@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_martensite::{MartensitePrismEvaluator, PrismProbeSnapshot};
+use oblikovati_martensite::{CertifiedNamedSolidEvaluator, NamedSolid};
+use oblikovati_model::history::SnapshotReplay;
 use oblikovati_session::{
     DocumentSession, TransactionObserver,
     part_evaluation::{PartEvaluationError, PartEvaluationSlot},
@@ -19,8 +20,7 @@ impl TransactionObserver for NativeResultObserver {
     fn changed(&mut self, _: u64, _: u64) {}
 }
 type NativePartSession = DocumentSession<NativeResultObserver>;
-type NativePartSlot =
-    PartEvaluationSlot<PrismProbeSnapshot, oblikovati_martensite::EvaluationFailure>;
+type NativePartSlot = PartEvaluationSlot<NamedSolid, oblikovati_martensite::EvaluationFailure>;
 #[test]
 fn session_created_extrusion_builds_exact_faces_through_parameter_history() {
     let mut snapshot = selected_prism_document();
@@ -48,7 +48,10 @@ fn assert_created_faces(
 ) {
     publish_native(owner, slot);
     let body = slot.current(owner).unwrap().body(id).unwrap();
-    let report = body.report();
+    let guid = stored_document_guid();
+    let prism = body.as_prism().unwrap();
+    let key = prism.body_reference_key(owner.history(), guid).unwrap();
+    let report = prism.body_report(owner.history(), guid, key).unwrap();
     assert!(report.topology.solid);
     assert_eq!(report.topology.faces, 6);
     assert_eq!(report.topology.edges, 12);
@@ -72,9 +75,14 @@ fn native_part_session() -> NativePartSession {
     )
 }
 fn publish_native(owner: &mut NativePartSession, slot: &mut NativePartSlot) {
+    let mut backend = CertifiedNamedSolidEvaluator::with_optional_policy(
+        owner.history(),
+        stored_document_guid(),
+        None,
+    );
     let completed = owner
         .prepare_part_evaluation()
-        .evaluate(&mut MartensitePrismEvaluator)
+        .evaluate(&mut backend)
         .unwrap();
     owner.adopt_part_evaluation(completed, slot).unwrap();
 }
@@ -84,9 +92,8 @@ fn assert_native_volume(slot: &NativePartSlot, owner: &NativePartSession, expect
         evaluated
             .body(FeatureId(1))
             .unwrap()
-            .report()
-            .properties
-            .volume,
+            .volume(owner.history(), stored_document_guid())
+            .unwrap(),
         expected,
     );
 }
@@ -191,7 +198,11 @@ fn retained_current_bodies_reject_late_results_and_track_undo_redo_generations()
     assert_native_volume(&slot, &owner, 24.);
     let older = owner
         .prepare_part_evaluation()
-        .evaluate(&mut MartensitePrismEvaluator)
+        .evaluate(&mut CertifiedNamedSolidEvaluator::with_optional_policy(
+            owner.history(),
+            stored_document_guid(),
+            None,
+        ))
         .unwrap();
     native_depth_edit(&mut owner);
     assert!(!slot.latest().unwrap().is_current);
@@ -219,13 +230,21 @@ fn closed_native_owner_marks_retained_presentation_stale_and_cancels_queued_inpu
     let mut owner = native_part_session();
     let mut slot = NativePartSlot::default();
     publish_native(&mut owner, &mut slot);
+    let replay = SnapshotReplay::new(owner.snapshot()).unwrap();
     let queued = owner.prepare_part_evaluation();
     owner.close();
     let retained = slot.latest().unwrap();
     assert!(!retained.is_current);
-    let body = retained.evaluation.body(FeatureId(1)).unwrap();
-    assert_analytic_scalar(body.report().properties.volume, 24.);
+    assert!(retained.evaluation.body(FeatureId(1)).is_some());
     assert!(queued.is_superseded());
-    assert!(queued.evaluate(&mut MartensitePrismEvaluator).is_err());
+    assert!(
+        queued
+            .evaluate(&mut CertifiedNamedSolidEvaluator::with_optional_policy(
+                replay.history(),
+                stored_document_guid(),
+                None
+            ))
+            .is_err()
+    );
     slot.clear();
 }

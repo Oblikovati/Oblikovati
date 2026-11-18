@@ -3,16 +3,41 @@ use super::*;
 #[allow(dead_code)]
 #[path = "../../../test-utilities/rust/selected_sketch_prism.rs"]
 mod fixture;
+fn evaluate_document(
+    document: &oblikovati_model::history::DocumentSnapshot,
+) -> (
+    oblikovati_model::history::SnapshotReplay,
+    oblikovati_model::feature::part::PartFeatureEvaluation<
+        oblikovati_martensite::NamedSolid,
+        oblikovati_martensite::EvaluationFailure,
+    >,
+) {
+    let history = oblikovati_model::history::SnapshotReplay::new(document).unwrap();
+    let guid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::with_optional_policy(
+        history.history(),
+        guid,
+        None,
+    );
+    let result = history
+        .history()
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .unwrap();
+    (history, result)
+}
 #[test]
 fn mesh_declines_retain_feature_identity_without_mutating_analytic_outputs() {
     let document = fixture::selected_prism_document();
-    let evaluated = document
-        .evaluate_part_features(&mut oblikovati_martensite::MartensitePrismEvaluator)
-        .unwrap();
+    let (history, evaluated) = evaluate_document(&document);
     let body = evaluated
         .body(oblikovati_model::feature::FeatureId(1))
         .unwrap();
-    let original = body.physical_properties().unwrap();
+    let guid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let key = body.body_reference_key(history.history(), guid).unwrap();
+    let original = body
+        .physical_properties(history.history(), guid, key)
+        .unwrap();
     // tol:oracle independent analytic volume integration permits floating-point roundoff.
     assert!((original.geometry.volume - 24.).abs() < 24. * f64::EPSILON * 8.);
     let options = oblikovati_martensite::PrismMeshOptions {
@@ -23,7 +48,11 @@ fn mesh_declines_retain_feature_identity_without_mutating_analytic_outputs() {
         ViewportScene::from_part_evaluation(&evaluated, options, [0.; 3], [0., 1., 0., 1.])
             .unwrap();
     verify_mesh_decline(&presentation);
-    assert_eq!(body.physical_properties().unwrap(), original);
+    assert_eq!(
+        body.physical_properties(history.history(), guid, key)
+            .unwrap(),
+        original
+    );
 }
 
 fn verify_mesh_decline(presentation: &PartPresentation) {
@@ -39,9 +68,7 @@ fn verify_mesh_decline(presentation: &PartPresentation) {
 #[test]
 fn hidden_bodies_are_not_meshed_and_visibility_errors_are_not_empty_success() {
     let document = fixture::selected_prism_document();
-    let evaluated = document
-        .evaluate_part_features(&mut oblikovati_martensite::MartensitePrismEvaluator)
-        .unwrap();
+    let (_history, evaluated) = evaluate_document(&document);
     let options = oblikovati_martensite::PrismMeshOptions {
         chord_error: 0.,
         angular_error: 0.5,
@@ -84,9 +111,7 @@ fn a_body_style_failure_does_not_hide_other_valid_bodies() {
     let feature =
         AuthoredFeature::sketch_prism(FeatureId(2), "Independent", definition, &document).unwrap();
     document.work_geometry.append(feature).unwrap();
-    let evaluated = document
-        .evaluate_part_features(&mut oblikovati_martensite::MartensitePrismEvaluator)
-        .unwrap();
+    let (_history, evaluated) = evaluate_document(&document);
     let options = oblikovati_martensite::PrismMeshOptions {
         chord_error: 0.05,
         angular_error: 0.5,

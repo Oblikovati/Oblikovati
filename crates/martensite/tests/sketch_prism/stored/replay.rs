@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_martensite::MartensitePrismEvaluator;
+use oblikovati_martensite::CertifiedNamedSolidEvaluator;
 use oblikovati_model::feature::{
     AuthoredFeature, FeatureEvaluationStatus,
     part::{PartFeatureDefinition, PartFeatureEvaluation, PartFeatureFailure},
     work_plane::{WorkPlaneDefinition, WorkPlaneDistance, WorkPlaneOrigin, WorkPlaneReference},
 };
 type NativePartEvaluation = PartFeatureEvaluation<
-    oblikovati_martensite::PrismProbeSnapshot,
+    oblikovati_martensite::NamedSolid,
     oblikovati_martensite::EvaluationFailure,
 >;
 fn replace_prism_source(document: &mut DocumentSnapshot, definition: SketchPrismDefinition) {
@@ -39,16 +39,41 @@ fn broken_boundary_document() -> DocumentSnapshot {
     document.work_geometry.append(independent).unwrap();
     document
 }
-fn assert_current_volume(evaluated: &NativePartEvaluation, id: u64) {
+fn evaluate_snapshot(
+    document: &DocumentSnapshot,
+) -> (
+    oblikovati_model::history::SnapshotReplay,
+    NativePartEvaluation,
+) {
+    let history = oblikovati_model::history::SnapshotReplay::new(document).unwrap();
+    let mut evaluator = CertifiedNamedSolidEvaluator::with_optional_policy(
+        history.history(),
+        stored_document_guid(),
+        None,
+    );
+    let result = history
+        .history()
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .unwrap();
+    (history, result)
+}
+fn assert_current_volume(
+    evaluated: &NativePartEvaluation,
+    history: &oblikovati_model::history::SnapshotReplay,
+    id: u64,
+) {
     let body = evaluated.body(FeatureId(id)).unwrap();
-    assert_analytic_scalar(body.report().properties.volume, 24.);
+    assert_analytic_scalar(
+        body.volume(history.history(), stored_document_guid())
+            .unwrap(),
+        24.,
+    );
 }
 #[test]
 fn kernel_boundary_decline_keeps_independent_current_prism_and_recovers() {
     let mut document = broken_boundary_document();
-    let failed = document
-        .evaluate_part_features(&mut MartensitePrismEvaluator)
-        .unwrap();
+    let (failed_history, failed) = evaluate_snapshot(&document);
     assert!(failed.body(FeatureId(1)).is_none());
     assert!(matches!(
         failed.health()[0].status,
@@ -69,12 +94,10 @@ fn kernel_boundary_decline_keeps_independent_current_prism_and_recovers() {
     assert!(
         matches!(cause.entity(), oblikovati_martensite::EvaluationEntity::Edges(edges) if edges.len() == 2)
     );
-    assert_current_volume(&failed, 2);
+    assert_current_volume(&failed, &failed_history, 2);
     replace_prism_source(&mut document, stored_definition());
-    let recovered = document
-        .evaluate_part_features(&mut MartensitePrismEvaluator)
-        .unwrap();
-    assert_current_volume(&recovered, 1);
+    let (recovered_history, recovered) = evaluate_snapshot(&document);
+    assert_current_volume(&recovered, &recovered_history, 1);
     assert!(failed.into_body(FeatureId(1)).is_none());
 }
 fn append_failed_host(document: &mut DocumentSnapshot) {
@@ -112,9 +135,7 @@ fn recover_host(document: &mut DocumentSnapshot) {
 #[test]
 fn failed_host_plane_blocks_native_prism_until_current_datum_recovers() {
     let mut document = hosted_document();
-    let failed = document
-        .evaluate_part_features(&mut MartensitePrismEvaluator)
-        .unwrap();
+    let (_failed_history, failed) = evaluate_snapshot(&document);
     assert_eq!(
         failed.health()[1].status,
         FeatureEvaluationStatus::Blocked {
@@ -123,15 +144,13 @@ fn failed_host_plane_blocks_native_prism_until_current_datum_recovers() {
     );
     assert!(failed.body(FeatureId(1)).is_none());
     recover_host(&mut document);
-    let recovered = document
-        .evaluate_part_features(&mut MartensitePrismEvaluator)
-        .unwrap();
-    assert_current_volume(&recovered, 1);
+    let (recovered_history, recovered) = evaluate_snapshot(&document);
+    assert_current_volume(&recovered, &recovered_history, 1);
     assert!(failed.into_body(FeatureId(1)).is_none());
 }
 
 #[test]
-fn unnamed_diagnostic_replay_refuses_body_deletion_without_losing_geometry() {
+fn document_scoped_replay_deletes_the_named_body() {
     use oblikovati_model::{feature::part::DeleteBodyDefinition, identity::SemanticReferenceName};
     let mut document = stored_owner().snapshot().clone();
     let guid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
@@ -147,12 +166,9 @@ fn unnamed_diagnostic_replay_refuses_body_deletion_without_losing_geometry() {
         definition.reads(),
     );
     document.work_geometry.append(feature).unwrap();
-    let result = document
-        .evaluate_part_features(&mut MartensitePrismEvaluator)
-        .unwrap();
-    assert_current_volume(&result, 1);
-    assert!(
-        matches!(&result.health()[1].status, FeatureEvaluationStatus::Failed(PartFeatureFailure::BodyReference(cause)) if cause.contains("document-scoped named part evaluator"))
-    );
-    assert!(result.deleted_body(FeatureId(2)).is_none());
+    let (_history, result) = evaluate_snapshot(&document);
+    assert!(result.body(FeatureId(1)).is_none());
+    assert_eq!(result.health()[1].status, FeatureEvaluationStatus::Healthy);
+    assert!(result.deleted_body(FeatureId(2)).is_some());
+    assert!(retain_stored_sketch_prism(&document, FeatureId(1)).is_err());
 }

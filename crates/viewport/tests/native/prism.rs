@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_martensite::{PrismMeshOptions, retain_stored_sketch_prism};
+use oblikovati_martensite::PrismMeshOptions;
+fn retain_stored_sketch_prism(
+    document: &oblikovati_model::history::DocumentSnapshot,
+    feature: FeatureId,
+) -> Result<oblikovati_martensite::PrismProbeSnapshot, String> {
+    let guid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    oblikovati_martensite::retain_stored_sketch_prism(document, guid, feature)
+}
 use oblikovati_model::{
     feature::{FeatureId, sketch_prism::SketchPrismDefinition, work_geometry::DatumLength},
     history::{DocumentEditHistory, DocumentSnapshot},
