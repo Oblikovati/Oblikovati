@@ -13,9 +13,7 @@ use oblikovati_model::{
 };
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{
-    TransactionObserver,
-    files::FileWorkspace,
-    part_evaluation::{CompletedPartEvaluation, PartEvaluationSlot},
+    TransactionObserver, files::FileWorkspace, part_evaluation::PartEvaluationSlot,
     workspace::WorkspaceObserver,
 };
 mod access;
@@ -165,7 +163,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<Vec<FeatureError>, String> {
-        refresh_and_adopt_owned(files, document, self.resolution, &mut self.replay_count)?;
+        files.recompute_owned_part(document, self.resolution, &mut self.replay_count)?;
         let session = files
             .workspace()
             .session(document)
@@ -257,30 +255,6 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
             .ok_or("expected document-owned replay")?;
         slot_datums_for_face(files, document, slot, face)
     }
-}
-
-fn refresh_and_adopt_owned<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-    files: &mut FileWorkspace<O, W, F>,
-    document: u64,
-    policy: Option<PrismResolutionPolicy>,
-    replay_count: &mut u64,
-) -> Result<(), String> {
-    let completed = prepare_part_sketches(files, document, policy, replay_count)?;
-    let published = match completed {
-        Some(completed) => files
-            .commands(document)
-            .map_err(|error| error.to_string())?
-            .adopt_owned_sketches(policy, completed)?,
-        None => false,
-    };
-    if !published {
-        let completed = complete_part_replay_counted(files, document, policy, replay_count)?;
-        files
-            .commands(document)
-            .map_err(|error| error.to_string())?
-            .adopt_owned_part(policy, completed)?;
-    }
-    Ok(())
 }
 
 /// Refresh dependent sketches from ordered replay before publishing a part.
@@ -403,29 +377,6 @@ pub fn part_replay_is_stale<O: TransactionObserver>(
 ) -> bool {
     !session.snapshot().work_geometry.features().is_empty()
         && slot.is_none_or(|result| result.current(session).is_err())
-}
-
-fn complete_part_replay_counted<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-    files: &FileWorkspace<O, W, F>,
-    document: u64,
-    resolution: Option<PrismResolutionPolicy>,
-    replay_count: &mut u64,
-) -> Result<CompletedPartEvaluation<NamedSolid, EvaluationFailure>, String> {
-    let workspace = files.workspace();
-    let guid = workspace
-        .identity(document)
-        .map_err(|error| error.to_string())?
-        .internal_name;
-    let session = workspace
-        .session(document)
-        .map_err(|error| error.to_string())?;
-    let request = session.prepare_part_evaluation();
-    let mut evaluator =
-        CertifiedNamedSolidEvaluator::with_optional_policy(session.history(), guid, resolution);
-    *replay_count = replay_count.saturating_add(1);
-    request
-        .evaluate(&mut evaluator)
-        .map_err(|error| error.to_string())
 }
 
 /// Convert ordered replay health to canonical feature errors.

@@ -403,3 +403,5 @@ fn checkpoints_require_a_current_document_owned_result() {
 
 #[path = "replay_ownership_parameter.rs"]
 mod parameter;
+#[path = "replay_ownership_session.rs"]
+mod session_owner;

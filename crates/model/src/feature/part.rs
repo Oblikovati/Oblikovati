@@ -30,6 +30,7 @@ pub use transfer::{CapturedPartTransfer, CompletedPartTransfer};
 mod checkpoint_suffix;
 mod replay_boundary;
 mod replay_observer;
+mod sketch_recompute;
 pub use super::work_plane::{
     WorkPlaneProgramRecipe as PartFeatureProgramRecipe,
     WorkPlaneProgramRecipeError as PartFeatureProgramRecipeError,

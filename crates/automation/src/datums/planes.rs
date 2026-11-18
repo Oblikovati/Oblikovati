@@ -17,28 +17,7 @@ type PlaneEntry = AuthoredFeature<WorkGeometryDefinition>;
 /// Identify datum programs that require named part geometry.
 /// Example: `requires_part_replay(snapshot)` before resolving sketch placement.
 pub fn requires_part_replay(snapshot: &DocumentSnapshot) -> bool {
-    use oblikovati_model::document_sketch::SketchPlacement;
-    use oblikovati_model::feature::work_plane::WorkPlaneReference;
-    if snapshot
-        .sketches
-        .sketches()
-        .iter()
-        .any(|sketch| matches!(sketch.placement(), SketchPlacement::Face(_)))
-    {
-        return true;
-    }
-    snapshot.work_geometry.features().iter().any(|feature| {
-        let base = match feature.definition() {
-            WorkGeometryDefinition::Offset { base, .. } => Some(base),
-            WorkGeometryDefinition::ParallelThroughPoint(source) => Some(&source.base),
-            WorkGeometryDefinition::AtAngleAboutAxis(source) => Some(&source.base),
-            _ => None,
-        };
-        matches!(
-            base,
-            Some(WorkPlaneReference::Face(_) | WorkPlaneReference::GoPrismFace(_))
-        )
-    })
+    snapshot.requires_named_part_replay()
 }
 /// Resolve a selected plane by identity, independent of its display label.
 /// Example: `work_plane_reference(&snapshot, selected_id)?`.
