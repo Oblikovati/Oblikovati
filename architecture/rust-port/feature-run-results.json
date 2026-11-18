@@ -263,11 +263,11 @@
       "features/application/ribbon-display/wheel-tab-navigation.svg": "a7768245a07ca78c28a2ccd4aca1a0533df328fb2d22abc4caf6027b3742e9da",
       "features/application/ribbon-display/wheel-tabs-only.svg": "3647e88e7456c04629f2b42536e16cfa2d5f07860ff29826711a5c11879f2a34"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-home-options/cucumber.json",
-    "cucumber_sha256": "8ef8939521f079ba5e219e388bed874292da1216349fe243225de7e6a8cc443a",
-    "application_commit": "39a4773e724989b4b439f3e645c0fa41030d2374",
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-view-compact/cucumber.json",
+    "cucumber_sha256": "c94d86d1d90736adeaab9dd35e1804dcd4613b4d4f93f2829539253e276814ea",
+    "application_commit": "1b40482e1a2b29d01428a2995ef7ff63a49e6818",
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-display XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh sh architecture/rust-port/receipts/2026-11-18-ribbon-display-maximize/run.sh",
     "environment": "Linux X11, Xvfb, Openbox and Vulkan Lavapipe; scripted window input plus native X11 resize and maximize",
-    "notes": "32 of 50 scenarios passed; 16 stopped at unbound steps and two failed behavior checks. Options command scope and the two-toggle restoration sequence need scenario-owner clarification (BLOCKERS.md; #4095). Feature and support files stayed unchanged during the run. Unversioned source: diagnostic only, not strict verified acceptance (#3856)."
+    "notes": "33 of 50 scenarios passed; 15 stopped at unbound steps and two failed behavior checks. Options command scope and the two-toggle restoration sequence need scenario-owner clarification (BLOCKERS.md; #4095). Feature and support files stayed unchanged during the run. The compact-panel scenario used X11 clicks; separate native tests cover drag cancellation and modal blocking. Unversioned source: diagnostic only, not strict verified acceptance (#3849, #3856)."
   }
 }
