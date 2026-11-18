@@ -2,82 +2,12 @@
 //! Preserve clean part checkpoints across an accepted document edit.
 use crate::{command_owner::CommandOwner, edit::PreparedEdit};
 use oblikovati_api::Error;
-use oblikovati_martensite::{
-    CapturedNamedSolid, CertifiedNamedSolidEvaluator, EvaluationFailure, NamedSolid,
-    PrismResolutionPolicy,
-};
-use oblikovati_model::{
-    history::{DocumentEditHistory, DocumentSnapshot, EvaluationTransition},
-    identity::DocumentGuid,
-};
-use oblikovati_session::part_evaluation::{CapturedPartCheckpointCandidate, PartCheckpointPrefix};
+use oblikovati_martensite::PrismResolutionPolicy;
+use oblikovati_model::history::{DocumentSnapshot, EvaluationTransition};
 
-type NamedPrefix = PartCheckpointPrefix<NamedSolid, EvaluationFailure>;
-pub(super) type NamedCandidate =
-    CapturedPartCheckpointCandidate<CapturedNamedSolid, EvaluationFailure>;
-pub(super) struct CheckpointReplay {
-    document: u64,
-    guid: DocumentGuid,
-    policy: Option<PrismResolutionPolicy>,
-    prefix: NamedPrefix,
-}
-impl CheckpointReplay {
-    pub(super) fn prepare(
-        &self,
-        snapshot: &DocumentSnapshot,
-        history: &DocumentEditHistory,
-    ) -> Result<Option<NamedCandidate>, Error> {
-        if snapshot.sketches.requires_part_dependency_recompute() {
-            return Ok(None);
-        }
-        let Some(change) = history.snapshot().part_replay_change(snapshot) else {
-            return Ok(None);
-        };
-        if change.start == 0 {
-            return Ok(None);
-        }
-        let mut evaluator =
-            CertifiedNamedSolidEvaluator::with_optional_policy(history, self.guid, self.policy);
-        let Some(candidate) = self
-            .prefix
-            .prepare_checkpoints(history, snapshot, &mut evaluator)
-            .map_err(Error)?
-        else {
-            return Ok(None);
-        };
-        candidate
-            .capture(history, |_, body| body.capture_detached(history, self.guid))
-            .map(Some)
-            .map_err(Error)
-    }
-    pub(super) fn adopt(
-        &self,
-        owner: &mut impl CommandOwner,
-        candidate: NamedCandidate,
-        transition: &EvaluationTransition,
-    ) -> Result<(), Error> {
-        let session = owner
-            .workspace()
-            .session(self.document)
-            .map_err(|error| Error(error.to_string()))?;
-        let completed = oblikovati_martensite::complete_named_checkpoints(
-            candidate.into_transfer(),
-            self.document,
-            transition,
-            session.history(),
-            self.guid,
-        )
-        .map_err(Error)?;
-        let completed = session
-            .complete_checkpoint_transfer(completed)
-            .map_err(Error)?;
-        owner
-            .commands(self.document)
-            .map_err(|error| Error(error.to_string()))?
-            .adopt_owned_replayed_checkpoints(self.policy, completed)
-            .map_err(Error)
-    }
-}
+type NamedCandidate = oblikovati_session::OwnedCheckpointCandidate;
+type CheckpointReplay = oblikovati_session::OwnedCheckpointReplay;
+
 fn current_prefix(owner: &impl CommandOwner, document: u64) -> Option<CheckpointReplay> {
     let workspace = owner.workspace();
     let session = workspace.session(document).ok()?;
@@ -85,19 +15,26 @@ fn current_prefix(owner: &impl CommandOwner, document: u64) -> Option<Checkpoint
         return None;
     }
     let (policy, prefix) = session.owned_checkpoint_prefix()?;
-    replay_for_prefix(workspace, document, policy, prefix)
+    workspace
+        .owned_checkpoint_replay(document, policy, prefix)
+        .ok()
 }
 pub(super) fn certified_prefix(
     owner: &impl CommandOwner,
     document: u64,
     prefix: crate::CertifiedCheckpointPrefix,
-) -> Option<CheckpointReplay> {
+) -> Result<Option<CheckpointReplay>, Error> {
     let workspace = owner.workspace();
-    let session = workspace.session(document).ok()?;
+    let session = workspace
+        .session(document)
+        .map_err(|error| Error(error.to_string()))?;
     if session.in_transaction() {
-        return None;
+        return Ok(None);
     }
-    replay_for_prefix(workspace, document, prefix.policy, prefix.prefix)
+    workspace
+        .owned_checkpoint_replay(document, prefix.policy, prefix.prefix)
+        .map(Some)
+        .map_err(Error)
 }
 
 /// Commit an edit and publish a matching checkpoint when its prefix is safe.
@@ -121,9 +58,10 @@ pub(super) fn edit_with_owner<
     let prefix = owner
         .cached_checkpoint_prefix(files, document)
         .map_err(Error)?;
-    let replay = prefix
-        .filter(|prefix| prefix.policy == policy)
-        .and_then(|prefix| certified_prefix(files, document, prefix));
+    let replay = match prefix.filter(|prefix| prefix.policy == policy) {
+        Some(prefix) => certified_prefix(files, document, prefix)?,
+        None => None,
+    };
     let Some((policy, replay)) = policy.zip(replay) else {
         return files
             .commands(document)
@@ -156,7 +94,7 @@ fn apply_checkpointed_edit<
         .commands(document)
         .map_err(|error| Error(error.to_string()))?
         .run_projected_with_transition(label, edit, |snapshot, reply, history| {
-            Ok((reply, replay.prepare(snapshot, history)?))
+            Ok((reply, replay.prepare(snapshot, history).map_err(Error)?))
         })
         .map_err(|error| Error(error.to_string()))?;
     let Some(candidate) = candidate else {
@@ -201,22 +139,25 @@ fn publish_checkpoint<
         })
 }
 
-fn replay_for_prefix<
-    O: oblikovati_session::TransactionObserver,
-    W: oblikovati_session::workspace::WorkspaceObserver,
->(
-    workspace: &oblikovati_session::workspace::WorkspaceSession<O, W>,
-    document: u64,
-    policy: Option<PrismResolutionPolicy>,
-    prefix: NamedPrefix,
-) -> Option<CheckpointReplay> {
-    let guid = workspace.identity(document).ok()?.internal_name;
-    Some(CheckpointReplay {
-        document,
-        guid,
-        policy,
-        prefix,
-    })
+fn adopt_parameter_candidate(
+    owner: &mut impl CommandOwner,
+    replay: &CheckpointReplay,
+    candidate: NamedCandidate,
+    transition: &EvaluationTransition,
+) -> Result<(), Error> {
+    let document = replay.document();
+    let session = owner
+        .workspace()
+        .session(document)
+        .map_err(|error| Error(error.to_string()))?;
+    let completed = replay
+        .complete(session, candidate, transition)
+        .map_err(Error)?;
+    owner
+        .commands(document)
+        .map_err(|error| Error(error.to_string()))?
+        .adopt_owned_replayed_checkpoints(replay.policy(), completed)
+        .map_err(Error)
 }
 /// Run a parameter edit with a current checkpoint when its prefix is safe.
 /// Example: `try_edit(owner, edit, document)?` before a normal edit.
@@ -236,13 +177,15 @@ pub(super) fn try_edit(
             label,
             |snapshot, reservations| edit.apply(snapshot, reservations),
             |snapshot, response, history| {
-                Ok::<_, Error>((response, replay.prepare(snapshot, history)?))
+                Ok::<_, Error>((response, replay.prepare(snapshot, history).map_err(Error)?))
             },
         )
         .map_err(|error| Error(error.to_string()))?;
     if let Some(candidate) = candidate {
-        replay.adopt(owner, candidate, &transition).map_err(|error| {
-            Error(format!("document {document}: parameter edit committed but replay adoption failed: {error}"))
+        adopt_parameter_candidate(owner, &replay, candidate, &transition).map_err(|error| {
+            Error(format!(
+                "document {document}: parameter edit committed but replay adoption failed: {error}"
+            ))
         })?;
     }
     owner.refresh_after_command(document)?;

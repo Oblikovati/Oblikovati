@@ -50,6 +50,9 @@ using this status; the live scenario directory can change.
   recomputes and creates feature checkpoints. The file workspace supplies the
   document identity and validates the policy; tests cover separate documents,
   stale generations, and checkpoint reuse (#4079).
+- Checkpoint candidate replay and restoration now use a session-issued
+  capability. The workspace rejects a foreign, wrong-policy, or stale prefix;
+  tests also reject stale candidate histories (#4079).
 - A cold checkpoint request for a part without associative sketch recompute
   publishes its result and boundaries from one replay instead of two. Ownership
   tests cover repeat requests and isolation between documents (#4079).
@@ -81,9 +84,9 @@ using this status; the live scenario directory can change.
   clean parent `01c398155` (related clipped-tab investigation #4082).
 - The desktop replay owner creates checkpoints on demand for blend edit
   previews. Successive previews and accepted edits reuse matching checkpoints.
-  Associative sketches use ordered recompute. Candidate and preview orchestration
-  still lives outside the session, so the complete evaluation service remains
-  unfinished (#4079).
+  Associative sketches use ordered recompute. Some preview and feature-specific
+  orchestration still lives outside the session, so the complete evaluation
+  service remains unfinished (#4079).
 - A newly appended feature may add parameters without dirtying an unchanged
   prefix when no earlier feature reads them. Other parameter changes remain
   conservative (#4079).
