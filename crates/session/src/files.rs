@@ -23,6 +23,7 @@ mod project;
 mod project_assets;
 mod projects;
 pub use projects::LoadedProject;
+mod part_recompute;
 mod propagation;
 mod refresh;
 pub use propagation::{BlockedDerivedDocument, DerivedRefreshFailure, DerivedRefreshReport};

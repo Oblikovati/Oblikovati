@@ -9,6 +9,14 @@ use crate::{
     },
 };
 impl<O: TransactionObserver> SessionCommands<'_, O> {
+    pub(crate) fn recompute_owned_part(
+        &mut self,
+        guid: oblikovati_model::identity::DocumentGuid,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        attempts: &mut u64,
+    ) -> Result<(), String> {
+        self.session.recompute_owned_part(guid, policy, attempts)
+    }
     /// Publish an accepted checkpoint set with its part result.
     /// Example: `files.commands(id)?.adopt_replayed_checkpoints(done, &mut part, &mut checkpoints)?`.
     pub fn adopt_replayed_checkpoints<Body: Clone, Failure: Clone>(

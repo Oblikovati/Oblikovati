@@ -115,6 +115,7 @@ fn picked_face_creates_a_direct_associative_sketch_without_a_work_plane() {
         snapshot.sketches.get(sketch).unwrap().placement(),
         SketchPlacement::Face(_)
     ));
+    assert!(snapshot.requires_named_part_replay());
     let state = owner.gui_command_state().unwrap();
     assert_eq!(state.dimensions_needed, Some(0));
     assert!(
