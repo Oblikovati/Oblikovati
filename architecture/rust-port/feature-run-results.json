@@ -84,6 +84,7 @@
   },
   "features/application/document-opening/document-opening.feature": {
     "feature_sha256": "ce0be44dd1e0ded53c12de6a96465ffafca2307db3029351147c6d9606bf4b8b",
+    "blocker": "The observed Finish and Simplify assembly commands need identification and behavior confirmation (#3963).",
     "supporting_files": {
       "features/application/document-opening/FUNCTIONAL.md": "05912fd64ef7fc579a11b2c0c14607f6728eed0f138d3d7a32d87c93b03b6bac",
       "features/application/document-opening/VISUAL.md": "788c60876a734b13c25eaad5a1d34a043f95ec73bd847ae319140ce115088cc3",

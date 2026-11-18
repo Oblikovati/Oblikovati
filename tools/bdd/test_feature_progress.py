@@ -91,9 +91,19 @@ class FeatureProgressTests(unittest.TestCase):
 
     def test_blocker_is_visible_until_source_changes(self) -> None:
         self.record["blocker"] = "Scenario is capture-only"
-        self.assertEqual(self.status(), ("blocked", 0))
+        self.assertEqual(self.status(), ("blocked", 2))
         self.feature.write_text(self.feature.read_text() + "# updated\n")
         self.assertEqual(self.status(), ("source_changed", 0))
+
+    def test_blocked_feature_retains_only_verified_scenario_count(self) -> None:
+        report = json.loads(self.report.read_text())
+        report[0]["elements"][1]["steps"][0]["result"]["status"] = "failed"
+        self.report.write_text(json.dumps(report))
+        self.record["cucumber_sha256"] = progress.digest(self.report)
+        self.record["blocker"] = "Command details are not confirmed"
+        self.assertEqual(self.status(), ("blocked", 1))
+        self.report.write_text("[]")
+        self.assertEqual(self.status(), ("blocked", 0))
 
     def test_outline_requires_each_expanded_example(self) -> None:
         row = {
