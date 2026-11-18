@@ -29,5 +29,13 @@
     "blocker": "All seven scenarios are tagged capture-only and capture-host-only; the native runner excludes them. The scenario owner must supply executable requirements and fixtures.",
     "command": "OBK_BDD_FEATURE=viewport-entity-selection tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb, Vulkan Lavapipe; no scenario was executed"
+  },
+  "features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature": {
+    "feature_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-navigation-wheel/cucumber.json",
+    "cucumber_sha256": "0b51c3ceb975f2d7de81ef76b87f0e08f045ac05385c3837d8d345c3c580cfed",
+    "application_commit": "850f63345e268b39fbde47f235c040f56dc807bf",
+    "command": "OBK_BDD_FEATURE=viewport-navigation-wheel tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb, Vulkan Lavapipe; scripted window input"
   }
 }
