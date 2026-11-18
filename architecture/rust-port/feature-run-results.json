@@ -142,5 +142,19 @@
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=body-properties XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input",
     "notes": "A separate native X11 mouse and keyboard test opens Body Properties from the body row and checks Escape preserves selection and highlight."
+  },
+  "features/application/project-dialog/project-dialog.feature": {
+    "feature_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d",
+    "supporting_files": {
+      "features/application/project-dialog/FUNCTIONAL.md": "10aa53fcfee1fad6a1fe0d4e0c7a93feddb36c1e73f837a799c92dcf8de7bf98",
+      "features/application/project-dialog/VISUAL.md": "5cc404e8e057f48092d0d1ee701b005361dc72ee63635b003285b75e33b2db2a",
+      "features/application/project-dialog/FIXTURES.md": "db5f22c3e158bc47b2317dd2e29b9e3b1eb3796fb129e64ed13511bd06331bc0",
+      "features/application/project-dialog/BLOCKERS.md": "4d0f059ee6c0ce2acfc342e7a81f22259a86b468ee3fd71f02230a43f4859448"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-project-dialog/cucumber.json",
+    "cucumber_sha256": "828dd66e168853b0a737deadf39bbbb1bb54a544ec40f53120242e98ce507bca",
+    "application_commit": "68ff0ccf6ef2c4cd9265519d0da700e0da514b8e",
+    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=project-dialog XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input"
   }
 }
