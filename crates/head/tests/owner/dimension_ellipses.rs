@@ -106,7 +106,7 @@ fn check_mixed_curve_rejection(recipe: &SketchPlacementRecipe, pixel: [i32; 2]) 
         &[button([-200, -100], true), button([0, 300], true)],
     );
     assert_eq!(
-        draft(&owner).kind,
+        draft(&mut owner).kind,
         oblikovati_api::types::DIM_CONSTRAINT_DISTANCE.0.as_ref()
     );
 }

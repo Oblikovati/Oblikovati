@@ -149,6 +149,21 @@ fn drawing_projection_tracks_open_part_edits_and_missing_sources() {
     let before = owner.gui_command_state().unwrap().drawing_projections[&drawing].clone();
     assert!(before.error.is_none(), "{:?}", before.error);
     assert!(!before.lines.is_empty());
+    let session = owner.files.workspace().session(part).unwrap();
+    let published = session
+        .owned_part_slot(Some(oblikovati_drawing::modelling_policy()))
+        .unwrap();
+    let initial = published.current(session).unwrap() as *const _;
+    owner.gui_command_state().unwrap();
+    let session = owner.files.workspace().session(part).unwrap();
+    assert!(std::ptr::eq(
+        session
+            .owned_part_slot(Some(oblikovati_drawing::modelling_policy()))
+            .unwrap()
+            .current(session)
+            .unwrap(),
+        initial
+    ));
     owner
         .files
         .commands(part)
@@ -160,6 +175,14 @@ fn drawing_projection_tracks_open_part_edits_and_missing_sources() {
     let after = owner.gui_command_state().unwrap().drawing_projections[&drawing].clone();
     assert!(after.error.is_none(), "{:?}", after.error);
     assert_ne!(before.lines, after.lines);
+    let session = owner.files.workspace().session(part).unwrap();
+    assert!(
+        session
+            .owned_part_slot(Some(oblikovati_drawing::modelling_policy()))
+            .unwrap()
+            .current(session)
+            .is_ok()
+    );
     owner.files.commands(part).unwrap().undo().unwrap();
     assert_eq!(
         owner.gui_command_state().unwrap().drawing_projections[&drawing].lines,

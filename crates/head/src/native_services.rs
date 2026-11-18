@@ -246,7 +246,7 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     fn select_theme_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.owner.select_theme_from_gui(name)
     }
-    fn gui_command_state(&self) -> Result<oblikovati_gui::GuiCommandState, String> {
+    fn gui_command_state(&mut self) -> Result<oblikovati_gui::GuiCommandState, String> {
         self.owner.gui_command_state()
     }
     fn edit_parameter_from_gui(

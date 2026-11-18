@@ -57,23 +57,6 @@ pub fn project_evaluated_part(
     let bodies: Vec<_> = part.ordered_bodies().collect();
     oblikovati_martensite::drawing_base_view_solids(history, document, &bodies, view)
 }
-/// Evaluate the part and refuse a sick feature; example: `evaluate_part(history, guid)?`.
-pub fn evaluate_part(
-    history: &DocumentEditHistory,
-    document: DocumentGuid,
-) -> Result<PartFeatureEvaluation<NamedSolid, EvaluationFailure>, String> {
-    let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::with_policy(
-        history,
-        document,
-        crate::modelling_policy(),
-    );
-    let result = history
-        .snapshot()
-        .evaluate_part_features(&mut evaluator)
-        .map_err(|cause| cause.to_string())?;
-    require_healthy(&result)?;
-    Ok(result)
-}
 fn require_healthy(
     result: &PartFeatureEvaluation<NamedSolid, EvaluationFailure>,
 ) -> Result<(), String> {

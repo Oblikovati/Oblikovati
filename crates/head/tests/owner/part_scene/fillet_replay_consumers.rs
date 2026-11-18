@@ -47,7 +47,7 @@ fn base_view_projects_fillet_cube() {
         [100., 100.],
     )
     .unwrap();
-    let fresh = oblikovati_drawing::evaluate_part(session.history(), guid).unwrap();
+    let fresh = crate::drawing_fixture_replay::evaluate(session.history(), guid).unwrap();
     let counts = oblikovati_drawing::DrawingProjectionService
         .counts_current(session.history(), guid, &view, &fresh)
         .unwrap();

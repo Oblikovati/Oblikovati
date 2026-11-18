@@ -14,12 +14,13 @@ fn start(owner: &mut TestOwner) {
         .dimension_tool_from_gui(&GuiDimensionAction::Start)
         .unwrap();
 }
-fn draft(owner: &TestOwner) -> GuiDimensionDraft {
+fn draft(owner: &mut TestOwner) -> GuiDimensionDraft {
     owner.gui_command_state().unwrap().dimension_draft.unwrap()
 }
 fn apply(owner: &mut TestOwner, expression: &str, driven: bool) -> Result<bool, String> {
+    let id = draft(owner).id;
     owner.dimension_tool_from_gui(&GuiDimensionAction::Apply {
-        id: draft(owner).id,
+        id,
         expression: expression.into(),
         driven,
     })
@@ -49,7 +50,7 @@ fn point_dimension_keeps_history_until_placement_and_selects_the_drag_orientatio
         let (mut owner, _, _) = geometric_owner(&[[0., 0.], [100., 40.]], false);
         let before = owner.gui_command_state().unwrap().undo_label;
         point_draft(&mut owner, at);
-        let state = draft(&owner);
+        let state = draft(&mut owner);
         assert_eq!(state.kind, "distance");
         assert_eq!(state.orientation, orientation);
         assert!(!state.expression.is_empty());
@@ -75,7 +76,7 @@ fn a_second_line_remains_reachable_before_the_placement_click() {
         &mut owner,
         &[button([110, 50], true), button([200, 200], true)],
     );
-    assert_eq!(draft(&owner).kind, "angle");
+    assert_eq!(draft(&mut owner).kind, "angle");
     apply(&mut owner, "90 deg", false).unwrap();
     let rows = dimensions(&mut owner);
     assert_eq!(rows[0].kind, "angle");
@@ -90,7 +91,7 @@ fn a_single_line_measures_its_endpoints_with_a_measured_default() {
         &mut owner,
         &[button([50, 20], true), button([50, 100], true)],
     );
-    assert_eq!(draft(&owner).orientation, "horizontal");
+    assert_eq!(draft(&mut owner).orientation, "horizontal");
     apply(&mut owner, "", false).unwrap();
     assert!((dimensions(&mut owner)[0].value - 100.).abs() < 1e-8);
     assert!(inspection(&mut owner).healthy);
@@ -114,7 +115,7 @@ fn circular_outlines_create_radius_dimensions_and_reference_keeps_freedom() {
         let dof = inspection(&mut owner).dof;
         start(&mut owner);
         deliver(&mut owner, &[button(pixel, true), button([200, 200], true)]);
-        assert_eq!(draft(&owner).kind, "radius");
+        assert_eq!(draft(&mut owner).kind, "radius");
         apply(&mut owner, "999 cm", true).unwrap();
         let rows = dimensions(&mut owner);
         assert!(rows[0].driven);
@@ -126,7 +127,7 @@ fn circular_outlines_create_radius_dimensions_and_reference_keeps_freedom() {
 fn cancellation_retains_placement_and_stale_dialog_actions_are_rejected() {
     let (mut owner, _, _) = geometric_owner(&[[0., 0.], [100., 40.]], false);
     point_draft(&mut owner, [50, 100]);
-    let old = draft(&owner).id;
+    let old = draft(&mut owner).id;
     owner
         .dimension_tool_from_gui(&GuiDimensionAction::Cancel { id: old })
         .unwrap();
@@ -136,7 +137,7 @@ fn cancellation_retains_placement_and_stale_dialog_actions_are_rejected() {
         .undo()
         .unwrap();
     point_draft(&mut owner, [50, 100]);
-    assert_ne!(draft(&owner).id, old);
+    assert_ne!(draft(&mut owner).id, old);
     assert!(
         owner
             .dimension_tool_from_gui(&GuiDimensionAction::Apply {
@@ -200,10 +201,10 @@ fn a_parameter_expression_drives_the_dimension_through_undo_and_redo() {
 fn invalid_expression_keeps_the_same_draft_for_correction() {
     let (mut owner, _, _) = geometric_owner(&[[0., 0.], [100., 40.]], false);
     point_draft(&mut owner, [50, 100]);
-    let id = draft(&owner).id;
+    let id = draft(&mut owner).id;
     let before = dimensions(&mut owner);
     assert!(apply(&mut owner, "1 +", false).is_err());
-    assert_eq!(draft(&owner).id, id);
+    assert_eq!(draft(&mut owner).id, id);
     assert_eq!(dimensions(&mut owner), before);
     apply(&mut owner, "10 cm", false).unwrap();
     assert_eq!(dimensions(&mut owner).len(), 1);
@@ -225,10 +226,10 @@ fn incompatible_dimension_keeps_fixed_geometry_and_the_owner_draft() {
     assert!(inspection(&mut owner).healthy);
     assert_eq!(inspection(&mut owner).dof, 0);
     point_draft(&mut owner, [50, 100]);
-    let id = draft(&owner).id;
+    let id = draft(&mut owner).id;
     let result = apply(&mut owner, "10 cm", false);
     assert!(result.is_err(), "{result:?}: {:?}", inspection(&mut owner));
-    assert_eq!(draft(&owner).id, id);
+    assert_eq!(draft(&mut owner).id, id);
     assert!(dimensions(&mut owner).is_empty());
     assert!(inspection(&mut owner).healthy);
 }
@@ -294,7 +295,7 @@ fn cursor_preview_and_authored_labels_do_not_create_extra_history() {
 fn history_changes_retire_placed_dimension_dialogs_and_selection() {
     let (mut owner, _, _) = geometric_owner(&[[0., 0.], [100., 40.]], false);
     point_draft(&mut owner, [50, 100]);
-    let old = draft(&owner).id;
+    let old = draft(&mut owner).id;
     Client::new(owner.document_host())
         .transactions()
         .undo()
@@ -396,10 +397,10 @@ fn redundant_dimension_keeps_the_editor_until_explicit_reference_correction() {
             button([50, 100], true),
         ],
     );
-    let id = draft(&owner).id;
+    let id = draft(&mut owner).id;
     let cause = apply(&mut owner, "100 cm", false).unwrap_err();
     assert!(cause.contains("redundant"), "{cause}");
-    assert_eq!(draft(&owner).id, id);
+    assert_eq!(draft(&mut owner).id, id);
     assert_eq!(dimensions(&mut owner), before);
     assert!(inspection(&mut owner).healthy);
     apply(&mut owner, "100 cm", true).unwrap();
@@ -443,7 +444,7 @@ fn placed_dimension_survives_cancellation_and_has_its_own_history_step() {
     assert_eq!(rows.len(), 1, "placement must create a measured dimension");
     assert_eq!(rows[0].text_point, Some(vec![50., 100.]));
     assert_ne!(owner.gui_command_state().unwrap().undo_label, before);
-    let id = draft(&owner).id;
+    let id = draft(&mut owner).id;
     owner
         .dimension_tool_from_gui(&GuiDimensionAction::Cancel { id })
         .unwrap();
@@ -468,7 +469,7 @@ fn placed_dimension_survives_cancellation_and_has_its_own_history_step() {
 fn placed_editor_rejects_a_different_sketch_or_constraint() {
     let (mut owner, _, _) = geometric_owner(&[[0., 0.], [100., 40.]], false);
     point_draft(&mut owner, [50, 100]);
-    let owned = draft(&owner).committed.unwrap();
+    let owned = draft(&mut owner).committed.unwrap();
     let before = dimensions(&mut owner);
     for (sketch, constraint) in [
         (owned.sketch + 1, owned.constraint),

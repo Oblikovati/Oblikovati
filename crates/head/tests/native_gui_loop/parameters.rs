@@ -15,7 +15,7 @@ pub(super) fn create_size_parameter(
     assert_size_expression(owner, "10 mm");
     click_parameter_label(window, owner, "Done");
 }
-fn assert_size_expression(owner: &NativeDesktopOwner, expression: &str) {
+fn assert_size_expression(owner: &mut NativeDesktopOwner, expression: &str) {
     let state = owner.gui_command_state().unwrap();
     let parameter = state
         .parameters

@@ -3,7 +3,7 @@ use super::commands::dirty_property;
 use super::*;
 use oblikovati_gui::{GuiCommandState, GuiShellAction};
 pub(super) fn assert_authoring_context(
-    owner: &TestOwner,
+    owner: &mut TestOwner,
     expected: oblikovati_gui::GuiAuthoringContext,
 ) {
     let state = owner.gui_command_state().unwrap();
@@ -68,11 +68,12 @@ fn verify_transaction_metadata(owner: &mut TestOwner) {
     assert_eq!(owner.gui_command_state().unwrap(), before);
 }
 
-fn verify_script_owner_command_state(owner: TestOwner) -> TestOwner {
+fn verify_script_owner_command_state(mut owner: TestOwner) -> TestOwner {
     let expected = owner.gui_command_state().unwrap();
     let engine =
         oblikovati_script::IsolatedLuaEngine::new(&std::env::current_exe().unwrap(), Vec::new());
-    let desktop = crate::DesktopScripts::new(owner, engine, oblikovati_script::ScriptLimits::gui());
+    let mut desktop =
+        crate::DesktopScripts::new(owner, engine, oblikovati_script::ScriptLimits::gui());
     assert_eq!(desktop.gui_command_state().unwrap(), expected);
     assert_eq!(
         crate::work_idle::IdleHeadWork.gui_command_state().unwrap(),
