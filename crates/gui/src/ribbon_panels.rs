@@ -19,6 +19,7 @@ pub(crate) struct RibbonPanelLayout {
     widths: BTreeMap<(RibbonTab, RibbonPanel), f32>,
     scrollbar_shown: bool,
     measured_appearance: Option<crate::ribbon_command_layout::RibbonAppearance>,
+    popup_press: crate::popup_press::PopupPress<(RibbonTab, RibbonPanel)>,
     pub pending_layout: bool,
     additional: additional::PanelExpansions,
 }
@@ -392,6 +393,7 @@ fn draw_row(
         };
         x += width + 8.;
     }
+    layout.popup_press.finish_frame(context.ui);
     activated
 }
 fn draw_expanded(
@@ -447,7 +449,7 @@ fn draw_collapsed(
     let ui = context.ui;
     let identity = format!("##panel-{tab:?}-{panel:?}");
     crate::widget_abi::cursor_position(ui, origin);
-    if crate::widget_abi::button(
+    let clicked = crate::widget_abi::button(
         ui,
         &format!("v{identity}"),
         [
@@ -455,7 +457,9 @@ fn draw_collapsed(
             (context.owners.icons.appearance.command_height() - 2.).max(18.)
                 * context.owners.icons.layout_factor(),
         ],
-    ) {
+    );
+    let through_popup = layout.popup_press.released(ui, (tab, panel));
+    if clicked || through_popup {
         ui.open_popup(&identity);
     }
     let anchor = ui.item_rect_min()[0];

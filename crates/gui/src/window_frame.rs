@@ -8,7 +8,7 @@ const CONTROL_WIDTH: f32 = 48.;
 #[derive(Default)]
 pub(crate) struct FrameInteraction {
     drag_armed: bool,
-    popup_press: Option<usize>,
+    popup_press: crate::popup_press::PopupPress<usize>,
 }
 
 #[derive(Default)]
@@ -87,6 +87,7 @@ pub(crate) fn draw(
                 actions.push(GuiShellAction::Exit);
             }
         });
+    interaction.popup_press.finish_frame(ui);
     let scale = request.layout_scale();
     for bounds in &mut controls.bounds {
         for axis in 0..2 {
@@ -112,7 +113,7 @@ fn control(
     interaction: &mut FrameInteraction,
 ) -> bool {
     let clicked = crate::widget_abi::button(ui, label, [CONTROL_WIDTH, bar_height]);
-    let through_popup = released_after_popup(ui, index, interaction);
+    let through_popup = interaction.popup_press.released(ui, index);
     let clicked = clicked || through_popup;
     let clicked = clicked || crate::accessibility::focused_activation(ui);
     record_control(ui, index, &mut controls.bounds, &mut controls.focused);
@@ -133,20 +134,6 @@ fn control(
         });
     }
     clicked
-}
-fn released_after_popup(ui: &Ui, index: usize, interaction: &mut FrameInteraction) -> bool {
-    // Non-modal popups dismiss on press; retain the target until release (#3849).
-    if !ui.is_item_hovered()
-        && ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_BLOCKED_BY_POPUP)
-        && ui.is_mouse_clicked(MouseButton::Left)
-    {
-        interaction.popup_press = Some(index);
-    }
-    if !ui.is_mouse_released(MouseButton::Left) || interaction.popup_press != Some(index) {
-        return false;
-    }
-    interaction.popup_press = None;
-    ui.is_item_hovered()
 }
 fn draw_icon(ui: &Ui, kind: &str) {
     let min = ui.item_rect_min();

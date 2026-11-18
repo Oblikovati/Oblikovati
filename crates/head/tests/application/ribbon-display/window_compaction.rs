@@ -11,6 +11,12 @@ fn full_model_part(world: &mut ApplicationWorld) {
 
 #[given("the narrow window shows Modify as a compact panel button")]
 fn narrow_modify(world: &mut ApplicationWorld) {
+    narrow_window(world);
+    world.expect_text("Modify");
+    world.expect_no_text("Hole");
+}
+
+pub(super) fn narrow_window(world: &mut ApplicationWorld) {
     super::super::x11_input::focus_window();
     let bounds = super::super::x11_input::application_bounds();
     let edge = [bounds[2] - 2, bounds[3] / 2];
@@ -18,8 +24,6 @@ fn narrow_modify(world: &mut ApplicationWorld) {
     super::super::main_window_frame_native::drag_resize_handle(world, edge, target);
     world.pump(Vec::new());
     assert!(world.app().window.native.drawable_extent().unwrap()[0] < 800);
-    world.expect_text("Modify");
-    world.expect_no_text("Hole");
 }
 
 #[given("the temporary Modify panel is open")]
