@@ -59,6 +59,9 @@ using this status; the live scenario directory can change.
 - Fillet and Chamfer creation now use a session-issued whole-part capability
   for append replay. Tests retain the replay counts and reject foreign or stale
   histories and validator refusals (#4079).
+- Extrude creation also uses that capability, including the first empty-part
+  replay. Tests cover policy and identity mismatches, an injected refusal, and
+  named faces after a second extrusion (#4079).
 - Feature-edit previews now replay through the document session, under its
   identity and policy. A private preview does not publish a result or change
   the document generation; the Fillet test compares full and checkpoint

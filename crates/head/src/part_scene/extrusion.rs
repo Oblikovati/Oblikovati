@@ -73,14 +73,16 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
         feature: FeatureId,
         prefix: &oblikovati_automation::ExtrudeReplayPrefix,
     ) -> Result<Option<oblikovati_automation::ExtrudePrefixReplay>, String> {
-        let mut evaluator = CertifiedNamedSolidEvaluator::with_policy(history, document, self.0);
-        let Some(result) = prefix.prepare_tail(history, candidate, feature, &mut evaluator)? else {
-            return Ok(None);
-        };
-        let count = result.body_count();
-        let captured =
-            result.capture(history, |_, body| body.capture_detached(history, document))?;
-        Ok(Some((count, captured)))
+        if prefix.policy() != Some(self.0) || !prefix.owns_identity(document) {
+            return Err(format!(
+                "document {document:?} policy {:?}: expected the extrusion replay owner and policy {:?}",
+                prefix.policy(),
+                self.0
+            ));
+        }
+        prefix
+            .prepare(history, candidate, feature)
+            .map_err(|error| error.to_string())
     }
     fn feature_health(
         &self,

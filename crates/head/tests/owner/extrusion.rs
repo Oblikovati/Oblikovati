@@ -283,6 +283,11 @@ fn assert_face(owner: &TestOwner, document: u64, key: &[u8], area: f64) {
 
 struct RejectExtrusionCandidate;
 impl oblikovati_automation::ExtrudeRegionAccess for RejectExtrusionCandidate {
+    fn replay_policy(&self) -> Option<oblikovati_martensite::PrismResolutionPolicy> {
+        Some(oblikovati_martensite::PrismResolutionPolicy::Fixed(
+            resolution(),
+        ))
+    }
     fn region(
         &self,
         _: &oblikovati_model::history::DocumentSnapshot,

@@ -23,10 +23,7 @@ mod replay;
 use replay::{ExtrudeProjection, adopt_extrude_candidate, prepare_owned_prefix};
 
 /// A current named result prefix for certified extrusion validation.
-pub type ExtrudeReplayPrefix = oblikovati_session::part_evaluation::PartCandidatePrefix<
-    oblikovati_martensite::NamedSolid,
-    oblikovati_martensite::EvaluationFailure,
->;
+pub type ExtrudeReplayPrefix = oblikovati_session::OwnedPartReplay;
 /// Detached named bodies produced by an extrusion candidate.
 pub type CapturedExtrudeCandidate = oblikovati_session::part_evaluation::CapturedPartCandidate<
     oblikovati_martensite::CapturedNamedSolid,
@@ -160,7 +157,7 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         .identity(document)
         .map_err(api_error)?
         .internal_name;
-    let prefix = prepare_owned_prefix(files, document, guid, backend)?;
+    let prefix = prepare_owned_prefix(files, document, backend)?;
     let name = prepared.name.clone();
     let projection = ExtrudeProjection {
         backend,
