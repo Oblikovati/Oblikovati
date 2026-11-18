@@ -15,6 +15,8 @@ pub struct PartSketchContinuity {
     document: DocumentGuid,
     resolution: Option<PrismResolutionPolicy>,
     options: SolveOptions,
+    #[cfg(test)]
+    replay_count: std::sync::atomic::AtomicUsize,
 }
 impl PartSketchContinuity {
     /// Bind the document and policies; example: `PartSketchContinuity::new(guid, None, options)`.
@@ -27,6 +29,8 @@ impl PartSketchContinuity {
             document,
             resolution,
             options,
+            #[cfg(test)]
+            replay_count: std::sync::atomic::AtomicUsize::new(0),
         }
     }
     /// Resolve a sketch plane from current ordered part data.
@@ -102,6 +106,9 @@ impl PartSketchContinuity {
         &self,
         history: &DocumentEditHistory,
     ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
+        #[cfg(test)]
+        self.replay_count
+            .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let snapshot = history.snapshot();
         let mut evaluator = CertifiedNamedSolidEvaluator::with_optional_policy(
             history,
@@ -119,9 +126,20 @@ impl SketchContinuityResolver for PartSketchContinuity {
     fn resolve(
         &self,
         history: &DocumentEditHistory,
-        sketch: DocumentSketchId,
-    ) -> Result<(), String> {
-        self.plane(history, sketch).map(|_| ())
+        sketches: &[DocumentSketchId],
+    ) -> Vec<Result<(), String>> {
+        let datums = self.datums(history);
+        sketches
+            .iter()
+            .map(|sketch| match &datums {
+                Ok(datums) => history
+                    .snapshot()
+                    .resolve_sketch_plane_with_datums(*sketch, datums)
+                    .map(|_| ())
+                    .map_err(|error| error.to_string()),
+                Err(error) => Err(error.clone()),
+            })
+            .collect()
     }
 }
 

@@ -417,17 +417,24 @@ impl oblikovati_session::SketchContinuityResolver for FakePartSketchContinuity {
     fn resolve(
         &self,
         history: &DocumentEditHistory,
-        sketch: oblikovati_model::document_sketch::DocumentSketchId,
-    ) -> Result<(), String> {
-        let (part, _) = history
+        sketches: &[oblikovati_model::document_sketch::DocumentSketchId],
+    ) -> Vec<Result<(), String>> {
+        let part = history
             .snapshot()
             .recompute_part_with_sketches(&mut NamedFaceEvaluator, Default::default())
-            .map_err(|error| error.to_string())?;
-        history
-            .snapshot()
-            .resolve_sketch_plane_with_datums(sketch, &part.datum_evaluation())
-            .map(|_| ())
-            .map_err(|error| error.to_string())
+            .map(|(part, _)| part.datum_evaluation())
+            .map_err(|error| error.to_string());
+        sketches
+            .iter()
+            .map(|sketch| match &part {
+                Ok(datums) => history
+                    .snapshot()
+                    .resolve_sketch_plane_with_datums(*sketch, datums)
+                    .map(|_| ())
+                    .map_err(|error| error.to_string()),
+                Err(error) => Err(error.clone()),
+            })
+            .collect()
     }
 }
 #[test]

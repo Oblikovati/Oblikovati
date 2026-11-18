@@ -5,12 +5,12 @@ use oblikovati_model::{
 };
 /// Resolve a sketch for every published history state.
 pub trait SketchContinuityResolver: Send + Sync {
-    /// Validate the current placement; example: `resolver.resolve(history, sketch)?`.
+    /// Validate each placement in input order; example: `resolver.resolve(history, &[sketch])`.
     fn resolve(
         &self,
         history: &DocumentEditHistory,
-        sketch: DocumentSketchId,
-    ) -> Result<(), String>;
+        sketches: &[DocumentSketchId],
+    ) -> Vec<Result<(), String>>;
 }
 use std::sync::{
     Arc, Weak,
@@ -60,16 +60,30 @@ impl SketchContinuityWatches {
         resolve_sketch(self.resolver.as_deref(), history, sketch)
     }
     pub(crate) fn refresh(&mut self, history: &DocumentEditHistory) {
-        let resolver = self.resolver.as_deref();
         self.watches.retain(|watch| {
             let Some(live) = watch.live.upgrade() else {
                 return false;
             };
-            if resolve_sketch(resolver, history, watch.sketch).is_err() {
+            if history.snapshot().sketches.get(watch.sketch).is_err() {
                 live.store(false, Ordering::Release);
                 return false;
             }
             true
+        });
+        if self.watches.is_empty() {
+            return;
+        }
+        let sketches: Vec<_> = self.watches.iter().map(|watch| watch.sketch).collect();
+        let results = resolve_sketches(self.resolver.as_deref(), history, &sketches);
+        let mut results = results.into_iter();
+        self.watches.retain(|watch| {
+            if results.next().is_some_and(|result| result.is_ok()) {
+                return true;
+            }
+            if let Some(live) = watch.live.upgrade() {
+                live.store(false, Ordering::Release);
+            }
+            false
         });
     }
 }
@@ -83,14 +97,42 @@ fn resolve_sketch(
         .sketches
         .get(sketch)
         .map_err(|error| error.to_string())?;
-    match resolver {
-        Some(resolver) => resolver.resolve(history, sketch),
-        None => history
-            .snapshot()
-            .resolve_sketch_plane(sketch)
-            .map(|_| ())
-            .map_err(|error| error.to_string()),
+    let mut results = resolve_sketches(resolver, history, &[sketch]);
+    results
+        .pop()
+        .unwrap_or_else(|| Err(format!("sketch {sketch:?}: expected one continuity result")))
+}
+fn resolve_sketches(
+    resolver: Option<&dyn SketchContinuityResolver>,
+    history: &DocumentEditHistory,
+    sketches: &[DocumentSketchId],
+) -> Vec<Result<(), String>> {
+    let results = match resolver {
+        Some(resolver) => resolver.resolve(history, sketches),
+        None => sketches
+            .iter()
+            .map(|sketch| {
+                history
+                    .snapshot()
+                    .resolve_sketch_plane(*sketch)
+                    .map(|_| ())
+                    .map_err(|error| error.to_string())
+            })
+            .collect(),
+    };
+    if results.len() == sketches.len() {
+        return results;
     }
+    sketches
+        .iter()
+        .map(|sketch| {
+            Err(format!(
+                "sketch {sketch:?}: expected {} continuity results, got {}",
+                sketches.len(),
+                results.len()
+            ))
+        })
+        .collect()
 }
 impl Drop for SketchContinuityWatches {
     fn drop(&mut self) {
