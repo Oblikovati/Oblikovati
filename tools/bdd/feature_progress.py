@@ -51,11 +51,10 @@ def result_status(
         return "source_changed", 0
     if not supporting_files_match(source, record.get("supporting_files", {})):
         return "support_changed", 0
-    if isinstance(record.get("blocker"), str) and record["blocker"].strip():
-        return "blocked", 0
+    blocked = isinstance(record.get("blocker"), str) and bool(record["blocker"].strip())
     report = ROOT / str(record.get("cucumber", ""))
     if not report.is_file() or digest(report) != record.get("cucumber_sha256"):
-        return "invalid_result", 0
+        return ("blocked" if blocked else "invalid_result"), 0
     if info["outlines"]:
         result = compare_inventoried_report(path, info, report, record)
     else:
@@ -64,6 +63,8 @@ def result_status(
         return "source_changed", 0
     if not supporting_files_match(source, record.get("supporting_files", {})):
         return "support_changed", 0
+    if blocked and result[0] in ("green", "incomplete"):
+        return "blocked", result[1]
     return result
 
 
