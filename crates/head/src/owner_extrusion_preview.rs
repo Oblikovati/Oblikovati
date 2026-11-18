@@ -339,56 +339,27 @@ impl<
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
-        let guid = self
-            .files
-            .workspace()
-            .identity(document)
-            .map_err(|cause| cause.to_string())?
-            .internal_name;
         let prepared =
             oblikovati_automation::prepare_extrusion(session.snapshot(), backend, request)
                 .map_err(|cause| cause.to_string())?;
-        let prefix = session.owned_part_prefix(Some(backend.0));
         session
             .preview_projected(
                 |snapshot, ids| prepared.create(snapshot, ids),
                 |candidate, id| {
-                    let mut evaluator =
-                        oblikovati_martensite::CertifiedNamedSolidEvaluator::with_policy(
-                            session.history(),
-                            guid,
-                            backend.0,
-                        );
-                    if !candidate.sketches.requires_part_dependency_recompute()
-                        && let Some(prefix) = &prefix
-                        && let Some(result) = prefix
-                            .prepare_tail(session.history(), candidate, id, &mut evaluator)
-                            .map_err(oblikovati_api::Error)?
-                    {
-                        let presentation = result
-                            .inspect_body(session.history(), id, |body| {
-                                extrusion_preview_presentation(body, id)
-                            })
-                            .map_err(oblikovati_api::Error)?
-                            .ok_or_else(|| {
-                                oblikovati_api::Error(format!(
-                                    "preview feature {id:?}: expected a current body"
-                                ))
-                            })??;
-                        #[cfg(test)]
+                    let (presentation, reused) = self
+                        .files
+                        .workspace()
+                        .inspect_owned_append(document, Some(backend.0), candidate, id, |body| {
+                            extrusion_preview_presentation(body, id)
+                        })
+                        .map_err(|error| oblikovati_api::Error(error.to_string()))?;
+                    #[cfg(test)]
+                    if reused {
                         self.part_scenes.note_extrusion_prefix_preview();
-                        return Ok(presentation);
                     }
-                    let result = candidate
-                        .evaluate_part_features(&mut evaluator)
-                        .map_err(|cause| oblikovati_api::Error(cause.to_string()))?;
-                    let body = result.body(id).ok_or_else(|| {
-                        oblikovati_api::Error(format!(
-                            "preview feature {id:?}: expected a certified body; health {:?}",
-                            result.health()
-                        ))
-                    })?;
-                    extrusion_preview_presentation(body, id)
+                    #[cfg(not(test))]
+                    let _ = reused;
+                    presentation
                 },
             )
             .map_err(|cause| cause.to_string())

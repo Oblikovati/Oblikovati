@@ -4,7 +4,7 @@ use super::*;
 use oblikovati_martensite::{
     CertifiedNamedSolidEvaluator, EvaluationFailure, NamedSolid, PrismResolutionPolicy,
 };
-use oblikovati_model::feature::part::PartFeatureEvaluation;
+use oblikovati_model::feature::{FeatureId, part::PartFeatureEvaluation};
 
 /// A private result and whether it reused the document's current checkpoints.
 pub struct OwnedPartPreview {
@@ -86,6 +86,35 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         policy: Option<PrismResolutionPolicy>,
         candidate: &DocumentSnapshot,
     ) -> Result<OwnedPartPreview, PartPreviewError> {
+        self.preview_owned_candidate(document, policy, candidate)
+    }
+
+    /// Inspect an appended preview while its document prefix remains current.
+    /// Example: `workspace.inspect_owned_append(id, policy, &candidate, feature, |body| body.as_prism().is_some())?`.
+    pub fn inspect_owned_append<T>(
+        &self,
+        document: u64,
+        policy: Option<PrismResolutionPolicy>,
+        candidate: &DocumentSnapshot,
+        feature: FeatureId,
+        inspect: impl FnOnce(&NamedSolid) -> T,
+    ) -> Result<(T, bool), PartPreviewError> {
+        let session = self
+            .session(document)
+            .map_err(|error| preview_error(document, error))?;
+        let guid = self
+            .identity(document)
+            .map_err(|error| preview_error(document, error))?
+            .internal_name;
+        session.inspect_owned_append(document, guid, policy, candidate, feature, inspect)
+    }
+
+    fn preview_owned_candidate(
+        &self,
+        document: u64,
+        policy: Option<PrismResolutionPolicy>,
+        candidate: &DocumentSnapshot,
+    ) -> Result<OwnedPartPreview, PartPreviewError> {
         let session = self
             .session(document)
             .map_err(|error| preview_error(document, error))?;
@@ -117,5 +146,45 @@ impl<O: TransactionObserver> DocumentSession<O> {
             evaluation,
             used_checkpoint,
         })
+    }
+    fn inspect_owned_append<T>(
+        &self,
+        document: u64,
+        guid: DocumentGuid,
+        policy: Option<PrismResolutionPolicy>,
+        candidate: &DocumentSnapshot,
+        feature: FeatureId,
+        inspect: impl FnOnce(&NamedSolid) -> T,
+    ) -> Result<(T, bool), PartPreviewError> {
+        let mut evaluator =
+            CertifiedNamedSolidEvaluator::with_optional_policy(self.history(), guid, policy);
+        if !candidate.sketches.requires_part_dependency_recompute()
+            && let Some(prefix) = self.owned_part_prefix(policy)
+            && let Some(result) = prefix
+                .prepare_tail(self.history(), candidate, feature, &mut evaluator)
+                .map_err(|error| preview_error(document, error))?
+        {
+            let inspected = result
+                .inspect_body(self.history(), feature, inspect)
+                .map_err(|error| preview_error(document, error))?
+                .ok_or_else(|| {
+                    preview_error(
+                        document,
+                        format!("feature {feature:?}: expected a current body"),
+                    )
+                })?;
+            return Ok((inspected, true));
+        }
+        let preview = self.preview_owned_part(document, guid, policy, candidate)?;
+        let body = preview.evaluation.body(feature).ok_or_else(|| {
+            preview_error(
+                document,
+                format!(
+                    "feature {feature:?}: expected a certified body; health {:?}",
+                    preview.evaluation.health()
+                ),
+            )
+        })?;
+        Ok((inspect(body), false))
     }
 }
