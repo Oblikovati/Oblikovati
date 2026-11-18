@@ -267,3 +267,143 @@ fn candidate_prefix_declines_reuse_after_a_prefix_input_change() {
         None
     );
 }
+
+#[test]
+fn accepted_edit_transition_matches_only_its_source_and_current_history() {
+    let mut owner = session(7);
+    let source = owner.history().evaluation_scope();
+    let (value, transition) = owner
+        .run_projected_with_transition(
+            "Depth",
+            |candidate, _| candidate.parameters.set_expression(3, "3 cm"),
+            |_, value, view| {
+                assert!(source.is_current(view));
+                Ok(value)
+            },
+        )
+        .unwrap();
+    assert_eq!(value, ());
+    assert!(transition.matches(&source, owner.history()));
+    assert_eq!(transition.target_generation(), owner.generation());
+    let foreign = session(7);
+    assert!(!transition.matches(&foreign.history().evaluation_scope(), owner.history()));
+    assert!(!transition.matches(&source, foreign.history()));
+    owner.undo().unwrap();
+    assert!(!transition.matches(&source, owner.history()));
+    owner.redo().unwrap();
+    assert!(!transition.matches(&source, owner.history()));
+}
+
+#[test]
+fn rejected_edit_returns_no_generation_transition() {
+    let mut owner = session(7);
+    let source = owner.history().evaluation_scope();
+    let result = owner.run_projected_with_transition(
+        "Rejected",
+        |candidate, _| {
+            candidate
+                .parameters
+                .set_expression(3, "3 cm")
+                .map_err(|error| error.to_string())
+        },
+        |_, _, _| Err::<(), _>("rejected".to_owned()),
+    );
+    assert!(result.is_err());
+    assert!(source.is_current(owner.history()));
+}
+
+#[test]
+fn aborting_a_group_invalidates_its_accepted_edit_transition() {
+    let mut owner = session(7);
+    let source = owner.history().evaluation_scope();
+    owner.begin("Group").unwrap();
+    let (_, transition) = owner
+        .run_projected_with_transition(
+            "Depth",
+            |candidate, _| candidate.parameters.set_expression(3, "3 cm"),
+            |_, value, _| Ok(value),
+        )
+        .unwrap();
+    assert!(transition.matches(&source, owner.history()));
+    owner.abort().unwrap();
+    assert!(!transition.matches(&source, owner.history()));
+}
+
+#[test]
+fn candidate_result_matches_only_the_exact_accepted_edit() {
+    let mut owner = session(7);
+    owner
+        .run("Hide source sketch", |snapshot, _| {
+            snapshot.sketches.set_visible(fixture::SKETCH, false)
+        })
+        .unwrap();
+    let mut slot = PartSlot::default();
+    publish(&mut owner, &mut slot);
+    let prefix = slot.candidate_prefix(&owner).unwrap();
+    let (candidate, transition) = owner
+        .run_projected_with_transition(
+            "Second prism",
+            |snapshot, ids| {
+                snapshot
+                    .create_sketch_prism("Second", fixture::selected_prism_definition(), ids)
+                    .map_err(|error| error.to_string())
+            },
+            |snapshot, feature, source| {
+                prefix
+                    .prepare_tail(
+                        source,
+                        snapshot,
+                        feature,
+                        &mut FakePrismEvaluator::default(),
+                    )
+                    .map(|result| result.unwrap())
+            },
+        )
+        .unwrap();
+    assert_eq!(candidate.body_count(), 2);
+    assert!(candidate.matches_transition(&transition, owner.history()));
+    owner.undo().unwrap();
+    assert!(!candidate.matches_transition(&transition, owner.history()));
+    owner.redo().unwrap();
+    assert!(!candidate.matches_transition(&transition, owner.history()));
+}
+
+#[test]
+fn candidate_result_rejects_a_different_edit_from_the_same_source() {
+    let mut owner = session(7);
+    owner
+        .run("Hide source sketch", |snapshot, _| {
+            snapshot.sketches.set_visible(fixture::SKETCH, false)
+        })
+        .unwrap();
+    let mut slot = PartSlot::default();
+    publish(&mut owner, &mut slot);
+    let prefix = slot.candidate_prefix(&owner).unwrap();
+    let candidate = owner
+        .preview_projected(
+            |snapshot, ids| {
+                snapshot
+                    .create_sketch_prism("Second", fixture::selected_prism_definition(), ids)
+                    .map_err(|error| error.to_string())
+            },
+            |snapshot, feature| {
+                prefix
+                    .prepare_tail(
+                        owner.history(),
+                        snapshot,
+                        feature,
+                        &mut FakePrismEvaluator::default(),
+                    )
+                    .map(|result| result.unwrap())
+            },
+        )
+        .unwrap();
+    let (_, transition) = owner
+        .run_projected_with_transition(
+            "Different edit",
+            |snapshot, _| snapshot.parameters.set_expression(3, "3 cm"),
+            |_, value, _| Ok(value),
+        )
+        .unwrap();
+    assert!(!candidate.matches_transition(&transition, owner.history()));
+}

@@ -68,13 +68,26 @@ impl<O: TransactionObserver> DocumentSession<O> {
             &oblikovati_model::history::DocumentEditHistory,
         ) -> Result<T, E>,
     ) -> Result<T, CommandError<E>> {
+        self.edit_projected_with_transition(command, project)
+            .map(|(result, _)| result)
+    }
+
+    pub(crate) fn edit_projected_with_transition<R, T, E>(
+        &mut self,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        project: impl FnOnce(
+            &DocumentSnapshot,
+            R,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, E>,
+    ) -> Result<(T, oblikovati_model::history::EvaluationTransition), CommandError<E>> {
         let group = self
             .group
             .as_ref()
             .ok_or(CommandError::Session(SessionError::NoGroup))?;
         let options = SketchUpdateMode::Automatic.options(self.sketch_options);
         self.history
-            .edit_with_view(&group.token, |snapshot, ids, view| {
+            .edit_with_view_transition(&group.token, |snapshot, ids, view| {
                 apply_recipe_edit(snapshot, ids, command, options, |candidate, result| {
                     project(candidate, result, view)
                 })

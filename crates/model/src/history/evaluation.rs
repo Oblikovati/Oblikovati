@@ -30,6 +30,28 @@ impl EvaluationScope {
         self.owner.ptr_eq(&Arc::downgrade(&history.generation))
     }
 }
+/// Proof of one accepted edit, without a claim that any geometry is reusable.
+pub struct EvaluationTransition {
+    source: EvaluationScope,
+    target: EvaluationScope,
+}
+impl EvaluationTransition {
+    pub(super) fn new(source: EvaluationScope, target: EvaluationScope) -> Self {
+        Self { source, target }
+    }
+    /// Verify the exact source generation and current target owner.
+    /// Example: `transition.matches(&source_scope, &history)` before validating result transfer.
+    pub fn matches(&self, source: &EvaluationScope, history: &DocumentEditHistory) -> bool {
+        self.source.owner.ptr_eq(&source.owner)
+            && self.source.generation == source.generation
+            && self.target.is_current(history)
+            && self.source.belongs_to(history)
+    }
+    /// Read the accepted target generation; example: `transition.target_generation()`.
+    pub fn target_generation(&self) -> u64 {
+        self.target.generation
+    }
+}
 /// An owned immutable evaluation recipe, separate from live history and its reservation state.
 pub struct HistoryEvaluationSnapshot {
     snapshot: DocumentSnapshot,
