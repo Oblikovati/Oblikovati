@@ -12,6 +12,8 @@ mod blend_evaluation;
 mod body_dependencies;
 mod body_lineage;
 mod body_resolution;
+mod checkpoints;
+pub use checkpoints::PartReplayCheckpoints;
 mod delete;
 mod error;
 pub use delete::DeleteBodyDefinition;
@@ -24,6 +26,7 @@ mod prefix_replay;
 mod reads;
 pub use prefix_replay::BorrowedPartReplay;
 mod replay_boundary;
+mod replay_observer;
 pub use super::work_plane::{
     WorkPlaneProgramRecipe as PartFeatureProgramRecipe,
     WorkPlaneProgramRecipeError as PartFeatureProgramRecipeError,

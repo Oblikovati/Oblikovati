@@ -6,7 +6,6 @@ use super::{
 use crate::{
     feature::{
         FeatureHealthRecord, FeatureId, FeatureReplayController, FeatureReplayRange,
-        FeatureReplayStep,
         sketch_prism::{ResolvedSketchPrism, SketchPrismError},
         work_geometry::{WorkGeometryError, WorkGeometryEvaluation},
     },
@@ -84,7 +83,7 @@ pub struct PartFeatureEvaluation<Body, Failure> {
     pub(super) body_lineage: super::body_lineage::BodyLineageIndex,
     pub(super) deleted: BTreeMap<FeatureId, Vec<u8>>,
     pub(super) health: Vec<FeatureHealthRecord<PartFeatureFailure<Failure>>>,
-    pub(super) source: Option<Box<DocumentSnapshot>>,
+    pub(super) source: Option<std::sync::Arc<DocumentSnapshot>>,
 }
 /// One ordered part result and the solved sketches that produced it.
 pub type RecomputedPart<Body, Failure> = (
@@ -115,7 +114,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         datums.insert_sketch_face(reference, plane);
         Ok(datums)
     }
-    fn empty() -> Self {
+    pub(super) fn empty() -> Self {
         Self {
             datums: WorkGeometryEvaluation::default(),
             bodies: BTreeMap::new(),
@@ -260,7 +259,7 @@ impl DocumentSnapshot {
             )?;
             candidate.sketches = solved.candidate;
         }
-        evaluation.source = Some(Box::new(candidate.as_ref().clone()));
+        evaluation.source = Some(std::sync::Arc::new(candidate.as_ref().clone()));
         Ok((evaluation, candidate))
     }
 }
@@ -277,31 +276,14 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         options: Option<oblikovati_solve::nonlinear::SolveOptions>,
         cancelled: &mut impl FnMut() -> bool,
     ) -> Result<(), PartFeatureProgramError> {
-        loop {
-            require_replay_current(cancelled(), controller.records().len())?;
-            let Some(step) = controller
-                .advance()
-                .map_err(PartFeatureProgramError::Reads)?
-            else {
-                return Ok(());
-            };
-            if let FeatureReplayStep::Evaluate(id) = step {
-                self.refresh_sketch_faces(snapshot, backend);
-                if let Some(options) = options {
-                    self.solve_feature_sketch(
-                        snapshot,
-                        id,
-                        options,
-                        controller.records().len(),
-                        cancelled,
-                    )?;
-                }
-                let outcome = self.evaluate_entry(snapshot, backend, id);
-                controller
-                    .record_result(id, outcome)
-                    .map_err(PartFeatureProgramError::Reads)?;
-            }
-        }
+        self.replay_observed(
+            snapshot,
+            backend,
+            controller,
+            options,
+            cancelled,
+            &mut |_, _| {},
+        )
     }
     pub(super) fn refresh_sketch_faces<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
@@ -319,7 +301,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         }
         self.datums.replace_sketch_faces(faces);
     }
-    fn solve_feature_sketch(
+    pub(super) fn solve_feature_sketch(
         &self,
         snapshot: &mut Cow<'_, DocumentSnapshot>,
         id: FeatureId,
@@ -346,7 +328,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         }
         Ok(())
     }
-    fn evaluate_entry<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+    pub(super) fn evaluate_entry<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
         snapshot: &DocumentSnapshot,
         backend: &mut B,
@@ -477,7 +459,7 @@ impl<Body, Failure> crate::feature::work_plane::WorkPlaneResolver
     }
 }
 
-fn require_replay_current(
+pub(super) fn require_replay_current(
     cancelled: bool,
     completed: usize,
 ) -> Result<(), PartFeatureProgramError> {

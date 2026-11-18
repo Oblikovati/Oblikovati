@@ -58,3 +58,145 @@ fn fillet_candidate_reuses_its_retained_prism_and_matches_full_replay() {
     assert!(resumed.has_body(FeatureId(3)));
     assert!(retained.body(FeatureId(2)).is_some());
 }
+
+#[test]
+fn checkpoint_restores_the_body_consumed_by_an_edited_fillet() {
+    let mut source = document();
+    add_fillet(&mut source, 3, 2);
+    let mut initial = CountingBackend::default();
+    let checkpoints = source.evaluate_part_with_checkpoints(&mut initial).unwrap();
+    assert_eq!((initial.prisms, initial.blends), (1, 1));
+    assert_eq!(checkpoints.len(), 4);
+    assert!(checkpoints.result().body(FeatureId(2)).is_none());
+    let mut edited = source.clone();
+    edited
+        .work_geometry
+        .set_suppressed(FeatureId(3), true)
+        .unwrap();
+    let mut backend = CountingBackend::default();
+    let replay = checkpoints
+        .replay_candidate_tail(&edited, &mut backend)
+        .unwrap();
+    let mut full_backend = CountingBackend::default();
+    let full = edited.evaluate_part_features(&mut full_backend).unwrap();
+    assert_eq!((backend.prisms, backend.blends), (0, 0));
+    assert_eq!((full_backend.prisms, full_backend.blends), (1, 0));
+    assert_eq!(replay.health(), full.health());
+    assert_eq!(
+        replay.body(FeatureId(2)).unwrap().keys,
+        full.body(FeatureId(2)).unwrap().keys
+    );
+    assert!(replay.body(FeatureId(3)).is_none());
+}
+
+#[test]
+fn checkpoint_replays_changed_and_dependent_blends_in_order() {
+    let mut source = document();
+    add_fillet(&mut source, 3, 2);
+    add_fillet_edge(&mut source, 4, 3, "other-edge");
+    let checkpoints = source
+        .evaluate_part_with_checkpoints(&mut CountingBackend::default())
+        .unwrap();
+    let mut edited = source.clone();
+    let definition = FilletDefinition::new(
+        key(2, 4, "body"),
+        vec![key(2, 2, "edge")],
+        DatumLength::Constant(0.5),
+    )
+    .unwrap();
+    let reads = definition.reads();
+    edited
+        .work_geometry
+        .replace(
+            FeatureId(3),
+            PartFeatureDefinition::Fillet(Box::new(definition)),
+            reads,
+        )
+        .unwrap();
+    let mut backend = CountingBackend::default();
+    let replay = checkpoints
+        .replay_candidate_tail(&edited, &mut backend)
+        .unwrap();
+    let mut full_backend = CountingBackend::default();
+    let full = edited.evaluate_part_features(&mut full_backend).unwrap();
+    assert_eq!((backend.prisms, backend.blends), (0, 2));
+    assert_eq!((full_backend.prisms, full_backend.blends), (1, 2));
+    assert_eq!(replay.health(), full.health());
+    let actual = replay.body(FeatureId(4)).unwrap();
+    let expected = full.body(FeatureId(4)).unwrap();
+    assert_eq!(actual.keys, expected.keys);
+    assert_eq!(actual.deleted, expected.deleted);
+    assert_eq!(actual.radius, expected.radius);
+}
+
+#[test]
+fn checkpoint_replay_preserves_failed_and_blocked_diagnostics() {
+    let mut source = document();
+    add_fillet(&mut source, 3, 2);
+    add_fillet_edge(&mut source, 4, 3, "other-edge");
+    let mut backend = CountingBackend::default();
+    backend.inner.reject = true;
+    let checkpoints = source.evaluate_part_with_checkpoints(&mut backend).unwrap();
+    let mut full_backend = CountingBackend::default();
+    full_backend.inner.reject = true;
+    let full = source.evaluate_part_features(&mut full_backend).unwrap();
+    assert_eq!(checkpoints.result().health(), full.health());
+    let mut edited = source.clone();
+    edited
+        .work_geometry
+        .set_suppressed(FeatureId(4), true)
+        .unwrap();
+    let replay = checkpoints
+        .replay_candidate_tail(&edited, &mut CountingBackend::default())
+        .unwrap();
+    let mut full_backend = CountingBackend::default();
+    full_backend.inner.reject = true;
+    let expected = edited.evaluate_part_features(&mut full_backend).unwrap();
+    assert_eq!(replay.health(), expected.health());
+    assert!(replay.body(FeatureId(2)).is_some());
+}
+
+#[test]
+fn checkpoint_replay_discards_partial_state_on_cancellation() {
+    let mut source = document();
+    add_fillet(&mut source, 3, 2);
+    let mut polls = 0;
+    let result =
+        source.evaluate_part_with_checkpoints_cancellable(&mut CountingBackend::default(), || {
+            polls += 1;
+            polls > 2
+        });
+    assert!(matches!(
+        result,
+        Err(oblikovati_model::feature::part::PartFeatureProgramError::Cancelled { .. })
+    ));
+}
+
+#[test]
+fn checkpoint_handles_end_of_part_truncation_without_running_the_kernel() {
+    let mut source = document();
+    add_fillet(&mut source, 3, 2);
+    let checkpoints = source
+        .evaluate_part_with_checkpoints(&mut CountingBackend::default())
+        .unwrap();
+    let mut edited = source.clone();
+    edited.work_geometry.set_end_of_part(Some(2)).unwrap();
+    let mut backend = CountingBackend::default();
+    let replay = checkpoints
+        .replay_candidate_tail(&edited, &mut backend)
+        .unwrap();
+    let full = edited
+        .evaluate_part_features(&mut CountingBackend::default())
+        .unwrap();
+    assert_eq!((backend.prisms, backend.blends), (0, 0));
+    assert_eq!(replay.health(), full.health());
+    assert_eq!(
+        replay.body(FeatureId(2)).unwrap().keys,
+        full.body(FeatureId(2)).unwrap().keys
+    );
+    assert!(
+        checkpoints
+            .replay_candidate_tail(&source, &mut backend)
+            .is_err()
+    );
+}
