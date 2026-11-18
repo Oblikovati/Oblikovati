@@ -106,3 +106,60 @@ fn session_recomputes_each_document_under_its_own_identity() {
     );
     assert_eq!(attempts, 3);
 }
+
+#[test]
+fn session_builds_and_reuses_checkpoints_per_document() {
+    let (mut owner, _) = owner();
+    let first = open_named_prism(&mut owner, "session-checkpoints-first.opd");
+    let second = open_named_prism(&mut owner, "session-checkpoints-second.opd");
+    let policy = Some(crate::part_scene::resolution_policy::desktop_policy());
+    let mut attempts = 0;
+    owner
+        .files
+        .ensure_owned_checkpoints(first, policy, &mut attempts)
+        .unwrap();
+    owner
+        .files
+        .ensure_owned_checkpoints(first, policy, &mut attempts)
+        .unwrap();
+    assert_eq!(attempts, 1);
+    owner
+        .files
+        .ensure_owned_checkpoints(second, policy, &mut attempts)
+        .unwrap();
+    assert_eq!(attempts, 2);
+    owner
+        .files
+        .commands(first)
+        .unwrap()
+        .run("Change width", |snapshot, _| {
+            snapshot.parameters.set_expression(1, "5 cm")
+        })
+        .unwrap();
+    let second_session = owner.files.workspace().session(second).unwrap();
+    assert!(
+        second_session
+            .owned_checkpoint_slot(policy)
+            .unwrap()
+            .candidate_prefix(second_session)
+            .is_ok()
+    );
+    owner
+        .files
+        .ensure_owned_checkpoints(first, policy, &mut attempts)
+        .unwrap();
+    assert_eq!(attempts, 3);
+    assert!(
+        owner
+            .files
+            .ensure_owned_checkpoints(u64::MAX, policy, &mut attempts)
+            .is_err()
+    );
+    assert!(
+        owner
+            .files
+            .ensure_owned_checkpoints(first, None, &mut attempts)
+            .is_err()
+    );
+    assert_eq!(attempts, 3);
+}

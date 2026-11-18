@@ -65,6 +65,7 @@ pub use error::{CommandError, MutationError, SessionError};
 pub use events::TransactionObserver;
 use oblikovati_model::history::{DocumentEditHistory, DocumentSnapshot, TransactionToken};
 
+mod part_checkpoint_engine;
 mod part_replay_engine;
 mod part_replay_store;
 

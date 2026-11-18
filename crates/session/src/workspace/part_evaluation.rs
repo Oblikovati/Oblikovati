@@ -9,6 +9,15 @@ use crate::{
     },
 };
 impl<O: TransactionObserver> SessionCommands<'_, O> {
+    pub(crate) fn ensure_owned_checkpoints(
+        &mut self,
+        guid: oblikovati_model::identity::DocumentGuid,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        attempts: &mut u64,
+    ) -> Result<(), String> {
+        self.session
+            .ensure_owned_checkpoints(guid, policy, attempts)
+    }
     pub(crate) fn recompute_owned_part(
         &mut self,
         guid: oblikovati_model::identity::DocumentGuid,
