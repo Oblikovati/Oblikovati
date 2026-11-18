@@ -21,6 +21,7 @@ pub use evaluate::{
     unavailable_planar_face,
 };
 mod reads;
+mod replay_boundary;
 pub use super::work_plane::{
     WorkPlaneProgramRecipe as PartFeatureProgramRecipe,
     WorkPlaneProgramRecipeError as PartFeatureProgramRecipeError,

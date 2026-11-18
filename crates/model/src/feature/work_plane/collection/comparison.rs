@@ -56,12 +56,19 @@ fn same_feature(
         && first.plane_display.same_recipe(&second.plane_display)
         && first.definition.same_recipe(&second.definition)
         && first.definition_reads == second.definition_reads
+        && first.reads == second.reads
         && first.owned_scalars == second.owned_scalars
         && match (first.condition, second.condition) {
             (Some(left), Some(right)) => left.same_recipe(right),
             (None, None) => true,
             _ => false,
         }
+}
+
+impl AuthoredFeature<WorkPlaneDefinition> {
+    pub(crate) fn same_replay_recipe(&self, other: &Self) -> bool {
+        same_feature(self, other)
+    }
 }
 
 fn same_coordinates(

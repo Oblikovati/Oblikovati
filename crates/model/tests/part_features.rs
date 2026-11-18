@@ -152,6 +152,8 @@ mod refusals;
 
 #[path = "part_features/replay.rs"]
 mod replay;
+#[path = "part_features/replay_boundary.rs"]
+mod replay_boundary;
 
 #[path = "part_features/delete.rs"]
 mod delete;
