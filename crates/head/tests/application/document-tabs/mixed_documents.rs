@@ -90,7 +90,17 @@ fn list_contains(world: &mut ApplicationWorld) {
 #[then("the active part is marked in the list")]
 fn active_marked(world: &mut ApplicationWorld) {
     let name = world.document_name(part_of(world));
-    assert!(world.checked(&name), "list row {name:?}: expected a mark");
+    let menu = world.run("Close Tabs").list;
+    let row = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.list == menu && run.text.split('<').next() == Some(name.as_str()));
+    let row = row.unwrap_or_else(|| panic!("document list: expected row {name:?}"));
+    assert!(
+        world.checked_run(row),
+        "document list row {name:?}: expected a mark"
+    );
 }
 #[when("I select the drawing from the list")]
 #[when("the user selects the drawing from the list")]
