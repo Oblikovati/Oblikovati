@@ -26,6 +26,17 @@ pub trait DrawingViewProjectionAccess {
             oblikovati_martensite::EvaluationFailure,
         >,
     ) -> Result<[usize; 2], String>;
+    /// Sample one view from a current part; example: `backend.saved_lines_current(history, guid, view, part)?`.
+    fn saved_lines_current(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        view: &DrawingBaseViewDefinition,
+        part: &oblikovati_model::feature::part::PartFeatureEvaluation<
+            oblikovati_martensite::NamedSolid,
+            oblikovati_martensite::EvaluationFailure,
+        >,
+    ) -> Result<Vec<oblikovati_persistence::package::SavedDrawingLine>, String>;
     /// Return visible and hidden exact curve counts; example: `backend.counts(history, guid, &view)?`.
     fn counts(
         &self,

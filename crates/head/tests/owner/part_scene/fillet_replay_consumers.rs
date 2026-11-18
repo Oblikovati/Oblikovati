@@ -58,6 +58,13 @@ fn base_view_projects_fillet_cube() {
         .counts_current(session.history(), guid, &view, current)
         .unwrap();
     assert_eq!(cached_counts, counts);
+    let cached_lines = oblikovati_drawing::DrawingProjectionService
+        .saved_lines_current(session.history(), guid, &view, current)
+        .unwrap();
+    let fresh_lines = oblikovati_drawing::DrawingProjectionService
+        .saved_lines(session.history(), guid, &view)
+        .unwrap();
+    assert_eq!(cached_lines, fresh_lines);
     assert!(counts[0] > 0, "fillet cube must project visible curves");
 }
 
