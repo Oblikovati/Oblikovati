@@ -18,6 +18,31 @@ pub struct PartEvaluationSlot<Body, Failure> {
 pub struct PartCandidatePrefix<'a, Body, Failure> {
     published: &'a CompletedPartEvaluation<Body, Failure>,
 }
+/// A private candidate replay retained until its transaction finishes.
+pub struct PartCandidateResult<'a, Body, Failure> {
+    source: oblikovati_model::history::EvaluationScope,
+    candidate: oblikovati_model::history::DocumentSnapshot,
+    replay: oblikovati_model::feature::part::BorrowedPartReplay<'a, Body, Failure>,
+}
+impl<Body, Failure> PartCandidateResult<'_, Body, Failure> {
+    /// Count current bodies in the candidate; example: `result.body_count()`.
+    pub fn body_count(&self) -> usize {
+        self.replay.body_count()
+    }
+    /// Match the accepted edit and current evaluated inputs, without authorizing name transfer.
+    /// Example: `result.matches_transition(&transition, &history)` after commit.
+    pub fn matches_transition(
+        &self,
+        transition: &oblikovati_model::history::EvaluationTransition,
+        history: &oblikovati_model::history::DocumentEditHistory,
+    ) -> bool {
+        transition.matches(&self.source, history)
+            && self
+                .candidate
+                .part_replay_change(history.snapshot())
+                .is_none()
+    }
+}
 impl<Body, Failure: Clone + std::fmt::Debug> PartCandidatePrefix<'_, Body, Failure> {
     /// Validate an appended candidate, or return none when the prefix is ineligible.
     /// Example: `prefix.validate_tail(history, candidate, feature, &mut backend)?`.
@@ -28,6 +53,19 @@ impl<Body, Failure: Clone + std::fmt::Debug> PartCandidatePrefix<'_, Body, Failu
         feature: oblikovati_model::feature::FeatureId,
         backend: &mut B,
     ) -> Result<Option<usize>, String> {
+        Ok(self
+            .prepare_tail(history, candidate, feature, backend)?
+            .map(|result| result.body_count()))
+    }
+    /// Prepare an isolated candidate result for a later accepted transaction.
+    /// Example: `prefix.prepare_tail(history, candidate, feature, &mut backend)?`.
+    pub fn prepare_tail<'a, B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+        &'a self,
+        history: &oblikovati_model::history::DocumentEditHistory,
+        candidate: &oblikovati_model::history::DocumentSnapshot,
+        feature: oblikovati_model::feature::FeatureId,
+        backend: &mut B,
+    ) -> Result<Option<PartCandidateResult<'a, Body, Failure>>, String> {
         if !self.published.scope().is_current(history) {
             return Err("part candidate prefix: expected its current owning history".into());
         }
@@ -48,7 +86,11 @@ impl<Body, Failure: Clone + std::fmt::Debug> PartCandidatePrefix<'_, Body, Failu
         if !self.published.scope().is_current(history) {
             return Err("part candidate prefix: expected an unchanged owner after replay".into());
         }
-        Ok(Some(result.body_count()))
+        Ok(Some(PartCandidateResult {
+            source: self.published.scope().clone(),
+            candidate: candidate.clone(),
+            replay: result,
+        }))
     }
 }
 /// Owned datum results sealed to one document history and generation.

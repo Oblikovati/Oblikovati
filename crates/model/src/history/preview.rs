@@ -36,6 +36,24 @@ impl SnapshotReplay {
 }
 
 impl DocumentEditHistory {
+    /// Return a generation transition only after a source-view edit is accepted.
+    /// Example: `let (value, transition) = history.edit_with_view_transition(&token, edit)?;`.
+    pub fn edit_with_view_transition<R, E>(
+        &mut self,
+        token: &super::TransactionToken,
+        edit: impl FnOnce(
+            &mut DocumentSnapshot,
+            &mut RecipeReservations<'_>,
+            &DocumentEditHistory,
+        ) -> Result<R, E>,
+    ) -> Result<(R, super::EvaluationTransition), EditError<E>> {
+        let source = self.evaluation_scope();
+        let result = self.edit_with_view(token, edit)?;
+        Ok((
+            result,
+            super::EvaluationTransition::new(source, self.evaluation_scope()),
+        ))
+    }
     /// Edit while a read-only view keeps the source generation available to validation.
     /// Example: `history.edit_with_view(&token, |candidate, ids, source| validate(candidate, source))?`.
     pub fn edit_with_view<R, E>(

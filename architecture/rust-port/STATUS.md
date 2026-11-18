@@ -44,6 +44,8 @@ using this status; the live scenario directory can change.
   Fillet test compares its names, topology, and face areas with full replay.
   The Fillet and Chamfer commands use it with a current, policy-matched prefix;
   publication and general dirty-prefix replay remain open (#4079).
+- A retained candidate can verify its accepted generation transition and
+  evaluated inputs. It does not yet transfer names or publish geometry (#4079).
 - The dock lifecycle inventory and representative first-frame native tests pass.
   Projects pointer docking, modal-child saved-layout restart, and File Properties
   native docking remain open in #4073.

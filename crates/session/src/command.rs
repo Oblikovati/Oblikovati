@@ -48,6 +48,22 @@ impl<O: TransactionObserver> DocumentSession<O> {
             session.edit_projected_with_view(command, project)
         })
     }
+    /// Return proof of the accepted generation change with the projected result.
+    /// Example: `session.run_projected_with_transition("Edit", edit, project)?`.
+    pub fn run_projected_with_transition<R, T, E>(
+        &mut self,
+        label: &str,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        project: impl FnOnce(
+            &DocumentSnapshot,
+            R,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, E>,
+    ) -> Result<(T, oblikovati_model::history::EvaluationTransition), CommandError<E>> {
+        self.run_grouped(label, |session| {
+            session.edit_projected_with_transition(command, project)
+        })
+    }
     /// Evaluate a command on a private solved candidate without reserving live IDs.
     /// Example: `session.preview_projected(edit, |candidate, value| inspect(candidate, value))?`.
     pub fn preview_projected<R, T, E>(
