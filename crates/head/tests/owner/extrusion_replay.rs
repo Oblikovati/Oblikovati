@@ -2,6 +2,100 @@
 use super::*;
 
 #[test]
+fn append_candidate_adoption_checks_document_policy_and_transition() {
+    let (owner, _) = owner();
+    let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
+    let document = open_sketch(&mut owner);
+    assert!(
+        owner
+            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width")
+            .unwrap()
+    );
+    let policy = oblikovati_martensite::PrismResolutionPolicy::Fixed(resolution());
+    let session = owner.files.workspace().session(document).unwrap();
+    let prepared = oblikovati_automation::prepare_extrusion(
+        session.snapshot(),
+        owner.extrusion_access.as_ref().unwrap(),
+        &request(),
+    )
+    .unwrap();
+    let replay = owner
+        .files
+        .workspace()
+        .owned_part_replay(document, Some(policy))
+        .unwrap();
+    let foreign = Client::new(owner.document_host())
+        .documents()
+        .create(&CreateDocumentArgs {
+            type_: "part".into(),
+            name: "Other part".into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .id;
+    let ((wrong_document, wrong_policy, accepted, stale), transition) = owner
+        .files
+        .commands(document)
+        .unwrap()
+        .run_projected_with_transition(
+            "Second extrusion",
+            |snapshot, ids| prepared.create(snapshot, ids),
+            |candidate, feature, history| {
+                let capture = || {
+                    replay
+                        .prepare(history, candidate, feature)
+                        .unwrap()
+                        .unwrap()
+                        .1
+                };
+                Ok::<_, oblikovati_api::Error>((capture(), capture(), capture(), capture()))
+            },
+        )
+        .unwrap();
+    assert!(
+        owner
+            .files
+            .adopt_owned_part_candidate(foreign, Some(policy), wrong_document, &transition)
+            .is_err()
+    );
+    let mut other = resolution();
+    other.weld *= 2.;
+    assert!(
+        owner
+            .files
+            .adopt_owned_part_candidate(
+                document,
+                Some(oblikovati_martensite::PrismResolutionPolicy::Fixed(other)),
+                wrong_policy,
+                &transition
+            )
+            .is_err()
+    );
+    owner
+        .files
+        .adopt_owned_part_candidate(document, Some(policy), accepted, &transition)
+        .unwrap();
+    let session = owner.files.workspace().session(document).unwrap();
+    assert_eq!(
+        session
+            .owned_part_slot(Some(policy))
+            .unwrap()
+            .current(session)
+            .unwrap()
+            .ordered_bodies()
+            .count(),
+        2
+    );
+    owner.files.commands(document).unwrap().undo().unwrap();
+    assert!(
+        owner
+            .files
+            .adopt_owned_part_candidate(document, Some(policy), stale, &transition)
+            .is_err()
+    );
+}
+
+#[test]
 fn certified_extrusion_rejects_foreign_identity_and_policy() {
     use oblikovati_automation::ExtrudeRegionAccess;
     use oblikovati_model::identity::DocumentGuid;

@@ -104,25 +104,12 @@ pub(super) fn adopt_extrude_candidate<
 >(
     files: &mut FileWorkspace<O, W, F>,
     document: u64,
-    guid: DocumentGuid,
     policy: oblikovati_martensite::PrismResolutionPolicy,
     candidate: CapturedExtrudeCandidate,
     transition: &oblikovati_model::history::EvaluationTransition,
 ) -> Result<(), Error> {
-    let session = files.workspace().session(document).map_err(api_error)?;
-    let completed = oblikovati_martensite::complete_named_candidate(
-        candidate.into_transfer(),
-        document,
-        transition,
-        session.history(),
-        guid,
-    )
-    .map_err(Error)?;
-    let completed = session.complete_part_transfer(completed).map_err(Error)?;
     files
-        .commands(document)
-        .map_err(api_error)?
-        .adopt_owned_part(Some(policy), completed)
+        .adopt_owned_part_candidate(document, Some(policy), candidate, transition)
         .map_err(|error| {
             Error(format!(
                 "extrusion committed for document {document}, but replay adoption failed: {error}"

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Replay appended features against a document-owned named part.
-use crate::part_evaluation::{CapturedPartCandidate, PartCandidatePrefix};
+use crate::{
+    DocumentSession, TransactionObserver,
+    part_evaluation::{CapturedPartCandidate, CompletedPartEvaluation, PartCandidatePrefix},
+};
 use oblikovati_api::Error;
 use oblikovati_martensite::{
     CapturedNamedSolid, CertifiedNamedSolidEvaluator, EvaluationFailure, NamedSolid,
@@ -8,12 +11,42 @@ use oblikovati_martensite::{
 };
 use oblikovati_model::{
     feature::FeatureId,
-    history::{DocumentEditHistory, DocumentSnapshot},
+    history::{DocumentEditHistory, DocumentSnapshot, EvaluationTransition},
     identity::DocumentGuid,
 };
 
-/// An appended part candidate sealed to its source history and generation.
-pub type OwnedPartCandidate = CapturedPartCandidate<CapturedNamedSolid, EvaluationFailure>;
+/// An appended candidate sealed to its document, policy, history, and generation.
+pub struct OwnedPartCandidate {
+    guid: DocumentGuid,
+    policy: Option<PrismResolutionPolicy>,
+    captured: CapturedPartCandidate<CapturedNamedSolid, EvaluationFailure>,
+}
+impl OwnedPartCandidate {
+    pub(crate) fn complete<O: TransactionObserver>(
+        self,
+        document: u64,
+        guid: DocumentGuid,
+        policy: Option<PrismResolutionPolicy>,
+        session: &DocumentSession<O>,
+        transition: &EvaluationTransition,
+    ) -> Result<CompletedPartEvaluation<NamedSolid, EvaluationFailure>, Error> {
+        if self.guid != guid || self.policy != policy {
+            return Err(Error(format!(
+                "document {document} policy {policy:?}: expected candidate identity {:?} and policy {:?}",
+                self.guid, self.policy
+            )));
+        }
+        let completed = oblikovati_martensite::complete_named_candidate(
+            self.captured.into_transfer(),
+            document,
+            transition,
+            session.history(),
+            guid,
+        )
+        .map_err(Error)?;
+        session.complete_part_transfer(completed).map_err(Error)
+    }
+}
 
 /// A current named-part prefix bound to one document and resolution policy.
 pub struct OwnedPartReplay {
@@ -61,7 +94,14 @@ impl OwnedPartReplay {
         let captured = result
             .capture(history, |_, body| body.capture_detached(history, self.guid))
             .map_err(Error)?;
-        Ok(Some((count, captured)))
+        Ok(Some((
+            count,
+            OwnedPartCandidate {
+                guid: self.guid,
+                policy: self.policy,
+                captured,
+            },
+        )))
     }
     /// Validate a safe append without capturing it; example: `replay.validate(history, candidate, feature)?`.
     pub fn validate(
