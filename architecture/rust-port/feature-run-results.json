@@ -197,12 +197,12 @@
       "features/application/ribbon-keyboard-navigation/FIXTURES.md": "53d28b3a02b8e56ba5a458529c93e469f15f82c537cce4f179190c78ab595e2c",
       "features/application/ribbon-keyboard-navigation/BLOCKERS.md": "247a89fc61b82bd5a3604f1df222bbf57352cb536ec22767ea61cf15cbcd15b4"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-keyboard-selected-face/cucumber.json",
-    "cucumber_sha256": "d49b39b38645e2372b916b4ba171c970de65852b1783eb49da479d363e679f8d",
-    "application_commit": "d560f0318c3cdb39785869992508392cc6630d8e",
-    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-keyboard-navigation XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb, Openbox and Vulkan Lavapipe; scripted scenario input; separate native X11 mouse and keyboard tests passed",
-    "notes": "14 of 18 scenarios passed; four have undefined steps and involve the unavailable Hole command (#4093). Selected-face Tools tips and selection count passed with native X11 input; the no-selection Escape scenario passed."
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-keyboard-hole/cucumber.json",
+    "cucumber_sha256": "81bbb8b1a66cf58e58d6ebb1877dcaa1242220bd36d2cf3fb2f73c275bbf168f",
+    "application_commit": "b9a07431c16f2c345fc83175a30b94ec45769b1a",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-keyboard-navigation OBK_BDD_REPORTS=/tmp/obk-hole-ribbon-final-4093 CARGO_BUILD_JOBS=2 cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb, Vulkan Lavapipe; scripted scenario input; separate X11 keyboard and mouse Hole test passed",
+    "notes": "18 of 18 scenarios and 219 steps passed; feature and supporting documentation hashes matched before and after the run."
   },
   "features/application/document-tabs/document-tabs.feature": {
     "feature_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
