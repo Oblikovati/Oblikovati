@@ -62,6 +62,24 @@ fn base_view_projects_fillet_cube() {
 }
 
 #[test]
+fn drawing_projection_reuses_current_result_and_rejects_stale_replay() {
+    let (mut owner, document) = fillet_owner();
+    let cached = owner
+        .part_scenes
+        .current_part(&owner.files, document)
+        .unwrap() as *const _;
+    let retained = owner
+        .with_drawing_part(document, |part, _, _| Ok(std::ptr::eq(part, cached)))
+        .unwrap();
+    assert!(retained);
+    set_parameter(&mut owner, "width", "60 mm");
+    let retained = owner
+        .with_drawing_part(document, |part, _, _| Ok(std::ptr::eq(part, cached)))
+        .unwrap();
+    assert!(!retained);
+}
+
+#[test]
 fn unsuppressed_fillet_reports_healthy() {
     let (mut owner, _) = fillet_owner();
     for suppressed in [true, false] {

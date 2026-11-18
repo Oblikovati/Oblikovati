@@ -3,6 +3,52 @@
 use super::*;
 
 #[test]
+fn drawing_preview_retains_current_part_replay() {
+    use oblikovati_automation::PartUpdateAccess;
+    use oblikovati_gui::{
+        GuiBaseViewRequest, GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits,
+    };
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let part = super::part_scene::open_prism(&mut owner, false);
+    owner
+        .create_document_template(GuiDocumentTemplate {
+            kind: GuiTemplateKind::Drawing,
+            units: GuiTemplateUnits::Metric,
+        })
+        .unwrap();
+    let drawing = owner.documents().workspace().active_document().unwrap();
+    let request = GuiBaseViewRequest {
+        drawing,
+        source: part,
+        orientation: "front".into(),
+        scale: 1.,
+        center: [100., 80.],
+    };
+    assert!(owner.part_scenes.current_part(&owner.files, part).is_err());
+    assert!(owner.base_view_preview_from_gui(Some(&request)).unwrap());
+    let current = owner.part_scenes.current_part(&owner.files, part).unwrap() as *const _;
+    assert!(owner.base_view_preview_from_gui(Some(&request)).unwrap());
+    assert!(std::ptr::eq(
+        owner.part_scenes.current_part(&owner.files, part).unwrap(),
+        current
+    ));
+    owner
+        .files
+        .commands(part)
+        .unwrap()
+        .run("Change depth", |snapshot, _| {
+            snapshot.parameters.set_expression(3, "3 cm")
+        })
+        .unwrap();
+    assert!(owner.part_scenes.current_part(&owner.files, part).is_err());
+    assert!(owner.base_view_preview_from_gui(Some(&request)).unwrap());
+    assert!(owner.part_scenes.current_part(&owner.files, part).is_ok());
+}
+
+#[test]
 fn gui_base_view_is_one_undo_step_and_rolls_back_on_failure() {
     use oblikovati_gui::{
         GuiBaseViewRequest, GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits,
