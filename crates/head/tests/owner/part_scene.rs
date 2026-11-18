@@ -302,6 +302,8 @@ mod measure;
 mod part_mass;
 #[path = "part_scene/physical.rs"]
 mod physical;
+#[path = "part_scene/prism_edit_checkpoint.rs"]
+mod prism_edit_checkpoint;
 #[path = "part_scene/reorder_checkpoint.rs"]
 mod reorder_checkpoint;
 #[test]

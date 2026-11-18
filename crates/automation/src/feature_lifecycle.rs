@@ -117,14 +117,22 @@ fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     if let Some(kind) = blend_edit::kind(files, document, request.id)? {
         return blend_edit::edit(files, access, document, fillet, &request, kind);
     }
-    files
-        .commands(document)
-        .map_err(api_error)?
-        .run("Edit Feature", |snapshot, _| {
+    let owner = access.as_deref_mut().ok_or_else(|| {
+        Error(format!(
+            "document {document}: expected a feature replay owner"
+        ))
+    })?;
+    let (id, _) = crate::checkpoint_replay::edit_with_owner(
+        files,
+        owner,
+        document,
+        "Edit Feature",
+        |snapshot, _| {
             apply_feature_distance_edit(snapshot, &request)?;
             Ok::<_, Error>(request.id)
-        })
-        .map_err(api_error)
+        },
+    )?;
+    Ok(id)
 }
 
 /// Edit one prism distance on a caller-owned candidate, with no geometry or history side effects.
