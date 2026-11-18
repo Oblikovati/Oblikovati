@@ -31,6 +31,7 @@ fn tips_shown(world: &mut ApplicationWorld) {
     );
 }
 #[then("the key tips disappear")]
+#[then("the top-level key tips disappear")]
 fn tips_hidden(world: &mut ApplicationWorld) {
     assert!(
         !exact_tip(world, "X2"),
