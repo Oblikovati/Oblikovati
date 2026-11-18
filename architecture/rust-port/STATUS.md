@@ -87,8 +87,9 @@ using this status; the live scenario directory can change.
 - The native Extrude parameter-change test cannot find its Parameters window;
   it fails at the same lookup on clean parent `6cbed854e` (#4078). It is not
   acceptance evidence for this change.
-- The native Fillet edit diagnostic leaves the original radius after Enter;
-  it fails at the same assertion on clean parent `93f59d898` (#4078).
+- The native Fillet edit test now targets the radius input using its visible
+  label. The previous click hit the edge count; the corrected scripted test
+  checks preview, cancel, commit, undo, redo, and save/reopen (#4078).
 - A cold checkpoint request for a part without associative sketch recompute
   publishes its result and boundaries from one replay instead of two. Ownership
   tests cover repeat requests and isolation between documents (#4079).
