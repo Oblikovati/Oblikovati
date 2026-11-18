@@ -31,7 +31,7 @@ impl DocumentSnapshot {
         ids: &mut RecipeReservations<'_>,
     ) -> Result<FeatureId, HistoryError> {
         let reads = definition.reads();
-        self.create_blend(
+        self.create_body_feature(
             name,
             PartFeatureDefinition::Fillet(Box::new(definition)),
             reads,
@@ -46,14 +46,14 @@ impl DocumentSnapshot {
         ids: &mut RecipeReservations<'_>,
     ) -> Result<FeatureId, HistoryError> {
         let reads = definition.reads();
-        self.create_blend(
+        self.create_body_feature(
             name,
             PartFeatureDefinition::Chamfer(Box::new(definition)),
             reads,
             ids,
         )
     }
-    fn create_blend(
+    pub(super) fn create_body_feature(
         &mut self,
         name: &str,
         definition: PartFeatureDefinition,

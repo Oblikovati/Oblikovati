@@ -399,6 +399,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         DeleteBody(_) => "delete-body",
         Fillet(_) => "fillet",
         Chamfer(_) => "chamfer",
+        Hole(_) => "hole",
         Fixed(_) => "fixed-frame",
         Offset { .. } => "plane-offset",
         ParallelThroughPoint(_) => "plane-point",

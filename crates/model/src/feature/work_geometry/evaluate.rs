@@ -118,6 +118,7 @@ impl WorkGeometryEvaluation {
                 | WorkPlaneDefinition::DeleteBody(_)
                 | WorkPlaneDefinition::Fillet(_)
                 | WorkPlaneDefinition::Chamfer(_)
+                | WorkPlaneDefinition::Hole(_)
         ) {
             return Err(WorkPlaneError::Kind(super::WorkGeometryKindMismatch {
                 feature: id,

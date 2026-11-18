@@ -34,6 +34,18 @@ pub trait PartFeatureEvaluator {
         edges: &[Vec<u8>],
         distance: f64,
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>>;
+    /// Construct a named straight bore; example: `backend.evaluate_hole(id, body, face, input)`.
+    fn evaluate_hole(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _face: &[u8],
+        _input: crate::feature::hole::ResolvedHole,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "hole: expected an available named-face evaluator".into(),
+        ))
+    }
     /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.
     fn evaluate_prism(
         &mut self,
@@ -74,6 +86,7 @@ pub enum PartFeatureFailure<Failure> {
     BodyReference(String),
     FilletInput(String),
     ChamferInput(String),
+    HoleInput(String),
     Unsupported(String),
 }
 /// Derived results from a fresh replay. This does not implement the complete extrude operation or a prefix cache.
@@ -366,6 +379,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 | PartFeatureDefinition::DeleteBody(_)
                 | PartFeatureDefinition::Fillet(_)
                 | PartFeatureDefinition::Chamfer(_)
+                | PartFeatureDefinition::Hole(_)
         ) {
             feature
                 .validate_plane_metadata()
@@ -383,6 +397,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::Chamfer(definition) => {
                 self.evaluate_chamfer(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::Hole(definition) => {
+                self.evaluate_hole(snapshot, backend, id, definition)
             }
             _ => {
                 let bodies = &self.bodies;
@@ -456,29 +473,6 @@ impl DocumentSnapshot {
         })
     }
 }
-impl<Body, Failure> crate::feature::work_plane::WorkPlaneResolver
-    for PartFeatureEvaluation<Body, Failure>
-{
-    fn axis(
-        &self,
-        feature: FeatureId,
-    ) -> Result<crate::feature::work_axis::WorkAxisLine, WorkGeometryError> {
-        self.datums.axis(feature)
-    }
-    fn plane(&self, feature: FeatureId) -> Result<crate::sketch::SketchPlane, WorkGeometryError> {
-        crate::feature::work_plane::WorkPlaneResolver::plane(&self.datums, feature)
-    }
-    fn face(
-        &self,
-        reference: &crate::feature::work_plane::WorkPlaneFaceReference,
-    ) -> Result<crate::sketch::SketchPlane, WorkGeometryError> {
-        crate::feature::work_plane::WorkPlaneResolver::face(&self.datums, reference)
-    }
-    fn point(&self, feature: FeatureId) -> Result<[f64; 3], WorkGeometryError> {
-        self.datums.point(feature)
-    }
-}
-
 pub(super) fn require_replay_current(
     cancelled: bool,
     completed: usize,

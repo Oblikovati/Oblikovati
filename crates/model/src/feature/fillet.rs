@@ -116,7 +116,7 @@ impl BlendDefinition {
     }
 }
 
-fn reference_identity(
+pub(super) fn reference_identity(
     key: &[u8],
     expected: u32,
     operation: &str,

@@ -9,6 +9,7 @@ impl AuthoredFeature<WorkGeometryDefinition> {
                     | WorkGeometryDefinition::DeleteBody(_)
                     | WorkGeometryDefinition::Fillet(_)
                     | WorkGeometryDefinition::Chamfer(_)
+                    | WorkGeometryDefinition::Hole(_)
             )
         {
             return Err(WorkGeometryError::Kind(super::WorkGeometryKindMismatch {

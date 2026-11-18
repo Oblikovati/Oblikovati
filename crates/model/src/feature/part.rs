@@ -13,6 +13,7 @@ mod body_dependencies;
 mod body_lineage;
 mod body_resolution;
 mod checkpoints;
+mod hole_evaluation;
 pub use checkpoints::{CheckpointedPart, PartReplayCheckpoints};
 mod delete;
 mod error;
@@ -24,6 +25,7 @@ pub use evaluate::{
 };
 mod prefix_replay;
 mod reads;
+mod resolver;
 mod transfer;
 pub use prefix_replay::BorrowedPartReplay;
 pub use transfer::{CapturedPartTransfer, CompletedPartTransfer};
@@ -42,6 +44,7 @@ pub enum PartFeatureDefinition {
     DeleteBody(DeleteBodyDefinition),
     Chamfer(Box<super::chamfer::ChamferDefinition>),
     Fillet(Box<super::fillet::FilletDefinition>),
+    Hole(Box<super::hole::HoleDefinition>),
     SketchPrism(Box<super::sketch_prism::SketchPrismDefinition>),
     Fixed(SketchPlane),
     Offset {
@@ -67,6 +70,7 @@ impl PartFeatureDefinition {
             Self::DeleteBody(_) => "delete-body",
             Self::Chamfer(_) => "chamfer",
             Self::Fillet(_) => "fillet",
+            Self::Hole(_) => "hole",
             Self::Axis(_) | Self::AxisThroughPoints(_) => "work-axis",
             Self::Point(_) | Self::PointAtReference(_) => "work-point",
             _ => "work-plane",
