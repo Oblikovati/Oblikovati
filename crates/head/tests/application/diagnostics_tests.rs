@@ -2,6 +2,38 @@
 use super::*;
 use imgui::Condition;
 #[test]
+fn quarter_turned_glyph_keeps_its_letter_and_visible_bounds() {
+    let vertices = [
+        DrawVert {
+            pos: [20., 10.],
+            uv: [0.1, 0.2],
+            col: [255; 4],
+        },
+        DrawVert {
+            pos: [20., 20.],
+            uv: [0.2, 0.2],
+            col: [255; 4],
+        },
+        DrawVert {
+            pos: [10., 20.],
+            uv: [0.2, 0.3],
+            col: [255; 4],
+        },
+        DrawVert {
+            pos: [10., 10.],
+            uv: [0.1, 0.3],
+            col: [255; 4],
+        },
+    ];
+    let lookup = BTreeMap::from([([0.1_f32, 0.2, 0.2, 0.3].map(f32::to_bits), 'F')]);
+    let glyph = quad_glyph(0, &vertices, [0., 0., 30., 30.], &lookup).unwrap();
+    assert_eq!(
+        (glyph.letter, glyph.minimum, glyph.maximum),
+        ('F', [10., 10.], [20., 20.])
+    );
+    assert!(quad_glyph(0, &vertices, [15., 0., 30., 30.], &lookup).is_none());
+}
+#[test]
 fn clip_accepts_small_glyph_overhang_but_rejects_hidden_letters() {
     let vertex = |pos| DrawVert {
         pos,

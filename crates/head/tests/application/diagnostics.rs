@@ -217,10 +217,23 @@ fn quad_glyph(
     let opposite = vertices[first as usize + 2];
     let uv = [start.uv[0], start.uv[1], opposite.uv[0], opposite.uv[1]];
     let letter = glyph_for_uv(uv, lookup)?;
-    inside_clip(start, opposite, clip).then_some(RenderedGlyph {
+    let corners = &vertices[first as usize..first as usize + 4];
+    let mut minimum = start;
+    let mut maximum = opposite;
+    for axis in 0..2 {
+        minimum.pos[axis] = corners
+            .iter()
+            .map(|v| v.pos[axis])
+            .fold(f32::INFINITY, f32::min);
+        maximum.pos[axis] = corners
+            .iter()
+            .map(|v| v.pos[axis])
+            .fold(f32::NEG_INFINITY, f32::max);
+    }
+    inside_clip(minimum, maximum, clip).then_some(RenderedGlyph {
         letter,
-        minimum: start.pos,
-        maximum: opposite.pos,
+        minimum: minimum.pos,
+        maximum: maximum.pos,
         alpha: start.col[3],
         color: [start.col[0], start.col[1], start.col[2]],
     })
