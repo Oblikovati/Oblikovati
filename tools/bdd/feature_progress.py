@@ -7,7 +7,9 @@ import hashlib
 import json
 import re
 from pathlib import Path
+from functools import lru_cache
 
+from behavior_evidence import check_scenario
 from inventory import collect_features
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -49,13 +51,48 @@ def result_status(
         return "source_changed", 0
     if isinstance(record.get("blocker"), str) and record["blocker"].strip():
         return "blocked", 0
-    if info["outlines"]:
-        return "needs_outline_review", 0
     report = ROOT / str(record.get("cucumber", ""))
     if not report.is_file() or digest(report) != record.get("cucumber_sha256"):
         return "invalid_result", 0
-    result = compare_report(source, path, report)
+    if info["outlines"]:
+        result = compare_inventoried_report(path, info, report)
+    else:
+        result = compare_report(source, path, report)
     return result if digest(source / path) == info["sha256"] else ("source_changed", 0)
+
+
+@lru_cache(maxsize=1)
+def source_inventory() -> list[dict[str, object]]:
+    """Read the parsed scenario snapshot; for example, source_inventory() for an outline."""
+    path = ROOT / "architecture/rust-port/behavior-source-inventory.json"
+    return json.loads(path.read_text(encoding="utf-8"))["scenarios"]
+
+
+def compare_inventoried_report(
+    path: str, info: dict[str, object], report: Path
+) -> tuple[str, int]:
+    """Check every parsed declaration and example; for example, compare_inventoried_report(path, info, report)."""
+    rows = [row for row in source_inventory() if row["path"] == path]
+    if len(rows) != info["scenario_declarations"] or any(
+        row["source_sha256"] != info["sha256"] for row in rows
+    ):
+        return "needs_outline_review", 0
+    results = json.loads(report.read_text(encoding="utf-8"))
+    return count_checked_scenarios(results, rows)
+
+
+def count_checked_scenarios(
+    report: object, rows: list[dict[str, object]]
+) -> tuple[str, int]:
+    """Count declarations with all examples passing; for example, count_checked_scenarios(report, rows)."""
+    count = 0
+    for row in rows:
+        try:
+            check_scenario(report, row)
+        except ValueError:
+            continue
+        count += 1
+    return ("green" if count == len(rows) else "incomplete", count)
 
 
 def ordinary_scenarios(feature: Path) -> dict[str, dict[str, object]] | None:
