@@ -23,7 +23,7 @@ fn click_face(world: &mut ApplicationWorld) {
     world.click(at);
     world.pump(Vec::new());
 }
-fn visible_face_point(world: &mut ApplicationWorld) -> [i32; 2] {
+pub(crate) fn visible_face_point(world: &mut ApplicationWorld) -> [i32; 2] {
     use crate::HeadWork;
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);
     let windows = super::super::diagnostics::window_occlusions();
