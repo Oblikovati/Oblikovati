@@ -72,6 +72,15 @@ fn editing_a_fillet_consumed_by_a_chamfer_preserves_the_final_body() {
         owner.fillet_access.as_ref().unwrap().replay_counts(),
         validation_before
     );
+    Client::new(owner.document_host())
+        .features()
+        .edit(&edit_radius(id, "1.7 mm"))
+        .unwrap();
+    assert_eq!(owner.part_scenes.checkpoint_preview_metrics().0, before);
+    assert_eq!(
+        owner.fillet_access.as_ref().unwrap().replay_counts(),
+        validation_before
+    );
     assert_eq!(
         owner.take_scene().unwrap().unwrap().status.visible_bodies,
         1

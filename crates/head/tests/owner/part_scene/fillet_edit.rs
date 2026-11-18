@@ -151,6 +151,30 @@ fn typed_radius_edit_validates_before_commit_and_survives_history() {
     );
     assert_eq!(radius(&mut owner, id), 2.);
     assert!(owner.commit_fillet_edit(&draft).is_err());
+    owner.take_scene().unwrap().unwrap();
+    assert_eq!(
+        owner.part_scenes.checkpoint_preview_metrics(),
+        before_commit
+    );
+    let next_generation = owner
+        .files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .generation();
+    let next_draft = oblikovati_gui::GuiFilletEditRequest {
+        document,
+        generation: next_generation,
+        feature: FeatureId(id),
+        radius: "1.5 mm".into(),
+    };
+    let before_next = owner.part_scenes.checkpoint_preview_metrics();
+    assert!(owner.preview_fillet_edit(&next_draft).unwrap());
+    assert_eq!(
+        owner.part_scenes.checkpoint_preview_metrics(),
+        (before_next.0, before_next.1 + 1)
+    );
+    assert!(owner.preview_fillet_from_gui(None).unwrap());
     let after_scene: Vec<_> = owner
         .take_scene()
         .unwrap()

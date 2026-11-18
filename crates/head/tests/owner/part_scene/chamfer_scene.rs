@@ -241,6 +241,25 @@ fn typed_chamfer_distance_edit_validates_and_replays() {
         backend_before
     );
     assert!(owner.commit_chamfer_edit(&draft).is_err());
+    let generation = owner
+        .files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .generation();
+    let next = oblikovati_gui::GuiFilletEditRequest {
+        document,
+        generation,
+        feature: FeatureId(id),
+        radius: "1.5 mm".into(),
+    };
+    let before_next = owner.part_scenes.checkpoint_preview_metrics();
+    assert!(owner.preview_chamfer_edit(&next).unwrap());
+    assert_eq!(
+        owner.part_scenes.checkpoint_preview_metrics(),
+        (before_next.0, before_next.1 + 1)
+    );
+    assert!(owner.preview_chamfer_from_gui(None).unwrap());
     let scalar = Client::new(owner.document_host())
         .features()
         .get(&FeatureRefArgs { id })

@@ -51,7 +51,7 @@ impl FilletAccess for CertifiedFilletAccess {
         candidate: &DocumentSnapshot,
         feature: FeatureId,
         prefix: &crate::CertifiedCheckpointPrefix<'_>,
-    ) -> Result<Option<crate::CertifiedPartCandidate>, String> {
+    ) -> Result<Option<crate::CertifiedCheckpointCandidate>, String> {
         if prefix.policy != Some(self.policy) {
             return Err("part checkpoints: expected the blend validation policy".into());
         }
@@ -64,7 +64,7 @@ impl FilletAccess for CertifiedFilletAccess {
             CertifiedNamedSolidEvaluator::with_policy(history, document, self.policy);
         let Some(result) = prefix
             .prefix
-            .prepare_candidate(history, candidate, &mut evaluator)?
+            .prepare_checkpoints(history, candidate, &mut evaluator)?
         else {
             match kind {
                 oblikovati_model::feature::part::PartBlendKind::Fillet => {
@@ -83,7 +83,7 @@ impl FilletAccess for CertifiedFilletAccess {
         }
         let candidate =
             result.capture(history, |_, body| body.capture_detached(history, document))?;
-        Ok(Some(crate::CertifiedPartCandidate {
+        Ok(Some(crate::CertifiedCheckpointCandidate {
             policy: self.policy,
             candidate,
         }))
