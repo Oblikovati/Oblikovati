@@ -382,7 +382,7 @@ fn ribbon_panel_row(
             hole_tip: ribbon.tips.model_commands() && ribbon.tips.matching("HO"),
             modify_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("Y"),
             sketch_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("K"),
-            create_group_tip: ribbon.tips.model_commands() && ribbon.tips.matching("C"),
+            create_group_tip: ribbon.tips.create_group_tip(ribbon.display.mode),
             key_tips_active: ribbon.tips.active(),
             sketch_tip: ribbon.tips.model_commands() && ribbon.tips.matching("SK"),
             extrude_tip: ribbon.tips.model_commands() && ribbon.tips.matching("EX"),

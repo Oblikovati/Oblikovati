@@ -203,6 +203,7 @@ fn group_key_tip(ui: &Ui, panel: RibbonPanel, owners: &RibbonPanelOwners<'_>) {
         RibbonPanel::PartModify if owners.modify_group_tip => "Y",
         RibbonPanel::Sketch if owners.sketch_group_tip => "K",
         RibbonPanel::PartCreate if owners.create_group_tip => "C",
+        RibbonPanel::Create if owners.create_group_tip => "D",
         _ => return,
     };
     crate::ribbon_key_tips::badge(ui, tip);
@@ -434,8 +435,8 @@ fn draw_expanded(
             if expandable {
                 let requested = layout.take_additional(tab, panel);
                 additional::trigger(ui, tab, panel, anchor, title_clicked || requested, layout);
-                if panel == RibbonPanel::PartModify && context.owners.modify_group_tip {
-                    crate::ribbon_key_tips::badge(ui, "Y");
+                if matches!(panel, RibbonPanel::PartModify | RibbonPanel::Create) {
+                    group_key_tip(ui, panel, &context.owners);
                 }
             }
         } else if expandable {

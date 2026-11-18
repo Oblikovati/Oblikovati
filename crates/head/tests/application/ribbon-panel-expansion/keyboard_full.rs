@@ -39,6 +39,31 @@ fn expansion_and_tips_close(world: &mut ApplicationWorld) {
 
 #[cfg(target_os = "linux")]
 #[test]
+fn x11_sketch_create_tip_opens_unavailable_commands_outside_edit() {
+    let mut world = ApplicationWorld::new();
+    super::solid_part(&mut world);
+    world.app().window.native.view.resize([2400, 900]).unwrap();
+    world.pump(Vec::new());
+    for key in [0xffe9, u32::from(b's')] {
+        super::super::x11_input::press_keysym(key);
+        world.pump(Vec::new());
+    }
+    world.expect_text("D");
+    super::super::x11_input::press_keysym(u32::from(b'd'));
+    world.pump(Vec::new());
+    let area = "##ribbon-additional-Create";
+    assert!(diagnostics::window_geometry(area).is_some());
+    for label in ["CreateBlock", "PreciseInput"] {
+        assert!(world.run_in_window(area, label).alpha < u8::MAX);
+    }
+    super::super::x11_input::click([1000, 700]);
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry(area).is_none());
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+#[test]
 fn x11_keyboard_opens_the_full_modify_expansion_over_the_browser() {
     let mut world = ApplicationWorld::new();
     super::solid_part(&mut world);
