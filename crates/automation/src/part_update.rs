@@ -26,6 +26,13 @@ type NamedSketchRecompute = oblikovati_session::part_evaluation::CompletedPartSk
 
 /// Part replay capability independent of viewport and topology queries.
 pub trait PartUpdateAccess<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> {
+    /// Resolve edge keys against the current part; example: `owner.blend_body(files, id, &edges)?`.
+    fn blend_body(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        edges: &[Vec<u8>],
+    ) -> Result<Vec<u8>, String>;
     /// Replay a part and report failures; example: `owner.update_part(files, id)?`.
     fn update_part(
         &mut self,
@@ -128,6 +135,24 @@ impl PartReplayService {
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
     for PartReplayService
 {
+    fn blend_body(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        edges: &[Vec<u8>],
+    ) -> Result<Vec<u8>, String> {
+        let slot = self.current_slot(files, document)?;
+        let workspace = files.workspace();
+        let session = workspace
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        let guid = workspace
+            .identity(document)
+            .map_err(|error| error.to_string())?
+            .internal_name;
+        let evaluation = slot.current(session).map_err(|error| error.to_string())?;
+        crate::fillet::resolve_blend_body(evaluation, session.history(), guid, edges)
+    }
     fn update_part(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,

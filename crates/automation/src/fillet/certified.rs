@@ -35,20 +35,7 @@ impl FilletAccess for CertifiedFilletAccess {
             .snapshot()
             .evaluate_part_features(&mut evaluator)
             .map_err(|cause| cause.to_string())?;
-        let mut owners = Vec::new();
-        for body in evaluated.ordered_bodies() {
-            let keys = body.subentity_reference_keys(history, document)?;
-            if edges.iter().all(|edge| keys.contains(edge)) {
-                owners.push(body.body_reference_key(history, document)?.to_vec());
-            }
-        }
-        match owners.as_slice() {
-            [body] => Ok(body.clone()),
-            _ => Err(format!(
-                "blend edges {edges:?}, matching bodies {}: expected one current body containing every edge",
-                owners.len()
-            )),
-        }
+        resolve_blend_body(&evaluated, history, document, edges)
     }
     fn validate(
         &self,
@@ -67,6 +54,34 @@ impl FilletAccess for CertifiedFilletAccess {
     ) -> Result<usize, String> {
         CertifiedFilletValidation::new(document, self.0)?
             .validate_count(candidate, feature, "chamfer")
+    }
+}
+
+pub(crate) fn resolve_blend_body(
+    evaluated: &oblikovati_model::feature::part::PartFeatureEvaluation<
+        oblikovati_martensite::NamedSolid,
+        oblikovati_martensite::EvaluationFailure,
+    >,
+    history: &DocumentEditHistory,
+    document: DocumentGuid,
+    edges: &[Vec<u8>],
+) -> Result<Vec<u8>, String> {
+    if edges.is_empty() {
+        return Err("blend edges []: expected at least one exact edge key".into());
+    }
+    let mut owners = Vec::new();
+    for body in evaluated.ordered_bodies() {
+        let keys = body.subentity_reference_keys(history, document)?;
+        if edges.iter().all(|edge| keys.contains(edge)) {
+            owners.push(body.body_reference_key(history, document)?.to_vec());
+        }
+    }
+    match owners.as_slice() {
+        [body] => Ok(body.clone()),
+        _ => Err(format!(
+            "blend edges {edges:?}, matching bodies {}: expected one current body containing every edge",
+            owners.len()
+        )),
     }
 }
 impl CertifiedFilletValidation {

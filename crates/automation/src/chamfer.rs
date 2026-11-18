@@ -15,6 +15,7 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     backend: Option<&dyn FilletAccess>,
+    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
     request: AddFeatureArgs,
 ) -> Result<Vec<u8>, Error> {
     let input: Chamfer = serde_json::from_value(
@@ -30,15 +31,13 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     let document = crate::part_owner::active_part(files)?;
     let backend = backend
         .ok_or_else(|| Error("chamfer: expected an injected certified geometry service".into()))?;
+    let body = crate::fillet::blend_input_body(files, backend, replay, document, &edges)?;
     let workspace = files.workspace();
     let session = workspace.session(document).map_err(api_error)?;
     let guid = workspace
         .identity(document)
         .map_err(api_error)?
         .internal_name;
-    let body = backend
-        .body(session.history(), guid, &edges)
-        .map_err(Error)?;
     let prepared = prepare_chamfer(session.snapshot(), body, edges, &input.distance)?;
     create(files, document, guid, backend, prepared)
 }

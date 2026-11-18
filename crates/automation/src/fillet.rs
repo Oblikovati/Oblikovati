@@ -7,8 +7,35 @@ use oblikovati_model::{
 };
 mod certified;
 mod wire;
+pub(crate) use certified::resolve_blend_body;
 pub use certified::{CertifiedFilletAccess, CertifiedFilletValidation};
 pub(crate) use wire::apply as apply_wire;
+
+pub(crate) fn blend_input_body<O, W, F>(
+    files: &mut oblikovati_session::files::FileWorkspace<O, W, F>,
+    backend: &dyn FilletAccess,
+    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
+    document: u64,
+    edges: &[Vec<u8>],
+) -> Result<Vec<u8>, Error>
+where
+    O: oblikovati_session::TransactionObserver,
+    W: oblikovati_session::workspace::WorkspaceObserver,
+    F: oblikovati_persistence::file_access::DocumentFiles,
+{
+    if let Some(replay) = replay {
+        return replay.blend_body(files, document, edges).map_err(Error);
+    }
+    let workspace = files.workspace();
+    let session = workspace
+        .session(document)
+        .map_err(|error| Error(error.to_string()))?;
+    let guid = workspace
+        .identity(document)
+        .map_err(|error| Error(error.to_string()))?
+        .internal_name;
+    backend.body(session.history(), guid, edges).map_err(Error)
+}
 
 /// Exact body resolution and validation for typed Fillet commands.
 pub trait FilletAccess {
