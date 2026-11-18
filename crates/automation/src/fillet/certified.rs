@@ -6,6 +6,13 @@ use oblikovati_model::{
     history::{DocumentEditHistory, SnapshotReplay},
     identity::DocumentGuid,
 };
+use std::sync::atomic::{AtomicU64, Ordering};
+
+fn count_replay(counter: &AtomicU64) {
+    let _ = counter.try_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
+        Some(value.saturating_add(1))
+    });
+}
 
 /// A document-scoped validator for private, solved candidates.
 pub struct CertifiedFilletValidation {
@@ -13,16 +20,31 @@ pub struct CertifiedFilletValidation {
     policy: PrismResolutionPolicy,
 }
 /// Document-independent policy for typed Fillet operations.
-pub struct CertifiedFilletAccess(PrismResolutionPolicy);
+pub struct CertifiedFilletAccess {
+    policy: PrismResolutionPolicy,
+    body_replays: AtomicU64,
+    validation_replays: AtomicU64,
+}
 impl CertifiedFilletAccess {
     /// Bind a validated policy; example: `CertifiedFilletAccess::new(policy)?`.
     pub fn new(policy: PrismResolutionPolicy) -> Result<Self, String> {
-        Ok(Self(policy.validate()?))
+        Ok(Self {
+            policy: policy.validate()?,
+            body_replays: AtomicU64::new(0),
+            validation_replays: AtomicU64::new(0),
+        })
+    }
+    /// Count full body lookup and validation replay attempts; example: `access.replay_counts()`.
+    pub fn replay_counts(&self) -> (u64, u64) {
+        (
+            self.body_replays.load(Ordering::Relaxed),
+            self.validation_replays.load(Ordering::Relaxed),
+        )
     }
 }
 impl FilletAccess for CertifiedFilletAccess {
     fn accepts_policy(&self, policy: Option<PrismResolutionPolicy>) -> bool {
-        policy == Some(self.0)
+        policy == Some(self.policy)
     }
     fn body(
         &self,
@@ -33,7 +55,9 @@ impl FilletAccess for CertifiedFilletAccess {
         if edges.is_empty() {
             return Err("blend edges []: expected at least one exact edge key".into());
         }
-        let mut evaluator = CertifiedNamedSolidEvaluator::with_policy(history, document, self.0);
+        let mut evaluator =
+            CertifiedNamedSolidEvaluator::with_policy(history, document, self.policy);
+        count_replay(&self.body_replays);
         let evaluated = history
             .snapshot()
             .evaluate_part_features(&mut evaluator)
@@ -46,8 +70,12 @@ impl FilletAccess for CertifiedFilletAccess {
         candidate: &DocumentSnapshot,
         feature: FeatureId,
     ) -> Result<usize, String> {
-        CertifiedFilletValidation::new(document, self.0)?
-            .validate_count(candidate, feature, "fillet")
+        CertifiedFilletValidation::new(document, self.policy)?.validate_count(
+            candidate,
+            feature,
+            "fillet",
+            &self.validation_replays,
+        )
     }
     fn validate_chamfer(
         &self,
@@ -55,8 +83,12 @@ impl FilletAccess for CertifiedFilletAccess {
         candidate: &DocumentSnapshot,
         feature: FeatureId,
     ) -> Result<usize, String> {
-        CertifiedFilletValidation::new(document, self.0)?
-            .validate_count(candidate, feature, "chamfer")
+        CertifiedFilletValidation::new(document, self.policy)?.validate_count(
+            candidate,
+            feature,
+            "chamfer",
+            &self.validation_replays,
+        )
     }
 }
 
@@ -98,7 +130,7 @@ impl CertifiedFilletValidation {
 }
 impl FilletValidation for CertifiedFilletValidation {
     fn validate(&self, candidate: &DocumentSnapshot, feature: FeatureId) -> Result<(), String> {
-        self.validate_count(candidate, feature, "fillet")
+        self.validate_count(candidate, feature, "fillet", &AtomicU64::new(0))
             .map(|_| ())
     }
 }
@@ -108,6 +140,7 @@ impl CertifiedFilletValidation {
         candidate: &DocumentSnapshot,
         feature: FeatureId,
         expected: &str,
+        replay_count: &AtomicU64,
     ) -> Result<usize, String> {
         let authored = candidate
             .work_geometry
@@ -125,6 +158,7 @@ impl CertifiedFilletValidation {
             self.document,
             self.policy,
         );
+        count_replay(replay_count);
         let result = history
             .history()
             .snapshot()
