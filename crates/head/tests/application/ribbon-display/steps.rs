@@ -4,6 +4,7 @@ use cucumber::{given, then, when};
 mod compact_options;
 mod double_click;
 mod drawing;
+mod home_transition;
 mod measure;
 mod mode_policy;
 mod sketch_exit;
@@ -199,6 +200,16 @@ fn windows_panel_closed(world: &mut ApplicationWorld) {
 #[when("the user opens the ribbon display menu again")]
 fn open_menu(world: &mut ApplicationWorld) {
     click_display_menu(world);
+}
+#[when("the user chooses Minimize to Panel Buttons from the ribbon display menu")]
+fn choose_panel_buttons_from_menu(world: &mut ApplicationWorld) {
+    click_display_menu(world);
+    world.click_text("Minimize to Panel Buttons");
+}
+#[when("the user activates the ribbon display control twice")]
+fn activate_display_twice(world: &mut ApplicationWorld) {
+    activate_display_control(world);
+    activate_display_control(world);
 }
 #[then("the menu offers minimization to tabs, panel titles and panel buttons")]
 fn menu_choices(world: &mut ApplicationWorld) {

@@ -19,6 +19,7 @@ fn options_button_color(world: &mut ApplicationWorld) -> [u8; 4] {
 }
 
 #[given("the Tools ribbon is minimized to panel buttons")]
+#[given("the Tools ribbon displays compact panel buttons")]
 fn compact_tools(world: &mut ApplicationWorld) {
     full_tools(world);
     click_display_menu(world);
@@ -38,6 +39,9 @@ fn click_options(world: &mut ApplicationWorld) {
 
 #[then("the temporary Options command panel appears below the button strip")]
 #[then("the temporary Options command panel remains visible")]
+#[then("a temporary Options panel opens below the ribbon")]
+#[then("the Options commands appear in a temporary panel below the buttons")]
+#[then("the temporary Options panel remains visible")]
 fn options_panel_visible(world: &mut ApplicationWorld) {
     world.expect_text("Document Settings");
     let (position, _) = window_geometry("##ribbon-temporary-panel")
@@ -78,6 +82,7 @@ fn select_display_mode(world: &mut ApplicationWorld, label: String) {
 }
 
 #[then("the temporary Options command panel closes")]
+#[then("the temporary Options panel closes")]
 fn options_panel_closed(world: &mut ApplicationWorld) {
     assert!(window_geometry("##ribbon-temporary-panel").is_none());
     world.expect_no_text("Document Settings");
@@ -108,6 +113,7 @@ fn click_options_panel_title(world: &mut ApplicationWorld) {
 }
 
 #[then("the Tools panel buttons remain visible")]
+#[then("the compact Tools panel buttons remain visible")]
 fn tools_buttons_remain(world: &mut ApplicationWorld) {
     world.expect_text("Tools");
     let _button = options_button(world);
@@ -115,4 +121,17 @@ fn tools_buttons_remain(world: &mut ApplicationWorld) {
         options_button_color(world),
         world.compact_options_idle_color.unwrap()
     );
+}
+
+#[then("it shows Application Options, Document Settings and Customize")]
+fn options_main_commands(world: &mut ApplicationWorld) {
+    for command in ["Application Options", "Document Settings", "Customize"] {
+        world.expect_text(command);
+    }
+}
+
+#[then("it also shows Reset UI Layout and iLogic Configuration")]
+fn options_additional_commands(world: &mut ApplicationWorld) {
+    world.expect_text("Reset UI Layout");
+    world.expect_text("iLogic Configuration");
 }

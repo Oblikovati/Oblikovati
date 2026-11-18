@@ -31,6 +31,7 @@ fn temporary_tools(world: &mut ApplicationWorld) {
 }
 
 #[when("the user clicks empty viewport space")]
+#[when("the user clicks empty viewport space outside the panel")]
 #[when("the user clicks an empty area of the viewport")]
 fn click_empty_viewport(world: &mut ApplicationWorld) {
     world.click([1000, 600]);

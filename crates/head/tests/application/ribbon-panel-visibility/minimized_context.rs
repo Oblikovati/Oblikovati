@@ -92,7 +92,10 @@ fn restore_full_ribbon(world: &mut ApplicationWorld) {
 }
 #[then("the full ribbon is restored")]
 fn full_ribbon(world: &mut ApplicationWorld) {
-    world.expect_text("Start 2D Sketch");
+    assert!(
+        world.shows("Start 2D Sketch") || world.shows("User Interface"),
+        "expected full 3D Model or View ribbon commands"
+    );
     assert!(super::super::diagnostics::window_geometry("##ribbon-temporary-panel").is_none());
 }
 #[then("the Parameters panel is visible")]

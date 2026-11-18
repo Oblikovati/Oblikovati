@@ -104,6 +104,7 @@ fn mouse_wheel_switches_an_open_temporary_ribbon() {
 }
 
 #[given("the full Tools ribbon is visible")]
+#[given("the full Tools ribbon is displayed")]
 pub(super) fn full_tools(world: &mut ApplicationWorld) {
     world.click_text("Tools");
     world.expect_text("Application Options");

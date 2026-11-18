@@ -48,6 +48,10 @@ fn tips_hidden(world: &mut ApplicationWorld) {
 fn select_tools(world: &mut ApplicationWorld) {
     world.click_text("Tools");
     world.expect_text("Application Options");
+    if super::diagnostics::window_geometry("##ribbon-temporary-panel").is_some() {
+        world.click([1000, 600]);
+        world.expect_no_text("Application Options");
+    }
 }
 #[when("the user presses \"Z\"")]
 fn unknown_tip(world: &mut ApplicationWorld) {
