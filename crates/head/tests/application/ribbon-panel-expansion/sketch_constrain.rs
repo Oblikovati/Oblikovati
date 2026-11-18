@@ -6,6 +6,9 @@ use super::super::workspace_layout::browser_feature::{
 use super::{ApplicationWorld, click_expansion_arrow, diagnostics};
 use cucumber::{given, then, when};
 
+#[path = "sketch_constrain_finish.rs"]
+mod finish_checks;
+
 const WINDOW: &str = "##ribbon-additional-Constrain";
 
 #[given("a part is active in the MCAD Software outside sketch edit")]
@@ -141,7 +144,8 @@ fn returns_to_part(world: &mut ApplicationWorld) {
         world.state().authoring,
         oblikovati_gui::GuiAuthoringContext::Part
     );
-    world.expect_text("Start 2D Sketch");
+    assert!(world.app().owner.active_sketch_edit().is_none());
+    expect_solid_visible(world);
 }
 #[then("the Constrain additional-command area closes")]
 fn constrain_area_closes(world: &mut ApplicationWorld) {
