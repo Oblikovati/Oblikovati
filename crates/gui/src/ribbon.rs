@@ -8,6 +8,21 @@ use oblikovati_api::types::{
 #[path = "ribbon_reset.rs"]
 mod reset;
 
+impl DocumentRibbon {
+    pub(crate) fn apply_context_actions(&mut self, tab: RibbonTab) {
+        if let Some((owner, panel)) = self.display.take_context_relocated() {
+            self.panels.close_additional(owner, panel);
+        }
+        if self.display.take_appearance_expansion_close() {
+            self.panels.close_unpinned_additional();
+        }
+        if self.display.take_customization_request() {
+            self.panels.close_unpinned_additional();
+            self.customization.open(tab);
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum RibbonTab {
     #[default]

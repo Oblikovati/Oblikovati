@@ -3,6 +3,14 @@
 use super::{RibbonDisplayState, RibbonPanel, RibbonTab};
 use imgui::Ui;
 
+pub(super) fn submenu_row_pressed(ui: &Ui, label: &str, submenu_open: bool) -> bool {
+    let selected = crate::widget_abi::dialog_selectable(ui, label, false);
+    // ImGui consumes the first click to dismiss a child popup before its parent row activates.
+    let hovered =
+        ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_BLOCKED_BY_POPUP);
+    selected || submenu_open && hovered && ui.is_mouse_clicked(imgui::MouseButton::Left)
+}
+
 impl RibbonDisplayState {
     pub(crate) fn request_expansion_context(&mut self, tab: RibbonTab, panel: RibbonPanel) {
         self.context_expansion = Some((tab, panel));
