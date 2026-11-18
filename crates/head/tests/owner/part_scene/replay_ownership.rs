@@ -22,6 +22,68 @@ fn open_named_prism(owner: &mut TestOwner, name: &str) -> u64 {
 }
 
 #[test]
+fn checkpoint_cache_is_lazy_and_scoped_to_each_document_generation() {
+    let (mut owner, _) = owner();
+    let first = open_named_prism(&mut owner, "checkpoint-first.opd");
+    let second = open_named_prism(&mut owner, "checkpoint-second.opd");
+    let mut replay =
+        PartReplayService::with_policy(crate::part_scene::resolution_policy::desktop_policy())
+            .unwrap();
+    replay.ensure_part(&mut owner.files, first).unwrap();
+    replay.ensure_part(&mut owner.files, second).unwrap();
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, first)
+            .unwrap()
+            .is_none()
+    );
+    let before = replay.replay_count();
+    replay.ensure_checkpoints(&mut owner.files, first).unwrap();
+    assert_eq!(replay.replay_count(), before + 1);
+    replay.ensure_checkpoints(&mut owner.files, first).unwrap();
+    assert_eq!(replay.replay_count(), before + 1);
+    replay.ensure_checkpoints(&mut owner.files, second).unwrap();
+    assert_eq!(replay.replay_count(), before + 2);
+    Client::new(owner.document_host())
+        .documents()
+        .activate(&ActivateDocumentArgs { id: first })
+        .unwrap();
+    set_parameter(&mut owner, "width", "6 cm");
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, first)
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, second)
+            .unwrap()
+            .is_some()
+    );
+    replay.ensure_checkpoints(&mut owner.files, first).unwrap();
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, first)
+            .unwrap()
+            .is_some()
+    );
+    replay.clear();
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, first)
+            .unwrap()
+            .is_none()
+    );
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, second)
+            .unwrap()
+            .is_none()
+    );
+}
+
+#[test]
 fn headless_replay_tracks_each_document_and_its_own_generation() {
     let (mut owner, _) = owner();
     let first = open_named_prism(&mut owner, "replay-owner-first.opd");

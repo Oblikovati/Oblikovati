@@ -183,7 +183,15 @@ fn typed_chamfer_distance_edit_validates_and_replays() {
             .chamfer_edits
             .contains_key(&draft.feature)
     );
+    let before_metrics = owner.part_scenes.checkpoint_preview_metrics();
     assert!(owner.preview_chamfer_edit(&draft).unwrap());
+    let first_metrics = owner.part_scenes.checkpoint_preview_metrics();
+    assert_eq!(first_metrics, (before_metrics.0 + 1, before_metrics.1 + 1));
+    assert!(owner.preview_chamfer_edit(&draft).unwrap());
+    assert_eq!(
+        owner.part_scenes.checkpoint_preview_metrics(),
+        (first_metrics.0, first_metrics.1 + 1)
+    );
     assert_eq!(
         owner
             .files

@@ -227,6 +227,9 @@ impl<
     ) -> Result<bool, String> {
         self.require_blend_edit(request)?;
         self.clear_extrusion_preview();
+        self.part_scenes
+            .ensure_edit_checkpoints(&mut self.files, request.document)?;
+        self.require_blend_edit(request)?;
         let session = self
             .files
             .workspace()

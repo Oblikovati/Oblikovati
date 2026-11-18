@@ -24,6 +24,65 @@ pub struct CertifiedPartCandidate {
 }
 
 impl PartReplayService {
+    /// Retain feature boundaries for the current document on demand.
+    /// Example: `owner.ensure_checkpoints(files, document)?` before interactive edits.
+    pub fn ensure_checkpoints<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<(), String> {
+        self.current_slot(files, document)?;
+        if self.checkpoint_prefix(files, document)?.is_some() {
+            return Ok(());
+        }
+        let policy = self
+            .resolution
+            .ok_or("part checkpoints: expected a certified resolution policy")?;
+        let workspace = files.workspace();
+        let session = workspace
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        let guid = workspace
+            .identity(document)
+            .map_err(|error| error.to_string())?
+            .internal_name;
+        let mut evaluator =
+            CertifiedNamedSolidEvaluator::with_policy(session.history(), guid, policy);
+        self.replay_count = self.replay_count.saturating_add(1);
+        let completed = session
+            .prepare_part_evaluation()
+            .evaluate_checkpoints(&mut evaluator)
+            .map_err(|error| error.to_string())?;
+        let mut slot = oblikovati_session::part_evaluation::PartCheckpointSlot::default();
+        slot.adopt(session, completed)
+            .map_err(|error| error.to_string())?;
+        self.checkpoints.insert(document, slot);
+        Ok(())
+    }
+    /// Borrow current checkpoints when available; example: `owner.checkpoint_prefix(files, id)?`.
+    pub fn checkpoint_prefix<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+        &'a self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<
+        Option<
+            oblikovati_session::part_evaluation::PartCheckpointPrefix<
+                'a,
+                NamedSolid,
+                EvaluationFailure,
+            >,
+        >,
+        String,
+    > {
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        Ok(self
+            .checkpoints
+            .get(&document)
+            .and_then(|slot| slot.candidate_prefix(session).ok()))
+    }
     pub(super) fn adopt_named_candidate<
         O: TransactionObserver,
         W: WorkspaceObserver,
@@ -63,6 +122,21 @@ impl PartReplayService {
             .commands(document)
             .map_err(|error| error.to_string())?
             .adopt_part_evaluation(completed, slot)
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        self.checkpoints.remove(&document);
+        Ok(())
+    }
+}
+
+impl PartReplayService {
+    /// Retire results for closed documents; example: `service.retain_open_documents(ids)`.
+    pub fn retain_open_documents(&mut self, documents: &[u64]) {
+        self.slots.retain(|id, _| documents.contains(id));
+        self.checkpoints.retain(|id, _| documents.contains(id));
+    }
+    /// Retire all retained kernel outputs; example: `service.clear()` on policy change.
+    pub fn clear(&mut self) {
+        self.slots.clear();
+        self.checkpoints.clear();
     }
 }
