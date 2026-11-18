@@ -95,6 +95,6 @@
     "application_commit": "bb4553dbc",
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=document-opening VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; reopening an already open part separately passed with X11 keyboard and pointer input",
-    "notes": "The run has one failed scenario, tracked in #3963. After the run BLOCKERS.md received a request for the observed assembly command outcomes. A separate X11 test opened a native drawing using a mixed-case folder path with an underscore and a space, and XMODIFIERS=@im=none."
+    "notes": "The run has one failed scenario, tracked in #3963. After the run BLOCKERS.md received a request for the observed assembly command outcomes. A separate X11 test opened a native drawing using a mixed-case folder path with an underscore and a space, and XMODIFIERS=@im=none. A separate X11 test opened an assembly in Express mode and chose Load Full; it does not cover the missing Finish and Simplify commands."
   }
 }

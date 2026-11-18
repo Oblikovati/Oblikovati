@@ -325,3 +325,36 @@ fn save_as_copy_and_batch_store_a_qualified_assembly_cache() {
     assert_qualified_cache(&batch_copy);
     world.close();
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_opens_express_assembly_and_loads_full_geometry() {
+    use super::native_existing::native_click_run;
+    let mut world = ApplicationWorld::new();
+    world.add_drawing();
+    saved_assembly(&mut world);
+    open_express_with_x11(&mut world);
+    assembly_opens(&mut world);
+    component_visible(&mut world);
+    assembly_components(&mut world);
+    offers_load_full(&mut world);
+    native_click_run(&mut world, "Load Full");
+    still_visible(&mut world);
+    no_load_full(&mut world);
+    super::selections::drawing_tab_kept(&mut world);
+    world.save_capture("native-assembly-loaded-full-3963");
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+fn open_express_with_x11(world: &mut ApplicationWorld) {
+    use super::native_existing::{native_click_run, native_enter_folder};
+    super::super::x11_input::press_control_o();
+    settle(world);
+    let folder = models_folder(world);
+    native_enter_folder(world, &folder, ASSEMBLY_FILE);
+    native_click_run(world, ASSEMBLY_FILE);
+    native_click_run(world, "Load in Express Mode");
+    assert!(world.checked("Load in Express Mode"));
+    native_click_run(world, "Open");
+}
