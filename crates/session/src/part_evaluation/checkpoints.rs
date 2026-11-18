@@ -196,3 +196,26 @@ impl<Body, Failure: Clone> PartCheckpointPrefix<'_, Body, Failure> {
         }))
     }
 }
+
+impl<Body, Failure: Clone> PartCandidateResult<'_, Body, Failure> {
+    /// Copy a private preview while retaining the source generation guard.
+    /// Example: `candidate.copy_current(history)?` before rendering.
+    pub fn copy_current(
+        &self,
+        history: &oblikovati_model::history::DocumentEditHistory,
+    ) -> Result<PartFeatureEvaluation<Body, Failure>, String>
+    where
+        Body: Clone,
+    {
+        if !self.source.is_current(history) {
+            return Err("part candidate preview: expected its current owning history".into());
+        }
+        let evaluation = self
+            .replay
+            .try_map_bodies(|_, body| Ok::<_, String>(body.clone()))?;
+        if !self.source.is_current(history) {
+            return Err("part candidate preview: expected an unchanged owner after copying".into());
+        }
+        Ok(evaluation)
+    }
+}

@@ -82,6 +82,8 @@ pub(crate) struct DesktopPartScenes {
     face_mesh_cache: Option<face_display::FaceMeshCache>,
     #[cfg(test)]
     face_mesh_builds: usize,
+    #[cfg(test)]
+    checkpoint_previews: std::cell::Cell<usize>,
     resolution: Option<oblikovati_martensite::PrismResolutionPolicy>,
     replay: oblikovati_automation::PartReplayService,
     active_replay: Option<u64>,

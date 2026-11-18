@@ -169,6 +169,14 @@ fn candidate_capture_rejects_backend_failure_and_a_stale_owner() {
         )
         .unwrap();
     let mut captures = 0;
+    assert_eq!(
+        candidate
+            .copy_current(owner.history())
+            .unwrap()
+            .ordered_bodies()
+            .count(),
+        2
+    );
     assert!(
         candidate
             .capture(owner.history(), |_, body| {
@@ -183,6 +191,7 @@ fn candidate_capture_rejects_backend_failure_and_a_stale_owner() {
     assert_eq!(captures, 2);
     assert!(slot.current(&owner).is_ok());
     edit_depth(&mut owner, "3 cm");
+    assert!(candidate.copy_current(owner.history()).is_err());
     let mut called = false;
     assert!(
         candidate

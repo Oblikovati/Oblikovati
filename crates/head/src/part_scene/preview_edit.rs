@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Private, fully replayed feature-edit scene.
+//! Private feature-edit scenes with generation-checked checkpoint reuse.
 use super::*;
 use oblikovati_model::{feature::FeatureId, history::DocumentSnapshot, identity::DocumentGuid};
 use oblikovati_session::DocumentSession;
@@ -8,6 +8,21 @@ type PreviewEvaluation = oblikovati_model::feature::part::PartFeatureEvaluation<
     oblikovati_martensite::EvaluationFailure,
 >;
 impl DesktopPartScenes {
+    #[cfg(test)]
+    pub(crate) fn checkpoint_preview_metrics(&self) -> (u64, usize) {
+        (self.replay.replay_count(), self.checkpoint_previews.get())
+    }
+    pub(crate) fn ensure_edit_checkpoints<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+    ) -> Result<(), String> {
+        self.replay.ensure_checkpoints(files, document)
+    }
     pub(crate) fn preview_feature_edit<
         O: TransactionObserver,
         W: WorkspaceObserver,
@@ -31,7 +46,16 @@ impl DesktopPartScenes {
             .identity(document)
             .map_err(|cause| cause.to_string())?
             .internal_name;
-        let (evaluated, edited_key) = evaluate_preview(session, candidate, feature, guid, policy)?;
+        let prefix = self.replay.checkpoint_prefix(files, document)?;
+        let (evaluated, edited_key, used_checkpoint) =
+            evaluate_preview(session, candidate, feature, guid, policy, prefix)?;
+        #[cfg(test)]
+        if used_checkpoint {
+            self.checkpoint_previews
+                .set(self.checkpoint_previews.get() + 1);
+        }
+        #[cfg(not(test))]
+        let _ = used_checkpoint;
         render_preview(
             files,
             session,
@@ -49,15 +73,33 @@ fn evaluate_preview<O: TransactionObserver>(
     feature: FeatureId,
     guid: DocumentGuid,
     policy: oblikovati_martensite::PrismResolutionPolicy,
-) -> Result<(PreviewEvaluation, String), String> {
+    prefix: Option<
+        oblikovati_session::part_evaluation::PartCheckpointPrefix<
+            '_,
+            NamedSolid,
+            oblikovati_martensite::EvaluationFailure,
+        >,
+    >,
+) -> Result<(PreviewEvaluation, String, bool), String> {
     let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::with_policy(
         session.history(),
         guid,
         policy,
     );
-    let evaluated = candidate
-        .evaluate_part_features(&mut evaluator)
-        .map_err(|cause| cause.to_string())?;
+    let reused = match prefix {
+        Some(prefix) => prefix
+            .prepare_candidate(session.history(), candidate, &mut evaluator)?
+            .map(|result| result.copy_current(session.history()))
+            .transpose()?,
+        None => None,
+    };
+    let used_checkpoint = reused.is_some();
+    let evaluated = match reused {
+        Some(result) => result,
+        None => candidate
+            .evaluate_part_features(&mut evaluator)
+            .map_err(|cause| cause.to_string())?,
+    };
     let edited = evaluated.body(feature).ok_or_else(|| {
         format!(
             "feature {feature:?} preview: expected a valid body; health {:?}",
@@ -65,7 +107,7 @@ fn evaluate_preview<O: TransactionObserver>(
         )
     })?;
     let key = bodies::body_reference_text(edited.body_reference_key(session.history(), guid)?);
-    Ok((evaluated, key))
+    Ok((evaluated, key, used_checkpoint))
 }
 fn render_preview<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,

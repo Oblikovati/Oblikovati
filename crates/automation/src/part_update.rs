@@ -29,6 +29,10 @@ pub use candidate::{CertifiedPartCandidate, CertifiedPartPrefix};
 #[derive(Default)]
 pub struct PartReplayService {
     slots: BTreeMap<u64, PartEvaluationSlot<NamedSolid, EvaluationFailure>>,
+    checkpoints: BTreeMap<
+        u64,
+        oblikovati_session::part_evaluation::PartCheckpointSlot<NamedSolid, EvaluationFailure>,
+    >,
     resolution: Option<PrismResolutionPolicy>,
     replay_count: u64,
 }
@@ -37,6 +41,7 @@ impl PartReplayService {
     pub fn with_policy(policy: PrismResolutionPolicy) -> Result<Self, String> {
         Ok(Self {
             slots: BTreeMap::new(),
+            checkpoints: BTreeMap::new(),
             resolution: Some(policy.validate()?),
             replay_count: 0,
         })
@@ -51,14 +56,6 @@ impl PartReplayService {
         document: u64,
     ) -> Option<&PartEvaluationSlot<NamedSolid, EvaluationFailure>> {
         self.slots.get(&document)
-    }
-    /// Retire results for closed documents; example: `service.retain_open_documents(ids)`.
-    pub fn retain_open_documents(&mut self, documents: &[u64]) {
-        self.slots.retain(|id, _| documents.contains(id));
-    }
-    /// Retire all retained kernel outputs; example: `service.clear()` on policy change.
-    pub fn clear(&mut self) {
-        self.slots.clear();
     }
     fn current_slot<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         &mut self,
@@ -172,6 +169,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
             slot,
             &mut self.replay_count,
         )?;
+        self.checkpoints.remove(&document);
         let session = files
             .workspace()
             .session(document)

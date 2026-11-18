@@ -89,7 +89,33 @@ fn typed_radius_edit_validates_before_commit_and_survives_history() {
         feature: oblikovati_model::feature::FeatureId(id),
         radius: "2 mm".into(),
     };
+    let full_preview = {
+        let session = owner.files.workspace().session(document).unwrap();
+        let edit = edit(id, "2 mm");
+        session
+            .preview_projected(
+                |candidate, _| oblikovati_automation::apply_fillet_radius_edit(candidate, &edit),
+                |candidate, feature| {
+                    owner
+                        .part_scenes
+                        .preview_feature_edit(&owner.files, document, candidate, feature)
+                        .map_err(oblikovati_api::Error)
+                },
+            )
+            .unwrap()
+            .triangles
+            .into_iter()
+            .map(|triangle| triangle.positions)
+            .collect::<Vec<_>>()
+    };
+    let before_metrics = owner.part_scenes.checkpoint_preview_metrics();
     assert!(owner.preview_fillet_edit(&draft).unwrap());
+    let first_metrics = owner.part_scenes.checkpoint_preview_metrics();
+    assert_eq!(first_metrics.0, before_metrics.0 + 1);
+    assert_eq!(first_metrics.1, before_metrics.1 + 1);
+    assert!(owner.preview_fillet_edit(&draft).unwrap());
+    let repeated_metrics = owner.part_scenes.checkpoint_preview_metrics();
+    assert_eq!(repeated_metrics, (first_metrics.0, first_metrics.1 + 1));
     assert_eq!(
         owner
             .files
@@ -108,6 +134,7 @@ fn typed_radius_edit_validates_before_commit_and_survives_history() {
         .iter()
         .map(|triangle| triangle.positions)
         .collect();
+    assert_eq!(preview, full_preview);
     assert_ne!(before_scene, preview);
     assert!(owner.preview_fillet_from_gui(None).unwrap());
     assert_eq!(radius(&mut owner, id), 1.);
