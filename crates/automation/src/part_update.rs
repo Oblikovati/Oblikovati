@@ -308,19 +308,10 @@ pub fn preview_part_datums<O: TransactionObserver, W: WorkspaceObserver, F: Docu
     candidate: &DocumentSnapshot,
     resolution: Option<PrismResolutionPolicy>,
 ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
-    let workspace = files.workspace();
-    let session = workspace
-        .session(document)
-        .map_err(|error| error.to_string())?;
-    let guid = workspace
-        .identity(document)
-        .map_err(|error| error.to_string())?
-        .internal_name;
-    let mut evaluator =
-        CertifiedNamedSolidEvaluator::with_optional_policy(session.history(), guid, resolution);
-    candidate
-        .evaluate_part_features(&mut evaluator)
-        .map(|result| result.datum_evaluation())
+    files
+        .workspace()
+        .preview_owned_part(document, resolution, candidate)
+        .map(|preview| preview.evaluation.datum_evaluation())
         .map_err(|error| error.to_string())
 }
 
