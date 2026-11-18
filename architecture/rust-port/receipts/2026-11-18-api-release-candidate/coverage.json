@@ -1,0 +1,26 @@
+{
+  "candidate_commit": "a87a7fc945232c1d73c67c6dcfd08967e4738aa3",
+  "checked_at_utc": "2026-11-18T13:24:56+00:00",
+  "go": {
+    "command": "go test ./... -coverprofile=<profile>; go tool cover -func=<profile>",
+    "directory": "go",
+    "aggregate_statement_percent": 86.5,
+    "packages_below_80_with_statements": []
+  },
+  "rust": {
+    "command": "CARGO_BUILD_JOBS=2 cargo llvm-cov --manifest-path rust/Cargo.toml --locked --summary-only",
+    "line_percent": 97.77,
+    "function_percent": 95.88,
+    "region_percent": 97.68
+  },
+  "artifacts": {
+    "go-coverage.txt": "4ed5c7e958e2375f13a346141d47f171e6a6f95b23f032facadd8ca5e8c70daa",
+    "go-coverage.out.gz": "a6bfa6c8b8d2fedf726a127d18344164d49ff96f5c6cb01c1dfb865f481f1e68",
+    "rust-coverage.txt.gz": "522570403f8f498aee0a68297746eff82f4b961af1075857d800b2c25203debe"
+  },
+  "hosted_ci": {
+    "run": "https://github.com/Oblikovati/Oblikovati.API/actions/runs/44312785242",
+    "commit": "a87a7fc945232c1d73c67c6dcfd08967e4738aa3",
+    "observed": "Linux gate and Windows passed; macOS queued."
+  }
+}
