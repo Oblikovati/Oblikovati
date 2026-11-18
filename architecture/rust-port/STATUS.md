@@ -35,6 +35,9 @@ using this status; the live scenario directory can change.
   Session guards reject stale or foreign histories and restore exact names only
   for the accepted edit. Real-kernel tests compare named face areas with a full
   replay, including a Fillet consumed by a later Chamfer (#4079).
+- Each document session owns its policy-scoped part result and checkpoints.
+  Hosts with the same policy share them; a policy change replaces and retires
+  the old result. Closing the document drops both (#4079).
 - The desktop replay owner creates checkpoints on demand for blend edit
   previews. Successive previews and accepted edits reuse matching checkpoints.
   Associative sketches use ordered recompute. The per-document session does not

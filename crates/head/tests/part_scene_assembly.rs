@@ -85,10 +85,24 @@ fn assembly_presentation_retains_current_component_replay() {
     scenes.ensure_current(&mut files, part).unwrap();
     scenes.empty();
     let session = files.workspace().session(part).unwrap();
-    assert!(scenes.replay.slot(part).unwrap().current(session).is_ok());
+    assert!(
+        scenes
+            .replay
+            .slot(&files, part)
+            .unwrap()
+            .current(session)
+            .is_ok()
+    );
     scenes.evaluate_assembly(&mut files, assembly).unwrap();
     let session = files.workspace().session(part).unwrap();
-    assert!(scenes.replay.slot(part).unwrap().current(session).is_ok());
+    assert!(
+        scenes
+            .replay
+            .slot(&files, part)
+            .unwrap()
+            .current(session)
+            .is_ok()
+    );
 }
 
 #[test]

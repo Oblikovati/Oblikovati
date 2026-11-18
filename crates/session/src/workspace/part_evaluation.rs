@@ -63,3 +63,51 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         self.session.adopt_part_evaluation(completed, slot)
     }
 }
+
+impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Publish a named part under its document policy; example: `commands.adopt_owned_part(policy, result)?`.
+    pub fn adopt_owned_part(
+        &mut self,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        completed: CompletedPartEvaluation<
+            oblikovati_martensite::NamedSolid,
+            oblikovati_martensite::EvaluationFailure,
+        >,
+    ) -> Result<(), String> {
+        self.session.adopt_owned_part(policy, completed)
+    }
+    /// Publish named sketch replay; example: `commands.adopt_owned_sketches(policy, result)?`.
+    pub fn adopt_owned_sketches(
+        &mut self,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        completed: CompletedPartSketchRecompute<
+            oblikovati_martensite::NamedSolid,
+            oblikovati_martensite::EvaluationFailure,
+        >,
+    ) -> Result<bool, String> {
+        self.session.adopt_owned_sketches(policy, completed)
+    }
+    /// Retain named checkpoints; example: `commands.adopt_owned_checkpoints(policy, result)?`.
+    pub fn adopt_owned_checkpoints(
+        &mut self,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        completed: CompletedPartCheckpoints<
+            oblikovati_martensite::NamedSolid,
+            oblikovati_martensite::EvaluationFailure,
+        >,
+    ) -> Result<(), String> {
+        self.session.adopt_owned_checkpoints(policy, completed)
+    }
+    /// Publish named replay checkpoints; example: `commands.adopt_owned_replayed_checkpoints(policy, result)?`.
+    pub fn adopt_owned_replayed_checkpoints(
+        &mut self,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        completed: CompletedPartCheckpoints<
+            oblikovati_martensite::NamedSolid,
+            oblikovati_martensite::EvaluationFailure,
+        >,
+    ) -> Result<(), String> {
+        self.session
+            .adopt_owned_replayed_checkpoints(policy, completed)
+    }
+}
