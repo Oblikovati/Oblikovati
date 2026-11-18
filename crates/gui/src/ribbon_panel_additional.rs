@@ -250,19 +250,21 @@ fn draw_window(
                 }
             }
             ui.separator();
-            let active = expansion.pinned.then(|| {
-                ui.push_style_color(
-                    imgui::StyleColor::Button,
-                    ui.style_color(imgui::StyleColor::ButtonActive),
-                )
-            });
-            let clicked = ui.small_button("   Pin##additional-pin");
-            draw_pin(ui);
-            if clicked {
-                expansion.pinned = !expansion.pinned;
+            if shows_pin(display) {
+                let active = expansion.pinned.then(|| {
+                    ui.push_style_color(
+                        imgui::StyleColor::Button,
+                        ui.style_color(imgui::StyleColor::ButtonActive),
+                    )
+                });
+                let clicked = ui.small_button("   Pin##additional-pin");
+                draw_pin(ui);
+                if clicked {
+                    expansion.pinned = !expansion.pinned;
+                }
+                drop(active);
+                ui.same_line();
             }
-            drop(active);
-            ui.same_line();
             let title_clicked = ui.small_button(panel.label());
             if ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Right) {
                 display.request_expansion_context(tab, panel);
@@ -300,6 +302,10 @@ fn draw_window(
         });
     close
 }
+fn shows_pin(display: &RibbonDisplayState) -> bool {
+    !(display.mode == crate::application::ribbon_display::RibbonDisplay::Tabs
+        && display.temporary == Some(crate::application::ribbon_display::TemporaryPanel::WholeTab))
+}
 fn draw_pin(ui: &Ui) {
     let [x, y] = ui.item_rect_min();
     let scale = ui.current_font_size() / 13.;
@@ -332,6 +338,18 @@ fn inside(point: [f32; 2], bounds: [[f32; 2]; 2]) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn temporary_tab_footer_hides_pin_only_in_tabs_mode() {
+        use crate::application::ribbon_display::{RibbonDisplay, TemporaryPanel};
+        let mut display = RibbonDisplayState::default();
+        assert!(shows_pin(&display));
+        display.mode = RibbonDisplay::Tabs;
+        display.temporary = Some(TemporaryPanel::WholeTab);
+        assert!(!shows_pin(&display));
+        display.mode = RibbonDisplay::PanelTitles;
+        display.temporary = Some(TemporaryPanel::Group(RibbonPanel::PartModify));
+        assert!(shows_pin(&display));
+    }
     #[test]
     fn switching_documents_drops_pinned_expansions() {
         let mut expansions = PanelExpansions::default();
