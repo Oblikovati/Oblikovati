@@ -109,6 +109,9 @@ fn certified_resolution(maximum_tolerance: f64) -> oblikovati_martensite::PrismR
         maximum_tolerance,
     }
 }
+fn certification_document() -> oblikovati_model::identity::DocumentGuid {
+    "11111111-2222-3333-4444-555555555555".parse().unwrap()
+}
 fn create_certified(
     owner: &mut NativePartSession,
     limit: f64,
@@ -121,9 +124,16 @@ fn create_certified(
                 .map_err(|cause| cause.to_string())
         },
         |candidate, id| {
-            let mut backend =
-                oblikovati_martensite::CertifiedPrismEvaluator::new(certified_resolution(limit));
-            let replay = candidate
+            let history = oblikovati_model::history::SnapshotReplay::new(candidate)
+                .map_err(|cause| cause.to_string())?;
+            let mut backend = oblikovati_martensite::CertifiedNamedSolidEvaluator::new(
+                history.history(),
+                certification_document(),
+                certified_resolution(limit),
+            );
+            let replay = history
+                .history()
+                .snapshot()
                 .evaluate_part_features(&mut backend)
                 .map_err(|cause| cause.to_string())?;
             if replay.body(id).is_none() {
@@ -151,14 +161,21 @@ fn candidate_certification_rolls_back_a_refused_extrusion_before_commit() {
     assert_eq!(owner.snapshot().work_geometry.features().len(), before);
     assert!(owner.snapshot().sketches.get(SKETCH).unwrap().visible());
     let id = create_certified(&mut owner, 1e-5).unwrap();
-    let mut evaluator =
-        oblikovati_martensite::CertifiedPrismEvaluator::new(certified_resolution(1e-5));
+    let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::new(
+        owner.history(),
+        certification_document(),
+        certified_resolution(1e-5),
+    );
     let replay = owner
         .snapshot()
         .evaluate_part_features(&mut evaluator)
         .unwrap();
     let body = replay.body(id).unwrap();
-    assert_analytic_scalar(body.body.report().properties.volume, 24.);
+    assert_analytic_scalar(
+        body.volume(owner.history(), certification_document())
+            .unwrap(),
+        24.,
+    );
     use oblikovati_model::feature::part::PartFeatureEvaluator;
     assert!(evaluator.verify_body_reference(body, b"unscoped").is_err());
     owner.undo().unwrap();
