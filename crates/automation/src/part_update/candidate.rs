@@ -83,9 +83,19 @@ impl PartReplayService {
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<(), String> {
-        self.ensure_current(files, document)?;
         if self.checkpoint_prefix(files, document)?.is_some() {
             return Ok(());
+        }
+        let session = files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?;
+        let needs_sketch_recompute = crate::datums::requires_part_replay(session.snapshot());
+        let current = self
+            .slot(files, document)
+            .is_some_and(|slot| slot.current(session).is_ok());
+        if needs_sketch_recompute {
+            self.ensure_current(files, document)?;
         }
         let policy = self
             .resolution
@@ -105,10 +115,14 @@ impl PartReplayService {
             .prepare_part_evaluation()
             .evaluate_checkpoints(&mut evaluator)
             .map_err(|error| error.to_string())?;
-        files
+        let mut commands = files
             .commands(document)
-            .map_err(|error| error.to_string())?
-            .adopt_owned_checkpoints(self.resolution, completed)?;
+            .map_err(|error| error.to_string())?;
+        if current || needs_sketch_recompute {
+            commands.adopt_owned_checkpoints(self.resolution, completed)?;
+        } else {
+            commands.adopt_owned_full_checkpoints(self.resolution, completed)?;
+        }
         Ok(())
     }
     /// Borrow current checkpoints when available; example: `owner.checkpoint_prefix(files, id)?`.

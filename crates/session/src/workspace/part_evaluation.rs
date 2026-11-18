@@ -98,6 +98,17 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
     ) -> Result<(), String> {
         self.session.adopt_owned_checkpoints(policy, completed)
     }
+    /// Publish a full replay and its boundaries; example: `commands.adopt_owned_full_checkpoints(policy, result)?`.
+    pub fn adopt_owned_full_checkpoints(
+        &mut self,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        completed: CompletedPartCheckpoints<
+            oblikovati_martensite::NamedSolid,
+            oblikovati_martensite::EvaluationFailure,
+        >,
+    ) -> Result<(), String> {
+        self.session.adopt_owned_full_checkpoints(policy, completed)
+    }
     /// Publish named replay checkpoints; example: `commands.adopt_owned_replayed_checkpoints(policy, result)?`.
     pub fn adopt_owned_replayed_checkpoints(
         &mut self,

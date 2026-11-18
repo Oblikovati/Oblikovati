@@ -22,6 +22,30 @@ fn open_named_prism(owner: &mut TestOwner, name: &str) -> u64 {
 }
 
 #[test]
+fn cold_checkpoint_request_publishes_part_with_one_replay() {
+    let (mut owner, _) = owner();
+    let first = open_named_prism(&mut owner, "cold-checkpoint-first.opd");
+    let second = open_named_prism(&mut owner, "cold-checkpoint-second.opd");
+    let policy = crate::part_scene::resolution_policy::desktop_policy();
+    let mut replay = PartReplayService::with_policy(policy).unwrap();
+    replay.ensure_checkpoints(&mut owner.files, first).unwrap();
+    assert_eq!(replay.replay_count(), 1);
+    assert!(replay.current_part(&owner.files, first).is_ok());
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, first)
+            .unwrap()
+            .is_some()
+    );
+    assert!(replay.slot(&owner.files, second).is_none());
+    replay.ensure_checkpoints(&mut owner.files, first).unwrap();
+    assert_eq!(replay.replay_count(), 1);
+    replay.ensure_checkpoints(&mut owner.files, second).unwrap();
+    assert_eq!(replay.replay_count(), 2);
+    assert!(replay.current_part(&owner.files, second).is_ok());
+}
+
+#[test]
 fn checkpoint_cache_is_lazy_and_scoped_to_each_document_generation() {
     let (mut owner, _) = owner();
     let first = open_named_prism(&mut owner, "checkpoint-first.opd");
