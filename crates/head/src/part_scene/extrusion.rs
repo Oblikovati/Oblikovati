@@ -62,6 +62,26 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
         }
         Ok(replay.ordered_bodies().count())
     }
+    fn replay_policy(&self) -> Option<PrismResolutionPolicy> {
+        Some(self.0)
+    }
+    fn capture_with_prefix(
+        &self,
+        history: &oblikovati_model::history::DocumentEditHistory,
+        document: DocumentGuid,
+        candidate: &DocumentSnapshot,
+        feature: FeatureId,
+        prefix: &oblikovati_automation::ExtrudeReplayPrefix,
+    ) -> Result<Option<oblikovati_automation::ExtrudePrefixReplay>, String> {
+        let mut evaluator = CertifiedNamedSolidEvaluator::with_policy(history, document, self.0);
+        let Some(result) = prefix.prepare_tail(history, candidate, feature, &mut evaluator)? else {
+            return Ok(None);
+        };
+        let count = result.body_count();
+        let captured =
+            result.capture(history, |_, body| body.capture_detached(history, document))?;
+        Ok(Some((count, captured)))
+    }
     fn feature_health(
         &self,
         candidate: &DocumentSnapshot,

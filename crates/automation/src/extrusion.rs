@@ -19,6 +19,26 @@ use oblikovati_model::{
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
+mod replay;
+use replay::{ExtrudeProjection, adopt_extrude_candidate, prepare_owned_prefix};
+
+/// A current named result prefix for certified extrusion validation.
+pub type ExtrudeReplayPrefix = oblikovati_session::part_evaluation::PartCandidatePrefix<
+    oblikovati_martensite::NamedSolid,
+    oblikovati_martensite::EvaluationFailure,
+>;
+/// Detached named bodies produced by an extrusion candidate.
+pub type CapturedExtrudeCandidate = oblikovati_session::part_evaluation::CapturedPartCandidate<
+    oblikovati_martensite::CapturedNamedSolid,
+    oblikovati_martensite::EvaluationFailure,
+>;
+/// The candidate body count and its captured results.
+pub type ExtrudePrefixReplay = (usize, CapturedExtrudeCandidate);
+type PolicyExtrudePrefix = (
+    oblikovati_martensite::PrismResolutionPolicy,
+    ExtrudeReplayPrefix,
+);
+
 /// Geometry capability used before committing an Extrude command.
 pub trait ExtrudeRegionAccess {
     /// Resolve a current profile index to durable authored lineage; example: `backend.region(snapshot, sketch, 0)?`.
@@ -35,6 +55,23 @@ pub trait ExtrudeRegionAccess {
         document: DocumentGuid,
         feature: FeatureId,
     ) -> Result<usize, String>;
+    /// Report a policy only when this validator can certify retained replay.
+    /// Example: `backend.replay_policy()` before acquiring a prefix.
+    fn replay_policy(&self) -> Option<oblikovati_martensite::PrismResolutionPolicy> {
+        None
+    }
+    /// Validate a candidate against its current retained prefix when supported.
+    /// Example: `backend.capture_with_prefix(history, document, candidate, feature, prefix)?`.
+    fn capture_with_prefix(
+        &self,
+        _history: &oblikovati_model::history::DocumentEditHistory,
+        _document: DocumentGuid,
+        _candidate: &DocumentSnapshot,
+        _feature: FeatureId,
+        _prefix: &ExtrudeReplayPrefix,
+    ) -> Result<Option<ExtrudePrefixReplay>, String> {
+        Ok(None)
+    }
     /// Replay a feature and return its failure reason, or an empty string when healthy or suppressed.
     /// Example: `backend.feature_health(candidate, feature)?`.
     fn feature_health(
@@ -118,29 +155,32 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     backend: &dyn ExtrudeRegionAccess,
     prepared: PreparedExtrusion,
 ) -> Result<Vec<u8>, Error> {
-    let name = prepared.name.clone();
     let guid = files
         .workspace()
         .identity(document)
         .map_err(api_error)?
         .internal_name;
-    files
+    let prefix = prepare_owned_prefix(files, document, guid, backend)?;
+    let name = prepared.name.clone();
+    let projection = ExtrudeProjection {
+        backend,
+        guid,
+        name: &name,
+        prefix: prefix.as_ref(),
+    };
+    let ((response, captured), transition) = files
         .commands(document)
         .map_err(api_error)?
-        .run_projected(
+        .run_projected_with_transition(
             "Create extrusion",
             |snapshot, ids| prepared.create(snapshot, ids),
-            |candidate, id| {
-                let bodies = backend.validate(candidate, guid, id).map_err(Error)?;
-                let feature = candidate.work_geometry.get(id).map_err(api_error)?;
-                crate::encode(&serde_json::json!({
-                    "id": id.0, "name": feature.name(), "kind": feature.definition().kind(),
-                    "suppressed": candidate.feature_suppressed(id).map_err(api_error)?,
-                    "health": "", "feature": name, "bodies": bodies, "healthy": true
-                }))
-            },
+            |candidate, id, history| projection.project(candidate, id, history),
         )
-        .map_err(api_error)
+        .map_err(api_error)?;
+    if let (Some((policy, _)), Some(captured)) = (prefix, captured) {
+        adopt_extrude_candidate(files, document, guid, policy, captured, &transition)?;
+    }
+    Ok(response)
 }
 
 fn parse_request(request: wire::AddFeatureArgs) -> Result<Extrude, Error> {

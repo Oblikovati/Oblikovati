@@ -42,7 +42,8 @@ records the policy, and checks each transfer before adoption. Each captured
 named body also checks its own source history, even when document IDs match.
 The adapter completes transfers through the model without a session dependency.
 Prefixes share immutable results and retire when their slot is replaced or the
-document closes. Parameter changes use current feature and sketch reads to find
+document closes. Certified Extrude creation can adopt its validated prefix replay
+directly; a validator without this capability keeps its own validation path. Parameter changes use current feature and sketch reads to find
 the earliest dirty boundary; unclassified inputs restart replay. Martensite
 checkpoint tests compare the changed Fillet and each named face with a full
 replay. Parameter Set and Update use a current checkpoint when its clean
