@@ -371,3 +371,6 @@ mod replay_ownership;
 
 #[path = "part_scene/blend_replay.rs"]
 mod blend_replay;
+
+#[path = "part_scene/move_body_scene.rs"]
+mod move_body_scene;

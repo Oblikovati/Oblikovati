@@ -4,7 +4,10 @@
 pub mod conditional_prism;
 mod datums;
 pub mod legacy_profile;
+mod move_body;
+mod part_feature_transaction;
 mod part_owner;
+pub use move_body::{PreparedMoveBody, prepare_move_body};
 mod reference_bytes;
 pub use datums::{
     DATUM_COMMAND_METHODS, DATUM_QUERY_METHODS, requires_part_replay, work_plane_reference,

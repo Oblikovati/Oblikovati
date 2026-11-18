@@ -4,7 +4,7 @@ use super::*;
 use oblikovati_api::wire::{MassPropertiesArgs, MeasureArgs, featureargs::Hole};
 use oblikovati_model::identity::SemanticReferenceName;
 
-fn face_key(owner: &TestOwner, document: u64) -> String {
+pub(super) fn face_key(owner: &TestOwner, document: u64) -> String {
     let guid = owner
         .files
         .workspace()
@@ -17,7 +17,7 @@ fn face_key(owner: &TestOwner, document: u64) -> String {
         .unwrap();
     key.iter().map(|byte| format!("{byte:02x}")).collect()
 }
-fn face_area(owner: &mut TestOwner, face: &str) -> f64 {
+pub(super) fn face_area(owner: &mut TestOwner, face: &str) -> f64 {
     let result = Client::new(owner.document_host())
         .analysis()
         .measure(&MeasureArgs {

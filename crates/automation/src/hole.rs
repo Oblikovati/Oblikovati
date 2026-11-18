@@ -47,7 +47,15 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .snapshot();
     let prepared = prepare_hole(snapshot, body, face, &input)?;
     let prefix = owner.candidate_prefix(files, document).map_err(Error)?;
-    let ((reply, candidate), transition) = create(files, document, guid, policy, prefix, prepared)?;
+    let ((reply, candidate), transition) = crate::part_feature_transaction::create(
+        files,
+        document,
+        guid,
+        policy,
+        prefix,
+        "hole",
+        |candidate, ids| prepared.create(candidate, ids),
+    )?;
     crate::fillet::publish_blend_candidate(files, Some(owner), document, candidate, &transition)?;
     Ok(reply)
 }
@@ -122,9 +130,6 @@ pub fn prepare_hole(
 fn api_error(error: impl std::fmt::Display) -> Error {
     Error(error.to_string())
 }
-
-mod transaction;
-use transaction::create;
 
 #[cfg(test)]
 #[path = "../tests/hole/mod.rs"]
