@@ -358,3 +358,6 @@ mod lazy_producer;
 
 #[path = "part_scene/replay_ownership.rs"]
 mod replay_ownership;
+
+#[path = "part_scene/blend_replay.rs"]
+mod blend_replay;

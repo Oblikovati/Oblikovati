@@ -13,6 +13,7 @@ mod assembly_occurrence_edits;
 mod assembly_placement;
 mod assembly_references;
 mod attachments;
+mod blend;
 mod document_update;
 pub use assembly_references::{AssemblyReferenceFailure, AssemblyReferenceReport};
 pub use document_update::DOCUMENT_UPDATE_METHODS;
@@ -427,11 +428,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         }
         if method == METHOD_FEATURES_ADD {
             let args: AddFeatureArgs = decode(method, request)?;
-            if args.kind == oblikovati_api::wire::featureargs::KIND_FILLET {
-                return crate::fillet::apply_wire(self.files, self.fillet, args);
-            }
-            if args.kind == oblikovati_api::wire::featureargs::KIND_CHAMFER {
-                return crate::chamfer::apply(self.files, self.fillet, args);
+            if [
+                oblikovati_api::wire::featureargs::KIND_FILLET,
+                oblikovati_api::wire::featureargs::KIND_CHAMFER,
+            ]
+            .contains(&args.kind.as_str())
+            {
+                return self.add_blend(args);
             }
             return crate::extrusion::apply(self.files, self.extrusion, request);
         }

@@ -62,6 +62,14 @@ impl DesktopPartScenes {
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
     for DesktopPartScenes
 {
+    fn blend_body(
+        &mut self,
+        files: &mut FileWorkspace<O, W, F>,
+        document: u64,
+        edges: &[Vec<u8>],
+    ) -> Result<Vec<u8>, String> {
+        self.replay.blend_body(files, document, edges)
+    }
     fn update_part(
         &mut self,
         files: &mut FileWorkspace<O, W, F>,
