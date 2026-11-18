@@ -9,7 +9,6 @@ mod context_bounds;
 mod docking_menu;
 mod panel_selector;
 pub(crate) use panel_selector::PANEL_SELECTOR_WIDTH;
-
 const CYCLE: [RibbonDisplay; 4] = [
     RibbonDisplay::Full,
     RibbonDisplay::PanelButtons,
@@ -266,7 +265,8 @@ impl RibbonDisplayState {
             &mut crate::application::quick_access_toolbar::QuickAccessToolbar,
         ),
     ) {
-        if std::mem::take(&mut self.context_requested) {
+        let context_opened = std::mem::take(&mut self.context_requested);
+        if context_opened {
             ui.open_popup(CONTEXT_MENU);
         }
         let Some(_menu) = ui.begin_popup(CONTEXT_MENU) else {
@@ -281,6 +281,9 @@ impl RibbonDisplayState {
         };
         let submenu_open = self.submenu_bounds.is_some();
         self.capture_context_bounds(ui);
+        if context_opened {
+            ui.set_keyboard_focus_here();
+        }
         self.appearance_menu(ui, submenu_open, customization);
         if self.context_command.is_some() {
             self.expanded_command_menu(ui, customization, toolbar);
@@ -483,7 +486,6 @@ impl RibbonDisplayState {
         .flatten()
     }
 }
-
 fn submenu_row_pressed(ui: &Ui, label: &str, submenu_open: bool) -> bool {
     let selected = crate::widget_abi::dialog_selectable(ui, label, false);
     // ImGui consumes the first click to dismiss a child popup before its parent row activates.

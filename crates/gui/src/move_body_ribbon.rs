@@ -35,20 +35,37 @@ pub(crate) fn main_button(
     if hovered && ui.is_mouse_clicked(imgui::MouseButton::Right) {
         quick_access.command_took_right_click = true;
     }
-    if hovered && ui.is_mouse_released(imgui::MouseButton::Right) {
+    let opened = hovered && ui.is_mouse_released(imgui::MouseButton::Right);
+    if opened {
         ui.open_popup("##move-body-main-context");
     }
     let Some(_menu) = ui.begin_popup("##move-body-main-context") else {
         return;
     };
-    if ui.menu_item("Move to Expanded Panel") {
+    if opened {
+        ui.set_keyboard_focus_here();
+    }
+    if menu_item(ui, "Move to Expanded Panel", true) {
         customization.relocate_builtin_reported(MAIN, false);
     }
-    if ui
-        .menu_item_config("Add to Quick Access Toolbar")
-        .enabled(!quick_access.has_ribbon_command(state, LABEL))
-        .build()
-    {
+    if menu_item(
+        ui,
+        "Add to Quick Access Toolbar",
+        !quick_access.has_ribbon_command(state, LABEL),
+    ) {
         quick_access.add_ribbon_command(state, LABEL);
     }
+}
+
+/// Activate a context-menu row with pointer or focused Enter; example: `menu_item(ui, "Move", true)`.
+pub(crate) fn menu_item(ui: &Ui, label: &str, enabled: bool) -> bool {
+    let clicked = ui.menu_item_config(label).enabled(enabled).build();
+    let keyboard = enabled
+        && ui.is_item_focused()
+        && (ui.is_key_pressed_no_repeat(imgui::Key::Enter)
+            || ui.is_key_pressed_no_repeat(imgui::Key::KeypadEnter));
+    if keyboard {
+        ui.close_current_popup();
+    }
+    clicked || keyboard
 }

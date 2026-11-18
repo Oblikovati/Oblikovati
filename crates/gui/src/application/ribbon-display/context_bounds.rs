@@ -37,14 +37,14 @@ impl RibbonDisplayState {
             return;
         }
         let label = crate::move_body_ribbon::LABEL;
-        if ui
-            .menu_item_config("Add to Quick Access Toolbar")
-            .enabled(!toolbar.has_ribbon_command(state, label))
-            .build()
-        {
+        if crate::move_body_ribbon::menu_item(
+            ui,
+            "Add to Quick Access Toolbar",
+            !toolbar.has_ribbon_command(state, label),
+        ) {
             toolbar.add_ribbon_command(state, label);
         }
-        if ui.menu_item("Move to Main Panel") {
+        if crate::move_body_ribbon::menu_item(ui, "Move to Main Panel", true) {
             match crate::move_body_ribbon::set_main(customization, true) {
                 Ok(()) => self.context_relocated = self.context_expansion,
                 Err(error) => customization.report_command_error(error),
