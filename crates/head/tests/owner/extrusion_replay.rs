@@ -2,6 +2,63 @@
 use super::*;
 
 #[test]
+fn appended_preview_matches_full_replay_faces() {
+    let (owner, _) = owner();
+    let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
+    let document = open_sketch(&mut owner);
+    assert!(
+        owner
+            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width")
+            .unwrap()
+    );
+    let workspace = owner.files.workspace();
+    let session = workspace.session(document).unwrap();
+    let guid = workspace.identity(document).unwrap().internal_name;
+    let policy = oblikovati_martensite::PrismResolutionPolicy::Fixed(resolution());
+    let prepared = oblikovati_automation::prepare_extrusion(
+        session.snapshot(),
+        owner.extrusion_access.as_ref().unwrap(),
+        &request(),
+    )
+    .unwrap();
+    session
+        .preview_projected(
+            |candidate, ids| prepared.create(candidate, ids),
+            |candidate, feature| {
+                let mut evaluator =
+                    oblikovati_martensite::CertifiedNamedSolidEvaluator::with_policy(
+                        session.history(),
+                        guid,
+                        policy,
+                    );
+                let full = candidate.evaluate_part_features(&mut evaluator).unwrap();
+                let expected = full.body(feature).unwrap();
+                let keys = expected
+                    .face_reference_keys(session.history(), guid)
+                    .unwrap();
+                assert!(!keys.is_empty());
+                let (_, reused) = workspace
+                    .inspect_owned_append(document, Some(policy), candidate, feature, |actual| {
+                        assert_eq!(
+                            actual.face_reference_keys(session.history(), guid).unwrap(),
+                            keys
+                        );
+                        for key in &keys {
+                            assert_eq!(
+                                actual.face_area(session.history(), guid, key).unwrap(),
+                                expected.face_area(session.history(), guid, key).unwrap()
+                            );
+                        }
+                    })
+                    .unwrap();
+                assert!(reused);
+                Ok::<_, oblikovati_api::Error>(())
+            },
+        )
+        .unwrap();
+}
+
+#[test]
 fn extrusion_commit_publishes_the_certified_document_result_before_display() {
     let (owner, _) = owner();
     let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
@@ -142,6 +199,27 @@ fn extrusion_preview_does_not_reuse_a_different_policy() {
     )
     .unwrap();
     replay.ensure_part(&mut owner.files, document).unwrap();
+    for factor in [3., 4., 5.] {
+        let mut other = resolution();
+        other.weld *= factor;
+        let mut other_replay = oblikovati_automation::PartReplayService::with_policy(
+            oblikovati_martensite::PrismResolutionPolicy::Fixed(other),
+        )
+        .unwrap();
+        other_replay
+            .ensure_part(&mut owner.files, document)
+            .unwrap();
+    }
+    let original_policy = oblikovati_martensite::PrismResolutionPolicy::Fixed(resolution());
+    assert!(
+        owner
+            .files
+            .workspace()
+            .session(document)
+            .unwrap()
+            .owned_part_prefix(Some(original_policy))
+            .is_none()
+    );
     let before = owner.part_scenes.extrusion_prefix_previews();
     let generation = owner
         .files

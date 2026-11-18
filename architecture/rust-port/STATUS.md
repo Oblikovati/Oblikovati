@@ -57,6 +57,12 @@ using this status; the live scenario directory can change.
   identity and policy. A private preview does not publish a result or change
   the document generation; the Fillet test compares full and checkpoint
   previews and checks cancellation and history (#4079).
+- Extrude creation previews also use the session. A current append prefix is
+  inspected under its generation guard without copying all bodies; tests compare
+  named face areas with a full replay and cover policy isolation (#4079).
+- The native Extrude parameter-change test cannot find its Parameters window;
+  it fails at the same lookup on clean parent `6cbed854e` (#4078). It is not
+  acceptance evidence for this change.
 - A cold checkpoint request for a part without associative sketch recompute
   publishes its result and boundaries from one replay instead of two. Ownership
   tests cover repeat requests and isolation between documents (#4079).
