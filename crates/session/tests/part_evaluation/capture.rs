@@ -239,3 +239,55 @@ fn model_candidate_guard_tracks_the_exact_accepted_history_and_inputs() {
     owner.undo().unwrap();
     assert!(!guard.matches(&transition, owner.history()));
 }
+
+#[test]
+fn model_transfer_rejects_wrong_recipe_and_stale_completion() {
+    use oblikovati_model::feature::part::CapturedPartTransfer;
+    let mut owner = session(7);
+    let scope = owner.history().evaluation_scope();
+    let old = owner
+        .history()
+        .snapshot()
+        .evaluate_part_features(&mut FakePrismEvaluator::default())
+        .unwrap();
+    let old_checkpoints = owner
+        .history()
+        .snapshot()
+        .evaluate_part_with_checkpoints(&mut FakePrismEvaluator::default())
+        .unwrap();
+    let (captured, transition) = owner
+        .run_projected_with_transition(
+            "Second prism",
+            |snapshot, ids| {
+                snapshot
+                    .create_sketch_prism("Second", fixture::selected_prism_definition(), ids)
+                    .map_err(|error| error.to_string())
+            },
+            |snapshot, _, history| {
+                assert!(
+                    CapturedPartTransfer::capture_result(7, &scope, snapshot, old, history)
+                        .is_err()
+                );
+                assert!(
+                    CapturedPartTransfer::capture_checkpoints(
+                        7,
+                        &scope,
+                        snapshot,
+                        old_checkpoints,
+                        history,
+                    )
+                    .is_err()
+                );
+                let evaluated = snapshot
+                    .evaluate_part_features(&mut FakePrismEvaluator::default())
+                    .map_err(|error| error.to_string())?;
+                CapturedPartTransfer::capture_result(7, &scope, snapshot, evaluated, history)
+            },
+        )
+        .unwrap();
+    let completed = captured
+        .complete(7, &transition, owner.history(), |payload, _| Ok(payload))
+        .unwrap();
+    owner.undo().unwrap();
+    assert!(completed.into_current(7, owner.history()).is_err());
+}

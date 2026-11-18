@@ -39,9 +39,8 @@ pub struct PartCheckpointCandidate<Body, Failure> {
 }
 /// Detached boundaries awaiting an accepted document transition.
 pub struct CapturedPartCheckpointCandidate<Body, Failure> {
-    document: u64,
-    guard: oblikovati_model::history::PartCandidateGuard,
-    checkpoints: PartReplayCheckpoints<Body, Failure>,
+    transfer:
+        oblikovati_model::feature::part::CapturedPartTransfer<PartReplayCheckpoints<Body, Failure>>,
 }
 impl super::request::PartEvaluationRequest {
     /// Solve sketches and capture matching checkpoints in a single ordered replay.
@@ -268,17 +267,24 @@ impl<Body, Failure: Clone> PartCheckpointCandidate<Body, Failure> {
             return Err("part checkpoint capture: expected unchanged source after capture".into());
         }
         Ok(CapturedPartCheckpointCandidate {
-            document: self.document,
-            guard: oblikovati_model::history::PartCandidateGuard::capture(
+            transfer: oblikovati_model::feature::part::CapturedPartTransfer::capture_checkpoints(
+                self.document,
                 &self.source,
                 &self.candidate,
+                checkpoints,
                 history,
             )?,
-            checkpoints,
         })
     }
 }
 impl<Body, Failure> CapturedPartCheckpointCandidate<Body, Failure> {
+    /// Move the sealed boundaries to a kernel adapter; example: `candidate.into_transfer()`.
+    pub fn into_transfer(
+        self,
+    ) -> oblikovati_model::feature::part::CapturedPartTransfer<PartReplayCheckpoints<Body, Failure>>
+    {
+        self.transfer
+    }
     /// Restore captured boundaries only for their accepted edit and current inputs.
     /// The mapper must validate its own kernel bodies and names.
     /// Example: `candidate.try_complete(&transition, &session, restore)?`.
@@ -292,28 +298,33 @@ impl<Body, Failure> CapturedPartCheckpointCandidate<Body, Failure> {
             &DocumentEditHistory,
         ) -> Result<Mapped, String>,
     ) -> Result<CompletedPartCheckpoints<Mapped, Failure>, String> {
-        if self.document != session.document || !self.guard.matches(transition, &session.history) {
-            return Err(format!(
-                "part checkpoint document {}, session {}: expected its accepted edit and current inputs",
-                self.document, session.document
-            ));
-        }
-        let checkpoints = self
-            .checkpoints
-            .try_map_owned_bodies(|id, body| restore(id, body, &session.history))?;
-        if !self.guard.matches(transition, &session.history) {
-            return Err(
-                "part checkpoint completion: expected unchanged inputs after restore".into(),
-            );
-        }
-        Ok(CompletedPartCheckpoints {
-            document: session.document,
-            scope: session.history.evaluation_scope(),
-            checkpoints,
-        })
+        let completed = self.transfer.complete(
+            session.document,
+            transition,
+            &session.history,
+            |checkpoints, history| {
+                checkpoints.try_map_owned_bodies(|id, body| restore(id, body, history))
+            },
+        )?;
+        session.complete_checkpoint_transfer(completed)
     }
 }
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Seal completed model checkpoints to this session before publication.
+    /// Example: `session.complete_checkpoint_transfer(completed)?`.
+    pub fn complete_checkpoint_transfer<Body, Failure>(
+        &self,
+        completed: oblikovati_model::feature::part::CompletedPartTransfer<
+            PartReplayCheckpoints<Body, Failure>,
+        >,
+    ) -> Result<CompletedPartCheckpoints<Body, Failure>, String> {
+        let checkpoints = completed.into_current(self.document, &self.history)?;
+        Ok(CompletedPartCheckpoints {
+            document: self.document,
+            scope: self.history.evaluation_scope(),
+            checkpoints,
+        })
+    }
     /// Publish an accepted checkpoint set and its final part result together.
     /// Example: `session.adopt_replayed_checkpoints(completed, &mut part, &mut checkpoints)?`.
     pub fn adopt_replayed_checkpoints<Body: Clone, Failure: Clone>(

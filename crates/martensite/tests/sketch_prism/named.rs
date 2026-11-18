@@ -272,3 +272,52 @@ fn selection_center_rebinds_after_edit_undo_and_redo() {
         [2., 1.5, 3.],
     );
 }
+
+fn complete_named_candidate<O: oblikovati_session::TransactionObserver, F>(
+    candidate: oblikovati_session::part_evaluation::CapturedPartCandidate<
+        oblikovati_martensite::CapturedNamedSolid,
+        F,
+    >,
+    transition: &oblikovati_model::history::EvaluationTransition,
+    session: &oblikovati_session::DocumentSession<O>,
+    document: DocumentGuid,
+) -> Result<
+    oblikovati_session::part_evaluation::CompletedPartEvaluation<
+        oblikovati_martensite::NamedSolid,
+        F,
+    >,
+    String,
+> {
+    let completed = oblikovati_martensite::complete_named_candidate(
+        candidate.into_transfer(),
+        session.document_id(),
+        transition,
+        session.history(),
+        document,
+    )?;
+    session.complete_part_transfer(completed)
+}
+fn complete_named_checkpoints<O: oblikovati_session::TransactionObserver, F>(
+    candidate: oblikovati_session::part_evaluation::CapturedPartCheckpointCandidate<
+        oblikovati_martensite::CapturedNamedSolid,
+        F,
+    >,
+    transition: &oblikovati_model::history::EvaluationTransition,
+    session: &oblikovati_session::DocumentSession<O>,
+    document: DocumentGuid,
+) -> Result<
+    oblikovati_session::part_evaluation::CompletedPartCheckpoints<
+        oblikovati_martensite::NamedSolid,
+        F,
+    >,
+    String,
+> {
+    let completed = oblikovati_martensite::complete_named_checkpoints(
+        candidate.into_transfer(),
+        session.document_id(),
+        transition,
+        session.history(),
+        document,
+    )?;
+    session.complete_checkpoint_transfer(completed)
+}

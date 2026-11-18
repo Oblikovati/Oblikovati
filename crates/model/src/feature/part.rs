@@ -24,7 +24,9 @@ pub use evaluate::{
 };
 mod prefix_replay;
 mod reads;
+mod transfer;
 pub use prefix_replay::BorrowedPartReplay;
+pub use transfer::{CapturedPartTransfer, CompletedPartTransfer};
 mod checkpoint_suffix;
 mod replay_boundary;
 mod replay_observer;

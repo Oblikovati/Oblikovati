@@ -36,14 +36,12 @@ tests check a directed-boundary decline beside a valid independent prism, and a
 failed host plane followed by recovery. Existing owner edit, undo, package,
 condition, placed-frame, and native pixel tests consume the same path.
 
-The model stores each captured candidate's source generation and replay inputs.
-The session guards checkpoint capture and adoption by document, generation, and
-accepted edit. Each captured named body also checks that its own source history
+The model seals each captured result to its evaluated inputs, source generation,
+and accepted edit. The session checks the completed transfer before adoption. Each captured named body also checks that its own source history
 matches the accepted edit, including when document identifiers are equal. The
-adapter still depends on the session for this guarded completion; moving the
-result store into the session must preserve that boundary. The replay owner
-reuses checkpoints for blend creation and edits
-when policy and sketch inputs permit it. Associative sketches use ordered
+adapter completes transfers through the model without a session dependency. The
+replay owner reuses checkpoints for blend creation and edits when policy and
+sketch inputs permit it. Associative sketches use ordered
 recompute. General dirty-prefix replay, session ownership, full validity levels,
 achieved tolerance budgets, and operation-result requirements remain open.
 
