@@ -33,6 +33,16 @@ struct FakePrismEvaluator {
 impl PartFeatureEvaluator for FakePrismEvaluator {
     type Body = f64;
     type Failure = &'static str;
+    fn resolve_planar_face(
+        &self,
+        _body: &Self::Body,
+        key: &[u8],
+    ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
+        Err(oblikovati_model::feature::part::unavailable_planar_face(
+            key,
+        ))
+    }
+
     fn evaluate_blend(
         &mut self,
         kind: oblikovati_model::feature::part::PartBlendKind,
@@ -349,6 +359,16 @@ struct EditingPrismEvaluator<'a> {
 impl PartFeatureEvaluator for EditingPrismEvaluator<'_> {
     type Body = f64;
     type Failure = &'static str;
+    fn resolve_planar_face(
+        &self,
+        _body: &Self::Body,
+        key: &[u8],
+    ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
+        Err(oblikovati_model::feature::part::unavailable_planar_face(
+            key,
+        ))
+    }
+
     fn evaluate_blend(
         &mut self,
         kind: oblikovati_model::feature::part::PartBlendKind,

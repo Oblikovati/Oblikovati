@@ -3,6 +3,13 @@
 use super::*;
 
 #[test]
+fn unavailable_face_names_the_key_and_expected_resolver() {
+    let error = oblikovati_model::feature::part::unavailable_planar_face(&[1, 2]);
+    assert!(error.contains("[1, 2]"), "{error}");
+    assert!(error.contains("named planar-face evaluator"), "{error}");
+}
+
+#[test]
 fn unsupported_blend_declines_name_each_operation() {
     for (kind, expected) in [
         (PartBlendKind::Fillet, "fillet"),
