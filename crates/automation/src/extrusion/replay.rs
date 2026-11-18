@@ -67,7 +67,6 @@ pub(super) fn prepare_owned_prefix<
 >(
     files: &mut FileWorkspace<O, W, F>,
     document: u64,
-    guid: DocumentGuid,
     backend: &dyn ExtrudeRegionAccess,
 ) -> Result<Option<PolicyExtrudePrefix>, Error> {
     let Some(policy) = backend.replay_policy() else {
@@ -77,32 +76,26 @@ pub(super) fn prepare_owned_prefix<
     if session.in_transaction() {
         return Ok(None);
     }
-    if let Some(prefix) = session.owned_part_prefix(Some(policy)) {
-        return Ok(Some((policy, prefix)));
+    if session.owned_part_prefix(Some(policy)).is_some() {
+        let replay = files
+            .workspace()
+            .owned_part_replay(document, Some(policy))
+            .map_err(api_error)?;
+        return Ok(Some((policy, replay)));
     }
-    if !session.snapshot().work_geometry.features().is_empty() {
+    if !session.snapshot().work_geometry.features().is_empty()
+        || session.snapshot().requires_named_part_replay()
+    {
         return Ok(None);
     }
-    let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::with_policy(
-        session.history(),
-        guid,
-        policy,
-    );
-    let completed = session
-        .prepare_part_evaluation()
-        .evaluate(&mut evaluator)
-        .map_err(api_error)?;
     files
-        .commands(document)
-        .map_err(api_error)?
-        .adopt_owned_part(Some(policy), completed)
+        .recompute_owned_part(document, Some(policy), &mut 0)
         .map_err(Error)?;
-    Ok(files
+    let replay = files
         .workspace()
-        .session(document)
-        .map_err(api_error)?
-        .owned_part_prefix(Some(policy))
-        .map(|prefix| (policy, prefix)))
+        .owned_part_replay(document, Some(policy))
+        .map_err(api_error)?;
+    Ok(Some((policy, replay)))
 }
 pub(super) fn adopt_extrude_candidate<
     O: TransactionObserver,

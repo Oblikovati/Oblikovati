@@ -2,6 +2,69 @@
 use super::*;
 
 #[test]
+fn certified_extrusion_rejects_foreign_identity_and_policy() {
+    use oblikovati_automation::ExtrudeRegionAccess;
+    use oblikovati_model::identity::DocumentGuid;
+    let (owner, _) = owner();
+    let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
+    let document = open_sketch(&mut owner);
+    assert!(
+        owner
+            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width")
+            .unwrap()
+    );
+    let policy = oblikovati_martensite::PrismResolutionPolicy::Fixed(resolution());
+    let mut other_resolution = resolution();
+    other_resolution.weld *= 2.;
+    let other_policy = oblikovati_martensite::PrismResolutionPolicy::Fixed(other_resolution);
+    owner
+        .files
+        .recompute_owned_part(document, Some(other_policy), &mut 0)
+        .unwrap();
+    let workspace = owner.files.workspace();
+    let session = workspace.session(document).unwrap();
+    let guid = workspace.identity(document).unwrap().internal_name;
+    let foreign: DocumentGuid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let replay = workspace.owned_part_replay(document, Some(policy)).unwrap();
+    let other = workspace
+        .owned_part_replay(document, Some(other_policy))
+        .unwrap();
+    let backend = owner.extrusion_access.as_ref().unwrap();
+    let prepared =
+        oblikovati_automation::prepare_extrusion(session.snapshot(), backend, &request()).unwrap();
+    session
+        .preview_projected(
+            |candidate, ids| prepared.create(candidate, ids),
+            |candidate, feature| {
+                assert!(
+                    backend
+                        .capture_with_prefix(
+                            session.history(),
+                            foreign,
+                            candidate,
+                            feature,
+                            &replay
+                        )
+                        .is_err()
+                );
+                assert!(
+                    backend
+                        .capture_with_prefix(session.history(), guid, candidate, feature, &other)
+                        .is_err()
+                );
+                assert!(
+                    backend
+                        .capture_with_prefix(session.history(), guid, candidate, feature, &replay)
+                        .unwrap()
+                        .is_some()
+                );
+                Ok::<_, oblikovati_api::Error>(())
+            },
+        )
+        .unwrap();
+}
+
+#[test]
 fn appended_preview_matches_full_replay_faces() {
     let (owner, _) = owner();
     let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
