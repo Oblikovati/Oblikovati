@@ -66,6 +66,8 @@ using this status; the live scenario directory can change.
   and first-feature deletion, replay counts, names, undo/redo, and reopen (#4079).
 - Feature reorder reuses the unchanged prefix before the first moved feature.
   Tests cover replay counts, names, rejected moves, undo/redo, and reopen (#4079).
+- Prism distance edits use the same checkpoint path. Tests compare every named
+  face area with full replay and cover invalid inputs, history, and reopen (#4079).
 - Drawing creation, live display, previews, and saved views obtain a current
   document-owned part, including when the injected owner uses another policy
   or is absent. Tests cover source edits, undo, retained results, and refusing
