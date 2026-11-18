@@ -14,6 +14,11 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- The live feature-run inventory reports application closing green: 3 of 3
+  scenarios at SHA-256 `d87eaf041fc93701e0de5c911dd3b4c0622386d184f05954a8409400e412c0d0`.
+  Run `python3 -B tools/bdd/feature_progress.py /mnt/vininas-projects/MCAD-Scenarios`
+  for current feature hashes and counts. This result is a full-feature diagnostic
+  at its recorded application commit; the strict acceptance ledger is separate.
 - The ledger reports **0 verified of 2,760** declarations at local snapshot
   `b576445b98cffd686dcc05aa8c017de2a591c8c8`. This is not an upstream scenario
   commit. Run `python3 -B tools/bdd/behavior_cli.py report` for current counts.

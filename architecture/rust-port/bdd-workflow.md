@@ -241,3 +241,28 @@ scenario declarations marked blocked with their parser error. The checked-in
 `behavior-source-inventory.json` is a source inventory: its null milestone,
 owner, and receipt fields do not establish implementation or acceptance.
 Do not overwrite future behavior classifications with this raw inventory.
+
+## Feature-by-feature run inventory
+
+Work on one feature until all its scenarios pass. To inspect the live source and
+its recorded full-feature runs, use:
+
+```sh
+python3 -B tools/bdd/feature_progress.py /mnt/vininas-projects/MCAD-Scenarios
+```
+
+The report includes the current SHA-256 of each `.feature` file, its scenario
+declaration count, and the number of scenarios passed in the recorded run. A
+feature is `green` only when the source hash matches, the report hash matches,
+every scenario and its source steps are present, and every step and cleanup
+hook passed. A source change becomes `source_changed`; a removed file is listed
+separately. Outlines, backgrounds, rules, and step tables need further support
+before this inventory can mark them green. They are reported for review.
+
+After running a whole feature, retain its Cucumber report and other artifacts
+under `receipts/`, then add the source hash, report path and hash, tested commit,
+command, and environment to `feature-run-results.json`. Check the feature hash
+before and after the run. A green entry means that the complete recorded run
+passed at the listed application commit; it does not prove later application
+commits. It is distinct from the stricter verified acceptance ledger and its
+build-provenance requirements.
