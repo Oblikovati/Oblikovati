@@ -210,9 +210,11 @@ fn change_fillet_radius(
     owner: &mut NativeDesktopOwner,
     value: &str,
 ) {
-    let (position, _) = application_bdd::window_geometry("Fillet").unwrap();
-    let field = application_bdd::pointer_pixels([position[0] + 80., position[1] + 40.]);
-    click_shell_position(window, owner, field);
+    let (position, size) = application_bdd::window_geometry("Fillet").unwrap();
+    let end = [position[0] + size[0], position[1] + size[1]];
+    let label = application_bdd::rendered_label_in_rect("Radius", position, end);
+    let field_x = application_bdd::pointer_pixels([position[0] + 80., position[1]])[0];
+    click_shell_position(window, owner, [field_x, label[1]]);
     for _ in 0..12 {
         press_shell_key(window, owner, ViewportPhysicalKey::Backspace);
     }
