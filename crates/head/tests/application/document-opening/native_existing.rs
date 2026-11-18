@@ -33,3 +33,27 @@ fn native_click_run(world: &mut ApplicationWorld, label: &str) {
     super::super::x11_input::click(position);
     settle(world);
 }
+
+#[test]
+fn native_input_opens_saved_drawing_with_its_sheet_and_view() {
+    use super::drawing_fixture::{drawing_available, sheet_and_border};
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    drawing_available(&mut world);
+    super::super::x11_input::press_control_o();
+    settle(&mut world);
+    world.expect_text("Look in");
+    let folder = models_folder(&mut world);
+    look_in(&mut world, &folder);
+    native_click_run(&mut world, DRAWING_FILE);
+    native_click_run(&mut world, "Open");
+    world.expect_no_text("Look in");
+    let drawing = world.active_id();
+    assert_ne!(drawing, part);
+    assert!(world.state().drawing_documents.contains_key(&drawing));
+    sheet_and_border(&mut world);
+    let part_name = world.document_name(part);
+    world.expect_tab(&part_name);
+    world.save_capture("native-open-drawing-3889");
+    world.close();
+}
