@@ -37,7 +37,11 @@ failed host plane followed by recovery. Existing owner edit, undo, package,
 condition, placed-frame, and native pixel tests consume the same path.
 
 The session guards checkpoint capture and adoption by document, generation, and
-accepted edit. The replay owner reuses checkpoints for blend creation and edits
+accepted edit. Each captured named body also checks that its own source history
+matches the accepted edit, including when document identifiers are equal. The
+adapter still depends on the session for this guarded completion; moving the
+result store into the session must preserve that boundary. The replay owner
+reuses checkpoints for blend creation and edits
 when policy and sketch inputs permit it. Associative sketches use ordered
 recompute. General dirty-prefix replay, session ownership, full validity levels,
 achieved tolerance budgets, and operation-result requirements remain open.

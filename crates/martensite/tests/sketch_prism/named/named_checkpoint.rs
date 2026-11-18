@@ -286,7 +286,14 @@ fn commit_checkpointed_fillet(
     edge: &[u8],
     radius: f64,
 ) -> (usize, usize) {
-    let ((captured, counts), transition) = {
+    let foreign_history = owner(cube_document());
+    let mut foreign_backend = CountingEvaluator::new(&foreign_history);
+    let foreign_result = foreign_history
+        .snapshot()
+        .evaluate_part_features(&mut foreign_backend)
+        .unwrap();
+    let foreign_body = foreign_result.body(FeatureId(1)).unwrap();
+    let ((captured, foreign_capture, counts), transition) = {
         let prefix = checkpoints.candidate_prefix(session).unwrap();
         session
             .run_projected_with_transition(
@@ -303,11 +310,23 @@ fn commit_checkpointed_fillet(
                     let captured = candidate.capture(history, |_, body| {
                         body.capture_detached(history, document())
                     })?;
-                    Ok((captured, (backend.prisms, backend.blends)))
+                    let foreign_capture = candidate.capture(history, |_, _| {
+                        foreign_body.capture_detached(&foreign_history, document())
+                    })?;
+                    Ok((captured, foreign_capture, (backend.prisms, backend.blends)))
                 },
             )
             .unwrap()
     };
+    assert!(
+        oblikovati_martensite::complete_named_checkpoints(
+            foreign_capture,
+            &transition,
+            session,
+            document(),
+        )
+        .is_err()
+    );
     let completed = oblikovati_martensite::complete_named_checkpoints(
         captured,
         &transition,
