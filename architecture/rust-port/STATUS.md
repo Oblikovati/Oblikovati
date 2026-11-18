@@ -37,11 +37,10 @@ using this status; the live scenario directory can change.
   including both examples of one outline, passed at SHA-256
   `d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6`.
   This run used scripted window input.
-- Viewport entity selection is blocked at the scenario source: all seven
-  scenarios are capture-only and excluded from execution. The source folder's
-  `BLOCKERS.md` asks for executable requirements and a reproducible fixture.
-  Separate X11 tests passed for face selection, clearing, and face-based sketch
-  creation; they do not count as the seven scenario passes (#4038).
+- Viewport entity selection now has executable scenarios and an Inventor part
+  fixture. The fixture step reaches the document host, which rejects the binary
+  file as invalid YAML; native Inventor and 3D-sketch support remain open
+  (#4092). Separate X11 face-selection tests do not count as scenario passes.
 - The ledger reports **0 verified of 2,760** declarations at local snapshot
   `b576445b98cffd686dcc05aa8c017de2a591c8c8`. This is not an upstream scenario
   commit. Run `python3 -B tools/bdd/behavior_cli.py report` for current counts.
