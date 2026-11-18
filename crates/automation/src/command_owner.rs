@@ -64,7 +64,7 @@ pub(super) fn edit(
     let edit = PreparedEdit::decode(method, request)?;
     let id = edit.document(owner.workspace().active_document())?;
     if edit.is_parameter_value_edit() {
-        return crate::parameter_replay::try_edit(owner, edit, id);
+        return crate::checkpoint_replay::try_edit(owner, edit, id);
     }
     apply_edit(owner, edit, id)
 }

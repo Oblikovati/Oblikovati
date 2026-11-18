@@ -59,6 +59,9 @@ using this status; the live scenario directory can change.
 - Parameter Set and Update reuse a current document checkpoint for a proven
   clean prefix. A typed API test edits a Fillet parameter twice, checks named
   faces against a full replay, and exercises undo, redo, save, and reopen (#4079).
+- End-of-Part edits use matching retained checkpoints for a proven clean prefix.
+  Tests check rollback, restore, names, undo/redo, save/reopen, and full replay
+  for transactions and mismatched policies (#4079).
 - Drawing creation, live display, previews, and saved views obtain a current
   document-owned part, including when the injected owner uses another policy
   or is absent. Tests cover source edits, undo, retained results, and refusing

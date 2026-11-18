@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Preserve clean part checkpoints across a parameter value transaction.
+//! Preserve clean part checkpoints across an accepted document edit.
 use crate::{command_owner::CommandOwner, edit::PreparedEdit};
 use oblikovati_api::Error;
 use oblikovati_martensite::{
@@ -13,15 +13,16 @@ use oblikovati_model::{
 use oblikovati_session::part_evaluation::{CapturedPartCheckpointCandidate, PartCheckpointPrefix};
 
 type NamedPrefix = PartCheckpointPrefix<NamedSolid, EvaluationFailure>;
-type NamedCandidate = CapturedPartCheckpointCandidate<CapturedNamedSolid, EvaluationFailure>;
-struct ParameterReplay {
+pub(super) type NamedCandidate =
+    CapturedPartCheckpointCandidate<CapturedNamedSolid, EvaluationFailure>;
+pub(super) struct CheckpointReplay {
     document: u64,
     guid: DocumentGuid,
     policy: Option<PrismResolutionPolicy>,
     prefix: NamedPrefix,
 }
-impl ParameterReplay {
-    fn prepare(
+impl CheckpointReplay {
+    pub(super) fn prepare(
         &self,
         snapshot: &DocumentSnapshot,
         history: &DocumentEditHistory,
@@ -49,7 +50,7 @@ impl ParameterReplay {
             .map(Some)
             .map_err(Error)
     }
-    fn adopt(
+    pub(super) fn adopt(
         &self,
         owner: &mut impl CommandOwner,
         candidate: NamedCandidate,
@@ -77,15 +78,38 @@ impl ParameterReplay {
             .map_err(Error)
     }
 }
-fn current_prefix(owner: &impl CommandOwner, document: u64) -> Option<ParameterReplay> {
+fn current_prefix(owner: &impl CommandOwner, document: u64) -> Option<CheckpointReplay> {
     let workspace = owner.workspace();
     let session = workspace.session(document).ok()?;
     if session.in_transaction() {
         return None;
     }
     let (policy, prefix) = session.owned_checkpoint_prefix()?;
+    replay_for_prefix(workspace, document, policy, prefix)
+}
+pub(super) fn certified_prefix(
+    owner: &impl CommandOwner,
+    document: u64,
+    prefix: crate::CertifiedCheckpointPrefix,
+) -> Option<CheckpointReplay> {
+    let workspace = owner.workspace();
+    let session = workspace.session(document).ok()?;
+    if session.in_transaction() {
+        return None;
+    }
+    replay_for_prefix(workspace, document, prefix.policy, prefix.prefix)
+}
+fn replay_for_prefix<
+    O: oblikovati_session::TransactionObserver,
+    W: oblikovati_session::workspace::WorkspaceObserver,
+>(
+    workspace: &oblikovati_session::workspace::WorkspaceSession<O, W>,
+    document: u64,
+    policy: Option<PrismResolutionPolicy>,
+    prefix: NamedPrefix,
+) -> Option<CheckpointReplay> {
     let guid = workspace.identity(document).ok()?.internal_name;
-    Some(ParameterReplay {
+    Some(CheckpointReplay {
         document,
         guid,
         policy,
