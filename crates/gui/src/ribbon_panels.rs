@@ -260,7 +260,8 @@ fn temporary_panel(
     let before = context.actions.len();
     let mut keep = true;
     let focus = std::mem::take(&mut display.temporary_focus);
-    let keep_on_click = std::mem::take(&mut display.keep_temporary_on_click);
+    let keep_on_click = std::mem::take(&mut display.keep_temporary_on_click)
+        || layout.additional.preserves_tab_press();
     let selector_hovered = display.selector_open && display.selector_pointer_inside;
     ui.window("##ribbon-temporary-panel")
         // `flags` replaces the flags set so far, so it comes first.

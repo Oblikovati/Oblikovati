@@ -21,6 +21,9 @@ mod sketch_constrain_menu;
 mod sketch_create_live;
 #[path = "sketch_layout.rs"]
 mod sketch_layout;
+#[cfg(target_os = "linux")]
+#[path = "temporary_tab_native.rs"]
+mod temporary_tab_native;
 const WINDOW: &str = "##ribbon-additional-PartModify";
 const SIMPLIFICATION: &str = "##ribbon-additional-PartSimplification";
 

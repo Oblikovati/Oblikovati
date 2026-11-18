@@ -19,6 +19,7 @@ fn tab_row_height(ui: &Ui) -> f32 {
 }
 
 mod side;
+mod tab_click;
 mod tab_overflow;
 use side::{reserve_ribbon_margins, side_ribbon};
 
@@ -423,6 +424,7 @@ fn ribbon_tabs(
         let clicked = ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
         let through_popup = ribbon.tab_popup_press.released(ui, *tab);
         let double_click = clicked && ui.is_mouse_double_clicked(imgui::MouseButton::Left);
+        tab_click::temporary_expansion_press(ribbon, *tab, clicked, double_click);
         if clicked && ribbon.active != *tab {
             ribbon.display.switch_from_open_compact_panel();
         }

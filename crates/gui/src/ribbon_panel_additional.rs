@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Additional ribbon commands stay anchored to their panel and can be pinned.
 use super::*;
+#[path = "ribbon_panel_additional/temporary_tab.rs"]
+mod temporary_tab;
 const ADDITIONAL_WIDTH: f32 = 230.;
 const ADDITIONAL_HEIGHT: f32 = 130.;
 const VIEWPORT_MARGIN: f32 = 8.;
@@ -12,6 +14,8 @@ pub(super) struct PanelExpansions {
     mode: Option<RibbonDisplay>,
     titles_visible: Option<bool>,
     last_ribbon_bottom: f32,
+    temporary_tab_armed: bool,
+    preserve_tab_press: bool,
 }
 #[derive(Clone, Copy)]
 struct Expansion {
@@ -24,6 +28,8 @@ struct Expansion {
 impl PanelExpansions {
     pub(super) fn clear(&mut self) {
         self.open.clear();
+        self.temporary_tab_armed = false;
+        self.preserve_tab_press = false;
     }
     pub(super) fn use_document(&mut self, document: Option<u64>) {
         if self.document != document {
@@ -94,6 +100,7 @@ pub(super) fn trigger(
     let key = (tab, panel);
     if (clicked || title_clicked) && layout.additional.open.remove(&key).is_none() {
         layout.additional.open.retain(|_, item| item.pinned);
+        layout.additional.temporary_tab_armed = false;
         layout.additional.open.insert(
             key,
             Expansion {
@@ -126,6 +133,7 @@ pub(super) fn draw(
             && !display.hidden_panels.contains(&(tab, *panel))
             && context.additional_allowed
     });
+    let preserve_tab_press = std::mem::take(&mut layout.additional.preserve_tab_press);
     let keys: Vec<_> = layout.additional.open.keys().copied().collect();
     for key in keys {
         let Some(expansion) = layout.additional.open.get_mut(&key) else {
@@ -135,7 +143,15 @@ pub(super) fn draw(
             .owners
             .workspace
             .document_area(context.ui.io().display_size, context.ribbon_bottom);
-        if draw_window(context, key.0, key.1, area, expansion, display) {
+        if draw_window(
+            context,
+            key.0,
+            key.1,
+            area,
+            expansion,
+            display,
+            preserve_tab_press,
+        ) {
             layout.additional.open.remove(&key);
             closed = true;
         }
@@ -149,6 +165,7 @@ fn draw_window(
     area: crate::application::document_creation::workspaces::WorkspaceArea,
     expansion: &mut Expansion,
     display: &mut RibbonDisplayState,
+    preserve_tab_press: bool,
 ) -> bool {
     let ui = context.ui;
     let scale = context.owners.icons.layout_factor();
@@ -233,6 +250,7 @@ fn draw_window(
                 close = true;
             }
             if !expansion.pinned
+                && !preserve_tab_press
                 && ui.is_mouse_clicked(imgui::MouseButton::Left)
                 && !inside_window(ui)
                 && !inside(ui.io().mouse_pos, expansion.trigger)
