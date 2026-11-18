@@ -22,6 +22,7 @@ fn right_click_model(world: &mut ApplicationWorld) {
     let position = super::super::diagnostics::pointer_pixels(world.run("3D Model").center());
     world.right_click(position);
 }
+#[then("the ribbon context menu is displayed")]
 #[then("the ribbon context menu opens")]
 fn context_open(world: &mut ApplicationWorld) {
     world.expect_text("Show Panels");

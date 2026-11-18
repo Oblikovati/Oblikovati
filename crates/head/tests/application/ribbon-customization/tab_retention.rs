@@ -34,6 +34,7 @@ fn same_session(world: &mut ApplicationWorld) {
 fn select_keyboard(world: &mut ApplicationWorld) {
     click_in_customize(world, "Keyboard");
 }
+#[when("the user closes the customization dialog without making changes")]
 #[when("the user closes the customization dialog")]
 fn close_customization(world: &mut ApplicationWorld) {
     click_in_customize(world, "Close");
