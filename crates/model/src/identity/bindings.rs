@@ -5,12 +5,14 @@ use super::{
 };
 use crate::history::{DocumentEditHistory, EvaluationScope};
 use std::collections::{BTreeMap, btree_map::Entry};
+use std::sync::Arc;
 
 /// An immutable exact-name index for one document evaluation. It owns no geometry recovery policy.
+#[derive(Clone)]
 pub struct ExactReferenceBindings<Entity> {
     document: DocumentGuid,
     scope: EvaluationScope,
-    entries: BTreeMap<Vec<u8>, Entity>,
+    entries: Arc<BTreeMap<Vec<u8>, Entity>>,
 }
 impl<Entity> ExactReferenceBindings<Entity> {
     /// Copy exact entries while their original owner remains current.
@@ -67,7 +69,7 @@ impl<Entity> ExactReferenceBindings<Entity> {
         Ok(Self {
             document,
             scope,
-            entries: indexed,
+            entries: Arc::new(indexed),
         })
     }
     /// Resolve only within the current owning history and requested kind; example: `bindings.bind(&history, document, key, 1)?`.

@@ -9,6 +9,7 @@ use std::collections::BTreeSet;
 type NameLists = (Vec<Vec<u8>>, Vec<Vec<u8>>);
 
 /// A named current solid produced by ordered Part replay.
+#[derive(Clone)]
 pub enum NamedSolid {
     Prism(Box<NamedPrismSnapshot>),
     Fillet(Box<BlendNamedTopology>),

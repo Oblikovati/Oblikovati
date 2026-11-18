@@ -9,6 +9,8 @@ mod chamfer_candidate;
 
 #[path = "fillet_candidate.rs"]
 mod candidate;
+#[path = "named_checkpoint.rs"]
+mod named_checkpoint;
 #[path = "fillet_prefix_replay.rs"]
 mod prefix_replay;
 
