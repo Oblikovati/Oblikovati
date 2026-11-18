@@ -7,6 +7,8 @@ use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
 #[path = "builtin_commands.rs"]
 mod builtin_commands;
+#[path = "command_context.rs"]
+mod command_context;
 #[path = "custom_commands.rs"]
 mod custom_commands;
 #[path = "keyboard_full.rs"]
