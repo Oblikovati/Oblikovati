@@ -473,6 +473,8 @@ mod owner_blend;
 mod owner_command_state;
 #[path = "owner_extrusion.rs"]
 mod owner_extrusion;
+#[path = "owner_extrusion_preview.rs"]
+mod owner_extrusion_preview;
 #[path = "owner_host.rs"]
 mod owner_host;
 #[path = "owner_prompts.rs"]
@@ -494,6 +496,3 @@ mod sketch_environment;
 pub(crate) mod tests;
 #[path = "owner_ui_scale.rs"]
 mod ui_scale;
-
-#[path = "owner_extrusion_preview.rs"]
-mod owner_extrusion_preview;

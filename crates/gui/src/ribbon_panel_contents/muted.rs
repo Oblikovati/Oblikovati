@@ -25,15 +25,15 @@ pub(super) fn part_modify_controls(
 ) {
     use crate::icons::IconGlyph;
     let size = muted_command_position(ui, origin, icons, 0);
-    muted_command(
-        ui,
-        "Hole",
-        NOT_PORTED,
-        icons,
-        Some(IconGlyph::Hole),
-        hole_tip,
-        size,
-    );
+    let action = crate::GuiShellAction::OpenHole;
+    let disabled = ui.begin_disabled(!action.dispatchable(state));
+    if icons.button(ui, "Hole", IconGlyph::Hole, size) {
+        actions.push(action);
+    }
+    drop(disabled);
+    if hole_tip {
+        crate::ribbon_key_tips::badge(ui, "HO");
+    }
     let size = muted_command_position(ui, origin, icons, 1);
     let action = crate::GuiShellAction::OpenFillet;
     let disabled = ui.begin_disabled(!action.dispatchable(state));

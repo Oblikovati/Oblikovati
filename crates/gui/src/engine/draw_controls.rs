@@ -274,7 +274,13 @@ impl GuiFrameEngine {
             }
         }
         selected.retain(|action| !matches!(action, GuiShellAction::OpenChamferEdit(_)));
+        if selected.contains(&GuiShellAction::OpenHole) {
+            self.blend_dialog.close(&mut selected);
+            self.hole_dialog.open(&request.commands);
+            selected.retain(|action| !matches!(action, GuiShellAction::OpenHole));
+        }
         if selected.contains(&GuiShellAction::OpenFillet) {
+            self.hole_dialog.close(&mut selected);
             if self.blend_dialog.active() {
                 self.blend_dialog.close(&mut selected);
             }
@@ -282,6 +288,7 @@ impl GuiFrameEngine {
             selected.retain(|action| !matches!(action, GuiShellAction::OpenFillet));
         }
         if selected.contains(&GuiShellAction::OpenChamfer) {
+            self.hole_dialog.close(&mut selected);
             if self.blend_dialog.active() {
                 self.blend_dialog.close(&mut selected);
             }
@@ -319,6 +326,7 @@ impl GuiFrameEngine {
         );
         self.blend_dialog
             .panel(ui, &request.commands, &mut selected);
+        self.hole_dialog.panel(ui, &request.commands, &mut selected);
         self.offset_plane
             .panel(ui, &request.commands, &mut selected);
         self.ribbon

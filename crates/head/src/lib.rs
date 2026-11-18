@@ -51,6 +51,7 @@ mod orientation_work;
 mod work_datum;
 mod work_blend;
 mod work_drawing;
+mod work_hole;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[macro_use]
 mod work_metadata;

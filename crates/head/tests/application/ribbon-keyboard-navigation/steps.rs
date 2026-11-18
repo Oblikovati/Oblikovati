@@ -116,6 +116,7 @@ fn model_selected(world: &mut ApplicationWorld) {
 #[then("the 3D Model command key tips appear again")]
 #[then("the command key tips remain visible")]
 #[then("command key tips are visible")]
+#[then("the Hole command displays the key tip \"HO\"")]
 fn command_tips(world: &mut ApplicationWorld) {
     assert!(exact_tip(world, "HO"), "{:?}", world.text());
 }
@@ -137,6 +138,7 @@ fn show_model_tips(world: &mut ApplicationWorld) {
 fn prefix_h(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::H, false);
 }
+#[then("the visible command key tips narrow to H-prefixed choices")]
 #[then("the visible command key tips narrow to H-prefixed entries")]
 #[then("the visible command key tips are narrowed to matching H-prefixed entries")]
 #[then("the H-prefixed command key tips remain visible")]
@@ -333,6 +335,7 @@ fn temporary_model(world: &mut ApplicationWorld) {
     world.expect_text("Start 2D Sketch");
     assert!(super::diagnostics::window_geometry("##ribbon-temporary-panel").is_some());
 }
+#[then("the temporary command area closes leaving the ribbon minimized to tabs")]
 #[then("the temporary command area closes and the ribbon remains minimized to tabs")]
 fn temporary_closed(world: &mut ApplicationWorld) {
     assert!(super::diagnostics::window_geometry("##ribbon-temporary-panel").is_none());
@@ -448,3 +451,38 @@ mod view_rotation;
 mod browser_navigation;
 #[path = "face_selection.rs"]
 mod face_selection;
+
+#[when("the user presses \"O\"")]
+fn hole_key(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::O, false);
+}
+#[then("the Hole properties panel opens")]
+fn hole_panel_open(world: &mut ApplicationWorld) {
+    assert!(super::diagnostics::window_geometry("Hole").is_some());
+    world.run_in_window("Hole", "Diameter");
+    let count = world.state().browser.as_ref().unwrap().features.len();
+    world.observed_counts.push(count);
+}
+#[when("the user cancels the Hole command")]
+#[when("the user clicks Cancel in the Hole properties panel")]
+fn cancel_hole(world: &mut ApplicationWorld) {
+    let cancel = world.run_in_window("Hole", "Cancel");
+    world.click(cancel.center().map(|value| value as i32));
+}
+#[then("the properties panel closes without creating a hole")]
+#[then("the properties panel closes")]
+fn hole_panel_closed(world: &mut ApplicationWorld) {
+    assert!(super::diagnostics::window_geometry("Hole").is_none());
+    let count = world.state().browser.as_ref().unwrap().features.len();
+    assert_eq!(Some(&count), world.observed_counts.last());
+}
+
+#[then("the ribbon key tips and adjacent Modify panel disappear")]
+fn nested_hole_tips_closed(world: &mut ApplicationWorld) {
+    assert!(!exact_tip(world, "HO"));
+    assert!(super::diagnostics::window_geometry("##ribbon-temporary-panel").is_none());
+}
+
+#[cfg(target_os = "linux")]
+#[path = "native_hole.rs"]
+mod native_hole;

@@ -201,6 +201,13 @@ fn apply_key_tip(
             owners.ribbon.display.temporary = None;
             actions.push(crate::extrude_dialog::start_action(state));
         }
+        Some(KeyTipAction::Hole) => {
+            let action = GuiShellAction::OpenHole;
+            if !owners.home_active && action.enabled(state) {
+                owners.ribbon.display.temporary = None;
+                actions.push(action);
+            }
+        }
         Some(KeyTipAction::Extrude) | None => {}
     }
     false

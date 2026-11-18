@@ -106,9 +106,9 @@ pub use commands::{
     GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
     GuiDrawingLine, GuiDrawingProjection, GuiExtrudeDistanceValidation, GuiExtrudeEditRequest,
     GuiExtrudePreview, GuiFeatureCondition, GuiFeatureEdit, GuiFilletEditRequest, GuiFilletRequest,
-    GuiOffsetPlaneBase, GuiOffsetPlaneValidation, GuiParameterMutation, GuiPartAssetKind,
-    GuiPreviewImage, GuiProject, GuiProjectGroup, GuiSelectionMode, GuiShellAction,
-    GuiSketchLineStyle,
+    GuiHoleRequest, GuiOffsetPlaneBase, GuiOffsetPlaneValidation, GuiParameterMutation,
+    GuiPartAssetKind, GuiPreviewImage, GuiProject, GuiProjectGroup, GuiSelectionMode,
+    GuiShellAction, GuiSketchLineStyle,
 };
 pub use engine::{
     GuiFrameEngine, GuiFrameOutput, GuiFrameRequest, GuiWindowAction, GuiWindowControls,
@@ -128,6 +128,7 @@ mod blend_dialog;
 mod dimensions;
 mod extrude_dialog;
 mod face_properties;
+mod hole_dialog;
 pub use face_properties::GuiFaceProperties;
 mod marking_menu;
 mod marking_menu_layout;

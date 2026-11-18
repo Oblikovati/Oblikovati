@@ -277,6 +277,12 @@ pub enum GuiShellAction {
     OpenExtrude,
     /// Open a fillet draft for selected edges.
     OpenFillet,
+    /// Open a straight-hole draft.
+    OpenHole,
+    /// Show or clear the private hole preview.
+    PreviewHole(Option<GuiHoleRequest>),
+    /// Create a hole from the selected face.
+    CreateHole(GuiHoleRequest),
     /// Open an equal-distance chamfer draft for selected edges.
     OpenChamfer,
     OpenFilletEdit(oblikovati_model::feature::FeatureId),
@@ -386,7 +392,7 @@ pub struct GuiBaseViewRequest {
 mod feature_requests;
 pub use feature_requests::{
     GuiDrawingLine, GuiDrawingProjection, GuiExtrudeEditRequest, GuiExtrudePreview,
-    GuiFilletEditRequest, GuiFilletRequest,
+    GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest,
 };
 /// Owner validation for one extrusion expression and active document.
 #[derive(Clone, Debug, PartialEq, Eq)]

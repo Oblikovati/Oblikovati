@@ -8,6 +8,15 @@ pub struct GuiExtrudePreview {
     pub profile: i64,
     pub distance: String,
 }
+/// One generation-scoped face and size for a straight-hole draft.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiHoleRequest {
+    pub document: u64,
+    pub generation: u64,
+    pub face: String,
+    pub diameter: String,
+    pub depth: String,
+}
 /// One immutable edge selection and radius for a fillet draft.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiFilletRequest {
