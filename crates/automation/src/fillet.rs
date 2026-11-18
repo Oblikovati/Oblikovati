@@ -37,6 +37,26 @@ where
     backend.body(session.history(), guid, edges).map_err(Error)
 }
 
+pub(crate) fn matching_blend_prefix<'a, O, W, F>(
+    files: &oblikovati_session::files::FileWorkspace<O, W, F>,
+    backend: &dyn FilletAccess,
+    replay: Option<&'a dyn crate::PartUpdateAccess<O, W, F>>,
+    document: u64,
+) -> Result<Option<crate::CertifiedPartPrefix<'a>>, Error>
+where
+    O: oblikovati_session::TransactionObserver,
+    W: oblikovati_session::workspace::WorkspaceObserver,
+    F: oblikovati_persistence::file_access::DocumentFiles,
+{
+    match replay {
+        Some(owner) if backend.accepts_policy(owner.resolution_policy()) => owner
+            .candidate_prefix(files, document)
+            .map(Some)
+            .map_err(Error),
+        _ => Ok(None),
+    }
+}
+
 /// Exact body resolution and validation for typed Fillet commands.
 pub trait FilletAccess {
     /// Require the validator's policy for reuse; example: `access.accepts_policy(policy)`.
@@ -55,16 +75,24 @@ pub trait FilletAccess {
         candidate: &DocumentSnapshot,
         feature: FeatureId,
     ) -> Result<usize, String>;
-    /// Validate with an available current prefix; example: `access.validate_with_prefix(history, document, candidate, feature, prefix)?`.
+    /// Validate a blend with a current prefix; example: `access.validate_with_prefix(kind, history, document, candidate, feature, prefix)?`.
     fn validate_with_prefix(
         &self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
         _history: &oblikovati_model::history::DocumentEditHistory,
         document: oblikovati_model::identity::DocumentGuid,
         candidate: &DocumentSnapshot,
         feature: FeatureId,
         _prefix: &crate::CertifiedPartPrefix<'_>,
     ) -> Result<usize, String> {
-        self.validate(document, candidate, feature)
+        match kind {
+            oblikovati_model::feature::part::PartBlendKind::Fillet => {
+                self.validate(document, candidate, feature)
+            }
+            oblikovati_model::feature::part::PartBlendKind::Chamfer => {
+                self.validate_chamfer(document, candidate, feature)
+            }
+        }
     }
     /// Validate a chamfer candidate; example: `access.validate_chamfer(document, candidate, feature)?`.
     fn validate_chamfer(

@@ -37,13 +37,13 @@ using this status; the live scenario directory can change.
   cached geometry safe or enable prefix reuse.
 - A session test places a newly authored Fillet at the dirty boundary and
   checks undo and redo. It uses a fake evaluator; it is not a replay-count test.
-- A headless typed Fillet test measures three full replays without a shared
-  source result and one with a warm source result. Candidate validation now
+- Headless typed Fillet and Chamfer tests measure three full replays without a
+  shared source result and one with a warm source result. Candidate validation
   replays its tail; publication still replays the complete part (#4079).
 - Candidate tail replay can borrow a current complete prefix. A certified cube
   Fillet test compares its names, topology, and face areas with full replay.
-  The Fillet command uses it with a current, policy-matched prefix; publication
-  and general dirty-prefix replay remain open (#4079).
+  The Fillet and Chamfer commands use it with a current, policy-matched prefix;
+  publication and general dirty-prefix replay remain open (#4079).
 - The dock lifecycle inventory and representative first-frame native tests pass.
   Projects pointer docking, modal-child saved-layout restart, and File Properties
   native docking remain open in #4073.

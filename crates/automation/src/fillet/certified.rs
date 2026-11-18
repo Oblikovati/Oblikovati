@@ -79,6 +79,7 @@ impl FilletAccess for CertifiedFilletAccess {
     }
     fn validate_with_prefix(
         &self,
+        kind: oblikovati_model::feature::part::PartBlendKind,
         history: &DocumentEditHistory,
         document: DocumentGuid,
         candidate: &DocumentSnapshot,
@@ -86,9 +87,13 @@ impl FilletAccess for CertifiedFilletAccess {
         prefix: &crate::CertifiedPartPrefix<'_>,
     ) -> Result<usize, String> {
         if prefix.policy != Some(self.policy) {
-            return Err("part candidate prefix: expected the Fillet validation policy".into());
+            return Err("part candidate prefix: expected the blend validation policy".into());
         }
-        require_feature_kind(candidate, feature, "fillet")?;
+        let expected = match kind {
+            oblikovati_model::feature::part::PartBlendKind::Fillet => "fillet",
+            oblikovati_model::feature::part::PartBlendKind::Chamfer => "chamfer",
+        };
+        require_feature_kind(candidate, feature, expected)?;
         let mut evaluator =
             CertifiedNamedSolidEvaluator::with_policy(history, document, self.policy);
         match prefix
@@ -96,7 +101,14 @@ impl FilletAccess for CertifiedFilletAccess {
             .validate_tail(history, candidate, feature, &mut evaluator)?
         {
             Some(count) => Ok(count),
-            None => self.validate(document, candidate, feature),
+            None => match kind {
+                oblikovati_model::feature::part::PartBlendKind::Fillet => {
+                    self.validate(document, candidate, feature)
+                }
+                oblikovati_model::feature::part::PartBlendKind::Chamfer => {
+                    self.validate_chamfer(document, candidate, feature)
+                }
+            },
         }
     }
     fn validate_chamfer(
