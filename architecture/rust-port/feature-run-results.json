@@ -197,12 +197,12 @@
       "features/application/ribbon-keyboard-navigation/FIXTURES.md": "53d28b3a02b8e56ba5a458529c93e469f15f82c537cce4f179190c78ab595e2c",
       "features/application/ribbon-keyboard-navigation/BLOCKERS.md": "247a89fc61b82bd5a3604f1df222bbf57352cb536ec22767ea61cf15cbcd15b4"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-keyboard-side-final/cucumber.json",
-    "cucumber_sha256": "3555fdce6618fde101a7556acc0e3c0f02cd04887863b595a5c8386e004a6bc2",
-    "application_commit": "233974834ca87f6fd1c8ef5cf1daceb0a06e849f",
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-keyboard-selected-face/cucumber.json",
+    "cucumber_sha256": "d49b39b38645e2372b916b4ba171c970de65852b1783eb49da479d363e679f8d",
+    "application_commit": "d560f0318c3cdb39785869992508392cc6630d8e",
     "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-keyboard-navigation XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb, Openbox and Vulkan Lavapipe; scripted scenario input; separate native X11 keyboard tests passed",
-    "notes": "13 of 18 scenarios passed; five are undefined. Four need Hole command access (#4093); selected-face Tools key tips need implementation. Side-docked Escape passed; the top-docked Escape checks passed before an unrelated undefined face-click step."
+    "environment": "Linux X11, Xvfb, Openbox and Vulkan Lavapipe; scripted scenario input; separate native X11 mouse and keyboard tests passed",
+    "notes": "14 of 18 scenarios passed; four have undefined steps and involve the unavailable Hole command (#4093). Selected-face Tools tips and selection count passed with native X11 input; the no-selection Escape scenario passed."
   },
   "features/application/document-tabs/document-tabs.feature": {
     "feature_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
