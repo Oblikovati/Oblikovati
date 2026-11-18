@@ -42,9 +42,10 @@ using this status; the live scenario directory can change.
   Session guards reject stale or foreign histories and restore exact names only
   for the accepted edit. Real-kernel tests compare named face areas with a full
   replay, including a Fillet consumed by a later Chamfer (#4079).
-- Each document session owns its policy-scoped part result and checkpoints.
-  Hosts with the same policy share them; a policy change replaces and retires
-  the old result. Closing the document drops both (#4079).
+- Each document session owns up to four policy-scoped part results and their
+  checkpoints. Hosts share a matching result; publishing a fifth policy retires
+  the least recently published one. An edit invalidates all old generations,
+  and closing the document drops all results (#4079).
 - A cold checkpoint request for a part without associative sketch recompute
   publishes its result and boundaries from one replay instead of two. Ownership
   tests cover repeat requests and isolation between documents (#4079).

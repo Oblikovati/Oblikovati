@@ -16,6 +16,10 @@ type NamedCheckpoints = CompletedPartCheckpoints<NamedSolid, EvaluationFailure>;
 type NamedSketchResult = CompletedPartSketchRecompute<NamedSolid, EvaluationFailure>;
 type NamedSketchCheckpoints = CompletedPartSketchCheckpoints<NamedSolid, EvaluationFailure>;
 
+// Bound retained kernel bodies when callers supply many resolution policies.
+// Entries are ordered by publication; a successful update moves its policy to the end.
+const MAX_RETAINED_POLICIES: usize = 4;
+
 pub(crate) struct DocumentPartReplay {
     policy: Option<PrismResolutionPolicy>,
     part: NamedPartSlot,
@@ -35,8 +39,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
     /// Example: `session.owned_part_slot(policy)` before a named query.
     pub fn owned_part_slot(&self, policy: Option<PrismResolutionPolicy>) -> Option<&NamedPartSlot> {
         self.part_replay
-            .as_ref()
-            .filter(|owner| owner.policy == policy)
+            .iter()
+            .find(|owner| owner.policy == policy)
             .map(|owner| &owner.part)
     }
     /// Borrow checkpoints only under their recorded policy.
@@ -46,8 +50,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
         policy: Option<PrismResolutionPolicy>,
     ) -> Option<&NamedCheckpointSlot> {
         self.part_replay
-            .as_ref()
-            .filter(|owner| owner.policy == policy)
+            .iter()
+            .find(|owner| owner.policy == policy)
             .map(|owner| &owner.checkpoints)
     }
     /// Capture a current part prefix for an appended feature.
@@ -58,7 +62,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
     ) -> Option<crate::part_evaluation::PartCandidatePrefix<NamedSolid, EvaluationFailure>> {
         self.owned_part_slot(policy)?.candidate_prefix(self).ok()
     }
-    /// Capture the current document-owned checkpoint and its policy.
+    /// Capture the most recently published current checkpoint and its policy.
     /// Example: `session.owned_checkpoint_prefix()` before an edit.
     pub fn owned_checkpoint_prefix(
         &self,
@@ -66,25 +70,31 @@ impl<O: TransactionObserver> DocumentSession<O> {
         Option<PrismResolutionPolicy>,
         crate::part_evaluation::PartCheckpointPrefix<NamedSolid, EvaluationFailure>,
     )> {
-        let owner = self.part_replay.as_ref()?;
-        Some((owner.policy, owner.checkpoints.candidate_prefix(self).ok()?))
+        self.part_replay
+            .iter()
+            .rev()
+            .find_map(|owner| Some((owner.policy, owner.checkpoints.candidate_prefix(self).ok()?)))
     }
     fn with_part_replay<T, E>(
         &mut self,
         policy: Option<PrismResolutionPolicy>,
         operation: impl FnOnce(&mut Self, &mut DocumentPartReplay) -> Result<T, E>,
     ) -> Result<T, E> {
-        let previous = self.part_replay.take();
-        let (previous, mut current, reused) = match previous {
-            Some(owner) if owner.policy == policy => (None, owner, true),
-            other => (other, DocumentPartReplay::new(policy), false),
-        };
+        let mut owners = std::mem::take(&mut self.part_replay);
+        let previous_index = owners.iter().position(|owner| owner.policy == policy);
+        let mut current = previous_index
+            .map(|index| owners.remove(index))
+            .unwrap_or_else(|| DocumentPartReplay::new(policy));
         let result = operation(self, &mut current);
-        self.part_replay = if result.is_ok() || reused {
-            Some(current)
-        } else {
-            previous
-        };
+        if result.is_ok() {
+            owners.push(current);
+            if owners.len() > MAX_RETAINED_POLICIES {
+                owners.remove(0);
+            }
+        } else if let Some(index) = previous_index {
+            owners.insert(index, current);
+        }
+        self.part_replay = owners;
         result
     }
     /// Publish a named part into its document-owned slot.
