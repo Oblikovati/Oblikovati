@@ -121,6 +121,58 @@ fn document_tab_sets_have_unambiguous_tips() {
     }
 }
 #[test]
+fn sketch_create_tip_opens_additional_commands() {
+    let mut tips = RibbonKeyTips::default();
+    let tabs = [RibbonTab::Model, RibbonTab::Sketch];
+    let mut press = |key| {
+        tips.process(
+            &[GuiInputEvent::Key { key, pressed: true }],
+            &tabs,
+            false,
+            false,
+        )
+    };
+    press(GuiKey::LeftAlt);
+    assert_eq!(
+        press(GuiKey::S),
+        Some(KeyTipAction::SelectTab(RibbonTab::Sketch))
+    );
+    assert_eq!(
+        press(GuiKey::D),
+        Some(KeyTipAction::OpenAdditional(
+            crate::ribbon_panels::RibbonPanel::Create
+        ))
+    );
+}
+#[test]
+fn sketch_create_tip_is_not_shown_for_grouped_ribbons() {
+    let mut tips = RibbonKeyTips::default();
+    let tabs = [RibbonTab::Sketch];
+    for key in [GuiKey::LeftAlt, GuiKey::S] {
+        tips.process(
+            &[GuiInputEvent::Key { key, pressed: true }],
+            &tabs,
+            false,
+            true,
+        );
+    }
+    assert!(
+        !tips.create_group_tip(crate::application::ribbon_display::RibbonDisplay::PanelButtons)
+    );
+    assert_eq!(
+        tips.process(
+            &[GuiInputEvent::Key {
+                key: GuiKey::D,
+                pressed: true
+            }],
+            &tabs,
+            false,
+            true
+        ),
+        None
+    );
+}
+#[test]
 fn consumed_key_text_does_not_reach_a_later_widget() {
     let mut tips = RibbonKeyTips::default();
     press(&mut tips, GuiKey::LeftAlt);

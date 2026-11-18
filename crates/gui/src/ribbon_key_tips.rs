@@ -57,6 +57,18 @@ impl RibbonKeyTips {
     pub(crate) fn model_commands(&self) -> bool {
         self.commands() && self.command_tab == Some(RibbonTab::Model)
     }
+    pub(crate) fn sketch_commands(&self) -> bool {
+        self.commands() && self.command_tab == Some(RibbonTab::Sketch)
+    }
+    pub(crate) fn create_group_tip(
+        &self,
+        mode: crate::application::ribbon_display::RibbonDisplay,
+    ) -> bool {
+        (self.model_commands() && self.matching("C"))
+            || (mode == crate::application::ribbon_display::RibbonDisplay::Full
+                && self.sketch_commands()
+                && self.matching("D"))
+    }
     pub(crate) fn matching(&self, tip: &str) -> bool {
         self.active() && tip.starts_with(&self.prefix)
     }
@@ -197,6 +209,11 @@ impl RibbonKeyTips {
         action
     }
     fn command_key(&mut self, character: char, grouped: bool) -> Option<KeyTipAction> {
+        if !grouped && self.sketch_commands() && character == 'D' && self.prefix.is_empty() {
+            return Some(KeyTipAction::OpenAdditional(
+                crate::ribbon_panels::RibbonPanel::Create,
+            ));
+        }
         if self.command_tab != Some(RibbonTab::Model) {
             return None;
         }
