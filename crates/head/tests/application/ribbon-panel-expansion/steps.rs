@@ -124,6 +124,7 @@ fn opened_pinned(world: &mut ApplicationWorld) {
 #[when("I select the pin control again")]
 #[when("the user unpins the Modify additional command area")]
 #[when("the user unpins the additional area")]
+#[when("the user unpins the additional command area")]
 #[when("the user clicks its pin control")]
 pub(super) fn toggle_pin(world: &mut ApplicationWorld) {
     let label = world.run("Pin");
@@ -384,4 +385,11 @@ fn temporary_tools(world: &mut ApplicationWorld) {
 fn temporary_model(world: &mut ApplicationWorld) {
     temporary_remains(world);
     world.expect_text("Start 2D Sketch");
+}
+
+#[when("the user opens the Modify additional command area and pins it")]
+#[when("the user opens and pins the Modify additional command area")]
+fn open_and_pin_modify(world: &mut ApplicationWorld) {
+    open_modify(world);
+    toggle_pin(world);
 }

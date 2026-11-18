@@ -324,11 +324,11 @@
       "features/application/ribbon-panel-expansion/unpinned-expansion-face-selection.svg": "db3c031bc230282b079d15f6f85a40c054b25f32fe77893bf03e6358a9237eff",
       "features/application/ribbon-panel-expansion/unpinned-tab-switch.svg": "ce5b07d3e0fee7c9de7f41b0210ce566b173add27dce5a2637acdbc0c93f4065"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-expansion-baseline/cucumber.json",
-    "cucumber_sha256": "62f9cc8e41ba994a250fd7612fddde148a341f37a11ab9f6163ee08501961ad2",
-    "application_commit": "269fd25a2",
-    "command": "xvfb-run -a with Openbox and Vulkan Lavapipe; OBK_BDD_FEATURE=ribbon-panel-expansion cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb, Openbox and Vulkan Lavapipe; scripted scenario input",
-    "notes": "Diagnostic full run at the recorded earlier application commit: 15 of 67 passed, 43 had undefined steps and 9 failed checks. Later focused scenario fixes are not counted in this full run."
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-expansion-420d4e5/cucumber.json",
+    "cucumber_sha256": "cd5f1e39838d473b4681ffe1c9ad10f1de0c7713a76e694d2e0281cf1c32bd32",
+    "application_commit": "420d4e5ab47bcdf0b6c4d09a075dc8000593ee9e",
+    "command": "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-panel-expansion xvfb-run -a -s \"-screen 0 1600x1000x24\" cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted native scenario input",
+    "notes": "Diagnostic full run: 27 of 67 scenarios passed. Scenario source is an external directory without Git metadata; the feature hash remained unchanged. Later focused fixes are not counted in this run."
   }
 }

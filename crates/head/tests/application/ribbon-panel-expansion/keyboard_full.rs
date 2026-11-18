@@ -141,3 +141,24 @@ fn full_ribbon(world: &mut ApplicationWorld) {
 fn model_tips(world: &mut ApplicationWorld) {
     world.expect_text("HO");
 }
+
+#[cucumber::given(
+    "the 3D Model Modify additional command area is open using Alt, \"M\", and \"Y\""
+)]
+fn keyboard_open_modify(world: &mut ApplicationWorld) {
+    open_modify_by_keys(world);
+    modify_tips_visible(world);
+}
+#[cucumber::given("its command key tips are visible")]
+fn expansion_tips_visible(world: &mut ApplicationWorld) {
+    modify_tips_visible(world);
+}
+#[then("the additional command area and its key tips remain visible")]
+fn expansion_tips_remain(world: &mut ApplicationWorld) {
+    modify_tips_visible(world);
+}
+#[then("the additional command area and key tips close")]
+fn expansion_tips_closed(world: &mut ApplicationWorld) {
+    expansion_and_tips_close(world);
+    assert!(!world.frame.runs.iter().any(|run| run.text == "OD"));
+}
