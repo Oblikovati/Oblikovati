@@ -21,6 +21,7 @@ mod assembly_snapshots;
 mod close;
 mod derived_links;
 mod drawing_snapshots;
+mod drawing_view;
 mod selection;
 mod synchronization;
 pub use derived_links::DERIVED_COMMAND_METHODS;
@@ -418,11 +419,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             return Ok(result);
         }
         if method == oblikovati_api::wire::METHOD_DRAWING_VIEWS_ADD_BASE {
-            let result = crate::drawing_views::add_base(
-                self.files,
-                self.drawing_views,
-                decode(method, request)?,
-            )?;
+            let result = self.add_drawing_base(decode(method, request)?)?;
             self.synchronize_drawing_references();
             return Ok(result);
         }

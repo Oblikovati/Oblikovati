@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Consumers must replay the same named solid history as the viewport.
 use super::*;
-use oblikovati_automation::DrawingViewProjectionAccess;
+use oblikovati_automation::{DrawingViewProjectionAccess, PartUpdateAccess};
 use oblikovati_model::drawing::DrawingBaseViewDefinition;
 
 fn fillet_owner() -> (TestOwner, u64) {
@@ -50,6 +50,14 @@ fn base_view_projects_fillet_cube() {
     let counts = oblikovati_drawing::DrawingProjectionService
         .counts(session.history(), guid, &view)
         .unwrap();
+    let current = owner
+        .part_scenes
+        .current_part(&owner.files, document)
+        .unwrap();
+    let cached_counts = oblikovati_drawing::DrawingProjectionService
+        .counts_current(session.history(), guid, &view, current)
+        .unwrap();
+    assert_eq!(cached_counts, counts);
     assert!(counts[0] > 0, "fillet cube must project visible curves");
 }
 

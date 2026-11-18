@@ -16,6 +16,25 @@ use oblikovati_persistence::package::SavedDrawingLine;
 /// The shared Martensite projection backend; example: `let backend = DrawingProjectionService`.
 pub struct DrawingProjectionService;
 impl DrawingViewProjectionAccess for DrawingProjectionService {
+    fn accepts_policy(&self, policy: Option<oblikovati_martensite::PrismResolutionPolicy>) -> bool {
+        policy == Some(crate::modelling_policy())
+    }
+    fn counts_current(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        view: &DrawingBaseViewDefinition,
+        part: &PartFeatureEvaluation<NamedSolid, EvaluationFailure>,
+    ) -> Result<[usize; 2], String> {
+        require_healthy(part)?;
+        let bodies: Vec<_> = part.ordered_bodies().collect();
+        let projection =
+            oblikovati_martensite::drawing_base_view_solids(history, document, &bodies, view)?;
+        Ok([
+            projection.curves.visible.len(),
+            projection.curves.hidden.len(),
+        ])
+    }
     fn counts(
         &self,
         history: &DocumentEditHistory,
@@ -61,6 +80,12 @@ pub fn evaluate_part(
         .snapshot()
         .evaluate_part_features(&mut evaluator)
         .map_err(|cause| cause.to_string())?;
+    require_healthy(&result)?;
+    Ok(result)
+}
+fn require_healthy(
+    result: &PartFeatureEvaluation<NamedSolid, EvaluationFailure>,
+) -> Result<(), String> {
     for health in result.health() {
         if matches!(
             health.status,
@@ -74,7 +99,7 @@ pub fn evaluate_part(
             ));
         }
     }
-    Ok(result)
+    Ok(())
 }
 /// Sample one projected view for display; example: `sample_projection(&view, style, history, guid)?`.
 pub fn sample_projection(

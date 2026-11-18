@@ -49,6 +49,8 @@ fn headless_replay_tracks_each_document_and_its_own_generation() {
         .unwrap();
     set_parameter(&mut owner, "width", "6 cm");
     assert!(replay.part_requires_update(&owner.files, first).unwrap());
+    assert!(replay.current_part(&owner.files, first).is_err());
+    assert!(replay.current_part(&owner.files, second).is_ok());
     assert!(!replay.part_requires_update(&owner.files, second).unwrap());
     assert!(
         replay
