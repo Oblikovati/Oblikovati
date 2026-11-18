@@ -2165,6 +2165,7 @@ name = "oblikovati-session"
 version = "0.1.0"
 dependencies = [
  "oblikovati-api",
+ "oblikovati-martensite",
  "oblikovati-model",
  "oblikovati-persistence",
  "oblikovati-solve",

@@ -145,8 +145,6 @@ impl DesktopPartScenes {
         &mut self,
         files: &mut FileWorkspace<O, W, F>,
     ) -> Result<Option<HeadSceneUpdate>, String> {
-        self.replay
-            .retain_open_documents(files.workspace().documents());
         let source = match assembly::active_scene_source(files) {
             Ok(source) => source,
             Err(error) => return self.failed_assembly_scene(files, error),
@@ -189,7 +187,7 @@ impl DesktopPartScenes {
             .map_err(|cause| cause.to_string())?;
         if self
             .replay
-            .slot(document)
+            .slot(files, document)
             .is_none_or(|slot| slot.current(session).is_err())
         {
             self.replay.update_part(files, document)?;
@@ -197,15 +195,22 @@ impl DesktopPartScenes {
         self.active_replay = Some(document);
         Ok(())
     }
-    fn active_slot(
+    fn active_slot<'a, O: TransactionObserver>(
         &self,
-    ) -> Result<&PartEvaluationSlot<NamedSolid, oblikovati_martensite::EvaluationFailure>, String>
+        session: &'a oblikovati_session::DocumentSession<O>,
+    ) -> Result<&'a PartEvaluationSlot<NamedSolid, oblikovati_martensite::EvaluationFailure>, String>
     {
         let document = self
             .active_replay
             .ok_or("part replay: expected an active document")?;
-        self.replay
-            .slot(document)
+        if document != session.document_id() {
+            return Err(format!(
+                "document {}: expected active document {document}",
+                session.document_id()
+            ));
+        }
+        session
+            .owned_part_slot(self.resolution)
             .ok_or_else(|| format!("document {document} part replay: expected a retained result"))
     }
     /// Borrow only this session's current published bodies; example: `scenes.current(session)?`.
@@ -219,7 +224,7 @@ impl DesktopPartScenes {
         >,
         String,
     > {
-        self.active_slot()?
+        self.active_slot(session)?
             .current(session)
             .map_err(|cause| cause.to_string())
     }
@@ -374,7 +379,6 @@ impl DesktopPartScenes {
         }
     }
     pub fn clear(&mut self) {
-        self.replay.clear();
         self.active_replay = None;
         self.source = None;
         self.scene_failure = None;

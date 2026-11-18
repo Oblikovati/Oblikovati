@@ -37,14 +37,14 @@ failed host plane followed by recovery. Existing owner edit, undo, package,
 condition, placed-frame, and native pixel tests consume the same path.
 
 The model seals each captured result to its evaluated inputs, source generation,
-and accepted edit. The session checks the completed transfer before adoption. Each captured named body also checks that its own source history
-matches the accepted edit, including when document identifiers are equal. The
-adapter completes transfers through the model without a session dependency. The
-replay owner reuses checkpoints for blend creation and edits when policy and
-sketch inputs permit it. Prefixes share immutable retained results and are
-retired when their source slot is cleared, replaced, or dropped. Associative sketches use ordered
-recompute. General dirty-prefix replay, session ownership, full validity levels,
-achieved tolerance budgets, and operation-result requirements remain open.
+and accepted edit. The document session owns the result and its checkpoints,
+records the policy, and checks each transfer before adoption. Each captured
+named body also checks its own source history, even when document IDs match.
+The adapter completes transfers through the model without a session dependency.
+Prefixes share immutable results and retire when their slot is replaced or the
+document closes. Associative sketches use ordered recompute. General dirty-prefix
+replay, full validity levels, achieved tolerance budgets, and operation-result
+requirements remain open.
 
 Run `CARGO_NET_OFFLINE=true make gate` for the complete local Linux checks.
 

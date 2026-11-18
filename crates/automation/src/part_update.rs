@@ -18,20 +18,18 @@ use oblikovati_session::{
     part_evaluation::{CompletedPartEvaluation, PartEvaluationSlot},
     workspace::WorkspaceObserver,
 };
-use std::collections::BTreeMap;
 mod access;
 mod candidate;
 pub use access::PartUpdateAccess;
+use candidate::NamedSketchRecompute;
 pub use candidate::{
     CertifiedCheckpointCandidate, CertifiedCheckpointPrefix, CertifiedPartCandidate,
     CertifiedPartPrefix,
 };
-use candidate::{DocumentPartReplay, NamedSketchRecompute};
 
 /// A headless owner of generation-checked Martensite replay results.
 #[derive(Default)]
 pub struct PartReplayService {
-    slots: BTreeMap<u64, DocumentPartReplay>,
     resolution: Option<PrismResolutionPolicy>,
     replay_count: u64,
 }
@@ -39,7 +37,6 @@ impl PartReplayService {
     /// Create a certified headless replay owner; example: `PartReplayService::with_policy(policy)?`.
     pub fn with_policy(policy: PrismResolutionPolicy) -> Result<Self, String> {
         Ok(Self {
-            slots: BTreeMap::new(),
             resolution: Some(policy.validate()?),
             replay_count: 0,
         })
@@ -48,12 +45,18 @@ impl PartReplayService {
     pub fn replay_count(&self) -> u64 {
         self.replay_count
     }
-    /// Borrow a document's retained replay; example: `service.slot(document)`.
-    pub fn slot(
+    /// Borrow a document-owned replay under this service's policy.
+    /// Example: `service.slot(files, document)` before a query.
+    pub fn slot<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         &self,
+        files: &'a FileWorkspace<O, W, F>,
         document: u64,
-    ) -> Option<&PartEvaluationSlot<NamedSolid, EvaluationFailure>> {
-        self.slots.get(&document).map(|owner| &owner.part)
+    ) -> Option<&'a PartEvaluationSlot<NamedSolid, EvaluationFailure>> {
+        files
+            .workspace()
+            .session(document)
+            .ok()?
+            .owned_part_slot(self.resolution)
     }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateAccess<O, W, F>
@@ -98,7 +101,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<(), String> {
-        self.current_slot(files, document).map(|_| ())
+        self.ensure_current(files, document)
     }
     fn current_part<'a>(
         &'a self,
@@ -112,7 +115,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
             .workspace()
             .session(document)
             .map_err(|error| error.to_string())?;
-        self.slot(document)
+        self.slot(files, document)
             .ok_or_else(|| format!("document {document}: expected a retained part replay"))?
             .current(session)
             .map_err(|error| error.to_string())
@@ -127,7 +130,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
             .session(document)
             .map_err(|error| error.to_string())?;
         let prefix = self
-            .slot(document)
+            .slot(files, document)
             .ok_or_else(|| format!("document {document}: expected a retained part replay"))?
             .candidate_prefix(session)
             .map_err(|error| error.to_string())?;
@@ -142,7 +145,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         document: u64,
         edges: &[Vec<u8>],
     ) -> Result<Vec<u8>, String> {
-        let slot = self.current_slot(files, document)?;
+        self.ensure_current(files, document)?;
+        let slot = self
+            .slot(files, document)
+            .ok_or("expected document-owned replay")?;
         let workspace = files.workspace();
         let session = workspace
             .session(document)
@@ -159,25 +165,17 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<Vec<FeatureError>, String> {
-        self.retain_open_documents(files.workspace().documents());
-        let owner = self.slots.entry(document).or_default();
-        refresh_and_adopt_counted(
-            files,
-            document,
-            self.resolution,
-            &mut owner.part,
-            &mut self.replay_count,
-        )?;
-        owner.checkpoints = None;
+        refresh_and_adopt_owned(files, document, self.resolution, &mut self.replay_count)?;
         let session = files
             .workspace()
             .session(document)
             .map_err(|error| error.to_string())?;
+        let slot = self
+            .slot(files, document)
+            .ok_or("expected document-owned replay")?;
         part_feature_errors(
             session.snapshot(),
-            owner
-                .part
-                .current(session)
+            slot.current(session)
                 .map_err(|error| error.to_string())?
                 .health(),
         )
@@ -191,7 +189,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
             .workspace()
             .session(document)
             .map_err(|error| error.to_string())?;
-        Ok(part_replay_is_stale(session, self.slot(document)))
+        Ok(part_replay_is_stale(session, self.slot(files, document)))
     }
     fn resolve_planar_face(
         &mut self,
@@ -199,7 +197,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         document: u64,
         face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
     ) -> Result<oblikovati_model::sketch::SketchPlane, String> {
-        let slot = self.current_slot(files, document)?;
+        self.ensure_current(files, document)?;
+        let slot = self
+            .slot(files, document)
+            .ok_or("expected document-owned replay")?;
         resolve_slot_face(files, document, slot, face)
     }
     fn datum_evaluation(
@@ -207,7 +208,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
-        let slot = self.current_slot(files, document)?;
+        self.ensure_current(files, document)?;
+        let slot = self
+            .slot(files, document)
+            .ok_or("expected document-owned replay")?;
         let session = files
             .workspace()
             .session(document)
@@ -230,7 +234,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         files: &mut FileWorkspace<O, W, F>,
         document: u64,
     ) -> Result<oblikovati_session::part_evaluation::CurrentPartDatums, String> {
-        let slot = self.current_slot(files, document)?;
+        self.ensure_current(files, document)?;
+        let slot = self
+            .slot(files, document)
+            .ok_or("expected document-owned replay")?;
         let session = files
             .workspace()
             .session(document)
@@ -244,46 +251,34 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> PartUpdateA
         document: u64,
         face: &oblikovati_model::feature::work_plane::WorkPlaneFaceReference,
     ) -> Result<oblikovati_session::part_evaluation::CurrentPartDatums, String> {
-        let slot = self.current_slot(files, document)?;
+        self.ensure_current(files, document)?;
+        let slot = self
+            .slot(files, document)
+            .ok_or("expected document-owned replay")?;
         slot_datums_for_face(files, document, slot, face)
     }
 }
 
-/// Refresh sketches and publish a matching part result to the supplied owner.
-/// Example: `refresh_and_adopt_part(files, id, policy, &mut slot)?`.
-pub fn refresh_and_adopt_part<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+fn refresh_and_adopt_owned<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     document: u64,
-    resolution: Option<PrismResolutionPolicy>,
-    slot: &mut PartEvaluationSlot<NamedSolid, EvaluationFailure>,
-) -> Result<(), String> {
-    refresh_and_adopt_counted(files, document, resolution, slot, &mut 0)
-}
-
-fn refresh_and_adopt_counted<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-    files: &mut FileWorkspace<O, W, F>,
-    document: u64,
-    resolution: Option<PrismResolutionPolicy>,
-    slot: &mut PartEvaluationSlot<NamedSolid, EvaluationFailure>,
+    policy: Option<PrismResolutionPolicy>,
     replay_count: &mut u64,
 ) -> Result<(), String> {
-    let completed = prepare_part_sketches(files, document, resolution, replay_count)?;
-    let published = if let Some(completed) = completed {
-        files
+    let completed = prepare_part_sketches(files, document, policy, replay_count)?;
+    let published = match completed {
+        Some(completed) => files
             .commands(document)
             .map_err(|error| error.to_string())?
-            .adopt_sketch_replay(completed, slot)
-            .map_err(|error| error.to_string())?
-    } else {
-        false
+            .adopt_owned_sketches(policy, completed)?,
+        None => false,
     };
     if !published {
-        let completed = complete_part_replay_counted(files, document, resolution, replay_count)?;
+        let completed = complete_part_replay_counted(files, document, policy, replay_count)?;
         files
             .commands(document)
             .map_err(|error| error.to_string())?
-            .adopt_part_evaluation(completed, slot)
-            .map_err(|error| error.to_string())?;
+            .adopt_owned_part(policy, completed)?;
     }
     Ok(())
 }
@@ -410,15 +405,6 @@ pub fn part_replay_is_stale<O: TransactionObserver>(
         && slot.is_none_or(|result| result.current(session).is_err())
 }
 
-/// Replay against the current history with the selected tolerance policy.
-/// Example: `complete_part_replay(files, id, None)?` before generation-checked adoption.
-pub fn complete_part_replay<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
-    files: &FileWorkspace<O, W, F>,
-    document: u64,
-    resolution: Option<PrismResolutionPolicy>,
-) -> Result<CompletedPartEvaluation<NamedSolid, EvaluationFailure>, String> {
-    complete_part_replay_counted(files, document, resolution, &mut 0)
-}
 fn complete_part_replay_counted<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     document: u64,
