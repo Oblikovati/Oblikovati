@@ -12,6 +12,7 @@ mod evaluation;
 pub mod fillet;
 mod footprint;
 pub mod hole;
+pub mod move_body;
 pub mod part;
 mod replay;
 pub mod sketch_prism;
