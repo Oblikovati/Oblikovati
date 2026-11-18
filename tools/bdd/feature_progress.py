@@ -55,7 +55,7 @@ def result_status(
     if not report.is_file() or digest(report) != record.get("cucumber_sha256"):
         return "invalid_result", 0
     if info["outlines"]:
-        result = compare_inventoried_report(path, info, report)
+        result = compare_inventoried_report(path, info, report, record)
     else:
         result = compare_report(source, path, report)
     return result if digest(source / path) == info["sha256"] else ("source_changed", 0)
@@ -69,16 +69,32 @@ def source_inventory() -> list[dict[str, object]]:
 
 
 def compare_inventoried_report(
-    path: str, info: dict[str, object], report: Path
+    path: str, info: dict[str, object], report: Path, record: dict[str, object]
 ) -> tuple[str, int]:
-    """Check every parsed declaration and example; for example, compare_inventoried_report(path, info, report)."""
-    rows = [row for row in source_inventory() if row["path"] == path]
+    """Check every parsed declaration and example; for example, compare_inventoried_report(path, info, report, record)."""
+    inventory = recorded_inventory(record)
+    if inventory is None:
+        return "invalid_result", 0
+    rows = [row for row in inventory if row["path"] == path]
     if len(rows) != info["scenario_declarations"] or any(
         row["source_sha256"] != info["sha256"] for row in rows
     ):
         return "needs_outline_review", 0
     results = json.loads(report.read_text(encoding="utf-8"))
     return count_checked_scenarios(results, rows)
+
+
+def recorded_inventory(record: dict[str, object]) -> list[dict[str, object]] | None:
+    """Load a hashed parsed inventory, or the standard snapshot; for example, recorded_inventory(record)."""
+    name = record.get("scenario_inventory")
+    if name is None:
+        return source_inventory()
+    path = (ROOT / str(name)).resolve()
+    if not path.is_relative_to(ROOT.resolve()) or not path.is_file():
+        return None
+    if digest(path) != record.get("scenario_inventory_sha256"):
+        return None
+    return json.loads(path.read_text(encoding="utf-8"))["scenarios"]
 
 
 def count_checked_scenarios(
