@@ -58,8 +58,7 @@ fn menu_and_constrain_close(world: &mut ApplicationWorld) {
 
 fn sketch_with_constrain_area() -> ApplicationWorld {
     let mut world = ApplicationWorld::new();
-    world.start_empty_sketch();
-    world.record_initial_sketch();
+    sketch_constrain::active_editable_sketch(&mut world);
     constrain_area_open(&mut world);
     world
 }
