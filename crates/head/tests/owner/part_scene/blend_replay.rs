@@ -8,58 +8,37 @@ use oblikovati_model::{
     history::{DocumentEditHistory, DocumentSnapshot},
     identity::{DocumentGuid, SemanticReferenceName},
 };
-use std::cell::Cell;
-
-struct CountedFillet {
-    inner: CertifiedFilletAccess,
-    body_replays: Cell<u64>,
-    validation_replays: Cell<u64>,
-}
-impl FilletAccess for CountedFillet {
-    fn accepts_policy(&self, policy: Option<oblikovati_martensite::PrismResolutionPolicy>) -> bool {
-        self.inner.accepts_policy(policy)
-    }
-    fn body(
-        &self,
-        history: &DocumentEditHistory,
-        document: DocumentGuid,
-        edges: &[Vec<u8>],
-    ) -> Result<Vec<u8>, String> {
-        self.body_replays.set(self.body_replays.get() + 1);
-        self.inner.body(history, document, edges)
-    }
-    fn validate(
-        &self,
-        document: DocumentGuid,
-        candidate: &DocumentSnapshot,
-        feature: FeatureId,
-    ) -> Result<usize, String> {
-        self.validation_replays
-            .set(self.validation_replays.get() + 1);
-        self.inner.validate(document, candidate, feature)
-    }
-}
-
 fn count_fillet_replays(reuse: bool) -> (u64, u64, u64) {
     let (mut owner, _) = owner();
     let document = open_prism(&mut owner, false);
     let text = counted_edge_key(&owner, document);
     let policy = crate::part_scene::resolution_policy::desktop_policy();
-    let backend = CountedFillet {
-        inner: CertifiedFilletAccess::new(policy).unwrap(),
-        body_replays: Cell::new(0),
-        validation_replays: Cell::new(0),
-    };
+    let backend = CertifiedFilletAccess::new(policy).unwrap();
+    verify_declines_do_not_count_replays(&owner, document, &backend);
     let mut replay = PartReplayService::with_policy(policy).unwrap();
     replay.update_part(&mut owner.files, document).unwrap();
     let initial = replay.replay_count();
     create_counted_fillet(&mut owner, &backend, &mut replay, text, reuse);
     replay.update_part(&mut owner.files, document).unwrap();
-    (
-        backend.body_replays.get(),
-        backend.validation_replays.get(),
-        replay.replay_count() - initial,
-    )
+    let (body, validation) = backend.replay_counts();
+    (body, validation, replay.replay_count() - initial)
+}
+
+fn verify_declines_do_not_count_replays(
+    owner: &TestOwner,
+    document: u64,
+    backend: &CertifiedFilletAccess,
+) {
+    let workspace = owner.files.workspace();
+    let session = workspace.session(document).unwrap();
+    let guid = workspace.identity(document).unwrap().internal_name;
+    assert!(backend.body(session.history(), guid, &[]).is_err());
+    assert!(
+        backend
+            .validate(guid, session.snapshot(), FeatureId(1))
+            .is_err()
+    );
+    assert_eq!(backend.replay_counts(), (0, 0));
 }
 
 fn counted_edge_key(owner: &TestOwner, document: u64) -> String {
@@ -79,7 +58,7 @@ fn counted_edge_key(owner: &TestOwner, document: u64) -> String {
 
 fn create_counted_fillet(
     owner: &mut TestOwner,
-    backend: &CountedFillet,
+    backend: &CertifiedFilletAccess,
     replay: &mut PartReplayService,
     text: String,
     reuse: bool,
