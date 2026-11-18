@@ -13,12 +13,39 @@ fn add_associative(
         .add_associative_entity(input)
 }
 
+type EntityCreator = fn(
+    &mut DiscoveryWorkspace,
+    &mut QueryGuids,
+    &AddSketchEntityArgs,
+) -> Result<AddSketchEntityResult, oblikovati_api::Error>;
+
 #[test]
 fn circle_radius_expression_survives_parameter_edits_and_history() {
+    for create in [add_call as EntityCreator, add_associative] {
+        verify_driving_circle_round_trip(create);
+    }
+}
+
+fn verify_driving_circle_round_trip(create: EntityCreator) {
     let (mut files, document, mut source) = fresh();
     let mut input = circle_input();
     input.radius = "width / 2".into();
-    let circle = add_associative(&mut files, &mut source, &input).unwrap();
+    let circle = create(&mut files, &mut source, &input).unwrap();
+    assert_driving_circle_dimension(&files, document);
+    assert_radius(&files, circle.entity_id, 0.5);
+    set_width(&mut files, &mut source, "2 cm");
+    assert_radius(&files, circle.entity_id, 1.0);
+    files.commands(document).unwrap().undo().unwrap();
+    assert_radius(&files, circle.entity_id, 0.5);
+    files.commands(document).unwrap().redo().unwrap();
+    assert_radius(&files, circle.entity_id, 1.0);
+    reopen_with_observer(&mut files, document, &mut source, Default::default());
+    assert_radius(&files, circle.entity_id, 1.0);
+    set_width(&mut files, &mut source, "3 cm");
+    assert_radius(&files, circle.entity_id, 1.5);
+}
+
+fn assert_driving_circle_dimension(files: &DiscoveryWorkspace, document: u64) {
     let snapshot = files.workspace().session(document).unwrap().snapshot();
     let dimension = snapshot
         .parameters
@@ -28,31 +55,14 @@ fn circle_radius_expression_survives_parameter_edits_and_history() {
         snapshot.parameters.get(dimension).unwrap().source,
         "width / 2"
     );
-    assert_eq!(row(&files, circle.entity_id).radius, 0.5);
-    Client::new(FileHost::new(&mut files, &mut source, "test"))
-        .parameters()
-        .set(&ParameterSetArgs {
-            name: "width".into(),
-            expression: "2 cm".into(),
-            ..Default::default()
-        })
-        .unwrap();
-    assert!((row(&files, circle.entity_id).radius - 1.0).abs() < 1e-7);
-    files.commands(document).unwrap().undo().unwrap();
-    assert!((row(&files, circle.entity_id).radius - 0.5).abs() < 1e-7);
-    files.commands(document).unwrap().redo().unwrap();
-    assert!((row(&files, circle.entity_id).radius - 1.0).abs() < 1e-7);
-    reopen_with_observer(&mut files, document, &mut source, Default::default());
-    assert!((row(&files, circle.entity_id).radius - 1.0).abs() < 1e-7);
-    Client::new(FileHost::new(&mut files, &mut source, "test"))
-        .parameters()
-        .set(&ParameterSetArgs {
-            name: "width".into(),
-            expression: "3 cm".into(),
-            ..Default::default()
-        })
-        .unwrap();
-    assert!((row(&files, circle.entity_id).radius - 1.5).abs() < 1e-7);
+}
+
+fn assert_radius(files: &DiscoveryWorkspace, entity: u64, expected: f64) {
+    let radius = row(files, entity).radius;
+    assert!(
+        (radius - expected).abs() < 1e-7,
+        "radius {radius}: expected {expected}"
+    );
 }
 
 #[test]
