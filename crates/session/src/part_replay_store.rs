@@ -136,6 +136,19 @@ impl<O: TransactionObserver> DocumentSession<O> {
                 .map_err(|error| error.to_string())
         })
     }
+    /// Publish a current full replay and its boundaries together.
+    /// Example: `session.adopt_owned_full_checkpoints(policy, completed)?`.
+    pub fn adopt_owned_full_checkpoints(
+        &mut self,
+        policy: Option<PrismResolutionPolicy>,
+        completed: NamedCheckpoints,
+    ) -> Result<(), String> {
+        self.with_part_replay(policy, |session, owner| {
+            session
+                .adopt_replayed_checkpoints(completed, &mut owner.part, &mut owner.checkpoints)
+                .map_err(|error| error.to_string())
+        })
+    }
     /// Publish a replayed result and its checkpoints as one operation.
     /// Example: `session.adopt_owned_replayed_checkpoints(policy, completed)?`.
     pub fn adopt_owned_replayed_checkpoints(

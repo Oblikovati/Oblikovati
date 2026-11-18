@@ -43,6 +43,9 @@ using this status; the live scenario directory can change.
 - Each document session owns its policy-scoped part result and checkpoints.
   Hosts with the same policy share them; a policy change replaces and retires
   the old result. Closing the document drops both (#4079).
+- A cold checkpoint request for a part without associative sketch recompute
+  publishes its result and boundaries from one replay instead of two. Ownership
+  tests cover repeat requests and isolation between documents (#4079).
 - Certified Extrude creation publishes its validated document replay before
   display when a current prefix is available. Repeated previews reuse that
   prefix and cancel without an edit. Tests check two-extrusion names, policy
