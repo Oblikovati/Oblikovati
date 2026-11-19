@@ -208,7 +208,9 @@ fn short_name(world: &mut ApplicationWorld) {
     world.expect_no_text("NewSolid");
 }
 #[when("I select Show Extended Names")]
+#[when("the user selects Show Extended Names")]
 #[when("I select Show Extended Names again")]
+#[when("the user selects Show Extended Names again")]
 fn select_extended_names(world: &mut ApplicationWorld) {
     world.click_text("Show Extended Names");
     world.pump(Vec::new());

@@ -226,7 +226,9 @@ fn origin_expanded(world: &mut ApplicationWorld) {
     world.expect_text("Features");
 }
 #[when("I select the expansion control beside Origin")]
+#[when("the user selects the expansion control beside Origin")]
 #[when("I select the expansion control beside Origin again")]
+#[when("the user selects the expansion control beside Origin again")]
 fn toggle_origin(world: &mut ApplicationWorld) {
     world.press_disclosure("Origin");
 }
@@ -278,6 +280,7 @@ fn tree_and_solid_visible(world: &mut ApplicationWorld) {
     super::browser_feature::expect_solid_visible(world);
 }
 #[when("I select the browser search control")]
+#[when("the user selects the browser search control")]
 fn select_search_control(world: &mut ApplicationWorld) {
     open_search(world);
 }
@@ -300,11 +303,13 @@ fn tree_and_viewport(world: &mut ApplicationWorld) {
     expect_sketch_editing(world);
 }
 #[when("I select the close control on the empty search field")]
+#[when("the user selects the close control on the empty search field")]
 fn close_empty_field(world: &mut ApplicationWorld) {
     press_search_close(world);
 }
 // Origin rows and Display Preferences
 #[when("I select the X Axis entry in the browser")]
+#[when("the user selects the X Axis entry in the browser")]
 fn select_x_axis(world: &mut ApplicationWorld) {
     world.click_text("X Axis");
     world.pump(Vec::new());
@@ -373,7 +378,9 @@ fn work_features_unchecked(world: &mut ApplicationWorld) {
     );
 }
 #[when("I select Hide Work Features")]
+#[when("the user selects Hide Work Features")]
 #[when("I select Hide Work Features again")]
+#[when("the user selects Hide Work Features again")]
 fn select_hide_work_features(world: &mut ApplicationWorld) {
     world.click_text("Hide Work Features");
     world.pump(Vec::new());
@@ -388,6 +395,7 @@ fn sketch_entries_remain(world: &mut ApplicationWorld) {
     expect_sketch_editing(world);
 }
 #[when("I reopen browser Display Preferences")]
+#[when("the user reopens browser Display Preferences")]
 fn reopen_preferences(world: &mut ApplicationWorld) {
     expand_display_preferences(world);
 }
