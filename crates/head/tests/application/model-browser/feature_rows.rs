@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Choosing feature, body and root rows, and what they show on the block.
 use super::*;
+#[cfg(target_os = "linux")]
+#[path = "root_context_native.rs"]
+mod root_context_native;
 
 const TOOLBAR: &str = "##selection-toolbar";
 /// Well inside the block's outline, in the home view.
@@ -336,28 +339,70 @@ fn body_folder_menu(world: &mut ApplicationWorld) {
 // The document's own row
 #[given("the document root row is visible in the model browser")]
 fn root_listed(world: &mut ApplicationWorld) {
-    let name = world.state().browser.expect("expected a browser").name;
-    world.expect_text(&name);
+    root_caption(world);
 }
 fn root_name(world: &mut ApplicationWorld) -> String {
     world.state().browser.expect("expected a browser").name
 }
+fn root_caption(world: &mut ApplicationWorld) -> diagnostics::RenderedRun {
+    let name = root_name(world);
+    let (position, size) = diagnostics::window_geometry("Model").expect("expected Model browser");
+    let matches: Vec<_> = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text.starts_with(&name) && run_in_bounds(run, position, size))
+        .cloned()
+        .collect();
+    assert_eq!(
+        matches.len(),
+        1,
+        "root {name:?}: expected one caption within Model"
+    );
+    matches.into_iter().next().unwrap()
+}
+fn run_in_bounds(run: &diagnostics::RenderedRun, position: [f32; 2], size: [f32; 2]) -> bool {
+    let center = run.center();
+    (0..2).all(|axis| center[axis] >= position[axis] && center[axis] < position[axis] + size[axis])
+}
 #[when("I right-click the document root row")]
 #[when("the user right-clicks the document root row")]
 fn right_click_root(world: &mut ApplicationWorld) {
-    let name = root_name(world);
-    right_click_row(world, &name);
+    let run = root_caption(world);
+    let point = diagnostics::pointer_pixels(run.center());
+    world.right_click(point);
+    settle(world);
 }
 #[then("the root row is highlighted and the visible block edges are blue")]
 fn root_lit(world: &mut ApplicationWorld) {
-    let name = root_name(world);
-    expect_row_and_edges(world, &name);
+    assert!(
+        world
+            .state()
+            .browser
+            .expect("expected browser")
+            .root_selected
+    );
+    assert_root_accent(world);
+    expect_outline(world, true);
+}
+fn assert_root_accent(world: &mut ApplicationWorld) {
+    let run = root_caption(world);
+    let (position, size) = diagnostics::window_geometry("Model").expect("expected Model browser");
+    let selected = diagnostics::pointer_pixels([run.maximum[0] + 20., run.center()[1]]);
+    let plain = diagnostics::pointer_pixels([run.maximum[0] + 20., position[1] + size[1] - 20.]);
+    assert_ne!(
+        world.pixel_at(selected.map(|value| value as usize)),
+        world.pixel_at(plain.map(|value| value as usize)),
+        "expected root row highlight"
+    );
 }
 #[then("the context menu offers Open File Location and Copy File Path")]
+#[then("the context menu offers file-location and file-path actions")]
 fn file_rows(world: &mut ApplicationWorld) {
     expect_rows(world, &["Open File Location", "Copy File Path"]);
 }
 #[then("the context menu offers Create Drawing View and Open Drawing")]
+#[then("the context menu offers drawing actions")]
 fn drawing_rows(world: &mut ApplicationWorld) {
     expect_rows(world, &["Create Drawing View", "Open Drawing"]);
 }
