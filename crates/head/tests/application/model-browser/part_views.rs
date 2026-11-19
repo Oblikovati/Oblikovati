@@ -23,7 +23,7 @@ pub(super) fn expanded_primary_view(world: &mut ApplicationWorld) {
 }
 
 #[when("the user chooses Copy from the Primary view representation context menu")]
-fn copy_primary_view(world: &mut ApplicationWorld) {
+pub(super) fn copy_primary_view(world: &mut ApplicationWorld) {
     right_click_row(world, "Primary");
     choose_menu_row(world, "Copy");
 }
@@ -53,7 +53,7 @@ fn primary_view_active(world: &mut ApplicationWorld) {
 }
 
 #[when("the user enters \"Capture View\" and presses Enter")]
-fn rename_copied_view(world: &mut ApplicationWorld) {
+pub(super) fn rename_copied_view(world: &mut ApplicationWorld) {
     world.type_text("Capture View");
     world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
     world.pump(Vec::new());
@@ -65,13 +65,13 @@ fn copied_view_renamed(world: &mut ApplicationWorld) {
 }
 
 #[when("the user double-clicks \"Capture View\"")]
-fn activate_copied_view(world: &mut ApplicationWorld) {
+pub(super) fn activate_copied_view(world: &mut ApplicationWorld) {
     world.double_click(world.run("Capture View").center().map(|value| value as i32));
     world.pump(Vec::new());
 }
 
 #[then("\"Capture View\" is marked active")]
-fn copied_view_active(world: &mut ApplicationWorld) {
+pub(super) fn copied_view_active(world: &mut ApplicationWorld) {
     assert_eq!(
         world
             .state()
@@ -103,7 +103,7 @@ fn primary_view_branch_label(world: &mut ApplicationWorld) {
     expect_branch_label(world, "Primary");
 }
 
-fn expect_branch_label(world: &ApplicationWorld, name: &str) {
+pub(super) fn expect_branch_label(world: &ApplicationWorld, name: &str) {
     let branch = view_branch(world);
     let active = world.run(&format!("<{name}>"));
     assert!((active.center()[1] - branch.center()[1]).abs() < 3.);
@@ -254,7 +254,7 @@ fn primary_stays_active(world: &mut ApplicationWorld) {
 }
 
 #[given("a copied view representation is active")]
-fn activate_copy_for_camera(world: &mut ApplicationWorld) {
+pub(super) fn activate_copy_for_camera(world: &mut ApplicationWorld) {
     expanded_primary_view(world);
     copy_primary_view(world);
     rename_copied_view(world);
@@ -375,7 +375,7 @@ fn custom_scale_ok_disabled(world: &mut ApplicationWorld) {
 }
 #[when(expr = "the user replaces the scale with {string}")]
 fn replace_custom_scale(world: &mut ApplicationWorld, value: String) {
-    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
+    select_all_text(world);
     world.type_text(&value);
     world.pump(Vec::new());
 }
@@ -430,4 +430,26 @@ fn scale_input_run(world: &ApplicationWorld) -> &super::super::diagnostics::Rend
         .rev()
         .find(|run| ["0", "1:0", "abc", "3:2"].contains(&run.text.as_str()))
         .expect("expected the entered scale text")
+}
+
+/// Select the focused input on the platform's standard shortcut.
+pub(super) fn select_all_text(world: &mut ApplicationWorld) {
+    use oblikovati_viewport::{
+        ViewportEvent, ViewportInput, ViewportModifiers, ViewportPhysicalKey,
+    };
+    let modifiers = ViewportModifiers {
+        control: !cfg!(target_os = "macos"),
+        super_key: cfg!(target_os = "macos"),
+        ..Default::default()
+    };
+    let key = |pressed, modifiers| {
+        ViewportEvent::Input(ViewportInput::PhysicalKey {
+            key: ViewportPhysicalKey::A,
+            layout_key: ViewportPhysicalKey::A,
+            pressed,
+            command: None,
+            modifiers,
+        })
+    };
+    world.pump(vec![key(true, modifiers), key(false, Default::default())]);
 }
