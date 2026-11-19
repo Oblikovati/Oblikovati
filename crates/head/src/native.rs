@@ -33,6 +33,10 @@ pub struct NativeHeadWindow {
         oblikovati_model::document_sketch::DocumentSketchId,
         oblikovati_model::sketch::SketchConstraintId,
     )>,
+    glyph_candidates: Option<(
+        oblikovati_model::document_sketch::DocumentSketchId,
+        Vec<oblikovati_gui::GuiConstraintCandidate>,
+    )>,
     tool_hover: Option<oblikovati_viewport::ViewportSketchFeedback>,
     datum_declines: Vec<(oblikovati_model::feature::FeatureId, String)>,
     navigation: crate::navigation::DesktopNavigation,

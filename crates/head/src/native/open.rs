@@ -90,6 +90,7 @@ impl NativeHeadWindow {
             sketch_scene: None,
             glyph_hover: None,
             glyph_target: None,
+            glyph_candidates: None,
             tool_hover: None,
             datum_declines: Vec::new(),
             navigation: Default::default(),

@@ -93,7 +93,11 @@ pub enum GuiShellAction {
         token: u64,
         entity: oblikovati_model::sketch::SketchEntityId,
     },
-    /// Retire a dismissed sketch context menu.
+    /// Select one relation offered by the current glyph context.
+    SelectContextConstraintGlyph {
+        token: u64,
+        glyph: oblikovati_model::sketch::SketchConstraintId,
+    },
     /// Hide the constraint glyph captured by this context menu.
     HideContextConstraintGlyph {
         token: u64,
@@ -104,6 +108,7 @@ pub enum GuiShellAction {
         token: u64,
         shown: bool,
     },
+    /// Retire a dismissed sketch context menu.
     DismissSketchContext {
         token: u64,
     },
@@ -476,15 +481,8 @@ pub enum GuiAuthoringContext {
 pub use crate::application::model_browser::feature_properties::{
     GuiFeatureCondition, GuiFeatureEdit,
 };
-/// How a sketch's lines are drawn; a part left unset draws as the application's default.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct GuiSketchLineStyle {
-    pub color: Option<[u8; 3]>,
-    pub line_type: Option<String>,
-    /// In millimeters.
-    pub weight: Option<f32>,
-    pub scale: Option<f32>,
-}
+mod line_style;
+pub use line_style::GuiSketchLineStyle;
 mod browser_choice;
 pub use browser_choice::GuiBrowserChoice;
 mod presentation;

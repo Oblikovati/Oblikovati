@@ -259,3 +259,127 @@ fn x11_glyph_context_hide_and_f8_restore() {
     assert_eq!(world.edited_geometry(), original);
     world.close();
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_overlapping_glyph_chooser_selects_the_named_relation_and_delete_removes_it() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    parallel_lines(&mut world);
+    let edit = world.app().owner.active_sketch_edit().unwrap();
+    let line = world.edited_geometry().lines()[0].id;
+    world
+        .app()
+        .owner
+        .document_commands(edit.document)
+        .create_sketch_geometric_constraint(
+            edit.sketch,
+            &SketchGeometricConstraintCreation::Relation(PlanarConstraint::LineHorizontal { line }),
+        )
+        .unwrap();
+    world.pump(Vec::new());
+    let original = world.edited_geometry();
+    let horizontal = original
+        .constraints()
+        .iter()
+        .find(|item| matches!(item.relation, PlanarConstraint::LineHorizontal { .. }))
+        .unwrap()
+        .id;
+    let label = format!("H (constraint {})", horizontal.0);
+    super::super::x11_input::focus_window();
+    let point = world.exact_run_center("//");
+    move_pointer(&mut world, point);
+    super::super::x11_input::right_click(point);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    world.expect_text(&label);
+    if std::env::var_os("OBK_CAPTURE_OVERLAP").is_some() {
+        world.save_capture(&format!("overlap-chooser-4169-{}", std::process::id()));
+    }
+    super::super::x11_input::press_escape();
+    world.pump(Vec::new());
+    assert_eq!(world.edited_geometry(), original);
+    super::super::x11_input::right_click(point);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    let row = super::super::diagnostics::pointer_pixels(world.run(&label).center());
+    super::super::x11_input::click(row);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    let picks = world
+        .app()
+        .owner
+        .documents()
+        .workspace()
+        .session(edit.document)
+        .unwrap()
+        .selected_sketch_picks(edit.sketch);
+    assert_eq!(picks.len(), 1);
+    assert_eq!(
+        picks[0].target(),
+        oblikovati_session::selection::SketchPickTarget::GeometricConstraint(horizontal)
+    );
+    assert_eq!(world.edited_geometry(), original);
+    super::super::x11_input::press_keysym(0xffff); // X11 Delete
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    let remaining = world.edited_geometry();
+    assert!(
+        remaining
+            .constraints()
+            .iter()
+            .all(|relation| relation.id != horizontal)
+    );
+    assert_eq!(remaining.lines(), original.lines());
+    world.expect_annotation("//");
+    world.close();
+}
+
+#[test]
+fn stale_overlap_choice_cannot_select_after_a_sketch_edit() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    parallel_lines(&mut world);
+    let edit = world.app().owner.active_sketch_edit().unwrap();
+    let line = world.edited_geometry().lines()[0].id;
+    world
+        .app()
+        .owner
+        .document_commands(edit.document)
+        .create_sketch_geometric_constraint(
+            edit.sketch,
+            &SketchGeometricConstraintCreation::Relation(PlanarConstraint::LineHorizontal { line }),
+        )
+        .unwrap();
+    world.pump(Vec::new());
+    world.right_click(world.exact_run_center("//"));
+    let context = world.state().sketch_context.unwrap();
+    assert_eq!(context.glyph_candidates.len(), 2);
+    let choice = context.glyph_candidates[0].constraint;
+    world
+        .app()
+        .owner
+        .document_commands(edit.document)
+        .create_sketch_primitive(
+            edit.sketch,
+            &SketchPrimitiveCreation::Point { position: [8., 8.] },
+        )
+        .unwrap();
+    assert!(
+        world
+            .app()
+            .owner
+            .select_context_constraint_glyph(context.token, choice)
+            .is_err()
+    );
+    let picks = world
+        .app()
+        .owner
+        .documents()
+        .workspace()
+        .session(edit.document)
+        .unwrap()
+        .selected_sketch_picks(edit.sketch);
+    assert!(picks.is_empty());
+    world.close();
+}

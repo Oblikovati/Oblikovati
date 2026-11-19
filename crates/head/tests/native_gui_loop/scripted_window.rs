@@ -10,6 +10,15 @@ impl HeadWindow for ScriptedGuiWindow {
         self.native.hovered_constraint_glyph()
     }
 
+    fn hovered_constraint_glyphs(
+        &self,
+    ) -> Option<(
+        oblikovati_model::document_sketch::DocumentSketchId,
+        Vec<oblikovati_gui::GuiConstraintCandidate>,
+    )> {
+        self.native.hovered_constraint_glyphs()
+    }
+
     fn window_action(&mut self, action: oblikovati_gui::GuiWindowAction) -> Result<bool, String> {
         self.native.window_action(action)
     }

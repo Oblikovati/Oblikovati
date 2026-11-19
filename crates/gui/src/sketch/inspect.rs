@@ -93,6 +93,8 @@ pub struct GuiSketchContext {
     pub block: Option<oblikovati_model::sketch::SketchEntityId>,
     /// The geometric constraint whose displayed glyph was hit.
     pub glyph: Option<oblikovati_model::sketch::SketchConstraintId>,
+    /// Exact overlapping glyphs captured when this context opened.
+    pub glyph_candidates: Vec<crate::GuiConstraintCandidate>,
     pub center_point: bool,
     /// Every entity within reach; two or more is what Select Other is for.
     pub candidates: Vec<GuiSketchCandidate>,
@@ -257,14 +259,15 @@ fn constraint_glyph_rows(
     let Some(context) = state
         .sketch_context
         .as_ref()
-        .filter(|context| context.glyph.is_some())
+        .filter(|context| context.glyph.is_some() || !context.glyph_candidates.is_empty())
     else {
         return false;
     };
-    let Some(glyph) = context.glyph else {
-        return false;
-    };
-    if ui.menu_item("Hide") {
+    if context.glyph_candidates.len() > 1 {
+        glyph_chooser(ui, context, actions);
+    } else if let Some(glyph) = context.glyph
+        && ui.menu_item("Hide")
+    {
         actions.push(GuiShellAction::HideContextConstraintGlyph {
             token: context.token,
             glyph,
@@ -283,6 +286,29 @@ fn constraint_glyph_rows(
         });
     }
     true
+}
+
+fn glyph_chooser(ui: &Ui, context: &GuiSketchContext, actions: &mut Vec<GuiShellAction>) {
+    ui.text("Select constraint");
+    let rows = context.glyph_candidates.len().min(8) as f32;
+    let height =
+        (ui.text_line_height_with_spacing() * rows + 8.).min(ui.io().display_size[1] * 0.5);
+    ui.child_window("##overlapping-constraint-glyphs")
+        .size([240., height])
+        .border(true)
+        .build(|| {
+            let count = i32::try_from(context.glyph_candidates.len()).unwrap_or(i32::MAX);
+            for index in imgui::ListClipper::new(count).begin(ui).iter() {
+                let candidate = &context.glyph_candidates[index as usize];
+                let label = format!("{} (constraint {})", candidate.text, candidate.constraint.0);
+                if ui.menu_item(&label) {
+                    actions.push(GuiShellAction::SelectContextConstraintGlyph {
+                        token: context.token,
+                        glyph: candidate.constraint,
+                    });
+                }
+            }
+        });
 }
 
 fn explode_block_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {

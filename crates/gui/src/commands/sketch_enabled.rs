@@ -67,8 +67,14 @@ pub(super) fn glyph_context(
     state.sketch_at_ready
         && state.sketch_context.as_ref().is_some_and(|context| {
             context.token == token
-                && context.glyph.is_some()
-                && expected.is_none_or(|glyph| context.glyph == Some(glyph))
+                && (context.glyph.is_some() || !context.glyph_candidates.is_empty())
+                && expected.is_none_or(|glyph| {
+                    context.glyph == Some(glyph)
+                        || context
+                            .glyph_candidates
+                            .iter()
+                            .any(|candidate| candidate.constraint == glyph)
+                })
         })
 }
 
@@ -88,4 +94,10 @@ pub(super) fn dimension_cancel(state: &GuiCommandState, id: u64) -> bool {
         .dimension_draft
         .as_ref()
         .is_some_and(|draft| draft.id == id)
+}
+
+pub(super) fn format_available(state: &GuiCommandState) -> bool {
+    state.authoring == GuiAuthoringContext::Sketch
+        && state.sketch_format_available
+        && !state.transaction_open
 }

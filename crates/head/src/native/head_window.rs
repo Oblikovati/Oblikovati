@@ -12,6 +12,15 @@ impl HeadWindow for NativeHeadWindow {
         self.glyph_target
     }
 
+    fn hovered_constraint_glyphs(
+        &self,
+    ) -> Option<(
+        oblikovati_model::document_sketch::DocumentSketchId,
+        Vec<oblikovati_gui::GuiConstraintCandidate>,
+    )> {
+        self.glyph_candidates.clone()
+    }
+
     fn capture_window(&self) -> Result<oblikovati_viewport::ViewportCapture, String> {
         self.view.capture()
     }

@@ -25,6 +25,7 @@ pub(super) fn context_target(
         curve,
         block: None,
         glyph: None,
+        glyph_candidates: Vec::new(),
         generation,
         document: edit.document,
         sketch: edit.sketch,

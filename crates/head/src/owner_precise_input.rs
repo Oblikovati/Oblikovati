@@ -335,21 +335,28 @@ impl<
             target.curve = None;
             target.candidates.clear();
         }
-        if let Some((_, relation)) =
-            window
-                .hovered_constraint_glyph()
-                .filter(|(sketch_id, relation)| {
-                    *sketch_id == edit.sketch
+        if let Some((sketch_id, candidates)) = window.hovered_constraint_glyphs() {
+            let relation_ids: std::collections::BTreeSet<_> =
+                geometry.geometric_relation_ids().collect();
+            let candidates: Vec<_> = candidates
+                .into_iter()
+                .filter(|candidate| {
+                    sketch_id == edit.sketch
                         && sketch.constraints_shown()
-                        && !sketch.hidden_constraint_glyphs().contains(relation)
-                        && geometry.has_geometric_relation(*relation)
+                        && !sketch
+                            .hidden_constraint_glyphs()
+                            .contains(&candidate.constraint)
+                        && relation_ids.contains(&candidate.constraint)
                 })
-        {
-            target.glyph = Some(relation);
-            target.block = None;
-            target.point = None;
-            target.curve = None;
-            target.candidates.clear();
+                .collect();
+            if !candidates.is_empty() {
+                target.glyph = (candidates.len() == 1).then_some(candidates[0].constraint);
+                target.glyph_candidates = candidates;
+                target.block = None;
+                target.point = None;
+                target.curve = None;
+                target.candidates.clear();
+            }
         }
         target.token = token;
         self.sketch_memory.context_serial = token;
@@ -440,6 +447,7 @@ pub(super) struct SketchContextTarget {
     pub(super) curve: Option<SketchEntityId>,
     pub(super) block: Option<SketchEntityId>,
     pub(super) glyph: Option<oblikovati_model::sketch::SketchConstraintId>,
+    pub(super) glyph_candidates: Vec<oblikovati_gui::GuiConstraintCandidate>,
     pub(super) generation: u64,
     pub(super) document: u64,
     pub(super) sketch: oblikovati_model::document_sketch::DocumentSketchId,
