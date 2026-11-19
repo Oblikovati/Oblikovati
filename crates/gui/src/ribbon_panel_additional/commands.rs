@@ -39,7 +39,7 @@ pub(super) fn draw(
         return;
     }
     let labels = match panel {
-        RibbonPanel::PartModify => &["Move Bodies", "Bend Part", "Copy Object"][..],
+        RibbonPanel::PartModify => &["Move Bodies", "Bend Part", "Copy Object", "Shell"][..],
         RibbonPanel::PartSimplification => {
             &["Remove Details", "Fill Voids", "Define Envelopes"][..]
         }
@@ -51,7 +51,10 @@ pub(super) fn draw(
         {
             continue;
         }
-        let action = (label == "Move Bodies").then_some(GuiShellAction::OpenMoveBody);
+        if label == "Shell" && !crate::shell_ribbon::is_expanded(context.owners.customization) {
+            continue;
+        }
+        let action = crate::shell_ribbon::additional_action(label);
         let coordinate = coordinate_restriction::ready(label, context.state);
         let disabled = ui.begin_disabled(
             !coordinate
@@ -92,7 +95,10 @@ fn additional_icons(
         }
         let (position, size) = icons.appearance.cell(index);
         icons.cursor(ui, origin, position);
-        let action = (label == "Move Bodies").then_some(GuiShellAction::OpenMoveBody);
+        if label == "Shell" && !crate::shell_ribbon::is_expanded(context.owners.customization) {
+            continue;
+        }
+        let action = crate::shell_ribbon::additional_action(label);
         let coordinate = coordinate_restriction::ready(label, context.state);
         let disabled = ui.begin_disabled(
             !coordinate
@@ -126,6 +132,7 @@ fn additional_icon_entries(
             ("Move Bodies", Glyph::MoveBodies),
             ("Bend Part", Glyph::BendPart),
             ("Copy Object", Glyph::Copy),
+            ("Shell", Glyph::Shell),
         ],
         RibbonPanel::PartSimplification => &[
             ("Remove Details", Glyph::Simplify),
@@ -152,6 +159,10 @@ fn unavailable_tooltip(
     }
     if ui.is_mouse_clicked(imgui::MouseButton::Right) {
         display.request_expansion_command_context(tab, panel, label);
+    }
+    if label == "Shell" {
+        ui.tooltip_text("Shell\nRemove faces to create a hollow solid.");
+        return;
     }
     if label == "Move Bodies" {
         ui.tooltip_text("Move Bodies\nMove a solid body using parameter-driven offsets.");

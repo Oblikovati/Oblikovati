@@ -216,3 +216,24 @@ fn move_body_main_placement_round_trips_and_reset_restores_additional_area() {
     restored.set_store(Box::new(store)).unwrap();
     assert!(!crate::move_body_ribbon::is_main(&restored));
 }
+
+#[test]
+fn shell_placement_persists_and_restores_without_moving_other_commands() {
+    let store = FakeRibbonStore::default();
+    let mut customization = RibbonCustomization::default();
+    customization.set_store(Box::new(store.clone())).unwrap();
+    assert!(!crate::shell_ribbon::is_expanded(&customization));
+    customization
+        .relocate_builtin(crate::shell_ribbon::ID, true)
+        .unwrap();
+    let mut reopened = RibbonCustomization::default();
+    reopened.set_store(Box::new(store.clone())).unwrap();
+    assert!(crate::shell_ribbon::is_expanded(&reopened));
+    assert!(!crate::move_body_ribbon::is_main(&reopened));
+    reopened
+        .relocate_builtin(crate::shell_ribbon::ID, false)
+        .unwrap();
+    let mut restored = RibbonCustomization::default();
+    restored.set_store(Box::new(store)).unwrap();
+    assert!(!crate::shell_ribbon::is_expanded(&restored));
+}
