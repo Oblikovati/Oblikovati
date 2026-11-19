@@ -14,11 +14,13 @@ fn rectangle_selection_survives_context_menu_and_escape() {
     super::native_click(&mut world, position);
     let selected = vec![(edit.sketch, edge)];
     assert_eq!(world.state().sketch_selection.entities, selected);
+    assert_selected_edge_color(&mut world, &baseline);
     open_rectangle_menu(&mut world);
     assert_eq!(world.state().sketch_selection.entities, selected);
     assert_selected_edge_color(&mut world, &baseline);
     dismiss_rectangle_menu(&mut world);
     assert_eq!(world.state().sketch_selection.entities, selected);
+    assert_selected_edge_color(&mut world, &baseline);
     clear_rectangle_selection(&mut world, &baseline);
     world.close();
 }
@@ -53,7 +55,8 @@ fn assert_selected_edge_color(
     baseline: &oblikovati_viewport::ViewportCapture,
 ) {
     use oblikovati_api::types::{TOKEN_SKETCH_GEOMETRY, TOKEN_SKETCH_SELECTED};
-    let sample = world.line_point(0, 0.8);
+    // #4168: the context menu covers the edge near its far end.
+    let sample = world.line_point(0, 0.5);
     let state = world.state();
     let palette = state.theme.as_ref().expect("active theme").palette();
     let normal = &palette[&TOKEN_SKETCH_GEOMETRY];
@@ -63,7 +66,8 @@ fn assert_selected_edge_color(
         [selected.r, selected.g, selected.b],
     ];
     let after = super::super::super::capture_framebuffer(&mut world.app().window.native);
-    assert!(super::selection_color_changed(
-        baseline, &after, sample, colors
-    ));
+    assert!(
+        super::selection_color_changed(baseline, &after, sample, colors),
+        "expected the selected edge color at the uncovered point {sample:?}"
+    );
 }
