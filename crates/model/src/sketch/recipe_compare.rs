@@ -52,7 +52,7 @@ fn same_constraints(first: &[SketchConstraint], second: &[SketchConstraint]) -> 
             first.id == second.id && same_relation(&first.relation, &second.relation)
         })
 }
-fn same_relation(first: &PlanarConstraint, second: &PlanarConstraint) -> bool {
+pub(super) fn same_relation(first: &PlanarConstraint, second: &PlanarConstraint) -> bool {
     match (first, second) {
         (
             PlanarConstraint::Ground { points: first },

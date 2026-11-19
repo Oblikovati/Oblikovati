@@ -268,15 +268,7 @@ impl Sketch2D {
         cancelled: impl FnMut() -> bool,
     ) -> Result<SketchSolveOutcome, SketchError> {
         let prepared = grounded::prepare(self, parameters, anchors)?;
-        let warm_values = prepared.warm_start_values(self);
-        let numerical = solve_constraints_with_constants(
-            &warm_values,
-            &prepared.blocks(),
-            &prepared.constants,
-            options,
-            cancelled,
-        )
-        .map_err(|cause| source_failure(&prepared.origins, cause))?;
+        let numerical = self.solve_prepared_grounded(&prepared, options, cancelled)?;
         let candidate = self.candidate_values(&prepared.restore(&numerical.values)?)?;
         let operands = residual_operands(self, &prepared, &numerical.values, anchors)?;
         let equations = prepared.equation_evidence(self);
@@ -296,6 +288,21 @@ impl Sketch2D {
             numerical,
             parameter_dependencies: prepared.parameter_dependencies,
         })
+    }
+    pub(super) fn solve_prepared_grounded(
+        &self,
+        prepared: &grounded::GroundedSketch,
+        options: SolveOptions,
+        cancelled: impl FnMut() -> bool,
+    ) -> Result<NonlinearResult, SketchError> {
+        solve_constraints_with_constants(
+            &prepared.warm_start_values(self),
+            &prepared.blocks(),
+            &prepared.constants,
+            options,
+            cancelled,
+        )
+        .map_err(|cause| source_failure(&prepared.origins, cause))
     }
     /// Inspect local DOF without changing geometry or iterating; example: `sketch.analyze(&parameters, 1e-9)?`.
     pub fn analyze(
