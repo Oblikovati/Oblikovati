@@ -119,7 +119,8 @@ fn suppressed_row(world: &mut ApplicationWorld) {
 }
 #[then("the extrusion row is no longer struck through")]
 fn computed_row(world: &mut ApplicationWorld) {
-    let run = world.run("Extrude1");
+    let name = world.state().browser.unwrap().features[0].name.clone();
+    let run = world.run(&name);
     assert!(
         !diagnostics::has_strike(run),
         "expected no line across the feature name"

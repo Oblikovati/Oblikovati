@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Compare an accepted table after the host replaces draft row keys (#4119).
+//! Compare an accepted table after the host replaces draft row keys (#4119, #4124).
 use oblikovati_api::wire::*;
 
 pub(crate) fn same_table(draft: &ModelStateTableView, current: &ModelStateTableView) -> bool {
@@ -77,7 +77,8 @@ fn suppressions_match(draft: &ModelStateTableView, current: &ModelStateTableView
                             (Some(x), Some(y)) => {
                                 x.len() == y.len()
                                     && x.iter().zip(y).enumerate().all(|(i, (x, y))| {
-                                        x.suppressed == y.suppressed
+                                        x.suppressed.as_deref().copied().unwrap_or(a.base)
+                                            == y.suppressed.as_deref().copied().unwrap_or(b.base)
                                             && row_matches(draft, current, i, &x.row, &y.row)
                                     })
                             }
@@ -157,5 +158,49 @@ mod tests {
             .unwrap()[0]
             .expression = Some(Box::new("3 cm".into()));
         assert!(!same_table(&draft, &accepted));
+    }
+    #[test]
+    fn accepted_suppression_may_be_normalized_to_the_base() {
+        let row = ModelStateTableRowRef {
+            member_id: 1,
+            ..Default::default()
+        };
+        let member = ModelStateTableRow {
+            ref_: row.clone(),
+            name: "Primary".into(),
+            source: None,
+        };
+        let column = ModelStateTableSuppression {
+            feature_id: 1,
+            base: false,
+            cells: Some(vec![ModelStateTableSuppressionCell {
+                row,
+                suppressed: Some(Box::new(false)),
+            }]),
+        };
+        let draft = ModelStateTableView {
+            rows: Some(vec![member]),
+            columns: Some(vec![]),
+            properties: Some(vec![]),
+            suppressions: Some(vec![column]),
+            parameters: Some(vec![]),
+            ..Default::default()
+        };
+        let mut current = draft.clone();
+        current.suppressions.as_mut().unwrap()[0]
+            .cells
+            .as_mut()
+            .unwrap()[0]
+            .suppressed = None;
+        assert!(same_table(&draft, &current));
+        current.suppressions.as_mut().unwrap()[0].base = true;
+        assert!(!same_table(&draft, &current));
+        current.suppressions.as_mut().unwrap()[0].base = false;
+        current.suppressions.as_mut().unwrap()[0]
+            .cells
+            .as_mut()
+            .unwrap()[0]
+            .suppressed = Some(Box::new(true));
+        assert!(!same_table(&draft, &current));
     }
 }

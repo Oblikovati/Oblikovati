@@ -77,11 +77,12 @@ impl ModelStateTable {
         else {
             return;
         };
-        if draft.generation != current.generation
-            && crate::model_state_table_acceptance::same_table(draft, current)
-        {
+        if current.generation < draft.generation {
+            return;
+        }
+        if crate::model_state_table_acceptance::same_table(draft, current) {
             self.close();
-        } else {
+        } else if current.generation > draft.generation {
             self.pending = false;
         }
     }

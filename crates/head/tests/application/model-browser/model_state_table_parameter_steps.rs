@@ -235,13 +235,20 @@ fn accept_parameter_table(world: &mut ApplicationWorld) {
             .frame
             .runs
             .iter()
-            .any(|run| run.text.trim() == "Model State Table")
+            .any(|run| run.text == "ModelStateTable")
         {
             return;
         }
         world.pump(Vec::new());
     }
-    panic!("expected model-state table to close after accepting its checked draft");
+    let view = Client::new(world.app().owner.document_host())
+        .model_states()
+        .get_table(&Default::default())
+        .unwrap();
+    panic!(
+        "expected model-state table to close after accepting its checked draft; committed host view: {view:?}; rendered: {:?}",
+        world.frame.runs
+    );
 }
 #[when("reopens the model-state table")]
 fn reopen_parameter_table(world: &mut ApplicationWorld) {

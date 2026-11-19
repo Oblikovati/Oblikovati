@@ -188,3 +188,30 @@ fn verification_is_visible_only_for_the_exact_document_and_draft() {
     table.document = Some(2);
     assert!(table.current_verification(&state).is_none());
 }
+
+#[test]
+fn stale_matching_response_cannot_acknowledge_a_pending_draft() {
+    let mut state = state();
+    let mut table = ModelStateTable::default();
+    table.open(&state);
+    table.pending = true;
+    let view = std::sync::Arc::make_mut(state.model_state_table.as_mut().unwrap());
+    view.generation -= 1;
+    table.sync_before_docking(&state);
+    assert!(table.document.is_some());
+    assert!(table.pending);
+    let view = std::sync::Arc::make_mut(state.model_state_table.as_mut().unwrap());
+    view.generation += 2;
+    table.sync_before_docking(&state);
+    assert!(table.document.is_none());
+}
+
+#[test]
+fn pending_noop_closes_when_the_current_table_already_matches() {
+    let state = state();
+    let mut table = ModelStateTable::default();
+    table.open(&state);
+    table.pending = true;
+    table.sync_before_docking(&state);
+    assert!(table.document.is_none());
+}
