@@ -65,3 +65,43 @@ fn shell_preview_input(owner: &TestOwner, document: u64) -> oblikovati_automatio
     )
     .unwrap()
 }
+
+#[test]
+fn shell_desktop_request_validates_selection_and_reports_kernel_refusal() {
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let document = open_prism(&mut owner, false);
+    owner.take_scene().unwrap().unwrap();
+    owner.ambient_selection.disable_all();
+    owner
+        .ambient_selection
+        .set_enabled(oblikovati_session::selection::SelectionKind::Face, true);
+    owner
+        .click_model_with_window(document, [[2., 1.5, 10.], [0., 0., -1.]], Some(0.01))
+        .unwrap();
+    let face = owner.chosen_model_face(document).unwrap();
+    let generation = owner
+        .files
+        .workspace()
+        .session(document)
+        .unwrap()
+        .generation();
+    let request = oblikovati_gui::GuiShellFeatureRequest {
+        document,
+        generation,
+        faces: vec![face.key.iter().map(|byte| format!("{byte:02x}")).collect()],
+        thickness: "1 mm".into(),
+    };
+    let mut stale = request.clone();
+    stale.generation += 1;
+    assert!(crate::HeadWork::preview_shell_from_gui(&mut owner, Some(&stale)).is_err());
+    let error = crate::HeadWork::preview_shell_from_gui(&mut owner, Some(&request)).unwrap_err();
+    assert!(
+        error.contains("tolerance"),
+        "unexpected Shell refusal: {error}"
+    );
+    assert!(owner.extrusion_preview.is_none());
+    assert!(!owner.files.workspace().needs_save(document).unwrap());
+}

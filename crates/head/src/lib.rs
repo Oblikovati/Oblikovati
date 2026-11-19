@@ -53,6 +53,7 @@ mod work_blend;
 mod work_drawing;
 mod work_hole;
 mod work_move_body;
+mod work_shell_feature;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[macro_use]
 mod work_metadata;

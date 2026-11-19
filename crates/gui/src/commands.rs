@@ -391,19 +391,11 @@ pub enum GuiSelectionMode {
     Components,
     Custom,
 }
-/// A drawing view chosen in the desktop dialog.
-#[derive(Clone, Debug, PartialEq)]
-pub struct GuiBaseViewRequest {
-    pub drawing: u64,
-    pub source: u64,
-    pub orientation: String,
-    pub scale: f64,
-    pub center: [f64; 2],
-}
 mod feature_requests;
 pub use feature_requests::{
-    GuiDrawingLine, GuiDrawingProjection, GuiExtrudeEditRequest, GuiExtrudePreview,
-    GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest, GuiMoveBodyRequest,
+    GuiBaseViewRequest, GuiDrawingLine, GuiDrawingProjection, GuiExtrudeEditRequest,
+    GuiExtrudePreview, GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest, GuiMoveBodyRequest,
+    GuiShellFeatureRequest,
 };
 /// Owner validation for one extrusion expression and active document.
 #[derive(Clone, Debug, PartialEq, Eq)]
