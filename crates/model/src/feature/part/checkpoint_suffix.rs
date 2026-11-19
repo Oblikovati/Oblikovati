@@ -63,7 +63,7 @@ impl<Body: Clone, Failure: Clone> PartReplayCheckpoints<Body, Failure> {
                 &mut |state, health| states.push(copy_state(state, health, &source)),
             )
             .map_err(|error| error.to_string())?;
-        result.refresh_sketch_faces(&candidate, backend);
+        result.refresh_sketch_references(&candidate, backend);
         result.health = controller.finish().map_err(|error| error.to_string())?;
         if cancelled() {
             return Err(format!(

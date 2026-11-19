@@ -17,6 +17,10 @@ impl DocumentSketches {
                 sketch.placement,
                 SketchPlacement::Fixed(_) | SketchPlacement::OriginPlane(_)
             ) || sketch.orientation.is_some()
+                || sketch
+                    .frame_edit
+                    .as_ref()
+                    .is_some_and(|edit| edit.requires_datums())
                 || !sketch.point_projections.is_empty()
         })
     }
@@ -103,24 +107,33 @@ impl PlacedSketch {
         if let Some(orientation) = self.orientation {
             keys.extend(orientation.read_keys());
         }
+        if let Some(edit) = &self.frame_edit {
+            keys.extend(edit.read_keys());
+        }
         keys
     }
-    /// Resolve the frame without a stale fallback; example: `placed.plane(Some(&current_planes))?`.
+    /// Resolve with caller-supplied current planes; the caller must verify their source freshness.
+    /// Example: `placed.plane(Some(&current_planes))?`.
     pub fn plane(
         &self,
         planes: Option<&dyn WorkPlaneResolver>,
     ) -> Result<SketchPlane, WorkPlaneError> {
         self.plane_with_axes(planes, &super::orientation::UnavailableSketchAxes)
     }
-    /// Resolve the current base and axis before orientation; example: `placed.plane_with_axes(Some(&planes), &axes)?`.
+    /// Resolve using caller-supplied current resolvers; callers must ensure their data is fresh for this sketch.
+    /// Example: `placed.plane_with_axes(Some(&planes), &axes)?`.
     pub fn plane_with_axes(
         &self,
         planes: Option<&dyn WorkPlaneResolver>,
         axes: &dyn super::SketchAxisResolver,
     ) -> Result<SketchPlane, WorkPlaneError> {
         let base = self.base_plane(planes)?;
-        super::orientation::orient_current(base, self.orientation, axes)
-            .map_err(WorkPlaneError::Frame)
+        let frame = super::orientation::orient_current(base, self.orientation, axes)
+            .map_err(WorkPlaneError::Frame)?;
+        match &self.frame_edit {
+            Some(edit) => edit.resolve(frame, axes).map_err(WorkPlaneError::Frame),
+            None => Ok(frame),
+        }
     }
     fn base_plane(
         &self,

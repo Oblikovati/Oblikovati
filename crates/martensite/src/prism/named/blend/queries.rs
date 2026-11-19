@@ -111,6 +111,24 @@ impl BlendNamedTopology {
         super::super::subentities::analytic_edge_length(edge)
     }
 
+    /// Resolve an exact named vertex or circular-edge center; example: `body.frame_origin(history, document, key)?`.
+    pub fn frame_origin(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        key: &[u8],
+    ) -> Result<[f64; 3], String> {
+        let kind = ReferenceEnvelope::decode(key)
+            .map_err(|error| error.to_string())?
+            .kind;
+        if !matches!(kind, 2 | 3) {
+            return Err(format!(
+                "frame origin key {key:?}, kind {kind}: expected edge 2 or vertex 3"
+            ));
+        }
+        let entity = self.bindings.bind(history, document, key, kind)?;
+        super::super::frame_origin::analytic_frame_origin(entity, kind)
+    }
     /// Read an analytic bounds center for an edge or vertex; example: `body.subentity_point(&history, document, key)?`.
     pub fn subentity_point(
         &self,

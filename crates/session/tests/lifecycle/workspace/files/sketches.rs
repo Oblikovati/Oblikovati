@@ -456,5 +456,8 @@ mod conditional_precision;
 #[path = "sketches/visibility.rs"]
 mod visibility;
 
+#[path = "sketches/frame_edit.rs"]
+mod frame_edit;
+
 #[path = "sketches/legacy_3d_safety.rs"]
 mod legacy_3d_safety;

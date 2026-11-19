@@ -210,6 +210,33 @@ fn subentity_keys(history: &DocumentEditHistory) -> Vec<Vec<u8>> {
     keys
 }
 
+#[test]
+fn named_cube_vertices_resolve_as_exact_frame_origins() {
+    let history = owner(cube_document());
+    let body = certified(&history);
+    let keys = body.subentity_reference_keys(&history, document()).unwrap();
+    let vertices: Vec<_> = keys
+        .iter()
+        .filter(|key| {
+            oblikovati_model::identity::ReferenceEnvelope::decode(key)
+                .unwrap()
+                .kind
+                == 3
+        })
+        .collect();
+    assert_eq!(vertices.len(), 8);
+    for key in vertices {
+        let expected = body
+            .subentity_provenance(&history, document(), key)
+            .unwrap()
+            .point;
+        assert_eq!(
+            body.frame_origin(&history, document(), key).unwrap(),
+            expected
+        );
+    }
+}
+
 #[path = "fillet_replay.rs"]
 mod fillet_replay;
 #[path = "rebuild/hole_replay.rs"]

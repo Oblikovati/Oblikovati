@@ -75,6 +75,11 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     pub fn datum_evaluation(&self) -> WorkGeometryEvaluation {
         let mut datums = self.datums.clone();
         datums.health = self.health.iter().filter_map(datum_health).collect();
+        if let Some(source) = &self.source
+            && !datums.has_part_source_for(source)
+        {
+            datums.bind_part_source(std::sync::Arc::clone(source));
+        }
         datums
     }
     /// Resolve a prospective sketch support against this part result.
@@ -236,7 +241,7 @@ impl DocumentSnapshot {
             cancelled,
             observe,
         )?;
-        evaluation.refresh_sketch_faces(&candidate, backend);
+        evaluation.refresh_sketch_references(&candidate, backend);
         evaluation.health = controller
             .finish()
             .map_err(PartFeatureProgramError::Reads)?;
@@ -253,7 +258,16 @@ impl DocumentSnapshot {
             )?;
             candidate.sketches = solved.candidate;
         }
-        evaluation.source = Some(std::sync::Arc::new(candidate.as_ref().clone()));
+        let output = std::sync::Arc::new(candidate.as_ref().clone());
+        let input = if self.sketches.same_recipe(&candidate.sketches) {
+            std::sync::Arc::clone(&output)
+        } else {
+            std::sync::Arc::new(self.clone())
+        };
+        evaluation
+            .datums
+            .bind_part_sources(input, std::sync::Arc::clone(&output));
+        evaluation.source = Some(output);
         Ok((evaluation, candidate))
     }
 }
@@ -279,14 +293,29 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             &mut |_, _| {},
         )
     }
-    pub(super) fn refresh_sketch_faces<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
+    pub(super) fn refresh_sketch_references<
+        B: PartFeatureEvaluator<Body = Body, Failure = Failure>,
+    >(
         &mut self,
         snapshot: &DocumentSnapshot,
         backend: &B,
     ) {
         use crate::document_sketch::SketchPlacement;
         let mut faces = BTreeMap::new();
+        let mut origins = BTreeMap::new();
         for sketch in snapshot.sketches.sketches() {
+            if let Some(crate::document_sketch::SketchFrameOrigin::Topology(reference)) =
+                sketch.frame_edit().and_then(|edit| edit.origin.as_ref())
+            {
+                origins.entry(reference.key().to_vec()).or_insert_with(|| {
+                    super::body_resolution::resolve_body_frame_origin(
+                        &self.bodies,
+                        &self.body_lineage,
+                        backend,
+                        reference,
+                    )
+                });
+            }
             if let SketchPlacement::Face(reference) = sketch.placement() {
                 faces.entry(reference.key().to_vec()).or_insert_with(|| {
                     resolve_body_face(&self.bodies, &self.body_lineage, backend, &reference)
@@ -294,6 +323,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
         }
         self.datums.replace_sketch_faces(faces);
+        self.datums.replace_sketch_frame_origins(origins);
     }
     pub(super) fn solve_feature_sketch(
         &self,

@@ -251,7 +251,7 @@ impl<Body, Failure: Clone> PartFeatureEvaluation<Body, Failure> {
                 &mut || false,
             )
             .map_err(|error| error.to_string())?;
-        result.refresh_sketch_faces(&candidate, &backend);
+        result.refresh_sketch_references(&candidate, &backend);
         result.health = controller.finish().map_err(|error| error.to_string())?;
         result.source = Some(std::sync::Arc::new(candidate.as_ref().clone()));
         Ok(BorrowedPartReplay(result))

@@ -6,7 +6,7 @@ mod normal;
 mod through_points;
 pub(crate) use direction::{normalize_direction, point_difference};
 mod orientation;
-pub use orientation::SketchFrameAxis;
+pub use orientation::{SketchFrameAlignment, SketchFrameAxis};
 /// Versioned metric checks for authored sketch frame axes, separate from modelling tolerance.
 #[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]

@@ -41,6 +41,7 @@ pub(super) struct SketchEvaluationStamp {
     projections: Result<Vec<SketchPoint2D>, SketchError>,
     placement: super::SketchPlacement,
     orientation: Option<super::SketchOrientationDefinition>,
+    frame_edit: Option<super::SketchFrameEditDefinition>,
 }
 #[derive(Clone, Debug, PartialEq)]
 enum SketchParameterInput {
@@ -87,6 +88,7 @@ impl PlacedSketch {
         self.evaluation.as_ref().is_some_and(|stamp| {
             stamp.placement.same_recipe(&self.placement)
                 && super::orientation::same_orientation(stamp.orientation, self.orientation)
+                && super::frame_edit::same(stamp.frame_edit.as_ref(), self.frame_edit.as_ref())
         })
     }
     pub(super) fn record_evaluation(
@@ -107,6 +109,7 @@ impl PlacedSketch {
             projections,
             placement: self.placement.clone(),
             orientation: self.orientation,
+            frame_edit: self.frame_edit.clone(),
         });
     }
 }

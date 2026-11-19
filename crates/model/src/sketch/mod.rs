@@ -103,7 +103,9 @@ pub use constraint::{
 };
 pub use error::SketchError;
 pub use geometry::{SketchEntityId, SketchLine2D, SketchPoint2D};
-pub use plane::{SketchFrameAxis, SketchPlane, SketchPlaneOptions, SketchPlaneRecipe};
+pub use plane::{
+    SketchFrameAlignment, SketchFrameAxis, SketchPlane, SketchPlaneOptions, SketchPlaneRecipe,
+};
 pub use recipe::{SKETCH_RECIPE_VERSION, SketchRecipe};
 pub use solve::{SketchResidualOperand, SketchResidualRow, SketchSolveOutcome};
 pub use source::SketchRelationId;

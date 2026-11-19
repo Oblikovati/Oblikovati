@@ -232,6 +232,18 @@ impl NamedSolid {
         }
     }
 
+    /// Resolve an exact named vertex or circular-edge center; example: `body.frame_origin(history, document, key)?`.
+    pub fn frame_origin(
+        &self,
+        history: &DocumentEditHistory,
+        document: DocumentGuid,
+        key: &[u8],
+    ) -> Result<[f64; 3], String> {
+        match self {
+            Self::Prism(body) => body.frame_origin(history, document, key),
+            Self::Derived(body) => body.frame_origin(history, document, key),
+        }
+    }
     /// Read an exact edge or vertex's analytic bounds center; example: `body.subentity_point(&history, document, key)?`.
     pub fn subentity_point(
         &self,
@@ -405,6 +417,9 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
             NamedSolid::Prism(body) => self.diagnostic.resolve_planar_face(body, key),
             NamedSolid::Derived(body) => body.face_plane(self.history, self.document, key),
         }
+    }
+    fn resolve_frame_origin(&self, body: &NamedSolid, key: &[u8]) -> Result<[f64; 3], String> {
+        body.frame_origin(self.history, self.document, key)
     }
     fn evaluate_prism(
         &mut self,

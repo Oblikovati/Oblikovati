@@ -32,7 +32,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 return Ok(());
             };
             if let FeatureReplayStep::Evaluate(id) = step {
-                self.refresh_sketch_faces(snapshot, backend);
+                self.refresh_sketch_references(snapshot, backend);
                 if let Some(options) = options {
                     self.solve_feature_sketch(
                         snapshot,

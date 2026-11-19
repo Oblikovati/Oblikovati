@@ -10,12 +10,13 @@ impl DocumentSnapshot {
     /// Identify inputs that need named-part replay before publication.
     /// Example: `snapshot.requires_named_part_replay()` before recompute.
     pub fn requires_named_part_replay(&self) -> bool {
-        if self
-            .sketches
-            .sketches()
-            .iter()
-            .any(|sketch| matches!(sketch.placement(), SketchPlacement::Face(_)))
-        {
+        if self.sketches.sketches().iter().any(|sketch| {
+            matches!(sketch.placement(), SketchPlacement::Face(_))
+                || matches!(
+                    sketch.frame_edit().and_then(|edit| edit.origin.as_ref()),
+                    Some(crate::document_sketch::SketchFrameOrigin::Topology(_))
+                )
+        }) {
             return true;
         }
         self.work_geometry.features().iter().any(|feature| {

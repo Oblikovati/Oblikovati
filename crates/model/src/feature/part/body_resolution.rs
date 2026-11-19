@@ -36,6 +36,23 @@ pub(super) fn resolve_body_face<B: PartFeatureEvaluator>(
     .map_err(WorkGeometryError::BodyReference)
 }
 
+pub(super) fn resolve_body_frame_origin<B: PartFeatureEvaluator>(
+    bodies: &BTreeMap<FeatureId, B::Body>,
+    lineage: &BodyLineageIndex,
+    backend: &B,
+    reference: &crate::document_sketch::SketchFrameTopologyOrigin,
+) -> Result<[f64; 3], WorkGeometryError> {
+    resolve_reference(
+        bodies,
+        lineage,
+        reference.source(),
+        reference.key(),
+        |body| backend.resolve_frame_origin(body, reference.key()),
+    )
+    .map(|(_, point)| point)
+    .map_err(WorkGeometryError::BodyReference)
+}
+
 fn resolve_reference<Body, Value>(
     bodies: &BTreeMap<FeatureId, Body>,
     lineage: &BodyLineageIndex,
