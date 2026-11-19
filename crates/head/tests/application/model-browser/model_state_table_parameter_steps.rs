@@ -88,7 +88,11 @@ pub(super) fn set_parameter_cell(world: &mut ApplicationWorld, row: &str, value:
     world.pump(Vec::new());
     super::super::x11_input::press_control_a();
     for character in value.chars() {
-        super::super::x11_input::press_path_character(character);
+        if character == '+' {
+            super::super::x11_input::press_shifted_keysym(u32::from('='));
+        } else {
+            super::super::x11_input::press_path_character(character);
+        }
     }
     world.pump(Vec::new());
 }
@@ -228,7 +232,7 @@ fn add_parameter_from_feature(world: &mut ApplicationWorld) {
     transfer_parameter(world);
 }
 #[when("accepts the table")]
-fn accept_parameter_table(world: &mut ApplicationWorld) {
+pub(super) fn accept_parameter_table(world: &mut ApplicationWorld) {
     click(world, "OK");
     for _ in 0..8 {
         if !world
@@ -251,7 +255,7 @@ fn accept_parameter_table(world: &mut ApplicationWorld) {
     );
 }
 #[when("reopens the model-state table")]
-fn reopen_parameter_table(world: &mut ApplicationWorld) {
+pub(super) fn reopen_parameter_table(world: &mut ApplicationWorld) {
     open(world);
 }
 #[then("the parameter tree displays d0 as 2 in")]
@@ -262,7 +266,7 @@ fn tree_displays_two_inches(world: &mut ApplicationWorld) {
 fn tree_displays_one_inch(world: &mut ApplicationWorld) {
     tree_expression(world, "1 in");
 }
-fn tree_expression(world: &ApplicationWorld, expression: &str) {
+pub(super) fn tree_expression(world: &ApplicationWorld, expression: &str) {
     let expected = format!(
         "d0={}",
         expression

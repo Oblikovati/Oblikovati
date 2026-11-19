@@ -35,6 +35,7 @@ fn parameter_row(
 ) -> GuiParameterRow {
     GuiParameterRow {
         tolerance_text: String::new(),
+        model_value_text: String::new(),
         has_groups: false,
         parameter,
         detail: ParameterDetail {

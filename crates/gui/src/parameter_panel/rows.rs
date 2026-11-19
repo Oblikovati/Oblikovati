@@ -25,6 +25,8 @@ pub(super) fn draw_parameter_row(
     ui.table_next_column();
     draw_parameter_value(ui, row);
     ui.table_next_column();
+    ui.text(&row.model_value_text);
+    ui.table_next_column();
     draw_parameter_tolerance(ui, row);
     toggle_cell(
         ui,

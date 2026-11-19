@@ -20,6 +20,7 @@ impl ParameterCellWidgetFixture {
             document: 7,
             rows: vec![GuiParameterRow {
                 tolerance_text: String::new(),
+                model_value_text: String::new(),
                 has_groups: false,
                 parameter: 11,
                 detail: Default::default(),
@@ -115,6 +116,7 @@ fn panel_response_forwarding_retires_only_the_matching_text_request() {
         document: 7,
         rows: vec![GuiParameterRow {
             tolerance_text: String::new(),
+            model_value_text: String::new(),
             has_groups: false,
             parameter: 11,
             detail: Default::default(),
@@ -136,6 +138,7 @@ fn choice_labels_retain_the_current_custom_expression_after_a_list_changes() {
     let mut row = GuiParameterRow {
         parameter: 1,
         tolerance_text: String::new(),
+        model_value_text: String::new(),
         has_groups: false,
         detail: Default::default(),
     };
@@ -302,6 +305,7 @@ fn value_list_menu_opens_or_clears_lists_and_hides_commands_on_boolean_and_read_
             listed.then(|| Box::new(oblikovati_api::wire::ExpressionListInfo::default()));
         fixture.value_row = Some(GuiParameterRow {
             tolerance_text: String::new(),
+            model_value_text: String::new(),
             has_groups: false,
             parameter: 11,
             detail,
@@ -373,6 +377,7 @@ fn tolerance_menu_is_available_only_for_editable_numeric_rows() {
         fixture.tolerance_menu = true;
         fixture.value_row = Some(GuiParameterRow {
             tolerance_text: String::new(),
+            model_value_text: String::new(),
             has_groups: false,
             parameter: 11,
             detail: oblikovati_api::wire::ParameterDetail {
@@ -412,6 +417,7 @@ fn group_menu_offers_add_on_read_only_rows_and_remove_only_when_memberships_exis
             parameter: 11,
             detail: Default::default(),
             tolerance_text: String::new(),
+            model_value_text: String::new(),
             has_groups: grouped,
         });
         fixture.frame(false, false, &[GuiInputEvent::PointerMoved([120., 120.])]);
@@ -440,6 +446,7 @@ fn failed_parameter_values_keep_last_good_text_and_show_an_explicit_warning() {
         parameter: 0,
         detail: Default::default(),
         tolerance_text: String::new(),
+        model_value_text: String::new(),
         has_groups: false,
     };
     row.detail.parameter_info.value = "80 mm".into();
