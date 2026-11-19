@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Verify empty viewport space without treating navigation controls as scene pixels.
+//! Verify empty viewport space without treating GUI window overlays as scene pixels.
 use oblikovati_viewport::ViewportCapture;
 
 pub(super) fn gradient_region_visible(
