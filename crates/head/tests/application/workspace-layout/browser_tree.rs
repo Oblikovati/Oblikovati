@@ -13,16 +13,19 @@ fn branches_expanded(world: &mut ApplicationWorld) {
     world.expect_text("XY Plane");
 }
 #[when("I open the model browser menu")]
+#[when("the user opens the model browser menu")]
 pub(in super::super) fn open_browser_menu(world: &mut ApplicationWorld) {
     world.click_text("Menu");
     world.pump(Vec::new());
 }
 #[when("I choose Collapse All")]
+#[when("the user chooses Collapse All")]
 fn collapse_all(world: &mut ApplicationWorld) {
     world.click_text("Collapse All");
     world.pump(Vec::new());
 }
 #[when("I choose Expand All")]
+#[when("the user chooses Expand All")]
 fn expand_all(world: &mut ApplicationWorld) {
     world.click_text("Expand All");
     world.pump(Vec::new());
