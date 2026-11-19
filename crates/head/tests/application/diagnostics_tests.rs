@@ -200,3 +200,61 @@ fn window_occlusions_identifies_real_ui_rectangles() {
     );
     assert!(window_pixel_bounds("absent panel").is_none());
 }
+
+#[test]
+fn dock_header_bounds_exclude_only_the_scaled_strip() {
+    let node = sys::ImGuiDockNode {
+        Pos: sys::ImVec2 { x: 0., y: 158. },
+        Size: sys::ImVec2 { x: 360., y: 720. },
+        ..Default::default()
+    };
+    let scale = sys::ImVec2 { x: 2., y: 1.5 };
+    assert_eq!(
+        dock_header_bounds(&node, 177., scale),
+        Some([0., 237., 720., 265.5])
+    );
+    assert_eq!(dock_header_bounds(&node, 158., scale), None);
+}
+
+#[test]
+fn dock_header_is_not_solid_but_does_not_hide_model_pixels() {
+    let node = sys::ImGuiDockNode {
+        Pos: sys::ImVec2 { x: 0., y: 0. },
+        Size: sys::ImVec2 { x: 16., y: 32. },
+        ..Default::default()
+    };
+    let scale = sys::ImVec2 { x: 1., y: 1. };
+    let header = dock_header_bounds(&node, 8., scale).unwrap();
+    let mut image = blank_visibility_capture();
+    paint_visibility_patch(&mut image, [2, 1]);
+    assert!(!super::super::solid_visibility::visible_solid_fill(
+        &image,
+        &[header]
+    ));
+    paint_visibility_patch(&mut image, [20, 20]);
+    assert!(super::super::solid_visibility::visible_solid_fill(
+        &image,
+        &[header]
+    ));
+}
+
+fn blank_visibility_capture() -> oblikovati_viewport::ViewportCapture {
+    oblikovati_viewport::ViewportCapture {
+        view_id: 0,
+        scene_generation: 0,
+        camera_generation: 0,
+        surface_generation: 0,
+        overlay_generation: 0,
+        extent: [32, 32],
+        rgba: vec![40; 32 * 32 * 4],
+    }
+}
+
+fn paint_visibility_patch(image: &mut oblikovati_viewport::ViewportCapture, at: [usize; 2]) {
+    for y in at[1]..at[1] + 5 {
+        for x in at[0]..at[0] + 5 {
+            let offset = (y * 32 + x) * 4;
+            image.rgba[offset..offset + 4].copy_from_slice(&[63, 153, 255, 255]);
+        }
+    }
+}

@@ -74,6 +74,16 @@ fn copy_marked(world: &mut ApplicationWorld) {
 #[then("the solid body is absent from the viewport")]
 fn no_solid(world: &mut ApplicationWorld) {
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let status = world
+        .app()
+        .window
+        .native
+        .scene_status()
+        .expect("expected a published scene");
+    assert_eq!(
+        status.visible_bodies, 0,
+        "expected the suppressed part to publish no bodies"
+    );
     assert!(!super::super::solid_visibility::visible_solid_fill(
         &capture,
         &diagnostics::window_occlusions()
@@ -82,6 +92,16 @@ fn no_solid(world: &mut ApplicationWorld) {
 #[then("the solid body is visible in the viewport")]
 fn solid_visible(world: &mut ApplicationWorld) {
     expect_solid_visible(world);
+    let status = world
+        .app()
+        .window
+        .native
+        .scene_status()
+        .expect("expected a published scene");
+    assert_eq!(
+        status.visible_bodies, 1,
+        "expected the computed part to publish one body"
+    );
 }
 #[then("the extrusion row is dimmed and struck through")]
 fn suppressed_row(world: &mut ApplicationWorld) {
@@ -104,4 +124,30 @@ fn computed_row(world: &mut ApplicationWorld) {
         !diagnostics::has_strike(run),
         "expected no line across the feature name"
     );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_state_switch_updates_scene_and_suppression_row() {
+    let mut world = ApplicationWorld::new();
+    states_with_extrusion(&mut world);
+    set_primary_suppression(&mut world);
+    activate_copy_fixture(&mut world);
+    native_double_click(&mut world, "Primary");
+    primary_marked(&mut world);
+    no_solid(&mut world);
+    suppressed_row(&mut world);
+    native_double_click(&mut world, "Copy State");
+    copy_marked(&mut world);
+    solid_visible(&mut world);
+    computed_row(&mut world);
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+fn native_double_click(world: &mut ApplicationWorld, label: &str) {
+    let point = diagnostics::pointer_pixels(world.run(label).center());
+    super::super::x11_input::click(point);
+    super::super::x11_input::click(point);
+    world.pump(Vec::new());
 }
