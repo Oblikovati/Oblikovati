@@ -43,7 +43,10 @@ pub(crate) fn feature_row<'ui>(
     view: &mut BrowserView,
     actions: &mut Vec<GuiShellAction>,
 ) -> Option<imgui::TreeNodeToken<'ui>> {
-    let mut flags = TreeNodeFlags::OPEN_ON_ARROW | TreeNodeFlags::SPAN_AVAIL_WIDTH;
+    // The States control shares the full-width row; it must receive its own click (#4128).
+    let mut flags = TreeNodeFlags::OPEN_ON_ARROW
+        | TreeNodeFlags::SPAN_AVAIL_WIDTH
+        | TreeNodeFlags::ALLOW_ITEM_OVERLAP;
     if browser.selected_feature == Some(feature.id) {
         flags |= TreeNodeFlags::SELECTED;
     }
@@ -69,9 +72,19 @@ pub(crate) fn feature_row<'ui>(
     if feature.suppressed {
         strike_feature_name(ui, &feature.name);
     }
-    choose_on_press(ui, state, feature, view, actions);
+    let row_hovered = ui.is_item_hovered();
+    let row_left = ui.item_rect_min()[0];
+    let indicator_hovered = states::model_state_indicator(ui, browser, feature);
+    choose_on_press(
+        ui,
+        state,
+        feature,
+        view,
+        actions,
+        row_hovered && !indicator_hovered,
+        row_left,
+    );
     feature_menu(ui, state, browser, feature, view, actions);
-    states::model_state_indicator(ui, browser, feature);
     token
 }
 fn strike_feature_name(ui: &Ui, name: &str) {
@@ -96,13 +109,13 @@ fn choose_on_press(
     feature: &GuiBrowserFeature,
     view: &mut BrowserView,
     actions: &mut Vec<GuiShellAction>,
+    hovered: bool,
+    row_left: f32,
 ) {
-    let hovered = ui.is_item_hovered();
     let asks_menu = hovered && ui.is_mouse_clicked(MouseButton::Right);
     if asks_menu {
         ui.open_popup(FEATURE_MENU);
     }
-    let [row_left, _] = ui.item_rect_min();
     let past_arrow = ui.io().mouse_pos[0] > row_left + ui.frame_height();
     let clicked = hovered && past_arrow && ui.is_mouse_clicked(MouseButton::Left);
     // Dimensions a row asked for go away the next time its menu is asked for.
@@ -449,47 +462,9 @@ fn segment_distance_squared(point: [f32; 2], segment: [[i32; 2]; 2]) -> f32 {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use oblikovati_model::feature::FeatureId;
-    #[test]
-    fn selected_face_outline_is_green_and_browser_feature_outline_is_blue() {
-        let mut commands = GuiCommandState::default();
-        assert_eq!(feature_outline_color(&commands), EDGE_COLOR);
-        commands.model_face_chosen = true;
-        assert_eq!(feature_outline_color(&commands), EDGE_HOVER_COLOR);
-        commands.selected_body_keys.push("body".into());
-        assert_eq!(feature_outline_color(&commands), EDGE_COLOR);
-    }
-    #[test]
-    fn hover_uses_segment_distance_in_window_pixels() {
-        let edge = [[[10, 20], [30, 20]], [[30, 20], [35, 25]]];
-        assert!(edge_group_hovered([20., 27.], &edge));
-        assert!(!edge_group_hovered([20., 27.], &[[[80, 20], [100, 20]]]));
-        assert!(!edge_group_hovered([20., 29.], &edge));
-        assert!(edge_group_hovered([36., 26.], &edge));
-        assert!(!edge_group_hovered([f32::NAN, 20.], &edge));
-        assert_eq!(segment_distance_squared([3., 4.], [[0, 0], [0, 0]]), 25.);
-    }
-    fn extrude(suppressed: bool) -> GuiBrowserFeature {
-        GuiBrowserFeature {
-            id: FeatureId(1),
-            name: "Extrude1".into(),
-            suppressed,
-            extended: Some("New Solid, 20 mm".into()),
-            kind: "Extrusion",
-        }
-    }
-    #[test]
-    fn a_row_says_its_operation_and_depth_only_when_extended_names_are_on() {
-        assert_eq!(feature_label(&extrude(false), false), "Extrude1");
-        assert_eq!(
-            feature_label(&extrude(false), true),
-            "Extrude1 (New Solid, 20 mm)"
-        );
-        assert_eq!(
-            feature_label(&extrude(true), false),
-            "Extrude1 (suppressed)"
-        );
-    }
-}
+#[path = "../../../tests/application/workspace-layout/browser_feature_unit.rs"]
+mod tests;
+
+#[cfg(test)]
+#[path = "../../../tests/application/workspace-layout/browser_feature_click.rs"]
+mod click_tests;
