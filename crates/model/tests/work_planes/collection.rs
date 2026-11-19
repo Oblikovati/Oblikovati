@@ -132,20 +132,37 @@ fn duplicate_and_forward_ids_cannot_restore_over_a_valid_recipe() {
 #[test]
 fn versions_and_invalid_definitions_are_named_restore_failures() {
     let mut recipe = authored_program().work_plane_recipe().unwrap();
-    recipe.version = 21;
-    let error = FeatureSequence::from_work_plane_recipe(&recipe).unwrap_err();
-    assert_eq!(error, WorkPlaneProgramRecipeError::Version(21));
-    assert_eq!(
-        error.to_string(),
-        "work plane program version 21: expected 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, or 20"
-    );
-    assert!(error.source().is_none());
+    for version in [0, 25] {
+        recipe.version = version;
+        let error = FeatureSequence::from_work_plane_recipe(&recipe).unwrap_err();
+        assert_eq!(error, WorkPlaneProgramRecipeError::Version(version));
+        assert_eq!(
+            error.to_string(),
+            format!("work plane program version {version}: expected 1 through 24")
+        );
+        assert!(error.source().is_none());
+    }
     recipe.version = 1;
     recipe.features[0].definition.version = 2;
     let error = FeatureSequence::from_work_plane_recipe(&recipe).unwrap_err();
     assert!(matches!(error, WorkPlaneProgramRecipeError::Plane(_)));
     assert!(error.source().is_some());
     assert!(error.to_string().contains("recipe version 2: expected 1"));
+}
+
+#[test]
+fn compatible_newer_program_versions_preserve_authored_planes() {
+    let sequence = authored_program();
+    let mut recipe = sequence.work_plane_recipe().unwrap();
+    for version in 20..=24 {
+        recipe.version = version;
+        let restored = FeatureSequence::from_work_plane_recipe(&recipe)
+            .unwrap_or_else(|error| panic!("version {version}: {error}"));
+        assert!(
+            sequence.same_work_plane_recipe(&restored),
+            "version {version}"
+        );
+    }
 }
 
 #[test]
