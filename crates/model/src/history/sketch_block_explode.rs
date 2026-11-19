@@ -44,6 +44,10 @@ impl DocumentSnapshot {
             transform,
             &mut || reservations.allocate_sketch_entity(),
         )?;
+        if let Some(color) = definition.color() {
+            apply_definition_color(&mut geometry, &report, color)
+                .map_err(SketchCopyError::Sketch)?;
+        }
         let mut candidate = self.clone();
         candidate
             .sketches
@@ -56,4 +60,23 @@ impl DocumentSnapshot {
         *self = candidate;
         Ok(report)
     }
+}
+
+fn apply_definition_color(
+    geometry: &mut crate::sketch::Sketch2D,
+    report: &SketchCopyReport,
+    color: &oblikovati_api::types::Color,
+) -> Result<(), SketchError> {
+    for entity in &report.copies {
+        let mut format = geometry
+            .entity_format(*entity)?
+            .cloned()
+            .unwrap_or_default();
+        if format.override_color.source == oblikovati_api::types::OVERRIDE_COLOR_SOURCE {
+            continue;
+        }
+        format.override_color = color.clone();
+        geometry.set_entity_format(*entity, format)?;
+    }
+    Ok(())
 }

@@ -56,7 +56,7 @@ impl SketchDisplayOverlay {
         match transform_primitive(&entity.primitive, instance) {
             Ok(primitive) => {
                 entity.primitive = primitive;
-                self.append_entity_for(viewer, sketch, &entity, instance.id());
+                self.append_entity_for(viewer, sketch, &entity, instance.id(), instance.color());
             }
             Err(cause) => self.declines.push(display_decline(
                 sketch,
@@ -87,7 +87,11 @@ fn block_display(
         plane: sketch.plane,
         geometry: block.geometry.clone(),
         blocks: Vec::new(),
-        line_color: sketch.line_color.clone(),
+        line_color: block
+            .definition_color
+            .as_ref()
+            .map(super::api_color)
+            .or_else(|| sketch.line_color.clone()),
     }
 }
 fn center_marker(point: oblikovati_model::sketch::SketchPoint2D) -> SketchDisplayEntity {

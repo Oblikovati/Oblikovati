@@ -39,6 +39,18 @@ impl PlacedSketch {
 impl DocumentSketches {
     pub(super) fn placement_recipe_version(&self) -> u32 {
         if self
+            .block_definitions
+            .iter()
+            .any(|block| block.color().is_some())
+            || self
+                .sketches
+                .iter()
+                .flat_map(|sketch| sketch.block_instances())
+                .any(|instance| instance.color().is_some())
+        {
+            return 16;
+        }
+        if self
             .sketches
             .iter()
             .any(|sketch| sketch.frame_edit.is_some())

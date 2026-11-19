@@ -45,6 +45,7 @@ fn malformed_or_legacy_block_recipes_are_refused() {
     recipe.block_definitions = vec![SketchBlockDefinitionRecipe {
         name: "Rib".into(),
         geometry: None,
+        color: None,
     }];
     assert!(DocumentSketches::from_recipe(&recipe).is_err());
     recipe.version = 8;
@@ -61,6 +62,7 @@ fn definition_recipes_refuse_constraints_owned_by_a_sketch() {
     recipe.block_definitions.push(SketchBlockDefinitionRecipe {
         name: "Rib".into(),
         geometry: Some(source.get(DocumentSketchId(1)).unwrap().geometry().recipe()),
+        color: None,
     });
     assert!(
         DocumentSketches::from_recipe(&recipe)

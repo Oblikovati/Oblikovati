@@ -11,6 +11,8 @@ use oblikovati_model::{
     units::UnitsOfMeasure,
 };
 use oblikovati_solve::nonlinear::{SolveOptions, SolveTermination};
+#[path = "document_sketch/block_color.rs"]
+mod block_color;
 #[path = "document_sketch/block_definitions.rs"]
 mod block_definitions;
 #[path = "document_sketch/block_instances.rs"]

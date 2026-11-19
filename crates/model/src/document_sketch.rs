@@ -4,6 +4,7 @@ use crate::sketch::{
     Sketch2D, SketchError, SketchPlane, SketchPlaneOptions, SketchPlaneRecipe, SketchRecipe,
 };
 use std::collections::BTreeSet;
+mod block_color;
 mod block_definitions;
 mod block_instances;
 mod comparison;
@@ -335,9 +336,9 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=15) {
+        if !matches!(recipe.version, 1..=16) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1 through 15",
+                "document sketch recipe version {}: expected 1 through 16",
                 recipe.version
             )));
         }

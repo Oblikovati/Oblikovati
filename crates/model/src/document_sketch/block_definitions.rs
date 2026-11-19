@@ -10,14 +10,17 @@ use crate::sketch::SketchEntityId;
 pub struct SketchBlockDefinition {
     name: String,
     geometry: Sketch2D,
+    pub(super) color: Option<oblikovati_api::types::Color>,
 }
-/// Saved definition; example: `SketchBlockDefinitionRecipe { name: "Rib".into(), geometry: None }`.
+/// Saved definition; example: `SketchBlockDefinitionRecipe { name: "Rib".into(), geometry: None, color: None }`.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SketchBlockDefinitionRecipe {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub geometry: Option<SketchRecipe>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<oblikovati_api::types::Color>,
 }
 impl SketchBlockDefinition {
     /// Return the registry name; example: `assert_eq!(definition.name(), "Rib")`.
@@ -27,6 +30,10 @@ impl SketchBlockDefinition {
     /// Return definition-local geometry; example: `definition.geometry().entity_ids()`.
     pub fn geometry(&self) -> &Sketch2D {
         &self.geometry
+    }
+    /// Read the definition color override; example: `definition.color()`.
+    pub fn color(&self) -> Option<&oblikovati_api::types::Color> {
+        self.color.as_ref()
     }
 }
 impl DocumentSketches {
@@ -46,6 +53,7 @@ impl DocumentSketches {
         self.block_definitions.push(SketchBlockDefinition {
             name: name.into(),
             geometry: Sketch2D::default(),
+            color: None,
         });
         Ok(index)
     }
@@ -106,6 +114,7 @@ impl DocumentSketches {
                 name: item.name.clone(),
                 geometry: (!item.geometry.owned_entity_ids().is_empty())
                     .then(|| item.geometry.recipe()),
+                color: item.color.clone(),
             })
             .collect()
     }
@@ -120,6 +129,12 @@ impl DocumentSketches {
             )));
         }
         for item in &recipe.block_definitions {
+            if recipe.version < 16 && item.color.is_some() {
+                return Err(SketchError::Definition(format!(
+                    "block definition {:?} color in recipe version {}: expected version 16 or later",
+                    item.name, recipe.version
+                )));
+            }
             if recipe.version < 9 && item.geometry.is_some() {
                 return Err(SketchError::Definition(format!(
                     "block definition {:?} geometry in recipe version {}: expected version 9 or later",
@@ -140,6 +155,7 @@ impl DocumentSketches {
             }
             let index = self.define_empty_block(&item.name)?;
             self.block_definitions[index].geometry = geometry;
+            self.set_block_definition_color(&item.name, item.color.clone())?;
         }
         Ok(())
     }
@@ -149,7 +165,9 @@ impl DocumentSketches {
                 .block_definitions
                 .iter()
                 .zip(&other.block_definitions)
-                .all(|(a, b)| a.name == b.name && a.geometry.same_recipe(&b.geometry))
+                .all(|(a, b)| {
+                    a.name == b.name && a.color == b.color && a.geometry.same_recipe(&b.geometry)
+                })
     }
 }
 fn validate_name(name: &str) -> Result<(), SketchError> {

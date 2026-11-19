@@ -3,6 +3,7 @@ use crate::encode;
 mod add_constraint;
 mod add_dimension;
 pub(crate) mod add_entity;
+mod block_color;
 mod block_definitions;
 mod block_explode;
 mod block_placement;
@@ -41,11 +42,13 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 22] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 24] = [
     METHOD_SKETCH_ADD_ASSOCIATIVE_ENTITY,
     METHOD_SKETCH_ADD_BLOCK_INSTANCE,
     METHOD_SKETCH_EXPLODE_BLOCK_INSTANCE,
     METHOD_SKETCH_SET_ENTITY_FORMAT,
+    METHOD_SKETCH_SET_BLOCK_DEFINITION_COLOR,
+    METHOD_SKETCH_SET_BLOCK_INSTANCE_COLOR,
     METHOD_SKETCH_BLOCK_DEFINITION_CREATE,
     METHOD_SKETCH_BLOCK_DEFINITION_DELETE,
     METHOD_SKETCH_CREATE,
@@ -123,6 +126,12 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
     editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_SET_BLOCK_DEFINITION_COLOR {
+        return block_color::definition(files, crate::decode(method, request)?);
+    }
+    if method == METHOD_SKETCH_SET_BLOCK_INSTANCE_COLOR {
+        return block_color::instance(files, crate::decode(method, request)?);
+    }
     if method == METHOD_SKETCH_SET_ENTITY_FORMAT {
         return entity_format::apply(files, crate::decode(method, request)?, editing);
     }

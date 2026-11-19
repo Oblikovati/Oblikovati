@@ -58,6 +58,23 @@ fn member_color_is_drawn_after_block_explosion() {
     world.click_text("Place Block");
     world.click([1100, 550]);
     world.escape();
+    let instance = world.state().browser.unwrap().block_instances[0].id.0;
+    let cyan = Color {
+        r: 0,
+        g: 255,
+        b: 255,
+        opacity: 1.0,
+        source: OVERRIDE_COLOR_SOURCE,
+    };
+    oblikovati_api::client::Client::new(world.app().owner.document_host())
+        .sketch()
+        .set_block_instance_color(&oblikovati_api::wire::SetBlockInstanceColorArgs {
+            sketch_index: 0,
+            instance_id: instance,
+            color: Some(Box::new(cyan)),
+        })
+        .unwrap();
+    world.pump(Vec::new());
     let row = world.run("Red:1").center();
     world.right_click(diagnostics::pointer_pixels(row));
     world.click_text("Explode");
@@ -91,7 +108,35 @@ fn member_color_is_drawn_after_block_explosion() {
         red_pixel_near(&image, pixel),
         "expected a red exploded member near {pixel:?}"
     );
+    world.command_key(ViewportPhysicalKey::Z, ViewportKey::Undo);
+    let image = super::super::capture_framebuffer(&mut world.app().window.native);
+    assert!(
+        cyan_pixel_near(&image, pixel),
+        "expected the restored cyan instance near {pixel:?}"
+    );
+    world.command_key(ViewportPhysicalKey::Y, ViewportKey::Redo);
+    let image = super::super::capture_framebuffer(&mut world.app().window.native);
+    assert!(
+        red_pixel_near(&image, pixel),
+        "expected the red member after redo"
+    );
     world.close();
+}
+
+fn cyan_pixel_near(image: &oblikovati_viewport::ViewportCapture, pixel: [i32; 2]) -> bool {
+    (-3..=3).any(|dy| {
+        (-3..=3).any(|dx| {
+            let x = (pixel[0] + dx) as usize;
+            let y = (pixel[1] + dy) as usize;
+            let index = (y * image.extent[0] as usize + x) * 4;
+            image.rgba.get(index..index + 3).is_some_and(|rgb| {
+                rgb[1] > 150
+                    && rgb[2] > 150
+                    && u16::from(rgb[1]) > u16::from(rgb[0]) * 2
+                    && u16::from(rgb[2]) > u16::from(rgb[0]) * 2
+            })
+        })
+    })
 }
 
 fn red_pixel_near(image: &oblikovati_viewport::ViewportCapture, pixel: [i32; 2]) -> bool {

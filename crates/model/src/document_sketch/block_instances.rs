@@ -14,6 +14,8 @@ pub struct SketchBlockInstance {
     scale: f64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     ordinal: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(super) color: Option<oblikovati_api::types::Color>,
 }
 impl SketchBlockInstance {
     /// Validate one placement; example: `SketchBlockInstance::new(id, "Rib", [1., 2.], 0., 1.)?`.
@@ -31,11 +33,13 @@ impl SketchBlockInstance {
             rotation,
             scale,
             ordinal: None,
+            color: None,
         };
         instance.validate()?;
         Ok(instance)
     }
     fn validate(&self) -> Result<(), SketchError> {
+        super::block_color::validate_block_color(self.color.as_ref())?;
         if self.id.0 == 0
             || self.definition.trim().is_empty()
             || self.definition.contains('\0')
@@ -74,6 +78,10 @@ impl SketchBlockInstance {
     /// Return the assigned instance number; example: `instance.ordinal()` after insertion.
     pub fn ordinal(&self) -> Option<u64> {
         self.ordinal
+    }
+    /// Read the instance color override; example: `instance.color()`.
+    pub fn color(&self) -> Option<&oblikovati_api::types::Color> {
+        self.color.as_ref()
     }
     /// Map a definition point into its sketch; example: `instance.to_sketch([0., 0.])?`.
     pub fn to_sketch(&self, [x, y]: [f64; 2]) -> Result<[f64; 2], SketchError> {
@@ -212,6 +220,12 @@ impl DocumentSketches {
             )));
         }
         for instance in &recipe.block_instances {
+            if version < 16 && instance.color.is_some() {
+                return Err(SketchError::Definition(format!(
+                    "block instance {:?} color in recipe version {version}: expected version 16 or later",
+                    instance.id()
+                )));
+            }
             if (version >= 11) != instance.ordinal.is_some() {
                 return Err(SketchError::Definition(format!(
                     "block instance {:?} ordinal {:?} in recipe version {version}: expected an ordinal only in version 11 or later",
@@ -233,6 +247,7 @@ pub(super) fn same_instances(
             a.id == b.id
                 && a.definition == b.definition
                 && a.ordinal == b.ordinal
+                && a.color == b.color
                 && a.position
                     .iter()
                     .zip(b.position)

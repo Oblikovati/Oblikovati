@@ -19,6 +19,8 @@ pub struct ViewportSketchDisplay {
 pub struct ViewportSketchBlock {
     pub instance: SketchBlockInstance,
     pub geometry: Sketch2D,
+    /// Definition color used when a member has no own override.
+    pub definition_color: Option<oblikovati_api::types::Color>,
 }
 /// Display failure names the sketch as well as its entity within the current source packet.
 #[derive(Clone, Debug, PartialEq)]

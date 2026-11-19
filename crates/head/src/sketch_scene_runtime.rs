@@ -177,6 +177,7 @@ fn scene_blocks(
         blocks.push(ViewportSketchBlock {
             instance: instance.clone(),
             geometry: definition.geometry().clone(),
+            definition_color: definition.color().cloned(),
         });
     }
     blocks

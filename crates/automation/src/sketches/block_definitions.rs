@@ -21,8 +21,7 @@ pub(super) fn list<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
         .map(|(index, definition)| {
             info(
                 index,
-                definition.name(),
-                definition.geometry().entity_ids().len(),
+                definition,
                 sketches.block_instance_count(definition.name()),
             )
         })
@@ -54,7 +53,7 @@ pub(super) fn list_instances<O: TransactionObserver, W: WorkspaceObserver, F: Do
         instances: Some(rows),
     })
 }
-fn instance_info(
+pub(super) fn instance_info(
     snapshot: &DocumentSnapshot,
     index: usize,
     instance: &oblikovati_model::document_sketch::SketchBlockInstance,
@@ -85,7 +84,7 @@ fn instance_info(
         rotation: instance.rotation(),
         scale: instance.scale(),
         entity_count: wire_count(definition.geometry().entity_ids().len())?,
-        color: None,
+        color: instance.color().cloned().map(Box::new),
     })
 }
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -132,8 +131,7 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
                 let definition = &snapshot.sketches.block_definitions()[index];
                 encode(&info(
                     index,
-                    &request.name,
-                    definition.geometry().entity_ids().len(),
+                    definition,
                     snapshot.sketches.block_instance_count(&request.name),
                 )?)
             },
@@ -160,17 +158,16 @@ fn delete<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         )
         .map_err(api_error)
 }
-fn info(
+pub(super) fn info(
     index: usize,
-    name: &str,
-    entities: usize,
+    definition: &oblikovati_model::document_sketch::SketchBlockDefinition,
     instances: usize,
 ) -> Result<SketchBlockDefinitionInfo, Error> {
     Ok(SketchBlockDefinitionInfo {
         index: wire_count(index)?,
-        name: name.into(),
-        entity_count: wire_count(entities)?,
+        name: definition.name().into(),
+        entity_count: wire_count(definition.geometry().entity_ids().len())?,
         instance_count: wire_count(instances)?,
-        color: None,
+        color: definition.color().cloned().map(Box::new),
     })
 }

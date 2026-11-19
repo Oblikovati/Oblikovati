@@ -147,7 +147,7 @@ impl SketchDisplayOverlay {
         sketch: &ViewportSketchDisplay,
         entity: &SketchDisplayEntity,
     ) {
-        self.append_entity_for(viewer, sketch, entity, entity.entity);
+        self.append_entity_for(viewer, sketch, entity, entity.entity, None);
     }
     fn append_entity_for(
         &mut self,
@@ -155,6 +155,7 @@ impl SketchDisplayOverlay {
         sketch: &ViewportSketchDisplay,
         entity: &SketchDisplayEntity,
         identity: oblikovati_model::sketch::SketchEntityId,
+        instance_color: Option<&oblikovati_api::types::Color>,
     ) {
         let selected = self.selected.sketches.contains(&sketch.sketch)
             || self.selected.entities.contains(&(sketch.sketch, identity));
@@ -162,6 +163,7 @@ impl SketchDisplayOverlay {
             sketch,
             entity.entity,
             selected,
+            instance_color,
             &self.color,
             &self.selected_color,
         );
@@ -180,11 +182,15 @@ fn entity_color(
     sketch: &ViewportSketchDisplay,
     entity: oblikovati_model::sketch::SketchEntityId,
     selected: bool,
+    instance_color: Option<&oblikovati_api::types::Color>,
     default: &Rgba,
     selection: &Rgba,
 ) -> Rgba {
     if selected {
         return selection.clone();
+    }
+    if let Some(color) = instance_color {
+        return api_color(color);
     }
     if let Some(color) = sketch
         .geometry
@@ -193,14 +199,17 @@ fn entity_color(
         .map(|format| &format.override_color)
         .filter(|color| color.source == oblikovati_api::types::OVERRIDE_COLOR_SOURCE)
     {
-        return Rgba {
-            r: f32::from(color.r) / 255.0,
-            g: f32::from(color.g) / 255.0,
-            b: f32::from(color.b) / 255.0,
-            a: color.opacity as f32,
-        };
+        return api_color(color);
     }
     sketch.line_color.clone().unwrap_or_else(|| default.clone())
+}
+fn api_color(color: &oblikovati_api::types::Color) -> Rgba {
+    Rgba {
+        r: f32::from(color.r) / 255.0,
+        g: f32::from(color.g) / 255.0,
+        b: f32::from(color.b) / 255.0,
+        a: color.opacity as f32,
+    }
 }
 pub(super) fn build_entity(
     viewer: &V3dViewer,
@@ -356,10 +365,25 @@ mod role_style_tests {
             blocks: Vec::new(),
             line_color: Some(blue.clone()),
         };
-        assert_eq!(entity_color(&sketch, id, false, &green, &blue), red);
-        assert_eq!(entity_color(&sketch, id, true, &green, &blue), blue);
+        assert_eq!(entity_color(&sketch, id, false, None, &green, &blue), red);
+        assert_eq!(entity_color(&sketch, id, true, None, &green, &blue), blue);
+        let override_color = Color {
+            r: 0,
+            g: 255,
+            b: 0,
+            opacity: 1.0,
+            source: OVERRIDE_COLOR_SOURCE,
+        };
         assert_eq!(
-            entity_color(&sketch, SketchEntityId(8), false, &green, &red),
+            entity_color(&sketch, id, false, Some(&override_color), &green, &blue),
+            green
+        );
+        assert_eq!(
+            entity_color(&sketch, id, true, Some(&override_color), &green, &blue),
+            blue
+        );
+        assert_eq!(
+            entity_color(&sketch, SketchEntityId(8), false, None, &green, &red),
             blue
         );
     }

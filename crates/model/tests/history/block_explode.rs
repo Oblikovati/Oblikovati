@@ -91,3 +91,72 @@ fn missing_instance_leaves_document_unchanged() {
     assert!(history.snapshot().sketches.same_recipe(&before));
     history.abort(&token).unwrap();
 }
+
+#[test]
+fn explosion_drops_instance_override_and_keeps_definition_color_through_history() {
+    use oblikovati_api::types::{Color, OVERRIDE_COLOR_SOURCE};
+    let mut history = block_history();
+    let sketch = DocumentSketchId(1);
+    let cyan = Color {
+        r: 0,
+        g: 255,
+        b: 255,
+        opacity: 1.0,
+        source: OVERRIDE_COLOR_SOURCE,
+    };
+    let red = Color {
+        r: 255,
+        g: 0,
+        b: 0,
+        opacity: 1.0,
+        source: OVERRIDE_COLOR_SOURCE,
+    };
+    let token = history.begin("Color block").unwrap();
+    history
+        .edit(&token, |snapshot, _| {
+            snapshot
+                .sketches
+                .set_block_definition_color("Rib", Some(cyan.clone()))?;
+            snapshot.sketches.set_block_instance_color(
+                sketch,
+                SketchEntityId(10),
+                Some(red.clone()),
+            )
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    let token = history.begin("Explode").unwrap();
+    let report = history
+        .edit(&token, |snapshot, ids| {
+            snapshot.explode_sketch_block(sketch, SketchEntityId(10), ids)
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    let geometry = history.snapshot().sketches.get(sketch).unwrap().geometry();
+    assert_eq!(
+        geometry
+            .entity_format(report.copies[0])
+            .unwrap()
+            .unwrap()
+            .override_color,
+        cyan
+    );
+    history.undo().unwrap();
+    let instances = history
+        .snapshot()
+        .sketches
+        .get(sketch)
+        .unwrap()
+        .block_instances();
+    assert_eq!(instances[0].color(), Some(&red));
+    history.redo().unwrap();
+    let geometry = history.snapshot().sketches.get(sketch).unwrap().geometry();
+    assert_eq!(
+        geometry
+            .entity_format(report.copies[0])
+            .unwrap()
+            .unwrap()
+            .override_color,
+        cyan
+    );
+}

@@ -15,7 +15,11 @@ fn block_packet() -> ViewportSketchDisplay {
         sketch: DocumentSketchId(1),
         plane: SketchPlane::xy(),
         geometry: Sketch2D::default(),
-        blocks: vec![ViewportSketchBlock { instance, geometry }],
+        blocks: vec![ViewportSketchBlock {
+            instance,
+            geometry,
+            definition_color: None,
+        }],
         line_color: None,
     }
 }
