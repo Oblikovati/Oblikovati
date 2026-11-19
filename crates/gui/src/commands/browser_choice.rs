@@ -16,6 +16,15 @@ pub enum GuiBrowserChoice {
         id: u64,
         locked: bool,
     },
+    /// Store the current camera in the active part view.
+    SavePartViewCamera(u64),
+    /// Restore a view's saved camera to the viewport.
+    RestorePartViewCamera(u64),
+    /// Change automatic camera capture for a part view.
+    PartViewAutosave {
+        id: u64,
+        enabled: bool,
+    },
     /// Set whether a part view is published.
     PublishPartView {
         id: u64,

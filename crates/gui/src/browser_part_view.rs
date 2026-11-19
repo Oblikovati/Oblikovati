@@ -100,7 +100,12 @@ impl BrowserTree<'_> {
             return;
         };
         let document = self.state.document.unwrap_or(0);
-        if self.ui.menu_item("Activate") {
+        if self
+            .ui
+            .menu_item_config("Activate")
+            .enabled(!entry.active())
+            .build()
+        {
             actions.push(GuiShellAction::BrowserChoice {
                 document,
                 choice: crate::GuiBrowserChoice::ActivatePartView(entry.id()),
@@ -126,6 +131,44 @@ impl BrowserTree<'_> {
                 }
             }
         }
+        self.ui.menu("Camera View", || {
+            if self
+                .ui
+                .menu_item_config("Save Current Camera")
+                .enabled(entry.active() && !entry.locked())
+                .build()
+            {
+                actions.push(GuiShellAction::BrowserChoice {
+                    document,
+                    choice: crate::GuiBrowserChoice::SavePartViewCamera(entry.id()),
+                });
+            }
+            if self
+                .ui
+                .menu_item_config("Restore Saved Camera")
+                .enabled(entry.camera().is_some())
+                .build()
+            {
+                actions.push(GuiShellAction::BrowserChoice {
+                    document,
+                    choice: crate::GuiBrowserChoice::RestorePartViewCamera(entry.id()),
+                });
+            }
+            if self
+                .ui
+                .menu_item_config("Autosave Camera")
+                .selected(entry.autosave_camera())
+                .build()
+            {
+                actions.push(GuiShellAction::BrowserChoice {
+                    document,
+                    choice: crate::GuiBrowserChoice::PartViewAutosave {
+                        id: entry.id(),
+                        enabled: !entry.autosave_camera(),
+                    },
+                });
+            }
+        });
         if self
             .ui
             .menu_item_config("Publish")
