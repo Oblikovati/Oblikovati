@@ -2,7 +2,7 @@
 //! The Find dialog's list of criteria: its rows, their controls and saved searches.
 use super::find::{
     EXTRUSION_ROW, FILLET_ROW, SUPPRESSED_ROW, add_grouped_type, add_is_enabled, add_pending,
-    add_type, choose_in_list, expect_control, expect_listed, grouped_types,
+    add_type, choose_in_list, expect_control, expect_empty_input, expect_listed, grouped_types,
 };
 use super::*;
 
@@ -109,6 +109,7 @@ fn choose_hole(world: &mut ApplicationWorld) {
     choose_in_list(world, "Value", "Hole");
 }
 #[then("the Value field shows Hole and Add to list is enabled")]
+#[then("the Value field shows Hole and adds to list is enabled")]
 fn hole_pending(world: &mut ApplicationWorld) {
     expect_control(world, "Value", "Hole");
     assert!(add_is_enabled(world), "expected Add to list enabled");
@@ -129,6 +130,7 @@ fn extrusion_and_and(world: &mut ApplicationWorld) {
     assert!(world.radio_selected("And"), "expected And selected");
 }
 #[then("Add to list is disabled")]
+#[then("adds to list is disabled")]
 fn add_disabled(world: &mut ApplicationWorld) {
     assert!(!add_is_enabled(world), "expected Add to list disabled");
 }
@@ -147,8 +149,10 @@ fn choose_save(world: &mut ApplicationWorld) {
 #[then("a prompt shows an empty search-name field")]
 fn save_prompt(world: &mut ApplicationWorld) {
     world.expect_text("Search name");
+    expect_empty_input(world, "Search name");
 }
 #[then("OK is disabled and Cancel is available")]
+#[then("OK is disabled and cancels is available")]
 fn ok_muted(world: &mut ApplicationWorld) {
     assert!(!world.run_is_enabled("OK"), "expected OK disabled");
     assert!(world.run_is_enabled("Cancel"), "expected Cancel enabled");
@@ -175,6 +179,7 @@ fn choose_open_search(world: &mut ApplicationWorld) {
     settle(world);
 }
 #[then("a picker shows a saved-search list and Open, Cancel and Delete actions")]
+#[then("a picker shows a saved-search list and opens, Cancel and Delete actions")]
 fn picker(world: &mut ApplicationWorld) {
     expect_rows(world, &["Types", "Open", "Cancel", "Delete"]);
 }
