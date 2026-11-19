@@ -26,6 +26,7 @@ fn drawing_branches_open(world: &mut ApplicationWorld) {
     world.expect_text(DRAWING_BORDER);
 }
 #[when("I open the drawing browser menu")]
+#[when("the user opens the drawing browser menu")]
 fn open_drawing_menu(world: &mut ApplicationWorld) {
     open_browser_menu(world);
 }
@@ -121,6 +122,7 @@ fn drawing_no_results(world: &mut ApplicationWorld) {
     world.expect_no_text("Sheet:1");
 }
 #[when("I select the sheet border entry in the drawing browser")]
+#[when("the user selects the sheet border entry in the drawing browser")]
 fn select_border(world: &mut ApplicationWorld) {
     world.click_text(DRAWING_BORDER);
 }
@@ -132,6 +134,7 @@ fn border_highlighted(world: &mut ApplicationWorld) {
     );
 }
 #[when("I select the sheet title block entry in the drawing browser")]
+#[when("the user selects the sheet title block entry in the drawing browser")]
 fn select_title_block(world: &mut ApplicationWorld) {
     world.click_text(SHEET_TITLE_BLOCK);
 }
@@ -193,7 +196,9 @@ fn sheet_row_shown(world: &ApplicationWorld) -> bool {
     world.frame.runs.iter().any(|run| run.text == "TitleBlock")
 }
 #[when("I select the expansion control beside the sheet branch")]
+#[when("the user selects the expansion control beside the sheet branch")]
 #[when("I select the expansion control beside the sheet branch again")]
+#[when("the user selects the expansion control beside the sheet branch again")]
 fn toggle_sheet_branch(world: &mut ApplicationWorld) {
     world.press_disclosure("Sheet:1");
 }

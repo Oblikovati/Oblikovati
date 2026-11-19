@@ -52,6 +52,7 @@ fn docked_on_left(world: &mut ApplicationWorld) {
     world.expect_text("Drawing Resources");
 }
 #[when("I select the browser tab's close control")]
+#[when("the user selects the browser tab's close control")]
 fn close_browser_tab(world: &mut ApplicationWorld) {
     world.click_run_close_mark("Model");
 }
@@ -78,7 +79,9 @@ fn plus_remains(world: &mut ApplicationWorld) {
     );
 }
 #[when("I open the plus control")]
+#[when("the user opens the plus control")]
 #[when("I open the panel-add control")]
+#[when("the user opens the panel-add control")]
 fn open_plus(world: &mut ApplicationWorld) {
     world.click_text("+");
     world.pump(Vec::new());
@@ -88,6 +91,7 @@ fn offers_model(world: &mut ApplicationWorld) {
     world.expect_text("Model Browser");
 }
 #[when("I select Model Browser")]
+#[when("the user selects Model Browser")]
 fn select_model_browser(world: &mut ApplicationWorld) {
     world.click_text("Model Browser");
     world.pump(Vec::new());
