@@ -12,6 +12,7 @@ pub(super) type RibbonSettings = BTreeMap<RibbonTab, Vec<Entry>>;
 pub(super) struct SettingsDocument {
     pub commands: RibbonSettings,
     pub expanded_builtins: BTreeSet<String>,
+    pub ungrouped_builtins: BTreeSet<String>,
     pub appearance: RibbonAppearance,
 }
 
@@ -32,7 +33,7 @@ pub(super) fn encode(settings: &SettingsDocument) -> Result<Vec<u8>, String> {
     writer
         .write(
             WriteEvent::start_element("ribbon-customization")
-                .attr("version", "4")
+                .attr("version", "5")
                 .attr("appearance", settings.appearance.id()),
         )
         .map_err(|error| format!("XML root: expected writable settings: {error}"))?;
@@ -72,6 +73,15 @@ pub(super) fn encode(settings: &SettingsDocument) -> Result<Vec<u8>, String> {
             .write(WriteEvent::end_element())
             .map_err(|error| error.to_string())?;
     }
+    for id in &settings.ungrouped_builtins {
+        validate_builtin_id(id)?;
+        writer
+            .write(WriteEvent::start_element("ungrouped-builtin").attr("id", id))
+            .map_err(|error| error.to_string())?;
+        writer
+            .write(WriteEvent::end_element())
+            .map_err(|error| error.to_string())?;
+    }
     writer
         .write(WriteEvent::end_element())
         .map_err(|error| error.to_string())?;
@@ -95,6 +105,7 @@ pub(super) fn decode(bytes: &[u8]) -> Result<SettingsDocument, String> {
     Ok(SettingsDocument {
         commands: decoder.settings,
         expanded_builtins: decoder.expanded_builtins,
+        ungrouped_builtins: decoder.ungrouped_builtins,
         appearance: decoder.appearance,
     })
 }
@@ -102,6 +113,7 @@ pub(super) fn decode(bytes: &[u8]) -> Result<SettingsDocument, String> {
 struct SettingsDecoder {
     settings: RibbonSettings,
     expanded_builtins: BTreeSet<String>,
+    ungrouped_builtins: BTreeSet<String>,
     path: Vec<String>,
     current: Option<RibbonTab>,
     root: bool,
@@ -151,12 +163,23 @@ impl SettingsDecoder {
             {
                 self.builtin(attrs)?
             }
+            ([parent], "ungrouped-builtin")
+                if parent == "ribbon-customization" && self.version >= 5 =>
+            {
+                let id = attribute(attrs, "id", 1)?;
+                validate_builtin_id(id)?;
+                if !self.ungrouped_builtins.insert(id.to_owned()) {
+                    return Err(format!(
+                        "built-in group {id:?}: expected a unique group state"
+                    ));
+                }
+            }
             ([root, tab], "command") if root == "ribbon-customization" && tab == "tab" => {
                 self.command(attrs)?
             }
             _ => {
                 return Err(format!(
-                    "XML element {tag:?}: expected version 1, 2, 3 or 4 ribbon settings"
+                    "XML element {tag:?}: expected version 1, 2, 3, 4 or 5 ribbon settings"
                 ));
             }
         }
@@ -173,11 +196,16 @@ impl SettingsDecoder {
             Some("2") => 2,
             Some("3") => 3,
             Some("4") => 4,
-            _ => return Err(format!("ribbon version {version:?}: expected 1, 2, 3 or 4")),
+            Some("5") => 5,
+            _ => {
+                return Err(format!(
+                    "ribbon version {version:?}: expected 1, 2, 3, 4 or 5"
+                ));
+            }
         };
-        let count = if self.version == 4 { 2 } else { 1 };
+        let count = if self.version >= 4 { 2 } else { 1 };
         attribute(attrs, "version", count)?;
-        if self.version == 4 {
+        if self.version >= 4 {
             self.appearance = RibbonAppearance::from_id(attribute(attrs, "appearance", count)?)?;
         }
         self.root = true;
@@ -300,6 +328,7 @@ mod tests {
         let settings = SettingsDocument {
             commands,
             expanded_builtins: BTreeSet::from(["part.tools.clipboard.copy".into()]),
+            ungrouped_builtins: BTreeSet::from(["part.model.work-features.plane".into()]),
             appearance: RibbonAppearance::Compact,
         };
         assert_eq!(decode(&encode(&settings).unwrap()).unwrap(), settings);
@@ -325,6 +354,18 @@ mod tests {
             "<ribbon-customization version=\"3\"><expanded-builtin id=\"bad id\"/></ribbon-customization>",
             "<ribbon-customization version=\"3\"><expanded-builtin id=\"part.tools.clipboard.copy\"/><expanded-builtin id=\"part.tools.clipboard.copy\"/></ribbon-customization>",
             "<ribbon-customization version=\"2\"><expanded-builtin id=\"part.tools.clipboard.copy\"/></ribbon-customization>",
+        ] {
+            assert!(decode(xml.as_bytes()).is_err(), "{xml}");
+        }
+    }
+    #[test]
+    fn old_settings_default_to_grouped_and_invalid_group_entries_are_rejected() {
+        let old = b"<ribbon-customization version=\"4\" appearance=\"normal\"/>";
+        assert!(decode(old).unwrap().ungrouped_builtins.is_empty());
+        for xml in [
+            "<ribbon-customization version=\"4\" appearance=\"normal\"><ungrouped-builtin id=\"part.model.work-features.plane\"/></ribbon-customization>",
+            "<ribbon-customization version=\"5\" appearance=\"normal\"><ungrouped-builtin id=\"bad id\"/></ribbon-customization>",
+            "<ribbon-customization version=\"5\" appearance=\"normal\"><ungrouped-builtin id=\"part.model.work-features.plane\"/><ungrouped-builtin id=\"part.model.work-features.plane\"/></ribbon-customization>",
         ] {
             assert!(decode(xml.as_bytes()).is_err(), "{xml}");
         }

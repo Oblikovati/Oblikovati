@@ -332,12 +332,11 @@ pub(crate) fn draw_panel_content(
         }
         RibbonPanel::PartWorkFeatures => {
             use crate::icons::IconGlyph;
-            let (position, size) = owners.icons.appearance.cell(0);
+            let (position, _) = owners.icons.appearance.cell(0);
             owners.icons.cursor(ui, origin, position);
-            let action = GuiShellAction::OpenOffsetPlane;
-            crate::chrome::command_control(ui, "Plane", action, state, actions, || {
-                owners.icons.button(ui, "Plane", IconGlyph::WorkPlane, size)
-            });
+            crate::ribbon_panels::builtin::draw(ui, panel, state, owners, actions, false);
+            let plane_cells =
+                crate::ribbon_panels::builtin::plane_main_cells(state, owners.customization);
             for (index, (label, icon)) in [
                 ("Axis", IconGlyph::WorkAxis),
                 ("Point", IconGlyph::WorkPoint),
@@ -346,7 +345,7 @@ pub(crate) fn draw_panel_content(
             .into_iter()
             .enumerate()
             {
-                let (position, size) = owners.icons.appearance.cell(index + 1);
+                let (position, size) = owners.icons.appearance.cell(index + plane_cells);
                 owners.icons.cursor(ui, origin, position);
                 muted::muted_command(ui, label, NOT_PORTED, owners.icons, Some(icon), false, size);
             }
