@@ -16,7 +16,7 @@ oblikovati-martensite = { path = "../martensite" }
 oblikovati-drawing = { path = "../drawing" }
 oblikovati-script = { path = "../script" }
 oblikovati-automation = { path = "../automation" }
-oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "3262b559d953b6327d4d2ba9123a2c4156df659c", version = "=0.159.0" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "ad18513083fb46c9e8abe5bf45a2fb4bcaf28d37", version = "=0.159.0" }
 oblikovati-model = { path = "../model" }
 oblikovati-session = { path = "../session" }
 oblikovati-persistence = { path = "../persistence" }

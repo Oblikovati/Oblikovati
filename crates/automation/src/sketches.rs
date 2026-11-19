@@ -4,6 +4,7 @@ mod add_constraint;
 mod add_dimension;
 pub(crate) mod add_entity;
 mod block_definitions;
+mod block_explode;
 mod block_placement;
 mod constraints;
 mod coordinates;
@@ -39,9 +40,10 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 20] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 21] = [
     METHOD_SKETCH_ADD_ASSOCIATIVE_ENTITY,
     METHOD_SKETCH_ADD_BLOCK_INSTANCE,
+    METHOD_SKETCH_EXPLODE_BLOCK_INSTANCE,
     METHOD_SKETCH_BLOCK_DEFINITION_CREATE,
     METHOD_SKETCH_BLOCK_DEFINITION_DELETE,
     METHOD_SKETCH_CREATE,
@@ -128,6 +130,9 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     }
     if method == METHOD_SKETCH_ADD_BLOCK_INSTANCE {
         return block_placement::apply(files, crate::decode(method, request)?);
+    }
+    if method == METHOD_SKETCH_EXPLODE_BLOCK_INSTANCE {
+        return block_explode::apply(files, crate::decode(method, request)?);
     }
     if [
         METHOD_SKETCH_BLOCK_DEFINITION_CREATE,

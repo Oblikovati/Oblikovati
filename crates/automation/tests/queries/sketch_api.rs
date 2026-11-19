@@ -230,6 +230,8 @@ fn an_existing_empty_sketch_is_well_constrained_and_healthy() {
 
 #[path = "sketch_api/block_definitions.rs"]
 mod block_definitions;
+#[path = "sketch_api/block_explode.rs"]
+mod block_explode;
 #[path = "sketch_api/block_placement.rs"]
 mod block_placement;
 #[path = "sketch_api/history.rs"]
