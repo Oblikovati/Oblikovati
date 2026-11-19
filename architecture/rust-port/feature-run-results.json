@@ -526,15 +526,15 @@
       "features/sketch/constraint-inference-scope/VISUAL.md": "978d7bd4b6cc11f3f457fe65bb8a93ba1410ddd0cdbbb8b03db39fd1b6679fe7",
       "features/sketch/constraint-inference-scope/feature-icon.svg": "459b063c1d6e4e0815081a38631005c92f52d1651f552f799c14bf5f8cf1c3a3"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-19-inference-scope-baseline-eb542ded1/cucumber.json",
-    "cucumber_sha256": "07f08ec220f1a81c0cd9fbf079817b004878538d780dc081c1f8a38967357caa",
-    "application_commit": "eb542ded1",
-    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=constraint-inference-scope OBK_BDD_REPORTS=/tmp/obk-inference-scope-eb542ded1/run cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-inference-scope-full-f7186111b/cucumber.json",
+    "cucumber_sha256": "aa608747a16f83103bd868d302df9f956c5fe66df220097a74a28f05e151c9e2",
+    "application_commit": "f7186111b",
+    "command": "xvfb-run -a -s '-screen 0 2600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=constraint-inference-scope OBK_BDD_REPORTS=/tmp/obk-inference-scope-full-f7186111b/run cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan lavapipe",
-    "notes": "Full baseline: all four scenarios stopped at their first unbound step. Feature and supporting files matched before and after the run. Portable geometry for the two recorded selection fixtures has been requested. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
-    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-inference-scope-baseline-eb542ded1/scenario-inventory.json",
+    "notes": "Full feature: 2 of 4 scenarios passed; the other 2 stopped at unbound fixture setup. Feature and supporting hashes matched before and after the run. Portable geometry has been requested in BLOCKERS.md. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-inference-scope-full-f7186111b/scenario-inventory.json",
     "scenario_inventory_sha256": "13c70b5229ded138a118a8195f4207e4ae10a852b54bcfd3344bf14d3ec4f924",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-inference-scope-baseline-eb542ded1/scenario-arguments.json",
-    "scenario_arguments_sha256": "0b66574f81e3b0d3aa6bef2fc97acaadf344bc14a7c1e3c57ca59ec1a9608082"
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-inference-scope-full-f7186111b/scenario-arguments.json",
+    "scenario_arguments_sha256": "f8461b30b3c9e391ab82ef49f945d8716eeec6ecf51a222bcf0f2999bfb42b39"
   }
 }

@@ -14,9 +14,9 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
-- Constraint inference scope (#4152): the initial full run stopped at four
-  unbound setup steps. The entry and All Geometry scenarios now pass focused
-  native runs; the recorded selection fixtures still need portable geometry.
+- Constraint inference scope (#4152): the full native run at `f7186111b`
+  passed two of four scenarios. The recorded selection fixtures still need
+  portable geometry; the scenario owner has been asked in `BLOCKERS.md`.
 - Sketch preferences (#4148): the complete native run at `6fdb0dc6c` passed
   all three scenarios and 26 steps. Sketch edits are staged, Axes can be
   applied off and on, and HUD input controls retain their values on Cancel.
@@ -37,7 +37,7 @@ using this status; the live scenario directory can change.
   cases, including both outline examples. Its inventory counts 49 of 51
   declarations. The spacing and User Interface menu scenarios remain
   incomplete; their source questions are in the feature's `BLOCKERS.md`.
-- The current feature-run inventory has 14 green features and 405 passing
+- The current feature-run inventory has 14 green features and 407 passing
   scenario declarations out of 3,088, across 256 features. These counts are
   tied to source hashes and must be regenerated when the scenario source changes.
 - Sketch constraint-glyph hover passed its complete one-scenario native run at
