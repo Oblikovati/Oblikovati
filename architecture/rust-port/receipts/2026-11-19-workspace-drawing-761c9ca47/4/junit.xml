@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:16:49.292475167Z" time="4.630495038"><testcase name="Scenario: Collapse and reopens one drawing browser branch: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:353:3" time="4.630495038"><system-out><![CDATA[  Scenario: Collapse and reopens one drawing browser branch
+   ✔  Given a drawing with a sheet and drawing resources is open in the MCAD Software
+   ✔  And the sheet and drawing resources branches are expanded in the browser
+   ✔  And the nested title block branch is expanded
+   ✔  When the user selects the expansion control beside the sheet branch
+   ✔  Then the sheet branch collapses and its child entries are hidden
+   ✔  And the drawing resources branch remains expanded
+   ✔  And the drawing sheet remains visible
+   ✔  When the user selects the expansion control beside the sheet branch again
+   ✔  Then the sheet branch expands and its child entries are displayed
+   ✔  And the nested title block branch appears expanded
+   ✔  And the drawing resources branch remains expanded
+]]></system-out></testcase></testsuite></testsuites>
