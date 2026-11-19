@@ -274,8 +274,10 @@ fn fit_bounds_follow_displayed_sketch_geometry_and_clear_with_it() {
         view.fit_visible_bounds().is_err(),
         "empty display has no fit bounds"
     );
+    assert_eq!(view.visible_presentation_bounds().unwrap(), None);
     view.set_sketch_display(&[packet()]).unwrap();
     let bounds = view.fit_visible_bounds().unwrap();
+    assert_eq!(view.visible_presentation_bounds().unwrap(), Some(bounds));
     assert!(
         bounds[0][0] <= -5. && bounds[1][0] >= 5.,
         "bounds {bounds:?}"
@@ -297,10 +299,12 @@ fn fit_bounds_follow_displayed_sketch_geometry_and_clear_with_it() {
         bounds,
         "preview must not affect Fit bounds"
     );
+    assert_eq!(view.visible_presentation_bounds().unwrap(), Some(bounds));
     let after = view.redraw().unwrap();
     assert_eq!(after.rgba, before.rgba, "the preview must remain displayed");
     view.set_sketch_preview(None).unwrap();
     view.set_sketch_display(&[]).unwrap();
+    assert_eq!(view.visible_presentation_bounds().unwrap(), None);
     assert!(
         view.fit_visible_bounds().is_err(),
         "cleared display has no fit bounds"

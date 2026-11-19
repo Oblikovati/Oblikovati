@@ -38,6 +38,7 @@ pub(crate) fn browser_contents(
         ui.text("(no document)");
         return;
     };
+    view.prune_origin_sizes(state);
     view.feature_rows.clear();
     view.feature_open.clear();
     view.header(ui, browser.kind == crate::GuiBrowserKind::Drawing);

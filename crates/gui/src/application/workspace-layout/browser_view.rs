@@ -73,6 +73,8 @@ pub(crate) struct BrowserView {
     origin_open_request: Option<bool>,
     /// Origin rows made visible, by document and row: view state, as a body's visibility is.
     pub visible_origin_rows: std::collections::BTreeSet<(u64, usize)>,
+    /// Explicit non-automatic datum displays, scoped to each open document.
+    origin_fixed_size: std::collections::BTreeSet<(u64, usize)>,
     design_view_expansion: bool,
     auto_expand_representations: AutoExpandRepresentations,
     pub find: FindDialog,
@@ -157,6 +159,24 @@ impl BrowserView {
     /// Restore the saved representation-tree preference; example: `view.set_auto_expand_representations(false)`.
     pub(crate) fn set_auto_expand_representations(&mut self, enabled: bool) {
         self.auto_expand_representations.0 = enabled;
+    }
+    /// Read whether an origin datum follows scene bounds; example: `view.origin_auto_resize(1, 0)`.
+    pub(crate) fn origin_auto_resize(&self, document: u64, row: usize) -> bool {
+        !self.origin_fixed_size.contains(&(document, row))
+    }
+    /// Toggle an origin datum independently; example: `view.toggle_origin_auto_resize(1, 0)`.
+    pub(crate) fn toggle_origin_auto_resize(&mut self, document: u64, row: usize) {
+        let key = (document, row);
+        if !self.origin_fixed_size.remove(&key) {
+            self.origin_fixed_size.insert(key);
+        }
+    }
+    /// Release overrides for documents that have closed; example: `view.prune_origin_sizes(&state)`.
+    pub(crate) fn prune_origin_sizes(&mut self, state: &GuiCommandState) {
+        self.origin_fixed_size.retain(|(document, _)| {
+            state.document == Some(*document)
+                || state.documents.iter().any(|row| row.id == *document)
+        });
     }
     /// Open or fold the whole tree on the next frame; example: the root row's commands.
     pub(crate) fn set_expansion(&mut self, open: bool) {

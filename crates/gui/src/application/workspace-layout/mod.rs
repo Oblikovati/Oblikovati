@@ -225,7 +225,13 @@ impl WorkspaceLayout {
         let shown = visible
             .filter(|(owner, _)| *owner == document)
             .map(|(_, row)| *row);
-        browser_origin::draw_selected_origin(ui, request, self.view.selected_origin_row, shown);
+        browser_origin::draw_selected_origin(
+            ui,
+            request,
+            self.view.selected_origin_row,
+            shown,
+            &self.view,
+        );
     }
     pub(crate) fn reserve_for_ribbon(&mut self, left: f32, right: f32) {
         self.ribbon_left = left;

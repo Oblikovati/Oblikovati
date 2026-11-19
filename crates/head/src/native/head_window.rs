@@ -253,6 +253,9 @@ impl HeadWindow for NativeHeadWindow {
     ) -> Result<[i32; 2], String> {
         NativeHeadWindow::sketch_pixel(self, plane, point)
     }
+    fn presentation_bounds(&self) -> Option<[[f64; 3]; 2]> {
+        self.presentation_bounds
+    }
     fn model_pixel(&self, point: [f64; 3]) -> Result<[i32; 2], String> {
         self.view.model_pixel(point)
     }

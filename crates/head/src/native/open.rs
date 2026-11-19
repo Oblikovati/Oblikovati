@@ -83,6 +83,9 @@ impl NativeHeadWindow {
             scene_status: None,
             current_scene: None,
             scene_depth_bounds: None,
+            presentation_bounds: None,
+            #[cfg(test)]
+            presentation_bounds_refreshes: 0,
             preview_background: None,
             sketch_scene: None,
             glyph_hover: None,
