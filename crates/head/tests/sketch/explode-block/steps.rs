@@ -7,7 +7,7 @@ use oblikovati_model::{
 };
 
 #[given("a block definition with an instance")]
-fn block_definition_with_instance(world: &mut ApplicationWorld) {
+pub(super) fn block_definition_with_instance(world: &mut ApplicationWorld) {
     let document = world.add_part();
     let request = DocumentSketchCreation {
         name: "Sketch3".into(),
@@ -31,6 +31,7 @@ fn block_definition_with_instance(world: &mut ApplicationWorld) {
         .map(|line| line.id.0)
         .collect();
     let circle = add_inner_circle(world, edit);
+    set_member_colors(world, edit, &lines, circle);
     let mut entities = lines;
     entities.push(circle);
     let args = oblikovati_api::wire::CreateBlockDefinitionArgs {
@@ -45,6 +46,61 @@ fn block_definition_with_instance(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.expect_text("Sketch3");
     world.expect_text("Block1:1");
+    let instance = world.state().browser.unwrap().block_instances[0].id.0;
+    let args = oblikovati_api::wire::SetBlockInstanceColorArgs {
+        sketch_index: 0,
+        instance_id: instance,
+        color: Some(Box::new(fixture_color(0, 255, 255))),
+    };
+    oblikovati_api::client::Client::new(world.app().owner.document_host())
+        .sketch()
+        .set_block_instance_color(&args)
+        .unwrap();
+    world.pump(Vec::new());
+}
+
+fn fixture_color(r: u8, g: u8, b: u8) -> oblikovati_api::types::Color {
+    oblikovati_api::types::Color {
+        r,
+        g,
+        b,
+        opacity: 1.0,
+        source: oblikovati_api::types::OVERRIDE_COLOR_SOURCE,
+    }
+}
+fn set_member_colors(
+    world: &mut ApplicationWorld,
+    edit: crate::HeadSketchEdit,
+    lines: &[u64],
+    circle: u64,
+) {
+    world
+        .app()
+        .owner
+        .document_commands(edit.document)
+        .run("Prepare member colors", |snapshot, _| {
+            for id in lines {
+                let format = oblikovati_api::types::SketchEntityFormat {
+                    override_color: fixture_color(160, 0, 255),
+                    ..Default::default()
+                };
+                snapshot.sketches.set_entity_format(
+                    edit.sketch,
+                    oblikovati_model::sketch::SketchEntityId(*id),
+                    format,
+                )?;
+            }
+            let format = oblikovati_api::types::SketchEntityFormat {
+                override_color: fixture_color(255, 0, 0),
+                ..Default::default()
+            };
+            snapshot.sketches.set_entity_format(
+                edit.sketch,
+                oblikovati_model::sketch::SketchEntityId(circle),
+                format,
+            )
+        })
+        .unwrap();
 }
 
 fn add_inner_circle(world: &mut ApplicationWorld, edit: crate::HeadSketchEdit) -> u64 {
@@ -89,7 +145,7 @@ fn add_inner_circle(world: &mut ApplicationWorld, edit: crate::HeadSketchEdit) -
 }
 
 #[when("the user explode the instance")]
-fn explode_instance(world: &mut ApplicationWorld) {
+pub(super) fn explode_instance(world: &mut ApplicationWorld) {
     let row = world.run("Block1:1").center();
     world.right_click(diagnostics::pointer_pixels(row));
     world.click_text("Explode");

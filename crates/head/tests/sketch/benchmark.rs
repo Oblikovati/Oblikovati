@@ -27,6 +27,8 @@ mod dimension_expression;
 mod ellipse;
 #[path = "explode-block/steps.rs"]
 mod explode_block;
+#[path = "explode-block/history.rs"]
+mod explode_block_history;
 #[path = "fixtures.rs"]
 pub(super) mod fixtures;
 #[path = "fixtures_midpoint.rs"]
