@@ -451,9 +451,19 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_hole(feature, body, face, input)
     }
+    fn evaluate_shell(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        openings: &[Vec<u8>],
+        input: oblikovati_model::feature::shell::ResolvedShell,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_shell(feature, body, openings, input)
+    }
 }
 
 mod blend_evaluation;
 mod hole_evaluation;
 mod hole_placement;
 mod move_body_evaluation;
+mod shell_evaluation;

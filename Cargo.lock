@@ -1702,6 +1702,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "martensite-tkoffset"
+version = "0.10.1"
+source = "git+https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47548431c8f128f08f66a1f719bcee4982"
+dependencies = [
+ "martensite-cmath",
+ "martensite-tkbo",
+ "martensite-tkbool",
+ "martensite-tkbrep",
+ "martensite-tkernel",
+ "martensite-tkfillet",
+ "martensite-tkg2d",
+ "martensite-tkg3d",
+ "martensite-tkgeomalgo",
+ "martensite-tkgeombase",
+ "martensite-tkmath",
+ "martensite-tkprim",
+ "martensite-tkshhealing",
+ "martensite-tktopalgo",
+]
+
+[[package]]
 name = "martensite-tkprim"
 version = "0.3.10"
 source = "git+https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47548431c8f128f08f66a1f719bcee4982"
@@ -2135,6 +2156,7 @@ dependencies = [
  "martensite-tkhlr",
  "martensite-tkmath",
  "martensite-tkmesh",
+ "martensite-tkoffset",
  "martensite-tkprim",
  "martensite-tktopalgo",
  "oblikovati-api",

@@ -9,6 +9,7 @@ use martensite_tktopalgo::brep_builder_api::{BRepBuilderAPICopy, BRepBuilderAPIM
 use oblikovati_model::identity::ReferenceEnvelope;
 mod hole;
 mod rigid_motion;
+mod shell;
 pub use rigid_motion::RigidMotion;
 mod naming;
 pub(super) use hole::HoleRequest;

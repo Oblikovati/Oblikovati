@@ -11,6 +11,7 @@ impl WorkGeometryDefinition {
             Self::Chamfer(definition) => return definition.reads(),
             Self::Fillet(definition) => return definition.reads(),
             Self::Hole(definition) => return definition.reads(),
+            Self::Shell(definition) => return definition.reads(),
             Self::MoveBody(definition) => return definition.reads(),
             Self::SketchPrism(definition) => {
                 definition.source_reads().keys().iter().copied().collect()

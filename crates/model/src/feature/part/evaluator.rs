@@ -6,6 +6,18 @@ use crate::feature::{FeatureId, sketch_prism::ResolvedSketchPrism};
 pub trait PartFeatureEvaluator {
     type Body;
     type Failure;
+    /// Construct a named shell or report a named decline; example: `backend.evaluate_shell(id, body, faces, input)`.
+    fn evaluate_shell(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _faces: &[Vec<u8>],
+        _input: crate::feature::shell::ResolvedShell,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "shell: expected an available named-face evaluator".into(),
+        ))
+    }
     /// Verify the complete body name before a body-set edit; example: `backend.verify_body_reference(body, key)?`.
     fn verify_body_reference(&self, body: &Self::Body, key: &[u8]) -> Result<(), String>;
     /// Resolve a current named planar face; example: `backend.resolve_planar_face(body, key)?`.

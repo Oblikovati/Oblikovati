@@ -26,6 +26,7 @@ martensite-tktopalgo = { git = "https://github.com/Oblikovati/Martensite", rev =
 
 martensite-tkbo = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.8.2" }
 martensite-tkfillet = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.8.1" }
+martensite-tkoffset = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.10.1" }
 
 [lints]
 workspace = true

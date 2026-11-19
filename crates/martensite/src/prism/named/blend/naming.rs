@@ -22,6 +22,7 @@ pub struct BlendNamedTopology {
 mod capture;
 mod hole;
 mod rigid_motion;
+mod shell;
 mod source;
 pub(in crate::prism::named) use capture::CapturedBlendTopology;
 

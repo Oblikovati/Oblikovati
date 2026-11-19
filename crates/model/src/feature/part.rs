@@ -35,6 +35,7 @@ pub use transfer::{CapturedPartTransfer, CompletedPartTransfer};
 mod checkpoint_suffix;
 mod replay_boundary;
 mod replay_observer;
+mod shell_evaluation;
 mod sketch_recompute;
 pub use super::work_plane::{
     WorkPlaneProgramRecipe as PartFeatureProgramRecipe,
@@ -49,6 +50,7 @@ pub enum PartFeatureDefinition {
     Fillet(Box<super::fillet::FilletDefinition>),
     Hole(Box<super::hole::HoleDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
+    Shell(Box<super::shell::ShellDefinition>),
     SketchPrism(Box<super::sketch_prism::SketchPrismDefinition>),
     Fixed(SketchPlane),
     Offset {
@@ -76,6 +78,7 @@ impl PartFeatureDefinition {
             Self::Fillet(_) => "fillet",
             Self::Hole(_) => "hole",
             Self::MoveBody(_) => "move-body",
+            Self::Shell(_) => "shell",
             Self::Axis(_) | Self::AxisThroughPoints(_) => "work-axis",
             Self::Point(_) | Self::PointAtReference(_) => "work-point",
             _ => "work-plane",
