@@ -193,6 +193,17 @@ fn sketch_compact_row(world: &mut ApplicationWorld) {
 fn sketch_large_rows(world: &mut ApplicationWorld) {
     mode_steps::large_two_rows(world);
 }
+#[then("command labels are hidden while command icons and panel titles remain visible")]
+fn sketch_icon_only_with_titles(world: &mut ApplicationWorld) {
+    sketch_labels_hidden(world);
+    world.expect_text("Create");
+    assert!(icon_quads::ribbon_icon_quads(modes_native::ribbon_bottom()).len() >= 4);
+}
+#[then("command labels return to the ribbon")]
+fn sketch_command_labels_return(world: &mut ApplicationWorld) {
+    world.expect_text("Rectangle");
+    world.expect_text("Line");
+}
 #[then("command labels are hidden")]
 fn sketch_labels_hidden(world: &mut ApplicationWorld) {
     modes_native::assert_no_ribbon_labels(

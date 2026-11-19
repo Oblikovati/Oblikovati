@@ -18,6 +18,15 @@ fn options_context(world: &mut ApplicationWorld) {
 #[when("the user opens the Ribbon Appearance submenu")]
 #[when("the user opens Ribbon Appearance again")]
 fn open_appearance(world: &mut ApplicationWorld) {
+    if !world.shows("Ribbon Appearance") {
+        let panel = if world.state().authoring == oblikovati_gui::GuiAuthoringContext::Sketch {
+            "Create"
+        } else {
+            "Options"
+        };
+        modes_native::open_appearance_from(world, panel);
+        return;
+    }
     world.click_text("Ribbon Appearance");
 }
 #[when("the user selects Reset Ribbon")]
