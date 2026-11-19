@@ -225,6 +225,10 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Asked before creating a redundant sketch dimension when the warning preference is selected. (#4163)
+
+- Honored the edit-on-creation preference for new sketch dimensions. (#4167)
+
 - Refused named-prism queries when a later blend replaces the requested body. (#4086)
 
 - Preserved exact curve bounds when sampling saved drawing views. (#4085)
