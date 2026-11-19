@@ -8,6 +8,8 @@ mod block_close_native;
 #[cfg(target_os = "linux")]
 #[path = "browser_bottom_native.rs"]
 mod browser_bottom_native;
+#[path = "browser_branch_scenario.rs"]
+mod browser_branch_scenario;
 #[path = "browser_feature.rs"]
 pub(super) mod browser_feature;
 #[path = "browser_origin.rs"]
