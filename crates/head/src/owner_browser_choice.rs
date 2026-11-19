@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Apply model browser selections and representation commands.
 use super::*;
+use oblikovati_session::selection::SelectionClickMode;
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
