@@ -14,10 +14,10 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
-- New Sketch (#4156): the full run at `11024a30b` passed six of ten
-  scenarios. Three ViewCube assertions need correction (#4157); the accumulated
-  document fixture remains unresolved (#4011). See the feature's
-  `BLOCKERS.md` and the baseline receipt.
+- New Sketch (#4156): the full run at `60c48f25f` passed nine of ten
+  scenarios. The accumulated document fixture remains unresolved (#4011) and
+  requires circular sketch patterns (#3905). See the feature's `BLOCKERS.md`
+  and the full-run receipt.
 - Explode Block (#4153): the full run at `91e69a377` passed two of five
   scenarios. The other three need the portable fixtures requested in the
   feature's `BLOCKERS.md`. Native checks also cover canvas and browser
@@ -210,9 +210,9 @@ using this status; the live scenario directory can change.
 
 ## Work queue
 
-1. Reassess `new-sketch` against its current feature and supporting documents.
-   Its accumulated-document fixture is unresolved (#4011). Do not take
-   Inventor-file, assembly, or 3D-sketch scenarios until authorized.
+1. Revisit `new-sketch` when its accumulated-document fixture is resolved
+   (#4011) and circular sketch patterns are available (#3905). Select the next
+   feature without Inventor-file, assembly, or 3D-sketch requirements.
 2. Complete the evaluation owner and safe dirty-prefix replay in #4079, with
    generation, policy, invalidation, naming, and replay-count evidence.
 3. Repair and verify the GUI integration targets in #4078. The separate

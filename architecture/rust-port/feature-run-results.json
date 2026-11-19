@@ -565,15 +565,15 @@
       "features/sketch/new-sketch/VISUAL.md": "14ff1c77300c1d733c111a7f81bcb1d10be89ccec4d9f38d74790b94f0696269",
       "features/sketch/new-sketch/feature-icon.svg": "ccc109fa1729de6754eb36b6b101de9c8761e893a1bd65f3e0b449d9faeafbb5"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-19-new-sketch-baseline-11024a30b/cucumber.json",
-    "cucumber_sha256": "00abe66cc762a5972a6885e3b11e4d84d208bec20c63e72966ea526b36921b9c",
-    "application_commit": "11024a30b",
-    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=new-sketch OBK_BDD_REPORTS=/tmp/obk-new-sketch-full-11024a30b CARGO_BUILD_JOBS=4 cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-new-sketch-full-60c48f25f/cucumber.json",
+    "cucumber_sha256": "97c3a08685a2567cad3db6f37d9ad9c5acbca49403125de666a4523300edeefb",
+    "application_commit": "60c48f25f",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=new-sketch OBK_BDD_REPORTS=/tmp/obk-new-sketch-full-60c48f25f CARGO_BUILD_JOBS=4 cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan lavapipe",
-    "notes": "Full feature baseline: 6 of 10 passed. Three ViewCube checks compare sorted uppercase glyphs with mixed-case strings (#4157); the accumulated save/reopen fixture is unbound and lacks portable source details (#4011). Feature and supporting hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "notes": "Full feature run: 9 of 10 passed. The accumulated save/reopen scenario has an unbound starting fixture and needs portable source details (#4011); it also requires circular sketch patterns (#3905). Feature and supporting hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
     "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-explode-block-baseline-c87a73c50/scenario-inventory.json",
     "scenario_inventory_sha256": "70f8abe46124087cc04d5b0e998333cd715596b65fdb8fb0cd865f8e4a7fa07d",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-new-sketch-baseline-11024a30b/scenario-arguments.json",
-    "scenario_arguments_sha256": "8d733341eb11c0754da5c0e00ab3d61ad90ac5e61474b83f3e365b8149476159"
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-new-sketch-full-60c48f25f/scenario-arguments.json",
+    "scenario_arguments_sha256": "f09d2136e6fe528318a9ba6c3b6e45615edec6f7e411c2ebf8b60ad74a7527bb"
   }
 }

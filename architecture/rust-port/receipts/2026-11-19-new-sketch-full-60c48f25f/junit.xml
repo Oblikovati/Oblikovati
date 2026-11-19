@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: New sketch: mnt/vininas-projects/MCAD-Scenarios/features/sketch/new-sketch/scenario.feature" package="testsuite/Feature: New sketch: mnt/vininas-projects/MCAD-Scenarios/features/sketch/new-sketch/scenario.feature" tests="10" errors="0" failures="1" hostname="localhost" timestamp="2026-11-19T20:15:18.144894937Z" time="113.252637481"><testcase name="Scenario: new-sketch-01 Create a sketch on a named origin plane: mnt/vininas-projects/MCAD-Scenarios/features/sketch/new-sketch/scenario.feature:5:3" time="8.7958088"><system-out><![CDATA[  Scenario: new-sketch-01 Create a sketch on a named origin plane
+   ✔  Given Part2 has Sketch1 and the Origin browser is expanded
+   ✔  When the user invoke Start 2D Sketch and choose XZ Plane
+   ✔  Then Sketch2 is added in the Sketch editing environment
+   ✔  And the ViewCube reads TOP
+   ✔  And the empty sketch status reads Fully Constrained
+]]></system-out></testcase><testcase name="Scenario: new-sketch-02 Cancel before selecting a plane: mnt/vininas-projects/MCAD-Scenarios/features/sketch/new-sketch/scenario.feature:13:3" time="8.861087701"><system-out><![CDATA[  Scenario: new-sketch-02 Cancel before selecting a plane
+   ✔  Given Part2 has only Sketch1
+   ✔  When the user invoke Start 2D Sketch and press Escape before choosing a plane
+   ✔  Then the reference-plane previews disappear
+   ✔  And the browser still contains only Sketch1
+]]></system-out></testcase><testcase name="Scenario: new-sketch-03 Escape after accepting the support plane: mnt/vininas-projects/MCAD-Scenarios/features/sketch/new-sketch/scenario.feature:20:3" time="9.25908166"><system-out><![CDATA[  Scenario: new-sketch-03 Escape after accepting the support plane
+   ✔  Given selecting XZ Plane has created empty Sketch2
+   ✔  When the user press Escape
+   ✔  Then Sketch2 remains active in the Sketch editing environment
+   ✔  And creation is not rolled back
+]]></system-out></testcase><testcase name="Scenario: new-sketch-04 Creation and finishing have distinct history transactions: mnt/vininas-projects/MCAD-Scenarios/features/sketch/new-sketch/scenario.feature:27:3" time="12.413908764"><system-out><![CDATA[  Scenario: new-sketch-04 Creation and finishing have distinct history transactions
+   ✔  Given the user have created empty Sketch2 and chosen Finish Sketch
+   ✔  When the user press Ctrl+Z once
+   ✔  Then Sketch2 remains and its editing environment returns
+   ✔  When the user press Ctrl+Z again
+   ✔  Then Sketch2 disappears from the model browser
+   ✔  When the user press Ctrl+Y twice in sequence
+   ✔  Then creation and Finish Sketch are restored in order
+]]></system-out></testcase><testcase name="Scenario: new-sketch-05 Start with a preselected support plane: mnt/vininas-projects/MCAD-Scenarios/features/sketch/new-sketch/scenario.feature:37:3" time="10.320566079"><system-out><![CDATA[  Scenario: new-sketch-05 Start with a preselected support plane
+   ✔  Given the model browser exposes YZ Plane
+   ✔  When the user select YZ Plane before invoking Start 2D Sketch
+   ✔  Then Sketch3 is created without another support-selection click
+   ✔  And the ViewCube reads RIGHT
+   ✔  And the empty sketch status reads Fully Constrained
+]]></system-out></testcase><testcase name="Scenario: new-sketch-07 Create an empty sketch on a planar solid face: mnt/vininas-projects/MCAD-Scenarios/features/sketch/new-sketch/scenario.feature:45:3" time="11.930718498"><system-out><![CDATA[  Scenario: new-sketch-07 Create an empty sketch on a planar solid face
+   ✔  Given isolated Part3 contains a 10 mm rectangular extrusion
+   ✔  When the user invoke Start 2D Sketch and select its broad planar face
+   ✔  Then Sketch2 is added in the Sketch editing environment
+   ✔  And FRONT view and empty Fully Constrained status are displayed
+   ✔  When the user choose Finish Sketch
+   ✔  Then Sketch2 is retained beside Extrusion1
+]]></system-out></testcase><testcase name="Scenario: new-sketch-08 Create a sketch on a non-origin work plane: mnt/vininas-projects/MCAD-Scenarios/features/sketch/new-sketch/scenario.feature:54:3" time="12.991303499"><system-out><![CDATA[  Scenario: new-sketch-08 Create a sketch on a non-origin work plane
+   ✔  Given Work Plane1 was created 5 mm offset from the planar face
+   ✔  When the user preselect Work Plane1 and invoke Start 2D Sketch
+   ✔  Then empty Sketch3 is created without another support click
+   ✔  And Finish Sketch retains Sketch3 and Work Plane1
+]]></system-out></testcase><testcase name="Scenario: new-sketch-09 Observe each automatic startup plane and restore the baseline: mnt/vininas-projects/MCAD-Scenarios/features/sketch/new-sketch/scenario.feature:61:3" time="18.611202783"><system-out><![CDATA[  Scenario: new-sketch-09 Observe each automatic startup plane and restore the baseline
+   ✔  Given No new sketch is the starting preference
+   ✔  When the user accept each automatic startup plane in turn
+   ✔  And the user create a fresh metric part document after each change
+   ✔  Then x-y creates Part4 Sketch1 in FRONT view
+   ✔  And y-z creates Part5 Sketch1 in RIGHT view
+   ✔  And x-z creates Part6 Sketch1 in TOP orientation
+   ✔  And no separate Start 2D Sketch action is needed in those routes
+   ✔  And No new sketch is restored accepted and verified
+]]></system-out></testcase><testcase name="Scenario: new-sketch-10 Compare automatic normal view on creation and edit: mnt/vininas-projects/MCAD-Scenarios/features/sketch/new-sketch/scenario.feature:72:3" time="16.851615217"><system-out><![CDATA[  Scenario: new-sketch-10 Compare automatic normal view on creation and edit
+   ✔  Given Part6 is in an oblique Home View
+   ✔  When the user disable Part Look at sketch plane and create a sketch on YZ Plane
+   ✔  Then Sketch2 is created and the oblique view remains
+   ✔  When the user finish Sketch2 and restore Part Look at sketch plane
+   ✔  And the user choose Edit Sketch on that same Sketch2
+   ✔  Then its editing environment opens in RIGHT view
+]]></system-out></testcase><testcase name="Scenario: new-sketch-06 Save close and reopen an accumulated sketch document: mnt/vininas-projects/MCAD-Scenarios/features/sketch/new-sketch/scenario.feature:81:3" time="3.21734448"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: new-sketch-06 Save close and reopen an accumulated sketch document
+   ✘  Given Part1 contains an existing sketch with geometry
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/new-sketch/scenario.feature:82:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>
