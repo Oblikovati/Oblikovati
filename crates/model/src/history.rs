@@ -23,6 +23,7 @@ mod prism_create;
 mod scalar_ownership;
 mod shell_create;
 mod sketch_block_create;
+mod sketch_block_explode;
 mod sketch_create;
 mod sketch_current_geometry;
 mod sketch_dimension_create;

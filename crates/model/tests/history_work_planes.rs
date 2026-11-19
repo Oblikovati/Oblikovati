@@ -7,6 +7,8 @@ use oblikovati_model::{
     sketch::SketchPlane,
     units::UnitsOfMeasure,
 };
+#[path = "history/block_explode.rs"]
+mod block_explode;
 fn snapshot() -> DocumentSnapshot {
     DocumentSnapshot {
         work_geometry: Default::default(),
