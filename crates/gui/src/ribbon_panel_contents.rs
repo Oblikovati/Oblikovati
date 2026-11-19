@@ -140,7 +140,13 @@ pub(crate) fn draw_panel_content(
             }
             drop(disabled);
         }
-        RibbonPanel::Parameters => return owners.parameters.toolbar(ui, state, owners.icons),
+        RibbonPanel::Parameters => {
+            let clicked = owners.parameters.toolbar(ui, state, owners.icons);
+            if clicked {
+                owners.workspace.tool_visibility.parameters = owners.parameters.is_open();
+            }
+            return clicked;
+        }
         RibbonPanel::ToolOptions => {
             if owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal {
                 return appearance_tools::options(ui, origin, state, owners);
