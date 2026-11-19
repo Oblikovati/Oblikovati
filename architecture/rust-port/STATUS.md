@@ -14,10 +14,13 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
-- Explode Block (#4153): all five scenarios stopped at unbound setup steps in
-  the full baseline at `c87a73c50`. The API contract is on
-  `work/explode-block-310` at `ad18513`; its full API gate passed. The host
-  implementation and portable geometry and styling remain open (#310).
+- Explode Block (#4153): the full run at `91e69a377` passed two of five
+  scenarios. The other three need the portable fixtures requested in the
+  feature's `BLOCKERS.md`. Native checks also cover canvas and browser
+  explosion, color inheritance, selection of another instance, and analytic
+  Measure before and after explosion. The latter fix is merged at `1d727f246`.
+  The API contract is on `work/explode-block-310` at `0bf27c8`; its full API
+  gate passed, but the contract is not released (#310, #311).
 - Constraint inference scope (#4152): the full native run at `f7186111b`
   passed two of four scenarios. The recorded selection fixtures still need
   portable geometry; the scenario owner has been asked in `BLOCKERS.md`.
@@ -41,8 +44,9 @@ using this status; the live scenario directory can change.
   cases, including both outline examples. Its inventory counts 49 of 51
   declarations. The spacing and User Interface menu scenarios remain
   incomplete; their source questions are in the feature's `BLOCKERS.md`.
-- The current feature-run inventory has 14 green features and 407 passing
-  scenario declarations out of 3,088, across 256 features. These counts are
+- The current feature-run inventory has 9 green features and 325 passing
+  scenario declarations out of 3,088, across 256 features. Source edits have
+  invalidated earlier runs, including runs previously reported as green. These counts are
   tied to source hashes and must be regenerated when the scenario source changes.
 - Sketch constraint-glyph hover passed its complete one-scenario native run at
   `e33bac9dd`. Application closing previously passed 3 of 3 scenarios, but its
@@ -203,17 +207,22 @@ using this status; the live scenario directory can change.
 
 ## Work queue
 
-1. Complete the evaluation owner and safe dirty-prefix replay in #4079, with
+1. Reassess `new-sketch` against its current feature and supporting documents.
+   Its accumulated-document fixture is unresolved (#4011). Do not take
+   Inventor-file, assembly, or 3D-sketch scenarios until authorized.
+2. Complete the evaluation owner and safe dirty-prefix replay in #4079, with
    generation, policy, invalidation, naming, and replay-count evidence.
-2. Repair and verify the GUI integration targets in #4078. The separate
+3. Repair and verify the GUI integration targets in #4078. The separate
    first-interaction row movement is #4077.
-3. Complete the dock lifecycle checks still listed in #4073.
-4. Continue ledger baseline and milestone exit work in #3865, #3861, and #3860.
-5. Recheck scenario changes through the scheduled sync; the source may be edited
+4. Complete the dock lifecycle checks still listed in #4073.
+5. Continue ledger baseline and milestone exit work in #3865, #3861, and #3860.
+6. Recheck scenario changes through the scheduled sync; the source may be edited
    while tests run. Capture source hashes before and after every diagnostic.
 
 ## Evidence and history
 
-`behavior-ledger.json` and its generated report are the counting source.
+`feature-run-results.json` and `tools/bdd/feature_progress.py` report full-feature
+diagnostics against current source hashes. The separate behavior ledger reports
+strictly verified acceptance; unversioned scenario source prevents that proof.
 `receipts/` contains recorded runs and their limitations. The prior status is
 preserved in [STATUS-history-2026-11-17.md](STATUS-history-2026-11-17.md).
