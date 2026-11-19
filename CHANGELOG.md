@@ -153,6 +153,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Changed
 
+- Kept inferred placement snaps without saving their constraints when persistence is off. (#4160)
+
 - Reduced sketch solving time and memory when many coordinates have no constraints. (#4165)
 
 - Removed the partial certified-prism whole-part evaluator. (#4079)

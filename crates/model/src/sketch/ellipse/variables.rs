@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::sketch::{Sketch2D, SketchEntityId, SketchError, variables::SketchVariable};
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(in crate::sketch) enum EllipseComponent {
     MajorRadius,
     MinorRadius,

@@ -2,7 +2,7 @@
 use super::{Sketch2D, SketchEntityId, SketchError, circle::require_radius};
 use oblikovati_solve::{ad::DualNumber, residual::ResidualError};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub(super) enum SketchVariable {
     Coordinate {
         point: SketchEntityId,
