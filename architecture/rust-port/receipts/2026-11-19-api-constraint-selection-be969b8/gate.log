@@ -1,0 +1,2479 @@
+python3 scripts/check-generated.py
+make[1]: Entering directory '/home/vmiguel/git/oblikovati-workspace/Oblikovati.API/.slim/worktrees/constraint-settings-312'
+mkdir -p build
+mkdir -p go/include
+cp include/oblikovati_addin.h go/include/oblikovati_addin.h
+cd go && go run ./scripts/apischema > ../build/api-schema.json
+python3 scripts/rustgen/main.py < build/api-schema.json
+Generated 3504 declarations and 676 typed calls.
+gofmt -w go/scripts/apifixtures go/scripts/apischema go/client go/examples
+cd go && go run ./scripts/apifixtures > ../build/go-wire.jsonl
+python3 scripts/split-fixtures.py
+cargo fmt --manifest-path rust/Cargo.toml
+python3 scripts/wiki-examples.py
+cargo update --manifest-path rust/Cargo.toml --workspace
+     Locking 0 packages to latest Rust 1.95 compatible versions
+note: pass `--verbose` to see 9 unchanged dependencies behind latest
+make[1]: Leaving directory '/home/vmiguel/git/oblikovati-workspace/Oblikovati.API/.slim/worktrees/constraint-settings-312'
+Go/Rust definitions, version, fixtures and wiki examples are in sync
+cd go && go build ./...
+cargo build --manifest-path rust/Cargo.toml --locked --all-targets
+   Compiling oblikovati-api v0.159.0 (/home/vmiguel/git/oblikovati-workspace/Oblikovati.API/.slim/worktrees/constraint-settings-312/rust)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.30s
+cd go && go test ./...
+ok  	oblikovati.org/api	0.002s
+ok  	oblikovati.org/api/client	0.047s
+ok  	oblikovati.org/api/contract	0.012s
+ok  	oblikovati.org/api/examples/c_addin	0.012s
+ok  	oblikovati.org/api/examples/ellipse	0.012s
+ok  	oblikovati.org/api/examples/operations	0.012s
+ok  	oblikovati.org/api/examples/version	0.012s
+ok  	oblikovati.org/api/scripts/apifixtures	0.039s
+ok  	oblikovati.org/api/scripts/apischema	0.294s
+ok  	oblikovati.org/api/scripts/nextver	0.021s
+ok  	oblikovati.org/api/types	0.015s
+ok  	oblikovati.org/api/wire	0.012s
+ok  	oblikovati.org/api/wire/featureargs	0.014s
+cargo test --manifest-path rust/Cargo.toml --locked
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src/lib.rs (rust/target/debug/deps/oblikovati_api-1dc3e484033942fc)
+
+running 2 tests
+test generated_dto::tests::field_rules_keep_null_defaults_omission_and_finite_checks ... ok
+test generated_scalar::tests::floating_scalar_retains_copy_layout_and_json ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/clients.rs (rust/target/debug/deps/clients-6af5d6d9879e65cc)
+
+running 676 tests
+test client_generated::calls_000::add_ins_get ... ok
+test client_generated::calls_000::add_ins_activate ... ok
+test client_generated::calls_000::add_ins_call_automation ... ok
+test client_generated::calls_000::add_ins_deactivate ... ok
+test client_generated::calls_000::add_ins_set_load_behavior ... ok
+test client_generated::calls_000::add_ins_list ... ok
+test client_generated::calls_000::analysis_mass_properties ... ok
+test client_generated::calls_000::analysis_model_health ... ok
+test client_generated::calls_000::analysis_measure ... ok
+test client_generated::calls_000::appearances_create ... ok
+test client_generated::calls_000::appearances_assign ... ok
+test client_generated::calls_000::appearances_get ... ok
+test client_generated::calls_000::appearances_list ... ok
+test client_generated::calls_000::application_api_version ... ok
+test client_generated::calls_000::application_hud_options ... ok
+test client_generated::calls_000::assembly_add_virtual ... ok
+test client_generated::calls_000::assembly_bom_export ... ok
+test client_generated::calls_000::application_set_hud_options ... ok
+test client_generated::calls_000::assembly_bom_view ... ok
+test client_generated::calls_001::assembly_constraints_add_angle ... ok
+test client_generated::calls_001::assembly_constraints_add_flush ... ok
+test client_generated::calls_001::assembly_constraints_add_custom ... ok
+test client_generated::calls_000::appearances_update ... ok
+test client_generated::calls_001::assembly_constraints_add_insert ... ok
+test client_generated::calls_001::assembly_constraints_add_mate ... ok
+test client_generated::calls_001::assembly_constraints_add_rotate_rotate ... ok
+test client_generated::calls_001::assembly_constraints_add_rotate_translate ... ok
+test client_generated::calls_001::assembly_constraints_add_symmetry ... ok
+test client_generated::calls_001::assembly_constraints_add_tangent ... ok
+test client_generated::calls_001::assembly_constraints_add_translate_translate ... ok
+test client_generated::calls_001::assembly_constraints_add_transitional ... ok
+test client_generated::calls_001::assembly_constraints_delete ... ok
+test client_generated::calls_001::assembly_constraints_health ... ok
+test client_generated::calls_001::assembly_constraints_list ... ok
+test client_generated::calls_001::assembly_constraints_set_limits ... ok
+test client_generated::calls_001::assembly_constraints_solve ... ok
+test client_generated::calls_001::assembly_constraints_snap ... ok
+test client_generated::calls_001::assembly_copy ... ok
+test client_generated::calls_001::assembly_derive_break_link ... ok
+test client_generated::calls_001::assembly_derive_create ... ok
+test client_generated::calls_002::assembly_derive_status ... ok
+test client_generated::calls_002::assembly_derive_update ... ok
+test client_generated::calls_002::assembly_features_add ... ok
+test client_generated::calls_002::assembly_drive_preview ... ok
+test client_generated::calls_002::assembly_features_add_chamfer ... ok
+test client_generated::calls_002::assembly_features_add_extrude ... ok
+test client_generated::calls_002::assembly_features_add_fillet ... ok
+test client_generated::calls_002::assembly_features_add_move_face ... ok
+test client_generated::calls_002::assembly_features_add_hole ... ok
+test client_generated::calls_002::assembly_features_add_proxy_cut ... ok
+test client_generated::calls_002::assembly_features_add_revolve ... ok
+test client_generated::calls_002::assembly_features_add_sweep ... ok
+test client_generated::calls_002::assembly_features_list ... ok
+test client_generated::calls_002::assembly_features_set_end_of_features ... ok
+test client_generated::calls_002::assembly_features_edit ... ok
+test client_generated::calls_002::assembly_features_get_end_of_features ... ok
+test client_generated::calls_002::assembly_features_set_participant_paths ... ok
+test client_generated::calls_002::assembly_ground ... ok
+test client_generated::calls_003::assembly_joints_add_ball ... ok
+test client_generated::calls_002::assembly_features_set_participants ... ok
+test client_generated::calls_002::assembly_features_set_suppressed ... ok
+test client_generated::calls_003::assembly_joints_add_rotational ... ok
+test client_generated::calls_003::assembly_joints_delete ... ok
+test client_generated::calls_003::assembly_joints_add_slider ... ok
+test client_generated::calls_003::assembly_joints_set_flip ... ok
+test client_generated::calls_003::assembly_joints_set_limits ... ok
+test client_generated::calls_003::assembly_joints_set_origin ... ok
+test client_generated::calls_003::assembly_joints_set_state ... ok
+test client_generated::calls_003::assembly_mirror ... ok
+test client_generated::calls_003::assembly_joints_add_cylindrical ... ok
+test client_generated::calls_003::assembly_occurrences ... ok
+test client_generated::calls_003::assembly_options ... ok
+test client_generated::calls_003::assembly_pattern_delete ... ok
+test client_generated::calls_003::assembly_pattern_create ... ok
+test client_generated::calls_003::assembly_pattern_element_reposition ... ok
+test client_generated::calls_004::assembly_pattern_list ... ok
+test client_generated::calls_003::assembly_pattern_element_set_suppressed ... ok
+test client_generated::calls_004::assembly_pattern_set_suppressed ... ok
+test client_generated::calls_004::assembly_place ... ok
+test client_generated::calls_004::assembly_place_by_definition_batch ... ok
+test client_generated::calls_004::assembly_remove ... ok
+test client_generated::calls_004::assembly_set_bom_structure ... ok
+test client_generated::calls_004::assembly_set_flexible ... ok
+test client_generated::calls_003::assembly_joints_add_planar ... ok
+test client_generated::calls_004::assembly_place_by_definition ... ok
+test client_generated::calls_004::assembly_replace ... ok
+test client_generated::calls_003::assembly_joints_list ... ok
+test client_generated::calls_003::assembly_joints_add_rigid ... ok
+test client_generated::calls_003::assembly_mirror_into_part ... ok
+test client_generated::calls_004::assembly_set_options ... ok
+test client_generated::calls_004::assembly_set_visible ... ok
+test client_generated::calls_004::assembly_set_flexible_child ... ok
+test client_generated::calls_004::assembly_shrinkwrap_create ... ok
+test client_generated::calls_004::assembly_substitute ... ok
+test client_generated::calls_004::assembly_suppress ... ok
+test client_generated::calls_004::assembly_transform ... ok
+test client_generated::calls_004::attributes_delete_on ... ok
+test client_generated::calls_004::attributes_find ... ok
+test client_generated::calls_004::attributes_get_on ... ok
+test client_generated::calls_005::attributes_list ... ok
+test client_generated::calls_005::attributes_list_all ... ok
+test client_generated::calls_005::attributes_list_on ... ok
+test client_generated::calls_004::assembly_set_occurrence_state ... ok
+test client_generated::calls_005::attributes_list_sets ... ok
+test client_generated::calls_005::attributes_set_on ... ok
+test client_generated::calls_005::body_bind_transient_key ... ok
+test client_generated::calls_005::body_calculate_facets ... ok
+test client_generated::calls_005::body_calculate_strokes ... ok
+test client_generated::calls_005::body_convexity_edges ... ok
+test client_generated::calls_005::body_delete ... ok
+test client_generated::calls_005::body_existing_facets ... ok
+test client_generated::calls_005::body_face_calculate_strokes ... ok
+test client_generated::calls_005::body_face_calculate_facets ... ok
+test client_generated::calls_005::body_face_evaluate ... ok
+test client_generated::calls_005::body_existing_strokes ... ok
+test client_generated::calls_005::body_facet_tolerances ... ok
+test client_generated::calls_005::body_find_using_ray ... ok
+test client_generated::calls_005::body_is_point_inside ... ok
+test client_generated::calls_005::body_list ... ok
+test client_generated::calls_006::body_minimum_distance ... ok
+test client_generated::calls_005::body_locate_using_point ... ok
+test client_generated::calls_006::body_offset_planar_wire ... ok
+test client_generated::calls_006::body_physical_properties ... ok
+test client_generated::calls_006::body_range_box ... ok
+test client_generated::calls_006::body_rename ... ok
+test client_generated::calls_006::body_set_visible ... ok
+test client_generated::calls_006::body_shells ... ok
+test client_generated::calls_006::body_stroke_tolerances ... ok
+test client_generated::calls_006::body_validate ... ok
+test client_generated::calls_006::body_wires ... ok
+test client_generated::calls_006::browser_delete_pane ... ok
+test client_generated::calls_006::browser_list_panes ... ok
+test client_generated::calls_006::browser_set_pane ... ok
+test client_generated::calls_006::client_applications_list ... ok
+test client_generated::calls_006::client_applications_register ... ok
+test client_generated::calls_006::client_applications_unregister ... ok
+test client_generated::calls_006::client_export_dxf ... ok
+test client_generated::calls_006::client_import_dwg ... ok
+test client_generated::calls_006::client_import_dxf ... ok
+test client_generated::calls_006::client_import_pdf ... ok
+test client_generated::calls_007::color_schemes_active ... ok
+test client_generated::calls_007::color_schemes_list ... ok
+test client_generated::calls_007::color_schemes_set_active ... ok
+test client_generated::calls_007::commands_create ... ok
+test client_generated::calls_007::commands_execute ... ok
+test client_generated::calls_007::commands_list ... ok
+test client_generated::calls_007::commands_set_state ... ok
+test client_generated::calls_007::commands_submit_line ... ok
+test client_generated::calls_007::constrain_add ... ok
+test client_generated::calls_007::constrain_add_with ... ok
+test client_generated::calls_007::constrain_delete ... ok
+test client_generated::calls_007::contact_sets_add_member ... ok
+test client_generated::calls_007::contact_sets_create ... ok
+test client_generated::calls_007::contact_sets_list ... ok
+test client_generated::calls_007::contact_sets_delete ... ok
+test client_generated::calls_007::contact_sets_remove_member ... ok
+test client_generated::calls_007::contact_solver_set_enabled ... ok
+test client_generated::calls_007::contact_solver_status ... ok
+test client_generated::calls_007::ds_joints_add ... ok
+test client_generated::calls_007::ds_joints_delete ... ok
+test client_generated::calls_008::design_reps_activate ... ok
+test client_generated::calls_008::design_reps_capture ... ok
+test client_generated::calls_008::design_reps_delete ... ok
+test client_generated::calls_008::design_reps_add_section ... ok
+test client_generated::calls_008::design_reps_list ... ok
+test client_generated::calls_008::design_reps_set_appearance ... ok
+test client_generated::calls_008::diagnostics_tail ... ok
+test client_generated::calls_008::design_reps_set_visibility ... ok
+test client_generated::calls_008::dialogs_list_web_views ... ok
+test client_generated::calls_008::dialogs_close_web_dialog ... ok
+test client_generated::calls_008::dialogs_show_file_dialog ... ok
+test client_generated::calls_008::dialogs_show_web_dialog ... ok
+test client_generated::calls_008::dimension_add ... ok
+test client_generated::calls_008::dimension_add_with ... ok
+test client_generated::calls_008::dimension_delete ... ok
+test client_generated::calls_008::dimension_edit ... ok
+test client_generated::calls_008::dimension_move_ ... ok
+test client_generated::calls_008::display_options ... ok
+test client_generated::calls_008::ds_joints_list ... ok
+test client_generated::calls_008::ds_joints_set_imposed_motion ... ok
+test client_generated::calls_009::display_settings ... ok
+test client_generated::calls_009::dockable_windows_delete ... ok
+test client_generated::calls_009::dockable_windows_list ... ok
+test client_generated::calls_009::display_set_options ... ok
+test client_generated::calls_009::display_set_settings ... ok
+test client_generated::calls_009::dockable_windows_set ... ok
+test client_generated::calls_009::dockable_windows_set_references ... ok
+test client_generated::calls_009::dockable_windows_set_value ... ok
+test client_generated::calls_009::dockable_windows_set_visible ... ok
+test client_generated::calls_009::documents_add_attachment ... ok
+test client_generated::calls_009::documents_activate ... ok
+test client_generated::calls_009::documents_add_interest ... ok
+test client_generated::calls_009::documents_attachments ... ok
+test client_generated::calls_009::documents_batch_save ... ok
+test client_generated::calls_009::documents_close_all ... ok
+test client_generated::calls_009::documents_create ... ok
+test client_generated::calls_009::documents_export ... ok
+test client_generated::calls_009::documents_close ... ok
+test client_generated::calls_009::documents_get_end_of_part ... ok
+test client_generated::calls_009::documents_file_references ... ok
+test client_generated::calls_010::documents_get_property ... ok
+test client_generated::calls_010::documents_get_sketch_settings ... ok
+test client_generated::calls_010::documents_get_units ... ok
+test client_generated::calls_010::documents_has_interest ... ok
+test client_generated::calls_010::documents_import ... ok
+test client_generated::calls_010::documents_interests ... ok
+test client_generated::calls_010::documents_list ... ok
+test client_generated::calls_010::documents_list_properties ... ok
+test client_generated::calls_010::documents_load_full ... ok
+test client_generated::calls_010::documents_open ... ok
+test client_generated::calls_010::documents_rebuild ... ok
+test client_generated::calls_010::documents_register_sub_type ... ok
+test client_generated::calls_010::documents_remove_attachment ... ok
+test client_generated::calls_010::documents_remove_interest ... ok
+test client_generated::calls_010::documents_requires_update ... ok
+test client_generated::calls_010::documents_save ... ok
+test client_generated::calls_010::documents_save_as ... ok
+test client_generated::calls_010::documents_set_end_of_part ... ok
+test client_generated::calls_010::documents_set_property ... ok
+test client_generated::calls_010::documents_save_copy_as ... ok
+test client_generated::calls_011::documents_set_units ... ok
+test client_generated::calls_011::documents_sub_types ... ok
+test client_generated::calls_011::documents_set_sketch_settings ... ok
+test client_generated::calls_011::documents_update ... ok
+test client_generated::calls_011::drawing_add_default_border ... ok
+test client_generated::calls_011::drawing_add_sheet ... ok
+test client_generated::calls_011::drawing_add_sheet_using_format ... ok
+test client_generated::calls_011::drawing_annotations_add_bend_note ... ok
+test client_generated::calls_011::drawing_annotations_add_balloon ... ok
+test client_generated::calls_011::drawing_annotations_add_center_marks ... ok
+test client_generated::calls_011::drawing_annotations_add_centerlines ... ok
+test client_generated::calls_011::drawing_annotations_add_chamfer_note ... ok
+test client_generated::calls_011::drawing_annotations_add_co_g_marker ... ok
+test client_generated::calls_011::drawing_annotations_add_custom_table ... ok
+test client_generated::calls_011::drawing_annotations_add_datum_feature ... ok
+test client_generated::calls_011::drawing_annotations_add_hole_notes ... ok
+test client_generated::calls_011::drawing_annotations_add_feature_control_frame ... ok
+test client_generated::calls_011::drawing_annotations_add_hole_table ... ok
+test client_generated::calls_011::drawing_annotations_add_parts_list ... ok
+test client_generated::calls_011::drawing_annotations_add_note ... ok
+test client_generated::calls_012::drawing_annotations_add_revision_cloud ... ok
+test client_generated::calls_012::drawing_annotations_add_revision_table ... ok
+test client_generated::calls_012::drawing_annotations_add_revision_tag ... ok
+test client_generated::calls_012::drawing_annotations_add_surface_texture ... ok
+test client_generated::calls_012::drawing_annotations_delete ... ok
+test client_generated::calls_012::drawing_annotations_list ... ok
+test client_generated::calls_012::drawing_define_sheet_format ... ok
+test client_generated::calls_012::drawing_dimensions_add_angular ... ok
+test client_generated::calls_012::drawing_dimensions_add_baseline ... ok
+test client_generated::calls_012::drawing_dimensions_add_arc_length ... ok
+test client_generated::calls_012::drawing_dimensions_add_chain ... ok
+test client_generated::calls_012::drawing_dimensions_add_linear ... ok
+test client_generated::calls_012::drawing_dimensions_add_ordinate ... ok
+test client_generated::calls_012::drawing_dimensions_add_radial ... ok
+test client_generated::calls_012::drawing_dimensions_delete ... ok
+test client_generated::calls_012::drawing_dimensions_list ... ok
+test client_generated::calls_012::drawing_dimensions_list_retrievable ... ok
+test client_generated::calls_012::drawing_dimensions_retrieve ... ok
+test client_generated::calls_012::drawing_dimensions_set_text_style ... ok
+test client_generated::calls_012::drawing_dimensions_set_inspection ... ok
+test client_generated::calls_013::drawing_dimensions_set_tolerance ... ok
+test client_generated::calls_013::drawing_export_dxf ... ok
+test client_generated::calls_013::drawing_list_sheets ... ok
+test client_generated::calls_013::drawing_remove_sheet ... ok
+test client_generated::calls_013::drawing_set_active_sheet ... ok
+test client_generated::calls_013::drawing_set_model_reference ... ok
+test client_generated::calls_013::drawing_set_sheet_revision ... ok
+test client_generated::calls_013::drawing_set_title_block ... ok
+test client_generated::calls_013::drawing_sketches_add ... ok
+test client_generated::calls_013::drawing_sketches_add_entity ... ok
+test client_generated::calls_013::drawing_sketches_add_hatch_region ... ok
+test client_generated::calls_013::drawing_sketches_list ... ok
+test client_generated::calls_013::drawing_styles_get_active_style ... ok
+test client_generated::calls_013::drawing_styles_list_standards ... ok
+test client_generated::calls_013::drawing_styles_set_standard ... ok
+test client_generated::calls_013::drawing_title_block_fields ... ok
+test client_generated::calls_013::drawing_views_add_auxiliary ... ok
+test client_generated::calls_013::drawing_views_add_base ... ok
+test client_generated::calls_013::drawing_views_add_break ... ok
+test client_generated::calls_013::drawing_views_add_breakout ... ok
+test client_generated::calls_014::drawing_views_add_crop ... ok
+test client_generated::calls_014::drawing_views_add_draft ... ok
+test client_generated::calls_014::drawing_views_add_detail ... ok
+test client_generated::calls_014::drawing_views_add_projected ... ok
+test client_generated::calls_014::drawing_views_add_section ... ok
+test client_generated::calls_014::drawing_views_add_slice ... ok
+test client_generated::calls_014::drawing_views_align ... ok
+test client_generated::calls_014::drawing_views_curves ... ok
+test client_generated::calls_014::drawing_views_delete ... ok
+test client_generated::calls_014::drawing_views_list ... ok
+test client_generated::calls_014::drawing_views_remove_crop ... ok
+test client_generated::calls_014::drawing_views_rotate ... ok
+test client_generated::calls_014::drawing_views_set_display ... ok
+test client_generated::calls_014::drawing_views_set_label ... ok
+test client_generated::calls_014::environment_get ... ok
+test client_generated::calls_014::environment_list_presets ... ok
+test client_generated::calls_014::environment_load_image ... ok
+test client_generated::calls_014::environment_set ... ok
+test client_generated::calls_014::features_add ... ok
+test client_generated::calls_014::features_delete ... ok
+test client_generated::calls_015::features_edit ... ok
+test client_generated::calls_015::features_list ... ok
+test client_generated::calls_015::features_get ... ok
+test client_generated::calls_015::features_rename ... ok
+test client_generated::calls_015::features_reorder ... ok
+test client_generated::calls_015::features_set_suppressed ... ok
+test client_generated::calls_015::files_get ... ok
+test client_generated::calls_015::files_references ... ok
+test client_generated::calls_015::files_replace_reference ... ok
+test client_generated::calls_015::flat_pattern_activate_orientation ... ok
+test client_generated::calls_015::flat_pattern_add_centerline ... ok
+test client_generated::calls_015::flat_pattern_add_orientation ... ok
+test client_generated::calls_015::flat_pattern_delete_centerline ... ok
+test client_generated::calls_015::flat_pattern_delete_orientation ... ok
+test client_generated::calls_015::flat_pattern_edges_of_type ... ok
+test client_generated::calls_015::flat_pattern_faces ... ok
+test client_generated::calls_015::flat_pattern_get_settings ... ok
+test client_generated::calls_015::flat_pattern_list_bend_order ... ok
+test client_generated::calls_015::flat_pattern_list_centerlines ... ok
+test client_generated::calls_015::flat_pattern_list_orientations ... ok
+test client_generated::calls_016::flat_pattern_list_plates ... ok
+test client_generated::calls_016::flat_pattern_list_punches ... ok
+test client_generated::calls_016::flat_pattern_map_entity ... ok
+test client_generated::calls_016::flat_pattern_set_bend_order ... ok
+test client_generated::calls_016::flat_pattern_set_settings ... ok
+test client_generated::calls_016::freeform_crease_edges ... ok
+test client_generated::calls_016::fonts_list ... ok
+test client_generated::calls_016::freeform_move_vertices ... ok
+test client_generated::calls_016::freeform_set_level ... ok
+test client_generated::calls_016::graphics_color_mappers ... ok
+test client_generated::calls_016::graphics_delete ... ok
+test client_generated::calls_016::graphics_list ... ok
+test client_generated::calls_016::graphics_register_color_mapper ... ok
+test client_generated::calls_016::graphics_set ... ok
+test client_generated::calls_016::graphics_set_node_selectable ... ok
+test client_generated::calls_016::graphics_set_node_transform ... ok
+test client_generated::calls_016::graphics_set_node_visible ... ok
+test client_generated::calls_016::graphics_set_visible ... ok
+test client_generated::calls_016::help_display ... ok
+test client_generated::calls_016::help_language_info ... ok
+test client_generated::calls_017::help_path ... ok
+test client_generated::calls_017::help_register_context ... ok
+test client_generated::calls_017::interaction_graphics_clear ... ok
+test client_generated::calls_017::interaction_graphics_update ... ok
+test client_generated::calls_017::interaction_set_notice ... ok
+test client_generated::calls_017::interaction_state ... ok
+test client_generated::calls_017::keymap_export ... ok
+test client_generated::calls_017::interference_analyze ... ok
+test client_generated::calls_017::keymap_import ... ok
+test client_generated::calls_017::keymap_list ... ok
+test client_generated::calls_017::keymap_reset_all ... ok
+test client_generated::calls_017::keymap_reset ... ok
+test client_generated::calls_017::keymap_set_alias ... ok
+test client_generated::calls_017::keymap_set_chord ... ok
+test client_generated::calls_017::lighting_add_light ... ok
+test client_generated::calls_017::lod_reps_activate ... ok
+test client_generated::calls_017::lod_reps_capture ... ok
+test client_generated::calls_017::lod_reps_delete ... ok
+test client_generated::calls_017::lod_reps_list ... ok
+test client_generated::calls_018::lighting_lights ... ok
+test client_generated::calls_017::lod_reps_set_suppressed ... ok
+test client_generated::calls_018::lighting_list_styles ... ok
+test client_generated::calls_018::lighting_set_style ... ok
+test client_generated::calls_018::lighting_style ... ok
+test client_generated::calls_018::manipulators_remove ... ok
+test client_generated::calls_018::lighting_set_light ... ok
+test client_generated::calls_018::manipulators_set ... ok
+test client_generated::calls_018::materials_create ... ok
+test client_generated::calls_018::materials_assign ... ok
+test client_generated::calls_018::materials_get ... ok
+test client_generated::calls_018::materials_list ... ok
+test client_generated::calls_018::materials_physical_properties ... ok
+test client_generated::calls_018::messages_add_message ... ok
+test client_generated::calls_018::messages_begin_section ... ok
+test client_generated::calls_018::messages_clear ... ok
+test client_generated::calls_018::messages_end_section ... ok
+test client_generated::calls_018::materials_update ... ok
+test client_generated::calls_018::messages_list ... ok
+test client_generated::calls_018::messages_show ... ok
+test client_generated::calls_018::messages_register_balloon_tip ... ok
+test client_generated::calls_019::messages_show_balloon_tip ... ok
+test client_generated::calls_019::mini_toolbars_list ... ok
+test client_generated::calls_019::messages_show_prompt ... ok
+test client_generated::calls_019::mini_toolbars_remove ... ok
+test client_generated::calls_019::mini_toolbars_set ... ok
+test client_generated::calls_019::mini_toolbars_update ... ok
+test client_generated::calls_019::model_create_highlight_set ... ok
+test client_generated::calls_019::model_add_highlight_items ... ok
+test client_generated::calls_019::model_reference_keys ... ok
+test client_generated::calls_019::model_clear_selection ... ok
+test client_generated::calls_019::model_selection ... ok
+test client_generated::calls_019::model_deselect ... ok
+test client_generated::calls_019::model_set_highlight_set_color ... ok
+test client_generated::calls_019::model_states_activate ... ok
+test client_generated::calls_019::model_states_copy ... ok
+test client_generated::calls_019::model_states_create ... ok
+test client_generated::calls_019::model_states_delete ... ok
+test client_generated::calls_020::model_states_get_table ... ok
+test client_generated::calls_020::model_states_list ... ok
+test client_generated::calls_020::model_states_rename ... ok
+test client_generated::calls_019::model_delete_highlight_set ... ok
+test client_generated::calls_020::model_tree ... ok
+test client_generated::calls_020::model_states_set_table ... ok
+test client_generated::calls_020::options_get_group ... ok
+test client_generated::calls_020::model_states_verify_table ... ok
+test client_generated::calls_019::model_highlight_sets ... ok
+test client_generated::calls_020::options_groups ... ok
+test client_generated::calls_020::options_set_display ... ok
+test client_generated::calls_019::model_select ... ok
+test client_generated::calls_020::options_set_save ... ok
+test client_generated::calls_020::options_set_sketch ... ok
+test client_generated::calls_020::parameters_add ... ok
+test client_generated::calls_020::parameters_add_derived_table ... ok
+test client_generated::calls_020::parameters_add_group ... ok
+test client_generated::calls_020::options_set_general ... ok
+test client_generated::calls_020::parameters_delete_derived_table ... ok
+test client_generated::calls_021::parameters_delete_group ... ok
+test client_generated::calls_020::options_set_part ... ok
+test client_generated::calls_021::parameters_dependents ... ok
+test client_generated::calls_021::parameters_driven_by ... ok
+test client_generated::calls_021::parameters_export ... ok
+test client_generated::calls_021::parameters_get ... ok
+test client_generated::calls_021::parameters_get_detail ... ok
+test client_generated::calls_021::parameters_get_settings ... ok
+test client_generated::calls_021::parameters_list ... ok
+test client_generated::calls_021::parameters_import ... ok
+test client_generated::calls_021::parameters_list_derived_tables ... ok
+test client_generated::calls_021::parameters_list_groups ... ok
+test client_generated::calls_021::parameters_remove_group_member ... ok
+test client_generated::calls_020::parameters_add_group_member ... ok
+test client_generated::calls_021::parameters_rename ... ok
+test client_generated::calls_021::parameters_set ... ok
+test client_generated::calls_021::parameters_set_all_model_value_type ... ok
+test client_generated::calls_021::parameters_set_derived_table_linked ... ok
+test client_generated::calls_020::parameters_convert ... ok
+test client_generated::calls_021::parameters_set_expression_list ... ok
+test client_generated::calls_020::parameters_delete ... ok
+test client_generated::calls_021::parameters_set_group_display_name ... ok
+test client_generated::calls_021::parameters_set_settings ... ok
+test client_generated::calls_021::parameters_set_tolerance ... ok
+test client_generated::calls_022::parameters_update ... ok
+test client_generated::calls_022::part_design_views_activate ... ok
+test client_generated::calls_022::part_design_views_camera ... ok
+test client_generated::calls_022::part_design_views_copy ... ok
+test client_generated::calls_022::part_design_views_delete ... ok
+test client_generated::calls_022::part_design_views_capture_camera ... ok
+test client_generated::calls_022::part_design_views_list ... ok
+test client_generated::calls_022::part_design_views_rename ... ok
+test client_generated::calls_022::part_design_views_set_body_visibility ... ok
+test client_generated::calls_022::part_design_views_set_options ... ok
+test client_generated::calls_022::pattern_circular ... ok
+test client_generated::calls_022::pattern_rectangular ... ok
+test client_generated::calls_022::point_clouds_add_crop ... ok
+test client_generated::calls_022::point_clouds_attach ... ok
+test client_generated::calls_022::point_clouds_delete ... ok
+test client_generated::calls_022::point_clouds_fit_plane ... ok
+test client_generated::calls_022::point_clouds_delete_crop ... ok
+test client_generated::calls_022::point_clouds_from_model_space ... ok
+test client_generated::calls_022::point_clouds_get ... ok
+test client_generated::calls_023::point_clouds_list_crops ... ok
+test client_generated::calls_022::point_clouds_list ... ok
+test client_generated::calls_023::point_clouds_set_density ... ok
+test client_generated::calls_023::point_clouds_set_crop_active ... ok
+test client_generated::calls_023::point_clouds_set_display_mode ... ok
+test client_generated::calls_023::point_clouds_nearest_point ... ok
+test client_generated::calls_023::point_clouds_set_scale ... ok
+test client_generated::calls_023::point_clouds_set_transform ... ok
+test client_generated::calls_023::point_clouds_set_visible ... ok
+test client_generated::calls_023::point_clouds_to_model_space ... ok
+test client_generated::calls_023::positional_reps_activate ... ok
+test client_generated::calls_023::positional_reps_capture ... ok
+test client_generated::calls_023::positional_reps_delete ... ok
+test client_generated::calls_023::positional_reps_set_flexible ... ok
+test client_generated::calls_023::positional_reps_list ... ok
+test client_generated::calls_023::positional_reps_set_override ... ok
+test client_generated::calls_023::progress_begin ... ok
+test client_generated::calls_023::progress_end ... ok
+test client_generated::calls_023::ribbon_environments ... ok
+test client_generated::calls_023::progress_update ... ok
+test client_generated::calls_023::ribbon_list ... ok
+test client_generated::calls_024::scripts_run ... ok
+test client_generated::calls_024::sheet_metal_bends ... ok
+test client_generated::calls_024::sheet_metal_bend_allowance ... ok
+test client_generated::calls_024::sheet_metal_unfold ... ok
+test client_generated::calls_024::sketch3_d_add_constraint ... ok
+test client_generated::calls_024::sketch3_d_add_dimension ... ok
+test client_generated::calls_024::sheet_metal_get_style ... ok
+test client_generated::calls_024::sheet_metal_set_style ... ok
+test client_generated::calls_024::sketch3_d_constraint_status ... ok
+test client_generated::calls_024::sketch3_d_constraints ... ok
+test client_generated::calls_024::sketch3_d_create ... ok
+test client_generated::calls_024::sketch3_d_delete ... ok
+test client_generated::calls_024::sketch3_d_delete_constraint ... ok
+test client_generated::calls_024::sketch3_d_dimensions ... ok
+test client_generated::calls_024::sketch3_d_edit ... ok
+test client_generated::calls_024::sketch3_d_drive_dimension ... ok
+test client_generated::calls_024::sketch3_d_edit_helix_definition ... ok
+test client_generated::calls_024::sketch3_d_entities ... ok
+test client_generated::calls_025::sketch3_d_exit_edit ... ok
+test client_generated::calls_024::sketch3_d_add_entity ... ok
+test client_generated::calls_024::sketch3_d_add_surface_curve ... ok
+test client_generated::calls_025::sketch3_d_get ... ok
+test client_generated::calls_025::sketch3_d_include_sketch ... ok
+test client_generated::calls_025::sketch3_d_list ... ok
+test client_generated::calls_025::sketch3_d_paths ... ok
+test client_generated::calls_025::sketch3_d_profiles ... ok
+test client_generated::calls_025::sketch3_d_reference_key ... ok
+test client_generated::calls_025::sketch3_d_region_properties ... ok
+test client_generated::calls_025::sketch3_d_set_property ... ok
+test client_generated::calls_025::sketch3_d_include ... ok
+test client_generated::calls_025::sketch3_d_set_spline_handle ... ok
+test client_generated::calls_025::sketch3_d_solve ... ok
+test client_generated::calls_025::sketch3_d_transform ... ok
+test client_generated::calls_025::sketch_add_associative_entity ... ok
+test client_generated::calls_025::sketch_add_block_instance ... ok
+test client_generated::calls_025::sketch_add_fill_region ... ok
+test client_generated::calls_025::sketch_add_entity ... ok
+test client_generated::calls_025::sketch_add_image ... ok
+test client_generated::calls_025::sketch_add_text ... ok
+test client_generated::calls_025::sketch_add_text_with ... ok
+test client_generated::calls_026::sketch_auto_dimension ... ok
+test client_generated::calls_026::sketch_block_definitions ... ok
+test client_generated::calls_026::sketch_block_instances ... ok
+test client_generated::calls_026::sketch_commit_move ... ok
+test client_generated::calls_026::sketch_constraint_status ... ok
+test client_generated::calls_026::sketch_constraints ... ok
+test client_generated::calls_026::sketch_copy_to ... ok
+test client_generated::calls_026::sketch_create ... ok
+test client_generated::calls_026::sketch_delete ... ok
+test client_generated::calls_026::sketch_create_block_definition ... ok
+test client_generated::calls_026::sketch_delete_block_definition ... ok
+test client_generated::calls_026::sketch_dependents ... ok
+test client_generated::calls_026::sketch_dimensions ... ok
+test client_generated::calls_026::sketch_edit ... ok
+test client_generated::calls_026::sketch_edit_text ... ok
+test client_generated::calls_026::sketch_entities ... ok
+test client_generated::calls_026::sketch_entity_format ... ok
+test client_generated::calls_026::sketch_exit_edit ... ok
+test client_generated::calls_026::sketch_explode_block_instance ... ok
+test client_generated::calls_026::sketch_format_modes ... ok
+test client_generated::calls_027::sketch_get ... ok
+test client_generated::calls_027::sketch_get_custom_line_type ... ok
+test client_generated::calls_027::sketch_get_text ... ok
+test client_generated::calls_027::sketch_inference_options ... ok
+test client_generated::calls_027::sketch_inference_scope ... ok
+test client_generated::calls_027::sketch_list ... ok
+test client_generated::calls_027::sketch_offset_chain ... ok
+test client_generated::calls_027::sketch_offset ... ok
+test client_generated::calls_027::sketch_profiles ... ok
+test client_generated::calls_027::sketch_plan_move ... ok
+test client_generated::calls_027::sketch_project_cut_edges ... ok
+test client_generated::calls_027::sketch_project ... ok
+test client_generated::calls_027::sketch_rectangle ... ok
+test client_generated::calls_027::sketch_project_silhouette ... ok
+test client_generated::calls_027::sketch_reference_key ... ok
+test client_generated::calls_027::sketch_region_properties ... ok
+test client_generated::calls_027::sketch_resolve_reference ... ok
+test client_generated::calls_027::sketch_set_block_instance_color ... ok
+test client_generated::calls_027::sketch_set_block_definition_color ... ok
+test client_generated::calls_028::sketch_set_format_modes ... ok
+test client_generated::calls_028::sketch_set_inference_options ... ok
+test client_generated::calls_028::sketch_set_entity_format ... ok
+test client_generated::calls_028::sketch_set_inference_scope ... ok
+test client_generated::calls_028::sketch_set_property ... ok
+test client_generated::calls_028::sketch_set_spline_handle ... ok
+test client_generated::calls_028::sketch_set_text_font ... ok
+test client_generated::calls_028::styles_libraries ... ok
+test client_generated::calls_028::theme_active ... ok
+test client_generated::calls_029::theme_list ... ok
+test client_generated::calls_029::threads_table_query ... ok
+test client_generated::calls_029::transactions_abort ... ok
+test client_generated::calls_029::transactions_end ... ok
+test client_generated::calls_029::threads_resolve ... ok
+test client_generated::calls_029::transactions_history ... ok
+test client_generated::calls_027::sketch_set_custom_line_type ... ok
+test client_generated::calls_029::transactions_state ... ok
+test client_generated::calls_029::transactions_jump_to ... ok
+test client_generated::calls_028::sketch_solve ... ok
+test client_generated::calls_029::transactions_undo ... ok
+test client_generated::calls_029::transient_b_rep_copy ... ok
+test client_generated::calls_029::transient_b_rep_create_from_definition ... ok
+test client_generated::calls_029::transient_b_rep_create_intersection_with_plane ... ok
+test client_generated::calls_029::transient_b_rep_create_primitive ... ok
+test client_generated::calls_028::styles_delete ... ok
+test client_generated::calls_029::transient_b_rep_create_ruled_surface ... ok
+test client_generated::calls_029::transient_b_rep_create_silhouette_curve ... ok
+test client_generated::calls_029::transient_b_rep_delete ... ok
+test client_generated::calls_028::sketch_transform ... ok
+test client_generated::calls_029::transient_b_rep_delete_faces ... ok
+test client_generated::calls_029::transient_b_rep_describe ... ok
+test client_generated::calls_028::status_text ... ok
+test client_generated::calls_030::transient_b_rep_do_boolean ... ok
+test client_generated::calls_030::transient_b_rep_get_identical_bodies ... ok
+test client_generated::calls_028::styles_get ... ok
+test client_generated::calls_030::transient_b_rep_imprint_bodies ... ok
+test client_generated::calls_030::transient_b_rep_list ... ok
+test client_generated::calls_028::styles_import_library ... ok
+test client_generated::calls_028::status_set_text ... ok
+test client_generated::calls_028::styles_list ... ok
+test client_generated::calls_028::task_panels_close ... ok
+test client_generated::calls_028::task_panels_show ... ok
+test client_generated::calls_029::transactions_begin ... ok
+test client_generated::calls_029::transactions_redo ... ok
+test client_generated::calls_028::styles_set ... ok
+test client_generated::calls_030::transient_b_rep_transform ... ok
+test client_generated::calls_030::transient_b_rep_offset_faces ... ok
+test client_generated::calls_030::triad_get ... ok
+test client_generated::calls_030::triad_hide ... ok
+test client_generated::calls_030::triad_show ... ok
+test client_generated::calls_030::triad_update ... ok
+test client_generated::calls_030::ui_activate_environment ... ok
+test client_generated::calls_030::ui_marking_menu ... ok
+test client_generated::calls_030::ui_object_visibility ... ok
+test client_generated::calls_030::ui_register_environment ... ok
+test client_generated::calls_030::ui_search ... ok
+test client_generated::calls_030::ui_set_context_menu ... ok
+test client_generated::calls_030::ui_set_marking_menu ... ok
+test client_generated::calls_030::ui_set_object_visibility ... ok
+test client_generated::calls_030::units_compatible_units ... ok
+test client_generated::calls_030::units_convert ... ok
+test client_generated::calls_031::units_get_database_units_from_expression ... ok
+test client_generated::calls_031::units_get_driving_parameters ... ok
+test client_generated::calls_031::units_get_locale_corrected_expression ... ok
+test client_generated::calls_031::units_get_precise_string_from_value ... ok
+test client_generated::calls_031::units_get_string_from_type ... ok
+test client_generated::calls_031::units_get_type_from_string ... ok
+test client_generated::calls_031::units_get_string_from_value ... ok
+test client_generated::calls_031::units_is_expression_valid ... ok
+test client_generated::calls_031::units_get_value_from_expression ... ok
+test client_generated::calls_031::view_camera ... ok
+test client_generated::calls_031::view_capture ... ok
+test client_generated::calls_031::view_capture_window ... ok
+test client_generated::calls_031::view_display_mode ... ok
+test client_generated::calls_031::view_click ... ok
+test client_generated::calls_031::view_list_display_modes ... ok
+test client_generated::calls_031::view_press_key ... ok
+test client_generated::calls_031::view_scroll ... ok
+test client_generated::calls_031::view_set_display_mode ... ok
+test client_generated::calls_031::view_set_camera ... ok
+test client_generated::calls_031::view_set_mesh_colors ... ok
+test client_generated::calls_032::view_set_normal_debug ... ok
+test client_generated::calls_032::view_set_orientation ... ok
+test client_generated::calls_032::view_set_shadows ... ok
+test client_generated::calls_032::view_shadows ... ok
+test client_generated::calls_032::views_activate ... ok
+test client_generated::calls_032::views_add ... ok
+test client_generated::calls_032::views_capture_named ... ok
+test client_generated::calls_032::views_close ... ok
+test client_generated::calls_032::views_delete_named ... ok
+test client_generated::calls_032::views_list ... ok
+test client_generated::calls_032::views_layout ... ok
+test client_generated::calls_032::views_list_named ... ok
+test client_generated::calls_032::views_rename ... ok
+test client_generated::calls_032::views_restore_named ... ok
+test client_generated::calls_032::views_set_layout ... ok
+test client_generated::calls_032::windows_activate_tab ... ok
+test client_generated::calls_032::windows_close_tab ... ok
+test client_generated::calls_032::windows_frames ... ok
+test client_generated::calls_032::work_axes_create ... ok
+test client_generated::calls_033::work_axes_list ... ok
+test client_generated::calls_032::windows_tabs ... ok
+test client_generated::calls_033::work_axes_list_with_options ... ok
+test client_generated::calls_033::work_features_delete ... ok
+test client_generated::calls_033::work_features_set_visible ... ok
+test client_generated::calls_033::work_planes_flip_normal ... ok
+test client_generated::calls_033::work_planes_create ... ok
+test client_generated::calls_033::work_planes_list ... ok
+test client_generated::calls_033::work_planes_list_with_options ... ok
+test client_generated::calls_033::work_planes_redefine ... ok
+test client_generated::calls_033::work_points_create ... ok
+test client_generated::calls_033::work_points_list ... ok
+test client_generated::calls_033::work_points_list_with_options ... ok
+test client_generated::calls_033::work_surfaces_get ... ok
+test client_generated::calls_033::work_surfaces_list ... ok
+test client_generated::calls_033::work_surfaces_rename ... ok
+test client_generated::calls_033::work_surfaces_set_visible ... ok
+
+test result: ok. 676 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/express_assembly.rs (rust/target/debug/deps/express_assembly-989fd40e79582f24)
+
+running 2 tests
+test old_open_requests_and_responses_default_to_full_mode ... ok
+test express_option_and_load_full_identity_round_trip ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/generated_scalar_contract.rs (rust/target/debug/deps/generated_scalar_contract-7294e8310e1804a2)
+
+running 2 tests
+test generated_string_keeps_transparent_cow_representation ... ok
+test generated_integers_keep_distinct_types_and_transparent_wire_values ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/geometry_contract.rs (rust/target/debug/deps/geometry_contract-9dbdc8aebcfe14e8)
+
+running 8 tests
+test matrix2d_matches_go_fields ... ok
+test matrix_matches_go_fields ... ok
+test point_matches_go_fields ... ok
+test point2d_matches_go_fields ... ok
+test unit_vector2d_matches_go_fields ... ok
+test unit_vector_matches_go_fields ... ok
+test vector2d_matches_go_fields ... ok
+test vector_matches_go_fields ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/parity.rs (rust/target/debug/deps/parity-75d5b384a817328c)
+
+running 1379 tests
+test large_identifiers_are_compared_without_rounding ... ok
+test go_byte_codec_edges ... ok
+test go_timestamp_codec_edges ... ok
+test parity_generated::values_000::featureargs_boss ... ok
+test parity_generated::values_000::featureargs_core_cavity ... ok
+test parity_generated::values_000::featureargs_fair_surface ... ok
+test parity_generated::values_000::featureargs_flange_width_extent ... ok
+test parity_generated::values_000::featureargs_bridge_surface ... ok
+test parity_generated::values_000::featureargs_fill_surface ... ok
+test parity_generated::values_000::featureargs_freeform_plane ... ok
+test parity_generated::values_000::featureargs_face_pair ... ok
+test parity_generated::values_000::featureargs_datum_label ... ok
+test parity_generated::values_000::featureargs_freeform_box ... ok
+test parity_generated::values_000::featureargs_face_offset ... ok
+test parity_generated::values_000::featureargs_fit_surface ... ok
+test parity_generated::values_000::featureargs_extend ... ok
+test parity_generated::values_000::featureargs_fillet_radius_point ... ok
+test parity_generated::values_000::featureargs_direct_edit ... ok
+test parity_generated::values_000::featureargs_fillet_edge_set ... ok
+test parity_generated::values_000::featureargs_chamfer ... ok
+test parity_generated::values_000::featureargs_boundary_patch ... ok
+test parity_generated::values_000::featureargs_fillet ... ok
+test parity_generated::values_000::featureargs_extrude ... ok
+test parity_generated::values_000::featureargs_combine ... ok
+test parity_generated::values_000::featureargs_delete_face ... ok
+test parity_generated::values_000::featureargs_coil ... ok
+test parity_generated::values_000::featureargs_bend_part ... ok
+test parity_generated::values_000::featureargs_draft ... ok
+test parity_generated::values_000::featureargs_flange_edge_set ... ok
+test parity_generated::values_000::featureargs_bend_options ... ok
+test parity_generated::values_000::featureargs_corner_round_edge_set ... ok
+test parity_generated::values_000::featureargs_freeform_quad_ball ... ok
+test parity_generated::values_000::featureargs_emboss ... ok
+test parity_generated::values_000::featureargs_full_round_fillet ... ok
+test parity_generated::values_000::featureargs_hull ... ok
+test parity_generated::values_000::featureargs_geom_edge_sel ... ok
+test parity_generated::values_000::featureargs_hole_clearance ... ok
+test parity_generated::values_000::featureargs_loft_area_stop ... ok
+test parity_generated::values_000::featureargs_lip ... ok
+test parity_generated::values_000::featureargs_mesh ... ok
+test parity_generated::values_000::featureargs_mirror ... ok
+test parity_generated::values_000::featureargs_loft ... ok
+test parity_generated::values_000::featureargs_loft_section ... ok
+test parity_generated::values_000::featureargs_hole ... ok
+test parity_generated::values_000::featureargs_move_body ... ok
+test parity_generated::values_000::featureargs_mid_surface ... ok
+test parity_generated::values_000::featureargs_move_face ... ok
+test parity_generated::values_000::featureargs_model_tolerance ... ok
+test parity_generated::values_001::featureargs_rule_fillet ... ok
+test parity_generated::values_000::featureargs_loft_end ... ok
+test parity_generated::values_001::featureargs_sculpt_surface ... ok
+test parity_generated::values_001::featureargs_sculpt ... ok
+test parity_generated::values_000::featureargs_rib ... ok
+test parity_generated::values_000::featureargs_geom_face_sel ... ok
+test parity_generated::values_000::featureargs_pattern_sketch_driven ... ok
+test parity_generated::values_001::featureargs_sheet_metal_bend ... ok
+test parity_generated::values_001::featureargs_ruled_surface ... ok
+test parity_generated::values_000::featureargs_grill ... ok
+test parity_generated::values_000::featureargs_loft_rail ... ok
+test parity_generated::values_000::featureargs_pattern_boundary ... ok
+test parity_generated::values_001::featureargs_sheet_metal_contour_roll ... ok
+test parity_generated::values_001::featureargs_sheet_metal_contour_flange ... ok
+test parity_generated::values_001::featureargs_sheet_metal_cosmetic_bend ... ok
+test parity_generated::values_001::featureargs_sheet_metal_corner ... ok
+test parity_generated::values_001::featureargs_sheet_metal_cut ... ok
+test parity_generated::values_001::featureargs_sheet_metal_face ... ok
+test parity_generated::values_001::featureargs_sheet_metal_corner_seam ... ok
+test parity_generated::values_001::featureargs_sheet_metal_fold ... ok
+test parity_generated::values_000::featureargs_move_body_op ... ok
+test parity_generated::values_001::featureargs_sheet_metal_flange ... ok
+test parity_generated::values_000::featureargs_pattern_placement ... ok
+test parity_generated::values_000::featureargs_rest ... ok
+test parity_generated::values_000::featureargs_replace_face ... ok
+test parity_generated::values_000::featureargs_network_surface ... ok
+test parity_generated::values_000::featureargs_pattern_circular ... ok
+test parity_generated::values_000::featureargs_revolve ... ok
+test parity_generated::values_001::featureargs_sheet_metal_hem ... ok
+test parity_generated::values_001::featureargs_sheet_metal_lip ... ok
+test parity_generated::values_000::featureargs_pattern_rectangular ... ok
+test parity_generated::values_001::featureargs_sheet_metal_lofted_flange ... ok
+test parity_generated::values_001::featureargs_sheet_metal_refold ... ok
+test parity_generated::values_001::featureargs_sheet_metal_punch ... ok
+test parity_generated::values_001::featureargs_simplify ... ok
+test parity_generated::values_001::featureargs_snap_fit ... ok
+test parity_generated::values_001::featureargs_shell ... ok
+test parity_generated::values_001::featureargs_split ... ok
+test parity_generated::values_001::featureargs_stitch ... ok
+test parity_generated::values_001::featureargs_sheet_metal_rip ... ok
+test parity_generated::values_001::featureargs_surface_offset ... ok
+test parity_generated::values_001::featureargs_sweep_twist_station ... ok
+test parity_generated::values_001::featureargs_thicken ... ok
+test parity_generated::values_001::featureargs_thread ... ok
+test parity_generated::values_001::featureargs_sheet_metal_unfold ... ok
+test parity_generated::values_001::featureargs_trim ... ok
+test parity_generated::values_001::featureargs_tolerance_frame ... ok
+test parity_generated::values_001::featureargs_split_solid ... ok
+test parity_generated::values_001::featureargs_sweep ... ok
+test parity_generated::values_001::featureargs_shell_face_thickness ... ok
+test parity_generated::values_001::types_a_side_face_status ... ok
+test parity_generated::values_001::featureargs_unwrap ... ok
+test parity_generated::values_001::types_action_id ... ok
+test parity_generated::values_001::types_action_type ... ok
+test parity_generated::values_001::types_accuracy ... ok
+test parity_generated::values_001::types_add_in_kind ... ok
+test parity_generated::values_001::types_add_in_load_behavior ... ok
+test parity_generated::values_001::types_alignment_type ... ok
+test parity_generated::values_001::types_angle_constraint_solution_type ... ok
+test parity_generated::values_001::types_assembly_constraint_type ... ok
+test parity_generated::values_001::types_assembly_joint_origin_definition_type ... ok
+test parity_generated::values_001::types_assembly_joint_origin_mode ... ok
+test parity_generated::values_001::types_assembly_joint_type ... ok
+test parity_generated::values_001::types_attachment_kind ... ok
+test parity_generated::values_001::types_asset_source ... ok
+test parity_generated::values_001::types_anisotropic_elastic ... ok
+test parity_generated::values_001::types_back_face_culling_enum ... ok
+test parity_generated::values_001::types_background_type_enum ... ok
+test parity_generated::values_001::types_b_spline_curve_def ... ok
+test parity_generated::values_001::types_b_spline_surface_def ... ok
+test parity_generated::values_001::types_base_view_orientation ... ok
+test parity_generated::values_001::types_bend_part_type ... ok
+test parity_generated::values_001::types_b_spline_curve2d_def ... ok
+test parity_generated::values_001::types_bom_structure ... ok
+test parity_generated::values_002::types_bend_transition ... ok
+test parity_generated::values_002::types_border_label_mode ... ok
+test parity_generated::values_002::types_boolean_type ... ok
+test parity_generated::values_002::types_break_orientation ... ok
+test parity_generated::values_002::types_box2d ... ok
+test parity_generated::values_001::types_bom_view_kind ... ok
+test parity_generated::values_002::types_box_ ... ok
+test parity_generated::values_002::types_brep_definition_issue ... ok
+test parity_generated::values_002::types_brep_curve_def ... ok
+test parity_generated::values_002::types_brep_edge_use_def ... ok
+test parity_generated::values_002::types_brep_edge_def ... ok
+test parity_generated::values_002::types_brep_loop_def ... ok
+test parity_generated::values_002::types_brep_wire_def ... ok
+test parity_generated::values_002::types_button_style ... ok
+test parity_generated::values_002::types_cached_graphics_status_enum ... ok
+test parity_generated::values_002::types_chamfer_concave_strategy ... ok
+test parity_generated::values_002::types_chamfer_type ... ok
+test parity_generated::values_002::types_client_graphics_type_enum ... ok
+test parity_generated::values_002::types_color_binding_enum ... ok
+test parity_generated::values_002::types_color_source_type_enum ... ok
+test parity_generated::values_002::types_constraint_inference_kind ... ok
+test parity_generated::values_002::types_color ... ok
+test parity_generated::values_002::types_color3 ... ok
+test parity_generated::values_002::types_constraint_inference_priority ... ok
+test parity_generated::values_002::types_brep_body_definition ... ok
+test parity_generated::values_002::types_constraint_status ... ok
+test parity_generated::values_002::types_containment ... ok
+test parity_generated::values_002::types_control_kind ... ok
+test parity_generated::values_002::types_brep_lump_def ... ok
+test parity_generated::values_002::types_brep_shell_def ... ok
+test parity_generated::values_002::types_corner_relief_shape ... ok
+test parity_generated::values_002::types_brep_surface_def ... ok
+test parity_generated::values_002::types_brep_face_def ... ok
+test parity_generated::values_002::types_crop_break_mark_line_type ... ok
+test parity_generated::values_002::types_curve2d_type ... ok
+test parity_generated::values_002::types_curve_geometry_form ... ok
+test parity_generated::values_002::types_curve_type ... ok
+test parity_generated::values_002::types_custom_property_precision ... ok
+test parity_generated::values_002::types_custom_property_type ... ok
+test parity_generated::values_002::types_derive_style ... ok
+test parity_generated::values_002::types_dimension3_d_constraint_kind ... ok
+test parity_generated::values_002::types_dimension_constraint_kind ... ok
+test parity_generated::values_002::types_dimension_display_type ... ok
+test parity_generated::values_002::types_dimension_unit ... ok
+test parity_generated::values_002::types_direct_edit_operation_type ... ok
+test parity_generated::values_002::types_dimension_tolerance ... ok
+test parity_generated::values_002::types_display_mode_enum ... ok
+test parity_generated::values_002::types_corner_relief_placement ... ok
+test parity_generated::values_002::types_coordinate_system_type ... ok
+test parity_generated::values_002::types_corner_seam_type ... ok
+test parity_generated::values_002::types_brep_vertex_def ... ok
+test parity_generated::values_002::types_corner_seam_definition_type ... ok
+test parity_generated::values_002::types_display_mode_source_type_enum ... ok
+test parity_generated::values_002::types_display_quality_enum ... ok
+test parity_generated::values_002::types_display_separate_colors_type_enum ... ok
+test parity_generated::values_002::types_display_transform_behavior_enum ... ok
+test parity_generated::values_002::types_dimension_tolerance_type ... ok
+test parity_generated::values_002::types_docking_state ... ok
+test parity_generated::values_002::types_ds_joint_type ... ok
+test parity_generated::values_002::types_dsdof_imposed_motion_type ... ok
+test parity_generated::values_002::types_dxf_version ... ok
+test parity_generated::values_003::types_document_type ... ok
+test parity_generated::values_003::types_drafting_standard ... ok
+test parity_generated::values_003::types_drawing_annotation_kind ... ok
+test parity_generated::values_003::types_drawing_curve_kind ... ok
+test parity_generated::values_003::types_drawing_edge_type ... ok
+test parity_generated::values_003::types_document_interest_type ... ok
+test parity_generated::values_003::types_drawing_sketch_entity_kind ... ok
+test parity_generated::values_003::types_document_sub_type_id ... ok
+test parity_generated::values_003::types_drawing_dimension_type ... ok
+test parity_generated::values_003::types_drawing_view_alignment ... ok
+test parity_generated::values_003::types_feature_approximation_type ... ok
+test parity_generated::values_003::types_exchange_format ... ok
+test parity_generated::values_003::types_document_interest_record ... ok
+test parity_generated::values_003::types_drawing_view_style ... ok
+test parity_generated::values_003::types_file_location_type ... ok
+test parity_generated::values_003::types_fillet_concave_strategy ... ok
+test parity_generated::values_003::types_fillet_cross_section ... ok
+test parity_generated::values_003::types_flat_pattern_edge_type ... ok
+test parity_generated::values_003::types_drive_variable ... ok
+test parity_generated::values_003::types_graphics_color_binding ... ok
+test parity_generated::values_003::types_graphics_lane ... ok
+test parity_generated::values_003::types_graphics_line_type ... ok
+test parity_generated::values_003::types_graphics_normal_binding ... ok
+test parity_generated::values_003::types_graphics_point_style ... ok
+test parity_generated::values_003::types_graphics_primitive_kind ... ok
+test parity_generated::values_003::types_edge_collection_kind ... ok
+test parity_generated::values_003::types_graphics_selectability_enum ... ok
+test parity_generated::values_003::types_graphics_visibility_enum ... ok
+test parity_generated::values_003::types_grid_cell ... ok
+test parity_generated::values_003::types_environment ... ok
+test parity_generated::values_003::types_electrical ... ok
+test parity_generated::values_003::types_fillet_corner_type ... ok
+test parity_generated::values_003::types_fillet_type ... ok
+test parity_generated::values_003::types_flat_pattern_face_type ... ok
+test parity_generated::values_003::types_geometric_constraint_kind ... ok
+test parity_generated::values_003::types_geometric_characteristic ... ok
+test parity_generated::values_003::types_drawing_view_type ... ok
+test parity_generated::values_003::types_geometry_moveable_status ... ok
+test parity_generated::values_003::types_geometric_edge_ref ... ok
+test parity_generated::values_003::types_ground_shadow_enum ... ok
+test parity_generated::values_003::types_grid_track ... ok
+test parity_generated::values_003::types_hatch_pattern ... ok
+test parity_generated::values_003::types_health_status ... ok
+test parity_generated::values_003::types_helical_shape_definition_kind ... ok
+test parity_generated::values_003::types_heads_up_display_options ... ok
+test parity_generated::values_003::types_helix_end_kind ... ok
+test parity_generated::values_003::types_hole_note_quantity ... ok
+test parity_generated::values_003::types_inspection_shape ... ok
+test parity_generated::values_003::types_isotropy_class ... ok
+test parity_generated::values_003::types_inspection_dimension ... ok
+test parity_generated::values_003::types_key_chord ... ok
+test parity_generated::values_003::types_light_definition_type_enum ... ok
+test parity_generated::values_003::types_light_type_enum ... ok
+test parity_generated::values_003::types_lighting_style_type_enum ... ok
+test parity_generated::values_003::types_line_definition_space_enum ... ok
+test parity_generated::values_003::types_loft_condition ... ok
+test parity_generated::values_003::types_loft_type ... ok
+test parity_generated::values_004::types_lofted_flange_output_type ... ok
+test parity_generated::values_003::types_loft_area_stop ... ok
+test parity_generated::values_004::types_magnetic_class ... ok
+test parity_generated::values_004::types_magnetic ... ok
+test parity_generated::values_003::types_geometric3_d_constraint_kind ... ok
+test parity_generated::values_003::types_grid_track_kind ... ok
+test parity_generated::values_004::types_mate_constraint_solution_type ... ok
+test parity_generated::values_004::types_mass_properties_accuracy ... ok
+test parity_generated::values_004::types_material_removal ... ok
+test parity_generated::values_004::types_measure_type ... ok
+test parity_generated::values_004::types_matrix2d ... ok
+test parity_generated::values_004::types_matrix ... ok
+test parity_generated::values_004::types_mesh_resolution ... ok
+test parity_generated::values_004::types_message_severity ... ok
+test parity_generated::values_004::types_mini_toolbar_control_kind ... ok
+test parity_generated::values_004::types_mechanical ... ok
+test parity_generated::values_004::types_model_diameter_from_thread ... ok
+test parity_generated::values_004::types_model_state_table_column_kind ... ok
+test parity_generated::values_004::types_model_state_property_key ... ok
+test parity_generated::values_004::types_model_value_type ... ok
+test parity_generated::values_004::types_move_operation_type ... ok
+test parity_generated::values_004::types_normal_binding_enum ... ok
+test parity_generated::values_004::types_new_file_metadata ... ok
+test parity_generated::values_004::types_object_kind ... ok
+test parity_generated::values_004::types_occurrence_dof_state ... ok
+test parity_generated::values_004::types_occurrence_pattern_suppression ... ok
+test parity_generated::values_004::types_object_ref ... ok
+test parity_generated::values_004::types_offset_corner_closure_type ... ok
+test parity_generated::values_004::types_open_pbr_base ... ok
+test parity_generated::values_004::types_open_pbr_emission ... ok
+test parity_generated::values_004::types_open_pbr_coat ... ok
+test parity_generated::values_004::types_open_pbr_fuzz ... ok
+test parity_generated::values_004::types_open_pbr_specular ... ok
+test parity_generated::values_004::types_orbit_type_enum ... ok
+test parity_generated::values_004::types_open_pbr_geometry ... ok
+test parity_generated::values_004::types_open_pbr_thin_film ... ok
+test parity_generated::values_004::types_over_constrained_dimension_behavior ... ok
+test parity_generated::values_004::types_panel_control_kind ... ok
+test parity_generated::values_004::types_param_anomaly ... ok
+test parity_generated::values_004::types_open_pbr_transmission ... ok
+test parity_generated::values_004::types_open_pbr_subsurface ... ok
+test parity_generated::values_004::types_parameter_display_format ... ok
+test parity_generated::values_004::types_oriented_box ... ok
+test parity_generated::values_004::types_parameter_kind ... ok
+test parity_generated::values_004::types_part_annotation_scale_mode ... ok
+test parity_generated::values_004::types_pattern_boundary_inclusion ... ok
+test parity_generated::values_004::types_pattern_compute_type ... ok
+test parity_generated::values_004::types_part_design_view_camera ... ok
+test parity_generated::values_004::types_pattern_orientation ... ok
+test parity_generated::values_004::types_pattern_positioning_method ... ok
+test parity_generated::values_004::types_pattern_spacing_type ... ok
+test parity_generated::values_004::types_point_cloud_display_mode ... ok
+test parity_generated::values_004::types_point_inference_kind ... ok
+test parity_generated::values_004::types_project_curve_to_surface_type ... ok
+test parity_generated::values_004::types_projection_direction ... ok
+test parity_generated::values_004::types_prompt_restriction ... ok
+test parity_generated::values_004::types_projection_type_enum ... ok
+test parity_generated::values_005::types_punch_representation_type ... ok
+test parity_generated::values_005::types_reference_status ... ok
+test parity_generated::values_005::types_relief_shape ... ok
+test parity_generated::values_004::types_parameter_group_key ... ok
+test parity_generated::values_005::types_representation_kind ... ok
+test parity_generated::values_004::types_part_annotation_scale ... ok
+test parity_generated::values_004::types_point2d ... ok
+test parity_generated::values_004::types_point_render_style_enum ... ok
+test parity_generated::values_004::types_physical_properties ... ok
+test parity_generated::values_004::types_point ... ok
+test parity_generated::values_005::types_ray_tracing_quality_enum ... ok
+test parity_generated::values_005::types_ribbon_key ... ok
+test parity_generated::values_005::types_rgba ... ok
+test parity_generated::values_005::types_rip_type ... ok
+test parity_generated::values_005::types_screen_quadrant ... ok
+test parity_generated::values_005::types_section_view_type ... ok
+test parity_generated::values_005::types_shadow_direction_enum ... ok
+test parity_generated::values_005::types_sheet_orientation ... ok
+test parity_generated::values_005::types_section_plane ... ok
+test parity_generated::values_005::types_sheet_size ... ok
+test parity_generated::values_005::types_shrinkwrap_envelope_style ... ok
+test parity_generated::values_005::types_shrinkwrap_remove_style ... ok
+test parity_generated::values_005::types_sketch3_d_entity_kind ... ok
+test parity_generated::values_005::types_sketch_entity_kind ... ok
+test parity_generated::values_005::types_sketch_inference_scope ... ok
+test parity_generated::values_005::types_sketch_inference_types ... ok
+test parity_generated::values_005::types_sketch_entity_format ... ok
+test parity_generated::values_005::types_sketch_format_modes ... ok
+test parity_generated::values_005::types_sketch_line_type ... ok
+test parity_generated::values_005::types_sketch_pattern_kind ... ok
+test parity_generated::values_005::types_sketch_point_inference_kind ... ok
+test parity_generated::values_005::types_sketch_relax_types ... ok
+test parity_generated::values_005::types_solution_nature ... ok
+test parity_generated::values_005::types_spline_fit_method ... ok
+test parity_generated::values_005::types_split_type ... ok
+test parity_generated::values_005::types_sketch_text_style ... ok
+test parity_generated::values_005::types_startup_action_type ... ok
+test parity_generated::values_005::types_startup_sketch_plane ... ok
+test parity_generated::values_005::types_style_location_enum ... ok
+test parity_generated::values_005::types_surface_continuity ... ok
+test parity_generated::values_005::types_sketch_settings ... ok
+test parity_generated::values_005::types_surface_geometry_form ... ok
+test parity_generated::values_005::types_sketch_move_geometric_policy ... ok
+test parity_generated::values_005::types_sweep_type ... ok
+test parity_generated::values_005::types_surface_type ... ok
+test parity_generated::values_005::types_theme_kind ... ok
+test parity_generated::values_005::types_thumbnail_save_option ... ok
+test parity_generated::values_005::types_title_block_location ... ok
+test parity_generated::values_005::types_thermal ... ok
+test parity_generated::values_005::types_tolerance_type ... ok
+test parity_generated::values_005::types_transaction_point ... ok
+test parity_generated::values_005::types_tolerance ... ok
+test parity_generated::values_005::types_transparency_type_enum ... ok
+test parity_generated::values_005::types_sweep_profile_orientation ... ok
+test parity_generated::values_005::types_sweep_definition_type ... ok
+test parity_generated::values_005::types_sketch_move_dimension_policy ... ok
+test parity_generated::values_005::types_sweep_profile_scaling ... ok
+test parity_generated::values_005::types_text_horizontal_align ... ok
+test parity_generated::values_005::types_triad_move_type ... ok
+test parity_generated::values_005::types_triad_segment ... ok
+test parity_generated::values_005::types_text_vertical_align ... ok
+test parity_generated::values_005::types_unfold_method_type ... ok
+test parity_generated::values_005::types_unit_vector ... ok
+test parity_generated::values_005::types_units_type ... ok
+test parity_generated::values_005::types_theme_token ... ok
+test parity_generated::values_005::types_unit_vector2d ... ok
+test parity_generated::values_006::types_value_type ... ok
+test parity_generated::values_006::types_vector ... ok
+test parity_generated::values_006::types_view_justification ... ok
+test parity_generated::values_006::types_vector2d ... ok
+test parity_generated::values_006::types_view_layout ... ok
+test parity_generated::values_006::types_view_operation_type_enum ... ok
+test parity_generated::values_006::types_variant ... ok
+test parity_generated::values_006::types_view_orientation_type_enum ... ok
+test parity_generated::values_006::types_view_tile_type_enum ... ok
+test parity_generated::values_006::types_view_type_enum ... ok
+test parity_generated::values_006::types_window_state ... ok
+test parity_generated::values_006::types_work_axis_kind ... ok
+test parity_generated::values_006::types_work_plane_kind ... ok
+test parity_generated::values_006::types_work_point_kind ... ok
+test parity_generated::values_006::wire_activate_document_args ... ok
+test parity_generated::values_006::wire_activate_environment_args ... ok
+test parity_generated::values_006::wire_activate_orientation_args ... ok
+test parity_generated::values_006::wire_activate_view_tab_args ... ok
+test parity_generated::values_006::wire_activate_view_args ... ok
+test parity_generated::values_006::wire_add_angular_dimension_args ... ok
+test parity_generated::values_006::wire_add_angle_args ... ok
+test parity_generated::values_006::wire_add_arc_length_dimension_args ... ok
+test parity_generated::values_006::wire_add_assembly_extrude_args ... ok
+test parity_generated::values_006::wire_add_assembly_feature_args ... ok
+test parity_generated::values_006::wire_add_assembly_chamfer_args ... ok
+test parity_generated::values_006::wire_add_assembly_fillet_args ... ok
+test parity_generated::values_006::wire_add_assembly_hole_args ... ok
+test parity_generated::values_006::wire_add_assembly_move_face_args ... ok
+test parity_generated::values_006::wire_add_assembly_sweep_args ... ok
+test parity_generated::values_006::wire_add_attachment_args ... ok
+test parity_generated::values_006::wire_add_assembly_revolve_args ... ok
+test parity_generated::values_006::wire_add_auxiliary_view_args ... ok
+test parity_generated::values_006::wire_add_bend_note_args ... ok
+test parity_generated::values_006::wire_add_base_view_args ... ok
+test parity_generated::values_006::wire_add_balloon_args ... ok
+test parity_generated::values_006::wire_add_center_marks_args ... ok
+test parity_generated::values_006::wire_add_centerline_args ... ok
+test parity_generated::values_006::wire_add_centerlines_args ... ok
+test parity_generated::values_006::wire_add_break_view_args ... ok
+test parity_generated::values_006::wire_add_breakout_view_args ... ok
+test parity_generated::values_006::wire_add_chamfer_note_args ... ok
+test parity_generated::values_006::wire_add_co_g_marker_args ... ok
+test parity_generated::values_006::wire_add_constraint_result ... ok
+test parity_generated::values_006::wire_add_constraint_args ... ok
+test parity_generated::values_006::wire_add_custom_args ... ok
+test parity_generated::values_006::wire_add_datum_feature_args ... ok
+test parity_generated::values_006::wire_add_default_border_args ... ok
+test parity_generated::values_006::wire_add_custom_table_args ... ok
+test parity_generated::values_006::wire_add_dimension_result ... ok
+test parity_generated::values_006::wire_add_detail_view_args ... ok
+test parity_generated::values_006::wire_add_dimension_set_args ... ok
+test parity_generated::values_006::wire_add_entity_id_result ... ok
+test parity_generated::values_006::wire_add_dimension_args ... ok
+test parity_generated::values_006::wire_add_error_message_args ... ok
+test parity_generated::values_006::wire_add_ds_joint_args ... ok
+test parity_generated::values_006::wire_add_document_interest_args ... ok
+test parity_generated::values_007::wire_add_feature_args ... ok
+test parity_generated::values_007::wire_add_feature_control_frame_args ... ok
+test parity_generated::values_007::wire_add_fill_region_args ... ok
+test parity_generated::values_007::wire_add_flush_args ... ok
+test parity_generated::values_006::wire_add_drawing_sketch_args ... ok
+test parity_generated::values_007::wire_add_in_ref_args ... ok
+test parity_generated::values_007::wire_add_hatch_region_args ... ok
+test parity_generated::values_007::wire_add_in_info ... ok
+test parity_generated::values_006::wire_add_drawing_note_args ... ok
+test parity_generated::values_007::wire_add_in_manifest ... ok
+test parity_generated::values_006::wire_add_draft_view_args ... ok
+test parity_generated::values_007::wire_add_insert_args ... ok
+test parity_generated::values_007::wire_add_light_args ... ok
+test parity_generated::values_007::wire_add_ordinate_dimensions_args ... ok
+test parity_generated::values_007::wire_add_orientation_args ... ok
+test parity_generated::values_007::wire_add_mate_args ... ok
+test parity_generated::values_006::wire_add_drawing_sketch_entity_args ... ok
+test parity_generated::values_007::wire_add_point_cloud_crop_args ... ok
+test parity_generated::values_007::wire_add_parts_list_args ... ok
+test parity_generated::values_007::wire_add_linear_dimension_args ... ok
+test parity_generated::values_007::wire_add_joint_args ... ok
+test parity_generated::values_007::wire_add_hole_notes_args ... ok
+test parity_generated::values_007::wire_add_hole_table_args ... ok
+test parity_generated::values_007::wire_add_proxy_cut_feature_args ... ok
+test parity_generated::values_007::wire_add_projected_view_args ... ok
+test parity_generated::values_007::wire_add_radial_dimension_args ... ok
+test parity_generated::values_007::wire_add_revision_cloud_args ... ok
+test parity_generated::values_007::wire_add_revision_tag_args ... ok
+test parity_generated::values_007::wire_add_revision_table_args ... ok
+test parity_generated::values_007::wire_add_rotate_rotate_args ... ok
+test parity_generated::values_007::wire_add_rotate_translate_args ... ok
+test parity_generated::values_007::wire_add_section_args ... ok
+test parity_generated::values_007::wire_add_sheet_args ... ok
+test parity_generated::values_007::wire_add_sketch3_d_constraint_args ... ok
+test parity_generated::values_007::wire_add_sheet_using_format_args ... ok
+test parity_generated::values_007::wire_add_section_view_args ... ok
+test parity_generated::values_007::wire_add_sketch3_d_constraint_result ... ok
+test parity_generated::values_007::wire_add_sketch3_d_dimension_args ... ok
+test parity_generated::values_007::wire_add_sketch3_d_entity_result ... ok
+test parity_generated::values_007::wire_add_sketch3_d_surface_curve_result ... ok
+test parity_generated::values_007::wire_add_sketch_block_args ... ok
+test parity_generated::values_007::wire_add_sketch_block_result ... ok
+test parity_generated::values_007::wire_add_sketch3_d_surface_curve_args ... ok
+test parity_generated::values_007::wire_add_sketch_image_result ... ok
+test parity_generated::values_007::wire_add_sketch_image_args ... ok
+test parity_generated::values_007::wire_add_sketch_pattern_result ... ok
+test parity_generated::values_007::wire_add_sketch_pattern_args ... ok
+test parity_generated::values_007::wire_add_surface_texture_args ... ok
+test parity_generated::values_007::wire_add_slice_view_args ... ok
+test parity_generated::values_007::wire_add_symmetry_args ... ok
+test parity_generated::values_007::wire_add_sketch_entity_args ... ok
+test parity_generated::values_007::wire_add_text_args ... ok
+test parity_generated::values_007::wire_add_transitional_args ... ok
+test parity_generated::values_007::wire_add_sketch_entity_result ... ok
+test parity_generated::values_007::wire_add_view_args ... ok
+test parity_generated::values_007::wire_add_tangent_args ... ok
+test parity_generated::values_007::wire_add_translate_translate_args ... ok
+test parity_generated::values_007::wire_align_view_args ... ok
+test parity_generated::values_007::wire_add_virtual_args ... ok
+test parity_generated::values_008::wire_applied_constraint_inference ... ok
+test parity_generated::values_008::wire_application_api_version_result ... ok
+test parity_generated::values_007::wire_annotation_result ... ok
+test parity_generated::values_007::wire_add_sketch3_d_dimension_result ... ok
+test parity_generated::values_007::wire_add_sketch3_d_entity_args ... ok
+test parity_generated::values_007::wire_analyze_interference_args ... ok
+test parity_generated::values_008::wire_applied_point_inference ... ok
+test parity_generated::values_007::wire_add_view_crop_args ... ok
+test parity_generated::values_008::wire_appearance_info ... ok
+test parity_generated::values_008::wire_assembly_edge_ref ... ok
+test parity_generated::values_008::wire_assembly_face_ref ... ok
+test parity_generated::values_008::wire_assembly_feature_health ... ok
+test parity_generated::values_008::wire_assembly_constraint_info ... ok
+test parity_generated::values_008::wire_assembly_features_changed_event ... ok
+test parity_generated::values_008::wire_assembly_features_result ... ok
+test parity_generated::values_008::wire_assembly_feature_result ... ok
+test parity_generated::values_008::wire_assembly_options ... ok
+test parity_generated::values_008::wire_assembly_health_result ... ok
+test parity_generated::values_008::wire_assembly_feature_info ... ok
+test parity_generated::values_008::wire_assign_appearance_args ... ok
+test parity_generated::values_008::wire_assign_material_args ... ok
+test parity_generated::values_008::wire_assembly_options_result ... ok
+test parity_generated::values_008::wire_attachment_info ... ok
+test parity_generated::values_008::wire_assembly_joints_result ... ok
+test parity_generated::values_008::wire_auto_dimension_result ... ok
+test parity_generated::values_008::wire_attribute_match ... ok
+test parity_generated::values_008::wire_assembly_joint_result ... ok
+test parity_generated::values_008::wire_attribute_result ... ok
+test parity_generated::values_008::wire_asset_ref_args ... ok
+test parity_generated::values_008::wire_attribute_info ... ok
+test parity_generated::values_008::wire_attach_point_cloud_args ... ok
+test parity_generated::values_008::wire_begin_message_section_args ... ok
+test parity_generated::values_008::wire_balloon_tip_clicked_event ... ok
+test parity_generated::values_008::wire_batch_save_item_result ... ok
+test parity_generated::values_008::wire_begin_message_section_result ... ok
+test parity_generated::values_008::wire_begin_progress_args ... ok
+test parity_generated::values_008::wire_batch_save_result ... ok
+test parity_generated::values_008::wire_begin_progress_result ... ok
+test parity_generated::values_008::wire_bend_allowance_args ... ok
+test parity_generated::values_008::wire_bend_allowance_result ... ok
+test parity_generated::values_008::wire_bend_order_info ... ok
+test parity_generated::values_008::wire_bend_info ... ok
+test parity_generated::values_008::wire_bend_order_result ... ok
+test parity_generated::values_008::wire_bind_transient_key_args ... ok
+test parity_generated::values_008::wire_bind_transient_key_result ... ok
+test parity_generated::values_008::wire_bends_result ... ok
+test parity_generated::values_008::wire_body_index_args ... ok
+test parity_generated::values_008::wire_binding_info ... ok
+test parity_generated::values_008::wire_body_info ... ok
+test parity_generated::values_008::wire_body_range_box_args ... ok
+test parity_generated::values_008::wire_body_physical_properties_args ... ok
+test parity_generated::values_008::wire_body_list_result ... ok
+test parity_generated::values_008::wire_body_info_result ... ok
+test parity_generated::values_008::wire_batch_save_item ... ok
+test parity_generated::values_008::wire_batch_save_args ... ok
+test parity_generated::values_008::wire_batch_placement ... ok
+test parity_generated::values_008::wire_bom_export_args ... ok
+test parity_generated::values_008::wire_bom_export_result ... ok
+test parity_generated::values_008::wire_body_rename_args ... ok
+test parity_generated::values_008::wire_body_range_box_result ... ok
+test parity_generated::values_008::wire_bom_view_args ... ok
+test parity_generated::values_008::wire_body_set_visible_args ... ok
+test parity_generated::values_008::wire_bom_row_info ... ok
+test parity_generated::values_008::wire_bom_view_result ... ok
+test parity_generated::values_009::wire_brep_body_ref ... ok
+test parity_generated::values_009::wire_body_wires_result ... ok
+test parity_generated::values_009::wire_body_topology ... ok
+test parity_generated::values_008::wire_body_shells_result ... ok
+test parity_generated::values_009::wire_brep_body_stats ... ok
+test parity_generated::values_009::wire_brep_copy_args ... ok
+test parity_generated::values_009::wire_brep_handle_args ... ok
+test parity_generated::values_009::wire_brep_delete_faces_args ... ok
+test parity_generated::values_009::wire_brep_boolean_args ... ok
+test parity_generated::values_009::wire_brep_create_from_definition_result ... ok
+test parity_generated::values_009::wire_brep_handle_result ... ok
+test parity_generated::values_009::wire_brep_identical_bodies_result ... ok
+test parity_generated::values_009::wire_brep_identical_bodies_args ... ok
+test parity_generated::values_009::wire_brep_list_result ... ok
+test parity_generated::values_009::wire_brep_imprint_result ... ok
+test parity_generated::values_009::wire_brep_imprint_args ... ok
+test parity_generated::values_009::wire_brep_offset_faces_args ... ok
+test parity_generated::values_009::wire_brep_create_from_definition_args ... ok
+test parity_generated::values_009::wire_brep_ruled_surface_args ... ok
+test parity_generated::values_009::wire_brep_silhouette_args ... ok
+test parity_generated::values_009::wire_brep_section_args ... ok
+test parity_generated::values_009::wire_brep_transform_args ... ok
+test parity_generated::values_009::wire_brep_wire_ref ... ok
+test parity_generated::values_009::wire_browser_menu_item ... ok
+test parity_generated::values_009::wire_brep_wires_result ... ok
+test parity_generated::values_009::wire_browser_node_event ... ok
+test parity_generated::values_009::wire_calculate_facets_args ... ok
+test parity_generated::values_009::wire_calculate_strokes_args ... ok
+test parity_generated::values_009::wire_browser_pane_spec ... ok
+test parity_generated::values_009::wire_browser_node_spec ... ok
+test parity_generated::values_009::wire_call_add_in_automation_result ... ok
+test parity_generated::values_009::wire_call_add_in_automation_args ... ok
+test parity_generated::values_009::wire_capture_named_view_args ... ok
+test parity_generated::values_009::wire_capture_rep_args ... ok
+test parity_generated::values_009::wire_camera_view ... ok
+test parity_generated::values_009::wire_camera_changed_event ... ok
+test parity_generated::values_009::wire_capture_viewport_args ... ok
+test parity_generated::values_009::wire_center_marks_result ... ok
+test parity_generated::values_009::wire_capture_part_design_view_camera_args ... ok
+test parity_generated::values_009::wire_centerline_info ... ok
+test parity_generated::values_009::wire_capture_window_args ... ok
+test parity_generated::values_009::wire_client_application_info ... ok
+test parity_generated::values_009::wire_capture_viewport_result ... ok
+test parity_generated::values_009::wire_client_graphics_info ... ok
+test parity_generated::values_009::wire_close_all_documents_args ... ok
+test parity_generated::values_009::wire_capture_window_result ... ok
+test parity_generated::values_009::wire_close_document_args ... ok
+test parity_generated::values_009::wire_close_documents_result ... ok
+test parity_generated::values_009::wire_close_web_dialog_args ... ok
+test parity_generated::values_009::wire_color_mapper_info ... ok
+test parity_generated::values_009::wire_centerlines_result ... ok
+test parity_generated::values_009::wire_circular_pattern_feature_args ... ok
+test parity_generated::values_009::wire_color_mappers_result ... ok
+test parity_generated::values_010::wire_command_started_event ... ok
+test parity_generated::values_010::wire_command_line_result ... ok
+test parity_generated::values_009::wire_color_schemes_result ... ok
+test parity_generated::values_009::wire_click_viewport_args ... ok
+test parity_generated::values_010::wire_commit_sketch_move_args ... ok
+test parity_generated::values_009::wire_click_viewport_result ... ok
+test parity_generated::values_010::wire_color_styles_result ... ok
+test parity_generated::values_010::wire_command_info ... ok
+test parity_generated::values_010::wire_commit_sketch_move_result ... ok
+test parity_generated::values_010::wire_compatible_units_result ... ok
+test parity_generated::values_009::wire_color_scheme_view ... ok
+test parity_generated::values_010::wire_color_style_view ... ok
+test parity_generated::values_010::wire_constraint3_d_info ... ok
+test parity_generated::values_009::wire_client_operation_event ... ok
+test parity_generated::values_009::wire_close_task_panel_args ... ok
+test parity_generated::values_009::wire_close_view_args ... ok
+test parity_generated::values_009::wire_close_view_tab_args ... ok
+test parity_generated::values_010::wire_constraint_geom_ref ... ok
+test parity_generated::values_010::wire_constraint_event_payload ... ok
+test parity_generated::values_010::wire_constraint_limits ... ok
+test parity_generated::values_010::wire_constraint_info ... ok
+test parity_generated::values_010::wire_constraint_status_result ... ok
+test parity_generated::values_010::wire_contact_member_args ... ok
+test parity_generated::values_010::wire_contact_set_info ... ok
+test parity_generated::values_010::wire_contact_set_ref ... ok
+test parity_generated::values_010::wire_constraints_result ... ok
+test parity_generated::values_010::wire_contact_set_result ... ok
+test parity_generated::values_010::wire_constraint_result ... ok
+test parity_generated::values_010::wire_contact_solver_enable_args ... ok
+test parity_generated::values_010::wire_contact_sets_result ... ok
+test parity_generated::values_010::wire_contact_solver_info ... ok
+test parity_generated::values_010::wire_context_menu_item_spec ... ok
+test parity_generated::values_010::wire_contact_solver_result ... ok
+test parity_generated::values_010::wire_convert_units_args ... ok
+test parity_generated::values_010::wire_convert_units_result ... ok
+test parity_generated::values_010::wire_convexity_edges_args ... ok
+test parity_generated::values_010::wire_copy_components_args ... ok
+test parity_generated::values_010::wire_convexity_edges_result ... ok
+test parity_generated::values_010::wire_copy_part_design_view_args ... ok
+test parity_generated::values_010::wire_copy_sketch_result ... ok
+test parity_generated::values_010::wire_create_appearance_args ... ok
+test parity_generated::values_010::wire_create_block_definition_args ... ok
+test parity_generated::values_010::wire_copy_sketch_args ... ok
+test parity_generated::values_010::wire_crease_freeform_edges_args ... ok
+test parity_generated::values_010::wire_create_highlight_set_args ... ok
+test parity_generated::values_010::wire_create_model_state_args ... ok
+test parity_generated::values_010::wire_create_contact_set_args ... ok
+test parity_generated::values_010::wire_create_command_args ... ok
+test parity_generated::values_010::wire_create_sketch3_d_args ... ok
+test parity_generated::values_010::wire_create_sketch3_d_result ... ok
+test parity_generated::values_010::wire_create_sketch_args ... ok
+test parity_generated::values_010::wire_create_work_axis_args ... ok
+test parity_generated::values_010::wire_create_primitive_args ... ok
+test parity_generated::values_010::wire_create_work_axis_result ... ok
+test parity_generated::values_010::wire_create_pattern_args ... ok
+test parity_generated::values_010::wire_create_work_plane_result ... ok
+test parity_generated::values_010::wire_create_work_point_result ... ok
+test parity_generated::values_010::wire_custom_property_format_info ... ok
+test parity_generated::values_010::wire_create_document_args ... ok
+test parity_generated::values_010::wire_create_work_plane_args ... ok
+test parity_generated::values_010::wire_create_work_point_args ... ok
+test parity_generated::values_010::wire_dsdof_info ... ok
+test parity_generated::values_010::wire_ds_joint_info ... ok
+test parity_generated::values_011::wire_delete_annotation_args ... ok
+test parity_generated::values_011::wire_delete_attribute_result ... ok
+test parity_generated::values_010::wire_ds_joint_result ... ok
+test parity_generated::values_011::wire_delete_block_definition_args ... ok
+test parity_generated::values_011::wire_delete_browser_pane_args ... ok
+test parity_generated::values_010::wire_create_sketch_result ... ok
+test parity_generated::values_010::wire_database_units_result ... ok
+test parity_generated::values_011::wire_delete_assembly_constraint_args ... ok
+test parity_generated::values_011::wire_delete_attribute_args ... ok
+test parity_generated::values_011::wire_define_sheet_format_args ... ok
+test parity_generated::values_010::wire_ds_joints_result ... ok
+test parity_generated::values_011::wire_delete_centerline_args ... ok
+test parity_generated::values_011::wire_delete_client_graphics_args ... ok
+test parity_generated::values_011::wire_delete_constraint_args ... ok
+test parity_generated::values_011::wire_delete_ds_joint_args ... ok
+test parity_generated::values_010::wire_create_pattern_result ... ok
+test parity_generated::values_011::wire_delete_dimension_args ... ok
+test parity_generated::values_011::wire_delete_feature_result ... ok
+test parity_generated::values_011::wire_delete_joint_args ... ok
+test parity_generated::values_011::wire_delete_orientation_args ... ok
+test parity_generated::values_011::wire_delete_pattern_args ... ok
+test parity_generated::values_011::wire_delete_pattern_result ... ok
+test parity_generated::values_011::wire_delete_point_cloud_crop_result ... ok
+test parity_generated::values_011::wire_delete_point_cloud_result ... ok
+test parity_generated::values_011::wire_delete_sketch3_d_constraint_args ... ok
+test parity_generated::values_011::wire_delete_sketch_dimension_result ... ok
+test parity_generated::values_011::wire_delete_sketch_dimension_args ... ok
+test parity_generated::values_011::wire_delete_view_args ... ok
+test parity_generated::values_011::wire_delete_work_feature_args ... ok
+test parity_generated::values_011::wire_delete_work_feature_result ... ok
+test parity_generated::values_011::wire_delete_dockable_window_args ... ok
+test parity_generated::values_011::wire_deselect_args ... ok
+test parity_generated::values_011::wire_derive_break_link_args ... ok
+test parity_generated::values_011::wire_derive_status_args ... ok
+test parity_generated::values_011::wire_derived_parameter_table_info ... ok
+test parity_generated::values_011::wire_derive_create_args ... ok
+test parity_generated::values_011::wire_dimension3_d_info ... ok
+test parity_generated::values_011::wire_design_view_info ... ok
+test parity_generated::values_011::wire_dimension_info ... ok
+test parity_generated::values_011::wire_design_views_result ... ok
+test parity_generated::values_011::wire_design_view_result ... ok
+test parity_generated::values_011::wire_display_mode_info ... ok
+test parity_generated::values_011::wire_derive_status_result ... ok
+test parity_generated::values_011::wire_dimension_result ... ok
+test parity_generated::values_011::wire_display_mode_view ... ok
+test parity_generated::values_011::wire_display_options_view ... ok
+test parity_generated::values_011::wire_document_file_reference_info ... ok
+test parity_generated::values_011::wire_document_info ... ok
+test parity_generated::values_011::wire_document_sub_type_info ... ok
+test parity_generated::values_011::wire_display_settings_view ... ok
+test parity_generated::values_011::wire_derived_parameter_table_add_args ... ok
+test parity_generated::values_011::wire_derived_parameter_table_delete_args ... ok
+test parity_generated::values_011::wire_derived_parameter_table_set_linked_args ... ok
+test parity_generated::values_011::wire_display_mode_options_view ... ok
+test parity_generated::values_011::wire_document_units_info ... ok
+test parity_generated::values_011::wire_drag_context ... ok
+test parity_generated::values_011::wire_drawing_annotation_info ... ok
+test parity_generated::values_012::wire_drawing_sketch_info ... ok
+test parity_generated::values_011::wire_dimension_style_info ... ok
+test parity_generated::values_012::wire_drawing_sketch_result ... ok
+test parity_generated::values_011::wire_display_help_args ... ok
+test parity_generated::values_011::wire_drawing_dimension_info ... ok
+test parity_generated::values_011::wire_dockable_window_spec ... ok
+test parity_generated::values_011::wire_dimension_set_result ... ok
+test parity_generated::values_011::wire_dockable_window_changed_event ... ok
+test parity_generated::values_011::wire_derived_parameter_reference ... ok
+test parity_generated::values_012::wire_drawing_view_info ... ok
+test parity_generated::values_012::wire_drive_dimension_args ... ok
+test parity_generated::values_012::wire_drive_frame ... ok
+test parity_generated::values_012::wire_drive_result ... ok
+test parity_generated::values_012::wire_drive_sketch3_d_dimension_args ... ok
+test parity_generated::values_012::wire_driving_parameters_result ... ok
+test parity_generated::values_012::wire_duplicate_asset_args ... ok
+test parity_generated::values_012::wire_drive_settings_dto ... ok
+test parity_generated::values_012::wire_drive_joint_args ... ok
+test parity_generated::values_012::wire_edges_of_type_args ... ok
+test parity_generated::values_011::wire_drawing_curve_segment ... ok
+test parity_generated::values_012::wire_drive_placement ... ok
+test parity_generated::values_012::wire_edges_result ... ok
+test parity_generated::values_012::wire_edit_assembly_feature_args ... ok
+test parity_generated::values_012::wire_edit_committed_event ... ok
+test parity_generated::values_012::wire_edit_sketch3_d_result ... ok
+test parity_generated::values_012::wire_edit_feature_args ... ok
+test parity_generated::values_012::wire_edit_sketch_result ... ok
+test parity_generated::values_012::wire_end_message_section_args ... ok
+test parity_generated::values_012::wire_end_of_features_result ... ok
+test parity_generated::values_012::wire_edit_helix_args ... ok
+test parity_generated::values_012::wire_edit_text_args ... ok
+test parity_generated::values_012::wire_end_progress_args ... ok
+test parity_generated::values_012::wire_end_of_part_result ... ok
+test parity_generated::values_012::wire_enumerate_entities3_d_result ... ok
+test parity_generated::values_012::wire_enumerate_entities_result ... ok
+test parity_generated::values_012::wire_environment_changed_event ... ok
+test parity_generated::values_012::wire_environment_preset_info ... ok
+test parity_generated::values_012::wire_execute_command_args ... ok
+test parity_generated::values_012::wire_environment_preset_list_result ... ok
+test parity_generated::values_012::wire_environment_view ... ok
+test parity_generated::values_012::wire_enumerator_page ... ok
+test parity_generated::values_012::wire_environment_info ... ok
+test parity_generated::values_012::wire_explode_sketch_block_args ... ok
+test parity_generated::values_012::wire_explode_sketch_block_result ... ok
+test parity_generated::values_012::wire_export_drawing_dxf_args ... ok
+test parity_generated::values_012::wire_export_drawing_dxf_result ... ok
+test parity_generated::values_012::wire_export_dxf_args ... ok
+test parity_generated::values_012::wire_export_dxf_result ... ok
+test parity_generated::values_012::wire_export_request ... ok
+test parity_generated::values_012::wire_expression_args ... ok
+test parity_generated::values_012::wire_export_response ... ok
+test parity_generated::values_012::wire_expression_list_info ... ok
+test parity_generated::values_012::wire_expression_valid_result ... ok
+test parity_generated::values_012::wire_expression_with_type_args ... ok
+test parity_generated::values_012::wire_face_evaluate_args ... ok
+test parity_generated::values_012::wire_face_evaluate_result ... ok
+test parity_generated::values_012::wire_face_facets_args ... ok
+test parity_generated::values_012::wire_faces_result ... ok
+test parity_generated::values_012::wire_face_shell_info ... ok
+test parity_generated::values_012::wire_facet_set_result ... ok
+test parity_generated::values_012::wire_facet_tolerances_result ... ok
+test parity_generated::values_012::wire_feature_error ... ok
+test parity_generated::values_012::wire_feature_health ... ok
+test parity_generated::values_012::wire_feature_info ... ok
+test parity_generated::values_012::wire_feature_detail ... ok
+test parity_generated::values_013::wire_feature_ref_args ... ok
+test parity_generated::values_012::wire_feature_kind_info ... ok
+test parity_generated::values_012::wire_feature_lifecycle_event ... ok
+test parity_generated::values_012::wire_feature_detail_result ... ok
+test parity_generated::values_013::wire_feature_repick ... ok
+test parity_generated::values_013::wire_feature_scalar ... ok
+test parity_generated::values_013::wire_feature_slot ... ok
+test parity_generated::values_013::wire_file_dialog_chosen_event ... ok
+test parity_generated::values_013::wire_file_dirty_event_payload ... ok
+test parity_generated::values_013::wire_file_dialog_hook_payload ... ok
+test parity_generated::values_013::wire_file_metadata_entry ... ok
+test parity_generated::values_013::wire_file_info ... ok
+test parity_generated::values_013::wire_find_by_attribute_args ... ok
+test parity_generated::values_013::wire_file_resolution_event_payload ... ok
+test parity_generated::values_013::wire_file_reference_info ... ok
+test parity_generated::values_013::wire_fit_point_cloud_plane_args ... ok
+test parity_generated::values_013::wire_find_using_ray_args ... ok
+test parity_generated::values_013::wire_find_by_attribute_result ... ok
+test parity_generated::values_013::wire_find_using_ray_result ... ok
+test parity_generated::values_013::wire_fit_point_cloud_plane_result ... ok
+test parity_generated::values_013::wire_flat_bend_line_info ... ok
+test parity_generated::values_013::wire_flat_edge_info ... ok
+test parity_generated::values_013::wire_flat_face_info ... ok
+test parity_generated::values_013::wire_flat_pattern_settings ... ok
+test parity_generated::values_013::wire_flat_pattern_orientation_info ... ok
+test parity_generated::values_013::wire_flip_work_plane_args ... ok
+test parity_generated::values_013::wire_font_face ... ok
+test parity_generated::values_013::wire_general_options_view ... ok
+test parity_generated::values_013::wire_flat_punch_info ... ok
+test parity_generated::values_013::wire_get_camera_args ... ok
+test parity_generated::values_013::wire_get_display_settings_args ... ok
+test parity_generated::values_013::wire_get_file_args ... ok
+test parity_generated::values_013::wire_flip_work_plane_result ... ok
+test parity_generated::values_013::wire_get_sketch_settings_args ... ok
+test parity_generated::values_013::wire_flat_pattern_info ... ok
+test parity_generated::values_013::wire_get_attribute_args ... ok
+test parity_generated::values_013::wire_graphics_color_mapper ... ok
+test parity_generated::values_013::wire_ground_occurrence_args ... ok
+test parity_generated::values_013::wire_has_document_interest_args ... ok
+test parity_generated::values_013::wire_has_document_interest_result ... ok
+test parity_generated::values_013::wire_ground_plane_view ... ok
+test parity_generated::values_013::wire_heads_up_display_options_view ... ok
+test parity_generated::values_013::wire_helix_end_condition ... ok
+test parity_generated::values_013::wire_help_path_result ... ok
+test parity_generated::values_013::wire_helix_shape_row ... ok
+test parity_generated::values_013::wire_highlight_set_info ... ok
+test parity_generated::values_013::wire_helix_definition_view ... ok
+test parity_generated::values_013::wire_highlight_set_items_args ... ok
+test parity_generated::values_013::wire_highlight_set_ref_args ... ok
+test parity_generated::values_013::wire_graphics_primitive ... ok
+test parity_generated::values_013::wire_graphics_node ... ok
+test parity_generated::values_013::wire_get_marking_menu_args ... ok
+test parity_generated::values_013::wire_import_dwg_args ... ok
+test parity_generated::values_013::wire_get_property_args ... ok
+test parity_generated::values_013::wire_get_option_group_args ... ok
+test parity_generated::values_013::wire_get_style_args ... ok
+test parity_generated::values_013::wire_get_text_args ... ok
+test parity_generated::values_013::wire_import_dwg_result ... ok
+test parity_generated::values_013::wire_import_dxf_args ... ok
+test parity_generated::values_013::wire_import_dxf_result ... ok
+test parity_generated::values_013::wire_import_pdf_args ... ok
+test parity_generated::values_013::wire_import_pdf_result ... ok
+test parity_generated::values_014::wire_import_response ... ok
+test parity_generated::values_013::wire_import_request ... ok
+test parity_generated::values_014::wire_import_style_library_args ... ok
+test parity_generated::values_014::wire_include_sketch2_d_args ... ok
+test parity_generated::values_014::wire_include_sketch3_d_args ... ok
+test parity_generated::values_014::wire_include_sketch3_d_result ... ok
+test parity_generated::values_014::wire_inference_options_view ... ok
+test parity_generated::values_014::wire_interaction_state ... ok
+test parity_generated::values_014::wire_interference_result_info ... ok
+test parity_generated::values_014::wire_interference_results_result ... ok
+test parity_generated::values_014::wire_is_point_inside_args ... ok
+test parity_generated::values_014::wire_is_point_inside_result ... ok
+test parity_generated::values_014::wire_joint_event_payload ... ok
+test parity_generated::values_014::wire_joint_limits ... ok
+test parity_generated::values_014::wire_keyed_object_ref ... ok
+test parity_generated::values_014::wire_keyed_object_ref_list ... ok
+test parity_generated::values_014::wire_keymap_export ... ok
+test parity_generated::values_014::wire_language_info_result ... ok
+test parity_generated::values_014::wire_layout_result ... ok
+test parity_generated::values_014::wire_joint_info ... ok
+test parity_generated::values_014::wire_lighting_style_list_result ... ok
+test parity_generated::values_014::wire_lighting_style_info ... ok
+test parity_generated::values_014::wire_light_list_result ... ok
+test parity_generated::values_014::wire_light_info ... ok
+test parity_generated::values_014::wire_lighting_style_view ... ok
+test parity_generated::values_014::wire_line_style_info ... ok
+test parity_generated::values_014::wire_list_attachments_args ... ok
+test parity_generated::values_014::wire_list_attribute_sets_args ... ok
+test parity_generated::values_014::wire_list_attachments_result ... ok
+test parity_generated::values_014::wire_list_add_ins_result ... ok
+test parity_generated::values_014::wire_list_attribute_sets_result ... ok
+test parity_generated::values_014::wire_list_attributes_args ... ok
+test parity_generated::values_014::wire_list_bindings_result ... ok
+test parity_generated::values_014::wire_list_client_applications_result ... ok
+test parity_generated::values_014::wire_list_attributes_result ... ok
+test parity_generated::values_014::wire_list_constraints3_d_result ... ok
+test parity_generated::values_014::wire_list_browser_panes_result ... ok
+test parity_generated::values_014::wire_list_appearances_result ... ok
+test parity_generated::values_014::wire_list_client_graphics_result ... ok
+test parity_generated::values_014::wire_list_commands_result ... ok
+test parity_generated::values_014::wire_list_derived_parameter_tables_result ... ok
+test parity_generated::values_014::wire_list_constraints_result ... ok
+test parity_generated::values_014::wire_list_block_definitions_result ... ok
+test parity_generated::values_014::wire_list_dimensions3_d_result ... ok
+test parity_generated::values_014::wire_list_display_modes_result ... ok
+test parity_generated::values_014::wire_list_document_file_references_args ... ok
+test parity_generated::values_014::wire_list_dimensions_result ... ok
+test parity_generated::values_014::wire_list_document_file_references_result ... ok
+test parity_generated::values_014::wire_list_drawing_annotations_result ... ok
+test parity_generated::values_014::wire_lo_ds_result ... ok
+test parity_generated::values_014::wire_lod_result ... ok
+test parity_generated::values_015::wire_list_environments_result ... ok
+test parity_generated::values_014::wire_lod_info ... ok
+test parity_generated::values_015::wire_list_feature_kinds_result ... ok
+test parity_generated::values_014::wire_list_dockable_windows_result ... ok
+test parity_generated::values_015::wire_list_errors_result ... ok
+test parity_generated::values_014::wire_list_document_sub_types_result ... ok
+test parity_generated::values_015::wire_list_fonts_result ... ok
+test parity_generated::values_014::wire_list_drawing_sketches_result ... ok
+test parity_generated::values_014::wire_list_drawing_dimensions_result ... ok
+test parity_generated::values_015::wire_list_highlight_sets_result ... ok
+test parity_generated::values_015::wire_list_parameters_result ... ok
+test parity_generated::values_014::wire_list_document_interests_args ... ok
+test parity_generated::values_014::wire_list_documents_result ... ok
+test parity_generated::values_015::wire_list_point_cloud_crops_args ... ok
+test parity_generated::values_015::wire_list_file_references_result ... ok
+test parity_generated::values_015::wire_list_paths3_d_result ... ok
+test parity_generated::values_015::wire_list_mini_toolbars_result ... ok
+test parity_generated::values_015::wire_list_point_cloud_crops_result ... ok
+test parity_generated::values_015::wire_list_materials_result ... ok
+test parity_generated::values_015::wire_list_profiles_result ... ok
+test parity_generated::values_015::wire_list_properties_args ... ok
+test parity_generated::values_015::wire_list_point_clouds_result ... ok
+test parity_generated::values_014::wire_list_document_interests_result ... ok
+test parity_generated::values_014::wire_list_drawing_views_result ... ok
+test parity_generated::values_015::wire_list_option_groups_result ... ok
+test parity_generated::values_014::wire_list_block_instances_result ... ok
+test parity_generated::values_015::wire_list_retrievable_dimensions_args ... ok
+test parity_generated::values_015::wire_list_parameter_groups_result ... ok
+test parity_generated::values_015::wire_list_ribbon_result ... ok
+test parity_generated::values_015::wire_list_sheets_result ... ok
+test parity_generated::values_015::wire_list_sketches3_d_result ... ok
+test parity_generated::values_015::wire_list_sketches_result ... ok
+test parity_generated::values_015::wire_list_profiles3_d_result ... ok
+test parity_generated::values_015::wire_list_properties_result ... ok
+test parity_generated::values_015::wire_list_standards_result ... ok
+test parity_generated::values_015::wire_list_themes_result ... ok
+test parity_generated::values_015::wire_list_views_args ... ok
+test parity_generated::values_015::wire_list_view_frames_result ... ok
+test parity_generated::values_015::wire_list_view_tabs_result ... ok
+test parity_generated::values_015::wire_list_work_axes_args ... ok
+test parity_generated::values_015::wire_list_web_views_result ... ok
+test parity_generated::values_015::wire_list_work_planes_args ... ok
+test parity_generated::values_015::wire_list_views_result ... ok
+test parity_generated::values_015::wire_list_work_axes_result ... ok
+test parity_generated::values_015::wire_list_work_points_args ... ok
+test parity_generated::values_015::wire_load_environment_image_args ... ok
+test parity_generated::values_015::wire_load_full_document_args ... ok
+test parity_generated::values_015::wire_list_work_surfaces_result ... ok
+test parity_generated::values_015::wire_list_work_points_result ... ok
+test parity_generated::values_015::wire_locate_using_point_args ... ok
+test parity_generated::values_015::wire_list_work_planes_result ... ok
+test parity_generated::values_015::wire_located_entity_info ... ok
+test parity_generated::values_015::wire_locate_using_point_result ... ok
+test parity_generated::values_015::wire_log_record ... ok
+test parity_generated::values_015::wire_logs_tail_args ... ok
+test parity_generated::values_015::wire_logs_result ... ok
+test parity_generated::values_015::wire_map_entity_args ... ok
+test parity_generated::values_015::wire_manipulator_handle_spec ... ok
+test parity_generated::values_015::wire_map_entity_result ... ok
+test parity_generated::values_015::wire_marking_menu_item ... ok
+test parity_generated::values_015::wire_marking_menu_view ... ok
+test parity_generated::values_015::wire_mass_properties_args ... ok
+test parity_generated::values_015::wire_manipulator_drag_event ... ok
+test parity_generated::values_015::wire_measure_args ... ok
+test parity_generated::values_015::wire_measure_result ... ok
+test parity_generated::values_015::wire_message_section_view ... ok
+test parity_generated::values_015::wire_mass_properties_result ... ok
+test parity_generated::values_016::wire_mini_toolbar_committed_event ... ok
+test parity_generated::values_015::wire_mesh_colors_result ... ok
+test parity_generated::values_016::wire_minimum_distance_result ... ok
+test parity_generated::values_016::wire_minimum_distance_args ... ok
+test parity_generated::values_016::wire_mirror_components_args ... ok
+test parity_generated::values_016::wire_mirror_feature_args ... ok
+test parity_generated::values_016::wire_model_changed_event ... ok
+test parity_generated::values_016::wire_mirror_into_part_args ... ok
+test parity_generated::values_016::wire_model_state_name_args ... ok
+test parity_generated::values_016::wire_model_state_info ... ok
+test parity_generated::values_016::wire_mini_toolbar_changed_event ... ok
+test parity_generated::values_015::wire_material_info ... ok
+test parity_generated::values_016::wire_model_state_result ... ok
+test parity_generated::values_016::wire_model_state_table_created_row ... ok
+test parity_generated::values_016::wire_model_state_table_column_ref ... ok
+test parity_generated::values_016::wire_model_state_table_diagnostic ... ok
+test parity_generated::values_016::wire_mini_toolbar_control_spec ... ok
+test parity_generated::values_016::wire_model_state_table_feature_choice ... ok
+test parity_generated::values_016::wire_model_state_table_evaluation ... ok
+test parity_generated::values_016::wire_model_state_table_parameter_cell ... ok
+test parity_generated::values_016::wire_model_state_table_parameter ... ok
+test parity_generated::values_016::wire_model_state_table_parameter_choice ... ok
+test parity_generated::values_016::wire_model_health_args ... ok
+test parity_generated::values_015::wire_message_entry ... ok
+test parity_generated::values_016::wire_mini_toolbar_spec ... ok
+test parity_generated::values_016::wire_model_state_table_row_ref ... ok
+test parity_generated::values_016::wire_model_state_table_property_choice ... ok
+test parity_generated::values_016::wire_model_state_table_row ... ok
+test parity_generated::values_016::wire_model_health_result ... ok
+test parity_generated::values_016::wire_model_state_table_suppression ... ok
+test parity_generated::values_016::wire_model_state_table_suppression_cell ... ok
+test parity_generated::values_016::wire_model_state_table_verification ... ok
+test parity_generated::values_016::wire_model_states_result ... ok
+test parity_generated::values_016::wire_move_sketch_dimension_args ... ok
+test parity_generated::values_016::wire_move_freeform_vertices_args ... ok
+test parity_generated::values_016::wire_model_tree_result ... ok
+test parity_generated::values_016::wire_name_value_map ... ok
+test parity_generated::values_016::wire_name_value_entry ... ok
+test parity_generated::values_016::wire_named_view_ref_args ... ok
+test parity_generated::values_016::wire_nearest_point_args ... ok
+test parity_generated::values_016::wire_named_view_info ... ok
+test parity_generated::values_016::wire_model_state_table_property ... ok
+test parity_generated::values_016::wire_named_views_result ... ok
+test parity_generated::values_016::wire_model_state_table_view ... ok
+test parity_generated::values_016::wire_model_state_table_property_cell ... ok
+test parity_generated::values_016::wire_model_state_table_result ... ok
+test parity_generated::values_016::wire_nearest_point_result ... ok
+test parity_generated::values_016::wire_normal_debug_result ... ok
+test parity_generated::values_016::wire_object_ref_list ... ok
+test parity_generated::values_016::wire_object_renamed_event ... ok
+test parity_generated::values_016::wire_object_visibility_view ... ok
+test parity_generated::values_016::wire_new_occurrences_result ... ok
+test parity_generated::values_016::wire_occurrence_dof_info ... ok
+test parity_generated::values_016::wire_occurrence_event_payload ... ok
+test parity_generated::values_016::wire_offset_planar_wire_args ... ok
+test parity_generated::values_016::wire_offset_planar_wire_result ... ok
+test parity_generated::values_016::wire_offset_sketch_args ... ok
+test parity_generated::values_016::wire_offset_sketch_result ... ok
+test parity_generated::values_016::wire_occurrences_result ... ok
+test parity_generated::values_016::wire_occurrence_result ... ok
+test parity_generated::values_016::wire_open_document_args ... ok
+test parity_generated::values_016::wire_ok_result ... ok
+test parity_generated::values_016::wire_occurrence_info ... ok
+test parity_generated::values_017::wire_orientation_result ... ok
+test parity_generated::values_017::wire_option_group_view ... ok
+test parity_generated::values_017::wire_orientations_result ... ok
+test parity_generated::values_017::wire_panel_reference_row ... ok
+test parity_generated::values_017::wire_panel_value_changed_event ... ok
+test parity_generated::values_017::wire_panel_references_changed_event ... ok
+test parity_generated::values_017::wire_parameter_convert_args ... ok
+test parity_generated::values_017::wire_parameter_changed_event ... ok
+test parity_generated::values_017::wire_parameter_export_result ... ok
+test parity_generated::values_017::wire_parameter_expression_list_args ... ok
+test parity_generated::values_017::wire_parameter_group_add_args ... ok
+test parity_generated::values_017::wire_parameter_group_delete_args ... ok
+test parity_generated::values_017::wire_parameter_group_display_name_args ... ok
+test parity_generated::values_017::wire_parameter_group_member_args ... ok
+test parity_generated::values_017::wire_parameter_import_args ... ok
+test parity_generated::values_017::wire_parameter_group_info ... ok
+test parity_generated::values_017::wire_parameter_import_result ... ok
+test parity_generated::values_017::wire_panel_control_spec ... ok
+test parity_generated::values_017::wire_parameter_name_args ... ok
+test parity_generated::values_017::wire_parameter_info ... ok
+test parity_generated::values_017::wire_parameter_names_result ... ok
+test parity_generated::values_017::wire_parameter_rename_args ... ok
+test parity_generated::values_017::wire_parameter_detail ... ok
+test parity_generated::values_017::wire_parameter_set_args ... ok
+test parity_generated::values_017::wire_parameter_sweep_args ... ok
+test parity_generated::values_017::wire_parameter_settings_info ... ok
+test parity_generated::values_017::wire_parameter_settings_update_args ... ok
+test parity_generated::values_017::wire_parameter_sweep_result ... ok
+test parity_generated::values_017::wire_parameter_tolerance_args ... ok
+test parity_generated::values_017::wire_part_design_view_ref ... ok
+test parity_generated::values_017::wire_parameter_update_args ... ok
+test parity_generated::values_017::wire_part_options_view ... ok
+test parity_generated::values_017::wire_path3_d_info ... ok
+test parity_generated::values_017::wire_part_design_view_info ... ok
+test parity_generated::values_017::wire_pattern_element_info ... ok
+test parity_generated::values_017::wire_part_design_views_result ... ok
+test parity_generated::values_017::wire_part_design_view_result ... ok
+test parity_generated::values_017::wire_pattern_info ... ok
+test parity_generated::values_017::wire_pattern_list_result ... ok
+test parity_generated::values_017::wire_place_by_definition_batch_args ... ok
+test parity_generated::values_017::wire_place_occurrence_args ... ok
+test parity_generated::values_017::wire_place_by_definition_args ... ok
+test parity_generated::values_017::wire_plan_sketch_move_args ... ok
+test parity_generated::values_017::wire_plate_info ... ok
+test parity_generated::values_017::wire_plates_result ... ok
+test parity_generated::values_017::wire_point_cloud_crop_args ... ok
+test parity_generated::values_017::wire_plan_sketch_move_result ... ok
+test parity_generated::values_017::wire_point_cloud_name_args ... ok
+test parity_generated::values_017::wire_point_cloud_space_result ... ok
+test parity_generated::values_017::wire_positional_info ... ok
+test parity_generated::values_017::wire_place_by_definition_batch_result ... ok
+test parity_generated::values_017::wire_positionals_result ... ok
+test parity_generated::values_017::wire_point_cloud_info ... ok
+test parity_generated::values_017::wire_press_key_args ... ok
+test parity_generated::values_017::wire_press_key_result ... ok
+test parity_generated::values_017::wire_problem_entity_info ... ok
+test parity_generated::values_018::wire_progress_cancelled_event ... ok
+test parity_generated::values_017::wire_positional_result ... ok
+test parity_generated::values_017::wire_point_cloud_space_args ... ok
+test parity_generated::values_017::wire_point_cloud_crop_info ... ok
+test parity_generated::values_018::wire_project_silhouette_args ... ok
+test parity_generated::values_017::wire_profile3_d_info ... ok
+test parity_generated::values_018::wire_property_result ... ok
+test parity_generated::values_018::wire_project_geometry_args ... ok
+test parity_generated::values_018::wire_punches_result ... ok
+test parity_generated::values_018::wire_rectangular_pattern_feature_args ... ok
+test parity_generated::values_018::wire_redefine_work_plane_args ... ok
+test parity_generated::values_018::wire_region_properties_args ... ok
+test parity_generated::values_018::wire_prompt_answered_event ... ok
+test parity_generated::values_018::wire_register_client_application_args ... ok
+test parity_generated::values_018::wire_register_balloon_tip_args ... ok
+test parity_generated::values_018::wire_register_client_application_result ... ok
+test parity_generated::values_018::wire_redefine_work_plane_result ... ok
+test parity_generated::values_018::wire_region_properties_result ... ok
+test parity_generated::values_018::wire_register_document_sub_type_args ... ok
+test parity_generated::values_018::wire_register_environment_args ... ok
+test parity_generated::values_018::wire_register_help_context_args ... ok
+test parity_generated::values_018::wire_register_color_mapper_args ... ok
+test parity_generated::values_018::wire_remove_attachment_args ... ok
+test parity_generated::values_018::wire_remove_document_interest_args ... ok
+test parity_generated::values_018::wire_remove_manipulators_args ... ok
+test parity_generated::values_018::wire_remove_mini_toolbar_args ... ok
+test parity_generated::values_018::wire_project_cut_edges_args ... ok
+test parity_generated::values_018::wire_project_geometry_result ... ok
+test parity_generated::values_018::wire_profile_info ... ok
+test parity_generated::values_018::wire_property_changed_event ... ok
+test parity_generated::values_018::wire_property_info ... ok
+test parity_generated::values_018::wire_remove_occurrence_args ... ok
+test parity_generated::values_018::wire_remove_sheet_args ... ok
+test parity_generated::values_018::wire_remove_view_crop_args ... ok
+test parity_generated::values_018::wire_reorder_feature_args ... ok
+test parity_generated::values_018::wire_rename_work_surface_args ... ok
+test parity_generated::values_018::wire_rep_ref ... ok
+test parity_generated::values_018::wire_reference_keys_result ... ok
+test parity_generated::values_018::wire_rename_feature_args ... ok
+test parity_generated::values_018::wire_rename_part_design_view_args ... ok
+test parity_generated::values_018::wire_requires_update_result ... ok
+test parity_generated::values_018::wire_reset_binding_args ... ok
+test parity_generated::values_018::wire_representation_info ... ok
+test parity_generated::values_018::wire_resolve_sketch_reference_args ... ok
+test parity_generated::values_018::wire_reposition_pattern_element_args ... ok
+test parity_generated::values_018::wire_resolve_sketch_reference_result ... ok
+test parity_generated::values_018::wire_resolve_thread_args ... ok
+test parity_generated::values_018::wire_representation_event_payload ... ok
+test parity_generated::values_018::wire_rename_view_args ... ok
+test parity_generated::values_018::wire_ribbon_item_info ... ok
+test parity_generated::values_018::wire_retrieved_dimensions_result ... ok
+test parity_generated::values_018::wire_ribbon_selector_info ... ok
+test parity_generated::values_018::wire_rotate_view_args ... ok
+test parity_generated::values_018::wire_ribbon_control_info ... ok
+test parity_generated::values_018::wire_save_document_args ... ok
+test parity_generated::values_018::wire_save_copy_as_args ... ok
+test parity_generated::values_019::wire_save_document_as_args ... ok
+test parity_generated::values_019::wire_save_options_view ... ok
+test parity_generated::values_018::wire_replace_occurrence_args ... ok
+test parity_generated::values_019::wire_save_document_result ... ok
+test parity_generated::values_018::wire_retrievable_dimension_info ... ok
+test parity_generated::values_018::wire_retrievable_dimensions_result ... ok
+test parity_generated::values_018::wire_retrieve_dimensions_args ... ok
+test parity_generated::values_019::wire_save_warning ... ok
+test parity_generated::values_018::wire_revision_table_row ... ok
+test parity_generated::values_019::wire_scalar_edit ... ok
+test parity_generated::values_019::wire_script_run_args ... ok
+test parity_generated::values_019::wire_script_run_result ... ok
+test parity_generated::values_019::wire_scroll_viewport_result ... ok
+test parity_generated::values_019::wire_search_commands_args ... ok
+test parity_generated::values_019::wire_scroll_viewport_args ... ok
+test parity_generated::values_019::wire_select_args ... ok
+test parity_generated::values_019::wire_selection_changed_event ... ok
+test parity_generated::values_019::wire_set_active_sheet_args ... ok
+test parity_generated::values_019::wire_search_commands_result ... ok
+test parity_generated::values_019::wire_selection_result ... ok
+test parity_generated::values_018::wire_replace_file_reference_args ... ok
+test parity_generated::values_019::wire_set_add_in_load_behavior_args ... ok
+test parity_generated::values_018::wire_ribbon_panel_info ... ok
+test parity_generated::values_019::wire_set_alias_args ... ok
+test parity_generated::values_019::wire_set_appearance_args ... ok
+test parity_generated::values_019::wire_set_assembly_features_suppressed_args ... ok
+test parity_generated::values_018::wire_ribbon_tab_info ... ok
+test parity_generated::values_019::wire_set_assembly_participant_paths_args ... ok
+test parity_generated::values_019::wire_set_assembly_options_args ... ok
+test parity_generated::values_019::wire_set_assembly_participants_args ... ok
+test parity_generated::values_019::wire_set_bend_order_args ... ok
+test parity_generated::values_019::wire_set_bom_structure_args ... ok
+test parity_generated::values_019::wire_set_bom_structure_result ... ok
+test parity_generated::values_019::wire_set_attribute_args ... ok
+test parity_generated::values_019::wire_set_block_definition_color_args ... ok
+test parity_generated::values_019::wire_set_block_instance_color_args ... ok
+test parity_generated::values_019::wire_set_camera_args ... ok
+test parity_generated::values_019::wire_set_browser_pane_args ... ok
+test parity_generated::values_019::wire_set_chord_args ... ok
+test parity_generated::values_019::wire_set_color_scheme_args ... ok
+test parity_generated::values_019::wire_set_client_graphics_result ... ok
+test parity_generated::values_019::wire_set_client_graphics_visible_args ... ok
+test parity_generated::values_019::wire_set_context_menu_args ... ok
+test parity_generated::values_019::wire_set_dimension_inspection_args ... ok
+test parity_generated::values_019::wire_set_command_state_args ... ok
+test parity_generated::values_019::wire_set_dimension_text_style_args ... ok
+test parity_generated::values_019::wire_set_display_mode_args ... ok
+test parity_generated::values_019::wire_set_dimension_tolerance_args ... ok
+test parity_generated::values_019::wire_set_dockable_window_visible_args ... ok
+test parity_generated::values_019::wire_set_dockable_window_references_args ... ok
+test parity_generated::values_019::wire_set_constraint_limits_args ... ok
+test parity_generated::values_019::wire_set_client_graphics_args ... ok
+test parity_generated::values_019::wire_set_flexible_args ... ok
+test parity_generated::values_019::wire_set_display_settings_args ... ok
+test parity_generated::values_019::wire_set_flexible_child_args ... ok
+test parity_generated::values_019::wire_set_flexible_occurrence_args ... ok
+test parity_generated::values_019::wire_set_dockable_window_value_args ... ok
+test parity_generated::values_020::wire_set_layout_args ... ok
+test parity_generated::values_020::wire_set_joint_state_args ... ok
+test parity_generated::values_020::wire_set_lighting_style_args ... ok
+test parity_generated::values_020::wire_set_joint_origin_args ... ok
+test parity_generated::values_020::wire_set_manipulators_args ... ok
+test parity_generated::values_020::wire_set_marking_menu_args ... ok
+test parity_generated::values_019::wire_set_end_of_features_args ... ok
+test parity_generated::values_019::wire_set_document_units_args ... ok
+test parity_generated::values_020::wire_set_light_args ... ok
+test parity_generated::values_019::wire_set_end_of_part_args ... ok
+test parity_generated::values_020::wire_set_mini_toolbar_args ... ok
+test parity_generated::values_019::wire_set_environment_args ... ok
+test parity_generated::values_019::wire_set_feature_suppressed_args ... ok
+test parity_generated::values_020::wire_set_model_reference_result ... ok
+test parity_generated::values_020::wire_set_node_selectable_args ... ok
+test parity_generated::values_019::wire_set_freeform_level_args ... ok
+test parity_generated::values_019::wire_set_highlight_set_color_args ... ok
+test parity_generated::values_019::wire_set_joint_flip_args ... ok
+test parity_generated::values_019::wire_set_imposed_motion_args ... ok
+test parity_generated::values_020::wire_set_model_state_table_args ... ok
+test parity_generated::values_020::wire_set_mesh_colors_args ... ok
+test parity_generated::values_019::wire_set_joint_limits_args ... ok
+test parity_generated::values_020::wire_set_model_reference_args ... ok
+test parity_generated::values_019::wire_set_dockable_window_args ... ok
+test parity_generated::values_020::wire_set_node_transform_args ... ok
+test parity_generated::values_020::wire_set_node_visible_args ... ok
+test parity_generated::values_020::wire_set_normal_debug_args ... ok
+test parity_generated::values_020::wire_set_notice_args ... ok
+test parity_generated::values_020::wire_set_object_visibility_args ... ok
+test parity_generated::values_020::wire_set_orientation_args ... ok
+test parity_generated::values_020::wire_set_occurrence_state_args ... ok
+test parity_generated::values_020::wire_set_part_design_view_body_visibility_args ... ok
+test parity_generated::values_020::wire_set_pattern_element_suppressed_args ... ok
+test parity_generated::values_020::wire_set_part_design_view_options_args ... ok
+test parity_generated::values_020::wire_set_pattern_suppressed_args ... ok
+test parity_generated::values_020::wire_set_point_cloud_crop_active_args ... ok
+test parity_generated::values_020::wire_set_point_cloud_density_args ... ok
+test parity_generated::values_020::wire_set_point_cloud_display_mode_args ... ok
+test parity_generated::values_020::wire_set_point_cloud_scale_args ... ok
+test parity_generated::values_020::wire_set_positional_override_args ... ok
+test parity_generated::values_020::wire_set_settings_args ... ok
+test parity_generated::values_020::wire_set_point_cloud_visible_args ... ok
+test parity_generated::values_020::wire_set_property_args ... ok
+test parity_generated::values_020::wire_set_point_cloud_transform_args ... ok
+test parity_generated::values_020::wire_set_sheet_revision_args ... ok
+test parity_generated::values_020::wire_set_sketch3_d_property_args ... ok
+test parity_generated::values_020::wire_set_sketch_custom_line_type_args ... ok
+test parity_generated::values_020::wire_set_sheet_metal_style_args ... ok
+test parity_generated::values_020::wire_set_sketch_property_args ... ok
+test parity_generated::values_020::wire_set_standard_args ... ok
+test parity_generated::values_020::wire_set_status_text_args ... ok
+test parity_generated::values_020::wire_set_spline_handle_args ... ok
+test parity_generated::values_020::wire_set_sketch_entity_format_args ... ok
+test parity_generated::values_020::wire_set_suppressed_args ... ok
+test parity_generated::values_020::wire_set_text_font_args ... ok
+test parity_generated::values_020::wire_set_text_font_result ... ok
+test parity_generated::values_020::wire_set_title_block_args ... ok
+test parity_generated::values_020::wire_set_sketch_settings_args ... ok
+test parity_generated::values_020::wire_set_view_display_args ... ok
+test parity_generated::values_020::wire_set_visible_occurrence_args ... ok
+test parity_generated::values_020::wire_set_visibility_args ... ok
+test parity_generated::values_020::wire_set_work_feature_visible_args ... ok
+test parity_generated::values_020::wire_set_view_label_args ... ok
+test parity_generated::values_020::wire_set_work_surface_visible_args ... ok
+test parity_generated::values_020::wire_settings_result ... ok
+test parity_generated::values_020::wire_shadow_settings ... ok
+test parity_generated::values_020::wire_sheet_info ... ok
+test parity_generated::values_020::wire_shaded_display_mode_options_view ... ok
+test parity_generated::values_021::wire_show_balloon_tip_args ... ok
+test parity_generated::values_021::wire_show_balloon_tip_result ... ok
+test parity_generated::values_020::wire_sheet_metal_style_info ... ok
+test parity_generated::values_020::wire_sheet_result ... ok
+test parity_generated::values_020::wire_sheet_metal_style_result ... ok
+test parity_generated::values_021::wire_show_prompt_result ... ok
+test parity_generated::values_021::wire_show_file_dialog_args ... ok
+test parity_generated::values_021::wire_show_prompt_args ... ok
+test parity_generated::values_021::wire_show_web_dialog_args ... ok
+test parity_generated::values_021::wire_sketch3_d_args ... ok
+test parity_generated::values_021::wire_shrinkwrap_create_args ... ok
+test parity_generated::values_021::wire_sketch_args ... ok
+test parity_generated::values_021::wire_sketch3_d_info ... ok
+test parity_generated::values_021::wire_show_triad_args ... ok
+test parity_generated::values_021::wire_sketch3_d_entity_info ... ok
+test parity_generated::values_021::wire_sketch_block_definition_info ... ok
+test parity_generated::values_021::wire_sketch_custom_line_type_result ... ok
+test parity_generated::values_021::wire_show_task_panel_args ... ok
+test parity_generated::values_021::wire_sketch_dependent ... ok
+test parity_generated::values_021::wire_sketch_block_info ... ok
+test parity_generated::values_021::wire_sketch_dependents_result ... ok
+test parity_generated::values_021::wire_sketch_edit_event ... ok
+test parity_generated::values_021::wire_sketch_entity_format_args ... ok
+test parity_generated::values_021::wire_sketch_inference_scope_args ... ok
+test parity_generated::values_021::wire_sketch_format_modes_view ... ok
+test parity_generated::values_021::wire_sketch_entity_info ... ok
+test parity_generated::values_021::wire_sketch_inference_scope_view ... ok
+test parity_generated::values_021::wire_sketch_move_dimension_change ... ok
+test parity_generated::values_021::wire_sketch_move_geometric_change ... ok
+test parity_generated::values_021::wire_sketch_info ... ok
+test parity_generated::values_021::wire_sketch_options_view ... ok
+test parity_generated::values_021::wire_sketch_orientation ... ok
+test parity_generated::values_021::wire_sketch_rectangle_args ... ok
+test parity_generated::values_021::wire_sketch_rectangle_result ... ok
+test parity_generated::values_021::wire_slot_repick ... ok
+test parity_generated::values_021::wire_sketch_text_result ... ok
+test parity_generated::values_021::wire_solve_sketch3_d_result ... ok
+test parity_generated::values_021::wire_snap_constraint_args ... ok
+test parity_generated::values_021::wire_sketch_entity_format_view ... ok
+test parity_generated::values_021::wire_solve_sketch_result ... ok
+test parity_generated::values_021::wire_status_text_result ... ok
+test parity_generated::values_021::wire_sketch_reference_key_result ... ok
+test parity_generated::values_021::wire_spline_handle_info ... ok
+test parity_generated::values_021::wire_string_from_value_args ... ok
+test parity_generated::values_021::wire_style_changed_event ... ok
+test parity_generated::values_021::wire_stroke_set_result ... ok
+test parity_generated::values_021::wire_submit_command_line_args ... ok
+test parity_generated::values_021::wire_style_library_info ... ok
+test parity_generated::values_021::wire_style_libraries_result ... ok
+test parity_generated::values_021::wire_suppress_occurrence_args ... ok
+test parity_generated::values_021::wire_table_row ... ok
+test parity_generated::values_021::wire_substitute_components_args ... ok
+test parity_generated::values_021::wire_task_panel_closed_event ... ok
+test parity_generated::values_021::wire_text_style_info ... ok
+test parity_generated::values_021::wire_theme_summary ... ok
+test parity_generated::values_021::wire_theme_view ... ok
+test parity_generated::values_021::wire_thread_table_query_args ... ok
+test parity_generated::values_022::wire_thread_table_query_result ... ok
+test parity_generated::values_022::wire_title_block_field ... ok
+test parity_generated::values_022::wire_title_block_fields_args ... ok
+test parity_generated::values_021::wire_thread_info_result ... ok
+test parity_generated::values_022::wire_tolerance_info ... ok
+test parity_generated::values_022::wire_title_block_fields_result ... ok
+test parity_generated::values_021::wire_task_panel_spec ... ok
+test parity_generated::values_021::wire_sketch_settings_result ... ok
+test parity_generated::values_021::wire_standard_style_info ... ok
+test parity_generated::values_022::wire_transaction_history ... ok
+test parity_generated::values_022::wire_transaction_jump_to_args ... ok
+test parity_generated::values_022::wire_transaction_history_entry ... ok
+test parity_generated::values_021::wire_standard_style_result ... ok
+test parity_generated::values_022::wire_transform_sketch_result ... ok
+test parity_generated::values_022::wire_transform_occurrence_args ... ok
+test parity_generated::values_022::wire_transform3_d_args ... ok
+test parity_generated::values_022::wire_transaction_history_args ... ok
+test parity_generated::values_022::wire_tree_node ... ok
+test parity_generated::values_022::wire_triad_segment_event ... ok
+test parity_generated::values_022::wire_transform_sketch_args ... ok
+test parity_generated::values_021::wire_string_result ... ok
+test parity_generated::values_022::wire_unregister_client_application_args ... ok
+test parity_generated::values_022::wire_update_document_args ... ok
+test parity_generated::values_022::wire_triad_spec ... ok
+test parity_generated::values_022::wire_update_document_result ... ok
+test parity_generated::values_022::wire_triad_drag_event ... ok
+test parity_generated::values_022::wire_topology_ref ... ok
+test parity_generated::values_022::wire_update_mini_toolbar_args ... ok
+test parity_generated::values_022::wire_transaction_event_payload ... ok
+test parity_generated::values_022::wire_update_progress_args ... ok
+test parity_generated::values_022::wire_unit_string_args ... ok
+test parity_generated::values_022::wire_transform3_d_result ... ok
+test parity_generated::values_022::wire_update_progress_result ... ok
+test parity_generated::values_022::wire_validate_body_args ... ok
+test parity_generated::values_022::wire_update_interaction_graphics_args ... ok
+test parity_generated::values_022::wire_value_result ... ok
+test parity_generated::values_022::wire_view_curves_args ... ok
+test parity_generated::values_022::wire_validate_body_result ... ok
+test parity_generated::values_022::wire_view_frame_info ... ok
+test parity_generated::values_022::wire_view_curves_result ... ok
+test parity_generated::values_022::wire_undo_state ... ok
+test parity_generated::values_022::wire_units_type_args ... ok
+test parity_generated::values_022::wire_view_info ... ok
+test parity_generated::values_022::wire_view_tab_info ... ok
+test parity_generated::values_022::wire_unfold_result ... ok
+test parity_generated::values_022::wire_transaction_begin_args ... ok
+test parity_generated::values_022::wire_web_dialog_changed_event ... ok
+test parity_generated::values_022::wire_web_dialog_spec ... ok
+test parity_generated::values_022::wire_wire_info ... ok
+test parity_generated::values_022::wire_wire_polyline ... ok
+test parity_generated::values_022::wire_update_appearance_args ... ok
+test parity_generated::values_022::wire_wireframe_display_mode_options_view ... ok
+test parity_generated::values_022::wire_units_type_result ... ok
+test parity_generated::values_022::wire_work_axis_info ... ok
+test parity_generated::values_022::wire_view_result ... ok
+test parity_generated::values_022::wire_work_plane_info ... ok
+test parity_generated::values_022::wire_work_plane_ref_slot ... ok
+test parity_generated::values_022::wire_work_plane_scalar ... ok
+test parity_generated::values_022::wire_work_point_info ... ok
+test parity_generated::values_022::wire_work_surface_ref_args ... ok
+test parity_generated::values_022::wire_work_surface_info ... ok
+test parity_generated::values_022::wire_work_surface_detail_result ... ok
+
+test result: ok. 1379 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/part_options_client.rs (rust/target/debug/deps/part_options_client-c70fcf1a61527d96)
+
+running 2 tests
+test invalid_startup_plane_is_refused_before_host_call ... ok
+test accepted_planes_and_optional_facing_reach_host_without_value_loss ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/part_sketch_view.rs (rust/target/debug/deps/part_sketch_view-61e23d7ee3d4dc3d)
+
+running 1 test
+test part_sketch_view_keeps_omitted_false_and_true_distinct ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/runtime_client.rs (rust/target/debug/deps/runtime_client-3e424cbecb824744)
+
+running 77 tests
+test feature_kinds::kinds_000::bend_part ... ok
+test feature_kinds::kinds_000::boss ... ok
+test feature_kinds::kinds_000::bridge_surface ... ok
+test client_decodes_typed_results_and_reports_invalid_replies ... ok
+test feature_kinds::kinds_000::boundary_patch ... ok
+test feature_kinds::kinds_000::chamfer ... ok
+test feature_kinds::kinds_000::coil ... ok
+test feature_kinds::kinds_000::combine ... ok
+test feature_kinds::kinds_000::core_cavity ... ok
+test feature_kinds::kinds_000::delete_face ... ok
+test feature_kinds::kinds_000::direct_edit ... ok
+test feature_kinds::kinds_000::draft ... ok
+test feature_kinds::kinds_000::emboss ... ok
+test feature_kinds::kinds_000::extend ... ok
+test feature_kinds::kinds_000::extrude ... ok
+test feature_kinds::kinds_000::face_offset ... ok
+test feature_kinds::kinds_000::fair_surface ... ok
+test feature_kinds::kinds_000::fill_surface ... ok
+test feature_kinds::kinds_000::fillet ... ok
+test feature_kinds::kinds_000::fit_surface ... ok
+test feature_kinds::kinds_000::freeform_box ... ok
+test feature_kinds::kinds_000::freeform_plane ... ok
+test feature_kinds::kinds_000::freeform_quad_ball ... ok
+test feature_kinds::kinds_000::full_round_fillet ... ok
+test feature_kinds::kinds_000::grill ... ok
+test feature_kinds::kinds_000::hole ... ok
+test feature_kinds::kinds_000::hull ... ok
+test feature_kinds::kinds_000::lip ... ok
+test feature_kinds::kinds_000::loft ... ok
+test feature_kinds::kinds_000::mesh ... ok
+test feature_kinds::kinds_000::mid_surface ... ok
+test feature_kinds::kinds_000::mirror ... ok
+test feature_kinds::kinds_000::model_tolerance ... ok
+test feature_kinds::kinds_000::move_body ... ok
+test feature_kinds::kinds_000::move_face ... ok
+test feature_kinds::kinds_000::network_surface ... ok
+test feature_kinds::kinds_000::pattern_circular ... ok
+test feature_kinds::kinds_000::pattern_rectangular ... ok
+test feature_kinds::kinds_000::pattern_sketch_driven ... ok
+test feature_kinds::kinds_000::replace_face ... ok
+test feature_kinds::kinds_000::rest ... ok
+test feature_kinds::kinds_000::revolve ... ok
+test feature_kinds::kinds_000::rib ... ok
+test feature_kinds::kinds_000::rule_fillet ... ok
+test feature_kinds::kinds_000::ruled_surface ... ok
+test feature_kinds::kinds_000::sculpt ... ok
+test feature_kinds::kinds_000::sheet_metal_bend ... ok
+test feature_kinds::kinds_000::sheet_metal_contour_flange ... ok
+test feature_kinds::kinds_000::sheet_metal_contour_roll ... ok
+test feature_kinds::kinds_000::sheet_metal_corner ... ok
+test feature_kinds::kinds_000::sheet_metal_corner_seam ... ok
+test feature_kinds::kinds_001::sheet_metal_cosmetic_bend ... ok
+test feature_kinds::kinds_001::sheet_metal_cut ... ok
+test feature_kinds::kinds_001::sheet_metal_face ... ok
+test feature_kinds::kinds_001::sheet_metal_flange ... ok
+test feature_kinds::kinds_001::sheet_metal_fold ... ok
+test feature_kinds::kinds_001::sheet_metal_hem ... ok
+test feature_kinds::kinds_001::sheet_metal_lip ... ok
+test feature_kinds::kinds_001::sheet_metal_lofted_flange ... ok
+test feature_kinds::kinds_001::sheet_metal_punch ... ok
+test feature_kinds::kinds_001::sheet_metal_refold ... ok
+test feature_kinds::kinds_001::sheet_metal_rip ... ok
+test feature_kinds::kinds_001::sheet_metal_unfold ... ok
+test feature_kinds::kinds_001::shell ... ok
+test feature_kinds::kinds_001::simplify ... ok
+test feature_kinds::kinds_001::snap_fit ... ok
+test feature_kinds::kinds_001::split ... ok
+test feature_kinds::kinds_001::split_solid ... ok
+test feature_kinds::kinds_001::stitch ... ok
+test feature_kinds::kinds_001::surface_offset ... ok
+test feature_kinds::kinds_001::sweep ... ok
+test feature_kinds::kinds_001::thicken ... ok
+test feature_kinds::kinds_001::thread ... ok
+test feature_kinds::kinds_001::trim ... ok
+test feature_kinds::kinds_001::unwrap ... ok
+test invalid_requests_fail_before_host_io ... ok
+test typed_features_build_the_same_envelope_as_go ... ok
+
+test result: ok. 77 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/runtime_host.rs (rust/target/debug/deps/runtime_host-74fd491bb6752fca)
+
+running 5 tests
+test callback_validation_requires_both_functions ... ok
+test embedded_nul_is_rejected_before_calling_c ... ok
+test invalid_buffer_shapes_are_rejected_and_freed ... ok
+test empty_buffers_are_valid_with_either_pointer_shape ... ok
+test successful_and_failed_calls_release_the_host_allocation ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/runtime_json.rs (rust/target/debug/deps/runtime_json-632613c07760bc55)
+
+running 7 tests
+test byte_enums_use_the_byte_slice_encoding ... ok
+test geometry_uses_ordered_arrays_and_unit_directions ... ok
+test nonfinite_numbers_are_rejected_through_nested_containers ... ok
+test raw_json_distinguishes_absent_null_and_large_identifiers ... ok
+test bytes_preserve_null_empty_and_base64 ... ok
+test timestamps_keep_nanoseconds_and_validate_the_shape ... ok
+test variants_preserve_every_tag_and_units ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/save_warning.rs (rust/target/debug/deps/save_warning-b13a2a097b381421)
+
+running 2 tests
+test older_save_results_remain_valid_and_omit_empty_warnings ... ok
+test warnings_survive_all_save_result_shapes ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sketch_block_color.rs (rust/target/debug/deps/sketch_block_color-a0d55e17f8e81643)
+
+running 1 test
+test typed_color_commands_carry_cyan_and_null_default ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sketch_constraint_selection.rs (rust/target/debug/deps/sketch_constraint_selection-75139c21773e1e2e)
+
+running 2 tests
+test explicit_empty_selection_is_distinct_from_legacy_policy ... ok
+test explicit_choices_round_trip_without_changing_legacy_defaults ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sketch_explode_block.rs (rust/target/debug/deps/sketch_explode_block-738ea048dc6a8ca2)
+
+running 1 test
+test typed_explode_preserves_the_instance_and_new_entity_identities ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sketch_inference_scope.rs (rust/target/debug/deps/sketch_inference_scope-f867e3551f51b36a)
+
+running 2 tests
+test all_and_current_modes_have_distinct_wire_values ... ok
+test selected_scope_round_trips_the_sketch_and_candidate_ids ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sketch_move_plan.rs (rust/target/debug/deps/sketch_move_plan-b92ec2daea2fcfb5)
+
+running 2 tests
+test plan_uses_explicit_policies_and_distinct_wire_methods ... ok
+test impact_and_approval_round_trip ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/sketch_size_expressions.rs (rust/target/debug/deps/sketch_size_expressions-c0757abdd88a6d4d)
+
+running 2 tests
+test associative_entity_preserves_legacy_host_error ... ok
+test sketch_entity_client_preserves_size_expressions ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/startup_sketch_plane.rs (rust/target/debug/deps/startup_sketch_plane-4f9b87ff0ac642da)
+
+running 4 tests
+test invalid_plane_values_are_not_valid_startup_choices ... ok
+test part_sketch_preferences_remain_independent ... ok
+test startup_sketch_choices_round_trip_and_old_payload_is_unchanged ... ok
+test null_and_unknown_planes_remain_distinct ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests oblikovati_api
+
+running 2 tests
+test src/lib.rs - (line 6) ... ok
+test src/startup_sketch_plane.rs - startup_sketch_plane::crate::types::StartupSketchPlane::is_valid (line 7) ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+all doctests ran in 0.14s; merged doctests compilation took 0.13s
+cargo test --manifest-path rust/Cargo.toml --locked --examples
+   Compiling oblikovati-api v0.159.0 (/home/vmiguel/git/oblikovati-workspace/Oblikovati.API/.slim/worktrees/constraint-settings-312/rust)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.25s
+     Running unittests examples/c_addin.rs (rust/target/debug/examples/c_addin-759feae8bca8eab7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests examples/datums.rs (rust/target/debug/examples/datums-2c45afef0c69ba46)
+
+running 3 tests
+test tests::axes_example_includes_construction_rows ... ok
+test tests::planes_example_includes_construction_rows ... ok
+test tests::points_example_includes_construction_rows ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/ellipse.rs (rust/target/debug/examples/ellipse-9812335d545c7a84)
+
+running 1 test
+test tests::minor_radius_example_preserves_owner_kind_and_length_expression ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/operations.rs (rust/target/debug/examples/operations-6586aecb9a309804)
+
+running 2 tests
+test tests::extrude_profile_uses_typed_feature_arguments ... ok
+test tests::create_part_sends_a_typed_document_request ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples/version.rs (rust/target/debug/examples/version-47f4647a5f1089cd)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+python3 -m unittest discover -s scripts/rustgen -p 'test_*.py'
+..................
+----------------------------------------------------------------------
+Ran 18 tests in 0.094s
+
+OK
+Generated 4 declarations and 1 typed calls.
+python3 -m unittest discover -s scripts -p 'test_*.py'
+.............To /tmp/tmp35n9vdnz/remote.git
+   a4e9680..02105f0  HEAD -> develop
+ * [new tag]         v0.2.0 -> v0.2.0
+ * [new tag]         go/v0.2.0 -> go/v0.2.0
+.error: atomic push failed for ref refs/heads/develop. status: 7
+
+fatal: the remote end hung up unexpectedly
+To /tmp/tmp1fks846y/remote.git
+ ! [rejected]        HEAD -> develop (stale info)
+ ! [rejected]        v0.2.0 -> v0.2.0 (atomic push failed)
+ ! [rejected]        go/v0.2.0 -> go/v0.2.0 (atomic push failed)
+error: failed to push some refs to '/tmp/tmp1fks846y/remote.git'
+..To /tmp/tmpbj2niwuj/remote.git
+   9ca75cd..6230e7a  HEAD -> develop
+ * [new tag]         v0.2.0 -> v0.2.0
+ * [new tag]         go/v0.2.0 -> go/v0.2.0
+To /tmp/tmpgnonhij3/remote.git
+   9ca75cd..6230e7a  HEAD -> develop
+ * [new tag]         v0.2.0 -> v0.2.0
+ * [new tag]         go/v0.2.0 -> go/v0.2.0
+.To /tmp/tmpln6etq0u/remote.git
+   9ca75cd..6230e7a  HEAD -> develop
+ * [new tag]         v0.2.0 -> v0.2.0
+ * [new tag]         go/v0.2.0 -> go/v0.2.0
+.....error: failed to push some refs to '/tmp/tmptncj7yf9/remote.git'
+...........................
+----------------------------------------------------------------------
+Ran 49 tests in 1.215s
+
+OK
+Go import metadata selects the released go/ module
+python3 scripts/workflow_dependencies.py
+Workflow actions and Go tools use immutable source revisions
+cd go && go vet ./...
+test -z "$(gofmt -l go)"
+cargo fmt --manifest-path rust/Cargo.toml -- --check
+cargo clippy --manifest-path rust/Cargo.toml --locked --all-targets -- -D warnings
+    Checking itoa v1.0.18
+    Checking powerfmt v0.2.1
+    Checking memchr v2.8.3
+    Checking num-conv v0.1.0
+    Checking time-core v0.1.7
+    Checking base64 v0.22.1
+    Checking serde_core v1.0.229
+    Checking zmij v1.0.23
+    Checking deranged v0.5.8
+    Checking time v0.3.45
+    Checking serde_json v1.0.151
+    Checking serde v1.0.229
+    Checking oblikovati-api v0.159.0 (/home/vmiguel/git/oblikovati-workspace/Oblikovati.API/.slim/worktrees/constraint-settings-312/rust)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 34.21s
+python3 scripts/check-spdx.py --check
+python3 scripts/check-license-boundary.py
+Go and Rust API dependencies respect the application boundary
+npx --yes markdownlint-cli2@0.18.1 README.md RELEASING.md 'docs/wiki/*.md'
+markdownlint-cli2 v0.18.1 (markdownlint v0.38.0)
+Finding: README.md RELEASING.md docs/wiki/*.md
+Linting: 13 file(s)
+Summary: 0 error(s)
+python3 scripts/wiki-examples.py --check
+bash scripts/assemble-wiki.sh
+level=warning msg="Unable to find symbol Material.AppearanceID" dir=.
+level=warning msg="Unable to find symbol Parameter.NominalValue" dir=.
+level=warning msg="Unable to find symbol Parameter.UnitName" dir=.
+level=warning msg="Unable to find symbol " dir=.
+level=warning msg="Unable to find symbol Arg.Kind" dir=.
+level=warning msg="Unable to find symbol Arg.Kind" dir=.
+gen-api-docs: wrote build/wiki/Go-API-Reference.md (47330 lines)
+cargo doc --manifest-path rust/Cargo.toml --locked --no-deps
+ Documenting oblikovati-api v0.159.0 (/home/vmiguel/git/oblikovati-workspace/Oblikovati.API/.slim/worktrees/constraint-settings-312/rust)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.20s
+   Generated /home/vmiguel/git/oblikovati-workspace/Oblikovati.API/.slim/worktrees/constraint-settings-312/rust/target/doc/oblikovati_api/index.html
+bash scripts/test-c-abi.sh
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s
+{"time":"2026-11-19T21:31:34.672331486+01:00","level":"INFO","msg":"api-version","language":"go","version":"0.159.0"}
+C ABI: exports, typed call, error propagation and buffer ownership passed
+{"language":"rust","msg":"api-version","version":"0.159.0"}
+C ABI: exports, typed call, error propagation and buffer ownership passed
+bash scripts/test-go-package.sh
+ok  	oblikovati.org/api	0.001s
+ok  	oblikovati.org/api/client	0.045s
+ok  	oblikovati.org/api/contract	0.002s
+ok  	oblikovati.org/api/examples/c_addin	0.004s
+ok  	oblikovati.org/api/examples/ellipse	0.002s
+ok  	oblikovati.org/api/examples/operations	0.002s
+ok  	oblikovati.org/api/examples/version	0.002s
+ok  	oblikovati.org/api/scripts/apifixtures	0.028s
+ok  	oblikovati.org/api/scripts/apischema	0.307s
+ok  	oblikovati.org/api/scripts/nextver	0.007s
+ok  	oblikovati.org/api/types	0.004s
+ok  	oblikovati.org/api/wire	0.002s
+ok  	oblikovati.org/api/wire/featureargs	0.002s
+python3 scripts/duplication_gate.py
+duplication: 1103/106774 lines (1.0330%), below 3%
