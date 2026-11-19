@@ -14,11 +14,14 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
-- Constraint Settings (#4158): the full run at `f59421482` passed
-  zero of eight scenarios. The shared precondition is fixed (#4159); each
-  scenario stops at an undefined feature-specific step. The inference
-  persistence field is not consumed by creation (#4160). Fixture questions
-  are recorded in `BLOCKERS.md`; API selection types are tracked in #312.
+- Constraint Settings (#4158): a full diagnostic on the uncommitted feature
+  worktree passed five of eight scenarios with the feature and support hashes
+  unchanged during the run. Three scenarios stopped at undefined setup steps;
+  fixture questions are in the feature's `BLOCKERS.md`. This worktree result is
+  not inventory evidence. Inference persistence (#4160), Relax Mode (#4164),
+  and independent selection of overlapping glyphs (#4169) remain in progress.
+  The merged branch has separate passing persistence, typed API, and X11 glyph
+  checks in `receipts/2026-11-19-merged-glyph-0b3efd7/`.
 - New Sketch (#4156): the full run at `60c48f25f` passed nine of ten
   scenarios. The accumulated document fixture remains unresolved (#4011) and
   requires circular sketch patterns (#3905). See the feature's `BLOCKERS.md`
