@@ -41,6 +41,9 @@ mod model_state_table;
 #[path = "model_state_table_extra.rs"]
 mod model_state_table_extra;
 #[cfg(target_os = "linux")]
+#[path = "model_state_table_name_steps.rs"]
+mod model_state_table_name_steps;
+#[cfg(target_os = "linux")]
 #[path = "model_state_table_parameter_steps.rs"]
 mod model_state_table_parameter_steps;
 #[cfg(target_os = "linux")]

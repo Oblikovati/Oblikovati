@@ -30,6 +30,7 @@ pub(crate) struct ModelStateTable {
     pending: bool,
     row_sequence: u64,
     show_verification_error: bool,
+    name_prompt: Option<names::NamePrompt>,
     accept_after_verification: Option<SetModelStateTableArgs>,
 }
 impl DockableWindow for ModelStateTable {}
@@ -56,6 +57,7 @@ impl ModelStateTable {
         self.pending = false;
         self.row_sequence = 0;
         self.show_verification_error = false;
+        self.name_prompt = None;
         self.accept_after_verification = None;
         self.dock.set_open(true);
     }
@@ -160,12 +162,16 @@ impl ModelStateTable {
             !self.dirty || self.pending || !self.invalid.is_empty() || self.stale(state),
         );
         if ui.button("OK") {
-            match verification {
-                Some(result) if result.valid => self.accept(actions),
-                Some(_) => self.show_verification_error = true,
-                None => {
-                    self.accept_after_verification = self.draft.as_ref().map(request);
-                    self.verify(actions);
+            if let Some(prompt) = self.name_problem() {
+                self.name_prompt = Some(prompt);
+            } else {
+                match verification {
+                    Some(result) if result.valid => self.accept(actions),
+                    Some(_) => self.show_verification_error = true,
+                    None => {
+                        self.accept_after_verification = self.draft.as_ref().map(request);
+                        self.verify(actions);
+                    }
                 }
             }
         }
@@ -179,56 +185,7 @@ impl ModelStateTable {
             self.close();
         }
         self.verification_modal(ui);
-    }
-    fn current_verification(
-        &self,
-        state: &GuiCommandState,
-    ) -> Option<oblikovati_api::wire::ModelStateTableVerification> {
-        let (document, checked, result) = state.model_state_verification.as_ref()?;
-        let draft = self.draft.as_ref()?;
-        (Some(*document) == self.document && *checked == request(draft)).then(|| result.clone())
-    }
-    fn verify(&self, actions: &mut Vec<GuiShellAction>) {
-        let (Some(document), Some(view)) = (self.document, self.draft.as_ref()) else {
-            return;
-        };
-        actions.push(GuiShellAction::VerifyModelStateTable {
-            document,
-            request: request(view),
-        });
-    }
-    fn verification_modal(&mut self, ui: &Ui) {
-        if self.show_verification_error {
-            ui.open_popup("Table contains an error");
-            self.show_verification_error = false;
-        }
-        if let Some(_popup) = ui
-            .modal_popup_config("Table contains an error")
-            .always_auto_resize(true)
-            .begin_popup()
-        {
-            for diagnostic in &self.extra.diagnostics {
-                let name = self
-                    .draft
-                    .as_ref()
-                    .and_then(|view| view.available_parameters.as_deref())
-                    .unwrap_or_default()
-                    .iter()
-                    .find(|item| item.id == diagnostic.parameter_id)
-                    .map_or("Table", |item| item.name.as_str());
-                if diagnostic.parameter_id == 0 {
-                    ui.text(&diagnostic.message);
-                } else {
-                    ui.text(format!(
-                        "{name}: {} cannot be evaluated.",
-                        diagnostic.expression
-                    ));
-                }
-            }
-            if ui.button("OK") {
-                ui.close_current_popup();
-            }
-        }
+        self.name_modal(ui, actions);
     }
     fn extra_selection(&mut self, ui: &Ui, kind: crate::model_state_table_extra::ExtraKind) {
         let Some(view) = self.draft.as_mut() else {
@@ -427,6 +384,9 @@ impl ModelStateTable {
             }
             ui.table_next_column();
             let mut name = row.name.clone();
+            let invalid_name = names::invalid(&rows, index);
+            let highlight = invalid_name
+                .then(|| ui.push_style_color(imgui::StyleColor::FrameBg, [0.75, 0.58, 0.12, 1.0]));
             let disabled = ui.begin_disabled(index == 0);
             ui.set_next_item_width(140.);
             if ui.input_text("##member-name", &mut name).build()
@@ -436,6 +396,7 @@ impl ModelStateTable {
                 self.dirty = true;
             }
             drop(disabled);
+            drop(highlight);
             for column in &columns {
                 ui.table_next_column();
                 if let Some(key) = column.property.as_deref() {
@@ -485,6 +446,10 @@ impl ModelStateTable {
 }
 #[path = "model_state_table_helpers.rs"]
 mod helpers;
+#[path = "model_state_table_names.rs"]
+mod names;
+#[path = "model_state_table_verification.rs"]
+mod verification;
 use helpers::{edit_cell, new_column, property_visible, request, row_key};
 
 #[cfg(test)]
