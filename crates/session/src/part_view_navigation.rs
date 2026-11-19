@@ -83,6 +83,21 @@ impl<O: TransactionObserver> DocumentSession<O> {
         prepared: PreparedPartViewNavigation,
         applied_camera: Option<&PartDesignViewCamera>,
     ) -> Result<(), String> {
+        self.commit_part_view_navigation_projected(prepared, applied_camera, |_, _| Ok(()))?;
+        Ok(())
+    }
+
+    /// Capture the target recipe before a validated display history step.
+    /// Example: `session.commit_part_view_navigation_projected(prepared, camera, capture)?`.
+    pub fn commit_part_view_navigation_projected<T>(
+        &mut self,
+        prepared: PreparedPartViewNavigation,
+        applied_camera: Option<&PartDesignViewCamera>,
+        project: impl FnOnce(
+            &oblikovati_model::history::DocumentSnapshot,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, String>,
+    ) -> Result<(T, oblikovati_model::history::EvaluationTransition), String> {
         if !prepared.scope.is_current(&self.history)
             || self.body_visibility_revision() != prepared.visibility_revision
         {
@@ -96,17 +111,25 @@ impl<O: TransactionObserver> DocumentSession<O> {
                 prepared.target.camera
             ));
         }
+        let candidate = match prepared.direction {
+            PartViewNavigationDirection::Undo => self.history.undo_candidate(),
+            PartViewNavigationDirection::Redo => self.history.redo_candidate(),
+        }
+        .map_err(|cause| cause.to_string())?;
+        let captured = project(candidate, &self.history)?;
         let old = self.body_visibility.clone();
         self.body_visibility
             .replace_hidden(&prepared.target.hidden_body_keys, &prepared.available)?;
         let result = match prepared.direction {
-            PartViewNavigationDirection::Undo => self.undo_display_checked(),
-            PartViewNavigationDirection::Redo => self.redo_display_checked(),
+            PartViewNavigationDirection::Undo => self.undo_display_transition(),
+            PartViewNavigationDirection::Redo => self.redo_display_transition(),
         };
-        if let Err(cause) = result {
-            self.body_visibility = old;
-            return Err(cause.to_string());
+        match result {
+            Ok(transition) => Ok((captured, transition)),
+            Err(cause) => {
+                self.body_visibility = old;
+                Err(cause.to_string())
+            }
         }
-        Ok(())
     }
 }

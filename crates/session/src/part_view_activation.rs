@@ -84,6 +84,21 @@ impl<O: TransactionObserver> DocumentSession<O> {
         prepared: PreparedPartViewActivation,
         applied_camera: PartDesignViewCamera,
     ) -> Result<(), String> {
+        self.commit_part_view_activation_projected(prepared, applied_camera, |_, _| Ok(()))?;
+        Ok(())
+    }
+
+    /// Capture a validated candidate before accepting a display transition.
+    /// Example: `session.commit_part_view_activation_projected(prepared, camera, capture)?`.
+    pub fn commit_part_view_activation_projected<T>(
+        &mut self,
+        prepared: PreparedPartViewActivation,
+        applied_camera: PartDesignViewCamera,
+        project: impl FnOnce(
+            &oblikovati_model::history::DocumentSnapshot,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, String>,
+    ) -> Result<(T, oblikovati_model::history::EvaluationTransition), String> {
         if self.group.is_some()
             || !prepared.scope.is_current(&self.history)
             || self.body_visibility_revision() != prepared.visibility_revision
@@ -117,14 +132,16 @@ impl<O: TransactionObserver> DocumentSession<O> {
         let old_visibility = self.body_visibility.clone();
         self.body_visibility
             .replace_hidden(&prepared.target_hidden, &prepared.available)?;
-        let result = self.run_part_view_edit("Activate Part View", display, |snapshot, _| {
-            apply_prepared_view(snapshot, &prepared)
-        });
-        if let Err(cause) = result {
+        let result = self.run_part_view_edit_projected(
+            "Activate Part View",
+            display,
+            |snapshot, _| apply_prepared_view(snapshot, &prepared),
+            project,
+        );
+        if result.is_err() {
             self.body_visibility = old_visibility;
-            return Err(cause.to_string());
         }
-        Ok(())
+        result
     }
 }
 fn apply_prepared_view(

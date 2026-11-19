@@ -51,6 +51,7 @@ mod model_states;
 mod part_design_views;
 mod part_view_body_visibility;
 mod part_view_display;
+mod part_view_replay;
 mod part_view_transactions;
 pub use part_view_display::PartViewDisplayAccess;
 mod selection_events;

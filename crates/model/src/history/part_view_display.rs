@@ -53,18 +53,21 @@ impl DocumentEditHistory {
             .last()
             .and_then(|step| step.part_view_display.as_ref())
     }
-    /// Check whether a history jump crosses a display step; example: `history.jump_crosses_part_view(0)`.
+    /// Check whether a history jump crosses a part-view edit; example: `history.jump_crosses_part_view(0)`.
     pub fn jump_crosses_part_view(&self, destination: usize) -> bool {
         let current = self.done.len();
         if destination < current {
-            return self.done[destination..]
-                .iter()
-                .any(|step| step.part_view_display.is_some());
+            return self.done[destination..].iter().any(part_view_step);
         }
         self.undone
             .iter()
             .rev()
             .take(destination - current)
-            .any(|step| step.part_view_display.is_some())
+            .any(part_view_step)
     }
+}
+
+fn part_view_step(step: &super::HistoryStep) -> bool {
+    step.part_view_display.is_some()
+        || step.before.part_design_views != step.after.part_design_views
 }

@@ -39,15 +39,43 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     let reply = crate::encode(&PartDesignViewResult {
         view: crate::part_design_views::info(candidate.get(request.id).map_err(Error)?),
     })?;
-    files
-        .commands(document)
-        .map_err(|cause| Error(cause.to_string()))?
-        .set_part_view_body_visibility(
-            request.body_keys.as_deref().unwrap_or_default(),
-            &available,
-            request.visible,
-        )
-        .map_err(Error)?;
+    let policy = access.as_deref().map(|owner| owner.resolution_policy());
+    let replay = policy.and_then(|policy| {
+        files
+            .workspace()
+            .owned_part_replay(document, policy)
+            .ok()
+            .map(|replay| (policy, replay))
+    });
+    if let Some((policy, replay)) = replay {
+        let (_, capture) = files
+            .commands(document)
+            .map_err(|cause| Error(cause.to_string()))?
+            .set_part_view_body_visibility_projected(
+                request.body_keys.as_deref().unwrap_or_default(),
+                &available,
+                request.visible,
+                |candidate, history| {
+                    replay
+                        .capture_unchanged(history, candidate)
+                        .map_err(|cause| cause.to_string())
+                },
+            )
+            .map_err(Error)?;
+        if let Some((candidate, transition)) = capture {
+            crate::part_view_replay::adopt(files, document, policy, candidate, &transition);
+        }
+    } else {
+        files
+            .commands(document)
+            .map_err(|cause| Error(cause.to_string()))?
+            .set_part_view_body_visibility(
+                request.body_keys.as_deref().unwrap_or_default(),
+                &available,
+                request.visible,
+            )
+            .map_err(Error)?;
+    }
     Ok(reply)
 }
 pub(crate) fn resolved_keys<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(

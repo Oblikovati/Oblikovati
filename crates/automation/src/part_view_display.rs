@@ -27,6 +27,7 @@ pub trait PartViewDisplayAccess {
 pub(crate) fn copy<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     display: &mut Option<&mut dyn PartViewDisplayAccess>,
+    policy: Option<Option<oblikovati_martensite::PrismResolutionPolicy>>,
     request: CopyPartDesignViewArgs,
 ) -> Result<Vec<u8>, Error> {
     let document = crate::part_owner::active_part(files)?;
@@ -52,34 +53,27 @@ pub(crate) fn copy<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFile
     } else {
         None
     };
-    files
-        .commands(document)
-        .map_err(|cause| Error(cause.to_string()))?
-        .run_projected(
-            "Copy Part View",
-            |snapshot, ids| {
-                let views = snapshot
-                    .part_design_views
-                    .as_mut()
-                    .ok_or_else(|| Error("part view copy: expected retained part views".into()))?;
-                if let Some(camera) = camera {
-                    views
-                        .capture_camera(request.source_id, camera)
-                        .map_err(Error)?;
-                }
-                crate::part_design_views::copy_view(views, ids, request)
-            },
-            |snapshot, id| {
-                let views = snapshot
-                    .part_design_views
-                    .as_ref()
-                    .ok_or_else(|| Error("part view copy: expected retained views".into()))?;
-                crate::encode(&PartDesignViewResult {
-                    view: crate::part_design_views::info(views.get(id).map_err(Error)?),
-                })
-            },
-        )
-        .map_err(|cause| Error(cause.to_string()))
+    crate::part_view_replay::run(
+        files,
+        document,
+        policy,
+        "Copy Part View",
+        |snapshot, ids| {
+            let views = snapshot
+                .part_design_views
+                .as_mut()
+                .ok_or_else(|| Error("part view copy: expected retained part views".into()))?;
+            if let Some(camera) = camera {
+                views
+                    .capture_camera(request.source_id, camera)
+                    .map_err(Error)?;
+            }
+            let id = crate::part_design_views::copy_view(views, ids, request)?;
+            crate::encode(&PartDesignViewResult {
+                view: crate::part_design_views::info(views.get(id).map_err(Error)?),
+            })
+        },
+    )
 }
 
 pub(crate) fn activate<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -90,6 +84,14 @@ pub(crate) fn activate<O: TransactionObserver, W: WorkspaceObserver, F: Document
 ) -> Result<Vec<u8>, Error> {
     let document = crate::part_owner::active_part(files)?;
     let available = crate::part_view_body_visibility::resolved_keys(files, topology, document)?;
+    let policy = topology.as_deref().map(|owner| owner.resolution_policy());
+    let replay = policy.and_then(|policy| {
+        files
+            .workspace()
+            .owned_part_replay(document, policy)
+            .ok()
+            .map(|replay| (policy, replay))
+    });
     let display = display
         .as_deref_mut()
         .ok_or_else(|| Error("part view activation: expected an active desktop display".into()))?;
@@ -117,10 +119,26 @@ pub(crate) fn activate<O: TransactionObserver, W: WorkspaceObserver, F: Document
     view.active = true;
     let reply = crate::encode(&PartDesignViewResult { view })?;
     apply_display_transaction(display, &original, &target, || {
-        files
+        let Some((policy, replay)) = replay else {
+            return files
+                .commands(document)
+                .map_err(|cause| cause.to_string())?
+                .commit_part_view_activation(prepared, target.clone());
+        };
+        let (candidate, transition) = files
             .commands(document)
             .map_err(|cause| cause.to_string())?
-            .commit_part_view_activation(prepared, target.clone())
+            .commit_part_view_activation_projected(
+                prepared,
+                target.clone(),
+                |candidate, history| {
+                    replay
+                        .capture_unchanged(history, candidate)
+                        .map_err(|cause| cause.to_string())
+                },
+            )?;
+        crate::part_view_replay::adopt(files, document, policy, candidate, &transition);
+        Ok(())
     })?;
     Ok(reply)
 }
@@ -164,6 +182,14 @@ pub(crate) fn navigate<O: TransactionObserver, W: WorkspaceObserver, F: Document
         )));
     }
     let available = crate::part_view_body_visibility::resolved_keys(files, topology, document)?;
+    let policy = topology.as_deref().map(|owner| owner.resolution_policy());
+    let replay = policy.and_then(|policy| {
+        files
+            .workspace()
+            .owned_part_replay(document, policy)
+            .ok()
+            .map(|replay| (policy, replay))
+    });
     let prepared = files
         .commands(document)
         .map_err(|cause| Error(cause.to_string()))?
@@ -171,22 +197,43 @@ pub(crate) fn navigate<O: TransactionObserver, W: WorkspaceObserver, F: Document
         .map_err(Error)?;
     let target = prepared.camera().cloned();
     let Some(target) = target else {
-        return files
-            .commands(document)
-            .map_err(|cause| Error(cause.to_string()))?
-            .commit_part_view_navigation(prepared, None)
-            .map_err(Error);
+        return commit_navigation(files, document, prepared, None, replay).map_err(Error);
     };
     let display = display
         .as_deref_mut()
         .ok_or_else(|| Error("part view history: expected an active desktop display".into()))?;
     let original = display.camera().map_err(Error)?;
     apply_display_transaction(display, &original, &target, || {
-        files
+        commit_navigation(files, document, prepared, Some(&target), replay)
+    })
+}
+
+fn commit_navigation<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    prepared: oblikovati_session::PreparedPartViewNavigation,
+    camera: Option<&PartDesignViewCamera>,
+    replay: Option<(
+        Option<oblikovati_martensite::PrismResolutionPolicy>,
+        oblikovati_session::OwnedPartReplay,
+    )>,
+) -> Result<(), String> {
+    let Some((policy, replay)) = replay else {
+        return files
             .commands(document)
             .map_err(|cause| cause.to_string())?
-            .commit_part_view_navigation(prepared, Some(&target))
-    })
+            .commit_part_view_navigation(prepared, camera);
+    };
+    let (candidate, transition) = files
+        .commands(document)
+        .map_err(|cause| cause.to_string())?
+        .commit_part_view_navigation_projected(prepared, camera, |candidate, history| {
+            replay
+                .capture_unchanged(history, candidate)
+                .map_err(|cause| cause.to_string())
+        })?;
+    crate::part_view_replay::adopt(files, document, policy, candidate, &transition);
+    Ok(())
 }
 
 #[cfg(test)]

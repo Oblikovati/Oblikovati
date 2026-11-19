@@ -245,3 +245,83 @@ fn ordinary_geometry_history_preserves_locked_view_transient_display() {
             .locked()
     );
 }
+
+#[test]
+fn activating_view_keeps_certified_named_solid_without_replay() {
+    use oblikovati_automation::{PartReplayService, PartUpdateAccess};
+    let (owner, _) = owner();
+    let policy = crate::part_scene::resolution_policy::desktop_policy();
+    let mut owner = owner.with_extrusion_policy(policy).unwrap();
+    let document = super::part_scene::open_prism(&mut owner, false);
+    let mut replay = PartReplayService::with_policy(policy).unwrap();
+    replay.ensure_part(&mut owner.files, document).unwrap();
+    let guid = owner
+        .files
+        .workspace()
+        .identity(document)
+        .unwrap()
+        .internal_name;
+    let session = owner.files.workspace().session(document).unwrap();
+    let keys = replay
+        .current_part(&owner.files, document)
+        .unwrap()
+        .body(oblikovati_model::feature::FeatureId(1))
+        .unwrap()
+        .face_reference_keys(session.history(), guid)
+        .unwrap();
+    let before = replay.replay_count();
+    let mut display =
+        FakePartViewDisplay(oblikovati_viewport::ViewportCamera::default().part_view_camera());
+    Client::new(owner.document_host().with_part_view_display(&mut display))
+        .part_design_views()
+        .activate(&PartDesignViewRef { id: 3 })
+        .unwrap();
+    replay.ensure_part(&mut owner.files, document).unwrap();
+    assert_eq!(replay.replay_count(), before);
+    let session = owner.files.workspace().session(document).unwrap();
+    let restored = replay
+        .current_part(&owner.files, document)
+        .unwrap()
+        .body(oblikovati_model::feature::FeatureId(1))
+        .unwrap()
+        .face_reference_keys(session.history(), guid)
+        .unwrap();
+    assert_eq!(restored, keys);
+    Client::new(owner.document_host().with_part_view_display(&mut display))
+        .transactions()
+        .undo()
+        .unwrap();
+    replay.ensure_part(&mut owner.files, document).unwrap();
+    assert_eq!(replay.replay_count(), before);
+    Client::new(owner.document_host().with_part_view_display(&mut display))
+        .transactions()
+        .redo()
+        .unwrap();
+    replay.ensure_part(&mut owner.files, document).unwrap();
+    assert_eq!(replay.replay_count(), before);
+    let session = owner.files.workspace().session(document).unwrap();
+    let restored = replay
+        .current_part(&owner.files, document)
+        .unwrap()
+        .body(oblikovati_model::feature::FeatureId(1))
+        .unwrap()
+        .face_reference_keys(session.history(), guid)
+        .unwrap();
+    assert_eq!(restored, keys);
+    Client::new(owner.document_host().with_part_view_display(&mut display))
+        .part_design_views()
+        .set_body_visibility(&SetPartDesignViewBodyVisibilityArgs {
+            id: 3,
+            body_keys: None,
+            visible: false,
+        })
+        .unwrap();
+    replay.ensure_part(&mut owner.files, document).unwrap();
+    assert_eq!(replay.replay_count(), before);
+    Client::new(owner.document_host().with_part_view_display(&mut display))
+        .transactions()
+        .undo()
+        .unwrap();
+    replay.ensure_part(&mut owner.files, document).unwrap();
+    assert_eq!(replay.replay_count(), before);
+}

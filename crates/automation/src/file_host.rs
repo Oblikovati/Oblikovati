@@ -353,6 +353,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             return crate::part_view_display::copy(
                 self.files,
                 &mut self.part_view_display,
+                self.part_update
+                    .as_deref()
+                    .map(|owner| owner.resolution_policy())
+                    .or_else(|| {
+                        self.part_topology
+                            .as_deref()
+                            .map(|owner| owner.resolution_policy())
+                    }),
                 decode(method, request)?,
             );
         }
@@ -385,6 +393,22 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         }
         if crate::SKETCH_OPTION_METHODS.contains(&method) {
             return self.sketch_option_command(method, request);
+        }
+        if matches!(
+            method,
+            METHOD_PART_DESIGN_VIEWS_SET_OPTIONS
+                | METHOD_PART_DESIGN_VIEWS_COPY
+                | METHOD_PART_DESIGN_VIEWS_RENAME
+                | METHOD_PART_DESIGN_VIEWS_CAPTURE_CAMERA
+        ) {
+            let policy = match self.part_update.as_deref() {
+                Some(owner) => owner.resolution_policy(),
+                None => match self.part_topology.as_deref() {
+                    Some(owner) => owner.resolution_policy(),
+                    None => return command_owner::edit(self.files, method, request),
+                },
+            };
+            return crate::part_view_replay::edit(self.files, policy, method, request);
         }
         if EDIT_METHODS.contains(&method) {
             return command_owner::edit(self.files, method, request);

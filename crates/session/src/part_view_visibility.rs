@@ -12,6 +12,28 @@ impl<O: TransactionObserver> DocumentSession<O> {
         available: &BTreeSet<String>,
         visible: bool,
     ) -> Result<bool, String> {
+        self.set_part_view_body_visibility_projected(keys, available, visible, |_, _| Ok(()))
+            .map(|(changed, _)| changed)
+    }
+
+    /// Capture a candidate before retaining active view body visibility.
+    /// Example: `session.set_part_view_body_visibility_projected(&keys, &available, false, capture)?`.
+    pub fn set_part_view_body_visibility_projected<T>(
+        &mut self,
+        keys: &[String],
+        available: &BTreeSet<String>,
+        visible: bool,
+        project: impl FnOnce(
+            &oblikovati_model::history::DocumentSnapshot,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, String>,
+    ) -> Result<
+        (
+            bool,
+            Option<(T, oblikovati_model::history::EvaluationTransition)>,
+        ),
+        String,
+    > {
         if self.group.is_some() {
             return Err(
                 "part view visibility with open transaction: expected no open group".into(),
@@ -52,21 +74,27 @@ impl<O: TransactionObserver> DocumentSession<O> {
         };
         let display_change = self.body_visibility.replace_hidden(&next, available)?;
         if locked || !stored_change {
-            return Ok(display_change);
+            return Ok((display_change, None));
         }
-        let result =
-            self.run_part_view_edit("Change Part View Visibility", display, |snapshot, _| {
+        let result = self.run_part_view_edit_projected(
+            "Change Part View Visibility",
+            display,
+            |snapshot, _| {
                 snapshot
                     .part_design_views
                     .as_mut()
                     .ok_or("part view visibility: expected retained part views".to_string())?
                     .set_body_visibility(id, keys, available, visible)
-            });
-        if let Err(cause) = result {
-            self.body_visibility = previous;
-            return Err(cause.to_string());
+            },
+            project,
+        );
+        match result {
+            Ok(capture) => Ok((true, Some(capture))),
+            Err(cause) => {
+                self.body_visibility = previous;
+                Err(cause.to_string())
+            }
         }
-        Ok(true)
     }
 }
 fn selected_body_keys(

@@ -30,7 +30,14 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         return Ok(None);
     };
     if !is_tagged(files, document, direction)? {
-        return Ok(None);
+        if !crate::part_view_replay::navigate_unchanged(files, topology, document, direction)? {
+            return Ok(None);
+        }
+        crate::command_owner::CommandOwner::refresh_after_command(files, document)?;
+        return Ok(Some((
+            crate::encode(&crate::transactions::state(files.workspace())?)?,
+            true,
+        )));
     }
     crate::part_view_display::navigate(files, topology, display, document, direction)?;
     Ok(Some((
@@ -145,6 +152,10 @@ fn step<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     if is_tagged(files, document, direction)? {
         crate::part_view_display::navigate(files, topology, display, document, direction)?;
         return Ok(false);
+    }
+    if crate::part_view_replay::navigate_unchanged(files, topology, document, direction)? {
+        crate::command_owner::CommandOwner::refresh_after_command(files, document)?;
+        return Ok(true);
     }
     let mut commands = files
         .commands(document)

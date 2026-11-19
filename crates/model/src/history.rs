@@ -73,6 +73,7 @@ pub use sketch_placement::{DocumentSketchPlacementError, ResolvedDocumentSketch}
 pub use sketch_projection::ResolvedSketchPointProjection;
 mod error;
 mod navigation;
+mod navigation_capture;
 mod part_design_view_ids;
 mod part_view_display;
 pub use part_view_display::{PartViewDisplayState, PartViewDisplayTransition};
