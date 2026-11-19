@@ -194,6 +194,175 @@ fn explode_instance_from_browser_menu_and_undo_redo() {
 }
 
 #[test]
+fn exploded_edges_select_independently_of_a_second_grouped_instance() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    world.draw_rectangle();
+    world.escape();
+    let edit = world.app().owner.active_sketch_edit().unwrap();
+    let mut entities: Vec<u64> = world
+        .edited_geometry()
+        .lines()
+        .iter()
+        .map(|line| line.id.0)
+        .collect();
+    entities.extend(add_two_test_circles(&mut world, edit));
+    let args = oblikovati_api::wire::CreateBlockDefinitionArgs {
+        name: "Rib".into(),
+        source_sketch_index: 0,
+        entity_refs: Some(entities),
+    };
+    oblikovati_api::client::Client::new(world.app().owner.document_host())
+        .sketch()
+        .create_block_definition(&args)
+        .unwrap();
+    world.pump(Vec::new());
+    start_block_from_browser(&mut world);
+    world.click([1100, 550]);
+    world.escape();
+    let second = world.state().browser.unwrap().block_instances[1].id;
+    let row = world.run("Rib:1").center();
+    world.right_click(diagnostics::pointer_pixels(row));
+    world.click_text("Explode");
+    world.pump(Vec::new());
+    world.expect_no_text("Rib:1");
+    world.expect_text("Rib:2");
+    let geometry = world.edited_geometry();
+    assert_eq!((geometry.lines().len(), geometry.circles().len()), (4, 2));
+    let line = geometry.lines()[0].id;
+    let segment = [world.line_point(0, 0.35), world.line_point(0, 0.65)];
+    let midpoint = std::array::from_fn(|axis| (segment[0][axis] + segment[1][axis]) / 2);
+    world.click(midpoint);
+    assert_eq!(
+        world.state().sketch_selection.entities,
+        [(edit.sketch, line)]
+    );
+    world.click([1300, 700]);
+    let [group_edge, first_circle, second_circle] = grouped_samples(&mut world, edit, second);
+    let unselected = super::super::capture_framebuffer(&mut world.app().window.native);
+    world.click_text("Rib:2");
+    assert_eq!(
+        world.state().sketch_selection.entities,
+        [(edit.sketch, second)]
+    );
+    let selected = super::super::capture_framebuffer(&mut world.app().window.native);
+    assert!(segment_color_changed(&unselected, &selected, group_edge));
+    assert!(segment_color_changed(&unselected, &selected, first_circle));
+    assert!(segment_color_changed(&unselected, &selected, second_circle));
+    assert!(
+        !segment_color_changed(&unselected, &selected, segment),
+        "selecting the second instance changed the exploded edge"
+    );
+    world.close();
+}
+
+fn grouped_samples(
+    world: &mut ApplicationWorld,
+    edit: crate::HeadSketchEdit,
+    id: oblikovati_model::sketch::SketchEntityId,
+) -> [[[i32; 2]; 2]; 3] {
+    let snapshot = world
+        .app()
+        .owner
+        .documents()
+        .workspace()
+        .session(edit.document)
+        .unwrap()
+        .snapshot();
+    let instance = snapshot
+        .sketches
+        .get(edit.sketch)
+        .unwrap()
+        .block_instances()
+        .iter()
+        .find(|instance| instance.id() == id)
+        .unwrap()
+        .clone();
+    let geometry = snapshot
+        .sketches
+        .block_definitions()
+        .iter()
+        .find(|definition| definition.name() == instance.definition())
+        .unwrap()
+        .geometry()
+        .clone();
+    let endpoints = geometry.lines()[0]
+        .endpoints
+        .map(|id| geometry.point(id).unwrap().position);
+    let edge = endpoints.map(|point| instance.to_sketch(point).unwrap());
+    let circles = geometry
+        .circles()
+        .iter()
+        .map(|circle| {
+            let center = geometry.point(circle.center).unwrap().position;
+            instance
+                .to_sketch([center[0] + circle.radius, center[1]])
+                .unwrap()
+        })
+        .collect::<Vec<_>>();
+    let pixel = |world: &mut ApplicationWorld, point| {
+        world.app().window.sketch_pixel(edit.plane, point).unwrap()
+    };
+    let a = pixel(world, edge[0]);
+    let b = pixel(world, edge[1]);
+    let c = pixel(world, circles[0]);
+    let d = pixel(world, circles[1]);
+    [[a, b], [c, c], [d, d]]
+}
+
+fn add_two_test_circles(world: &mut ApplicationWorld, edit: crate::HeadSketchEdit) -> Vec<u64> {
+    world
+        .app()
+        .owner
+        .document_commands(edit.document)
+        .run("Prepare two circles", |snapshot, ids| {
+            let mut geometry = snapshot
+                .sketches
+                .get(edit.sketch)
+                .unwrap()
+                .geometry()
+                .clone();
+            let points: Vec<_> = geometry
+                .lines()
+                .iter()
+                .flat_map(|line| line.endpoints)
+                .map(|id| geometry.point(id).unwrap().position)
+                .collect();
+            let bounds = [0, 1].map(|axis| {
+                points
+                    .iter()
+                    .map(|point| point[axis])
+                    .fold([f64::INFINITY, f64::NEG_INFINITY], |[lo, hi], value| {
+                        [lo.min(value), hi.max(value)]
+                    })
+            });
+            let radius = (bounds[0][1] - bounds[0][0]).min(bounds[1][1] - bounds[1][0]) / 8.0;
+            let mut circles = Vec::new();
+            for fraction in [1.0 / 3.0, 2.0 / 3.0] {
+                let center = ids.allocate_sketch_entity().unwrap();
+                let circle = ids.allocate_sketch_entity().unwrap();
+                geometry
+                    .add_point(
+                        center,
+                        [
+                            bounds[0][0] + fraction * (bounds[0][1] - bounds[0][0]),
+                            (bounds[1][0] + bounds[1][1]) / 2.0,
+                        ],
+                    )
+                    .unwrap();
+                geometry.add_circle(circle, center, radius).unwrap();
+                circles.push(circle.0);
+            }
+            snapshot
+                .sketches
+                .replace_geometry(edit.sketch, geometry)
+                .unwrap();
+            Ok::<_, String>(circles)
+        })
+        .unwrap()
+}
+
+#[test]
 fn place_block_context_menu_repeats_and_escape_cancels() {
     let mut world = ApplicationWorld::new();
     world.start_empty_sketch();
