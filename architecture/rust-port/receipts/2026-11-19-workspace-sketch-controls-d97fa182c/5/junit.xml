@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:14:48.675722823Z" time="10.191291779"><testcase name="Scenario: Show and hide extended feature names in the browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:455:3" time="10.191291779"><system-out><![CDATA[  Scenario: Show and hide extended feature names in the browser
+   ✔  Given a part with a 20 mm new-solid extrusion is active in the MCAD Software
+   ✔  And Show Extended Names is unchecked in browser Display Preferences
+   ✔  And the extrusion is displayed with its short feature name
+   ✔  When the user selects Show Extended Names
+   ✔  Then the extrusion's browser label includes its new-solid operation and 20 mm depth
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user reopens browser Display Preferences
+   ✔  Then Show Extended Names is checked
+   ✔  When the user selects Show Extended Names again
+   ✔  Then the extrusion is displayed with its short feature name
+   ✔  And the solid remains visible in the viewport
+]]></system-out></testcase></testsuite></testsuites>

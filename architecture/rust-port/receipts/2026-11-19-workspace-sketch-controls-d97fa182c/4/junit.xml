@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:14:37.788142718Z" time="10.059133652"><testcase name="Scenario: Hide and restore work-feature entries in the part browser: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:441:3" time="10.059133652"><system-out><![CDATA[  Scenario: Hide and restore work-feature entries in the part browser
+   ✔  Given a part document is open in the MCAD Software with a sketch being edited
+   ✔  And the model browser shows an expanded Origin branch
+   ✔  And Hide Work Features is unchecked in browser Display Preferences
+   ✔  When the user selects Hide Work Features
+   ✔  Then the Origin branch is hidden from the browser
+   ✔  And the sketch entries and sketch viewport remain visible
+   ✔  When the user reopens browser Display Preferences
+   ✔  Then Hide Work Features is checked
+   ✔  When the user selects Hide Work Features again
+   ✔  Then the Origin branch returns to the browser in a collapsed state
+   ✔  And the sketch entries and sketch viewport remain visible
+]]></system-out></testcase></testsuite></testsuites>
