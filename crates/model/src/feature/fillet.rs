@@ -140,18 +140,29 @@ fn validate_edges(
     edges: Vec<Vec<u8>>,
     operation: &str,
 ) -> Result<(Vec<Vec<u8>>, Vec<FeatureId>), String> {
-    if edges.is_empty() {
+    validate_topology_keys(document, body, edges, 2, "edge", operation)
+}
+
+pub(super) fn validate_topology_keys(
+    document: DocumentGuid,
+    body: FeatureId,
+    keys: Vec<Vec<u8>>,
+    kind: u32,
+    entity: &str,
+    operation: &str,
+) -> Result<(Vec<Vec<u8>>, Vec<FeatureId>), String> {
+    if keys.is_empty() {
         return Err(format!(
-            "{operation} edges []: expected at least one named edge"
+            "{operation} {entity}s []: expected at least one named {entity}"
         ));
     }
     let mut unique = BTreeSet::new();
     let mut sources = BTreeSet::from([body]);
-    for key in edges {
-        let (edge_document, source) = reference_identity(&key, 2, operation)?;
+    for key in keys {
+        let (edge_document, source) = reference_identity(&key, kind, operation)?;
         if edge_document != document || !unique.insert(key.clone()) {
             return Err(format!(
-                "{operation} edge {key:?}: expected one occurrence in document {document:?}"
+                "{operation} {entity} {key:?}: expected one occurrence in document {document:?}"
             ));
         }
         sources.insert(source);
@@ -159,7 +170,7 @@ fn validate_edges(
     Ok((unique.into_iter().collect(), sources.into_iter().collect()))
 }
 
-fn validate_radius_source(radius: DatumLength, operation: &str) -> Result<(), String> {
+pub(super) fn validate_radius_source(radius: DatumLength, operation: &str) -> Result<(), String> {
     radius
         .validate_source()
         .map_err(|cause| cause.to_string())?;
