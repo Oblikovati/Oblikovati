@@ -233,9 +233,11 @@ fn browser_quarter_width(world: &mut ApplicationWorld) {
 fn viewport_shares_browser_edge(world: &mut ApplicationWorld) {
     let (browser, size) = geometry("Model");
     let area = viewport_area(world);
+    let browser_right = super::super::diagnostics::pointer_pixels([browser[0] + size[0], 0.])[0];
+    let splitter = super::dock_splitter::right_splitter("Model", browser_right, area[0] as i32);
     assert!(
-        (browser[0] + size[0] - area[0] as f32).abs() <= 1.,
-        "browser {browser:?} / {size:?}, viewport {area:?}"
+        splitter.is_some(),
+        "browser {browser:?} / {size:?}, viewport {area:?}: expected the actual dock splitter between both regions"
     );
 }
 

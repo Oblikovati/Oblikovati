@@ -21,6 +21,8 @@ mod browser_search_axes;
 mod browser_sketch_native;
 #[path = "browser_tree.rs"]
 pub(super) mod browser_tree;
+#[path = "dock_splitter.rs"]
+mod dock_splitter;
 #[cfg(target_os = "linux")]
 #[path = "dockspace_native.rs"]
 pub(super) mod dockspace_native;
