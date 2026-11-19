@@ -19,8 +19,9 @@ using this status; the live scenario directory can change.
   applied off and on, and HUD input controls retain their values on Cancel.
   Line scenario `line-30` now keeps the Background sketch, but its measurement
   fixture needs independent source coordinates (#4150).
-- Sketch visibility (#4151): both scenarios stopped at their first unbound
-  setup step in the complete native baseline at `a85d6f9a0`.
+- Sketch visibility (#4151): the complete native run at `e82b8006b` passed
+  both scenarios and 17 steps. Isolation preserves earlier body visibility;
+  a native regression also checks restoration when the sketch is finished.
 - Model browser: the full native run at `0890f84e0` passed 97 of 100
   scenarios against feature SHA-256
   `603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e`.
@@ -33,7 +34,7 @@ using this status; the live scenario directory can change.
   cases, including both outline examples. Its inventory counts 49 of 51
   declarations. The spacing and User Interface menu scenarios remain
   incomplete; their source questions are in the feature's `BLOCKERS.md`.
-- The current feature-run inventory has 13 green features and 403 passing
+- The current feature-run inventory has 14 green features and 405 passing
   scenario declarations out of 3,088, across 256 features. These counts are
   tied to source hashes and must be regenerated when the scenario source changes.
 - Sketch constraint-glyph hover passed its complete one-scenario native run at

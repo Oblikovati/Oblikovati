@@ -506,15 +506,15 @@
       "features/sketch/sketch-visibility/VISUAL.md": "a93af486c0c006ce978e59a3600e0e38f9eda0fba3e7e427f08cf3b7e62f6827",
       "features/sketch/sketch-visibility/sketch-visibility-icon.svg": "e7e6a371764a17f789fd61a76f5bbb970b1d1e1eb6b8013330a8fad7f4fc99bd"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-19-sketch-visibility-baseline-a85d6f9a0/cucumber.json",
-    "cucumber_sha256": "491081f9045caab4cbead01a1d97f2934ec9e2242731ad3df7d0ebcbdf4de5ab",
-    "application_commit": "a85d6f9a0",
-    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=sketch-visibility OBK_BDD_REPORTS=/tmp/obk-sketch-visibility-a85d6f9a0/run cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-sketch-visibility-full-e82b8006b/cucumber.json",
+    "cucumber_sha256": "7769e18098a5c27b66c50df7c315eed11f69e0a85549bb9e0d09cc2117526be5",
+    "application_commit": "e82b8006b",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=sketch-visibility OBK_BDD_REPORTS=/tmp/obk-sketch-visibility-full-e82b8006b/run cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan lavapipe",
-    "notes": "Full baseline: both scenarios stopped at their first unbound step. Feature and supporting file hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
-    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-sketch-visibility-baseline-a85d6f9a0/scenario-inventory.json",
+    "notes": "Full feature: both scenarios and 17 steps passed against a native extruded-part fixture. Feature and supporting file hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-sketch-visibility-full-e82b8006b/scenario-inventory.json",
     "scenario_inventory_sha256": "13c70b5229ded138a118a8195f4207e4ae10a852b54bcfd3344bf14d3ec4f924",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-sketch-visibility-baseline-a85d6f9a0/scenario-arguments.json",
-    "scenario_arguments_sha256": "449a77f76b6acd533f46e4e60316427d058c0a158b3ff6208ade9d425554a116"
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-sketch-visibility-full-e82b8006b/scenario-arguments.json",
+    "scenario_arguments_sha256": "57efc7c63c17673ba60aefa373a69a6d56ed6467b65e69c5ab8dad97ac080314"
   }
 }
