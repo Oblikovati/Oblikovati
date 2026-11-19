@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:12:27.026472001Z" time="10.338869735"><testcase name="Scenario: Expand and collapse nested entries in the solid-bodies folder: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:586:3" time="10.338869735"><system-out><![CDATA[  Scenario: Expand and collapse nested entries in the solid-bodies folder
+   ✔  Given a part with one solid body made from an extrusion and sketch is active in the MCAD Software
+   ✔  And the Solid Bodies folder is collapsed in the model browser
+   ✔  When the user right-clicks Solid Bodies
+   ✔  Then its context menu offers Visibility, Expand All Children and Collapse All Children
+   ✔  When the user chooses Expand All Children
+   ✔  Then the folder displays the body row
+   ✔  And the body displays its extrusion and underlying sketch as nested rows
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user right-clicks Solid Bodies and chooses Collapse All Children
+   ✔  Then the body row remains visible beneath the folder
+   ✔  And the extrusion and sketch rows beneath that body are hidden
+   ✔  And the solid remains visible in the viewport
+]]></system-out></testcase></testsuite></testsuites>
