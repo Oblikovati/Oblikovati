@@ -5,7 +5,7 @@ use crate::{
     dockable_window::DockableWindow,
     model_state_table_cells::{parse_cell, property_text},
 };
-use imgui::{TableFlags, Ui};
+use imgui::{ImColor32, TableBgTarget, TableFlags, Ui};
 use oblikovati_api::{
     types::{MODEL_STATE_TABLE_PROPERTY_COLUMN, ModelStatePropertyKey, VariantValue},
     wire::{
@@ -384,6 +384,13 @@ impl ModelStateTable {
         let mut row_action = None;
         for (index, row) in rows.iter().enumerate() {
             ui.table_next_row();
+            if row.ref_.member_id != 0 && row.ref_.member_id == view.active_member_id {
+                // #4130: show which committed member supplies the tree values.
+                ui.table_set_bg_color(
+                    TableBgTarget::ROW_BG0,
+                    ImColor32::from_rgba(184, 224, 184, 255),
+                );
+            }
             ui.table_next_column();
             let _id = ui.push_id(row_key(&row.ref_));
             ui.small_button(format!("{}##row", index + 1));

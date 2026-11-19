@@ -63,6 +63,8 @@ mod model_state_table_suppression_steps;
 #[cfg(target_os = "linux")]
 #[path = "model_state_table_verify_steps.rs"]
 mod model_state_table_verify_steps;
+#[path = "model_state_tree_values.rs"]
+mod model_state_tree_values;
 #[path = "model_states.rs"]
 mod model_states;
 #[path = "origin_rows.rs"]
