@@ -52,6 +52,7 @@ mod work_datum;
 mod work_blend;
 mod work_drawing;
 mod work_hole;
+mod work_inference_scope;
 mod work_move_body;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[macro_use]

@@ -25,6 +25,10 @@ pub struct GuiCommandState {
     pub dimension_labels: Vec<crate::GuiDimensionLabel>,
     pub dimension_draft: Option<crate::GuiDimensionDraft>,
     pub sketch_selection: oblikovati_viewport::ViewportSketchSelection,
+    /// Applied scope for the active sketch session, if available.
+    pub sketch_inference_scope: Option<oblikovati_api::wire::SketchInferenceScopeView>,
+    /// Explain an invalid saved selection until a replacement is accepted.
+    pub sketch_inference_scope_error: Option<String>,
     /// Transient type cue for a checked canvas pick.
     pub sketch_pick_cue: Option<crate::GuiSketchPickCue>,
     /// Transient type cue for a checked model face pick.

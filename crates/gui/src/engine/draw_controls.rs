@@ -129,7 +129,12 @@ impl GuiFrameEngine {
             &mut self.home,
             &mut selected,
         );
+        let mut open_inference_scope = false;
         selected.retain(|action| {
+            if matches!(action, GuiShellAction::OpenInferenceScope) {
+                open_inference_scope = true;
+                return false;
+            }
             if let GuiShellAction::OpenClearBodyAppearance { document } = action {
                 self.clear_appearance.open(*document);
                 return false;
@@ -148,6 +153,13 @@ impl GuiFrameEngine {
             }
             true
         });
+        super::inference_dialog::draw(
+            &mut self.inference_scope,
+            ui,
+            &request.commands,
+            &mut selected,
+            open_inference_scope,
+        );
         self.metadata.panel(ui, &request.commands, &mut selected);
         self.clear_appearance
             .panel(ui, &request.commands, &mut selected);
@@ -431,18 +443,7 @@ impl GuiFrameEngine {
             || self.ribbon.tips.consumed
             || self.workspace.browser_consumed_arrow()
             || self.ribbon.customization.navigation_consumed;
-        let arrow_press = request.events.iter().any(|event| {
-            matches!(
-                event,
-                GuiInputEvent::Key {
-                    key: crate::GuiKey::LeftArrow
-                        | crate::GuiKey::RightArrow
-                        | crate::GuiKey::UpArrow
-                        | crate::GuiKey::DownArrow,
-                    pressed: true
-                }
-            )
-        });
+        let arrow_press = super::frame_inputs::has_arrow_press(request);
         // ImGui can queue the first navigation move before it exposes the focus highlight (#3874).
         if arrow_press && activity.pending_navigation && !keys.tool_keyboard {
             capture.keyboard = true;

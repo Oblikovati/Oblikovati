@@ -5,6 +5,7 @@ pub(crate) mod constraint_glyphs;
 pub(crate) mod create_block;
 #[path = "dimension-edit/mod.rs"]
 pub(crate) mod dimension_edit;
+pub(crate) mod inference_scope;
 #[path = "inspect.rs"]
 pub(crate) mod inspect;
 #[path = "line/mod.rs"]

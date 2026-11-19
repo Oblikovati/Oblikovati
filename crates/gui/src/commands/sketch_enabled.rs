@@ -18,3 +18,21 @@ pub(super) fn delete_selection(state: &GuiCommandState) -> bool {
         && state.sketch_delete_available
         && !state.transaction_open
 }
+
+pub(super) fn select_browser_block(
+    state: &GuiCommandState,
+    document: u64,
+    sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    instance: oblikovati_model::sketch::SketchEntityId,
+) -> bool {
+    state.document == Some(document)
+        && state.authoring == GuiAuthoringContext::Sketch
+        && state.sketch_at_ready
+        && !state.transaction_open
+        && state.browser.as_ref().is_some_and(|browser| {
+            browser
+                .block_instances
+                .iter()
+                .any(|row| row.sketch == sketch && row.id == instance)
+        })
+}

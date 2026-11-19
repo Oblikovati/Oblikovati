@@ -427,6 +427,18 @@ impl<
     }
     desktop_selection_work!();
     desktop_document_work!();
+    fn select_inference_geometry_from_gui(
+        &mut self,
+        entities: Option<&[u64]>,
+    ) -> Result<bool, String> {
+        self.select_inference_geometry(entities)
+    }
+    fn set_inference_scope_from_gui(
+        &mut self,
+        scope: &oblikovati_api::wire::SketchInferenceScopeView,
+    ) -> Result<bool, String> {
+        self.set_active_inference_scope(scope)
+    }
     fn select_block_geometry_from_gui(&mut self, active: bool) -> Result<bool, String> {
         self.set_block_selection(active)
     }

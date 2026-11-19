@@ -366,6 +366,18 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.create_document_template(template)
         }
+        fn select_inference_geometry_from_gui(
+            &mut self,
+            entities: Option<&[u64]>,
+        ) -> Result<bool, String> {
+            self.$owner.select_inference_geometry_from_gui(entities)
+        }
+        fn set_inference_scope_from_gui(
+            &mut self,
+            scope: &oblikovati_api::wire::SketchInferenceScopeView,
+        ) -> Result<bool, String> {
+            self.$owner.set_inference_scope_from_gui(scope)
+        }
         fn select_block_geometry_from_gui(&mut self, active: bool) -> Result<bool, String> {
             self.$owner.select_block_geometry_from_gui(active)
         }

@@ -45,6 +45,7 @@ impl<
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
+        let (inference_scope, inference_scope_error) = self.gui_inference_scope()?;
         Ok(oblikovati_gui::GuiCommandState {
             window_maximized: false,
             selection_mode: self.selection_mode,
@@ -82,6 +83,8 @@ impl<
             dimension_labels: Vec::new(),
             sketch_delete_available: self.sketch_delete_available(document),
             sketch_selection: browser_selection::gui_sketch_selection(session),
+            sketch_inference_scope: inference_scope,
+            sketch_inference_scope_error: inference_scope_error,
             sketch_pick_cue: self.gui_sketch_pick_cue(),
             model_pick_cue: self.gui_model_pick_cue(),
             sketch_block_names: session
@@ -231,6 +234,44 @@ impl<
             repeat_command: self.sketch_memory.repeat_command,
             line_command: self.gui_line_command_menu(),
         })
+    }
+    fn gui_inference_scope(
+        &self,
+    ) -> Result<
+        (
+            Option<oblikovati_api::wire::SketchInferenceScopeView>,
+            Option<String>,
+        ),
+        String,
+    > {
+        let Some(edit) = self.active_sketch_edit() else {
+            return Ok((None, None));
+        };
+        let session = self
+            .files
+            .workspace()
+            .session(edit.document)
+            .map_err(|error| error.to_string())?;
+        let sketch_index =
+            crate::sketch_geometric::wire_sketch_index(&session.snapshot().sketches, edit.sketch)?;
+        let (scope, entities, error) = match session.sketch_inference_scope(edit.sketch) {
+            Ok(scope) => (
+                scope.mode().clone(),
+                scope.selected().iter().map(|id| id.0).collect(),
+                None,
+            ),
+            Err(error) => (
+                oblikovati_api::types::INFERENCE_SCOPE_CURRENT_COMMAND,
+                Vec::new(),
+                Some(error.to_string()),
+            ),
+        };
+        let view = oblikovati_api::wire::SketchInferenceScopeView {
+            sketch_index,
+            scope,
+            entities: Some(entities),
+        };
+        Ok((Some(view), error))
     }
     fn gui_drawing_documents(
         &self,

@@ -51,7 +51,11 @@ pub(super) fn draw(
         {
             continue;
         }
-        let action = (label == "Move Bodies").then_some(GuiShellAction::OpenMoveBody);
+        let action = match label {
+            "Move Bodies" => Some(GuiShellAction::OpenMoveBody),
+            "Constraint Inference Scope" => Some(GuiShellAction::OpenInferenceScope),
+            _ => None,
+        };
         let coordinate = coordinate_restriction::ready(label, context.state);
         let disabled = ui.begin_disabled(
             !coordinate
@@ -62,14 +66,18 @@ pub(super) fn draw(
         let clicked = ui.button(label);
         if clicked && coordinate {
             coordinate_restriction::open(ui);
-        } else if clicked && let Some(action) = action {
-            context.actions.push(action);
+        } else if clicked && let Some(action) = action.as_ref() {
+            context.actions.push(action.clone());
         }
         drop(disabled);
         if label == "Move Bodies" && context.owners.key_tips_active {
             crate::ribbon_key_tips::badge(ui, "OD");
         }
-        unavailable_tooltip(ui, tab, panel, label, display, coordinate);
+        let available = coordinate
+            || action
+                .as_ref()
+                .is_some_and(|action| action.dispatchable(context.state));
+        unavailable_tooltip(ui, tab, panel, label, display, available);
         if label == coordinate_restriction::LABEL {
             coordinate_restriction::dialog(ui);
         }
@@ -92,7 +100,11 @@ fn additional_icons(
         }
         let (position, size) = icons.appearance.cell(index);
         icons.cursor(ui, origin, position);
-        let action = (label == "Move Bodies").then_some(GuiShellAction::OpenMoveBody);
+        let action = match label {
+            "Move Bodies" => Some(GuiShellAction::OpenMoveBody),
+            "Constraint Inference Scope" => Some(GuiShellAction::OpenInferenceScope),
+            _ => None,
+        };
         let coordinate = coordinate_restriction::ready(label, context.state);
         let disabled = ui.begin_disabled(
             !coordinate
@@ -103,14 +115,18 @@ fn additional_icons(
         let clicked = icons.button(ui, label, glyph, size);
         if clicked && coordinate {
             coordinate_restriction::open(ui);
-        } else if clicked && let Some(action) = action {
-            context.actions.push(action);
+        } else if clicked && let Some(action) = action.as_ref() {
+            context.actions.push(action.clone());
         }
         drop(disabled);
         if label == "Move Bodies" && context.owners.key_tips_active {
             crate::ribbon_key_tips::badge(ui, "OD");
         }
-        unavailable_tooltip(ui, tab, panel, label, display, coordinate);
+        let available = coordinate
+            || action
+                .as_ref()
+                .is_some_and(|action| action.dispatchable(context.state));
+        unavailable_tooltip(ui, tab, panel, label, display, available);
         if label == coordinate_restriction::LABEL {
             coordinate_restriction::dialog(ui);
         }

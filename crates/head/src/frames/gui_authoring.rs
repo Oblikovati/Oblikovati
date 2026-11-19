@@ -21,6 +21,11 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::SetKeymap(delta) => owner.set_keymap_from_gui(delta),
         GuiShellAction::PlaceSketchBlock(name) => owner.place_sketch_block_from_gui(name),
         GuiShellAction::UpdatePart => owner.update_part_from_gui(),
+        GuiShellAction::SelectInferenceGeometry(entities) => {
+            owner.select_inference_geometry_from_gui(entities.as_deref())
+        }
+        GuiShellAction::SetInferenceScope(scope) => owner.set_inference_scope_from_gui(scope),
+        GuiShellAction::OpenInferenceScope => Ok(false),
         GuiShellAction::SelectBlockGeometry(active) => {
             owner.select_block_geometry_from_gui(*active)
         }

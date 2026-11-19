@@ -77,17 +77,15 @@ impl GuiShellAction {
                 sketch,
                 instance,
                 ..
-            } => {
-                state.document == Some(*document)
-                    && state.authoring == GuiAuthoringContext::Sketch
-                    && state.sketch_at_ready
+            } => sketch_enabled::select_browser_block(state, *document, *sketch, *instance),
+            Self::OpenInferenceScope => {
+                state.sketch_at_ready
+                    && state.sketch_inference_scope.is_some()
                     && !state.transaction_open
-                    && state.browser.as_ref().is_some_and(|browser| {
-                        browser
-                            .block_instances
-                            .iter()
-                            .any(|row| row.sketch == *sketch && row.id == *instance)
-                    })
+            }
+            Self::SelectInferenceGeometry(None) => true,
+            Self::SelectInferenceGeometry(Some(_)) | Self::SetInferenceScope(_) => {
+                state.sketch_at_ready && !state.transaction_open
             }
             Self::SelectBlockGeometry(false) => true,
             Self::SelectBlockGeometry(true) => state.sketch_at_ready && !state.transaction_open,

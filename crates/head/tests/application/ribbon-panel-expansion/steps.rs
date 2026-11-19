@@ -454,3 +454,7 @@ fn customization_closed_with_model_ribbon(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Customize").is_none());
     world.expect_text("Start 2D Sketch");
 }
+
+#[cfg(target_os = "linux")]
+#[path = "sketch_inference_scope_native.rs"]
+mod sketch_inference_scope_native;
