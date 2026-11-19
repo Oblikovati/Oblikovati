@@ -6,6 +6,45 @@ use crate::HeadWindow;
 use oblikovati_viewport::{ViewportKey, ViewportPhysicalKey};
 
 #[test]
+fn explode_instance_from_browser_menu_and_undo_redo() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    world.draw_rectangle();
+    world.escape();
+    let edit = world.app().owner.active_sketch_edit().unwrap();
+    let line = world.edited_geometry().lines()[0].id;
+    world
+        .app()
+        .owner
+        .document_commands(edit.document)
+        .run("Capture block", |snapshot, _| {
+            snapshot
+                .sketches
+                .capture_block_definition("Rib", edit.sketch, &[line])
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    start_block_from_browser(&mut world);
+    world.click([1100, 550]);
+    world.escape();
+    let before = world.edited_geometry().lines().len();
+    let row = world.run("Rib:1").center();
+    world.right_click(diagnostics::pointer_pixels(row));
+    world.click_text("Explode");
+    world.pump(Vec::new());
+    world.expect_no_text("Rib:1");
+    assert_eq!(world.edited_geometry().lines().len(), before + 1);
+    assert_eq!(world.state().sketch_block_names, ["Rib"]);
+    world.command_key(ViewportPhysicalKey::Z, ViewportKey::Undo);
+    world.expect_text("Rib:1");
+    assert_eq!(world.edited_geometry().lines().len(), before);
+    world.command_key(ViewportPhysicalKey::Y, ViewportKey::Redo);
+    world.expect_no_text("Rib:1");
+    assert_eq!(world.edited_geometry().lines().len(), before + 1);
+    world.close();
+}
+
+#[test]
 fn place_block_context_menu_repeats_and_escape_cancels() {
     let mut world = ApplicationWorld::new();
     world.start_empty_sketch();

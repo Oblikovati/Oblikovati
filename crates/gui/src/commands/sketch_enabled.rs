@@ -19,6 +19,15 @@ pub(super) fn delete_selection(state: &GuiCommandState) -> bool {
         && !state.transaction_open
 }
 
+pub(super) fn create_block(state: &GuiCommandState, name: &str) -> bool {
+    state.sketch_at_ready
+        && !state.transaction_open
+        && !name.trim().is_empty()
+        && !name.contains('\0')
+        && !state.sketch_block_names.iter().any(|item| item == name)
+        && !state.sketch_selection.entities.is_empty()
+}
+
 pub(super) fn select_browser_block(
     state: &GuiCommandState,
     document: u64,

@@ -116,6 +116,20 @@ fn block_instance_row(
     if crate::widget_abi::selectable(ui, "##block-instance", selected, true) {
         actions.push(action);
     }
+    if let Some(_popup) = ui.begin_popup_context_item() {
+        let explode = GuiShellAction::ExplodeSketchBlock {
+            document: state.document.unwrap_or(0),
+            sketch: instance.sketch,
+            instance: instance.id,
+        };
+        if ui
+            .menu_item_config("Explode")
+            .enabled(explode.dispatchable(state))
+            .build()
+        {
+            actions.push(explode);
+        }
+    }
     crate::widget_abi::literal_text(
         ui,
         position,

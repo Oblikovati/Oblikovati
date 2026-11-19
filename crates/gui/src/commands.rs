@@ -17,6 +17,12 @@ pub enum GuiShellAction {
     SetInferenceScope(oblikovati_api::wire::SketchInferenceScopeView),
     /// Group the editor's current checked selection under this name.
     CreateSketchBlock(String),
+    /// Replace one placed block with its independent sketch members.
+    ExplodeSketchBlock {
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        instance: oblikovati_model::sketch::SketchEntityId,
+    },
     SetDocumentUnits {
         document: u64,
         request: oblikovati_api::wire::SetDocumentUnitsArgs,

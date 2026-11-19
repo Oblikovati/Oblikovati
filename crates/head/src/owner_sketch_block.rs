@@ -142,6 +142,32 @@ impl<
         self.block_created = Some(name.into());
         Ok(true)
     }
+    pub(super) fn explode_browser_sketch_block(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        instance: oblikovati_model::sketch::SketchEntityId,
+    ) -> Result<bool, String> {
+        let edit = self.active_sketch_edit().filter(|edit| edit.document == document && edit.sketch == sketch)
+            .ok_or_else(|| format!("block instance {instance:?} in sketch {sketch:?}: expected the active edited sketch"))?;
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let sketch_index =
+            crate::sketch_geometric::wire_sketch_index(&session.snapshot().sketches, sketch)?;
+        let request = oblikovati_api::wire::ExplodeSketchBlockArgs {
+            sketch_index,
+            instance_id: instance.0,
+        };
+        oblikovati_api::client::Client::new(self.document_host())
+            .sketch()
+            .explode_block_instance(&request)
+            .map_err(|cause| cause.to_string())?;
+        self.store_sketch_click(edit, None, SelectionClickMode::Replace)?;
+        Ok(true)
+    }
     fn block_creation_request(
         &self,
         name: &str,

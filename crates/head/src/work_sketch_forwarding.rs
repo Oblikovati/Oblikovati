@@ -17,6 +17,15 @@ macro_rules! forward_owner_sketch_work {
         fn place_sketch_block_from_gui(&mut self, name: &str) -> Result<bool, String> {
             self.$owner.place_sketch_block_from_gui(name)
         }
+        fn explode_sketch_block_from_gui(
+            &mut self,
+            document: u64,
+            sketch: oblikovati_model::document_sketch::DocumentSketchId,
+            instance: oblikovati_model::sketch::SketchEntityId,
+        ) -> Result<bool, String> {
+            self.$owner
+                .explode_sketch_block_from_gui(document, sketch, instance)
+        }
         fn set_sketch_line_style_from_gui(
             &mut self,
             document: u64,

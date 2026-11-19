@@ -32,6 +32,11 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
             owner.select_block_geometry_from_gui(*active)
         }
         GuiShellAction::CreateSketchBlock(name) => owner.create_sketch_block_from_gui(name),
+        GuiShellAction::ExplodeSketchBlock {
+            document,
+            sketch,
+            instance,
+        } => owner.explode_sketch_block_from_gui(*document, *sketch, *instance),
         GuiShellAction::SetDocumentUnits { document, request } => {
             owner.set_document_units_from_gui(*document, request)
         }

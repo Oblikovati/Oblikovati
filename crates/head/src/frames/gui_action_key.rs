@@ -72,6 +72,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::SetSketchVisibility { .. }
         | GuiShellAction::SelectBrowserSketch { .. }
         | GuiShellAction::SelectBrowserBlock { .. }
+        | GuiShellAction::ExplodeSketchBlock { .. }
         | GuiShellAction::SelectBrowserFeature { .. }
         | GuiShellAction::BrowserChoice { .. }
         | GuiShellAction::SetSketchLineStyle { .. }

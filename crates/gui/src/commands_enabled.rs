@@ -81,6 +81,11 @@ impl GuiShellAction {
                 sketch,
                 instance,
                 ..
+            }
+            | Self::ExplodeSketchBlock {
+                document,
+                sketch,
+                instance,
             } => sketch_enabled::select_browser_block(state, *document, *sketch, *instance),
             Self::OpenInferenceScope => {
                 state.sketch_at_ready
@@ -93,14 +98,7 @@ impl GuiShellAction {
             }
             Self::SelectBlockGeometry(false) => true,
             Self::SelectBlockGeometry(true) => state.sketch_at_ready && !state.transaction_open,
-            Self::CreateSketchBlock(name) => {
-                state.sketch_at_ready
-                    && !state.transaction_open
-                    && !name.trim().is_empty()
-                    && !name.contains('\0')
-                    && !state.sketch_block_names.contains(name)
-                    && !state.sketch_selection.entities.is_empty()
-            }
+            Self::CreateSketchBlock(name) => sketch_enabled::create_block(state, name),
             Self::SetDocumentUnits { document, .. } => {
                 state.document == Some(*document)
                     && state.document_units.is_some()

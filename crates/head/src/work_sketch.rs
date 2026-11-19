@@ -55,6 +55,17 @@ pub trait HeadSketchWork {
             "block name {name:?}: expected an active sketch owner"
         ))
     }
+    /// Explode a selected browser placement; example: `work.explode_sketch_block_from_gui(document, sketch, instance)`.
+    fn explode_sketch_block_from_gui(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        instance: oblikovati_model::sketch::SketchEntityId,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "block instance {instance:?} in sketch {sketch:?} of document {document}: expected an active sketch owner"
+        ))
+    }
     /// Save the sketch options; example: `work.set_sketch_options_from_gui(options)`.
     fn set_sketch_options_from_gui(
         &mut self,

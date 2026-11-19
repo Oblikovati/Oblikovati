@@ -271,6 +271,14 @@ impl<
     fn create_sketch_block_from_gui(&mut self, name: &str) -> Result<bool, String> {
         self.create_selected_sketch_block(name)
     }
+    fn explode_sketch_block_from_gui(
+        &mut self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        instance: oblikovati_model::sketch::SketchEntityId,
+    ) -> Result<bool, String> {
+        self.explode_browser_sketch_block(document, sketch, instance)
+    }
     fn constrain_sketch_from_gui(
         &mut self,
         choice: oblikovati_gui::GuiSketchConstraint,
