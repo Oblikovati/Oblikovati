@@ -24,6 +24,7 @@ fn open_state_menu(world: &mut ApplicationWorld) {
 }
 
 #[then("it offers New Model State, Expand All Children and Collapse All Children")]
+#[then("it offers New Model State, Expand All Children and collapses All Children")]
 fn state_menu_options(world: &mut ApplicationWorld) {
     expect_rows(
         world,
@@ -33,6 +34,20 @@ fn state_menu_options(world: &mut ApplicationWorld) {
             "Collapse All Children",
         ],
     );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_model_state_menu_shows_creation_and_tree_actions() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    let point = super::super::diagnostics::pointer_pixels(world.run("Model State").center());
+    super::super::x11_input::right_click(point);
+    world.pump(Vec::new());
+    state_menu_options(&mut world);
+    super::super::x11_input::press_escape();
+    world.pump(Vec::new());
+    world.close();
 }
 
 #[when("I open the New Model State submenu")]
