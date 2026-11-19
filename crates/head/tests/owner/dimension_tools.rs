@@ -486,5 +486,7 @@ fn placed_editor_rejects_a_different_sketch_or_constraint() {
     }
 }
 
+#[path = "dimension_tools/creation_setting.rs"]
+mod creation_setting;
 #[path = "dimension_tools/prompt.rs"]
 mod prompt;
