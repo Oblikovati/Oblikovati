@@ -411,6 +411,7 @@ fn bodies_collapsed(world: &mut ApplicationWorld) {
     world.expect_no_text(BODY);
 }
 #[when("I right-click Solid Bodies")]
+#[when("the user right-clicks Solid Bodies")]
 fn right_click_bodies(world: &mut ApplicationWorld) {
     right_click_row(world, "Solid Bodies");
 }
