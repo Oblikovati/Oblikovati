@@ -459,5 +459,24 @@
     "scenario_inventory_sha256": "c4fe86998c8b053dd4505cbcce28704cf8279d0c4be561b2f6ceb64187ebaac0",
     "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-dof-baseline-bfe5edc49/scenario-arguments.json",
     "scenario_arguments_sha256": "d244bd6fa81bfbc0263127e52a4aff4268917ffe2e807b918946add06d17df2d"
+  },
+  "features/sketch/constraint-glyph-hover/constraint-glyph-hover.feature": {
+    "feature_sha256": "5d30dc6745bfc4bf6415c21558d7d6ff3cae1df3b50862583a87ebd4e38f2926",
+    "supporting_files": {
+      "features/sketch/constraint-glyph-hover/BLOCKERS.md": "9fa2c5c40fafc96ad9fffde407bf8d8568e28498d20d1d88c15acff03b5008a5",
+      "features/sketch/constraint-glyph-hover/FIXTURES.md": "a0549cafcc7eafce3df322d50c390ae3b61fb12fb07009802654d18bbdbdbf62",
+      "features/sketch/constraint-glyph-hover/FUNCTIONAL.md": "c25a246a8351d5232567628aeb8c1b3d060ef5754168146b783e4ed1a777debc",
+      "features/sketch/constraint-glyph-hover/VISUAL.md": "20e7dc430fe0e4df236b95923c95b49b811f0338c58866e0a59bdf5afd1d842b"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-constraint-glyph-e33bac9dd/cucumber.json",
+    "cucumber_sha256": "8bb359b509dccf6eecb4a224899f32cb083c8c328baa260494c7eed54cb2209c",
+    "application_commit": "e33bac9dd",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=constraint-glyph-hover OBK_BDD_REPORTS=/tmp/obk-glyph-e33bac9dd/run cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe",
+    "notes": "Full feature: 1 scenario and 6 steps passed using native pointer motion. Feature and supporting file hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-constraint-glyph-e33bac9dd/scenario-inventory.json",
+    "scenario_inventory_sha256": "13c70b5229ded138a118a8195f4207e4ae10a852b54bcfd3344bf14d3ec4f924",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-constraint-glyph-e33bac9dd/scenario-arguments.json",
+    "scenario_arguments_sha256": "10d95769d69dc18ce23bebcfc2f8019230594b87aba5787f9fb34f09459128e9"
   }
 }

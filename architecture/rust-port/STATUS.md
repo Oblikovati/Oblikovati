@@ -26,11 +26,12 @@ using this status; the live scenario directory can change.
   cases, including both outline examples. Its inventory counts 49 of 51
   declarations. The spacing and User Interface menu scenarios remain
   incomplete; their source questions are in the feature's `BLOCKERS.md`.
-- The current feature-run inventory has 11 green features and 397 passing
+- The current feature-run inventory has 12 green features and 400 passing
   scenario declarations out of 3,088, across 256 features. These counts are
   tied to source hashes and must be regenerated when the scenario source changes.
-- The live feature-run inventory reports application closing green: 3 of 3
-  scenarios at SHA-256 `d87eaf041fc93701e0de5c911dd3b4c0622386d184f05954a8409400e412c0d0`.
+- Sketch constraint-glyph hover passed its complete one-scenario native run at
+  `e33bac9dd`. Application closing previously passed 3 of 3 scenarios, but its
+  source has changed and now includes assembly scenarios, which are deferred.
   Run `python3 -B tools/bdd/feature_progress.py /mnt/vininas-projects/MCAD-Scenarios`
   for current feature hashes and counts. This result is a full-feature diagnostic
   at its recorded application commit; the strict acceptance ledger is separate.
