@@ -188,7 +188,8 @@ impl RibbonCustomization {
         let document = self.staged_document();
         if let Some(settings) = self.settings.panel(ui, &document) {
             self.draft.import(settings.commands);
-            self.builtins.import(settings.expanded_builtins);
+            self.builtins
+                .import(settings.expanded_builtins, settings.ungrouped_builtins);
             self.staged_appearance = settings.appearance;
         }
     }

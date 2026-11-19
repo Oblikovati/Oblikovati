@@ -23,6 +23,29 @@ impl GuiRibbonSettingsStore for FakeRibbonStore {
     }
 }
 #[test]
+fn plane_group_and_placement_persist_independently_and_roll_back_failed_saves() {
+    let store = FakeRibbonStore::default();
+    let id = "part.model.work-features.plane";
+    let mut customization = RibbonCustomization::default();
+    customization.set_store(Box::new(store.clone())).unwrap();
+    customization.relocate_builtin(id, true).unwrap();
+    customization.set_builtin_ungrouped(id, true).unwrap();
+    store.0.borrow_mut().fail_save = true;
+    assert!(customization.set_builtin_ungrouped(id, false).is_err());
+    assert!(customization.builtin_ungrouped(id));
+    store.0.borrow_mut().fail_save = false;
+    let mut reopened = RibbonCustomization::default();
+    reopened.set_store(Box::new(store.clone())).unwrap();
+    assert!(reopened.builtin_expanded(id));
+    assert!(reopened.builtin_ungrouped(id));
+    reopened.set_builtin_ungrouped(id, false).unwrap();
+    reopened.relocate_builtin(id, false).unwrap();
+    let mut restored = RibbonCustomization::default();
+    restored.set_store(Box::new(store)).unwrap();
+    assert!(!restored.builtin_expanded(id));
+    assert!(!restored.builtin_ungrouped(id));
+}
+#[test]
 fn applied_settings_reload_and_failed_saves_leave_the_draft_pending() {
     let store = FakeRibbonStore::default();
     let mut customization = RibbonCustomization::default();

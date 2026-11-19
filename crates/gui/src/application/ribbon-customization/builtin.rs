@@ -11,23 +11,29 @@ use std::collections::BTreeSet;
 pub(super) struct BuiltinLayout {
     applied: BTreeSet<String>,
     staged: BTreeSet<String>,
+    ungrouped: BTreeSet<String>,
+    staged_ungrouped: BTreeSet<String>,
 }
 impl BuiltinLayout {
-    pub(super) fn load(&mut self, locations: BTreeSet<String>) {
+    pub(super) fn load(&mut self, locations: BTreeSet<String>, groups: BTreeSet<String>) {
         self.applied = locations;
+        self.ungrouped = groups;
         self.open();
     }
     pub(super) fn open(&mut self) {
         self.staged = self.applied.clone();
+        self.staged_ungrouped = self.ungrouped.clone();
     }
     pub(super) fn apply(&mut self) {
         self.applied = self.staged.clone();
+        self.ungrouped = self.staged_ungrouped.clone();
     }
-    pub(super) fn import(&mut self, locations: BTreeSet<String>) {
+    pub(super) fn import(&mut self, locations: BTreeSet<String>, groups: BTreeSet<String>) {
         self.staged = locations;
+        self.staged_ungrouped = groups;
     }
     pub(super) fn changed(&self) -> bool {
-        self.applied != self.staged
+        self.applied != self.staged || self.ungrouped != self.staged_ungrouped
     }
 }
 impl RibbonCustomization {
@@ -35,6 +41,7 @@ impl RibbonCustomization {
         SettingsDocument {
             commands: self.draft.snapshot().clone(),
             expanded_builtins: self.builtins.staged.clone(),
+            ungrouped_builtins: self.builtins.staged_ungrouped.clone(),
             appearance: self.staged_appearance,
         }
     }
@@ -42,6 +49,7 @@ impl RibbonCustomization {
         SettingsDocument {
             commands: self.draft.applied_snapshot().clone(),
             expanded_builtins: self.builtins.applied.clone(),
+            ungrouped_builtins: self.builtins.ungrouped.clone(),
             appearance: self.appearance,
         }
     }
@@ -61,7 +69,8 @@ impl RibbonCustomization {
                 ));
             }
             let document = settings_xml::decode(&bytes)?;
-            self.builtins.load(document.expanded_builtins);
+            self.builtins
+                .load(document.expanded_builtins, document.ungrouped_builtins);
             self.appearance = document.appearance;
             self.staged_appearance = document.appearance;
             self.draft.load_applied(document.commands);
@@ -108,7 +117,8 @@ impl RibbonCustomization {
         let defaults = settings_xml::SettingsDocument::default();
         Self::save_settings(&mut self.store, &defaults)?;
         self.draft.load_applied(defaults.commands);
-        self.builtins.load(defaults.expanded_builtins);
+        self.builtins
+            .load(defaults.expanded_builtins, defaults.ungrouped_builtins);
         self.appearance = defaults.appearance;
         self.staged_appearance = defaults.appearance;
         Ok(())
@@ -159,6 +169,33 @@ impl RibbonCustomization {
     pub(crate) fn builtin_expanded(&self, id: &str) -> bool {
         self.builtins.applied.contains(id)
     }
+    pub(crate) fn builtin_ungrouped(&self, id: &str) -> bool {
+        self.builtins.ungrouped.contains(id)
+    }
+    pub(super) fn set_builtin_ungrouped(
+        &mut self,
+        id: &str,
+        ungrouped: bool,
+    ) -> Result<(), String> {
+        let mut document = self.applied_document();
+        if ungrouped {
+            document.ungrouped_builtins.insert(id.to_owned());
+        } else {
+            document.ungrouped_builtins.remove(id);
+        }
+        Self::save_settings(&mut self.store, &document)?;
+        for groups in [
+            &mut self.builtins.ungrouped,
+            &mut self.builtins.staged_ungrouped,
+        ] {
+            if ungrouped {
+                groups.insert(id.to_owned());
+            } else {
+                groups.remove(id);
+            }
+        }
+        Ok(())
+    }
     pub(crate) fn relocate_builtin(&mut self, id: &str, expanded: bool) -> Result<(), String> {
         let mut document = self.applied_document();
         if expanded {
@@ -196,11 +233,34 @@ impl RibbonCustomization {
         expanded: bool,
         draw: impl FnOnce(),
     ) -> bool {
+        self.draw_builtin_with_menu(ui, id, expanded, false, |_| draw())
+    }
+    pub(crate) fn builtin_group_draw(
+        &mut self,
+        ui: &imgui::Ui,
+        id: &str,
+        expanded: bool,
+        draw: impl FnOnce(bool),
+    ) -> bool {
+        self.draw_builtin_with_menu(ui, id, expanded, true, draw)
+    }
+    fn draw_builtin_with_menu(
+        &mut self,
+        ui: &imgui::Ui,
+        id: &str,
+        expanded: bool,
+        group: bool,
+        draw: impl FnOnce(bool),
+    ) -> bool {
         if self.builtin_expanded(id) != expanded {
             return false;
         }
         let _command_id = ui.push_id(id);
-        draw();
+        if group {
+            ui.group(|| draw(self.builtin_ungrouped(id)));
+        } else {
+            draw(false);
+        }
         let hovered = ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED);
         let right = hovered
             && (ui.is_mouse_clicked(imgui::MouseButton::Right)
@@ -208,10 +268,10 @@ impl RibbonCustomization {
         if hovered && ui.is_mouse_released(imgui::MouseButton::Right) {
             ui.open_popup("##builtin-command-context");
         }
-        self.builtin_menu(ui, id, expanded);
+        self.builtin_menu(ui, id, expanded, group);
         right
     }
-    fn builtin_menu(&mut self, ui: &imgui::Ui, id: &str, expanded: bool) {
+    fn builtin_menu(&mut self, ui: &imgui::Ui, id: &str, expanded: bool, group: bool) {
         let Some(_menu) = ui.begin_popup("##builtin-command-context") else {
             return;
         };
@@ -225,6 +285,19 @@ impl RibbonCustomization {
         {
             self.command_error = Some(error);
             self.command_error_opening = true;
+        }
+        if group {
+            let ungrouped = self.builtin_ungrouped(id);
+            let label = if ungrouped {
+                "Group Commands into Drop-Down Menu"
+            } else {
+                "Ungroup Commands from Drop-Down Menu"
+            };
+            if ui.menu_item(label)
+                && let Err(error) = self.set_builtin_ungrouped(id, !ungrouped)
+            {
+                self.report_command_error(error);
+            }
         }
         let disabled = ui.begin_disabled(true);
         ui.menu_item("Add to Quick Access Toolbar");

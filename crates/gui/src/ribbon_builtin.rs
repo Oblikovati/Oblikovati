@@ -3,16 +3,20 @@
 use super::{RibbonPanel, RibbonPanelOwners};
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
+#[path = "ribbon_plane_group.rs"]
+mod plane_group;
 
 #[derive(Clone, Copy)]
 enum Builtin {
     Copy,
     Measure,
+    Plane,
 }
 fn builtin_for(panel: RibbonPanel) -> Option<Builtin> {
     match panel {
         RibbonPanel::ToolClipboard => Some(Builtin::Copy),
         RibbonPanel::ToolMeasure => Some(Builtin::Measure),
+        RibbonPanel::PartWorkFeatures => Some(Builtin::Plane),
         _ => None,
     }
 }
@@ -41,6 +45,7 @@ fn command_id(state: &GuiCommandState, command: Builtin) -> String {
     let suffix = match command {
         Builtin::Copy => "clipboard.copy",
         Builtin::Measure => "measure.measure",
+        Builtin::Plane => return format!("{document}.model.work-features.plane"),
     };
     format!("{document}.tools.{suffix}")
 }
@@ -58,6 +63,15 @@ pub(crate) fn draw(
     };
     let id = command_id(state, command);
     let icons = owners.icons;
+    if matches!(command, Builtin::Plane) {
+        let right = owners
+            .customization
+            .builtin_group_draw(ui, &id, expanded, |ungrouped| {
+                plane_group::draw(ui, state, icons, actions, ungrouped, expanded);
+            });
+        owners.quick_access.command_took_right_click |= right;
+        return;
+    }
     let right = owners
         .customization
         .builtin_draw(ui, &id, expanded, || match command {
@@ -71,8 +85,22 @@ pub(crate) fn draw(
                 };
                 icons.command_button(ui, "Measure", action, state, size, actions);
             }
+            Builtin::Plane => {}
         });
     owners.quick_access.command_took_right_click |= right;
+}
+pub(crate) fn plane_main_cells(
+    state: &GuiCommandState,
+    customization: &crate::application::ribbon_customization::RibbonCustomization,
+) -> usize {
+    let id = command_id(state, Builtin::Plane);
+    if customization.builtin_expanded(&id) {
+        return 0;
+    }
+    if customization.builtin_ungrouped(&id) {
+        return plane_group::COMMAND_COUNT;
+    }
+    1
 }
 fn unavailable_copy(ui: &Ui, icons: &crate::icons::GuiRibbonIcons) {
     let disabled = ui.begin_disabled(true);
