@@ -6,8 +6,9 @@ use super::{
 use crate::{
     document_sketch::DocumentSketchId,
     sketch::{
-        Sketch2D, SketchConstraintId, SketchDirectionInference, SketchInferencePolicy,
-        SketchLinePlacementInference, SketchPointInput, SketchPrimitiveCreation,
+        Sketch2D, SketchConstraintId, SketchDirectionInference, SketchInferenceCandidates,
+        SketchInferencePolicy, SketchLinePlacementInference, SketchPointInput,
+        SketchPrimitiveCreation,
     },
 };
 use oblikovati_solve::nonlinear::SolveOptions;
@@ -51,8 +52,21 @@ impl DocumentSnapshot {
         solve_options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
     ) -> Result<SketchLineCreationReport, SketchLineCreationError> {
+        self.create_inferred_line_scoped(sketch, input, policy, solve_options, ids, None)
+    }
+    /// Create an inferred line using an optional session scope.
+    /// Example: `snapshot.create_inferred_line_scoped(sketch, &input, policy, options, ids, Some(&scope))?`.
+    pub fn create_inferred_line_scoped(
+        &mut self,
+        sketch: DocumentSketchId,
+        input: &SketchLineCreation,
+        policy: SketchInferencePolicy,
+        solve_options: SolveOptions,
+        ids: &mut RecipeReservations<'_>,
+        scope: Option<&SketchInferenceCandidates>,
+    ) -> Result<SketchLineCreationReport, SketchLineCreationError> {
         let (mut geometry, inference, enabled) =
-            self.prepare_inferred_line(sketch, input, policy, solve_options)?;
+            self.prepare_inferred_line(sketch, input, policy, solve_options, scope)?;
         let creation = input.primitive(inference.candidate_endpoints);
         let report =
             append_inferred_primitive(&mut geometry, sketch, &creation, inference, enabled, ids)?;
@@ -67,14 +81,19 @@ impl DocumentSnapshot {
         input: &SketchLineCreation,
         policy: SketchInferencePolicy,
         solve_options: SolveOptions,
+        scope: Option<&SketchInferenceCandidates>,
     ) -> Result<(Sketch2D, SketchLinePlacementInference, bool), SketchLineCreationError> {
         let settings = self.effective_sketch_settings();
         let geometry = self
             .current_sketch_authoring_geometry(sketch, solve_options)
             .map_err(SketchLineCreationError::Sketch)?;
-        let inference = geometry
-            .infer_line_placement(input.endpoints, &settings, policy)
-            .map_err(SketchLineCreationError::Sketch)?;
+        let inference = match scope {
+            Some(scope) => {
+                geometry.infer_line_placement_scoped(input.endpoints, &settings, policy, scope, &[])
+            }
+            None => geometry.infer_line_placement(input.endpoints, &settings, policy),
+        }
+        .map_err(SketchLineCreationError::Sketch)?;
         Ok((geometry, inference, settings.auto_apply_constraints))
     }
 }

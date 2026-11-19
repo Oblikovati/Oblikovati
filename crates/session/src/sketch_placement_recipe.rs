@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::{CommandError, DocumentSession, TransactionObserver};
+use crate::{CommandError, DocumentSession, MutationError, TransactionObserver};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     history::{
-        SketchPlacementCreationError, SketchPlacementCreationReport, SketchPlacementFieldLock,
+        EditError, SketchPlacementCreationError, SketchPlacementCreationReport,
+        SketchPlacementFieldLock,
     },
-    sketch::{SketchCircleConstruction, SketchPlacementRecipe},
+    sketch::{SketchCircleConstruction, SketchInferenceCandidates, SketchPlacementRecipe},
 };
 /// Solved private-copy geometry and only the new placement's members.
 #[derive(Clone, Debug, PartialEq)]
@@ -25,6 +26,9 @@ impl<O: TransactionObserver> DocumentSession<O> {
         datums: &crate::part_evaluation::CurrentPartDatums,
     ) -> Result<SketchPlacementPreview, crate::PartSketchCreateError<SketchPlacementCreationError>>
     {
+        let scope = self
+            .sketch_inference_scope(sketch)
+            .map_err(|error| crate::PartSketchCreateError::Command(scope_error(error)))?;
         let current = datums
             .current(self)
             .map_err(crate::PartSketchCreateError::Evaluation)?;
@@ -35,7 +39,9 @@ impl<O: TransactionObserver> DocumentSession<O> {
                     snapshot,
                     ids,
                     |snapshot, ids| {
-                        create_with_datums(snapshot, ids, sketch, recipe, locks, options, current)
+                        create_with_datums(
+                            snapshot, ids, sketch, recipe, locks, options, current, &scope,
+                        )
                     },
                     None,
                     |snapshot, report| {
@@ -58,6 +64,9 @@ impl<O: TransactionObserver> DocumentSession<O> {
         SketchPlacementCreationReport,
         crate::PartSketchCreateError<SketchPlacementCreationError>,
     > {
+        let scope = self
+            .sketch_inference_scope(sketch)
+            .map_err(|error| crate::PartSketchCreateError::Command(scope_error(error)))?;
         let current = datums
             .current(self)
             .map_err(crate::PartSketchCreateError::Evaluation)?
@@ -66,8 +75,9 @@ impl<O: TransactionObserver> DocumentSession<O> {
         self.run_with_recompute(
             "Create constrained sketch recipe",
             |snapshot, ids| {
-                let report =
-                    create_with_datums(snapshot, ids, sketch, recipe, locks, options, &current)?;
+                let report = create_with_datums(
+                    snapshot, ids, sketch, recipe, locks, options, &current, &scope,
+                )?;
                 verify_placement(snapshot, &report, recipe, Some(construction))?;
                 Ok(report)
             },
@@ -84,6 +94,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
         locks: &[Option<SketchPlacementFieldLock>],
         construction: &dyn SketchCircleConstruction,
     ) -> Result<SketchPlacementPreview, CommandError<SketchPlacementCreationError>> {
+        let scope = self.sketch_inference_scope(sketch).map_err(scope_error)?;
         let options = self.sketch_options;
         self.history
             .preview(|snapshot, ids| {
@@ -91,7 +102,9 @@ impl<O: TransactionObserver> DocumentSession<O> {
                     snapshot,
                     ids,
                     |snapshot, ids| {
-                        snapshot.create_sketch_placement(sketch, recipe, locks, options, ids)
+                        snapshot.create_scoped_sketch_placement(
+                            sketch, recipe, locks, options, ids, None, &scope,
+                        )
                     },
                     Some(options),
                     |snapshot, report| {
@@ -128,10 +141,15 @@ impl<O: TransactionObserver> DocumentSession<O> {
         locks: &[Option<SketchPlacementFieldLock>],
         construction: Option<&dyn SketchCircleConstruction>,
     ) -> Result<SketchPlacementCreationReport, CommandError<SketchPlacementCreationError>> {
+        let scope = self.sketch_inference_scope(sketch).map_err(scope_error)?;
         let options = self.sketch_options;
         self.run_projected(
             "Create constrained sketch recipe",
-            |snapshot, ids| snapshot.create_sketch_placement(sketch, recipe, locks, options, ids),
+            |snapshot, ids| {
+                snapshot.create_scoped_sketch_placement(
+                    sketch, recipe, locks, options, ids, None, &scope,
+                )
+            },
             |snapshot, report| {
                 verify_placement(snapshot, &report, recipe, construction)?;
                 Ok(report)
@@ -147,9 +165,17 @@ fn create_with_datums(
     locks: &[Option<SketchPlacementFieldLock>],
     options: oblikovati_solve::nonlinear::SolveOptions,
     datums: &oblikovati_model::feature::work_geometry::WorkGeometryEvaluation,
+    scope: &SketchInferenceCandidates,
 ) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
-    let report = snapshot
-        .create_sketch_placement_with_datums(sketch, recipe, locks, options, ids, datums)?;
+    let report = snapshot.create_scoped_sketch_placement(
+        sketch,
+        recipe,
+        locks,
+        options,
+        ids,
+        Some(datums),
+        scope,
+    )?;
     let solved =
         snapshot.solve_one_document_sketch_with_datums(sketch, options, || false, datums)?;
     let result = solved
@@ -187,4 +213,12 @@ fn verify_placement(
     let geometry = snapshot.sketches.get(report.sketch)?.geometry();
     recipe.verify_circular_seeds(geometry, &report.members, construction)?;
     Ok(())
+}
+
+fn scope_error(
+    error: oblikovati_model::sketch::SketchError,
+) -> CommandError<SketchPlacementCreationError> {
+    CommandError::Edit(EditError::Mutation(MutationError::Command(
+        SketchPlacementCreationError::Sketch(error),
+    )))
 }

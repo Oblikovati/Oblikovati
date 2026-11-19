@@ -12,6 +12,9 @@ fn request() -> SketchLineCreation {
 fn inferred_line_joins_an_open_group_and_recomputes_before_publication() {
     let mut session = session(None);
     let sketch = empty_sketch(&mut session, true);
+    session
+        .set_sketch_inference_scope(sketch, INFERENCE_SCOPE_ALL_GEOMETRY, &[])
+        .unwrap();
     session.begin("Author geometry").unwrap();
     let report = session
         .create_inferred_sketch_line(sketch, &request())
@@ -32,6 +35,9 @@ fn inferred_line_joins_an_open_group_and_recomputes_before_publication() {
 fn rejected_reply_discards_line_and_relations_but_reserves_all_their_ids() {
     let mut session = session(None);
     let sketch = empty_sketch(&mut session, true);
+    session
+        .set_sketch_inference_scope(sketch, INFERENCE_SCOPE_ALL_GEOMETRY, &[])
+        .unwrap();
     let before = session.snapshot().sketches.clone();
     let result = session.create_inferred_sketch_line_projected(sketch, &request(), |result| {
         let report = result.unwrap();
@@ -68,6 +74,9 @@ fn document_working_scale_sets_the_snap_reach() {
         let mut session = scaled_session(scale);
         session
             .create_sketch_primitive(DocumentSketchId(1), &point([0.0, 0.0]))
+            .unwrap();
+        session
+            .set_sketch_inference_scope(DocumentSketchId(1), INFERENCE_SCOPE_ALL_GEOMETRY, &[])
             .unwrap();
         let mut input = request();
         input.endpoints[0] = [0.0005, 0.0005];

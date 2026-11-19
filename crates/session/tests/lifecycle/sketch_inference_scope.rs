@@ -108,3 +108,97 @@ fn line_chain_scope_matches_preview_and_commit() {
         session.snapshot().sketches.get(sketch).unwrap().geometry()
     );
 }
+
+struct NoCircularVerification;
+impl oblikovati_model::sketch::SketchCircleConstruction for NoCircularVerification {
+    fn arc_direction(
+        &self,
+        _: [[f64; 2]; 3],
+    ) -> Result<bool, std::boxed::Box<dyn std::error::Error>> {
+        Err("unexpected circular construction".into())
+    }
+    fn circumcircle(
+        &self,
+        _: [[f64; 2]; 3],
+        _: oblikovati_model::sketch::CircumcircleOptions,
+    ) -> Result<oblikovati_model::sketch::PlanarCircumcircle, std::boxed::Box<dyn std::error::Error>>
+    {
+        Err("unexpected circular construction".into())
+    }
+    fn verify(
+        &self,
+        _: [[f64; 2]; 3],
+        _: oblikovati_model::sketch::SolvedCircularSeed,
+        _: oblikovati_model::sketch::CircumcircleOptions,
+    ) -> Result<(), std::boxed::Box<dyn std::error::Error>> {
+        Err("unexpected circular verification".into())
+    }
+}
+
+#[test]
+fn shape_preview_and_commit_use_applied_scope_for_point_inference() {
+    use oblikovati_model::sketch::{PlanarConstraint, SketchPlacementRecipe};
+    let mut session = owned_sketch_session(None, "Scope", one_line());
+    let sketch = DocumentSketchId(1);
+    let recipe = SketchPlacementRecipe::circle([0., 0.], 0.5).unwrap();
+    let current = session
+        .preview_sketch_placement(sketch, &recipe, &[], &NoCircularVerification)
+        .unwrap();
+    assert!(
+        !current
+            .geometry
+            .constraints()
+            .iter()
+            .any(|item| matches!(item.relation, PlanarConstraint::Coincident { .. }))
+    );
+    session
+        .set_sketch_inference_scope(
+            sketch,
+            INFERENCE_SCOPE_SELECTED_GEOMETRY,
+            &[SketchEntityId(3)],
+        )
+        .unwrap();
+    let selected = session
+        .preview_sketch_placement(sketch, &recipe, &[], &NoCircularVerification)
+        .unwrap();
+    assert!(
+        selected
+            .geometry
+            .constraints()
+            .iter()
+            .any(|item| matches!(item.relation, PlanarConstraint::Coincident { .. }))
+    );
+    session
+        .create_sketch_placement_with_construction(sketch, &recipe, &[], &NoCircularVerification)
+        .unwrap();
+    assert_eq!(
+        &selected.geometry,
+        session.snapshot().sketches.get(sketch).unwrap().geometry()
+    );
+}
+
+#[test]
+fn single_line_creation_uses_the_session_scope() {
+    use oblikovati_model::history::SketchLineCreation;
+    let sketch = DocumentSketchId(1);
+    let input = SketchLineCreation {
+        endpoints: [[0., 0.], [0.5, 0.5]],
+        construction: false,
+        centerline: false,
+    };
+    let mut current = owned_sketch_session(None, "Current", one_line());
+    let report = current.create_inferred_sketch_line(sketch, &input).unwrap();
+    assert!(report.inference.points.is_empty());
+    let mut selected = owned_sketch_session(None, "Selected", one_line());
+    selected
+        .set_sketch_inference_scope(
+            sketch,
+            INFERENCE_SCOPE_SELECTED_GEOMETRY,
+            &[SketchEntityId(3)],
+        )
+        .unwrap();
+    let report = selected
+        .create_inferred_sketch_line(sketch, &input)
+        .unwrap();
+    assert_eq!(report.inference.points[0].target, SketchEntityId(1));
+}

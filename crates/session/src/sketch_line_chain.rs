@@ -28,7 +28,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
         sketch: DocumentSketchId,
         input: &SketchLineChainCreation,
     ) -> Result<SketchLineChainPreview, CommandError<SketchLineCreationError>> {
-        self.preview_line_chain_with_scope(sketch, input, None)
+        self.preview_scoped_line_chain(sketch, input)
     }
     /// Preview using the session's sketch scope; example: `session.preview_scoped_line_chain(sketch, &input)?`.
     pub fn preview_scoped_line_chain(
@@ -65,7 +65,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
         sketch: DocumentSketchId,
         input: &SketchLineChainCreation,
     ) -> Result<SketchLineChainCreationReport, CommandError<SketchLineCreationError>> {
-        self.create_line_chain_with_scope(sketch, input, None)
+        self.create_scoped_line_chain(sketch, input)
     }
     /// Commit with the same scope used for preview; example: `session.create_scoped_line_chain(sketch, &input)?`.
     pub fn create_scoped_line_chain(
