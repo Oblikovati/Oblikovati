@@ -53,7 +53,12 @@ impl<O: TransactionObserver> DocumentSession<O> {
                     ids,
                     |snapshot, ids| author_chain(snapshot, ids, sketch, input, options, scope),
                     Some(options),
-                    chain_preview,
+                    |snapshot, report| {
+                        for line in &report.lines {
+                            line.verify_inference_preserved(snapshot, options)?;
+                        }
+                        chain_preview(snapshot, report)
+                    },
                 )
             })
             .map_err(CommandError::Edit)
@@ -88,6 +93,9 @@ impl<O: TransactionObserver> DocumentSession<O> {
             |snapshot, ids| author_chain(snapshot, ids, sketch, input, options, scope),
             |snapshot, report| {
                 chain_solution(snapshot, report.sketch)?;
+                for line in &report.lines {
+                    line.verify_inference_preserved(snapshot, options)?;
+                }
                 Ok(report)
             },
         )
@@ -130,7 +138,12 @@ fn author_chain(
     scope: Option<&SketchInferenceCandidates>,
 ) -> Result<SketchLineChainCreationReport, SketchLineCreationError> {
     let policy = SketchInferencePolicy::for_units(snapshot.parameters.units());
-    snapshot.create_inferred_sketch_line_chain_scoped(sketch, input, policy, options, ids, scope)
+    let report = snapshot
+        .create_inferred_sketch_line_chain_scoped(sketch, input, policy, options, ids, scope)?;
+    if let Some(first) = report.lines.first() {
+        first.prepare_inference(snapshot, options)?;
+    }
+    Ok(report)
 }
 fn scope_error(
     error: oblikovati_model::sketch::SketchError,

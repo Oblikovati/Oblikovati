@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
-
 //! Application-owned planar geometry and constraints, independent from kernel topology.
 mod angle;
 mod available_targets;
+mod point_index;
 pub use available_targets::SketchAvailableTargetAnalysis;
 mod arc;
 mod arc_length;

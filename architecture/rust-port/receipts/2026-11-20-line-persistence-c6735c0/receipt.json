@@ -1,0 +1,34 @@
+{
+  "tested_commit": "c6735c0259181d1f9b9c3ae35769daff1d40ed9f",
+  "merge_commit": "80b477384",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "2",
+    "native_display": "Xvfb 1600x1000x24, Lavapipe"
+  },
+  "checks": [
+    {
+      "name": "model and session red regressions",
+      "result": "failed on baseline as expected"
+    },
+    {
+      "command": "cargo test --locked -p oblikovati-model -p oblikovati-session",
+      "result": "2557 passed"
+    },
+    {
+      "name": "native X11 line input",
+      "result": "passed"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-model -p oblikovati-session -p oblikovati-head --tests -- -D warnings",
+      "result": "passed"
+    }
+  ],
+  "benchmark": {
+    "build": "CARGO_INCREMENTAL=0 CARGO_PROFILE_RELEASE_DEBUG=0 CARGO_BUILD_JOBS=2 cargo test --locked --release -p oblikovati-session --test lifecycle measure_inferred_line_on_large_sketch --no-run",
+    "execution": "Alternated base and final test binaries for 3 rounds using /usr/bin/time -v <lifecycle-test-binary> --ignored --nocapture --test-threads=1 measure_inferred_line_on_large_sketch; each run used 3 warmups and 10 samples per size.",
+    "limitation": "A separate Martensite test and emulators were active. The test measures session creation, not GUI frame rate."
+  }
+}

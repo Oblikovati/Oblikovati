@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Read glyphs from actual completed draw packets; no widget state is substituted.
-use imgui::{DrawCmd, DrawVert, internal::RawCast, sys};
-use std::{collections::BTreeMap, ffi::CString};
+use imgui::{
+    DrawCmd, DrawVert,
+    internal::{RawCast, RawWrapper},
+    sys,
+};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    ffi::CString,
+};
 type GlyphCoordinates = [u32; 4];
 const QUAD_INDICES: usize = 6;
 /// One drawn glyph in UI layout units, inside its clip rectangle.
@@ -36,6 +43,58 @@ pub(super) struct RenderedMark {
 pub(super) struct RenderedFrame {
     pub runs: Vec<RenderedRun>,
     pub marks: Vec<RenderedMark>,
+    font_size: f32,
+    popup_lists: BTreeSet<usize>,
+}
+pub(super) fn run_is_checked(frame: &RenderedFrame, run: &RenderedRun) -> bool {
+    frame.marks.iter().any(|mark| {
+        if !mark.bright || mark.list != run.list || !same_check_row(frame, run, mark.position[1]) {
+            return false;
+        }
+        let left = run.minimum[0] - mark.position[0];
+        if left > 0. && left < frame.font_size * 2.5 {
+            return true;
+        }
+        frame.popup_lists.contains(&run.list)
+            && mark.position[0] > run.maximum[0]
+            && !frame.runs.iter().any(|other| {
+                other.list == run.list
+                    && other.minimum[0] > mark.position[0]
+                    && other.minimum[0] - mark.position[0] < frame.font_size * 2.5
+                    && same_check_row(frame, other, mark.position[1])
+            })
+    })
+}
+fn same_check_row(frame: &RenderedFrame, run: &RenderedRun, y: f32) -> bool {
+    (y - run.center()[1]).abs() < frame.font_size * 0.5
+}
+fn is_popup_list(list: &imgui::DrawList) -> bool {
+    // SAFETY: diagnostics run on the GUI owner thread while its ImGui context is live;
+    // the borrowed context is not retained across another frame or context shutdown.
+    let Some(context) = (unsafe { sys::igGetCurrentContext().as_ref() }) else {
+        return false;
+    };
+    if context.Windows.Size <= 0 || context.Windows.Data.is_null() {
+        return false;
+    }
+    // SAFETY: ImGui owns this non-null array and its recorded positive length. No frame
+    // or window mutation occurs while the slice is borrowed, and it does not escape.
+    let windows =
+        unsafe { std::slice::from_raw_parts(context.Windows.Data, context.Windows.Size as usize) };
+    // SAFETY: `list` is borrowed from this context's completed draw data and remains
+    // live for this call; its raw address is used only for identity comparison.
+    let draw = unsafe { list.raw() } as *const sys::ImDrawList;
+    windows
+        .iter()
+        .filter_map(|window| {
+            // SAFETY: entries are ImGui-owned window pointers from the live context;
+            // null entries are skipped and no window is mutated during this borrow.
+            unsafe { window.as_ref() }
+        })
+        .any(|window| {
+            std::ptr::eq(window.DrawList, draw)
+                && window.Flags & sys::ImGuiWindowFlags_Popup as i32 != 0
+        })
 }
 impl RenderedRun {
     pub fn center(&self) -> [f32; 2] {
@@ -105,8 +164,14 @@ pub(super) fn frame_of_draw_data(
     lookup: &BTreeMap<GlyphCoordinates, char>,
     font_size: f32,
 ) -> RenderedFrame {
-    let mut frame = RenderedFrame::default();
+    let mut frame = RenderedFrame {
+        font_size,
+        ..Default::default()
+    };
     for (index, list) in draws.draw_lists().enumerate() {
+        if is_popup_list(list) {
+            frame.popup_lists.insert(index);
+        }
         let first_of_list = frame.runs.len();
         let (glyphs, marks) = list_shapes(list, lookup);
         frame

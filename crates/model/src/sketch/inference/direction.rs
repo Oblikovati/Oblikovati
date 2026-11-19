@@ -59,13 +59,17 @@ fn relative_suggestion(
     candidates: &super::scope::ResolvedCandidates,
     settings: &SketchSettings,
 ) -> Result<Option<SketchDirectionInference>, SketchError> {
+    if sketch.lines().is_empty() {
+        return Ok(None);
+    }
+    let indexed = super::super::point_index::PointIndex::new(sketch);
     let mut strongest: Option<SketchDirectionInference> = None;
     for line in sketch
         .lines()
         .iter()
         .filter(|line| candidates.contains(line.id))
     {
-        let candidate = relative_for_line(sketch, line, direction, policy)?;
+        let candidate = relative_for_line(sketch, &indexed, line, direction, policy)?;
         if let Some(candidate) = candidate.filter(|candidate| {
             allows_direction(settings, candidate.kind)
                 && strongest.is_none_or(|best| candidate.score > best.score)
@@ -77,13 +81,14 @@ fn relative_suggestion(
 }
 fn relative_for_line(
     sketch: &Sketch2D,
+    indexed: &super::super::point_index::PointIndex,
     line: &crate::sketch::SketchLine2D,
     direction: [f64; 2],
     policy: SketchInferencePolicy,
 ) -> Result<Option<SketchDirectionInference>, SketchError> {
     let points = [
-        sketch.point(line.endpoints[0])?.position,
-        sketch.point(line.endpoints[1])?.position,
+        indexed.position(sketch, line.endpoints[0])?,
+        indexed.position(sketch, line.endpoints[1])?,
     ];
     let Some(reference) = segment_direction(points) else {
         return Ok(None);

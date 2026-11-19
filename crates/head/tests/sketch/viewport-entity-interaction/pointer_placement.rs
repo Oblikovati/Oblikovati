@@ -67,3 +67,42 @@ fn accepted_line_remains(world: &mut ApplicationWorld) {
     world.expect_segment_absent(END, NEXT);
     world.save_capture("sketch-pointer-line-cancel-4037");
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_line_inference_aligns_without_persisting_direction() {
+    use oblikovati_api::{client::Client, wire::SetSketchSettingsArgs};
+    use oblikovati_model::sketch::PlanarConstraint;
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    let mut settings = oblikovati_model::sketch_settings::default_sketch_settings();
+    settings.persist_inferred_constraints = false;
+    Client::new(world.app().owner.document_host())
+        .documents()
+        .set_sketch_settings(&SetSketchSettingsArgs {
+            document: 0,
+            settings,
+        })
+        .unwrap();
+    line_tool_active(&mut world);
+    super::native_click(&mut world, [620, 300]);
+    super::native_click(&mut world, [840, 302]);
+    super::super::super::x11_input::press_escape();
+    world.pump(Vec::new());
+    let sketch = world.edited_geometry();
+    assert_eq!(sketch.lines().len(), 1);
+    let line = &sketch.lines()[0];
+    let start = sketch.point(line.endpoints[0]).unwrap().position;
+    let end = sketch.point(line.endpoints[1]).unwrap().position;
+    assert!(
+        (start[1] - end[1]).abs() < 1e-8,
+        "expected a horizontal line: {start:?}, {end:?}"
+    );
+    assert!(!sketch.constraints().iter().any(|record| matches!(
+        record.relation,
+        PlanarConstraint::LineHorizontal { .. }
+            | PlanarConstraint::LineVertical { .. }
+            | PlanarConstraint::Lines { .. }
+    )));
+    world.close();
+}

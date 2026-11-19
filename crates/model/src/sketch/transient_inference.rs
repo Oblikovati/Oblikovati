@@ -43,8 +43,9 @@ impl SketchInferenceFreeze {
         sketch: &Sketch2D,
     ) -> Result<(), SketchTransientSolveError> {
         self.validate_structure(sketch)?;
+        let indexed = super::point_index::PointIndex::new(sketch);
         for point in &self.points {
-            let actual = sketch.point(point.id)?.position;
+            let actual = indexed.position(sketch, point.id)?;
             if bits(actual) != bits(point.position) {
                 return Err(SketchTransientSolveError::SourcePointChanged {
                     point: point.id,

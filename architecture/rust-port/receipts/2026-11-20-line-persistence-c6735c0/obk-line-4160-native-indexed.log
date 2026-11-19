@@ -1,0 +1,19 @@
+   Compiling oblikovati-model v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/model)
+   Compiling oblikovati-martensite v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/martensite)
+   Compiling oblikovati-persistence v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/persistence)
+   Compiling oblikovati-viewport v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/viewport)
+   Compiling oblikovati-session v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/session)
+   Compiling oblikovati-automation v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/automation)
+   Compiling oblikovati-gui v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/gui)
+   Compiling oblikovati-drawing v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/drawing)
+   Compiling oblikovati-cli v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/cli)
+   Compiling oblikovati-addin-host v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/addin-host)
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/head)
+    Finished `test` profile [unoptimized] target(s) in 1m 03s
+     Running unittests src/lib.rs (/tmp/obk-line-4160-target/debug/deps/oblikovati_head-10ebd026c75ea768)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::sketch::viewport_entity_interaction::pointer_placement::native_line_inference_aligns_without_persisting_direction ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1516 filtered out; finished in 8.39s
+

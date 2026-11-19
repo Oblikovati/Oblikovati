@@ -258,3 +258,101 @@ fn paint_visibility_patch(image: &mut oblikovati_viewport::ViewportCapture, at: 
         }
     }
 }
+
+fn checkbox_frame(scale: f32, mut left: bool, mut right: bool) -> RenderedFrame {
+    let mut context = crate::test_context::create();
+    context.set_ini_filename(None);
+    context.fonts().build_rgba32_texture();
+    context.io_mut().display_size = [800., 400.];
+    context.io_mut().font_global_scale = scale;
+    context.io_mut().delta_time = 0.016;
+    let ui = context.frame();
+    ui.window("probe")
+        .position([0., 0.], Condition::Always)
+        .size([750., 300.], Condition::Always)
+        .build(|| {
+            ui.checkbox("Left", &mut left);
+            ui.same_line();
+            ui.checkbox("Right", &mut right);
+        });
+    let lookup = glyph_lookup();
+    let font_size = current_font_size();
+    frame_of_draw_data(context.render(), &lookup, font_size)
+}
+#[test]
+fn checkbox_marks_belong_to_their_own_label_at_multiple_scales() {
+    for scale in [1.0, 1.5, 2.0] {
+        for (left, right) in [(false, false), (false, true), (true, false), (true, true)] {
+            let frame = checkbox_frame(scale, left, right);
+            for (label, expected) in [("Left", left), ("Right", right)] {
+                let run = frame.runs.iter().find(|run| run.text == label).unwrap();
+                assert_eq!(
+                    run_is_checked(&frame, run),
+                    expected,
+                    "scale {scale}, label {label}, marks {:?}",
+                    frame.marks
+                );
+            }
+        }
+    }
+}
+
+fn popup_frame(scale: f32, mut left: bool, mut right: bool, selected: bool) -> RenderedFrame {
+    let mut context = crate::test_context::create();
+    context.set_ini_filename(None);
+    context.fonts().build_rgba32_texture();
+    context.io_mut().display_size = [800., 400.];
+    context.io_mut().font_global_scale = scale;
+    context.io_mut().delta_time = 0.016;
+    let mut frame = RenderedFrame::default();
+    for pass in 0..2 {
+        let ui = context.frame();
+        ui.window("probe")
+            .position([0., 0.], Condition::Always)
+            .size([750., 300.], Condition::Always)
+            .build(|| {
+                if pass == 0 {
+                    ui.open_popup("settings");
+                }
+                if let Some(_popup) = ui.begin_popup("settings") {
+                    ui.checkbox("PopupLeft", &mut left);
+                    ui.same_line();
+                    ui.checkbox("PopupRight", &mut right);
+                    ui.menu_item_config("MenuOption").selected(selected).build();
+                }
+            });
+        let lookup = glyph_lookup();
+        let font_size = current_font_size();
+        frame = frame_of_draw_data(context.render(), &lookup, font_size);
+    }
+    frame
+}
+#[test]
+fn popup_checkbox_columns_and_menu_marks_stay_distinct_at_multiple_scales() {
+    for scale in [1.0, 1.5, 2.0] {
+        for (left, right, selected) in [
+            (false, true, false),
+            (true, false, true),
+            (false, false, true),
+        ] {
+            let frame = popup_frame(scale, left, right, selected);
+            for (label, expected) in [
+                ("PopupLeft", left),
+                ("PopupRight", right),
+                ("MenuOption", selected),
+            ] {
+                let run = frame
+                    .runs
+                    .iter()
+                    .find(|run| run.text == label)
+                    .unwrap_or_else(|| panic!("missing {label}: {:?}", frame.runs));
+                assert_eq!(
+                    run_is_checked(&frame, run),
+                    expected,
+                    "scale {scale}, label {label}, runs {:?}",
+                    frame.runs
+                );
+            }
+        }
+    }
+}

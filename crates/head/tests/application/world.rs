@@ -260,12 +260,7 @@ impl ApplicationWorld {
     }
     /// Inspect a specific rendered row; example: `world.checked_run(world.run("Option"))`.
     pub fn checked_run(&self, run: &diagnostics::RenderedRun) -> bool {
-        self.frame.marks.iter().any(|mark| {
-            mark.bright
-                && mark.list == run.list
-                // Close to the label's own centre line: a neighbour's mark reaches past its row.
-                && (mark.position[1] - run.center()[1]).abs() < CHECK_MARK_REACH
-        })
+        diagnostics::run_is_checked(&self.frame, run)
     }
     /// The framebuffer colour just left of a label, inside the widget that holds it.
     pub fn pixel_left_of(&mut self, label: &str) -> [u8; 4] {
@@ -361,7 +356,6 @@ impl Drop for ApplicationWorld {
     }
 }
 
-const CHECK_MARK_REACH: f32 = 6.;
 pub(super) fn squeezed(text: &str) -> String {
     text.chars()
         .filter(|letter| !letter.is_whitespace())
