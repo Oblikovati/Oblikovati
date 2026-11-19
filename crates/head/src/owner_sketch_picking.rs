@@ -180,7 +180,7 @@ impl<
     ) -> Result<(), String> {
         self.store_sketch_target(edit, picked.map(SketchPickTarget::Entity), mode)
     }
-    fn store_sketch_target(
+    pub(super) fn store_sketch_target(
         &mut self,
         edit: HeadSketchEdit,
         picked: Option<SketchPickTarget>,

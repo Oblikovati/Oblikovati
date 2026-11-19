@@ -1,0 +1,276 @@
+    Checking cfg-if v1.0.5
+    Checking libc v0.2.190
+    Checking bitflags v2.13.2
+    Checking linux-raw-sys v0.12.1
+    Checking smallvec v1.16.3
+    Checking num-traits v0.2.19
+    Checking serde_core v1.0.229
+    Checking memchr v2.8.3
+    Checking errno v0.3.14
+    Checking rustix v1.1.6
+    Checking bytemuck v1.25.2
+    Checking fast_polynomial v0.4.1
+    Checking metallic v0.3.0
+    Checking serde v1.0.229
+    Checking num-integer v0.1.47
+    Checking num-bigint v0.4.6
+    Checking nix v0.31.3
+    Checking martensite-cmath v0.3.5 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking allocator-api2 v0.4.0
+    Checking rustc_apfloat v0.2.3+llvm-462a31f5a5ab
+    Checking num-complex v0.4.6
+    Checking pin-project-lite v0.2.17
+    Checking simd-adler32 v0.3.10
+    Checking sha1_smol v1.0.1
+    Checking once_cell v1.21.4
+    Checking uuid v1.27.0
+    Checking futures-core v0.3.34
+    Checking fastrand v2.5.0
+    Checking adler2 v2.0.1
+    Checking crc32fast v1.5.2
+    Checking miniz_oxide v0.9.1
+    Checking crossbeam-utils v0.8.23
+    Checking flate2 v1.1.10
+    Checking parking v2.2.1
+    Checking futures-io v0.3.34
+    Checking itoa v1.0.18
+    Checking typenum v1.20.1
+    Checking time-core v0.1.9
+    Checking xattr v1.7.0
+    Checking deranged v0.5.8
+    Checking martensite-tkernel v0.4.5 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking powerfmt v0.2.1
+    Checking num-conv v0.2.2
+    Checking generic-array v0.14.7
+    Checking time v0.3.55
+    Checking zmij v1.0.23
+    Checking slab v0.4.12
+    Checking unicode-ident v1.0.26
+    Checking proc-macro2 v1.0.107
+    Checking serde_json v1.0.151
+    Checking base64 v0.22.1
+    Checking zerofrom v0.1.8
+    Checking quote v1.0.47
+    Checking crypto-common v0.1.7
+    Checking block-buffer v0.10.4
+    Checking event-listener v5.4.2
+    Checking concurrent-queue v2.5.0
+    Checking foldhash v0.2.0
+    Checking stable_deref_trait v1.2.1
+    Checking yoke v0.8.4
+    Checking hashbrown v0.17.1
+    Checking event-listener-strategy v0.5.4
+    Checking digest v0.10.7
+    Checking syn v3.0.7
+    Checking oblikovati-api v0.159.0 (https://github.com/Oblikovati/Oblikovati.API.git?rev=57ae73ca46bfcadcc09e3ec1d0c424d803cadc44#57ae73ca)
+    Checking libm v0.2.16
+    Checking getrandom v0.4.3
+    Checking futures-lite v2.6.1
+    Checking cpufeatures v0.2.17
+    Checking winnow v1.0.4
+    Checking martensite-tkmath v0.3.9 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking zvariant_utils v4.2.0
+    Checking sha2 v0.10.9
+    Checking maryada v0.2.0
+    Checking enumflags2 v0.7.12
+    Checking miniz_oxide v0.8.9
+    Checking fdeflate v0.3.7
+    Checking zcheapstr v1.2.0
+    Checking endi v1.1.1
+    Checking xml v1.4.0
+    Checking oblikovati-solve v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/selection-color-4168/crates/solve)
+    Checking zvariant v5.15.1
+    Checking zerovec v0.11.9
+    Checking polling v3.11.0
+    Checking log v0.4.34
+    Checking async-task v4.7.1
+    Checking async-io v2.6.0
+    Checking zbus_names v4.3.5
+    Checking async-channel v2.5.0
+    Checking signal-hook-registry v1.4.8
+    Checking twox-hash v2.1.5
+    Checking bitflags v1.3.2
+    Checking fnv v1.0.7
+    Checking equivalent v1.0.2
+    Checking atomic-waker v1.1.2
+    Checking web-time v1.1.0
+    Checking writeable v0.6.4
+    Checking siphasher v1.0.4
+    Checking cfb v0.15.0
+    Checking piper v0.2.5
+    Checking indexmap v2.14.2
+    Checking ruzstd v0.9.1
+    Checking martensite-tkg2d v0.3.7 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking async-signal v0.2.14
+    Checking async-lock v3.5.0
+    Checking tracing-core v0.1.36
+    Checking bstr v1.13.1
+    Checking arrayvec v0.7.8
+    Checking martensite-tkg3d v0.3.9 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking scopeguard v1.2.0
+    Checking color_quant v1.1.0
+    Checking ryu v1.0.23
+    Checking weezl v0.1.12
+    Checking unsafe-libyaml v0.2.11
+    Checking zune-core v0.4.12
+    Checking zune-jpeg v0.4.21
+    Checking serde_yaml_ng v0.10.0
+    Checking gif v0.13.3
+    Checking lock_api v0.4.14
+    Checking tracing v0.1.44
+    Checking async-process v2.5.0
+    Checking corliss v0.1.0 (https://github.com/Oblikovati/Corliss?rev=872ff91ea0fd9ebb3ad34d0030c67bbc7b5989fb#872ff91e)
+    Checking martensite-tkgeombase v0.3.6 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking blocking v1.7.0
+    Checking parking_lot_core v0.9.12
+    Checking png v0.17.16
+    Checking zbus_xml v5.2.1
+    Checking async-executor v1.14.1
+    Checking tinystr v0.8.5
+    Checking tempfile v3.27.0
+    Checking async-broadcast v0.7.2
+    Checking ordered-stream v0.2.0
+    Checking aho-corasick v1.1.5
+    Checking litemap v0.8.3
+    Checking hex v0.4.3
+    Checking either v1.19.0
+    Checking float-cmp v0.9.0
+    Checking futures-sink v0.3.34
+    Checking byteorder-lite v0.1.0
+    Checking regex-syntax v0.8.11
+    Checking regex-automata v0.4.18
+    Checking image v0.25.6
+    Checking futures-channel v0.3.34
+    Checking strict-num v0.1.1
+    Checking martensite-tkbrep v0.3.11 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking zbus v5.19.0
+    Checking icu_locale_core v2.4.0
+    Checking zbus-lockstep v0.5.2
+    Checking parking_lot v0.12.5
+    Checking x11-dl v2.21.0
+    Checking martensite-tkgeomalgo v0.3.8 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking polycool v0.4.0
+    Checking potential_utf v0.1.6
+    Checking zerotrie v0.2.5
+    Checking utf_types v1.0.0
+    Checking arrayref v0.3.9
+    Checking static_assertions v1.1.0
+    Checking futures-task v0.3.34
+    Checking futures-util v0.3.34
+    Checking oblikovati-model v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/selection-color-4168/crates/model)
+    Checking atspi-common v0.13.0
+    Checking tiny-skia-path v0.12.0
+    Checking utf8_iter v1.1.0
+    Checking icu_provider v2.4.0
+    Checking kurbo v0.13.1
+    Checking martensite-tkservice v0.4.1 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking oblikovati-persistence v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/selection-color-4168/crates/persistence)
+    Checking martensite-tktopalgo v0.4.3 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking icu_locale_fallback_data v2.4.0
+    Checking quick-xml v0.39.4
+    Checking libloading v0.8.9
+    Checking utf8parse v0.2.2
+    Checking anstyle-parse v1.0.0
+    Checking ash v0.38.0+1.3.281
+    Checking mlua-sys v0.13.0
+    Checking icu_locale_fallback v2.4.0
+    Checking svgtypes v0.16.2
+    Checking icu_collections v2.4.0
+    Checking crossbeam-epoch v0.9.21
+    Checking icu_segmenter_data v2.4.0
+    Checking phf_shared v0.14.0
+    Checking simplecss v0.2.2
+    Checking png v0.18.1
+    Checking gethostname v1.1.0
+    Checking accesskit v0.25.1
+    Checking num-rational v0.4.2
+    Checking roxmltree v0.21.2
+    Checking anstyle v1.0.14
+    Checking pico-args v0.5.0
+    Checking anstyle-query v1.1.5
+    Checking chlorine v1.0.13
+    Checking unicode-width v0.2.3
+    Checking rustc-hash v2.1.3
+    Checking x11rb-protocol v0.14.0
+    Checking martensite-tkshhealing v0.3.9 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking martensite-tkprim v0.3.10 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking martensite-tkhlr v0.3.6 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking data-url v0.3.2
+    Checking is_terminal_polyfill v1.70.2
+    Checking mint v0.5.9
+    Checking same-file v1.0.6
+    Checking imagesize v0.15.0
+    Checking colorchoice v1.0.5
+    Checking anstream v1.0.0
+    Checking usvg v0.49.0
+    Checking walkdir v2.5.0
+    Checking martensite-vulkan v0.7.2 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking imgui-sys v0.12.0
+    Checking x11rb v0.14.0
+    Checking mlua v0.12.2
+    Checking martensite-tkbo v0.8.2 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking martensite-tkmesh v0.3.8 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking martensite-tkv3d v0.7.1 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking accesskit_consumer v0.39.1
+    Checking tiny-skia v0.12.0
+    Checking phf v0.14.0
+    Checking icu_segmenter v2.4.0
+    Checking crossbeam-deque v0.8.8
+    Checking atspi-proxies v0.13.0
+    Checking globset v0.4.21
+   Compiling oblikovati-cli v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/selection-color-4168/crates/cli)
+    Checking terminal_size v0.4.4
+   Compiling oblikovati-gui v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/selection-color-4168/crates/gui)
+    Checking rgb v0.8.53
+    Checking nom v8.0.0
+    Checking clap_lex v1.1.1
+    Checking smawk v0.3.3
+    Checking bytecount v0.6.9
+    Checking strsim v0.11.1
+    Checking peg-runtime v0.6.3
+    Checking peg v0.6.3
+    Checking clap_builder v4.6.7
+    Checking nom_locate v5.0.0
+    Checking textwrap v0.16.4
+    Checking thiserror v2.0.21
+    Checking typed-builder v0.23.2
+    Checking resvg v0.49.0
+    Checking martensite-tkbool v0.8.0 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking ignore v0.4.34
+    Checking atspi v0.29.0
+    Checking accesskit_atspi_common v0.21.0
+    Checking oblikovati-script v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/selection-color-4168/crates/script)
+    Checking imgui v0.12.0
+    Checking futures-executor v0.3.34
+    Checking derive_more v2.1.1
+    Checking regex v1.13.1
+    Checking quick-xml v0.41.0
+    Checking ref-cast v1.0.27
+    Checking pin-project v1.1.13
+    Checking junit-report v0.9.1
+    Checking cucumber-expressions v0.5.0
+    Checking clap v4.6.7
+    Checking futures v0.3.32
+    Checking accesskit_unix v0.24.0
+    Checking serde_with v3.24.0
+    Checking gherkin v0.16.0
+    Checking globwalk v0.9.1
+    Checking anyhow v1.0.104
+    Checking console v0.16.6
+    Checking itertools v0.14.0
+    Checking linked-hash-map v0.5.6
+    Checking Inflector v0.11.4
+    Checking inventory v0.3.25
+    Checking mime v0.3.18
+    Checking humantime v2.4.0
+    Checking cucumber v0.23.0
+    Checking martensite-tkfillet v0.8.1 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking martensite-tkoffset v0.10.1 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+    Checking oblikovati-martensite v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/selection-color-4168/crates/martensite)
+    Checking oblikovati-session v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/selection-color-4168/crates/session)
+    Checking oblikovati-viewport v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/selection-color-4168/crates/viewport)
+    Checking oblikovati-automation v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/selection-color-4168/crates/automation)
+    Checking oblikovati-drawing v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/selection-color-4168/crates/drawing)
+    Checking oblikovati-addin-host v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/selection-color-4168/crates/addin-host)
+    Checking oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/selection-color-4168/crates/head)
+    Finished `dev` profile [unoptimized] target(s) in 1m 34s

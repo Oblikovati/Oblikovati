@@ -69,10 +69,15 @@ pub use inference::{
 };
 mod selection_copy;
 mod selection_transform;
+mod transient_inference;
 mod translation;
 pub use inspection::{SketchEntityInspection, SketchMovementOptions};
 pub use selection_copy::{SketchCopyError, SketchCopyOperation, SketchCopyReport};
 pub use selection_transform::SketchSelectionTransform;
+pub use transient_inference::{
+    SketchInferenceFreeze, SketchTransientInference, SketchTransientSolveError,
+    SketchTransientSolveOutcome,
+};
 mod grounded;
 mod line_residual;
 mod offset_dimension;

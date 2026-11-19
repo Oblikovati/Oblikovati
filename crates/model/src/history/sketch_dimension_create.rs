@@ -53,7 +53,7 @@ impl DocumentSnapshot {
             options,
             ids,
             DimensionRolePolicy::Explicit,
-            None,
+            Default::default(),
         )
     }
     fn create_dimension_with_role(
@@ -63,8 +63,10 @@ impl DocumentSnapshot {
         options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
         policy: DimensionRolePolicy,
-        datums: AuthoringDatums<'_>,
+        context: super::sketch_placement_recipe::inference::PlacementSolveContext<'_>,
     ) -> Result<SketchDimensionCreationReport, SketchDimensionCreationError> {
+        let super::sketch_placement_recipe::inference::PlacementSolveContext { datums, transient } =
+            context;
         let geometry = self.prepare_dimension_creation(sketch, input, options, datums)?;
         let prior_redundancy =
             self.dimension_prior_redundancy(sketch, &geometry, options, datums)?;
@@ -74,6 +76,13 @@ impl DocumentSnapshot {
         let mut candidate = self.clone();
         candidate.append_owned_dimension(sketch, input, geometry, &reserved)?;
         candidate.classify_dimension_role(sketch, reserved.constraint, probe, options)?;
+        if let Some(transient) = transient {
+            let geometry = candidate.sketches.get(sketch)?.geometry();
+            let solved = transient
+                .solve(&candidate, geometry, sketch, options, datums)
+                .map_err(SketchDimensionCreationError::Inference)?;
+            candidate.sketches.replace_geometry(sketch, solved)?;
+        }
         let report = candidate.evaluate_created_dimension(
             sketch,
             &reserved,
@@ -82,6 +91,12 @@ impl DocumentSnapshot {
             prior_redundancy,
         )?;
         candidate.confirm_dimension_creation(sketch, &report, datums)?;
+        if let Some(transient) = transient {
+            let geometry = candidate.sketches.get(sketch)?.geometry();
+            transient
+                .check_preserved(geometry)
+                .map_err(SketchDimensionCreationError::Inference)?;
+        }
         self.parameters = candidate.parameters;
         self.sketches = candidate.sketches;
         Ok(report)

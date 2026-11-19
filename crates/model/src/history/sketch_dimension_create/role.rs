@@ -18,13 +18,13 @@ pub(super) enum DimensionRoleProbe {
 impl DocumentSnapshot {
     /// Classify a placement lock's role before solving its candidate.
     /// Example: `snapshot.create_placement_dimension(sketch,&input,options,ids)?` inside a placement edit.
-    pub(crate) fn create_placement_dimension(
+    pub(in crate::history) fn create_placement_dimension(
         &mut self,
         sketch: DocumentSketchId,
         input: &SketchDimensionCreation,
         options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
-        datums: AuthoringDatums<'_>,
+        context: super::super::sketch_placement_recipe::inference::PlacementSolveContext<'_>,
     ) -> Result<SketchDimensionCreationReport, SketchDimensionCreationError> {
         self.create_dimension_with_role(
             sketch,
@@ -32,7 +32,7 @@ impl DocumentSnapshot {
             options,
             ids,
             DimensionRolePolicy::Placement,
-            datums,
+            context,
         )
     }
     pub(super) fn prepare_dimension_role(

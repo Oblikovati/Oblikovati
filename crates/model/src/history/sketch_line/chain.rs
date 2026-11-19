@@ -132,7 +132,7 @@ impl DocumentSnapshot {
                 text_point: lock.text_point,
             };
             let created = self
-                .create_placement_dimension(sketch, &creation, options, ids, None)
+                .create_placement_dimension(sketch, &creation, options, ids, Default::default())
                 .map_err(|cause| SketchLineCreationError::Dimension { index, cause })?;
             dimensions.push(created);
         }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{Sketch2D, SketchEntityId, SketchError, geometry::require_position};
 use crate::sketch_settings::SketchSettings;
-use oblikovati_api::types::ConstraintInferenceKind;
+use oblikovati_api::types::{ConstraintInferenceKind, SKETCH_INFER_COINCIDENT};
 mod direction;
 mod policy;
 mod scope;
@@ -71,7 +71,7 @@ impl Sketch2D {
     ) -> Result<Option<SketchEntityId>, SketchError> {
         policy.require_valid()?;
         require_position(position)?;
-        if !settings.infer_constraints {
+        if !settings.infer_constraints || !allows_type(settings, SKETCH_INFER_COINCIDENT) {
             return Ok(None);
         }
         Ok(snap::nearest_point(
@@ -164,7 +164,7 @@ impl Sketch2D {
             require_position(endpoint)?;
         }
         let mut report = empty_report(endpoints);
-        if settings.infer_constraints {
+        if settings.infer_constraints && allows_type(settings, SKETCH_INFER_COINCIDENT) {
             snap::propose(
                 self,
                 excluded,
@@ -187,7 +187,7 @@ impl Sketch2D {
             report.direction = direction::winner(
                 self,
                 report.candidate_endpoints,
-                settings.constraint_priority,
+                settings,
                 policy,
                 candidates,
             )?;
@@ -202,4 +202,11 @@ fn empty_report(endpoints: [[f64; 2]; 2]) -> SketchLinePlacementInference {
         points: Vec::new(),
         direction: None,
     }
+}
+
+fn allows_type(
+    settings: &SketchSettings,
+    kind: oblikovati_api::types::SketchInferenceTypes,
+) -> bool {
+    !settings.custom_inference_types || settings.inference_types.0 & kind.0 != 0
 }

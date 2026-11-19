@@ -73,7 +73,15 @@ pub(super) fn prepare(
     parameters: &ParameterCollection<u64>,
     anchors: &[SketchPoint2D],
 ) -> Result<GroundedSketch, SketchError> {
-    let (prepared, layout, constants) = prepare_coordinates(sketch, parameters, anchors)?;
+    prepare_with_fixed_scalars(sketch, parameters, anchors, &[])
+}
+pub(super) fn prepare_with_fixed_scalars(
+    sketch: &Sketch2D,
+    parameters: &ParameterCollection<u64>,
+    anchors: &[SketchPoint2D],
+    scalars: &[(super::variables::SketchVariable, f64)],
+) -> Result<GroundedSketch, SketchError> {
+    let (prepared, layout, constants) = prepare_coordinates(sketch, parameters, anchors, scalars)?;
     let sources = prepared
         .sources
         .into_iter()
@@ -93,10 +101,12 @@ fn prepare_coordinates(
     sketch: &Sketch2D,
     parameters: &ParameterCollection<u64>,
     anchors: &[SketchPoint2D],
+    scalars: &[(super::variables::SketchVariable, f64)],
 ) -> Result<PreparedCoordinates, SketchError> {
     // #3762 / #3808: branch and contact preparation must see the current reference coordinates.
     let (warm, identities) = grounded_seed(sketch, anchors)?;
-    let columns = grounded_columns(&warm, &identities);
+    let mut columns = grounded_columns(&warm, &identities);
+    add_fixed_scalar_columns(&warm, scalars, &mut columns)?;
     let targets = super::frozen::authored_targets(&warm)?;
     let constants = coincident_constants::propagate(&warm, anchors, &targets, &columns)?;
     let seed = super::frozen::seed_authored(&warm, &constants)?;
@@ -104,6 +114,30 @@ fn prepare_coordinates(
     let prepared = compile::prepare(&seed, parameters)?;
     let layout = GroundedLayout::new(&prepared.values, &columns);
     Ok((prepared, layout, constants))
+}
+
+pub(super) fn add_fixed_scalar_columns(
+    sketch: &Sketch2D,
+    scalars: &[(super::variables::SketchVariable, f64)],
+    columns: &mut BTreeSet<usize>,
+) -> Result<(), SketchError> {
+    if scalars.is_empty() {
+        return Ok(());
+    }
+    let values = sketch.variable_values();
+    for (variable, expected) in scalars {
+        let column = sketch.variable_column(*variable)?;
+        let actual = *values.get(column).ok_or_else(|| SketchError::Definition(format!(
+            "inference source scalar {variable:?} column {column}: expected an owned solver value"
+        )))?;
+        if actual.to_bits() != expected.to_bits() {
+            return Err(SketchError::Definition(format!(
+                "inference source scalar {variable:?} is {actual:?}: expected unchanged {expected:?}"
+            )));
+        }
+        columns.insert(column);
+    }
+    Ok(())
 }
 
 fn grounded_seed(

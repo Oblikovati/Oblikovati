@@ -1,0 +1,24 @@
+{
+  "tested_commit": "2461cd495",
+  "merge_commit": "406cc0750",
+  "environment": {
+    "display": "Xvfb 1600x1000x24",
+    "vulkan": "Lavapipe",
+    "profile": "unoptimized, debug info disabled"
+  },
+  "checks": [
+    {
+      "name": "rectangle selection color",
+      "result": "passed"
+    },
+    {
+      "name": "viewport interaction native group",
+      "result": "8 passed, 6 performance tests ignored"
+    },
+    {
+      "name": "head scoped clippy",
+      "result": "passed with warnings denied"
+    }
+  ],
+  "limitation": "Native test run on Linux only; Windows live testing was not performed."
+}

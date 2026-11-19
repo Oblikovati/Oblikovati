@@ -17,6 +17,13 @@ pub struct GuiConstraintHover {
     pub sketch: oblikovati_model::document_sketch::DocumentSketchId,
     pub constraint: oblikovati_model::sketch::SketchConstraintId,
     pub related: Vec<oblikovati_model::sketch::SketchEntityId>,
+    pub candidates: Vec<GuiConstraintCandidate>,
+}
+/// An exact relation hit offered in an overlapping-glyph chooser.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiConstraintCandidate {
+    pub constraint: oblikovati_model::sketch::SketchConstraintId,
+    pub text: String,
 }
 const PADDING: f32 = 2.;
 /// Beside the point it describes, so the mark never hides the geometry it marks.
@@ -27,24 +34,31 @@ pub(crate) fn draw_constraint_glyphs(
     request: &GuiFrameRequest,
 ) -> Option<GuiConstraintHover> {
     let scale = request.layout_scale();
-    let mut hit = None;
-    let mut ambiguous = false;
+    let mut hits = Vec::new();
     for glyph in &request.commands.constraint_glyphs {
         if draw_glyph(ui, glyph, scale) {
-            if hit.is_some() {
-                ambiguous = true;
-            } else {
-                hit = Some(glyph);
-            }
+            hits.push(glyph);
         }
     }
-    if ambiguous {
-        return None;
-    }
-    hit.map(|glyph| GuiConstraintHover {
-        sketch: glyph.sketch,
-        constraint: glyph.constraint,
-        related: glyph.related.clone(),
+    let first = *hits.first()?;
+    let mut candidates: Vec<_> = hits
+        .iter()
+        .filter(|glyph| glyph.sketch == first.sketch)
+        .map(|glyph| GuiConstraintCandidate {
+            constraint: glyph.constraint,
+            text: glyph.text.clone(),
+        })
+        .collect();
+    candidates.sort_unstable_by_key(|candidate| candidate.constraint);
+    Some(GuiConstraintHover {
+        sketch: first.sketch,
+        constraint: first.constraint,
+        related: if candidates.len() == 1 {
+            first.related.clone()
+        } else {
+            Vec::new()
+        },
+        candidates,
     })
 }
 

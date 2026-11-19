@@ -19,7 +19,8 @@ impl GuiShellAction {
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
             Self::DismissSketchContext { .. } => true,
-            Self::HideContextConstraintGlyph { token, glyph } => {
+            Self::SelectContextConstraintGlyph { token, glyph }
+            | Self::HideContextConstraintGlyph { token, glyph } => {
                 sketch_enabled::glyph_context(state, *token, Some(*glyph))
             }
             Self::SetContextConstraintGlyphs { token, .. } => {
@@ -478,11 +479,7 @@ impl GuiShellAction {
             Self::Dimension(crate::GuiDimensionAction::Cancel { id }) => {
                 sketch_enabled::dimension_cancel(state, *id)
             }
-            Self::ToggleSketchFormat(_) => {
-                state.authoring == GuiAuthoringContext::Sketch
-                    && state.sketch_format_available
-                    && !state.transaction_open
-            }
+            Self::ToggleSketchFormat(_) => sketch_enabled::format_available(state),
             Self::PlaceSketchTool(tool) => {
                 (*tool != crate::GuiSketchTool::Point || !state.sketch_formats.construction)
                     && state.authoring == GuiAuthoringContext::Sketch

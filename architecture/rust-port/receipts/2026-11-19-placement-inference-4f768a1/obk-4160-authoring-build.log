@@ -1,0 +1,43 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling version_check v0.9.5
+   Compiling generic-array v0.14.7
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling autocfg v1.5.1
+   Compiling typenum v1.20.1
+   Compiling serde_core v1.0.229
+   Compiling num-traits v0.2.19
+   Compiling zmij v1.0.23
+   Compiling syn v3.0.7
+   Compiling libm v0.2.16
+   Compiling libc v0.2.190
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling serde_derive v1.0.229
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling getrandom v0.4.3
+   Compiling cfg-if v1.0.5
+   Compiling itoa v1.0.18
+   Compiling memchr v2.8.3
+   Compiling time-core v0.1.9
+   Compiling powerfmt v0.2.1
+   Compiling num-conv v0.2.2
+   Compiling deranged v0.5.8
+   Compiling time v0.3.55
+   Compiling digest v0.10.7
+   Compiling num-integer v0.1.47
+   Compiling base64 v0.22.1
+   Compiling cpufeatures v0.2.17
+   Compiling sha1_smol v1.0.1
+   Compiling uuid v1.27.0
+   Compiling sha2 v0.10.9
+   Compiling oblikovati-api v0.159.0 (https://github.com/Oblikovati/Oblikovati.API.git?rev=57ae73ca46bfcadcc09e3ec1d0c424d803cadc44#57ae73ca)
+   Compiling maryada v0.2.0
+   Compiling num-bigint v0.4.6
+   Compiling xml v1.4.0
+   Compiling oblikovati-solve v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/placement-inference-4160/crates/solve)
+   Compiling num-rational v0.4.2
+   Compiling oblikovati-model v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/placement-inference-4160/crates/model)
+    Finished `release` profile [optimized] target(s) in 1m 08s
+  Executable tests/sketch_transient_inference.rs (/tmp/obk-4160-integration-target/release/deps/sketch_transient_inference-59517184b8906b37)

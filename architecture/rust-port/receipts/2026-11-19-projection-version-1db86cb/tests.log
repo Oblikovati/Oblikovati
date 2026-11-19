@@ -1,0 +1,154 @@
+   Compiling oblikovati-model v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/projection-version-4174/crates/model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.79s
+     Running tests/associative_orientation.rs (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/deps/associative_orientation-e4b3187a717222ae)
+
+running 12 tests
+test missing_axes_decline_without_returning_a_previous_frame ... ok
+test feature_axes_are_resolved_again_and_never_frozen_in_the_recipe ... ok
+test origin_axes_resolve_without_an_external_catalogue ... ok
+test recipes::exact_orientation_comparison_distinguishes_signed_origins_and_all_authored_options ... ok
+test oriented_work_plane_recipes_follow_current_base_facing_and_fail_on_degeneracy ... ok
+test parallel_axes_and_unknown_sketches_are_refused ... ok
+test recipes::source_axis_choice_and_direction_changes_are_authored_edits ... ok
+test recipes::hidden_oriented_sketch_restores_both_metadata_and_axis_sources ... ok
+test changing_world_orientation_keeps_local_coordinates_and_solver_verification ... ok
+test recipes::absent_orientation_keeps_legacy_layout_and_oriented_records_require_version_three ... ok
+test recipes::malformed_authored_orientation_is_refused_before_mutation_or_restore ... ok
+test recipes::unknown_sketch_orientation_edits_are_refused ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/associative_point_projection.rs (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/deps/associative_point_projection-f23c0d1d427c7fc6)
+
+running 51 tests
+test guards::a_repeated_source_with_a_distinct_anchor_is_refused_atomically ... ok
+test guards::cancellation_discards_grounded_coordinates_and_projection_verification_as_one_batch ... ok
+test guards::deleting_the_last_projection_consumer_prunes_its_construction_source ... ok
+test guards::analysis_reads_current_projected_sources_and_refuses_source_loss ... ok
+test guards::distinct_sources_at_equal_coordinates_keep_both_anchor_identities ... ok
+test guards::removal_of_a_bound_anchor_is_refused_atomically ... ok
+test guards::removing_a_bound_anchor_or_malformed_bindings_is_refused_atomically ... ok
+test conditional_origin::legacy_fixed_xy_frame_is_not_promoted_to_canonical_origin ... ok
+test current_source_drives_grounding_and_pending_recompute_without_direct_dimension_reads ... ok
+test guards::document_health_reads_current_projected_sources_without_mutating_the_sketch ... ok
+test conditional_origin::moved_frame_invalidates_the_stored_projected_point ... ok
+test conditional_origin::frame_edit_and_unproven_frame_boxes_are_rejected ... ok
+test conditional_origin::nonfinite_or_misidentified_frame_assumptions_are_refused ... ok
+test guards::same_bindings_are_a_true_noop ... ok
+test conditional_origin::same_value_parameter_source_change_is_rejected ... ok
+test guards::structural_source_replay_failure_is_retained_in_the_projection_report ... ok
+test guards::source_failure_and_recovery_are_local_and_never_return_last_good_geometry_as_verified ... ok
+test conditional_origin::origin_projection_contains_exact_frame_assumption_corners ... ok
+test guards::source_redefinition_requires_a_new_solve_and_refreshes_dependencies ... ok
+test guards::unknown_selected_sketch_is_declined_before_solving ... ok
+test conditional_origin::nonorigin_projection_is_refused ... ok
+test guards::suppressed_source_does_not_stop_an_independent_sketch_and_selected_solve_is_local ... ok
+test conditional_origin::nonconstant_axis_assumptions_enclose_exact_corner_products ... ok
+test host_frame_edit_changes_local_anchor_and_undo_seed_cannot_supply_a_source ... ok
+test placement::host_loss_is_a_named_projection_failure_without_a_last_good_frame ... ok
+test placement::current_owned_host_axis_and_source_share_live_binding_resolution_and_reads ... ok
+test placement::reversing_the_host_normal_invalidates_projected_local_coordinates ... ok
+test projected_root::canonical_origin_rejects_stale_same_value_parameter_source ... ok
+test projected_root::changed_projection_source_is_rejected_even_when_local_coordinates_match ... ok
+test projected_root::fixed_lookalike_and_edited_plane_cannot_claim_canonical_identity ... ok
+test projected_root::projected_root_rejects_frame_change_with_same_rounded_anchor ... ok
+test projected_root::projected_root_rejects_same_value_parameter_source_edits ... ok
+test recipes::old_versions_cannot_accept_bindings_and_invalid_anchors_are_refused_on_restore ... ok
+test projected_root::projected_origin_bound_must_fit_the_variable_box ... ok
+test recipes::a_saved_warm_seed_cannot_override_current_projection_sources ... ok
+test recipes::hidden_projected_sketch_restores_and_remains_available_to_model_consumers ... ok
+test source_reads_join_deletion_dependencies_and_source_lookup_uses_identity ... ok
+test recipes::removing_bindings_restores_the_original_version_and_free_point_dof ... ok
+test projected_root::canonical_xy_identity_supplies_exact_origin_bounds_for_rectangle ... ok
+test standalone_parameter_health_and_solve_refuse_unresolved_point_sources ... ok
+test recipes::version_four_round_trip_preserves_sources_without_saving_verification ... ok
+test projected_root::displacements::segment_error_declines_unproven_frame ... ok
+test projected_root::generated_preconditioner_checks_the_actual_canonical_rectangle ... ok
+test projected_root::displacements::assumed_frame_cannot_claim_canonical_point_displacements ... ok
+test projected_root::generated_preconditioner_rejects_non_square_rectangle ... ok
+test projected_root::canonical_origin_root_tracks_formula_sources_across_solves ... ok
+test projected_root::displacements::rectangle_segments_have_source_attributed_conditional_bounds ... ok
+test projected_root::projected_rectangle_root_encloses_independent_origin_and_size_corners ... ok
+test projected_root::all_canonical_origin_plane_identities_bound_the_projected_origin ... ok
+test projected_root::projected_system_refuses_non_square_and_redundant_equations ... ok
+test projected_root::displacements::canonical_point_displacements_cover_exact_rectangle_corners_in_all_origin_frames ... ok
+
+test result: ok. 51 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/document_sketch.rs (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/deps/document_sketch-4fe68bf364992825)
+
+running 71 tests
+test block_definitions::captured_center_point_keeps_its_role ... ok
+test block_definitions::definition_recipes_refuse_constraints_owned_by_a_sketch ... ok
+test block_color::invalid_color_or_identity_never_changes_the_document ... ok
+test block_definitions::malformed_or_legacy_block_recipes_are_refused ... ok
+test block_definitions::invalid_capture_does_not_create_a_definition ... ok
+test block_definitions::invalid_names_and_duplicate_definitions_leave_the_registry_unchanged ... ok
+test block_definitions::captured_point_preserves_signed_zero_and_exact_recipe_comparison ... ok
+test block_definitions::captured_geometry_keeps_shared_points_and_does_not_change_the_source ... ok
+test block_instances::instance_placement_preserves_signed_zero_in_recipe_comparison ... ok
+test block_instances::placement_coordinates_round_trip_for_rotation_and_signed_scale ... ok
+test block_instances::instances_round_trip_with_global_identities_and_block_deletion_is_refused ... ok
+test block_definitions::empty_block_definitions_round_trip_in_creation_order ... ok
+test block_instances::old_or_malformed_instance_recipes_are_refused ... ok
+test block_instances::invalid_or_colliding_instances_never_change_the_document ... ok
+test block_instances::replacing_geometry_cannot_reuse_an_instance_identity ... ok
+test block_color::independent_colors_round_trip_and_clear_without_changing_old_recipes ... ok
+test constraint_glyphs::hidden_marks_round_trip_and_show_all_clears_overrides ... ok
+test constraint_glyphs::hidden_marks_reject_invalid_relations_and_invalid_recipes ... ok
+test constraint_glyphs::scalar_contract_reports_global_and_individual_glyph_visibility ... ok
+test block_instances::legacy_block_instances_receive_stable_numbers_during_migration ... ok
+test constraint_glyphs::replacing_geometry_drops_only_deleted_glyph_ids ... ok
+test custom_frame_options_round_trip_and_identity_allocators_do_not_rewind_on_failure_or_removal ... ok
+test block_instances::current_recipes_refuse_missing_or_duplicate_instance_numbers ... ok
+test entity_collisions_and_unknown_sketch_edits_leave_the_whole_document_unchanged ... ok
+test exact_recipe_comparison_tracks_signed_zero_geometry_fix_targets_and_collection_shape ... ok
+test face_support::face_support_round_trips_the_name_and_resolves_current_frames ... ok
+test document_recipes_preserve_order_names_frames_global_entities_and_local_constraints ... ok
+test named_geometry_and_placement_edits_preserve_keys_and_other_sketch_records ... ok
+test health::unconstrained_geometry_is_refused_with_its_free_variable_count ... ok
+test health::iteration_limit_is_a_named_decline_with_diagnostics ... ok
+test health::exact_signed_zero_targets_invalidate_even_when_numeric_equality_holds ... ok
+test health::geometry_replacement_clears_verification_but_name_and_plane_edits_keep_planar_results ... ok
+test saved_document_reference_keys_survive_restore_and_keep_kind_and_document_namespaces ... ok
+test selected::unknown_identity_is_rejected_before_cancellation_or_numerical_work ... ok
+test health::new_and_restored_recipes_require_fresh_verification_without_persisting_derived_health ... ok
+test shown_constraints_round_trip_at_version_six_and_older_recipes_refuse_them ... ok
+test health::cancelled_batches_keep_prior_diagnostics_and_stale_inputs ... ok
+test health::missing_parameter_dependencies_remain_tracked_through_creation_and_deletion ... ok
+test health::redundant_converged_geometry_keeps_its_warning_in_checked_diagnostics ... ok
+test health::upstream_formula_changes_mark_the_dimension_read_stale ... ok
+test restoring_refuses_invalid_collection_version_global_ids_geometry_and_frame_options ... ok
+test pending::equal_model_values_do_not_recompute_verified_readers ... ok
+test selected::selected_cancellation_retains_all_geometry_and_health ... ok
+test selected::selected_solve_updates_only_the_requested_geometry_and_verification ... ok
+test health::changed_targets_are_stale_while_equal_values_unrelated_edits_and_rename_stay_current ... ok
+test health::accepted_solver_domain_evidence_survives_document_verification ... ok
+test visibility::explicit_true_and_missing_overrides_restore_the_legacy_default ... ok
+test visibility::hidden_work_plane_sketch_keeps_its_reference_without_resolving_it ... ok
+test pending::local_failed_reader_does_not_block_an_independent_changed_reader ... ok
+test recompute::converged_redundancy_remains_visible_in_the_document_report ... ok
+test recompute::cancellation_before_during_and_after_a_converged_sketch_retains_the_complete_recipe ... ok
+test visibility::a_line_style_round_trips_at_version_seven_and_older_recipes_refuse_it ... ok
+test health::selected_tolerance_values_invalidate_actual_model_reads ... ok
+test pending::evaluation_comparison_separates_health_updates_from_authored_changes ... ok
+test health::failed_parameter_last_good_values_are_not_usable_and_recovery_requires_verification ... ok
+test pending::current_failed_readers_skip_retries_until_their_inputs_recover ... ok
+test visibility::visibility_preserves_geometry_identity_and_read_footprints ... ok
+test recompute::iteration_limits_and_invalid_options_do_not_adopt_unconverged_candidates ... ok
+test visibility::visibility_fields_require_version_five_even_for_explicit_true ... ok
+test visibility::visibility_edits_are_authored_content_and_repeated_values_are_noops ... ok
+test pending::pending_cancellation_keeps_geometry_and_evaluation_state_for_every_reader ... ok
+test selected::selected_solve_retries_a_current_failure_with_the_new_policy ... ok
+test visibility::repeated_visibility_changes_preserve_current_solver_verification ... ok
+test recompute::empty_documents_and_underconstraint_remain_explicit ... ok
+test visibility::legacy_recipes_keep_every_sketch_visible_without_new_fields ... ok
+test visibility::hidden_sketch_recipe_round_trips_in_version_five ... ok
+test visibility::unknown_visibility_targets_leave_the_verified_document_unchanged ... ok
+test restored_sketch_solves_with_zero_dof_and_keeps_document_placement ... ok
+test pending::initial_verification_then_changed_reader_selection_keeps_independent_geometry_and_stamps ... ok
+test recompute::ordered_batch_recomputes_parameters_without_mutating_input_identity_or_placement ... ok
+test recompute::invalid_parameter_and_unsatisfied_constraint_keep_local_geometry_and_continue_the_batch ... ok
+
+test result: ok. 71 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

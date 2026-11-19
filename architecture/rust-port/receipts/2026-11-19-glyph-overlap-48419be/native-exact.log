@@ -1,0 +1,14 @@
+   Compiling oblikovati-gui v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/glyph-overlap-4169/crates/gui)
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/glyph-overlap-4169/crates/head)
+    Finished `test` profile [unoptimized] target(s) in 51.12s
+     Running unittests src/lib.rs (/tmp/obk-glyph-overlap-4169/debug/deps/oblikovati_head-10ebd026c75ea768)
+
+running 5 tests
+test native::gui_loop_tests::application_bdd::sketch::constraint_glyph_hover::glyph_context_hides_one_and_f8_restores_all_without_changing_the_sketch ... ok
+test native::gui_loop_tests::application_bdd::sketch::constraint_glyph_hover::stale_glyph_menu_cannot_hide_a_relation_after_the_sketch_changes ... ok
+test native::gui_loop_tests::application_bdd::sketch::constraint_glyph_hover::stale_overlap_choice_cannot_select_after_a_sketch_edit ... ok
+test native::gui_loop_tests::application_bdd::sketch::constraint_glyph_hover::x11_glyph_context_hide_and_f8_restore ... ok
+test native::gui_loop_tests::application_bdd::sketch::constraint_glyph_hover::x11_overlapping_glyph_chooser_selects_the_named_relation_and_delete_removes_it ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 1511 filtered out; finished in 57.24s
+
