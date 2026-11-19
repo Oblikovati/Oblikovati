@@ -6,6 +6,110 @@ use crate::HeadWindow;
 use oblikovati_viewport::{ViewportKey, ViewportPhysicalKey};
 
 #[test]
+fn member_color_is_drawn_after_block_explosion() {
+    use oblikovati_api::types::{Color, OVERRIDE_COLOR_SOURCE, SketchEntityFormat};
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    world.draw_rectangle();
+    world.escape();
+    let edit = world.app().owner.active_sketch_edit().unwrap();
+    let line = world.edited_geometry().lines()[0].id;
+    world
+        .app()
+        .owner
+        .document_commands(edit.document)
+        .run("Prepare red block", |snapshot, _| {
+            let mut geometry = snapshot
+                .sketches
+                .get(edit.sketch)
+                .unwrap()
+                .geometry()
+                .clone();
+            let color = Color {
+                r: 255,
+                g: 0,
+                b: 0,
+                opacity: 1.0,
+                source: OVERRIDE_COLOR_SOURCE,
+            };
+            geometry
+                .set_entity_format(
+                    line,
+                    SketchEntityFormat {
+                        override_color: color,
+                        ..Default::default()
+                    },
+                )
+                .unwrap();
+            snapshot
+                .sketches
+                .replace_geometry(edit.sketch, geometry)
+                .unwrap();
+            snapshot
+                .sketches
+                .capture_block_definition("Red", edit.sketch, &[line])
+                .unwrap();
+            Ok::<_, String>(())
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    let name = world.run("Red").center();
+    world.right_click(diagnostics::pointer_pixels(name));
+    world.click_text("Place Block");
+    world.click([1100, 550]);
+    world.escape();
+    let row = world.run("Red:1").center();
+    world.right_click(diagnostics::pointer_pixels(row));
+    world.click_text("Explode");
+    world.pump(Vec::new());
+    let geometry = world.edited_geometry();
+    let exploded_line = geometry.lines().last().unwrap();
+    let exploded = exploded_line.id;
+    assert_eq!(
+        geometry
+            .entity_format(exploded)
+            .unwrap()
+            .unwrap()
+            .override_color
+            .r,
+        255
+    );
+    let points = exploded_line
+        .endpoints
+        .map(|id| geometry.point(id).unwrap().position);
+    let midpoint = [
+        (points[0][0] + points[1][0]) / 2.0,
+        (points[0][1] + points[1][1]) / 2.0,
+    ];
+    let pixel = world
+        .app()
+        .window
+        .sketch_pixel(edit.plane, midpoint)
+        .unwrap();
+    let image = super::super::capture_framebuffer(&mut world.app().window.native);
+    assert!(
+        red_pixel_near(&image, pixel),
+        "expected a red exploded member near {pixel:?}"
+    );
+    world.close();
+}
+
+fn red_pixel_near(image: &oblikovati_viewport::ViewportCapture, pixel: [i32; 2]) -> bool {
+    (-3..=3).any(|dy| {
+        (-3..=3).any(|dx| {
+            let x = (pixel[0] + dx) as usize;
+            let y = (pixel[1] + dy) as usize;
+            let index = (y * image.extent[0] as usize + x) * 4;
+            image.rgba.get(index..index + 3).is_some_and(|rgb| {
+                rgb[0] > 150
+                    && u16::from(rgb[0]) > u16::from(rgb[1]) * 2
+                    && u16::from(rgb[0]) > u16::from(rgb[2]) * 2
+            })
+        })
+    })
+}
+
+#[test]
 fn explode_instance_from_browser_menu_and_undo_redo() {
     let mut world = ApplicationWorld::new();
     world.start_empty_sketch();

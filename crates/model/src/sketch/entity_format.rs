@@ -12,11 +12,11 @@ pub struct SketchEntityFormatEntry {
     pub format: SketchEntityFormat,
 }
 impl Sketch2D {
-    /// Iterate stored overrides by identity; example: `for (id, format) in sketch.entity_format_overrides() { /* draw */ }`.
+    /// Inspect overrides by identity; example: `sketch.entity_format_overrides().get(&line)`.
     pub fn entity_format_overrides(
         &self,
-    ) -> impl ExactSizeIterator<Item = (&SketchEntityId, &SketchEntityFormat)> {
-        self.entity_formats.iter()
+    ) -> &std::collections::BTreeMap<SketchEntityId, SketchEntityFormat> {
+        &self.entity_formats
     }
     /// Read the explicit override, or `None` when inherited; example: `sketch.entity_format(line)?`.
     pub fn entity_format(

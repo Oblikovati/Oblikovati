@@ -156,14 +156,16 @@ impl SketchDisplayOverlay {
         entity: &SketchDisplayEntity,
         identity: oblikovati_model::sketch::SketchEntityId,
     ) {
-        let color = if self.selected.sketches.contains(&sketch.sketch)
-            || self.selected.entities.contains(&(sketch.sketch, identity))
-        {
-            &self.selected_color
-        } else {
-            sketch.line_color.as_ref().unwrap_or(&self.color)
-        };
-        match build_entity(viewer, sketch, entity, color, false) {
+        let selected = self.selected.sketches.contains(&sketch.sketch)
+            || self.selected.entities.contains(&(sketch.sketch, identity));
+        let color = entity_color(
+            sketch,
+            entity.entity,
+            selected,
+            &self.color,
+            &self.selected_color,
+        );
+        match build_entity(viewer, sketch, entity, &color, false) {
             Ok(structure) => self.structures.push(structure),
             Err(cause) => self.declines.push(display_decline(sketch, identity, cause)),
         }
@@ -173,6 +175,32 @@ impl SketchDisplayOverlay {
         self.declines.clear();
         self.source = None;
     }
+}
+fn entity_color(
+    sketch: &ViewportSketchDisplay,
+    entity: oblikovati_model::sketch::SketchEntityId,
+    selected: bool,
+    default: &Rgba,
+    selection: &Rgba,
+) -> Rgba {
+    if selected {
+        return selection.clone();
+    }
+    if let Some(color) = sketch
+        .geometry
+        .entity_format_overrides()
+        .get(&entity)
+        .map(|format| &format.override_color)
+        .filter(|color| color.source == oblikovati_api::types::OVERRIDE_COLOR_SOURCE)
+    {
+        return Rgba {
+            r: f32::from(color.r) / 255.0,
+            g: f32::from(color.g) / 255.0,
+            b: f32::from(color.b) / 255.0,
+            a: color.opacity as f32,
+        };
+    }
+    sketch.line_color.clone().unwrap_or_else(|| default.clone())
 }
 pub(super) fn build_entity(
     viewer: &V3dViewer,
@@ -281,5 +309,58 @@ mod role_style_tests {
             AspectTypeOfLine::Dotdash
         );
         assert_eq!(curve_role_line_style(true, true), AspectTypeOfLine::Dotdash);
+    }
+    #[test]
+    fn entity_color_overrides_sketch_color_but_selection_wins() {
+        use oblikovati_api::types::{Color, OVERRIDE_COLOR_SOURCE, SketchEntityFormat};
+        use oblikovati_model::{
+            document_sketch::DocumentSketchId,
+            sketch::{Sketch2D, SketchEntityId, SketchPlane},
+        };
+        let id = SketchEntityId(7);
+        let mut geometry = Sketch2D::default();
+        geometry.add_point(id, [0.0, 0.0]).unwrap();
+        let format = SketchEntityFormat {
+            override_color: Color {
+                r: 255,
+                g: 0,
+                b: 0,
+                opacity: 1.0,
+                source: OVERRIDE_COLOR_SOURCE,
+            },
+            ..Default::default()
+        };
+        geometry.set_entity_format(id, format).unwrap();
+        let blue = Rgba {
+            r: 0.0,
+            g: 0.0,
+            b: 1.0,
+            a: 1.0,
+        };
+        let red = Rgba {
+            r: 1.0,
+            g: 0.0,
+            b: 0.0,
+            a: 1.0,
+        };
+        let green = Rgba {
+            r: 0.0,
+            g: 1.0,
+            b: 0.0,
+            a: 1.0,
+        };
+        let sketch = ViewportSketchDisplay {
+            sketch: DocumentSketchId(1),
+            plane: SketchPlane::xy(),
+            geometry,
+            blocks: Vec::new(),
+            line_color: Some(blue.clone()),
+        };
+        assert_eq!(entity_color(&sketch, id, false, &green, &blue), red);
+        assert_eq!(entity_color(&sketch, id, true, &green, &blue), blue);
+        assert_eq!(
+            entity_color(&sketch, SketchEntityId(8), false, &green, &red),
+            blue
+        );
     }
 }
