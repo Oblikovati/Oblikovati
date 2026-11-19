@@ -68,7 +68,11 @@ impl DocumentSketches {
         if let Some(value) = &edit {
             value.validate()?;
         }
+        if same(self.sketches[index].frame_edit.as_ref(), edit.as_ref()) {
+            return Ok(());
+        }
         self.sketches[index].frame_edit = edit;
+        self.sketches[index].evaluation = None;
         Ok(())
     }
 }

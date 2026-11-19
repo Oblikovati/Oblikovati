@@ -41,6 +41,7 @@ fn preview_is_transient_and_committed_frame_survives_undo_and_redo() {
         })
         .unwrap();
     assert!(preview.same_recipe(committed));
+    assert_current_solve(&session, sketch);
     assert_eq!(
         session
             .snapshot()
@@ -52,7 +53,17 @@ fn preview_is_transient_and_committed_frame_survives_undo_and_redo() {
     );
     session.undo().unwrap();
     assert!(before.same_recipe(&session.snapshot().sketches));
+    assert!(matches!(
+        session
+            .snapshot()
+            .sketches
+            .get(sketch)
+            .unwrap()
+            .health(&session.snapshot().parameters),
+        oblikovati_model::document_sketch::PlacedSketchHealth::Unevaluated
+    ));
     session.redo().unwrap();
+    assert_current_solve(&session, sketch);
     assert_eq!(
         session
             .snapshot()
@@ -61,5 +72,15 @@ fn preview_is_transient_and_committed_frame_survives_undo_and_redo() {
             .recipe()
             .origin,
         [2., 3., 0.]
+    );
+}
+
+fn assert_current_solve(session: &DocumentSession<RecordingObserver>, sketch: DocumentSketchId) {
+    use oblikovati_model::document_sketch::{PlacedSketchHealth, SketchEvaluation};
+    let snapshot = session.snapshot();
+    assert!(
+        matches!(snapshot.sketches.get(sketch).unwrap().health(&snapshot.parameters),
+        PlacedSketchHealth::Current(SketchEvaluation::Numerical(diagnostics))
+        if diagnostics.termination == oblikovati_solve::nonlinear::SolveTermination::Converged)
     );
 }
