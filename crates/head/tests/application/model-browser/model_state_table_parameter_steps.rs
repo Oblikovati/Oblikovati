@@ -204,15 +204,7 @@ fn cancel_and_reopen(world: &mut ApplicationWorld) {
 #[then("d0 is absent from the chosen parameters")]
 fn parameter_not_chosen(world: &mut ApplicationWorld) {
     click(world, "Parameters");
-    assert_eq!(
-        world
-            .frame
-            .runs
-            .iter()
-            .filter(|run| run.text.trim() == "d0")
-            .count(),
-        1
-    );
+    removed_parameter_is_hidden(world);
 }
 #[then("the grid has no d0 column")]
 fn no_parameter_grid(world: &mut ApplicationWorld) {
