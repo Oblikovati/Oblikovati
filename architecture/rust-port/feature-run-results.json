@@ -376,5 +376,25 @@
     "scenario_inventory_sha256": "ae56e1923bf07a5c57af2ed430bc1c0c3ddfa00debfc5d2fc8d7877f8128776c",
     "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-model-browser-0890f84e0/scenario-arguments.json",
     "scenario_arguments_sha256": "769b6b8afbe77d607d7c99fa0cf10fbc68635d4dd4e7c43a51dc1089dd4293ae"
+  },
+  "features/application/docking-system/docking-system.feature": {
+    "feature_sha256": "1406edc4ac8267dbaa75f7305a7c090dfe544fd7638fee646578a8aca2332db2",
+    "supporting_files": {
+      "features/application/docking-system/BLOCKERS.md": "0361cffae1744a998577ce1a82cdb824a601ec3bf9695df744325881f086c216",
+      "features/application/docking-system/FIXTURES.md": "5989bba3c2dc829b0a46b0749616b1a177a7bcbcde6a847aa1445f1ed01d4f49",
+      "features/application/docking-system/FUNCTIONAL.md": "4e9078b8aa820d3c7377463e6c11a5301fc9f0e68e0ac30dcb1c8d2068f2eb8e",
+      "features/application/docking-system/VISUAL.md": "ab88095125af0b4dd5b5859fc743f1606837210ea54a787e9a45b3dc7aae875c",
+      "features/application/docking-system/right-dock-tabs.svg": "f07847f1b581581045032a3cf5d17d8d67de6f3a3ac82c4f035b5b692982ca55"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-docking-baseline-ffc5f785d/cucumber.json",
+    "cucumber_sha256": "b7e99675691c1ac70e4369da3036f6b64af30dff016058b73f8c369a3af2e457",
+    "application_commit": "ffc5f785d",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=docking-system OBK_BDD_REPORTS=/tmp/obk-docking-baseline-ffc5f785d cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe; mixed native and scripted input",
+    "notes": "Full diagnostic passed 8 of 10 declarations and 65 steps. Two capture_host_only scenarios were excluded because host fixture attestation is unavailable; the feature is not complete. Source and support files matched before and after; the source is unversioned.",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-docking-baseline-ffc5f785d/scenario-inventory.json",
+    "scenario_inventory_sha256": "c4fe86998c8b053dd4505cbcce28704cf8279d0c4be561b2f6ceb64187ebaac0",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-docking-baseline-ffc5f785d/scenario-arguments.json",
+    "scenario_arguments_sha256": "a313aecfe73922c8242fb0dbbf684a4b58c79308ce982e0cc36677e4d985fda7"
   }
 }
