@@ -93,6 +93,8 @@ fn diagnostics_center(run: &super::super::diagnostics::RenderedRun) -> [f32; 2] 
 fn border_marked(world: &mut ApplicationWorld) {
     let label = if world.shows("X Axis") {
         "X Axis"
+    } else if world.shows("XY Plane") {
+        "XY Plane"
     } else {
         DRAWING_BORDER
     };

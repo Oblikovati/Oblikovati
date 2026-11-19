@@ -36,3 +36,47 @@ fn unfiltered_tree(world: &mut ApplicationWorld) {
         world.expect_text(label);
     }
 }
+
+#[given("a part with origin axes and planes is active in the MCAD Software")]
+fn part_with_origin(world: &mut ApplicationWorld) {
+    super::browser_feature::open_visible_extruded_part(world);
+    origin_axes_present(world);
+}
+
+#[given("the browser search field contains \"axis\"")]
+fn field_contains_axis(world: &mut ApplicationWorld) {
+    search_for(world, "axis".into());
+    world.expect_text("axis");
+}
+
+#[given("X Axis, Y Axis and Z Axis are displayed under Origin")]
+fn filtered_axes_present(world: &mut ApplicationWorld) {
+    matching_axes(world);
+}
+
+#[when(regex = r#"^the user selects all search text and replaces it with "([^"]*)"$"#)]
+fn replace_search(world: &mut ApplicationWorld, query: String) {
+    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
+    world.type_text(&query);
+}
+
+#[then("the browser displays a no-results message instead of the axis rows")]
+fn no_matching_axes(world: &mut ApplicationWorld) {
+    world.expect_text("No matching entries");
+    world.expect_no_text("X Axis");
+    world.expect_no_text("Y Axis");
+    world.expect_no_text("Z Axis");
+}
+
+#[then("the browser displays YZ Plane, XZ Plane and XY Plane under Origin")]
+fn matching_planes(world: &mut ApplicationWorld) {
+    for label in ["Origin", "YZ Plane", "XZ Plane", "XY Plane"] {
+        world.expect_text(label);
+    }
+    world.expect_no_text("X Axis");
+}
+
+#[when("the user clears the query and closes the empty search field")]
+fn clear_query_and_close(world: &mut ApplicationWorld) {
+    clear_and_close(world);
+}
