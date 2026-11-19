@@ -1,0 +1,9 @@
+{
+  "application_commit": "42aa1f8ff",
+  "feature": "features/application/model-browser/model-browser.feature",
+  "feature_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e",
+  "scenario": "Cancel a staged model-state suppression change",
+  "passed_steps": 13,
+  "environment": "Linux X11, Xvfb, software Vulkan, native mouse and keyboard input",
+  "scope": "Focused scenario only; this is not a full-feature run. The source was unversioned."
+}
