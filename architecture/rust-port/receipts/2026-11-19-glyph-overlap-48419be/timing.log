@@ -1,0 +1,8 @@
+
+running 1 test
+test dense_overlap_frame_timing ... unhovered: p50=5.932135ms p95=6.34044ms max=6.484918ms
+overlap: p50=6.288504ms p95=6.543005ms max=6.767621ms
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 3.82s
+
