@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T04:17:34.035984314Z" time="11.526255366000001"><testcase name="Scenario: Float and redock the model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:729:3" time="11.526255366000001"><system-out><![CDATA[  Scenario: Float and redock the model browser
+   ✔  Given a part is open in the MCAD Software with the model browser docked on the left
+   ✔  And the browser tree and shaded block are visible
+   ✔  When the user drags the Model tab into the viewport and release it
+   ✔  Then the browser becomes a floating panel over the viewport
+   ✔  And the browser tree remains available in the floating panel
+   ✔  And the viewport occupies the space formerly used by the docked panel
+   ✔  When the user drags the floating Model tab to the left edge and release it
+   ✔  Then the browser docks on the left again
+   ✔  And the tree and shaded block remain visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -7,16 +7,7 @@ fn geometry(name: &str) -> ([f32; 2], [f32; 2]) {
     window_geometry(name).unwrap_or_else(|| panic!("expected window {name:?}"))
 }
 fn viewport_area(world: &mut ApplicationWorld) -> [u32; 4] {
-    let extent = world.extent();
-    world
-        .app()
-        .window
-        .native
-        .gui
-        .as_ref()
-        .unwrap()
-        .document_area(extent)
-        .unwrap()
+    world.viewport_bounds()
 }
 #[given("the ribbon and model browser are visible")]
 fn ribbon_and_browser_visible(world: &mut ApplicationWorld) {

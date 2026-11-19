@@ -3,16 +3,7 @@
 use super::*;
 
 pub(in super::super) fn viewport(world: &mut ApplicationWorld) -> [u32; 4] {
-    let extent = world.extent();
-    world
-        .app()
-        .window
-        .native
-        .gui
-        .as_ref()
-        .unwrap()
-        .document_area(extent)
-        .unwrap()
+    world.viewport_bounds()
 }
 
 #[test]

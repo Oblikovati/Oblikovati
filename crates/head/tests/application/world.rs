@@ -283,6 +283,18 @@ impl ApplicationWorld {
             .unwrap()
             .unwrap()
     }
+    /// Read viewport pixel bounds; example: `world.viewport_bounds()` after a frame.
+    pub fn viewport_bounds(&mut self) -> [u32; 4] {
+        let extent = self.extent();
+        self.app()
+            .window
+            .native
+            .gui
+            .as_ref()
+            .expect("expected the GUI")
+            .document_area(extent)
+            .expect("expected viewport bounds")
+    }
     /// Assert the viewport shows in this rectangle: its background gradient has uniform rows.
     pub fn expect_blank_region(&mut self, x: [usize; 2], y: [usize; 2]) {
         let capture = super::capture_framebuffer(&mut self.app().window.native);

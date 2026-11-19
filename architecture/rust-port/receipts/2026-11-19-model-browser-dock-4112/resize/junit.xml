@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T04:17:21.629893785Z" time="11.580858631"><testcase name="Scenario: Resize the docked model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:717:3" time="11.580858631"><system-out><![CDATA[  Scenario: Resize the docked model browser
+   ✔  Given a part is open in the MCAD Software with the model browser docked at the left
+   ✔  And the browser tree and a shaded block are visible
+   ✔  When the user drags the divider between the browser and viewport to the right
+   ✔  Then the browser becomes wider and the viewport becomes narrower
+   ✔  And the tree hierarchy remains visible
+   ✔  And the block remains visible with the same apparent size and orientation
+   ✔  When the user drags the divider back to the left
+   ✔  Then the browser becomes narrower and the viewport becomes wider
+   ✔  And the tree and block remain visible
+]]></system-out></testcase></testsuite></testsuites>

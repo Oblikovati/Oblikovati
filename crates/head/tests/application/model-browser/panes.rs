@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The dock's other panes, and the dock itself.
 use super::*;
+#[cfg(target_os = "linux")]
+#[path = "panes_native.rs"]
+mod native;
 
 const FAVORITES: &str = "Favorites";
 const TREE_VIEW: &str = "Tree View";
 const THUMBNAIL_VIEW: &str = "Thumbnail View";
-const LEFT_EDGE: [i32; 2] = [4, 400];
-const RIGHT_EDGE: [i32; 2] = [1436, 400];
-const OVER_VIEW: [i32; 2] = [800, 400];
+const DOCK_TARGET_INSET: f32 = 15.;
+const MAX_SPLITTER_GAP: f32 = 12.;
 /// What a floating or docked browser's tree shows, whatever else is on screen.
 const TREE_ROW: &str = "Center Point";
 
@@ -165,22 +167,74 @@ fn browser_geometry() -> ([f32; 2], [f32; 2]) {
     diagnostics::window_geometry("Model").expect("expected the browser")
 }
 fn drag_model_tab(world: &mut ApplicationWorld, to: [i32; 2]) {
-    let at = tab_bar_of(world, "Model").map(|value| value as i32);
+    let at = diagnostics::pointer_pixels(tab_bar_of(world, "Model"));
     world.drag(at, to);
     settle(world);
 }
 fn divider() -> [i32; 2] {
     let (position, size) = browser_geometry();
-    [
-        (position[0] + size[0]) as i32 + 3,
-        (position[1] + size[1] / 2.) as i32,
-    ]
+    diagnostics::pointer_pixels([position[0] + size[0] + 3., position[1] + size[1] / 2.])
+}
+fn expect_left_docked(world: &mut ApplicationWorld) {
+    expect_dock_adjacent(world, false);
+}
+fn expect_dock_adjacent(world: &mut ApplicationWorld, right_side: bool) {
+    let (position, size) = browser_geometry();
+    let viewport = world.viewport_bounds();
+    let dock = diagnostics::window_dock_id("Model").expect("expected a visible model browser");
+    assert_ne!(dock, 0, "expected a docked browser");
+    let left = diagnostics::pointer_pixels(position)[0];
+    let right = diagnostics::pointer_pixels([position[0] + size[0], position[1]])[0];
+    let gap = if right_side {
+        left - viewport[2] as i32
+    } else {
+        viewport[0] as i32 - right
+    };
+    let max_gap = diagnostics::pointer_pixels([MAX_SPLITTER_GAP, 0.])[0];
+    assert!(
+        (-1..=max_gap).contains(&gap),
+        "browser {position:?} {size:?}, viewport {viewport:?}: expected adjacent dock"
+    );
+}
+fn edge_target(world: &mut ApplicationWorld, right: bool) -> [i32; 2] {
+    let area = world.viewport_bounds();
+    let inset = diagnostics::pointer_pixels([DOCK_TARGET_INSET, 0.])[0] as u32;
+    assert!(
+        area[2] > area[0] + inset * 2,
+        "viewport {area:?}: expected space for docking targets"
+    );
+    let x = if right {
+        area[2] - inset
+    } else {
+        area[0] + inset
+    };
+    [x as i32, ((area[1] + area[3]) / 2) as i32]
+}
+fn remember_viewport(world: &mut ApplicationWorld) {
+    let area = world.viewport_bounds();
+    world.docking_resize = Some((area, 0.));
+}
+fn expect_viewport_change(world: &mut ApplicationWorld, narrowed: bool) {
+    let before = world
+        .docking_resize
+        .expect("expected the previous viewport")
+        .0;
+    let after = world.viewport_bounds();
+    let changed = if narrowed {
+        after[0] > before[0]
+    } else {
+        after[0] < before[0]
+    };
+    assert!(
+        changed && after[2] == before[2],
+        "viewport {before:?} -> {after:?}"
+    );
 }
 #[given("a part is open in the MCAD Software with the model browser docked at the left")]
 #[given("a part is open in the MCAD Software with the model browser docked on the left")]
 fn docked_part(world: &mut ApplicationWorld) {
     open_block(world);
-    assert_eq!(browser_geometry().0[0], 8., "expected the left dock");
+    expect_left_docked(world);
 }
 #[given("the browser tree and a shaded block are visible")]
 #[given("the browser tree and shaded block are visible")]
@@ -194,8 +248,10 @@ fn tree_and_block(world: &mut ApplicationWorld) {
 #[when("the user drags the divider between the browser and viewport to the right")]
 fn divider_right(world: &mut ApplicationWorld) {
     world.observed_row_gap = Some(browser_geometry().1[0]);
+    remember_viewport(world);
     let from = divider();
-    world.drag(from, [from[0] + 120, from[1]]);
+    let delta = (world.extent()[0] / 12) as i32;
+    world.drag(from, [from[0] + delta, from[1]]);
     settle(world);
 }
 #[then("the browser becomes wider and the viewport becomes narrower")]
@@ -205,6 +261,7 @@ fn browser_wider(world: &mut ApplicationWorld) {
         browser_geometry().1[0] > earlier,
         "browser width from {earlier}"
     );
+    expect_viewport_change(world, true);
 }
 #[then("the tree hierarchy remains visible")]
 #[then("its tree remains visible")]
@@ -221,8 +278,10 @@ fn block_kept(world: &mut ApplicationWorld) {
 #[when("the user drags the divider back to the left")]
 fn divider_left(world: &mut ApplicationWorld) {
     world.observed_row_gap = Some(browser_geometry().1[0]);
+    remember_viewport(world);
     let from = divider();
-    world.drag(from, [from[0] - 120, from[1]]);
+    let delta = (world.extent()[0] / 12) as i32;
+    world.drag(from, [from[0] - delta, from[1]]);
     settle(world);
 }
 #[then("the browser becomes narrower and the viewport becomes wider")]
@@ -232,11 +291,17 @@ fn browser_narrower(world: &mut ApplicationWorld) {
         browser_geometry().1[0] < earlier,
         "browser width from {earlier}"
     );
+    expect_viewport_change(world, false);
 }
 #[when("I drag the Model tab into the viewport and release it")]
 #[when("the user drags the Model tab into the viewport and release it")]
 fn tab_into_view(world: &mut ApplicationWorld) {
-    drag_model_tab(world, OVER_VIEW);
+    let area = world.viewport_bounds();
+    let center = [
+        ((area[0] + area[2]) / 2) as i32,
+        ((area[1] + area[3]) / 2) as i32,
+    ];
+    drag_model_tab(world, center);
 }
 #[then("the browser becomes a floating panel over the viewport")]
 fn browser_floats(_: &mut ApplicationWorld) {
@@ -252,22 +317,20 @@ fn view_spreads(world: &mut ApplicationWorld) {
 #[when("I drag the Model tab to the left edge and release it")]
 #[when("the user drags the Model tab to the left edge and release it")]
 fn tab_to_left(world: &mut ApplicationWorld) {
-    drag_model_tab(world, LEFT_EDGE);
+    let target = edge_target(world, false);
+    drag_model_tab(world, target);
 }
 #[then("the browser docks on the left again")]
-fn docks_left(_: &mut ApplicationWorld) {
-    assert_eq!(browser_geometry().0[0], 8., "expected the left dock");
+fn docks_left(world: &mut ApplicationWorld) {
+    expect_left_docked(world);
 }
 #[when("I drag the Model tab to the right edge and release it")]
 #[when("the user drags the Model tab to the right edge and release it")]
 fn tab_to_right(world: &mut ApplicationWorld) {
-    drag_model_tab(world, RIGHT_EDGE);
+    let target = edge_target(world, true);
+    drag_model_tab(world, target);
 }
 #[then("the browser docks on the right of the viewport")]
-fn docks_right(_: &mut ApplicationWorld) {
-    let (position, size) = browser_geometry();
-    assert!(
-        position[0] + size[0] > 1400.,
-        "browser at {position:?} {size:?}"
-    );
+fn docks_right(world: &mut ApplicationWorld) {
+    expect_dock_adjacent(world, true);
 }
