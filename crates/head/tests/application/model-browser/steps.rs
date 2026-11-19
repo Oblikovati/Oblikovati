@@ -42,6 +42,8 @@ mod panes;
 mod part_views;
 #[path = "relationships.rs"]
 mod relationships;
+#[path = "representations.rs"]
+mod representations;
 
 const ORIGIN_RESULT_ROW: &str = "XY Plane";
 const ORIGIN_ROW_NAMES: [&str; 7] = [
