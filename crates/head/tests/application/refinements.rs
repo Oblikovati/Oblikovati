@@ -326,7 +326,10 @@ fn press_search_close(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("I activate the search field close control")]
+#[when("the user activates the search field close control")]
+#[when("the user clears the search query")]
 #[when("I activate the close control again")]
+#[when("the user activates the close control again")]
 fn activate_close(world: &mut ApplicationWorld) {
     press_search_close(world);
 }

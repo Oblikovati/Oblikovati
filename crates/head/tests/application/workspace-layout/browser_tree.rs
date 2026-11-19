@@ -74,8 +74,10 @@ fn browser_visible(world: &mut ApplicationWorld) {
     world.expect_text("Origin");
 }
 #[when("I open the browser search field")]
+#[when("the user opens the browser search field")]
 #[given("the model browser search field is open")]
 fn open_search(world: &mut ApplicationWorld) {
+    world.click_text("Search");
     world.click_text("Search");
 }
 pub(in super::super) fn type_in_search(world: &mut ApplicationWorld, query: &str) {
@@ -175,6 +177,7 @@ fn search_hidden(world: &mut ApplicationWorld) {
     );
 }
 #[when("I enter a query that matches no browser entry")]
+#[when("the user enters a query that matches no browser entry")]
 fn enter_no_match(world: &mut ApplicationWorld) {
     type_in_search(world, "zzz");
 }
