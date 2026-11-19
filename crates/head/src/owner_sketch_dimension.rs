@@ -207,6 +207,17 @@ impl<
             .ok_or_else(|| {
                 format!("dimension draft {id}: expected the current placed owner draft")
             })?;
+        let (serial, generation) = self.next_dimension_draft(edit)?;
+        let Some(SketchToolState::Dimension(tool)) = self.sketch_tool.as_mut() else {
+            return Err(format!(
+                "dimension draft {id}: expected an active dimension command"
+            ));
+        };
+        tool.reset_draft(serial, generation);
+        self.dimension_prompt(false);
+        Ok(())
+    }
+    fn next_dimension_draft(&mut self, edit: HeadSketchEdit) -> Result<(u64, u64), String> {
         self.require_edit_document(edit.document)?;
         self.clear_geometric_picks(edit)?;
         let generation = self.capture_sketch_tool_context()?.1;
@@ -217,21 +228,18 @@ impl<
             )
         })?;
         self.dimension_serial = serial;
-        let Some(SketchToolState::Dimension(tool)) = self.sketch_tool.as_mut() else {
-            return Err(format!(
-                "dimension draft {id}: expected an active dimension command"
-            ));
-        };
-        tool.serial = serial;
-        tool.generation = generation;
-        tool.placed = None;
-        tool.cursor = None;
-        tool.proposal = None;
-        tool.committed = None;
-        tool.refusal = None;
-        tool.choice_required = false;
-        self.dimension_prompt(false);
-        Ok(())
+        Ok((serial, generation))
+    }
+    fn edit_dimension_on_creation(&self, document: u64) -> Result<bool, String> {
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|e| e.to_string())?;
+        Ok(session
+            .snapshot()
+            .effective_sketch_settings()
+            .edit_dimensions_when_created)
     }
     /// The General Dimension command is running, so a click on a label opens that dimension.
     pub(super) fn dimension_tool_active(&self) -> bool {
@@ -327,6 +335,12 @@ impl<
             });
         match result {
             Ok(result) => {
+                if !self.edit_dimension_on_creation(tool.edit.document)? {
+                    let (serial, generation) = self.next_dimension_draft(tool.edit)?;
+                    tool.reset_draft(serial, generation);
+                    self.dimension_prompt(false);
+                    return Ok(());
+                }
                 tool.generation = self.capture_sketch_tool_context()?.1;
                 let committed = self.created_dimension_edit(tool.edit, result.index);
                 self.clear_geometric_picks(tool.edit)?;
