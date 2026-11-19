@@ -193,7 +193,38 @@ fn unavailable_command_tooltip(world: &mut ApplicationWorld) {
         }
         world.pump(Vec::new());
     }
-    panic!("expected the unavailable Edit Coordinate System tooltip");
+    panic!(
+        "expected the unavailable Edit Coordinate System tooltip: {:?}",
+        world.text()
+    );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_command_help_returns_after_context_escape() {
+    let mut world = sketch_with_constrain_area();
+    super::super::x11_input::focus_window();
+    world.pump(Vec::new());
+    let command = world.run_in_window(CONSTRAIN, "EditCoordinateSystem");
+    let position = diagnostics::pointer_pixels(command.center());
+    super::super::x11_input::move_pointer(position);
+    world.pump(Vec::new());
+    unavailable_command_tooltip(&mut world);
+    super::super::x11_input::right_click(position);
+    world.pump(Vec::new());
+    coordinate_command_menu(&mut world);
+    world.expect_no_text("Change the sketch origin and coordinate axes.");
+    super::super::x11_input::press_escape();
+    world.pump(Vec::new());
+    command_menu_closes(&mut world);
+    constrain_remains_open(&mut world);
+    unavailable_command_tooltip(&mut world);
+    assert!(
+        world
+            .edited_geometry()
+            .same_recipe(&world.observed_sketch.as_ref().unwrap().geometry)
+    );
+    world.close();
 }
 
 #[test]

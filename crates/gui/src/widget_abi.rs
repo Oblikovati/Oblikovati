@@ -167,6 +167,13 @@ pub(crate) fn item_mouse_hovered(_: &Ui) -> bool {
     // The live Ui owns the context; imgui-rs omits this scalar flag.
     unsafe { imgui::sys::igIsItemHovered(imgui::sys::ImGuiHoveredFlags_NoNavOverride as i32) }
 }
+/// Check pointer hover on a disabled item after keyboard navigation; for example, a command tooltip.
+pub(crate) fn disabled_item_mouse_hovered(_: &Ui) -> bool {
+    let flags = imgui::sys::ImGuiHoveredFlags_NoNavOverride
+        | imgui::sys::ImGuiHoveredFlags_AllowWhenDisabled;
+    // The live Ui owns the context; imgui-rs omits the pointer-only flag.
+    unsafe { imgui::sys::igIsItemHovered(flags as i32) }
+}
 /// Draw literal UTF-8 in the current window; example: `literal_text(ui, point, color, "Part##1")` preserves hashes.
 pub(crate) fn literal_text(ui: &Ui, position: [f32; 2], color: [f32; 4], text: &str) {
     draw_literal_text(ui, position, color, text, false);

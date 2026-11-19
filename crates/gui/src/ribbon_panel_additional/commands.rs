@@ -132,7 +132,7 @@ fn unavailable_tooltip(
     label: &'static str,
     display: &mut RibbonDisplayState,
 ) {
-    if !ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+    if !crate::widget_abi::disabled_item_mouse_hovered(ui) {
         return;
     }
     if ui.is_mouse_clicked(imgui::MouseButton::Right) {
