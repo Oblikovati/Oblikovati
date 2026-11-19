@@ -58,6 +58,7 @@ mod sketch_edit_state;
 mod window_capture;
 pub use window_capture::{WINDOW_CAPTURE_METHODS, WindowCaptureAccess};
 mod sketch_inference;
+mod sketch_scope;
 pub use sketch_edit_state::SketchInspectionEdit;
 mod sketches;
 pub use edit::EDIT_METHODS;
@@ -94,12 +95,13 @@ use oblikovati_session::{
 pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 36] = [
+pub const QUERY_METHODS: [&str; 37] = [
     METHOD_MODEL_STATES_LIST,
     METHOD_APPLICATION_API_VERSION,
     METHOD_CLIENT_APPS_LIST,
     METHOD_MODEL_SELECTION,
     METHOD_SKETCH_GET_INFERENCE_OPTIONS,
+    METHOD_SKETCH_GET_INFERENCE_SCOPE,
     METHOD_DOCUMENTS_LIST_ATTACHMENTS,
     METHOD_DOCUMENTS_LIST_INTERESTS,
     METHOD_DOCUMENTS_HAS_INTEREST,
@@ -171,6 +173,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'
                 major: i64::from(oblikovati_api::API_MAJOR),
                 minor: i64::from(oblikovati_api::API_MINOR),
             }),
+            METHOD_SKETCH_GET_INFERENCE_SCOPE => {
+                sketch_scope::query(self.workspace, decode(method, request)?)
+            }
             METHOD_SKETCH_GET_INFERENCE_OPTIONS => {
                 sketch_inference::query_inference_preferences(self.workspace)
             }

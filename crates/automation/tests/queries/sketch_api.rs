@@ -470,3 +470,6 @@ mod read_contract;
 
 #[path = "sketch_api/pattern.rs"]
 mod pattern;
+
+#[path = "sketch_api/inference_scope.rs"]
+mod inference_scope;
