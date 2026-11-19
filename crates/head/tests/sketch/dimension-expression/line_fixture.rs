@@ -167,3 +167,44 @@ fn native_overconstraint_prompt_cancels_or_creates_driven_dimension() {
     }
     world.close();
 }
+
+#[test]
+fn native_dimension_editor_obeys_creation_preference() {
+    for enabled in [false, true] {
+        let mut world = ApplicationWorld::new();
+        world.start_sketch_on("YZ Plane");
+        world.select_line_tool();
+        for point in [[2., 2.], [4., 7.]] {
+            let pixel = world.sketch_pixel_of(point);
+            world.sketch_click(pixel);
+        }
+        world.escape();
+        let mut settings = oblikovati_model::sketch_settings::default_sketch_settings();
+        settings.edit_dimensions_when_created = enabled;
+        Client::new(world.app().owner.document_host())
+            .documents()
+            .set_sketch_settings(&oblikovati_api::wire::SetSketchSettingsArgs {
+                document: 0,
+                settings,
+            })
+            .unwrap();
+        world.key(ViewportPhysicalKey::D, false);
+        let line = world.sketch_pixel_of([3., 4.5]);
+        world.sketch_click(line);
+        let label = world.sketch_pixel_of([0.5, 5.5]);
+        world.sketch_click(label);
+        world.pump(Vec::new());
+        let rows = Client::new(world.app().owner.document_host())
+            .sketch()
+            .dimensions(&SketchArgs::default())
+            .unwrap()
+            .dimensions
+            .unwrap_or_default();
+        assert_eq!(rows.len(), 1);
+        assert_eq!(
+            diagnostics::window_geometry("Edit Dimension").is_some(),
+            enabled
+        );
+        world.close();
+    }
+}

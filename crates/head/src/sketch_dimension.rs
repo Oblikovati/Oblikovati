@@ -33,6 +33,17 @@ pub(crate) struct SketchDimensionState {
     pub choice_required: bool,
 }
 impl SketchDimensionState {
+    /// Clear a completed draft for the next dimension; example: `state.reset_draft(serial, generation)`.
+    pub(crate) fn reset_draft(&mut self, serial: u64, generation: u64) {
+        self.serial = serial;
+        self.generation = generation;
+        self.placed = None;
+        self.cursor = None;
+        self.proposal = None;
+        self.committed = None;
+        self.refusal = None;
+        self.choice_required = false;
+    }
     pub(crate) fn wants(
         &self,
         geometry: &Sketch2D,
