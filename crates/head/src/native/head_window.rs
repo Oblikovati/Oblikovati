@@ -57,6 +57,16 @@ impl HeadWindow for NativeHeadWindow {
         }
         Ok(())
     }
+    fn acknowledge_gui_document_units(
+        &mut self,
+        document: u64,
+        result: Result<(), String>,
+    ) -> Result<(), String> {
+        if let Some(gui) = &mut self.gui {
+            gui.acknowledge_document_units(document, result);
+        }
+        Ok(())
+    }
     fn window_capture_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
         self.view.drawable_extent().map(Some)
     }

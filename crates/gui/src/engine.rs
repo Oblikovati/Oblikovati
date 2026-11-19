@@ -237,6 +237,11 @@ impl GuiFrameEngine {
     ) {
         self.parameter_editor.acknowledge(action, result);
     }
+    /// Report a document-units commit result to its draft; example: `engine.acknowledge_document_units(1, Ok(()))`.
+    pub fn acknowledge_document_units(&mut self, document: u64, result: Result<(), String>) {
+        self.preferences
+            .acknowledge_document_units(document, result);
+    }
     /// Attach owner-thread clipboard I/O; example: `GuiFrameEngine::with_clipboard(clipboard)?`.
     pub fn with_clipboard(clipboard: crate::GuiClipboard) -> Result<Self, String> {
         let mut owner = Self::new()?;

@@ -91,6 +91,13 @@ fn dispatch_frame_actions(
         window.acknowledge_gui_parameter(action, result.map(|_| ()))?;
     }
     for action in &update.actions {
+        if let GuiShellAction::SetDocumentUnits { document, request } = action {
+            let result = owner.set_document_units_from_gui(*document, request);
+            update.changed |= result.as_ref().copied().unwrap_or(false);
+            window.acknowledge_gui_document_units(*document, result.map(|_| ()))?;
+            update.changed = true;
+            continue;
+        }
         update.changed |= dispatch_gui_action(window, owner, action)?;
     }
     Ok(())

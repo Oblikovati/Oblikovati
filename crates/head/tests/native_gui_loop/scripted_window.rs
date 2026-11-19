@@ -42,6 +42,13 @@ impl HeadWindow for ScriptedGuiWindow {
     ) -> Result<(), String> {
         self.native.acknowledge_gui_parameter(action, result)
     }
+    fn acknowledge_gui_document_units(
+        &mut self,
+        document: u64,
+        result: Result<(), String>,
+    ) -> Result<(), String> {
+        self.native.acknowledge_gui_document_units(document, result)
+    }
     fn set_sketch_preview(
         &mut self,
         preview: Option<&oblikovati_viewport::ViewportSketchPreview>,
