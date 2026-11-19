@@ -148,6 +148,13 @@ const INFRASTRUCTURE: &[(&str, &str)] = &[
         "modal:MISSING_FILE",
     ),
     ("sketch/dimension-edit/mod.rs", "modal:WARNING"),
+    // Validation prompts are transient modals; their owning tools remain dockable.
+    ("browser_part_view_edit.rs", "modal:View Name Already Used"),
+    ("model_state_table_names.rs", "modal:Model state names"),
+    (
+        "model_state_table_verification.rs",
+        "modal:Table contains an error",
+    ),
     // One transient confirmation; the Move tool itself remains dockable (#4054).
     ("sketch/move_tool.rs", "modal:REJECTION_POPUP"),
 ];

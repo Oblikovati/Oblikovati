@@ -148,6 +148,7 @@ pub use dimension_labels::{GuiDimensionLabel, GuiDimensionLabelRole};
 mod sketch_delete;
 
 mod part_options_ui;
+mod sketch_options_hud;
 mod sketch_options_ui;
 mod ui_scale;
 

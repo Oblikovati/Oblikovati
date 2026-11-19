@@ -51,6 +51,7 @@ impl GuiScalePreferences {
         registry: &mut crate::dockable_lifecycle::DockRegistry,
     ) -> Result<(), String> {
         registry.register::<Self>("Application Options", &self.open)?;
+        self.sketch_draft.register_dockable(registry)?;
         self.document_units.register_dockable(registry)
     }
     /// Open the scale panel; example: the File menu's Options entry.
@@ -99,6 +100,7 @@ impl GuiScalePreferences {
                 ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
             })
             .unwrap_or(false);
+        self.sketch_draft.draw_hud(ui);
         if escape || close_requested {
             self.open.set_open(false);
         }

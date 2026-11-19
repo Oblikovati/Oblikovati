@@ -33,6 +33,7 @@ const TOGGLES: [(&str, ToggleField); 13] = [
 pub(crate) struct SketchOptionsDraft {
     original: Option<SketchApplicationOptions>,
     edited: Option<SketchApplicationOptions>,
+    hud: crate::sketch_options_hud::HudSettings,
 }
 impl SketchOptionsDraft {
     fn synchronize(&mut self, accepted: &SketchApplicationOptions) {
@@ -42,7 +43,20 @@ impl SketchOptionsDraft {
         }
     }
     pub(crate) fn clear(&mut self) {
-        *self = Self::default();
+        self.original = None;
+        self.edited = None;
+        self.hud.close();
+    }
+    pub(crate) fn register_dockable(
+        &self,
+        registry: &mut crate::dockable_lifecycle::DockRegistry,
+    ) -> Result<(), String> {
+        self.hud.register_dockable(registry)
+    }
+    pub(crate) fn draw_hud(&mut self, ui: &Ui) {
+        if let Some(edited) = self.edited.as_mut() {
+            self.hud.panel(ui, edited);
+        }
     }
     pub(crate) fn draw(
         &mut self,
@@ -65,6 +79,9 @@ impl SketchOptionsDraft {
             ui.text("Sketch settings changed. Revert before applying.");
         }
         let close = draw_actions(ui, edited, accepted, conflict, actions);
+        if ui.button("HUD Settings") {
+            self.hud.request(edited);
+        }
         draw_grid(ui, edited);
         for (label, field) in TOGGLES {
             ui.checkbox(label, field(edited));
