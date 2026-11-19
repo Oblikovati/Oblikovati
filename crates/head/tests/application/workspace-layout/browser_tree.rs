@@ -75,6 +75,7 @@ fn browser_visible(world: &mut ApplicationWorld) {
 }
 #[when("I open the browser search field")]
 #[when("the user opens the browser search field")]
+#[when("the user opens browser search")]
 #[given("the model browser search field is open")]
 fn open_search(world: &mut ApplicationWorld) {
     world.click_text("Search");
@@ -152,6 +153,7 @@ fn unrelated_filtered(world: &mut ApplicationWorld) {
     }
 }
 #[when("I close the empty search field")]
+#[when("the user closes the empty search field")]
 fn press_search_close(world: &mut ApplicationWorld) {
     world.click_text("x");
 }
@@ -256,6 +258,24 @@ fn sketch_remains(world: &mut ApplicationWorld) {
 fn search_closed(world: &mut ApplicationWorld) {
     world.expect_text("Origin");
     assert!(!close_control_shown(world), "expected no search field");
+}
+#[given("the model browser is visible with no search field open")]
+fn browser_visible_without_search(world: &mut ApplicationWorld) {
+    super::browser_feature::open_visible_extruded_part(world);
+    world.expect_text("Origin");
+    assert!(
+        !close_control_shown(world),
+        "expected no browser search field"
+    );
+}
+#[then("the field shows the placeholder \"Type Keyword\"")]
+fn search_placeholder(world: &mut ApplicationWorld) {
+    world.expect_text("Type Keyword");
+}
+#[then("the browser tree and solid remain visible")]
+fn tree_and_solid_visible(world: &mut ApplicationWorld) {
+    world.expect_text("Origin");
+    super::browser_feature::expect_solid_visible(world);
 }
 #[when("I select the browser search control")]
 fn select_search_control(world: &mut ApplicationWorld) {
