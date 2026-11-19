@@ -1,4 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
+/// A drawing view chosen in the desktop dialog.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GuiBaseViewRequest {
+    pub drawing: u64,
+    pub source: u64,
+    pub orientation: String,
+    pub scale: f64,
+    pub center: [f64; 2],
+}
 /// Transient profile preview request owned by the current document.
 #[derive(Clone, Debug, PartialEq)]
 pub struct GuiExtrudePreview {
@@ -16,6 +25,14 @@ pub struct GuiHoleRequest {
     pub face: String,
     pub diameter: String,
     pub depth: String,
+}
+/// Selected opening faces and wall thickness for a Shell draft.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiShellFeatureRequest {
+    pub document: u64,
+    pub generation: u64,
+    pub faces: Vec<String>,
+    pub thickness: String,
 }
 /// One generation-scoped, exactly identified body and its ordered motion draft.
 #[derive(Clone, Debug, PartialEq)]
