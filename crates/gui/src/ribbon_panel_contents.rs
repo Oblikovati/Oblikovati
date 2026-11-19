@@ -80,6 +80,7 @@ pub(crate) fn draw_panel_content(
             ],
             false,
         ),
+        RibbonPanel::ManageInsert => muted::manage_insert_commands(ui, origin, owners.icons),
         RibbonPanel::Create => {
             sketch::sketch_create_controls(ui, origin, state, owners.icons, actions)
         }

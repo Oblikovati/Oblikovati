@@ -15,6 +15,25 @@ pub(super) fn muted_commands(
         muted_command(ui, label, reason, icons, None, false, size);
     }
 }
+pub(super) fn manage_insert_commands(
+    ui: &Ui,
+    origin: [f32; 2],
+    icons: &crate::icons::GuiRibbonIcons,
+) {
+    muted_commands(
+        ui,
+        origin,
+        icons,
+        &[
+            "Derive",
+            "Feature",
+            "Insert iFeature",
+            "Insert Object",
+            "Import",
+        ],
+        NOT_PORTED,
+    );
+}
 pub(super) fn part_modify_controls(
     ui: &Ui,
     origin: [f32; 2],
