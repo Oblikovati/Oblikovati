@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{DocumentPackage, Mapping, PackageCodecError, Value};
 use oblikovati_model::sketch_settings::SketchSettings;
+use serde::Deserialize;
 
 impl DocumentPackage {
     /// Restore explicit settings, keeping absent/null records distinct from document defaults.
@@ -52,6 +53,9 @@ impl DocumentPackage {
             .and_then(Value::as_mapping)
             .cloned()
             .unwrap_or_default();
+        for name in sketch_setting_names()? {
+            section.remove(Value::String((*name).to_owned()));
+        }
         let encoded = serde_yaml_ng::to_value(settings).map_err(super::codec_error)?;
         section.extend(
             encoded
@@ -74,4 +78,43 @@ fn require_finite_spacing(settings: &SketchSettings) -> Result<(), PackageCodecE
         }
     }
     Ok(())
+}
+
+// Read the DTO's declared serde fields so newly omitted values cannot leave stale keys (#4161).
+fn sketch_setting_names() -> Result<&'static [&'static str], PackageCodecError> {
+    let mut names = None;
+    let _ = SketchSettings::deserialize(SketchSettingsFieldNames(&mut names));
+    names.ok_or_else(|| PackageCodecError("sketchSettings: expected a serde struct".into()))
+}
+
+struct SketchSettingsFieldNames<'a>(&'a mut Option<&'static [&'static str]>);
+
+impl<'de> serde::Deserializer<'de> for SketchSettingsFieldNames<'_> {
+    type Error = serde::de::value::Error;
+
+    fn deserialize_struct<V>(
+        self,
+        _name: &'static str,
+        fields: &'static [&'static str],
+        _visitor: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: serde::de::Visitor<'de>,
+    {
+        *self.0 = Some(fields);
+        Err(serde::de::Error::custom("field names captured"))
+    }
+
+    fn deserialize_any<V>(self, _visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: serde::de::Visitor<'de>,
+    {
+        Err(serde::de::Error::custom("expected a struct"))
+    }
+
+    serde::forward_to_deserialize_any! {
+        bool i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 char str string bytes
+        byte_buf option unit unit_struct newtype_struct seq tuple tuple_struct
+        map enum identifier ignored_any
+    }
 }

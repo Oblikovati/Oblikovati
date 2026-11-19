@@ -122,3 +122,29 @@ fn unknown_numeric_ids_are_preserved_as_contract_values() {
         original
     );
 }
+
+#[test]
+fn resetting_optional_settings_clears_previous_values_and_preserves_extensions() {
+    let original = package("sketchSettings: {custom: {revision: 7}}");
+    let mut settings = default_sketch_settings();
+    settings.custom_inference_types = true;
+    settings.inference_types = SketchInferenceTypes(3);
+    settings.custom_relax_types = true;
+    settings.relax_types = SketchRelaxTypes(5);
+    let enabled = original.with_sketch_settings(Some(&settings)).unwrap();
+    let reopened = DocumentPackage::decode(&enabled.encode().unwrap()).unwrap();
+    assert_eq!(
+        reopened.restore_sketch_settings().unwrap(),
+        Some(settings.clone())
+    );
+    settings.custom_inference_types = false;
+    settings.inference_types = SketchInferenceTypes(0);
+    settings.custom_relax_types = false;
+    settings.relax_types = SketchRelaxTypes(0);
+    let reset = reopened.with_sketch_settings(Some(&settings)).unwrap();
+    let reopened = DocumentPackage::decode(&reset.encode().unwrap()).unwrap();
+    assert_eq!(reopened.restore_sketch_settings().unwrap(), Some(settings));
+    let yaml =
+        String::from_utf8(reopened.section_yaml("sketchSettings").unwrap().unwrap()).unwrap();
+    assert!(yaml.contains("revision: 7"));
+}
