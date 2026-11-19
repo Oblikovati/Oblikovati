@@ -30,6 +30,7 @@ pub(crate) struct SketchDimensionState {
     pub proposal: Option<AddDimensionArgs>,
     pub committed: Option<oblikovati_gui::GuiDimensionEdit>,
     pub refusal: Option<String>,
+    pub choice_required: bool,
 }
 impl SketchDimensionState {
     pub(crate) fn wants(

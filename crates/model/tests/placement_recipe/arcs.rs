@@ -91,6 +91,7 @@ fn verify_locked_arc(fixture: GoRecipe) {
     let recipe = SketchPlacementRecipe::arc(center, [start, end], fixture.ccw).unwrap();
     let locks = [
         Some(SketchPlacementFieldLock {
+            reference: false,
             expression: "2.5 * 2 cm".into(),
             text_point: None,
         }),

@@ -11,6 +11,7 @@ pub struct GuiDimensionDraft {
     pub expression: String,
     pub committed: Option<crate::GuiDimensionEdit>,
     pub refusal: Option<String>,
+    pub choice_required: bool,
 }
 /// UI intent for one owner draft; example: `GuiDimensionAction::Start`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -57,6 +58,7 @@ pub(crate) fn validate_dimension_draft(state: &GuiCommandState) -> Result<(), St
         _ => false,
     };
     if draft.id == 0
+        || (draft.choice_required && draft.committed.is_some())
         || !kind_valid
         || !outcome_valid
         || !orientation_valid

@@ -111,3 +111,68 @@ fn redundant_reference_lock_preserves_the_accepted_geometry_bit_exact() {
         }
     }
 }
+
+#[test]
+fn prompt_policy_reports_redundancy_without_publishing_a_placement() {
+    use oblikovati_api::types::OVER_CONSTRAINED_PROMPT;
+    use oblikovati_model::history::{
+        EditError, SketchDimensionCreationError, SketchPlacementCreationError,
+    };
+    let mut history = super::super::polyline::polyline_history();
+    let before = history.snapshot().clone();
+    let mut recipe = placement(false);
+    recipe.fields.push(recipe.fields[0].clone());
+    let mut locks = [lock("10 cm"), None, None, lock("20 cm")];
+    let token = history.begin("Prompt for redundancy").unwrap();
+    let error = history
+        .edit(&token, |snapshot, ids| {
+            let mut settings = snapshot.effective_sketch_settings();
+            settings.over_constrained_behavior = OVER_CONSTRAINED_PROMPT;
+            snapshot.sketch_settings = Some(settings);
+            snapshot.create_sketch_placement(
+                DocumentSketchId(1),
+                &recipe,
+                &locks,
+                Default::default(),
+                ids,
+            )
+        })
+        .unwrap_err();
+    assert!(matches!(
+        error,
+        EditError::Mutation(SketchPlacementCreationError::Field { cause, .. })
+            if matches!(*cause, SketchDimensionCreationError::ChoiceRequired)
+    ));
+    assert!(before.sketches.same_recipe(&history.snapshot().sketches));
+    assert!(
+        before
+            .parameters
+            .same_recipe(&history.snapshot().parameters)
+    );
+    locks[3].as_mut().unwrap().reference = true;
+    let report = history
+        .edit(&token, |snapshot, ids| {
+            let mut settings = snapshot.effective_sketch_settings();
+            settings.over_constrained_behavior = OVER_CONSTRAINED_PROMPT;
+            snapshot.sketch_settings = Some(settings);
+            snapshot.create_sketch_placement(
+                DocumentSketchId(1),
+                &recipe,
+                &locks,
+                Default::default(),
+                ids,
+            )
+        })
+        .unwrap();
+    let geometry = history
+        .snapshot()
+        .sketches
+        .get(report.sketch)
+        .unwrap()
+        .geometry();
+    assert!(
+        geometry
+            .dimension_is_reference(report.dimensions[1].1.constraint)
+            .unwrap()
+    );
+}

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::sketch::SketchPoint2D;
-use oblikovati_api::types::OVER_CONSTRAINED_APPLY_DRIVING;
+use oblikovati_api::types::{OVER_CONSTRAINED_APPLY_DRIVING, OVER_CONSTRAINED_PROMPT};
 
 pub(super) enum DimensionRolePolicy {
     Explicit,
@@ -12,6 +12,7 @@ pub(super) enum DimensionRoleProbe {
     Redundancy {
         prior: usize,
         anchors: Vec<SketchPoint2D>,
+        prompt: bool,
     },
 }
 impl DocumentSnapshot {
@@ -43,10 +44,11 @@ impl DocumentSnapshot {
         options: SolveOptions,
         datums: AuthoringDatums<'_>,
     ) -> Result<DimensionRoleProbe, SketchError> {
-        if matches!(policy, DimensionRolePolicy::Explicit)
-            || input.reference
-            || self.effective_sketch_settings().over_constrained_behavior
-                == OVER_CONSTRAINED_APPLY_DRIVING
+        let behavior = self.effective_sketch_settings().over_constrained_behavior;
+        if input.reference
+            || behavior == OVER_CONSTRAINED_APPLY_DRIVING
+            || (matches!(policy, DimensionRolePolicy::Explicit)
+                && behavior != OVER_CONSTRAINED_PROMPT)
         {
             return Ok(DimensionRoleProbe::Explicit);
         }
@@ -54,7 +56,11 @@ impl DocumentSnapshot {
         let prior = geometry
             .analyze_with_grounded_points(&self.parameters, &anchors, options.rank_tolerance)?
             .redundant_equations;
-        Ok(DimensionRoleProbe::Redundancy { prior, anchors })
+        Ok(DimensionRoleProbe::Redundancy {
+            prior,
+            anchors,
+            prompt: behavior == OVER_CONSTRAINED_PROMPT,
+        })
     }
     pub(super) fn classify_dimension_role(
         &mut self,
@@ -62,8 +68,13 @@ impl DocumentSnapshot {
         id: SketchConstraintId,
         probe: DimensionRoleProbe,
         options: SolveOptions,
-    ) -> Result<(), SketchError> {
-        let DimensionRoleProbe::Redundancy { prior, anchors } = probe else {
+    ) -> Result<(), SketchDimensionCreationError> {
+        let DimensionRoleProbe::Redundancy {
+            prior,
+            anchors,
+            prompt,
+        } = probe
+        else {
             return Ok(());
         };
         let geometry = self.sketches.get(sketch)?.geometry();
@@ -72,6 +83,9 @@ impl DocumentSnapshot {
             .analyze_with_grounded_points(&self.parameters, &anchors, options.rank_tolerance)?
             .redundant_equations;
         if after > prior {
+            if prompt {
+                return Err(SketchDimensionCreationError::ChoiceRequired);
+            }
             self.sketches.set_dimension_reference(sketch, id, true)?;
         }
         Ok(())

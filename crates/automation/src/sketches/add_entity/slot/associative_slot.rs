@@ -89,6 +89,7 @@ pub(super) fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
         .ok_or_else(|| Error("slot placement: expected a Width field".into()))?;
     let mut locks = vec![None; recipe.fields.len()];
     locks[width] = Some(SketchPlacementFieldLock {
+        reference: false,
         expression,
         text_point: None,
     });

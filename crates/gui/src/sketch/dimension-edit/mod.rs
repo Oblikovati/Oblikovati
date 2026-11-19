@@ -40,6 +40,26 @@ pub(crate) struct GuiDimensionValueEditor {
     owner_draft: Option<u64>,
     unplaced: bool,
     reference: bool,
+    choice_open: bool,
+    choice_id: Option<u64>,
+}
+fn dimension_choice_action(
+    ui: &Ui,
+    draft: &crate::GuiDimensionDraft,
+) -> Option<crate::GuiDimensionAction> {
+    ui.text_wrapped(
+        "Adding this dimension will over-constrain the sketch. Create a Driven Dimension?",
+    );
+    if ui.button("Accept") || ui.is_key_pressed_no_repeat(Key::Enter) {
+        return Some(crate::GuiDimensionAction::Apply {
+            id: draft.id,
+            expression: draft.expression.clone(),
+            driven: true,
+        });
+    }
+    ui.same_line();
+    (ui.button("Cancel") || ui.is_key_pressed_no_repeat(Key::Escape))
+        .then_some(crate::GuiDimensionAction::Cancel { id: draft.id })
 }
 const TITLE: &str = "Edit Dimension";
 const DRIVEN_TITLE: &str = "Driven Dimension";
@@ -78,7 +98,7 @@ impl GuiDimensionValueEditor {
     }
     /// The editor owned this frame's keys; the Escape that closed it was not the command's.
     pub(crate) fn had_keyboard(&self) -> bool {
-        self.open.is_some() || self.closed_this_frame
+        self.open.is_some() || self.closed_this_frame || self.choice_open
     }
     pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
         if !state.sketch_at_ready && !state.dimension_tool_active {
@@ -93,6 +113,10 @@ impl GuiDimensionValueEditor {
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.closed_this_frame = false;
+        self.choice_open = false;
+        if self.dimension_choice(ui, request, actions) {
+            return;
+        }
         self.open_from_draft(request);
         if self.owner_draft.is_none() {
             self.open_at_pointer(ui, request);
@@ -190,6 +214,41 @@ impl GuiDimensionValueEditor {
             // Keyboard focus was this editor's; the sketch's own keys work again without a click.
             crate::widget_abi::release_keyboard_focus(ui);
         }
+    }
+    fn dimension_choice(
+        &mut self,
+        ui: &Ui,
+        request: &GuiFrameRequest,
+        actions: &mut Vec<GuiShellAction>,
+    ) -> bool {
+        const TITLE: &str = "Over-constrained dimension";
+        let Some(draft) = request
+            .commands
+            .dimension_draft
+            .as_ref()
+            .filter(|d| d.choice_required)
+        else {
+            if self.choice_id.take().is_some()
+                && let Some(_popup) = ui.begin_modal_popup(TITLE)
+            {
+                ui.close_current_popup();
+            }
+            return false;
+        };
+        self.choice_open = true;
+        if self.choice_id != Some(draft.id) {
+            self.choice_id = Some(draft.id);
+            ui.open_popup(TITLE);
+        }
+        let Some(_popup) = ui.begin_modal_popup(TITLE) else {
+            return true;
+        };
+        if let Some(action) = dimension_choice_action(ui, draft) {
+            actions.push(GuiShellAction::Dimension(action));
+            ui.close_current_popup();
+            self.choice_id = None;
+        }
+        true
     }
     fn open_from_draft(&mut self, request: &GuiFrameRequest) {
         let draft = request.commands.dimension_draft.as_ref();

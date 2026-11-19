@@ -65,6 +65,7 @@ fn verify_chain_commit(
 ) {
     let locks = [
         Some(SketchPlacementFieldLock {
+            reference: false,
             expression: format!("{} cm", recipe.fields[0].value),
             text_point: None,
         }),

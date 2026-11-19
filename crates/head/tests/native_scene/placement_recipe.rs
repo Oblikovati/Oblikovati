@@ -47,11 +47,13 @@ fn verify_native_placement(owner: &mut NativeDesktopOwner, document: u64, curved
     .unwrap();
     let locks = [
         Some(SketchPlacementFieldLock {
+            reference: false,
             expression: "10 cm".into(),
             text_point: Some([2.0, 3.0]),
         }),
         None,
         Some(SketchPlacementFieldLock {
+            reference: false,
             expression: "2 cm".into(),
             text_point: Some([4.0, 5.0]),
         }),
