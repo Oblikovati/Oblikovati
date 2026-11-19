@@ -5,7 +5,7 @@ use cucumber::{given, then, when};
 use oblikovati_api::contract::PartDesignView as _;
 
 #[given("the View representation branch is expanded with Primary active")]
-fn expanded_primary_view(world: &mut ApplicationWorld) {
+pub(super) fn expanded_primary_view(world: &mut ApplicationWorld) {
     let branch = view_branch(world).clone();
     world.click([branch.minimum[0] as i32 - 10, branch.center()[1] as i32]);
     world.pump(Vec::new());
@@ -109,7 +109,7 @@ fn expect_branch_label(world: &ApplicationWorld, name: &str) {
     assert!((active.center()[1] - branch.center()[1]).abs() < 3.);
 }
 
-fn view_branch(world: &ApplicationWorld) -> &super::super::diagnostics::RenderedRun {
+pub(super) fn view_branch(world: &ApplicationWorld) -> &super::super::diagnostics::RenderedRun {
     let representations = world.run("Representations");
     world
         .frame
