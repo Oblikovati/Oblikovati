@@ -85,7 +85,7 @@ fn browser_feature_properties_survives_search_filter() {
     assert!(window_geometry("Feature Properties").is_some());
     world.click_text("Search");
     world.pump(Vec::new());
-    let field = world.run("Search").center();
+    let field = world.run("Type Keyword").center();
     world.click(super::super::diagnostics::pointer_pixels(field));
     world.type_text("Extrude");
     world.run("Extrude");
@@ -125,5 +125,27 @@ fn restored_project_dock_survives_parent_closure() {
     let cancel = world.run_in_window("New document", "Cancel").center();
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(cancel));
     assert_closed_with_visible_tab(&mut world, title, "Material Browser");
+    world.close();
+}
+
+#[test]
+fn native_browser_search_hint_filters_and_restores_the_tree() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    super::dockspace_restart::native_click_label(&mut world, "Search");
+    world.expect_text("Type Keyword");
+    world.expect_text("Origin");
+    super::dockspace_restart::native_click_label(&mut world, "Type Keyword");
+    for character in "zzq".chars() {
+        super::super::x11_input::press_path_character(character);
+        world.pump(Vec::new());
+    }
+    world.expect_text("No matching entries");
+    super::dockspace_restart::native_click_label(&mut world, "x");
+    world.expect_text("Type Keyword");
+    world.expect_text("Origin");
+    super::dockspace_restart::native_click_label(&mut world, "x");
+    world.expect_no_text("Type Keyword");
+    world.expect_text("Origin");
     world.close();
 }

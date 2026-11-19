@@ -78,11 +78,11 @@ fn browser_visible(world: &mut ApplicationWorld) {
 #[given("the model browser search field is open")]
 fn open_search(world: &mut ApplicationWorld) {
     world.click_text("Search");
-    world.click_text("Search");
+    world.click_text("Type Keyword");
 }
 pub(in super::super) fn type_in_search(world: &mut ApplicationWorld, query: &str) {
-    // The empty field shows its hint, drawn after the button that opened it.
-    world.click_text("Search");
+    // The field hint identifies the empty input separately from its opener.
+    world.click_text("Type Keyword");
     world.type_text(query);
 }
 #[when(expr = "I enter {string}")]

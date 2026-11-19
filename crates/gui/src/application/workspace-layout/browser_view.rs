@@ -10,7 +10,7 @@ use imgui::Ui;
 
 const BROWSER_MENU: &str = "##browser-menu";
 const NO_RESULTS: &str = "No matching entries";
-const SEARCH_HINT: &str = "Search";
+const SEARCH_HINT: &str = "Type Keyword";
 const HIGHLIGHT: [f32; 4] = [0.95, 0.75, 0.2, 0.45];
 const LISTED_DISPLAY_PREFERENCES: [&str; 5] = [
     "Hide Notes",
