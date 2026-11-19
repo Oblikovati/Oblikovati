@@ -298,13 +298,10 @@ impl ApplicationWorld {
     /// Assert the viewport shows in this rectangle: its background gradient has uniform rows.
     pub fn expect_blank_region(&mut self, x: [usize; 2], y: [usize; 2]) {
         let capture = super::capture_framebuffer(&mut self.app().window.native);
-        let controls: Vec<_> = ["##orientation-control", "##navigation-bar"]
-            .into_iter()
-            .filter_map(super::diagnostics::window_pixel_bounds)
-            .collect();
+        let controls = super::diagnostics::window_occlusions();
         assert!(
             super::viewport_background::gradient_region_visible(&capture, x, y, &controls),
-            "region x={x:?} y={y:?}: expected viewport gradient outside navigation controls"
+            "region x={x:?} y={y:?}: expected viewport gradient outside GUI windows"
         );
     }
     /// Scope intermediate captures to one scenario, preserving its final root image.

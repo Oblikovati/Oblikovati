@@ -54,3 +54,20 @@ fn navigation_rectangle_uses_exclusive_bottom_and_right_bounds() {
     assert!(!inside_control(3, 2, bounds));
     assert!(!inside_control(1, 4, bounds));
 }
+
+#[test]
+fn an_open_menu_is_excluded_without_hiding_uncovered_geometry() {
+    let mut capture = gradient_capture();
+    for y in 2..6 {
+        for x in 1..4 {
+            let offset = (y * 8 + x) * 4;
+            capture.rgba[offset..offset + 4].copy_from_slice(&[100, 100, 100, 255]);
+        }
+    }
+    let menu = [[1., 2., 4., 6.]];
+    assert!(!gradient_region_visible(&capture, [0, 8], [0, 8], &[]));
+    assert!(gradient_region_visible(&capture, [0, 8], [0, 8], &menu));
+    let geometry = (3 * 8 + 6) * 4;
+    capture.rgba[geometry..geometry + 4].copy_from_slice(&[200, 200, 200, 255]);
+    assert!(!gradient_region_visible(&capture, [0, 8], [0, 8], &menu));
+}
