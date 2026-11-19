@@ -46,6 +46,12 @@ pub struct ViewportSketchHover {
 #[derive(Clone, Debug, PartialEq)]
 pub enum ViewportSketchFeedback {
     Entities(ViewportSketchHover),
+    /// One definition member in one placed instance, independently highlighted.
+    BlockMember {
+        sketch: DocumentSketchId,
+        instance: oblikovati_model::sketch::SketchEntityId,
+        member: oblikovati_model::sketch::SketchEntityId,
+    },
     Point {
         sketch: DocumentSketchId,
         position: [f64; 2],

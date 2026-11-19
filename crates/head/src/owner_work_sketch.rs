@@ -37,7 +37,8 @@ impl<
         self.resolve_tool_candidate(pixel, window).map(|feedback| {
             feedback.and_then(|value| match value {
                 oblikovati_viewport::ViewportSketchFeedback::Entities(hover) => Some(hover),
-                oblikovati_viewport::ViewportSketchFeedback::Point { .. } => None,
+                oblikovati_viewport::ViewportSketchFeedback::Point { .. }
+                | oblikovati_viewport::ViewportSketchFeedback::BlockMember { .. } => None,
             })
         })
     }

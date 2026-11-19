@@ -78,7 +78,7 @@ fn sample_block(
         },
     )
 }
-fn block_display(
+pub(in crate::renderer) fn block_display(
     sketch: &ViewportSketchDisplay,
     block: &ViewportSketchBlock,
 ) -> ViewportSketchDisplay {
@@ -102,7 +102,7 @@ fn center_marker(point: oblikovati_model::sketch::SketchPoint2D) -> SketchDispla
         primitive: SketchDisplayPrimitive::Point(point.position),
     }
 }
-fn transform_primitive(
+pub(in crate::renderer) fn transform_primitive(
     primitive: &SketchDisplayPrimitive,
     instance: &SketchBlockInstance,
 ) -> Result<SketchDisplayPrimitive, String> {

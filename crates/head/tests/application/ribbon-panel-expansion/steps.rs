@@ -31,6 +31,8 @@ mod shell_native;
 mod shell_placement;
 #[path = "sketch_block_context.rs"]
 mod sketch_block_context;
+#[path = "sketch_block_measure.rs"]
+mod sketch_block_measure;
 #[path = "sketch_block_placement.rs"]
 mod sketch_block_placement;
 #[path = "sketch_constrain.rs"]

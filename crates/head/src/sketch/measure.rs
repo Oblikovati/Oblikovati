@@ -15,6 +15,10 @@ use oblikovati_model::{
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum MeasurePick {
     Curve(SketchEntityId),
+    BlockCurve {
+        instance: SketchEntityId,
+        member: SketchEntityId,
+    },
     Point([f64; 2]),
     /// A curve's own middle, which reads as a point and is named for what it is.
     Middle([f64; 2]),
@@ -82,6 +86,11 @@ fn pick_rows(
                 selection_name(measure.conic)
             ));
             curve_rows(context, measure, rows)?;
+        }
+        MeasurePick::BlockCurve { instance, member } => {
+            return Err(format!(
+                "block measure {instance:?}/{member:?}: expected resolved placed geometry"
+            ));
         }
     }
     Ok(())
@@ -209,6 +218,11 @@ fn pair_range(sketch: &Sketch2D, picks: [MeasurePick; 2]) -> Result<SketchDistan
                 minimum: witness,
                 maximum: witness,
             });
+        }
+        _ => {
+            return Err(format!(
+                "measure operands {picks:?}: expected resolved placed geometry"
+            ));
         }
     };
     range.map_err(|cause| cause.to_string())

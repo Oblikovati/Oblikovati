@@ -8,7 +8,7 @@ use oblikovati_martensite::planar_curve::sketch::{
 };
 use oblikovati_model::theme::Rgba;
 #[path = "sketch_display/blocks.rs"]
-mod blocks;
+pub(super) mod blocks;
 #[derive(Default)]
 pub(super) struct SketchDisplayOverlay {
     pub(super) source: Option<(Vec<ViewportSketchDisplay>, f64)>,

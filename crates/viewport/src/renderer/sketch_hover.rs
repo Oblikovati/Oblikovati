@@ -94,6 +94,11 @@ impl RenderView {
                 .iter()
                 .map(|id| self.hover_entity(sketch, *id, palette))
                 .collect(),
+            ViewportSketchFeedback::BlockMember {
+                instance, member, ..
+            } => self
+                .hover_block_member(sketch, *instance, *member, palette)
+                .map(|value| vec![value]),
             ViewportSketchFeedback::Point { position, .. } => {
                 let glyph = super::sketch_marker::SketchPointGlyph::from_center_role(false);
                 sketch_structure::point(
@@ -124,9 +129,44 @@ impl RenderView {
         )?;
         build_entity(&self.viewer, sketch, &entity, &palette.candidate, true)
     }
+    fn hover_block_member(
+        &self,
+        sketch: &ViewportSketchDisplay,
+        instance: oblikovati_model::sketch::SketchEntityId,
+        member: oblikovati_model::sketch::SketchEntityId,
+        palette: &crate::ViewportSketchPalette,
+    ) -> Result<sketch_structure::SketchStructure, String> {
+        let block = sketch
+            .blocks
+            .iter()
+            .find(|block| block.instance.id() == instance)
+            .ok_or_else(|| format!("hover block {instance:?}: expected a displayed instance"))?;
+        let mut entity = sample_sketch_entity(
+            &block.geometry,
+            member,
+            SketchSamplingOptionsV1 {
+                deflection: self.sketch_deflection()? / block.instance.scale().abs(),
+                maximum_curve_points: 4096,
+            },
+        )?;
+        entity.primitive =
+            super::sketch_display::blocks::transform_primitive(&entity.primitive, &block.instance)?;
+        let definition = super::sketch_display::blocks::block_display(sketch, block);
+        build_entity(&self.viewer, &definition, &entity, &palette.candidate, true)
+    }
 }
 
 fn hover_still_valid(sketches: &[ViewportSketchDisplay], hover: &ViewportSketchFeedback) -> bool {
+    if let ViewportSketchFeedback::BlockMember {
+        instance, member, ..
+    } = hover
+    {
+        return find_sketch(sketches, hover).is_ok_and(|sketch| {
+            sketch.blocks.iter().any(|block| {
+                block.instance.id() == *instance && block.geometry.entity_kind(*member).is_ok()
+            })
+        });
+    }
     let ViewportSketchFeedback::Entities(ViewportSketchHover { entities, .. }) = hover else {
         // Derived positions must be recomputed after any source change.
         return false;
@@ -160,6 +200,7 @@ fn find_sketch<'a>(
             }
             *sketch
         }
+        ViewportSketchFeedback::BlockMember { sketch, .. } => *sketch,
     };
     let mut found = sketches.iter().filter(|sketch| sketch.sketch == id);
     let sketch = found

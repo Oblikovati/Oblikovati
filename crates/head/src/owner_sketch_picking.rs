@@ -28,7 +28,7 @@ impl SketchPickFilter {
 use oblikovati_session::selection::{SelectionClickMode, SketchPickTarget};
 use oblikovati_viewport::{ViewportButton, ViewportEvent, ViewportInput};
 // Match Go's snapPixels; this is a UI hit radius, not a modelling tolerance.
-const SKETCH_PICK_REACH: f64 = 12.;
+pub(super) const SKETCH_PICK_REACH: f64 = 12.;
 pub(super) type ContextCurve = (
     SketchEntityPickWitness,
     oblikovati_api::types::SketchEntityKind,
