@@ -9,11 +9,13 @@ use cucumber::{given, then, when};
 use oblikovati_api::contract::PartDesignView as _;
 
 #[given("The MCAD Software has a part containing one visible solid body")]
+#[given("The MCAD Software has a part containing one solid body")]
 fn visible_prism(world: &mut ApplicationWorld) {
     open_extruded_part(world);
     expect_solid_visible(world);
 }
 #[given("an unlocked copied view is active")]
+#[given("a copied view is active")]
 fn unlocked_copy_active(world: &mut ApplicationWorld) {
     expanded_primary_view(world);
     copy_primary_view(world);
@@ -33,6 +35,7 @@ fn lock_copy(world: &mut ApplicationWorld) {
     choose_copy_action(world, "Lock");
 }
 #[when("the user chooses All Hidden from the copied view context menu")]
+#[when("the user chooses All Hidden from the active view context menu")]
 fn hide_copy_bodies(world: &mut ApplicationWorld) {
     choose_copy_action(world, "All Hidden");
 }
@@ -42,6 +45,7 @@ fn choose_copy_action(world: &mut ApplicationWorld, label: &str) {
     world.pump(Vec::new());
 }
 #[then("the solid body is hidden in the viewport")]
+#[then("the solid body is not displayed in the viewport")]
 fn prism_hidden(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);
@@ -58,11 +62,11 @@ fn prism_hidden(world: &mut ApplicationWorld) {
     ));
 }
 #[then("the copied view displays a lock indicator")]
-fn copied_view_is_locked(world: &mut ApplicationWorld) {
+pub(super) fn copied_view_is_locked(world: &mut ApplicationWorld) {
     assert!(active_view_locked(world));
     assert!(lock_icon_visible(world));
 }
-fn active_view_locked(world: &mut ApplicationWorld) -> bool {
+pub(super) fn active_view_locked(world: &mut ApplicationWorld) -> bool {
     world
         .state()
         .browser
@@ -73,7 +77,7 @@ fn active_view_locked(world: &mut ApplicationWorld) -> bool {
         .unwrap()
         .locked()
 }
-fn lock_icon_visible(world: &mut ApplicationWorld) -> bool {
+pub(super) fn lock_icon_visible(world: &mut ApplicationWorld) -> bool {
     let row = world.run("Capture View").clone();
     let left = row.maximum[0] as usize + 5;
     let top = row.minimum[1] as usize;
@@ -114,4 +118,26 @@ fn visible_prism_after_switch(world: &mut ApplicationWorld) {
         .scene_status()
         .expect("expected a published scene");
     assert_eq!(status.visible_bodies, 1);
+}
+
+#[given("the solid body is visible")]
+fn initial_solid_visible(world: &mut ApplicationWorld) {
+    expect_solid_visible(world);
+}
+#[when("the user chooses All Visible from the active view context menu")]
+fn show_copy_bodies(world: &mut ApplicationWorld) {
+    choose_copy_action(world, "All Visible");
+}
+#[then("the solid body is displayed in the viewport")]
+fn solid_displayed(world: &mut ApplicationWorld) {
+    visible_prism_after_switch(world);
+}
+#[then("the solid body and its extrusion remain in the model browser")]
+fn solid_and_feature_still_exist(world: &mut ApplicationWorld) {
+    let state = world.state();
+    let browser = state.browser.unwrap();
+    assert_eq!(browser.bodies.len(), 1);
+    assert_eq!(browser.features.len(), 1);
+    world.expect_text("Solid Bodies");
+    world.expect_text("Features");
 }

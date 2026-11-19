@@ -44,6 +44,8 @@ mod part_views;
 mod relationships;
 #[path = "representations.rs"]
 mod representations;
+#[path = "view_origin.rs"]
+mod view_origin;
 #[path = "view_rename.rs"]
 mod view_rename;
 #[path = "view_visibility.rs"]
