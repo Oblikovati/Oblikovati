@@ -34,6 +34,9 @@ mod drawing_browser_steps;
 #[cfg(target_os = "linux")]
 #[path = "external_close_native.rs"]
 mod external_close_native;
+#[cfg(target_os = "linux")]
+#[path = "representation_preference_native.rs"]
+mod representation_preference_native;
 use drawing_browser_steps::{drag_over_drawing, drawing_tree, expect_sheet_at, floats_over_sheet};
 #[cfg(target_os = "linux")]
 #[path = "link_close_native.rs"]

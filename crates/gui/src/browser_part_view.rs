@@ -12,7 +12,13 @@ impl BrowserTree<'_> {
         if self.browser.model_states.is_none() && self.browser.part_design_views.is_none() {
             return;
         }
-        let Some(_representations) = self.branch("Representations", true) else {
+        let node = self.ui.tree_node_config("Representations");
+        let node = if let Some(open) = self.expansion {
+            node.opened(open, imgui::Condition::Always)
+        } else {
+            node.opened(view.auto_expand_representations(), imgui::Condition::Once)
+        };
+        let Some(_representations) = node.push() else {
             return;
         };
         self.model_states(view, actions);

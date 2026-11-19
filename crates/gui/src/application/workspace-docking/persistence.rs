@@ -15,9 +15,15 @@ pub(crate) struct WorkspaceDockSettings {
     pub parameters: bool,
     pub selection_filter: bool,
     pub history_browser: bool,
+    #[serde(default = "auto_expand_default")]
+    pub auto_expand_representations: bool,
     #[serde(default)]
     pub browser_panels:
         Option<crate::application::workspace_layout::panel_tabs::BrowserPanelSettings>,
+}
+
+fn auto_expand_default() -> bool {
+    true
 }
 
 impl WorkspaceDockSettings {
@@ -63,6 +69,7 @@ impl WorkspaceDockSettings {
         Self {
             version: VERSION,
             imgui_ini,
+            auto_expand_representations: auto_expand_default(),
             ..Self::default()
         }
     }
@@ -101,5 +108,19 @@ mod tests {
             WorkspaceDockSettings::decode(&engine.save_workspace_layout().unwrap()).unwrap();
         assert!(restored.material_browser && restored.selection_filter);
         assert!(!restored.appearance_browser && !restored.parameters && !restored.history_browser);
+    }
+    #[test]
+    fn old_settings_default_and_round_trip_representation_preference() {
+        let legacy = br#"{"version":1,"imgui_ini":"","material_browser":false,"appearance_browser":false,"parameters":false,"selection_filter":false,"history_browser":false}"#;
+        let mut settings = WorkspaceDockSettings::decode(legacy).unwrap();
+        assert!(settings.auto_expand_representations);
+        settings.auto_expand_representations = false;
+        let mut engine = crate::GuiFrameEngine::new().unwrap();
+        engine
+            .load_workspace_layout(&settings.encode().unwrap())
+            .unwrap();
+        let restored =
+            WorkspaceDockSettings::decode(&engine.save_workspace_layout().unwrap()).unwrap();
+        assert!(!restored.auto_expand_representations);
     }
 }

@@ -75,6 +75,12 @@ impl WorkspaceLayout {
     pub(crate) fn test_browser_view(&self) -> &browser_view::BrowserView {
         &self.view
     }
+    pub(crate) fn auto_expand_representations(&self) -> bool {
+        self.view.auto_expand_representations()
+    }
+    pub(crate) fn set_auto_expand_representations(&mut self, enabled: bool) {
+        self.view.set_auto_expand_representations(enabled);
+    }
     pub(crate) fn register_dockables(
         &self,
         registry: &mut crate::dockable_lifecycle::DockRegistry,
