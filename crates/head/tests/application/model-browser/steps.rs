@@ -38,6 +38,9 @@ mod model_state_suppression;
 #[path = "model_state_table.rs"]
 mod model_state_table;
 #[cfg(target_os = "linux")]
+#[path = "model_state_table_categories_steps.rs"]
+mod model_state_table_categories_steps;
+#[cfg(target_os = "linux")]
 #[path = "model_state_table_extra.rs"]
 mod model_state_table_extra;
 #[cfg(target_os = "linux")]
