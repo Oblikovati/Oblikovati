@@ -315,6 +315,26 @@ fn remove(view: &mut ModelStateTableView, selected: &mut ExtraSelection, kind: E
     });
     before != columns.len()
 }
+pub(crate) fn remove_parameter(
+    view: &mut ModelStateTableView,
+    selected: &mut ExtraSelection,
+    id: u64,
+) -> bool {
+    let Some(columns) = view.columns.as_mut() else {
+        return false;
+    };
+    let before = columns.len();
+    columns.retain(|column| {
+        column.kind != MODEL_STATE_TABLE_PARAMETER_COLUMN || column.parameter_id != id
+    });
+    if columns.len() == before {
+        return false;
+    }
+    if selected.parameter_chosen == Some(id) {
+        selected.parameter_chosen = None;
+    }
+    true
+}
 pub(crate) fn name<'a>(
     view: &'a ModelStateTableView,
     column: &ModelStateTableColumnRef,

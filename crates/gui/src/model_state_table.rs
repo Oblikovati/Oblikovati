@@ -356,108 +356,6 @@ impl ModelStateTable {
             .retain(|(_, set, name), _| *set != key.set || *name != key.name);
         self.dirty = true;
     }
-    fn grid(&mut self, ui: &Ui) {
-        let Some(view) = self.draft.as_mut() else {
-            return;
-        };
-        let rows = view.rows.clone().unwrap_or_default();
-        let columns = view.columns.clone().unwrap_or_default();
-        let Some(_table) = ui.begin_table_with_sizing(
-            "model-state-grid",
-            columns.len() + 2,
-            TableFlags::BORDERS | TableFlags::ROW_BG | TableFlags::RESIZABLE,
-            [0., 180.],
-            0.,
-        ) else {
-            return;
-        };
-        ui.table_setup_column("#");
-        ui.table_setup_column("Member");
-        for column in &columns {
-            let name = column.property.as_deref().map_or_else(
-                || crate::model_state_table_extra::name(view, column),
-                |key| key.name.as_str(),
-            );
-            ui.table_setup_column(name);
-        }
-        ui.table_headers_row();
-        let mut row_action = None;
-        for (index, row) in rows.iter().enumerate() {
-            ui.table_next_row();
-            ui.table_next_column();
-            let _id = ui.push_id(row_key(&row.ref_));
-            ui.small_button(format!("{}##row", index + 1));
-            if let Some(_menu) = ui.begin_popup_context_item() {
-                if ui.menu_item("Insert Row") {
-                    row_action = Some((true, index));
-                }
-                let deletable = crate::model_state_table_rows::can_delete(view, index);
-                if ui.menu_item_config("Delete Row").enabled(deletable).build() {
-                    row_action = Some((false, index));
-                }
-                ui.separator();
-                for label in [
-                    "Set As Default / Compare Base Row",
-                    "Custom Parameter Column",
-                    "Column Range / Increment",
-                    "Custom Parameter Cell",
-                    "Cell Range / Increment",
-                    "Delete Column",
-                ] {
-                    ui.menu_item_config(label).enabled(false).build();
-                }
-            }
-            ui.table_next_column();
-            let mut name = row.name.clone();
-            let invalid_name = names::invalid(&rows, index);
-            let highlight = invalid_name
-                .then(|| ui.push_style_color(imgui::StyleColor::FrameBg, [0.75, 0.58, 0.12, 1.0]));
-            let disabled = ui.begin_disabled(index == 0);
-            ui.set_next_item_width(140.);
-            if ui.input_text("##member-name", &mut name).build()
-                && let Some(current) = view.rows.as_mut().and_then(|items| items.get_mut(index))
-            {
-                current.name = name;
-                self.dirty = true;
-            }
-            drop(disabled);
-            drop(highlight);
-            for column in &columns {
-                ui.table_next_column();
-                if let Some(key) = column.property.as_deref() {
-                    if let Some(property) = view
-                        .properties
-                        .as_mut()
-                        .and_then(|items| items.iter_mut().find(|item| item.property == *key))
-                    {
-                        self.dirty |= edit_cell(
-                            ui,
-                            &row.ref_,
-                            index,
-                            property,
-                            &mut self.buffers,
-                            &mut self.invalid,
-                        );
-                    }
-                } else {
-                    self.dirty |= crate::model_state_table_extra::cell(
-                        ui,
-                        view,
-                        &mut self.extra,
-                        index,
-                        column,
-                    );
-                }
-            }
-        }
-        if let Some((insert, index)) = row_action {
-            self.dirty |= if insert {
-                crate::model_state_table_rows::insert(view, index, &mut self.row_sequence)
-            } else {
-                crate::model_state_table_rows::delete(view, index)
-            };
-        }
-    }
     fn accept(&mut self, actions: &mut Vec<GuiShellAction>) {
         let (Some(document), Some(view)) = (self.document, self.draft.as_ref()) else {
             return;
@@ -477,6 +375,8 @@ impl ModelStateTable {
         self.pending = true;
     }
 }
+#[path = "model_state_table_grid.rs"]
+mod grid;
 #[path = "model_state_table_helpers.rs"]
 mod helpers;
 #[path = "model_state_table_names.rs"]
