@@ -46,6 +46,10 @@ fn assert_line_owner(
 #[test]
 fn file_command_reply_rejection_keeps_reservations_dirty_without_publishing_a_line() {
     let (mut host, _, document, sketch) = saved_driven_sketch();
+    host.commands(document)
+        .unwrap()
+        .set_sketch_inference_scope(sketch, INFERENCE_SCOPE_ALL_GEOMETRY, &[])
+        .unwrap();
     let before = sketch_recipe(&host, document);
     let result = host
         .commands(document)
@@ -67,6 +71,10 @@ fn saved_inferred_line() -> (
     SketchLineCreationReport,
 ) {
     let (mut host, mut source, document, sketch) = saved_driven_sketch();
+    host.commands(document)
+        .unwrap()
+        .set_sketch_inference_scope(sketch, INFERENCE_SCOPE_ALL_GEOMETRY, &[])
+        .unwrap();
     let report = host
         .commands(document)
         .unwrap()

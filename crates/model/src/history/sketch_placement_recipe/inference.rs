@@ -8,6 +8,7 @@ pub(super) fn append(
     sketch: DocumentSketchId,
     fresh: &[SketchEntityId],
     ids: &mut RecipeReservations<'_>,
+    scope: Option<&SketchInferenceCandidates>,
 ) -> Result<Vec<SketchConstraintId>, SketchPlacementCreationError> {
     let settings = snapshot.effective_sketch_settings();
     if !settings.auto_apply_constraints {
@@ -17,8 +18,12 @@ pub(super) fn append(
     let mut constraints = Vec::new();
     for point in fresh {
         let position = geometry.point(*point)?.position;
-        let Some(target) = geometry.infer_point_coincidence(position, fresh, &settings, policy)?
-        else {
+        let target = match scope {
+            Some(scope) => geometry
+                .infer_point_coincidence_scoped(position, fresh, &settings, policy, scope, fresh)?,
+            None => geometry.infer_point_coincidence(position, fresh, &settings, policy)?,
+        };
+        let Some(target) = target else {
             continue;
         };
         let constraint = ids

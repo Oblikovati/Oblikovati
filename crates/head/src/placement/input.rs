@@ -28,6 +28,8 @@ pub(crate) struct SketchPlacementState {
     cursor_point: Option<[f64; 2]>,
     /// Where the numeric fields follow the pointer, in window pixels.
     pub(crate) cursor_pixel: Option<[i32; 2]>,
+    /// Explicit vertex under the Point tool pointer, shared by preview and click (#4107).
+    pub(crate) cursor_vertex: Option<([f64; 2], oblikovati_model::sketch::SketchEntityId)>,
     pub(crate) formats: oblikovati_api::types::SketchFormatModes,
     /// For Point: what the next click makes, and so what the command asks for.
     pub(crate) center_point: bool,
@@ -94,6 +96,7 @@ impl SketchPlacementState {
             center_point: false,
             repeated_click: false,
             cursor_pixel: None,
+            cursor_vertex: None,
             formats: Default::default(),
             committing_value_dimensions: true,
             press: None,
@@ -403,6 +406,7 @@ impl SketchPlacementState {
         self.generation = generation;
         self.accepted.clear();
         self.cursor_point = None;
+        self.cursor_vertex = None;
         self.press = None;
         self.preview = None;
     }

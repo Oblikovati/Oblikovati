@@ -64,3 +64,16 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         self.session.create_tangent_arc(sketch, input)
     }
 }
+
+impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Set session-only inference candidates; example: `commands.set_sketch_inference_scope(sketch, mode, &entities)?`.
+    pub fn set_sketch_inference_scope(
+        &mut self,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        mode: oblikovati_api::types::SketchInferenceScope,
+        entities: &[oblikovati_model::sketch::SketchEntityId],
+    ) -> Result<(), oblikovati_model::sketch::SketchError> {
+        self.session
+            .set_sketch_inference_scope(sketch, mode, entities)
+    }
+}

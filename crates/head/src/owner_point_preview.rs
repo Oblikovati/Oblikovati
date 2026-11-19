@@ -31,7 +31,8 @@ impl<
         let Some(position) = tool.pointer_position() else {
             return Ok(None);
         };
-        let placement = tool.point_placement(position, None);
+        let position = tool.cursor_vertex.map_or(position, |(at, _)| at);
+        let placement = tool.point_placement(position, tool.cursor_vertex.map(|(_, id)| id));
         let session = self
             .files
             .workspace()

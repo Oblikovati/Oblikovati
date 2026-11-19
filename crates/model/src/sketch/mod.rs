@@ -64,8 +64,8 @@ pub(crate) use geometry::require_position;
 mod inference;
 mod inspection;
 pub use inference::{
-    SketchDirectionInference, SketchEndpointInference, SketchInferencePolicy,
-    SketchLinePlacementInference,
+    SketchDirectionInference, SketchEndpointInference, SketchInferenceCandidates,
+    SketchInferencePolicy, SketchLinePlacementInference,
 };
 mod selection_copy;
 mod selection_transform;

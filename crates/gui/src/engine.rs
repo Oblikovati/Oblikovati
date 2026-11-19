@@ -19,7 +19,8 @@ mod draw_controls;
 mod external_panels;
 mod work_plane;
 use work_plane::selected_work_plane;
-#[path = "engine/quick_access.rs"]
+mod frame_inputs;
+mod inference_dialog;
 mod quick_access;
 use quick_access::apply_quick_access;
 #[path = "engine/workspace_layout.rs"]
@@ -89,6 +90,7 @@ pub struct GuiFrameEngine {
     dimension_value_editor: crate::sketch::dimension_edit::GuiDimensionValueEditor,
     precise_input: crate::sketch::precise_input::PreciseInputBar,
     create_block: crate::sketch::create_block::CreateBlockDialog,
+    inference_scope: crate::sketch::inference_scope::InferenceScopeDialog,
     sketch_pattern: crate::sketch::rectangular_pattern::RectangularPatternDialog,
     command_alias: crate::sketch::command_alias::CommandAliasBox,
     /// A popup was open last frame: Escape closes it, and the frame that opens is already too
@@ -166,6 +168,7 @@ impl GuiFrameEngine {
             dimension_value_editor: Default::default(),
             precise_input: Default::default(),
             create_block: Default::default(),
+            inference_scope: Default::default(),
             sketch_pattern: Default::default(),
             command_alias: Default::default(),
             popup_was_open: false,

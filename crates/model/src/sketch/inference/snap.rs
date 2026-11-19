@@ -9,13 +9,14 @@ pub(super) fn propose(
     report: &mut SketchLinePlacementInference,
     constrain: bool,
     policy: SketchInferencePolicy,
+    candidates: &super::scope::ResolvedCandidates,
 ) {
     for endpoint in 0..2 {
         let Some(target) = nearest_point(
             sketch
                 .points()
                 .iter()
-                .filter(|point| !excluded.contains(&point.id)),
+                .filter(|point| !excluded.contains(&point.id) && candidates.contains(point.id)),
             report.candidate_endpoints[endpoint],
             policy.snap_distance_working,
         ) else {

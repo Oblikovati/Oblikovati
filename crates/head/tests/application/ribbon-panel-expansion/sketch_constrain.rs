@@ -8,6 +8,8 @@ use cucumber::{given, then, when};
 
 #[path = "sketch_constrain_finish.rs"]
 mod finish_checks;
+#[path = "sketch_constrain_pinned.rs"]
+mod pinned_checks;
 
 const WINDOW: &str = "##ribbon-additional-Constrain";
 

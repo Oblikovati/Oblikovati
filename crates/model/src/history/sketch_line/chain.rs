@@ -4,7 +4,7 @@ use crate::{
     history::{SketchDimensionCreation, SketchDimensionCreationReport, SketchPlacementFieldLock},
     sketch::{
         DistanceMeasure, MeasuredDimensionOperands, SeededDimensionOperands,
-        SketchDimensionalConstraintCreation, SketchEntityId,
+        SketchDimensionalConstraintCreation, SketchEntityId, SketchInferenceCandidates,
         chain_layout::{line_chain_indices, require_chain_vertices},
     },
     sketch_settings::SketchSettings,
@@ -42,6 +42,25 @@ impl DocumentSnapshot {
         solve_options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
     ) -> Result<SketchLineChainCreationReport, SketchLineCreationError> {
+        self.create_inferred_sketch_line_chain_scoped(
+            sketch,
+            input,
+            policy,
+            solve_options,
+            ids,
+            None,
+        )
+    }
+    /// Author a chain with an explicit inference scope; example: `snapshot.create_inferred_sketch_line_chain_scoped(sketch, &input, policy, options, ids, Some(&scope))?`.
+    pub fn create_inferred_sketch_line_chain_scoped(
+        &mut self,
+        sketch: DocumentSketchId,
+        input: &SketchLineChainCreation,
+        policy: SketchInferencePolicy,
+        solve_options: SolveOptions,
+        ids: &mut RecipeReservations<'_>,
+        scope: Option<&SketchInferenceCandidates>,
+    ) -> Result<SketchLineChainCreationReport, SketchLineCreationError> {
         require_chain_vertices(&input.points, false).map_err(SketchLineCreationError::Sketch)?;
         policy
             .require_valid()
@@ -55,6 +74,7 @@ impl DocumentSnapshot {
             &self.effective_sketch_settings(),
             policy,
             ids,
+            scope,
         )?;
         self.sketches
             .replace_geometry(sketch, geometry)
@@ -111,6 +131,12 @@ fn locked_segment_operands(
         )),
     ]
 }
+struct LineInferenceContext<'a> {
+    settings: &'a SketchSettings,
+    policy: SketchInferencePolicy,
+    scope: Option<&'a SketchInferenceCandidates>,
+    current: &'a [SketchEntityId],
+}
 impl SketchLineChainCreation {
     fn append_chain(
         &self,
@@ -119,6 +145,7 @@ impl SketchLineChainCreation {
         settings: &SketchSettings,
         policy: SketchInferencePolicy,
         ids: &mut RecipeReservations<'_>,
+        scope: Option<&SketchInferenceCandidates>,
     ) -> Result<SketchLineChainCreationReport, SketchLineCreationError> {
         let first = match self.joins[0] {
             Some(vertex) => vertex,
@@ -137,9 +164,24 @@ impl SketchLineChainCreation {
                 report.points.push(vertex);
             }
             let endpoints = indices.map(|index| report.points[index]);
-            report
-                .lines
-                .push(self.append_segment(geometry, sketch, endpoints, settings, policy, ids)?);
+            let current: Vec<_> = report
+                .points
+                .iter()
+                .copied()
+                .chain(report.lines.iter().map(|line| line.primitive.entity))
+                .collect();
+            report.lines.push(self.append_segment(
+                geometry,
+                sketch,
+                endpoints,
+                ids,
+                LineInferenceContext {
+                    settings,
+                    policy,
+                    scope,
+                    current: &current,
+                },
+            )?);
         }
         Ok(report)
     }
@@ -162,13 +204,22 @@ impl SketchLineChainCreation {
         geometry: &mut Sketch2D,
         sketch: DocumentSketchId,
         points: [SketchEntityId; 2],
-        settings: &SketchSettings,
-        policy: SketchInferencePolicy,
         ids: &mut RecipeReservations<'_>,
+        context: LineInferenceContext<'_>,
     ) -> Result<SketchLineCreationReport, SketchLineCreationError> {
-        let mut inference = geometry
-            .infer_owned_line_placement(points, settings, policy)
-            .map_err(SketchLineCreationError::Sketch)?;
+        let LineInferenceContext {
+            settings,
+            policy,
+            scope,
+            current,
+        } = context;
+        let inference = match scope {
+            Some(scope) => {
+                geometry.infer_owned_line_placement_scoped(points, settings, policy, scope, current)
+            }
+            None => geometry.infer_owned_line_placement(points, settings, policy),
+        };
+        let mut inference = inference.map_err(SketchLineCreationError::Sketch)?;
         // A typed angle owns the direction; an inferred relation on top would be redundant.
         if self.locks[1].is_some() {
             inference.direction = None;

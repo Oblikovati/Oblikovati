@@ -15,6 +15,7 @@ pub mod part_evaluation;
 mod refresh;
 pub mod selection;
 mod sketch_inference;
+mod sketch_inference_scope;
 pub use sketch_inference::SketchInferenceProjectionInput;
 mod editor_selection_scope;
 mod fillet_create;
@@ -91,6 +92,9 @@ pub struct DocumentSession<O> {
     /// The document's own row is chosen: everything it holds shows as chosen.
     browser_root: bool,
     editor_selection: selection::SelectionSet<selection::SketchPick>,
+    inference_scopes:
+        std::collections::BTreeMap<u64, oblikovati_model::sketch::SketchInferenceCandidates>,
+    inference_validation: std::cell::RefCell<sketch_inference_scope::ScopeValidationCache>,
     history: DocumentEditHistory,
     observer: O,
     group: Option<BoundedGroup>,
@@ -127,6 +131,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
             browser_body: Default::default(),
             browser_root: false,
             editor_selection: Default::default(),
+            inference_scopes: Default::default(),
+            inference_validation: Default::default(),
             history,
             observer,
             group: None,

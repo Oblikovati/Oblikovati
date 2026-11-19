@@ -1,0 +1,44 @@
+// SPDX-License-Identifier: GPL-2.0-only
+/// What a press on a browser row other than a feature or sketch asks for.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum GuiBrowserChoice {
+    /// Create and activate a new model-state member.
+    CreateModelState,
+    /// Copy a member without activating the copy.
+    CopyModelState(u64),
+    /// Rename one document-owned member.
+    RenameModelState {
+        id: u64,
+        name: String,
+    },
+    /// Activate a document-owned model state.
+    ActivateModelState(u64),
+    /// Change whether a feature edit affects one member or all members.
+    ToggleModelStateEditScope,
+    /// No row stays chosen, as after a click on empty space.
+    Nothing,
+    /// Show this feature's dimensions in the view, or none.
+    ShowFeatureDimensions(Option<oblikovati_model::feature::FeatureId>),
+    /// Whether a sketch shows its dimensions while it is visible.
+    SketchDimensionsShown {
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        shown: bool,
+    },
+    Root,
+    /// Choose a placed component by its generation-scoped owner path.
+    Occurrence(crate::GuiOccurrencePath),
+    /// Change the suppression state of an assembly-owned occurrence.
+    SetOccurrenceSuppressed {
+        path: crate::GuiOccurrencePath,
+        suppressed: bool,
+    },
+    Body {
+        key: String,
+        feature: oblikovati_model::feature::FeatureId,
+        toggle: bool,
+    },
+    BodyVisible {
+        key: String,
+        visible: bool,
+    },
+}

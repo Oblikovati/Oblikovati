@@ -263,8 +263,16 @@ impl<
             return false;
         }
         tool.cursor_pixel = Some(pixel);
-        let outcome = window
-            .sketch_point(pixel, tool.plane)
+        let acquired = if tool.tool == crate::SketchPlacementTool::Point {
+            self.vertex_under_pointer(tool, window, pixel)
+        } else {
+            Ok(None)
+        };
+        let outcome = acquired
+            .and_then(|vertex| {
+                tool.cursor_vertex = vertex;
+                window.sketch_point(pixel, tool.plane)
+            })
             .and_then(|point| tool.cursor(point, place, &self.sketch_construction))
             .and_then(|recipe| {
                 tool.resolved_preview = self.resolved_placement_preview(tool)?;

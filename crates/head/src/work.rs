@@ -62,6 +62,7 @@ pub trait HeadWork: HeadSketchWork {
             "browser block {instance:?} in sketch {sketch:?}, document {document}, toggle {toggle}: expected a sketch selection owner"
         ))
     }
+    crate::work_inference_scope::inference_scope_work_methods!();
     /// Change the block selection mode; example: `work.select_block_geometry_from_gui(true)?`.
     fn select_block_geometry_from_gui(&mut self, active: bool) -> Result<bool, String> {
         Err(format!(

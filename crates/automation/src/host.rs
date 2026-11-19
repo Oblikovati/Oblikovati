@@ -54,6 +54,21 @@ impl<O: TransactionObserver, W: WorkspaceObserver> SessionHost<'_, O, W> {
 }
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if method == oblikovati_api::wire::METHOD_SKETCH_SET_INFERENCE_SCOPE {
+            let mut workspace = self.workspace.try_borrow_mut().map_err(|_| busy(method))?;
+            let (document, sketch, candidates, reply) =
+                crate::sketch_scope::prepare(&workspace, crate::decode(method, request)?)?;
+            workspace
+                .commands(document)
+                .map_err(|error| Error(error.to_string()))?
+                .set_sketch_inference_scope(
+                    sketch,
+                    candidates.mode().clone(),
+                    candidates.selected(),
+                )
+                .map_err(|error| Error(error.to_string()))?;
+            return Ok(reply);
+        }
         if method == oblikovati_api::wire::METHOD_SKETCH_SET_INFERENCE_OPTIONS {
             return self.edit_inference(method, request);
         }

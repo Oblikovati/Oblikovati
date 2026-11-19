@@ -39,7 +39,7 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 19] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 20] = [
     METHOD_SKETCH_ADD_ASSOCIATIVE_ENTITY,
     METHOD_SKETCH_ADD_BLOCK_INSTANCE,
     METHOD_SKETCH_BLOCK_DEFINITION_CREATE,
@@ -47,6 +47,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 19] = [
     METHOD_SKETCH_CREATE,
     METHOD_SKETCH_SET_PROPERTY,
     METHOD_SKETCH_SET_INFERENCE_OPTIONS,
+    METHOD_SKETCH_SET_INFERENCE_SCOPE,
     METHOD_SKETCH_SOLVE,
     METHOD_SKETCH_DELETE,
     METHOD_SKETCH_TRANSFORM,
@@ -61,7 +62,8 @@ pub const SKETCH_COMMAND_METHODS: [&str; 19] = [
     METHOD_SKETCH_SET_SPLINE_HANDLE,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
-pub const SKETCH_QUERY_METHODS: [&str; 10] = [
+pub const SKETCH_QUERY_METHODS: [&str; 11] = [
+    METHOD_SKETCH_GET_INFERENCE_SCOPE,
     METHOD_SKETCH_BLOCK_DEFINITION_LIST,
     METHOD_SKETCH_LIST_BLOCK_INSTANCES,
     METHOD_SKETCH_LIST,
@@ -79,6 +81,10 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
     editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_GET_INFERENCE_SCOPE {
+        owner::active_sketch_host(files)?;
+        return crate::sketch_scope::query(files.workspace(), crate::decode(method, request)?);
+    }
     if method == METHOD_SKETCH_BLOCK_DEFINITION_LIST {
         return block_definitions::list(files);
     }
@@ -109,6 +115,17 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
     editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_SET_INFERENCE_SCOPE {
+        owner::active_sketch_host(files)?;
+        let (document, sketch, candidates, reply) =
+            crate::sketch_scope::prepare(files.workspace(), crate::decode(method, request)?)?;
+        files
+            .commands(document)
+            .map_err(api_error)?
+            .set_sketch_inference_scope(sketch, candidates.mode().clone(), candidates.selected())
+            .map_err(api_error)?;
+        return Ok(reply);
+    }
     if method == METHOD_SKETCH_ADD_BLOCK_INSTANCE {
         return block_placement::apply(files, crate::decode(method, request)?);
     }
@@ -236,7 +253,10 @@ fn active_sketch<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>
         .snapshot();
     Ok((document, sketch_at(snapshot, index)?))
 }
-fn sketch_at(snapshot: &DocumentSnapshot, index: i64) -> Result<DocumentSketchId, Error> {
+pub(crate) fn sketch_at(
+    snapshot: &DocumentSnapshot,
+    index: i64,
+) -> Result<DocumentSketchId, Error> {
     let sketches = snapshot.sketches.sketches();
     usize::try_from(index)
         .ok()

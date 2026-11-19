@@ -18,6 +18,9 @@ fn request() -> SketchLineChainCreation {
 fn preview_and_commit_have_identical_solved_geometry_members_and_inference() {
     let mut session = session(None);
     let sketch = empty_sketch(&mut session, true);
+    session
+        .set_sketch_inference_scope(sketch, INFERENCE_SCOPE_ALL_GEOMETRY, &[])
+        .unwrap();
     let before = session.snapshot().sketches.clone();
     let marks = session.history().sketch_reservations();
     let generation = session.generation();
@@ -112,6 +115,9 @@ fn fixed_endpoints_session() -> DocumentSession<RecordingObserver> {
 fn conflicting_inference_is_refused_after_solve_in_preview_and_commit() {
     let mut session = fixed_endpoints_session();
     let sketch = DocumentSketchId(1);
+    session
+        .set_sketch_inference_scope(sketch, INFERENCE_SCOPE_ALL_GEOMETRY, &[])
+        .unwrap();
     let before = session.snapshot().sketches.clone();
     let marks = session.history().sketch_reservations();
     let mut input = request();
@@ -166,6 +172,9 @@ fn invalid_preview_and_missing_sketch_do_not_change_events_or_reservations() {
 fn preview_reads_current_parameters_and_inference_preferences_in_an_open_edit() {
     let mut session = driven_reference_session();
     let sketch = DocumentSketchId(1);
+    session
+        .set_sketch_inference_scope(sketch, INFERENCE_SCOPE_ALL_GEOMETRY, &[])
+        .unwrap();
     session.begin("Edit source and extend").unwrap();
     session
         .edit(|snapshot, _| {

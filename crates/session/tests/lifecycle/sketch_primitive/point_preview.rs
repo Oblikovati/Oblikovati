@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_model::history::SketchPointPlacement;
+use oblikovati_model::{history::SketchPointPlacement, sketch::PlanarConstraint};
 #[test]
 fn point_preview_matches_commit_without_consuming_ids_or_live_history() {
     for center in [false, true] {
@@ -42,4 +42,22 @@ fn invalid_point_preview_names_the_invalid_coordinate_and_preserves_geometry() {
         .to_string();
     assert!(error.contains("NaN"), "{error}");
     assert_eq!(session.snapshot().sketches, before);
+}
+
+#[test]
+fn acquired_vertex_point_preview_matches_committed_coincidence() {
+    let mut session = session(None);
+    let sketch = empty_sketch(&mut session, true);
+    let target = geometry(&session, sketch).points()[0].id;
+    let position = geometry(&session, sketch).point(target).unwrap().position;
+    let placement = SketchPointPlacement {
+        position,
+        center: false,
+        coincident_with: Some(target),
+    };
+    let preview = session.preview_sketch_point(sketch, &placement).unwrap();
+    let point = session.create_sketch_point(sketch, &placement).unwrap();
+    assert_eq!(preview.members, [point]);
+    assert_eq!(&preview.geometry, geometry(&session, sketch));
+    assert!(preview.geometry.constraints().iter().any(|constraint| matches!(constraint.relation, PlanarConstraint::Coincident { points } if points == [target, point])));
 }

@@ -26,10 +26,22 @@ impl<O: TransactionObserver> DocumentSession<O> {
         input: &SketchLineCreation,
         project: impl FnOnce(SketchLineProjectionInput) -> Result<R, E>,
     ) -> Result<R, CommandError<E>> {
+        let scope = self.sketch_inference_scope(sketch);
         let options = self.sketch_options;
         self.run("Create inferred sketch line", |snapshot, ids| {
             let policy = SketchInferencePolicy::for_units(snapshot.parameters.units());
-            project(snapshot.create_inferred_sketch_line(sketch, input, policy, options, ids))
+            let result = match scope {
+                Ok(scope) => snapshot.create_inferred_line_scoped(
+                    sketch,
+                    input,
+                    policy,
+                    options,
+                    ids,
+                    Some(&scope),
+                ),
+                Err(error) => Err(SketchLineCreationError::Sketch(error)),
+            };
+            project(result)
         })
     }
 }
