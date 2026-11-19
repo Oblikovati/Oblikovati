@@ -15,6 +15,8 @@ mod custom_commands;
 mod face_selection;
 #[path = "footer_comparison.rs"]
 mod footer_comparison;
+#[path = "grouped_plane.rs"]
+mod grouped_plane;
 #[cfg(target_os = "linux")]
 #[path = "keyboard_face_retention.rs"]
 mod keyboard_face_retention;
