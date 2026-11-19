@@ -11,6 +11,7 @@ use std::{error::Error, fmt, io, path::PathBuf};
 /// A failed file operation; no new binding or successful save was adopted.
 #[derive(Debug)]
 pub enum FileWorkspaceError {
+    UnsupportedSketchPolicy(String),
     ProjectAssets(String),
     ObserverFactory(String),
     ProjectConfiguration(io::Error),
@@ -72,6 +73,7 @@ pub enum FileWorkspaceError {
 impl fmt::Display for FileWorkspaceError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::UnsupportedSketchPolicy(reason) => write!(output, "{reason}"),
             Self::ExpressOpen(path, reason) => {
                 write!(output, "express assembly {path:?}: {reason}")
             }
@@ -185,7 +187,7 @@ impl fmt::Display for FileWorkspaceError {
 impl Error for FileWorkspaceError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            Self::ProjectAssets(_) => None,
+            Self::ProjectAssets(_) | Self::UnsupportedSketchPolicy(_) => None,
             Self::ProjectConfiguration(error) => Some(error),
             Self::Project(error) => Some(error),
             Self::Package(error) => Some(error),
