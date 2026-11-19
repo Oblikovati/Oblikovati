@@ -32,6 +32,9 @@ pub(crate) struct WorkspaceLayout {
     dock_state: crate::dockable_lifecycle::DockableState,
     pub tool_visibility: ToolVisibility,
     pub tabs_visible: bool,
+    pub view_cube_visible: bool,
+    pub navigation_bar_visible: bool,
+    pub status_bar_visible: bool,
     outer_center: Option<crate::application::document_creation::workspaces::WorkspaceArea>,
     outer_bottom_docked: bool,
     pub(crate) outer_bottom_span: Option<[f32; 2]>,
@@ -54,6 +57,9 @@ impl Default for WorkspaceLayout {
             dock_state: Default::default(),
             tool_visibility: Default::default(),
             tabs_visible: true,
+            view_cube_visible: true,
+            navigation_bar_visible: true,
+            status_bar_visible: true,
             outer_center: None,
             outer_bottom_docked: false,
             outer_bottom_span: None,
@@ -250,7 +256,7 @@ impl WorkspaceLayout {
             top: band_height,
             right: display[0] - self.ribbon_right,
             bottom: display[1]
-                - status_bar::STATUS_BAR_HEIGHT
+                - self.status_height()
                 - if self.outer_bottom_docked {
                     self.tab_height()
                 } else {
@@ -305,13 +311,21 @@ impl WorkspaceLayout {
             0.
         }
     }
+    /// Reserve space only while the status bar is visible; example: `layout.status_height()`.
+    pub(crate) fn status_height(&self) -> f32 {
+        if self.status_bar_visible {
+            status_bar::STATUS_BAR_HEIGHT
+        } else {
+            0.
+        }
+    }
     /// Find the top of the bottom tab row; example: `layout.tab_top(900.)`.
     pub(crate) fn tab_top(&self, height: f32) -> f32 {
         let bottom = if self.outer_bottom_docked {
-            height - status_bar::STATUS_BAR_HEIGHT
+            height - self.status_height()
         } else {
             self.outer_center
-                .map_or(height - status_bar::STATUS_BAR_HEIGHT, |area| area.bottom)
+                .map_or(height - self.status_height(), |area| area.bottom)
         };
         (bottom - self.tab_height()).max(0.)
     }
@@ -357,6 +371,9 @@ impl WorkspaceLayout {
             ui.open_popup("##user-interface");
         }
         if let Some(_menu) = ui.begin_popup("##user-interface") {
+            ui.checkbox("ViewCube", &mut self.view_cube_visible);
+            ui.checkbox("Navigation Bar", &mut self.navigation_bar_visible);
+            ui.checkbox("Status Bar", &mut self.status_bar_visible);
             ui.checkbox("Model Browser", &mut self.panels.model_open);
             ui.checkbox("Document Tabs", &mut self.tabs_visible);
             let mut favorites = self.panels.favorites_visible();

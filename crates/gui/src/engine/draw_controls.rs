@@ -102,11 +102,13 @@ impl GuiFrameEngine {
         if !self.ribbon.tips.active() && !self.ribbon.tips.consumed {
             self.command_alias.panel(ui, &request.commands, &keys.typed);
         }
-        crate::application::workspace_layout::status_bar::status_bar(
-            ui,
-            request,
-            self.command_alias.text(),
-        );
+        if self.workspace.status_bar_visible {
+            crate::application::workspace_layout::status_bar::status_bar(
+                ui,
+                request,
+                self.command_alias.text(),
+            );
+        }
         self.workspace.sync_before_docking(&request.commands);
         self.dock_lifecycle.reconcile(|title| {
             crate::widget_abi::close_dock_tab(ui, title);
@@ -179,7 +181,7 @@ impl GuiFrameEngine {
             &request.commands,
             (
                 request.extent[1] as f32 / request.layout_scale()[1]
-                    - crate::application::workspace_layout::status_bar::STATUS_BAR_HEIGHT,
+                    - self.workspace.status_height(),
                 band_height,
             ),
             area,
@@ -227,7 +229,16 @@ impl GuiFrameEngine {
         selected.retain(|action| !matches!(action, GuiShellAction::OpenExtrudeEdit(_)));
         // Over Home there is no view for it to turn.
         if !self.home.active {
-            self.orientation.panel(ui, request, area, &mut selected);
+            self.orientation.panel(
+                ui,
+                request,
+                area,
+                &mut selected,
+                crate::application::viewport_orientation::ViewControlVisibility {
+                    cube: self.workspace.view_cube_visible,
+                    navigation: self.workspace.navigation_bar_visible,
+                },
+            );
         } else {
             self.orientation.set_suspended(true);
         }

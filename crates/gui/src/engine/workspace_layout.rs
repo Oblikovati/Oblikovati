@@ -26,6 +26,9 @@ impl GuiFrameEngine {
     }
 
     fn restore_workspace_panels(&mut self, settings: &WorkspaceDockSettings) {
+        self.workspace.view_cube_visible = settings.view_cube_visible;
+        self.workspace.navigation_bar_visible = settings.navigation_bar_visible;
+        self.workspace.status_bar_visible = settings.status_bar_visible;
         self.workspace
             .set_auto_expand_representations(settings.auto_expand_representations);
         if settings.material_browser {
@@ -59,6 +62,9 @@ impl GuiFrameEngine {
         settings.history_browser = self.history_browser.is_open();
         settings.browser_panels = Some(self.workspace.panels.settings());
         settings.auto_expand_representations = self.workspace.auto_expand_representations();
+        settings.view_cube_visible = self.workspace.view_cube_visible;
+        settings.navigation_bar_visible = self.workspace.navigation_bar_visible;
+        settings.status_bar_visible = self.workspace.status_bar_visible;
         settings.encode()
     }
 }

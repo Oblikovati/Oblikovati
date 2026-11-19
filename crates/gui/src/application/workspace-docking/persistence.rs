@@ -15,14 +15,20 @@ pub(crate) struct WorkspaceDockSettings {
     pub parameters: bool,
     pub selection_filter: bool,
     pub history_browser: bool,
-    #[serde(default = "auto_expand_default")]
+    #[serde(default = "enabled_by_default")]
+    pub view_cube_visible: bool,
+    #[serde(default = "enabled_by_default")]
+    pub navigation_bar_visible: bool,
+    #[serde(default = "enabled_by_default")]
+    pub status_bar_visible: bool,
+    #[serde(default = "enabled_by_default")]
     pub auto_expand_representations: bool,
     #[serde(default)]
     pub browser_panels:
         Option<crate::application::workspace_layout::panel_tabs::BrowserPanelSettings>,
 }
 
-fn auto_expand_default() -> bool {
+fn enabled_by_default() -> bool {
     true
 }
 
@@ -69,7 +75,10 @@ impl WorkspaceDockSettings {
         Self {
             version: VERSION,
             imgui_ini,
-            auto_expand_representations: auto_expand_default(),
+            auto_expand_representations: enabled_by_default(),
+            view_cube_visible: true,
+            navigation_bar_visible: true,
+            status_bar_visible: true,
             ..Self::default()
         }
     }
@@ -108,6 +117,38 @@ mod tests {
             WorkspaceDockSettings::decode(&engine.save_workspace_layout().unwrap()).unwrap();
         assert!(restored.material_browser && restored.selection_filter);
         assert!(!restored.appearance_browser && !restored.parameters && !restored.history_browser);
+    }
+    #[test]
+    fn view_controls_default_visible_and_round_trip_independently() {
+        let legacy = br#"{"version":1,"imgui_ini":"","material_browser":false,"appearance_browser":false,"parameters":false,"selection_filter":false,"history_browser":false}"#;
+        let mut settings = WorkspaceDockSettings::decode(legacy).unwrap();
+        assert!(
+            settings.view_cube_visible
+                && settings.navigation_bar_visible
+                && settings.status_bar_visible
+        );
+        settings.status_bar_visible = false;
+        settings.view_cube_visible = false;
+        let mut engine = crate::GuiFrameEngine::new().unwrap();
+        engine
+            .load_workspace_layout(&settings.encode().unwrap())
+            .unwrap();
+        let saved =
+            WorkspaceDockSettings::decode(&engine.save_workspace_layout().unwrap()).unwrap();
+        assert!(
+            !saved.view_cube_visible && saved.navigation_bar_visible && !saved.status_bar_visible
+        );
+        settings.status_bar_visible = true;
+        settings.view_cube_visible = true;
+        settings.navigation_bar_visible = false;
+        engine
+            .load_workspace_layout(&settings.encode().unwrap())
+            .unwrap();
+        let saved =
+            WorkspaceDockSettings::decode(&engine.save_workspace_layout().unwrap()).unwrap();
+        assert!(
+            saved.view_cube_visible && !saved.navigation_bar_visible && saved.status_bar_visible
+        );
     }
     #[test]
     fn old_settings_default_and_round_trip_representation_preference() {

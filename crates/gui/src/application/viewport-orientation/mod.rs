@@ -24,6 +24,12 @@ mod options;
 use drawing::{draw_compass, draw_control};
 use options::{OrientationOptions, ScreenCorner};
 
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct ViewControlVisibility {
+    pub cube: bool,
+    pub navigation: bool,
+}
+
 const CONTROL_WINDOW: &str = "##orientation-control";
 const CONTROL_MENU: &str = "##orientation-menu";
 const MARGIN: f32 = 8.;
@@ -265,6 +271,7 @@ impl OrientationControl {
         request: &crate::GuiFrameRequest,
         area: WorkspaceArea,
         actions: &mut Vec<GuiShellAction>,
+        visibility: ViewControlVisibility,
     ) {
         let state = &request.commands;
         let Some(axes) = state.view_axes else {
@@ -282,45 +289,49 @@ impl OrientationControl {
         axis_triad::draw(ui, area, &axes);
         let side = self.options.side();
         let position = self.position(area, side);
-        let window = ui
-            .window(CONTROL_WINDOW)
-            .position(position, imgui::Condition::Always)
-            .size([side, side], imgui::Condition::Always)
-            .flags(control_flags());
-        window.build(|| {
-            ui.invisible_button("##orientation-area", [side, side]);
-            let layout = GuiOrientationLayout::for_side(side);
-            let alpha = if ui.is_item_hovered() {
-                1.
-            } else {
-                self.options.inactive_alpha()
-            };
-            draw_control(ui, &axes, &layout, position, alpha);
-            if self.options.compass_shown() {
-                draw_compass(ui, &layout, position, alpha, self.options.north_angle());
-            }
-            if ui.is_item_clicked_with_button(MouseButton::Left) {
-                let fit = self.options.fits_on_change();
-                press(ui, &axes, &layout, position, fit, actions);
-            }
-            if ui.is_item_clicked_with_button(MouseButton::Right) {
-                ui.open_popup(CONTROL_MENU);
-            }
-            if state.orientation_selection_locked {
-                let [x, y] = layout.step_down;
-                ui.set_cursor_pos([x - layout.half, y - LOCK_CAPTION_RISE]);
-                ui.text(LOCK_CAPTION);
-            }
-            self.context_menu(ui, state, actions);
-        });
-        self.navigation_bar(
-            ui,
-            state,
-            request.extent,
-            area,
-            [position, [side, side]],
-            actions,
-        );
+        if visibility.cube {
+            let window = ui
+                .window(CONTROL_WINDOW)
+                .position(position, imgui::Condition::Always)
+                .size([side, side], imgui::Condition::Always)
+                .flags(control_flags());
+            window.build(|| {
+                ui.invisible_button("##orientation-area", [side, side]);
+                let layout = GuiOrientationLayout::for_side(side);
+                let alpha = if ui.is_item_hovered() {
+                    1.
+                } else {
+                    self.options.inactive_alpha()
+                };
+                draw_control(ui, &axes, &layout, position, alpha);
+                if self.options.compass_shown() {
+                    draw_compass(ui, &layout, position, alpha, self.options.north_angle());
+                }
+                if ui.is_item_clicked_with_button(MouseButton::Left) {
+                    let fit = self.options.fits_on_change();
+                    press(ui, &axes, &layout, position, fit, actions);
+                }
+                if ui.is_item_clicked_with_button(MouseButton::Right) {
+                    ui.open_popup(CONTROL_MENU);
+                }
+                if state.orientation_selection_locked {
+                    let [x, y] = layout.step_down;
+                    ui.set_cursor_pos([x - layout.half, y - LOCK_CAPTION_RISE]);
+                    ui.text(LOCK_CAPTION);
+                }
+                self.context_menu(ui, state, actions);
+            });
+        }
+        if visibility.navigation {
+            self.navigation_bar(
+                ui,
+                state,
+                request.extent,
+                area,
+                [position, [side, side]],
+                actions,
+            );
+        }
         self.navigation.follow_view(ui, request, actions);
         let center = [(area.left + area.right) / 2., (area.top + area.bottom) / 2.];
         let reach = (area.right - area.left).min(area.bottom - area.top);

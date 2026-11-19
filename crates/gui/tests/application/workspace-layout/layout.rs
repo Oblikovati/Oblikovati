@@ -176,3 +176,16 @@ fn origin_focus_is_scoped_to_its_document() {
     layout.sync_origin_document(Some(2));
     assert_eq!(layout.view.focused_origin_row, None);
 }
+
+#[test]
+fn status_visibility_changes_reserved_workspace_height() {
+    let mut layout = WorkspaceLayout::default();
+    let visible = layout.outer_area([1440., 900.], 120.);
+    layout.status_bar_visible = false;
+    let hidden = layout.outer_area([1440., 900.], 120.);
+    assert_eq!(
+        hidden.bottom - visible.bottom,
+        status_bar::STATUS_BAR_HEIGHT
+    );
+    assert_eq!(layout.tab_top(900.), 900. - layout.tab_height());
+}

@@ -58,6 +58,9 @@ mod precise_close_native;
 #[path = "scale_native.rs"]
 mod scale_native;
 #[cfg(target_os = "linux")]
+#[path = "view_controls_native.rs"]
+mod view_controls_native;
+#[cfg(target_os = "linux")]
 #[path = "wheel_close_native.rs"]
 mod wheel_close_native;
 #[path = "wireframe_tabs.rs"]
