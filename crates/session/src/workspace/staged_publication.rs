@@ -2,7 +2,8 @@
 //! Commit a source, its named replay and linked readers as one prepared edit (#4122).
 use super::*;
 use oblikovati_model::history::{
-    PreparedDependentPublication, PreparedDependentRefresh, PreparedValue, RecipeReservations,
+    PreparedChoice, PreparedDependentPublication, PreparedDependentRefresh, PreparedValue,
+    RecipeReservations,
 };
 
 type UnusedEdit =
@@ -139,20 +140,23 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         let mut metadata = BTreeMap::new();
         for &id in &readers {
             let target = self.session(id).map_err(|error| error.to_string())?;
-            if target.snapshot().assembly.is_some() || target.snapshot().drawing.is_some() {
+            if target.snapshot().drawing.is_some() {
                 return Err(format!(
-                    "linked reader {id}: expected a part document for prepared replay"
+                    "linked reader {id}: expected a part or assembly document"
                 ));
             }
+            let is_assembly = target.snapshot().assembly.is_some();
             let target_policy = target
                 .owned_checkpoint_prefix()
                 .and_then(|(policy, _)| policy);
-            target.validate_prepared_named_destination(target_policy)?;
+            if !is_assembly {
+                target.validate_prepared_named_destination(target_policy)?;
+            }
             let target_guid = self
                 .identity(id)
                 .map_err(|error| error.to_string())?
                 .internal_name;
-            metadata.insert(id, (target_guid, target_policy));
+            metadata.insert(id, (target_guid, target_policy, is_assembly));
         }
         let mut source = None;
         let mut targets = Vec::new();
@@ -160,9 +164,15 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         for (&id, entry) in &mut self.entries {
             if id == document {
                 source = Some(&mut entry.session);
-            } else if let Some(&(target_guid, target_policy)) = metadata.get(&id) {
+            } else if let Some(&(target_guid, target_policy, is_assembly)) = metadata.get(&id) {
                 let target = &mut entry.session;
-                targets.push((id, &mut target.history, target_guid, target_policy));
+                targets.push((
+                    id,
+                    &mut target.history,
+                    target_guid,
+                    target_policy,
+                    is_assembly,
+                ));
                 stores.push((id, &mut target.part_replay, target_policy));
             }
         }
@@ -180,7 +190,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
             let bodies =
                 oblikovati_martensite::prepare_full_named_publication(candidate, guid, policy)?;
             let mut prepared = Vec::new();
-            for (id, history, target_guid, target_policy) in targets {
+            for (id, history, target_guid, target_policy, is_assembly) in targets {
                 let snapshot = snapshots
                     .remove(&id)
                     .ok_or_else(|| format!("reader {id}: expected a staged snapshot"))?;
@@ -191,13 +201,19 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
                     })
                     .map_err(|error| error.to_string())?;
                 let refresh = PreparedDependentRefresh::new(candidate, refresh);
-                let replay = oblikovati_martensite::prepare_dependent_named_publication(
-                    candidate,
-                    &refresh,
-                    target_guid,
-                    target_policy,
-                )?;
-                prepared.push(PreparedDependentPublication::new(refresh, replay));
+                if is_assembly {
+                    prepared.push(PreparedChoice::Second(refresh));
+                } else {
+                    let replay = oblikovati_martensite::prepare_dependent_named_publication(
+                        candidate,
+                        &refresh,
+                        target_guid,
+                        target_policy,
+                    )?;
+                    prepared.push(PreparedChoice::First(PreparedDependentPublication::new(
+                        refresh, replay,
+                    )));
+                }
             }
             if !snapshots.is_empty() {
                 return Err(format!(
@@ -210,23 +226,32 @@ impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
         let publish = |session: &mut DocumentSession<O>, (bodies, (dependents, reply)), _| {
             session.publish_prepared_named_replay(policy, bodies);
             let mut changed = Vec::new();
-            for ((id, store, target_policy), (updated, scope, replay)) in
-                stores.into_iter().zip(dependents)
-            {
-                crate::part_replay_store::install_prepared_named_replay(
-                    store,
-                    id,
-                    target_policy,
-                    scope,
-                    replay,
-                );
-                changed.push(updated);
+            for ((id, store, target_policy), dependent) in stores.into_iter().zip(dependents) {
+                match dependent {
+                    PreparedChoice::First((updated, scope, replay)) => {
+                        crate::part_replay_store::install_prepared_named_replay(
+                            store,
+                            id,
+                            target_policy,
+                            scope,
+                            replay,
+                        );
+                        changed.push(updated);
+                    }
+                    PreparedChoice::Second(updated) => changed.push(updated),
+                }
             }
             output = Some((reply, changed));
         };
         match action {
             NamedAction::Edit(edit) => source
-                .run_prepared("Edit Model State Table", edit, prepare, publish)
+                .run_prepared(
+                    "Edit Model State Table",
+                    oblikovati_model::history::HistoryTransitionKind::ModelStateTable,
+                    edit,
+                    prepare,
+                    publish,
+                )
                 .map_err(|error| error.to_string())?,
             NamedAction::Navigate(direction, value) => source.navigate_prepared(
                 direction,

@@ -10,7 +10,7 @@ use oblikovati_session::{
 pub(crate) fn verify<O: TransactionObserver, W: WorkspaceObserver>(
     workspace: &WorkspaceSession<O, W>,
     request: SetModelStateTableArgs,
-    geometry: impl FnOnce(u64, &DocumentSnapshot) -> Result<(), String>,
+    mut geometry: impl FnMut(u64, &DocumentSnapshot) -> Result<(), String>,
 ) -> Result<ModelStateTableVerification, Error> {
     let id = workspace
         .active_document()
@@ -34,32 +34,66 @@ pub(crate) fn verify<O: TransactionObserver, W: WorkspaceObserver>(
     if !diagnostics.is_empty() {
         return Ok(result(diagnostics));
     }
-    let candidate = session.preview_projected(
-        |snapshot, ids| super::table_apply::apply(snapshot, ids, request),
-        |candidate, _| Ok(candidate.clone()),
-    );
-    let candidate = match candidate {
-        Ok(candidate) => candidate,
-        Err(error) => return Ok(result(vec![general(error.to_string())])),
-    };
-    let diagnostics = match geometry(id, &candidate) {
-        Ok(()) => vec![],
-        Err(error) => vec![general(error)],
-    };
+    let rows = request.rows.clone().unwrap_or_default();
+    if rows.is_empty() {
+        return Ok(result(vec![ModelStateTableDiagnostic {
+            row: None,
+            parameter_id: 0,
+            expression: String::new(),
+            message: "model-state rows: expected at least Primary".into(),
+        }]));
+    }
+    let mut diagnostics = Vec::new();
+    for row in rows {
+        let draft = request.clone();
+        let candidate = session.preview_projected(
+            |snapshot, ids| {
+                let created = super::table_apply::apply(snapshot, ids, draft)?;
+                let id = if row.ref_.member_id != 0 {
+                    row.ref_.member_id
+                } else {
+                    created
+                        .iter()
+                        .find(|item| item.draft_key == row.ref_.draft_key)
+                        .map(|item| item.member_id)
+                        .ok_or_else(|| {
+                            Error(format!(
+                                "draft row {:?}: expected a created member",
+                                row.ref_
+                            ))
+                        })?
+                };
+                snapshot
+                    .model_states
+                    .as_mut()
+                    .ok_or_else(|| Error("expected model states".into()))?
+                    .activate(id)
+                    .map_err(Error)?;
+                super::parameter_projection::project(snapshot)?;
+                super::property_projection::project(snapshot)?;
+                Ok::<_, Error>(())
+            },
+            |candidate, _| Ok(candidate.clone()),
+        );
+        let error = match candidate {
+            Ok(candidate) => geometry(id, &candidate).err(),
+            Err(error) => Some(error.to_string()),
+        };
+        if let Some(message) = error {
+            diagnostics.push(ModelStateTableDiagnostic {
+                row: Some(Box::new(row.ref_)),
+                parameter_id: 0,
+                expression: String::new(),
+                message,
+            });
+        }
+    }
     Ok(result(diagnostics))
 }
 fn result(diagnostics: Vec<ModelStateTableDiagnostic>) -> ModelStateTableVerification {
     ModelStateTableVerification {
         valid: diagnostics.is_empty(),
         diagnostics: Some(diagnostics),
-    }
-}
-fn general(message: String) -> ModelStateTableDiagnostic {
-    ModelStateTableDiagnostic {
-        row: None,
-        parameter_id: 0,
-        expression: String::new(),
-        message,
     }
 }
 pub(super) fn parameter_diagnostics(

@@ -429,11 +429,11 @@ impl ModelStateTable {
             let mut name = row.name.clone();
             let disabled = ui.begin_disabled(index == 0);
             ui.set_next_item_width(140.);
-            if ui.input_text("##member-name", &mut name).build() {
-                if let Some(current) = view.rows.as_mut().and_then(|items| items.get_mut(index)) {
-                    current.name = name;
-                    self.dirty = true;
-                }
+            if ui.input_text("##member-name", &mut name).build()
+                && let Some(current) = view.rows.as_mut().and_then(|items| items.get_mut(index))
+            {
+                current.name = name;
+                self.dirty = true;
             }
             drop(disabled);
             for column in &columns {

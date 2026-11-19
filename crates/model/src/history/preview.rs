@@ -48,7 +48,7 @@ pub struct PreparedPrivateEdit<'a> {
 }
 
 enum PreparedAction {
-    Edit(String),
+    Edit(String, super::HistoryTransitionKind),
     Undo,
     Redo,
 }
@@ -97,13 +97,21 @@ impl PreparedPrivateEdit<'_> {
         )
     }
 
+    /// Classify an edit before publication; example: `prepared.set_transition_kind(kind)`.
+    pub fn set_transition_kind(&mut self, kind: super::HistoryTransitionKind) {
+        if let PreparedAction::Edit(_, current) = &mut self.action {
+            *current = kind;
+        }
+    }
+
     /// Publish the validated edit as one undo step without further validation.
     /// Example: `let transition = prepared.publish();` after all observers accept.
     pub fn publish(self) -> super::EvaluationTransition {
         let changed = self.changed();
         match self.action {
-            PreparedAction::Edit(label) if changed => {
+            PreparedAction::Edit(label, kind) if changed => {
                 self.owner.done.push(super::HistoryStep {
+                    kind,
                     label,
                     saved: false,
                     before: self.owner.current.clone(),
@@ -112,7 +120,7 @@ impl PreparedPrivateEdit<'_> {
                 });
                 self.owner.undone.clear();
             }
-            PreparedAction::Edit(_) => {}
+            PreparedAction::Edit(_, _) => {}
             PreparedAction::Undo => {
                 let step = self.owner.done.pop().expect("prepared undo step");
                 self.owner.undone.push(step);
@@ -152,7 +160,7 @@ impl DocumentEditHistory {
                 candidate,
                 generation,
                 source,
-                action: PreparedAction::Edit(label.into()),
+                action: PreparedAction::Edit(label.into(), super::HistoryTransitionKind::Ordinary),
                 seal: std::sync::Arc::new(()),
             },
             result,

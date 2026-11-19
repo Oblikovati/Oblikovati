@@ -58,6 +58,7 @@ fn veto_leaves_generation_and_retained_body_current() {
     let generation = session.generation();
     let result = session.run_prepared(
         "depth",
+        oblikovati_model::history::HistoryTransitionKind::Ordinary,
         |snapshot, _| {
             snapshot
                 .parameters
@@ -89,6 +90,7 @@ fn preflight_failure_leaves_generation_and_retained_body_current() {
     let generation = session.generation();
     let result = session.run_prepared(
         "depth",
+        oblikovati_model::history::HistoryTransitionKind::Ordinary,
         |snapshot, _| {
             snapshot
                 .parameters
@@ -118,6 +120,7 @@ fn prepared_success_publishes_one_undo_step() {
     session
         .run_prepared(
             "depth",
+            oblikovati_model::history::HistoryTransitionKind::Ordinary,
             |snapshot, _| {
                 snapshot
                     .parameters
@@ -155,6 +158,7 @@ fn veto_keeps_real_body_and_prepared_dependent_unchanged() {
     let dependent_generation = dependent.generation();
     let result = session.run_prepared(
         "depth",
+        oblikovati_model::history::HistoryTransitionKind::Ordinary,
         |snapshot, _| {
             snapshot
                 .parameters
@@ -224,6 +228,7 @@ fn prepared_real_replay_and_dependent_publish_in_one_session_command() {
     session
         .run_prepared(
             "depth",
+            oblikovati_model::history::HistoryTransitionKind::Ordinary,
             |snapshot, _| {
                 snapshot
                     .parameters
@@ -280,6 +285,7 @@ fn body_preflight_refusal_keeps_owned_solid_and_dependent_current() {
     session.validate_prepared_named_destination(None).unwrap();
     let result = session.run_prepared(
         "depth",
+        oblikovati_model::history::HistoryTransitionKind::Ordinary,
         |snapshot, _| {
             snapshot
                 .parameters

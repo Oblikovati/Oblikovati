@@ -15,6 +15,11 @@ pub(super) trait CommandOwner {
     fn workspace(&self) -> &WorkspaceSession<Self::Observer, Self::WorkspaceObserver>;
     fn commands(&mut self, id: u64) -> Result<SessionCommands<'_, Self::Observer>, WorkspaceError>;
     fn refresh_after_command(&mut self, id: u64) -> Result<(), Error>;
+    fn verify_named_candidate(
+        &self,
+        id: u64,
+        candidate: &oblikovati_model::history::DocumentSnapshot,
+    ) -> Result<(), String>;
     fn navigate_named_prepared(
         &mut self,
         id: u64,
@@ -43,6 +48,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver> CommandOwner for WorkspaceSes
     }
     fn refresh_after_command(&mut self, _id: u64) -> Result<(), Error> {
         Ok(())
+    }
+    fn verify_named_candidate(
+        &self,
+        id: u64,
+        candidate: &oblikovati_model::history::DocumentSnapshot,
+    ) -> Result<(), String> {
+        self.verify_unlinked_named_candidate(id, candidate)
     }
     fn navigate_named_prepared(
         &mut self,
@@ -75,6 +87,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> CommandOwne
     }
     fn commands(&mut self, id: u64) -> Result<SessionCommands<'_, O>, WorkspaceError> {
         self.commands(id)
+    }
+    fn verify_named_candidate(
+        &self,
+        id: u64,
+        candidate: &oblikovati_model::history::DocumentSnapshot,
+    ) -> Result<(), String> {
+        FileWorkspace::verify_named_candidate(self, id, candidate)
     }
     fn navigate_named_prepared(
         &mut self,

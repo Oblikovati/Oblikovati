@@ -24,14 +24,16 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
                 .workspace
                 .session(id)
                 .map_err(|error| error.to_string())?;
-            if session.snapshot().assembly.is_some() || session.snapshot().drawing.is_some() {
+            if session.snapshot().drawing.is_some() {
                 return Err(format!(
-                    "linked reader {id}: expected a part document for prepared replay"
+                    "linked reader {id}: expected a part or assembly document"
                 ));
             }
             session.preview_refresh_snapshot(snapshot.clone())?;
-            self.workspace
-                .verify_unlinked_named_candidate(id, &snapshot)?;
+            if session.snapshot().assembly.is_none() {
+                self.workspace
+                    .verify_unlinked_named_candidate(id, &snapshot)?;
+            }
         }
         Ok(())
     }

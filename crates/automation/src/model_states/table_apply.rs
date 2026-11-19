@@ -31,11 +31,19 @@ pub(crate) fn set(
             session.generation()
         )));
     }
-    let diagnostics = super::table_verify::parameter_diagnostics(session.snapshot(), &request);
-    if let Some(diagnostic) = diagnostics.first() {
+    let validation =
+        super::table_verify::verify(owner.workspace(), request.clone(), |id, candidate| {
+            owner.verify_named_candidate(id, candidate)
+        })?;
+    if let Some(diagnostic) = validation
+        .diagnostics
+        .as_deref()
+        .unwrap_or_default()
+        .first()
+    {
         return Err(Error(format!(
-            "model-state parameter {} expression {:?}: {}",
-            diagnostic.parameter_id, diagnostic.expression, diagnostic.message
+            "model-state row {:?}, parameter {} expression {:?}: {}",
+            diagnostic.row, diagnostic.parameter_id, diagnostic.expression, diagnostic.message
         )));
     }
     let policy = session

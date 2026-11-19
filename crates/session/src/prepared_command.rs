@@ -12,6 +12,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
     pub(crate) fn run_prepared<R, P: PreparedPublication>(
         &mut self,
         label: &str,
+        kind: oblikovati_model::history::HistoryTransitionKind,
         command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, String>,
         prepare: impl FnOnce(&PreparedPrivateEdit<'_>, R) -> Result<P, String>,
         publish: impl FnOnce(&mut Self, P::Output, EvaluationTransition),
@@ -25,7 +26,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
             TRANSACTION_POINT_CURRENT,
         );
         let options = Some(self.sketch_options);
-        let (prepared, result) = self
+        let (mut prepared, result) = self
             .history
             .prepare_private_edit(label, |snapshot, ids, _| {
                 crate::sketch_recompute::apply_recipe_edit(
@@ -37,6 +38,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
                 )
             })
             .map_err(CommandError::Edit)?;
+        prepared.set_transition_kind(kind);
         let publication = prepare(&prepared, result).map_err(prepared_error)?;
         publication.validate(&prepared).map_err(prepared_error)?;
         publication

@@ -108,10 +108,11 @@ fn resolve_source(
     {
         return Ok(source.member_id);
     }
-    if source.member_id == 0 && !source.draft_key.is_empty() {
-        if let Some(id) = resolved.keys.get(&source.draft_key) {
-            return Ok(*id);
-        }
+    if source.member_id == 0
+        && !source.draft_key.is_empty()
+        && let Some(id) = resolved.keys.get(&source.draft_key)
+    {
+        return Ok(*id);
     }
     Err(Error(format!(
         "new model-state row source {source:?}: expected an existing or earlier draft row"

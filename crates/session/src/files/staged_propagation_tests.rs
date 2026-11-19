@@ -443,3 +443,6 @@ fn refused_linked_redo_preserves_history_and_both_real_solids() {
 
 #[path = "staged_verification_tests.rs"]
 mod verification;
+
+#[path = "staged_assembly_tests.rs"]
+mod assembly;

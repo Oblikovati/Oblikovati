@@ -304,7 +304,6 @@ fn verify_table_identifies_invalid_member_cell_without_reserving_ids() {
             && item.expression == "abc"
     }));
     assert!(client.model_states().set_table(&request).is_err());
-    drop(client);
     let session = workspace.session(document).unwrap();
     assert_eq!(session.generation(), before_generation);
     assert_eq!(session.high_water(), before_high_water);
@@ -323,7 +322,6 @@ fn verify_table_reports_both_ends_of_a_cross_parameter_cycle() {
             ..Default::default()
         })
         .unwrap();
-    drop(client);
     let height = workspace
         .session(document)
         .unwrap()
@@ -378,6 +376,72 @@ fn verify_table_reports_both_ends_of_a_cross_parameter_cycle() {
     assert!(diagnostics.iter().any(|item| item.parameter_id == height
         && item.row.as_deref().is_some_and(|row| row.member_id == 1)));
     assert!(client.model_states().set_table(&request).is_err());
-    drop(client);
     assert_eq!(workspace.session(document).unwrap().generation(), before);
+}
+
+#[test]
+fn typed_jump_crosses_table_edits_and_ordinary_label_collisions() {
+    use oblikovati_model::history::HistoryTransitionKind;
+    let (mut workspace, document, second, parameter, feature) = mixed_workspace();
+    let client = Client::new(SessionHost::new(&mut workspace));
+    let before = client
+        .transactions()
+        .history(&TransactionHistoryArgs { document })
+        .unwrap()
+        .position;
+    let view = client
+        .model_states()
+        .get_table(&EmptyObject::default())
+        .unwrap();
+    client
+        .model_states()
+        .set_table(&mixed_request(view, second, parameter, feature))
+        .unwrap();
+    workspace
+        .commands(document)
+        .unwrap()
+        .run("Edit Model State Table", |snapshot, _| {
+            snapshot.properties.put(
+                "Summary Information",
+                "Title",
+                VariantValue::String("collision".into()),
+            )
+        })
+        .unwrap();
+    assert_eq!(
+        workspace.session(document).unwrap().undo_transition_kind(),
+        Some(HistoryTransitionKind::Ordinary)
+    );
+    let client = Client::new(SessionHost::new(&mut workspace));
+    let moved = client
+        .transactions()
+        .jump_to(&TransactionJumpToArgs {
+            document,
+            position: before,
+        })
+        .unwrap();
+    assert_eq!(moved.position, before);
+    let table = client
+        .model_states()
+        .get_table(&EmptyObject::default())
+        .unwrap();
+    assert_eq!(table.rows.unwrap().len(), 2);
+    let moved = client
+        .transactions()
+        .jump_to(&TransactionJumpToArgs {
+            document,
+            position: before + 2,
+        })
+        .unwrap();
+    assert_eq!(moved.position, before + 2);
+    assert_eq!(
+        client
+            .model_states()
+            .get_table(&EmptyObject::default())
+            .unwrap()
+            .rows
+            .unwrap()
+            .len(),
+        3
+    );
 }

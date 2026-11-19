@@ -63,6 +63,8 @@ pub use dimension_names::SketchDimensionNameReservations;
 mod sketch_ids;
 pub use sketch_constraints::{SketchConstraintReservationError, SketchConstraintReservations};
 pub use sketch_delete::{DocumentSketchDeleteError, DocumentSketchDeleteReport};
+mod transition_kind;
+pub use transition_kind::HistoryTransitionKind;
 mod preview;
 pub(crate) mod publication;
 pub use preview::{PreparedCandidateSeal, PreparedNavigation, PreparedPrivateEdit, SnapshotReplay};
@@ -168,6 +170,7 @@ struct OpenTransaction {
 }
 #[derive(Debug)]
 struct HistoryStep {
+    kind: HistoryTransitionKind,
     label: String,
     saved: bool,
     before: DocumentSnapshot,
@@ -348,15 +351,15 @@ impl DocumentEditHistory {
             return Ok(());
         }
         if merge_previous
-            && let Some(previous) = self
-                .done
-                .last_mut()
-                .filter(|step| step.sketch_edit.is_none())
+            && let Some(previous) = self.done.last_mut().filter(|step| {
+                step.sketch_edit.is_none() && step.kind == HistoryTransitionKind::Ordinary
+            })
         {
             previous.after = self.current.clone();
             previous.saved = false;
         } else {
             self.done.push(HistoryStep {
+                kind: HistoryTransitionKind::Ordinary,
                 label: frame.label,
                 saved: false,
                 before: frame.before,

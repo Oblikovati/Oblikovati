@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Evaluate simultaneous parameter-expression changes on a private collection.
 use super::{expression_context::compile_context_source, *};
+type CompiledParameterEdit<Id> = (Id, Expression, Option<DimensionExpressionContext>);
 
 /// A rejected batch expression and the parameter whose validation failed.
 /// Example: `error.parameter` identifies the table cell to inspect.
@@ -38,8 +39,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     fn compile_batch(
         &self,
         edits: &[(Id, String)],
-    ) -> Result<Vec<(Id, Expression, Option<DimensionExpressionContext>)>, ParameterBatchError<Id>>
-    {
+    ) -> Result<Vec<CompiledParameterEdit<Id>>, ParameterBatchError<Id>> {
         let mut seen = BTreeSet::new();
         let mut compiled = Vec::new();
         for (id, source) in edits {
@@ -64,7 +64,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     }
     fn detach_batch(
         &mut self,
-        edits: &[(Id, Expression, Option<DimensionExpressionContext>)],
+        edits: &[CompiledParameterEdit<Id>],
     ) -> Result<(), ParameterBatchError<Id>> {
         for (id, _, _) in edits {
             self.graph
@@ -75,7 +75,7 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     }
     fn install_batch(
         &mut self,
-        edits: Vec<(Id, Expression, Option<DimensionExpressionContext>)>,
+        edits: Vec<CompiledParameterEdit<Id>>,
     ) -> Result<(), ParameterBatchError<Id>> {
         let ids: Vec<Id> = edits.iter().map(|(id, _, _)| *id).collect();
         for (id, expression, context) in edits {

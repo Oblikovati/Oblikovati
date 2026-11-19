@@ -132,3 +132,76 @@ fn entry_was_discarded(world: &mut ApplicationWorld) {
         .unwrap();
     assert_eq!(cell.expression.as_deref().map(String::as_str), Some("2 in"));
 }
+
+#[test]
+fn inactive_member_with_invalid_prism_is_rejected_without_publication() {
+    use oblikovati_api::wire::SetModelStateTableArgs;
+    let mut world = ApplicationWorld::new();
+    super::model_state_table_parameter_steps::three_state_prism(&mut world);
+    super::model_state_table_parameter_steps::persist_parameter_column(&mut world);
+    let client = Client::new(world.app().owner.document_host());
+    let before = client
+        .model_states()
+        .get_table(&Default::default())
+        .unwrap();
+    let history = client.transactions().history(&Default::default()).unwrap();
+    let mut parameters = before.parameters.clone().unwrap();
+    let column = parameters
+        .iter_mut()
+        .find(|item| item.parameter_id != 0)
+        .unwrap();
+    let primary = before
+        .rows
+        .as_ref()
+        .unwrap()
+        .iter()
+        .find(|row| row.name == "Primary")
+        .unwrap()
+        .ref_
+        .clone();
+    let cell = column
+        .cells
+        .as_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|cell| cell.row == primary)
+        .unwrap();
+    cell.expression = Some(Box::new("0 in".into()));
+    let draft = SetModelStateTableArgs {
+        expected_generation: before.generation,
+        rows: before.rows.clone(),
+        columns: before.columns.clone(),
+        properties: before.properties.clone(),
+        suppressions: before.suppressions.clone(),
+        parameters: Some(parameters),
+    };
+    let verification = client.model_states().verify_table(&draft).unwrap();
+    assert!(
+        !verification.valid,
+        "zero-depth inactive member must fail geometric replay"
+    );
+    assert!(
+        verification
+            .diagnostics
+            .unwrap()
+            .iter()
+            .any(|diagnostic| diagnostic.row.as_deref() == Some(&primary))
+    );
+    assert!(client.model_states().set_table(&draft).is_err());
+    assert_eq!(
+        client
+            .model_states()
+            .get_table(&Default::default())
+            .unwrap(),
+        before
+    );
+    assert_eq!(
+        client
+            .transactions()
+            .history(&Default::default())
+            .unwrap()
+            .position,
+        history.position
+    );
+    world.close();
+}
