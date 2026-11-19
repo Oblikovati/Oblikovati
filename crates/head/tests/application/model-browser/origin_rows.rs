@@ -3,6 +3,10 @@
 use super::*;
 use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportModifiers, ViewportPhysicalKey};
 
+#[cfg(target_os = "linux")]
+#[path = "origin_native.rs"]
+mod native;
+
 const YZ: &str = "YZ Plane";
 const XZ: &str = "XZ Plane";
 const XY: &str = "XY Plane";
@@ -47,11 +51,28 @@ fn origin_open(world: &mut ApplicationWorld) {
     }
 }
 #[given("the YZ origin plane is not visible in the viewport")]
-#[given("the YZ origin plane is hidden and its browser row is visible")]
 #[given("the origin plane is not persistently visible")]
 fn yz_hidden(world: &mut ApplicationWorld) {
     world.expect_text(YZ);
     assert!(!plane_shows_at(world, YZ), "expected the plane hidden");
+}
+#[given("the YZ origin plane is hidden and its browser row is visible")]
+fn yz_hidden_oblique(world: &mut ApplicationWorld) {
+    show_yz_area(world);
+    yz_hidden(world);
+}
+fn show_yz_area(world: &mut ApplicationWorld) {
+    let view = camera(world);
+    let oblique = crate::view_orientation::oriented(
+        &view,
+        oblikovati_gui::GuiOrientCommand::Corner {
+            right: true,
+            up: true,
+        },
+    );
+    crate::HeadWindow::set_view_camera(&mut world.app().window, oblique).unwrap();
+    world.observed_view_camera = Some(oblique);
+    settle(world);
 }
 #[when("I select the YZ Plane row")]
 #[when("the user selects the YZ Plane row")]

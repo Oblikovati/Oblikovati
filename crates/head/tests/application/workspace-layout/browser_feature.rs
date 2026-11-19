@@ -251,6 +251,7 @@ fn second_rows(world: &mut ApplicationWorld) {
 }
 #[then("it offers Expand All Children and Collapse All Children")]
 #[then("its context menu offers Expand All Children and Collapse All Children")]
+#[then("its context menu offers Expand All Children and collapses All Children")]
 fn third_rows(world: &mut ApplicationWorld) {
     expect_rows(world, &["Expand All Children", "Collapse All Children"]);
 }
