@@ -46,3 +46,7 @@ mod browser_click_tests;
 #[cfg(test)]
 #[path = "../tests/document-tabs/click.rs"]
 mod document_tab_click_tests;
+
+#[cfg(test)]
+#[path = "../tests/icons/shell_pointer.rs"]
+mod shell_pointer_tests;

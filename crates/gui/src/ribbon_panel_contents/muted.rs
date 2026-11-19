@@ -48,8 +48,15 @@ pub(super) fn part_modify_controls(
         actions.push(action);
     }
     drop(disabled);
+    let size = muted_command_position(ui, origin, icons, 3);
+    let action = crate::GuiShellAction::OpenShellFeature;
+    let disabled = ui.begin_disabled(!action.dispatchable(state));
+    if icons.button(ui, "Shell", IconGlyph::Shell, size) {
+        actions.push(action);
+    }
+    drop(disabled);
     if crate::move_body_ribbon::is_main(owners.customization) {
-        let size = muted_command_position(ui, origin, icons, 3);
+        let size = muted_command_position(ui, origin, icons, 4);
         crate::move_body_ribbon::main_button(
             ui,
             size,

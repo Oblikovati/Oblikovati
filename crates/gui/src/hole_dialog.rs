@@ -108,16 +108,12 @@ impl HoleDialog {
         let request = self.request(state).filter(|request| {
             GuiShellAction::PreviewHole(Some(request.clone())).dispatchable(state)
         });
-        if request == self.attempted {
-            return;
-        }
-        if self.attempted.is_some() {
-            actions.push(GuiShellAction::PreviewHole(None));
-        }
-        self.attempted = request.clone();
-        if let Some(request) = request {
-            actions.push(GuiShellAction::PreviewHole(Some(request)));
-        }
+        crate::face_draft::refresh_preview(
+            &mut self.attempted,
+            request,
+            actions,
+            GuiShellAction::PreviewHole,
+        );
     }
     fn controls(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         let request = self

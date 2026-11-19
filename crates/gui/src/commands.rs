@@ -294,6 +294,12 @@ pub enum GuiShellAction {
     PreviewHole(Option<GuiHoleRequest>),
     /// Create a hole from the selected face.
     CreateHole(GuiHoleRequest),
+    /// Open the Shell properties draft.
+    OpenShellFeature,
+    /// Show or clear the exact Shell preview.
+    PreviewShellFeature(Option<GuiShellFeatureRequest>),
+    /// Commit the Shell draft.
+    CreateShellFeature(GuiShellFeatureRequest),
     /// Open an equal-distance chamfer draft for selected edges.
     OpenChamfer,
     OpenFilletEdit(oblikovati_model::feature::FeatureId),
