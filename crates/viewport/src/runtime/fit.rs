@@ -8,6 +8,12 @@ impl Viewport {
         self.live()?.fit_visible_bounds()
     }
 
+    /// Read visible model and sketch bounds for presentation; an empty scene returns `None`.
+    /// Example: `let bounds = view.visible_presentation_bounds()?` for a display overlay.
+    pub fn visible_presentation_bounds(&self) -> Result<Option<[[f64; 3]; 2]>, String> {
+        self.live()?.visible_presentation_bounds()
+    }
+
     /// Fit or orient displayed geometry inside an unobstructed framebuffer rectangle.
     /// Example: `view.navigate_in_region(ViewportNavigation::Home { margin: 0.1 }, [200, 100, 800, 600])?`.
     pub fn navigate_in_region(

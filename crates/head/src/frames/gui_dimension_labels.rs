@@ -142,10 +142,31 @@ fn triad_pixels(origin: [i32; 2]) -> [[i32; 2]; 3] {
         [origin[0], origin[1] - TRIAD_REACH],
     ]
 }
-/// A half-side of the displayed origin planes, in working lengths: readable at the default view.
+/// The fixed half-size of an origin datum, in document lengths.
 const ORIGIN_PLANE_REACH: f64 = 6.;
-/// The planes as the camera sees them; a window that cannot project shows none.
-/// The origin's axes in pixels, with the rows that name them.
+/// Leave visual breathing room around the scene when a datum follows its bounds.
+const ORIGIN_AUTO_MARGIN: f64 = 1.1;
+
+fn automatic_origin_reach(bounds: Option<[[f64; 3]; 2]>) -> f64 {
+    let Some(bounds) = bounds else {
+        return ORIGIN_PLANE_REACH;
+    };
+    if bounds.iter().flatten().any(|value| !value.is_finite()) {
+        return ORIGIN_PLANE_REACH;
+    }
+    let largest = bounds
+        .into_iter()
+        .flatten()
+        .map(f64::abs)
+        .fold(0., f64::max);
+    let reach = largest * ORIGIN_AUTO_MARGIN;
+    if reach.is_finite() {
+        reach.max(ORIGIN_PLANE_REACH)
+    } else {
+        ORIGIN_PLANE_REACH
+    }
+}
+/// Project the origin axes at fixed and scene-sized reaches.
 pub(super) fn origin_axis_lines(
     window: &dyn HeadWindow,
     commands: &oblikovati_gui::GuiCommandState,
@@ -155,21 +176,36 @@ pub(super) fn origin_axis_lines(
     {
         return Vec::new();
     }
-    const R: f64 = ORIGIN_PLANE_REACH;
-    [
-        ("X Axis", [[-R, 0., 0.], [R, 0., 0.]]),
-        ("Y Axis", [[0., -R, 0.], [0., R, 0.]]),
-        ("Z Axis", [[0., 0., -R], [0., 0., R]]),
-    ]
-    .into_iter()
-    .filter_map(|(label, [from, to])| {
-        Some(oblikovati_gui::GuiOriginAxis {
-            label,
-            ends: [window.model_pixel(from).ok()?, window.model_pixel(to).ok()?],
+    let automatic = automatic_origin_reach(window.presentation_bounds());
+    ["X Axis", "Y Axis", "Z Axis"]
+        .into_iter()
+        .enumerate()
+        .filter_map(|(axis, label)| {
+            let ends = project_axis(window, axis, ORIGIN_PLANE_REACH)?;
+            let automatic_ends = if automatic == ORIGIN_PLANE_REACH {
+                ends
+            } else {
+                project_axis(window, axis, automatic)?
+            };
+            Some(oblikovati_gui::GuiOriginAxis {
+                label,
+                ends,
+                automatic_ends,
+            })
         })
-    })
-    .collect()
+        .collect()
 }
+fn project_axis(window: &dyn HeadWindow, axis: usize, reach: f64) -> Option<[[i32; 2]; 2]> {
+    let mut first = [0.; 3];
+    first[axis] = -reach;
+    let mut last = [0.; 3];
+    last[axis] = reach;
+    Some([
+        window.model_pixel(first).ok()?,
+        window.model_pixel(last).ok()?,
+    ])
+}
+/// Project the origin planes at fixed and scene-sized reaches.
 pub(super) fn origin_plane_outlines(
     window: &dyn HeadWindow,
     commands: &oblikovati_gui::GuiCommandState,
@@ -181,26 +217,42 @@ pub(super) fn origin_plane_outlines(
     {
         return Vec::new();
     }
-    let planes = [
+    let automatic = automatic_origin_reach(window.presentation_bounds());
+    [
         (Xy, SketchPlane::xy()),
         (Xz, SketchPlane::xz()),
         (Yz, SketchPlane::yz()),
-    ];
-    planes
-        .into_iter()
-        .filter_map(|(kind, plane)| {
-            let [a, b, c, d] =
-                [[-1., -1.], [1., -1.], [1., 1.], [-1., 1.]].map(|[u, v]: [f64; 2]| {
-                    window.sketch_pixel(plane, [u * ORIGIN_PLANE_REACH, v * ORIGIN_PLANE_REACH])
-                });
-            Some(oblikovati_gui::GuiOriginPlane {
-                kind,
-                corners: [a.ok()?, b.ok()?, c.ok()?, d.ok()?],
-            })
+    ]
+    .into_iter()
+    .filter_map(|(kind, plane)| {
+        let corners = project_origin_plane(window, plane, ORIGIN_PLANE_REACH)?;
+        let automatic_corners = if automatic == ORIGIN_PLANE_REACH {
+            corners
+        } else {
+            project_origin_plane(window, plane, automatic)?
+        };
+        Some(oblikovati_gui::GuiOriginPlane {
+            kind,
+            corners,
+            automatic_corners,
         })
-        .collect()
+    })
+    .collect()
+}
+fn project_origin_plane(
+    window: &dyn HeadWindow,
+    plane: oblikovati_model::sketch::SketchPlane,
+    reach: f64,
+) -> Option<[[i32; 2]; 4]> {
+    let [a, b, c, d] = [[-1., -1.], [1., -1.], [1., 1.], [-1., 1.]]
+        .map(|[u, v]| window.sketch_pixel(plane, [u * reach, v * reach]));
+    Some([a.ok()?, b.ok()?, c.ok()?, d.ok()?])
 }
 
 #[cfg(test)]
 #[path = "../../tests/constraint_glyph_projection.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "../../tests/origin_projection_tests.rs"]
+mod origin_tests;

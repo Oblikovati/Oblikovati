@@ -23,6 +23,9 @@ pub struct NativeHeadWindow {
     scene_status: Option<crate::HeadSceneStatus>,
     current_scene: Option<ViewportScene>,
     scene_depth_bounds: Option<scene_depth::SceneBounds>,
+    presentation_bounds: Option<[[f64; 3]; 2]>,
+    #[cfg(test)]
+    presentation_bounds_refreshes: usize,
     preview_background: Option<oblikovati_viewport::ViewportBackground>,
     sketch_scene: Option<crate::HeadSketchSceneUpdate>,
     glyph_hover: Option<oblikovati_viewport::ViewportSketchFeedback>,

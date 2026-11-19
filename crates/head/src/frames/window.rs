@@ -326,6 +326,11 @@ pub trait HeadWindow {
     }
     /// Keep the view to this projection; example: from the orientation control's menu.
     fn set_view_projection(&mut self, _: oblikovati_gui::GuiViewProjection) {}
+    /// Cached visible-scene bounds for presentation only; example: size an origin-plane overlay.
+    /// These bounds must never be used for modelling or topology decisions.
+    fn presentation_bounds(&self) -> Option<[[f64; 3]; 2]> {
+        None
+    }
     /// The pixel a model position shows at; example: to draw a solid's edges over the view.
     fn model_pixel(&self, point: [f64; 3]) -> Result<[i32; 2], String> {
         Err(format!(

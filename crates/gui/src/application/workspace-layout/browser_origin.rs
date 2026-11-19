@@ -21,6 +21,8 @@ const AXIS_THICKNESS: f32 = 2.;
 pub struct GuiOriginAxis {
     pub label: &'static str,
     pub ends: [[i32; 2]; 2],
+    /// Scene-sized endpoints for an automatically resized browser datum.
+    pub automatic_ends: [[i32; 2]; 2],
 }
 /// A right-click on the Origin row; its direct rows stay when its children collapse.
 pub(crate) fn origin_branch_menu(ui: &Ui, view: &mut BrowserView) {
@@ -101,13 +103,13 @@ fn origin_row_commands(
         }
         muted_menu_item(ui, "Measure");
         visibility_row(ui, state, view, row);
-        auto_resize_row(ui);
+        auto_resize_row(ui, state, view, row);
     } else if label.ends_with("Axis") {
         for listed in ["Copy", "Measure"] {
             muted_menu_item(ui, listed);
         }
         visibility_row(ui, state, view, row);
-        auto_resize_row(ui);
+        auto_resize_row(ui, state, view, row);
     } else {
         for listed in ["Copy", "Measure", "Create Note"] {
             muted_menu_item(ui, listed);
@@ -162,12 +164,19 @@ pub(crate) fn follow_keys(
         });
     }
 }
-/// Datums keep to the size of what they surround in this build, so the row only says so.
-fn auto_resize_row(ui: &Ui) {
-    ui.menu_item_config("Auto-Resize")
-        .selected(true)
-        .enabled(false)
-        .build();
+/// Auto-sized datums follow the visible scene; fixed datums keep the standard display extent.
+fn auto_resize_row(ui: &Ui, state: &GuiCommandState, view: &mut BrowserView, row: usize) {
+    let Some(document) = state.document else {
+        return;
+    };
+    let selected = view.origin_auto_resize(document, row);
+    if ui
+        .menu_item_config("Auto-Resize")
+        .selected(selected)
+        .build()
+    {
+        view.toggle_origin_auto_resize(document, row);
+    }
 }
 /// A click on the part's view, once no menu is left to close: no origin row stays chosen, and
 /// the owner looks for a face under the pointer.
@@ -223,15 +232,23 @@ pub(crate) fn draw_selected_origin(
     request: &GuiFrameRequest,
     selected: Option<usize>,
     visible: impl Iterator<Item = usize>,
+    view: &BrowserView,
 ) {
     for row in visible {
-        draw_origin_row(ui, request, row, MUTED_FILL, MUTED_LINE);
+        draw_origin_row(ui, request, row, MUTED_FILL, MUTED_LINE, view);
     }
     if let Some(row) = selected {
-        draw_origin_row(ui, request, row, PLANE_FILL, ACCENT);
+        draw_origin_row(ui, request, row, PLANE_FILL, ACCENT, view);
     }
 }
-fn draw_origin_row(ui: &Ui, request: &GuiFrameRequest, row: usize, fill: Color, line: Color) {
+fn draw_origin_row(
+    ui: &Ui,
+    request: &GuiFrameRequest,
+    row: usize,
+    fill: Color,
+    line: Color,
+    view: &BrowserView,
+) {
     let Some(label) = ORIGIN_ROWS.get(row) else {
         return;
     };
@@ -244,7 +261,13 @@ fn draw_origin_row(ui: &Ui, request: &GuiFrameRequest, row: usize, fill: Color, 
         .iter()
         .find(|plane| plane.kind.label() == *label)
     {
-        let [a, b, c, d] = plane.corners.map(logical);
+        let automatic = view.origin_auto_resize(commands.document.unwrap_or(0), row);
+        let corners = if automatic {
+            plane.automatic_corners
+        } else {
+            plane.corners
+        };
+        let [a, b, c, d] = corners.map(logical);
         list.add_triangle(a, b, c, fill).filled(true).build();
         list.add_triangle(a, c, d, fill).filled(true).build();
     }
@@ -253,7 +276,13 @@ fn draw_origin_row(ui: &Ui, request: &GuiFrameRequest, row: usize, fill: Color, 
         .iter()
         .find(|axis| axis.label == *label)
     {
-        list.add_line(logical(axis.ends[0]), logical(axis.ends[1]), line)
+        let automatic = view.origin_auto_resize(commands.document.unwrap_or(0), row);
+        let ends = if automatic {
+            axis.automatic_ends
+        } else {
+            axis.ends
+        };
+        list.add_line(logical(ends[0]), logical(ends[1]), line)
             .thickness(AXIS_THICKNESS)
             .build();
     }

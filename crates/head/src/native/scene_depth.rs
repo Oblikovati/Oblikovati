@@ -21,11 +21,27 @@ impl super::NativeHeadWindow {
         update: crate::HeadSceneUpdate,
     ) -> Result<(), String> {
         self.view.submit(&update.scene)?;
+        self.refresh_presentation_bounds()?;
         self.scene_depth_bounds = SceneBounds::from_scene(&update.scene);
         self.current_scene = Some(update.scene);
         self.scene_status = Some(update.status);
         self.refresh_title()?;
         self.refresh_current_scene_depth()
+    }
+
+    /// Cache display-only bounds when scene geometry changes, not on each GUI frame.
+    pub(super) fn refresh_presentation_bounds(&mut self) -> Result<(), String> {
+        self.presentation_bounds = self.view.visible_presentation_bounds()?;
+        #[cfg(test)]
+        {
+            self.presentation_bounds_refreshes += 1;
+        }
+        Ok(())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn presentation_bounds_refresh_count(&self) -> usize {
+        self.presentation_bounds_refreshes
     }
 
     pub(super) fn restore_previous_scene_view(&mut self) -> Result<bool, String> {

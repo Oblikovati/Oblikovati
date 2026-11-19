@@ -43,6 +43,7 @@ pub(crate) fn browser_contents(
     {
         view.focused_origin_row = None;
     }
+    view.prune_origin_sizes(state);
     view.feature_rows.clear();
     view.feature_open.clear();
     view.header(ui, browser.kind == crate::GuiBrowserKind::Drawing);

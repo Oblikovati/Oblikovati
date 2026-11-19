@@ -49,21 +49,32 @@ impl RenderView {
     }
     /// The same displayed bounds Fit uses, with the transient preview excluded.
     pub(crate) fn fit_visible_bounds(&self) -> Result<[[f64; 3]; 2], String> {
+        self.visible_presentation_bounds()?
+            .ok_or_else(|| "display fit bounds: expected nonempty finite bounds".into())
+    }
+    /// Presentation-only bounds; an empty scene has no bounds.
+    pub(crate) fn visible_presentation_bounds(&self) -> Result<Option<[[f64; 3]; 2]>, String> {
+        if self.structures.is_empty() && self.sketches.is_empty() {
+            return Ok(None);
+        }
         let (count, values) = self
             .preview
             .without_preview(|| self.view.min_max_world())
             .map_err(|cause| {
                 format!("display fit bounds: expected visible scene bounds: {cause}")
             })?;
-        if count == 0 || values.iter().any(|value| !value.is_finite()) {
+        if count == 0 {
+            return Ok(None);
+        }
+        if values.iter().any(|value| !value.is_finite()) {
             return Err(format!(
-                "display fit bounds {values:?}, structures {count}: expected nonempty finite bounds"
+                "display fit bounds {values:?}, structures {count}: expected finite bounds"
             ));
         }
-        Ok([
+        Ok(Some([
             [values[0], values[1], values[2]],
             [values[3], values[4], values[5]],
-        ])
+        ]))
     }
     fn apply_fit_region(
         &self,

@@ -26,6 +26,8 @@ impl GuiOriginPlaneKind {
 pub struct GuiOriginPlane {
     pub kind: GuiOriginPlaneKind,
     pub corners: [[i32; 2]; 4],
+    /// Scene-sized outline for an automatically resized browser datum.
+    pub automatic_corners: [[i32; 2]; 4],
 }
 /// Translucent and warm, so the planes read over a dark view without hiding it.
 const PLANE_FILL: [f32; 4] = [0.95, 0.65, 0.25, 0.22];

@@ -211,3 +211,29 @@ fn representation_expansion_preference_can_be_changed() {
     view.set_auto_expand_representations(true);
     assert!(view.auto_expand_representations());
 }
+
+#[test]
+fn origin_auto_resize_is_independent_per_document_and_row() {
+    let mut view = BrowserView::default();
+    assert!(view.origin_auto_resize(1, 0));
+    view.toggle_origin_auto_resize(1, 0);
+    assert!(!view.origin_auto_resize(1, 0));
+    assert!(view.origin_auto_resize(1, 1));
+    assert!(view.origin_auto_resize(2, 0));
+    view.toggle_origin_auto_resize(1, 0);
+    assert!(view.origin_auto_resize(1, 0));
+}
+
+#[test]
+fn origin_auto_resize_overrides_are_removed_when_documents_close() {
+    let mut view = BrowserView::default();
+    view.toggle_origin_auto_resize(1, 0);
+    view.toggle_origin_auto_resize(2, 1);
+    let state = GuiCommandState {
+        document: Some(2),
+        ..Default::default()
+    };
+    view.prune_origin_sizes(&state);
+    assert!(view.origin_auto_resize(1, 0));
+    assert!(!view.origin_auto_resize(2, 1));
+}

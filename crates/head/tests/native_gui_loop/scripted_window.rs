@@ -72,6 +72,9 @@ impl HeadWindow for ScriptedGuiWindow {
     ) -> Result<[i32; 2], String> {
         HeadWindow::sketch_pixel(&self.native, plane, point)
     }
+    fn presentation_bounds(&self) -> Option<[[f64; 3]; 2]> {
+        HeadWindow::presentation_bounds(&self.native)
+    }
     fn model_pixel(&self, point: [f64; 3]) -> Result<[i32; 2], String> {
         self.native.model_pixel(point)
     }

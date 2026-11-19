@@ -25,16 +25,19 @@ impl NativeHeadWindow {
         &mut self,
         update: crate::HeadSketchSceneUpdate,
     ) -> Result<(), String> {
-        if self
+        let changed = self
             .sketch_scene
             .as_ref()
-            .is_none_or(|scene| scene.source != update.source || scene.sketches != update.sketches)
-        {
+            .is_none_or(|scene| scene.source != update.source || scene.sketches != update.sketches);
+        if changed {
             self.view.set_sketch_feedback(None)?;
             self.glyph_hover = None;
             self.tool_hover = None;
         }
         self.view.set_sketch_display(&update.sketches)?;
+        if changed {
+            self.refresh_presentation_bounds()?;
+        }
         self.sketch_scene = Some(update);
         self.refresh_title()
     }
