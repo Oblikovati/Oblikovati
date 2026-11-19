@@ -61,12 +61,6 @@ impl DocumentSnapshot {
         ids: &mut RecipeReservations<'_>,
         scope: Option<&SketchInferenceCandidates>,
     ) -> Result<SketchLineChainCreationReport, SketchLineCreationError> {
-        let needs_choice = input.locks.iter().any(Option::is_some)
-            && self.effective_sketch_settings().over_constrained_behavior
-                == oblikovati_api::types::OVER_CONSTRAINED_PROMPT;
-        if !needs_choice {
-            return self.append_inferred_chain(sketch, input, policy, solve_options, ids, scope);
-        }
         let mut candidate = self.clone();
         let result =
             candidate.append_inferred_chain(sketch, input, policy, solve_options, ids, scope)?;
@@ -90,19 +84,71 @@ impl DocumentSnapshot {
         let mut geometry = self
             .current_sketch_authoring_geometry(sketch, solve_options)
             .map_err(SketchLineCreationError::Sketch)?;
-        let report = input.append_chain(
-            &mut geometry,
-            sketch,
-            &self.effective_sketch_settings(),
-            policy,
-            ids,
-            scope,
-        )?;
+        let settings = self.effective_sketch_settings();
+        let source = if settings.infer_constraints && settings.auto_apply_constraints {
+            Some(
+                crate::sketch::SketchInferenceFreeze::capture(&geometry)
+                    .map_err(SketchLineCreationError::Sketch)?,
+            )
+        } else {
+            None
+        };
+        let mut report =
+            input.append_chain(&mut geometry, sketch, &settings, policy, ids, scope)?;
+        let applied = report.lines.iter().any(|line| {
+            !line.point_constraints.is_empty()
+                || line.direction.is_some()
+                || (!settings.persist_inferred_constraints && line.inference.direction.is_some())
+        });
+        let context = match source.filter(|_| applied) {
+            Some(source) => {
+                let first = geometry
+                    .point(report.points[0])
+                    .map_err(SketchLineCreationError::Sketch)?;
+                let relations = report
+                    .lines
+                    .iter()
+                    .map(|line| super::temporary_direction(line, &settings))
+                    .collect::<Result<Vec<_>, _>>()?
+                    .into_iter()
+                    .flatten()
+                    .collect();
+                let context =
+                    super::super::sketch_placement_recipe::inference::TransientPlacement {
+                        source,
+                        anchors: if settings.persist_inferred_constraints {
+                            Vec::new()
+                        } else {
+                            vec![*first]
+                        },
+                        relations,
+                    };
+                if !settings.persist_inferred_constraints || input.locks.iter().any(Option::is_some)
+                {
+                    geometry = context
+                        .solve(self, &geometry, sketch, solve_options, None)
+                        .map_err(|cause| super::inference_failure(sketch, cause))?;
+                }
+                Some(context)
+            }
+            None => None,
+        };
         self.sketches
             .replace_geometry(sketch, geometry)
             .map_err(SketchLineCreationError::Sketch)?;
-        let dimensions =
-            self.append_locked_dimensions(sketch, input, &report, solve_options, ids)?;
+        let dimensions = self.append_locked_dimensions(
+            sketch,
+            input,
+            &report,
+            solve_options,
+            ids,
+            context.as_ref(),
+        )?;
+        if let Some(first) = report.lines.first_mut() {
+            first.needs_preparation =
+                settings.persist_inferred_constraints && !input.locks.iter().any(Option::is_some);
+            first.inference_witness = context;
+        }
         Ok(SketchLineChainCreationReport {
             dimensions,
             ..report
@@ -115,6 +161,7 @@ impl DocumentSnapshot {
         report: &SketchLineChainCreationReport,
         options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
+        transient: Option<&super::super::sketch_placement_recipe::inference::TransientPlacement>,
     ) -> Result<Vec<SketchDimensionCreationReport>, SketchLineCreationError> {
         let Some(last) = report.lines.last() else {
             return Ok(Vec::new());
@@ -132,7 +179,16 @@ impl DocumentSnapshot {
                 text_point: lock.text_point,
             };
             let created = self
-                .create_placement_dimension(sketch, &creation, options, ids, Default::default())
+                .create_placement_dimension(
+                    sketch,
+                    &creation,
+                    options,
+                    ids,
+                    super::super::sketch_placement_recipe::inference::PlacementSolveContext {
+                        datums: None,
+                        transient,
+                    },
+                )
                 .map_err(|cause| SketchLineCreationError::Dimension { index, cause })?;
             dimensions.push(created);
         }
@@ -158,6 +214,7 @@ struct LineInferenceContext<'a> {
     policy: SketchInferencePolicy,
     scope: Option<&'a SketchInferenceCandidates>,
     current: &'a [SketchEntityId],
+    protected: [bool; 2],
 }
 impl SketchLineChainCreation {
     fn append_chain(
@@ -192,6 +249,7 @@ impl SketchLineChainCreation {
                 .copied()
                 .chain(report.lines.iter().map(|line| line.primitive.entity))
                 .collect();
+            let protected = endpoints.map(|point| self.joins.contains(&Some(point)));
             report.lines.push(self.append_segment(
                 geometry,
                 sketch,
@@ -202,6 +260,7 @@ impl SketchLineChainCreation {
                     policy,
                     scope,
                     current: &current,
+                    protected,
                 },
             )?);
         }
@@ -234,12 +293,13 @@ impl SketchLineChainCreation {
             policy,
             scope,
             current,
+            protected,
         } = context;
         let inference = match scope {
-            Some(scope) => {
-                geometry.infer_owned_line_placement_scoped(points, settings, policy, scope, current)
-            }
-            None => geometry.infer_owned_line_placement(points, settings, policy),
+            Some(scope) => geometry.infer_owned_line_placement_scoped(
+                points, protected, settings, policy, scope, current,
+            ),
+            None => geometry.infer_owned_line_placement(points, protected, settings, policy),
         };
         let mut inference = inference.map_err(SketchLineCreationError::Sketch)?;
         // A typed angle owns the direction; an inferred relation on top would be redundant.
@@ -251,14 +311,7 @@ impl SketchLineChainCreation {
             construction: self.construction,
             centerline: self.centerline,
         };
-        append_inferred_primitive(
-            geometry,
-            sketch,
-            &creation,
-            inference,
-            settings.auto_apply_constraints,
-            ids,
-        )
+        append_inferred_primitive(geometry, sketch, &creation, inference, settings, ids)
     }
 }
 fn append_visible_vertex(

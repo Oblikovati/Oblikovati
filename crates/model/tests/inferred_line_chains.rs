@@ -114,3 +114,51 @@ fn verify_history(history: &mut DocumentEditHistory, before: &Sketch2D) {
     assert!(after.same_recipe(geometry(history)));
     assert_eq!(history.sketch_reservations(), marks);
 }
+
+#[test]
+fn nonpersistent_direction_aligns_without_saving_a_relation() {
+    let mut settings = oblikovati_model::sketch_settings::default_sketch_settings();
+    settings.persist_inferred_constraints = false;
+    let mut history = owner(Some(settings));
+    let before_dof = geometry(&history)
+        .analyze(&history.snapshot().parameters, 1e-9)
+        .unwrap()
+        .degrees_of_freedom;
+    let report = create(&mut history, &input(&[[10.0, 10.0], [14.0, 10.01]], false));
+    let line = &report.lines[0];
+    assert!(line.inference.direction.is_some());
+    assert!(
+        line.direction.is_none(),
+        "temporary direction must not be saved"
+    );
+    let sketch = geometry(&history);
+    let first = sketch.point(line.primitive.points[0]).unwrap().position;
+    let second = sketch.point(line.primitive.points[1]).unwrap().position;
+    assert!((first[1] - second[1]).abs() < 1e-9);
+    assert!(sketch.constraints().is_empty());
+    let after_dof = sketch
+        .analyze(&history.snapshot().parameters, 1e-9)
+        .unwrap()
+        .degrees_of_freedom;
+    assert_eq!(after_dof, before_dof + 4);
+}
+
+#[test]
+fn joined_source_endpoint_is_not_resnapped_to_another_existing_point() {
+    let mut settings = oblikovati_model::sketch_settings::default_sketch_settings();
+    settings.persist_inferred_constraints = false;
+    let mut history = owner(Some(settings));
+    let before = geometry(&history).clone();
+    let mut request = input(&[[0.0, 0.0], [4.0, 0.01]], false);
+    request.joins[0] = Some(SketchEntityId(1));
+    let report = create(&mut history, &request);
+    assert!(report.lines[0].point_constraints.is_empty());
+    assert!(report.lines[0].inference.points.is_empty());
+    assert_eq!(
+        geometry(&history)
+            .point(SketchEntityId(1))
+            .unwrap()
+            .position,
+        before.point(SketchEntityId(1)).unwrap().position
+    );
+}

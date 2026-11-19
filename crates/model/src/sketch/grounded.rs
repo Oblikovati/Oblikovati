@@ -146,6 +146,14 @@ fn grounded_seed(
 ) -> Result<(Sketch2D, BTreeSet<super::SketchEntityId>), SketchError> {
     let mut seed = sketch.clone();
     let mut identities = BTreeSet::new();
+    if anchors.len() < 2 {
+        for anchor in anchors {
+            identities.insert(anchor.id);
+            seed.set_position(anchor.id, anchor.position)?;
+        }
+        return Ok((seed, identities));
+    }
+    let indexed = super::point_index::PointIndex::new(&seed);
     for anchor in anchors {
         if !identities.insert(anchor.id) {
             return Err(SketchError::Definition(format!(
@@ -153,7 +161,15 @@ fn grounded_seed(
                 anchor.id
             )));
         }
-        seed.set_position(anchor.id, anchor.position)?;
+        super::geometry::require_position(anchor.position)?;
+        let index = indexed.index(sketch, anchor.id)?;
+        let point = seed.points.get_mut(index).ok_or_else(|| {
+            SketchError::Definition(format!(
+                "grounded sketch point {:?}: expected a valid indexed position",
+                anchor.id
+            ))
+        })?;
+        point.position = anchor.position;
     }
     Ok((seed, identities))
 }

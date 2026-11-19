@@ -9,6 +9,7 @@ pub(super) fn append(
     primitive: &SketchPrimitiveCreationReport,
     inference: &SketchLinePlacementInference,
     enabled: bool,
+    persist: bool,
     ids: &mut RecipeReservations<'_>,
 ) -> Result<(Vec<SketchConstraintId>, Option<SketchAppliedLineDirection>), SketchLineCreationError>
 {
@@ -18,6 +19,7 @@ pub(super) fn append(
     let points = append_snaps(geometry, primitive, inference, ids)?;
     let direction = inference
         .direction
+        .filter(|_| persist)
         .map(|suggestion| append_direction(geometry, primitive, suggestion, ids))
         .transpose()?;
     Ok((points, direction))
@@ -69,7 +71,7 @@ fn append_relation(
         .map_err(SketchLineCreationError::Sketch)?;
     Ok(id)
 }
-fn direction_relation(
+pub(super) fn direction_relation(
     line: crate::sketch::SketchEntityId,
     inference: SketchDirectionInference,
 ) -> Result<PlanarConstraint, SketchLineCreationError> {

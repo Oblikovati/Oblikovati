@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{
     history::{SketchConstraintReservationError, SketchPrimitiveCreationError},
-    sketch::SketchError,
+    sketch::{SketchError, SketchTransientSolveError},
 };
 use std::{error::Error, fmt};
 /// Keep geometry, solve readiness, primitive reservations, and local constraint exhaustion as typed causes.
 #[derive(Clone, Debug, PartialEq)]
 pub enum SketchLineCreationError {
     Sketch(SketchError),
+    Inference(SketchTransientSolveError),
+    InferenceChanged(SketchError),
     Readiness(crate::document_sketch::SketchReadinessError),
     Primitive(SketchPrimitiveCreationError),
     Constraint(SketchConstraintReservationError),
@@ -20,6 +22,8 @@ impl SketchLineCreationError {
     fn cause(&self) -> &(dyn Error + 'static) {
         match self {
             Self::Sketch(cause) => cause,
+            Self::Inference(cause) => cause,
+            Self::InferenceChanged(cause) => cause,
             Self::Readiness(cause) => cause,
             Self::Primitive(cause) => cause,
             Self::Constraint(cause) => cause,
