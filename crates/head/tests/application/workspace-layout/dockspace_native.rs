@@ -7,6 +7,31 @@ pub(in super::super) fn viewport(world: &mut ApplicationWorld) -> [u32; 4] {
 }
 
 #[test]
+fn manage_parameters_button_and_view_menu_share_visibility() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    super::dockspace_restart::native_click_label(&mut world, "Manage");
+    let button = super::super::rendered_label_center("Parameters");
+    super::super::x11_input::click(button);
+    world.pump(Vec::new());
+    assert!(window_geometry("Parameters").is_some());
+    let (position, size) = window_geometry("Parameters").unwrap();
+    let close = [position[0] + size[0] - 10., position[1] + 10.];
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(close));
+    world.pump(Vec::new());
+    assert!(window_geometry("Parameters").is_none());
+    super::dockspace_restart::native_click_label(&mut world, "View");
+    super::dockspace_restart::native_click_label(&mut world, "User Interface");
+    super::dockspace_restart::native_click_label(&mut world, "Parameters");
+    assert!(window_geometry("Parameters").is_some());
+    let done = world.run_in_window("Parameters", "Done").center();
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(done));
+    world.pump(Vec::new());
+    assert!(window_geometry("Parameters").is_none());
+    world.close();
+}
+
+#[test]
 fn material_browser_docks_at_workspace_right_and_reduces_viewport() {
     let mut world = ApplicationWorld::new();
     super::browser_feature::open_visible_extruded_part(&mut world);

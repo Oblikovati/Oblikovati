@@ -1,0 +1,11 @@
+{
+  "base_commit": "a5cefe41e78ef2336d101963cced37b9a726e87c",
+  "environment": "Linux X11, Xvfb, software Vulkan",
+  "before": "The native Manage Parameters click left the editor closed; before.png shows the button before the click.",
+  "after": "The native Manage click opened Parameters; the X closed it, and the View menu reopened it. after.png shows the open panel.",
+  "screenshots": {
+    "before.png": "72dda5d430f633028438a1b25b3675c90631169c2155e8ea9f865dc3f89b58b6",
+    "after.png": "113fbe0a163117e74cce21c9b81ffe380cc9a6d652385bc1408d932b86df6fa4"
+  },
+  "tests": "The native regression and both original parameter panel tests passed after the fix."
+}
