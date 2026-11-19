@@ -9,6 +9,8 @@ mod document_settings;
 mod double_click;
 mod drawing;
 mod home_transition;
+#[cfg(target_os = "linux")]
+mod manage_insert;
 mod measure;
 mod mode_policy;
 #[cfg(target_os = "linux")]

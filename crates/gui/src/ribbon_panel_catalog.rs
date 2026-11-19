@@ -15,6 +15,7 @@ pub(crate) enum RibbonPanel {
     Modify,
     SketchPattern,
     Insert,
+    ManageInsert,
     Format,
     Parameters,
     ToolOptions,
@@ -55,7 +56,7 @@ impl RibbonPanel {
             Self::UserCommands => "User Commands",
             Self::Modify => "Modify",
             Self::SketchPattern => "Pattern",
-            Self::Insert => "Insert",
+            Self::Insert | Self::ManageInsert => "Insert",
             Self::Format => "Format",
             Self::Parameters => "Parameters",
             Self::ToolOptions => "Options",
@@ -96,6 +97,7 @@ impl RibbonPanel {
             ),
             Self::SketchPattern
             | Self::Insert
+            | Self::ManageInsert
             | Self::Create
             | Self::Constrain
             | Self::Layout
@@ -180,6 +182,9 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
                 panels.insert(4, SketchPattern);
             }
             panels
+        }
+        RibbonTab::Manage if state.document_type == Some(oblikovati_api::types::DOCUMENT_PART) => {
+            vec![Parameters, ManageInsert]
         }
         RibbonTab::Manage => vec![Parameters],
         RibbonTab::Tools => vec![
