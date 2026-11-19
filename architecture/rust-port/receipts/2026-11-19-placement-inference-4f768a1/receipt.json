@@ -1,0 +1,26 @@
+{
+  "tested_commit": "4f768a1ce52a3672ea2a708c93978f6f24174d30",
+  "merge_commit": "73da75be9",
+  "environment": {
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_BUILD_JOBS": "2"
+  },
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-model -p oblikovati-session",
+      "result": "2549 passed"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-model -p oblikovati-session --tests -- -D warnings",
+      "result": "passed"
+    }
+  ],
+  "benchmark": {
+    "build": "CARGO_INCREMENTAL=0 CARGO_PROFILE_RELEASE_DEBUG=0 CARGO_BUILD_JOBS=2 cargo test --locked --release -p oblikovati-model --test sketch_transient_inference --no-run",
+    "execution": "For rounds 1 through 3 and each mode snap_before, snap_after, no_snap_before, no_snap_after: OBK_AUTHORING_BENCH_MODE=<mode> /usr/bin/time -v <release sketch_transient_inference test binary> --ignored --nocapture --test-threads=1 measure_authoring_capture_cost",
+    "scope": "1,000-line sketch authoring source work; excludes complete placement and GUI rendering",
+    "limitation": "Concurrent Martensite native test and compiler load; see load log."
+  }
+}
