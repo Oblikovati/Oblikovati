@@ -44,10 +44,12 @@ fn locked_major_radius_creates_one_parameter_and_minor_field_only_steers() {
     let recipe = SketchPlacementRecipe::ellipse([3., 4.], [0.6, 0.8], [5., 2.]).unwrap();
     let locks = [
         Some(SketchPlacementFieldLock {
+            reference: false,
             expression: "2.5 * 2 cm".into(),
             text_point: None,
         }),
         Some(SketchPlacementFieldLock {
+            reference: false,
             expression: "2 cm".into(),
             text_point: None,
         }),
@@ -85,6 +87,7 @@ fn placed_ellipse_can_be_fully_constrained_and_edit_its_radius_formula() {
     use oblikovati_model::history::SketchPlacementFieldLock;
     let recipe = SketchPlacementRecipe::ellipse([3., 4.], [1., 0.], [5., 2.]).unwrap();
     let lock = SketchPlacementFieldLock {
+        reference: false,
         expression: "2.5 * 2 cm".into(),
         text_point: None,
     };

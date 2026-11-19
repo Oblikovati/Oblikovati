@@ -485,3 +485,6 @@ fn placed_editor_rejects_a_different_sketch_or_constraint() {
         assert!(owner.gui_command_state().unwrap().dimension_draft.is_some());
     }
 }
+
+#[path = "dimension_tools/prompt.rs"]
+mod prompt;

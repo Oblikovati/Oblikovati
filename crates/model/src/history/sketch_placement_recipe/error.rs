@@ -14,8 +14,9 @@ pub enum SketchPlacementCreationError {
     Primitive(SketchPrimitiveCreationError),
     Constraint(SketchConstraintReservationError),
     Field {
+        index: usize,
         label: String,
-        cause: SketchDimensionCreationError,
+        cause: Box<SketchDimensionCreationError>,
     },
 }
 impl SketchPlacementCreationError {
@@ -24,13 +25,13 @@ impl SketchPlacementCreationError {
             Self::Sketch(cause) => cause,
             Self::Primitive(cause) => cause,
             Self::Constraint(cause) => cause,
-            Self::Field { cause, .. } => cause,
+            Self::Field { cause, .. } => cause.as_ref(),
         }
     }
 }
 impl fmt::Display for SketchPlacementCreationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Self::Field { label, cause } = self {
+        if let Self::Field { label, cause, .. } = self {
             return write!(f, "placement field {label:?}: {cause}");
         }
         write!(f, "sketch placement creation: {}", self.cause())

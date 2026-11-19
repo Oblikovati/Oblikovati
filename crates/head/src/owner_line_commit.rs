@@ -110,7 +110,7 @@ impl<
         };
         self.commit_line_input(tool, &input, pixel)
     }
-    fn commit_line_input(
+    pub(super) fn commit_line_input(
         &mut self,
         tool: &mut SketchPlacementState,
         input: &SketchLineChainCreation,
@@ -119,7 +119,21 @@ impl<
         // #3830: the command refuses zero-length edges; the typed line API deliberately admits them.
         oblikovati_model::sketch::SketchPlacementRecipe::line_chain(&input.points, input.closed)
             .map_err(|cause| cause.to_string())?;
-        let report = self.commit_sketch_line_chain(tool.document, tool.sketch, input)?;
+        let report = match self.try_commit_sketch_line_chain(tool.document, tool.sketch, input) {
+            Ok(report) => report,
+            Err(super::placement::PlacementFailure::Choice(index)) => {
+                self.set_pending_dimension(
+                    tool,
+                    index,
+                    crate::placement_input::PendingDimensionPlacement::Line {
+                        input: input.clone(),
+                        pixel,
+                    },
+                )?;
+                return Ok(());
+            }
+            Err(super::placement::PlacementFailure::Other(error)) => return Err(error),
+        };
         let session = self
             .files
             .workspace()

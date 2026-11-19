@@ -3,7 +3,8 @@ use crate::{CommandError, DocumentSession, TransactionObserver};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     history::{
-        SketchDimensionCreation, SketchDimensionCreationError, SketchDimensionCreationReport,
+        EditError, SketchDimensionCreation, SketchDimensionCreationError,
+        SketchDimensionCreationReport,
     },
 };
 /// Creation evidence or a typed decline before the transaction adopts the candidate.
@@ -11,6 +12,17 @@ use oblikovati_model::{
 pub type SketchDimensionCreationProjectionInput =
     Result<SketchDimensionCreationReport, SketchDimensionCreationError>;
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Evaluate a dimension privately before asking for a role; example: `session.preview_sketch_dimension(id, &input)?`.
+    pub fn preview_sketch_dimension(
+        &self,
+        sketch: DocumentSketchId,
+        input: &SketchDimensionCreation,
+    ) -> Result<SketchDimensionCreationReport, EditError<SketchDimensionCreationError>> {
+        self.history.preview(|snapshot, ids| {
+            snapshot.create_sketch_dimension(sketch, input, self.sketch_options, ids)
+        })
+    }
+
     /// Author and evaluate a dimension through the normal history boundary.
     /// Example: `session.create_sketch_dimension(sketch, &input)?;`.
     pub fn create_sketch_dimension(

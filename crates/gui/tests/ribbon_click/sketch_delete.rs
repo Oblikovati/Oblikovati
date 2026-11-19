@@ -49,6 +49,7 @@ fn sketch_delete_keyboard_does_not_steal_active_text_entry() {
     let mut request = deletion_request(1.);
     request.commands.dimension_tool_active = true;
     request.commands.dimension_draft = Some(GuiDimensionDraft {
+        choice_required: false,
         id: 42,
         kind: "distance".into(),
         orientation: "horizontal".into(),

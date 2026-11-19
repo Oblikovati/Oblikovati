@@ -7,6 +7,7 @@ use std::{error::Error, fmt};
 /// Source, geometry and permanent allocation failures keep their distinct causes.
 #[derive(Clone, Debug, PartialEq)]
 pub enum SketchDimensionCreationError {
+    ChoiceRequired,
     Sketch(SketchError),
     Readiness(crate::document_sketch::SketchReadinessError),
     Parameter(ParameterError<u64>),
@@ -14,24 +15,28 @@ pub enum SketchDimensionCreationError {
     ConstraintIdentity(SketchConstraintReservationError),
 }
 impl SketchDimensionCreationError {
-    fn cause(&self) -> &(dyn Error + 'static) {
+    fn cause(&self) -> Option<&(dyn Error + 'static)> {
         match self {
-            Self::Sketch(cause) => cause,
-            Self::Readiness(cause) => cause,
-            Self::Parameter(cause) => cause,
-            Self::Identity(cause) => cause,
-            Self::ConstraintIdentity(cause) => cause,
+            Self::ChoiceRequired => None,
+            Self::Sketch(cause) => Some(cause),
+            Self::Readiness(cause) => Some(cause),
+            Self::Parameter(cause) => Some(cause),
+            Self::Identity(cause) => Some(cause),
+            Self::ConstraintIdentity(cause) => Some(cause),
         }
     }
 }
 impl fmt::Display for SketchDimensionCreationError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(output, "dimension creation: {}", self.cause())
+        match self.cause() {
+            Some(cause) => write!(output, "dimension creation: {cause}"),
+            None => output.write_str("dimension creation would over-constrain the sketch: expected a driven dimension choice"),
+        }
     }
 }
 impl Error for SketchDimensionCreationError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
-        Some(self.cause())
+        self.cause()
     }
 }
 impl From<SketchError> for SketchDimensionCreationError {

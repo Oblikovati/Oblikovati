@@ -40,6 +40,7 @@ mod tests {
                 binding,
             };
             let lock = Some(SketchPlacementFieldLock {
+                reference: false,
                 expression: "size".into(),
                 text_point: None,
             });
@@ -201,6 +202,7 @@ impl PlacementFieldEntry {
         }
         self.replace_on_type = false;
         self.locked[self.active] = Some(SketchPlacementFieldLock {
+            reference: false,
             expression: std::mem::take(&mut self.buffer),
             text_point: None,
         });
@@ -243,6 +245,7 @@ impl PlacementFieldEntry {
             self.values[index]?;
             let expression = self.field_expression(index).filter(|_| keep)?;
             Some(SketchPlacementFieldLock {
+                reference: false,
                 expression: expression.to_owned(),
                 text_point: None,
             })
@@ -265,6 +268,7 @@ impl PlacementFieldEntry {
         let mut locks = self.locked.clone();
         if !self.buffer.is_empty() {
             locks[self.active] = Some(SketchPlacementFieldLock {
+                reference: false,
                 expression: self.buffer.clone(),
                 text_point: None,
             });

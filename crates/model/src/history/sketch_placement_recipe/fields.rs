@@ -15,8 +15,9 @@ pub(super) fn append(
 ) -> Result<(), SketchPlacementCreationError> {
     for (index, field) in recipe.fields.iter().enumerate() {
         let failure = |cause| SketchPlacementCreationError::Field {
+            index,
             label: field.label.clone(),
-            cause,
+            cause: Box::new(cause),
         };
         let operands = field
             .binding
@@ -58,7 +59,7 @@ fn append_field(
     let input = SketchDimensionCreation {
         operands,
         expression: lock.expression.clone(),
-        reference: false,
+        reference: lock.reference,
         text_point: lock.text_point,
     };
     let created = snapshot.create_placement_dimension(sketch, &input, options, ids, datums)?;

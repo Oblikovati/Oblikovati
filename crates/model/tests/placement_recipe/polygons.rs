@@ -63,6 +63,7 @@ fn polygon_diameter_lock_and_frame_constraints_keep_zero_freedoms_during_edits()
     use oblikovati_model::history::SketchPlacementFieldLock;
     let recipe = SketchPlacementRecipe::polygon(seed(5, [5., 0.])).unwrap();
     let lock = SketchPlacementFieldLock {
+        reference: false,
         expression: "2 * 5 cm".into(),
         text_point: None,
     };

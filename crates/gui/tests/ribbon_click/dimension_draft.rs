@@ -18,6 +18,7 @@ fn placed_dimension_uses_value_editor_and_cancel_retains_owner_draft() {
         driven: false,
     };
     request.commands.dimension_draft = Some(GuiDimensionDraft {
+        choice_required: false,
         id: 42,
         kind: "distance".into(),
         orientation: "horizontal".into(),
@@ -44,4 +45,40 @@ fn placed_dimension_uses_value_editor_and_cancel_retains_owner_draft() {
             id: 43
         })]
     );
+}
+
+#[test]
+fn overconstraint_prompt_accepts_driven_or_cancels() {
+    for (key, expected) in [
+        (
+            GuiKey::Enter,
+            GuiDimensionAction::Apply {
+                id: 42,
+                expression: "10 mm".into(),
+                driven: true,
+            },
+        ),
+        (GuiKey::Escape, GuiDimensionAction::Cancel { id: 42 }),
+    ] {
+        let mut engine = GuiFrameEngine::new().unwrap();
+        let mut request = ribbon_request();
+        request.extent = [1200, 800];
+        enter_part(&mut request);
+        request.commands.authoring = GuiAuthoringContext::Sketch;
+        request.commands.dimension_tool_active = true;
+        request.commands.dimension_draft = Some(GuiDimensionDraft {
+            id: 42,
+            kind: "distance".into(),
+            orientation: "horizontal".into(),
+            expression: "10 mm".into(),
+            committed: None,
+            refusal: Some("This dimension would over-constrain the sketch.".into()),
+            choice_required: true,
+        });
+        settle_ribbon(&mut engine, &mut request);
+        assert_eq!(
+            dimension_editor_key(&mut engine, &mut request, key),
+            [GuiShellAction::Dimension(expected)]
+        );
+    }
 }

@@ -11,7 +11,10 @@ pub enum SketchLineCreationError {
     Readiness(crate::document_sketch::SketchReadinessError),
     Primitive(SketchPrimitiveCreationError),
     Constraint(SketchConstraintReservationError),
-    Dimension(crate::history::SketchDimensionCreationError),
+    Dimension {
+        index: usize,
+        cause: crate::history::SketchDimensionCreationError,
+    },
 }
 impl SketchLineCreationError {
     fn cause(&self) -> &(dyn Error + 'static) {
@@ -20,7 +23,7 @@ impl SketchLineCreationError {
             Self::Readiness(cause) => cause,
             Self::Primitive(cause) => cause,
             Self::Constraint(cause) => cause,
-            Self::Dimension(cause) => cause,
+            Self::Dimension { cause, .. } => cause,
         }
     }
 }

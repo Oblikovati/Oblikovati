@@ -122,6 +122,7 @@ fn final_length_dimension_and_shared_vertices_follow_formula_edits_at_zero_dof()
             SketchPlacementRecipe::line_chain(&[[0., 0.], [4., 0.], [4., 3.]], closed).unwrap();
         let locks = [
             Some(oblikovati_model::history::SketchPlacementFieldLock {
+                reference: false,
                 expression: if closed { "5 cm" } else { "3 cm" }.into(),
                 text_point: None,
             }),

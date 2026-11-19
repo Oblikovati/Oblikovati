@@ -22,6 +22,12 @@ impl<
         &mut self,
         action: &GuiDimensionAction,
     ) -> Result<bool, String> {
+        if self
+            .placement_state()
+            .is_some_and(|tool| tool.pending_dimension.is_some())
+        {
+            return self.resolve_placement_dimension(action);
+        }
         match action {
             GuiDimensionAction::Start => self.start_dimension_tool(),
             GuiDimensionAction::Apply {
@@ -31,6 +37,75 @@ impl<
             } => self.accept_dimension_draft(*id, expression, *driven),
             GuiDimensionAction::Cancel { id } => self.cancel_dimension_draft(*id),
         }
+    }
+    fn resolve_placement_dimension(&mut self, action: &GuiDimensionAction) -> Result<bool, String> {
+        let (id, accept) = match action {
+            GuiDimensionAction::Apply {
+                id, driven: true, ..
+            } => (*id, true),
+            GuiDimensionAction::Cancel { id } => (*id, false),
+            _ => {
+                return Err(format!(
+                    "dimension choice {action:?}: expected driven or cancel"
+                ));
+            }
+        };
+        let valid = self
+            .placement_state()
+            .is_some_and(|tool| self.placement_context_valid(tool));
+        if !valid {
+            return Err(format!(
+                "dimension choice {id}: expected the current active sketch generation"
+            ));
+        }
+        let Some(SketchToolState::Placement(mut tool)) = self.sketch_tool.take() else {
+            return Err("dimension choice: expected an active placement".into());
+        };
+        let result = self.apply_placement_dimension_choice(&mut tool, id, accept);
+        self.sketch_tool = Some(SketchToolState::Placement(tool));
+        result
+    }
+    fn apply_placement_dimension_choice(
+        &mut self,
+        tool: &mut crate::placement_input::SketchPlacementState,
+        id: u64,
+        accept: bool,
+    ) -> Result<bool, String> {
+        if !tool
+            .pending_dimension
+            .as_ref()
+            .is_some_and(|choice| choice.id == id)
+        {
+            return Err(format!(
+                "dimension choice {id}: expected the current choice"
+            ));
+        }
+        let choice = tool
+            .pending_dimension
+            .take()
+            .expect("choice identity was checked");
+        if accept {
+            self.accept_placement_dimension(tool, choice)?;
+        }
+        Ok(true)
+    }
+    fn accept_placement_dimension(
+        &mut self,
+        tool: &mut crate::placement_input::SketchPlacementState,
+        choice: crate::placement_input::PendingDimensionChoice,
+    ) -> Result<(), String> {
+        use crate::placement_input::PendingDimensionPlacement;
+        match choice.placement {
+            PendingDimensionPlacement::Recipe { recipe, mut locks } => {
+                placement_reference_lock(&mut locks, choice.index)?;
+                self.commit_pending_recipe(tool, recipe, locks)?;
+            }
+            PendingDimensionPlacement::Line { mut input, pixel } => {
+                placement_reference_lock(&mut input.locks, choice.index)?;
+                self.commit_line_input(tool, &input, pixel)?;
+            }
+        }
+        Ok(())
     }
     fn start_dimension_tool(&mut self) -> Result<bool, String> {
         self.synchronize_sketch_edit();
@@ -53,6 +128,7 @@ impl<
             proposal: None,
             committed: None,
             refusal: None,
+            choice_required: false,
         })));
         self.dimension_prompt(false);
         Ok(true)
@@ -150,6 +226,7 @@ impl<
         tool.proposal = None;
         tool.committed = None;
         tool.refusal = None;
+        tool.choice_required = false;
         self.dimension_prompt(false);
         Ok(())
     }
@@ -232,6 +309,11 @@ impl<
             }
         };
         tool.proposal = Some(request.clone());
+        if self.dimension_choice_required(tool, &request)? {
+            tool.refusal = Some("This dimension would over-constrain the sketch.".into());
+            tool.choice_required = true;
+            return Ok(());
+        }
         let result = self
             .validate_dimension_source(tool.edit, &request)
             .and_then(|()| {
@@ -338,4 +420,16 @@ impl<
             message: message.into(),
         });
     }
+}
+
+fn placement_reference_lock(
+    locks: &mut [Option<oblikovati_model::history::SketchPlacementFieldLock>],
+    index: usize,
+) -> Result<(), String> {
+    let lock = locks
+        .get_mut(index)
+        .and_then(Option::as_mut)
+        .ok_or_else(|| format!("dimension choice field {index}: expected a lock"))?;
+    lock.reference = true;
+    Ok(())
 }

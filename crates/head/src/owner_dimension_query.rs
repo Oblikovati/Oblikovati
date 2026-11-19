@@ -18,6 +18,9 @@ impl<
         }
     }
     pub(super) fn gui_dimension_draft(&self) -> Result<Option<GuiDimensionDraft>, String> {
+        if let Some(draft) = self.pending_placement_dimension()? {
+            return Ok(Some(draft));
+        }
         let Some(tool) = self.dimension_state() else {
             return Ok(None);
         };
@@ -37,6 +40,39 @@ impl<
             expression: request.expression.clone(),
             committed: tool.committed.clone(),
             refusal: tool.refusal.clone(),
+            choice_required: tool.choice_required,
+        }))
+    }
+    fn pending_placement_dimension(&self) -> Result<Option<GuiDimensionDraft>, String> {
+        use crate::placement_input::PendingDimensionPlacement;
+        let Some(tool) = self
+            .placement_state()
+            .filter(|tool| self.placement_context_valid(tool))
+        else {
+            return Ok(None);
+        };
+        let Some(choice) = &tool.pending_dimension else {
+            return Ok(None);
+        };
+        let lock = match &choice.placement {
+            PendingDimensionPlacement::Recipe { locks, .. } => locks.get(choice.index),
+            PendingDimensionPlacement::Line { input, .. } => input.locks.get(choice.index),
+        }
+        .and_then(Option::as_ref)
+        .ok_or_else(|| {
+            format!(
+                "dimension choice field {}: expected a locked field",
+                choice.index
+            )
+        })?;
+        Ok(Some(GuiDimensionDraft {
+            id: choice.id,
+            kind: "distance".into(),
+            orientation: String::new(),
+            expression: lock.expression.clone(),
+            committed: None,
+            refusal: Some("This dimension would over-constrain the sketch.".into()),
+            choice_required: true,
         }))
     }
     pub(super) fn dimension_preview_annotation(
@@ -144,6 +180,45 @@ impl<
                 )
             })?;
         Ok(())
+    }
+    pub(super) fn dimension_choice_required(
+        &self,
+        tool: &SketchDimensionState,
+        request: &oblikovati_api::wire::AddDimensionArgs,
+    ) -> Result<bool, String> {
+        use oblikovati_model::history::{
+            EditError, SketchDimensionCreation, SketchDimensionCreationError,
+        };
+        let session = self
+            .files
+            .workspace()
+            .session(tool.edit.document)
+            .map_err(|e| e.to_string())?;
+        if session
+            .snapshot()
+            .effective_sketch_settings()
+            .over_constrained_behavior
+            != oblikovati_api::types::OVER_CONSTRAINED_PROMPT
+        {
+            return Ok(false);
+        }
+        let operands = crate::sketch_dimension::dimension_measurement_input(
+            &request.kind,
+            request.entities.as_deref().unwrap_or_default(),
+            &request.orientation,
+        )?;
+        let input = SketchDimensionCreation {
+            operands,
+            expression: request.expression.clone(),
+            reference: request.driven,
+            text_point: tool.placed,
+        };
+        Ok(matches!(
+            session.preview_sketch_dimension(tool.edit.sketch, &input),
+            Err(EditError::Mutation(
+                SketchDimensionCreationError::ChoiceRequired
+            ))
+        ))
     }
     pub(super) fn dimension_ready(&self, tool: &SketchDimensionState) -> Result<bool, String> {
         let session = self

@@ -8,6 +8,65 @@ use oblikovati_model::{
     },
     sketch::SketchPlacementRecipe,
 };
+pub(super) enum PlacementFailure {
+    Choice(usize),
+    Other(String),
+}
+fn placement_failure(
+    error: oblikovati_session::CommandError<
+        oblikovati_model::history::SketchPlacementCreationError,
+    >,
+) -> PlacementFailure {
+    use oblikovati_model::history::{
+        EditError, SketchDimensionCreationError, SketchPlacementCreationError,
+    };
+    use oblikovati_session::{CommandError, MutationError};
+    match error {
+        CommandError::Edit(EditError::Mutation(MutationError::Command(
+            SketchPlacementCreationError::Field { index, cause, .. },
+        ))) if matches!(*cause, SketchDimensionCreationError::ChoiceRequired) => {
+            PlacementFailure::Choice(index)
+        }
+        error => PlacementFailure::Other(error.to_string()),
+    }
+}
+fn part_placement_failure(
+    error: oblikovati_session::PartSketchCreateError<
+        oblikovati_model::history::SketchPlacementCreationError,
+    >,
+) -> PlacementFailure {
+    match error {
+        oblikovati_session::PartSketchCreateError::Command(error) => placement_failure(error),
+        error => PlacementFailure::Other(error.to_string()),
+    }
+}
+fn line_failure(
+    error: oblikovati_session::CommandError<oblikovati_model::history::SketchLineCreationError>,
+) -> PlacementFailure {
+    use oblikovati_model::history::{
+        EditError, SketchDimensionCreationError, SketchLineCreationError,
+    };
+    use oblikovati_session::{CommandError, MutationError};
+    match error {
+        CommandError::Edit(EditError::Mutation(MutationError::Command(
+            SketchLineCreationError::Dimension {
+                index,
+                cause: SketchDimensionCreationError::ChoiceRequired,
+            },
+        ))) => PlacementFailure::Choice(index),
+        error => PlacementFailure::Other(error.to_string()),
+    }
+}
+impl PlacementFailure {
+    fn message(self) -> String {
+        match self {
+            Self::Choice(index) => {
+                format!("placement field {index}: expected a driven dimension choice")
+            }
+            Self::Other(cause) => cause,
+        }
+    }
+}
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -22,10 +81,14 @@ impl<
         tool: &crate::placement_input::SketchPlacementState,
     ) -> Result<Option<oblikovati_viewport::ViewportSketchPreview>, String> {
         if tool.tool == crate::SketchPlacementTool::Line {
-            return tool
-                .line_input()
-                .map(|input| self.preview_sketch_line_chain(tool.document, tool.sketch, &input))
-                .transpose();
+            let Some(input) = tool.line_input() else {
+                return Ok(None);
+            };
+            return match self.try_preview_sketch_line_chain(tool.document, tool.sketch, &input) {
+                Ok(preview) => Ok(Some(preview)),
+                Err(PlacementFailure::Choice(_)) => Ok(None),
+                Err(PlacementFailure::Other(error)) => Err(error),
+            };
         }
         if tool.tool == crate::SketchPlacementTool::Point {
             return self.resolved_point_preview(tool);
@@ -42,33 +105,16 @@ impl<
         let Some(recipe) = seeded.as_ref().or(tool.preview.as_ref()) else {
             return Ok(None);
         };
-        let datums = self.placement_part_datums(tool.document)?;
-        let session = self
-            .files
-            .workspace()
-            .session(tool.document)
-            .map_err(|cause| cause.to_string())?;
-        let preview = match datums.as_ref() {
-            Some(datums) => session
-                .preview_sketch_placement_with_datums(
-                    tool.sketch,
-                    recipe,
-                    &tool.locks_for(recipe)?,
-                    &self.sketch_construction,
-                    datums,
-                )
-                .map_err(|cause| cause.to_string()),
-            None => session
-                .preview_sketch_placement(
-                    tool.sketch,
-                    recipe,
-                    &tool.locks_for(recipe)?,
-                    &self.sketch_construction,
-                )
-                .map_err(|cause| cause.to_string()),
+        let locks = tool.locks_for(recipe)?;
+        let preview = self.preview_placement_candidate(tool.document, tool.sketch, recipe, &locks);
+        match preview {
+            Ok(preview) => Ok(Some(placement_preview_packet(tool.plane, preview))),
+            Err(PlacementFailure::Choice(_)) => Ok(None),
+            Err(PlacementFailure::Other(error)) => Err(format!(
+                "placement preview {}: {error}",
+                tool.field_prompt()
+            )),
         }
-        .map_err(|cause| format!("placement preview {}: {cause}", tool.field_prompt()))?;
-        Ok(Some(placement_preview_packet(tool.plane, preview)))
     }
     /// Commit the displayed recipe through the document owner; example: `owner.commit_sketch_placement(document,sketch,&recipe,&locks)?;`.
     pub fn commit_sketch_placement(
@@ -78,12 +124,85 @@ impl<
         recipe: &SketchPlacementRecipe,
         locks: &[Option<SketchPlacementFieldLock>],
     ) -> Result<SketchPlacementCreationReport, String> {
-        let datums = self.placement_part_datums(document)?;
+        self.try_commit_sketch_placement(document, sketch, recipe, locks)
+            .map_err(PlacementFailure::message)
+    }
+    pub(super) fn try_commit_sketch_placement(
+        &mut self,
+        document: u64,
+        sketch: DocumentSketchId,
+        recipe: &SketchPlacementRecipe,
+        locks: &[Option<SketchPlacementFieldLock>],
+    ) -> Result<SketchPlacementCreationReport, PlacementFailure> {
+        if self.needs_dimension_choice_preview(document, locks.iter().any(Option::is_some))? {
+            self.preview_placement_candidate(document, sketch, recipe, locks)?;
+        }
+        self.commit_placement_candidate(document, sketch, recipe, locks)
+    }
+    fn needs_dimension_choice_preview(
+        &self,
+        document: u64,
+        has_locks: bool,
+    ) -> Result<bool, PlacementFailure> {
+        if !has_locks {
+            return Ok(false);
+        }
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|e| PlacementFailure::Other(e.to_string()))?;
+        Ok(session
+            .snapshot()
+            .effective_sketch_settings()
+            .over_constrained_behavior
+            == oblikovati_api::types::OVER_CONSTRAINED_PROMPT)
+    }
+    fn preview_placement_candidate(
+        &mut self,
+        document: u64,
+        sketch: DocumentSketchId,
+        recipe: &SketchPlacementRecipe,
+        locks: &[Option<SketchPlacementFieldLock>],
+    ) -> Result<oblikovati_session::SketchPlacementPreview, PlacementFailure> {
+        let datums = self
+            .placement_part_datums(document)
+            .map_err(PlacementFailure::Other)?;
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|e| PlacementFailure::Other(e.to_string()))?;
+        match datums.as_ref() {
+            Some(datums) => session
+                .preview_sketch_placement_with_datums(
+                    sketch,
+                    recipe,
+                    locks,
+                    &self.sketch_construction,
+                    datums,
+                )
+                .map_err(part_placement_failure),
+            None => session
+                .preview_sketch_placement(sketch, recipe, locks, &self.sketch_construction)
+                .map_err(placement_failure),
+        }
+    }
+    fn commit_placement_candidate(
+        &mut self,
+        document: u64,
+        sketch: DocumentSketchId,
+        recipe: &SketchPlacementRecipe,
+        locks: &[Option<SketchPlacementFieldLock>],
+    ) -> Result<SketchPlacementCreationReport, PlacementFailure> {
+        let datums = self
+            .placement_part_datums(document)
+            .map_err(PlacementFailure::Other)?;
         let mut commands = self
             .files
             .commands(document)
-            .map_err(|cause| format!("placement document {document}: {cause}"))?;
-        let result = match datums.as_ref() {
+            .map_err(|e| PlacementFailure::Other(e.to_string()))?;
+        match datums.as_ref() {
             Some(datums) => commands
                 .create_sketch_placement_with_datums(
                     sketch,
@@ -92,7 +211,7 @@ impl<
                     &self.sketch_construction,
                     datums,
                 )
-                .map_err(|cause| cause.to_string()),
+                .map_err(part_placement_failure),
             None => commands
                 .create_sketch_placement_with_construction(
                     sketch,
@@ -100,14 +219,8 @@ impl<
                     locks,
                     &self.sketch_construction,
                 )
-                .map_err(|cause| cause.to_string()),
-        };
-        result.map_err(|cause| {
-            format!(
-                "placement document {document}, sketch {}: {cause}",
-                sketch.0
-            )
-        })
+                .map_err(placement_failure),
+        }
     }
     fn placement_part_datums(
         &mut self,
@@ -134,15 +247,27 @@ impl<
         sketch: DocumentSketchId,
         input: &SketchLineChainCreation,
     ) -> Result<oblikovati_viewport::ViewportSketchPreview, String> {
-        let plane = self.resolve_edit(document, sketch)?.plane;
+        self.try_preview_sketch_line_chain(document, sketch, input)
+            .map_err(PlacementFailure::message)
+    }
+    fn try_preview_sketch_line_chain(
+        &self,
+        document: u64,
+        sketch: DocumentSketchId,
+        input: &SketchLineChainCreation,
+    ) -> Result<oblikovati_viewport::ViewportSketchPreview, PlacementFailure> {
+        let plane = self
+            .resolve_edit(document, sketch)
+            .map_err(PlacementFailure::Other)?
+            .plane;
         let session = self
             .files
             .workspace()
             .session(document)
-            .map_err(|cause| cause.to_string())?;
+            .map_err(|cause| PlacementFailure::Other(cause.to_string()))?;
         let preview = session
             .preview_inferred_sketch_line_chain(sketch, input)
-            .map_err(|cause| cause.to_string())?;
+            .map_err(line_failure)?;
         Ok(oblikovati_viewport::ViewportSketchPreview::Resolved {
             plane,
             geometry: Box::new(preview.geometry),
@@ -157,16 +282,23 @@ impl<
         sketch: DocumentSketchId,
         input: &SketchLineChainCreation,
     ) -> Result<SketchLineChainCreationReport, String> {
+        self.try_commit_sketch_line_chain(document, sketch, input)
+            .map_err(PlacementFailure::message)
+    }
+    pub(super) fn try_commit_sketch_line_chain(
+        &mut self,
+        document: u64,
+        sketch: DocumentSketchId,
+        input: &SketchLineChainCreation,
+    ) -> Result<SketchLineChainCreationReport, PlacementFailure> {
+        if self.needs_dimension_choice_preview(document, input.locks.iter().any(Option::is_some))? {
+            self.try_preview_sketch_line_chain(document, sketch, input)?;
+        }
         self.files
             .commands(document)
-            .map_err(|cause| cause.to_string())?
+            .map_err(|e| PlacementFailure::Other(e.to_string()))?
             .create_inferred_sketch_line_chain(sketch, input)
-            .map_err(|cause| {
-                format!(
-                    "line-chain placement document {document}, sketch {}: {cause}",
-                    sketch.0
-                )
-            })
+            .map_err(line_failure)
     }
 }
 pub(super) fn placement_preview_packet(
