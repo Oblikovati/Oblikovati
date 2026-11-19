@@ -13,6 +13,9 @@ use super::workspace_layout::browser_tree::{
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
 
+#[cfg(target_os = "linux")]
+#[path = "feature_outline_native.rs"]
+mod feature_outline_native;
 #[path = "feature_properties.rs"]
 mod feature_properties;
 #[path = "feature_rows.rs"]

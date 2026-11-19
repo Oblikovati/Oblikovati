@@ -12,6 +12,8 @@ use oblikovati_model::{
     units::UnitsOfMeasure,
 };
 use oblikovati_persistence::package::DocumentPackage;
+#[path = "browser_feature_color.rs"]
+mod color;
 
 pub(in super::super) const FEATURE: &str = "Extrude1";
 /// 20 mm in working units.
@@ -19,7 +21,6 @@ const DEPTH: f64 = 2.;
 const EMPTY_VIEWPORT: [i32; 2] = [1300, 800];
 /// The outline's accent, as drawn.
 const EDGE_COLOR: [u8; 3] = [64, 153, 255];
-const COLOR_REACH: i32 = 40;
 const DIMENSION_LABEL_STEP: f64 = 1.5;
 /// How far from a row its menu's first command opens.
 const MENU_REACH: f32 = 40.;
@@ -118,16 +119,8 @@ fn open_extruded_part_with_source(
 }
 pub(in super::super) fn colored_pixels(world: &mut ApplicationWorld, wanted: [u8; 3]) -> usize {
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);
-    capture
-        .rgba
-        .as_chunks::<4>()
-        .0
-        .iter()
-        .filter(|pixel| {
-            (0..3)
-                .all(|channel| (pixel[channel] as i32 - wanted[channel] as i32).abs() < COLOR_REACH)
-        })
-        .count()
+    let windows = super::super::diagnostics::window_occlusions();
+    color::count(&capture, wanted, &windows)
 }
 pub(in super::super) fn expect_solid_visible(world: &mut ApplicationWorld) {
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);

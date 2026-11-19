@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T03:45:32.64279361Z" time="9.709503747"><testcase name="Scenario: Inspect the extrusion row context menu: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:41:3" time="9.709503747"><system-out><![CDATA[  Scenario: Inspect the extrusion row context menu
+   ✔  Given an active part in the MCAD Software contains a block created by an extrusion
+   ✔  And the extrusion row is visible in the model browser
+   ✔  When the user right-clicks the extrusion row
+   ✔  Then the row is highlighted and the block edges are highlighted in blue
+   ✔  And the context menu offers Edit Sketch and Edit Feature
+   ✔  And the context menu offers Show Dimensions, Measure and Properties
+   ✔  And the context menu offers Expand All Children and collapses All Children
+   ✔  When the user dismisses the menu and clicks empty viewport space
+   ✔  Then the context menu and blue edge highlighting disappear
+   ✔  And the block remains visible
+]]></system-out></testcase></testsuite></testsuites>
