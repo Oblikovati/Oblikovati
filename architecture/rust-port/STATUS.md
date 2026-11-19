@@ -14,10 +14,9 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
-- Sketch preferences (#4148): the full baseline has three unbound scenarios.
-  Sketch edits stay in a draft until Apply and Escape discards them. Axes can
-  be applied off and on; a native display test checks both axes, the global
-  triad, and sketch exit. HUD Settings and complete scenario bindings remain.
+- Sketch preferences (#4148): the complete native run at `6fdb0dc6c` passed
+  all three scenarios and 26 steps. Sketch edits are staged, Axes can be
+  applied off and on, and HUD input controls retain their values on Cancel.
   The focused Line scenario `line-30` fails when its
   setup tries to start a second sketch; the cause is not yet established.
 - Model browser: the full native run at `0890f84e0` passed 97 of 100
@@ -32,7 +31,7 @@ using this status; the live scenario directory can change.
   cases, including both outline examples. Its inventory counts 49 of 51
   declarations. The spacing and User Interface menu scenarios remain
   incomplete; their source questions are in the feature's `BLOCKERS.md`.
-- The current feature-run inventory has 12 green features and 400 passing
+- The current feature-run inventory has 13 green features and 403 passing
   scenario declarations out of 3,088, across 256 features. These counts are
   tied to source hashes and must be regenerated when the scenario source changes.
 - Sketch constraint-glyph hover passed its complete one-scenario native run at

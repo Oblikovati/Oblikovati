@@ -487,15 +487,15 @@
       "features/sketch/sketch-preferences/VISUAL.md": "87f1eb87d333ec795ad59f9d4feb18338ad23c6e4b9f1455ebeb6f97a180f27c",
       "features/sketch/sketch-preferences/feature-icon.svg": "9ec690bf4342b0fd854c93aad33595538c0d724ee406fcc98467d705fc260ae0"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-19-sketch-preferences-baseline-88de2d7e5/cucumber.json",
-    "cucumber_sha256": "e0470fa78f084df4b1cd05151cd318d35480a2118614bdde2389e1fe9e0828b9",
-    "application_commit": "88de2d7e5",
-    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=sketch-preferences OBK_BDD_REPORTS=/tmp/obk-sketch-prefs-88de2d7e5/run cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-sketch-preferences-full-6fdb0dc6c/cucumber.json",
+    "cucumber_sha256": "d0a7db7306e82c1d7056de74cbca801864b4075390fbc08bc3d270301703b054",
+    "application_commit": "6fdb0dc6c",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=sketch-preferences OBK_BDD_REPORTS=/tmp/obk-sketch-prefs-full-6fdb0dc6c/run cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan lavapipe",
-    "notes": "Full baseline: all three scenarios stopped at their first unbound step. Source and supporting file hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
-    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-sketch-preferences-baseline-88de2d7e5/scenario-inventory.json",
+    "notes": "Full feature: all 3 scenarios and 26 steps passed. Feature and supporting file hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-sketch-preferences-full-6fdb0dc6c/scenario-inventory.json",
     "scenario_inventory_sha256": "13c70b5229ded138a118a8195f4207e4ae10a852b54bcfd3344bf14d3ec4f924",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-sketch-preferences-baseline-88de2d7e5/scenario-arguments.json",
-    "scenario_arguments_sha256": "266d85a219581e076b274a6701754324161ea771427cc024ef5018201a6d6d76"
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-sketch-preferences-full-6fdb0dc6c/scenario-arguments.json",
+    "scenario_arguments_sha256": "c72879c97463b12c7667d4984ad5c0fa7cae0ae98313687df3c34a5d5d6ede73"
   }
 }
