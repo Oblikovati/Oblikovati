@@ -335,14 +335,9 @@ fn activate_close(world: &mut ApplicationWorld) {
 }
 #[then("the search text is cleared")]
 fn search_cleared(world: &mut ApplicationWorld) {
-    // The empty field shows its hint beside the Search control; what it held is gone.
-    let hints = world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| run.text == "Search")
-        .count();
-    assert_eq!(hints, 2, "expected the field's hint beside the control");
+    // The field and its opener have distinct labels when the query is cleared.
+    world.expect_text("Search");
+    world.expect_text("Type Keyword");
 }
 #[then("the search query remains visible in the field")]
 fn query_visible(world: &mut ApplicationWorld) {
