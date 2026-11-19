@@ -415,3 +415,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         AxisThroughPoints(_) => "two-points",
     }
 }
+
+#[cfg(test)]
+#[path = "part_update/freshness_tests.rs"]
+mod freshness_tests;

@@ -112,14 +112,16 @@ impl PlacedSketch {
         }
         keys
     }
-    /// Resolve the frame without a stale fallback; example: `placed.plane(Some(&current_planes))?`.
+    /// Resolve with caller-supplied current planes; the caller must verify their source freshness.
+    /// Example: `placed.plane(Some(&current_planes))?`.
     pub fn plane(
         &self,
         planes: Option<&dyn WorkPlaneResolver>,
     ) -> Result<SketchPlane, WorkPlaneError> {
         self.plane_with_axes(planes, &super::orientation::UnavailableSketchAxes)
     }
-    /// Resolve the current base and axis before orientation; example: `placed.plane_with_axes(Some(&planes), &axes)?`.
+    /// Resolve using caller-supplied current resolvers; callers must ensure their data is fresh for this sketch.
+    /// Example: `placed.plane_with_axes(Some(&planes), &axes)?`.
     pub fn plane_with_axes(
         &self,
         planes: Option<&dyn WorkPlaneResolver>,

@@ -3,6 +3,7 @@
 use super::result::WorkGeometryResult;
 use super::{WorkGeometryDefinition as WorkPlaneDefinition, WorkGeometryError as WorkPlaneError};
 mod face;
+mod freshness;
 mod queries;
 use crate::{
     feature::{
@@ -19,12 +20,22 @@ pub struct WorkGeometryEvaluation {
     datums: BTreeMap<FeatureId, WorkGeometryResult>,
     sketch_faces: BTreeMap<Vec<u8>, Result<crate::sketch::SketchPlane, WorkPlaneError>>,
     sketch_frame_origins: BTreeMap<Vec<u8>, Result<[f64; 3], WorkPlaneError>>,
+    source_evidence: Option<freshness::EvaluationSource>,
     pub health: Vec<FeatureHealthRecord<WorkPlaneError>>,
 }
 
 impl FeatureSequence<WorkPlaneDefinition> {
     /// Evaluate current construction frames in recipe order; example: `sequence.evaluate_work_planes(&parameters)?`.
     pub fn evaluate_work_geometry(
+        &self,
+        parameters: &ParameterCollection<u64>,
+    ) -> Result<WorkGeometryEvaluation, FeatureReplayError> {
+        let mut evaluation = self.evaluate_work_geometry_unbound(parameters)?;
+        evaluation.bind_datum_source(self, parameters);
+        Ok(evaluation)
+    }
+
+    pub(crate) fn evaluate_work_geometry_unbound(
         &self,
         parameters: &ParameterCollection<u64>,
     ) -> Result<WorkGeometryEvaluation, FeatureReplayError> {

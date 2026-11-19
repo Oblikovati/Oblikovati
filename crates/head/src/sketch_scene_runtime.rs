@@ -124,15 +124,17 @@ fn collect_sketches(
     datums: Option<&oblikovati_model::feature::work_geometry::WorkGeometryEvaluation>,
     update: &mut HeadSketchSceneUpdate,
 ) {
+    let frames = datums.and_then(|datums| snapshot.bind_sketch_frames(datums).ok());
     for sketch in snapshot
         .sketches
         .sketches()
         .iter()
         .filter(|sketch| super::sketch_shows(sketch, called_up))
     {
-        let plane = match datums {
-            Some(datums) => snapshot.resolve_sketch_plane_with_datums(sketch.id(), datums),
-            None => snapshot.resolve_sketch_plane(sketch.id()),
+        let plane = match (datums, &frames) {
+            (Some(_), Some(frames)) => frames.resolve(sketch.id()),
+            (Some(datums), None) => snapshot.resolve_sketch_plane_with_datums(sketch.id(), datums),
+            (None, _) => snapshot.resolve_sketch_plane(sketch.id()),
         };
         match plane {
             Ok(plane) => {

@@ -17,7 +17,8 @@ pub struct SketchOrientationDefinition {
     pub reverse: bool,
     pub origin: Option<[f64; 3]>,
 }
-/// Inject the current feature-axis catalogue; it must not return a cached last-good direction.
+/// Inject feature-axis data from the caller's current model evaluation.
+/// The caller must provide fresh data; the trait cannot verify its source generation.
 pub trait SketchAxisResolver {
     /// Resolve one current stable identity; example: `axes.axis_direction(FeatureId(7))?`.
     fn axis_direction(&self, feature: FeatureId) -> Result<[f64; 3], SketchError>;

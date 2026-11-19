@@ -74,6 +74,11 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
     pub fn datum_evaluation(&self) -> WorkGeometryEvaluation {
         let mut datums = self.datums.clone();
         datums.health = self.health.iter().filter_map(datum_health).collect();
+        if let Some(source) = &self.source
+            && !datums.has_part_source_for(source)
+        {
+            datums.bind_part_source(std::sync::Arc::clone(source));
+        }
         datums
     }
     /// Resolve a prospective sketch support against this part result.
@@ -252,7 +257,16 @@ impl DocumentSnapshot {
             )?;
             candidate.sketches = solved.candidate;
         }
-        evaluation.source = Some(std::sync::Arc::new(candidate.as_ref().clone()));
+        let output = std::sync::Arc::new(candidate.as_ref().clone());
+        let input = if self.sketches.same_recipe(&candidate.sketches) {
+            std::sync::Arc::clone(&output)
+        } else {
+            std::sync::Arc::new(self.clone())
+        };
+        evaluation
+            .datums
+            .bind_part_sources(input, std::sync::Arc::clone(&output));
+        evaluation.source = Some(output);
         Ok((evaluation, candidate))
     }
 }

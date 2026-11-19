@@ -68,7 +68,9 @@ mod sketch_placement;
 mod sketch_projection;
 mod sketch_recompute;
 pub use sketch_ids::SketchReservationMarks;
-pub use sketch_placement::{DocumentSketchPlacementError, ResolvedDocumentSketch};
+pub use sketch_placement::{
+    BoundSketchFrames, DocumentSketchPlacementError, ResolvedDocumentSketch,
+};
 pub use sketch_projection::ResolvedSketchPointProjection;
 mod error;
 mod navigation;

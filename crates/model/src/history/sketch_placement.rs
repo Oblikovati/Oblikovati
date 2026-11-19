@@ -20,6 +20,22 @@ pub struct ResolvedDocumentSketch<'a> {
     pub plane: SketchPlane,
     pub verification: &'a SketchSolveDiagnostics,
 }
+/// Current concrete datums bound to an immutable snapshot for repeated frame queries.
+/// Example: `let frames = snapshot.bind_sketch_frames(&datums)?; frames.resolve(id)?;`.
+pub struct BoundSketchFrames<'a> {
+    snapshot: &'a DocumentSnapshot,
+    datums: &'a WorkPlaneEvaluation,
+}
+impl BoundSketchFrames<'_> {
+    /// Resolve one frame without repeating the model comparison; example: `frames.resolve(id)?`.
+    pub fn resolve(
+        &self,
+        id: DocumentSketchId,
+    ) -> Result<SketchPlane, DocumentSketchPlacementError> {
+        self.snapshot
+            .resolve_sketch_plane_with_replay_datums(id, self.datums)
+    }
+}
 enum RequiredSolve {
     FullyConstrained,
     Converged,
@@ -41,9 +57,35 @@ pub enum DocumentSketchPlacementError {
     Verification(SketchReadinessError),
 }
 impl DocumentSnapshot {
+    /// Verify concrete datums once for repeated queries; example: `snapshot.bind_sketch_frames(&datums)?`.
+    pub fn bind_sketch_frames<'a>(
+        &'a self,
+        datums: &'a WorkPlaneEvaluation,
+    ) -> Result<BoundSketchFrames<'a>, SketchError> {
+        datums.require_model_source(self)?;
+        Ok(BoundSketchFrames {
+            snapshot: self,
+            datums,
+        })
+    }
     /// Resolve a sketch against one ordered part replay.
     /// Example: `snapshot.resolve_sketch_plane_with_datums(id, &datums)?`.
     pub fn resolve_sketch_plane_with_datums(
+        &self,
+        id: DocumentSketchId,
+        datums: &WorkPlaneEvaluation,
+    ) -> Result<SketchPlane, DocumentSketchPlacementError> {
+        if self
+            .sketch_plane_needs_work_geometry(id)
+            .map_err(DocumentSketchPlacementError::Sketch)?
+        {
+            datums
+                .require_frame_source(self, id)
+                .map_err(DocumentSketchPlacementError::Sketch)?;
+        }
+        self.resolve_sketch_plane_with_replay_datums(id, datums)
+    }
+    pub(crate) fn resolve_sketch_plane_with_replay_datums(
         &self,
         id: DocumentSketchId,
         datums: &WorkPlaneEvaluation,
@@ -108,7 +150,7 @@ impl DocumentSnapshot {
             return Ok(None);
         }
         self.effective_work_geometry()
-            .evaluate_work_geometry(&self.parameters)
+            .evaluate_work_geometry_unbound(&self.parameters)
             .map(Some)
             .map_err(DocumentSketchPlacementError::Replay)
     }
@@ -142,7 +184,7 @@ impl DocumentSnapshot {
         id: DocumentSketchId,
         datums: &WorkPlaneEvaluation,
     ) -> Result<ResolvedDocumentSketch<'_>, DocumentSketchPlacementError> {
-        let plane = self.resolve_sketch_plane_with_datums(id, datums)?;
+        let plane = self.resolve_sketch_plane_with_replay_datums(id, datums)?;
         let points = self
             .projected_points_with_datums(id, datums)
             .map_err(DocumentSketchPlacementError::Sketch)?;

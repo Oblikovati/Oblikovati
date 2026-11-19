@@ -27,7 +27,7 @@ impl CurrentSketchProjectionInputs {
         Self {
             datums: snapshot
                 .effective_work_geometry()
-                .evaluate_work_geometry(&snapshot.parameters),
+                .evaluate_work_geometry_unbound(&snapshot.parameters),
         }
     }
 }
@@ -74,6 +74,16 @@ impl DocumentSnapshot {
     /// Inspect sketch health with projection inputs from one part replay.
     /// Example: `snapshot.document_sketch_health_with_datums(id, &datums)?`.
     pub fn document_sketch_health_with_datums(
+        &self,
+        id: DocumentSketchId,
+        datums: &WorkGeometryEvaluation,
+    ) -> Result<crate::document_sketch::PlacedSketchHealth<'_>, SketchError> {
+        if self.sketch_plane_needs_work_geometry(id)? {
+            datums.require_frame_source(self, id)?;
+        }
+        self.document_sketch_health_with_replay_datums(id, datums)
+    }
+    pub(crate) fn document_sketch_health_with_replay_datums(
         &self,
         id: DocumentSketchId,
         datums: &WorkGeometryEvaluation,
@@ -154,7 +164,7 @@ impl DocumentSnapshot {
         // #3760: source, host plane and orientation must consume the same immutable replay.
         let datums = self
             .effective_work_geometry()
-            .evaluate_work_geometry(&self.parameters)
+            .evaluate_work_geometry_unbound(&self.parameters)
             .map_err(DocumentSketchPlacementError::Replay)?;
         self.project_datum_point_into_sketch_with_datums(sketch, reference, &datums)
     }
