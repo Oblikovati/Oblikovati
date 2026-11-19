@@ -161,7 +161,6 @@ fn right_click_coordinate_command(world: &mut ApplicationWorld) {
 #[then(
     "the command context menu lists Ribbon Appearance, Add to Quick Access Toolbar, Move to Main Panel, Show Panels, Customize User Commands, Undock Ribbon and Docking Positions"
 )]
-#[then("the command context menu is visible")]
 fn coordinate_command_menu(world: &mut ApplicationWorld) {
     title_menu_choices(world);
     for label in ["Add to Quick Access Toolbar", "Move to Main Panel"] {
@@ -171,6 +170,12 @@ fn coordinate_command_menu(world: &mut ApplicationWorld) {
             "{label}: unavailable command must stay disabled"
         );
     }
+}
+#[then("the command context menu is visible")]
+fn command_menu_is_visible(world: &mut ApplicationWorld) {
+    title_menu_choices(world);
+    world.expect_text("Add to Quick Access Toolbar");
+    world.expect_text("Move to Main Panel");
 }
 #[then("Sketch, Create, Modify, Pattern, Constrain, Insert and Format are checked")]
 fn sketch_panels_checked(world: &mut ApplicationWorld) {

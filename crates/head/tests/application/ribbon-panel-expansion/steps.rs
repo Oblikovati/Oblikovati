@@ -5,6 +5,8 @@ use super::workspace_layout::browser_feature::{
 };
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
+#[path = "bend_notice.rs"]
+mod bend_notice;
 #[path = "builtin_commands.rs"]
 mod builtin_commands;
 #[path = "command_context.rs"]

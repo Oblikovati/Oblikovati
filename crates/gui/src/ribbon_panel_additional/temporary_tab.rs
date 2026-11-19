@@ -33,6 +33,7 @@ mod tests {
                 pinned: false,
                 focus: false,
                 bounds: [[0.; 2]; 2],
+                bend_notice: Default::default(),
             },
         );
         panels

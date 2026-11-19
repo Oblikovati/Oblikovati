@@ -63,6 +63,7 @@ const INFRASTRUCTURE: &[(&str, &str)] = &[
     ("document_tabs.rs", "<dynamic>"),
     ("document_tabs/strip_render.rs", "##open-document-tabs"),
     ("ribbon_panel_additional.rs", "<dynamic>"),
+    ("ribbon_panel_additional/bend_notice.rs", "modal:TITLE"),
     (
         "ribbon_panel_additional/coordinate_restriction.rs",
         "modal:MESSAGE",

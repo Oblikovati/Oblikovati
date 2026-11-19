@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Additional ribbon commands stay anchored to their panel and can be pinned.
 use super::*;
+#[path = "ribbon_panel_additional/bend_notice.rs"]
+mod bend_notice;
 #[path = "ribbon_panel_additional/commands.rs"]
 mod commands;
 #[path = "ribbon_panel_additional/temporary_tab.rs"]
@@ -26,6 +28,7 @@ struct Expansion {
     pinned: bool,
     focus: bool,
     bounds: [[f32; 2]; 2],
+    bend_notice: bend_notice::BendNotice,
 }
 impl PanelExpansions {
     pub(super) fn clear(&mut self) {
@@ -117,6 +120,7 @@ pub(super) fn trigger(
                 pinned: false,
                 focus: true,
                 bounds: [[0.; 2]; 2],
+                bend_notice: Default::default(),
             },
         );
     }
@@ -225,6 +229,7 @@ fn draw_window(
         .collapsible(false)
         .focused(focus)
         .build(|| {
+            close |= expansion.bend_notice.draw(ui);
             if panel == RibbonPanel::UserCommands {
                 let right = context.owners.customization.draw_panel(
                     ui,
@@ -238,7 +243,7 @@ fn draw_window(
                 close |= !context.owners.customization.has_expanded(tab);
             } else {
                 let before = context.actions.len();
-                commands::draw(context, tab, panel, display);
+                commands::draw(context, tab, panel, display, &mut expansion.bend_notice);
                 if !expansion.pinned
                     && context.actions[before..].contains(&GuiShellAction::OpenMoveBody)
                 {
@@ -273,6 +278,7 @@ fn draw_window(
                 close = true;
             }
             if !expansion.pinned
+                && !expansion.bend_notice.active()
                 && !preserve_tab_press
                 && ui.is_mouse_clicked(imgui::MouseButton::Left)
                 && !inside_window(ui)
@@ -362,6 +368,7 @@ mod tests {
                 pinned: true,
                 focus: false,
                 bounds: [[0.; 2]; 2],
+                bend_notice: Default::default(),
             },
         );
         expansions.use_document(Some(1));
@@ -387,6 +394,7 @@ mod tests {
                 pinned: true,
                 focus: false,
                 bounds: [[0.; 2]; 2],
+                bend_notice: Default::default(),
             },
         );
         expansions.use_mode(RibbonDisplay::Tabs);
