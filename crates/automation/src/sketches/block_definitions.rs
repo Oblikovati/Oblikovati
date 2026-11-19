@@ -85,6 +85,7 @@ fn instance_info(
         rotation: instance.rotation(),
         scale: instance.scale(),
         entity_count: wire_count(definition.geometry().entity_ids().len())?,
+        color: None,
     })
 }
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -170,5 +171,6 @@ fn info(
         name: name.into(),
         entity_count: wire_count(entities)?,
         instance_count: wire_count(instances)?,
+        color: None,
     })
 }
