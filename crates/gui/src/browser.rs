@@ -45,9 +45,9 @@ pub(crate) fn browser_contents(
     view.follow_relationships();
     let _document = ui.push_id(format!("document-{:?}", state.document));
     crate::application::model_browser::browser_root::root_row(ui, state, browser, view, actions);
-    if let Some(query) = view.query() {
+    if let Some(query) = view.query().map(str::to_owned) {
         crate::application::workspace_layout::browser_view::search_results(
-            ui, state, browser, query,
+            ui, state, browser, &query, view, actions,
         );
         view.feature_expansion = None;
         return;

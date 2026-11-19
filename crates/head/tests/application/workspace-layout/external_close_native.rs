@@ -149,3 +149,54 @@ fn native_browser_search_hint_filters_and_restores_the_tree() {
     world.expect_text("Origin");
     world.close();
 }
+
+#[test]
+fn native_browser_search_expands_a_matching_parent_and_restores_tree() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    world.expect_text("X Axis");
+    native_search_query(&mut world, "origin");
+    world.expect_text("Origin");
+    world.expect_no_text("X Axis");
+    assert!(
+        world.text_is_selected("Origin"),
+        "matching parent text must be highlighted"
+    );
+    let row = world.run("Origin");
+    let point = [row.minimum[0] - 10., row.center()[1]];
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(point));
+    world.pump(Vec::new());
+    for label in ["XY Plane", "X Axis", "Center Point"] {
+        world.expect_text(label);
+    }
+    assert!(
+        world.run("X Axis").alpha < world.run("Origin").alpha,
+        "unmatched children must use dimmed text"
+    );
+    super::dockspace_restart::native_click_label(&mut world, "x");
+    super::dockspace_restart::native_click_label(&mut world, "x");
+    world.expect_text("X Axis");
+    world.close();
+}
+
+#[test]
+fn native_browser_search_origin_axis_keeps_selection_after_clear() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    native_search_query(&mut world, "axis");
+    super::dockspace_restart::native_click_label(&mut world, "X Axis");
+    super::browser_feature::expect_outline(&mut world, true);
+    super::dockspace_restart::native_click_label(&mut world, "x");
+    world.expect_text("XY Plane");
+    super::browser_feature::expect_outline(&mut world, true);
+    world.close();
+}
+
+fn native_search_query(world: &mut ApplicationWorld, query: &str) {
+    super::dockspace_restart::native_click_label(world, "Search");
+    super::dockspace_restart::native_click_label(world, "Type Keyword");
+    for character in query.chars() {
+        super::super::x11_input::press_path_character(character);
+        world.pump(Vec::new());
+    }
+}
