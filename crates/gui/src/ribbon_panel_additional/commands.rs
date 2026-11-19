@@ -8,6 +8,7 @@ pub(super) fn draw(
     tab: RibbonTab,
     panel: RibbonPanel,
     display: &mut RibbonDisplayState,
+    bend_notice: &mut super::bend_notice::BendNotice,
 ) {
     let ui = context.ui;
     if builtin::supports(panel) {
@@ -35,7 +36,7 @@ pub(super) fn draw(
     if context.owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal
         && let Some(entries) = additional_icon_entries(panel)
     {
-        additional_icons(context, tab, panel, display, entries);
+        additional_icons(context, tab, panel, display, entries, bend_notice);
         return;
     }
     let labels = match panel {
@@ -56,15 +57,19 @@ pub(super) fn draw(
         }
         let action = additional_action(label);
         let coordinate = coordinate_restriction::ready(label, context.state);
+        let bend = label == "Bend Part" && super::bend_notice::BendNotice::available(context.state);
         let disabled = ui.begin_disabled(
             !coordinate
+                && !bend
                 && action
                     .as_ref()
                     .is_none_or(|action| !action.dispatchable(context.state)),
         );
-        let clicked = ui.button(label);
+        let clicked = ui.button(label) || bend && display.context_tab_press(ui);
         if clicked && coordinate {
             coordinate_restriction::open(ui);
+        } else if clicked && bend {
+            bend_notice.request(context.state);
         } else if clicked && let Some(action) = action.as_ref() {
             context.actions.push(action.clone());
         }
@@ -73,6 +78,7 @@ pub(super) fn draw(
             crate::ribbon_key_tips::badge(ui, "OD");
         }
         let available = coordinate
+            || bend
             || action
                 .as_ref()
                 .is_some_and(|action| action.dispatchable(context.state));
@@ -88,6 +94,7 @@ fn additional_icons(
     panel: RibbonPanel,
     display: &mut RibbonDisplayState,
     entries: &'static [(&'static str, crate::icons::IconGlyph)],
+    bend_notice: &mut super::bend_notice::BendNotice,
 ) {
     let ui = context.ui;
     let icons = context.owners.icons;
@@ -104,15 +111,19 @@ fn additional_icons(
         }
         let action = additional_action(label);
         let coordinate = coordinate_restriction::ready(label, context.state);
+        let bend = label == "Bend Part" && super::bend_notice::BendNotice::available(context.state);
         let disabled = ui.begin_disabled(
             !coordinate
+                && !bend
                 && action
                     .as_ref()
                     .is_none_or(|action| !action.dispatchable(context.state)),
         );
-        let clicked = icons.button(ui, label, glyph, size);
+        let clicked = icons.button(ui, label, glyph, size) || bend && display.context_tab_press(ui);
         if clicked && coordinate {
             coordinate_restriction::open(ui);
+        } else if clicked && bend {
+            bend_notice.request(context.state);
         } else if clicked && let Some(action) = action.as_ref() {
             context.actions.push(action.clone());
         }
@@ -121,6 +132,7 @@ fn additional_icons(
             crate::ribbon_key_tips::badge(ui, "OD");
         }
         let available = coordinate
+            || bend
             || action
                 .as_ref()
                 .is_some_and(|action| action.dispatchable(context.state));
