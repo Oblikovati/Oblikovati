@@ -285,11 +285,25 @@ fn both_ellipses(world: &mut ApplicationWorld) {
 }
 
 #[when("Done is clicked")]
-#[when("the user clicks Done")]
 fn done(world: &mut ApplicationWorld) {
     let done = world.run_in_window("Move", "Done").center();
     world.click(diagnostics::pointer_pixels(done));
     assert!(world.state().sketch_move.is_none());
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_done_closes_move_without_changing_geometry() {
+    let mut world = ApplicationWorld::new();
+    editable_ellipse(&mut world);
+    open_move(&mut world);
+    let done = world.run_in_window("Move", "Done").center();
+    super::super::x11_input::click(diagnostics::pointer_pixels(done));
+    world.pump(Vec::new());
+    assert!(world.state().sketch_move.is_none());
+    let original = world.observed_sketch.as_ref().unwrap().geometry.clone();
+    assert!(world.edited_geometry().same_recipe(&original));
+    world.close();
 }
 
 #[given("Move Copy has created the displaced ellipse and Move is closed")]

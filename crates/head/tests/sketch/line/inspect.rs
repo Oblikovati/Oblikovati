@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Measure, Region Properties and dimension edits against Line results.
-use super::super::super::ApplicationWorld;
+use super::super::super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
 use oblikovati_viewport::ViewportPhysicalKey;
 
@@ -57,8 +57,30 @@ fn identifies_four(world: &mut ApplicationWorld) {
 }
 #[when("I click Done")]
 #[when("the user click Done")]
+#[when("the user clicks Done")]
 fn click_done(world: &mut ApplicationWorld) {
-    world.click_text("Done");
+    let at = done_center(world);
+    world.click(at);
+}
+fn done_center(world: &ApplicationWorld) -> [i32; 2] {
+    diagnostics::pointer_pixels(world.run("Done").center())
+}
+
+#[test]
+fn done_uses_the_last_drawn_matching_control() {
+    let mut world = ApplicationWorld::new();
+    world.frame.runs = vec![done_run([10., 10.]), done_run([20., 20.])];
+    assert_eq!(done_center(&world), diagnostics::pointer_pixels([30., 30.]));
+    world.close();
+}
+fn done_run(minimum: [f32; 2]) -> diagnostics::RenderedRun {
+    diagnostics::RenderedRun {
+        text: "Done".into(),
+        minimum,
+        maximum: minimum.map(|axis| axis + 20.),
+        alpha: u8::MAX,
+        ..Default::default()
+    }
 }
 #[then("the panel closes and the segment remains")]
 fn panel_closed(world: &mut ApplicationWorld) {
