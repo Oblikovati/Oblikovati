@@ -115,6 +115,7 @@ fn log_available(world: &mut ApplicationWorld) {
     world.escape();
 }
 #[when("I add the log panel from the plus menu")]
+#[when("the user adds the log panel from the plus menu")]
 fn add_log(world: &mut ApplicationWorld) {
     open_plus(world);
     world.click_text("Log Panel");
@@ -142,16 +143,19 @@ fn model_tab_remains(world: &mut ApplicationWorld) {
     assert_eq!(tabs, 2, "expected the title and the Model tab");
 }
 #[when("I select the Model browser tab")]
+#[when("the user selects the Model browser tab")]
 fn select_model_tab(world: &mut ApplicationWorld) {
     world.click_text(BROWSER);
     world.pump(Vec::new());
 }
 #[when("I select the log panel tab")]
+#[when("the user selects the log panel tab")]
 fn select_log_tab(world: &mut ApplicationWorld) {
     world.click_text("Log");
     world.pump(Vec::new());
 }
 #[when("I close the log panel tab")]
+#[when("the user closes the log panel tab")]
 fn close_log_tab(world: &mut ApplicationWorld) {
     world.click_run_close_mark("Log");
     world.pump(Vec::new());
