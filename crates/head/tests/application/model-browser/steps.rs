@@ -31,6 +31,8 @@ mod find_native;
 mod line_properties;
 #[path = "model_state_copy.rs"]
 mod model_state_copy;
+#[path = "model_state_new_feature.rs"]
+mod model_state_new_feature;
 #[path = "model_state_scope.rs"]
 mod model_state_scope;
 #[path = "model_state_suppression.rs"]
