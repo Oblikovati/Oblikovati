@@ -13,10 +13,11 @@ fn drawable_extent_validation_keeps_signed_31_bit_limits_on_every_platform() {
 }
 #[test]
 fn camera_vectors_and_projection_decline_invalid_inputs() {
-    let changes: [fn(&mut ViewportCamera); 8] = [
+    let changes: [fn(&mut ViewportCamera); 9] = [
         |camera| camera.eye = [f64::NAN, 0., 0.],
         |camera| camera.eye = [0.; 3],
         |camera| camera.up = [0.; 3],
+        |camera| camera.up = [0., 0., 1.],
         |camera| camera.eye = [f64::MAX; 3],
         |camera| camera.up = [f64::MAX; 3],
         |camera| camera.scale = f64::INFINITY,
@@ -29,6 +30,28 @@ fn camera_vectors_and_projection_decline_invalid_inputs() {
         assert!(camera.validate().unwrap_err().contains("expected"));
     }
     assert!(ViewportCamera::default().validate().is_ok());
+}
+#[test]
+fn part_view_camera_round_trip_preserves_every_viewport_field() {
+    for perspective in [false, true] {
+        let camera = ViewportCamera {
+            eye: [3., 4., 9.],
+            target: [1., 2., 0.],
+            up: [0., 1., 0.],
+            scale: 13.,
+            near: 0.25,
+            far: 900.,
+            perspective,
+        };
+        let saved = camera.part_view_camera();
+        assert_eq!(
+            ViewportCamera::from_part_view_camera(&saved).unwrap(),
+            camera
+        );
+    }
+    let mut saved = ViewportCamera::default().part_view_camera();
+    saved.near = saved.far;
+    assert!(ViewportCamera::from_part_view_camera(&saved).is_err());
 }
 #[test]
 fn presentation_coordinates_and_channels_decline_nonfinite_and_out_of_range_values() {

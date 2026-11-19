@@ -285,6 +285,100 @@ fn native_creation_close_save_and_reopen_preserve_recipe_and_new_identity() {
 }
 
 #[test]
+fn part_view_names_survive_native_save_and_reopen() {
+    use oblikovati_api::contract::PartDesignView as _;
+    let directory = tempfile::tempdir().unwrap();
+    let destination = directory.path().join("views.opd");
+    let mut host = FileWorkspace::new(RecordingWorkspace::default(), NativeDocumentFiles);
+    let mut source = SequenceGuids(2000);
+    let package = DocumentPackage::decode(&fixture(1)).unwrap();
+    let id = host
+        .create(
+            &destination,
+            package,
+            RecordingObserver::default(),
+            "beta",
+            &mut source,
+        )
+        .unwrap()
+        .session_id;
+    host.commands(id)
+        .unwrap()
+        .create_design_view("Review")
+        .unwrap();
+    let camera = oblikovati_api::types::PartDesignViewCamera {
+        eye: oblikovati_api::types::Point {
+            x: 0.,
+            y: 0.,
+            z: 8.,
+        },
+        target: Default::default(),
+        up: oblikovati_api::types::Vector {
+            x: 0.,
+            y: 1.,
+            z: 0.,
+        },
+        scale: 12.,
+        near: 0.5,
+        far: 250.,
+        projection: oblikovati_api::types::ORTHOGRAPHIC_PROJECTION,
+    };
+    host.commands(id)
+        .unwrap()
+        .run("Capture camera", |snapshot, _| {
+            snapshot
+                .part_design_views
+                .as_mut()
+                .unwrap()
+                .capture_camera(1, camera.clone())
+        })
+        .unwrap();
+    host.commands(id)
+        .unwrap()
+        .run("Lock Primary", |snapshot, _| {
+            snapshot.part_design_views.as_mut().unwrap().set_options(
+                &oblikovati_api::wire::SetPartDesignViewOptionsArgs {
+                    id: 1,
+                    locked: Some(std::boxed::Box::new(true)),
+                    ..Default::default()
+                },
+            )
+        })
+        .unwrap();
+    let original = host
+        .workspace()
+        .session(id)
+        .unwrap()
+        .snapshot()
+        .part_design_views
+        .clone()
+        .unwrap();
+    host.close_saving_changes(id, "beta", &mut source).unwrap();
+    let reopened = host
+        .open(
+            &destination,
+            RecordingObserver::default(),
+            "beta",
+            &mut source,
+            OpenActivation::Activate,
+        )
+        .unwrap()
+        .session_id();
+    let loaded = host
+        .workspace()
+        .session(reopened)
+        .unwrap()
+        .snapshot()
+        .part_design_views
+        .as_ref()
+        .unwrap();
+    assert_eq!(loaded, &original);
+    assert_eq!(loaded.get(1).unwrap().camera(), Some(&camera));
+    assert!(loaded.get(1).unwrap().locked());
+    assert_eq!(loaded.list().last().unwrap().name(), "Review");
+}
+
+#[test]
 fn creation_accepts_an_identity_free_package_and_reports_generator_failure() {
     let mut host = host(RecordingWorkspace::default());
     let package = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 1\n").unwrap();

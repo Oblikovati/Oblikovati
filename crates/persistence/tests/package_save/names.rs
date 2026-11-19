@@ -20,6 +20,7 @@ fn snapshot() -> DocumentSnapshot {
         drawing: None,
         body_names: Default::default(),
         design_views: Default::default(),
+        part_design_views: None,
         sketch_settings: None,
         parameters: ParameterCollection::new(Default::default()),
         properties: Default::default(),
@@ -56,10 +57,12 @@ fn staged_title_changes_do_not_reach_the_retained_package_on_failed_storage() {
     let before = package.clone();
     let identity = FileIdentity::new("beta", &mut source).unwrap();
     let mut files = RefusingFiles { calls: 0 };
+    let mut document = snapshot();
+    document.part_design_views = Some(Default::default());
     let mut target = ParameterPackageTarget::new(&mut package, Path::new("part.opd"), &mut files)
         .with_display_name("Current title".into());
     let digest = target
-        .prepare(&snapshot(), 0, 0, Default::default(), 0)
+        .prepare(&document, 0, 0, Default::default(), 0)
         .unwrap();
     let identity = identity.prepare_save(digest, "beta", &mut source).unwrap();
     let error = target.persist(&identity).unwrap_err();
@@ -75,9 +78,11 @@ fn a_title_change_after_preparation_invalidates_the_old_candidate() {
     let before = package.clone();
     let identity = FileIdentity::new("beta", &mut source).unwrap();
     let mut files = RefusingFiles { calls: 0 };
+    let mut document = snapshot();
+    document.part_design_views = Some(Default::default());
     let mut target = ParameterPackageTarget::new(&mut package, Path::new("part.opd"), &mut files);
     target
-        .prepare(&snapshot(), 0, 0, Default::default(), 0)
+        .prepare(&document, 0, 0, Default::default(), 0)
         .unwrap();
     let mut target = target.with_display_name("New title".into());
     assert!(matches!(

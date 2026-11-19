@@ -197,4 +197,47 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
     pub fn set_body_visible(&mut self, key: &str, visible: bool) -> Result<bool, String> {
         self.session.body_visibility.set(key, visible)
     }
+    /// Change resolved bodies in the active view; example: `commands.set_part_view_body_visibility(&keys, &available, false)?`.
+    pub fn set_part_view_body_visibility(
+        &mut self,
+        keys: &[String],
+        available: &std::collections::BTreeSet<String>,
+        visible: bool,
+    ) -> Result<bool, String> {
+        self.session
+            .set_part_view_body_visibility(keys, available, visible)
+    }
+    /// Prepare a view switch against resolved bodies; example: `commands.prepare_part_view_activation(id, camera, &keys)?`.
+    pub fn prepare_part_view_activation(
+        &self,
+        id: u64,
+        camera: oblikovati_api::types::PartDesignViewCamera,
+        keys: &std::collections::BTreeSet<String>,
+    ) -> Result<crate::PreparedPartViewActivation, String> {
+        self.session.prepare_part_view_activation(id, camera, keys)
+    }
+    /// Commit a prepared view switch after its camera is applied; example: `commands.commit_part_view_activation(prepared, camera)?`.
+    pub fn commit_part_view_activation(
+        &mut self,
+        prepared: crate::PreparedPartViewActivation,
+        camera: oblikovati_api::types::PartDesignViewCamera,
+    ) -> Result<(), String> {
+        self.session.commit_part_view_activation(prepared, camera)
+    }
+    /// Prepare one tagged history step; example: `commands.prepare_part_view_navigation(direction, &keys)?`.
+    pub fn prepare_part_view_navigation(
+        &self,
+        direction: crate::PartViewNavigationDirection,
+        keys: &std::collections::BTreeSet<String>,
+    ) -> Result<crate::PreparedPartViewNavigation, String> {
+        self.session.prepare_part_view_navigation(direction, keys)
+    }
+    /// Commit a prepared display history step; example: `commands.commit_part_view_navigation(prepared, camera)?`.
+    pub fn commit_part_view_navigation(
+        &mut self,
+        prepared: crate::PreparedPartViewNavigation,
+        camera: Option<&oblikovati_api::types::PartDesignViewCamera>,
+    ) -> Result<(), String> {
+        self.session.commit_part_view_navigation(prepared, camera)
+    }
 }

@@ -7,6 +7,7 @@ use std::{error::Error, fmt};
 #[derive(Clone, Debug, PartialEq)]
 pub enum HistoryError {
     ModelStateMembers(String),
+    PartDesignViews(String),
     PartProgram(crate::feature::part::PartFeatureProgramError),
     DatumDeletion(super::DocumentDatumDeleteError),
     Identity(crate::identity::RecipeIdError),
@@ -38,6 +39,7 @@ impl fmt::Display for HistoryError {
     fn fmt(&self, output: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::ModelStateMembers(error) => output.write_str(error),
+            Self::PartDesignViews(error) => output.write_str(error),
             Self::PartProgram(error) => error.fmt(output),
             Self::DatumDeletion(error) => error.fmt(output),
             Self::Identity(error) => error.fmt(output),

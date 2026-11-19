@@ -248,6 +248,13 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     ) -> Result<bool, String> {
         self.owner.process_window_inputs(inputs, window)
     }
+    fn process_live_window_inputs(
+        &mut self,
+        inputs: &[oblikovati_viewport::ViewportEvent],
+        window: &mut dyn crate::HeadWindow,
+    ) -> Result<bool, String> {
+        self.owner.process_live_window_inputs(inputs, window)
+    }
     fn take_command_notice(&mut self) -> Option<crate::DesktopCommandNotice> {
         self.owner.take_command_notice()
     }

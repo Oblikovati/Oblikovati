@@ -127,6 +127,7 @@ fn document_from_sketches(sketches: DocumentSketches) -> DocumentSnapshot {
         model_states: None,
         body_names: Default::default(),
         design_views: Default::default(),
+        part_design_views: None,
         sketch_settings: None,
         properties: Default::default(),
         attributes: Default::default(),

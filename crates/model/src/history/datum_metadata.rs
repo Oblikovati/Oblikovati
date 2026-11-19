@@ -17,6 +17,7 @@ impl DocumentSnapshot {
             .map_err(HistoryError::PartProgram)?;
         self.validate_datum_metadata()?;
         self.validate_model_state_transition(before)?;
+        self.validate_part_design_view_transition(before)?;
         self.validate_scalar_transition(before)
     }
 }

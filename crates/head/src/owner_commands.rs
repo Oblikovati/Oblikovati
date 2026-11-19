@@ -163,6 +163,20 @@ impl<
         &mut self,
         inputs: &[ViewportEvent],
     ) -> Result<bool, String> {
+        self.process_document_inputs_using(inputs, None)
+    }
+    pub(super) fn process_document_inputs_with_window(
+        &mut self,
+        inputs: &[ViewportEvent],
+        window: &mut dyn crate::HeadWindow,
+    ) -> Result<bool, String> {
+        self.process_document_inputs_using(inputs, Some(window))
+    }
+    fn process_document_inputs_using(
+        &mut self,
+        inputs: &[ViewportEvent],
+        mut window: Option<&mut dyn crate::HeadWindow>,
+    ) -> Result<bool, String> {
         let mut changed = false;
         for input in inputs {
             let Some(command) = document_command(input) else {
@@ -170,7 +184,10 @@ impl<
             };
             let notice = match command {
                 NativeDocumentCommand::Save => Some(self.save_active_document()),
-                NativeDocumentCommand::History(action) => self.restore_document_history(action),
+                NativeDocumentCommand::History(action) => match &mut window {
+                    Some(window) => self.restore_document_history(action, Some(&mut **window)),
+                    None => self.restore_document_history(action, None),
+                },
             };
             if notice.is_some() {
                 self.command_notice = notice;
@@ -293,7 +310,29 @@ impl<
         document: u64,
         position: i64,
     ) -> Result<bool, String> {
-        let client = oblikovati_api::client::Client::new(self.document_host());
+        self.jump_history_with_display(document, position, None)
+    }
+    pub(super) fn jump_history_action_with_window(
+        &mut self,
+        document: u64,
+        position: i64,
+        window: &mut dyn crate::HeadWindow,
+    ) -> Result<bool, String> {
+        let mut display = crate::part_view_display::WindowPartViewDisplay(window);
+        self.jump_history_with_display(document, position, Some(&mut display))
+    }
+    fn jump_history_with_display(
+        &mut self,
+        document: u64,
+        position: i64,
+        display: Option<&mut dyn oblikovati_automation::PartViewDisplayAccess>,
+    ) -> Result<bool, String> {
+        let host = self.document_host();
+        let host = match display {
+            Some(display) => host.with_part_view_display(display),
+            None => host,
+        };
+        let client = oblikovati_api::client::Client::new(host);
         let current = client
             .transactions()
             .history(&oblikovati_api::wire::TransactionHistoryArgs { document })

@@ -191,6 +191,13 @@ fn canonical_plane_text_is_checked_before_it_reaches_the_tooltip() {
 }
 
 #[test]
+fn model_browser_accepts_document_owned_part_views() {
+    let mut browser = sample_state().browser.unwrap();
+    browser.part_design_views = Some(Default::default());
+    browser.validate().unwrap();
+}
+
+#[test]
 fn selection_has_its_own_enablement_and_requires_a_current_row() {
     let mut state = sample_state();
     let select = GuiShellAction::SelectBrowserSketch {

@@ -33,6 +33,7 @@ pub(super) fn parameter_workspace_sketches(
         drawing: None,
         body_names: Default::default(),
         design_views: Default::default(),
+        part_design_views: None,
         sketch_settings: None,
         parameters,
         properties,

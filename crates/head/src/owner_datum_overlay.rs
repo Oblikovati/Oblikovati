@@ -176,6 +176,7 @@ mod tests {
             model_states: None,
             body_names: Default::default(),
             design_views: Vec::new(),
+            part_design_views: None,
             work_geometry: Default::default(),
             assets: Default::default(),
             sketch_settings: None,

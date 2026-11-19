@@ -150,6 +150,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     client: &Client<oblikovati_automation::FileQueryHost<'_, O, W, F>>,
 ) -> Result<(), String> {
     browser.model_states = snapshot.model_states.clone();
+    browser.part_design_views = snapshot.part_design_views.clone();
     browser.block_definitions = snapshot
         .sketches
         .block_definitions()

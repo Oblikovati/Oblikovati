@@ -48,6 +48,11 @@ mod groups_edit;
 mod host;
 mod model_selection;
 mod model_states;
+mod part_design_views;
+mod part_view_body_visibility;
+mod part_view_display;
+mod part_view_transactions;
+pub use part_view_display::PartViewDisplayAccess;
 mod selection_events;
 pub use file_queries::{FILE_QUERY_METHODS, FileQueryHost};
 pub use selection_events::{
@@ -97,7 +102,9 @@ use oblikovati_session::{
 pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 37] = [
+pub const QUERY_METHODS: [&str; 39] = [
+    METHOD_PART_DESIGN_VIEWS_GET_CAMERA,
+    METHOD_PART_DESIGN_VIEWS_LIST,
     METHOD_MODEL_STATES_LIST,
     METHOD_APPLICATION_API_VERSION,
     METHOD_CLIENT_APPS_LIST,
@@ -168,6 +175,11 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver> SessionQueryHost<'a, O, W
 impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'_, O, W> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         match method {
+            METHOD_PART_DESIGN_VIEWS_GET_CAMERA => encode(&part_design_views::camera(
+                self.workspace,
+                decode(method, request)?,
+            )?),
+            METHOD_PART_DESIGN_VIEWS_LIST => encode(&part_design_views::list(self.workspace)?),
             METHOD_MODEL_STATES_LIST => encode(&model_states::list(self.workspace)?),
             METHOD_MODEL_SELECTION => encode(&model_selection::read(self.workspace)?),
             METHOD_APPLICATION_API_VERSION => encode(&ApplicationApiVersionResult {

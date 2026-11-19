@@ -102,43 +102,54 @@ impl ViewportCamera {
         2. * (self.scale / 2. / distance).atan().to_degrees()
     }
     pub(crate) fn validate(&self) -> Result<(), String> {
-        let vectors = [self.eye, self.target, self.up];
-        if vectors.iter().flatten().any(|value| !value.is_finite())
-            || self.eye == self.target
-            || self.up == [0.; 3]
-        {
-            return Err(format!(
-                "viewport camera {self:?}: expected finite distinct eye/target and nonzero up direction"
-            ));
-        }
-        self.validate_magnitudes()?;
-        self.validate_projection()
+        oblikovati_model::part_design_view::validate_part_camera(&self.part_view_camera())
+            .map_err(|cause| format!("viewport camera {self:?}: {cause}"))
     }
-    fn validate_magnitudes(&self) -> Result<(), String> {
-        let direction: [f64; 3] = std::array::from_fn(|axis| self.target[axis] - self.eye[axis]);
-        for vector in [direction, self.up] {
-            let squared: f64 = vector.iter().map(|value| value * value).sum();
-            if !squared.is_finite() || squared == 0. {
-                return Err(format!(
-                    "viewport camera {self:?}: expected finite nonzero squared direction magnitudes"
-                ));
-            }
+    /// Copy the complete viewport into a part view; example: `camera.part_view_camera()`.
+    pub fn part_view_camera(&self) -> oblikovati_api::types::PartDesignViewCamera {
+        use oblikovati_api::types::{
+            ORTHOGRAPHIC_PROJECTION, PERSPECTIVE_PROJECTION, Point, Vector,
+        };
+        oblikovati_api::types::PartDesignViewCamera {
+            eye: Point {
+                x: self.eye[0],
+                y: self.eye[1],
+                z: self.eye[2],
+            },
+            target: Point {
+                x: self.target[0],
+                y: self.target[1],
+                z: self.target[2],
+            },
+            up: Vector {
+                x: self.up[0],
+                y: self.up[1],
+                z: self.up[2],
+            },
+            scale: self.scale,
+            near: self.near,
+            far: self.far,
+            projection: if self.perspective {
+                PERSPECTIVE_PROJECTION
+            } else {
+                ORTHOGRAPHIC_PROJECTION
+            },
         }
-        Ok(())
     }
-    fn validate_projection(&self) -> Result<(), String> {
-        if !self.scale.is_finite()
-            || self.scale <= 0.
-            || !self.near.is_finite()
-            || !self.far.is_finite()
-            || self.near <= 0.
-            || self.far <= self.near
-        {
-            return Err(format!(
-                "viewport camera {self:?}: expected positive scale and finite 0 < near < far"
-            ));
-        }
-        Ok(())
+    /// Restore an authored part view; example: `ViewportCamera::from_part_view_camera(&saved)?`.
+    pub fn from_part_view_camera(
+        camera: &oblikovati_api::types::PartDesignViewCamera,
+    ) -> Result<Self, String> {
+        oblikovati_model::part_design_view::validate_part_camera(camera)?;
+        Ok(Self {
+            eye: [camera.eye.x, camera.eye.y, camera.eye.z],
+            target: [camera.target.x, camera.target.y, camera.target.z],
+            up: [camera.up.x, camera.up.y, camera.up.z],
+            scale: camera.scale,
+            near: camera.near,
+            far: camera.far,
+            perspective: camera.projection == oblikovati_api::types::PERSPECTIVE_PROJECTION,
+        })
     }
 }
 #[derive(Clone, Debug, PartialEq, Eq)]

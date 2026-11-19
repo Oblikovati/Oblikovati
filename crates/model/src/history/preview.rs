@@ -23,6 +23,7 @@ impl SnapshotReplay {
             .iter()
             .copied()
             .chain(super::model_state_ids::authored_ids(snapshot))
+            .chain(super::part_design_view_ids::authored_ids(snapshot))
             .max()
             .unwrap_or(0);
         let ids = RecipeIdAllocator::restore(Some(highest), snapshot.parameters.ids())?;

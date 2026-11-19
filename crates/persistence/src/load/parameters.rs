@@ -18,6 +18,7 @@ pub struct LoadedParameterPackage {
     pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
     pub body_names: std::collections::BTreeMap<String, String>,
     pub design_views: Vec<String>,
+    pub part_design_views: Option<oblikovati_model::part_design_view::PartDesignViews>,
     pub model_states: Option<oblikovati_model::model_state::ModelStateMembers>,
     pub drawing: Option<oblikovati_model::drawing::DrawingDocument>,
     pub assembly: Option<Vec<oblikovati_model::assembly::AssemblyOccurrenceRecipe>>,
@@ -55,6 +56,7 @@ pub fn load_parameter_package(
         resources: prepared.resources,
         body_names: prepared.body_names,
         design_views: prepared.design_views,
+        part_design_views: prepared.part_design_views,
         model_states: prepared.model_states,
         drawing: prepared.drawing,
         assembly: prepared.assembly,
@@ -77,6 +79,7 @@ pub struct PreparedParameterPackage {
     pub resources: std::collections::BTreeMap<String, oblikovati_model::resource::DocumentResource>,
     pub body_names: std::collections::BTreeMap<String, String>,
     pub design_views: Vec<String>,
+    pub part_design_views: Option<oblikovati_model::part_design_view::PartDesignViews>,
     pub model_states: Option<oblikovati_model::model_state::ModelStateMembers>,
     pub drawing: Option<oblikovati_model::drawing::DrawingDocument>,
     pub assembly: Option<Vec<oblikovati_model::assembly::AssemblyOccurrenceRecipe>>,
@@ -131,9 +134,17 @@ pub fn read_parameter_package(
     let attributes = package
         .restore_attributes()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
-    let restored = package
+    let mut restored = package
         .restore_document_parameters()
         .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
+    let part_design_views = package
+        .restore_part_design_views(&mut restored.ids)
+        .map_err(|error| load_error(path, LoadFailure::Codec(error)))?;
+    let design_views = if part_design_views.is_some() {
+        Vec::new()
+    } else {
+        design_views
+    };
     work_geometry
         .program
         .validate_scalar_parameters(&restored.parameters)
@@ -159,6 +170,7 @@ pub fn read_parameter_package(
         assets,
         body_names,
         design_views,
+        part_design_views,
         model_states,
         drawing,
         assembly,

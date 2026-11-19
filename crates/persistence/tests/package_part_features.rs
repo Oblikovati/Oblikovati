@@ -93,6 +93,7 @@ fn restored_part_owner(package: &DocumentPackage) -> DocumentEditHistory {
         drawing: None,
         body_names: Default::default(),
         design_views: Default::default(),
+        part_design_views: None,
         sketch_settings: None,
         properties: Default::default(),
         attributes: Default::default(),

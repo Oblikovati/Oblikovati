@@ -2,6 +2,7 @@
 use crate::{HeadSketchWork, HeadWorkStatus};
 /// Owner-thread services borrow model state only while the window loop polls them.
 pub trait HeadWork: HeadSketchWork {
+    crate::work_part_view::part_view_work_methods!();
     orientation_work_methods!();
     datum_work_methods!();
     appearance_work_methods!();

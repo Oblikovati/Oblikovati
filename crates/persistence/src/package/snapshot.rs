@@ -209,6 +209,18 @@ fn capture_nonparameter_sections(
     feature_high_water: u64,
     assembly_references: Option<&BTreeSet<String>>,
 ) -> Result<DocumentPackage, SnapshotPackageError> {
+    if snapshot.part_design_views.is_some() {
+        let mut ids = oblikovati_model::identity::RecipeIdAllocator::default();
+        original
+            .restore_part_design_views(&mut ids)
+            .map_err(SnapshotPackageError::Codec)?;
+        if !snapshot.design_views.is_empty() {
+            return Err(SnapshotPackageError::Codec(PackageCodecError(format!(
+                "legacy designViews {:?}: expected one part view source",
+                snapshot.design_views
+            ))));
+        }
+    }
     let candidate = match &snapshot.assembly {
         Some(occurrences) => match assembly_references {
             Some(names) => original.with_owned_assembly_occurrences(occurrences, names),
@@ -229,6 +241,8 @@ fn capture_nonparameter_sections(
         .with_body_names(&snapshot.body_names)
         .map_err(SnapshotPackageError::Codec)?
         .with_design_views(&snapshot.design_views)
+        .map_err(SnapshotPackageError::Codec)?
+        .with_part_design_views(snapshot.part_design_views.as_ref())
         .map_err(SnapshotPackageError::Codec)?
         .with_assets(&snapshot.assets)
         .map_err(SnapshotPackageError::Codec)?

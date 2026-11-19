@@ -35,6 +35,7 @@ pub use legacy_sketch::LegacySketchCandidate;
 mod model_states;
 mod named_views;
 mod parameters;
+mod part_design_views;
 mod properties;
 mod resource_edit;
 mod resource_import;

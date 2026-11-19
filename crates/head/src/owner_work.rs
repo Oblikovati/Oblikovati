@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 #[macro_use]
+#[path = "owner_work_part_view.rs"]
+mod part_view_work;
+#[macro_use]
 #[path = "owner_work_extrusion.rs"]
 mod extrusion_work;
 #[macro_use]
@@ -410,6 +413,7 @@ impl<
     ) -> Result<bool, String> {
         self.browser_choice(document, choice)
     }
+    desktop_part_view_work!();
     fn keep_document_picture_from_gui(
         &mut self,
         document: u64,
@@ -463,17 +467,8 @@ impl<
         if budget == 0 {
             return Err("desktop drain budget 0: expected a positive bounded batch".into());
         }
-        let serviced = self.drain_calls(budget)?;
-        let changed = self.factory.take_changed() || serviced != 0;
-        let changed = self.synchronize_sketch_edit() || changed;
-        let changed = self.synchronize_model_pick_cue() || changed;
-        let changed = self.retire_stale_face_properties() || changed;
-        let pending = self.dispatch.pending().map_err(|error| error.to_string())? != 0;
-        Ok(HeadWorkStatus {
-            changed,
-            pending,
-            wake_after: None,
-        })
+        let serviced = self.drain_calls(budget, None)?;
+        self.finish_owner_poll(serviced)
     }
     fn datum_planes(&mut self) -> Result<crate::HeadDatumPlaneUpdate, String> {
         self.datum_planes_for_view()

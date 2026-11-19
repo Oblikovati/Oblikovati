@@ -117,6 +117,7 @@ fn register(workspace: &mut Workspace, units: UnitsOfMeasure, source: &mut Query
         drawing: None,
         body_names: Default::default(),
         design_views: Default::default(),
+        part_design_views: None,
         sketch_settings: None,
         parameters: ParameterCollection::new(units),
         properties: DocumentProperties::default(),
@@ -433,3 +434,5 @@ mod sketch_updates;
 
 #[path = "application/model-browser/model_states.rs"]
 mod model_states;
+#[path = "application/model-browser/part_design_views.rs"]
+mod part_design_views;

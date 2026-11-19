@@ -9,6 +9,14 @@ use oblikovati_api::{
 impl<O: TransactionObserver> DocumentSession<O> {
     /// Undo after observers accept the move; example: `session.undo()?;`.
     pub fn undo(&mut self) -> Result<(), SessionError> {
+        self.history.undo_label()?;
+        if self.history.undo_part_view_display().is_some() {
+            return Err(SessionError::PartViewDisplayOwner);
+        }
+        self.undo_display_checked()
+    }
+
+    pub(super) fn undo_display_checked(&mut self) -> Result<(), SessionError> {
         let label = self.history.undo_label()?;
         let event = self.payload(EVENT_TRANSACTION_UNDONE, label, TRANSACTION_POINT_PREVIOUS);
         self.notify_before(&event)?;
@@ -24,6 +32,14 @@ impl<O: TransactionObserver> DocumentSession<O> {
 
     /// Redo after observers accept the move; example: `session.redo()?;`.
     pub fn redo(&mut self) -> Result<(), SessionError> {
+        self.history.redo_label()?;
+        if self.history.redo_part_view_display().is_some() {
+            return Err(SessionError::PartViewDisplayOwner);
+        }
+        self.redo_display_checked()
+    }
+
+    pub(super) fn redo_display_checked(&mut self) -> Result<(), SessionError> {
         let label = self.history.redo_label()?;
         let event = self.payload(EVENT_TRANSACTION_REDONE, label, TRANSACTION_POINT_NEXT);
         self.notify_before(&event)?;

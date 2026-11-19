@@ -13,6 +13,7 @@ pub enum SessionError {
     PartEvaluation(crate::part_evaluation::PartEvaluationError),
     NoGroup,
     NavigationGroupOpen,
+    PartViewDisplayOwner,
     HistoryPosition { supplied: i64, total: usize },
     DepthExhausted,
     Veto(String),
@@ -30,6 +31,10 @@ impl fmt::Display for SessionError {
             Self::NavigationGroupOpen => write!(
                 output,
                 "history jump with an open group: expected all transactions closed"
+            ),
+            Self::PartViewDisplayOwner => write!(
+                output,
+                "part view history: expected a current display and exact body resolver"
             ),
             Self::HistoryPosition { supplied, total } => write!(
                 output,

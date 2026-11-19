@@ -197,7 +197,7 @@ fn process_frame_inputs(
     owner: &mut dyn HeadWork,
     inputs: &[ViewportEvent],
 ) -> Result<bool, String> {
-    let mut changed = owner.process_window_inputs(&[], window)?;
+    let mut changed = owner.process_live_window_inputs(&[], window)?;
     changed |= synchronize_sketch_view(window, owner)?;
     changed |= gui::advance_gui(window, owner, None)?.changed;
     let mut index = 0;

@@ -2,6 +2,12 @@
 
 //! Serial document edits and transaction observations, independent of UI and I/O.
 mod body_visibility;
+mod part_view_activation;
+mod part_view_history;
+mod part_view_navigation;
+mod part_view_visibility;
+pub use part_view_activation::PreparedPartViewActivation;
+pub use part_view_navigation::{PartViewNavigationDirection, PreparedPartViewNavigation};
 mod browser_selection;
 pub mod clients;
 mod command;

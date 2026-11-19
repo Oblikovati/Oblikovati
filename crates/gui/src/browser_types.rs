@@ -20,6 +20,8 @@ pub struct GuiModelBrowser {
     pub has_origin: bool,
     /// Part members owned by the document, including its active member.
     pub model_states: Option<oblikovati_model::model_state::ModelStateMembers>,
+    /// Persisted part views, including the active row and stored display settings.
+    pub part_design_views: Option<oblikovati_model::part_design_view::PartDesignViews>,
     pub sketches: Vec<GuiBrowserSketch>,
     /// Definitions and their placed instances, in authored order.
     pub block_definitions: Vec<String>,
@@ -144,6 +146,9 @@ impl GuiModelBrowser {
         self.validate_identities()?;
         if let Some(states) = &self.model_states {
             states.validate()?;
+        }
+        if let Some(views) = &self.part_design_views {
+            views.validate()?;
         }
         for id in &self.selected_sketches {
             if !self.sketches.iter().any(|row| row.id == *id) {

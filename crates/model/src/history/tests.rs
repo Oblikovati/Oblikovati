@@ -18,6 +18,7 @@ fn empty_history() -> DocumentEditHistory {
             drawing: None,
             body_names: Default::default(),
             design_views: Default::default(),
+            part_design_views: None,
             sketch_settings: None,
             parameters: ParameterCollection::new(UnitsOfMeasure::default()),
             properties: DocumentProperties::default(),
@@ -309,6 +310,104 @@ fn unreserved_model_state_identity_is_refused_without_adopting_candidate() {
         Err(EditError::History(HistoryError::UnreservedIdentity(2)))
     ));
     assert!(history.snapshot().model_states.is_none());
+}
+
+#[test]
+fn part_view_edits_replay_and_do_not_reuse_undone_ids() {
+    let mut history = empty_history();
+    let token = history.begin("Create view").unwrap();
+    let id = history
+        .edit(&token, |snapshot, ids| {
+            let views = snapshot
+                .part_design_views
+                .get_or_insert_with(Default::default);
+            let id = ids
+                .allocate_part_design_view()
+                .map_err(|cause| cause.to_string())?;
+            views.copy(1, id, "Review")?;
+            Ok::<_, String>(id)
+        })
+        .unwrap();
+    history.commit(&token, true).unwrap();
+    history.undo().unwrap();
+    history.redo().unwrap();
+    assert!(
+        history
+            .snapshot()
+            .part_design_views
+            .as_ref()
+            .unwrap()
+            .get(id)
+            .is_ok()
+    );
+    history.undo().unwrap();
+    let token = history.begin("Create replacement view").unwrap();
+    let next = history
+        .edit(&token, |snapshot, ids| {
+            let views = snapshot
+                .part_design_views
+                .get_or_insert_with(Default::default);
+            let next = ids
+                .allocate_part_design_view()
+                .map_err(|cause| cause.to_string())?;
+            views.copy(1, next, "Replacement")?;
+            Ok::<_, String>(next)
+        })
+        .unwrap();
+    history.commit(&token, true).unwrap();
+    assert!(next > id);
+}
+
+#[test]
+fn unreserved_part_view_identity_is_refused() {
+    let mut history = empty_history();
+    let token = history.begin("Unreserved view").unwrap();
+    let result = history.edit(&token, |snapshot, _| {
+        let mut views = crate::part_design_view::PartDesignViews::default();
+        views.copy(1, 6, "Invalid")?;
+        snapshot.part_design_views = Some(views);
+        Ok::<_, String>(())
+    });
+    assert!(matches!(
+        result,
+        Err(EditError::History(HistoryError::UnreservedIdentity(6)))
+    ));
+    assert!(history.snapshot().part_design_views.is_none());
+}
+
+#[test]
+fn view_display_history_stays_on_its_own_step() {
+    let mut history = empty_history();
+    let transition = PartViewDisplayTransition {
+        before: PartViewDisplayState {
+            hidden_body_keys: Default::default(),
+            camera: None,
+        },
+        after: PartViewDisplayState {
+            hidden_body_keys: std::collections::BTreeSet::from(["aa".into()]),
+            camera: None,
+        },
+    };
+    let token = history.begin("Display").unwrap();
+    history
+        .tag_part_view_display(&token, transition.clone())
+        .unwrap();
+    assert!(!history.discard_unchanged(&token).unwrap());
+    history.commit(&token, false).unwrap();
+    assert_eq!(history.undo_part_view_display(), Some(&transition));
+    history.undo().unwrap();
+    assert_eq!(history.redo_part_view_display(), Some(&transition));
+    history.redo().unwrap();
+    let ordinary = history.begin("Ordinary").unwrap();
+    history.commit(&ordinary, true).unwrap();
+    assert!(history.undo_part_view_display().is_none());
+    assert!(!history.jump_crosses_part_view(1));
+    assert!(history.jump_crosses_part_view(0));
+    history.undo().unwrap();
+    assert_eq!(history.undo_part_view_display(), Some(&transition));
+    history.undo().unwrap();
+    assert!(history.jump_crosses_part_view(1));
+    assert!(history.jump_crosses_part_view(2));
 }
 
 #[test]

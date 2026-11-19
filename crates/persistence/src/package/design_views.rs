@@ -35,8 +35,27 @@ pub fn design_view_names_of_file(path: &std::path::Path) -> Vec<String> {
         return Vec::new();
     };
     DocumentPackage::decode(&encoded)
-        .and_then(|package| package.restore_design_views())
+        .and_then(|package| package.open_option_design_view_names())
         .unwrap_or_default()
+}
+
+impl DocumentPackage {
+    fn open_option_design_view_names(&self) -> Result<Vec<String>, PackageCodecError> {
+        use oblikovati_api::contract::PartDesignView as _;
+        if self.manifest.document_type != oblikovati_api::types::DOCUMENT_PART.0 {
+            return self.restore_design_views();
+        }
+        let mut ids = self.restore_document_parameters()?.ids;
+        let Some(views) = self.restore_part_design_views(&mut ids)? else {
+            return self.restore_design_views();
+        };
+        Ok(views
+            .list()
+            .iter()
+            .filter(|view| !view.primary())
+            .map(|view| view.name())
+            .collect())
+    }
 }
 
 /// A closed file's properties by name and text, whichever set holds them; a file that cannot
@@ -88,5 +107,14 @@ mod tests {
         package.root.insert(SECTION.into(), Value::from(3));
         let cause = package.restore_design_views().unwrap_err().to_string();
         assert!(cause.contains("expected a list of view names"), "{cause}");
+    }
+    #[test]
+    fn part_open_options_include_saved_views_without_repeating_primary() {
+        let package = DocumentPackage::empty(oblikovati_api::types::DOCUMENT_PART, "Part");
+        let mut views = oblikovati_model::part_design_view::PartDesignViews::default();
+        views.copy(1, 6, "Review").unwrap();
+        let stored = package.with_part_design_views(Some(&views)).unwrap();
+        let names = stored.open_option_design_view_names().unwrap();
+        assert_eq!(names, ["Isometric", "Front", "Top", "Right", "Review"]);
     }
 }

@@ -47,6 +47,7 @@ impl<
     pub(super) fn restore_document_history(
         &mut self,
         action: DesktopHistoryAction,
+        window: Option<&mut dyn crate::HeadWindow>,
     ) -> Option<DesktopCommandNotice> {
         let Some(document) = self.files.workspace().active_document() else {
             return Some(history_failure(
@@ -66,14 +67,21 @@ impl<
             Err(cause) => return Some(history_failure(action, cause.to_string())),
             _ => {}
         }
-        Some(self.call_document_history(document, action))
+        Some(self.call_document_history(document, action, window))
     }
     fn call_document_history(
         &mut self,
         document: u64,
         action: DesktopHistoryAction,
+        window: Option<&mut dyn crate::HeadWindow>,
     ) -> DesktopCommandNotice {
-        let client = Client::new(self.document_host());
+        let mut display = window.map(crate::part_view_display::WindowPartViewDisplay);
+        let host = self.document_host();
+        let host = match display.as_mut() {
+            Some(display) => host.with_part_view_display(display),
+            None => host,
+        };
+        let client = Client::new(host);
         let result = match action {
             DesktopHistoryAction::Undo => client.transactions().undo(),
             DesktopHistoryAction::Redo => client.transactions().redo(),

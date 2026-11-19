@@ -4,16 +4,7 @@ use super::*;
 
 #[derive(Debug, Default)]
 pub(crate) struct ModelStateEdit {
-    pending: Option<(u64, Vec<u64>)>,
-    draft: Option<ModelStateDraft>,
-}
-#[derive(Debug)]
-struct ModelStateDraft {
-    document: u64,
-    id: u64,
-    name: String,
-    focus: bool,
-    error: Option<String>,
+    core: browser_inline_edit::BrowserInlineEdit,
 }
 impl ModelStateEdit {
     fn request(
@@ -21,38 +12,24 @@ impl ModelStateEdit {
         document: u64,
         states: &oblikovati_model::model_state::ModelStateMembers,
     ) {
-        self.pending = Some((document, states.list().iter().map(|row| row.id).collect()));
-        self.draft = None;
+        self.core
+            .request(document, states.list().iter().map(|row| row.id));
     }
     pub(super) fn observe(
         &mut self,
         document: Option<u64>,
         states: &oblikovati_model::model_state::ModelStateMembers,
     ) {
-        if self.draft.as_ref().is_some_and(|draft| {
-            Some(draft.document) != document || !states.list().iter().any(|row| row.id == draft.id)
-        }) {
-            self.draft = None;
-        }
-        let Some((owner, before)) = self.pending.take() else {
-            return;
-        };
-        if Some(owner) != document {
-            return;
-        }
-        let Some(member) = states.list().iter().find(|row| !before.contains(&row.id)) else {
-            return;
-        };
-        self.draft = Some(ModelStateDraft {
-            document: owner,
-            id: member.id,
-            name: member.name.clone(),
-            focus: true,
-            error: None,
+        self.core.observe(document, || {
+            states
+                .list()
+                .iter()
+                .map(|row| (row.id, row.name.clone()))
+                .collect()
         });
     }
     pub(super) fn needs_open_branch(&self) -> bool {
-        self.draft.is_some() || self.pending.is_some()
+        self.core.needs_open_branch()
     }
     pub(super) fn draw(
         &mut self,
@@ -62,22 +39,18 @@ impl ModelStateEdit {
         states: &oblikovati_model::model_state::ModelStateMembers,
         actions: &mut Vec<GuiShellAction>,
     ) -> bool {
-        let Some(draft) = &mut self.draft else {
+        let Some((accept, cancel)) = self.core.input(
+            ui,
+            document,
+            member.id,
+            "model-state-edit",
+            "##model-state-name",
+        ) else {
             return false;
         };
-        if draft.id != member.id || Some(draft.document) != document {
+        let Some(draft) = self.core.draft.as_mut() else {
             return false;
-        }
-        let _id = ui.push_id(format!("model-state-edit-{}", member.id));
-        if std::mem::take(&mut draft.focus) {
-            ui.set_keyboard_focus_here();
-        }
-        let accept = ui
-            .input_text("##model-state-name", &mut draft.name)
-            .auto_select_all(true)
-            .enter_returns_true(true)
-            .build();
-        let cancel = ui.is_key_pressed_no_repeat(imgui::Key::Escape);
+        };
         if accept {
             let invalid = draft.name.trim().is_empty()
                 || draft.name.contains('\0')
@@ -97,12 +70,12 @@ impl ModelStateEdit {
                         },
                     });
                 }
-                self.draft = None;
+                self.core.draft = None;
             }
         } else if cancel {
-            self.draft = None;
+            self.core.draft = None;
         }
-        if let Some(message) = self.draft.as_ref().and_then(|row| row.error.as_ref()) {
+        if let Some(message) = self.core.draft.as_ref().and_then(|row| row.error.as_ref()) {
             ui.text(message);
         }
         true
@@ -112,9 +85,6 @@ impl ModelStateEdit {
 impl BrowserTree<'_> {
     pub(super) fn model_states(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
         let Some(states) = &self.browser.model_states else {
-            return;
-        };
-        let Some(_representations) = self.branch("Representations", true) else {
             return;
         };
         view.model_state_edit.observe(self.state.document, states);
@@ -246,7 +216,7 @@ impl BrowserTree<'_> {
     }
 }
 
-fn active_state_mark(ui: &Ui, position: [f32; 2]) {
+pub(super) fn active_state_mark(ui: &Ui, position: [f32; 2]) {
     let [x, y] = position;
     let scale = ui.current_font_size() / 13.;
     let color = ui.style_color(StyleColor::CheckMark);
