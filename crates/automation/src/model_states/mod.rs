@@ -5,8 +5,25 @@ use oblikovati_model::{
     history::{DocumentSnapshot, RecipeReservations},
     model_state::{ModelStateMember, ModelStateMembers},
 };
+mod parameter_projection;
+mod parameter_rename;
+mod property_edit;
+mod property_projection;
+mod property_view;
 mod query;
+pub(super) mod table_apply;
+mod table_apply_values;
+mod table_choices;
+mod table_rows;
+mod table_values;
+mod table_verify;
+mod table_view;
+pub(super) use parameter_projection::record_edits as record_parameter_edits;
+pub(super) use parameter_rename::plan as plan_parameter_rename;
+pub(super) use property_projection::record_edit as record_property_edit;
 pub(super) use query::list;
+pub(super) use table_verify::verify as verify_table;
+pub(super) use table_view::read as table;
 pub(super) enum MemberEdit {
     Create(CreateModelStateArgs),
     Rename(ModelStateNameArgs),
@@ -34,7 +51,8 @@ impl MemberEdit {
             .model_states
             .as_mut()
             .ok_or_else(|| Error("model-state edit: expected an active part document".into()))?;
-        match self {
+        let project = matches!(&self, Self::Activate(_) | Self::Delete(_));
+        let response = match self {
             Self::Create(request) => create(members, ids, request),
             Self::Rename(request) => {
                 members.rename(request.id, &request.name).map_err(Error)?;
@@ -49,7 +67,12 @@ impl MemberEdit {
                 members.delete(request.id).map_err(Error)?;
                 crate::encode(&member_list(members))
             }
+        }?;
+        if project {
+            parameter_projection::project(snapshot)?;
+            property_projection::project(snapshot)?;
         }
+        Ok(response)
     }
 }
 fn create(

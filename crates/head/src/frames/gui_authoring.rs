@@ -88,6 +88,12 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::SaveTheme { name } => owner.save_theme_from_gui(name),
         GuiShellAction::SetColorScheme(request) => owner.select_color_scheme_from_gui(request),
         GuiShellAction::SetTheme(name) => owner.select_theme_from_gui(name),
+        GuiShellAction::VerifyModelStateTable { document, request } => {
+            owner.verify_model_state_table_from_gui(*document, request)
+        }
+        GuiShellAction::SetModelStateTable { document, request } => {
+            owner.set_model_state_table_from_gui(*document, request)
+        }
         GuiShellAction::SetDocumentProperty(request) => {
             owner.set_document_property_from_gui(request)
         }

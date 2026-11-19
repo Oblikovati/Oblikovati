@@ -10,15 +10,109 @@ pub struct PreparedRefresh<'a> {
 }
 
 impl PreparedRefresh<'_> {
+    /// Read the staged snapshot; example: `prepared.snapshot()` before dependent replay.
+    pub fn snapshot(&self) -> &DocumentSnapshot {
+        self.candidate
+            .as_ref()
+            .map_or(&self.owner.current, |(snapshot, _)| snapshot)
+    }
+    /// Read the unchanged target history; example: `prepared.source()` before capture.
+    pub fn source(&self) -> &DocumentEditHistory {
+        self.owner
+    }
+
+    fn publish_scope(self) -> (bool, super::EvaluationScope) {
+        let owner = self.owner;
+        let changed = if let Some((snapshot, generation)) = self.candidate {
+            owner.current = snapshot;
+            owner.generation.store(generation, Ordering::Release);
+            true
+        } else {
+            false
+        };
+        (changed, owner.evaluation_scope())
+    }
     /// Publish the prepared candidate without further failure points.
     /// Example: `let changed = prepared.publish();` after another owner accepts an edit.
     pub fn publish(self) -> bool {
-        let Some((snapshot, generation)) = self.candidate else {
-            return false;
-        };
-        self.owner.current = snapshot;
-        self.owner.generation.store(generation, Ordering::Release);
-        true
+        self.publish_scope().0
+    }
+}
+
+/// A validated dependent refresh sealed to one source candidate (#4122).
+/// Example: `PreparedDependentRefresh::new(&edit, dependent)`.
+pub struct PreparedDependentRefresh<'a> {
+    seal: super::PreparedCandidateSeal,
+    refresh: PreparedRefresh<'a>,
+}
+impl<'a> PreparedDependentRefresh<'a> {
+    /// Read the staged dependent snapshot; example: `dependent.snapshot()` before replay.
+    pub fn snapshot(&self) -> &DocumentSnapshot {
+        self.refresh.snapshot()
+    }
+    /// Read its unchanged target history; example: `dependent.source()` before capture.
+    pub fn source(&self) -> &DocumentEditHistory {
+        self.refresh.source()
+    }
+    pub(crate) fn seal(&self) -> super::PreparedCandidateSeal {
+        self.seal.clone()
+    }
+    /// Associate an already validated refresh with its exact source candidate.
+    /// Example: `PreparedDependentRefresh::new(&edit, dependent)`.
+    pub fn new(edit: &super::PreparedPrivateEdit<'_>, refresh: PreparedRefresh<'a>) -> Self {
+        Self {
+            seal: edit.seal(),
+            refresh,
+        }
+    }
+}
+impl super::publication::private::Sealed for PreparedDependentRefresh<'_> {}
+impl super::PreparedPublication for PreparedDependentRefresh<'_> {
+    type Output = bool;
+    fn validate(&self, edit: &super::PreparedPrivateEdit<'_>) -> Result<(), String> {
+        if !self.seal.matches(edit) {
+            return Err("prepared dependent refresh: expected its exact source candidate".into());
+        }
+        Ok(())
+    }
+    fn install(self, _: &super::PublicationToken) -> bool {
+        self.refresh.publish()
+    }
+}
+
+/// A dependent snapshot and its validated replay, published under the target scope.
+/// Example: `PreparedDependentPublication::new(refresh, replay)`.
+pub struct PreparedDependentPublication<'a, P> {
+    refresh: PreparedDependentRefresh<'a>,
+    publication: P,
+}
+impl<'a, P> PreparedDependentPublication<'a, P> {
+    /// Pair a refresh with its prepared replay; example: `PreparedDependentPublication::new(refresh, replay)`.
+    pub fn new(refresh: PreparedDependentRefresh<'a>, publication: P) -> Self {
+        Self {
+            refresh,
+            publication,
+        }
+    }
+}
+impl<P: super::PreparedPublication> super::publication::private::Sealed
+    for PreparedDependentPublication<'_, P>
+{
+}
+impl<P: super::PreparedPublication> super::PreparedPublication
+    for PreparedDependentPublication<'_, P>
+{
+    type Output = (bool, super::EvaluationScope, P::Output);
+    fn validate(&self, edit: &super::PreparedPrivateEdit<'_>) -> Result<(), String> {
+        self.refresh.validate(edit)?;
+        self.publication.validate(edit)?;
+        self.publication
+            .validate_target(&self.refresh.source().evaluation_scope())
+    }
+    fn install(self, _: &super::PublicationToken) -> Self::Output {
+        let (changed, scope) = self.refresh.refresh.publish_scope();
+        let token = super::PublicationToken::for_scope(scope.clone());
+        (changed, scope, self.publication.install(&token))
     }
 }
 

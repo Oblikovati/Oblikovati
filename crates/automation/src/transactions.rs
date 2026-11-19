@@ -45,6 +45,18 @@ pub(super) fn apply(
         return jump(workspace, decode(method, request)?);
     }
     let id = target_document(workspace.workspace(), 0)?;
+    if let Some(direction) = prepared_table_navigation(workspace.workspace(), id, method)? {
+        let policy = workspace
+            .workspace()
+            .session(id)
+            .map_err(|error| Error(error.to_string()))?
+            .owned_checkpoint_prefix()
+            .and_then(|(policy, _)| policy);
+        workspace
+            .navigate_named_prepared(id, policy, direction)
+            .map_err(Error)?;
+        return encode(&state(workspace.workspace())?);
+    }
     let mut commands = workspace
         .commands(id)
         .map_err(|error| Error(error.to_string()))?;
@@ -122,4 +134,27 @@ fn jump(
         workspace.workspace(),
         TransactionHistoryArgs { document: id },
     )?)
+}
+
+fn prepared_table_navigation<O: TransactionObserver, W: WorkspaceObserver>(
+    workspace: &WorkspaceSession<O, W>,
+    id: u64,
+    method: &str,
+) -> Result<Option<oblikovati_model::history::PreparedNavigation>, Error> {
+    use oblikovati_model::history::PreparedNavigation;
+    let session = workspace
+        .session(id)
+        .map_err(|error| Error(error.to_string()))?;
+    let (label, direction) = match method {
+        METHOD_TRANSACTION_UNDO => (
+            session.undo_labels().last().copied(),
+            PreparedNavigation::Undo,
+        ),
+        METHOD_TRANSACTION_REDO => (
+            session.redo_labels().first().copied(),
+            PreparedNavigation::Redo,
+        ),
+        _ => return Ok(None),
+    };
+    Ok((label == Some("Edit Model State Table")).then_some(direction))
 }

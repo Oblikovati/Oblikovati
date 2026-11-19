@@ -25,6 +25,9 @@ impl EvaluationScope {
     pub fn is_current(&self, history: &DocumentEditHistory) -> bool {
         self.belongs_to(history) && !self.is_superseded()
     }
+    pub(crate) fn same_scope(&self, other: &Self) -> bool {
+        self.owner.ptr_eq(&other.owner) && self.generation == other.generation
+    }
     /// Prove history ownership independently of freshness; example: `scope.belongs_to(&history)` rejects a reopened document.
     pub fn belongs_to(&self, history: &DocumentEditHistory) -> bool {
         self.owner.ptr_eq(&Arc::downgrade(&history.generation))
@@ -46,6 +49,9 @@ impl EvaluationTransition {
             && self.source.generation == source.generation
             && self.target.is_current(history)
             && self.source.belongs_to(history)
+    }
+    pub(crate) fn target_scope(&self) -> EvaluationScope {
+        self.target.clone()
     }
     /// Read the accepted target generation; example: `transition.target_generation()`.
     pub fn target_generation(&self) -> u64 {

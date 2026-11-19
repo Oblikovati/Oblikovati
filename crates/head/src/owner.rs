@@ -52,6 +52,8 @@ mod metadata;
 mod model_browser;
 #[path = "owner_model_pick_cue.rs"]
 mod model_pick_cue;
+#[path = "owner_model_state_table.rs"]
+mod model_state_table;
 #[path = "owner_precise_input.rs"]
 pub(crate) mod owner_precise_input;
 #[path = "owner_work_sketch.rs"]
@@ -130,6 +132,12 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     themes: Option<oblikovati_model::theme::ThemeLibrary>,
     datum_fallback_theme: Option<Result<oblikovati_model::theme::ThemeDefinition, String>>,
     window_captures: Option<crate::DesktopWindowCaptures>,
+    model_state_table_cache: model_state_table::ModelStateTableCache,
+    model_state_verification: Option<(
+        u64,
+        oblikovati_api::wire::SetModelStateTableArgs,
+        oblikovati_api::wire::ModelStateTableVerification,
+    )>,
     files: FileWorkspace<O, W, F>,
     guids: G,
     factory: R,
@@ -249,6 +257,8 @@ impl<
             refused_close: Vec::new(),
             part_scenes: Default::default(),
             drawing_projections: Default::default(),
+            model_state_table_cache: Default::default(),
+            model_state_verification: None,
             drawing_projection_access: oblikovati_drawing::DrawingProjectionService,
             drawing_view_preview: None,
             extrusion_access: None,
@@ -442,23 +452,6 @@ impl<
             }
         }
         Ok(blocked)
-    }
-}
-impl<
-    O: TransactionObserver,
-    W: WorkspaceObserver,
-    F: DocumentFiles,
-    G: GuidSource,
-    R: DocumentObserverFactory<Observer = O> + HeadInvalidation,
-    S: DispatchWakeup,
-> crate::ScriptDocumentOwner for DesktopOwner<O, W, F, G, R, S>
-{
-    type Host<'a>
-        = FileHost<'a, O, W, F>
-    where
-        Self: 'a;
-    fn script_host(&mut self) -> Self::Host<'_> {
-        self.document_host()
     }
 }
 #[path = "owner_themes.rs"]

@@ -12,6 +12,28 @@ macro_rules! metadata_work_methods {
                 "GUI parameter {mutation:?} {request:?}: expected a document parameter owner"
             ))
         }
+        /// Check a table draft on the document owner.
+        /// Example: `work.verify_model_state_table_from_gui(id, &request)?`.
+        fn verify_model_state_table_from_gui(
+            &mut self,
+            document: u64,
+            request: &oblikovati_api::wire::SetModelStateTableArgs,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "model-state table {document} {request:?}: expected a document owner"
+            ))
+        }
+        /// Apply a model-state property table through the active document owner.
+        /// Example: `work.set_model_state_table_from_gui(id, &request)?`.
+        fn set_model_state_table_from_gui(
+            &mut self,
+            document: u64,
+            request: &oblikovati_api::wire::SetModelStateTableArgs,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "model-state table {document} {request:?}: expected a document owner"
+            ))
+        }
         /// Set metadata on the requested document through its owner.
         /// Example: `work.set_document_property_from_gui(&request)?`.
         fn set_document_property_from_gui(

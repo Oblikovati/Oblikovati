@@ -40,6 +40,30 @@ impl<
             });
         };
         let drawing_projections = self.gui_drawing_projections()?;
+        let (generation, is_part) = {
+            let session = self
+                .files
+                .workspace()
+                .session(document)
+                .map_err(|cause| cause.to_string())?;
+            (
+                session.generation(),
+                session.snapshot().model_states.is_some(),
+            )
+        };
+        let model_state_table = if is_part {
+            let files = &self.files;
+            Some(self.model_state_table_cache.get(document, generation, || {
+                oblikovati_api::client::Client::new(oblikovati_automation::FileQueryHost::new(
+                    files,
+                ))
+                .model_states()
+                .get_table(&oblikovati_api::json::EmptyObject::default())
+                .map_err(|cause| cause.to_string())
+            })?)
+        } else {
+            None
+        };
         let session = self
             .files
             .workspace()
@@ -149,6 +173,8 @@ impl<
                     .map_err(|cause| cause.to_string())?,
             ),
             parameters: self.gui_parameter_rows()?,
+            model_state_table,
+            model_state_verification: self.model_state_verification.clone(),
             document_properties: session
                 .snapshot()
                 .properties

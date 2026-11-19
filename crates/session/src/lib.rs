@@ -73,6 +73,7 @@ pub use part_append_engine::{OwnedPartCandidate, OwnedPartReplay};
 pub use part_candidate_engine::{OwnedCheckpointCandidate, OwnedCheckpointReplay};
 mod part_replay_engine;
 mod part_replay_store;
+mod prepared_command;
 
 struct BoundedGroup {
     token: TransactionToken,

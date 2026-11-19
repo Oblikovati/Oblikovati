@@ -2,8 +2,20 @@
 //! Owned model-state members; the built-in Primary member has a stable identity.
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
+mod parameter_table;
+mod property_table;
+mod row_batch;
 mod suppression;
+mod table_columns;
+pub use parameter_table::{
+    ModelStateParameterBase, ModelStateParameterTable, ModelStateParameterValue,
+};
+pub use property_table::{
+    ModelStatePropertyBase, ModelStatePropertyTable, ModelStatePropertyValue,
+};
+pub use row_batch::ModelStateRowEdit;
 pub use suppression::ModelStateEditScope;
+pub use table_columns::ModelStateTableColumn;
 
 /// A named document member. Example: `members.active().map(|member| member.name.as_str())`.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -21,8 +33,14 @@ pub struct ModelStateMembers {
     active: u64,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     suppression: BTreeMap<u64, BTreeMap<u64, bool>>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    table_columns: Vec<ModelStateTableColumn>,
     #[serde(default)]
     scope: ModelStateEditScope,
+    #[serde(default, skip_serializing_if = "property_table_is_empty")]
+    property_table: ModelStatePropertyTable,
+    #[serde(default, skip_serializing_if = "ModelStateParameterTable::is_empty")]
+    parameter_table: ModelStateParameterTable,
 }
 
 impl Default for ModelStateMembers {
@@ -34,13 +52,16 @@ impl Default for ModelStateMembers {
             }],
             active: 1,
             suppression: BTreeMap::new(),
+            table_columns: Vec::new(),
             scope: ModelStateEditScope::SingleMember,
+            property_table: ModelStatePropertyTable::default(),
+            parameter_table: ModelStateParameterTable::default(),
         }
     }
 }
 
 impl ModelStateMembers {
-    /// Inspect members in creation order. Example: `members.list().len()`.
+    /// Inspect members in table order. Example: `members.list().len()`.
     pub fn list(&self) -> &[ModelStateMember] {
         &self.members
     }
@@ -68,7 +89,10 @@ impl ModelStateMembers {
             seen.insert(member.id, &member.name)?;
         }
         seen.activate(self.active)?;
-        self.validate_suppression()
+        self.validate_suppression()?;
+        self.validate_table_columns(&self.table_columns)?;
+        self.property_table.validate(&self.members)?;
+        self.parameter_table.validate(&self.members)
     }
 
     /// Create an inactive member with an externally reserved identity. Example: `members.insert(id, "Variant")?`.
@@ -80,6 +104,8 @@ impl ModelStateMembers {
             ));
         }
         let inherited = self.suppression.get(&self.active).cloned();
+        self.property_table.clone_member(self.active, id);
+        self.parameter_table.clone_member(self.active, id);
         self.members.push(ModelStateMember {
             id,
             name: name.into(),
@@ -123,6 +149,8 @@ impl ModelStateMembers {
         }
         let overrides = self.suppression.get(&source).cloned();
         self.insert(reserved, name)?;
+        self.property_table.clone_member(source, reserved);
+        self.parameter_table.clone_member(source, reserved);
         self.suppression.remove(&reserved);
         if let Some(overrides) = overrides {
             self.suppression.insert(reserved, overrides);
@@ -143,9 +171,68 @@ impl ModelStateMembers {
             .ok_or_else(|| format!("model-state ID {id}: expected an existing member"))?;
         self.members.remove(index);
         self.suppression.remove(&id);
+        self.property_table.forget_member(id);
+        self.parameter_table.forget_member(id);
         if self.active == id {
             self.active = 1;
         }
+        Ok(())
+    }
+
+    /// Reorder every member without changing identities; example: `members.reorder(&[1, 3, 2])?`.
+    pub fn reorder(&mut self, order: &[u64]) -> Result<(), String> {
+        if order.len() != self.members.len() || order.first() != Some(&1) {
+            return Err(format!(
+                "model-state order {order:?}: expected Primary first and every member exactly once"
+            ));
+        }
+        let mut reordered = Vec::with_capacity(order.len());
+        for id in order {
+            let member = self
+                .members
+                .iter()
+                .find(|member| member.id == *id)
+                .ok_or_else(|| {
+                    format!("model-state order {order:?}: expected existing unique members")
+                })?;
+            if reordered
+                .iter()
+                .any(|previous: &ModelStateMember| previous.id == *id)
+            {
+                return Err(format!(
+                    "model-state order {order:?}: expected existing unique members"
+                ));
+            }
+            reordered.push(member.clone());
+        }
+        self.members = reordered;
+        Ok(())
+    }
+
+    /// Inspect retained parameter expressions; example: `members.parameter_table()`.
+    pub fn parameter_table(&self) -> &ModelStateParameterTable {
+        &self.parameter_table
+    }
+
+    /// Adopt validated parameter expressions; example: `members.set_parameter_table(candidate)?`.
+    pub fn set_parameter_table(
+        &mut self,
+        candidate: ModelStateParameterTable,
+    ) -> Result<(), String> {
+        candidate.validate(&self.members)?;
+        self.parameter_table = candidate;
+        Ok(())
+    }
+
+    /// Inspect the property table; example: `members.property_table()`.
+    pub fn property_table(&self) -> &ModelStatePropertyTable {
+        &self.property_table
+    }
+
+    /// Adopt a validated property table; example: `members.set_property_table(candidate)?`.
+    pub fn set_property_table(&mut self, candidate: ModelStatePropertyTable) -> Result<(), String> {
+        candidate.validate(&self.members)?;
+        self.property_table = candidate;
         Ok(())
     }
 
@@ -176,5 +263,20 @@ impl ModelStateMembers {
     }
 }
 
+fn property_table_is_empty(table: &ModelStatePropertyTable) -> bool {
+    table.values().is_empty() && table.bases().is_empty()
+}
+
+#[cfg(test)]
+mod property_table_tests;
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod parameter_table_tests;
+#[cfg(test)]
+mod row_batch_tests;
+#[cfg(test)]
+mod suppression_table_tests;
+#[cfg(test)]
+mod table_columns_tests;

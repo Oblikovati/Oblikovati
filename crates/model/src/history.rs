@@ -64,7 +64,12 @@ mod sketch_ids;
 pub use sketch_constraints::{SketchConstraintReservationError, SketchConstraintReservations};
 pub use sketch_delete::{DocumentSketchDeleteError, DocumentSketchDeleteReport};
 mod preview;
-pub use preview::SnapshotReplay;
+pub(crate) mod publication;
+pub use preview::{PreparedCandidateSeal, PreparedNavigation, PreparedPrivateEdit, SnapshotReplay};
+pub use publication::{
+    PreparedChoice, PreparedMapped, PreparedPublication, PreparedValue, PublicationToken,
+    publish_prepared,
+};
 mod sketch_placement;
 mod sketch_projection;
 mod sketch_recompute;
@@ -78,7 +83,7 @@ pub use sketch_edit_history::SketchEditTransition;
 mod refresh;
 mod sketch_consequence;
 pub use error::{EditError, HistoryError};
-pub use refresh::PreparedRefresh;
+pub use refresh::{PreparedDependentPublication, PreparedDependentRefresh, PreparedRefresh};
 use std::sync::{
     Arc,
     atomic::{AtomicU64, Ordering},
@@ -195,6 +200,7 @@ impl DocumentEditHistory {
     pub fn new(snapshot: DocumentSnapshot, ids: RecipeIdAllocator) -> Result<Self, HistoryError> {
         snapshot.validate_datum_metadata()?;
         snapshot.validate_model_state_members()?;
+        snapshot.validate_member_parameter_expressions()?;
         snapshot
             .validate_scalar_ownership()
             .map_err(HistoryError::ScalarOwnership)?;
@@ -434,6 +440,7 @@ mod tests;
 
 mod metadata_recipe;
 mod model_state_ids;
+mod model_state_parameter_validation;
 mod model_state_suppression;
 
 mod sketch_split;

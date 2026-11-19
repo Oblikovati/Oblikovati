@@ -15,6 +15,22 @@ pub(super) trait CommandOwner {
     fn workspace(&self) -> &WorkspaceSession<Self::Observer, Self::WorkspaceObserver>;
     fn commands(&mut self, id: u64) -> Result<SessionCommands<'_, Self::Observer>, WorkspaceError>;
     fn refresh_after_command(&mut self, id: u64) -> Result<(), Error>;
+    fn navigate_named_prepared(
+        &mut self,
+        id: u64,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        direction: oblikovati_model::history::PreparedNavigation,
+    ) -> Result<(), String>;
+    fn run_named_prepared<R, T>(
+        &mut self,
+        id: u64,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        edit: impl FnOnce(
+            &mut oblikovati_model::history::DocumentSnapshot,
+            &mut oblikovati_model::history::RecipeReservations<'_>,
+        ) -> Result<R, String>,
+        project: impl FnOnce(&oblikovati_model::history::DocumentSnapshot, R, u64) -> Result<T, String>,
+    ) -> Result<T, String>;
 }
 impl<O: TransactionObserver, W: WorkspaceObserver> CommandOwner for WorkspaceSession<O, W> {
     type Observer = O;
@@ -28,6 +44,26 @@ impl<O: TransactionObserver, W: WorkspaceObserver> CommandOwner for WorkspaceSes
     fn refresh_after_command(&mut self, _id: u64) -> Result<(), Error> {
         Ok(())
     }
+    fn navigate_named_prepared(
+        &mut self,
+        id: u64,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        direction: oblikovati_model::history::PreparedNavigation,
+    ) -> Result<(), String> {
+        self.navigate_unlinked_prepared(id, policy, direction)
+    }
+    fn run_named_prepared<R, T>(
+        &mut self,
+        id: u64,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        edit: impl FnOnce(
+            &mut oblikovati_model::history::DocumentSnapshot,
+            &mut oblikovati_model::history::RecipeReservations<'_>,
+        ) -> Result<R, String>,
+        project: impl FnOnce(&oblikovati_model::history::DocumentSnapshot, R, u64) -> Result<T, String>,
+    ) -> Result<T, String> {
+        self.run_unlinked_prepared(id, policy, edit, project)
+    }
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> CommandOwner
     for FileWorkspace<O, W, F>
@@ -39,6 +75,26 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> CommandOwne
     }
     fn commands(&mut self, id: u64) -> Result<SessionCommands<'_, O>, WorkspaceError> {
         self.commands(id)
+    }
+    fn navigate_named_prepared(
+        &mut self,
+        id: u64,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        direction: oblikovati_model::history::PreparedNavigation,
+    ) -> Result<(), String> {
+        FileWorkspace::navigate_named_prepared(self, id, policy, direction)
+    }
+    fn run_named_prepared<R, T>(
+        &mut self,
+        id: u64,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+        edit: impl FnOnce(
+            &mut oblikovati_model::history::DocumentSnapshot,
+            &mut oblikovati_model::history::RecipeReservations<'_>,
+        ) -> Result<R, String>,
+        project: impl FnOnce(&oblikovati_model::history::DocumentSnapshot, R, u64) -> Result<T, String>,
+    ) -> Result<T, String> {
+        FileWorkspace::run_named_prepared(self, id, policy, edit, project)
     }
     fn refresh_after_command(&mut self, id: u64) -> Result<(), Error> {
         if self
@@ -61,9 +117,12 @@ pub(super) fn edit(
     method: &str,
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
+    if method == oblikovati_api::wire::METHOD_MODEL_STATES_SET_TABLE {
+        return crate::model_states::table_apply::set(owner, crate::decode(method, request)?);
+    }
     let edit = PreparedEdit::decode(method, request)?;
     let id = edit.document(owner.workspace().active_document())?;
-    if edit.is_parameter_value_edit() {
+    if edit.requires_checkpoint_replay() {
         return crate::checkpoint_replay::try_edit(owner, edit, id);
     }
     apply_edit(owner, edit, id)

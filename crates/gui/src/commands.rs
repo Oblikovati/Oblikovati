@@ -224,6 +224,18 @@ pub enum GuiShellAction {
     SetDocumentProperty(oblikovati_api::wire::SetPropertyArgs),
     /// Open the metadata editor of the active document.
     OpenIProperties,
+    /// Open the active part model-state property table.
+    OpenModelStateTable,
+    /// Check a model-state table draft without changing the document.
+    VerifyModelStateTable {
+        document: u64,
+        request: oblikovati_api::wire::SetModelStateTableArgs,
+    },
+    /// Apply one model-state table draft through the document owner.
+    SetModelStateTable {
+        document: u64,
+        request: oblikovati_api::wire::SetModelStateTableArgs,
+    },
     NewPart,
     CreateDocument(crate::GuiDocumentTemplate),
     /// Picture the active window for the Save As preview; the file is not changed.

@@ -83,6 +83,40 @@ impl<Body, Failure> PartReplayCheckpoints<Body, Failure> {
         Ok(PartReplayCheckpoints { states })
     }
 }
+impl<B: crate::history::PreparedPublication, F> crate::history::publication::private::Sealed
+    for PartReplayCheckpoints<B, F>
+{
+}
+impl<B: crate::history::PreparedPublication, F> crate::history::PreparedPublication
+    for PartReplayCheckpoints<B, F>
+{
+    type Output = PartReplayCheckpoints<B::Output, F>;
+    fn validate(&self, edit: &crate::history::PreparedPrivateEdit<'_>) -> Result<(), String> {
+        for state in &self.states {
+            for body in state.bodies.values() {
+                body.validate(edit)?;
+            }
+        }
+        Ok(())
+    }
+    fn validate_target(&self, source: &crate::history::EvaluationScope) -> Result<(), String> {
+        for state in &self.states {
+            for body in state.bodies.values() {
+                body.validate_target(source)?;
+            }
+        }
+        Ok(())
+    }
+    fn install(self, token: &crate::history::PublicationToken) -> Self::Output {
+        let mapped = self
+            .try_map_owned_bodies(|_, body| Ok::<_, std::convert::Infallible>(body.install(token)));
+        match mapped {
+            Ok(value) => value,
+            Err(never) => match never {},
+        }
+    }
+}
+
 impl DocumentSnapshot {
     /// Evaluate once and retain each ordered prefix; example: `snapshot.evaluate_part_with_checkpoints(&mut backend)?`.
     /// Native bodies must clone as immutable handles, and the caller owns generation and policy checks.

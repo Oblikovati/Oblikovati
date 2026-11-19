@@ -14,6 +14,43 @@ pub(in crate::prism::named) struct CapturedBlendTopology {
 }
 
 impl CapturedBlendTopology {
+    pub(in crate::prism::named) fn prepare(
+        mut self,
+        candidate: &oblikovati_model::history::PreparedPrivateEdit<'_>,
+        dependent: Option<&oblikovati_model::history::PreparedDependentRefresh<'_>>,
+        document: DocumentGuid,
+    ) -> Result<
+        (
+            oblikovati_model::history::PreparedValue<Self>,
+            oblikovati_model::identity::PreparedExactReferenceBindings<Shape>,
+        ),
+        String,
+    > {
+        let entries = std::mem::take(&mut self.entries);
+        let bindings =
+            crate::prism::named::captured::prepare_index(candidate, dependent, document, entries)?;
+        Ok((
+            oblikovati_model::history::PreparedValue::new(candidate, self),
+            bindings,
+        ))
+    }
+
+    pub(in crate::prism::named) fn assemble(
+        self,
+        bindings: ExactReferenceBindings<Shape>,
+    ) -> BlendNamedTopology {
+        BlendNamedTopology {
+            resolution: self.resolution,
+            achieved_tolerance: self.achieved_tolerance,
+            live: self.live,
+            deleted: self.deleted,
+            bindings,
+            active_body: self.active_body,
+            primary_body: self.primary_body,
+            shape: self.shape,
+        }
+    }
+
     pub(in crate::prism::named) fn restore(
         self,
         history: &DocumentEditHistory,

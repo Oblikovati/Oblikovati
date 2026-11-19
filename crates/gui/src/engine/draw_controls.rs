@@ -186,6 +186,12 @@ impl GuiFrameEngine {
             self.part_context_open,
             &mut selected,
         );
+        if selected.contains(&GuiShellAction::OpenModelStateTable) {
+            self.model_state_table.open(&request.commands);
+        }
+        selected.retain(|action| !matches!(action, GuiShellAction::OpenModelStateTable));
+        self.model_state_table
+            .panel(ui, &request.commands, &mut selected);
         let open_offset = selected.contains(&GuiShellAction::OpenOffsetPlane);
         selected.retain(|action| !matches!(action, GuiShellAction::OpenOffsetPlane));
         if open_offset || self.offset_plane.active() {

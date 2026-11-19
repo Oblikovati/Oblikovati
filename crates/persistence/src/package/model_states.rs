@@ -77,6 +77,58 @@ mod tests {
         super::super::validation::validate_root(&stored.root).unwrap();
     }
     #[test]
+    fn authored_property_cells_survive_native_yaml_round_trip() {
+        use oblikovati_api::types::{ModelStatePropertyKey, Variant, VariantValue};
+        use oblikovati_model::model_state::{
+            ModelStatePropertyBase, ModelStatePropertyTable, ModelStatePropertyValue,
+        };
+        let package = DocumentPackage::empty(DOCUMENT_PART, "Part");
+        let mut members = ModelStateMembers::default();
+        members.insert(2, "Review").unwrap();
+        let key = ModelStatePropertyKey {
+            set: "Summary Information".into(),
+            name: "Category".into(),
+        };
+        let value = Variant {
+            value: VariantValue::String("Prototype".into()),
+            unit: String::new(),
+        };
+        let table = ModelStatePropertyTable::new(
+            vec![key.clone()],
+            vec![ModelStatePropertyValue {
+                member: 2,
+                property: key.clone(),
+                value: value.clone(),
+            }],
+        )
+        .with_bases(vec![ModelStatePropertyBase {
+            property: key.clone(),
+            value: None,
+        }]);
+        members.set_property_table(table).unwrap();
+        members
+            .set_table_columns(vec![
+                oblikovati_model::model_state::ModelStateTableColumn::Property(key.clone()),
+            ])
+            .unwrap();
+        let encoded = package
+            .with_model_states(Some(&members))
+            .unwrap()
+            .encode()
+            .unwrap();
+        let restored = DocumentPackage::decode(&encoded)
+            .unwrap()
+            .restore_model_states()
+            .unwrap()
+            .unwrap();
+        assert_eq!(restored, members);
+        assert_eq!(
+            restored.property_table().effective_value(2, &key),
+            Some(&value)
+        );
+        assert!(restored.property_table().effective_value(1, &key).is_none());
+    }
+    #[test]
     fn malformed_and_wrong_document_members_are_refused() {
         let mut package = DocumentPackage::empty(DOCUMENT_PART, "Part");
         package.root.insert(SECTION.into(), Value::from(3));

@@ -5,6 +5,19 @@ use oblikovati_model::{parameter::ParameterError, quantity::Quantity};
 use std::collections::BTreeMap;
 
 impl<O: TransactionObserver> DocumentSession<O> {
+    /// Validate a complete derived snapshot without changing history or identities.
+    /// Example: `session.preview_refresh_snapshot(candidate)?` before a table verification.
+    pub fn preview_refresh_snapshot(
+        &self,
+        candidate: oblikovati_model::history::DocumentSnapshot,
+    ) -> Result<(), String> {
+        self.history
+            .preview_refresh(|snapshot| {
+                *snapshot = candidate;
+                Ok::<_, String>(())
+            })
+            .map_err(|error| error.to_string())
+    }
     /// Refresh a derived table as a consequence of its source, preserving target undo/redo.
     /// Example: `session.refresh_derived_table(table, Some(&values))?` after source evaluation.
     pub fn refresh_derived_table(
@@ -25,7 +38,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
     }
 }
 
-fn refresh_source_snapshot(
+pub(crate) fn refresh_source_snapshot(
     snapshot: &mut oblikovati_model::history::DocumentSnapshot,
     table: i64,
     source: Option<&BTreeMap<String, Quantity>>,

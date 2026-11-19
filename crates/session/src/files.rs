@@ -27,6 +27,8 @@ mod part_candidate;
 mod part_recompute;
 mod propagation;
 mod refresh;
+mod staged_propagation;
+mod staged_publication;
 pub use propagation::{BlockedDerivedDocument, DerivedRefreshFailure, DerivedRefreshReport};
 mod save_as;
 mod sketch_inference;

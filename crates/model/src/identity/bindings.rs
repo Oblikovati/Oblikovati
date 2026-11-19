@@ -14,6 +14,115 @@ pub struct ExactReferenceBindings<Entity> {
     scope: EvaluationScope,
     entries: Arc<BTreeMap<Vec<u8>, Entity>>,
 }
+/// An exact index prepared for one private edit (#4122).
+/// Example: `PreparedExactReferenceBindings::new(&edit, document, entries)?`.
+pub struct PreparedExactReferenceBindings<Entity> {
+    seal: crate::history::PreparedCandidateSeal,
+    bindings: ExactReferenceBindings<Entity>,
+}
+
+impl<Entity> PreparedExactReferenceBindings<Entity> {
+    /// Validate every name before the candidate can be published.
+    /// Example: `PreparedExactReferenceBindings::new(&edit, document, entries)?`.
+    pub fn new(
+        candidate: &crate::history::PreparedPrivateEdit<'_>,
+        document: DocumentGuid,
+        entries: impl IntoIterator<Item = (Vec<u8>, Entity)>,
+    ) -> Result<Self, String> {
+        let bindings = ExactReferenceBindings::from_entries(
+            document,
+            candidate.source().evaluation_scope(),
+            entries,
+        )?;
+        for (key, entity) in bindings.entries.iter() {
+            let kind = ReferenceEnvelope::decode(key)
+                .map_err(|error| error.to_string())?
+                .kind;
+            let resolved = bindings.bind(candidate.source(), document, key, kind)?;
+            if !std::ptr::eq(entity, resolved) {
+                return Err(format!(
+                    "prepared name {key:?}: expected the captured entity"
+                ));
+            }
+        }
+        Ok(Self {
+            seal: candidate.seal(),
+            bindings,
+        })
+    }
+
+    /// Prepare names for a dependent history under the same source candidate.
+    /// Example: `PreparedExactReferenceBindings::for_dependent(&dependent, document, entries)?`.
+    pub fn for_dependent(
+        dependent: &crate::history::PreparedDependentRefresh<'_>,
+        document: DocumentGuid,
+        entries: impl IntoIterator<Item = (Vec<u8>, Entity)>,
+    ) -> Result<Self, String> {
+        let bindings = ExactReferenceBindings::from_entries(
+            document,
+            dependent.source().evaluation_scope(),
+            entries,
+        )?;
+        for (key, entity) in bindings.entries.iter() {
+            let kind = ReferenceEnvelope::decode(key)
+                .map_err(|error| error.to_string())?
+                .kind;
+            let resolved = bindings.bind(dependent.source(), document, key, kind)?;
+            if !std::ptr::eq(entity, resolved) {
+                return Err(format!(
+                    "prepared name {key:?}: expected the captured entity"
+                ));
+            }
+        }
+        Ok(Self {
+            seal: dependent.seal(),
+            bindings,
+        })
+    }
+
+    /// Reject another candidate before publishing either the edit or its index.
+    /// Example: `let (index, transition) = names.publish(edit)?;`.
+    pub fn publish(
+        self,
+        candidate: crate::history::PreparedPrivateEdit<'_>,
+    ) -> Result<
+        (
+            ExactReferenceBindings<Entity>,
+            crate::history::EvaluationTransition,
+        ),
+        String,
+    > {
+        crate::history::publish_prepared(candidate, self)
+    }
+}
+
+impl<Entity> crate::history::publication::private::Sealed
+    for PreparedExactReferenceBindings<Entity>
+{
+}
+impl<Entity> crate::history::PreparedPublication for PreparedExactReferenceBindings<Entity> {
+    type Output = ExactReferenceBindings<Entity>;
+    fn validate(&self, candidate: &crate::history::PreparedPrivateEdit<'_>) -> Result<(), String> {
+        if !self.seal.matches(candidate) {
+            return Err("prepared name bindings: expected their exact private candidate".into());
+        }
+        if self.bindings.scope.is_superseded() {
+            return Err("prepared name bindings: expected the unchanged source history".into());
+        }
+        Ok(())
+    }
+    fn validate_target(&self, source: &EvaluationScope) -> Result<(), String> {
+        if !self.bindings.scope.same_scope(source) {
+            return Err("prepared name bindings: expected their exact target history".into());
+        }
+        Ok(())
+    }
+    fn install(mut self, token: &crate::history::PublicationToken) -> Self::Output {
+        self.bindings.scope = token.scope();
+        self.bindings
+    }
+}
+
 impl<Entity> ExactReferenceBindings<Entity> {
     /// Copy exact entries while their original owner remains current.
     /// Example: `bindings.capture_entries(&history, document)?` before an edit.

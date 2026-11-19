@@ -361,6 +361,20 @@ impl<O: TransactionObserver> DocumentSession<O> {
             checkpoints,
         })
     }
+    pub(crate) fn validate_prepared_replay_destination<Body, Failure>(
+        &self,
+        part: Option<&PartEvaluationSlot<Body, Failure>>,
+        checkpoints: Option<&PartCheckpointSlot<Body, Failure>>,
+    ) -> Result<(), PartEvaluationError> {
+        if let Some(previous) = part.and_then(|slot| slot.published.as_ref()) {
+            previous.validate_owner(self)?;
+        }
+        if let Some(previous) = checkpoints.and_then(|slot| slot.published.as_ref()) {
+            previous.validate_owner(self)?;
+        }
+        Ok(())
+    }
+
     /// Publish an accepted checkpoint set and its final part result together.
     /// Example: `session.adopt_replayed_checkpoints(completed, &mut part, &mut checkpoints)?`.
     pub fn adopt_replayed_checkpoints<Body: Clone, Failure: Clone>(
@@ -443,4 +457,25 @@ impl<Body, Failure> PartCandidateResult<'_, Body, Failure> {
         }
         Ok(())
     }
+}
+
+pub(crate) fn install_prepared_replay<Body: Clone, Failure: Clone>(
+    document: u64,
+    scope: EvaluationScope,
+    prepared: PartReplayCheckpoints<Body, Failure>,
+    part: &mut PartEvaluationSlot<Body, Failure>,
+    checkpoints: &mut PartCheckpointSlot<Body, Failure>,
+) {
+    let completed = CompletedPartCheckpoints {
+        document,
+        scope: scope.clone(),
+        checkpoints: prepared,
+    };
+    let result = CompletedPartEvaluation {
+        document,
+        scope,
+        evaluation: completed.checkpoints.result().clone(),
+    };
+    part.publish(result);
+    checkpoints.publish(completed);
 }

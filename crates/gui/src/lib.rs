@@ -160,3 +160,9 @@ mod context_parallel_tests;
 
 mod popup_press;
 mod window_frame;
+
+mod model_state_table;
+mod model_state_table_acceptance;
+mod model_state_table_cells;
+mod model_state_table_extra;
+mod model_state_table_rows;

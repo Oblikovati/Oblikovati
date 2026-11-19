@@ -399,6 +399,11 @@ impl GuiShellAction {
             .enabled(state),
             Self::Parameter { .. } => state.document.is_some(),
             Self::OpenIProperties => state.document.is_some(),
+            Self::OpenModelStateTable => state.model_state_table.is_some(),
+            Self::SetModelStateTable { document, .. }
+            | Self::VerifyModelStateTable { document, .. } => {
+                state.document == Some(*document) && !state.transaction_open
+            }
             Self::SetDocumentProperty(request) => {
                 state.document == Some(request.document) && !state.transaction_open
             }
