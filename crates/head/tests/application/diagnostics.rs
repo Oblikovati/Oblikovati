@@ -69,18 +69,28 @@ fn same_check_row(frame: &RenderedFrame, run: &RenderedRun, y: f32) -> bool {
     (y - run.center()[1]).abs() < frame.font_size * 0.5
 }
 fn is_popup_list(list: &imgui::DrawList) -> bool {
+    // SAFETY: diagnostics run on the GUI owner thread while its ImGui context is live;
+    // the borrowed context is not retained across another frame or context shutdown.
     let Some(context) = (unsafe { sys::igGetCurrentContext().as_ref() }) else {
         return false;
     };
     if context.Windows.Size <= 0 || context.Windows.Data.is_null() {
         return false;
     }
+    // SAFETY: ImGui owns this non-null array and its recorded positive length. No frame
+    // or window mutation occurs while the slice is borrowed, and it does not escape.
     let windows =
         unsafe { std::slice::from_raw_parts(context.Windows.Data, context.Windows.Size as usize) };
+    // SAFETY: `list` is borrowed from this context's completed draw data and remains
+    // live for this call; its raw address is used only for identity comparison.
     let draw = unsafe { list.raw() } as *const sys::ImDrawList;
     windows
         .iter()
-        .filter_map(|window| unsafe { window.as_ref() })
+        .filter_map(|window| {
+            // SAFETY: entries are ImGui-owned window pointers from the live context;
+            // null entries are skipped and no window is mutated during this borrow.
+            unsafe { window.as_ref() }
+        })
         .any(|window| {
             std::ptr::eq(window.DrawList, draw)
                 && window.Flags & sys::ImGuiWindowFlags_Popup as i32 != 0
