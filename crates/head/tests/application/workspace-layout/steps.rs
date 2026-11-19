@@ -227,6 +227,7 @@ fn browser_floating(world: &mut ApplicationWorld) {
 #[when("I drag the floating browser by its header to the left edge of the workspace")]
 #[when("I drag its header to the left edge of the workspace")]
 #[when("I drag the floating browser header to the left edge of the workspace")]
+#[when("the user drags the floating browser header to the left edge of the workspace")]
 fn drag_left(world: &mut ApplicationWorld) {
     let extent = world.extent();
     let area = world

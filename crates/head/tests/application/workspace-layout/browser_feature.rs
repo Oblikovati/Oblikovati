@@ -283,6 +283,7 @@ fn extrusion_collapsed(world: &mut ApplicationWorld) {
     world.expect_no_text(SKETCH);
 }
 #[when("I right-click the extrusion and choose Expand All Children")]
+#[when("the user right-clicks the extrusion and chooses Expand All Children")]
 fn expand_extrusion(world: &mut ApplicationWorld) {
     right_click_feature(world);
     choose_menu_row(world, "Expand All Children");
@@ -293,6 +294,7 @@ fn sketch_child(world: &mut ApplicationWorld) {
     world.expect_text(SKETCH);
 }
 #[when("I right-click the extrusion and choose Collapse All Children")]
+#[when("the user right-clicks the extrusion and chooses Collapse All Children")]
 fn collapse_extrusion(world: &mut ApplicationWorld) {
     right_click_feature(world);
     choose_menu_row(world, "Collapse All Children");

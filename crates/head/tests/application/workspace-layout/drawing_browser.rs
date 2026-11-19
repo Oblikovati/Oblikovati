@@ -57,6 +57,7 @@ fn nested_shown(world: &mut ApplicationWorld) {
 #[when("I open the drawing browser search field")]
 #[when("the user opens the drawing browser search field")]
 #[when("I open the floating browser search field")]
+#[when("the user opens the floating browser search field")]
 #[given("the drawing browser search field is open")]
 fn open_drawing_search(world: &mut ApplicationWorld) {
     world.click_text("Search");
@@ -121,6 +122,7 @@ fn drawing_search_hidden(world: &mut ApplicationWorld) {
     assert!(!close_shown, "expected no search close control");
 }
 #[when("I enter a query that matches no drawing browser entry")]
+#[when("the user enters a query that matches no drawing browser entry")]
 fn no_drawing_match(world: &mut ApplicationWorld) {
     type_in_search(world, "zzz");
 }
@@ -167,17 +169,31 @@ fn drawing_browser_floats(world: &mut ApplicationWorld) {
     floats_over_sheet(world);
 }
 #[when("I drag the drawing browser header to the right edge of the workspace")]
+#[when("the user drags the drawing browser header to the right edge of the workspace")]
 fn drawing_header_right(world: &mut ApplicationWorld) {
-    let width = world.extent()[0] as i32;
-    drag_header(world, [width - 10, 400]);
+    let extent = world.extent();
+    let area = world
+        .app()
+        .window
+        .native
+        .gui
+        .as_ref()
+        .unwrap()
+        .document_area(extent)
+        .unwrap();
+    drag_header(
+        world,
+        [area[2] as i32 - 15, ((area[1] + area[3]) / 2) as i32],
+    );
 }
 #[then("the drawing browser docks on the right")]
 fn drawing_docks_right(world: &mut ApplicationWorld) {
     let (position, size) = browser_geometry();
     let width = world.extent()[0] as f32;
+    let dock = super::super::diagnostics::window_dock_id("Model").unwrap_or_default();
     assert!(
-        position[0] + size[0] > width - 20. && position[0] > width / 2.,
-        "browser {position:?} {size:?}: expected the right edge"
+        dock != 0 && position[0] + size[0] > width - 20. && position[0] > width / 2.,
+        "browser {position:?} {size:?} dock {dock}: expected the right dock"
     );
 }
 #[then("its drawing resources and sheet tree remain visible")]
@@ -189,6 +205,7 @@ fn sheet_to_left(world: &mut ApplicationWorld) {
     expect_sheet_at(world, [500, 500]);
 }
 #[when("I drag the drawing browser header to the left edge of the workspace")]
+#[when("the user drags the drawing browser header to the left edge of the workspace")]
 fn drawing_header_left(world: &mut ApplicationWorld) {
     drag_left(world);
 }

@@ -14,6 +14,7 @@ fn drawing_browser_docked(world: &mut ApplicationWorld) {
     expect_docked_left(world);
 }
 #[when("I drag the browser header into the drawing area")]
+#[when("the user drags the browser header into the drawing area")]
 pub(super) fn drag_over_drawing(world: &mut ApplicationWorld) {
     drag_header(world, [800, 300]);
 }
