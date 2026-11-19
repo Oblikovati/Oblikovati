@@ -8,6 +8,49 @@ const SEGMENT: [[i32; 2]; 2] = [[620, 300], [840, 420]];
 
 #[given("the MCAD Software is running")]
 fn software_running(world: &mut ApplicationWorld) {
+    assert!(world.app.is_some(), "expected a running application window");
+    world.pump(Vec::new());
+}
+#[test]
+fn running_precondition_is_independent_of_document_and_sketch_state() {
+    let mut world = ApplicationWorld::new();
+    running_at_home(&mut world);
+    running_with_part(&mut world);
+    running_with_sketch(&mut world);
+    world.close();
+    assert!(
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| software_running(
+            &mut world
+        )))
+        .is_err()
+    );
+}
+fn running_at_home(world: &mut ApplicationWorld) {
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::NoDocument
+    );
+    software_running(world);
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::NoDocument
+    );
+}
+fn running_with_part(world: &mut ApplicationWorld) {
+    let document = world.add_part();
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Part
+    );
+    software_running(world);
+    assert_eq!(world.state().document, Some(document));
+    assert!(!world.state().sketch_at_ready);
+}
+fn running_with_sketch(world: &mut ApplicationWorld) {
+    world.start_sketch();
+    let sketch = world.state().active_sketch;
+    software_running(world);
+    assert_eq!(world.state().active_sketch, sketch);
     assert!(world.state().sketch_at_ready);
 }
 #[given("an empty editable planar sketch is active")]
