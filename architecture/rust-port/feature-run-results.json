@@ -273,7 +273,7 @@
   "features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature": {
     "feature_sha256": "645576c3b62e89cdb6c668d5579123e6880a33f9e4a8020f922f1b08e0502ca2",
     "supporting_files": {
-      "features/application/ribbon-panel-expansion/BLOCKERS.md": "c64fed62437c40db731594a3943a307903be4c2f7bf03ff91082c4430b1fa4e0",
+      "features/application/ribbon-panel-expansion/BLOCKERS.md": "e8ad6217b1ce64fe7a6031c48d92af9bc3bdd059b6925b1575b14cfcbe563e68",
       "features/application/ribbon-panel-expansion/FIXTURES.md": "38eec46e771394c170aefded5c1bb0714115da364c692a84fd83860158310d24",
       "features/application/ribbon-panel-expansion/FUNCTIONAL.md": "6cfb93ea59eeb1a2cd6767d490cf939421d12bc2d255666d7a9d53b316889e36",
       "features/application/ribbon-panel-expansion/VISUAL.md": "33e331d90ccd383b2d96e4a65435256747ed5b75004cf45622c460d01855b361",
@@ -324,11 +324,11 @@
       "features/application/ribbon-panel-expansion/unpinned-expansion-face-selection.svg": "db3c031bc230282b079d15f6f85a40c054b25f32fe77893bf03e6358a9237eff",
       "features/application/ribbon-panel-expansion/unpinned-tab-switch.svg": "ce5b07d3e0fee7c9de7f41b0210ce566b173add27dce5a2637acdbc0c93f4065"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-19-ribbon-expansion-b2eb4b171/cucumber.json",
-    "cucumber_sha256": "e31bc5866bf24ebe5ef077086c3b767fe3e96a7e170c564376adfdf1e1178bce",
-    "application_commit": "b2eb4b171",
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-ribbon-expansion-aefc6751f/cucumber.json",
+    "cucumber_sha256": "c6bd054288c5526f08978345f165aa16b8a9eefa1a6274f6a602cc6fbae37273",
+    "application_commit": "aefc6751f",
     "command": "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-panel-expansion xvfb-run -a -s \"-screen 0 1600x1000x24\" cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted native scenario input",
-    "notes": "Diagnostic full run: 39 of 67 scenarios passed; 24 stopped at undefined steps and four failed checks. The unversioned feature and three principal supporting documents matched before and after the run; the remaining supporting files match the previous recorded hashes. The unversioned source prevents strict verified acceptance."
+    "notes": "Diagnostic full run: 49 of 67 scenarios passed; 18 stopped at undefined steps. Feature and all supporting Markdown and SVG hashes matched before and after the run. The unversioned source prevents strict verified acceptance; BLOCKERS.md records a scenario/documentation conflict."
   }
 }
