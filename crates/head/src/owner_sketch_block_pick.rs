@@ -2,7 +2,9 @@
 //! Analytic picking in definition coordinates, projected back through the instance placement.
 use crate::{HeadSketchEdit, HeadWindow};
 use oblikovati_martensite::planar_curve::{PlanarPickOptionsV1, sketch::SketchPickQuery};
-use oblikovati_model::{document_sketch::SketchBlockInstance, history::DocumentSnapshot};
+use oblikovati_model::{
+    document_sketch::SketchBlockInstance, history::DocumentSnapshot, sketch::SketchEntityId,
+};
 use oblikovati_session::selection::SketchPickTarget;
 
 pub(super) fn nearest_block(
@@ -11,6 +13,17 @@ pub(super) fn nearest_block(
     pixel: [i32; 2],
     window: &dyn HeadWindow,
 ) -> Result<Option<(f64, SketchPickTarget)>, String> {
+    Ok(nearest_block_member(snapshot, edit, pixel, window, false)?
+        .map(|(distance, instance, _)| (distance, SketchPickTarget::BlockInstance(instance))))
+}
+
+pub(super) fn nearest_block_member(
+    snapshot: &DocumentSnapshot,
+    edit: HeadSketchEdit,
+    pixel: [i32; 2],
+    window: &dyn HeadWindow,
+    curves_only: bool,
+) -> Result<Option<(f64, SketchEntityId, SketchEntityId)>, String> {
     let Some(cursor) = window.sketch_point(pixel, edit.plane)? else {
         return Ok(None);
     };
@@ -23,14 +36,15 @@ pub(super) fn nearest_block(
     }
     let mut candidates = Vec::new();
     for instance in sketch.block_instances() {
-        if let Some(distance) = block_distance(snapshot, instance, cursor, edit, pixel, window)? {
-            candidates.push((distance, instance.id()));
+        if let Some((distance, member)) =
+            block_distance(snapshot, instance, cursor, edit, pixel, window, curves_only)?
+        {
+            candidates.push((distance, instance.id(), member));
         }
     }
     Ok(candidates
         .into_iter()
-        .min_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)))
-        .map(|(distance, id)| (distance, SketchPickTarget::BlockInstance(id))))
+        .min_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)).then(a.2.cmp(&b.2))))
 }
 
 fn block_distance(
@@ -40,7 +54,8 @@ fn block_distance(
     edit: HeadSketchEdit,
     pixel: [i32; 2],
     window: &dyn HeadWindow,
-) -> Result<Option<f64>, String> {
+    curves_only: bool,
+) -> Result<Option<(f64, SketchEntityId)>, String> {
     let definition = snapshot
         .sketches
         .block_definitions()
@@ -59,16 +74,37 @@ fn block_distance(
     let geometry = definition.geometry();
     let query = SketchPickQuery::new(geometry, local, PlanarPickOptionsV1::default())
         .map_err(|cause| cause.to_string())?;
-    let mut distance: Option<f64> = None;
+    let points: std::collections::BTreeSet<_> =
+        geometry.points().iter().map(|point| point.id).collect();
+    let mut witnesses = Vec::new();
     for id in geometry.entity_ids() {
+        if curves_only && points.contains(id) {
+            continue;
+        }
         let witness = query.candidate(*id).map_err(|cause| cause.to_string())?;
         let point = instance
             .to_sketch(witness.position)
             .map_err(|cause| cause.to_string())?;
-        let projected = window.sketch_pixel(edit.plane, point)?;
+        witnesses.push((*id, point));
+    }
+    let positions: Vec<_> = witnesses.iter().map(|(_, point)| *point).collect();
+    let pixels = window.sketch_pixels(edit.plane, &positions)?;
+    if pixels.len() != witnesses.len() {
+        return Err(format!(
+            "block projected {} positions: expected {}",
+            pixels.len(),
+            witnesses.len()
+        ));
+    }
+    let mut distance: Option<(f64, SketchEntityId)> = None;
+    for ((id, _), projected) in witnesses.into_iter().zip(pixels) {
         let candidate = super::sketch_picking::screen_distance(projected, pixel);
-        if candidate <= 12. && distance.is_none_or(|current| candidate < current) {
-            distance = Some(candidate);
+        if candidate <= super::sketch_picking::SKETCH_PICK_REACH
+            && distance.is_none_or(|current| {
+                candidate < current.0 || (candidate == current.0 && id < current.1)
+            })
+        {
+            distance = Some((candidate, id));
         }
     }
     Ok(distance)

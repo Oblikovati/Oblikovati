@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The sketch's inspection commands on the owner: Measure and Region Properties.
 use super::sketch_picking::{SketchPickFilter, pick_witness};
+#[path = "owner_inspect/measure_block.rs"]
+mod measure_block;
+#[path = "owner_inspect/measure_block_points.rs"]
+mod measure_block_points;
 #[path = "owner_inspect/measure_projection.rs"]
 mod measure_projection;
 use super::*;
@@ -225,17 +229,17 @@ impl<
         pixel: [i32; 2],
         window: &dyn HeadWindow,
     ) -> Result<Option<oblikovati_viewport::ViewportSketchFeedback>, String> {
+        if let Some(SketchToolState::Measure(tool)) = self.sketch_tool.as_ref()
+            && !self.sketch_context_valid(edit.document, edit.sketch, tool.generation)
+        {
+            return Ok(None);
+        }
         let session = self
             .files
             .workspace()
             .session(edit.document)
             .map_err(|cause| cause.to_string())?;
-        let sketch = session
-            .snapshot()
-            .sketches
-            .get(edit.sketch)
-            .map_err(|cause| cause.to_string())?;
-        let pick = measure_target(sketch.geometry(), edit.plane, pixel, window)?;
+        let pick = measure_block::target(session.snapshot(), edit, pixel, window)?;
         let pick = pick.filter(|candidate| match self.sketch_tool.as_ref() {
             Some(SketchToolState::Measure(tool)) => !tool.picks.contains(candidate),
             _ => false,
@@ -247,6 +251,13 @@ impl<
                     entities: vec![entity],
                 },
             ),
+            MeasurePick::BlockCurve { instance, member } => {
+                oblikovati_viewport::ViewportSketchFeedback::BlockMember {
+                    sketch: edit.sketch,
+                    instance,
+                    member,
+                }
+            }
             MeasurePick::Point(position) | MeasurePick::Middle(position) => {
                 oblikovati_viewport::ViewportSketchFeedback::Point {
                     sketch: edit.sketch,
@@ -284,30 +295,26 @@ impl<
         pixel: [i32; 2],
         window: &dyn HeadWindow,
     ) -> Result<bool, String> {
+        if !self.sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation) {
+            return Err(format!(
+                "measure sketch {:?}: expected the current sketch generation",
+                tool.edit.sketch
+            ));
+        }
         let session = self
             .files
             .workspace()
             .session(tool.edit.document)
             .map_err(|cause| cause.to_string())?;
         let snapshot = session.snapshot();
-        let geometry = snapshot
-            .sketches
-            .get(tool.edit.sketch)
-            .map_err(|cause| cause.to_string())?
-            .geometry();
         // A click on nothing starts the selection over, as Done would without closing the panel.
-        let Some(pick) = measure_target(geometry, tool.edit.plane, pixel, window)? else {
+        let Some(pick) = measure_block::target(snapshot, tool.edit, pixel, window)? else {
             tool.picks.clear();
             tool.rows.clear();
             return Ok(true);
         };
         tool.add_pick(pick);
-        let context = MeasureContext {
-            sketch: geometry,
-            plane: tool.edit.plane,
-            units: snapshot.parameters.units(),
-        };
-        tool.rows = measure_rows(&context, &tool.picks)?;
+        tool.rows = measure_block::rows(snapshot, tool.edit, &tool.picks)?;
         Ok(true)
     }
     /// One event while Region Properties is open; a press accepts or releases the loop under it.
@@ -385,19 +392,6 @@ fn selection_pixel(event: ViewportEvent) -> Option<[i32; 2]> {
         }) => Some(position),
         _ => None,
     }
-}
-/// Points first: they sit on their curves, so a curve would otherwise always win.
-fn measure_target(
-    geometry: &oblikovati_model::sketch::Sketch2D,
-    plane: SketchPlane,
-    pixel: [i32; 2],
-    window: &dyn HeadWindow,
-) -> Result<Option<MeasurePick>, String> {
-    if let Some(point) = measure_point(geometry, plane, pixel, window)? {
-        return Ok(Some(point));
-    }
-    let picked = pick_witness(geometry, plane, pixel, window, SketchPickFilter::Curves)?;
-    Ok(picked.map(|witness| MeasurePick::Curve(witness.entity)))
 }
 fn measure_point(
     geometry: &oblikovati_model::sketch::Sketch2D,
