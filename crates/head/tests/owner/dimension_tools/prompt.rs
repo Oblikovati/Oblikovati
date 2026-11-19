@@ -200,3 +200,77 @@ fn assert_dimension_undo_redo(owner: &mut TestOwner, expected: usize) {
         .unwrap();
     assert_eq!(dimensions(owner).len(), expected);
 }
+
+#[test]
+fn failed_placement_accept_keeps_the_choice_for_retry_or_cancel() {
+    use oblikovati_model::history::SketchPlacementFieldLock;
+    for retry in [false, true] {
+        let (mut owner, document, sketch) = geometric_owner(&[], false);
+        let mut settings = oblikovati_model::sketch_settings::default_sketch_settings();
+        settings.infer_constraints = false;
+        settings.over_constrained_behavior = oblikovati_api::types::OVER_CONSTRAINED_PROMPT;
+        Client::new(owner.document_host())
+            .documents()
+            .set_sketch_settings(&oblikovati_api::wire::SetSketchSettingsArgs {
+                document,
+                settings,
+            })
+            .unwrap();
+        owner.start_slot_placement(document, sketch, 2.).unwrap();
+        let mut recipe = SketchPlacementRecipe::straight_slot([[0., 0.], [10., 0.]], 2.).unwrap();
+        recipe.fields.push(recipe.fields[0].clone());
+        let lock = |expression: &str| {
+            Some(SketchPlacementFieldLock {
+                expression: expression.into(),
+                text_point: None,
+                reference: false,
+            })
+        };
+        let locks = vec![lock("unknown_width"), None, None, lock("20 cm")];
+        let Some(crate::sketch_tool::SketchToolState::Placement(mut tool)) =
+            owner.sketch_tool.take()
+        else {
+            panic!("expected placement");
+        };
+        owner
+            .set_pending_dimension(
+                &mut tool,
+                3,
+                crate::placement_input::PendingDimensionPlacement::Recipe { recipe, locks },
+            )
+            .unwrap();
+        owner.sketch_tool = Some(crate::sketch_tool::SketchToolState::Placement(tool));
+        let pending = draft(&mut owner);
+        let accept = GuiDimensionAction::Apply {
+            id: pending.id,
+            expression: pending.expression.clone(),
+            driven: true,
+        };
+        assert!(owner.dimension_tool_from_gui(&accept).is_err());
+        assert_eq!(draft(&mut owner).id, pending.id);
+        assert!(dimensions(&mut owner).is_empty());
+        if retry {
+            let Some(crate::sketch_tool::SketchToolState::Placement(tool)) =
+                owner.sketch_tool.as_mut()
+            else {
+                panic!("expected placement");
+            };
+            let Some(crate::placement_input::PendingDimensionChoice {
+                placement: crate::placement_input::PendingDimensionPlacement::Recipe { locks, .. },
+                ..
+            }) = &mut tool.pending_dimension
+            else {
+                panic!("expected pending recipe");
+            };
+            locks[0].as_mut().unwrap().expression = "10 cm".into();
+            owner.dimension_tool_from_gui(&accept).unwrap();
+            assert_eq!(dimensions(&mut owner).len(), 2);
+        } else {
+            owner
+                .dimension_tool_from_gui(&GuiDimensionAction::Cancel { id: pending.id })
+                .unwrap();
+            assert!(owner.gui_command_state().unwrap().dimension_draft.is_none());
+            assert!(dimensions(&mut owner).is_empty());
+        }
+    }
+}

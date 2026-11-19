@@ -80,12 +80,15 @@ impl<
                 "dimension choice {id}: expected the current choice"
             ));
         }
-        let choice = tool
-            .pending_dimension
-            .take()
-            .expect("choice identity was checked");
+        let Some(choice) = tool.pending_dimension.take() else {
+            return Err(format!("dimension choice {id}: expected a pending choice"));
+        };
         if accept {
-            self.accept_placement_dimension(tool, choice)?;
+            let original = choice.clone();
+            if let Err(error) = self.accept_placement_dimension(tool, choice) {
+                tool.pending_dimension = Some(original);
+                return Err(error);
+            }
         }
         Ok(true)
     }

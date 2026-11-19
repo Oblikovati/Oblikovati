@@ -15,6 +15,7 @@ mod formats;
 mod line;
 #[path = "typed_stage.rs"]
 mod typed_stage;
+#[derive(Clone)]
 pub(crate) enum PendingDimensionPlacement {
     Recipe {
         recipe: SketchPlacementRecipe,
@@ -25,6 +26,7 @@ pub(crate) enum PendingDimensionPlacement {
         pixel: Option<[i32; 2]>,
     },
 }
+#[derive(Clone)]
 pub(crate) struct PendingDimensionChoice {
     pub id: u64,
     pub index: usize,
