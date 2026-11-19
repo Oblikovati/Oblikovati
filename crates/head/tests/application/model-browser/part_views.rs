@@ -179,7 +179,7 @@ fn primary_active_before_copy(world: &mut ApplicationWorld) {
 }
 
 #[given("an inactive copied view representation exists")]
-fn inactive_view_copy(world: &mut ApplicationWorld) {
+pub(super) fn inactive_view_copy(world: &mut ApplicationWorld) {
     expanded_primary_view(world);
     copy_primary_view(world);
     rename_copied_view(world);
