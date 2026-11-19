@@ -19,10 +19,12 @@ fn origin_collapsed(world: &mut ApplicationWorld) {
     world.expect_no_text("X Axis");
 }
 #[when("I right-click Origin")]
+#[when("the user right-clicks Origin")]
 fn right_click_origin(world: &mut ApplicationWorld) {
     right_click_row(world, "Origin");
 }
 #[when("I choose Expand All Children")]
+#[when("the user chooses Expand All Children")]
 fn choose_expand(world: &mut ApplicationWorld) {
     choose_menu_row(world, "Expand All Children");
 }
@@ -32,6 +34,7 @@ fn origin_children(world: &mut ApplicationWorld) {
     expect_rows(world, &ORIGIN_CHILDREN);
 }
 #[when("I right-click Origin and choose Collapse All Children")]
+#[when("the user right-clicks Origin and chooses Collapse All Children")]
 fn collapse_origin(world: &mut ApplicationWorld) {
     right_click_origin(world);
     choose_menu_row(world, "Collapse All Children");

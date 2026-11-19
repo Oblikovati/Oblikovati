@@ -234,6 +234,7 @@ fn feature_visible(world: &mut ApplicationWorld) {
     world.expect_text(FEATURE);
 }
 #[when("I right-click the extrusion feature in the browser")]
+#[when("the user right-clicks the extrusion feature in the browser")]
 fn right_click_extrusion_row(world: &mut ApplicationWorld) {
     right_click_feature(world);
 }
@@ -261,6 +262,7 @@ fn highlighted(world: &mut ApplicationWorld) {
     expect_row_and_edges_highlighted(world);
 }
 #[when("I click the empty viewport area again")]
+#[when("the user clicks the empty viewport area again")]
 fn click_viewport(world: &mut ApplicationWorld) {
     click_empty_viewport(world);
 }
@@ -299,6 +301,7 @@ fn extrusion_expanded(world: &mut ApplicationWorld) {
     world.expect_text(SKETCH);
 }
 #[when("I right-click the sketch child in the browser")]
+#[when("the user right-clicks the sketch child in the browser")]
 fn right_click_sketch(world: &mut ApplicationWorld) {
     right_click_row(world, SKETCH);
 }
