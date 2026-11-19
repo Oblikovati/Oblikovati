@@ -1,0 +1,9 @@
+{
+  "application_commit": "6478db744",
+  "feature": "features/application/ribbon-appearance/ribbon-appearance.feature",
+  "feature_sha256": "7ebd05f3a8b347bd7eee5a132e7782ba9731a16f1bb0e8ac26a756fe5da312fa",
+  "scenario": "Cancel the Reset Ribbon confirmation",
+  "result": "1 scenario, 9 steps passed",
+  "environment": "Linux X11, Xvfb, software Vulkan; scripted window input",
+  "scope": "Focused scenario only; not a full-feature run. Source was unversioned."
+}
