@@ -166,6 +166,12 @@ impl DocumentSnapshot {
         SketchPlacementCreationError,
     > {
         let mut geometry = self.current_sketch_authoring_geometry_from(sketch, options, datums)?;
+        let settings = self.effective_sketch_settings();
+        let source = if settings.infer_constraints && settings.auto_apply_constraints {
+            Some(crate::sketch::SketchInferenceFreeze::capture(&geometry)?)
+        } else {
+            None
+        };
         let points = append_defining_positions(&mut geometry, &recipe.points, ids)
             .map_err(SketchPlacementCreationError::Primitive)?;
         // Primitives can add auxiliary points; infer before those can become fresh targets.
@@ -175,15 +181,13 @@ impl DocumentSnapshot {
             append_relations(&mut geometry, sketch, recipe, &points, &members, ids)?;
         let has_inference = !inferred.relations.is_empty() || !inferred.anchors.is_empty();
         relations.extend(inferred.relations);
-        let transient = if has_inference {
-            let original = self.current_sketch_authoring_geometry_from(sketch, options, datums)?;
-            Some(inference::TransientPlacement {
-                source: crate::sketch::SketchInferenceFreeze::capture(&original)?,
-                anchors: inferred.anchors,
-            })
-        } else {
-            None
-        };
+        let transient =
+            source
+                .filter(|_| has_inference)
+                .map(|source| inference::TransientPlacement {
+                    source,
+                    anchors: inferred.anchors,
+                });
         if let Some(context) = &transient {
             geometry = context
                 .solve(self, &geometry, sketch, options, datums)

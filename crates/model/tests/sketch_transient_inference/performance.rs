@@ -138,3 +138,51 @@ fn report(count: u64, method: &str, samples: &mut [Duration]) {
 fn ms(duration: Duration) -> f64 {
     duration.as_secs_f64() * 1000.0
 }
+
+#[test]
+#[ignore = "measure authoring solve and source capture in release mode"]
+fn measure_authoring_capture_cost() {
+    let mode = std::env::var("OBK_AUTHORING_BENCH_MODE").unwrap_or_else(|_| "all".into());
+    let cases = [
+        "snap_before",
+        "snap_after",
+        "no_snap_before",
+        "no_snap_after",
+    ];
+    assert!(mode == "all" || cases.contains(&mode.as_str()));
+    for count in [200_u64, 1000] {
+        let (source, _, _, _) = fixture(count);
+        let parameters = ParameterCollection::new(Default::default());
+        for case in cases {
+            if mode != "all" && mode != case {
+                continue;
+            }
+            let mut samples = Vec::new();
+            for iteration in 0..60 {
+                let start = Instant::now();
+                let current = authoring_source(&source, &parameters);
+                match case {
+                    "snap_before" => {
+                        let repeated = authoring_source(&source, &parameters);
+                        std::hint::black_box(SketchInferenceFreeze::capture(&repeated).unwrap());
+                    }
+                    "snap_after" | "no_snap_after" => {
+                        std::hint::black_box(SketchInferenceFreeze::capture(&current).unwrap());
+                    }
+                    _ => {}
+                }
+                std::hint::black_box(current);
+                if iteration >= 10 {
+                    samples.push(start.elapsed());
+                }
+            }
+            report(count, case, &mut samples);
+        }
+    }
+}
+fn authoring_source(source: &Sketch2D, parameters: &ParameterCollection<u64>) -> Sketch2D {
+    source
+        .solve_with_grounded_points(parameters, &[], SolveOptions::default(), || false)
+        .unwrap()
+        .into_candidate()
+}
