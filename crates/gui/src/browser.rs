@@ -9,6 +9,8 @@ pub(crate) mod browser_model_state;
 mod browser_part_view;
 #[path = "browser_part_view_edit.rs"]
 pub(crate) mod browser_part_view_edit;
+#[path = "browser_part_view_scale.rs"]
+pub(crate) mod browser_part_view_scale;
 #[path = "browser_drawing_tree.rs"]
 pub(crate) mod drawing_tree;
 use crate::application::workspace_layout::browser_view::BrowserView;

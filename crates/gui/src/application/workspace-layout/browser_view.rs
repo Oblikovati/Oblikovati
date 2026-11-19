@@ -49,6 +49,7 @@ pub(crate) struct BrowserView {
     pub feature_expansion: Option<(oblikovati_model::feature::FeatureId, bool)>,
     pub model_state_edit: crate::browser::browser_model_state::ModelStateEdit,
     pub part_view_edit: crate::browser::browser_part_view_edit::PartViewEdit,
+    pub part_view_scale: crate::browser::browser_part_view_scale::PartViewScaleDialog,
     pub hide_work_features: bool,
     /// Feature rows also say their operation and depth.
     pub show_extended_names: bool,

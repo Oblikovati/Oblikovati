@@ -18,10 +18,11 @@ impl<
     ) -> Result<bool, String> {
         use oblikovati_gui::GuiBrowserChoice::{
             ActivateModelState, ActivatePartView, Body, BodyVisible, CopyModelState, CopyPartView,
-            CreateModelState, LockPartView, Nothing, Occurrence, PartViewAutosave,
-            PartViewBodyVisibility, PublishPartView, RenameModelState, RenamePartView,
-            RestorePartViewCamera, Root, SavePartViewCamera, SetOccurrenceSuppressed,
-            ShowFeatureDimensions, SketchDimensionsShown, ToggleModelStateEditScope,
+            CreateModelState, LockPartView, Nothing, Occurrence, PartViewAnnotationScale,
+            PartViewAutosave, PartViewBodyVisibility, PublishPartView, RenameModelState,
+            RenamePartView, RestorePartViewCamera, Root, SavePartViewCamera,
+            SetOccurrenceSuppressed, ShowFeatureDimensions, SketchDimensionsShown,
+            ToggleModelStateEditScope,
         };
         self.require_browser_document(document)?;
         if matches!(choice, Body { toggle: true, .. })
@@ -79,6 +80,35 @@ impl<
                 .set_options(&oblikovati_api::wire::SetPartDesignViewOptionsArgs {
                     id: *id,
                     locked: Some(std::boxed::Box::new(*locked)),
+                    ..Default::default()
+                })
+                .map_err(|cause| cause.to_string())?;
+            return Ok(true);
+        }
+        if let PartViewAnnotationScale {
+            id,
+            numerator,
+            denominator,
+            custom,
+        } = choice
+        {
+            let mode = if *numerator == 0 {
+                oblikovati_api::types::PART_ANNOTATION_SCALE_AUTO
+            } else if *custom {
+                oblikovati_api::types::PART_ANNOTATION_SCALE_CUSTOM
+            } else {
+                oblikovati_api::types::PART_ANNOTATION_SCALE_FIXED
+            };
+            let scale = oblikovati_api::types::PartAnnotationScale {
+                mode,
+                numerator: *numerator,
+                denominator: *denominator,
+            };
+            oblikovati_api::client::Client::new(self.document_host())
+                .part_design_views()
+                .set_options(&oblikovati_api::wire::SetPartDesignViewOptionsArgs {
+                    id: *id,
+                    annotation_scale: Some(Box::new(scale)),
                     ..Default::default()
                 })
                 .map_err(|cause| cause.to_string())?;
@@ -177,6 +207,7 @@ impl<
             | LockPartView { .. }
             | PublishPartView { .. }
             | PartViewAutosave { .. }
+            | PartViewAnnotationScale { .. }
             | SavePartViewCamera(_)
             | RestorePartViewCamera(_)
             | PartViewBodyVisibility { .. }

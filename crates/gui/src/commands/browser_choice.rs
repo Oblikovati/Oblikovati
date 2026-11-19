@@ -30,6 +30,13 @@ pub enum GuiBrowserChoice {
         id: u64,
         published: bool,
     },
+    /// Set the active view's annotation ratio; zero numerator selects Auto.
+    PartViewAnnotationScale {
+        id: u64,
+        numerator: u32,
+        denominator: u32,
+        custom: bool,
+    },
     /// Show or hide every resolved body in the active part view.
     PartViewBodyVisibility {
         id: u64,

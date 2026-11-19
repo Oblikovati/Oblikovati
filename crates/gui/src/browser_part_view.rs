@@ -70,6 +70,8 @@ impl BrowserTree<'_> {
                 });
             }
             self.part_view_menu(entry, views, view, actions);
+            view.part_view_scale
+                .draw(self.ui, self.state.document, entry.id(), actions);
             if entry.active() {
                 browser_model_state::active_state_mark(self.ui, position);
             }
@@ -169,6 +171,7 @@ impl BrowserTree<'_> {
                 });
             }
         });
+        view.part_view_scale.menu(self.ui, document, entry, actions);
         if self
             .ui
             .menu_item_config("Publish")

@@ -302,3 +302,132 @@ fn restore_active_view_camera(world: &mut ApplicationWorld) {
 fn camera_indicates_front(world: &mut ApplicationWorld) {
     super::super::viewport_orientation::expect_control_shows(world, "Front");
 }
+
+#[given("its annotation scale is Auto")]
+fn active_view_scale_is_auto(world: &mut ApplicationWorld) {
+    let state = world.state();
+    let views = state.browser.unwrap().part_design_views.unwrap();
+    assert_eq!(
+        views.active().unwrap().annotation_scale().mode,
+        oblikovati_api::types::PART_ANNOTATION_SCALE_AUTO
+    );
+}
+
+#[when("the user opens the active view's context menu and expands Annotation Scale")]
+#[when("the user opens the active view's Annotation Scale submenu")]
+#[when("the user reopens the active view's Annotation Scale submenu")]
+#[when("the user reopens the Annotation Scale submenu")]
+fn open_annotation_scale_menu(world: &mut ApplicationWorld) {
+    right_click_row(world, "Capture View");
+    let at = super::super::diagnostics::pointer_pixels(world.run("Annotation Scale").center());
+    world.hover(at);
+    world.pump(Vec::new());
+}
+
+#[then("Auto is checked")]
+fn annotation_auto_checked(world: &mut ApplicationWorld) {
+    assert!(world.checked("Auto"));
+}
+#[then("Auto is not checked")]
+fn annotation_auto_unchecked(world: &mut ApplicationWorld) {
+    assert!(!world.checked("Auto"));
+}
+#[then("1:1 is checked")]
+fn annotation_one_checked(world: &mut ApplicationWorld) {
+    assert!(world.checked("1:1"));
+}
+#[then("1:1 is not checked")]
+fn annotation_one_unchecked(world: &mut ApplicationWorld) {
+    assert!(!world.checked("1:1"));
+}
+#[then("fixed ratios and Custom are available")]
+fn annotation_choices_available(world: &mut ApplicationWorld) {
+    assert!(world.run_is_enabled("1:1"));
+    assert!(world.run_is_enabled("Custom"));
+}
+#[when("the user chooses 1:1")]
+fn choose_one_to_one(world: &mut ApplicationWorld) {
+    choose_menu_row(world, "1:1");
+}
+#[when("the user chooses Auto")]
+#[when("the user selects Auto")]
+fn choose_annotation_auto(world: &mut ApplicationWorld) {
+    choose_menu_row(world, "Auto");
+}
+
+#[given("a copied view representation is active with annotation scale Auto")]
+fn active_copy_with_auto_scale(world: &mut ApplicationWorld) {
+    activate_copy_for_camera(world);
+    active_view_scale_is_auto(world);
+}
+#[when("the user chooses Custom")]
+fn choose_custom_scale(world: &mut ApplicationWorld) {
+    choose_menu_row(world, "Custom");
+}
+#[then("the Edit Annotation Scale dialog opens with Auto selected")]
+fn custom_scale_dialog_is_open(world: &mut ApplicationWorld) {
+    world.expect_text("Edit Annotation Scale");
+    assert!(world.text_is_selected("Auto"));
+}
+#[then("OK is disabled")]
+fn custom_scale_ok_disabled(world: &mut ApplicationWorld) {
+    assert!(!world.run_is_enabled("OK"));
+}
+#[when(expr = "the user replaces the scale with {string}")]
+fn replace_custom_scale(world: &mut ApplicationWorld, value: String) {
+    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
+    world.type_text(&value);
+    world.pump(Vec::new());
+}
+#[then(expr = "the scale field displays {string}")]
+fn custom_scale_text(world: &mut ApplicationWorld, value: String) {
+    world.expect_text(&value);
+}
+#[when("the user confirms the dialog")]
+fn confirm_custom_scale(world: &mut ApplicationWorld) {
+    world.click_text("OK");
+    world.pump(Vec::new());
+}
+#[then("Custom is checked")]
+fn custom_scale_checked(world: &mut ApplicationWorld) {
+    assert!(world.checked("Custom"));
+}
+#[then("the Custom entry displays the equivalent decimal value 1.50")]
+fn custom_scale_decimal(world: &mut ApplicationWorld) {
+    world.expect_text("1.50");
+}
+#[then("the annotation scale submenu closes")]
+fn scale_menu_closed(world: &mut ApplicationWorld) {
+    world.expect_no_text("1:1");
+}
+
+#[given("the Edit Annotation Scale dialog is open")]
+fn open_custom_scale_dialog(world: &mut ApplicationWorld) {
+    open_annotation_scale_menu(world);
+    choose_custom_scale(world);
+}
+#[then("the scale text is red")]
+fn invalid_scale_is_red(world: &mut ApplicationWorld) {
+    let color = scale_input_run(world).color;
+    assert!(
+        u16::from(color[0]) > u16::from(color[1]) * 2,
+        "expected red scale input, got {color:?}"
+    );
+}
+#[then("the scale text returns to its normal color")]
+fn valid_scale_is_not_red(world: &mut ApplicationWorld) {
+    let color = scale_input_run(world).color;
+    assert!(
+        u16::from(color[0]) < u16::from(color[1]) * 2,
+        "expected normal scale input, got {color:?}"
+    );
+}
+fn scale_input_run(world: &ApplicationWorld) -> &super::super::diagnostics::RenderedRun {
+    world
+        .frame
+        .runs
+        .iter()
+        .rev()
+        .find(|run| ["0", "1:0", "abc", "3:2"].contains(&run.text.as_str()))
+        .expect("expected the entered scale text")
+}
