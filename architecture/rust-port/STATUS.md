@@ -14,6 +14,11 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- Constraint Settings (#4158): the full baseline at `fcda72a8f` passed
+  zero of eight scenarios. Six first steps are undefined, and two encounter
+  a shared precondition bug (#4159). The inference persistence field is not
+  consumed by creation (#4160). The scenario owner has fixture questions in
+  `BLOCKERS.md`, which changed after the baseline.
 - New Sketch (#4156): the full run at `60c48f25f` passed nine of ten
   scenarios. The accumulated document fixture remains unresolved (#4011) and
   requires circular sketch patterns (#3905). See the feature's `BLOCKERS.md`
@@ -210,9 +215,10 @@ using this status; the live scenario directory can change.
 
 ## Work queue
 
-1. Revisit `new-sketch` when its accumulated-document fixture is resolved
-   (#4011) and circular sketch patterns are available (#3905). Select the next
-   feature without Inventor-file, assembly, or 3D-sketch requirements.
+1. Work on Constraint Settings (#4158), including its shared precondition
+   (#4159) and inference persistence (#4160). Revisit `new-sketch` when its
+   accumulated-document fixture (#4011) and circular patterns (#3905) are
+   available. Defer Inventor-file, assembly, and 3D-sketch scenarios.
 2. Complete the evaluation owner and safe dirty-prefix replay in #4079, with
    generation, policy, invalidation, naming, and replay-count evidence.
 3. Repair and verify the GUI integration targets in #4078. The separate
