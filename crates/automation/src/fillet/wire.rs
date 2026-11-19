@@ -104,7 +104,7 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     prefix: Option<crate::CertifiedPartPrefix>,
 ) -> Result<super::BlendTransaction, Error> {
     let name = prepared.name.clone();
-    files.commands(document).map_err(api_error)?.run_projected_with_transition(
+    files.commands(document).map_err(api_error)?.run_private_candidate(
         "Create fillet",
         |candidate, ids| prepared.create(candidate, ids),
         |candidate, id, history| {

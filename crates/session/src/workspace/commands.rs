@@ -122,6 +122,20 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         self.session
             .run_projected_with_transition(label, command, project)
     }
+    /// Validate an unexposed candidate before adopting its identities (#4108).
+    /// Example: `commands.run_private_candidate("Edit", edit, validate)?`.
+    pub fn run_private_candidate<R, T, E>(
+        &mut self,
+        label: &str,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        project: impl FnOnce(
+            &DocumentSnapshot,
+            R,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, E>,
+    ) -> Result<(T, oblikovati_model::history::EvaluationTransition), CommandError<E>> {
+        self.session.run_private_candidate(label, command, project)
+    }
     /// Run through this document's normal transaction path.
     /// Example: `commands.run("width", |snapshot, _| snapshot.parameters.set_expression(1, "2 cm"))?;`.
     pub fn run<R, E>(

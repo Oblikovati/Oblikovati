@@ -30,7 +30,7 @@ pub(crate) fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
             "{label} document {document}: expected a current prefix with the same identity and resolution"
         )));
     }
-    files.commands(document).map_err(api_error)?.run_projected_with_transition(
+    files.commands(document).map_err(api_error)?.run_private_candidate(
         &format!("Create {label}"),
         create,
         |candidate, feature, history| {

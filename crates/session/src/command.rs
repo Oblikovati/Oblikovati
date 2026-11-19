@@ -64,6 +64,23 @@ impl<O: TransactionObserver> DocumentSession<O> {
             session.edit_projected_with_transition(command, project)
         })
     }
+    /// Validate a private candidate before reserving its identities (#4108).
+    /// The closures must not publish candidate identities before success.
+    /// Example: `session.run_private_candidate("Edit", edit, validate)?`.
+    pub fn run_private_candidate<R, T, E>(
+        &mut self,
+        label: &str,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        project: impl FnOnce(
+            &DocumentSnapshot,
+            R,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, E>,
+    ) -> Result<(T, oblikovati_model::history::EvaluationTransition), CommandError<E>> {
+        self.run_grouped(label, |session| {
+            session.edit_private_projected_with_transition(command, project)
+        })
+    }
     /// Evaluate a command on a private solved candidate without reserving live IDs.
     /// Example: `session.preview_projected(edit, |candidate, value| inspect(candidate, value))?`.
     pub fn preview_projected<R, T, E>(

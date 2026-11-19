@@ -165,7 +165,7 @@ fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     let ((response, captured), transition) = files
         .commands(document)
         .map_err(api_error)?
-        .run_projected_with_transition(
+        .run_private_candidate(
             "Create extrusion",
             |snapshot, ids| prepared.create(snapshot, ids),
             |candidate, id, history| projection.project(candidate, id, history),
