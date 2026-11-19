@@ -60,7 +60,7 @@ fn edit_same_sketch(world: &mut ApplicationWorld) {
 #[then("its editing environment opens in RIGHT view")]
 fn edited_sketch_faces_right(world: &mut ApplicationWorld) {
     assert_eq!(world.state().authoring, GuiAuthoringContext::Sketch);
-    assert_eq!(viewport_orientation::control_letters(world), "Rghit");
+    viewport_orientation::expect_control_shows(world, "RIGHT");
     let camera = world.app().window.native.view.camera_state().unwrap();
     assert!(camera.eye[0] > camera.target[0]);
     assert_eq!(camera.eye[1..], camera.target[1..]);
