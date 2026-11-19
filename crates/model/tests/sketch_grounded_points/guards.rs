@@ -108,3 +108,34 @@ fn grounding_preserves_bits_at_finite_coordinate_extremes() {
         assert_exact_anchor(&result, anchor);
     }
 }
+
+#[test]
+fn indexed_anchors_keep_input_order_bits_and_typed_errors() {
+    let sketch = geometry(&[(7, [1.0, 2.0]), (2, [3.0, 4.0]), (9, [5.0, 6.0])]);
+    let anchors = [
+        point(9, [-0.0, 7.0]),
+        point(7, [8.0, -0.0]),
+        point(2, [9.0, 10.0]),
+    ];
+    let solved = solve(&sketch, &anchors);
+    for anchor in anchors {
+        assert_exact_anchor(&solved, anchor);
+    }
+    let unknown = [point(7, [1.0, 2.0]), point(99, [3.0, 4.0])];
+    let error = sketch
+        .solve_with_grounded_points(&parameters(), &unknown, SolveOptions::default(), || false)
+        .unwrap_err();
+    assert_eq!(
+        error.to_string(),
+        "sketch point SketchEntityId(99): expected an existing point"
+    );
+    let duplicate = [point(7, [1.0, 2.0]), point(7, [f64::NAN, 0.0])];
+    let error = sketch
+        .solve_with_grounded_points(&parameters(), &duplicate, SolveOptions::default(), || false)
+        .unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .contains("expected one current coordinate source per point")
+    );
+}
