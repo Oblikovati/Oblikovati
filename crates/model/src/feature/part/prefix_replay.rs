@@ -76,6 +76,17 @@ where
             .evaluate_hole(feature, body.get(), face, input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_shell(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        openings: &[Vec<u8>],
+        input: crate::feature::shell::ResolvedShell,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_shell(feature, body.get(), openings, input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,

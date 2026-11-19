@@ -119,3 +119,19 @@ fn shell_refusal_keeps_the_input_body_and_reports_failed_health() {
         matches!(&result.health()[2].status, FeatureEvaluationStatus::Failed(PartFeatureFailure::Kernel(message)) if message == "tolerance refused")
     );
 }
+
+#[test]
+fn shell_candidate_replays_through_the_retained_prefix() {
+    let mut owner = part_owner();
+    append_prism(&mut owner);
+    let source = owner.snapshot().clone();
+    let retained = source
+        .evaluate_part_features(&mut FakeShellBackend::default())
+        .unwrap();
+    let candidate = with_shell();
+    let resumed = retained
+        .replay_candidate_tail(&candidate, &mut FakeShellBackend::default())
+        .unwrap();
+    assert!(resumed.body(FeatureId(3)).unwrap().shelled);
+    assert!(!retained.body(FeatureId(2)).unwrap().shelled);
+}

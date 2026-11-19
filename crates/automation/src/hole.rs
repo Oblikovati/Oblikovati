@@ -60,7 +60,7 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     Ok(reply)
 }
 
-fn current_face_body<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+pub(crate) fn current_face_body<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     owner: &dyn crate::PartUpdateAccess<O, W, F>,
     files: &FileWorkspace<O, W, F>,
     document: u64,
@@ -71,23 +71,23 @@ fn current_face_body<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
     let evaluation = owner.current_part(files, document).map_err(Error)?;
     let mut matches = Vec::new();
     for body in evaluation.ordered_bodies() {
-        if body
+        for key in body
             .face_reference_keys(session.history(), guid)
             .map_err(Error)?
-            .iter()
-            .any(|key| key == face)
         {
-            matches.push(
-                body.body_reference_key(session.history(), guid)
-                    .map_err(Error)?
-                    .to_vec(),
-            );
+            if key == face {
+                matches.push(
+                    body.body_reference_key(session.history(), guid)
+                        .map_err(Error)?
+                        .to_vec(),
+                );
+            }
         }
     }
     match matches.as_slice() {
         [body] => Ok(body.clone()),
         _ => Err(Error(format!(
-            "hole face {face:?}, matching bodies {}: expected exactly one current body",
+            "face {face:?}, matching current faces {}: expected exactly one current face",
             matches.len()
         ))),
     }

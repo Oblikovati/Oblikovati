@@ -374,3 +374,5 @@ mod blend_replay;
 
 #[path = "part_scene/move_body_scene.rs"]
 mod move_body_scene;
+#[path = "part_scene/shell_rejection.rs"]
+mod shell_rejection;
