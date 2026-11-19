@@ -18,9 +18,10 @@ using this status; the live scenario directory can change.
   worktree passed five of eight scenarios with the feature and support hashes
   unchanged during the run. Three scenarios stopped at undefined setup steps;
   fixture questions are in the feature's `BLOCKERS.md`. This worktree result is
-  not inventory evidence. Inference persistence (#4160), Relax Mode (#4164),
-  and the settings acknowledgement fix (#4172) remain in progress. Overlapping
-  glyph selection (#4169) is merged and its native checks passed.
+  not inventory evidence. Checkbox assertions on a shared grid row need the
+  diagnostic correction in #4175, so the five passes are provisional. Point
+  inference persistence (#4160), Relax Mode (#4164), and settings acknowledgement
+  (#4172) remain in progress. Overlapping glyph selection (#4169) is merged.
   The merged branch has separate passing persistence, typed API, and X11 glyph
   checks in `receipts/2026-11-19-merged-glyph-0b3efd7/`.
 - New Sketch (#4156): the full run at `60c48f25f` passed nine of ten
