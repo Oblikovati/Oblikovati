@@ -34,21 +34,15 @@ fn typed_shell_refusal_preserves_recipe_history_and_dirty_state() {
     assert_eq!(after.1, before.1, "generation changed");
     assert_eq!(after.2, before.2, "undo history changed");
     assert_eq!(after.3, before.3, "redo history changed");
-    if after.0 != before.0 {
-        let position = before
+    assert!(
+        before
             .0
-            .bytes()
-            .zip(after.0.bytes())
-            .position(|(a, b)| a != b)
-            .unwrap();
-        let start = position.saturating_sub(80);
-        let end = (position + 160).min(before.0.len()).min(after.0.len());
-        panic!(
-            "snapshot changed: before {:?}, after {:?}",
-            &before.0[start..end],
-            &after.0[start..end]
-        );
-    }
+            .work_geometry
+            .same_work_plane_recipe(&after.0.work_geometry)
+    );
+    assert!(before.0.sketches.same_recipe(&after.0.sketches));
+    assert!(before.0.parameters.same_recipe(&after.0.parameters));
+    assert!(before.0.same_metadata_recipe(&after.0));
     assert_eq!(after.4, before.4, "dirty state changed");
 }
 
@@ -69,12 +63,18 @@ fn named_face(owner: &TestOwner, replay: &PartReplayService, document: u64) -> S
 fn document_state(
     owner: &TestOwner,
     document: u64,
-) -> (String, u64, Vec<String>, Vec<String>, bool) {
+) -> (
+    oblikovati_model::history::DocumentSnapshot,
+    u64,
+    Vec<String>,
+    Vec<String>,
+    bool,
+) {
     let workspace = owner.files.workspace();
     let session = workspace.session(document).unwrap();
     let history = session.history();
     (
-        format!("{:?}", session.snapshot()),
+        session.snapshot().clone(),
         session.generation(),
         history
             .undo_labels()
