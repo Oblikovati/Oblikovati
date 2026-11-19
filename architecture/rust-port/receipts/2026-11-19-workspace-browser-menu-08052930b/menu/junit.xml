@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T13:49:49.902649971Z" time="4.586443602"><testcase name="Scenario: Inspect the model browser menu: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:158:3" time="4.586443602"><system-out><![CDATA[  Scenario: Inspect the model browser menu
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the model browser is visible
+   ✔  When the user opens the model browser menu
+   ✔  Then the menu offers Autoscroll, Expand All and Collapse All
+   ✔  And it offers Find, Display Preferences and Help
+]]></system-out></testcase></testsuite></testsuites>
