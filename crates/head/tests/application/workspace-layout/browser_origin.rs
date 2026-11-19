@@ -71,6 +71,30 @@ pub(in super::super) fn plane_shows_at(world: &mut ApplicationWorld, row: &str) 
     let color = world.pixel_at(at);
     color[1] > PLANE_TINT && color[1] > color[0]
 }
+#[given("Auto-Resize is enabled for the YZ Plane in the captured session")]
+fn enable_plane_auto_resize(world: &mut ApplicationWorld) {
+    ensure_auto_resize(world, "YZ Plane");
+}
+#[given("Auto-Resize is enabled for the Y Axis in the captured session")]
+fn enable_axis_auto_resize(world: &mut ApplicationWorld) {
+    ensure_auto_resize(world, "Y Axis");
+}
+fn ensure_auto_resize(world: &mut ApplicationWorld, label: &str) {
+    right_click_row(world, label);
+    if !world.checked("Auto-Resize") {
+        world.click_text("Auto-Resize");
+        right_click_row(world, label);
+    }
+    assert!(
+        world.checked("Auto-Resize"),
+        "{label}: expected Auto-Resize checked"
+    );
+    world.escape();
+}
+#[then("Auto-Resize is checked in this session")]
+fn auto_resize_checked(world: &mut ApplicationWorld) {
+    assert!(world.checked("Auto-Resize"));
+}
 #[when("I right-click the YZ Plane row")]
 #[when("the user right-clicks the YZ Plane row")]
 fn right_click_plane(world: &mut ApplicationWorld) {
@@ -92,6 +116,7 @@ fn plane_row(world: &mut ApplicationWorld) {
     expect_row_accent(world, "YZ Plane", true);
 }
 #[then("the corresponding plane is highlighted as a translucent surface in the viewport")]
+#[then("the corresponding plane is highlighted as a blue translucent surface in the viewport")]
 fn plane_surface(world: &mut ApplicationWorld) {
     assert!(
         plane_shows(world),
