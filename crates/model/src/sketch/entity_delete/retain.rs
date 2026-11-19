@@ -32,5 +32,6 @@ impl Sketch2D {
         self.construction_curves.retain(|id| !retired.contains(id));
         self.retain_center_points(retired);
         self.centerlines.retain(|id| !retired.contains(id));
+        self.entity_formats.retain(|id, _| !retired.contains(id));
     }
 }

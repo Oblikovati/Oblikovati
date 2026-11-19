@@ -107,6 +107,8 @@ pub use plane::{
     SketchFrameAlignment, SketchFrameAxis, SketchPlane, SketchPlaneOptions, SketchPlaneRecipe,
 };
 pub use recipe::{SKETCH_RECIPE_VERSION, SketchRecipe};
+mod entity_format;
+pub use entity_format::SketchEntityFormatEntry;
 pub use solve::{SketchResidualOperand, SketchResidualRow, SketchSolveOutcome};
 pub use source::SketchRelationId;
 pub use tangent::{CircleContact, LineContactSide};
@@ -120,6 +122,8 @@ pub struct Sketch2D {
     construction_curves: std::collections::BTreeSet<SketchEntityId>,
     center_points: std::collections::BTreeSet<SketchEntityId>,
     centerlines: std::collections::BTreeSet<SketchEntityId>,
+    entity_formats:
+        std::collections::BTreeMap<SketchEntityId, oblikovati_api::types::SketchEntityFormat>,
     points: Vec<SketchPoint2D>,
     lines: Vec<SketchLine2D>,
     circles: Vec<SketchCircle2D>,

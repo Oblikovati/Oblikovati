@@ -69,6 +69,9 @@ impl Sketch2D {
         if source.is_center_point(original) {
             self.set_center_point(created, true)?;
         }
+        if let Some(format) = source.entity_formats.get(&original) {
+            self.set_entity_format(created, format.clone())?;
+        }
         Ok(())
     }
 }

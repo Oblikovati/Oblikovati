@@ -3,8 +3,8 @@ use super::{
     Sketch2D, SketchArc2D, SketchCircle2D, SketchConstraint, SketchError, SketchLine2D,
     SketchPoint2D,
 };
-/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership, v13 point direction dimensions, v14 structural pattern point and radius links, v15 parameter-driven pattern offsets, v16 rectangular pattern records, v17 spline handles, v18 signed offset sources, v19 structural relation owners, v20 branch-preserving corner setbacks.
-pub const SKETCH_RECIPE_VERSION: u32 = 20;
+/// Latest planar schema: v2 records order, v3 construction roles, v4 line axis roles, v5 dimension placements, v6 drive settings, v7 analytic ellipses, v8 ground anchors, v9 ellipse minor-radius dimensions, v10 parent and offset splines, v11 offset dimensions, v12 defining-point ownership, v13 point direction dimensions, v14 structural pattern point and radius links, v15 parameter-driven pattern offsets, v16 rectangular pattern records, v17 spline handles, v18 signed offset sources, v19 structural relation owners, v20 branch-preserving corner setbacks, v21 entity formats.
+pub const SKETCH_RECIPE_VERSION: u32 = 21;
 /// Owned authored values; no numerical workspace, derived topology or system equations.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -44,6 +44,8 @@ pub struct SketchRecipe {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub centerlines: Option<Vec<super::SketchEntityId>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entity_formats: Option<Vec<super::SketchEntityFormatEntry>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub dimension_placements: Option<Vec<super::SketchDimensionPlacement>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reference_dimensions: Option<Vec<super::SketchConstraintId>>,
@@ -82,6 +84,7 @@ impl Sketch2D {
         if has_corner_setback(&recipe) {
             recipe.version = 20;
         }
+        self.capture_entity_formats(&mut recipe);
         recipe
     }
     fn capture_point_angle_schema(&self, recipe: &mut SketchRecipe) {
@@ -113,6 +116,7 @@ impl Sketch2D {
             construction_curves: self.saved_construction_curves(),
             center_points: self.saved_center_points(),
             centerlines: self.saved_centerlines(),
+            entity_formats: None,
             dimension_placements: self.saved_dimension_placements(),
             reference_dimensions: self.saved_reference_dimensions(),
             dimension_limits: self.saved_dimension_limits(),
@@ -168,6 +172,7 @@ impl Sketch2D {
         sketch.restore_construction_curves(recipe)?;
         sketch.restore_centerlines(recipe)?;
         sketch.restore_center_points(recipe)?;
+        sketch.restore_entity_formats(recipe)?;
         for constraint in &recipe.constraints {
             sketch.add_constraint(constraint.id, constraint.relation.clone())?;
         }

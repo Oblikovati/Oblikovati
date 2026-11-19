@@ -205,15 +205,15 @@ impl Sketch2D {
         recipe: &SketchRecipe,
     ) -> Result<(), SketchError> {
         match (recipe.version, &recipe.owned_relations) {
-            (1..=18, None) => Ok(()),
-            (19..=20, Some(relations)) if !relations.is_empty() => {
+            (1..=18 | 21, None) => Ok(()),
+            (19..=21, Some(relations)) if !relations.is_empty() => {
                 for relation in relations {
                     self.own_relation(relation.owner, relation.constraint)?;
                 }
                 Ok(())
             }
             shape => Err(SketchError::Definition(format!(
-                "structural relation recipe {shape:?}: expected no owners through version 18 or a nonempty owner list in versions 19 or 20"
+                "structural relation recipe {shape:?}: expected no owners through version 18 or a nonempty owner list in versions 19-21"
             ))),
         }
     }

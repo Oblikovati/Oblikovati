@@ -10,6 +10,8 @@ use oblikovati_model::{
 use oblikovati_solve::nonlinear::SolveOptions;
 #[path = "sketch_entity_order/block_extraction.rs"]
 mod block_extraction;
+#[path = "sketch_entity_order/entity_format.rs"]
+mod entity_format;
 #[path = "sketch_entity_order/placed_copy.rs"]
 mod placed_copy;
 fn mixed_geometry() -> Sketch2D {
