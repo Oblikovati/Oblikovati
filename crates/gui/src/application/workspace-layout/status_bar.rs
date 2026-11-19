@@ -8,6 +8,8 @@ pub(crate) const STATUS_BAR_HEIGHT: f32 = 22.;
 /// Draw the status line across the window's foot; example: `Ready` and `4 dimensions needed`.
 pub(crate) fn status_bar(ui: &Ui, request: &GuiFrameRequest, alias: Option<&str>) {
     let [width, height] = ui.io().display_size;
+    // The status line is shorter than ImGui's default minimum window height (#4141).
+    let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([1., 1.]));
     ui.window("##status-bar")
         .position([0., height - STATUS_BAR_HEIGHT], imgui::Condition::Always)
         .size([width, STATUS_BAR_HEIGHT], imgui::Condition::Always)

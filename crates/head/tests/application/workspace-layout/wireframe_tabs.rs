@@ -186,6 +186,18 @@ fn tabs_show_home_and_active(world: &mut ApplicationWorld) {
     world.expect_tab("Home");
     world.expect_tab(&name);
 }
+#[cfg(target_os = "linux")]
+#[test]
+fn native_status_window_fits_the_application_bottom() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    status_at_bottom(&mut world);
+    let (position, size) = geometry("##status-bar");
+    assert!(
+        size[1] > 0. && position[1] > 0.,
+        "status {position:?} {size:?}"
+    );
+}
 #[then("the status area is visible along the bottom")]
 fn status_at_bottom(world: &mut ApplicationWorld) {
     status_below_strip(world);
