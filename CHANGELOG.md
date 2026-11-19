@@ -151,6 +151,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Changed
 
+- Reduced sketch solving time and memory when many coordinates have no constraints. (#4165)
+
 - Removed the partial certified-prism whole-part evaluator. (#4079)
 
 - Removed whole-part replay from the partial named-prism evaluators. (#4079)
