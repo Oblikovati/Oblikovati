@@ -165,3 +165,14 @@ fn hiding_all_model_panels_closes_the_dock_before_layout() {
     );
     assert_eq!(titles, ["Model"]);
 }
+
+#[test]
+fn origin_focus_is_scoped_to_its_document() {
+    let mut layout = WorkspaceLayout::default();
+    layout.sync_origin_document(Some(1));
+    layout.view.focused_origin_row = Some(4);
+    layout.sync_origin_document(Some(1));
+    assert_eq!(layout.view.focused_origin_row, Some(4));
+    layout.sync_origin_document(Some(2));
+    assert_eq!(layout.view.focused_origin_row, None);
+}

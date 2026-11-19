@@ -38,6 +38,11 @@ pub(crate) fn browser_contents(
         ui.text("(no document)");
         return;
     };
+    if ui.is_window_hovered()
+        && (ui.is_mouse_clicked(MouseButton::Left) || ui.is_mouse_clicked(MouseButton::Right))
+    {
+        view.focused_origin_row = None;
+    }
     view.feature_rows.clear();
     view.feature_open.clear();
     view.header(ui, browser.kind == crate::GuiBrowserKind::Drawing);
