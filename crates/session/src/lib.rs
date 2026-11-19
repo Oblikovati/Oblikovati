@@ -94,6 +94,7 @@ pub struct DocumentSession<O> {
     editor_selection: selection::SelectionSet<selection::SketchPick>,
     inference_scopes:
         std::collections::BTreeMap<u64, oblikovati_model::sketch::SketchInferenceCandidates>,
+    inference_validation: std::cell::RefCell<sketch_inference_scope::ScopeValidationCache>,
     history: DocumentEditHistory,
     observer: O,
     group: Option<BoundedGroup>,
@@ -131,6 +132,7 @@ impl<O: TransactionObserver> DocumentSession<O> {
             browser_root: false,
             editor_selection: Default::default(),
             inference_scopes: Default::default(),
+            inference_validation: Default::default(),
             history,
             observer,
             group: None,

@@ -65,6 +65,13 @@ fn deleted_selected_geometry_fails_closed_until_the_scope_is_replaced() {
         .delete_sketch_entities(sketch, &[SketchEntityId(3)])
         .unwrap();
     assert!(session.sketch_inference_scope(sketch).is_err());
+    session.undo().unwrap();
+    assert_eq!(
+        session.sketch_inference_scope(sketch).unwrap().selected(),
+        &[SketchEntityId(3)]
+    );
+    session.redo().unwrap();
+    assert!(session.sketch_inference_scope(sketch).is_err());
     session
         .set_sketch_inference_scope(sketch, INFERENCE_SCOPE_ALL_GEOMETRY, &[])
         .unwrap();

@@ -76,6 +76,9 @@ fn expand_owned_candidates(
     sketch: &Sketch2D,
     roots: &[SketchEntityId],
 ) -> Result<BTreeSet<SketchEntityId>, SketchError> {
+    if roots.is_empty() {
+        return Ok(BTreeSet::new());
+    }
     let catalogue = crate::sketch::entity_geometry::catalogue(sketch);
     let mut pending = roots.to_vec();
     let mut resolved = BTreeSet::new();
