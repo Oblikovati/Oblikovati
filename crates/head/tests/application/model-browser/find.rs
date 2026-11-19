@@ -73,6 +73,40 @@ pub(super) fn expect_control(world: &ApplicationWorld, label: &str, value: &str)
 pub(super) fn add_is_enabled(world: &ApplicationWorld) -> bool {
     world.run_is_enabled("Add to list")
 }
+pub(super) fn expect_empty_input(world: &ApplicationWorld, label: &str) {
+    let visible = input_value(world, label);
+    assert!(
+        visible.is_empty(),
+        "{label} field contains {visible:?}: expected empty"
+    );
+}
+pub(super) fn input_value(world: &ApplicationWorld, label: &str) -> String {
+    let field = world.run(label);
+    let displayed: String = field
+        .text
+        .chars()
+        .filter(|ch| !ch.is_whitespace())
+        .collect();
+    let suffix: String = label.chars().filter(|ch| !ch.is_whitespace()).collect();
+    format!(
+        "{}{}",
+        preceding_input_text(world, field),
+        displayed.strip_suffix(&suffix).unwrap_or_default()
+    )
+}
+fn preceding_input_text(world: &ApplicationWorld, field: &diagnostics::RenderedRun) -> String {
+    world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| {
+            run.list == field.list
+                && (run.center()[1] - field.center()[1]).abs() < 8.
+                && run.maximum[0] < field.minimum[0]
+        })
+        .map(|run| run.text.as_str())
+        .collect()
+}
 #[when("I choose Find from the model browser menu")]
 #[when("the user chooses Find from the model browser menu")]
 fn choose_find(world: &mut ApplicationWorld) {
@@ -186,7 +220,9 @@ fn condition_contains(world: &mut ApplicationWorld) {
     expect_control(world, "Condition", "contains");
 }
 #[then("the Value field is empty and Add to list is disabled")]
+#[then("the Value field is empty and adds to list is disabled")]
 fn value_empty(world: &mut ApplicationWorld) {
+    expect_empty_input(world, "Value");
     assert!(!add_is_enabled(world), "expected Add to list disabled");
 }
 #[when("I open the Condition list")]

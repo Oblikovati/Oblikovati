@@ -5,6 +5,9 @@ use cucumber::{given, then, when};
 #[path = "row_selection.rs"]
 mod row_selection;
 use row_selection::shift_down;
+#[path = "cancel_dialog.rs"]
+mod cancel_dialog;
+use cancel_dialog::cancel_customization;
 #[path = "category_steps.rs"]
 mod category_steps;
 #[path = "custom_panel_title.rs"]
@@ -204,40 +207,6 @@ fn double_click_sketches(world: &mut ApplicationWorld) {
 #[then("\"2D Sketches\" moves to the custom panel list")]
 fn double_click_moved_sketches(world: &mut ApplicationWorld) {
     sketches_in_target(world);
-}
-#[when("the user clicks \"Cancel\"")]
-#[when("the user clicks Cancel")]
-fn cancel_customization(world: &mut ApplicationWorld) {
-    for title in [
-        "Import Customization Settings",
-        "Export Customization Settings",
-        "Geometry Properties",
-        "Feature Properties",
-        "Incremental View Rotate",
-        "Navigation Wheel Options",
-    ] {
-        if let Some((position, size)) = diagnostics::window_geometry(title) {
-            let center = world
-                .frame
-                .runs
-                .iter()
-                .rev()
-                .find(|run| {
-                    let point = run.center();
-                    run.text == "Cancel"
-                        && (0..2).all(|axis| {
-                            point[axis] >= position[axis]
-                                && point[axis] <= position[axis] + size[axis]
-                        })
-                })
-                .expect("expected the dialog's Cancel button")
-                .center();
-            world.click(diagnostics::pointer_pixels(center));
-            world.pump(Vec::new());
-            return;
-        }
-    }
-    click_in_customize(world, "Cancel");
 }
 #[given("the ribbon customization dialog is open in The MCAD Software")]
 #[given("the ribbon customization dialog is open in the MCAD Software")]

@@ -24,6 +24,9 @@ mod feature_rows;
 mod find;
 #[path = "find_lists.rs"]
 mod find_lists;
+#[cfg(target_os = "linux")]
+#[path = "find_native.rs"]
+mod find_native;
 #[path = "line_properties.rs"]
 mod line_properties;
 #[path = "model_state_copy.rs"]
