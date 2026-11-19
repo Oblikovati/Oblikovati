@@ -366,11 +366,15 @@
       "features/application/model-browser/relationships-wireframe.svg": "d2c550f636d567ba5b3ecf2271d55b4b3ae54f60ddbd264baee9ecfd7052a004",
       "features/application/model-browser/saved-search-wireframe.svg": "3cdf64adeeabd3e0fa1d35db52af8230fbc60d190213dd7ecc0e39fd64e211a9"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-19-model-browser-b7d69d4ca/cucumber.json",
-    "cucumber_sha256": "7701348fc6b28a8355b3205c91c2872be692d8b4e1de69de25e356999fe36f21",
-    "application_commit": "b7d69d4ca",
-    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=model-browser OBK_BDD_REPORTS=/tmp/obk-model-browser-b7d69d4ca cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-model-browser-258654729/cucumber.json",
+    "cucumber_sha256": "213b9d521291fd0a5338b33a9ebdf4f2fccde6db98d45ba41b5cd82b2990e7e3",
+    "application_commit": "258654729",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=model-browser OBK_BDD_REPORTS=/tmp/obk-model-browser-258654729 cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan lavapipe; scripted native window input",
-    "notes": "Full diagnostic baseline: 35 of 100 scenarios passed; 65 stopped at failed or undefined steps. The feature and supporting Markdown and SVG files had matching hashes before and after the run. Failures include test-oracle and shared step investigations tracked by #4110 through #4113; model-state and view-representation fixture steps are also missing. The unversioned source and build provenance prevent strict verified acceptance (#3978). The inventory reports needs_source_review because the feature contains step tables; the parsed snapshot does not yet prove table arguments against the report."
+    "notes": "Full diagnostic run: 48 of 100 scenarios passed; 52 stopped at failed or undefined steps. The feature and supporting Markdown and SVG hashes matched before and after. The local parsed inventory is labeled unversioned, so strict verified acceptance remains unavailable (#3978). Origin, root menu, Find, view representations and model-state table work is tracked by #4115\u2013#4119.",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-model-browser-258654729/scenario-inventory.json",
+    "scenario_inventory_sha256": "ae56e1923bf07a5c57af2ed430bc1c0c3ddfa00debfc5d2fc8d7877f8128776c",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-model-browser-258654729/scenario-arguments.json",
+    "scenario_arguments_sha256": "c666d14633d5de13c8cacae0ed4a4d4410ed1fa408806c39bee9e8f103115da6"
   }
 }
