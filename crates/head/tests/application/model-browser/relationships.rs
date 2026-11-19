@@ -162,6 +162,22 @@ fn go_to_sketch_parent(world: &mut ApplicationWorld) {
 fn dialog_closed(world: &mut ApplicationWorld) {
     world.expect_no_text("Done");
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_done_closes_relationships_and_keeps_the_part() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    let document = world.active_id();
+    from_xy(&mut world);
+    xy_selected(&mut world);
+    let done = world.run_in_window("Relationships", "Done").center();
+    super::super::x11_input::click(diagnostics::pointer_pixels(done));
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("Relationships").is_none());
+    world.expect_active(document);
+    world.close();
+}
 // From a plane
 #[when("I choose Relationships from the XY plane row context menu")]
 #[when("the user chooses Relationships from the XY plane row context menu")]
