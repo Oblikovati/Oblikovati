@@ -241,3 +241,44 @@ fn failed_noop_acknowledgment_keeps_the_draft_open() {
     assert!(!table.pending);
     assert_eq!(table.submission_error.as_deref(), Some("observer veto"));
 }
+
+#[test]
+fn recreated_table_does_not_reuse_an_old_acknowledgment_id() {
+    let mut state = state();
+    state.model_state_table_ack = Some((1, 42, Ok(())));
+    let mut table = ModelStateTable::default();
+    table.open(&state);
+    let mut actions = Vec::new();
+    table.accept(&mut actions);
+    assert!(matches!(
+        &actions[0],
+        GuiShellAction::SetModelStateTable { request_id: 43, .. }
+    ));
+    table.sync_before_docking(&state);
+    assert!(table.document.is_some());
+    assert!(table.pending);
+}
+
+#[test]
+fn reopened_table_ignores_the_previous_inflight_request_result() {
+    let mut state = state();
+    let mut table = ModelStateTable::default();
+    table.open(&state);
+    let mut actions = Vec::new();
+    table.accept(&mut actions);
+    assert!(matches!(
+        &actions[0],
+        GuiShellAction::SetModelStateTable { request_id: 1, .. }
+    ));
+    table.close();
+    table.open(&state);
+    table.accept(&mut actions);
+    assert!(matches!(
+        &actions[1],
+        GuiShellAction::SetModelStateTable { request_id: 2, .. }
+    ));
+    state.model_state_table_ack = Some((1, 1, Ok(())));
+    table.sync_before_docking(&state);
+    assert!(table.document.is_some());
+    assert!(table.pending);
+}

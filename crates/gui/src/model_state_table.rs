@@ -60,6 +60,9 @@ impl ModelStateTable {
         self.pending = false;
         self.pending_request = None;
         self.submission_error = None;
+        if let Some((_, request_id, _)) = state.model_state_table_ack.as_ref() {
+            self.request_sequence = self.request_sequence.max(*request_id);
+        }
         self.row_sequence = 0;
         self.show_verification_error = false;
         self.name_prompt = None;
