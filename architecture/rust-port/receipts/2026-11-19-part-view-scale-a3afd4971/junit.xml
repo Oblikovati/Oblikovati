@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="4" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T09:25:44.022842779Z" time="90.757211222"><testcase name="Scenario: Choose and restore annotation scale for an active view: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:965:3" time="23.300692823"><system-out><![CDATA[  Scenario: Choose and restore annotation scale for an active view
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And a copied view representation is active
+   ✔  And its annotation scale is Auto
+   ✔  When the user opens the active view's context menu and expands Annotation Scale
+   ✔  Then Auto is checked
+   ✔  And fixed ratios and Custom are available
+   ✔  When the user chooses 1:1
+   ✔  And the user reopens the Annotation Scale submenu
+   ✔  Then 1:1 is checked
+   ✔  And Auto is not checked
+   ✔  When the user chooses Auto
+   ✔  And the user reopens the Annotation Scale submenu
+   ✔  Then Auto is checked
+   ✔  And 1:1 is not checked
+   ✔  When the user dismisses the menus
+   ✔  Then the copied view remains active
+   ✔  And the viewport remains empty
+]]></system-out></testcase><testcase name="Scenario: Cancel a custom annotation scale: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:985:3" time="25.358173024"><system-out><![CDATA[  Scenario: Cancel a custom annotation scale
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And a copied view representation is active with annotation scale Auto
+   ✔  When the user opens the active view's Annotation Scale submenu
+   ✔  And the user chooses Custom
+   ✔  Then the Edit Annotation Scale dialog opens with Auto selected
+   ✔  And OK is disabled
+   ✔  When the user replaces the scale with "3:2"
+   ✔  Then the scale field displays "3:2"
+   ✔  And OK is enabled
+   ✔  When the user cancels the dialog
+   ✔  And the user reopens the active view's Annotation Scale submenu
+   ✔  Then Auto is checked
+   ✔  When the user dismisses the menus
+   ✔  Then the copied view remains active
+]]></system-out></testcase><testcase name="Scenario: Accept a custom annotation scale: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1003:3" time="20.828620087"><system-out><![CDATA[  Scenario: Accept a custom annotation scale
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And a copied view representation is active with annotation scale Auto
+   ✔  When the user opens the active view's Annotation Scale submenu
+   ✔  And the user chooses Custom
+   ✔  And the user replaces the scale with "3:2"
+   ✔  And the user confirms the dialog
+   ✔  And the user reopens the active view's Annotation Scale submenu
+   ✔  Then Custom is checked
+   ✔  And the Custom entry displays the equivalent decimal value 1.50
+   ✔  When the user selects Auto
+   ✔  Then the annotation scale submenu closes
+]]></system-out></testcase><testcase name="Scenario: Correct an invalid custom annotation scale: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1017:3" time="21.269725288"><system-out><![CDATA[  Scenario: Correct an invalid custom annotation scale
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And a copied view representation is active with annotation scale Auto
+   ✔  And the Edit Annotation Scale dialog is open
+   ✔  When the user replaces the scale with "0"
+   ✔  Then the scale text is red
+   ✔  And OK is disabled
+   ✔  When the user replaces the scale with "1:0"
+   ✔  Then the scale text is red
+   ✔  And OK is disabled
+   ✔  When the user replaces the scale with "abc"
+   ✔  Then the scale text is red
+   ✔  And OK is disabled
+   ✔  When the user replaces the scale with "3:2"
+   ✔  Then the scale text returns to its normal color
+   ✔  And OK is enabled
+   ✔  When the user cancels the dialog
+   ✔  Then the dialog closes
+]]></system-out></testcase></testsuite></testsuites>
