@@ -192,6 +192,7 @@ const SEEDED_BEFORE_SOURCE: usize = 24;
 fn toggle_sketch_hud(world: &mut ApplicationWorld) {
     world.open_application_options();
     world.click_text("Sketch HUD");
+    world.click_text("Apply Sketch");
     world.pump(Vec::new());
     world.close_application_options();
 }

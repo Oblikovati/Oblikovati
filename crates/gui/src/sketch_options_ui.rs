@@ -28,40 +28,72 @@ const TOGGLES: [(&str, ToggleField); 12] = [
     }),
 ];
 
-/// Offer the current sketch options; example: `draw(ui, state, actions)` in the preferences window.
-pub(crate) fn draw(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-    let Some(options) = &state.sketch_options else {
-        return;
-    };
-    ui.separator();
-    ui.text("Sketch");
-    draw_grid(ui, options, actions);
-    for (label, field) in TOGGLES {
-        let mut edited = options.clone();
-        if ui.checkbox(label, field(&mut edited)) {
-            actions.push(GuiShellAction::SetSketchOptions(edited));
+#[derive(Default)]
+pub(crate) struct SketchOptionsDraft {
+    original: Option<SketchApplicationOptions>,
+    edited: Option<SketchApplicationOptions>,
+}
+impl SketchOptionsDraft {
+    fn synchronize(&mut self, accepted: &SketchApplicationOptions) {
+        if self.original == self.edited || self.edited.as_ref() == Some(accepted) {
+            self.original = Some(accepted.clone());
+            self.edited = Some(accepted.clone());
+        }
+    }
+    pub(crate) fn clear(&mut self) {
+        *self = Self::default();
+    }
+    pub(crate) fn draw(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let Some(accepted) = &state.sketch_options else {
+            self.clear();
+            return;
+        };
+        self.synchronize(accepted);
+        let Some(edited) = self.edited.as_mut() else {
+            return;
+        };
+        ui.separator();
+        ui.text("Sketch");
+        let conflict = self.original.as_ref() != Some(accepted);
+        if conflict {
+            ui.text("Sketch settings changed. Revert before applying.");
+        }
+        let disabled = ui.begin_disabled(edited == accepted || conflict);
+        if ui.button("Apply Sketch") {
+            actions.push(GuiShellAction::SetSketchOptions(edited.clone()));
+        }
+        disabled.end();
+        ui.same_line();
+        if ui.button("Revert Sketch") {
+            *edited = accepted.clone();
+            self.original = Some(accepted.clone());
+        }
+        draw_grid(ui, edited);
+        for (label, field) in TOGGLES {
+            ui.checkbox(label, field(edited));
         }
     }
 }
 
-fn draw_grid(ui: &Ui, options: &SketchApplicationOptions, actions: &mut Vec<GuiShellAction>) {
+fn draw_grid(ui: &Ui, options: &mut SketchApplicationOptions) {
     let mut spacing = options.grid_spacing_cm as f32;
     if ui.input_float("Grid spacing (cm)", &mut spacing).build()
         && spacing.is_finite()
         && spacing > 0.
     {
-        let mut edited = options.clone();
-        edited.grid_spacing_cm = f64::from(spacing);
-        actions.push(GuiShellAction::SetSketchOptions(edited));
+        options.grid_spacing_cm = f64::from(spacing);
     }
     let Ok(mut interval) = i32::try_from(options.grid_major_every) else {
         ui.text("Major line interval is outside the desktop input range.");
         return;
     };
     if ui.input_int("Major line every", &mut interval).build() && interval > 0 {
-        let mut edited = options.clone();
-        edited.grid_major_every = i64::from(interval);
-        actions.push(GuiShellAction::SetSketchOptions(edited));
+        options.grid_major_every = i64::from(interval);
     }
 }
 
@@ -84,5 +116,22 @@ mod tests {
             );
             variants.push(edited);
         }
+    }
+    #[test]
+    fn draft_retains_pending_edits_and_detects_external_changes() {
+        let mut draft = SketchOptionsDraft::default();
+        let accepted = SketchApplicationOptions::default();
+        draft.synchronize(&accepted);
+        draft.edited.as_mut().unwrap().grid_visible = false;
+        draft.synchronize(&accepted);
+        assert!(!draft.edited.as_ref().unwrap().grid_visible);
+        let mut external = accepted.clone();
+        external.snap_to_grid = false;
+        draft.synchronize(&external);
+        assert_ne!(draft.original.as_ref(), Some(&external));
+        assert!(draft.edited.as_ref().unwrap().snap_to_grid);
+        draft.clear();
+        draft.synchronize(&external);
+        assert_eq!(draft.edited, Some(external));
     }
 }

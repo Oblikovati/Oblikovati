@@ -31,6 +31,25 @@ fn sketch_preferences_change_the_owned_application_options() {
         application_bdd::rendered_label_center("Show grid in sketch"),
     );
     assert!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .sketch_options
+            .unwrap()
+            .grid_visible
+    );
+    assert!(
+        window
+            .gui_actions
+            .iter()
+            .all(|action| !matches!(action, oblikovati_gui::GuiShellAction::SetSketchOptions(_)))
+    );
+    click_shell_position(
+        &mut window,
+        &mut owner,
+        application_bdd::rendered_label_center("Apply Sketch"),
+    );
+    assert!(
         !owner
             .gui_command_state()
             .unwrap()
@@ -43,6 +62,53 @@ fn sketch_preferences_change_the_owned_application_options() {
             .gui_actions
             .iter()
             .any(|action| matches!(action, oblikovati_gui::GuiShellAction::SetSketchOptions(_)))
+    );
+    owner.finish().unwrap();
+    window.finish().unwrap();
+}
+
+#[test]
+fn escaping_sketch_preferences_discards_the_pending_edit() {
+    let preferences = tempfile::tempdir().unwrap();
+    let mut native = NativeHeadWindow::open().unwrap();
+    native.ribbon_settings_directory = Some(preferences.path().to_owned());
+    let mut owner = native_owner_at(native.wake.clone(), preferences.path()).unwrap();
+    let mut window = scripted_window(native);
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    for label in ["Tools", "Application Options", "Show grid in sketch"] {
+        click_shell_position(
+            &mut window,
+            &mut owner,
+            application_bdd::rendered_label_center(label),
+        );
+    }
+    window.scripted = [true, false]
+        .into_iter()
+        .map(|pressed| {
+            ViewportEvent::Input(ViewportInput::PhysicalKey {
+                key: oblikovati_viewport::ViewportPhysicalKey::Escape,
+                layout_key: oblikovati_viewport::ViewportPhysicalKey::Escape,
+                command: Some(oblikovati_viewport::ViewportKey::Cancel),
+                modifiers: Default::default(),
+                pressed,
+            })
+        })
+        .collect();
+    crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
+    for label in ["Application Options", "Show grid in sketch", "Apply Sketch"] {
+        click_shell_position(
+            &mut window,
+            &mut owner,
+            application_bdd::rendered_label_center(label),
+        );
+    }
+    assert!(
+        !owner
+            .gui_command_state()
+            .unwrap()
+            .sketch_options
+            .unwrap()
+            .grid_visible
     );
     owner.finish().unwrap();
     window.finish().unwrap();

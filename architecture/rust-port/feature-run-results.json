@@ -478,5 +478,24 @@
     "scenario_inventory_sha256": "13c70b5229ded138a118a8195f4207e4ae10a852b54bcfd3344bf14d3ec4f924",
     "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-constraint-glyph-e33bac9dd/scenario-arguments.json",
     "scenario_arguments_sha256": "10d95769d69dc18ce23bebcfc2f8019230594b87aba5787f9fb34f09459128e9"
+  },
+  "features/sketch/sketch-preferences/scenario.feature": {
+    "feature_sha256": "7a5a5e600f8213f97978d926448c9f7be5431f71e2155e6b2fbf5ed0fa9cd7c6",
+    "supporting_files": {
+      "features/sketch/sketch-preferences/BLOCKERS.md": "458175a3738144b727c1d520480f41bf602308e35f022c0242d82df35c795815",
+      "features/sketch/sketch-preferences/FUNCTIONAL.md": "bffa14ad68c4f24942ffd5bb0c3d8fdf0c1b5a082649c705a3605b04f8b4baee",
+      "features/sketch/sketch-preferences/VISUAL.md": "87f1eb87d333ec795ad59f9d4feb18338ad23c6e4b9f1455ebeb6f97a180f27c",
+      "features/sketch/sketch-preferences/feature-icon.svg": "9ec690bf4342b0fd854c93aad33595538c0d724ee406fcc98467d705fc260ae0"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-sketch-preferences-baseline-88de2d7e5/cucumber.json",
+    "cucumber_sha256": "e0470fa78f084df4b1cd05151cd318d35480a2118614bdde2389e1fe9e0828b9",
+    "application_commit": "88de2d7e5",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=sketch-preferences OBK_BDD_REPORTS=/tmp/obk-sketch-prefs-88de2d7e5/run cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe",
+    "notes": "Full baseline: all three scenarios stopped at their first unbound step. Source and supporting file hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-sketch-preferences-baseline-88de2d7e5/scenario-inventory.json",
+    "scenario_inventory_sha256": "13c70b5229ded138a118a8195f4207e4ae10a852b54bcfd3344bf14d3ec4f924",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-sketch-preferences-baseline-88de2d7e5/scenario-arguments.json",
+    "scenario_arguments_sha256": "266d85a219581e076b274a6701754324161ea771427cc024ef5018201a6d6d76"
   }
 }

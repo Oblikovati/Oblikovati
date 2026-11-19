@@ -40,6 +40,7 @@ pub(crate) struct GuiScalePreferences {
     open: crate::dockable_lifecycle::DockableState,
     document_units: crate::document_units::GuiDocumentUnits,
     part_draft: crate::part_options_ui::PartOptionsDraft,
+    sketch_draft: crate::sketch_options_ui::SketchOptionsDraft,
     #[cfg(test)]
     pub(crate) scale_200_bounds: Option<[[f32; 2]; 2]>,
 }
@@ -75,6 +76,7 @@ impl GuiScalePreferences {
         self.document_units.panel(ui, state, actions, home_active);
         let Some(options) = state.ui_scale.filter(|_| self.open.is_open()) else {
             self.part_draft.clear();
+            self.sketch_draft.clear();
             return;
         };
         preference_geometry(ui);
@@ -92,7 +94,7 @@ impl GuiScalePreferences {
                     &mut self.scale_200_bounds,
                 );
                 self.part_draft.draw(ui, state.part_options, actions);
-                crate::sketch_options_ui::draw(ui, state, actions);
+                self.sketch_draft.draw(ui, state, actions);
                 ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
             })
             .unwrap_or(false);
@@ -104,6 +106,7 @@ impl GuiScalePreferences {
         }
         if !self.open.is_open() {
             self.part_draft.clear();
+            self.sketch_draft.clear();
         }
     }
 }
