@@ -203,6 +203,7 @@ pub(crate) fn canvas_menu(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
     open_token: &mut Option<u64>,
+    marking_enabled: bool,
 ) {
     if state.authoring != GuiAuthoringContext::Sketch || !state.sketch_at_ready {
         retire_closed_context(open_token, actions);
@@ -218,7 +219,7 @@ pub(crate) fn canvas_menu(
     };
     *open_token = state.sketch_context.as_ref().map(|context| context.token);
     if let Some(menu) = &state.sketch_marking_menu {
-        if state.sketch_classic_menu {
+        if crate::marking_menu::use_classic(state.sketch_classic_menu, marking_enabled) {
             super::marking_menu::draw_classic(ui, menu, state, actions);
         } else {
             super::marking_menu::draw(ui, menu, state, actions);

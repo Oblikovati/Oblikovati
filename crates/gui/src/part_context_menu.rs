@@ -10,18 +10,20 @@ pub(crate) fn canvas_menu(
     area: crate::application::document_creation::workspaces::WorkspaceArea,
     actions: &mut Vec<GuiShellAction>,
     repeat_wheel: &mut Option<bool>,
+    marking_enabled: bool,
 ) -> bool {
     if state.authoring != GuiAuthoringContext::Part || state.document.is_none() {
         return false;
     }
+    let classic = crate::marking_menu::use_classic(state.sketch_classic_menu, marking_enabled);
     if !ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel())
         && ui.is_mouse_released(imgui::MouseButton::Right)
     {
         ui.open_popup(POPUP);
-        position_face_popup(ui, state, area);
+        position_face_popup(ui, state, area, classic);
     }
     let face = selected_face_action(state);
-    let separate = face.is_some() && !state.sketch_classic_menu;
+    let separate = face.is_some() && !classic;
     let _background =
         separate.then(|| ui.push_style_color(imgui::StyleColor::PopupBg, [0., 0., 0., 0.]));
     let Some(_popup) = ui.begin_popup(POPUP) else {
@@ -33,7 +35,7 @@ pub(crate) fn canvas_menu(
     if repeat_wheel.is_some() && ui.menu_item("Repeat Navigation Wheel") {
         *repeat_wheel = Some(true);
     }
-    draw_configured_menu(ui, state, actions);
+    draw_configured_menu(ui, state, actions, classic);
     draw_face_measure(ui, state, actions, face.as_ref());
     if !separate {
         draw_face_properties(ui, state, actions, face.as_ref());
@@ -55,8 +57,9 @@ fn position_face_popup(
     ui: &Ui,
     state: &GuiCommandState,
     area: crate::application::document_creation::workspaces::WorkspaceArea,
+    classic: bool,
 ) {
-    if state.sketch_classic_menu || selected_face_action(state).is_none() {
+    if classic || selected_face_action(state).is_none() {
         return;
     }
     let Some(ring) = face_ring_size(ui, state) else {
@@ -174,7 +177,12 @@ fn draw_face_properties(
         actions.push(action);
     }
 }
-fn draw_configured_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+fn draw_configured_menu(
+    ui: &Ui,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    classic: bool,
+) {
     let Some(menus) = &state.marking_menus else {
         return;
     };
@@ -186,7 +194,7 @@ fn draw_configured_menu(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiS
         command
     };
     let start = actions.len();
-    if state.sketch_classic_menu {
+    if classic {
         crate::marking_menu::draw_classic(ui, &menu, state, actions, resolve);
     } else {
         crate::marking_menu::draw(ui, &menu, state, actions, resolve);

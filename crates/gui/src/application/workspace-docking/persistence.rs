@@ -22,6 +22,8 @@ pub(crate) struct WorkspaceDockSettings {
     #[serde(default = "enabled_by_default")]
     pub status_bar_visible: bool,
     #[serde(default = "enabled_by_default")]
+    pub marking_menu_enabled: bool,
+    #[serde(default = "enabled_by_default")]
     pub auto_expand_representations: bool,
     #[serde(default)]
     pub browser_panels:
@@ -79,6 +81,7 @@ impl WorkspaceDockSettings {
             view_cube_visible: true,
             navigation_bar_visible: true,
             status_bar_visible: true,
+            marking_menu_enabled: true,
             ..Self::default()
         }
     }
@@ -149,6 +152,20 @@ mod tests {
         assert!(
             saved.view_cube_visible && !saved.navigation_bar_visible && saved.status_bar_visible
         );
+    }
+    #[test]
+    fn marking_menu_visibility_defaults_and_round_trips() {
+        let legacy = br#"{"version":1,"imgui_ini":"","material_browser":false,"appearance_browser":false,"parameters":false,"selection_filter":false,"history_browser":false}"#;
+        let mut settings = WorkspaceDockSettings::decode(legacy).unwrap();
+        assert!(settings.marking_menu_enabled);
+        settings.marking_menu_enabled = false;
+        let mut engine = crate::GuiFrameEngine::new().unwrap();
+        engine
+            .load_workspace_layout(&settings.encode().unwrap())
+            .unwrap();
+        let saved =
+            WorkspaceDockSettings::decode(&engine.save_workspace_layout().unwrap()).unwrap();
+        assert!(!saved.marking_menu_enabled);
     }
     #[test]
     fn old_settings_default_and_round_trip_representation_preference() {

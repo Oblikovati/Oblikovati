@@ -265,6 +265,7 @@ impl GuiFrameEngine {
                     area,
                     &mut menu_actions,
                     &mut repeat_wheel,
+                    self.workspace.marking_menu_enabled,
                 );
             if repeat_wheel == Some(true) {
                 self.orientation.repeat_wheel();
@@ -358,6 +359,7 @@ impl GuiFrameEngine {
             &request.commands,
             &mut selected,
             &mut self.sketch_popup_token,
+            self.workspace.marking_menu_enabled,
         );
         self.dimension_value_editor
             .panel(ui, request, &mut selected);
