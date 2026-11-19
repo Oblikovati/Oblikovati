@@ -164,6 +164,11 @@ impl NativeGui {
         self.parameter_changed = true;
         self.deadline = Some(self.last_frame.unwrap_or_default());
     }
+    pub(super) fn acknowledge_document_units(&mut self, document: u64, result: Result<(), String>) {
+        self.engine.acknowledge_document_units(document, result);
+        self.parameter_changed = true;
+        self.deadline = Some(self.last_frame.unwrap_or_default());
+    }
     pub(super) fn require_publication(&mut self) {
         self.dirty = true;
     }

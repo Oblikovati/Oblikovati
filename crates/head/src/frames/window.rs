@@ -102,6 +102,15 @@ pub trait HeadWindow {
         Ok(())
     }
 
+    /// Report a unit update result; example: `window.acknowledge_gui_document_units(1, Ok(()))?`.
+    fn acknowledge_gui_document_units(
+        &mut self,
+        _: u64,
+        _: Result<(), String>,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+
     /// Advance GUI work before routing one input; example: `window.gui_frame(Some(event), &commands)?`.
     fn gui_frame(
         &mut self,

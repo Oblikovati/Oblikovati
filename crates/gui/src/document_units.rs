@@ -3,12 +3,13 @@
 use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Key, Ui};
-use oblikovati_api::wire::{DocumentUnitsInfo, SetDocumentUnitsArgs};
+use oblikovati_api::wire::DocumentUnitsInfo;
 
 #[derive(Default)]
 pub(crate) struct GuiDocumentUnits {
     document: Option<u64>,
     dock_state: crate::dockable_lifecycle::DockableState,
+    draft: Option<crate::document_units_draft::UnitDraft>,
 }
 impl DockableWindow for GuiDocumentUnits {}
 impl GuiDocumentUnits {
@@ -20,9 +21,13 @@ impl GuiDocumentUnits {
     }
     fn set_document(&mut self, document: Option<u64>) {
         self.document = document;
+        self.draft = None;
         self.dock_state.set_open(document.is_some());
     }
     pub(crate) fn request(&mut self, document: u64) {
+        if self.document == Some(document) {
+            return;
+        }
         self.set_document(Some(document));
     }
     pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState, home_active: bool) {
@@ -41,83 +46,65 @@ impl GuiDocumentUnits {
         let (Some(document), Some(units)) = (self.document, state.document_units.as_ref()) else {
             return;
         };
-        Self::fit_dockable(ui, "Document Settings", [400., 170.], [390., 350.]);
+        let draft = self
+            .draft
+            .get_or_insert_with(|| crate::document_units_draft::UnitDraft::new(units));
+        draft.sync(units);
+        Self::fit_dockable(ui, "Document Settings", [400., 190.], [390., 390.]);
         let mut open = true;
         let mut done = false;
         Self::dockable_window(ui, "Document Settings", &mut open).build(|| {
             ui.text("Units");
-            let disabled = ui.begin_disabled(state.transaction_open);
-            unit_controls(ui, document, units, actions);
-            precision_controls(ui, document, units, actions);
+            let disabled = ui.begin_disabled(state.transaction_open || draft.pending());
+            unit_controls(ui, &mut draft.value);
+            precision_controls(ui, &mut draft.value);
             drop(disabled);
             ui.text_disabled("Angle as DMS: unavailable");
+            if draft.stale(units) {
+                ui.text_colored(
+                    [1., 0.3, 0.3, 1.],
+                    "Settings changed elsewhere. Cancel and reopen.",
+                );
+            }
+            if let Some(error) = &draft.error {
+                ui.text_colored([1., 0.3, 0.3, 1.], error);
+            }
             ui.separator();
-            done = crate::widget_abi::button(ui, "Done", [0.; 2])
-                || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape);
+            done = unit_actions(ui, document, units, draft, actions, state.transaction_open);
+            done |= ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape);
         });
         if !open || done {
             self.set_document(None);
         }
     }
-}
-#[derive(Clone, Copy)]
-enum UnitField {
-    Length,
-    Angle,
-    Mass,
-    Time,
-    LengthFormat,
-}
-fn unit_controls(
-    ui: &Ui,
-    document: u64,
-    units: &DocumentUnitsInfo,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    for (field, label, current, options) in [
-        (
-            UnitField::Length,
-            "Length",
-            units.length_unit.as_str(),
-            &["µm", "mm", "cm", "m", "in", "ft"][..],
-        ),
-        (
-            UnitField::Angle,
-            "Angle",
-            units.angle_unit.as_str(),
-            &["deg", "rad"][..],
-        ),
-        (
-            UnitField::Mass,
-            "Mass",
-            units.mass_unit.as_str(),
-            &["kg", "g", "lb"][..],
-        ),
-        (
-            UnitField::Time,
-            "Time",
-            units.time_unit.as_str(),
-            &["s", "ms", "min", "hr"][..],
-        ),
-        (
-            UnitField::LengthFormat,
-            "Length format",
-            units.length_display_format.as_str(),
-            &["decimal", "fractional", "architectural"][..],
-        ),
-    ] {
-        if let Some(selected) = select_unit(ui, label, current, options) {
-            let mut request = SetDocumentUnitsArgs::default();
-            let value = Some(Box::new(selected.to_string()));
-            match field {
-                UnitField::Length => request.length_unit = value,
-                UnitField::Angle => request.angle_unit = value,
-                UnitField::Mass => request.mass_unit = value,
-                UnitField::Time => request.time_unit = value,
-                UnitField::LengthFormat => request.length_display_format = value,
-            }
-            actions.push(GuiShellAction::SetDocumentUnits { document, request });
+    pub(crate) fn acknowledge(&mut self, document: u64, result: Result<(), String>) {
+        if self.document == Some(document)
+            && let Some(draft) = &mut self.draft
+        {
+            draft.acknowledge(result);
         }
+    }
+}
+fn unit_controls(ui: &Ui, units: &mut DocumentUnitsInfo) {
+    edit_unit(
+        ui,
+        "Length",
+        &mut units.length_unit,
+        &["µm", "mm", "cm", "m", "in", "ft"],
+    );
+    edit_unit(ui, "Angle", &mut units.angle_unit, &["deg", "rad"]);
+    edit_unit(ui, "Mass", &mut units.mass_unit, &["kg", "g", "lb"]);
+    edit_unit(ui, "Time", &mut units.time_unit, &["s", "ms", "min", "hr"]);
+    edit_unit(
+        ui,
+        "Length format",
+        &mut units.length_display_format,
+        &["decimal", "fractional", "architectural"],
+    );
+}
+fn edit_unit(ui: &Ui, label: &str, value: &mut String, options: &[&str]) {
+    if let Some(selected) = select_unit(ui, label, value, options) {
+        *value = selected.to_string();
     }
 }
 fn select_unit<'a>(ui: &Ui, label: &str, current: &str, options: &'a [&str]) -> Option<&'a str> {
@@ -129,31 +116,43 @@ fn select_unit<'a>(ui: &Ui, label: &str, current: &str, options: &'a [&str]) -> 
             && *name != current
     })
 }
-fn precision_controls(
-    ui: &Ui,
-    document: u64,
-    units: &DocumentUnitsInfo,
-    actions: &mut Vec<GuiShellAction>,
-) {
+fn precision_controls(ui: &Ui, units: &mut DocumentUnitsInfo) {
     for (label, current) in [
-        ("Length precision", units.length_display_precision),
-        ("Angle precision", units.angle_display_precision),
+        ("Length precision", &mut units.length_display_precision),
+        ("Angle precision", &mut units.angle_display_precision),
     ] {
-        let Ok(mut value) = i32::try_from(current) else {
+        let Ok(mut value) = i32::try_from(*current) else {
             ui.text_disabled(format!("{label}: {current}"));
             continue;
         };
-        if !ui.input_int(label, &mut value).build() || value < 0 || i64::from(value) == current {
-            continue;
+        if ui.input_int(label, &mut value).build() {
+            *current = i64::from(value);
         }
-        let mut request = SetDocumentUnitsArgs::default();
-        if label == "Length precision" {
-            request.length_display_precision = Some(Box::new(i64::from(value)));
-        } else {
-            request.angle_display_precision = Some(Box::new(i64::from(value)));
-        }
+    }
+}
+fn unit_actions(
+    ui: &Ui,
+    document: u64,
+    units: &DocumentUnitsInfo,
+    draft: &mut crate::document_units_draft::UnitDraft,
+    actions: &mut Vec<GuiShellAction>,
+    transaction_open: bool,
+) -> bool {
+    let close_disabled = ui.begin_disabled(draft.dirty() || draft.pending());
+    let close = crate::widget_abi::button(ui, "Close", [0.; 2]);
+    drop(close_disabled);
+    ui.same_line();
+    let cancel_disabled = ui.begin_disabled(!draft.dirty() || draft.pending());
+    let cancel = crate::widget_abi::button(ui, "Cancel", [0.; 2]);
+    drop(cancel_disabled);
+    ui.same_line();
+    let apply_disabled = ui.begin_disabled(transaction_open || !draft.ready(units));
+    let apply = crate::widget_abi::button(ui, "Apply", [0.; 2]);
+    drop(apply_disabled);
+    if apply && let Some(request) = draft.submit(units) {
         actions.push(GuiShellAction::SetDocumentUnits { document, request });
     }
+    close || cancel
 }
 
 #[cfg(test)]
@@ -172,5 +171,16 @@ mod dock_tests {
         };
         dialog.sync_before_docking(&state, true);
         assert!(dialog.document.is_none());
+    }
+    #[test]
+    fn reopening_same_document_preserves_draft() {
+        let mut dialog = GuiDocumentUnits::default();
+        dialog.request(7);
+        let units = DocumentUnitsInfo::default();
+        let mut draft = crate::document_units_draft::UnitDraft::new(&units);
+        draft.value.length_unit = "cm".into();
+        dialog.draft = Some(draft);
+        dialog.request(7);
+        assert_eq!(dialog.draft.unwrap().value.length_unit, "cm");
     }
 }

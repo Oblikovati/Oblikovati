@@ -33,6 +33,7 @@ mod dockable_lifecycle;
 mod dockable_window;
 mod document_tabs;
 mod document_units;
+mod document_units_draft;
 mod engine;
 mod external_dock_window;
 mod files;

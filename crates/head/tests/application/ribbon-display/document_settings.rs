@@ -58,7 +58,7 @@ fn settings_tabs_visible(world: &mut ApplicationWorld) {
 
 #[when("the user closes the dialog without changing settings")]
 fn close_settings(world: &mut ApplicationWorld) {
-    let at = super::super::diagnostics::pointer_pixels(world.run("Done").center());
+    let at = super::super::diagnostics::pointer_pixels(world.run("Close").center());
     super::super::x11_input::click(at);
     world.pump(Vec::new());
 }

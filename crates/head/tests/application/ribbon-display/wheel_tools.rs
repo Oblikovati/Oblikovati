@@ -232,7 +232,8 @@ fn tools_document_settings_edit_the_active_part_units() {
             .document_units
             .unwrap()
             .length_unit,
-        selected
+        units.length_unit,
+        "a staged edit must not change the document before Apply"
     );
     let angle = if units.angle_unit == "rad" {
         "deg"
@@ -254,6 +255,7 @@ fn tools_document_settings_edit_the_active_part_units() {
     };
     world.click_text(&units.length_display_format);
     world.click_text(format);
+    world.click_text("Apply");
     let updated = world
         .app()
         .owner
@@ -270,8 +272,45 @@ fn tools_document_settings_edit_the_active_part_units() {
         ),
         (angle, mass, time, format)
     );
-    world.click_text("Done");
+    assert_eq!(updated.length_unit, selected);
+    world.click_text("Close");
     world.expect_no_text("Length precision");
+    world.close();
+}
+
+#[test]
+fn document_settings_cancel_discards_staged_unit_edits() {
+    use crate::HeadWork;
+    let mut world = ApplicationWorld::new();
+    part_with_full_ribbon(&mut world);
+    full_tools(&mut world);
+    let before = world
+        .app()
+        .owner
+        .gui_command_state()
+        .unwrap()
+        .document_units
+        .unwrap();
+    let selected = if before.length_unit == "in" {
+        "mm"
+    } else {
+        "in"
+    };
+    world.click_text("Document Settings");
+    world.click_text(&before.length_unit);
+    world.click_text(selected);
+    world.click_text("Cancel");
+    let after = world
+        .app()
+        .owner
+        .gui_command_state()
+        .unwrap()
+        .document_units
+        .unwrap();
+    assert_eq!(after, before, "Cancel must discard the full staged edit");
+    world.click_text("Document Settings");
+    world.expect_text(&before.length_unit);
+    world.click_text("Close");
     world.close();
 }
 
@@ -299,7 +338,7 @@ fn compact_tools_closes_its_panel_when_document_settings_opens() {
     world.expect_text("Document Settings");
     world.pump(vec![button(false)]);
     world.expect_text("Length precision");
-    world.click_text("Done");
+    world.click_text("Close");
     world.expect_no_text("Length precision");
     world.expect_no_text("Document Settings");
     world.close();
@@ -316,7 +355,7 @@ fn tabs_only_tools_closes_temporary_commands_after_opening_settings() {
     world.click_text("Document Settings");
     world.expect_text("Length precision");
     world.expect_no_text("Application Options");
-    world.click_text("Done");
+    world.click_text("Close");
     world.expect_no_text("Length precision");
     world.expect_no_text("Document Settings");
     world.close();
