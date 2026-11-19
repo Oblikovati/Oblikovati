@@ -30,6 +30,12 @@ pub struct SketchPlacementCreationReport {
     pub relations: Vec<SketchConstraintId>,
     pub dimensions: Vec<(usize, SketchDimensionCreationReport)>,
 }
+/// Evaluated inputs that govern placement inference; example: `SketchPlacementContext { datums: None, scope: Some(&scope) }`.
+#[derive(Clone, Copy)]
+pub struct SketchPlacementContext<'a> {
+    pub datums: Option<&'a crate::feature::work_geometry::WorkGeometryEvaluation>,
+    pub scope: Option<&'a SketchInferenceCandidates>,
+}
 impl DocumentSnapshot {
     /// Apply geometry, relations, and locked dimensions as one candidate; example: `snapshot.create_sketch_placement(sketch,&recipe,&locks,options,ids)?`.
     pub fn create_sketch_placement(
@@ -40,7 +46,17 @@ impl DocumentSnapshot {
         options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
     ) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
-        self.create_sketch_placement_from(sketch, recipe, locks, options, ids, None, None)
+        self.create_sketch_placement_from(
+            sketch,
+            recipe,
+            locks,
+            options,
+            ids,
+            SketchPlacementContext {
+                datums: None,
+                scope: None,
+            },
+        )
     }
     /// Create a placement using one current part replay.
     /// Example: `snapshot.create_sketch_placement_with_datums(sketch, recipe, locks, options, ids, datums)?`.
@@ -53,10 +69,20 @@ impl DocumentSnapshot {
         ids: &mut RecipeReservations<'_>,
         datums: &crate::feature::work_geometry::WorkGeometryEvaluation,
     ) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
-        self.create_sketch_placement_from(sketch, recipe, locks, options, ids, Some(datums), None)
+        self.create_sketch_placement_from(
+            sketch,
+            recipe,
+            locks,
+            options,
+            ids,
+            SketchPlacementContext {
+                datums: Some(datums),
+                scope: None,
+            },
+        )
     }
     /// Create with a session inference scope and optional evaluated datums.
-    /// Example: `snapshot.create_scoped_sketch_placement(sketch, recipe, locks, options, ids, None, &scope)?`.
+    /// Example: `snapshot.create_scoped_sketch_placement(sketch, recipe, locks, options, ids, context)?`.
     pub fn create_scoped_sketch_placement(
         &mut self,
         sketch: DocumentSketchId,
@@ -64,10 +90,9 @@ impl DocumentSnapshot {
         locks: &[Option<SketchPlacementFieldLock>],
         options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
-        datums: Option<&crate::feature::work_geometry::WorkGeometryEvaluation>,
-        scope: &SketchInferenceCandidates,
+        context: SketchPlacementContext<'_>,
     ) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
-        self.create_sketch_placement_from(sketch, recipe, locks, options, ids, datums, Some(scope))
+        self.create_sketch_placement_from(sketch, recipe, locks, options, ids, context)
     }
     fn create_sketch_placement_from(
         &mut self,
@@ -76,9 +101,9 @@ impl DocumentSnapshot {
         locks: &[Option<SketchPlacementFieldLock>],
         options: SolveOptions,
         ids: &mut RecipeReservations<'_>,
-        datums: Option<&crate::feature::work_geometry::WorkGeometryEvaluation>,
-        scope: Option<&SketchInferenceCandidates>,
+        context: SketchPlacementContext<'_>,
     ) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
+        let SketchPlacementContext { datums, scope } = context;
         recipe.validate()?;
         let mut candidate = self.clone();
         let mut report = candidate.append_placement(sketch, recipe, options, ids, datums, scope)?;

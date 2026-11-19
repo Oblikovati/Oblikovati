@@ -131,6 +131,12 @@ fn locked_segment_operands(
         )),
     ]
 }
+struct LineInferenceContext<'a> {
+    settings: &'a SketchSettings,
+    policy: SketchInferencePolicy,
+    scope: Option<&'a SketchInferenceCandidates>,
+    current: &'a [SketchEntityId],
+}
 impl SketchLineChainCreation {
     fn append_chain(
         &self,
@@ -165,7 +171,16 @@ impl SketchLineChainCreation {
                 .chain(report.lines.iter().map(|line| line.primitive.entity))
                 .collect();
             report.lines.push(self.append_segment(
-                geometry, sketch, endpoints, settings, policy, ids, scope, &current,
+                geometry,
+                sketch,
+                endpoints,
+                ids,
+                LineInferenceContext {
+                    settings,
+                    policy,
+                    scope,
+                    current: &current,
+                },
             )?);
         }
         Ok(report)
@@ -189,12 +204,15 @@ impl SketchLineChainCreation {
         geometry: &mut Sketch2D,
         sketch: DocumentSketchId,
         points: [SketchEntityId; 2],
-        settings: &SketchSettings,
-        policy: SketchInferencePolicy,
         ids: &mut RecipeReservations<'_>,
-        scope: Option<&SketchInferenceCandidates>,
-        current: &[SketchEntityId],
+        context: LineInferenceContext<'_>,
     ) -> Result<SketchLineCreationReport, SketchLineCreationError> {
+        let LineInferenceContext {
+            settings,
+            policy,
+            scope,
+            current,
+        } = context;
         let inference = match scope {
             Some(scope) => {
                 geometry.infer_owned_line_placement_scoped(points, settings, policy, scope, current)

@@ -3,8 +3,8 @@ use crate::{CommandError, DocumentSession, MutationError, TransactionObserver};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     history::{
-        EditError, SketchPlacementCreationError, SketchPlacementCreationReport,
-        SketchPlacementFieldLock,
+        EditError, SketchPlacementContext, SketchPlacementCreationError,
+        SketchPlacementCreationReport, SketchPlacementFieldLock,
     },
     sketch::{SketchCircleConstruction, SketchInferenceCandidates, SketchPlacementRecipe},
 };
@@ -40,7 +40,13 @@ impl<O: TransactionObserver> DocumentSession<O> {
                     ids,
                     |snapshot, ids| {
                         create_with_datums(
-                            snapshot, ids, sketch, recipe, locks, options, current, &scope,
+                            snapshot,
+                            ids,
+                            sketch,
+                            recipe,
+                            locks,
+                            options,
+                            (current, &scope),
                         )
                     },
                     None,
@@ -76,7 +82,13 @@ impl<O: TransactionObserver> DocumentSession<O> {
             "Create constrained sketch recipe",
             |snapshot, ids| {
                 let report = create_with_datums(
-                    snapshot, ids, sketch, recipe, locks, options, &current, &scope,
+                    snapshot,
+                    ids,
+                    sketch,
+                    recipe,
+                    locks,
+                    options,
+                    (&current, &scope),
                 )?;
                 verify_placement(snapshot, &report, recipe, Some(construction))?;
                 Ok(report)
@@ -103,7 +115,15 @@ impl<O: TransactionObserver> DocumentSession<O> {
                     ids,
                     |snapshot, ids| {
                         snapshot.create_scoped_sketch_placement(
-                            sketch, recipe, locks, options, ids, None, &scope,
+                            sketch,
+                            recipe,
+                            locks,
+                            options,
+                            ids,
+                            SketchPlacementContext {
+                                datums: None,
+                                scope: Some(&scope),
+                            },
                         )
                     },
                     Some(options),
@@ -147,7 +167,15 @@ impl<O: TransactionObserver> DocumentSession<O> {
             "Create constrained sketch recipe",
             |snapshot, ids| {
                 snapshot.create_scoped_sketch_placement(
-                    sketch, recipe, locks, options, ids, None, &scope,
+                    sketch,
+                    recipe,
+                    locks,
+                    options,
+                    ids,
+                    SketchPlacementContext {
+                        datums: None,
+                        scope: Some(&scope),
+                    },
                 )
             },
             |snapshot, report| {
@@ -164,17 +192,22 @@ fn create_with_datums(
     recipe: &SketchPlacementRecipe,
     locks: &[Option<SketchPlacementFieldLock>],
     options: oblikovati_solve::nonlinear::SolveOptions,
-    datums: &oblikovati_model::feature::work_geometry::WorkGeometryEvaluation,
-    scope: &SketchInferenceCandidates,
+    context: (
+        &oblikovati_model::feature::work_geometry::WorkGeometryEvaluation,
+        &SketchInferenceCandidates,
+    ),
 ) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
+    let (datums, scope) = context;
     let report = snapshot.create_scoped_sketch_placement(
         sketch,
         recipe,
         locks,
         options,
         ids,
-        Some(datums),
-        scope,
+        SketchPlacementContext {
+            datums: Some(datums),
+            scope: Some(scope),
+        },
     )?;
     let solved =
         snapshot.solve_one_document_sketch_with_datums(sketch, options, || false, datums)?;
