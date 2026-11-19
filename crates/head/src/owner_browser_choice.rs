@@ -19,8 +19,8 @@ impl<
         use oblikovati_gui::GuiBrowserChoice::{
             ActivateModelState, ActivatePartView, Body, BodyVisible, CopyModelState, CopyPartView,
             CreateModelState, LockPartView, Nothing, Occurrence, PartViewBodyVisibility,
-            RenameModelState, RenamePartView, Root, SetOccurrenceSuppressed, ShowFeatureDimensions,
-            SketchDimensionsShown, ToggleModelStateEditScope,
+            PublishPartView, RenameModelState, RenamePartView, Root, SetOccurrenceSuppressed,
+            ShowFeatureDimensions, SketchDimensionsShown, ToggleModelStateEditScope,
         };
         self.require_browser_document(document)?;
         if matches!(choice, Body { toggle: true, .. })
@@ -78,6 +78,17 @@ impl<
                 .set_options(&oblikovati_api::wire::SetPartDesignViewOptionsArgs {
                     id: *id,
                     locked: Some(std::boxed::Box::new(*locked)),
+                    ..Default::default()
+                })
+                .map_err(|cause| cause.to_string())?;
+            return Ok(true);
+        }
+        if let PublishPartView { id, published } = choice {
+            oblikovati_api::client::Client::new(self.document_host())
+                .part_design_views()
+                .set_options(&oblikovati_api::wire::SetPartDesignViewOptionsArgs {
+                    id: *id,
+                    published: Some(Box::new(*published)),
                     ..Default::default()
                 })
                 .map_err(|cause| cause.to_string())?;
@@ -152,6 +163,7 @@ impl<
             | CopyPartView(_)
             | ActivatePartView(_)
             | LockPartView { .. }
+            | PublishPartView { .. }
             | PartViewBodyVisibility { .. }
             | CopyModelState(_)
             | RenameModelState { .. }

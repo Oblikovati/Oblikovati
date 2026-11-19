@@ -123,3 +123,41 @@ fn view_branch(world: &ApplicationWorld) -> &super::super::diagnostics::Rendered
         .min_by(|first, second| first.center()[1].total_cmp(&second.center()[1]))
         .expect("expected View inside the browser's Representations branch")
 }
+
+#[given("The MCAD Software has an empty part with a copied view active")]
+fn empty_part_with_active_copy(world: &mut ApplicationWorld) {
+    world.add_part();
+    expanded_primary_view(world);
+    copy_primary_view(world);
+    rename_copied_view(world);
+    activate_copied_view(world);
+}
+
+#[given("Publish is checked in the copied view context menu")]
+fn published_view_menu_open(world: &mut ApplicationWorld) {
+    right_click_row(world, "Capture View");
+    assert!(world.checked("Publish"));
+}
+
+#[when("the user chooses Publish from the copied view context menu")]
+#[when("the user chooses Publish from the copied view context menu again")]
+fn toggle_view_publication(world: &mut ApplicationWorld) {
+    choose_menu_row(world, "Publish");
+}
+
+#[then("Publish is unchecked when the context menu is reopened")]
+fn view_publication_unchecked(world: &mut ApplicationWorld) {
+    right_click_row(world, "Capture View");
+    assert!(!world.checked("Publish"));
+}
+
+#[then("Publish is checked when the context menu is reopened")]
+fn view_publication_checked(world: &mut ApplicationWorld) {
+    right_click_row(world, "Capture View");
+    assert!(world.checked("Publish"));
+}
+
+#[then("the copied view remains active")]
+fn published_copy_remains_active(world: &mut ApplicationWorld) {
+    copied_view_active(world);
+}

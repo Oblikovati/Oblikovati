@@ -16,6 +16,11 @@ pub enum GuiBrowserChoice {
         id: u64,
         locked: bool,
     },
+    /// Set whether a part view is published.
+    PublishPartView {
+        id: u64,
+        published: bool,
+    },
     /// Show or hide every resolved body in the active part view.
     PartViewBodyVisibility {
         id: u64,

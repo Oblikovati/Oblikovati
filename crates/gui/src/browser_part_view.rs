@@ -128,6 +128,20 @@ impl BrowserTree<'_> {
         }
         if self
             .ui
+            .menu_item_config("Publish")
+            .selected(entry.published())
+            .build()
+        {
+            actions.push(GuiShellAction::BrowserChoice {
+                document,
+                choice: crate::GuiBrowserChoice::PublishPartView {
+                    id: entry.id(),
+                    published: !entry.published(),
+                },
+            });
+        }
+        if self
+            .ui
             .menu_item_config("Lock")
             .selected(entry.locked())
             .enabled(!entry.primary())
