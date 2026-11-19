@@ -35,6 +35,7 @@ pub(crate) struct WorkspaceLayout {
     pub view_cube_visible: bool,
     pub navigation_bar_visible: bool,
     pub status_bar_visible: bool,
+    pub marking_menu_enabled: bool,
     outer_center: Option<crate::application::document_creation::workspaces::WorkspaceArea>,
     outer_bottom_docked: bool,
     pub(crate) outer_bottom_span: Option<[f32; 2]>,
@@ -60,6 +61,7 @@ impl Default for WorkspaceLayout {
             view_cube_visible: true,
             navigation_bar_visible: true,
             status_bar_visible: true,
+            marking_menu_enabled: true,
             outer_center: None,
             outer_bottom_docked: false,
             outer_bottom_span: None,
@@ -374,6 +376,7 @@ impl WorkspaceLayout {
             ui.checkbox("ViewCube", &mut self.view_cube_visible);
             ui.checkbox("Navigation Bar", &mut self.navigation_bar_visible);
             ui.checkbox("Status Bar", &mut self.status_bar_visible);
+            ui.checkbox("Marking Menu", &mut self.marking_menu_enabled);
             ui.checkbox("Model Browser", &mut self.panels.model_open);
             ui.checkbox("Document Tabs", &mut self.tabs_visible);
             let mut favorites = self.panels.favorites_visible();

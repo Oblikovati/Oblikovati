@@ -6,6 +6,12 @@ use oblikovati_api::wire::MarkingMenuView;
 
 pub(crate) type ResolveCommand = fn(&str) -> Option<(&'static str, GuiShellAction)>;
 
+/// Use the linear context menu when marking is disabled or the user chose classic.
+/// Example: `use_classic(false, false)` returns `true`.
+pub(crate) fn use_classic(configured_classic: bool, marking_enabled: bool) -> bool {
+    configured_classic || !marking_enabled
+}
+
 pub(crate) fn draw(
     ui: &Ui,
     menu: &MarkingMenuView,
@@ -138,5 +144,17 @@ fn draw_slot(
     if pressed {
         actions.push(slot.action);
         ui.close_current_popup();
+    }
+}
+
+#[cfg(test)]
+mod visibility_tests {
+    use super::use_classic;
+    #[test]
+    fn disabled_marking_preserves_classic_choice() {
+        assert!(!use_classic(false, true));
+        assert!(use_classic(false, false));
+        assert!(use_classic(true, true));
+        assert!(use_classic(true, false));
     }
 }

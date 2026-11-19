@@ -44,6 +44,9 @@ use drawing_browser_steps::{drag_over_drawing, drawing_tree, expect_sheet_at, fl
 #[path = "link_close_native.rs"]
 mod link_close_native;
 #[cfg(target_os = "linux")]
+#[path = "marking_toggle_native.rs"]
+mod marking_toggle_native;
+#[cfg(target_os = "linux")]
 #[path = "model_dock_native.rs"]
 mod model_dock_native;
 #[path = "orientation_close_native.rs"]

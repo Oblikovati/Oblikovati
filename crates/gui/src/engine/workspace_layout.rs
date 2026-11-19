@@ -29,6 +29,7 @@ impl GuiFrameEngine {
         self.workspace.view_cube_visible = settings.view_cube_visible;
         self.workspace.navigation_bar_visible = settings.navigation_bar_visible;
         self.workspace.status_bar_visible = settings.status_bar_visible;
+        self.workspace.marking_menu_enabled = settings.marking_menu_enabled;
         self.workspace
             .set_auto_expand_representations(settings.auto_expand_representations);
         if settings.material_browser {
@@ -65,6 +66,7 @@ impl GuiFrameEngine {
         settings.view_cube_visible = self.workspace.view_cube_visible;
         settings.navigation_bar_visible = self.workspace.navigation_bar_visible;
         settings.status_bar_visible = self.workspace.status_bar_visible;
+        settings.marking_menu_enabled = self.workspace.marking_menu_enabled;
         settings.encode()
     }
 }
