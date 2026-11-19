@@ -1,0 +1,31 @@
+
+running 1 test
+test measure_dense_residual_evaluation ... dense_residual lines=200 n=50 min_ms=1.521 p50_ms=1.668 max_ms=2.682
+dense_residual lines=1000 n=10 min_ms=25.366 p50_ms=27.931 max_ms=29.584
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.51s
+
+	Command being timed: "/tmp/obk-4165-solver-target/release/deps/dense_residual_benchmark-419c9b5aaa224ee1 --ignored --nocapture --test-threads=1"
+	User time (seconds): 0.23
+	System time (seconds): 0.27
+	Percent of CPU this job got: 100%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.51
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 255724
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 355265
+	Voluntary context switches: 3
+	Involuntary context switches: 17
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 8
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
