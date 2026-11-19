@@ -430,6 +430,8 @@ mod sketch_endpoint;
 mod sketch_entity_delete;
 #[path = "lifecycle/sketch_fixture.rs"]
 mod sketch_fixture;
+#[path = "lifecycle/sketch_inference_scope.rs"]
+mod sketch_inference_scope;
 #[path = "lifecycle/sketch_polyline.rs"]
 mod sketch_polyline;
 #[path = "lifecycle/sketch_selection_click.rs"]

@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{
-    CommandError, DocumentSession, TransactionObserver, sketch_recompute::apply_recipe_edit,
+    CommandError, DocumentSession, MutationError, TransactionObserver,
+    sketch_recompute::apply_recipe_edit,
 };
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     history::{
-        DocumentSnapshot, RecipeReservations, SketchLineChainCreation,
+        DocumentSnapshot, EditError, RecipeReservations, SketchLineChainCreation,
         SketchLineChainCreationReport, SketchLineCreationError, SketchTangentArcCreation,
         SketchTangentArcReport,
     },
-    sketch::{Sketch2D, SketchEntityId, SketchInferencePolicy},
+    sketch::{Sketch2D, SketchEntityId, SketchInferenceCandidates, SketchInferencePolicy},
 };
 use oblikovati_solve::nonlinear::SolveOptions;
 /// Private-copy geometry and authored members, with the same inference evidence as commit.
@@ -27,13 +28,30 @@ impl<O: TransactionObserver> DocumentSession<O> {
         sketch: DocumentSketchId,
         input: &SketchLineChainCreation,
     ) -> Result<SketchLineChainPreview, CommandError<SketchLineCreationError>> {
+        self.preview_line_chain_with_scope(sketch, input, None)
+    }
+    /// Preview using the session's sketch scope; example: `session.preview_scoped_line_chain(sketch, &input)?`.
+    pub fn preview_scoped_line_chain(
+        &self,
+        sketch: DocumentSketchId,
+        input: &SketchLineChainCreation,
+    ) -> Result<SketchLineChainPreview, CommandError<SketchLineCreationError>> {
+        let scope = self.sketch_inference_scope(sketch).map_err(scope_error)?;
+        self.preview_line_chain_with_scope(sketch, input, Some(&scope))
+    }
+    fn preview_line_chain_with_scope(
+        &self,
+        sketch: DocumentSketchId,
+        input: &SketchLineChainCreation,
+        scope: Option<&SketchInferenceCandidates>,
+    ) -> Result<SketchLineChainPreview, CommandError<SketchLineCreationError>> {
         let options = self.sketch_options;
         self.history
             .preview(|snapshot, ids| {
                 apply_recipe_edit(
                     snapshot,
                     ids,
-                    |snapshot, ids| author_chain(snapshot, ids, sketch, input, options),
+                    |snapshot, ids| author_chain(snapshot, ids, sketch, input, options, scope),
                     Some(options),
                     chain_preview,
                 )
@@ -47,10 +65,27 @@ impl<O: TransactionObserver> DocumentSession<O> {
         sketch: DocumentSketchId,
         input: &SketchLineChainCreation,
     ) -> Result<SketchLineChainCreationReport, CommandError<SketchLineCreationError>> {
+        self.create_line_chain_with_scope(sketch, input, None)
+    }
+    /// Commit with the same scope used for preview; example: `session.create_scoped_line_chain(sketch, &input)?`.
+    pub fn create_scoped_line_chain(
+        &mut self,
+        sketch: DocumentSketchId,
+        input: &SketchLineChainCreation,
+    ) -> Result<SketchLineChainCreationReport, CommandError<SketchLineCreationError>> {
+        let scope = self.sketch_inference_scope(sketch).map_err(scope_error)?;
+        self.create_line_chain_with_scope(sketch, input, Some(&scope))
+    }
+    fn create_line_chain_with_scope(
+        &mut self,
+        sketch: DocumentSketchId,
+        input: &SketchLineChainCreation,
+        scope: Option<&SketchInferenceCandidates>,
+    ) -> Result<SketchLineChainCreationReport, CommandError<SketchLineCreationError>> {
         let options = self.sketch_options;
         self.run_projected(
             "Create Line",
-            |snapshot, ids| author_chain(snapshot, ids, sketch, input, options),
+            |snapshot, ids| author_chain(snapshot, ids, sketch, input, options, scope),
             |snapshot, report| {
                 chain_solution(snapshot, report.sketch)?;
                 Ok(report)
@@ -92,9 +127,17 @@ fn author_chain(
     sketch: DocumentSketchId,
     input: &SketchLineChainCreation,
     options: SolveOptions,
+    scope: Option<&SketchInferenceCandidates>,
 ) -> Result<SketchLineChainCreationReport, SketchLineCreationError> {
     let policy = SketchInferencePolicy::for_units(snapshot.parameters.units());
-    snapshot.create_inferred_sketch_line_chain(sketch, input, policy, options, ids)
+    snapshot.create_inferred_sketch_line_chain_scoped(sketch, input, policy, options, ids, scope)
+}
+fn scope_error(
+    error: oblikovati_model::sketch::SketchError,
+) -> CommandError<SketchLineCreationError> {
+    CommandError::Edit(EditError::Mutation(MutationError::Command(
+        SketchLineCreationError::Sketch(error),
+    )))
 }
 fn chain_solution(
     snapshot: &DocumentSnapshot,

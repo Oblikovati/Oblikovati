@@ -10,12 +10,13 @@ pub(super) fn winner(
     endpoints: [[f64; 2]; 2],
     priority: ConstraintInferencePriority,
     policy: SketchInferencePolicy,
+    candidates: &super::scope::ResolvedCandidates,
 ) -> Result<Option<SketchDirectionInference>, SketchError> {
     let Some(direction) = segment_direction(endpoints) else {
         return Ok(None);
     };
     let axial = axial_suggestion(direction, policy);
-    let relative = relative_suggestion(sketch, direction, policy)?;
+    let relative = relative_suggestion(sketch, direction, policy, candidates)?;
     Ok(choose_family(axial, relative, priority))
 }
 fn choose_family(
@@ -53,9 +54,14 @@ fn relative_suggestion(
     sketch: &Sketch2D,
     direction: [f64; 2],
     policy: SketchInferencePolicy,
+    candidates: &super::scope::ResolvedCandidates,
 ) -> Result<Option<SketchDirectionInference>, SketchError> {
     let mut strongest: Option<SketchDirectionInference> = None;
-    for line in sketch.lines() {
+    for line in sketch
+        .lines()
+        .iter()
+        .filter(|line| candidates.contains(line.id))
+    {
         let candidate = relative_for_line(sketch, line, direction, policy)?;
         if let Some(candidate) =
             candidate.filter(|candidate| strongest.is_none_or(|best| candidate.score > best.score))
