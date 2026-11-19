@@ -39,7 +39,7 @@ pub(super) fn draw(
         return;
     }
     let labels = match panel {
-        RibbonPanel::PartModify => &["Move Bodies", "Bend Part", "Copy Object"][..],
+        RibbonPanel::PartModify => &["Move Bodies", "Bend Part", "Copy Object", "Shell"][..],
         RibbonPanel::PartSimplification => {
             &["Remove Details", "Fill Voids", "Define Envelopes"][..]
         }
@@ -51,11 +51,10 @@ pub(super) fn draw(
         {
             continue;
         }
-        let action = match label {
-            "Move Bodies" => Some(GuiShellAction::OpenMoveBody),
-            "Constraint Inference Scope" => Some(GuiShellAction::OpenInferenceScope),
-            _ => None,
-        };
+        if label == "Shell" && !crate::shell_ribbon::is_expanded(context.owners.customization) {
+            continue;
+        }
+        let action = additional_action(label);
         let coordinate = coordinate_restriction::ready(label, context.state);
         let disabled = ui.begin_disabled(
             !coordinate
@@ -100,11 +99,10 @@ fn additional_icons(
         }
         let (position, size) = icons.appearance.cell(index);
         icons.cursor(ui, origin, position);
-        let action = match label {
-            "Move Bodies" => Some(GuiShellAction::OpenMoveBody),
-            "Constraint Inference Scope" => Some(GuiShellAction::OpenInferenceScope),
-            _ => None,
-        };
+        if label == "Shell" && !crate::shell_ribbon::is_expanded(context.owners.customization) {
+            continue;
+        }
+        let action = additional_action(label);
         let coordinate = coordinate_restriction::ready(label, context.state);
         let disabled = ui.begin_disabled(
             !coordinate
@@ -142,6 +140,7 @@ fn additional_icon_entries(
             ("Move Bodies", Glyph::MoveBodies),
             ("Bend Part", Glyph::BendPart),
             ("Copy Object", Glyph::Copy),
+            ("Shell", Glyph::Shell),
         ],
         RibbonPanel::PartSimplification => &[
             ("Remove Details", Glyph::Simplify),
@@ -168,6 +167,10 @@ fn unavailable_tooltip(
     }
     if ui.is_mouse_clicked(imgui::MouseButton::Right) {
         display.request_expansion_command_context(tab, panel, label);
+    }
+    if label == "Shell" {
+        ui.tooltip_text("Shell\nRemove faces to create a hollow solid.");
+        return;
     }
     if label == "Move Bodies" {
         ui.tooltip_text("Move Bodies\nMove a solid body using parameter-driven offsets.");
@@ -210,4 +213,34 @@ fn create_commands(
         icons.cursor(ui, origin, [0., icons.appearance.command_height()]);
     }
     drop(disabled);
+}
+
+fn additional_action(label: &str) -> Option<GuiShellAction> {
+    match label {
+        "Move Bodies" => Some(GuiShellAction::OpenMoveBody),
+        crate::shell_ribbon::LABEL => Some(GuiShellAction::OpenShellFeature),
+        "Constraint Inference Scope" => Some(GuiShellAction::OpenInferenceScope),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn expanded_commands_keep_their_real_actions() {
+        assert_eq!(
+            additional_action("Shell"),
+            Some(GuiShellAction::OpenShellFeature)
+        );
+        assert_eq!(
+            additional_action("Move Bodies"),
+            Some(GuiShellAction::OpenMoveBody)
+        );
+        assert_eq!(
+            additional_action("Constraint Inference Scope"),
+            Some(GuiShellAction::OpenInferenceScope)
+        );
+        assert_eq!(additional_action("Bend Part"), None);
+    }
 }

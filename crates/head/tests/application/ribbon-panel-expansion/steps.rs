@@ -25,6 +25,8 @@ mod keyboard_full;
 #[cfg(target_os = "linux")]
 #[path = "shell_native.rs"]
 mod shell_native;
+#[path = "shell_placement.rs"]
+mod shell_placement;
 #[path = "sketch_block_placement.rs"]
 mod sketch_block_placement;
 #[path = "sketch_constrain.rs"]

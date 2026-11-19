@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::{HeadOptions, HeadPresentation, HeadWorkStatus};
+use oblikovati_viewport::ViewportKey;
 use std::collections::VecDeque;
 #[derive(Default)]
 struct FakeGuiWindow {

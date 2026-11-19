@@ -39,21 +39,34 @@ impl RibbonDisplayState {
             &mut crate::application::quick_access_toolbar::QuickAccessToolbar,
         ),
     ) {
-        if self.context_command != Some(crate::move_body_ribbon::LABEL) {
+        let Some(label) = self.context_command else {
+            return;
+        };
+        let recognized =
+            label == crate::move_body_ribbon::LABEL || label == crate::shell_ribbon::LABEL;
+        if !recognized {
             muted_context_item(ui, "Add to Quick Access Toolbar");
             muted_context_item(ui, "Move to Main Panel");
             return;
         }
-        let label = crate::move_body_ribbon::LABEL;
-        if crate::move_body_ribbon::menu_item(
-            ui,
-            "Add to Quick Access Toolbar",
-            !toolbar.has_ribbon_command(state, label),
-        ) {
-            toolbar.add_ribbon_command(state, label);
+        if label == crate::move_body_ribbon::LABEL {
+            if crate::move_body_ribbon::menu_item(
+                ui,
+                "Add to Quick Access Toolbar",
+                !toolbar.has_ribbon_command(state, label),
+            ) {
+                toolbar.add_ribbon_command(state, label);
+            }
+        } else {
+            muted_context_item(ui, "Add to Quick Access Toolbar");
         }
         if crate::move_body_ribbon::menu_item(ui, "Move to Main Panel", true) {
-            match crate::move_body_ribbon::set_main(customization, true) {
+            let result = if label == crate::shell_ribbon::LABEL {
+                customization.relocate_builtin(crate::shell_ribbon::ID, false)
+            } else {
+                crate::move_body_ribbon::set_main(customization, true)
+            };
+            match result {
                 Ok(()) => self.context_relocated = self.context_expansion,
                 Err(error) => customization.report_command_error(error),
             }

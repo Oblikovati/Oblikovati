@@ -133,6 +133,7 @@ mod hole_dialog;
 mod move_body_dialog;
 mod move_body_ribbon;
 mod shell_feature_dialog;
+mod shell_ribbon;
 pub use face_properties::GuiFaceProperties;
 mod marking_menu;
 mod marking_menu_layout;

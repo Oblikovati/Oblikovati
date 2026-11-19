@@ -48,13 +48,22 @@ pub(super) fn part_modify_controls(
         actions.push(action);
     }
     drop(disabled);
-    let size = muted_command_position(ui, origin, icons, 3);
-    let action = crate::GuiShellAction::OpenShellFeature;
-    let disabled = ui.begin_disabled(!action.dispatchable(state));
-    if icons.button(ui, "Shell", IconGlyph::Shell, size) {
-        actions.push(action);
+    if !crate::shell_ribbon::is_expanded(owners.customization) {
+        let size = muted_command_position(ui, origin, icons, 3);
+        let right = owners
+            .customization
+            .builtin_draw(ui, crate::shell_ribbon::ID, false, || {
+                icons.command_button(
+                    ui,
+                    "Shell",
+                    crate::GuiShellAction::OpenShellFeature,
+                    state,
+                    size,
+                    actions,
+                );
+            });
+        owners.quick_access.command_took_right_click |= right;
     }
-    drop(disabled);
     if crate::move_body_ribbon::is_main(owners.customization) {
         let size = muted_command_position(ui, origin, icons, 4);
         crate::move_body_ribbon::main_button(
