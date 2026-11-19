@@ -47,6 +47,10 @@ mod part_views;
 mod relationships;
 #[path = "representations.rs"]
 mod representations;
+#[path = "view_rename.rs"]
+mod view_rename;
+#[path = "view_visibility.rs"]
+mod view_visibility;
 
 const ORIGIN_RESULT_ROW: &str = "XY Plane";
 const ORIGIN_ROW_NAMES: [&str; 7] = [
