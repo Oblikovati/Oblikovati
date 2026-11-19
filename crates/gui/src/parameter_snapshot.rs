@@ -7,6 +7,8 @@ pub struct GuiParameterRow {
     pub parameter: u64,
     pub detail: ParameterDetail,
     pub tolerance_text: String,
+    /// Model-selected numeric value formatted with the document units.
+    pub model_value_text: String,
     pub has_groups: bool,
 }
 impl PartialEq for GuiParameterRow {
@@ -14,6 +16,7 @@ impl PartialEq for GuiParameterRow {
         // #3614: a stored sign change must request a new frame even when numeric values compare equal.
         self.has_groups == other.has_groups
             && self.tolerance_text == other.tolerance_text
+            && self.model_value_text == other.model_value_text
             && self.parameter == other.parameter
             && self.detail == other.detail
             && self.detail.model_value.to_bits() == other.detail.model_value.to_bits()
@@ -176,7 +179,7 @@ fn validate_parameter_row(row: &GuiParameterRow) -> Result<(), String> {
     }
     validate_parameter_choices(row)
 }
-fn display_fields(row: &GuiParameterRow) -> [(&'static str, &str); 8] {
+fn display_fields(row: &GuiParameterRow) -> [(&'static str, &str); 9] {
     let detail = &row.detail;
     let information = &detail.parameter_info;
     [
@@ -188,6 +191,7 @@ fn display_fields(row: &GuiParameterRow) -> [(&'static str, &str); 8] {
         ("units", &detail.units),
         ("comment", &detail.comment),
         ("tolerance", &row.tolerance_text),
+        ("model value", &row.model_value_text),
     ]
 }
 fn validate_parameter_choices(row: &GuiParameterRow) -> Result<(), String> {

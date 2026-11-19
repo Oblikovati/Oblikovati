@@ -156,6 +156,7 @@ fn authored_size() -> GuiParameterRow {
     GuiParameterRow {
         parameter: 11,
         tolerance_text: String::new(),
+        model_value_text: String::new(),
         has_groups: false,
         detail: ParameterDetail {
             parameter_info: ParameterInfo {

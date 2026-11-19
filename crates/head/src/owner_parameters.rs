@@ -259,11 +259,30 @@ fn projected_parameter_row(
         parameter: id,
         detail,
         tolerance_text: owner_tolerance_text(parameters, id)?,
+        model_value_text: owner_model_value_text(parameters, id)?,
         has_groups: !parameters
             .groups_of(id)
             .map_err(|cause| cause.to_string())?
             .is_empty(),
     })
+}
+
+fn owner_model_value_text(
+    parameters: &ParameterCollection<u64>,
+    id: u64,
+) -> Result<String, String> {
+    let value = parameters
+        .inspection_value(id)
+        .map_err(|cause| cause.to_string())?;
+    value
+        .map(|quantity| {
+            parameters
+                .units()
+                .format_precise(quantity)
+                .map_err(|cause| cause.to_string())
+        })
+        .transpose()
+        .map(|value| value.unwrap_or_default())
 }
 
 fn owner_tolerance_text(parameters: &ParameterCollection<u64>, id: u64) -> Result<String, String> {
@@ -379,3 +398,7 @@ impl<
         Ok(true)
     }
 }
+
+#[cfg(test)]
+#[path = "owner_parameters_model_value_tests.rs"]
+mod model_value_tests;

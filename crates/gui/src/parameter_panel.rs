@@ -424,7 +424,7 @@ fn draw_parameter_section(
     let height = ui.frame_height_with_spacing() * (rows.len().min(8) + 1) as f32;
     let flags =
         TableFlags::BORDERS | TableFlags::ROW_BG | TableFlags::SCROLL_Y | TableFlags::RESIZABLE;
-    let Some(_table) = ui.begin_table_with_sizing(title, 8, flags, [0., height], 0.) else {
+    let Some(_table) = ui.begin_table_with_sizing(title, 9, flags, [0., height], 0.) else {
         return;
     };
     configure_parameter_columns(ui);
@@ -434,7 +434,15 @@ fn draw_parameter_section(
 }
 fn configure_parameter_columns(ui: &Ui) {
     for column in [
-        "Name", "Unit", "Equation", "Value", "Tol.", "Key", "Export", "Comment",
+        "Name",
+        "Unit",
+        "Equation",
+        "Nominal Value",
+        "Model Value",
+        "Tol.",
+        "Key",
+        "Export",
+        "Comment",
     ] {
         ui.table_setup_column(column);
     }

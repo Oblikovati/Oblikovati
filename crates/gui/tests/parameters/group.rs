@@ -5,6 +5,7 @@ fn group_row() -> GuiParameterRow {
         parameter: 0,
         detail: Default::default(),
         tolerance_text: String::new(),
+        model_value_text: String::new(),
         has_groups: false,
     }
 }

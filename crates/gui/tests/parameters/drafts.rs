@@ -15,6 +15,7 @@ impl ParameterDraftFixture {
             document: 7,
             rows: vec![GuiParameterRow {
                 tolerance_text: String::new(),
+                model_value_text: String::new(),
                 has_groups: false,
                 parameter: 11,
                 detail: Default::default(),

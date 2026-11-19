@@ -3,6 +3,7 @@ use super::*;
 fn value_list_row() -> GuiParameterRow {
     GuiParameterRow {
         tolerance_text: String::new(),
+        model_value_text: String::new(),
         has_groups: false,
         parameter: 0,
         detail: oblikovati_api::wire::ParameterDetail {

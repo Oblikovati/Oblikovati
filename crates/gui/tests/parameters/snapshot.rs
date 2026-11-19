@@ -26,6 +26,7 @@ impl ParameterSnapshotFixture {
                 document: 7,
                 rows: vec![GuiParameterRow {
                     tolerance_text: String::new(),
+                    model_value_text: String::new(),
                     has_groups: false,
                     parameter: 11,
                     detail,
@@ -141,6 +142,7 @@ fn parameter_row_editability_includes_tables_and_refuses_reference_derived_and_u
     ] {
         let mut row = GuiParameterRow {
             tolerance_text: String::new(),
+            model_value_text: String::new(),
             has_groups: false,
             parameter: 0,
             detail: Default::default(),
@@ -189,6 +191,14 @@ fn tolerance_presentation_changes_request_a_frame_and_nul_is_refused() {
     changed.validate().unwrap();
     changed.rows[0].tolerance_text = "bad\0band".into();
     assert!(changed.validate().unwrap_err().contains("field tolerance"));
+    changed.rows[0].tolerance_text.clear();
+    changed.rows[0].model_value_text = "bad\0value".into();
+    assert!(
+        changed
+            .validate()
+            .unwrap_err()
+            .contains("field model value")
+    );
 }
 #[test]
 fn linked_tables_use_canonical_dtos_and_refuse_invalid_ids_and_unsafe_labels() {

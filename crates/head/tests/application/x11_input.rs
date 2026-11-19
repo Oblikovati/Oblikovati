@@ -132,7 +132,7 @@ pub(super) fn press_path_character(character: char) {
     }
 }
 
-fn press_shifted_keysym(keysym: u32) {
+pub(super) fn press_shifted_keysym(keysym: u32) {
     let (connection, root) = keyboard_target();
     let shift = keyboard_keycode(&connection, 0xffe1);
     let key = keyboard_keycode(&connection, keysym);
