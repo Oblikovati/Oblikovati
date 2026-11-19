@@ -107,6 +107,58 @@ fn reject_reserved_plane(host: &mut Host, id: u64) {
     assert!(host.workspace().needs_save(id).unwrap());
 }
 #[test]
+fn rejected_private_feature_candidate_keeps_saved_document_clean() {
+    let mut host = host(RecordingWorkspace::default());
+    let mut source = SequenceGuids(1000);
+    let id = open_file(&mut host, "a.obk", &mut source, OpenActivation::Activate);
+    let before = host
+        .workspace()
+        .session(id)
+        .unwrap()
+        .history()
+        .evaluation_scope();
+    let result = host.commands(id).unwrap().run_private_candidate(
+        "Rejected candidate",
+        add_plane,
+        |_, _, _| Err::<(), _>("candidate rejected".to_owned()),
+    );
+    assert!(result.is_err());
+    assert!(snapshot(&host, id).work_geometry.features().is_empty());
+    assert!(!host.workspace().needs_save(id).unwrap());
+    assert!(before.is_current(host.workspace().session(id).unwrap().history()));
+    let (feature, transition) = host
+        .commands(id)
+        .unwrap()
+        .run_private_candidate("Create plane", add_plane, |_, feature, source| {
+            assert!(before.is_current(source));
+            Ok::<_, String>(feature)
+        })
+        .unwrap();
+    assert_eq!(feature, FeatureId(1));
+    assert!(transition.matches(&before, host.workspace().session(id).unwrap().history()));
+    host.save(id, "alpha", &mut source).unwrap();
+    assert!(!host.workspace().needs_save(id).unwrap());
+    host.commands(id).unwrap().undo().unwrap();
+    assert!(host.workspace().needs_save(id).unwrap());
+    host.commands(id).unwrap().redo().unwrap();
+    assert!(!host.workspace().needs_save(id).unwrap());
+    let reopened = reopen(&mut host, id, &mut source);
+    assert_eq!(create_plane(&mut host, reopened), FeatureId(2));
+}
+#[test]
+fn vetoed_private_candidate_keeps_observed_feature_ids_reserved() {
+    let mut session = crate::session(Some(EVENT_TRANSACTION_COMMITTED));
+    for mark in 1..=2 {
+        let result = session.run_private_candidate("Create plane", add_plane, |_, feature, _| {
+            Ok::<_, String>(feature)
+        });
+        assert!(result.is_err());
+        assert_eq!(session.history().feature_high_water(), mark);
+        assert!(session.snapshot().work_geometry.features().is_empty());
+        assert!(session.undo_labels().is_empty());
+    }
+}
+#[test]
 fn failed_and_deleted_reservations_remain_dirty_and_survive_save_reopen() {
     let mut host = host(RecordingWorkspace::default());
     let mut source = SequenceGuids(1000);

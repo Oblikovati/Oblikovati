@@ -81,18 +81,50 @@ impl<O: TransactionObserver> DocumentSession<O> {
             &oblikovati_model::history::DocumentEditHistory,
         ) -> Result<T, E>,
     ) -> Result<(T, oblikovati_model::history::EvaluationTransition), CommandError<E>> {
+        self.edit_projected_candidate(command, project, false)
+    }
+
+    pub(crate) fn edit_private_projected_with_transition<R, T, E>(
+        &mut self,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        project: impl FnOnce(
+            &DocumentSnapshot,
+            R,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, E>,
+    ) -> Result<(T, oblikovati_model::history::EvaluationTransition), CommandError<E>> {
+        self.edit_projected_candidate(command, project, true)
+    }
+
+    fn edit_projected_candidate<R, T, E>(
+        &mut self,
+        command: impl FnOnce(&mut DocumentSnapshot, &mut RecipeReservations<'_>) -> Result<R, E>,
+        project: impl FnOnce(
+            &DocumentSnapshot,
+            R,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, E>,
+        private: bool,
+    ) -> Result<(T, oblikovati_model::history::EvaluationTransition), CommandError<E>> {
         let group = self
             .group
             .as_ref()
             .ok_or(CommandError::Session(SessionError::NoGroup))?;
         let options = SketchUpdateMode::Automatic.options(self.sketch_options);
-        self.history
-            .edit_with_view_transition(&group.token, |snapshot, ids, view| {
-                apply_recipe_edit(snapshot, ids, command, options, |candidate, result| {
-                    project(candidate, result, view)
-                })
+        let edit = |snapshot: &mut DocumentSnapshot,
+                    ids: &mut RecipeReservations<'_>,
+                    view: &oblikovati_model::history::DocumentEditHistory| {
+            apply_recipe_edit(snapshot, ids, command, options, |candidate, result| {
+                project(candidate, result, view)
             })
-            .map_err(CommandError::Edit)
+        };
+        let result = if private {
+            self.history
+                .edit_private_with_view_transition(&group.token, edit)
+        } else {
+            self.history.edit_with_view_transition(&group.token, edit)
+        };
+        result.map_err(CommandError::Edit)
     }
 
     /// Close one level; only the outer end records a step and emits events.

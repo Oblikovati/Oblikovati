@@ -36,6 +36,49 @@ impl SnapshotReplay {
 }
 
 impl DocumentEditHistory {
+    /// Adopt an unexposed candidate and its reservations only after validation succeeds (#4108).
+    ///
+    /// The edit must not publish candidate identities before returning success.
+    /// Example: `history.edit_private_with_view_transition(&token, |candidate, ids, source| validate(candidate, ids, source))?`.
+    pub fn edit_private_with_view_transition<R, E>(
+        &mut self,
+        token: &super::TransactionToken,
+        edit: impl FnOnce(
+            &mut DocumentSnapshot,
+            &mut RecipeReservations<'_>,
+            &DocumentEditHistory,
+        ) -> Result<R, E>,
+    ) -> Result<(R, super::EvaluationTransition), EditError<E>> {
+        self.require_top(token).map_err(EditError::History)?;
+        let generation = self.next_generation().map_err(EditError::History)?;
+        let source = self.evaluation_scope();
+        let mut view = self.preview_owner().map_err(EditError::History)?;
+        view.generation = self.generation.clone();
+        let mut private = self.preview_owner().map_err(EditError::History)?;
+        let private_token = private
+            .begin("Private candidate")
+            .map_err(EditError::History)?;
+        let result = private.edit(&private_token, |candidate, ids| edit(candidate, ids, &view))?;
+        self.adopt_private_candidate(private, generation);
+        Ok((
+            result,
+            super::EvaluationTransition::new(source, self.evaluation_scope()),
+        ))
+    }
+
+    fn adopt_private_candidate(&mut self, candidate: Self, generation: u64) {
+        self.current = candidate.current;
+        self.ids = candidate.ids;
+        self.sketch_ids = candidate.sketch_ids;
+        self.feature_ids = candidate.feature_ids;
+        self.occurrence_ids = candidate.occurrence_ids;
+        self.sketch_entity_ids = candidate.sketch_entity_ids;
+        self.sketch_constraint_ids = candidate.sketch_constraint_ids;
+        self.dimension_names = candidate.dimension_names;
+        self.derived_high_water = candidate.derived_high_water;
+        self.generation
+            .store(generation, std::sync::atomic::Ordering::Release);
+    }
     /// Return a generation transition only after a source-view edit is accepted.
     /// Example: `let (value, transition) = history.edit_with_view_transition(&token, edit)?;`.
     pub fn edit_with_view_transition<R, E>(
