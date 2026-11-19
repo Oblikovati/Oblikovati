@@ -238,7 +238,7 @@
   "features/application/ribbon-display/ribbon-display.feature": {
     "feature_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e",
     "supporting_files": {
-      "features/application/ribbon-display/BLOCKERS.md": "0b6d0b533a39a513eec20a36d38791c09f3a9b471c148fe2fd85b1a109e82530",
+      "features/application/ribbon-display/BLOCKERS.md": "612e9139015c0b83ae674a5ae8ca9194774467a9f6357742b8a43807703cf9d7",
       "features/application/ribbon-display/FIXTURES.md": "691eb8ed8feac04f41e1f60584e6a51f7de962d85d2c0c73641245b68adaac57",
       "features/application/ribbon-display/FUNCTIONAL.md": "3c33ded6cbdcc8bf41d5c700f3bacbe4d0038187f13f5a0e8d8ad27ba3d3e671",
       "features/application/ribbon-display/VISUAL.md": "08318a315aecdb690e6909a826aa3a902b43b7f3ef54b624bc4ce269590233fe",
@@ -272,12 +272,16 @@
       "features/application/ribbon-display/wheel-tab-navigation.svg": "a7768245a07ca78c28a2ccd4aca1a0533df328fb2d22abc4caf6027b3742e9da",
       "features/application/ribbon-display/wheel-tabs-only.svg": "3647e88e7456c04629f2b42536e16cfa2d5f07860ff29826711a5c11879f2a34"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-context-control/cucumber.json",
-    "cucumber_sha256": "b77c1edf59f682d3db19ba43a6547ee0482d6a2232b8ca3b88f43a929550b26c",
-    "application_commit": "364abf3095cc94274b4f213fee2ad8bf858d31c4",
-    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-display XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh sh architecture/rust-port/receipts/2026-11-18-ribbon-display-maximize/run.sh",
-    "environment": "Linux X11, Xvfb, Openbox and Vulkan Lavapipe; scripted window input plus native X11 resize and maximize",
-    "notes": "39 of 50 scenarios passed; eight stopped at unbound steps and three failed behavior checks. Options scope and the two-toggle sequence need scenario-owner clarification (BLOCKERS.md; #4095); Document Settings is #4096. An earlier full run missed the compact Tools label in the first frame; the test waits for layout, then passed three focused repetitions and the final full run. Source and support files stayed unchanged; unversioned source is diagnostic only (#3849, #3856)."
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-ribbon-full-5f33ffaf7/cucumber.json",
+    "cucumber_sha256": "94fa160fb4b3884af286fc63f0610c627c5d6f7b96f56443679c4404bd1ed86b",
+    "application_commit": "5f33ffaf7",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-display OBK_BDD_REPORTS=/tmp/obk-ribbon-full-5f33ffaf7 sh architecture/rust-port/receipts/2026-11-18-ribbon-display-maximize/run.sh",
+    "environment": "Linux X11, Xvfb, Openbox and Vulkan lavapipe; mixed native and scripted input",
+    "notes": "Complete diagnostic: 39 of 50 scenarios passed; 11 failed or had unbound steps. Two overflow checks matched a browser View label after the popup closed; a correction is in progress. Other gaps are recorded in BLOCKERS.md and #4095, #4096, #4142, #4144 and #4145. Feature and supporting files matched before and after. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-docking-baseline-ffc5f785d/scenario-inventory.json",
+    "scenario_inventory_sha256": "c4fe86998c8b053dd4505cbcce28704cf8279d0c4be561b2f6ceb64187ebaac0",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-ribbon-full-5f33ffaf7/scenario-arguments.json",
+    "scenario_arguments_sha256": "74bee615b1c79d4a6ecf0b2c0fd17174a154b6d927f23a2e61e742a621f738a6"
   },
   "features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature": {
     "feature_sha256": "645576c3b62e89cdb6c668d5579123e6880a33f9e4a8020f922f1b08e0502ca2",
