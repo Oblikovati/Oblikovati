@@ -14,6 +14,9 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- Constraint inference scope (#4152): the initial full run stopped at four
+  unbound setup steps. The entry and All Geometry scenarios now pass focused
+  native runs; the recorded selection fixtures still need portable geometry.
 - Sketch preferences (#4148): the complete native run at `6fdb0dc6c` passed
   all three scenarios and 26 steps. Sketch edits are staged, Axes can be
   applied off and on, and HUD input controls retain their values on Cancel.

@@ -19,6 +19,8 @@ mod coincident_points;
 mod coincident_segments;
 #[path = "constraint-glyph-hover/steps.rs"]
 mod constraint_glyph_hover;
+#[path = "constraint-inference-scope/steps.rs"]
+mod constraint_inference_scope;
 #[path = "dimension-expression/steps.rs"]
 mod dimension_expression;
 #[path = "ellipse/steps.rs"]
