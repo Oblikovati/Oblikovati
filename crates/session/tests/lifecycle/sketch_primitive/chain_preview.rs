@@ -278,3 +278,84 @@ fn a_tangent_arc_is_one_undo_step_bound_to_the_line_it_leaves() {
     session.undo().unwrap();
     assert!(geometry(&session, sketch).arcs().is_empty());
 }
+
+fn nonpersistent_chain_session() -> (DocumentSession<RecordingObserver>, DocumentSketchId) {
+    let mut session = session(None);
+    let sketch = empty_sketch(&mut session, true);
+    session.begin("Inference settings").unwrap();
+    session
+        .edit(|snapshot, _| {
+            let mut settings = oblikovati_model::sketch_settings::default_sketch_settings();
+            settings.persist_inferred_constraints = false;
+            snapshot.sketch_settings = Some(settings);
+            Ok::<_, oblikovati_model::parameter::ParameterError<u64>>(())
+        })
+        .unwrap();
+    session.end().unwrap();
+    session
+        .set_sketch_inference_scope(sketch, INFERENCE_SCOPE_ALL_GEOMETRY, &[])
+        .unwrap();
+    (session, sketch)
+}
+
+#[test]
+fn nonpersistent_chain_preserves_endpoint_coincidence_and_preview_history() {
+    let (mut session, sketch) = nonpersistent_chain_session();
+    let before = session.snapshot().sketches.clone();
+    let preview = session
+        .preview_inferred_sketch_line_chain(sketch, &request())
+        .unwrap();
+    let report = session
+        .create_inferred_sketch_line_chain(sketch, &request())
+        .unwrap();
+    assert_eq!(preview.report, report);
+    assert!(report.lines.iter().all(|line| line.direction.is_none()));
+    assert_eq!(report.lines[0].point_constraints.len(), 1);
+    let placed = geometry(&session, sketch);
+    let points: Vec<_> = report
+        .points
+        .iter()
+        .map(|id| placed.point(*id).unwrap().position)
+        .collect();
+    assert!((points[0][1] - points[1][1]).abs() < 1e-9);
+    assert!((points[1][0] - points[2][0]).abs() < 1e-9);
+    assert_eq!(
+        placed.point(SketchEntityId(1)).unwrap().position,
+        [0.0, 0.0]
+    );
+    assert!(placed.same_recipe(&preview.geometry));
+    let after = session.snapshot().sketches.clone();
+    session.undo().unwrap();
+    assert!(before.same_recipe(&session.snapshot().sketches));
+    session.redo().unwrap();
+    assert!(after.same_evaluated_state(&session.snapshot().sketches));
+}
+
+#[test]
+fn nonpersistent_chain_keeps_alignment_during_locked_length() {
+    let (mut session, sketch) = nonpersistent_chain_session();
+    let mut input = request();
+    input.locks[0] = Some(oblikovati_model::history::SketchPlacementFieldLock {
+        reference: false,
+        expression: "4 cm".into(),
+        text_point: None,
+    });
+    let preview = session
+        .preview_inferred_sketch_line_chain(sketch, &input)
+        .unwrap();
+    let report = session
+        .create_inferred_sketch_line_chain(sketch, &input)
+        .unwrap();
+    let placed = geometry(&session, sketch);
+    let points: Vec<_> = report
+        .points
+        .iter()
+        .map(|id| placed.point(*id).unwrap().position)
+        .collect();
+    assert!((points[0][1] - points[1][1]).abs() < 1e-9);
+    assert!((points[1][0] - points[2][0]).abs() < 1e-9);
+    assert!(((points[2][1] - points[1][1]).abs() - 4.0).abs() < 1e-8);
+    assert_eq!(report.dimensions.len(), 1);
+    assert!(report.lines.iter().all(|line| line.direction.is_none()));
+    assert!(placed.same_recipe(&preview.geometry));
+}

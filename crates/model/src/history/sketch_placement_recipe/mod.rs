@@ -187,6 +187,7 @@ impl DocumentSnapshot {
                 .map(|source| inference::TransientPlacement {
                     source,
                     anchors: inferred.anchors,
+                    relations: Vec::new(),
                 });
         if let Some(context) = &transient {
             geometry = context

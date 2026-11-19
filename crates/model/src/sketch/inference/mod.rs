@@ -112,11 +112,13 @@ impl Sketch2D {
     pub(crate) fn infer_owned_line_placement(
         &mut self,
         points: [SketchEntityId; 2],
+        protected: [bool; 2],
         settings: &SketchSettings,
         policy: SketchInferencePolicy,
     ) -> Result<SketchLinePlacementInference, SketchError> {
         self.infer_owned_line_from_candidates(
             points,
+            protected,
             settings,
             policy,
             &scope::ResolvedCandidates::all(),
@@ -125,17 +127,19 @@ impl Sketch2D {
     pub(crate) fn infer_owned_line_placement_scoped(
         &mut self,
         points: [SketchEntityId; 2],
+        protected: [bool; 2],
         settings: &SketchSettings,
         policy: SketchInferencePolicy,
         scope: &SketchInferenceCandidates,
         current: &[SketchEntityId],
     ) -> Result<SketchLinePlacementInference, SketchError> {
         let candidates = scope.resolve(self, current)?;
-        self.infer_owned_line_from_candidates(points, settings, policy, &candidates)
+        self.infer_owned_line_from_candidates(points, protected, settings, policy, &candidates)
     }
     fn infer_owned_line_from_candidates(
         &mut self,
         points: [SketchEntityId; 2],
+        protected: [bool; 2],
         settings: &SketchSettings,
         policy: SketchInferencePolicy,
         candidates: &scope::ResolvedCandidates,
@@ -144,8 +148,17 @@ impl Sketch2D {
             self.point(points[0])?.position,
             self.point(points[1])?.position,
         ];
-        let report = self.line_point_proposals(endpoints, &points, settings, policy, candidates)?;
-        // Go aa8297d1 applies snaps before ranking directions, including shared reference endpoints.
+        let mut report =
+            self.line_point_proposals(endpoints, &points, settings, policy, candidates)?;
+        report
+            .points
+            .retain(|suggestion| !protected[suggestion.endpoint]);
+        for (index, &fixed) in protected.iter().enumerate() {
+            if fixed {
+                report.candidate_endpoints[index] = endpoints[index];
+            }
+        }
+        // Shared endpoints already belong to another segment or the source sketch and must not move.
         for (point, position) in points.into_iter().zip(report.candidate_endpoints) {
             self.set_position(point, position)?;
         }

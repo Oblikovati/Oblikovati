@@ -18,6 +18,7 @@ pub(in crate::history) struct PlacementSolveContext<'a> {
 pub(in crate::history) struct TransientPlacement {
     pub source: crate::sketch::SketchInferenceFreeze,
     pub anchors: Vec<SketchPoint2D>,
+    pub relations: Vec<PlanarConstraint>,
 }
 impl TransientPlacement {
     pub fn check_preserved(
@@ -50,7 +51,7 @@ impl TransientPlacement {
             source: &self.source,
             durable_anchors: &durable_anchors,
             temporary_anchors: &self.anchors,
-            temporary_relations: &[],
+            temporary_relations: &self.relations,
         };
         geometry
             .solve_transient_inference(&snapshot.parameters, &context, options, || false)

@@ -28,20 +28,34 @@ impl<O: TransactionObserver> DocumentSession<O> {
     ) -> Result<R, CommandError<E>> {
         let scope = self.sketch_inference_scope(sketch);
         let options = self.sketch_options;
-        self.run("Create inferred sketch line", |snapshot, ids| {
-            let policy = SketchInferencePolicy::for_units(snapshot.parameters.units());
-            let result = match scope {
-                Ok(scope) => snapshot.create_inferred_line_scoped(
-                    sketch,
-                    input,
-                    policy,
-                    options,
-                    ids,
-                    Some(&scope),
-                ),
-                Err(error) => Err(SketchLineCreationError::Sketch(error)),
-            };
-            project(result)
-        })
+        self.run_projected(
+            "Create inferred sketch line",
+            |snapshot, ids| {
+                let policy = SketchInferencePolicy::for_units(snapshot.parameters.units());
+                let result = match scope {
+                    Ok(scope) => snapshot.create_inferred_line_scoped(
+                        sketch,
+                        input,
+                        policy,
+                        options,
+                        ids,
+                        Some(&scope),
+                    ),
+                    Err(error) => Err(SketchLineCreationError::Sketch(error)),
+                };
+                let result = result.and_then(|report| {
+                    report.prepare_inference(snapshot, options)?;
+                    Ok(report)
+                });
+                Ok::<_, E>(result)
+            },
+            |snapshot, result| {
+                let checked = result.and_then(|report| {
+                    report.verify_inference_preserved(snapshot, options)?;
+                    Ok(report)
+                });
+                project(checked)
+            },
+        )
     }
 }
