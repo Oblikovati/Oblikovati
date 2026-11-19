@@ -14,6 +14,10 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- New Sketch (#4156): the full run at `11024a30b` passed six of ten
+  scenarios. Three ViewCube assertions need correction (#4157); the accumulated
+  document fixture remains unresolved (#4011). See the feature's
+  `BLOCKERS.md` and the baseline receipt.
 - Explode Block (#4153): the full run at `91e69a377` passed two of five
   scenarios. The other three need the portable fixtures requested in the
   feature's `BLOCKERS.md`. Native checks also cover canvas and browser
@@ -44,10 +48,9 @@ using this status; the live scenario directory can change.
   cases, including both outline examples. Its inventory counts 49 of 51
   declarations. The spacing and User Interface menu scenarios remain
   incomplete; their source questions are in the feature's `BLOCKERS.md`.
-- The current feature-run inventory has 9 green features and 325 passing
-  scenario declarations out of 3,088, across 256 features. Source edits have
-  invalidated earlier runs, including runs previously reported as green. These counts are
-  tied to source hashes and must be regenerated when the scenario source changes.
+- Source edits have invalidated earlier runs, including runs previously
+  reported as green. Counts are tied to source hashes and must be regenerated
+  with `tools/bdd/feature_progress.py` before reporting them.
 - Sketch constraint-glyph hover passed its complete one-scenario native run at
   `e33bac9dd`. Application closing previously passed 3 of 3 scenarios, but its
   source has changed and now includes assembly scenarios, which are deferred.
