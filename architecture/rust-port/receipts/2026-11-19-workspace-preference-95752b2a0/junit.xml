@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T15:02:20.214239975Z" time="9.274130376"><testcase name="Scenario: Inspect browser display preferences during sketch editing: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:428:3" time="9.274130376"><system-out><![CDATA[  Scenario: Inspect browser display preferences during sketch editing
+   ✔  Given a part document is open in the MCAD Software with a sketch being edited
+   ✔  And the model browser is visible
+   ✔  And Auto expand Representations Folder on Open is enabled for the captured session
+   ✔  When the user opens the browser header menu
+   ✔  And the user expands Display Preferences
+   ✔  Then the submenu offers Hide UCS, Hide Work Features, Hide Notes, Hide Documents and Hide Warnings
+   ✔  And it offers Show Extended Names and Hide Blue Dot Indicator
+   ✔  And it offers Auto expand Representations Folder on Open and Design View Expansion
+   ✔  And Auto expand Representations Folder on Open is checked
+   ✔  And the sketch viewport remains visible
+]]></system-out></testcase></testsuite></testsuites>
