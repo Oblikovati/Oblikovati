@@ -440,5 +440,24 @@
     "scenario_inventory_sha256": "c4fe86998c8b053dd4505cbcce28704cf8279d0c4be561b2f6ceb64187ebaac0",
     "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-workspace-full-c0060be36/scenario-arguments.json",
     "scenario_arguments_sha256": "26a8dddec79c0602b68830180f1e0f52e445d7c0f550d2ac7f78283e48d3291e"
+  },
+  "features/sketch/degrees-of-freedom/scenario.feature": {
+    "feature_sha256": "637b9d731edef63577801a11efc8baefc9331cec4929bb57d4c3ba4c75f984ec",
+    "supporting_files": {
+      "features/sketch/degrees-of-freedom/BLOCKERS.md": "0b49b74efc73781acf410f73bc95ac99adb5185e4ce866485e5d9ba652a301b3",
+      "features/sketch/degrees-of-freedom/FUNCTIONAL.md": "25bf6dd47da03f3787f8bd37e1376d4fb78fd79cf1b2fcdf6166fcd556073ab9",
+      "features/sketch/degrees-of-freedom/VISUAL.md": "ea82137e9a74295a801f3069cec07c17472e11e7e247b58458c347bf3f9462d1",
+      "features/sketch/degrees-of-freedom/freedom-indicators-icon.svg": "9b8f30ac96215f41ba0546ba981c3bb47a621e2c183908cc67fdc93ad622f2a9"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-dof-baseline-bfe5edc49/cucumber.json",
+    "cucumber_sha256": "bb9459da0a07e8375c15a62864ce0489fd5b74a8264eb77f4213d5ac25122935",
+    "application_commit": "bfe5edc49",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=degrees-of-freedom OBK_BDD_REPORTS=/tmp/obk-dof-baseline-bfe5edc49 cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe",
+    "notes": "Full baseline: all four scenarios stopped at their first unbound fixture step. Source and supporting files matched during the run. BLOCKERS.md was updated afterward to request portable geometry and motion semantics. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-docking-baseline-ffc5f785d/scenario-inventory.json",
+    "scenario_inventory_sha256": "c4fe86998c8b053dd4505cbcce28704cf8279d0c4be561b2f6ceb64187ebaac0",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-dof-baseline-bfe5edc49/scenario-arguments.json",
+    "scenario_arguments_sha256": "d244bd6fa81bfbc0263127e52a4aff4268917ffe2e807b918946add06d17df2d"
   }
 }
