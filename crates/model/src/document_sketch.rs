@@ -12,6 +12,7 @@ mod corner_component;
 mod curve_format;
 mod dimension_placement;
 mod dimension_settings;
+mod entity_format;
 mod health;
 mod spatial;
 pub use block_definitions::{SketchBlockDefinition, SketchBlockDefinitionRecipe};

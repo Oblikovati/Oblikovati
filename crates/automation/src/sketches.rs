@@ -15,6 +15,7 @@ mod delete_dimension;
 mod dimensions;
 mod drive_dimension;
 mod entities;
+mod entity_format;
 mod indices;
 pub(crate) mod inspection;
 mod move_dimension;
@@ -40,10 +41,11 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 21] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 22] = [
     METHOD_SKETCH_ADD_ASSOCIATIVE_ENTITY,
     METHOD_SKETCH_ADD_BLOCK_INSTANCE,
     METHOD_SKETCH_EXPLODE_BLOCK_INSTANCE,
+    METHOD_SKETCH_SET_ENTITY_FORMAT,
     METHOD_SKETCH_BLOCK_DEFINITION_CREATE,
     METHOD_SKETCH_BLOCK_DEFINITION_DELETE,
     METHOD_SKETCH_CREATE,
@@ -64,8 +66,9 @@ pub const SKETCH_COMMAND_METHODS: [&str; 21] = [
     METHOD_SKETCH_SET_SPLINE_HANDLE,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
-pub const SKETCH_QUERY_METHODS: [&str; 11] = [
+pub const SKETCH_QUERY_METHODS: [&str; 12] = [
     METHOD_SKETCH_GET_INFERENCE_SCOPE,
+    METHOD_SKETCH_GET_ENTITY_FORMAT,
     METHOD_SKETCH_BLOCK_DEFINITION_LIST,
     METHOD_SKETCH_LIST_BLOCK_INSTANCES,
     METHOD_SKETCH_LIST,
@@ -83,6 +86,9 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
     editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_GET_ENTITY_FORMAT {
+        return entity_format::query(files, crate::decode(method, request)?, editing);
+    }
     if method == METHOD_SKETCH_GET_INFERENCE_SCOPE {
         owner::active_sketch_host(files)?;
         return crate::sketch_scope::query(files.workspace(), crate::decode(method, request)?);
@@ -117,6 +123,9 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
     editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_SET_ENTITY_FORMAT {
+        return entity_format::apply(files, crate::decode(method, request)?, editing);
+    }
     if method == METHOD_SKETCH_SET_INFERENCE_SCOPE {
         owner::active_sketch_host(files)?;
         let (document, sketch, candidates, reply) =

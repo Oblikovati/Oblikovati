@@ -234,6 +234,8 @@ mod block_definitions;
 mod block_explode;
 #[path = "sketch_api/block_placement.rs"]
 mod block_placement;
+#[path = "sketch_api/entity_format.rs"]
+mod entity_format;
 #[path = "sketch_api/history.rs"]
 mod history;
 
