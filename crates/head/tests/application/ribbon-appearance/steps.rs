@@ -121,13 +121,28 @@ fn sketch_ribbon_displayed(world: &mut ApplicationWorld) {
     world.expect_text("Finish Sketch");
 }
 #[given("the Ribbon Appearance submenu is open from a panel context menu")]
+#[given("the Modify panel context menu is open with Ribbon Appearance expanded")]
 fn appearance_submenu_open(world: &mut ApplicationWorld) {
     open_panel_appearance(world, "Modify");
 }
 #[then("the appearance submenu and panel context menu close")]
+#[then("the Ribbon Appearance submenu and panel context menu close")]
 fn appearance_menus_closed(world: &mut ApplicationWorld) {
     world.expect_no_text("Ribbon Appearance");
     world.expect_no_text("Normal");
+}
+#[given("Normal is the checked ribbon appearance")]
+fn normal_appearance_is_checked(world: &mut ApplicationWorld) {
+    assert!(
+        world.checked("Normal"),
+        "expected Normal appearance checked"
+    );
+}
+#[then("the full ribbon remains displayed in Normal appearance")]
+fn full_normal_ribbon(world: &mut ApplicationWorld) {
+    world.expect_text("Start 2D Sketch");
+    world.expect_text("Extrude");
+    world.expect_text("Modify");
 }
 #[then("the Tools ribbon is displayed")]
 fn tools_ribbon_displayed(world: &mut ApplicationWorld) {
