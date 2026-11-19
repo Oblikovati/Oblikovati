@@ -83,3 +83,24 @@ fn chosen_columns_keep_member_overrides_when_hidden_and_restored() {
         Some("20 mm")
     );
 }
+
+#[test]
+fn deleting_a_parameter_column_keeps_its_overrides_for_restoration() {
+    let mut view = fixture();
+    view.active_member_id = 1;
+    let mut selection = ExtraSelection {
+        parameter_available: Some(4),
+        parameter_chosen: Some(4),
+        ..Default::default()
+    };
+    assert!(add(&mut view, &selection, ExtraKind::Parameters));
+    view.parameters.as_mut().unwrap()[0].cells.as_mut().unwrap()[0].expression =
+        Some(Box::new("20 mm".into()));
+    assert!(!remove_parameter(&mut view, &mut selection, 99));
+    assert_eq!(selection.parameter_chosen, Some(4));
+    assert!(remove_parameter(&mut view, &mut selection, 4));
+    assert_eq!(selection.parameter_chosen, None);
+    assert!(view.columns.as_ref().unwrap().is_empty());
+    assert!(add(&mut view, &selection, ExtraKind::Parameters));
+    assert_eq!(active_expression(&view, 4), Some("20 mm"));
+}
