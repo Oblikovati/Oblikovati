@@ -68,3 +68,16 @@ fn browser_settings_restore_visibility_and_active_tab() {
     assert!(!restored.model_open && restored.log_open);
     assert_eq!(restored.select, Some(DockPanel::Log));
 }
+
+#[test]
+fn favorites_visibility_follows_menu_toggles_and_keeps_the_model() {
+    let mut panels = DockPanels::default();
+    assert!(!panels.favorites_visible());
+    panels.toggle_favorites();
+    assert!(panels.favorites_visible());
+    assert_eq!(panels.select, Some(DockPanel::Favorites));
+    panels.toggle_favorites();
+    assert!(!panels.favorites_visible());
+    assert!(panels.model_open && panels.dock_visible());
+    assert_eq!(panels.select, Some(DockPanel::Model));
+}

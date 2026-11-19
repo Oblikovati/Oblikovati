@@ -346,6 +346,10 @@ impl WorkspaceLayout {
         if let Some(_menu) = ui.begin_popup("##user-interface") {
             ui.checkbox("Model Browser", &mut self.panels.model_open);
             ui.checkbox("Document Tabs", &mut self.tabs_visible);
+            let mut favorites = self.panels.favorites_visible();
+            if ui.checkbox("Favorites", &mut favorites) {
+                self.panels.toggle_favorites();
+            }
             ui.separator();
             ui.checkbox("Material Browser", &mut self.tool_visibility.material);
             ui.checkbox("Appearance Browser", &mut self.tool_visibility.appearance);
