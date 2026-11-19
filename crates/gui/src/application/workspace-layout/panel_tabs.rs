@@ -118,6 +118,18 @@ impl DockPanels {
         .into_iter()
         .find_map(|(open, panel)| open.then_some(panel))
     }
+    /// Toggle the Favorites pane from the interface menu; example: `panels.toggle_favorites()`.
+    pub(crate) fn toggle_favorites(&mut self) {
+        if self.favorites_open {
+            self.close_panel(DockPanel::Favorites);
+        } else {
+            self.open_panel(DockPanel::Favorites);
+        }
+    }
+    /// Read the Favorites pane visibility; example: `panels.favorites_visible()`.
+    pub(crate) fn favorites_visible(&self) -> bool {
+        self.favorites_open
+    }
     /// Record a status message for the log; an unchanged or idle status adds nothing.
     pub(crate) fn record_status(&mut self, status: Option<&str>) {
         let Some(text) = status.filter(|text| *text != IDLE_STATUS && !text.is_empty()) else {

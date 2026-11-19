@@ -403,3 +403,36 @@ fn docked_parameters_stays_open_when_switching_parts() {
     assert_eq!(viewport(&mut world), docked_area);
     world.close();
 }
+
+#[test]
+fn view_interface_favorites_toggle_controls_the_browser_tab() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    super::dockspace_restart::native_click_label(&mut world, "View");
+    super::dockspace_restart::native_click_label(&mut world, "User Interface");
+    assert!(!world.checked("Favorites"));
+    super::dockspace_restart::native_click_label(&mut world, "Favorites");
+    world.pump(Vec::new());
+    world.expect_text("No favorites yet");
+    hide_favorites_from_menu(&mut world);
+    world.expect_no_text("No favorites yet");
+    world.expect_text("End of Part");
+    world.close();
+}
+
+fn hide_favorites_from_menu(world: &mut ApplicationWorld) {
+    if !world.shows("Model Browser") {
+        super::dockspace_restart::native_click_label(world, "User Interface");
+    }
+    let menu_list = world.run("Model Browser").list;
+    let checkbox = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text.trim() == "Favorites" && run.list == menu_list)
+        .expect("Favorites checkbox in User Interface menu");
+    assert!(world.checked_run(checkbox));
+    let point = checkbox.center();
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(point));
+    world.pump(Vec::new());
+}
