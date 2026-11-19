@@ -35,6 +35,7 @@ pub use fillet::{
     PreparedFillet, prepare_fillet,
 };
 pub use hole::{PreparedHole, prepare_hole};
+pub use shell::{PreparedShell, prepare_shell};
 mod interests;
 pub use file_host::{
     APPLICATION_PREFERENCE_METHODS, ASSEMBLY_COMMAND_METHODS, AssemblyReferenceFailure,
