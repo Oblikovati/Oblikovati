@@ -258,6 +258,25 @@ fn inside_clip(first: DrawVert, opposite: DrawVert, clip: [f32; 4]) -> bool {
         length > 0. && visible >= length * 0.85
     })
 }
+/// Check a named popup in its owning window; for example, ribbon overflow at a narrow width.
+pub(super) fn window_popup_open(window: &str, popup: &str) -> bool {
+    let window = CString::new(window).expect("window: expected no NUL");
+    let popup = CString::new(popup).expect("popup: expected no NUL");
+    let Some(owner) = (unsafe { sys::igFindWindowByName(window.as_ptr()).as_ref() }) else {
+        return false;
+    };
+    let Some(context) = (unsafe { sys::igGetCurrentContext().as_ref() }) else {
+        return false;
+    };
+    let stack = &context.OpenPopupStack;
+    if stack.Size <= 0 {
+        return false;
+    }
+    let id = unsafe { sys::igImHashStr(popup.as_ptr(), 0, owner.ID) };
+    unsafe { std::slice::from_raw_parts(stack.Data, stack.Size as usize) }
+        .iter()
+        .any(|entry| entry.PopupId == id)
+}
 pub(super) fn window_geometry(title: &str) -> Option<([f32; 2], [f32; 2])> {
     let title = CString::new(title).unwrap();
     let window = unsafe { sys::igFindWindowByName(title.as_ptr()).as_ref() }?;
