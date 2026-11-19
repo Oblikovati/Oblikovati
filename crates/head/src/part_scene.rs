@@ -141,6 +141,9 @@ impl DesktopPartScenes {
         Ok(())
     }
     pub(crate) fn edge_pick_available(&self) -> bool {
+        self.certified_part_feature_available()
+    }
+    pub(crate) fn certified_part_feature_available(&self) -> bool {
         self.resolution.is_some()
     }
     pub fn refresh<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(

@@ -208,6 +208,8 @@ impl<
             model_face_chosen: self.chosen_model_face(document).is_some(),
             selected_edge_count: self.chosen_model_edges(document).len(),
             look_at_available: self.look_at_plane()?.is_some(),
+            document_generation: Some(session.generation()),
+            certified_part_feature_available: self.part_scenes.certified_part_feature_available(),
             fillet_selection: Some((
                 session.generation(),
                 self.chosen_model_edges(document)

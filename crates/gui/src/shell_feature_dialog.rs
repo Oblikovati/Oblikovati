@@ -38,7 +38,7 @@ impl ShellFeatureDialog {
         }
         Some(GuiShellFeatureRequest {
             document: self.document?,
-            generation: state.fillet_selection.as_ref()?.0,
+            generation: state.document_generation?,
             faces,
             thickness: self.thickness.clone(),
         })
@@ -58,17 +58,16 @@ impl ShellFeatureDialog {
     ) {
         if self.document.is_some()
             && (self.document != state.document
-                || !state.fillet_available
+                || !state.certified_part_feature_available
                 || state.authoring != crate::GuiAuthoringContext::Part)
         {
             self.close(actions);
         }
-        if self.submitted.as_ref().is_some_and(|request| {
-            state
-                .fillet_selection
-                .as_ref()
-                .is_none_or(|(generation, _)| *generation != request.generation)
-        }) {
+        if self
+            .submitted
+            .as_ref()
+            .is_some_and(|request| state.document_generation != Some(request.generation))
+        {
             self.close(actions);
         }
     }
@@ -143,8 +142,8 @@ mod tests {
         let mut state = GuiCommandState {
             document: Some(7),
             authoring: crate::GuiAuthoringContext::Part,
-            fillet_available: true,
-            fillet_selection: Some((3, vec![])),
+            certified_part_feature_available: true,
+            document_generation: Some(3),
             ..Default::default()
         };
         state.selected_face_appearances = vec![("first".into(), false), ("second".into(), false)];

@@ -122,6 +122,10 @@ pub struct GuiCommandState {
     pub model_face_chosen: bool,
     /// Current exact solid edge selection count.
     pub selected_edge_count: usize,
+    /// Generation of the active document for generation-scoped feature drafts.
+    pub document_generation: Option<u64>,
+    /// Certified part feature replay is configured for this document.
+    pub certified_part_feature_available: bool,
     /// Current exact edge keys and document generation for a fillet draft.
     pub fillet_selection: Option<(u64, Vec<Vec<u8>>)>,
     pub fillet_available: bool,

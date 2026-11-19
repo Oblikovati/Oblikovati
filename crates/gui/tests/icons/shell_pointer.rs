@@ -17,8 +17,8 @@ fn shell_ribbon_click_opens_draft_and_escape_clears_preview() {
     request.commands.document = Some(7);
     request.commands.document_type = Some(oblikovati_api::types::DOCUMENT_PART);
     request.commands.authoring = crate::GuiAuthoringContext::Part;
-    request.commands.fillet_available = true;
-    request.commands.fillet_selection = Some((3, vec![]));
+    request.commands.certified_part_feature_available = true;
+    request.commands.document_generation = Some(3);
     request.commands.selected_face_appearances = vec![("face".into(), false)];
     let frame = stable(&mut engine, &mut request);
     let texture = engine

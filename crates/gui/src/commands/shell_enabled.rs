@@ -2,18 +2,21 @@
 //! Admission for an exact generation-scoped Shell face selection (#4106).
 use super::*;
 
+pub(super) fn open(state: &GuiCommandState) -> bool {
+    state.certified_part_feature_available
+        && state.document.is_some()
+        && state.authoring == GuiAuthoringContext::Part
+        && !state.transaction_open
+}
 pub(super) fn request(state: &GuiCommandState, request: &GuiShellFeatureRequest) -> bool {
     let selected: Vec<_> = state
         .selected_face_appearances
         .iter()
         .map(|(key, _)| key)
         .collect();
-    hole_enabled::open(state)
+    open(state)
         && state.document == Some(request.document)
-        && state
-            .fillet_selection
-            .as_ref()
-            .is_some_and(|(generation, _)| *generation == request.generation)
+        && state.document_generation == Some(request.generation)
         && !selected.is_empty()
         && selected == request.faces.iter().collect::<Vec<_>>()
         && !request.thickness.trim().is_empty()
@@ -28,8 +31,8 @@ mod tests {
         let mut state = GuiCommandState {
             document: Some(7),
             authoring: GuiAuthoringContext::Part,
-            fillet_available: true,
-            fillet_selection: Some((3, vec![])),
+            certified_part_feature_available: true,
+            document_generation: Some(3),
             ..Default::default()
         };
         state.selected_face_appearances.push(("face".into(), false));
@@ -40,7 +43,10 @@ mod tests {
             thickness: "1 mm".into(),
         };
         assert!(request(&state, &input));
-        state.fillet_selection = Some((4, vec![]));
+        assert!(!state.fillet_available);
+        assert!(state.fillet_selection.is_none());
+        assert!(GuiShellAction::OpenShellFeature.enabled(&state));
+        state.document_generation = Some(4);
         assert!(!request(&state, &input));
     }
 }

@@ -316,9 +316,8 @@ impl GuiShellAction {
                 offset,
             } => offset_enabled::create(state, *document, base, offset),
             Self::LookAtSelection => state.look_at_available,
-            Self::OpenMoveBody | Self::OpenHole | Self::OpenShellFeature => {
-                hole_enabled::open(state)
-            }
+            Self::OpenMoveBody | Self::OpenHole => hole_enabled::open(state),
+            Self::OpenShellFeature => shell_enabled::open(state),
             Self::PreviewMoveBody(None)
             | Self::PreviewHole(None)
             | Self::PreviewShellFeature(None) => true,
