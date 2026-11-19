@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T15:45:31.728150766Z" time="13.01959234"><testcase name="Scenario: Inspect the context menu for an Origin axis: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:548:3" time="13.01959234"><system-out><![CDATA[  Scenario: Inspect the context menu for an Origin axis
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  And Auto-Resize is enabled for the Y Axis in the captured session
+   ✔  When the user right-clicks the Y Axis row
+   ✔  Then a context menu opens beside the axis row
+   ✔  And the menu offers Copy, Measure, Visibility and Auto-Resize
+   ✔  And Auto-Resize is checked in this session
+   ✔  And the axis row is highlighted
+   ✔  And the corresponding axis is highlighted in the viewport
+   ✔  When the user clicks an empty area of the viewport outside the menu
+   ✔  Then the context menu closes
+   ✔  And the axis row and axis remain highlighted
+   ✔  When the user clicks the empty viewport area again
+   ✔  Then the axis is no longer highlighted in the viewport
+   ✔  And the axis row no longer has the filled selection highlight
+   ✔  And the axis row retains a focus outline
+   ✔  And the solid remains visible
+]]></system-out></testcase></testsuite></testsuites>
