@@ -25,6 +25,7 @@ mod feature_suppression;
 mod file_host;
 mod fillet;
 mod hole;
+mod shell;
 pub use extrusion::{
     CapturedExtrudeCandidate, ExtrudePrefixReplay, ExtrudeRegionAccess, ExtrudeReplayPrefix,
     PreparedExtrusion, prepare_extrusion, validate_extrude_distance,

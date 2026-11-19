@@ -21,6 +21,7 @@ mod move_body_create;
 mod occurrence_ids;
 mod prism_create;
 mod scalar_ownership;
+mod shell_create;
 mod sketch_block_create;
 mod sketch_create;
 mod sketch_current_geometry;

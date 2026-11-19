@@ -5,7 +5,13 @@ use super::*;
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext<'_, O, W, F> {
     pub(super) fn add_feature(&mut self, request: &[u8]) -> Result<Vec<u8>, Error> {
         let args: AddFeatureArgs = decode(METHOD_FEATURES_ADD, request)?;
-        if [featureargs::KIND_MOVE_BODY, featureargs::KIND_HOLE].contains(&args.kind.as_str()) {
+        if [
+            featureargs::KIND_MOVE_BODY,
+            featureargs::KIND_HOLE,
+            featureargs::KIND_SHELL,
+        ]
+        .contains(&args.kind.as_str())
+        {
             return self.add_part_feature(args);
         }
         if [featureargs::KIND_FILLET, featureargs::KIND_CHAMFER].contains(&args.kind.as_str()) {
@@ -24,6 +30,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             };
         match args.kind.as_str() {
             featureargs::KIND_MOVE_BODY => crate::move_body::apply(self.files, replay, args),
+            featureargs::KIND_SHELL => crate::shell::apply(self.files, replay, args),
             _ => crate::hole::apply(self.files, replay, args),
         }
     }
