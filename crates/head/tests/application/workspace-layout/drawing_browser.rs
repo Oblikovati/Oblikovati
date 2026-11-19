@@ -55,10 +55,12 @@ fn nested_shown(world: &mut ApplicationWorld) {
     world.expect_text(SHEET_TITLE_BLOCK);
 }
 #[when("I open the drawing browser search field")]
+#[when("the user opens the drawing browser search field")]
 #[when("I open the floating browser search field")]
 #[given("the drawing browser search field is open")]
 fn open_drawing_search(world: &mut ApplicationWorld) {
     world.click_text("Search");
+    world.click_text("Type Keyword");
 }
 #[then("matching border entries are displayed beneath their respective parent branches")]
 fn borders_under_parents(world: &mut ApplicationWorld) {
@@ -89,9 +91,14 @@ fn diagnostics_center(run: &super::super::diagnostics::RenderedRun) -> [f32; 2] 
 #[then("matching text is highlighted")]
 #[then("the matching text is highlighted")]
 fn border_marked(world: &mut ApplicationWorld) {
+    let label = if world.shows("X Axis") {
+        "X Axis"
+    } else {
+        DRAWING_BORDER
+    };
     assert!(
-        world.end_of_text_is_marked(DRAWING_BORDER),
-        "expected a marked match"
+        world.end_of_text_is_marked(label),
+        "expected a marked match in {label}"
     );
 }
 #[then("unrelated browser entries are hidden")]

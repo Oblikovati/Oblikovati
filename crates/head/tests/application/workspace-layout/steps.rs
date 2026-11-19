@@ -14,6 +14,8 @@ mod browser_branch_scenario;
 pub(super) mod browser_feature;
 #[path = "browser_origin.rs"]
 pub(super) mod browser_origin;
+#[path = "browser_search_axes.rs"]
+mod browser_search_axes;
 #[cfg(target_os = "linux")]
 #[path = "browser_sketch_native.rs"]
 mod browser_sketch_native;
