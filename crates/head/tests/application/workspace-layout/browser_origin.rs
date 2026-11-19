@@ -69,6 +69,7 @@ pub(in super::super) fn plane_shows_at(world: &mut ApplicationWorld, row: &str) 
     color[1] > PLANE_TINT && color[1] > color[0]
 }
 #[when("I right-click the YZ Plane row")]
+#[when("the user right-clicks the YZ Plane row")]
 fn right_click_plane(world: &mut ApplicationWorld) {
     right_click_row(world, "YZ Plane");
 }
@@ -144,6 +145,7 @@ fn axis_plain(world: &mut ApplicationWorld) {
     expect_row_accent(world, "Y Axis", false);
 }
 #[when("I right-click the Center Point row")]
+#[when("the user right-clicks the Center Point row")]
 fn right_click_point(world: &mut ApplicationWorld) {
     right_click_row(world, "Center Point");
 }
