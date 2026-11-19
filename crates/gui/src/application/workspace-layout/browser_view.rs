@@ -12,12 +12,11 @@ const BROWSER_MENU: &str = "##browser-menu";
 const NO_RESULTS: &str = "No matching entries";
 const SEARCH_HINT: &str = "Type Keyword";
 const HIGHLIGHT: [f32; 4] = [0.95, 0.75, 0.2, 0.45];
-const LISTED_DISPLAY_PREFERENCES: [&str; 5] = [
+const LISTED_DISPLAY_PREFERENCES: [&str; 4] = [
     "Hide Notes",
     "Hide Documents",
     "Hide Warnings",
     "Hide Blue Dot Indicator",
-    "Auto expand Representations Folder on Open",
 ];
 
 /// A row that has rows of its own under it.
@@ -75,10 +74,18 @@ pub(crate) struct BrowserView {
     /// Origin rows made visible, by document and row: view state, as a body's visibility is.
     pub visible_origin_rows: std::collections::BTreeSet<(u64, usize)>,
     design_view_expansion: bool,
+    auto_expand_representations: AutoExpandRepresentations,
     pub find: FindDialog,
     pub relationships: RelationshipsDialog,
     pub geometry: GeometryProperties,
     pub feature_properties: FeatureProperties,
+}
+#[derive(Debug)]
+struct AutoExpandRepresentations(bool);
+impl Default for AutoExpandRepresentations {
+    fn default() -> Self {
+        Self(true)
+    }
 }
 impl BrowserView {
     /// Draw the menu and search controls above the tree; example: `view.header(ui)`.
@@ -115,7 +122,7 @@ impl BrowserView {
         }
         muted_menu_item(ui, "Help");
     }
-    /// Only Hide Work Features has a tree to act on yet; the rest are listed, not offered.
+    /// Display preferences that control the browser tree; unsupported choices stay unavailable.
     fn display_preferences(&mut self, ui: &Ui) {
         ui.menu("Display Preferences", || {
             muted_menu_item(ui, "Hide UCS");
@@ -137,9 +144,19 @@ impl BrowserView {
             for row in rest {
                 muted_menu_item(ui, row);
             }
+            ui.menu_item_config("Auto expand Representations Folder on Open")
+                .build_with_ref(&mut self.auto_expand_representations.0);
             ui.menu_item_config("Design View Expansion")
                 .build_with_ref(&mut self.design_view_expansion);
         });
+    }
+    /// Read the initial representation-tree preference; example: `view.auto_expand_representations()`.
+    pub(crate) fn auto_expand_representations(&self) -> bool {
+        self.auto_expand_representations.0
+    }
+    /// Restore the saved representation-tree preference; example: `view.set_auto_expand_representations(false)`.
+    pub(crate) fn set_auto_expand_representations(&mut self, enabled: bool) {
+        self.auto_expand_representations.0 = enabled;
     }
     /// Open or fold the whole tree on the next frame; example: the root row's commands.
     pub(crate) fn set_expansion(&mut self, open: bool) {

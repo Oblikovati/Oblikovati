@@ -201,3 +201,13 @@ fn matching_a_body_folder_or_body_keeps_its_direct_children() {
     );
     assert!(body[1].is_match && !body[2].is_match);
 }
+
+#[test]
+fn representation_expansion_preference_can_be_changed() {
+    let mut view = BrowserView::default();
+    assert!(view.auto_expand_representations());
+    view.set_auto_expand_representations(false);
+    assert!(!view.auto_expand_representations());
+    view.set_auto_expand_representations(true);
+    assert!(view.auto_expand_representations());
+}

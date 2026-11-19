@@ -26,6 +26,8 @@ impl GuiFrameEngine {
     }
 
     fn restore_workspace_panels(&mut self, settings: &WorkspaceDockSettings) {
+        self.workspace
+            .set_auto_expand_representations(settings.auto_expand_representations);
         if settings.material_browser {
             self.material_browser.open();
         }
@@ -56,6 +58,7 @@ impl GuiFrameEngine {
         settings.selection_filter = self.selection_filter.is_open();
         settings.history_browser = self.history_browser.is_open();
         settings.browser_panels = Some(self.workspace.panels.settings());
+        settings.auto_expand_representations = self.workspace.auto_expand_representations();
         settings.encode()
     }
 }
