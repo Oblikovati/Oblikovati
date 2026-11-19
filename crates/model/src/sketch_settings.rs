@@ -21,6 +21,10 @@ pub fn default_sketch_settings() -> SketchSettings {
         over_constrained_behavior: OVER_CONSTRAINED_APPLY_DRIVEN,
         enable_relax_mode: false,
         keep_dimensions_with_equation_in_relax_mode: true,
+        custom_inference_types: false,
+        inference_types: Default::default(),
+        custom_relax_types: false,
+        relax_types: Default::default(),
     }
 }
 impl DocumentSnapshot {

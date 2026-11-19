@@ -272,6 +272,10 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         let prepared = read_parameter_package(path, version, source, &mut self.files)
             .map_err(FileWorkspaceError::Load)?;
         super::create::require_document_kind(prepared.package.manifest().document_type)?;
+        if let Some(settings) = &prepared.sketch_settings {
+            crate::sketch_policy::require_supported_sketch_policies(settings)
+                .map_err(FileWorkspaceError::UnsupportedSketchPolicy)?;
+        }
         Ok(prepared)
     }
 

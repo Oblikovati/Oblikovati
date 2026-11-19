@@ -6,7 +6,7 @@ use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
 /// Additional queries that require a file owner, rather than bare recipe sessions.
-pub const FILE_QUERY_METHODS: [&str; 16] = [
+pub const FILE_QUERY_METHODS: [&str; 17] = [
     METHOD_ASSEMBLY_OCCURRENCES,
     METHOD_SKETCH_LIST,
     METHOD_SKETCH_GET,
@@ -16,6 +16,7 @@ pub const FILE_QUERY_METHODS: [&str; 16] = [
     METHOD_PARAMETERS_DERIVED_TABLES_LIST,
     METHOD_SKETCH_CONSTRAINT_STATUS,
     METHOD_SKETCH_CONSTRAINTS,
+    METHOD_SKETCH_CONSTRAINT_GLYPH_VISIBILITY,
     METHOD_SKETCH_DIMENSIONS,
     METHOD_SKETCH_ENTITIES,
     METHOD_SKETCH_REFERENCE_KEY,

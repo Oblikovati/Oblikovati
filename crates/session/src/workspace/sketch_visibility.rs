@@ -6,6 +6,19 @@ use oblikovati_model::{
 };
 
 impl<O: TransactionObserver> SessionCommands<'_, O> {
+    /// Change one geometric relation glyph; example: `commands.set_constraint_glyph_visible(id, relation, false)?`.
+    pub fn set_constraint_glyph_visible(
+        &mut self,
+        sketch: DocumentSketchId,
+        relation: oblikovati_model::sketch::SketchConstraintId,
+        visible: bool,
+    ) -> Result<(), CommandError<SketchError>> {
+        self.session
+            .set_constraint_glyph_visible(sketch, relation, visible)
+    }
+}
+
+impl<O: TransactionObserver> SessionCommands<'_, O> {
     /// Change one owned sketch's display state; example: `commands.set_sketch_visibility(id, false)?`.
     pub fn set_sketch_visibility(
         &mut self,

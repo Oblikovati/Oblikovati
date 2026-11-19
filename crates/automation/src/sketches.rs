@@ -7,6 +7,7 @@ mod block_color;
 mod block_definitions;
 mod block_explode;
 mod block_placement;
+mod constraint_glyphs;
 mod constraints;
 mod coordinates;
 pub(crate) mod create;
@@ -42,7 +43,7 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 24] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 26] = [
     METHOD_SKETCH_ADD_ASSOCIATIVE_ENTITY,
     METHOD_SKETCH_ADD_BLOCK_INSTANCE,
     METHOD_SKETCH_EXPLODE_BLOCK_INSTANCE,
@@ -62,6 +63,8 @@ pub const SKETCH_COMMAND_METHODS: [&str; 24] = [
     METHOD_SKETCH_ADD_ENTITY,
     METHOD_SKETCH_ADD_CONSTRAINT,
     METHOD_SKETCH_DELETE_CONSTRAINT,
+    METHOD_SKETCH_SET_CONSTRAINT_GLYPH_VISIBILITY,
+    METHOD_SKETCH_SET_ALL_CONSTRAINT_GLYPHS_VISIBILITY,
     METHOD_SKETCH_DELETE_DIMENSION,
     METHOD_SKETCH_MOVE_DIMENSION,
     METHOD_SKETCH_DRIVE_DIMENSION,
@@ -69,7 +72,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 24] = [
     METHOD_SKETCH_SET_SPLINE_HANDLE,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
-pub const SKETCH_QUERY_METHODS: [&str; 12] = [
+pub const SKETCH_QUERY_METHODS: [&str; 13] = [
     METHOD_SKETCH_GET_INFERENCE_SCOPE,
     METHOD_SKETCH_GET_ENTITY_FORMAT,
     METHOD_SKETCH_BLOCK_DEFINITION_LIST,
@@ -77,6 +80,7 @@ pub const SKETCH_QUERY_METHODS: [&str; 12] = [
     METHOD_SKETCH_LIST,
     METHOD_SKETCH_GET,
     METHOD_SKETCH_CONSTRAINTS,
+    METHOD_SKETCH_CONSTRAINT_GLYPH_VISIBILITY,
     METHOD_SKETCH_DIMENSIONS,
     METHOD_SKETCH_CONSTRAINT_STATUS,
     METHOD_SKETCH_ENTITIES,
@@ -89,6 +93,9 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
     editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_CONSTRAINT_GLYPH_VISIBILITY {
+        return constraint_glyphs::query(files, crate::decode(method, request)?);
+    }
     if method == METHOD_SKETCH_GET_ENTITY_FORMAT {
         return entity_format::query(files, crate::decode(method, request)?, editing);
     }
@@ -126,6 +133,12 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
     editing: Option<(u64, DocumentSketchId)>,
 ) -> Result<Vec<u8>, Error> {
+    if method == METHOD_SKETCH_SET_CONSTRAINT_GLYPH_VISIBILITY {
+        return constraint_glyphs::set_one(files, crate::decode(method, request)?);
+    }
+    if method == METHOD_SKETCH_SET_ALL_CONSTRAINT_GLYPHS_VISIBILITY {
+        return constraint_glyphs::set_all(files, crate::decode(method, request)?);
+    }
     if method == METHOD_SKETCH_SET_BLOCK_DEFINITION_COLOR {
         return block_color::definition(files, crate::decode(method, request)?);
     }

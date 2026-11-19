@@ -10,6 +10,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Added
 
+- Added individual sketch constraint glyph hiding and Show All through the viewport and typed API. (#4166)
+
 - Enabled the Rust desktop application on Windows through a native Win32 window and Martensite Vulkan rendering.
 - Enabled isolated Lua scripting on Windows in the desktop and CLI.
 
@@ -149,6 +151,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Changed
 
+- Reduced sketch solving time and memory when many coordinates have no constraints. (#4165)
+
 - Removed the partial certified-prism whole-part evaluator. (#4079)
 
 - Removed whole-part replay from the partial named-prism evaluators. (#4079)
@@ -224,6 +228,10 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Split sketch frame operations into `HeadSketchWork`; custom `HeadWork` owners must implement that interface. (#3860)
 
 ### Fixed
+
+- Asked before creating a redundant sketch dimension when the warning preference is selected. (#4163)
+
+- Honored the edit-on-creation preference for new sketch dimensions. (#4167)
 
 - Refused named-prism queries when a later blend replaces the requested body. (#4086)
 

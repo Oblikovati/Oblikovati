@@ -72,6 +72,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
 
 fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, FileWorkspaceError> {
     require_document_kind(package.manifest().document_type)?;
+    if let Some(settings) = package
+        .restore_sketch_settings()
+        .map_err(FileWorkspaceError::Package)?
+    {
+        crate::sketch_policy::require_supported_sketch_policies(&settings)
+            .map_err(FileWorkspaceError::UnsupportedSketchPolicy)?;
+    }
     package
         .require_supported_assembly()
         .map_err(FileWorkspaceError::Package)?;

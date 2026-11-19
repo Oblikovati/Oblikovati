@@ -188,3 +188,102 @@ fn malformed_template_settings_are_refused_before_creation_registers_an_owner() 
     assert!(files.workspace().documents().is_empty());
     assert_eq!(source.0, 0);
 }
+
+#[test]
+fn custom_sketch_policies_are_rejected_without_history_mutation() {
+    let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
+    let mut legacy = default_sketch_settings();
+    legacy.infer_constraints = false;
+    Client::new(FileHost::new(&mut files, &mut source, "test"))
+        .documents()
+        .set_sketch_settings(&SetSketchSettingsArgs {
+            document,
+            settings: legacy.clone(),
+        })
+        .unwrap();
+    let before = owner_revision(&files, document);
+    for (inference, relax, expected) in [
+        (true, false, "unsupported_custom_inference_types"),
+        (false, true, "unsupported_custom_relax_types"),
+    ] {
+        let mut requested = legacy.clone();
+        requested.custom_inference_types = inference;
+        requested.custom_relax_types = relax;
+        let error = Client::new(FileHost::new(&mut files, &mut source, "test"))
+            .documents()
+            .set_sketch_settings(&SetSketchSettingsArgs {
+                document,
+                settings: requested,
+            })
+            .unwrap_err();
+        assert!(
+            error.to_string().contains(expected),
+            "unexpected error: {error}"
+        );
+        assert_eq!(read_settings(&files, document).settings, legacy);
+        assert_eq!(owner_revision(&files, document), before);
+    }
+    files.commands(document).unwrap().undo().unwrap();
+    assert_eq!(settings(&files, document), None);
+}
+
+#[test]
+fn custom_sketch_policies_round_trip_but_cannot_create_or_open_documents() {
+    for (inference, relax, expected) in [
+        (true, false, "unsupported_custom_inference_types"),
+        (false, true, "unsupported_custom_relax_types"),
+    ] {
+        let mut custom = default_sketch_settings();
+        custom.custom_inference_types = inference;
+        custom.custom_relax_types = relax;
+        let package = DocumentPackage::decode(
+            b"schemaVersion: 2\ndocumentType: 1\nmodel: {parameters: []}\n",
+        )
+        .unwrap()
+        .with_sketch_settings(Some(&custom))
+        .unwrap();
+        let encoded = package.encode().unwrap();
+        assert_eq!(
+            DocumentPackage::decode(&encoded)
+                .unwrap()
+                .restore_sketch_settings()
+                .unwrap(),
+            Some(custom)
+        );
+        let storage = DiscoveryFiles::default();
+        storage
+            .packages
+            .borrow_mut()
+            .insert(Path::new("/fixtures/custom.obk").into(), encoded);
+        let mut files = DiscoveryWorkspace::new(QueryObserver::default(), storage);
+        let mut source = QueryGuids(0);
+        let create_error = files
+            .create(
+                Path::new("/fixtures/new.obk"),
+                package,
+                QueryObserver::default(),
+                "test",
+                &mut source,
+            )
+            .unwrap_err();
+        assert!(
+            create_error.to_string().contains(expected),
+            "unexpected error: {create_error}"
+        );
+        assert!(files.workspace().documents().is_empty());
+        let open_error = files
+            .open(
+                Path::new("/fixtures/custom.obk"),
+                QueryObserver::default(),
+                "test",
+                &mut source,
+                OpenActivation::Activate,
+            )
+            .unwrap_err();
+        assert!(
+            open_error.to_string().contains(expected),
+            "unexpected error: {open_error}"
+        );
+        assert!(files.workspace().documents().is_empty());
+    }
+}

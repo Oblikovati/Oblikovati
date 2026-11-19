@@ -108,44 +108,7 @@ fn native_click_on_dimension_line_opens_its_editor() {
 #[test]
 fn native_overconstraint_prompt_cancels_or_creates_driven_dimension() {
     let mut world = ApplicationWorld::new();
-    world.start_sketch_on("YZ Plane");
-    world.select_line_tool();
-    for point in [[2., 2.], [4., 7.]] {
-        let pixel = world.sketch_pixel_of(point);
-        world.sketch_click(pixel);
-    }
-    world.escape();
-    let entities = world.edited_geometry().lines()[0]
-        .endpoints
-        .map(|id| id.0)
-        .to_vec();
-    add(
-        &mut world,
-        &entities,
-        "horizontal",
-        "20 mm",
-        [3., 1.],
-        None,
-        false,
-    );
-    add(
-        &mut world,
-        &entities,
-        "vertical",
-        "50 mm",
-        [5., 4.5],
-        None,
-        false,
-    );
-    let mut settings = oblikovati_model::sketch_settings::default_sketch_settings();
-    settings.over_constrained_behavior = oblikovati_api::types::OVER_CONSTRAINED_PROMPT;
-    Client::new(world.app().owner.document_host())
-        .documents()
-        .set_sketch_settings(&oblikovati_api::wire::SetSketchSettingsArgs {
-            document: 0,
-            settings,
-        })
-        .unwrap();
+    prepare_overconstraint_fixture(&mut world);
     for accept in [false, true] {
         world.key(ViewportPhysicalKey::D, false);
         let line = world.sketch_pixel_of([3., 4.5]);
@@ -154,16 +117,7 @@ fn native_overconstraint_prompt_cancels_or_creates_driven_dimension() {
         world.sketch_click(label);
         world.expect_text("over-constrain");
         world.click_text(if accept { "Accept" } else { "Cancel" });
-        let rows = Client::new(world.app().owner.document_host())
-            .sketch()
-            .dimensions(&SketchArgs::default())
-            .unwrap()
-            .dimensions
-            .unwrap_or_default();
-        assert_eq!(rows.len(), if accept { 3 } else { 2 });
-        if accept {
-            assert!(rows[2].driven);
-        }
+        assert_prompt_outcome(&mut world, accept);
     }
     world.close();
 }
@@ -206,5 +160,102 @@ fn native_dimension_editor_obeys_creation_preference() {
             enabled
         );
         world.close();
+    }
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_dimension_prompt_cancel_and_accept_create_driven_only_on_accept() {
+    use super::super::super::x11_input;
+    let mut world = ApplicationWorld::new();
+    prepare_overconstraint_fixture(&mut world);
+    world.pump(Vec::new());
+    x11_input::focus_window();
+    for accept in [false, true] {
+        x11_prompt_interaction(&mut world, accept);
+        assert_prompt_outcome(&mut world, accept);
+    }
+    world.close();
+}
+
+fn prepare_overconstraint_fixture(world: &mut ApplicationWorld) {
+    world.start_sketch_on("YZ Plane");
+    world.select_line_tool();
+    for point in [[2., 2.], [4., 7.]] {
+        let pixel = world.sketch_pixel_of(point);
+        world.sketch_click(pixel);
+    }
+    world.escape();
+    add_overconstraint_dimensions(world);
+    enable_overconstraint_prompt(world);
+}
+
+fn add_overconstraint_dimensions(world: &mut ApplicationWorld) {
+    let entities = world.edited_geometry().lines()[0]
+        .endpoints
+        .map(|id| id.0)
+        .to_vec();
+    add(
+        world,
+        &entities,
+        "horizontal",
+        "20 mm",
+        [3., 1.],
+        None,
+        false,
+    );
+    add(
+        world,
+        &entities,
+        "vertical",
+        "50 mm",
+        [5., 4.5],
+        None,
+        false,
+    );
+}
+
+fn enable_overconstraint_prompt(world: &mut ApplicationWorld) {
+    let mut settings = oblikovati_model::sketch_settings::default_sketch_settings();
+    settings.over_constrained_behavior = oblikovati_api::types::OVER_CONSTRAINED_PROMPT;
+    Client::new(world.app().owner.document_host())
+        .documents()
+        .set_sketch_settings(&oblikovati_api::wire::SetSketchSettingsArgs {
+            document: 0,
+            settings,
+        })
+        .unwrap();
+}
+
+#[cfg(target_os = "linux")]
+fn x11_prompt_interaction(world: &mut ApplicationWorld, accept: bool) {
+    use super::super::super::x11_input;
+    x11_input::press_keysym(u32::from(b'd'));
+    world.pump(Vec::new());
+    assert!(world.state().dimension_tool_active);
+    for point in [[3., 4.5], [0.5, 5.5]] {
+        let pixel = world.sketch_pixel_of(point);
+        x11_input::click(pixel);
+        world.pump(Vec::new());
+    }
+    world.expect_text("over-constrain");
+    let button = world
+        .run(if accept { "Accept" } else { "Cancel" })
+        .center()
+        .map(|v| v as i32);
+    x11_input::click(button);
+    world.pump(Vec::new());
+}
+
+fn assert_prompt_outcome(world: &mut ApplicationWorld, accept: bool) {
+    let rows = Client::new(world.app().owner.document_host())
+        .sketch()
+        .dimensions(&SketchArgs::default())
+        .unwrap()
+        .dimensions
+        .unwrap_or_default();
+    assert_eq!(rows.len(), if accept { 3 } else { 2 });
+    if accept {
+        assert!(rows[2].driven);
     }
 }

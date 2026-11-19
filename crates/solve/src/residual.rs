@@ -90,7 +90,7 @@ pub fn evaluate_residuals(
     blocks: &[ResidualBlock<'_>],
 ) -> Result<ResidualEvaluation, EvaluationError> {
     validate_indices(values.len(), blocks)?;
-    let seeded = DualNumber::seed(values).map_err(EvaluationError::Input)?;
+    let seeded = seed_referenced_variables(values, blocks)?;
     let mut result = ResidualEvaluation {
         values: vec![],
         jacobian: vec![],
@@ -101,6 +101,30 @@ pub fn evaluate_residuals(
         evaluate_block(&seeded, block, index, &mut result)?;
     }
     Ok(result)
+}
+
+fn seed_referenced_variables(
+    values: &[f64],
+    blocks: &[ResidualBlock<'_>],
+) -> Result<Vec<DualNumber>, EvaluationError> {
+    let mut referenced = vec![false; values.len()];
+    for block in blocks {
+        for &index in block.variables {
+            referenced[index] = true;
+        }
+    }
+    values
+        .iter()
+        .enumerate()
+        .map(|(index, &value)| {
+            if referenced[index] {
+                DualNumber::variable(value, index, values.len())
+            } else {
+                DualNumber::constant(value)
+            }
+            .map_err(EvaluationError::Input)
+        })
+        .collect()
 }
 
 fn validate_indices(count: usize, blocks: &[ResidualBlock<'_>]) -> Result<(), EvaluationError> {

@@ -94,6 +94,16 @@ pub enum GuiShellAction {
         entity: oblikovati_model::sketch::SketchEntityId,
     },
     /// Retire a dismissed sketch context menu.
+    /// Hide the constraint glyph captured by this context menu.
+    HideContextConstraintGlyph {
+        token: u64,
+        glyph: oblikovati_model::sketch::SketchConstraintId,
+    },
+    /// Set the global constraint glyph switch from this context menu.
+    SetContextConstraintGlyphs {
+        token: u64,
+        shown: bool,
+    },
     DismissSketchContext {
         token: u64,
     },

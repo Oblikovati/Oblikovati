@@ -34,6 +34,8 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::DeleteSketchRelation(_)
         | GuiShellAction::SelectSketchContextCandidate { .. }
         | GuiShellAction::DismissSketchContext { .. }
+        | GuiShellAction::HideContextConstraintGlyph { .. }
+        | GuiShellAction::SetContextConstraintGlyphs { .. }
         | GuiShellAction::ExplodeSketchContext { .. }
         | GuiShellAction::Inspect(_)
         | GuiShellAction::MeasureSelectedFace { .. }

@@ -54,11 +54,10 @@ impl<O: TransactionObserver> DocumentSession<O> {
         sketch: DocumentSketchId,
         shown: bool,
     ) -> Result<(), CommandError<SketchError>> {
-        let unchanged = self
-            .snapshot()
-            .sketches
-            .get(sketch)
-            .is_ok_and(|current| current.constraints_shown() == shown);
+        let unchanged = self.snapshot().sketches.get(sketch).is_ok_and(|current| {
+            current.constraints_shown() == shown
+                && (!shown || current.hidden_constraint_glyphs().is_empty())
+        });
         if unchanged {
             return Ok(());
         }
@@ -69,6 +68,30 @@ impl<O: TransactionObserver> DocumentSession<O> {
         };
         self.run(label, |snapshot, _| {
             snapshot.sketches.set_constraints_shown(sketch, shown)
+        })
+    }
+}
+
+impl<O: TransactionObserver> DocumentSession<O> {
+    /// Change one geometric relation mark as an undoable display edit.
+    /// Example: `session.set_constraint_glyph_visible(sketch, relation, false)?`.
+    pub fn set_constraint_glyph_visible(
+        &mut self,
+        sketch: DocumentSketchId,
+        relation: oblikovati_model::sketch::SketchConstraintId,
+        visible: bool,
+    ) -> Result<(), CommandError<SketchError>> {
+        let unchanged = self.snapshot().sketches.get(sketch).is_ok_and(|current| {
+            current.geometry().has_geometric_relation(relation)
+                && current.hidden_constraint_glyphs().contains(&relation) != visible
+        });
+        if unchanged {
+            return Ok(());
+        }
+        self.run("Constraint Glyph Visibility", |snapshot, _| {
+            snapshot
+                .sketches
+                .set_constraint_glyph_visible(sketch, relation, visible)
         })
     }
 }

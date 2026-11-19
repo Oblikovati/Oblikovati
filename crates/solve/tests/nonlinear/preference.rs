@@ -176,3 +176,71 @@ fn invalid_preferences_and_unsatisfied_constraints_are_distinct() {
     .unwrap();
     assert_eq!(result.preference, PreferenceTermination::ConstraintFailed);
 }
+
+#[test]
+fn zero_tangent_preference_can_be_a_farthest_point_on_a_circle() {
+    let circle = UnitCircle;
+    let result = solve_with_preference(
+        &[1.0, 0.0],
+        &[block(&circle, &[0, 1])],
+        &[],
+        &[(0, -1.0)],
+        SolveOptions::default(),
+        || false,
+    )
+    .unwrap();
+    if result.preference == PreferenceTermination::Converged {
+        assert_close(result.solution.values[0], -1.0, 1e-7);
+        assert_close(result.solution.values[1], 0.0, 1e-7);
+    }
+}
+
+struct SquaredHeight;
+impl ResidualSource for SquaredHeight {
+    fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        Ok(vec![variables[0].product(&variables[0])?])
+    }
+}
+
+#[test]
+fn singular_constraint_does_not_prove_a_requested_motion() {
+    let height = SquaredHeight;
+    let result = solve_with_preference(
+        &[0.0],
+        &[block(&height, &[0])],
+        &[],
+        &[(0, 1.0)],
+        SolveOptions::default(),
+        || false,
+    )
+    .unwrap();
+    if result.preference == PreferenceTermination::Converged {
+        assert_close(result.solution.values[0], 1.0, 1e-7);
+        assert_close(result.solution.values[0].powi(2), 0.0, 1e-7);
+    }
+}
+
+struct BranchedLinear;
+impl ResidualSource for BranchedLinear {
+    fn evaluate(&self, variables: &[DualNumber]) -> Result<Vec<DualNumber>, ResidualError> {
+        let x = &variables[0];
+        Ok(vec![if x.value() <= 0.0 {
+            x.clone()
+        } else {
+            x.shifted(-1.0)?
+        }])
+    }
+}
+
+#[test]
+fn a_sampled_jacobian_does_not_certify_global_affinity() {
+    let source = BranchedLinear;
+    let blocks = [block(&source, &[0])];
+    let left = oblikovati_solve::residual::evaluate_residuals(&[-1.0], &blocks).unwrap();
+    let right = oblikovati_solve::residual::evaluate_residuals(&[1.0], &blocks).unwrap();
+    assert_eq!(left.jacobian(), right.jacobian());
+    assert_ne!(
+        right.values()[0],
+        left.values()[0] + 2.0 * left.jacobian()[0][0]
+    );
+}

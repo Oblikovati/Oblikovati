@@ -231,3 +231,49 @@ fn bad_shape_and_source_failures_identify_the_block_without_partial_success() {
         }
     }
 }
+
+#[test]
+fn unreferenced_variables_retain_global_columns_and_are_validated() {
+    let block = ResidualBlock {
+        source: &SharedVariable,
+        variables: &[999, 2],
+        equations: 1,
+    };
+    let mut values = vec![0.0; 1000];
+    values[2] = 4.0;
+    values[999] = 3.0;
+    let result = evaluate_residuals(&values, &[block]).unwrap();
+    assert_eq!(result.values(), [11.0]);
+    let row = &result.jacobian()[0];
+    assert_eq!(row.len(), 1000);
+    assert_eq!(row[2], 2.0);
+    assert_eq!(row[999], 1.0);
+    assert_eq!(row.iter().filter(|entry| **entry != 0.0).count(), 2);
+    values[500] = f64::NAN;
+    let invalid = evaluate_residuals(&values, &[]).unwrap_err();
+    assert!(matches!(invalid, EvaluationError::Input(_)));
+}
+
+#[test]
+fn sparse_seeding_matches_eager_global_derivatives_bit_for_bit() {
+    let source = Polynomial {
+        calls: Cell::new(0),
+    };
+    let values = [0.125, -0.0, 1.0e-100, 8.0, -3.5, 7.0];
+    let block = ResidualBlock {
+        source: &source,
+        variables: &[4, 0],
+        equations: 2,
+    };
+    let actual = evaluate_residuals(&values, &[block]).unwrap();
+    let eager = DualNumber::seed(&values).unwrap();
+    let expected = source
+        .evaluate(&[eager[4].clone(), eager[0].clone()])
+        .unwrap();
+    for (row, value) in expected.iter().enumerate() {
+        assert_eq!(actual.values()[row].to_bits(), value.value().to_bits());
+        for (actual, expected) in actual.jacobian()[row].iter().zip(value.gradient()) {
+            assert_eq!(actual.to_bits(), expected.to_bits());
+        }
+    }
+}

@@ -23,6 +23,8 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: SetSketchSettingsArgs,
 ) -> Result<Vec<u8>, Error> {
     let document = selected_document(files, request.document)?;
+    oblikovati_session::sketch_policy::require_supported_sketch_policies(&request.settings)
+        .map_err(Error)?;
     let result = store(files, document, request.settings)?;
     encode(&result)
 }

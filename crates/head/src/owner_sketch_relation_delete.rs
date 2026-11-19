@@ -61,10 +61,79 @@ impl<
             token: target.token,
             point: point.map(|point| point.0),
             block: target.block,
+            glyph: target
+                .glyph
+                .filter(|id| geometry.has_geometric_relation(*id)),
             center_point: point.is_some_and(|point| geometry.is_center_point(point)),
             candidates: target.candidates.clone(),
             relations,
         }))
+    }
+    pub(super) fn hide_sketch_context_glyph(
+        &mut self,
+        token: u64,
+        glyph: oblikovati_model::sketch::SketchConstraintId,
+    ) -> Result<bool, String> {
+        let edit = self.require_glyph_context(token, Some(glyph))?;
+        let index = self.sketch_glyph_wire_index(edit)?;
+        oblikovati_api::client::Client::new(self.document_host())
+            .constrain()
+            .set_glyph_visible(&oblikovati_api::wire::ConstraintGlyphVisibilityArgs {
+                sketch_index: index,
+                constraint_id: glyph.0,
+                visible: false,
+            })
+            .map_err(|error| error.to_string())?;
+        self.sketch_memory.context = None;
+        Ok(true)
+    }
+    pub(super) fn set_sketch_context_glyphs(
+        &mut self,
+        token: u64,
+        shown: bool,
+    ) -> Result<bool, String> {
+        self.require_glyph_context(token, None)?;
+        self.set_constraints_shown(shown)?;
+        self.sketch_memory.context = None;
+        Ok(true)
+    }
+    pub(super) fn sketch_glyph_wire_index(
+        &self,
+        edit: crate::HeadSketchEdit,
+    ) -> Result<i64, String> {
+        let session = self
+            .files
+            .workspace()
+            .session(edit.document)
+            .map_err(|error| error.to_string())?;
+        crate::sketch_geometric::wire_sketch_index(&session.snapshot().sketches, edit.sketch)
+    }
+    fn require_glyph_context(
+        &self,
+        token: u64,
+        glyph: Option<oblikovati_model::sketch::SketchConstraintId>,
+    ) -> Result<crate::HeadSketchEdit, String> {
+        let target = self
+            .sketch_memory
+            .context
+            .as_ref()
+            .ok_or_else(|| format!("glyph context {token}: expected a current context"))?;
+        let edit = self
+            .active_sketch_edit()
+            .ok_or_else(|| format!("glyph context {token}: expected an active sketch"))?;
+        if target.token != token
+            || target.document != edit.document
+            || target.sketch != edit.sketch
+            || self.sketch_tool.is_some()
+            || target.glyph.is_none()
+            || glyph.is_some_and(|id| target.glyph != Some(id))
+            || !self.sketch_context_valid(edit.document, edit.sketch, target.generation)
+        {
+            return Err(format!(
+                "glyph context {token}, glyph {glyph:?}: expected the current captured glyph"
+            ));
+        }
+        Ok(edit)
     }
     pub(super) fn delete_context_relation(&mut self, id: u64) -> Result<bool, String> {
         self.require_context_relation(id)?;
