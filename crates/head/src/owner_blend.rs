@@ -5,6 +5,8 @@ use super::*;
 mod owner_hole;
 #[path = "owner_move_body.rs"]
 mod owner_move_body;
+#[path = "owner_shell_face_body.rs"]
+mod owner_shell_face_body;
 #[path = "owner_shell_feature.rs"]
 mod owner_shell_feature;
 use oblikovati_automation::{PreparedChamfer, PreparedFillet, prepare_chamfer, prepare_fillet};

@@ -33,24 +33,22 @@ impl<
                 request.faces, request.generation
             ));
         }
-        let feature = picks[0].face.feature;
-        if picks.iter().any(|pick| pick.face.feature != feature) {
-            return Err(format!(
-                "shell faces {:?}: expected faces on one current body",
-                request.faces
-            ));
-        }
         let guid = workspace
             .identity(request.document)
             .map_err(|cause| cause.to_string())?
             .internal_name;
-        let body = self
-            .part_scenes
-            .current(session)?
-            .body(feature)
-            .ok_or_else(|| format!("shell face feature {feature:?}: expected a current body"))?;
-        let body_key = body.body_reference_key(session.history(), guid)?.to_vec();
-        let faces = picks.iter().map(|pick| pick.face.key.clone()).collect();
+        let evaluation = self.part_scenes.current(session)?;
+        let bodies = evaluation
+            .ordered_bodies()
+            .map(|body| {
+                Ok(super::owner_shell_face_body::ShellBodyFaces {
+                    body: body.body_reference_key(session.history(), guid)?.to_vec(),
+                    faces: body.face_reference_keys(session.history(), guid)?,
+                })
+            })
+            .collect::<Result<Vec<_>, String>>()?;
+        let faces: Vec<_> = picks.iter().map(|pick| pick.face.key.clone()).collect();
+        let body_key = super::owner_shell_face_body::unique_shell_face_body(&faces, &bodies)?;
         let input = Shell {
             face_refs: Some(keys),
             thickness: request.thickness.clone(),
