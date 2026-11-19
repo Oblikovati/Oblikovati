@@ -248,7 +248,7 @@ fn activate_second(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[given("the model-state table has a Category column with empty cells")]
-fn category_fixture(world: &mut ApplicationWorld) {
+pub(super) fn category_fixture(world: &mut ApplicationWorld) {
     use oblikovati_api::{
         types::{MODEL_STATE_TABLE_PROPERTY_COLUMN, ModelStatePropertyKey},
         wire::{
@@ -310,7 +310,7 @@ fn category_fixture(world: &mut ApplicationWorld) {
 #[when("the user opens the model-state table")]
 #[when("the user reopens the model-state table")]
 #[when("the user reopens the model-state table in the same session")]
-fn open_property_table(world: &mut ApplicationWorld) {
+pub(super) fn open_property_table(world: &mut ApplicationWorld) {
     if !world
         .frame
         .runs
