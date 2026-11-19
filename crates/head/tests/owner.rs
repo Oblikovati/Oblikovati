@@ -496,3 +496,6 @@ mod selection_preferences;
 mod sketch_context_selection;
 #[path = "owner/sketch_pattern.rs"]
 mod sketch_pattern;
+
+#[path = "owner/part_view_table_history.rs"]
+mod part_view_table_history;
