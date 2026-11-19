@@ -64,10 +64,26 @@ impl<
             glyph: target
                 .glyph
                 .filter(|id| geometry.has_geometric_relation(*id)),
+            glyph_candidates: target.glyph_candidates.clone(),
             center_point: point.is_some_and(|point| geometry.is_center_point(point)),
             candidates: target.candidates.clone(),
             relations,
         }))
+    }
+    pub(super) fn select_sketch_context_glyph(
+        &mut self,
+        token: u64,
+        glyph: oblikovati_model::sketch::SketchConstraintId,
+    ) -> Result<bool, String> {
+        let edit = self.require_glyph_context(token, Some(glyph))?;
+        self.store_sketch_target(
+            edit,
+            Some(oblikovati_session::selection::SketchPickTarget::GeometricConstraint(glyph)),
+            SelectionClickMode::Replace,
+        )?;
+        self.publish_selection_count(edit)?;
+        self.sketch_memory.context = None;
+        Ok(true)
     }
     pub(super) fn hide_sketch_context_glyph(
         &mut self,
@@ -125,8 +141,13 @@ impl<
             || target.document != edit.document
             || target.sketch != edit.sketch
             || self.sketch_tool.is_some()
-            || target.glyph.is_none()
-            || glyph.is_some_and(|id| target.glyph != Some(id))
+            || target.glyph_candidates.is_empty()
+            || glyph.is_some_and(|id| {
+                !target
+                    .glyph_candidates
+                    .iter()
+                    .any(|candidate| candidate.constraint == id)
+            })
             || !self.sketch_context_valid(edit.document, edit.sketch, target.generation)
         {
             return Err(format!(

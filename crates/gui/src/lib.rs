@@ -78,7 +78,9 @@ pub use application::viewport_orientation::{
 };
 pub use application::workspace_layout::body_properties::{GuiAppearanceChoice, GuiBodyPhysical};
 pub use application::workspace_layout::browser_origin::GuiOriginAxis;
-pub use sketch::constraint_glyphs::{GuiConstraintGlyph, GuiConstraintHover};
+pub use sketch::constraint_glyphs::{
+    GuiConstraintCandidate, GuiConstraintGlyph, GuiConstraintHover,
+};
 pub use sketch::dimension_edit::{GuiDimensionEdit, GuiDimensionValue};
 pub use sketch::inspect::{
     GuiInspectAction, GuiMeasurePanel, GuiSketchCandidate, GuiSketchContext, GuiSketchRelation,

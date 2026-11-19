@@ -10,6 +10,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Added
 
+- Choose and select one relation when sketch constraint glyphs overlap. (#4169)
+
 - Added individual sketch constraint glyph hiding and Show All through the viewport and typed API. (#4166)
 
 - Enabled the Rust desktop application on Windows through a native Win32 window and Martensite Vulkan rendering.

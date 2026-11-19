@@ -220,3 +220,32 @@ fn glyph_context_actions_require_the_captured_token_and_relation() {
     state.sketch_at_ready = false;
     assert!(!hide.enabled(&state) && !all.enabled(&state));
 }
+
+#[test]
+fn overlap_selection_requires_an_offered_relation_and_current_context() {
+    use oblikovati_model::sketch::SketchConstraintId;
+    let mut state = GuiCommandState {
+        sketch_at_ready: true,
+        sketch_context: Some(crate::GuiSketchContext {
+            token: 4,
+            glyph_candidates: vec![crate::GuiConstraintCandidate {
+                constraint: SketchConstraintId(9),
+                text: "H".into(),
+            }],
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let offered = GuiShellAction::SelectContextConstraintGlyph {
+        token: 4,
+        glyph: SketchConstraintId(9),
+    };
+    let absent = GuiShellAction::SelectContextConstraintGlyph {
+        token: 4,
+        glyph: SketchConstraintId(10),
+    };
+    assert!(offered.enabled(&state));
+    assert!(!absent.enabled(&state));
+    state.sketch_context.as_mut().unwrap().token += 1;
+    assert!(!offered.enabled(&state));
+}

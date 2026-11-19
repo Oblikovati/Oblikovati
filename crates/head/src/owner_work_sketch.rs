@@ -165,6 +165,13 @@ impl<
     fn delete_sketch_relation_from_gui(&mut self, id: u64) -> Result<bool, String> {
         self.delete_context_relation(id)
     }
+    fn select_context_constraint_glyph(
+        &mut self,
+        token: u64,
+        glyph: oblikovati_model::sketch::SketchConstraintId,
+    ) -> Result<bool, String> {
+        self.select_sketch_context_glyph(token, glyph)
+    }
     fn hide_context_constraint_glyph(
         &mut self,
         token: u64,

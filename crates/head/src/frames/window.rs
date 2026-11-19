@@ -129,6 +129,23 @@ pub trait HeadWindow {
     )> {
         None
     }
+    /// Return the current glyph candidates; example: `window.hovered_constraint_glyphs()`.
+    fn hovered_constraint_glyphs(
+        &self,
+    ) -> Option<(
+        oblikovati_model::document_sketch::DocumentSketchId,
+        Vec<oblikovati_gui::GuiConstraintCandidate>,
+    )> {
+        self.hovered_constraint_glyph().map(|(sketch, constraint)| {
+            (
+                sketch,
+                vec![oblikovati_gui::GuiConstraintCandidate {
+                    constraint,
+                    text: String::new(),
+                }],
+            )
+        })
+    }
     /// Check whether the ribbon awaits a model pick; example: `window.has_pending_ribbon_model_pick()`.
     fn has_pending_ribbon_model_pick(&self) -> bool {
         false

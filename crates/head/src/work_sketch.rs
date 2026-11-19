@@ -170,6 +170,16 @@ pub trait HeadSketchWork {
             "sketch relation {id}: expected an active sketch owner"
         ))
     }
+    /// Select an offered relation; example: `work.select_context_constraint_glyph(token, id)?`.
+    fn select_context_constraint_glyph(
+        &mut self,
+        token: u64,
+        glyph: oblikovati_model::sketch::SketchConstraintId,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "sketch glyph {glyph:?}, context {token}: expected an active sketch owner"
+        ))
+    }
     /// Hide the glyph captured by a current context; example: `work.hide_context_constraint_glyph(token, id)?`.
     fn hide_context_constraint_glyph(
         &mut self,
