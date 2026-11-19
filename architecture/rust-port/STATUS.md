@@ -14,11 +14,11 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
-- Constraint Settings (#4158): the full baseline at `fcda72a8f` passed
-  zero of eight scenarios. Six first steps are undefined, and two encounter
-  a shared precondition bug (#4159). The inference persistence field is not
-  consumed by creation (#4160). The scenario owner has fixture questions in
-  `BLOCKERS.md`, which changed after the baseline.
+- Constraint Settings (#4158): the full run at `f59421482` passed
+  zero of eight scenarios. The shared precondition is fixed (#4159); each
+  scenario stops at an undefined feature-specific step. The inference
+  persistence field is not consumed by creation (#4160). Fixture questions
+  are recorded in `BLOCKERS.md`; API selection types are tracked in #312.
 - New Sketch (#4156): the full run at `60c48f25f` passed nine of ten
   scenarios. The accumulated document fixture remains unresolved (#4011) and
   requires circular sketch patterns (#3905). See the feature's `BLOCKERS.md`
