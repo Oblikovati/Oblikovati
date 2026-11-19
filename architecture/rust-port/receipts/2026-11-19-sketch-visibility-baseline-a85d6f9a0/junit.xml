@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Sketch visibility: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/scenario.feature" package="testsuite/Feature: Sketch visibility: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/scenario.feature" tests="2" errors="0" failures="2" hostname="localhost" timestamp="2026-11-19T17:49:17.703654676Z" time="6.278255369"><testcase name="Scenario: sketch-visibility-01 Hide surrounding model while retaining active sketch display: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/scenario.feature:5:3" time="3.146312938"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: sketch-visibility-01 Hide surrounding model while retaining active sketch display
+   ✘  Given a sketch is active with surrounding model shading visible
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/scenario.feature:6:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: sketch-visibility-02 Restore surrounding model display: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/scenario.feature:16:3" time="3.131942431"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: sketch-visibility-02 Restore surrounding model display
+   ✘  Given Hide Others has been applied in the fixture sketch
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/scenario.feature:17:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

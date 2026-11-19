@@ -497,5 +497,24 @@
     "scenario_inventory_sha256": "13c70b5229ded138a118a8195f4207e4ae10a852b54bcfd3344bf14d3ec4f924",
     "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-sketch-preferences-full-6fdb0dc6c/scenario-arguments.json",
     "scenario_arguments_sha256": "c72879c97463b12c7667d4984ad5c0fa7cae0ae98313687df3c34a5d5d6ede73"
+  },
+  "features/sketch/sketch-visibility/scenario.feature": {
+    "feature_sha256": "84ce1cf47dee8bbb27a8ee769a6a2599c2c6bf7262bacb7c313b86843645e65b",
+    "supporting_files": {
+      "features/sketch/sketch-visibility/BLOCKERS.md": "ec438c1ad2b87983adde97f2789cdf667b745df12a1aa60383692251d492a9fb",
+      "features/sketch/sketch-visibility/FUNCTIONAL.md": "c428519660bafdc7a37ab987fe9b83ec2ce5888f4fcbf9e01bdc94d83913fcbb",
+      "features/sketch/sketch-visibility/VISUAL.md": "a93af486c0c006ce978e59a3600e0e38f9eda0fba3e7e427f08cf3b7e62f6827",
+      "features/sketch/sketch-visibility/sketch-visibility-icon.svg": "e7e6a371764a17f789fd61a76f5bbb970b1d1e1eb6b8013330a8fad7f4fc99bd"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-sketch-visibility-baseline-a85d6f9a0/cucumber.json",
+    "cucumber_sha256": "491081f9045caab4cbead01a1d97f2934ec9e2242731ad3df7d0ebcbdf4de5ab",
+    "application_commit": "a85d6f9a0",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=sketch-visibility OBK_BDD_REPORTS=/tmp/obk-sketch-visibility-a85d6f9a0/run cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe",
+    "notes": "Full baseline: both scenarios stopped at their first unbound step. Feature and supporting file hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-sketch-visibility-baseline-a85d6f9a0/scenario-inventory.json",
+    "scenario_inventory_sha256": "13c70b5229ded138a118a8195f4207e4ae10a852b54bcfd3344bf14d3ec4f924",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-sketch-visibility-baseline-a85d6f9a0/scenario-arguments.json",
+    "scenario_arguments_sha256": "449a77f76b6acd533f46e4e60316427d058c0a158b3ff6208ade9d425554a116"
   }
 }

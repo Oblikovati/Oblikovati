@@ -17,8 +17,10 @@ using this status; the live scenario directory can change.
 - Sketch preferences (#4148): the complete native run at `6fdb0dc6c` passed
   all three scenarios and 26 steps. Sketch edits are staged, Axes can be
   applied off and on, and HUD input controls retain their values on Cancel.
-  The focused Line scenario `line-30` fails when its
-  setup tries to start a second sketch; the cause is not yet established.
+  Line scenario `line-30` now keeps the Background sketch, but its measurement
+  fixture needs independent source coordinates (#4150).
+- Sketch visibility (#4151): both scenarios stopped at their first unbound
+  setup step in the complete native baseline at `a85d6f9a0`.
 - Model browser: the full native run at `0890f84e0` passed 97 of 100
   scenarios against feature SHA-256
   `603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e`.
