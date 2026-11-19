@@ -279,6 +279,13 @@ impl<
     ) -> Result<bool, String> {
         self.explode_browser_sketch_block(document, sketch, instance)
     }
+    fn explode_sketch_context_from_gui(
+        &mut self,
+        token: u64,
+        instance: oblikovati_model::sketch::SketchEntityId,
+    ) -> Result<bool, String> {
+        self.explode_context_sketch_block(token, instance)
+    }
     fn constrain_sketch_from_gui(
         &mut self,
         choice: oblikovati_gui::GuiSketchConstraint,

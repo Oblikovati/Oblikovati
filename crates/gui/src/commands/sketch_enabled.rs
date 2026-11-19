@@ -2,6 +2,19 @@
 //! Admission for a sketch attached to one current face (#4050).
 use super::*;
 
+pub(super) fn explode_context(
+    state: &GuiCommandState,
+    token: u64,
+    instance: oblikovati_model::sketch::SketchEntityId,
+) -> bool {
+    state.sketch_at_ready
+        && !state.transaction_open
+        && state
+            .sketch_context
+            .as_ref()
+            .is_some_and(|context| context.token == token && context.block == Some(instance))
+}
+
 pub(super) fn selected_face(state: &GuiCommandState, document: u64, key: &str) -> bool {
     state.document == Some(document)
         && state.authoring == GuiAuthoringContext::Part

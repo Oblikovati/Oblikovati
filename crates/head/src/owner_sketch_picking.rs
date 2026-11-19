@@ -193,7 +193,7 @@ impl<
             .map(|_| ())
             .map_err(|cause| cause.to_string())
     }
-    fn resolve_sketch_target(
+    pub(super) fn resolve_sketch_target(
         &self,
         edit: HeadSketchEdit,
         pixel: [i32; 2],

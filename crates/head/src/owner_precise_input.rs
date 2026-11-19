@@ -327,6 +327,14 @@ impl<
                 "sketch context token overflow: expected an unused menu identity".to_owned()
             })?;
         let mut target = context_target(geometry, edit, session.generation(), position, window)?;
+        if let Some(oblikovati_session::selection::SketchPickTarget::BlockInstance(instance)) =
+            self.resolve_sketch_target(edit, position, window)?
+        {
+            target.block = Some(instance);
+            target.point = None;
+            target.curve = None;
+            target.candidates.clear();
+        }
         target.token = token;
         self.sketch_memory.context_serial = token;
         self.sketch_memory.context = Some(target);
@@ -409,6 +417,7 @@ pub(super) struct SketchContextTarget {
     pub(super) token: u64,
     pub(super) point: Option<SketchEntityId>,
     pub(super) curve: Option<SketchEntityId>,
+    pub(super) block: Option<SketchEntityId>,
     pub(super) generation: u64,
     pub(super) document: u64,
     pub(super) sketch: oblikovati_model::document_sketch::DocumentSketchId,

@@ -66,6 +66,16 @@ pub trait HeadSketchWork {
             "block instance {instance:?} in sketch {sketch:?} of document {document}: expected an active sketch owner"
         ))
     }
+    /// Explode the block offered by a current canvas context; example: `work.explode_sketch_context_from_gui(token, instance)`.
+    fn explode_sketch_context_from_gui(
+        &mut self,
+        token: u64,
+        instance: oblikovati_model::sketch::SketchEntityId,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "block context {token}, instance {instance:?}: expected an active sketch owner"
+        ))
+    }
     /// Save the sketch options; example: `work.set_sketch_options_from_gui(options)`.
     fn set_sketch_options_from_gui(
         &mut self,

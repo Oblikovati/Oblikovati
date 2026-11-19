@@ -26,6 +26,13 @@ macro_rules! forward_owner_sketch_work {
             self.$owner
                 .explode_sketch_block_from_gui(document, sketch, instance)
         }
+        fn explode_sketch_context_from_gui(
+            &mut self,
+            token: u64,
+            instance: oblikovati_model::sketch::SketchEntityId,
+        ) -> Result<bool, String> {
+            self.$owner.explode_sketch_context_from_gui(token, instance)
+        }
         fn set_sketch_line_style_from_gui(
             &mut self,
             document: u64,

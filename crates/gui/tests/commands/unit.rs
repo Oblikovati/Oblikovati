@@ -168,3 +168,26 @@ fn sketch_context_choice_requires_current_offered_identity() {
     state.sketch_at_ready = false;
     assert!(!action.enabled(&state));
 }
+
+#[test]
+fn explode_context_requires_the_current_block_and_token() {
+    use crate::GuiSketchContext;
+    use oblikovati_model::sketch::SketchEntityId;
+    let instance = SketchEntityId(7);
+    let mut state = GuiCommandState {
+        sketch_at_ready: true,
+        sketch_context: Some(GuiSketchContext {
+            token: 3,
+            block: Some(instance),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let action = GuiShellAction::ExplodeSketchContext { token: 3, instance };
+    assert!(action.enabled(&state));
+    state.sketch_context.as_mut().unwrap().token = 4;
+    assert!(!action.enabled(&state));
+    state.sketch_context.as_mut().unwrap().token = 3;
+    state.sketch_context.as_mut().unwrap().block = Some(SketchEntityId(8));
+    assert!(!action.enabled(&state));
+}

@@ -89,6 +89,8 @@ pub struct GuiSketchContext {
     pub token: u64,
     /// The point the menu's Center Point row acts on; none on empty canvas.
     pub point: Option<u64>,
+    /// The placed block under the context pointer, when one was hit.
+    pub block: Option<oblikovati_model::sketch::SketchEntityId>,
     pub center_point: bool,
     /// Every entity within reach; two or more is what Select Other is for.
     pub candidates: Vec<GuiSketchCandidate>,
@@ -227,6 +229,7 @@ pub(crate) fn canvas_menu(
     }
     repeat_row(ui, state, actions);
     center_point_row(ui, state, actions);
+    explode_block_row(ui, state, actions);
     delete_selection_row(ui, state, actions);
     relation_rows(ui, state, actions);
     select_other_row(ui, state, actions);
@@ -238,6 +241,26 @@ pub(crate) fn canvas_menu(
         actions.push(GuiShellAction::Inspect(
             GuiInspectAction::OpenRegionProperties,
         ));
+    }
+}
+
+fn explode_block_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    let Some(context) = &state.sketch_context else {
+        return;
+    };
+    let Some(instance) = context.block else {
+        return;
+    };
+    let action = GuiShellAction::ExplodeSketchContext {
+        token: context.token,
+        instance,
+    };
+    if ui
+        .menu_item_config("Explode")
+        .enabled(action.enabled(state))
+        .build()
+    {
+        actions.push(action);
     }
 }
 

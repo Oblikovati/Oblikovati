@@ -19,6 +19,9 @@ impl GuiShellAction {
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
             Self::DismissSketchContext { .. } => true,
+            Self::ExplodeSketchContext { token, instance } => {
+                sketch_enabled::explode_context(state, *token, *instance)
+            }
             Self::SelectSketchContextCandidate { token, entity } => {
                 state.sketch_at_ready
                     && state.sketch_context.as_ref().is_some_and(|context| {

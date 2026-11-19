@@ -168,6 +168,25 @@ impl<
         self.store_sketch_click(edit, None, SelectionClickMode::Replace)?;
         Ok(true)
     }
+    pub(super) fn explode_context_sketch_block(
+        &mut self,
+        token: u64,
+        instance: oblikovati_model::sketch::SketchEntityId,
+    ) -> Result<bool, String> {
+        let state = self.gui_command_state()?;
+        let action = oblikovati_gui::GuiShellAction::ExplodeSketchContext { token, instance };
+        if !action.enabled(&state) {
+            return Err(format!(
+                "block context {token}, instance {instance:?}: expected a current offered block"
+            ));
+        }
+        let edit = self
+            .active_sketch_edit()
+            .ok_or("block context: expected an active sketch")?;
+        let changed = self.explode_browser_sketch_block(edit.document, edit.sketch, instance)?;
+        self.sketch_memory.context = None;
+        Ok(changed)
+    }
     fn block_creation_request(
         &self,
         name: &str,

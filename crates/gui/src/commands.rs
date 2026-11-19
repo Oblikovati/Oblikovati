@@ -23,6 +23,11 @@ pub enum GuiShellAction {
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
         instance: oblikovati_model::sketch::SketchEntityId,
     },
+    /// Explode the placed block hit by the current sketch context menu.
+    ExplodeSketchContext {
+        token: u64,
+        instance: oblikovati_model::sketch::SketchEntityId,
+    },
     SetDocumentUnits {
         document: u64,
         request: oblikovati_api::wire::SetDocumentUnitsArgs,

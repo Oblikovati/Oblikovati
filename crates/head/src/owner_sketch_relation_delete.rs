@@ -60,6 +60,7 @@ impl<
         Ok(Some(oblikovati_gui::GuiSketchContext {
             token: target.token,
             point: point.map(|point| point.0),
+            block: target.block,
             center_point: point.is_some_and(|point| geometry.is_center_point(point)),
             candidates: target.candidates.clone(),
             relations,
