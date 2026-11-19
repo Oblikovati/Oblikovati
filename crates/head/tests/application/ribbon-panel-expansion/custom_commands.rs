@@ -8,6 +8,18 @@ fn main_icon(world: &ApplicationWorld) -> [f32; 2] {
     let title = world.run("User Commands");
     [title.minimum[0] + 10., title.minimum[1] - 56.]
 }
+#[cucumber::given("2D Sketches has been added to the Part Tools custom panel")]
+fn add_sketch_command(world: &mut ApplicationWorld) {
+    world.click_text("Customize");
+    super::super::ribbon_customization::stage_sketch_visibility(world);
+    super::super::ribbon_customization::click_in_customize(world, "OK");
+    world.expect_text("User Commands");
+}
+#[cucumber::given("2D Sketches has been moved into the User Commands expanded area")]
+fn move_sketch_command(world: &mut ApplicationWorld) {
+    right_click_main_icon(world);
+    move_to_expanded(world);
+}
 fn expanded_icon() -> [f32; 2] {
     let (position, _) = diagnostics::window_geometry(EXPANSION).unwrap();
     [position[0] + 14., position[1] + 18.]
@@ -52,11 +64,13 @@ fn move_to_expanded(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[then("the icon is absent from the main panel")]
+#[then("the 2D Sketches icon is absent from its main area")]
 fn main_icon_absent(world: &mut ApplicationWorld) {
     let point = main_icon(world);
     assert_eq!(icon_colors(world, point), 1, "expected no main-panel icon");
 }
 #[then("the User Commands title offers an expansion control")]
+#[then("the User Commands panel is collapsed and offers an expansion control")]
 fn expansion_control(world: &mut ApplicationWorld) {
     let title = world.run("User Commands");
     assert!(
@@ -67,17 +81,47 @@ fn expansion_control(world: &mut ApplicationWorld) {
     );
 }
 #[when("the user opens the User Commands expansion")]
+#[when("the user opens the User Commands expanded area")]
 fn open_user_expansion(world: &mut ApplicationWorld) {
     world.click_text("User Commands");
     world.pump(Vec::new());
     assert!(diagnostics::window_geometry(EXPANSION).is_some());
 }
 #[then("the 2D Sketches icon appears in the expanded area")]
+#[then("the 2D Sketches icon is visible in that area")]
 fn expanded_icon_visible(world: &mut ApplicationWorld) {
     assert!(
         icon_colors(world, expanded_icon()) > 1,
         "expected the rendered expanded icon"
     );
+}
+#[then("the Tools expanded area is no longer visible")]
+fn tools_expansion_hidden(_: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry(EXPANSION).is_none());
+}
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_custom_expansion_survives_a_ribbon_tab_round_trip() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.click_text("Tools");
+    add_sketch_command(&mut world);
+    move_sketch_command(&mut world);
+    open_user_expansion(&mut world);
+    click_native_label(&mut world, "3D Model");
+    tools_expansion_hidden(&mut world);
+    click_native_label(&mut world, "Tools");
+    expansion_control(&mut world);
+    main_icon_absent(&mut world);
+    click_native_label(&mut world, "User Commands");
+    expanded_icon_visible(&mut world);
+    world.close();
+}
+#[cfg(target_os = "linux")]
+fn click_native_label(world: &mut ApplicationWorld, label: &str) {
+    let position = diagnostics::pointer_pixels(world.run(label).center());
+    super::super::x11_input::click(position);
+    world.pump(Vec::new());
 }
 #[when("the user right-clicks the expanded icon")]
 fn right_click_expanded_icon(world: &mut ApplicationWorld) {

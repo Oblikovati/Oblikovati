@@ -408,7 +408,7 @@ fn both_target_rows_selected(world: &mut ApplicationWorld) {
         assert_ne!(world.pixel_at([x, row.center()[1] as usize]), blank);
     }
 }
-fn click_in_customize(world: &mut ApplicationWorld, label: &str) {
+pub(super) fn click_in_customize(world: &mut ApplicationWorld, label: &str) {
     if label == "Line" && !world.window_text("Customize").contains("Line") {
         scroll_source_to_line(world);
     }
@@ -436,7 +436,7 @@ fn open_tools_customization(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Customize").is_some());
     assert!(world.window_text("Customize").contains("Part|Tools"));
 }
-fn stage_sketch_visibility(world: &mut ApplicationWorld) {
+pub(super) fn stage_sketch_visibility(world: &mut ApplicationWorld) {
     click_in_customize(world, "2DSketches");
     click_in_customize(world, ">");
     assert!(world.window_text("Customize").contains("Part|Tools*"));

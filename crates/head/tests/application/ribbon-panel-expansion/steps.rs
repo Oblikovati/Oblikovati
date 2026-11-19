@@ -230,6 +230,7 @@ fn ribbon_and_part(world: &mut ApplicationWorld) {
     assert!(world.state().document.is_some());
 }
 #[when("the user selects the Tools ribbon tab")]
+#[when("the user selects the Tools ribbon tab again")]
 fn select_tools(world: &mut ApplicationWorld) {
     world.click_text("Tools");
 }
