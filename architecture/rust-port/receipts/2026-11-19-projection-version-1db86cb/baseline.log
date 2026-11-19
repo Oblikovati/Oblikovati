@@ -1,0 +1,23 @@
+   Compiling oblikovati-solve v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/projection-version-4174/crates/solve)
+   Compiling oblikovati-model v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/projection-version-4174/crates/model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.78s
+     Running tests/associative_point_projection.rs (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/deps/associative_point_projection-f23c0d1d427c7fc6)
+
+running 1 test
+test recipes::old_versions_cannot_accept_bindings_and_invalid_anchors_are_refused_on_restore ... FAILED
+
+failures:
+
+---- recipes::old_versions_cannot_accept_bindings_and_invalid_anchors_are_refused_on_restore stdout ----
+
+thread 'recipes::old_versions_cannot_accept_bindings_and_invalid_anchors_are_refused_on_restore' (1693553) panicked at crates/model/tests/associative_point_projection/recipes.rs:26:9:
+assertion failed: DocumentSketches::from_recipe(&invalid).is_err()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    recipes::old_versions_cannot_accept_bindings_and_invalid_anchors_are_refused_on_restore
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 50 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p oblikovati-model --test associative_point_projection`
