@@ -93,8 +93,36 @@ fn open_and_select_view(world: &mut ApplicationWorld) {
 }
 
 #[then("the overflow menu closes")]
-fn overflow_menu_closed(world: &mut ApplicationWorld) {
-    world.expect_no_text("View");
+fn overflow_menu_closed(_: &mut ApplicationWorld) {
+    assert!(
+        !overflow_is_open(),
+        "expected the ribbon overflow popup to close"
+    );
+}
+
+fn overflow_is_open() -> bool {
+    super::super::diagnostics::window_popup_open(
+        "##application-ribbon",
+        "##ribbon-tab-overflow-menu",
+    )
+}
+
+#[test]
+fn overflow_popup_check_ignores_the_browser_view_row() {
+    let mut world = ApplicationWorld::new();
+    part_with_full_ribbon(&mut world);
+    view_in_overflow(&mut world);
+    assert!(world.shows("View"), "expected the browser View row");
+    assert!(!overflow_is_open(), "expected the popup closed initially");
+    open_overflow(&mut world);
+    assert!(overflow_is_open(), "expected the overflow popup open");
+    world.escape();
+    assert!(!overflow_is_open(), "expected Escape to close the popup");
+    assert!(
+        world.shows("View"),
+        "expected the browser View row retained"
+    );
+    world.close();
 }
 
 #[then("the View command groups remain displayed")]
