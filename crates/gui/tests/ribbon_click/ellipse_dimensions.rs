@@ -22,6 +22,7 @@ fn ellipse_axis_drafts_reach_the_same_editor_and_enter_dispatch() {
 }
 fn ellipse_axis_draft(id: u64, kind: DimensionConstraintKind) -> GuiDimensionDraft {
     GuiDimensionDraft {
+        choice_required: false,
         id,
         kind: kind.0.to_string(),
         orientation: String::new(),

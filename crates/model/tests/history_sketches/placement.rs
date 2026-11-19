@@ -34,6 +34,7 @@ fn committed(
 }
 pub(super) fn lock(expression: &str) -> Option<SketchPlacementFieldLock> {
     Some(SketchPlacementFieldLock {
+        reference: false,
         expression: expression.into(),
         text_point: Some([3.0, 4.0]),
     })

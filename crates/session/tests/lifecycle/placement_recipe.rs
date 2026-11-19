@@ -11,11 +11,13 @@ fn placement() -> SketchPlacementRecipe {
 fn locks() -> Vec<Option<SketchPlacementFieldLock>> {
     vec![
         Some(SketchPlacementFieldLock {
+            reference: false,
             expression: "10 cm".into(),
             text_point: None,
         }),
         None,
         Some(SketchPlacementFieldLock {
+            reference: false,
             expression: "2 cm".into(),
             text_point: None,
         }),
@@ -90,6 +92,7 @@ fn empty_locked_values_leave_only_the_geometric_recipe() {
             DocumentSketchId(1),
             &placement(),
             &[Some(SketchPlacementFieldLock {
+                reference: false,
                 expression: String::new(),
                 text_point: None,
             })],

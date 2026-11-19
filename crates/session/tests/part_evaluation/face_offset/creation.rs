@@ -122,6 +122,7 @@ fn face_sketch_placement_previews_locks_and_rejects_stale_datums() {
     let recipe = SketchPlacementRecipe::straight_slot([[10., 10.], [20., 10.]], 2.).unwrap();
     let lock = |expression: &str| {
         Some(SketchPlacementFieldLock {
+            reference: false,
             expression: expression.into(),
             text_point: None,
         })

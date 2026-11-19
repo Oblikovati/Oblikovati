@@ -18,6 +18,7 @@ pub use error::SketchPlacementCreationError;
 /// A user-entered expression and the preview's optional annotation position, in working units.
 #[derive(Clone, Debug, PartialEq)]
 pub struct SketchPlacementFieldLock {
+    pub reference: bool,
     pub expression: String,
     pub text_point: Option<[f64; 2]>,
 }

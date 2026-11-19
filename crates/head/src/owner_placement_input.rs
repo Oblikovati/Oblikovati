@@ -140,6 +140,10 @@ impl<
                 return true;
             }
         }
+        if tool.pending_dimension.is_some() {
+            self.sketch_tool = Some(crate::sketch_tool::SketchToolState::Placement(tool));
+            return false;
+        }
         let action = tool.event(event);
         if matches!(action, PlacementAction::Cancel) {
             // Whatever was placed is already its own step; the sketch is at rest again.
@@ -338,7 +342,27 @@ impl<
             return Ok(false);
         }
         let locks = tool.locks_for(&recipe)?;
-        self.commit_sketch_placement(tool.document, tool.sketch, &recipe, &locks)?;
+        self.commit_pending_recipe(tool, recipe, locks)
+    }
+    pub(super) fn commit_pending_recipe(
+        &mut self,
+        tool: &mut SketchPlacementState,
+        recipe: SketchPlacementRecipe,
+        locks: Vec<Option<oblikovati_model::history::SketchPlacementFieldLock>>,
+    ) -> Result<bool, String> {
+        use super::placement::PlacementFailure;
+        match self.try_commit_sketch_placement(tool.document, tool.sketch, &recipe, &locks) {
+            Ok(_) => {}
+            Err(PlacementFailure::Choice(index)) => {
+                self.set_pending_dimension(
+                    tool,
+                    index,
+                    crate::placement_input::PendingDimensionPlacement::Recipe { recipe, locks },
+                )?;
+                return Ok(false);
+            }
+            Err(PlacementFailure::Other(error)) => return Err(error),
+        }
         let generation = self
             .files
             .workspace()
@@ -347,6 +371,23 @@ impl<
             .generation();
         tool.restart(generation);
         Ok(false)
+    }
+    pub(super) fn set_pending_dimension(
+        &mut self,
+        tool: &mut SketchPlacementState,
+        index: usize,
+        placement: crate::placement_input::PendingDimensionPlacement,
+    ) -> Result<(), String> {
+        self.dimension_serial = self.dimension_serial.checked_add(1).ok_or_else(|| {
+            "dimension choice sequence exhausted: expected an available id".to_string()
+        })?;
+        tool.abandon_press();
+        tool.pending_dimension = Some(crate::placement_input::PendingDimensionChoice {
+            id: self.dimension_serial,
+            index,
+            placement,
+        });
+        Ok(())
     }
     /// Feed an exact point to any placement command, as a click there would.
     pub(super) fn place_exact_point(

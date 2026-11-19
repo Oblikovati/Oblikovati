@@ -281,6 +281,7 @@ fn dimension_editor_enter_uses_the_current_seed_and_escape_cancels() {
     request.commands.dimension_tool_active = true;
     for (id, expression) in [(42, "10 mm"), (43, "20 mm")] {
         request.commands.dimension_draft = Some(GuiDimensionDraft {
+            choice_required: false,
             id,
             kind: "distance".into(),
             orientation: "horizontal".into(),
@@ -374,6 +375,7 @@ fn malformed_dimension_drafts_are_refused_before_gui_input() {
     enter_part(&mut request);
     request.commands.authoring = GuiAuthoringContext::Sketch;
     let valid = GuiDimensionDraft {
+        choice_required: false,
         id: 1,
         kind: "distance".into(),
         orientation: "horizontal".into(),
@@ -383,18 +385,34 @@ fn malformed_dimension_drafts_are_refused_before_gui_input() {
     };
     for invalid in [
         GuiDimensionDraft {
+            choice_required: true,
+            committed: Some(oblikovati_gui::GuiDimensionEdit {
+                sketch: 1,
+                constraint: 1,
+                name: "d0".into(),
+                expression: "10 mm".into(),
+                driven: false,
+            }),
+            refusal: None,
+            ..valid.clone()
+        },
+        GuiDimensionDraft {
+            choice_required: false,
             id: 0,
             ..valid.clone()
         },
         GuiDimensionDraft {
+            choice_required: false,
             kind: "unknown".into(),
             ..valid.clone()
         },
         GuiDimensionDraft {
+            choice_required: false,
             orientation: "skew".into(),
             ..valid.clone()
         },
         GuiDimensionDraft {
+            choice_required: false,
             expression: "bad\0source".into(),
             ..valid.clone()
         },

@@ -201,3 +201,95 @@ fn redundant_driving_dimension_is_refused_before_adoption() {
     assert!(history.snapshot().parameters.ids().is_empty());
     create(&mut history, &distance_request("5 cm", true)).unwrap();
 }
+
+#[test]
+fn prompt_redundant_explicit_dimension_waits_for_a_reference_choice() {
+    use oblikovati_api::types::OVER_CONSTRAINED_PROMPT;
+    use oblikovati_model::history::EditError;
+    let mut initial = fixed_distance_snapshot();
+    let mut settings = initial.effective_sketch_settings();
+    settings.over_constrained_behavior = OVER_CONSTRAINED_PROMPT;
+    initial.sketch_settings = Some(settings);
+    let mut history = history(initial);
+    let before = history.snapshot().sketches.recipe();
+    let token = history.begin("Dimension choice").unwrap();
+    let error = history
+        .edit(&token, |snapshot, ids| {
+            snapshot.create_sketch_dimension(
+                DocumentSketchId(1),
+                &distance_request("5 cm", false),
+                Default::default(),
+                ids,
+            )
+        })
+        .unwrap_err();
+    assert!(matches!(
+        error,
+        EditError::Mutation(SketchDimensionCreationError::ChoiceRequired)
+    ));
+    assert_eq!(history.snapshot().sketches.recipe(), before);
+    history.abort(&token).unwrap();
+    let report = create(&mut history, &distance_request("5 cm", true)).unwrap();
+    let geometry = history
+        .snapshot()
+        .sketches
+        .get(DocumentSketchId(1))
+        .unwrap()
+        .geometry();
+    assert!(geometry.dimension_is_reference(report.constraint).unwrap());
+}
+
+#[test]
+fn prompt_for_line_lock_keeps_direct_snapshot_unchanged() {
+    use oblikovati_api::types::OVER_CONSTRAINED_PROMPT;
+    use oblikovati_model::history::{
+        SketchLineChainCreation, SketchLineCreationError, SketchPlacementFieldLock,
+    };
+    let mut initial = fixed_distance_snapshot();
+    let mut settings = initial.effective_sketch_settings();
+    settings.over_constrained_behavior = OVER_CONSTRAINED_PROMPT;
+    initial.sketch_settings = Some(settings);
+    let mut history = history(initial);
+    let token = history.begin("Line choice").unwrap();
+    history
+        .edit(&token, |snapshot, ids| -> Result<(), String> {
+            let before = snapshot.clone();
+            let input = SketchLineChainCreation {
+                points: vec![[0., 0.], [3., 4.]],
+                closed: false,
+                construction: false,
+                centerline: false,
+                joins: [Some(entity(1)), Some(entity(2))],
+                locks: [
+                    Some(SketchPlacementFieldLock {
+                        expression: "5 cm".into(),
+                        text_point: None,
+                        reference: false,
+                    }),
+                    None,
+                ],
+            };
+            let policy = SketchInferencePolicy::for_units(snapshot.parameters.units());
+            let error = snapshot
+                .create_inferred_sketch_line_chain(
+                    DocumentSketchId(1),
+                    &input,
+                    policy,
+                    Default::default(),
+                    ids,
+                )
+                .unwrap_err();
+            assert!(matches!(
+                error,
+                SketchLineCreationError::Dimension {
+                    index: 0,
+                    cause: SketchDimensionCreationError::ChoiceRequired
+                }
+            ));
+            assert!(before.sketches.same_recipe(&snapshot.sketches));
+            assert!(before.parameters.same_recipe(&snapshot.parameters));
+            Ok(())
+        })
+        .unwrap();
+    history.abort(&token).unwrap();
+}

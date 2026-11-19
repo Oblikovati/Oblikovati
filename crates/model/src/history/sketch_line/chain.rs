@@ -61,6 +61,28 @@ impl DocumentSnapshot {
         ids: &mut RecipeReservations<'_>,
         scope: Option<&SketchInferenceCandidates>,
     ) -> Result<SketchLineChainCreationReport, SketchLineCreationError> {
+        let needs_choice = input.locks.iter().any(Option::is_some)
+            && self.effective_sketch_settings().over_constrained_behavior
+                == oblikovati_api::types::OVER_CONSTRAINED_PROMPT;
+        if !needs_choice {
+            return self.append_inferred_chain(sketch, input, policy, solve_options, ids, scope);
+        }
+        let mut candidate = self.clone();
+        let result =
+            candidate.append_inferred_chain(sketch, input, policy, solve_options, ids, scope)?;
+        self.sketches = candidate.sketches;
+        self.parameters = candidate.parameters;
+        Ok(result)
+    }
+    fn append_inferred_chain(
+        &mut self,
+        sketch: DocumentSketchId,
+        input: &SketchLineChainCreation,
+        policy: SketchInferencePolicy,
+        solve_options: SolveOptions,
+        ids: &mut RecipeReservations<'_>,
+        scope: Option<&SketchInferenceCandidates>,
+    ) -> Result<SketchLineChainCreationReport, SketchLineCreationError> {
         require_chain_vertices(&input.points, false).map_err(SketchLineCreationError::Sketch)?;
         policy
             .require_valid()
@@ -99,19 +121,19 @@ impl DocumentSnapshot {
         };
         let operands = locked_segment_operands(last);
         let mut dimensions = Vec::new();
-        for (lock, operands) in input.locks.iter().zip(operands) {
+        for (index, (lock, operands)) in input.locks.iter().zip(operands).enumerate() {
             let Some(lock) = lock else {
                 continue;
             };
             let creation = SketchDimensionCreation {
                 operands,
                 expression: lock.expression.clone(),
-                reference: false,
+                reference: lock.reference,
                 text_point: lock.text_point,
             };
             let created = self
                 .create_placement_dimension(sketch, &creation, options, ids, None)
-                .map_err(SketchLineCreationError::Dimension)?;
+                .map_err(|cause| SketchLineCreationError::Dimension { index, cause })?;
             dimensions.push(created);
         }
         Ok(dimensions)

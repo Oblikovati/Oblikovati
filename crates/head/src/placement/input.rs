@@ -15,7 +15,25 @@ mod formats;
 mod line;
 #[path = "typed_stage.rs"]
 mod typed_stage;
+#[derive(Clone)]
+pub(crate) enum PendingDimensionPlacement {
+    Recipe {
+        recipe: SketchPlacementRecipe,
+        locks: Vec<Option<oblikovati_model::history::SketchPlacementFieldLock>>,
+    },
+    Line {
+        input: oblikovati_model::history::SketchLineChainCreation,
+        pixel: Option<[i32; 2]>,
+    },
+}
+#[derive(Clone)]
+pub(crate) struct PendingDimensionChoice {
+    pub id: u64,
+    pub index: usize,
+    pub placement: PendingDimensionPlacement,
+}
 pub(crate) struct SketchPlacementState {
+    pub pending_dimension: Option<PendingDimensionChoice>,
     pub document: u64,
     pub sketch: DocumentSketchId,
     pub generation: u64,
@@ -83,6 +101,7 @@ impl SketchPlacementState {
     ) -> Result<Self, String> {
         tool.validate()?;
         Ok(Self {
+            pending_dimension: None,
             document,
             sketch,
             generation,
