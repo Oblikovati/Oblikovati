@@ -23,8 +23,12 @@ fn active_part(world: &mut ApplicationWorld) {
 fn sketch_tab(world: &mut ApplicationWorld) {
     world.app().window.native.view.resize([2400, 900]).unwrap();
     world.pump(Vec::new());
-    click_sketch_tab(world);
+    if world.state().authoring != oblikovati_gui::GuiAuthoringContext::Sketch {
+        click_sketch_tab(world);
+    }
     world.expect_text("Constrain");
+}
+fn unavailable_sketch_commands(world: &mut ApplicationWorld) {
     for label in ["Line", "Finish Sketch"] {
         assert!(
             !world.run_is_enabled(label),
@@ -112,6 +116,7 @@ fn sketch_visible_outside_edit(world: &mut ApplicationWorld) {
         world.state().authoring,
         oblikovati_gui::GuiAuthoringContext::Part
     );
+    unavailable_sketch_commands(world);
 }
 #[when("the user enters sketch edit from the model browser")]
 fn edit_sketch(world: &mut ApplicationWorld) {
@@ -186,6 +191,7 @@ fn sketch_edit_inactive(world: &mut ApplicationWorld) {
 }
 
 #[given("a part has an active editable sketch in the MCAD Software")]
+#[given("a part contains an active editable sketch in the MCAD Software")]
 pub(super) fn active_editable_sketch(world: &mut ApplicationWorld) {
     world.start_empty_sketch();
     world.app().window.native.view.resize([2400, 900]).unwrap();

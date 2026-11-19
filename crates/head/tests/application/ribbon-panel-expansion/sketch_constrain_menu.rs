@@ -15,6 +15,7 @@ fn full_sketch_ribbon(world: &mut ApplicationWorld) {
     );
 }
 #[given("the Constrain additional command area is open")]
+#[given("the Constrain additional-command area is open")]
 fn constrain_area_open(world: &mut ApplicationWorld) {
     sketch_constrain::open_constrain(world);
     assert!(diagnostics::window_geometry(CONSTRAIN).is_some());
@@ -40,6 +41,7 @@ fn title_menu_choices(world: &mut ApplicationWorld) {
     }
 }
 #[then("the Constrain additional command area remains open")]
+#[then("the Constrain additional-command area remains open")]
 fn constrain_remains_open(_: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry(CONSTRAIN).is_some());
 }
@@ -51,9 +53,41 @@ fn docking_options(world: &mut ApplicationWorld) {
 }
 #[then("the title context menu and Constrain additional command area close")]
 #[then("the command context menu and Constrain additional command area close")]
+#[then("the context menu and Constrain additional-command area close")]
 fn menu_and_constrain_close(world: &mut ApplicationWorld) {
     world.expect_no_text("Undock Ribbon");
     assert!(diagnostics::window_geometry(CONSTRAIN).is_none());
+}
+#[when("the user right-clicks Constraint Inference Scope in the additional area")]
+fn right_click_inference_scope(world: &mut ApplicationWorld) {
+    let command = world.run_in_window(CONSTRAIN, "ConstraintInferenceScope");
+    world.right_click(diagnostics::pointer_pixels(command.center()));
+    world.pump(Vec::new());
+}
+#[then("the Constrain area context menu is visible")]
+fn constrain_context_visible(world: &mut ApplicationWorld) {
+    world.expect_text("Ribbon Appearance");
+    world.expect_text("Show Panels");
+}
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_switching_tabs_closes_constrain_command_menu() {
+    let mut world = sketch_with_constrain_area();
+    let scope = world.run_in_window(CONSTRAIN, "ConstraintInferenceScope");
+    super::super::x11_input::right_click(diagnostics::pointer_pixels(scope.center()));
+    world.pump(Vec::new());
+    constrain_context_visible(&mut world);
+    let tab = diagnostics::pointer_pixels(world.run("Tools").center());
+    super::super::x11_input::click(tab);
+    world.pump(Vec::new());
+    menu_and_constrain_close(&mut world);
+    world.expect_text("Application Options");
+    assert!(
+        world
+            .edited_geometry()
+            .same_recipe(&world.observed_sketch.as_ref().unwrap().geometry)
+    );
+    world.close();
 }
 
 fn sketch_with_constrain_area() -> ApplicationWorld {
@@ -218,6 +252,7 @@ fn sketch_edit_active(world: &mut ApplicationWorld) {
     );
 }
 #[then("the Constrain additional command area remains closed")]
+#[then("the Constrain additional-command area remains closed")]
 fn constrain_remains_closed(_: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry(CONSTRAIN).is_none());
 }
