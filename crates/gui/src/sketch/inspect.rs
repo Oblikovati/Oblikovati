@@ -91,6 +91,8 @@ pub struct GuiSketchContext {
     pub point: Option<u64>,
     /// The placed block under the context pointer, when one was hit.
     pub block: Option<oblikovati_model::sketch::SketchEntityId>,
+    /// The geometric constraint whose displayed glyph was hit.
+    pub glyph: Option<oblikovati_model::sketch::SketchConstraintId>,
     pub center_point: bool,
     /// Every entity within reach; two or more is what Select Other is for.
     pub candidates: Vec<GuiSketchCandidate>,
@@ -220,6 +222,9 @@ pub(crate) fn canvas_menu(
         return;
     };
     *open_token = state.sketch_context.as_ref().map(|context| context.token);
+    if constraint_glyph_rows(ui, state, actions) {
+        return;
+    }
     if let Some(menu) = &state.sketch_marking_menu {
         if crate::marking_menu::use_classic(state.sketch_classic_menu, marking_enabled) {
             super::marking_menu::draw_classic(ui, menu, state, actions);
@@ -242,6 +247,42 @@ pub(crate) fn canvas_menu(
             GuiInspectAction::OpenRegionProperties,
         ));
     }
+}
+
+fn constraint_glyph_rows(
+    ui: &Ui,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+) -> bool {
+    let Some(context) = state
+        .sketch_context
+        .as_ref()
+        .filter(|context| context.glyph.is_some())
+    else {
+        return false;
+    };
+    let Some(glyph) = context.glyph else {
+        return false;
+    };
+    if ui.menu_item("Hide") {
+        actions.push(GuiShellAction::HideContextConstraintGlyph {
+            token: context.token,
+            glyph,
+        });
+    }
+    if ui.menu_item("Show All Constraints") {
+        actions.push(GuiShellAction::SetContextConstraintGlyphs {
+            token: context.token,
+            shown: true,
+        });
+    }
+    if ui.menu_item("Hide All Constraints") {
+        actions.push(GuiShellAction::SetContextConstraintGlyphs {
+            token: context.token,
+            shown: false,
+        });
+    }
+    true
 }
 
 fn explode_block_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {

@@ -24,6 +24,7 @@ pub(super) fn context_target(
         point: points.first().map(|(_, id)| *id),
         curve,
         block: None,
+        glyph: None,
         generation,
         document: edit.document,
         sketch: edit.sketch,

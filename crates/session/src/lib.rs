@@ -56,6 +56,7 @@ pub use sketch_create::{PartSketchCreateError, SketchCreationProjectionInput};
 pub use sketch_primitive::SketchPrimitiveProjectionInput;
 pub use sketch_translation::{SketchTransformPreview, SketchTransformProjectionInput};
 mod sketch_delete;
+pub mod sketch_policy;
 mod sketch_precision;
 pub use sketch_precision::{
     ConditionalPrismAxis, ConditionalPrismDisplacement, ConditionalPrismSweptPoints,

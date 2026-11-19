@@ -3,6 +3,9 @@
 use super::*;
 impl PlacedSketch {
     pub(super) fn recipe_version(&self) -> u32 {
+        if !self.hidden_constraint_glyphs.is_empty() {
+            return 17;
+        }
         if self.frame_edit.is_some() {
             return 15;
         }
@@ -38,6 +41,13 @@ impl PlacedSketch {
 }
 impl DocumentSketches {
     pub(super) fn placement_recipe_version(&self) -> u32 {
+        if self
+            .sketches
+            .iter()
+            .any(|sketch| !sketch.hidden_constraint_glyphs.is_empty())
+        {
+            return 17;
+        }
         if self
             .block_definitions
             .iter()

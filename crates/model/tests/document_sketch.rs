@@ -17,6 +17,8 @@ mod block_color;
 mod block_definitions;
 #[path = "document_sketch/block_instances.rs"]
 mod block_instances;
+#[path = "document_sketch/constraint_glyphs.rs"]
+mod constraint_glyphs;
 #[path = "document_sketch/face_support.rs"]
 mod face_support;
 fn geometry(offset: u64) -> Sketch2D {

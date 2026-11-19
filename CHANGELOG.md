@@ -10,6 +10,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Added
 
+- Added individual sketch constraint glyph hiding and Show All through the viewport and typed API. (#4166)
+
 - Enabled the Rust desktop application on Windows through a native Win32 window and Martensite Vulkan rendering.
 - Enabled isolated Lua scripting on Windows in the desktop and CLI.
 

@@ -33,12 +33,14 @@ fn relation_mark(
 ) -> Option<([f64; 2], &'static str, Vec<SketchEntityId>)> {
     let (at, text, related) = match relation {
         PlanarConstraint::Coincident { points } => {
-            (point_at(geometry, points[0])?, "C", Vec::new())
+            (point_at(geometry, points[0])?, "C", points.to_vec())
         }
         PlanarConstraint::LineHorizontal { line } => {
-            (line_middle(geometry, *line)?, "H", Vec::new())
+            (line_middle(geometry, *line)?, "H", vec![*line])
         }
-        PlanarConstraint::LineVertical { line } => (line_middle(geometry, *line)?, "V", Vec::new()),
+        PlanarConstraint::LineVertical { line } => {
+            (line_middle(geometry, *line)?, "V", vec![*line])
+        }
         PlanarConstraint::Lines {
             lines,
             relation: LineRelation::Parallel,
@@ -46,7 +48,7 @@ fn relation_mark(
         PlanarConstraint::Lines { lines, relation } => (
             line_middle(geometry, lines[0])?,
             line_relation_text(*relation),
-            Vec::new(),
+            lines.to_vec(),
         ),
         _ => return None,
     };
@@ -94,7 +96,7 @@ mod tests {
                 id: oblikovati_model::sketch::SketchConstraintId(1),
                 at: [2., 0.],
                 text: "H".to_owned(),
-                related: Vec::new()
+                related: vec![SketchEntityId(3)]
             }]
         );
     }

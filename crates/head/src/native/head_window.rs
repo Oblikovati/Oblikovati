@@ -3,6 +3,15 @@
 use super::*;
 
 impl HeadWindow for NativeHeadWindow {
+    fn hovered_constraint_glyph(
+        &self,
+    ) -> Option<(
+        oblikovati_model::document_sketch::DocumentSketchId,
+        oblikovati_model::sketch::SketchConstraintId,
+    )> {
+        self.glyph_target
+    }
+
     fn capture_window(&self) -> Result<oblikovati_viewport::ViewportCapture, String> {
         self.view.capture()
     }

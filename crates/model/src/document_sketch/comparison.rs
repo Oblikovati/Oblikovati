@@ -9,6 +9,7 @@ impl PartialEq for PlacedSketch {
             && self.name == other.name
             && self.visible == other.visible
             && self.constraints_shown == other.constraints_shown
+            && self.hidden_constraint_glyphs == other.hidden_constraint_glyphs
             && self.line_style == other.line_style
             && self.placement == other.placement
             && self.orientation == other.orientation

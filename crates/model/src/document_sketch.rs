@@ -71,6 +71,8 @@ pub struct PlacedSketch {
     visible: bool,
     /// Whether the sketch draws a mark beside each relation; a saved, undoable display choice.
     constraints_shown: bool,
+    /// Individually hidden geometric relation marks, keyed by stable sketch relation identity.
+    hidden_constraint_glyphs: std::collections::BTreeSet<crate::sketch::SketchConstraintId>,
     /// How its lines are drawn; a saved, undoable display change.
     line_style: SketchLineStyle,
     placement: SketchPlacement,
@@ -100,6 +102,9 @@ pub struct PlacedSketchRecipe {
     /// Version 6: absent means the marks stay hidden, which every older file implies.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub constraints_shown: Option<bool>,
+    /// Version 17 stores individually hidden geometric relation marks.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hidden_constraint_glyphs: Vec<crate::sketch::SketchConstraintId>,
     /// Version 7: absent means every line draws as the application's default.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub line_style: Option<SketchLineStyle>,
@@ -150,6 +155,7 @@ impl PlacedSketch {
             name: name.into(),
             visible: true,
             constraints_shown: false,
+            hidden_constraint_glyphs: Default::default(),
             line_style: SketchLineStyle::default(),
             placement,
             orientation: None,
@@ -191,6 +197,7 @@ impl PlacedSketch {
             name: self.name.clone(),
             visible: (!self.visible).then_some(false),
             constraints_shown: self.constraints_shown.then_some(true),
+            hidden_constraint_glyphs: self.hidden_constraint_glyphs.iter().copied().collect(),
             line_style: (self.line_style != SketchLineStyle::default())
                 .then(|| self.line_style.clone()),
             plane,
@@ -226,6 +233,7 @@ impl DocumentSketches {
                         && first.name == second.name
                         && first.visible == second.visible
                         && first.constraints_shown == second.constraints_shown
+                        && first.hidden_constraint_glyphs == second.hidden_constraint_glyphs
                         && first.line_style == second.line_style
                         && first.placement.same_recipe(&second.placement)
                         && orientation::same_orientation(first.orientation, second.orientation)
@@ -307,6 +315,14 @@ impl DocumentSketches {
         let index = self.index(id)?;
         self.require_unique_entities(Some(id), &geometry)?;
         point_projection::validate_bindings(&geometry, &self.sketches[index].point_projections)?;
+        if !self.sketches[index].hidden_constraint_glyphs.is_empty() {
+            let current = geometry
+                .geometric_relation_ids()
+                .collect::<std::collections::BTreeSet<_>>();
+            self.sketches[index]
+                .hidden_constraint_glyphs
+                .retain(|id| current.contains(id));
+        }
         self.sketches[index].geometry = geometry;
         self.sketches[index].evaluation = None;
         Ok(())
@@ -336,9 +352,9 @@ impl DocumentSketches {
     }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=16) {
+        if !matches!(recipe.version, 1..=17) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1 through 16",
+                "document sketch recipe version {}: expected 1 through 17",
                 recipe.version
             )));
         }
@@ -359,6 +375,7 @@ impl DocumentSketches {
             point_projection::restore_bindings(&mut restored, sketch, recipe.version)?;
             visibility::restore_visibility(&mut restored, sketch, recipe.version)?;
             visibility::restore_constraints_shown(&mut restored, sketch, recipe.version)?;
+            visibility::restore_hidden_glyphs(&mut restored, sketch, recipe.version)?;
             visibility::restore_line_style(&mut restored, sketch, recipe.version)?;
             restored.restore_block_instances(sketch, recipe.version)?;
         }

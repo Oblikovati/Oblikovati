@@ -14,7 +14,7 @@ martensite-tkgeomalgo = { git = "https://github.com/Oblikovati/Martensite", rev 
 martensite-tkgeombase = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.3.6" }
 martensite-tkernel = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.4.5" }
 martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.3.9" }
-oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "0bf27c8920966c85ee831775324274484cf29070", version = "=0.159.0" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "57ae73ca46bfcadcc09e3ec1d0c424d803cadc44", version = "=0.159.0" }
 oblikovati-solve = { path = "../solve" }
 oblikovati-model = { path = "../model" }
 martensite-tkhlr = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.3.6" }
