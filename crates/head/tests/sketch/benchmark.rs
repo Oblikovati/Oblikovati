@@ -25,6 +25,8 @@ mod constraint_inference_scope;
 mod dimension_expression;
 #[path = "ellipse/steps.rs"]
 mod ellipse;
+#[path = "explode-block/steps.rs"]
+mod explode_block;
 #[path = "fixtures.rs"]
 pub(super) mod fixtures;
 #[path = "fixtures_midpoint.rs"]
