@@ -162,17 +162,21 @@ fn invalid_versions_marks_and_unknown_fields_fail_before_restore() {
         model["workPlanes"][key] = value.into();
         assert!(from_section(&model, 3).restore_work_planes().is_err());
     }
-    assert_invalid_recipe_version(&captured);
+    assert_recipe_version_boundary(&captured);
 }
-fn assert_invalid_recipe_version(captured: &DocumentPackage) {
+fn assert_recipe_version_boundary(captured: &DocumentPackage) {
+    for version in [23u64, 24] {
+        let mut model = section(captured);
+        model["workPlanes"]["recipe"]["version"] = version.into();
+        assert!(from_section(&model, 3).restore_work_planes().is_ok());
+    }
     let mut model = section(captured);
-    model["workPlanes"]["recipe"]["version"] = 23u64.into();
+    model["workPlanes"]["recipe"]["version"] = 25u64.into();
+    let error = from_section(&model, 3).restore_work_planes().unwrap_err();
     assert!(
-        from_section(&model, 3)
-            .restore_work_planes()
-            .unwrap_err()
+        error
             .to_string()
-            .contains("version 23")
+            .contains("version 25: expected 1 through 24")
     );
 }
 
