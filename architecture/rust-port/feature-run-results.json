@@ -426,15 +426,15 @@
       "features/application/workspace-layout/view-user-interface-menu.svg": "27cf5530201fec3789ce9d591ab8603ffa7a610feba1e64b90b94b02e71d6dd5",
       "features/application/workspace-layout/workspace-states.svg": "0d3c78266d6b29de48ed39a8ef5100d0acf5266053a8eeeb6ede888562516e80"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-19-workspace-full-f7194a098/cucumber.json",
-    "cucumber_sha256": "f28ae2dc43105e7a015e7c221433a9b236c15efad421eb9ac1e6cd430a68618d",
-    "application_commit": "f7194a098",
-    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=workspace-layout OBK_BDD_REPORTS=/tmp/obk-workspace-full-f7194a098 cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-workspace-full-c0060be36/cucumber.json",
+    "cucumber_sha256": "43638ff9686a81daeef4b20d5f5b6f8982bfb5769e63d03e59880098f7dc02aa",
+    "application_commit": "c0060be36",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=workspace-layout OBK_BDD_REPORTS=/tmp/obk-workspace-full-c0060be36 cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan lavapipe; mixed native and scripted window input",
-    "notes": "Complete diagnostic: 44 of 52 executed cases passed, including outline examples; 8 cases failed or had unbound steps. Source and supporting files matched before and after. The local scenario source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "notes": "Complete diagnostic: 50 of 52 executed cases passed, including both outline examples; two cases stopped at unbound steps for spacing and the User Interface menu. Source and supporting files matched before and after. The local scenario source is unversioned; strict verified acceptance remains unavailable (#3978).",
     "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-docking-baseline-ffc5f785d/scenario-inventory.json",
     "scenario_inventory_sha256": "c4fe86998c8b053dd4505cbcce28704cf8279d0c4be561b2f6ceb64187ebaac0",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-workspace-full-f7194a098/scenario-arguments.json",
-    "scenario_arguments_sha256": "1563b9a8465ff92e8936d353dce7fa281d9b78b75a33d2a1ef01ef0caefb55a7"
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-workspace-full-c0060be36/scenario-arguments.json",
+    "scenario_arguments_sha256": "26a8dddec79c0602b68830180f1e0f52e445d7c0f550d2ac7f78283e48d3291e"
   }
 }
