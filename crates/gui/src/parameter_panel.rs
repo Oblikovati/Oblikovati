@@ -4,7 +4,7 @@ use crate::{
     GuiParameterAck, GuiParameterDrafts, GuiParameterRow, GuiParameterSnapshot,
     GuiParameterTextEdit, GuiParameterTextField, GuiParameterTextTarget,
 };
-use imgui::{Condition, TableFlags, Ui};
+use imgui::{Condition, TableColumnFlags, TableColumnSetup, TableFlags, Ui};
 mod control_identity;
 mod create;
 mod group;
@@ -293,7 +293,7 @@ impl ParameterPanel {
         }
         let mut open = self.open.is_open();
         Self::dockable_window(ui, "Parameters", &mut open)
-            .size([920., 480.], Condition::FirstUseEver)
+            .size([1020., 480.], Condition::FirstUseEver)
             .build(|| self.draw_body(ui, &mut actions));
         if !open {
             self.open.set_open(false);
@@ -444,7 +444,15 @@ fn configure_parameter_columns(ui: &Ui) {
         "Export",
         "Comment",
     ] {
-        ui.table_setup_column(column);
+        if column == "Equation" {
+            // #4126: give expressions more space while keeping columns resizable.
+            let mut setup = TableColumnSetup::new(column);
+            setup.flags = TableColumnFlags::WIDTH_STRETCH;
+            setup.init_width_or_weight = 1.5;
+            ui.table_setup_column_with(setup);
+        } else {
+            ui.table_setup_column(column);
+        }
     }
     ui.table_setup_scroll_freeze(0, 1);
     ui.table_headers_row();
