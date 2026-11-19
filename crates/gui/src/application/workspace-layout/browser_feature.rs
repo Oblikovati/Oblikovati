@@ -200,7 +200,14 @@ pub(crate) fn body_row<'ui>(
         Some(open) => node.opened(open, Condition::Always),
         None => node,
     };
+    let muted = (!body.visible).then(|| {
+        ui.push_style_color(
+            imgui::StyleColor::Text,
+            ui.style_color(imgui::StyleColor::TextDisabled),
+        )
+    });
     let token = node.push();
+    drop(muted);
     let hovered = ui.is_item_hovered();
     let asks_menu = hovered && ui.is_mouse_clicked(MouseButton::Right);
     if asks_menu {

@@ -126,6 +126,8 @@ pub struct GuiCommandState {
     pub part_options: Option<oblikovati_model::application_options::PartApplicationOptions>,
     /// A sketch is open with no command running: the canvas offers its own menu.
     pub sketch_at_ready: bool,
+    /// Surrounding part bodies are temporarily hidden for the active sketch.
+    pub sketch_isolated: bool,
     /// Current canvas move stage when the Move tool is open.
     pub sketch_move: Option<crate::GuiSketchMoveStatus>,
     pub origin_planes: Vec<crate::GuiOriginPlane>,

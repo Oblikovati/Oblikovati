@@ -73,6 +73,8 @@ mod rectangle_two_point;
 mod sketch_preferences_axes;
 #[path = "sketch-preferences/hud.rs"]
 mod sketch_preferences_hud;
+#[path = "sketch-visibility/steps.rs"]
+mod sketch_visibility;
 
 #[path = "viewport-entity-interaction/steps.rs"]
 mod viewport_entity_interaction;

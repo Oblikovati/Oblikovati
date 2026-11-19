@@ -98,6 +98,7 @@ impl<
             ),
             ui_scale: self.gui_ui_scale(),
             sketch_options: Some(self.sketch_options.clone()),
+            sketch_isolated: session.sketch_isolated(),
             part_options: self.part_store.as_ref().map(|store| store.part_options()),
             // Projected by the frame, which owns the camera.
             constraint_glyphs: Vec::new(),

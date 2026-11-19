@@ -6,9 +6,22 @@ use std::collections::BTreeSet;
 #[derive(Clone, Default)]
 pub(super) struct BodyVisibilityState {
     hidden: BTreeSet<String>,
+    sketch_isolated: bool,
     revision: u64,
 }
 impl BodyVisibilityState {
+    fn effective_visibility(&self, key: &str) -> bool {
+        !self.sketch_isolated && !self.hidden.contains(key)
+    }
+    pub(crate) fn set_sketch_isolated(&mut self, isolated: bool) -> Result<bool, String> {
+        if self.sketch_isolated == isolated {
+            return Ok(false);
+        }
+        let revision = next_visibility_revision(self.revision, "sketch isolation")?;
+        self.sketch_isolated = isolated;
+        self.revision = revision;
+        Ok(true)
+    }
     /// What the scene shows of a body changed for another reason than its visibility.
     pub(super) fn note_display_change(&mut self) {
         self.revision = self.revision.wrapping_add(1);
@@ -70,7 +83,11 @@ fn next_visibility_revision(revision: u64, key: &str) -> Result<u64, String> {
 impl<O: TransactionObserver> DocumentSession<O> {
     /// Read document-local view state; example: `session.body_visible(resolved_key)`.
     pub fn body_visible(&self, key: &str) -> bool {
-        !self.body_visibility.hidden.contains(key)
+        self.body_visibility.effective_visibility(key)
+    }
+    /// Read the transient isolation mode; example: `session.sketch_isolated()`.
+    pub fn sketch_isolated(&self) -> bool {
+        self.body_visibility.sketch_isolated
     }
     /// Inspect display changes independently of modelling; example: `session.body_visibility_revision()`.
     pub fn body_visibility_revision(&self) -> u64 {
@@ -129,5 +146,31 @@ mod tests {
         state.revision = u64::MAX;
         assert!(state.replace_hidden(&BTreeSet::new(), &available).is_err());
         assert_eq!(state.hidden, selected);
+    }
+    #[test]
+    fn sketch_isolation_hides_display_without_changing_the_prior_hidden_set() {
+        let mut state = BodyVisibilityState::default();
+        state.set("already-hidden", false).unwrap();
+        let prior = state.hidden.clone();
+        let before = state.revision;
+        assert!(state.set_sketch_isolated(true).unwrap());
+        assert!(!state.effective_visibility("visible"));
+        assert!(!state.effective_visibility("already-hidden"));
+        assert_eq!(state.hidden, prior);
+        assert!(!state.set_sketch_isolated(true).unwrap());
+        assert!(state.set_sketch_isolated(false).unwrap());
+        assert!(state.effective_visibility("visible"));
+        assert!(!state.effective_visibility("already-hidden"));
+        assert_eq!(state.revision, before + 2);
+    }
+    #[test]
+    fn exhausted_revision_does_not_change_sketch_isolation() {
+        let mut state = BodyVisibilityState {
+            revision: u64::MAX,
+            ..Default::default()
+        };
+        assert!(state.set_sketch_isolated(true).is_err());
+        assert!(!state.sketch_isolated);
+        assert!(state.effective_visibility("body"));
     }
 }

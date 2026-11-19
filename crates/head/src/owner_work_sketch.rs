@@ -9,6 +9,26 @@ impl<
     S: DispatchWakeup,
 > crate::HeadSketchWork for DesktopOwner<O, W, F, G, R, S>
 {
+    fn set_sketch_isolation_from_gui(&mut self, isolated: bool) -> Result<bool, String> {
+        let edit = self
+            .active_sketch_edit()
+            .ok_or("sketch isolation: expected an active sketch")?;
+        if self
+            .files
+            .document_type(edit.document)
+            .map_err(|error| error.to_string())?
+            != oblikovati_api::types::DOCUMENT_PART
+        {
+            return Err(format!(
+                "sketch isolation document {}: expected a part",
+                edit.document
+            ));
+        }
+        self.files
+            .commands(edit.document)
+            .map_err(|error| error.to_string())?
+            .set_sketch_isolated(isolated)
+    }
     fn sketch_tool_candidate(
         &mut self,
         pixel: [i32; 2],
@@ -290,6 +310,9 @@ impl<
         self.start_sketch_on_plane_from_gui(oblikovati_gui::GuiOriginPlaneKind::Xy)
     }
     fn decline_sketch_edit(&mut self, cause: String) -> Result<(), String> {
+        if let Some((document, _, _)) = self.sketch_edit.as_ref() {
+            self.clear_sketch_isolation(*document)?;
+        }
         self.sketch_edit = None;
         self.retire_sketch_tool()?;
         self.command_notice = Some(DesktopCommandNotice::SketchEditFailed { cause });

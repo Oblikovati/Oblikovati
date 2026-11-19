@@ -55,6 +55,9 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::SetSketchOptions(options) => {
             owner.set_sketch_options_from_gui(options.clone())
         }
+        GuiShellAction::SetSketchIsolation(isolated) => {
+            owner.set_sketch_isolation_from_gui(*isolated)
+        }
         GuiShellAction::SetPartOptions(options) => owner.set_part_options_from_gui(*options),
         GuiShellAction::LineCommand(command) => owner.line_command_from_gui(*command),
         GuiShellAction::PrecisePoint(point) => owner.precise_point_from_gui(point),

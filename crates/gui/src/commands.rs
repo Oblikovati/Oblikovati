@@ -47,6 +47,8 @@ pub enum GuiShellAction {
         frequency: oblikovati_model::application_prompts::PromptFrequency,
     },
     SetSketchOptions(oblikovati_model::application_options::SketchApplicationOptions),
+    /// Hide or restore surrounding model bodies while a sketch is edited.
+    SetSketchIsolation(bool),
     SetPartOptions(oblikovati_model::application_options::PartApplicationOptions),
     SketchMove(crate::GuiSketchMoveAction),
     PreviewSketchPattern(Option<oblikovati_model::history::SketchRectangularPatternRequest>),

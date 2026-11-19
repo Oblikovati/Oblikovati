@@ -230,6 +230,7 @@ pub(crate) fn canvas_menu(
     delete_selection_row(ui, state, actions);
     relation_rows(ui, state, actions);
     select_other_row(ui, state, actions);
+    isolation_rows(ui, state, actions);
     if ui.menu_item("Measure") {
         actions.push(GuiShellAction::Inspect(GuiInspectAction::StartMeasure));
     }
@@ -237,6 +238,19 @@ pub(crate) fn canvas_menu(
         actions.push(GuiShellAction::Inspect(
             GuiInspectAction::OpenRegionProperties,
         ));
+    }
+}
+
+fn isolation_rows(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    for (label, isolated) in [("Hide Others", true), ("Show All", false)] {
+        let action = GuiShellAction::SetSketchIsolation(isolated);
+        if ui
+            .menu_item_config(label)
+            .enabled(action.enabled(state))
+            .build()
+        {
+            actions.push(action);
+        }
     }
 }
 

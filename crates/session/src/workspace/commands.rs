@@ -211,6 +211,10 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
     pub fn set_body_visible(&mut self, key: &str, visible: bool) -> Result<bool, String> {
         self.session.body_visibility.set(key, visible)
     }
+    /// Change transient sketch isolation; example: `commands.set_sketch_isolated(true)?`.
+    pub fn set_sketch_isolated(&mut self, isolated: bool) -> Result<bool, String> {
+        self.session.body_visibility.set_sketch_isolated(isolated)
+    }
     /// Change resolved bodies in the active view; example: `commands.set_part_view_body_visibility(&keys, &available, false)?`.
     pub fn set_part_view_body_visibility(
         &mut self,

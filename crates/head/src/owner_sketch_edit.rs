@@ -192,10 +192,21 @@ impl<
         self.require_edit_document(edit.document)?;
         self.finish_sketch_history_current(edit.document, edit.sketch)?;
         self.retire_sketch_tool()?;
+        self.clear_sketch_isolation(edit.document)?;
         self.sketch_edit = None;
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
             message: "Sketch finished.".into(),
         });
+        Ok(())
+    }
+    pub(super) fn clear_sketch_isolation(&mut self, document: u64) -> Result<(), String> {
+        if self.files.workspace().session(document).is_err() {
+            return Ok(());
+        }
+        self.files
+            .commands(document)
+            .map_err(|cause| cause.to_string())?
+            .set_sketch_isolated(false)?;
         Ok(())
     }
     fn finish_sketch_history_current(
@@ -377,7 +388,10 @@ impl<
         if self.sketch_edit.is_none() || self.active_sketch_edit().is_some() {
             return false;
         }
-        let retired = self.retire_sketch_tool();
+        let document = self.sketch_edit.as_ref().map(|(document, _, _)| *document);
+        let retired = self.retire_sketch_tool().and_then(|()| {
+            document.map_or(Ok(()), |document| self.clear_sketch_isolation(document))
+        });
         self.sketch_edit = None;
         self.command_notice = Some(match retired {
             Ok(()) => DesktopCommandNotice::PlacementPrompt {
@@ -418,6 +432,7 @@ impl<
         target: Option<DocumentSketchId>,
     ) -> Result<(), String> {
         self.retire_sketch_tool()?;
+        self.clear_sketch_isolation(document)?;
         self.sketch_edit = None;
         self.opened_hidden_sketch = None;
         if let Some(sketch) = target {

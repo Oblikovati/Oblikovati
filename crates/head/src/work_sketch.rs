@@ -2,6 +2,13 @@
 //! Sketch editing services called by the desktop frame loop.
 /// Route sketch editing to its owner; example: `work.edit_sketch_from_gui(true)?`.
 pub trait HeadSketchWork {
+    /// Change the active sketch's surrounding model display.
+    /// Example: `work.set_sketch_isolation_from_gui(true)?`.
+    fn set_sketch_isolation_from_gui(&mut self, isolated: bool) -> Result<bool, String> {
+        Err(format!(
+            "sketch isolation {isolated}: expected an active part sketch owner"
+        ))
+    }
     /// Resolve a tool-eligible sketch candidate at the pointer.
     /// Example: `work.sketch_tool_candidate(pixel, window)?` before drawing feedback.
     fn sketch_tool_candidate(

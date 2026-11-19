@@ -2,6 +2,9 @@
 // Keep sketch commands on the same owner through service wrappers.
 macro_rules! forward_owner_sketch_work {
     ($owner:ident) => {
+        fn set_sketch_isolation_from_gui(&mut self, isolated: bool) -> Result<bool, String> {
+            self.$owner.set_sketch_isolation_from_gui(isolated)
+        }
         fn select_browser_sketch_from_gui(
             &mut self,
             document: u64,

@@ -171,6 +171,18 @@ impl GuiShellAction {
                 !state.transaction_open
             }
             Self::SetSketchOptions(_) => state.sketch_options.is_some(),
+            Self::SetSketchIsolation(isolated) => {
+                state.sketch_at_ready
+                    && state.document_type == Some(oblikovati_api::types::DOCUMENT_PART)
+                    && if *isolated {
+                        !state.sketch_isolated
+                            && state.browser.as_ref().is_some_and(|browser| {
+                                browser.bodies.iter().any(|body| body.visible)
+                            })
+                    } else {
+                        state.sketch_isolated
+                    }
+            }
             Self::SetPartOptions(_) => state.part_options.is_some(),
             Self::LineCommand(_) => state.line_command.is_some(),
             Self::PrecisePoint(_) | Self::PreciseTriad(_) => state.precise_target.is_some(),
