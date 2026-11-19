@@ -50,6 +50,9 @@ mod model_state_table_parameter_steps;
 #[path = "model_state_table_row_steps.rs"]
 mod model_state_table_row_steps;
 #[cfg(target_os = "linux")]
+#[path = "model_state_table_suppression_steps.rs"]
+mod model_state_table_suppression_steps;
+#[cfg(target_os = "linux")]
 #[path = "model_state_table_verify_steps.rs"]
 mod model_state_table_verify_steps;
 #[path = "model_states.rs"]
