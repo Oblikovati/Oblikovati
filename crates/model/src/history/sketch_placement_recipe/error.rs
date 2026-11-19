@@ -4,13 +4,14 @@ use crate::{
         SketchConstraintReservationError, SketchDimensionCreationError,
         SketchPrimitiveCreationError,
     },
-    sketch::SketchError,
+    sketch::{SketchError, SketchTransientSolveError},
 };
 use std::{error::Error, fmt};
 /// Typed failures retain the failing geometry, reservation, or field dimension cause.
 #[derive(Clone, Debug, PartialEq)]
 pub enum SketchPlacementCreationError {
     Sketch(SketchError),
+    Inference(SketchTransientSolveError),
     Primitive(SketchPrimitiveCreationError),
     Constraint(SketchConstraintReservationError),
     Field {
@@ -23,6 +24,7 @@ impl SketchPlacementCreationError {
     fn cause(&self) -> &(dyn Error + 'static) {
         match self {
             Self::Sketch(cause) => cause,
+            Self::Inference(cause) => cause,
             Self::Primitive(cause) => cause,
             Self::Constraint(cause) => cause,
             Self::Field { cause, .. } => cause.as_ref(),

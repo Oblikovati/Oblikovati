@@ -13,7 +13,7 @@ use crate::{
 use oblikovati_solve::nonlinear::SolveOptions;
 mod error;
 mod fields;
-mod inference;
+pub(super) mod inference;
 pub use error::SketchPlacementCreationError;
 /// A user-entered expression and the preview's optional annotation position, in working units.
 #[derive(Clone, Debug, PartialEq)]
@@ -23,13 +23,37 @@ pub struct SketchPlacementFieldLock {
     pub text_point: Option<[f64; 2]>,
 }
 /// Permanent identities from one atomic recipe; field reports retain their input index.
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct SketchPlacementCreationReport {
     pub sketch: DocumentSketchId,
     pub points: Vec<SketchEntityId>,
     pub members: Vec<SketchEntityId>,
     pub relations: Vec<SketchConstraintId>,
     pub dimensions: Vec<(usize, SketchDimensionCreationReport)>,
+    inference_witness: Option<inference::TransientPlacement>,
+}
+// The witness validates publication; it is not part of the authored creation report.
+impl PartialEq for SketchPlacementCreationReport {
+    fn eq(&self, other: &Self) -> bool {
+        self.sketch == other.sketch
+            && self.points == other.points
+            && self.members == other.members
+            && self.relations == other.relations
+            && self.dimensions == other.dimensions
+    }
+}
+impl SketchPlacementCreationReport {
+    /// Check that a later placement solve kept the source and inferred anchors fixed.
+    /// Example: `report.verify_inference_preserved(&geometry)?` before publishing a candidate.
+    pub fn verify_inference_preserved(
+        &self,
+        geometry: &Sketch2D,
+    ) -> Result<(), crate::sketch::SketchTransientSolveError> {
+        match &self.inference_witness {
+            Some(witness) => witness.check_preserved(geometry),
+            None => Ok(()),
+        }
+    }
 }
 /// Evaluated inputs that govern placement inference; example: `SketchPlacementContext { datums: None, scope: Some(&scope) }`.
 #[derive(Clone, Copy)]
@@ -107,7 +131,8 @@ impl DocumentSnapshot {
         let SketchPlacementContext { datums, scope } = context;
         recipe.validate()?;
         let mut candidate = self.clone();
-        let mut report = candidate.append_placement(sketch, recipe, options, ids, datums, scope)?;
+        let (mut report, transient) =
+            candidate.append_placement(sketch, recipe, options, ids, datums, scope)?;
         fields::append(
             &mut candidate,
             recipe,
@@ -115,8 +140,12 @@ impl DocumentSnapshot {
             &mut report,
             options,
             ids,
-            datums,
+            inference::PlacementSolveContext {
+                datums,
+                transient: transient.as_ref(),
+            },
         )?;
+        report.inference_witness = transient;
         self.parameters = candidate.parameters;
         self.sketches = candidate.sketches;
         Ok(report)
@@ -129,7 +158,13 @@ impl DocumentSnapshot {
         ids: &mut RecipeReservations<'_>,
         datums: Option<&crate::feature::work_geometry::WorkGeometryEvaluation>,
         scope: Option<&SketchInferenceCandidates>,
-    ) -> Result<SketchPlacementCreationReport, SketchPlacementCreationError> {
+    ) -> Result<
+        (
+            SketchPlacementCreationReport,
+            Option<inference::TransientPlacement>,
+        ),
+        SketchPlacementCreationError,
+    > {
         let mut geometry = self.current_sketch_authoring_geometry_from(sketch, options, datums)?;
         let points = append_defining_positions(&mut geometry, &recipe.points, ids)
             .map_err(SketchPlacementCreationError::Primitive)?;
@@ -138,15 +173,34 @@ impl DocumentSnapshot {
         let members = append_members(&mut geometry, sketch, recipe, &points, ids)?;
         let mut relations =
             append_relations(&mut geometry, sketch, recipe, &points, &members, ids)?;
-        relations.extend(inferred);
+        let has_inference = !inferred.relations.is_empty() || !inferred.anchors.is_empty();
+        relations.extend(inferred.relations);
+        let transient = if has_inference {
+            let original = self.current_sketch_authoring_geometry_from(sketch, options, datums)?;
+            Some(inference::TransientPlacement {
+                source: crate::sketch::SketchInferenceFreeze::capture(&original)?,
+                anchors: inferred.anchors,
+            })
+        } else {
+            None
+        };
+        if let Some(context) = &transient {
+            geometry = context
+                .solve(self, &geometry, sketch, options, datums)
+                .map_err(SketchPlacementCreationError::Inference)?;
+        }
         self.sketches.replace_geometry(sketch, geometry)?;
-        Ok(SketchPlacementCreationReport {
-            sketch,
-            points,
-            members,
-            relations,
-            dimensions: Vec::new(),
-        })
+        Ok((
+            SketchPlacementCreationReport {
+                sketch,
+                points,
+                members,
+                relations,
+                dimensions: Vec::new(),
+                inference_witness: None,
+            },
+            transient,
+        ))
     }
 }
 fn append_members(

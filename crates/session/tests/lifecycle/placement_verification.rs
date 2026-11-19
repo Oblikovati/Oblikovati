@@ -9,7 +9,7 @@ use oblikovati_model::{
 };
 use std::{boxed::Box, cell::RefCell, error::Error};
 #[derive(Default)]
-struct RecordingCircularVerifier {
+pub(super) struct RecordingCircularVerifier {
     refuse: bool,
     observed: RefCell<Vec<SolvedCircularSeed>>,
 }

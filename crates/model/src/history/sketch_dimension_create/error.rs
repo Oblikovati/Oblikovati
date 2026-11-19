@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{
-    history::SketchConstraintReservationError, identity::RecipeIdError, parameter::ParameterError,
-    sketch::SketchError,
+    history::SketchConstraintReservationError,
+    identity::RecipeIdError,
+    parameter::ParameterError,
+    sketch::{SketchError, SketchTransientSolveError},
 };
 use std::{error::Error, fmt};
 /// Source, geometry and permanent allocation failures keep their distinct causes.
@@ -9,6 +11,7 @@ use std::{error::Error, fmt};
 pub enum SketchDimensionCreationError {
     ChoiceRequired,
     Sketch(SketchError),
+    Inference(SketchTransientSolveError),
     Readiness(crate::document_sketch::SketchReadinessError),
     Parameter(ParameterError<u64>),
     Identity(RecipeIdError),
@@ -19,6 +22,7 @@ impl SketchDimensionCreationError {
         match self {
             Self::ChoiceRequired => None,
             Self::Sketch(cause) => Some(cause),
+            Self::Inference(cause) => Some(cause),
             Self::Readiness(cause) => Some(cause),
             Self::Parameter(cause) => Some(cause),
             Self::Identity(cause) => Some(cause),

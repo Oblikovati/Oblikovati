@@ -244,6 +244,9 @@ fn verify_placement(
     construction: Option<&dyn SketchCircleConstruction>,
 ) -> Result<(), SketchPlacementCreationError> {
     let geometry = snapshot.sketches.get(report.sketch)?.geometry();
+    report
+        .verify_inference_preserved(geometry)
+        .map_err(SketchPlacementCreationError::Inference)?;
     recipe.verify_circular_seeds(geometry, &report.members, construction)?;
     Ok(())
 }

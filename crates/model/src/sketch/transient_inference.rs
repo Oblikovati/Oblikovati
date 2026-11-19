@@ -38,7 +38,10 @@ impl SketchInferenceFreeze {
             topology: source::FrozenTopology::capture(sketch),
         })
     }
-    fn validate_points(&self, sketch: &Sketch2D) -> Result<(), SketchTransientSolveError> {
+    pub(crate) fn validate_points(
+        &self,
+        sketch: &Sketch2D,
+    ) -> Result<(), SketchTransientSolveError> {
         self.validate_structure(sketch)?;
         for point in &self.points {
             let actual = sketch.point(point.id)?.position;
@@ -50,6 +53,14 @@ impl SketchInferenceFreeze {
                 });
             }
         }
+        Ok(())
+    }
+    pub(crate) fn validate_preserved(
+        &self,
+        sketch: &Sketch2D,
+    ) -> Result<(), SketchTransientSolveError> {
+        self.validate_points(sketch)?;
+        grounded::add_fixed_scalar_columns(sketch, &self.scalars, &mut BTreeSet::new())?;
         Ok(())
     }
     fn validate_structure(&self, sketch: &Sketch2D) -> Result<(), SketchTransientSolveError> {
@@ -148,6 +159,11 @@ pub enum SketchTransientSolveError {
         first: [f64; 2],
         second: [f64; 2],
     },
+    AnchorMoved {
+        point: SketchEntityId,
+        expected: [f64; 2],
+        actual: [f64; 2],
+    },
     TemporaryDimension {
         relation: PlanarConstraint,
     },
@@ -182,6 +198,14 @@ impl fmt::Display for SketchTransientSolveError {
             } => write!(
                 out,
                 "conflicting inference anchors for {point:?}: {first:?} and {second:?}; expected identical positions"
+            ),
+            Self::AnchorMoved {
+                point,
+                expected,
+                actual,
+            } => write!(
+                out,
+                "inference anchor {point:?} is {actual:?}: expected unchanged {expected:?}"
             ),
             Self::TemporaryDimension { relation } => write!(
                 out,
