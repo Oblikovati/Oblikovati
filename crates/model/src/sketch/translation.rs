@@ -82,8 +82,31 @@ impl Sketch2D {
         }
         let selected: BTreeSet<_> = entities.iter().copied().collect();
         self.transform_selected_axes(&selected, affine)?;
+        if let SketchSelectionTransform::Similarity { scale, .. } = transform {
+            self.scale_selected_curves(&selected, scale.abs())?;
+        }
         if matches!(transform, SketchSelectionTransform::Reflect { .. }) {
             self.reverse_selected_arcs(&selected);
+        }
+        Ok(())
+    }
+    fn scale_selected_curves(
+        &mut self,
+        selected: &BTreeSet<SketchEntityId>,
+        scale: f64,
+    ) -> Result<(), SketchError> {
+        for circle in &mut self.circles {
+            if selected.contains(&circle.id) {
+                let radius = circle.radius * scale;
+                super::circle::require_radius(circle.id, radius)?;
+                circle.radius = radius;
+            }
+        }
+        for ellipse in &mut self.ellipses {
+            if selected.contains(&ellipse.id()) {
+                let [major, minor] = ellipse.radii();
+                *ellipse = ellipse.with_radii([major * scale, minor * scale])?;
+            }
         }
         Ok(())
     }

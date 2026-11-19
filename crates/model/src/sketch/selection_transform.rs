@@ -4,8 +4,19 @@ use super::{SketchError, geometry::require_position};
 #[derive(Clone, Copy, Debug)]
 pub enum SketchSelectionTransform {
     Move([f64; 2]),
-    Rotate { center: [f64; 2], radians: f64 },
-    Reflect { start: [f64; 2], end: [f64; 2] },
+    Rotate {
+        center: [f64; 2],
+        radians: f64,
+    },
+    Reflect {
+        start: [f64; 2],
+        end: [f64; 2],
+    },
+    Similarity {
+        position: [f64; 2],
+        radians: f64,
+        scale: f64,
+    },
 }
 impl SketchSelectionTransform {
     /// Name the history step; example: `SketchSelectionTransform::Move([1.0, 0.0]).label()`.
@@ -14,6 +25,7 @@ impl SketchSelectionTransform {
             Self::Move(_) => "Move sketch entities",
             Self::Rotate { .. } => "Rotate sketch entities",
             Self::Reflect { .. } => "Mirror sketch entities",
+            Self::Similarity { .. } => "Place sketch entities",
         }
     }
     pub(super) fn affine(self) -> Result<SelectionAffine, SketchError> {
@@ -27,6 +39,11 @@ impl SketchSelectionTransform {
             }
             Self::Rotate { center, radians } => SelectionAffine::rotation(center, radians),
             Self::Reflect { start, end } => SelectionAffine::reflection(start, end),
+            Self::Similarity {
+                position,
+                radians,
+                scale,
+            } => SelectionAffine::similarity(position, radians, scale),
         }
     }
 }
@@ -35,6 +52,19 @@ pub(super) struct SelectionAffine {
     offset: [f64; 2],
 }
 impl SelectionAffine {
+    fn similarity(position: [f64; 2], radians: f64, scale: f64) -> Result<Self, SketchError> {
+        require_position(position)?;
+        if !radians.is_finite() || !scale.is_finite() || scale == 0.0 {
+            return Err(SketchError::Definition(format!(
+                "placement angle {radians:?} scale {scale:?}: expected a finite angle and finite nonzero scale"
+            )));
+        }
+        let (sin, cos) = radians.sin_cos();
+        Ok(Self {
+            matrix: [[scale * cos, -scale * sin], [scale * sin, scale * cos]],
+            offset: position,
+        })
+    }
     fn rotation(center: [f64; 2], radians: f64) -> Result<Self, SketchError> {
         require_position(center)?;
         if !radians.is_finite() {

@@ -19,6 +19,21 @@ struct PreparedSelectionCopy {
     sources: Vec<SketchEntityId>,
 }
 impl Sketch2D {
+    /// Copy another sketch's selection; example: `target.copy_transformed_selection(&source, &[line], transform, &mut reserve)?`.
+    pub fn copy_transformed_selection(
+        &mut self,
+        source: &Sketch2D,
+        entities: &[SketchEntityId],
+        transform: super::SketchSelectionTransform,
+        reserve: &mut impl FnMut() -> Result<SketchEntityId, RecipeIdError>,
+    ) -> Result<SketchCopyReport, SketchCopyError> {
+        let plan = PreparedSelectionCopy::transformed(source, entities, transform)
+            .map_err(SketchCopyError::Sketch)?;
+        let mut candidate = self.clone();
+        let report = plan.append_reserved(&mut candidate, reserve)?;
+        *self = candidate;
+        Ok(report)
+    }
     /// Capture selected geometry in its own identity namespace without changing this sketch.
     /// Example: `let geometry = sketch.capture_selection(&[line])?;` for a block definition.
     pub fn capture_selection(&self, entities: &[SketchEntityId]) -> Result<Sketch2D, SketchError> {
@@ -114,9 +129,16 @@ impl PreparedSelectionCopy {
         entities: &[SketchEntityId],
         operation: SketchCopyOperation,
     ) -> Result<Self, SketchError> {
+        Self::transformed(source, entities, operation.resolve(source)?)
+    }
+    fn transformed(
+        source: &Sketch2D,
+        entities: &[SketchEntityId],
+        transform: super::SketchSelectionTransform,
+    ) -> Result<Self, SketchError> {
         let selected = copy_selection(source, entities)?;
         let mut prepared = source.clone();
-        let mut sources = prepared.transform_entities(&selected, operation.resolve(source)?)?;
+        let mut sources = prepared.transform_entities(&selected, transform)?;
         sources.extend(
             selected
                 .iter()
