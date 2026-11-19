@@ -161,3 +161,144 @@ fn view_publication_checked(world: &mut ApplicationWorld) {
 fn published_copy_remains_active(world: &mut ApplicationWorld) {
     copied_view_active(world);
 }
+
+#[given("Primary is the active view representation")]
+fn primary_active_before_copy(world: &mut ApplicationWorld) {
+    assert_eq!(
+        world
+            .state()
+            .browser
+            .unwrap()
+            .part_design_views
+            .unwrap()
+            .active()
+            .unwrap()
+            .name(),
+        "Primary"
+    );
+}
+
+#[given("an inactive copied view representation exists")]
+fn inactive_view_copy(world: &mut ApplicationWorld) {
+    expanded_primary_view(world);
+    copy_primary_view(world);
+    rename_copied_view(world);
+    primary_view_active(world);
+}
+
+#[given("its camera autosave option is checked")]
+fn copied_view_autosave_enabled(world: &mut ApplicationWorld) {
+    let state = world.state();
+    let views = state.browser.unwrap().part_design_views.unwrap();
+    assert!(
+        views
+            .list()
+            .iter()
+            .find(|view| view.name() == "Capture View")
+            .unwrap()
+            .autosave_camera()
+    );
+}
+
+#[when("the user opens the copied view's context menu and expands Camera View")]
+#[when("the user reopens the Camera View submenu")]
+fn open_camera_submenu(world: &mut ApplicationWorld) {
+    right_click_row(world, "Capture View");
+    let at = super::super::diagnostics::pointer_pixels(world.run("Camera View").center());
+    world.hover(at);
+    world.pump(Vec::new());
+}
+
+#[then("Save Current Camera is unavailable")]
+fn inactive_camera_save_unavailable(world: &mut ApplicationWorld) {
+    let save = world.run("Save Current Camera");
+    let restore = world.run("Restore Saved Camera");
+    let brightness = |run: &super::super::diagnostics::RenderedRun| {
+        run.color.iter().map(|value| u32::from(*value)).sum::<u32>() * u32::from(run.alpha)
+    };
+    assert!(brightness(save) < brightness(restore));
+}
+
+#[then("Restore Saved Camera is available")]
+fn inactive_camera_restore_available(world: &mut ApplicationWorld) {
+    world.expect_text("Restore Saved Camera");
+}
+
+#[then("Autosave Camera is checked")]
+fn camera_autosave_checked(world: &mut ApplicationWorld) {
+    assert!(world.checked("Autosave Camera"));
+}
+
+#[then("Autosave Camera is unchecked")]
+fn camera_autosave_unchecked(world: &mut ApplicationWorld) {
+    assert!(!world.checked("Autosave Camera"));
+}
+
+#[when("the user chooses Autosave Camera")]
+#[when("the user chooses Autosave Camera again")]
+fn toggle_camera_autosave(world: &mut ApplicationWorld) {
+    choose_menu_row(world, "Autosave Camera");
+}
+
+#[when("the user dismisses the menus")]
+fn dismiss_view_menus(world: &mut ApplicationWorld) {
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
+    world.pump(Vec::new());
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Escape, false);
+    world.pump(Vec::new());
+}
+
+#[then("Primary remains the active view")]
+fn primary_stays_active(world: &mut ApplicationWorld) {
+    primary_view_active(world);
+}
+
+#[given("a copied view representation is active")]
+fn activate_copy_for_camera(world: &mut ApplicationWorld) {
+    expanded_primary_view(world);
+    copy_primary_view(world);
+    rename_copied_view(world);
+    activate_copied_view(world);
+}
+
+#[given("the orientation indicator shows Front")]
+fn camera_starts_front(world: &mut ApplicationWorld) {
+    super::super::viewport_orientation::press_part(world, |parts| parts.center);
+    super::super::viewport_orientation::expect_control_shows(world, "Front");
+}
+
+#[given("Autosave Camera is off for the active view")]
+fn disable_active_camera_autosave(world: &mut ApplicationWorld) {
+    open_camera_submenu(world);
+    assert!(world.checked("Autosave Camera"));
+    toggle_camera_autosave(world);
+}
+
+#[when("the user chooses Save Current Camera from the active view's Camera View submenu")]
+fn save_active_view_camera(world: &mut ApplicationWorld) {
+    open_camera_submenu(world);
+    choose_menu_row(world, "Save Current Camera");
+}
+
+#[when("the user changes the orientation to Top using the orientation control")]
+fn camera_turns_to_top(world: &mut ApplicationWorld) {
+    super::super::viewport_orientation::press_part(world, |parts| {
+        [parts.center[0], parts.center[1] - parts.half * 0.85]
+    });
+}
+
+#[then("the orientation indicator shows Top")]
+fn camera_indicates_top(world: &mut ApplicationWorld) {
+    super::super::viewport_orientation::expect_control_shows(world, "Top");
+}
+
+#[when("the user chooses Restore Saved Camera from the active view's Camera View submenu")]
+fn restore_active_view_camera(world: &mut ApplicationWorld) {
+    open_camera_submenu(world);
+    choose_menu_row(world, "Restore Saved Camera");
+}
+
+#[then("the orientation indicator shows Front")]
+fn camera_indicates_front(world: &mut ApplicationWorld) {
+    super::super::viewport_orientation::expect_control_shows(world, "Front");
+}

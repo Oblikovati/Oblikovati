@@ -18,8 +18,9 @@ impl<
     ) -> Result<bool, String> {
         use oblikovati_gui::GuiBrowserChoice::{
             ActivateModelState, ActivatePartView, Body, BodyVisible, CopyModelState, CopyPartView,
-            CreateModelState, LockPartView, Nothing, Occurrence, PartViewBodyVisibility,
-            PublishPartView, RenameModelState, RenamePartView, Root, SetOccurrenceSuppressed,
+            CreateModelState, LockPartView, Nothing, Occurrence, PartViewAutosave,
+            PartViewBodyVisibility, PublishPartView, RenameModelState, RenamePartView,
+            RestorePartViewCamera, Root, SavePartViewCamera, SetOccurrenceSuppressed,
             ShowFeatureDimensions, SketchDimensionsShown, ToggleModelStateEditScope,
         };
         self.require_browser_document(document)?;
@@ -78,6 +79,17 @@ impl<
                 .set_options(&oblikovati_api::wire::SetPartDesignViewOptionsArgs {
                     id: *id,
                     locked: Some(std::boxed::Box::new(*locked)),
+                    ..Default::default()
+                })
+                .map_err(|cause| cause.to_string())?;
+            return Ok(true);
+        }
+        if let PartViewAutosave { id, enabled } = choice {
+            oblikovati_api::client::Client::new(self.document_host())
+                .part_design_views()
+                .set_options(&oblikovati_api::wire::SetPartDesignViewOptionsArgs {
+                    id: *id,
+                    autosave_camera: Some(Box::new(*enabled)),
                     ..Default::default()
                 })
                 .map_err(|cause| cause.to_string())?;
@@ -164,6 +176,9 @@ impl<
             | ActivatePartView(_)
             | LockPartView { .. }
             | PublishPartView { .. }
+            | PartViewAutosave { .. }
+            | SavePartViewCamera(_)
+            | RestorePartViewCamera(_)
             | PartViewBodyVisibility { .. }
             | CopyModelState(_)
             | RenameModelState { .. }

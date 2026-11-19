@@ -204,7 +204,9 @@ pub(super) fn dispatch_gui_action(
             document,
             choice:
                 choice @ (oblikovati_gui::GuiBrowserChoice::CopyPartView(_)
-                | oblikovati_gui::GuiBrowserChoice::ActivatePartView(_)),
+                | oblikovati_gui::GuiBrowserChoice::ActivatePartView(_)
+                | oblikovati_gui::GuiBrowserChoice::SavePartViewCamera(_)
+                | oblikovati_gui::GuiBrowserChoice::RestorePartViewCamera(_)),
         } => {
             return owner.part_view_choice_from_gui(*document, choice, window);
         }

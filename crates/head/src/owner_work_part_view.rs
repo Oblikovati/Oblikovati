@@ -8,8 +8,18 @@ macro_rules! desktop_part_view_work {
             choice: &oblikovati_gui::GuiBrowserChoice,
             window: &mut dyn crate::HeadWindow,
         ) -> Result<bool, String> {
+            use oblikovati_automation::PartViewDisplayAccess as _;
             self.require_browser_document(document)?;
             let mut display = crate::part_view_display::WindowPartViewDisplay(window);
+            let original = if matches!(
+                choice,
+                oblikovati_gui::GuiBrowserChoice::SavePartViewCamera(_)
+                    | oblikovati_gui::GuiBrowserChoice::RestorePartViewCamera(_)
+            ) {
+                Some(display.camera()?)
+            } else {
+                None
+            };
             let client = oblikovati_api::client::Client::new(
                 self.document_host().with_part_view_display(&mut display),
             );
@@ -29,9 +39,33 @@ macro_rules! desktop_part_view_work {
                         .activate(&oblikovati_api::wire::PartDesignViewRef { id: *id })
                         .map_err(|cause| cause.to_string())?;
                 }
+                oblikovati_gui::GuiBrowserChoice::SavePartViewCamera(id) => {
+                    client
+                        .part_design_views()
+                        .capture_camera(&oblikovati_api::wire::CapturePartDesignViewCameraArgs {
+                            id: *id,
+                            camera: original.ok_or("camera save: expected the current camera")?,
+                        })
+                        .map_err(|cause| cause.to_string())?;
+                }
+                oblikovati_gui::GuiBrowserChoice::RestorePartViewCamera(id) => {
+                    let camera = client
+                        .part_design_views()
+                        .camera(&oblikovati_api::wire::PartDesignViewRef { id: *id })
+                        .map_err(|cause| cause.to_string())?;
+                    drop(client);
+                    if let Err(cause) = display.apply(&camera) {
+                        if let Some(original) = original {
+                            display.apply(&original).map_err(|restore| {
+                                format!("{cause}; camera restore failed: {restore}")
+                            })?;
+                        }
+                        return Err(cause);
+                    }
+                }
                 _ => {
                     return Err(format!(
-                        "part view choice {choice:?}: expected copy or activation"
+                        "part view choice {choice:?}: expected a view camera or activation action"
                     ));
                 }
             }
