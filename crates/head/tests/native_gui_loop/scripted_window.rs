@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 impl HeadWindow for ScriptedGuiWindow {
+    fn hovered_constraint_glyph(
+        &self,
+    ) -> Option<(
+        oblikovati_model::document_sketch::DocumentSketchId,
+        oblikovati_model::sketch::SketchConstraintId,
+    )> {
+        self.native.hovered_constraint_glyph()
+    }
+
     fn window_action(&mut self, action: oblikovati_gui::GuiWindowAction) -> Result<bool, String> {
         self.native.window_action(action)
     }

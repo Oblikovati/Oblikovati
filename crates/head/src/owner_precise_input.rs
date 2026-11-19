@@ -314,11 +314,11 @@ impl<
             .session(edit.document)
             .map_err(|cause| cause.to_string())?;
         let snapshot = session.snapshot();
-        let geometry = snapshot
+        let sketch = snapshot
             .sketches
             .get(edit.sketch)
-            .map_err(|cause| cause.to_string())?
-            .geometry();
+            .map_err(|cause| cause.to_string())?;
+        let geometry = sketch.geometry();
         let token = self
             .sketch_memory
             .context_serial
@@ -335,6 +335,22 @@ impl<
             target.curve = None;
             target.candidates.clear();
         }
+        if let Some((_, relation)) =
+            window
+                .hovered_constraint_glyph()
+                .filter(|(sketch_id, relation)| {
+                    *sketch_id == edit.sketch
+                        && sketch.constraints_shown()
+                        && !sketch.hidden_constraint_glyphs().contains(relation)
+                        && geometry.has_geometric_relation(*relation)
+                })
+        {
+            target.glyph = Some(relation);
+            target.block = None;
+            target.point = None;
+            target.curve = None;
+            target.candidates.clear();
+        }
         target.token = token;
         self.sketch_memory.context_serial = token;
         self.sketch_memory.context = Some(target);
@@ -345,10 +361,14 @@ impl<
         let edit = self
             .active_sketch_edit()
             .ok_or_else(|| format!("constraints shown {shown}: expected an edited sketch"))?;
-        self.files
-            .commands(edit.document)
-            .map_err(|cause| cause.to_string())?
-            .set_sketch_constraints_shown(edit.sketch, shown)
+        let index = self.sketch_glyph_wire_index(edit)?;
+        oblikovati_api::client::Client::new(self.document_host())
+            .constrain()
+            .set_all_glyphs_visible(&oblikovati_api::wire::AllConstraintGlyphsVisibilityArgs {
+                sketch_index: index,
+                visible: shown,
+            })
+            .map(|_| ())
             .map_err(|cause| cause.to_string())
     }
     /// Each shown relation with the sketch point its mark sits at, for the frame to project.
@@ -367,6 +387,7 @@ impl<
         }
         relation_marks(sketch.geometry())
             .into_iter()
+            .filter(|mark| !sketch.hidden_constraint_glyphs().contains(&mark.id))
             .map(|mark| HeadConstraintMark {
                 sketch: edit.sketch,
                 constraint: mark.id,
@@ -418,6 +439,7 @@ pub(super) struct SketchContextTarget {
     pub(super) point: Option<SketchEntityId>,
     pub(super) curve: Option<SketchEntityId>,
     pub(super) block: Option<SketchEntityId>,
+    pub(super) glyph: Option<oblikovati_model::sketch::SketchConstraintId>,
     pub(super) generation: u64,
     pub(super) document: u64,
     pub(super) sketch: oblikovati_model::document_sketch::DocumentSketchId,

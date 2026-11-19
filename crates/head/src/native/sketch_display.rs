@@ -32,6 +32,7 @@ impl NativeHeadWindow {
         if changed {
             self.view.set_sketch_feedback(None)?;
             self.glyph_hover = None;
+            self.glyph_target = None;
             self.tool_hover = None;
         }
         self.view.set_sketch_display(&update.sketches)?;
@@ -47,16 +48,16 @@ impl NativeHeadWindow {
         document: Option<u64>,
     ) -> Result<bool, String> {
         let source = self.sketch_scene.as_ref().and_then(|scene| scene.source);
-        let next = hover
-            .filter(|_| source.map(|value| value.0) == document)
-            .map(|value| {
-                oblikovati_viewport::ViewportSketchFeedback::Entities(
-                    oblikovati_viewport::ViewportSketchHover {
-                        sketch: value.sketch,
-                        entities: value.related.clone(),
-                    },
-                )
-            });
+        let hover = hover.filter(|_| source.is_some_and(|value| Some(value.0) == document));
+        self.glyph_target = hover.map(|hit| (hit.sketch, hit.constraint));
+        let next = hover.map(|value| {
+            oblikovati_viewport::ViewportSketchFeedback::Entities(
+                oblikovati_viewport::ViewportSketchHover {
+                    sketch: value.sketch,
+                    entities: value.related.clone(),
+                },
+            )
+        });
         let changed = self
             .view
             .set_sketch_feedback(next.as_ref().or(self.tool_hover.as_ref()))?;

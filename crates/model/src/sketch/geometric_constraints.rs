@@ -3,6 +3,20 @@ use super::{
     Sketch2D, SketchConstraint, SketchConstraintId, SketchError, dependencies::dimension_parameter,
 };
 impl Sketch2D {
+    /// Enumerate geometric relation IDs, including system-owned relations.
+    /// Example: `sketch.geometric_relation_ids().collect::<Vec<_>>()`.
+    pub fn geometric_relation_ids(&self) -> impl Iterator<Item = SketchConstraintId> + '_ {
+        self.constraints
+            .iter()
+            .filter(|constraint| dimension_parameter(&constraint.relation).is_none())
+            .map(|constraint| constraint.id)
+    }
+    /// Check any geometric relation identity, including system-owned relations.
+    /// Example: `sketch.has_geometric_relation(id)` before a display edit.
+    pub fn has_geometric_relation(&self, id: SketchConstraintId) -> bool {
+        self.geometric_relation_ids()
+            .any(|candidate| candidate == id)
+    }
     /// Enumerate geometric relations in authored order, independently of dimensional sources.
     /// Example: `sketch.geometric_constraints().map(|constraint| constraint.id)` for API rows.
     pub fn geometric_constraints(&self) -> impl Iterator<Item = &SketchConstraint> {

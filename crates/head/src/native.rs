@@ -29,6 +29,10 @@ pub struct NativeHeadWindow {
     preview_background: Option<oblikovati_viewport::ViewportBackground>,
     sketch_scene: Option<crate::HeadSketchSceneUpdate>,
     glyph_hover: Option<oblikovati_viewport::ViewportSketchFeedback>,
+    glyph_target: Option<(
+        oblikovati_model::document_sketch::DocumentSketchId,
+        oblikovati_model::sketch::SketchConstraintId,
+    )>,
     tool_hover: Option<oblikovati_viewport::ViewportSketchFeedback>,
     datum_declines: Vec<(oblikovati_model::feature::FeatureId, String)>,
     navigation: crate::navigation::DesktopNavigation,

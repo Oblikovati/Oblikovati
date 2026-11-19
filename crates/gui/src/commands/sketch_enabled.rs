@@ -58,3 +58,34 @@ pub(super) fn select_browser_block(
                 .any(|row| row.sketch == sketch && row.id == instance)
         })
 }
+
+pub(super) fn glyph_context(
+    state: &GuiCommandState,
+    token: u64,
+    expected: Option<oblikovati_model::sketch::SketchConstraintId>,
+) -> bool {
+    state.sketch_at_ready
+        && state.sketch_context.as_ref().is_some_and(|context| {
+            context.token == token
+                && context.glyph.is_some()
+                && expected.is_none_or(|glyph| context.glyph == Some(glyph))
+        })
+}
+
+pub(super) fn context_candidate(
+    state: &GuiCommandState,
+    token: u64,
+    entity: oblikovati_model::sketch::SketchEntityId,
+) -> bool {
+    state.sketch_at_ready
+        && state.sketch_context.as_ref().is_some_and(|context| {
+            context.token == token && context.candidates.iter().any(|item| item.entity == entity)
+        })
+}
+
+pub(super) fn dimension_cancel(state: &GuiCommandState, id: u64) -> bool {
+    state
+        .dimension_draft
+        .as_ref()
+        .is_some_and(|draft| draft.id == id)
+}

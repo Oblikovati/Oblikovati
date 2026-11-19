@@ -191,3 +191,32 @@ fn explode_context_requires_the_current_block_and_token() {
     state.sketch_context.as_mut().unwrap().block = Some(SketchEntityId(8));
     assert!(!action.enabled(&state));
 }
+
+#[test]
+fn glyph_context_actions_require_the_captured_token_and_relation() {
+    use crate::GuiSketchContext;
+    use oblikovati_model::sketch::SketchConstraintId;
+    let glyph = SketchConstraintId(4);
+    let mut state = GuiCommandState {
+        sketch_at_ready: true,
+        sketch_context: Some(GuiSketchContext {
+            token: 7,
+            glyph: Some(glyph),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let hide = GuiShellAction::HideContextConstraintGlyph { token: 7, glyph };
+    let all = GuiShellAction::SetContextConstraintGlyphs {
+        token: 7,
+        shown: false,
+    };
+    assert!(hide.enabled(&state) && all.enabled(&state));
+    state.sketch_context.as_mut().unwrap().token = 8;
+    assert!(!hide.enabled(&state) && !all.enabled(&state));
+    state.sketch_context.as_mut().unwrap().token = 7;
+    state.sketch_context.as_mut().unwrap().glyph = Some(SketchConstraintId(5));
+    assert!(!hide.enabled(&state) && all.enabled(&state));
+    state.sketch_at_ready = false;
+    assert!(!hide.enabled(&state) && !all.enabled(&state));
+}

@@ -19,15 +19,17 @@ impl GuiShellAction {
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
             Self::DismissSketchContext { .. } => true,
+            Self::HideContextConstraintGlyph { token, glyph } => {
+                sketch_enabled::glyph_context(state, *token, Some(*glyph))
+            }
+            Self::SetContextConstraintGlyphs { token, .. } => {
+                sketch_enabled::glyph_context(state, *token, None)
+            }
             Self::ExplodeSketchContext { token, instance } => {
                 sketch_enabled::explode_context(state, *token, *instance)
             }
             Self::SelectSketchContextCandidate { token, entity } => {
-                state.sketch_at_ready
-                    && state.sketch_context.as_ref().is_some_and(|context| {
-                        context.token == *token
-                            && context.candidates.iter().any(|item| item.entity == *entity)
-                    })
+                sketch_enabled::context_candidate(state, *token, *entity)
             }
             Self::PreviewSketchPattern(None) => true,
             Self::OpenSketchPattern { sketch, pattern } => {
@@ -473,10 +475,9 @@ impl GuiShellAction {
                     .is_some_and(|draft| draft.id == *id)
                     && !state.transaction_open
             }
-            Self::Dimension(crate::GuiDimensionAction::Cancel { id }) => state
-                .dimension_draft
-                .as_ref()
-                .is_some_and(|draft| draft.id == *id),
+            Self::Dimension(crate::GuiDimensionAction::Cancel { id }) => {
+                sketch_enabled::dimension_cancel(state, *id)
+            }
             Self::ToggleSketchFormat(_) => {
                 state.authoring == GuiAuthoringContext::Sketch
                     && state.sketch_format_available

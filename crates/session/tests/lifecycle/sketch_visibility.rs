@@ -122,3 +122,54 @@ fn rejected_changes_and_noop_replies_keep_the_callers_edit_group() {
     session.end().unwrap();
     assert!(session.undo_labels().is_empty());
 }
+
+#[test]
+fn individual_glyph_visibility_is_undoable_and_show_all_clears_overrides() {
+    use oblikovati_model::sketch::{PlanarConstraint, SketchConstraintId};
+    let mut geometry = Sketch2D::default();
+    let point = SketchEntityId(1);
+    let relation = SketchConstraintId(9);
+    geometry.add_point(point, [2., 3.]).unwrap();
+    geometry
+        .add_constraint(
+            relation,
+            PlanarConstraint::Fix {
+                point,
+                position: [2., 3.],
+            },
+        )
+        .unwrap();
+    let mut session = sketch_fixture::owned_sketch_session(None, "Display", geometry.clone());
+    let id = DocumentSketchId(1);
+    session.set_sketch_constraints_shown(id, true).unwrap();
+    session
+        .set_constraint_glyph_visible(id, relation, false)
+        .unwrap();
+    let hidden = |session: &DocumentSession<RecordingObserver>| {
+        session
+            .snapshot()
+            .sketches
+            .get(id)
+            .unwrap()
+            .hidden_constraint_glyphs()
+            .contains(&relation)
+    };
+    assert!(hidden(&session));
+    let revision = session.generation();
+    session
+        .set_constraint_glyph_visible(id, relation, false)
+        .unwrap();
+    assert_eq!(session.generation(), revision);
+    session.set_sketch_constraints_shown(id, true).unwrap();
+    assert!(!hidden(&session));
+    session.undo().unwrap();
+    assert!(hidden(&session));
+    session.undo().unwrap();
+    assert!(!hidden(&session));
+    session.redo().unwrap();
+    assert!(hidden(&session));
+    assert_eq!(
+        session.snapshot().sketches.get(id).unwrap().geometry(),
+        &geometry
+    );
+}

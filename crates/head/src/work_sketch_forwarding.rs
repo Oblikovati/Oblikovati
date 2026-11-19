@@ -85,6 +85,20 @@ macro_rules! forward_owner_sketch_work {
         fn delete_sketch_relation_from_gui(&mut self, id: u64) -> Result<bool, String> {
             self.$owner.delete_sketch_relation_from_gui(id)
         }
+        fn hide_context_constraint_glyph(
+            &mut self,
+            token: u64,
+            glyph: oblikovati_model::sketch::SketchConstraintId,
+        ) -> Result<bool, String> {
+            self.$owner.hide_context_constraint_glyph(token, glyph)
+        }
+        fn set_context_constraint_glyphs(
+            &mut self,
+            token: u64,
+            shown: bool,
+        ) -> Result<bool, String> {
+            self.$owner.set_context_constraint_glyphs(token, shown)
+        }
         fn dismiss_sketch_context(&mut self, token: u64) -> Result<bool, String> {
             self.$owner.dismiss_sketch_context(token)
         }

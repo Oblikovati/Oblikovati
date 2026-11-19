@@ -489,3 +489,6 @@ fn origin_plane_identity_round_trips_and_old_fixed_frames_stay_fixed() {
 
 #[path = "package_sketches/spatial.rs"]
 mod spatial;
+
+#[path = "package_sketches/constraint_glyphs.rs"]
+mod constraint_glyphs;

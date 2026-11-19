@@ -119,6 +119,16 @@ pub trait HeadWindow {
     ) -> Result<HeadGuiUpdate, String> {
         Ok(HeadGuiUpdate::default())
     }
+    /// Read the current unambiguous constraint glyph under the pointer.
+    /// Example: `window.hovered_constraint_glyph()` before a context request.
+    fn hovered_constraint_glyph(
+        &self,
+    ) -> Option<(
+        oblikovati_model::document_sketch::DocumentSketchId,
+        oblikovati_model::sketch::SketchConstraintId,
+    )> {
+        None
+    }
     /// Check whether the ribbon awaits a model pick; example: `window.has_pending_ribbon_model_pick()`.
     fn has_pending_ribbon_model_pick(&self) -> bool {
         false
