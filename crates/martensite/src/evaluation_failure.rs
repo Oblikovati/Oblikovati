@@ -17,6 +17,7 @@ pub enum EvaluationPhase {
     Fillet,
     Chamfer,
     Hole,
+    Shell,
     MoveBody,
     Validation,
     History,

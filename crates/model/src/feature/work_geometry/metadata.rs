@@ -10,6 +10,7 @@ impl AuthoredFeature<WorkGeometryDefinition> {
                     | WorkGeometryDefinition::Fillet(_)
                     | WorkGeometryDefinition::Chamfer(_)
                     | WorkGeometryDefinition::Hole(_)
+                    | WorkGeometryDefinition::Shell(_)
                     | WorkGeometryDefinition::MoveBody(_)
             )
         {

@@ -163,6 +163,7 @@ impl DatumCollection {
             | WorkGeometryDefinition::Fillet(_)
             | WorkGeometryDefinition::Chamfer(_)
             | WorkGeometryDefinition::Hole(_)
+            | WorkGeometryDefinition::Shell(_)
             | WorkGeometryDefinition::MoveBody(_) => {
                 return false;
             }

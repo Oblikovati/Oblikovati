@@ -11,6 +11,7 @@ impl WorkPlaneDefinition {
             (Fillet(first), Fillet(second)) => first == second,
             (Chamfer(first), Chamfer(second)) => first == second,
             (Hole(first), Hole(second)) => first.same_recipe(second),
+            (Shell(first), Shell(second)) => first == second,
             (MoveBody(first), MoveBody(second)) => first.same_recipe(second),
             (SketchPrism(first), SketchPrism(second)) => first.same_recipe(second),
             (AtAngleAboutAxis(first), AtAngleAboutAxis(second)) => {

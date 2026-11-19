@@ -13,6 +13,8 @@ mod candidate;
 mod named_checkpoint;
 #[path = "fillet_prefix_replay.rs"]
 mod prefix_replay;
+#[path = "shell_candidate.rs"]
+mod shell_candidate;
 
 #[test]
 fn ordered_part_replay_builds_a_named_fillet() {

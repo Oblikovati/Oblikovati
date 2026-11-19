@@ -46,6 +46,7 @@ pub enum PartFeatureFailure<Failure> {
     FilletInput(String),
     ChamferInput(String),
     HoleInput(String),
+    ShellInput(String),
     MoveBodyInput(String),
     Unsupported(String),
 }
@@ -340,6 +341,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 | PartFeatureDefinition::Fillet(_)
                 | PartFeatureDefinition::Chamfer(_)
                 | PartFeatureDefinition::Hole(_)
+                | PartFeatureDefinition::Shell(_)
                 | PartFeatureDefinition::MoveBody(_)
         ) {
             feature
@@ -364,6 +366,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::Hole(definition) => {
                 self.evaluate_hole(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::Shell(definition) => {
+                self.evaluate_shell(snapshot, backend, id, definition)
             }
             _ => {
                 let bodies = &self.bodies;

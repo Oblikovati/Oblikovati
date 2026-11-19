@@ -165,3 +165,5 @@ mod face_plane;
 mod fillet;
 #[path = "part_features/hole.rs"]
 mod hole;
+#[path = "part_features/shell.rs"]
+mod shell;

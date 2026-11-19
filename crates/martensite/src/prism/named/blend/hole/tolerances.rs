@@ -3,13 +3,14 @@
 use super::*;
 use martensite_tkbrep::{brep::BRepTool, topods};
 
-pub(super) fn check(
+pub(in crate::prism::named::blend) fn check(
     source: &Shape,
     result: &Shape,
     resolution: Option<PrismResolution>,
+    operation: &str,
 ) -> Result<PrismAchievedTolerance, String> {
     let resolution = resolution
-        .ok_or("hole input: expected a certified source resolution")?
+        .ok_or_else(|| format!("{operation} input: expected a certified source resolution"))?
         .validate()?;
     let before = measure(source)?;
     let after = measure(result)?;
@@ -21,7 +22,7 @@ pub(super) fn check(
         let limit = source_limit.min(resolution.maximum_tolerance);
         if !value.is_finite() || value < 0. || value > limit {
             return Err(format!(
-                "hole {kind} tolerance {value}: expected finite nonnegative tolerance at most {limit}"
+                "{operation} {kind} tolerance {value}: expected finite nonnegative tolerance at most {limit}"
             ));
         }
     }
@@ -86,12 +87,12 @@ mod tests {
             display_angular: 0.1,
             maximum_tolerance: 1e-10,
         };
-        let error = check(&shape, &shape, Some(bounds)).unwrap_err();
+        let error = check(&shape, &shape, Some(bounds), "hole").unwrap_err();
         assert!(
             error.contains("tolerance"),
             "expected a measured tolerance failure: {error}"
         );
-        assert!(check(&shape, &shape, None).is_err());
+        assert!(check(&shape, &shape, None, "hole").is_err());
     }
 
     #[test]
@@ -116,7 +117,7 @@ mod tests {
             display_angular: 0.1,
             maximum_tolerance: 1e-5,
         };
-        let error = check(&source, &result, Some(bounds)).unwrap_err();
+        let error = check(&source, &result, Some(bounds), "hole").unwrap_err();
         assert!(
             error.contains("vertex tolerance"),
             "expected a vertex widening failure: {error}"

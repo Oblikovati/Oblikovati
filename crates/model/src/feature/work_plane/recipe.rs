@@ -20,6 +20,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Fillet(crate::feature::fillet::FilletRecipe),
     Hole(crate::feature::hole::HoleRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
+    Shell(crate::feature::shell::ShellRecipe),
     SketchPrism(crate::feature::sketch_prism::SketchPrismRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
     ThroughTwoAxes([crate::feature::work_axis::WorkAxisReference; 2]),
@@ -59,6 +60,7 @@ impl WorkPlaneDefinition {
             Self::Fillet(definition) => Source::Fillet(definition.recipe()),
             Self::Hole(definition) => Source::Hole(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
+            Self::Shell(definition) => Source::Shell(definition.recipe()),
             Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
             Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(source.clone()),
             Self::ThroughTwoAxes(axes) => Source::ThroughTwoAxes(*axes),
@@ -90,6 +92,9 @@ fn restore_definition(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     use WorkPlaneDefinitionRecipe::*;
     match definition {
+        Shell(recipe) => crate::feature::shell::ShellDefinition::from_recipe(&recipe)
+            .map(|definition| WorkPlaneDefinition::Shell(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
         MoveBody(recipe) => crate::feature::move_body::MoveBodyDefinition::from_recipe(recipe)
             .map(|definition| WorkPlaneDefinition::MoveBody(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
@@ -165,6 +170,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Chamfer(_) => 16,
             Self::Hole(_) => 17,
             Self::MoveBody(_) => 18,
+            Self::Shell(_) => 19,
             Self::Fillet(_) => 15,
             Self::DeleteBody(_) => 12,
             Self::SketchPrism(_) => 11,
@@ -191,6 +197,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Chamfer(_) => 21,
             Self::Hole(_) => 22,
             Self::MoveBody(_) => 23,
+            Self::Shell(_) => 24,
             Self::Fillet(_) => 20,
             Self::DeleteBody(_) => 17,
             Self::SketchPrism(_) => 16,

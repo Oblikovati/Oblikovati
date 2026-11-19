@@ -9,7 +9,7 @@ use martensite_tkmath::gp::{Axis2, Direction3, Point3};
 use martensite_tkprim::brep_prim_api::{BRepPrimAPIMakeCylinder, BRepPrimAPIMakeOneAxis};
 use martensite_tktopalgo::brep_gprop::BRepGProp;
 use oblikovati_model::identity::DerivedReferenceName;
-mod tolerances;
+pub(super) mod tolerances;
 
 pub(in crate::prism::named) struct HoleRequest<'a> {
     pub feature: FeatureId,
@@ -149,7 +149,7 @@ fn checked_cut(
     crate::checked_shape::require_geometry(&result, "hole result")
         .map_err(|error| error.to_string())?;
     validate_result_faces(&result)?;
-    let achieved = tolerances::check(target, &result, resolution)?;
+    let achieved = tolerances::check(target, &result, resolution, "hole")?;
     let before = crate::checked_shape::analytic_properties(target, "hole input")
         .map_err(|error| error.to_string())?;
     let after = crate::checked_shape::analytic_properties(&result, "hole result")

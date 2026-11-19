@@ -42,6 +42,14 @@ pub struct ShellDefinition {
     sources: Vec<FeatureId>,
 }
 
+/// Numeric Shell inputs resolved against the current document parameters.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ResolvedShell {
+    pub thickness: f64,
+    pub direction: ShellDirection,
+    pub face_thicknesses: Vec<(Vec<u8>, f64)>,
+}
+
 impl ShellDefinition {
     /// Validate named inputs; for example, `ShellDefinition::new(body, faces, thickness, direction, overrides)`.
     pub fn new(
@@ -104,6 +112,14 @@ impl ShellDefinition {
     pub fn body_source(&self) -> FeatureId {
         self.body_source
     }
+    /// Inspect the named source body; for example, `definition.body()` during replay.
+    pub fn body(&self) -> &[u8] {
+        &self.recipe.body
+    }
+    /// Inspect the named openings; for example, `definition.openings()` during replay.
+    pub fn openings(&self) -> &[Vec<u8>] {
+        &self.recipe.openings
+    }
     /// Record all feature and scalar dependencies; for example, `definition.reads()`.
     pub fn reads(&self) -> FeatureReadFootprint {
         let features = self.sources.iter().copied().map(FeatureReadKey::Feature);
@@ -122,6 +138,21 @@ impl ShellDefinition {
     /// Resolve the base wall thickness; for example, `definition.resolved_thickness(&parameters)`.
     pub fn resolved_thickness(&self, parameters: &ParameterCollection<u64>) -> Result<f64, String> {
         positive_thickness(self.recipe.thickness, parameters)
+    }
+    /// Resolve every thickness; for example, `definition.resolve(&parameters)` before construction.
+    pub fn resolve(&self, parameters: &ParameterCollection<u64>) -> Result<ResolvedShell, String> {
+        let mut face_thicknesses = Vec::new();
+        for entry in &self.recipe.face_thicknesses {
+            face_thicknesses.push((
+                entry.face.clone(),
+                positive_thickness(entry.thickness, parameters)?,
+            ));
+        }
+        Ok(ResolvedShell {
+            thickness: self.resolved_thickness(parameters)?,
+            direction: self.recipe.direction,
+            face_thicknesses,
+        })
     }
 }
 
