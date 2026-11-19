@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+Sketch solving uses less time and memory when many coordinates have no constraints. (#4165)
+
 Fillet and Chamfer validation reuse a current matching part prefix before commit. (#4079)
 
 Stored prism diagnostics now use document-scoped complete replay. (#4079)
