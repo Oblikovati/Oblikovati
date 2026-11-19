@@ -91,9 +91,11 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::VerifyModelStateTable { document, request } => {
             owner.verify_model_state_table_from_gui(*document, request)
         }
-        GuiShellAction::SetModelStateTable { document, request } => {
-            owner.set_model_state_table_from_gui(*document, request)
-        }
+        GuiShellAction::SetModelStateTable {
+            document,
+            request_id,
+            request,
+        } => owner.set_model_state_table_from_gui(*document, *request_id, request),
         GuiShellAction::SetDocumentProperty(request) => {
             owner.set_document_property_from_gui(request)
         }

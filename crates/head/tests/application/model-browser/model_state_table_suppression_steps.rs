@@ -131,3 +131,69 @@ fn other_values(world: &mut ApplicationWorld) {
     );
     assert_eq!(grid_cell_text(world, "Extrusion", "Copy State"), "Compute");
 }
+
+#[given("The MCAD Software has an extrusion suppressed in Primary and computed in Copy State")]
+fn apply_fixture(world: &mut ApplicationWorld) {
+    suppressed_fixture(world);
+}
+#[given("the active view representation permits the extrusion's solid body to be visible")]
+fn active_view_shows_solid(world: &mut ApplicationWorld) {
+    copy_computed(world);
+}
+#[when("changes the Primary extrusion cell to Compute")]
+fn change_primary_to_compute(world: &mut ApplicationWorld) {
+    open_primary_cell(world);
+    select_compute(world);
+}
+#[when("activates the Primary model state")]
+fn activate_primary(world: &mut ApplicationWorld) {
+    let point = diagnostics::pointer_pixels(world.run("Primary").center());
+    super::super::x11_input::click(point);
+    super::super::x11_input::click(point);
+    world.pump(Vec::new());
+}
+#[then("the solid produced by the extrusion is visible")]
+#[then("the solid is visible again")]
+fn solid_is_visible(world: &mut ApplicationWorld) {
+    assert_eq!(
+        world
+            .app()
+            .window
+            .native
+            .scene_status()
+            .unwrap()
+            .visible_bodies,
+        1
+    );
+}
+#[then("the Primary extrusion cell displays Compute")]
+fn primary_value_is_compute(world: &mut ApplicationWorld) {
+    primary_computed(world);
+}
+#[when("the user changes the Primary extrusion cell to Suppress and accepts the table")]
+fn suppress_primary_and_accept(world: &mut ApplicationWorld) {
+    open_primary_cell(world);
+    let point = world
+        .frame
+        .runs
+        .iter()
+        .rev()
+        .find(|run| run.text == "Suppress")
+        .unwrap()
+        .center();
+    super::super::x11_input::click(diagnostics::pointer_pixels(point));
+    world.pump(Vec::new());
+    super::model_state_table_extra::click(world, "OK");
+    for _ in 0..8 {
+        if !world
+            .frame
+            .runs
+            .iter()
+            .any(|run| run.text == "ModelStateTable")
+        {
+            return;
+        }
+        world.pump(Vec::new());
+    }
+    panic!("expected the suppression table to close after acceptance");
+}

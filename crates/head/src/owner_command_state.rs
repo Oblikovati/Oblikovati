@@ -174,6 +174,7 @@ impl<
             ),
             parameters: self.gui_parameter_rows()?,
             model_state_table,
+            model_state_table_ack: self.model_state_table_ack.clone(),
             model_state_verification: self.model_state_verification.clone(),
             document_properties: session
                 .snapshot()

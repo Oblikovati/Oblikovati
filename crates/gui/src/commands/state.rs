@@ -75,6 +75,8 @@ pub struct GuiCommandState {
     pub document_properties: Vec<oblikovati_api::wire::PropertyInfo>,
     /// The active part model-state property table.
     pub model_state_table: Option<std::sync::Arc<oblikovati_api::wire::ModelStateTableView>>,
+    /// Completion of a specific table edit request, including host failures.
+    pub model_state_table_ack: Option<(u64, u64, Result<(), String>)>,
     /// The last checked table draft and its diagnostics.
     pub model_state_verification: Option<(
         u64,

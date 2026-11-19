@@ -28,10 +28,11 @@ macro_rules! metadata_work_methods {
         fn set_model_state_table_from_gui(
             &mut self,
             document: u64,
+            request_id: u64,
             request: &oblikovati_api::wire::SetModelStateTableArgs,
         ) -> Result<bool, String> {
             Err(format!(
-                "model-state table {document} {request:?}: expected a document owner"
+                "model-state table {document} request {request_id} {request:?}: expected a document owner"
             ))
         }
         /// Set metadata on the requested document through its owner.

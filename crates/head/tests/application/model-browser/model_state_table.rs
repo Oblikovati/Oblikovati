@@ -311,7 +311,14 @@ fn category_fixture(world: &mut ApplicationWorld) {
 #[when("the user reopens the model-state table")]
 #[when("the user reopens the model-state table in the same session")]
 fn open_property_table(world: &mut ApplicationWorld) {
-    world.click_text("Model State");
+    if !world
+        .frame
+        .runs
+        .iter()
+        .any(|run| run.text == "Primary" || run.text.starts_with("Primary("))
+    {
+        world.click_text("Model State");
+    }
     open_table(world);
 }
 #[when("the user double-clicks the active state's Category cell")]
