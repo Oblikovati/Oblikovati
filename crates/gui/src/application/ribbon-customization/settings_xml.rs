@@ -388,6 +388,22 @@ mod tests {
         }
     }
     #[test]
+    fn supported_versions_load_and_unknown_version_reports_the_expected_set() {
+        for version in 1..=5 {
+            let appearance = if version >= 4 {
+                " appearance=\"normal\""
+            } else {
+                ""
+            };
+            let xml = format!("<ribbon-customization version=\"{version}\"{appearance}/>");
+            assert!(decode(xml.as_bytes()).is_ok(), "version {version}");
+        }
+        assert_eq!(
+            decode(b"<ribbon-customization version=\"99\"/>").unwrap_err(),
+            "ribbon version Some(\"99\"): expected 1, 2, 3, 4 or 5"
+        );
+    }
+    #[test]
     fn rejects_invalid_versions_duplicate_commands_and_dtd() {
         for text in [
             "<ribbon-customization version=\"99\"/>",
