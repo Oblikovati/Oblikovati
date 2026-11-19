@@ -121,6 +121,8 @@ fn concurrent_document_change_keeps_the_draft_for_cancel() {
     let mut table = ModelStateTable::default();
     table.open(&state);
     table.pending = true;
+    table.pending_request = Some(1);
+    state.model_state_table_ack = Some((1, 1, Ok(())));
     let view = std::sync::Arc::make_mut(state.model_state_table.as_mut().unwrap());
     view.generation += 1;
     view.columns = Some(vec![ModelStateTableColumnRef::default()]);
@@ -137,6 +139,8 @@ fn accepted_draft_closes_only_after_matching_document_result() {
     choose_property(&mut table);
     table.add();
     table.pending = true;
+    table.pending_request = Some(1);
+    state.model_state_table_ack = Some((1, 1, Ok(())));
     let current = std::sync::Arc::make_mut(state.model_state_table.as_mut().unwrap());
     *current = table.draft.as_ref().unwrap().clone();
     current.generation += 1;
@@ -195,6 +199,8 @@ fn stale_matching_response_cannot_acknowledge_a_pending_draft() {
     let mut table = ModelStateTable::default();
     table.open(&state);
     table.pending = true;
+    table.pending_request = Some(1);
+    state.model_state_table_ack = Some((1, 1, Ok(())));
     let view = std::sync::Arc::make_mut(state.model_state_table.as_mut().unwrap());
     view.generation -= 1;
     table.sync_before_docking(&state);
@@ -207,11 +213,31 @@ fn stale_matching_response_cannot_acknowledge_a_pending_draft() {
 }
 
 #[test]
-fn pending_noop_closes_when_the_current_table_already_matches() {
-    let state = state();
+fn pending_noop_closes_only_after_its_success_acknowledgment() {
+    let mut state = state();
     let mut table = ModelStateTable::default();
     table.open(&state);
     table.pending = true;
+    table.pending_request = Some(7);
+    table.sync_before_docking(&state);
+    assert!(table.document.is_some());
+    state.model_state_table_ack = Some((1, 6, Ok(())));
+    table.sync_before_docking(&state);
+    assert!(table.document.is_some());
+    state.model_state_table_ack = Some((1, 7, Ok(())));
     table.sync_before_docking(&state);
     assert!(table.document.is_none());
+}
+#[test]
+fn failed_noop_acknowledgment_keeps_the_draft_open() {
+    let mut state = state();
+    let mut table = ModelStateTable::default();
+    table.open(&state);
+    table.pending = true;
+    table.pending_request = Some(7);
+    state.model_state_table_ack = Some((1, 7, Err("observer veto".into())));
+    table.sync_before_docking(&state);
+    assert!(table.document.is_some());
+    assert!(!table.pending);
+    assert_eq!(table.submission_error.as_deref(), Some("observer veto"));
 }

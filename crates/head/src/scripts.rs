@@ -212,9 +212,11 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     fn set_model_state_table_from_gui(
         &mut self,
         document: u64,
+        request_id: u64,
         request: &oblikovati_api::wire::SetModelStateTableArgs,
     ) -> Result<bool, String> {
-        self.owner.set_model_state_table_from_gui(document, request)
+        self.owner
+            .set_model_state_table_from_gui(document, request_id, request)
     }
     fn set_document_property_from_gui(
         &mut self,

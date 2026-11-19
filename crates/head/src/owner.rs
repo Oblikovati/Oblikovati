@@ -135,6 +135,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     datum_fallback_theme: Option<Result<oblikovati_model::theme::ThemeDefinition, String>>,
     window_captures: Option<crate::DesktopWindowCaptures>,
     model_state_table_cache: model_state_table::ModelStateTableCache,
+    model_state_table_ack: Option<(u64, u64, Result<(), String>)>,
     model_state_verification: Option<(
         u64,
         oblikovati_api::wire::SetModelStateTableArgs,
@@ -260,6 +261,7 @@ impl<
             part_scenes: Default::default(),
             drawing_projections: Default::default(),
             model_state_table_cache: Default::default(),
+            model_state_table_ack: None,
             model_state_verification: None,
             drawing_projection_access: oblikovati_drawing::DrawingProjectionService,
             drawing_view_preview: None,

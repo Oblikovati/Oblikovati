@@ -234,6 +234,7 @@ pub enum GuiShellAction {
     /// Apply one model-state table draft through the document owner.
     SetModelStateTable {
         document: u64,
+        request_id: u64,
         request: oblikovati_api::wire::SetModelStateTableArgs,
     },
     NewPart,

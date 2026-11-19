@@ -28,6 +28,9 @@ pub(crate) struct ModelStateTable {
     invalid: BTreeSet<CellKey>,
     dirty: bool,
     pending: bool,
+    pending_request: Option<u64>,
+    request_sequence: u64,
+    submission_error: Option<String>,
     row_sequence: u64,
     show_verification_error: bool,
     name_prompt: Option<names::NamePrompt>,
@@ -55,6 +58,8 @@ impl ModelStateTable {
         self.invalid.clear();
         self.dirty = false;
         self.pending = false;
+        self.pending_request = None;
+        self.submission_error = None;
         self.row_sequence = 0;
         self.show_verification_error = false;
         self.name_prompt = None;
@@ -73,6 +78,18 @@ impl ModelStateTable {
         if !self.pending {
             return;
         }
+        let Some((document, request_id, result)) = state.model_state_table_ack.as_ref() else {
+            return;
+        };
+        if Some(*document) != self.document || Some(*request_id) != self.pending_request {
+            return;
+        }
+        if let Err(error) = result {
+            self.pending = false;
+            self.pending_request = None;
+            self.submission_error = Some(error.clone());
+            return;
+        }
         let Some((draft, current)) = self.draft.as_ref().zip(state.model_state_table.as_ref())
         else {
             return;
@@ -84,6 +101,7 @@ impl ModelStateTable {
             self.close();
         } else if current.generation > draft.generation {
             self.pending = false;
+            self.pending_request = None;
         }
     }
     fn stale(&self, state: &GuiCommandState) -> bool {
@@ -158,6 +176,9 @@ impl ModelStateTable {
         }
         if self.stale(state) {
             ui.text("The document changed. Cancel and reopen the table.");
+        }
+        if let Some(error) = &self.submission_error {
+            ui.text_wrapped(error);
         }
         let disabled = ui.begin_disabled(
             !self.dirty || self.pending || !self.invalid.is_empty() || self.stale(state),
@@ -438,8 +459,16 @@ impl ModelStateTable {
         let (Some(document), Some(view)) = (self.document, self.draft.as_ref()) else {
             return;
         };
+        let Some(request_id) = self.request_sequence.checked_add(1) else {
+            self.submission_error = Some("Table request limit reached.".into());
+            return;
+        };
+        self.request_sequence = request_id;
+        self.pending_request = Some(request_id);
+        self.submission_error = None;
         actions.push(GuiShellAction::SetModelStateTable {
             document,
+            request_id,
             request: request(view),
         });
         self.pending = true;
