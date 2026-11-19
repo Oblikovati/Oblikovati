@@ -406,6 +406,28 @@ fn open_custom_scale_dialog(world: &mut ApplicationWorld) {
     open_annotation_scale_menu(world);
     choose_custom_scale(world);
 }
+
+#[test]
+fn annotation_scale_title_close_discards_an_unaccepted_ratio() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    activate_copy_for_camera(&mut world);
+    open_custom_scale_dialog(&mut world);
+    replace_custom_scale(&mut world, "3:2".into());
+    click_branch_arrow(&mut world, "Representations");
+    assert!(super::super::diagnostics::window_geometry("Edit Annotation Scale").is_some());
+    let (position, size) =
+        super::super::diagnostics::window_geometry("Edit Annotation Scale").unwrap();
+    let close =
+        super::super::diagnostics::pointer_pixels([position[0] + size[0] - 13., position[1] + 10.]);
+    world.click(close);
+    assert!(super::super::diagnostics::window_geometry("Edit Annotation Scale").is_none());
+    click_branch_arrow(&mut world, "Representations");
+    active_view_scale_is_auto(&mut world);
+    open_custom_scale_dialog(&mut world);
+    assert!(world.text_is_selected("Auto"));
+    world.close();
+}
 #[then("the scale text is red")]
 fn invalid_scale_is_red(world: &mut ApplicationWorld) {
     let color = scale_input_run(world).color;

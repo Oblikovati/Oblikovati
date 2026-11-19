@@ -191,6 +191,7 @@ impl BrowserView {
             || self.find.needs_frame()
             || self.geometry.needs_frame()
             || self.feature_properties.needs_frame()
+            || self.part_view_scale.needs_frame()
     }
     pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
         let suspended = state.browser.is_none();
@@ -200,6 +201,7 @@ impl BrowserView {
             .sync_before_docking(state, suspended);
         self.find.set_suspended(suspended);
         self.relationships.sync_before_docking(state, suspended);
+        self.part_view_scale.sync_before_docking(state, suspended);
     }
     /// Draw browser-owned windows independently of the current tree filter.
     pub(crate) fn dialogs(
@@ -213,6 +215,7 @@ impl BrowserView {
         self.relationships.panel(ui, state, browser, actions);
         self.geometry.panel(ui, state, actions);
         self.feature_properties.panel(ui, state, browser, actions);
+        self.part_view_scale.panel(ui, state.document, actions);
     }
     /// A row chosen in the Relationships dialog reads as chosen in the tree.
     pub(crate) fn follow_relationships(&mut self) {

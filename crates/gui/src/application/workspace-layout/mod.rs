@@ -98,6 +98,7 @@ impl WorkspaceLayout {
         self.view.feature_properties.register_dockable(registry)?;
         self.view.geometry.register_dockable(registry)?;
         self.view.relationships.register_dockable(registry)?;
+        self.view.part_view_scale.register_dockable(registry)?;
         self.view.find.register_dockable(registry)
     }
     /// Clear a browser origin selection when its document changes; example: `layout.sync_origin_document(Some(1))`.
