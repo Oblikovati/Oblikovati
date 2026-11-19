@@ -316,13 +316,15 @@ pub(super) fn window_occlusions() -> Vec<[f32; 4]> {
     let dock_host = unsafe { sys::igFindWindowByName(dock_host.as_ptr()) };
     windows
         .iter()
-        .filter_map(|window| {
-            if *window == dock_host {
-                return None;
+        .flat_map(|window_ptr| {
+            if *window_ptr == dock_host {
+                return Vec::new();
             }
-            let window = unsafe { window.as_ref() }?;
+            let Some(window) = (unsafe { window_ptr.as_ref() }) else {
+                return Vec::new();
+            };
             if !window.Active || window.Hidden {
-                return None;
+                return Vec::new();
             }
             let name = unsafe { std::ffi::CStr::from_ptr(window.Name) }.to_bytes();
             // Its children are transparent dockspace hosts; docked tools retain their own names.
@@ -330,17 +332,43 @@ pub(super) fn window_occlusions() -> Vec<[f32; 4]> {
                 || name.starts_with(b"##workspace-outer-host/")
                 || name.starts_with(b"##workspace-docking-host/DockSpace_")
             {
-                return None;
+                return Vec::new();
             }
             let bounds = window.OuterRectClipped;
-            Some([
+            let mut rects = vec![[
                 bounds.Min.x * scale.x,
                 bounds.Min.y * scale.y,
                 bounds.Max.x * scale.x,
                 bounds.Max.y * scale.y,
-            ])
+            ]];
+            if let Some(node) = unsafe { window.DockNode.as_ref() }
+                && node.VisibleWindow == *window_ptr
+                && !node.TabBar.is_null()
+                && let Some(header) = dock_header_bounds(node, bounds.Min.y, scale)
+            {
+                rects.push(header);
+            }
+            rects
         })
         .collect()
+}
+
+fn dock_header_bounds(
+    node: &sys::ImGuiDockNode,
+    content_top: f32,
+    scale: sys::ImVec2,
+) -> Option<[f32; 4]> {
+    let top = node.Pos.y;
+    let bottom = content_top.min(top + node.Size.y);
+    if node.Size.x <= 0. || bottom <= top {
+        return None;
+    }
+    Some([
+        node.Pos.x * scale.x,
+        top * scale.y,
+        (node.Pos.x + node.Size.x) * scale.x,
+        bottom * scale.y,
+    ])
 }
 #[cfg(test)]
 #[path = "diagnostics_tests.rs"]
