@@ -1,0 +1,941 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="100" errors="0" failures="43" hostname="localhost" timestamp="2026-11-19T06:44:30.996430375Z" time="1080.82323724"><testcase name="Scenario: Collapse and expands the origin branch: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:5:3" time="7.398222819"><system-out><![CDATA[  Scenario: Collapse and expands the origin branch
+   ✔  Given an active part in the MCAD Software contains a visible solid and has a visible model browser
+   ✔  And the Origin branch is expanded
+   ✔  Then the branch shows three origin planes, three origin axes and a center point
+   ✔  When the user clicks the Origin branch expansion control
+   ✔  Then the origin children are hidden
+   ✔  And the Origin branch remains visible
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user clicks the Origin branch expansion control again
+   ✔  Then the origin planes, axes and center point are visible again
+   ✔  And the solid remains in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Select a solid feature in the browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:18:3" time="7.159211445"><system-out><![CDATA[  Scenario: Select a solid feature in the browser
+   ✔  Given an active part in the MCAD Software contains a single block created by an extrusion
+   ✔  And the model browser shows the extrusion and its nested sketch
+   ✔  When the user selects the extrusion row in the model browser
+   ✔  Then the extrusion row is highlighted
+   ✔  And the visible block edges are highlighted in blue
+   ✔  And a contextual toolbar appears over the model
+   ✔  When the user clicks an empty area of the viewport
+   ✔  Then the blue edge highlighting and contextual toolbar disappear
+   ✔  And the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Collapse and expands a feature branch: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:30:3" time="9.983653705"><system-out><![CDATA[  Scenario: Collapse and expands a feature branch
+   ✔  Given an active part in the MCAD Software contains a visible block made by an extrusion with a nested sketch
+   ✔  And the extrusion branch is expanded in the model browser
+   ✔  When the user clicks the extrusion branch expansion control
+   ✔  Then the sketch row is hidden and the extrusion row remains visible
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user clicks the extrusion branch expansion control again
+   ✔  Then the sketch row appears beneath the extrusion
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Inspect the extrusion row context menu: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:41:3" time="10.393132697"><system-out><![CDATA[  Scenario: Inspect the extrusion row context menu
+   ✔  Given an active part in the MCAD Software contains a block created by an extrusion
+   ✔  And the extrusion row is visible in the model browser
+   ✔  When the user right-clicks the extrusion row
+   ✔  Then the row is highlighted and the block edges are highlighted in blue
+   ✔  And the context menu offers Edit Sketch and Edit Feature
+   ✔  And the context menu offers Show Dimensions, Measure and Properties
+   ✔  And the context menu offers Expand All Children and collapses All Children
+   ✔  When the user dismisses the menu and clicks empty viewport space
+   ✔  Then the context menu and blue edge highlighting disappear
+   ✔  And the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Filter the model browser by a feature name: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:54:3" time="10.313647882"><system-out><![CDATA[  Scenario: Filter the model browser by a feature name
+   ✔  Given an active part in the MCAD Software contains a visible block made by an extrusion named Extrusion1
+   ✔  And the model browser shows its normal hierarchy
+   ✔  When the user opens browser search and enters "Extrusion"
+   ✔  Then the browser shows matching extrusion rows and their ancestor hierarchy
+   ✔  And unrelated origin rows are absent from the filtered tree
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user clears the search text
+   ✔  Then the normal model hierarchy returns
+   ✔  When the user closes browser search
+   ✔  Then the search field disappears
+   ✔  And the normal hierarchy remains visible
+]]></system-out></testcase><testcase name="Scenario: Collapse and expands all browser branches: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:68:3" time="11.525974297"><system-out><![CDATA[  Scenario: Collapse and expands all browser branches
+   ✔  Given an active part in the MCAD Software contains a visible block made by an extrusion
+   ✔  And its browser has expanded representation, origin and extrusion branches
+   ✔  When the user opens the model browser menu and chooses Collapse All
+   ✔  Then the top-level branches remain visible with their children hidden
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user opens the model browser menu and chooses Expand All
+   ✔  Then the origin planes and the nested extrusion sketch are visible
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Toggle extended feature names in the browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:79:3" time="16.270321667"><system-out><![CDATA[  Scenario: Toggle extended feature names in the browser
+   ✔  Given an active part in the MCAD Software contains a 20 mm new-solid extrusion
+   ✔  And Show Extended Names is disabled in the model browser display preferences
+   ✔  When the user enables Show Extended Names from the browser display preferences
+   ✔  Then the extrusion row includes its new-solid operation and 20 mm extent after its name
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user reopens the browser display preferences
+   ✔  Then Show Extended Names is checked
+   ✔  When the user chooses Show Extended Names again
+   ✔  Then the extrusion row returns to its shorter name
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Inspect the Find feature criteria: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:92:3" time="19.20847934"><system-out><![CDATA[  Scenario: Inspect the Find feature criteria
+   ✔  Given an active part is open in the MCAD Software
+   ✔  When the user chooses Find from the model browser menu
+   ✔  Then a search criteria dialog opens over the workspace
+   ✔  And its object type list offers Sketches and Features
+   ✔  When the user selects Features and opens the Property list
+   ✔  Then the list offers Name, Note contents, Note title, Suppress status and Type
+   ✔  When the user selects Name and opens the Condition list
+   ✔  Then the list offers any value, begins with, ends with, includes, is exactly and is not
+   ✔  When the user dismisses the list and closes the dialog
+   ✔  Then the model browser and part remain visible
+]]></system-out></testcase><testcase name="Scenario: Open and closes an additional browser pane: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:105:3" time="12.713666057"><system-out><![CDATA[  Scenario: Open and closes an additional browser pane
+   ✔  Given an active part is visible in the MCAD Software
+   ✔  And the Model browser tab is active
+   ✔  When the user opens the add-pane menu in the browser header
+   ✔  And the user chooses Favorites
+   ✔  Then a Favorites tab appears beside the Model tab and becomes active
+   ✔  And the Favorites pane shows its content controls
+   ✔  And the model remains visible in the same apparent view
+   ✔  When the user selects the Model tab
+   ✔  Then the model hierarchy is visible again
+   ✔  When the user selects Favorites and closes its tab
+   ✔  Then the Favorites tab disappears and the Model hierarchy is visible
+   ✔  And the model remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Select an origin plane in the browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:120:3" time="8.795269956"><system-out><![CDATA[  Scenario: Select an origin plane in the browser
+   ✔  Given an active part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  And the YZ origin plane is not visible in the viewport
+   ✔  When the user selects the YZ Plane row
+   ✔  Then the row is highlighted
+   ✔  And the plane appears as a translucent blue rectangle in the viewport
+   ✔  And the block remains visible
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary plane highlight disappears
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Show and hide an origin plane from its browser menu: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:133:3" time="15.956586325"><system-out><![CDATA[  Scenario: Show and hide an origin plane from its browser menu
+   ✔  Given an active part with a visible block is open in the MCAD Software
+   ✔  And the YZ origin plane is hidden and its browser row is visible
+   ✔  When the user right-clicks the YZ Plane row
+   ✔  Then the context menu offers Visibility and New Sketch
+   ✔  And Visibility is not checked
+   ✔  When the user chooses Visibility and clicks empty viewport space
+   ✔  Then the plane remains visible as a translucent plane beside the block
+   ✔  When the user right-clicks the YZ Plane row again
+   ✔  Then Visibility is checked
+   ✔  When the user chooses Visibility again
+   ✔  Then the plane is hidden and the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Inspect a nested sketch from the model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:147:3" time="10.243116549"><system-out><![CDATA[  Scenario: Inspect a nested sketch from the model browser
+   ✔  Given an active part in the MCAD Software contains a dimensioned rectangular sketch used by an extrusion
+   ✔  And the extrusion branch is expanded in the model browser
+   ✔  When the user right-clicks the nested sketch row
+   ✔  Then the sketch row is highlighted
+   ✔  And its rectangular geometry and dimensions appear highlighted in the viewport
+   ✔  And the sketch context menu offers Edit Sketch, Redefine, Share Sketch and Properties
+   ✔  And the menu offers Visibility and Export Sketch As
+   ✔  When the user dismisses the menu and clears the selection
+   ✔  Then the highlighted sketch geometry and dimensions disappear from the viewport
+   ✔  And the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Cancel a sketch line style change: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:160:3" time="17.505785812"><system-out><![CDATA[  Scenario: Cancel a sketch line style change
+   ✔  Given a dimensioned sketch is nested under an extrusion in the MCAD Software
+   ✔  And the sketch line type is Default
+   ✔  When the user opens Properties from the sketch row context menu
+   ✔  Then the geometry properties dialog shows line color, line type and line weight controls
+   ✔  And the line type field displays Default
+   ✔  And Apply is disabled
+   ✔  When the user chooses Dashed as the line type
+   ✔  Then the line type field displays Dashed and Apply is enabled
+   ✔  When the user clicks Cancel and reopens the sketch properties
+   ✔  Then the line type field displays Default
+   ✔  When the user clicks Cancel
+   ✔  Then the properties dialog closes
+]]></system-out></testcase><testcase name="Scenario: Find a browser feature in the viewport: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:175:3" time="10.050773488"><system-out><![CDATA[  Scenario: Find a browser feature in the viewport
+   ✔  Given an active part in the MCAD Software contains a single extrusion forming a rectangular block
+   ✔  And the block appears small in the viewport
+   ✔  When the user right-clicks the extrusion row in the model browser
+   ✔  And the user chooses Find in Window
+   ✔  Then the block appears larger and fits within the viewport
+   ✔  And the extrusion row remains selected
+   ✔  And the visible block edges remain highlighted
+   ✔  And the apparent orientation is unchanged
+]]></system-out></testcase><testcase name="Scenario: Hide and show a solid body from the browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:186:3" time="15.547622485"><system-out><![CDATA[  Scenario: Hide and show a solid body from the browser
+   ✔  Given an active part in the MCAD Software contains one visible solid block
+   ✔  And the solid body row is visible in the model browser
+   ✔  When the user right-clicks the solid body row
+   ✔  Then the block faces are highlighted in blue
+   ✔  And Visibility is checked in the context menu
+   ✔  When the user chooses Visibility
+   ✔  Then the block disappears from the viewport
+   ✔  And the body and its feature remain represented in the browser
+   ✔  When the user right-clicks the hidden body row
+   ✔  Then Visibility is not checked
+   ✔  And the hidden body is indicated by a blue wireframe while selected
+   ✔  When the user chooses Visibility again
+   ✔  Then the shaded block returns in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Collapse and expands descendants of the solid bodies folder: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:202:3" time="18.122124817"><system-out><![CDATA[  Scenario: Collapse and expands descendants of the solid bodies folder
+   ✔  Given an active part in the MCAD Software has one solid body made by an extrusion from a sketch
+   ✔  And the Solid Bodies folder shows the body, its extrusion and nested sketch
+   ✔  When the user right-clicks Solid Bodies and chooses Collapse All Children
+   ✔  Then the body row remains visible under the folder
+   ✔  And the extrusion and sketch rows under the body are hidden
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user right-clicks Solid Bodies and chooses Expand All Children
+   ✔  Then the body's extrusion and nested sketch rows are visible again
+   ✔  And the solid remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Hide and restore work features in the model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:214:3" time="18.904885726"><system-out><![CDATA[  Scenario: Hide and restore work features in the model browser
+   ✔  Given the MCAD Software displays the single-block part fixture
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  And the Hide Work Features display preference is disabled
+   ✔  When the user enables Hide Work Features in the browser display preferences
+   ✔  Then the Origin branch is absent from the model browser
+   ✔  And the solid body and extrusion entries remain visible
+   ✔  And the block remains visible in the same view
+   ✔  When the user opens the browser display preferences
+   ✔  Then Hide Work Features is checked
+   ✔  When the user disables Hide Work Features
+   ✔  Then the Origin branch returns to the model browser collapsed
+   ✔  And the block remains visible in the same view
+]]></system-out></testcase><testcase name="Scenario: Inspect the part root context menu: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:229:3" time="9.170462959"><system-out><![CDATA[  Scenario: Inspect the part root context menu
+   ✔  Given an active saved part in the MCAD Software contains one visible solid block
+   ✔  And the document root row is visible in the model browser
+   ✔  When the user right-clicks the document root row
+   ✔  Then the root row is highlighted and the visible block edges are blue
+   ✔  And the context menu offers file-location and file-path actions
+   ✔  And the context menu offers drawing actions
+   ✔  And the context menu offers Expand All Children, Collapse All Children and Find in Window
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes and the block edges remain highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the blue edge highlighting disappears and the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Show and hide an origin axis from its browser menu: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:243:3" time="15.582985126"><system-out><![CDATA[  Scenario: Show and hide an origin axis from its browser menu
+   ✔  Given an active part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded and the X Axis is hidden
+   ✔  When the user right-clicks the X Axis row
+   ✔  Then the row is highlighted and the axis is highlighted in blue in the viewport
+   ✔  And Visibility is unchecked and Auto Resize is checked in the context menu
+   ✔  When the user chooses Visibility and clicks empty viewport space
+   ✔  Then the axis remains visible as a line beside the block
+   ✔  When the user right-clicks the X Axis row again
+   ✔  Then Visibility is checked in the context menu
+   ✔  When the user chooses Visibility again
+   ✔  Then the axis is hidden and the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Navigate the origin branch with arrow keys: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:257:3" time="15.543331529"><system-out><![CDATA[  Scenario: Navigate the origin branch with arrow keys
+   ✔  Given a part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded with its origin planes hidden
+   ✔  When the user selects the YZ Plane row in the model browser
+   ✔  Then the YZ plane is highlighted in the viewport
+   ✔  When the user presses Down Arrow
+   ✔  Then the XZ Plane row is selected and the XZ plane is highlighted
+   ✔  And the YZ plane highlight is removed
+   ✔  When the user presses Up Arrow
+   ✔  Then the YZ Plane row is selected and the YZ plane is highlighted again
+   ✔  When the user presses Left Arrow
+   ✔  Then the Origin parent row is selected and the plane highlight is removed
+   ✔  When the user presses Left Arrow again
+   ✔  Then the Origin branch collapses and its children are hidden
+   ✔  When the user presses Right Arrow
+   ✔  Then the Origin branch expands and its children are visible
+   ✔  When the user presses Right Arrow again
+   ✔  Then the YZ Plane row is selected and the YZ plane is highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the plane highlight disappears and the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Move between origin planes with Shift and Down Arrow: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:279:3" time="12.041929811"><system-out><![CDATA[  Scenario: Move between origin planes with Shift and Down Arrow
+   ✔  Given a part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded and its planes are hidden
+   ✔  And the YZ Plane row is selected and its plane is highlighted
+   ✔  When the user presses Shift and Down Arrow together
+   ✔  Then the XZ Plane row is selected and its plane is highlighted
+   ✔  And the YZ plane is no longer highlighted
+   ✔  When the user presses Shift and Down Arrow together again
+   ✔  Then the XY Plane row is selected and its plane is highlighted
+   ✔  And the XZ plane is no longer highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the plane highlight disappears and the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Inspect the center point context menu: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:293:3" time="9.503231107"><system-out><![CDATA[  Scenario: Inspect the center point context menu
+   ✔  Given an active part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  When the user right-clicks the Center Point row
+   ✔  Then the Center Point row is highlighted
+   ✔  And its context menu offers Copy, Measure, Create Note and Visibility
+   ✔  And the menu offers Relationships
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Change the Favorites pane view mode: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:305:3" time="15.849131281"><system-out><![CDATA[  Scenario: Change the Favorites pane view mode
+   ✔  Given a part with a visible block is open in the MCAD Software
+   ✔  And the Favorites pane is open with Tree View selected
+   ✔  When the user opens the Favorites view-mode menu
+   ✔  Then Tree View is checked and Thumbnail View is available
+   ✔  When the user chooses Thumbnail View
+   ✔  Then the view-mode control displays Thumbnail View
+   ✔  And the pane shows its content-location control
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user reopens the view-mode menu
+   ✔  Then Thumbnail View is checked
+   ✔  When the user chooses Tree View
+   ✔  Then the view-mode control displays Tree View
+   ✔  When the user closes the Favorites tab
+   ✔  Then the Model browser is displayed again
+]]></system-out></testcase><testcase name="Scenario: Inspect sketch parameter search criteria: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:322:3" time="16.557890188000002"><system-out><![CDATA[  Scenario: Inspect sketch parameter search criteria
+   ✔  Given a part is open in the MCAD Software with its model browser visible
+   ✔  When the user chooses Find from the model browser menu
+   ✔  And the user chooses Sketches in the object type list
+   ✔  And the user opens the Property list
+   ✔  Then the list offers Name, Note contents, Note title and Sketch Parameter Name
+   ✔  When the user chooses Sketch Parameter Name
+   ✔  Then the Condition field displays contains
+   ✔  And the Value field is empty and adds to list is disabled
+   ✔  When the user opens the Condition list
+   ✔  Then it offers contains and does not contain
+   ✔  When the user dismisses the list and closes the dialog
+   ✔  Then the model browser and part are visible
+]]></system-out></testcase><testcase name="Scenario: Find an extrusion by feature type: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:337:3" time="21.219156058"><system-out><![CDATA[  Scenario: Find an extrusion by feature type
+   ✔  Given an active part in the MCAD Software contains one extrusion forming a block
+   ✔  And the model browser is visible
+   ✔  And the Find criteria list is empty
+   ✔  When the user chooses Find from the model browser menu
+   ✔  And the user selects Features as the object type
+   ✔  And the user selects Type as the property and Extrusion as the value
+   ✔  Then the condition displays equals
+   ✔  When the user clicks Add to list
+   ✔  Then the criteria list contains Type equals Extrusion
+   ✔  When the user clicks Find Now
+   ✔  Then the extrusion row is selected in the model browser
+   ✔  And the visible edges of the block are highlighted in blue
+   ✔  And the Find dialog remains open
+   ✔  When the user closes the dialog
+   ✔  Then the extrusion remains selected and the block edges remain highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the selection highlight disappears and the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Group search criteria for the same feature property: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:357:3" time="31.100212"><system-out><![CDATA[  Scenario: Group search criteria for the same feature property
+   ✔  Given a part with one extrusion and no fillet is open in the MCAD Software
+   ✔  And the Find dialog contains the criterion Type equals Extrusion
+   ✔  And Features is the selected object type and And is selected for additional criteria
+   ✔  When the user chooses Type equals Fillet and clicks Add to list
+   ✔  Then a prompt says criteria using the same property must be grouped
+   ✔  And the prompt offers to add the criterion using the OR operator
+   ✔  When the user chooses Yes
+   ✔  Then the criteria list shows Type equals Extrusion
+   ✔  And the next line shows OR Type equals Fillet
+   ✔  When the user closes and reopens the Find dialog
+   ✔  Then both criteria remain in the list
+   ✔  When the user clicks Find Now
+   ✔  Then the extrusion row is selected and the block edges are highlighted
+   ✔  And the Find dialog remains open
+   ✔  When the user closes the Find dialog and clicks empty viewport space
+   ✔  Then the highlight disappears and the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Report no matching feature search results: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:376:3" time="31.207466596"><system-out><![CDATA[  Scenario: Report no matching feature search results
+   ✔  Given a part with one unsuppressed extrusion and no fillet is open in the MCAD Software
+   ✔  And the Find dialog contains Type equals Extrusion OR Type equals Fillet
+   ✔  And And is selected for additional criteria
+   ✔  When the user selects Suppress status as the property
+   ✔  Then the condition is equals and the value is Suppressed
+   ✔  When the user clicks Add to list
+   ✔  Then the criteria list includes Suppress status equals Suppressed
+   ✔  When the user clicks Find Now
+   ✔  Then an information message says that no objects matched the criteria
+   ✔  When the user acknowledges the message
+   ✔  Then the Find dialog remains open with the criteria displayed
+   ✔  When the user closes the Find dialog
+   ✔  Then the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Decline grouping an additional feature type: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:392:3" time="35.576106809"><system-out><![CDATA[  Scenario: Decline grouping an additional feature type
+   ✔  Given a part is open in the MCAD Software with the Find dialog open
+   ✔  And the criteria list contains Type equals Extrusion OR Type equals Fillet
+   ✔  And the criteria list contains Suppress status equals Suppressed
+   ✔  And And is selected for additional criteria
+   ✔  When the user chooses Type equals Hole and clicks Add to list
+   ✔  Then a prompt offers to group the additional type criterion using OR
+   ✔  When the user chooses No
+   ✔  Then the prompt closes and the existing three criteria remain in the list
+   ✔  And Type equals Hole is not added to the list
+   ✔  And the property, condition and value controls still show Type equals Hole
+   ✔  When the user closes the Find dialog
+   ✔  Then the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Toggle visibility from the solid bodies folder: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:407:3" time="15.112657772"><system-out><![CDATA[  Scenario: Toggle visibility from the solid bodies folder
+   ✔  Given an active part in the MCAD Software contains one visible solid block
+   ✔  And the Solid Bodies folder is visible in the model browser
+   ✔  When the user right-clicks the Solid Bodies folder
+   ✔  Then its context menu offers Visibility, Expand All Children and collapses All Children
+   ✔  And Visibility is checked
+   ✔  When the user chooses Visibility
+   ✔  Then the shaded block is hidden and its body remains listed in the browser
+   ✔  When the user right-clicks the Solid Bodies folder again
+   ✔  Then Visibility is unchecked
+   ✔  When the user chooses Visibility again
+   ✔  Then the shaded block returns in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Collapse descendants of the Origin folder: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:421:3" time="11.052942854"><system-out><![CDATA[  Scenario: Collapse descendants of the Origin folder
+   ✔  Given an active part with a visible block is open in the MCAD Software
+   ✔  And the Origin folder is expanded with its planes, axes and center point visible as rows
+   ✔  When the user right-clicks the Origin folder
+   ✔  Then its context menu offers Expand All Children and collapses All Children
+   ✔  When the user chooses Collapse All Children
+   ✔  Then the Origin folder remains expanded with its direct reference rows visible
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user clicks the Origin expansion control
+   ✔  Then the reference rows are hidden and the Origin folder remains visible
+   ✔  When the user clicks the Origin expansion control again
+   ✔  Then the reference rows are visible again
+]]></system-out></testcase><testcase name="Scenario: Cancel a sketch line color change: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:435:3" time="18.437104694"><system-out><![CDATA[  Scenario: Cancel a sketch line color change
+   ✔  Given a dimensioned sketch is nested under an extrusion in the MCAD Software
+   ✔  And its line color is Default
+   ✔  When the user opens Properties from the sketch row context menu
+   ✔  And the user opens the Line Color list
+   ✔  Then the list offers Default, Black, Red, Yellow, Green, Cyan, Blue, Magenta and White
+   ✔  And it offers a Select action
+   ✔  When the user chooses Red
+   ✔  Then the Line Color field displays Red and Apply is enabled
+   ✔  When the user clicks Cancel and reopens the sketch properties
+   ✔  Then the Line Color field displays Default and Apply is disabled
+   ✔  When the user clicks Cancel
+   ✔  Then the properties dialog closes
+]]></system-out></testcase><testcase name="Scenario: Inspect and cancels the custom line color picker: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:450:3" time="16.76410218"><system-out><![CDATA[  Scenario: Inspect and cancels the custom line color picker
+   ✔  Given a nested sketch in the MCAD Software has Default line color
+   ✔  And its geometry properties dialog is open
+   ✔  When the user chooses Select from the Line Color list
+   ✔  Then a color dialog opens with basic color swatches and custom color slots
+   ✔  When the user chooses Define Custom Colors
+   ✔  Then the dialog expands to show a color field, brightness control and color preview
+   ✔  And it shows hue, saturation, luminance and red, green and blue fields
+   ✔  And it offers Add to Custom Colors
+   ✔  When the user cancels the color dialog
+   ✔  Then the geometry properties dialog shows Default line color
+   ✔  And Apply is disabled
+   ✔  When the user cancels the geometry properties dialog
+   ✔  Then the dialog closes without applying a color change
+]]></system-out></testcase><testcase name="Scenario: Cancel a sketch line weight change: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:466:3" time="17.803485977"><system-out><![CDATA[  Scenario: Cancel a sketch line weight change
+   ✔  Given a nested sketch in the MCAD Software has Default line weight
+   ✔  When the user opens Properties from the sketch row context menu
+   ✔  And the user opens the Line Weight list
+   ✔  Then the list shows Default and numeric millimeter weights with line samples
+   ✔  And 0.25 mm is available
+   ✔  When the user chooses 0.25 mm
+   ✔  Then the Line Weight field displays 0.25 mm and Apply is enabled
+   ✔  When the user clicks Cancel and reopens the sketch properties
+   ✔  Then the Line Weight field displays Default and Apply is disabled
+   ✔  When the user clicks Cancel
+   ✔  Then the properties dialog closes
+]]></system-out></testcase><testcase name="Scenario: Toggle sketch line scale editing: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:480:3" time="12.405128754"><system-out><![CDATA[  Scenario: Toggle sketch line scale editing
+   ✔  Given a nested sketch in the MCAD Software has Default line type
+   ✔  And its geometry properties dialog is open with Scale unchecked
+   ✔  Then the scale value is shown as 1.00 and its field is disabled
+   ✔  When the user checks Scale
+   ✔  Then the scale field is enabled and shows 1.00
+   ✔  And Apply is enabled
+   ✔  When the user clears Scale
+   ✔  Then the scale field is disabled and still shows 1.00
+   ✔  When the user clicks Cancel
+   ✔  Then the geometry properties dialog closes
+]]></system-out></testcase><testcase name="Scenario: Inspect and navigate sketch dependencies: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:493:3" time="15.50727578"><system-out><![CDATA[  Scenario: Inspect and navigate sketch dependencies
+   ✔  Given a part in the MCAD Software contains a rectangular sketch on the XY plane used by one extrusion
+   ✔  And the sketch references the center point
+   ✔  When the user chooses Relationships from the sketch row context menu
+   ✔  Then the Relationships dialog identifies the sketch as the selected item
+   ✔  And its Parents list contains the XY plane and center point
+   ✔  And its Children list contains the extrusion
+   ✔  When the user selects the XY plane in the Parents list
+   ✔  Then the XY plane row is highlighted in the model browser
+   ✔  And the plane is highlighted in the viewport
+   ✔  When the user selects the extrusion in the Children list
+   ✔  Then the extrusion row and its solid edges are highlighted
+   ✔  When the user activates the navigation control beside the extrusion
+   ✔  Then the dialog identifies the extrusion as the selected item
+   ✔  And its Parents list contains the XY plane and the sketch
+   ✔  And its Children list is empty
+   ✔  When the user activates the navigation control beside the sketch in the Parents list
+   ✔  Then the dialog identifies the sketch as the selected item again
+   ✔  And its Children list contains the extrusion
+   ✔  When the user clicks Done
+   ✔  Then the Relationships dialog closes
+]]></system-out></testcase><testcase name="Scenario: Navigate relationships from an origin plane: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:516:3" time="11.623990073"><system-out><![CDATA[  Scenario: Navigate relationships from an origin plane
+   ✔  Given a part in the MCAD Software contains a sketch on the XY plane and an extrusion using that sketch
+   ✔  When the user chooses Relationships from the XY plane row context menu
+   ✔  Then the dialog identifies the XY plane as the selected item
+   ✔  And the Parents list is empty
+   ✔  And the Children list contains the sketch and the extrusion
+   ✔  When the user activates the navigation control beside the sketch
+   ✔  Then the sketch becomes the selected item in the dialog
+   ✔  And the Parents list contains the XY plane and center point
+   ✔  And the Children list contains the extrusion
+   ✔  When the user activates the navigation control beside the XY plane
+   ✔  Then the XY plane becomes the selected item again
+   ✔  And the Parents list is empty
+   ✔  And the Children list contains the sketch and the extrusion
+   ✔  When the user clicks Done
+   ✔  Then the Relationships dialog closes
+]]></system-out></testcase><testcase name="Scenario: Inspect an origin plane with no listed relationships: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:534:3" time="9.124592121"><system-out><![CDATA[  Scenario: Inspect an origin plane with no listed relationships
+   ✔  Given a part in the MCAD Software contains a sketch on the XY plane and an extrusion using it
+   ✔  When the user chooses Relationships from the YZ plane row context menu
+   ✔  Then the dialog identifies the YZ plane as the selected item
+   ✔  And the Parents list is empty
+   ✔  And the Children list is empty
+   ✔  When the user clicks Done
+   ✔  Then the Relationships dialog closes
+   ✔  And the YZ plane remains highlighted in the viewport
+]]></system-out></testcase><testcase name="Scenario: Toggle the design view expansion preference: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:545:3" time="14.276395347"><system-out><![CDATA[  Scenario: Toggle the design view expansion preference
+   ✔  Given a part is open in the MCAD Software with the model browser visible
+   ✔  And Design View Expansion is unchecked in the browser Display Preferences menu
+   ✔  When the user chooses Design View Expansion
+   ✔  And the user reopens the Display Preferences menu
+   ✔  Then Design View Expansion is checked
+   ✔  When the user chooses Design View Expansion again
+   ✔  And the user reopens the Display Preferences menu
+   ✔  Then Design View Expansion is unchecked
+   ✔  And the part remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Inspect existing feature search criteria: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:557:3" time="31.71237411"><system-out><![CDATA[  Scenario: Inspect existing feature search criteria
+   ✔  Given the MCAD Software Find dialog contains these feature criteria in order:
+       | Property        | Condition | Value      | Join |
+       | Type            | equals    | Extrusion  | And  |
+       | Type            | equals    | Fillet     | Or   |
+       | Suppress status | equals    | Suppressed | And  |
+   ✔  When the user selects the Suppress status criterion
+   ✔  Then the criterion controls show Suppress status, equals and Suppressed
+   ✔  And And is selected
+   ✔  When the user selects the Fillet criterion
+   ✔  Then the criterion controls show Type, equals and Fillet
+   ✔  And Or is selected
+   ✔  When the user selects the Extrusion criterion
+   ✔  Then the criterion controls show Type, equals and Extrusion
+   ✔  And And is selected
+   ✔  And the three criteria remain listed
+   ✔  When the user closes the Find dialog
+   ✔  Then the part workspace is visible
+]]></system-out></testcase><testcase name="Scenario: Change a pending Find value without replacing a listed criterion: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:577:3" time="29.698979935"><system-out><![CDATA[  Scenario: Change a pending Find value without replacing a listed criterion
+   ✔  Given the MCAD Software Find dialog lists Type equals Extrusion and OR Type equals Fillet
+   ✔  And Type equals Extrusion is selected with And selected
+   ✔  When the user chooses Hole in the Value list
+   ✔  Then the Value field shows Hole and adds to list is enabled
+   ✔  And the listed Extrusion and Fillet criteria remain unchanged
+   ✔  When the user selects the Fillet criterion
+   ✔  Then the controls show Type, equals, Fillet and Or
+   ✔  When the user selects the Extrusion criterion
+   ✔  Then the controls show Type, equals, Extrusion and And
+   ✔  And adds to list is disabled
+   ✔  When the user closes the Find dialog
+   ✔  Then the part workspace is visible
+]]></system-out></testcase><testcase name="Scenario: Cancel the saved-search name prompt: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:592:3" time="24.173049845"><system-out><![CDATA[  Scenario: Cancel the saved-search name prompt
+   ✔  Given the MCAD Software Find dialog contains feature search criteria
+   ✔  When the user chooses Save Search
+   ✔  Then a prompt shows an empty search-name field
+   ✔  And OK is disabled and cancels is available
+   ✔  When the user clicks Cancel
+   ✔  Then the Find dialog remains open with its criteria unchanged
+]]></system-out></testcase><testcase name="Scenario: Cancel the open-search picker: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:601:3" time="28.22501932"><system-out><![CDATA[  Scenario: Cancel the open-search picker
+   ✔  Given the MCAD Software Find dialog contains feature search criteria
+   ✔  And at least one saved search is available
+   ✔  When the user chooses Open Search
+   ✔  Then a picker shows a saved-search list and opens, Cancel and Delete actions
+   ✔  When the user clicks Cancel
+   ✔  Then the Find dialog remains open with its original criteria unchanged
+]]></system-out></testcase><testcase name="Scenario: Show the input of a nested sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:610:3" time="10.130300916"><system-out><![CDATA[  Scenario: Show the input of a nested sketch
+   ✔  Given a part in the MCAD Software contains a sketch on the XY plane used by an extrusion
+   ✔  And the origin plane is not persistently visible
+   ✔  When the user chooses Show Input from the sketch row context menu
+   ✔  Then the XY plane row is selected in the model browser
+   ✔  And the XY plane is highlighted in blue in the viewport
+   ✔  When the user clicks empty viewport space
+   ✔  Then the plane highlight is cleared and the shaded solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Show dimensions from an extrusion row: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:620:3" time="12.49830722"><system-out><![CDATA[  Scenario: Show dimensions from an extrusion row
+   ✔  Given a rectangular block in the MCAD Software is made by an extrusion of a dimensioned sketch
+   ✔  And the feature dimensions are not displayed
+   ✔  When the user chooses Show Dimensions from the extrusion row context menu
+   ✔  Then dimension annotations appear around the block
+   ✔  And the extrusion row and block edges are highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the selection highlight clears and the dimensions remain displayed
+   ✔  When the user right-clicks the extrusion row
+   ✔  Then the dimensions disappear and the extrusion context menu opens
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes and the shaded block remains visible
+]]></system-out></testcase><testcase name="Scenario: Inspect and cancels conditional feature suppression: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:634:3" time="20.805978612"><system-out><![CDATA[  Scenario: Inspect and cancels conditional feature suppression
+   ✔  Given an unsuppressed extrusion is selected in the MCAD Software model browser
+   ✔  When the user chooses Properties from the extrusion context menu
+   ✔  Then Feature Properties shows the feature name and Suppress, Adaptive and Feature Appearance controls
+   ✔  And Always and If are unchecked
+   ✔  And the conditional suppression controls are disabled
+   ✔  When the user checks If
+   ✔  Then the parameter selector, comparison operator and value field are enabled
+   ✔  And OK is disabled while the comparison value is empty
+   ✔  When the user opens the comparison operator list
+   ✔  Then it offers equals, not equals, less than, less than or equal, greater than and greater than or equal
+   ✔  When the user chooses greater than or equal
+   ✔  Then that operator is displayed
+   ✔  When the user clicks Cancel and reopens Feature Properties
+   ✔  Then If is unchecked and the conditional controls are disabled
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Switch between unconditional and conditional suppression: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:653:3" time="13.921743086"><system-out><![CDATA[  Scenario: Switch between unconditional and conditional suppression
+   ✔  Given an unsuppressed extrusion in the MCAD Software has Feature Properties open
+   ✔  And Always and If are unchecked
+   ✔  When the user checks Always
+   ✔  Then Always is checked and If is unchecked
+   ✔  And the conditional controls are disabled
+   ✔  When the user checks If
+   ✔  Then If is checked and Always is unchecked
+   ✔  And the conditional controls are enabled
+   ✔  And OK is disabled while the comparison value is empty
+   ✔  When the user checks Always again
+   ✔  Then Always is checked and If is unchecked
+   ✔  And the conditional controls are disabled and OK is enabled
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Cancel adaptive feature options: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:670:3" time="17.877898926"><system-out><![CDATA[  Scenario: Cancel adaptive feature options
+   ✔  Given an extrusion in the MCAD Software has Feature Properties open
+   ✔  And the Adaptive Sketch and Parameters options are unchecked
+   ✔  And From/To Planes is disabled for this extrusion
+   ✔  When the user checks Sketch and Parameters
+   ✔  Then both options are checked
+   ✔  And From/To Planes remains disabled
+   ✔  When the user clicks Cancel and reopens Feature Properties
+   ✔  Then Sketch and Parameters are unchecked
+   ✔  And From/To Planes remains disabled
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Cancel a feature appearance choice: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:684:3" time="17.790045432"><system-out><![CDATA[  Scenario: Cancel a feature appearance choice
+   ✔  Given an extrusion in the MCAD Software has Feature Appearance set to As Body
+   ✔  When the user opens Feature Properties from its browser context menu
+   ✔  And the user opens the Feature Appearance list
+   ✔  Then the list offers As Body and named appearances including Black
+   ✔  When the user chooses Black
+   ✔  Then Feature Appearance shows Black
+   ✔  When the user clicks Cancel and reopens Feature Properties
+   ✔  Then Feature Appearance shows As Body
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Toggle a nested sketch and its dimension visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:697:3" time="30.472250913"><system-out><![CDATA[  Scenario: Toggle a nested sketch and its dimension visibility
+   ✔  Given the MCAD Software has a rectangular dimensioned sketch consumed by an extrusion
+   ✔  And the sketch is hidden and its Dimension Visibility setting is enabled
+   ✔  When the user chooses Visibility from the sketch row context menu
+   ✔  Then the sketch is visible and its dimension annotations appear
+   ✔  When the user clicks empty viewport space
+   ✔  Then the dimension annotations remain visible
+   ✔  When the user reopens the sketch context menu
+   ✔  Then Visibility and Dimension Visibility are checked
+   ✔  When the user chooses Dimension Visibility
+   ✔  Then the dimension annotations disappear while the sketch remains visible
+   ✔  When the user reopens the sketch context menu
+   ✔  Then Visibility is checked and Dimension Visibility is unchecked
+   ✔  When the user chooses Dimension Visibility again
+   ✔  Then the dimension annotations reappear
+   ✔  When the user chooses Visibility from the sketch context menu
+   ✔  Then the sketch and its annotations are hidden again
+   ✔  And the shaded solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Resize the docked model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:717:3" time="11.816673402"><system-out><![CDATA[  Scenario: Resize the docked model browser
+   ✔  Given a part is open in the MCAD Software with the model browser docked at the left
+   ✔  And the browser tree and a shaded block are visible
+   ✔  When the user drags the divider between the browser and viewport to the right
+   ✔  Then the browser becomes wider and the viewport becomes narrower
+   ✔  And the tree hierarchy remains visible
+   ✔  And the block remains visible with the same apparent size and orientation
+   ✔  When the user drags the divider back to the left
+   ✔  Then the browser becomes narrower and the viewport becomes wider
+   ✔  And the tree and block remain visible
+]]></system-out></testcase><testcase name="Scenario: Float and redock the model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:729:3" time="11.995702637"><system-out><![CDATA[  Scenario: Float and redock the model browser
+   ✔  Given a part is open in the MCAD Software with the model browser docked on the left
+   ✔  And the browser tree and shaded block are visible
+   ✔  When the user drags the Model tab into the viewport and release it
+   ✔  Then the browser becomes a floating panel over the viewport
+   ✔  And the browser tree remains available in the floating panel
+   ✔  And the viewport occupies the space formerly used by the docked panel
+   ✔  When the user drags the floating Model tab to the left edge and release it
+   ✔  Then the browser docks on the left again
+   ✔  And the tree and shaded block remain visible
+]]></system-out></testcase><testcase name="Scenario: Dock the model browser on the opposite side: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:741:3" time="11.633065466"><system-out><![CDATA[  Scenario: Dock the model browser on the opposite side
+   ✔  Given a part is open in the MCAD Software with the model browser docked on the left
+   ✔  When the user drags the Model tab to the right edge and release it
+   ✔  Then the browser docks on the right of the viewport
+   ✔  And its tree remains visible
+   ✔  And the shaded block remains visible with the same apparent orientation
+   ✔  When the user drags the Model tab to the left edge and release it
+   ✔  Then the browser docks on the left again
+   ✔  And the tree and shaded block remain visible
+]]></system-out></testcase><testcase name="Scenario: Inspect representation branches in an empty part: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:752:3" time="3.955188031"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect representation branches in an empty part
+   ✔  Given a new empty part is active in the MCAD Software
+   ✘  And the model browser shows an expanded Representations branch
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:754:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Create and switch model states in an empty part: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:772:3" time="33.478259559"><system-out><![CDATA[  Scenario: Create and switch model states in an empty part
+   ✔  Given a new empty part is active in the MCAD Software
+   ✔  And the model browser shows the expanded Model State branch with Primary active
+   ✔  When the user opens the Model State branch context menu
+   ✔  Then it offers New Model State, Expand All Children and collapses All Children
+   ✔  When the user opens the New Model State submenu
+   ✔  Then it offers New Model State and Duplicate Primary
+   ✔  When the user chooses New Model State
+   ✔  Then a new model-state entry appears and is active
+   ✔  And its generated name is selected for inline editing
+   ✔  When the user enters a new state name and presses Enter
+   ✔  Then the new name appears in the model-state row and branch label
+   ✔  And the browser root and document tab identify the new state
+   ✔  When the user double-clicks the Primary model-state entry
+   ✔  Then Primary is marked as active
+   ✔  And the browser root and document tab identify Primary
+   ✔  When the user double-clicks the new model-state entry
+   ✔  Then the new state is marked as active
+   ✔  And the browser root and document tab identify the new state
+   ✔  And the viewport remains empty
+]]></system-out></testcase><testcase name="Scenario: Toggle the model-state edit scope: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:794:3" time="6.507070414"><system-out><![CDATA[  Scenario: Toggle the model-state edit scope
+   ✔  Given an empty part with Primary and a second model state is active in the MCAD Software
+   ✔  And the second state is active and the edit scope is Single Member
+   ✔  When the user clicks the edit-scope control on the Model State branch
+   ✔  Then its tooltip identifies All Members as the edit scope
+   ✔  And the browser root indicates All
+   ✔  And the second model state remains active
+   ✔  When the user clicks the edit-scope control again
+   ✔  Then its tooltip identifies Single Member as the edit scope
+   ✔  And the All indicator is removed from the browser root
+   ✔  And the second model state remains active
+   ✔  And the viewport remains empty
+]]></system-out></testcase><testcase name="Scenario: Duplicate the active model state in an empty part: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:808:3" time="21.360908551"><system-out><![CDATA[  Scenario: Duplicate the active model state in an empty part
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And a named non-primary model state is active
+   ✔  And the Model State branch is expanded
+   ✔  When the user opens the Model State branch context menu
+   ✔  And the user opens the New Model State submenu
+   ✔  Then the duplicate action identifies the active state by name
+   ✔  When the user chooses to duplicate the active state
+   ✔  Then a new model-state row appears with its generated name selected for editing
+   ✔  And the source model state remains marked active
+   ✔  When the user enters a distinct name and presses Enter
+   ✔  Then the source and renamed duplicate both remain in the tree
+   ✔  And the source model state remains marked active
+   ✔  When the user double-clicks the duplicate
+   ✔  Then the duplicate is marked active
+   ✔  And the Model State branch, browser root and document tab identify the duplicate
+   ✔  And the viewport remains empty
+]]></system-out></testcase><testcase name="Scenario: Cancel adding a property to the model-state table: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:827:3" time="3.375559809"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel adding a property to the model-state table
+   ✘  Given an empty part with Primary and two named model states is active in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:828:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Accept a property column in the model-state table: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:847:3" time="3.412074265"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Accept a property column in the model-state table
+   ✘  Given an empty part with Primary and two named model states is active in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:848:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Accept and cancels edits to a model-state property cell: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:865:3" time="3.408062373"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Accept and cancels edits to a model-state property cell
+   ✘  Given an empty part with Primary and two named model states is active in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:866:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel removal of a model-state property column: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:887:3" time="3.4425666919999998"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel removal of a model-state property column
+   ✘  Given an empty part with multiple model states is active in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:888:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Copy and activates a view representation in an empty part: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:905:3" time="3.945342459"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Copy and activates a view representation in an empty part
+   ✔  Given an empty part is active in the MCAD Software
+   ✘  And the View representation branch is expanded with Primary active
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:907:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Toggle the lock marker on a copied view representation: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:923:3" time="3.946966544"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Toggle the lock marker on a copied view representation
+   ✔  Given an empty part is active in the MCAD Software
+   ✘  And Primary is the active view representation
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:925:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Toggle camera autosave for an inactive copied view: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:945:3" time="4.039596876"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Toggle camera autosave for an inactive copied view
+   ✔  Given an empty part is active in the MCAD Software
+   ✘  And Primary is the active view representation
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:947:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Choose and restore annotation scale for an active view: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:965:3" time="3.951961073"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Choose and restore annotation scale for an active view
+   ✔  Given an empty part is active in the MCAD Software
+   ✘  And a copied view representation is active
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:967:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel a custom annotation scale: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:985:3" time="3.970791386"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel a custom annotation scale
+   ✔  Given an empty part is active in the MCAD Software
+   ✘  And a copied view representation is active with annotation scale Auto
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:987:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Accept a custom annotation scale: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1003:3" time="3.945938032"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Accept a custom annotation scale
+   ✔  Given an empty part is active in the MCAD Software
+   ✘  And a copied view representation is active with annotation scale Auto
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1005:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Correct an invalid custom annotation scale: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1017:3" time="3.911259341"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Correct an invalid custom annotation scale
+   ✔  Given an empty part is active in the MCAD Software
+   ✘  And a copied view representation is active with annotation scale Auto
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1019:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Restore a saved camera for an active view representation: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1037:3" time="3.9819772589999998"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Restore a saved camera for an active view representation
+   ✔  Given an empty part is active in the MCAD Software
+   ✘  And a copied view representation is active
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1039:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Retain a staged property column while switching table categories: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1052:3" time="3.381753256"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Retain a staged property column while switching table categories
+   ✘  Given an empty part with multiple model states is active in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1053:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel a duplicate view representation name: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1069:3" time="3.927374612"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel a duplicate view representation name
+   ✔  Given an empty part is active in the MCAD Software
+   ✘  And an active copied view is named "Capture View"
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1071:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Correct a duplicate view representation name: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1082:3" time="3.902460645"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Correct a duplicate view representation name
+   ✔  Given an empty part is active in the MCAD Software
+   ✘  And an active copied view is named "Capture View"
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1084:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Submit an empty view representation name: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1095:3" time="3.979419277"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Submit an empty view representation name
+   ✔  Given an empty part is active in the MCAD Software
+   ✘  And an active copied view is named "Capture View"
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1097:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel an inline view rename with Escape: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1106:3" time="3.956239998"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel an inline view rename with Escape
+   ✔  Given an empty part is active in the MCAD Software
+   ✘  And an active copied view is named "Capture View"
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1108:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Use a view name differing only in letter case: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1117:3" time="3.902030258"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Use a view name differing only in letter case
+   ✔  Given an empty part is active in the MCAD Software
+   ✘  And an active copied view is named "Capture View"
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1119:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Toggle an origin plane while the active view is locked: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1128:3" time="3.393483986"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Toggle an origin plane while the active view is locked
+   ✘  Given The MCAD Software has an empty part with a copied view active
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1129:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Switch locked views after showing an origin plane: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1143:3" time="3.391179883"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch locked views after showing an origin plane
+   ✘  Given The MCAD Software has an empty part with a locked copied view active
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1144:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Toggle the publication setting of an active copied view: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1156:3" time="3.345228751"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Toggle the publication setting of an active copied view
+   ✘  Given The MCAD Software has an empty part with a copied view active
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1157:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: View bulk visibility commands leave the origin plane unchanged in an empty part: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1167:3" time="3.363112383"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: View bulk visibility commands leave the origin plane unchanged in an empty part
+   ✘  Given The MCAD Software has an empty part with an unlocked copied view active
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1168:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Hide and show a solid using the active view commands: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1179:3" time="3.331099334"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Hide and show a solid using the active view commands
+   ✘  Given The MCAD Software has a part containing one solid body
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1180:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Restore a locked view after temporarily hiding its solid: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1191:3" time="3.402041145"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Restore a locked view after temporarily hiding its solid
+   ✘  Given The MCAD Software has a part containing one visible solid body
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1192:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Restore an unlocked view after hiding its solid: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1205:3" time="3.405539237"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Restore an unlocked view after hiding its solid
+   ✘  Given The MCAD Software has a part containing one visible solid body
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1206:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Switch between states with different feature suppression: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1218:3" time="8.074674932"><system-out><![CDATA[  Scenario: Switch between states with different feature suppression
+   ✔  Given The MCAD Software has a part with Primary and Copy State model states
+   ✔  And the extrusion is suppressed in Primary and computed in Copy State
+   ✔  And Copy State is active and its solid body is visible
+   ✔  When the user activates the Primary model state
+   ✔  Then the Primary model state is marked active
+   ✔  And the solid body is absent from the viewport
+   ✔  And the extrusion row is dimmed and struck through
+   ✔  When the user activates Copy State
+   ✔  Then Copy State is marked active
+   ✔  And the solid body is visible in the viewport
+   ✔  And the extrusion row is no longer struck through
+]]></system-out></testcase><testcase name="Scenario: Cancel a staged model-state suppression change: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1232:3" time="3.394737235"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel a staged model-state suppression change
+   ✘  Given The MCAD Software has a part with an extrusion suppressed in Primary and Capture State
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1233:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Apply a feature suppression change through the model-state table: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1248:3" time="3.455737846"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Apply a feature suppression change through the model-state table
+   ✘  Given The MCAD Software has an extrusion suppressed in Primary and computed in Copy State
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1249:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel a staged model-state parameter column and value: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1267:3" time="3.35181801"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel a staged model-state parameter column and value
+   ✘  Given The MCAD Software has a part with three model-state members
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1268:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Accept distinct parameter values for model-state members: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1285:3" time="3.323072787"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Accept distinct parameter values for model-state members
+   ✘  Given The MCAD Software has a part with Primary, Capture State, and Copy State model states
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1286:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel removal of a model-state parameter column: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1306:3" time="3.315012936"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel removal of a model-state parameter column
+   ✘  Given The MCAD Software has a model-state table containing parameter d0
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1307:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Report an unevaluable model-state parameter equation: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1318:3" time="3.417480456"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Report an unevaluable model-state parameter equation
+   ✘  Given The MCAD Software has a model-state table containing the length parameter d0
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1319:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Retain an arithmetic expression in a model-state parameter: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1335:3" time="3.3589506350000002"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Retain an arithmetic expression in a model-state parameter
+   ✘  Given The MCAD Software has a model-state table containing length parameter d0
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1336:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Parameter interface follows the active model state: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1348:3" time="3.4257867810000002"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Parameter interface follows the active model state
+   ✘  Given The MCAD Software has a Primary model state with d0 set to 1 in
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1349:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel inserting a model-state table row: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1359:3" time="3.3828319909999998"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel inserting a model-state table row
+   ✘  Given The MCAD Software has a model-state table with Primary, Capture State, and Copy State in that order
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1360:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Apply an inserted model-state table row: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1373:3" time="3.360310911"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Apply an inserted model-state table row
+   ✘  Given The MCAD Software has a model-state table with Capture State followed by active Copy State
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1374:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Decline removal of duplicate model-state member names: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1386:3" time="3.414778748"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Decline removal of duplicate model-state member names
+   ✘  Given The MCAD Software has a model-state table with members Capture State and Model State1
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1387:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Rename an inactive model state through the table: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1400:3" time="3.375165179"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Rename an inactive model state through the table
+   ✘  Given The MCAD Software has an active Copy State and an inactive Model State1
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1401:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Reject an empty model-state member name: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1411:3" time="3.382216663"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Reject an empty model-state member name
+   ✘  Given The MCAD Software has an active Copy State and an inactive Table Variant
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1412:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Add and apply a second model-state parameter: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1425:3" time="3.37293335"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Add and apply a second model-state parameter
+   ✘  Given The MCAD Software has a model-state table containing length parameter d0
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1426:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Show active member parameter values in the table tree: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1440:3" time="3.377886913"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Show active member parameter values in the table tree
+   ✘  Given The MCAD Software has model states Primary and Copy State
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1441:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect parameter column and cell context menus: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1451:3" time="3.373420682"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect parameter column and cell context menus
+   ✘  Given The MCAD Software displays a four-member model-state table with angular parameter d1 included
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1452:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Collapse descendants of an extrusion with a direct sketch child: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1464:3" time="9.631676808"><system-out><![CDATA[  Scenario: Collapse descendants of an extrusion with a direct sketch child
+   ✔  Given The MCAD Software shows a visible block made by an extrusion
+   ✔  And the extrusion branch is expanded and shows its direct sketch child
+   ✔  When the user right-clicks the extrusion row
+   ✔  And chooses Collapse All Children
+   ✔  Then the direct sketch row remains visible under the extrusion
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Create a feature while editing a single model-state member: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1473:3" time="3.416815045"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Create a feature while editing a single model-state member
+   ✘  Given The MCAD Software has an empty part with Primary, Capture State, and Copy State model states
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1474:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>
