@@ -13,6 +13,9 @@ mod detached;
 mod home_and_previews;
 #[path = "home_preview_native.rs"]
 mod home_preview_native;
+#[cfg(target_os = "linux")]
+#[path = "keyboard_native.rs"]
+mod keyboard_native;
 #[path = "mixed_documents.rs"]
 mod mixed_documents;
 #[path = "offscreen_selection.rs"]
@@ -100,6 +103,7 @@ fn browser_and_viewport(world: &mut ApplicationWorld) {
     world.expect_blank_region([400, 600], [250, 300]);
 }
 #[then("the second part remains available as an open tab")]
+#[then("the next document remains open")]
 fn second_tab_remains(world: &mut ApplicationWorld) {
     let name = world.document_name(second(world));
     world.expect_tab(&name);
@@ -336,19 +340,23 @@ fn list_offers_closes(world: &mut ApplicationWorld) {
 }
 #[given("two part tabs are adjacent in the MCAD Software")]
 #[given("two neighboring part tabs are visible in the MCAD Software")]
+#[given("two adjacent model document tabs are open in the MCAD Software")]
 fn adjacent_tabs(world: &mut ApplicationWorld) {
     world.add_part();
     world.add_part();
 }
 #[given("the left-hand part is active")]
+#[given("the first document tab is active")]
 fn left_hand_active(world: &mut ApplicationWorld) {
     world.activate_through_tab(world.parts[0]);
 }
 #[then("the right-hand part becomes active")]
+#[then("the next document tab becomes active")]
 fn right_hand_active(world: &mut ApplicationWorld) {
     world.expect_active(world.parts[1]);
 }
 #[then("the left-hand part remains open")]
+#[then("the first document remains open")]
 fn left_hand_open(world: &mut ApplicationWorld) {
     let name = world.document_name(world.parts[0]);
     world.expect_tab(&name);
@@ -363,6 +371,7 @@ fn control_shift_tab(world: &mut ApplicationWorld) {
     world.control_shift_key(ViewportPhysicalKey::Tab);
 }
 #[then("the part on the left becomes active")]
+#[then("the first document tab becomes active again")]
 fn left_active(world: &mut ApplicationWorld) {
     world.expect_active(world.parts[0]);
 }

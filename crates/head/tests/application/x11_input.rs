@@ -182,6 +182,24 @@ pub(super) fn press_control_s() {
     press_control_letter(b's');
 }
 
+/// Switch native tabs; example: `press_control_tab(true)` selects the previous tab.
+pub(super) fn press_control_tab(reverse: bool) {
+    let (connection, root) = keyboard_target();
+    let control = keyboard_keycode(&connection, 0xffe3);
+    let shift = keyboard_keycode(&connection, 0xffe1);
+    let tab = keyboard_keycode(&connection, 0xff09);
+    let mut events = vec![(KEY_PRESS_EVENT, control)];
+    if reverse {
+        events.push((KEY_PRESS_EVENT, shift));
+    }
+    events.extend([(KEY_PRESS_EVENT, tab), (KEY_RELEASE_EVENT, tab)]);
+    if reverse {
+        events.push((KEY_RELEASE_EVENT, shift));
+    }
+    events.push((KEY_RELEASE_EVENT, control));
+    send_key_sequence(&connection, root, &events);
+}
+
 fn press_control_letter(key: u8) {
     let (connection, root) = keyboard_target();
     let control = keyboard_keycode(&connection, 0xffe3);
