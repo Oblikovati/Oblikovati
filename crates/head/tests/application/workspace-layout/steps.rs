@@ -134,19 +134,23 @@ fn browser_left(world: &mut ApplicationWorld) {
     expect_docked_left(world);
 }
 #[when("I open the User Interface menu from the View ribbon tab")]
+#[when("the user opens the User Interface menu from the View ribbon tab")]
 fn open_user_interface(world: &mut ApplicationWorld) {
     world.click_text("View");
     world.click_text("User Interface");
 }
 /// The option leaves its menu open, so reopening only opens what has since closed.
 #[when("I reopen the User Interface menu")]
+#[when("the user reopens the User Interface menu")]
 fn reopen_user_interface(world: &mut ApplicationWorld) {
     if !world.shows("Model Browser") {
         open_user_interface(world);
     }
 }
 #[when("I clear the Model Browser option")]
+#[when("the user clears the Model Browser option")]
 #[when("I select the Model Browser option again")]
+#[when("the user selects the Model Browser option again")]
 fn toggle_browser(world: &mut ApplicationWorld) {
     world.click_text("Model Browser");
 }
