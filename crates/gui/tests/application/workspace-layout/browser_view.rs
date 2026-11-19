@@ -154,3 +154,50 @@ fn drawing_search_finds_a_view_in_its_authored_sheet() {
         [("Details".into(), vec!["Front View".into()])]
     );
 }
+
+#[test]
+fn a_matching_parent_retains_all_children_as_unmatched_results() {
+    let rows = matching_rows(&browser(&["Extrusion"]), "origin");
+    assert_eq!(rows[0].text, "Origin");
+    assert!(rows[0].is_match);
+    assert_eq!(rows.len(), ORIGIN_ROWS.len() + 1);
+    assert!(rows[1..].iter().all(|row| row.depth == 1 && !row.is_match));
+    assert!(matching_rows(&browser(&[]), "FEATURES")[0].is_match);
+}
+
+#[test]
+fn matching_origin_children_keep_their_original_identity() {
+    let rows = matching_rows(&browser(&[]), "axis");
+    let children: Vec<_> = rows.iter().skip(1).map(|row| row.text.as_str()).collect();
+    assert_eq!(children, ["X Axis", "Y Axis", "Z Axis"]);
+    for row in rows.iter().skip(1) {
+        assert!(row.is_match);
+        assert_eq!(row.text, ORIGIN_ROWS[row.origin_index.unwrap()]);
+    }
+}
+
+#[test]
+fn matching_a_body_folder_or_body_keeps_its_direct_children() {
+    let mut tree = browser(&["Extrude1"]);
+    tree.bodies.push(crate::browser::GuiBrowserBody {
+        name: "Solid1".into(),
+        feature: oblikovati_model::feature::FeatureId(1),
+        key: "body".into(),
+        index: 1,
+        visible: true,
+        faces: 6,
+        appearance: String::new(),
+        physical: None,
+    });
+    let folder = matching_rows(&tree, "solid bodies");
+    assert_eq!(
+        (folder[0].text.as_str(), folder[1].text.as_str()),
+        ("Solid Bodies", "Solid1")
+    );
+    let body = matching_rows(&tree, "solid1");
+    assert_eq!(
+        body.iter().map(|row| row.text.as_str()).collect::<Vec<_>>(),
+        ["Solid Bodies", "Solid1", "Extrude1"]
+    );
+    assert!(body[1].is_match && !body[2].is_match);
+}
