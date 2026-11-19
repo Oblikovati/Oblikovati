@@ -11,7 +11,10 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
-    pub(super) fn toggle_model_state_scope(&mut self, document: u64) -> Result<bool, String> {
+    pub(in crate::owner) fn toggle_model_state_scope(
+        &mut self,
+        document: u64,
+    ) -> Result<bool, String> {
         use oblikovati_model::model_state::ModelStateEditScope::{AllMembers, SingleMember};
         self.files
             .commands(document)
@@ -30,7 +33,7 @@ impl<
             .map_err(|cause| cause.to_string())?;
         Ok(true)
     }
-    pub(super) fn copy_model_state(&mut self, id: u64) -> Result<bool, String> {
+    pub(in crate::owner) fn copy_model_state(&mut self, id: u64) -> Result<bool, String> {
         oblikovati_api::client::Client::new(self.document_host())
             .model_states()
             .copy(&oblikovati_api::wire::ModelStateNameArgs {
@@ -40,7 +43,11 @@ impl<
             .map_err(|cause| cause.to_string())?;
         Ok(true)
     }
-    pub(super) fn rename_model_state(&mut self, id: u64, name: &str) -> Result<bool, String> {
+    pub(in crate::owner) fn rename_model_state(
+        &mut self,
+        id: u64,
+        name: &str,
+    ) -> Result<bool, String> {
         oblikovati_api::client::Client::new(self.document_host())
             .model_states()
             .rename(&oblikovati_api::wire::ModelStateNameArgs {
@@ -50,7 +57,10 @@ impl<
             .map_err(|cause| cause.to_string())?;
         Ok(true)
     }
-    pub(super) fn create_active_model_state(&mut self, document: u64) -> Result<bool, String> {
+    pub(in crate::owner) fn create_active_model_state(
+        &mut self,
+        document: u64,
+    ) -> Result<bool, String> {
         self.files
             .commands(document)
             .map_err(|cause| cause.to_string())?

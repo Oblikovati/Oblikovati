@@ -5,6 +5,7 @@ mod error;
 mod owner;
 mod request;
 mod retained;
+mod unchanged;
 use crate::{DocumentSession, TransactionObserver};
 pub use checkpoints::{
     CapturedPartCheckpointCandidate, CompletedPartCheckpoints, CompletedPartSketchCheckpoints,

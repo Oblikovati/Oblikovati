@@ -103,6 +103,25 @@ impl OwnedPartReplay {
             },
         )))
     }
+    /// Capture unchanged named bodies for a metadata-only accepted edit.
+    /// Example: `replay.capture_unchanged(history, candidate)?` before committing.
+    pub fn capture_unchanged(
+        &self,
+        history: &DocumentEditHistory,
+        candidate: &DocumentSnapshot,
+    ) -> Result<OwnedPartCandidate, Error> {
+        let captured = self
+            .prefix
+            .capture_unchanged(history, candidate, |_, body| {
+                body.capture_detached(history, self.guid)
+            })
+            .map_err(Error)?;
+        Ok(OwnedPartCandidate {
+            guid: self.guid,
+            policy: self.policy,
+            captured,
+        })
+    }
     /// Validate a safe append without capturing it; example: `replay.validate(history, candidate, feature)?`.
     pub fn validate(
         &self,

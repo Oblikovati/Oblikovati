@@ -84,6 +84,20 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
         self.session.redo()
     }
 
+    /// Undo an ordinary step with its accepted generation proof.
+    /// Example: `commands.undo_with_transition()?` after capturing a candidate.
+    pub fn undo_with_transition(
+        &mut self,
+    ) -> Result<oblikovati_model::history::EvaluationTransition, SessionError> {
+        self.session.undo_with_transition()
+    }
+    /// Redo an ordinary step with its accepted generation proof.
+    /// Example: `commands.redo_with_transition()?` after capturing a candidate.
+    pub fn redo_with_transition(
+        &mut self,
+    ) -> Result<oblikovati_model::history::EvaluationTransition, SessionError> {
+        self.session.redo_with_transition()
+    }
     /// Verify a recomputed candidate and prepare its reply before adoption.
     /// Example: `commands.run_projected("Create", create, verify_and_encode)?`.
     pub fn run_projected<R, T, E>(
@@ -196,5 +210,97 @@ impl<O: TransactionObserver> SessionCommands<'_, O> {
     /// Example: `commands.set_body_visible(current_body_key, false)?;` returns whether display changed.
     pub fn set_body_visible(&mut self, key: &str, visible: bool) -> Result<bool, String> {
         self.session.body_visibility.set(key, visible)
+    }
+    /// Change resolved bodies in the active view; example: `commands.set_part_view_body_visibility(&keys, &available, false)?`.
+    pub fn set_part_view_body_visibility(
+        &mut self,
+        keys: &[String],
+        available: &std::collections::BTreeSet<String>,
+        visible: bool,
+    ) -> Result<bool, String> {
+        self.session
+            .set_part_view_body_visibility(keys, available, visible)
+    }
+    /// Capture the candidate when body visibility is stored in a part view.
+    /// Example: `commands.set_part_view_body_visibility_projected(&keys, &available, false, capture)?`.
+    pub fn set_part_view_body_visibility_projected<T>(
+        &mut self,
+        keys: &[String],
+        available: &std::collections::BTreeSet<String>,
+        visible: bool,
+        project: impl FnOnce(
+            &oblikovati_model::history::DocumentSnapshot,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, String>,
+    ) -> Result<
+        (
+            bool,
+            Option<(T, oblikovati_model::history::EvaluationTransition)>,
+        ),
+        String,
+    > {
+        self.session
+            .set_part_view_body_visibility_projected(keys, available, visible, project)
+    }
+    /// Prepare a view switch against resolved bodies; example: `commands.prepare_part_view_activation(id, camera, &keys)?`.
+    pub fn prepare_part_view_activation(
+        &self,
+        id: u64,
+        camera: oblikovati_api::types::PartDesignViewCamera,
+        keys: &std::collections::BTreeSet<String>,
+    ) -> Result<crate::PreparedPartViewActivation, String> {
+        self.session.prepare_part_view_activation(id, camera, keys)
+    }
+    /// Commit a prepared view switch after its camera is applied; example: `commands.commit_part_view_activation(prepared, camera)?`.
+    pub fn commit_part_view_activation(
+        &mut self,
+        prepared: crate::PreparedPartViewActivation,
+        camera: oblikovati_api::types::PartDesignViewCamera,
+    ) -> Result<(), String> {
+        self.session.commit_part_view_activation(prepared, camera)
+    }
+    /// Capture a candidate while committing a display switch.
+    /// Example: `commands.commit_part_view_activation_projected(prepared, camera, capture)?`.
+    pub fn commit_part_view_activation_projected<T>(
+        &mut self,
+        prepared: crate::PreparedPartViewActivation,
+        camera: oblikovati_api::types::PartDesignViewCamera,
+        project: impl FnOnce(
+            &oblikovati_model::history::DocumentSnapshot,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, String>,
+    ) -> Result<(T, oblikovati_model::history::EvaluationTransition), String> {
+        self.session
+            .commit_part_view_activation_projected(prepared, camera, project)
+    }
+    /// Prepare one tagged history step; example: `commands.prepare_part_view_navigation(direction, &keys)?`.
+    pub fn prepare_part_view_navigation(
+        &self,
+        direction: crate::PartViewNavigationDirection,
+        keys: &std::collections::BTreeSet<String>,
+    ) -> Result<crate::PreparedPartViewNavigation, String> {
+        self.session.prepare_part_view_navigation(direction, keys)
+    }
+    /// Capture the target recipe while committing a display history step.
+    /// Example: `commands.commit_part_view_navigation_projected(prepared, camera, capture)?`.
+    pub fn commit_part_view_navigation_projected<T>(
+        &mut self,
+        prepared: crate::PreparedPartViewNavigation,
+        camera: Option<&oblikovati_api::types::PartDesignViewCamera>,
+        project: impl FnOnce(
+            &oblikovati_model::history::DocumentSnapshot,
+            &oblikovati_model::history::DocumentEditHistory,
+        ) -> Result<T, String>,
+    ) -> Result<(T, oblikovati_model::history::EvaluationTransition), String> {
+        self.session
+            .commit_part_view_navigation_projected(prepared, camera, project)
+    }
+    /// Commit a prepared display history step; example: `commands.commit_part_view_navigation(prepared, camera)?`.
+    pub fn commit_part_view_navigation(
+        &mut self,
+        prepared: crate::PreparedPartViewNavigation,
+        camera: Option<&oblikovati_api::types::PartDesignViewCamera>,
+    ) -> Result<(), String> {
+        self.session.commit_part_view_navigation(prepared, camera)
     }
 }

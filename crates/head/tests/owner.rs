@@ -381,6 +381,8 @@ mod gui_commands;
 mod parameter_editor;
 #[path = "owner/parameter_view.rs"]
 mod parameter_view;
+#[path = "owner/part_view_history.rs"]
+mod part_view_history;
 #[path = "owner/placement_fields.rs"]
 mod placement_fields;
 #[path = "owner/prompts.rs"]
@@ -394,11 +396,10 @@ mod sketch_history;
 #[path = "owner/slot_input.rs"]
 mod slot_input;
 
-#[path = "owner/circle_input.rs"]
-mod circle_input;
-
 #[path = "owner/arc_input.rs"]
 mod arc_input;
+#[path = "owner/circle_input.rs"]
+mod circle_input;
 
 #[path = "owner/ellipse_input.rs"]
 mod ellipse_input;

@@ -6,6 +6,7 @@ mod assembly_producer;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[allow(unsafe_code)]
 mod native_services;
+mod part_view_display;
 #[cfg(all(test, any(target_os = "linux", target_os = "windows")))]
 #[path = "../../gui/src/test_context.rs"]
 mod test_context;
@@ -54,6 +55,7 @@ mod work_drawing;
 mod work_hole;
 mod work_inference_scope;
 mod work_move_body;
+mod work_part_view;
 mod work_shell_feature;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[macro_use]

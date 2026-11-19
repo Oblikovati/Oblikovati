@@ -21,6 +21,7 @@ fn document_with_depth() -> DocumentSnapshot {
         model_states: None,
         body_names: Default::default(),
         design_views: Default::default(),
+        part_design_views: None,
         work_geometry: Default::default(),
         assets: Default::default(),
         sketch_settings: None,

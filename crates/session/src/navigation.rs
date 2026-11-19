@@ -9,32 +9,82 @@ use oblikovati_api::{
 impl<O: TransactionObserver> DocumentSession<O> {
     /// Undo after observers accept the move; example: `session.undo()?;`.
     pub fn undo(&mut self) -> Result<(), SessionError> {
+        self.history.undo_label()?;
+        if self.history.undo_part_view_display().is_some() {
+            return Err(SessionError::PartViewDisplayOwner);
+        }
+        self.undo_display_checked()
+    }
+    /// Undo an ordinary step and return its accepted generation transition.
+    /// Example: `session.undo_with_transition()?` after capturing a candidate.
+    pub fn undo_with_transition(
+        &mut self,
+    ) -> Result<oblikovati_model::history::EvaluationTransition, SessionError> {
+        self.history.undo_label()?;
+        if self.history.undo_part_view_display().is_some() {
+            return Err(SessionError::PartViewDisplayOwner);
+        }
+        self.undo_display_transition()
+    }
+
+    pub(super) fn undo_display_checked(&mut self) -> Result<(), SessionError> {
+        self.undo_display_transition().map(|_| ())
+    }
+
+    pub(super) fn undo_display_transition(
+        &mut self,
+    ) -> Result<oblikovati_model::history::EvaluationTransition, SessionError> {
         let label = self.history.undo_label()?;
         let event = self.payload(EVENT_TRANSACTION_UNDONE, label, TRANSACTION_POINT_PREVIOUS);
         self.notify_before(&event)?;
         let transition = self.history.undo_sketch_transition();
-        self.history.undo()?;
+        let accepted = self.history.undo_with_transition()?;
         self.remember_sketch_navigation(transition.map(|value| crate::SketchEditNavigation {
             from: value.after,
             to: value.before,
         }));
         self.notify_changed(&event);
-        Ok(())
+        Ok(accepted)
     }
 
     /// Redo after observers accept the move; example: `session.redo()?;`.
     pub fn redo(&mut self) -> Result<(), SessionError> {
+        self.history.redo_label()?;
+        if self.history.redo_part_view_display().is_some() {
+            return Err(SessionError::PartViewDisplayOwner);
+        }
+        self.redo_display_checked()
+    }
+    /// Redo an ordinary step and return its accepted generation transition.
+    /// Example: `session.redo_with_transition()?` after capturing a candidate.
+    pub fn redo_with_transition(
+        &mut self,
+    ) -> Result<oblikovati_model::history::EvaluationTransition, SessionError> {
+        self.history.redo_label()?;
+        if self.history.redo_part_view_display().is_some() {
+            return Err(SessionError::PartViewDisplayOwner);
+        }
+        self.redo_display_transition()
+    }
+
+    pub(super) fn redo_display_checked(&mut self) -> Result<(), SessionError> {
+        self.redo_display_transition().map(|_| ())
+    }
+
+    pub(super) fn redo_display_transition(
+        &mut self,
+    ) -> Result<oblikovati_model::history::EvaluationTransition, SessionError> {
         let label = self.history.redo_label()?;
         let event = self.payload(EVENT_TRANSACTION_REDONE, label, TRANSACTION_POINT_NEXT);
         self.notify_before(&event)?;
         let transition = self.history.redo_sketch_transition();
-        self.history.redo()?;
+        let accepted = self.history.redo_with_transition()?;
         self.remember_sketch_navigation(transition.map(|value| crate::SketchEditNavigation {
             from: value.before,
             to: value.after,
         }));
         self.notify_changed(&event);
-        Ok(())
+        Ok(accepted)
     }
 
     /// Drop this document's stream and return its observer; example: `let observer = session.close();`.

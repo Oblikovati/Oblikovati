@@ -217,6 +217,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             assembly: prepared.assembly,
             body_names: prepared.body_names,
             design_views: prepared.design_views,
+            part_design_views: prepared.part_design_views,
             sketch_settings: prepared.sketch_settings,
             parameters: prepared.restored.parameters,
             properties: prepared.properties,

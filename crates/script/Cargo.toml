@@ -11,7 +11,7 @@ unsafe_code = "deny"
 [lints.clippy]
 all = "warn"
 [dependencies]
-oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "051956aa29a83643e84a955531633cabac352373", version = "=0.159.0" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "3112be574e04c3be071b5932cdd2c77b5d8a00e0", version = "=0.159.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 [target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]

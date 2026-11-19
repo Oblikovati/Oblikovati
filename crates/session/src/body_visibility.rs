@@ -3,7 +3,7 @@
 use crate::{DocumentSession, TransactionObserver};
 use std::collections::BTreeSet;
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub(super) struct BodyVisibilityState {
     hidden: BTreeSet<String>,
     revision: u64,
@@ -31,6 +31,34 @@ impl BodyVisibilityState {
         self.revision = revision;
         Ok(true)
     }
+    pub(super) fn replace_hidden(
+        &mut self,
+        hidden: &BTreeSet<String>,
+        available: &BTreeSet<String>,
+    ) -> Result<bool, String> {
+        let Some(revision) = self.prepare_hidden(hidden, available)? else {
+            return Ok(false);
+        };
+        self.hidden.clone_from(hidden);
+        self.revision = revision;
+        Ok(true)
+    }
+    pub(super) fn prepare_hidden(
+        &self,
+        hidden: &BTreeSet<String>,
+        available: &BTreeSet<String>,
+    ) -> Result<Option<u64>, String> {
+        if let Some(key) = hidden.iter().find(|key| !available.contains(*key)) {
+            return Err(format!(
+                "body visibility key {key:?}: expected a current resolved body"
+            ));
+        }
+        if &self.hidden == hidden {
+            return Ok(None);
+        }
+        let revision = next_visibility_revision(self.revision, "part view")?;
+        Ok(Some(revision))
+    }
 }
 fn next_visibility_revision(revision: u64, key: &str) -> Result<u64, String> {
     revision.checked_add(1).ok_or_else(|| {
@@ -47,6 +75,10 @@ impl<O: TransactionObserver> DocumentSession<O> {
     /// Inspect display changes independently of modelling; example: `session.body_visibility_revision()`.
     pub fn body_visibility_revision(&self) -> u64 {
         self.body_visibility.revision
+    }
+    /// Inspect hidden body keys for view capture; example: `session.hidden_body_keys()`.
+    pub fn hidden_body_keys(&self) -> &BTreeSet<String> {
+        &self.body_visibility.hidden
     }
 }
 #[cfg(test)]
@@ -79,5 +111,23 @@ mod tests {
         assert_eq!(state.revision, u64::MAX);
         assert!(state.hidden.is_empty());
         assert!(!state.set("key", true).unwrap());
+    }
+    #[test]
+    fn replacing_hidden_bodies_is_atomic_and_advances_one_revision() {
+        let mut state = BodyVisibilityState::default();
+        let available = BTreeSet::from(["aa".into(), "bb".into()]);
+        let selected = BTreeSet::from(["aa".into()]);
+        assert!(state.replace_hidden(&selected, &available).unwrap());
+        assert!(!state.replace_hidden(&selected, &available).unwrap());
+        assert!(
+            state
+                .replace_hidden(&BTreeSet::from(["cc".into()]), &available)
+                .is_err()
+        );
+        assert_eq!(state.hidden, selected);
+        assert_eq!(state.revision, 1);
+        state.revision = u64::MAX;
+        assert!(state.replace_hidden(&BTreeSet::new(), &available).is_err());
+        assert_eq!(state.hidden, selected);
     }
 }

@@ -320,6 +320,13 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     ) -> Result<bool, String> {
         self.owner.process_window_inputs(inputs, window)
     }
+    fn process_live_window_inputs(
+        &mut self,
+        inputs: &[oblikovati_viewport::ViewportEvent],
+        window: &mut dyn crate::HeadWindow,
+    ) -> Result<bool, String> {
+        self.owner.process_live_window_inputs(inputs, window)
+    }
     fn take_command_notice(&mut self) -> Option<crate::DesktopCommandNotice> {
         self.startup
             .as_mut()
@@ -354,7 +361,7 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
             return Err("native desktop stopped=true: expected live owner polling".into());
         }
         let changed = self.poll_native_window(budget / 2, window)?;
-        let mut activity = self.owner.poll(budget - budget / 2)?;
+        let mut activity = self.owner.poll_window(budget - budget / 2, window)?;
         activity.changed |= changed;
         activity.pending |= self
             .runtime

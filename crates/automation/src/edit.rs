@@ -9,7 +9,11 @@ use oblikovati_api::{Error, wire::*};
 use oblikovati_model::history::{DocumentSnapshot, RecipeReservations};
 
 /// Implemented edits; queries are enumerated by `QUERY_METHODS`.
-pub const EDIT_METHODS: [&str; 29] = [
+pub const EDIT_METHODS: [&str; 33] = [
+    METHOD_PART_DESIGN_VIEWS_CAPTURE_CAMERA,
+    METHOD_PART_DESIGN_VIEWS_COPY,
+    METHOD_PART_DESIGN_VIEWS_RENAME,
+    METHOD_PART_DESIGN_VIEWS_SET_OPTIONS,
     METHOD_MODEL_STATES_CREATE,
     METHOD_MODEL_STATES_RENAME,
     METHOD_MODEL_STATES_COPY,
@@ -42,6 +46,7 @@ pub const EDIT_METHODS: [&str; 29] = [
 ];
 
 pub(super) enum PreparedEdit {
+    PartDesignView(crate::part_design_views::PartViewEdit),
     ModelState(crate::model_states::MemberEdit),
     AttachmentRemove(RemoveAttachmentArgs),
     InterestAdd(AddDocumentInterestArgs),
@@ -75,6 +80,18 @@ impl PreparedEdit {
 
     pub(super) fn decode(method: &str, request: &[u8]) -> Result<Self, Error> {
         match method {
+            METHOD_PART_DESIGN_VIEWS_CAPTURE_CAMERA => Ok(Self::PartDesignView(
+                crate::part_design_views::PartViewEdit::Camera(decode(method, request)?),
+            )),
+            METHOD_PART_DESIGN_VIEWS_COPY => Ok(Self::PartDesignView(
+                crate::part_design_views::PartViewEdit::Copy(decode(method, request)?),
+            )),
+            METHOD_PART_DESIGN_VIEWS_RENAME => Ok(Self::PartDesignView(
+                crate::part_design_views::PartViewEdit::Rename(decode(method, request)?),
+            )),
+            METHOD_PART_DESIGN_VIEWS_SET_OPTIONS => Ok(Self::PartDesignView(
+                crate::part_design_views::PartViewEdit::Options(decode(method, request)?),
+            )),
             METHOD_MODEL_STATES_CREATE => Ok(Self::ModelState(
                 crate::model_states::MemberEdit::Create(decode(method, request)?),
             )),
@@ -132,6 +149,7 @@ impl PreparedEdit {
 
     pub(super) fn label(&self) -> &'static str {
         match self {
+            Self::PartDesignView(edit) => edit.label(),
             Self::ModelState(edit) => edit.label(),
             Self::AttachmentRemove(_) => "Remove Attachment",
             Self::InterestAdd(_) => "Register Interest",
@@ -167,6 +185,7 @@ impl PreparedEdit {
     ) -> Result<Vec<u8>, Error> {
         let parameters = &mut snapshot.parameters;
         match self {
+            Self::PartDesignView(edit) => edit.apply(snapshot, reservations),
             Self::ModelState(edit) => edit.apply(snapshot, reservations),
             Self::AttachmentRemove(request) => encode(&crate::attachments::remove(
                 &mut snapshot.attachments,

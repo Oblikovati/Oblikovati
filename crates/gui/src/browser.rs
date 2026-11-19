@@ -1,8 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[path = "browser_blocks.rs"]
 mod browser_blocks;
+#[path = "browser_inline_edit.rs"]
+pub(crate) mod browser_inline_edit;
 #[path = "browser_model_state.rs"]
 pub(crate) mod browser_model_state;
+#[path = "browser_part_view.rs"]
+mod browser_part_view;
+#[path = "browser_part_view_edit.rs"]
+pub(crate) mod browser_part_view_edit;
 #[path = "browser_drawing_tree.rs"]
 pub(crate) mod drawing_tree;
 use crate::application::workspace_layout::browser_view::BrowserView;
@@ -85,7 +91,7 @@ impl BrowserTree<'_> {
         view: &mut BrowserView,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        self.model_states(view, actions);
+        self.representations(view, actions);
         self.bodies(view, actions);
         self.origin(view, actions);
         self.parameters();

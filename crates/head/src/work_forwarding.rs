@@ -35,6 +35,15 @@ macro_rules! forward_owner_view_work {
         fn jump_history_from_gui(&mut self, document: u64, position: i64) -> Result<bool, String> {
             self.$owner.jump_history_from_gui(document, position)
         }
+        fn jump_history_with_window(
+            &mut self,
+            document: u64,
+            position: i64,
+            window: &mut dyn crate::HeadWindow,
+        ) -> Result<bool, String> {
+            self.$owner
+                .jump_history_with_window(document, position, window)
+        }
         fn update_part_from_gui(&mut self) -> Result<bool, String> {
             self.$owner.update_part_from_gui()
         }
@@ -302,6 +311,15 @@ macro_rules! forward_owner_view_work {
             choice: &oblikovati_gui::GuiBrowserChoice,
         ) -> Result<bool, String> {
             self.$owner.browser_choice_from_gui(document, choice)
+        }
+        fn part_view_choice_from_gui(
+            &mut self,
+            document: u64,
+            choice: &oblikovati_gui::GuiBrowserChoice,
+            window: &mut dyn crate::HeadWindow,
+        ) -> Result<bool, String> {
+            self.$owner
+                .part_view_choice_from_gui(document, choice, window)
         }
         fn keep_document_picture_from_gui(
             &mut self,

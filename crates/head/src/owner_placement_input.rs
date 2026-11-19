@@ -6,6 +6,18 @@ use crate::{
 };
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchPlacementRecipe};
 use oblikovati_viewport::ViewportEvent;
+enum PlacementWindow<'a> {
+    Shared(&'a dyn HeadWindow),
+    Live(&'a mut dyn HeadWindow),
+}
+impl PlacementWindow<'_> {
+    fn shared(&self) -> &dyn HeadWindow {
+        match self {
+            Self::Shared(window) => *window,
+            Self::Live(window) => &**window,
+        }
+    }
+}
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -75,18 +87,37 @@ impl<
         inputs: &[ViewportEvent],
         window: &dyn HeadWindow,
     ) -> Result<bool, String> {
+        self.process_placement_inputs_using(inputs, PlacementWindow::Shared(window))
+    }
+    pub(super) fn process_live_placement_inputs(
+        &mut self,
+        inputs: &[ViewportEvent],
+        window: &mut dyn HeadWindow,
+    ) -> Result<bool, String> {
+        self.process_placement_inputs_using(inputs, PlacementWindow::Live(window))
+    }
+    fn process_placement_inputs_using(
+        &mut self,
+        inputs: &[ViewportEvent],
+        mut window: PlacementWindow<'_>,
+    ) -> Result<bool, String> {
         let mut changed = self.synchronize_sketch_edit();
         let mut retired = self.check_sketch_tool_context();
         changed |= retired;
         for input in inputs {
-            changed |= self.process_document_inputs(&[*input])?;
+            changed |= match &mut window {
+                PlacementWindow::Shared(_) => self.process_document_inputs(&[*input])?,
+                PlacementWindow::Live(window) => {
+                    self.process_document_inputs_with_window(&[*input], &mut **window)?
+                }
+            };
             let retired_now = self.check_sketch_tool_context();
             changed |= retired_now;
             if retired || retired_now {
                 retired = false;
                 continue;
             }
-            changed |= self.process_sketch_tool_event(*input, window);
+            changed |= self.process_sketch_tool_event(*input, window.shared());
         }
         Ok(changed)
     }

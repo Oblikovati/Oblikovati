@@ -75,6 +75,10 @@ pub use sketch_placement::{
 pub use sketch_projection::ResolvedSketchPointProjection;
 mod error;
 mod navigation;
+mod navigation_capture;
+mod part_design_view_ids;
+mod part_view_display;
+pub use part_view_display::{PartViewDisplayState, PartViewDisplayTransition};
 mod sketch_edit_history;
 pub use sketch_edit_history::SketchEditTransition;
 mod refresh;
@@ -97,6 +101,8 @@ pub struct DocumentSnapshot {
     pub body_names: std::collections::BTreeMap<String, String>,
     /// Named design views, in the order they were made.
     pub design_views: Vec<String>,
+    /// Part view recipes use the document's permanent identity reservations.
+    pub part_design_views: Option<crate::part_design_view::PartDesignViews>,
     pub work_geometry:
         crate::feature::FeatureSequence<crate::feature::work_geometry::WorkGeometryDefinition>,
     pub assets: crate::assets::DocumentAssets,
@@ -162,6 +168,7 @@ struct OpenTransaction {
     label: String,
     before: DocumentSnapshot,
     derived_baseline: Option<DocumentSnapshot>,
+    part_view_display: Option<PartViewDisplayTransition>,
 }
 #[derive(Debug)]
 struct HistoryStep {
@@ -170,6 +177,7 @@ struct HistoryStep {
     before: DocumentSnapshot,
     after: DocumentSnapshot,
     sketch_edit: Option<SketchEditTransition>,
+    part_view_display: Option<PartViewDisplayTransition>,
 }
 
 /// Owns current recipe state, permanent ID reservations, and nested edit history.
@@ -197,6 +205,7 @@ impl DocumentEditHistory {
     pub fn new(snapshot: DocumentSnapshot, ids: RecipeIdAllocator) -> Result<Self, HistoryError> {
         snapshot.validate_datum_metadata()?;
         snapshot.validate_model_state_members()?;
+        snapshot.validate_part_design_views()?;
         snapshot
             .validate_scalar_ownership()
             .map_err(HistoryError::ScalarOwnership)?;
@@ -204,6 +213,10 @@ impl DocumentEditHistory {
         RecipeIdAllocator::restore(
             Some(ids.high_water()),
             &model_state_ids::authored_ids(&snapshot),
+        )?;
+        RecipeIdAllocator::restore(
+            Some(ids.high_water()),
+            &part_design_view_ids::authored_ids(&snapshot),
         )?;
         let derived_high_water = snapshot
             .parameters
@@ -278,6 +291,7 @@ impl DocumentEditHistory {
             label: label.into(),
             before: self.current.clone(),
             derived_baseline: None,
+            part_view_display: None,
         });
         self.next_token = next;
         Ok(token)
@@ -344,10 +358,11 @@ impl DocumentEditHistory {
             return Ok(());
         }
         if merge_previous
-            && let Some(previous) = self
-                .done
-                .last_mut()
-                .filter(|step| step.sketch_edit.is_none())
+            && let Some(previous) = self.done.last_mut().filter(|step| {
+                step.sketch_edit.is_none()
+                    && step.part_view_display.is_none()
+                    && frame.part_view_display.is_none()
+            })
         {
             previous.after = self.current.clone();
             previous.saved = false;
@@ -358,6 +373,7 @@ impl DocumentEditHistory {
                 before: frame.before,
                 after: self.current.clone(),
                 sketch_edit: None,
+                part_view_display: frame.part_view_display,
             });
         }
         self.undone.clear();
@@ -385,6 +401,9 @@ impl DocumentEditHistory {
     pub fn discard_unchanged(&mut self, token: &TransactionToken) -> Result<bool, HistoryError> {
         self.require_top(token)?;
         let frame = self.open.last().expect("validated frame");
+        if frame.part_view_display.is_some() {
+            return Ok(false);
+        }
         let baseline = frame.derived_baseline.as_ref().unwrap_or(&frame.before);
         if !sketch_consequence::same_history_recipe(baseline, &self.current) {
             return Ok(false);
@@ -420,6 +439,7 @@ impl DocumentEditHistory {
         reserved_before: u64,
     ) -> Result<(), HistoryError> {
         self.validate_model_state_ids(candidate, reserved_before)?;
+        self.validate_part_design_view_ids(candidate, reserved_before)?;
         for &id in candidate.parameters.ids() {
             if self.current.parameters.get(id).is_none()
                 && (id <= reserved_before || id > self.ids.high_water())

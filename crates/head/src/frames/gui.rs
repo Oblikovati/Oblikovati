@@ -197,6 +197,17 @@ pub(super) fn dispatch_gui_action(
         window.set_tool_feedback(None)?;
     }
     match action {
+        GuiShellAction::JumpHistoryTo { document, position } => {
+            return owner.jump_history_with_window(*document, *position, window);
+        }
+        GuiShellAction::BrowserChoice {
+            document,
+            choice:
+                choice @ (oblikovati_gui::GuiBrowserChoice::CopyPartView(_)
+                | oblikovati_gui::GuiBrowserChoice::ActivatePartView(_)),
+        } => {
+            return owner.part_view_choice_from_gui(*document, choice, window);
+        }
         GuiShellAction::CaptureWindowPreview => return window.capture_window_preview(),
         GuiShellAction::CaptureIsometricPreview { document } => {
             super::publish_owner_scene(window, owner)?;
@@ -342,7 +353,7 @@ pub(super) fn dispatch_frame_input(
     let event = semantic_command_event(*event);
     let event = &event;
     let mut changed = window.process_view_input(event)?;
-    changed |= owner.process_window_inputs(&[*event], window)?;
+    changed |= owner.process_live_window_inputs(&[*event], window)?;
     changed |= synchronize_sketch_view(window, owner)?;
     changed |= update_tool_candidate(window, owner, event)?;
     Ok(changed)

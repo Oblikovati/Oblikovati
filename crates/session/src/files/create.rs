@@ -75,8 +75,11 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
     package
         .require_supported_assembly()
         .map_err(FileWorkspaceError::Package)?;
-    let restored = package
+    let mut restored = package
         .restore_document_parameters()
+        .map_err(FileWorkspaceError::Package)?;
+    let part_design_views = package
+        .restore_part_design_views(&mut restored.ids)
         .map_err(FileWorkspaceError::Package)?;
     let properties = package
         .restore_parameter_properties(&restored.parameters)
@@ -113,9 +116,14 @@ fn initial_history(package: &DocumentPackage) -> Result<DocumentEditHistory, Fil
         body_names: package
             .restore_body_names()
             .map_err(FileWorkspaceError::Package)?,
-        design_views: package
-            .restore_design_views()
-            .map_err(FileWorkspaceError::Package)?,
+        design_views: if part_design_views.is_some() {
+            Vec::new()
+        } else {
+            package
+                .restore_design_views()
+                .map_err(FileWorkspaceError::Package)?
+        },
+        part_design_views,
         assets: package
             .restore_assets()
             .map_err(FileWorkspaceError::Package)?,

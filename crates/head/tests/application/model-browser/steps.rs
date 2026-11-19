@@ -41,6 +41,8 @@ mod model_states;
 mod origin_rows;
 #[path = "panes.rs"]
 mod panes;
+#[path = "part_views.rs"]
+mod part_views;
 #[path = "relationships.rs"]
 mod relationships;
 

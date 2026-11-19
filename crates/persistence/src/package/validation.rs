@@ -13,6 +13,7 @@ const MAPPING_FIELDS: &[&str] = &[
     "resources",
     "model",
     "partModelStates",
+    "partDesignViews",
     "data",
 ];
 const SEQUENCE_FIELDS: &[&str] = &[

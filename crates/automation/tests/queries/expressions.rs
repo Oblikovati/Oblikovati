@@ -189,6 +189,7 @@ fn expression_queries_resolve_live_parameter_nominals_without_model_offsets() {
         drawing: None,
         body_names: Default::default(),
         design_views: Default::default(),
+        part_design_views: None,
         sketch_settings: None,
         parameters,
         properties: DocumentProperties::default(),

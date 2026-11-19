@@ -11,6 +11,7 @@ impl DocumentSnapshot {
             && self.assets == other.assets
             && self.body_names == other.body_names
             && self.design_views == other.design_views
+            && self.part_design_views == other.part_design_views
             && self.attachments == other.attachments
             && self.sketch_settings == other.sketch_settings
             && self.resources == other.resources

@@ -86,6 +86,7 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
         oblikovati_model::sketch::SketchConstructionPolicy,
     )>,
     part_topology: Option<&'a mut dyn crate::PartTopologyAccess<O, W, F>>,
+    part_view_display: Option<&'a mut dyn crate::PartViewDisplayAccess>,
     assembly_display_limits: Option<(f64, f64)>,
     assembly_producer: Option<Result<String, String>>,
     part_update: Option<&'a mut dyn crate::PartUpdateAccess<O, W, F>>,
@@ -98,106 +99,8 @@ struct FileContext<'a, O: TransactionObserver, W, F> {
         Option<&'a mut dyn oblikovati_model::application_options::PartPreferenceAccess>,
     startup_project_origin: bool,
 }
+mod builders;
 impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHost<'a, O, W, F> {
-    /// Set the current display producer identity.
-    /// Example: `host.with_assembly_producer(Ok(digest))`.
-    pub fn with_assembly_producer(mut self, producer: Result<String, String>) -> Self {
-        self.context.get_mut().assembly_producer = Some(producer);
-        self
-    }
-    /// Set the active display quality for saved assembly views.
-    /// Example: `host.with_assembly_display_limits((0.05, 0.5))`.
-    pub fn with_assembly_display_limits(mut self, limits: (f64, f64)) -> Self {
-        self.context.get_mut().assembly_display_limits = Some(limits);
-        self
-    }
-    /// Inject part replay ownership; example: `host.with_part_update(&mut replay)`.
-    pub fn with_part_update(
-        mut self,
-        replay: &'a mut dyn crate::PartUpdateAccess<O, W, F>,
-    ) -> Self {
-        self.context.get_mut().part_update = Some(replay);
-        self
-    }
-    /// Share the desktop's marking menus; example: `host.with_marking_menus(&mut menus)`.
-    pub fn with_marking_menus(
-        mut self,
-        menus: &'a mut oblikovati_model::marking_menu::MarkingMenus,
-    ) -> Self {
-        self.context.get_mut().marking_menus = Some(menus);
-        self
-    }
-    /// Share marking-menu storage; example: `host.with_marking_store(&mut store)`.
-    pub fn with_marking_store(
-        mut self,
-        store: &'a mut dyn oblikovati_model::marking_menu::MarkingMenuPreferenceAccess,
-    ) -> Self {
-        self.context.get_mut().marking_store = Some(store);
-        self
-    }
-    /// Share the application keymap; example: `host.with_keymap(&mut keymap)`.
-    pub fn with_keymap(mut self, keymap: &'a mut oblikovati_model::keymap::Keymap) -> Self {
-        self.context.get_mut().keymap = Some(keymap);
-        self
-    }
-    /// Share keymap storage; example: `host.with_keymap_store(&mut store)`.
-    pub fn with_keymap_store(
-        mut self,
-        store: &'a mut dyn oblikovati_model::keymap::KeymapPreferenceAccess,
-    ) -> Self {
-        self.context.get_mut().keymap_store = Some(store);
-        self
-    }
-    /// Supply exact drawing projection; example: `host.with_drawing_views(&backend)`.
-    pub fn with_drawing_views(
-        mut self,
-        backend: &'a dyn crate::DrawingViewProjectionAccess,
-    ) -> Self {
-        self.context.get_mut().drawing_views = Some(backend);
-        self
-    }
-    /// Supply profile discovery and candidate validation; example: `host.with_extrusion(&backend)`.
-    pub fn with_extrusion(mut self, backend: &'a dyn crate::ExtrudeRegionAccess) -> Self {
-        self.context.get_mut().extrusion = Some(backend);
-        self
-    }
-    /// Supply exact Fillet body resolution and validation; example: `host.with_fillet(&backend)`.
-    pub fn with_fillet(mut self, backend: &'a dyn crate::FilletAccess) -> Self {
-        self.context.get_mut().fillet = Some(backend);
-        self
-    }
-    /// Borrow the application viewport palettes; example: `host.with_color_schemes(&mut registry)`.
-    pub fn with_color_schemes(
-        mut self,
-        registry: &'a mut oblikovati_model::color_scheme::ColorSchemeRegistry,
-    ) -> Self {
-        self.context.get_mut().color_schemes = Some(registry);
-        self
-    }
-    /// Share the application theme library; example: `host.with_themes(&library)`.
-    pub fn with_themes(mut self, library: &'a oblikovati_model::theme::ThemeLibrary) -> Self {
-        self.context.get_mut().themes = Some(library);
-        self
-    }
-    /// Inject the native capture queue; example: `host.with_window_capture(&mut captures)`.
-    pub fn with_window_capture(mut self, capture: &'a mut dyn crate::WindowCaptureAccess) -> Self {
-        self.context.get_mut().window_capture = Some(capture);
-        self
-    }
-    /// Supply current desktop edit state without changing the document recipe.
-    /// Example: `host.with_sketch_edit(Some(edit.clone()))`.
-    pub fn with_sketch_edit(mut self, edit: Option<crate::SketchInspectionEdit>) -> Self {
-        self.context.get_mut().sketch_edit = edit;
-        self
-    }
-    /// Share the native exact-reference owner; example: `host.with_part_topology(&mut scenes)`.
-    pub fn with_part_topology(
-        mut self,
-        references: &'a mut dyn crate::PartTopologyAccess<O, W, F>,
-    ) -> Self {
-        self.context.get_mut().part_topology = Some(references);
-        self
-    }
     /// Borrow owned files and identity generation; example: `FileHost::new(&mut files, &mut guids, "alpha")`.
     pub fn new(
         files: &'a mut FileWorkspace<O, W, F>,
@@ -223,6 +126,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileHos
                 part_preferences: None,
                 startup_project_origin: true,
                 part_topology: None,
+                part_view_display: None,
                 assembly_display_limits: None,
                 assembly_producer: None,
                 part_update: None,
@@ -430,6 +334,36 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         if method == METHOD_FEATURES_SET_SUPPRESSED {
             return crate::feature_suppression::apply(self.files, self.extrusion, request);
         }
+        if method == METHOD_PART_DESIGN_VIEWS_SET_BODY_VISIBILITY {
+            return crate::part_view_body_visibility::apply(
+                self.files,
+                &mut self.part_topology,
+                decode(method, request)?,
+            );
+        }
+        if method == METHOD_PART_DESIGN_VIEWS_ACTIVATE {
+            return crate::part_view_display::activate(
+                self.files,
+                &mut self.part_topology,
+                &mut self.part_view_display,
+                decode(method, request)?,
+            );
+        }
+        if method == METHOD_PART_DESIGN_VIEWS_COPY && self.part_view_display.is_some() {
+            return crate::part_view_display::copy(
+                self.files,
+                &mut self.part_view_display,
+                self.part_update
+                    .as_deref()
+                    .map(|owner| owner.resolution_policy())
+                    .or_else(|| {
+                        self.part_topology
+                            .as_deref()
+                            .map(|owner| owner.resolution_policy())
+                    }),
+                decode(method, request)?,
+            );
+        }
         if crate::BODY_COMMAND_METHODS.contains(&method) {
             return crate::body_commands::apply(
                 self.files,
@@ -460,12 +394,37 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         if crate::SKETCH_OPTION_METHODS.contains(&method) {
             return self.sketch_option_command(method, request);
         }
+        if matches!(
+            method,
+            METHOD_PART_DESIGN_VIEWS_SET_OPTIONS
+                | METHOD_PART_DESIGN_VIEWS_COPY
+                | METHOD_PART_DESIGN_VIEWS_RENAME
+                | METHOD_PART_DESIGN_VIEWS_CAPTURE_CAMERA
+        ) {
+            let policy = match self.part_update.as_deref() {
+                Some(owner) => owner.resolution_policy(),
+                None => match self.part_topology.as_deref() {
+                    Some(owner) => owner.resolution_policy(),
+                    None => return command_owner::edit(self.files, method, request),
+                },
+            };
+            return crate::part_view_replay::edit(self.files, policy, method, request);
+        }
         if EDIT_METHODS.contains(&method) {
             return command_owner::edit(self.files, method, request);
         }
         if TRANSACTION_METHODS.contains(&method) {
-            let result = transactions::apply(self.files, method, request)?;
-            if method != METHOD_TRANSACTION_BEGIN {
+            let (result, needs_sync) = match crate::part_view_transactions::apply(
+                self.files,
+                &mut self.part_topology,
+                &mut self.part_view_display,
+                method,
+                request,
+            )? {
+                Some(reply) => reply,
+                None => (transactions::apply(self.files, method, request)?, true),
+            };
+            if method != METHOD_TRANSACTION_BEGIN && needs_sync {
                 self.synchronize_drawing_references();
                 self.synchronize_assembly_references().map_err(|error| {
                     Error(format!("transaction {method} was applied, but reference synchronization failed: {error}"))

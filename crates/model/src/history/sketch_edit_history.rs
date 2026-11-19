@@ -91,6 +91,7 @@ impl DocumentEditHistory {
                 before: Some(sketch),
                 after: None,
             }),
+            part_view_display: None,
         });
         self.undone.clear();
     }

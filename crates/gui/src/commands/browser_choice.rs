@@ -2,6 +2,30 @@
 /// What a press on a browser row other than a feature or sketch asks for.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GuiBrowserChoice {
+    /// Copy a stored part design view.
+    CopyPartView(u64),
+    /// Rename an authored part design view.
+    RenamePartView {
+        id: u64,
+        name: String,
+    },
+    /// Apply a part view to the active display.
+    ActivatePartView(u64),
+    /// Change the lock state of a part view.
+    LockPartView {
+        id: u64,
+        locked: bool,
+    },
+    /// Set whether a part view is published.
+    PublishPartView {
+        id: u64,
+        published: bool,
+    },
+    /// Show or hide every resolved body in the active part view.
+    PartViewBodyVisibility {
+        id: u64,
+        visible: bool,
+    },
     /// Create and activate a new model-state member.
     CreateModelState,
     /// Copy a member without activating the copy.

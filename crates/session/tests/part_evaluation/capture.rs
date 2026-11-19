@@ -291,3 +291,51 @@ fn model_transfer_rejects_wrong_recipe_and_stale_completion() {
     owner.undo().unwrap();
     assert!(completed.into_current(7, owner.history()).is_err());
 }
+
+#[test]
+fn unchanged_capture_accepts_view_metadata_and_rejects_geometry_edits() {
+    let mut owner = session(7);
+    owner
+        .run("Initialize views", |snapshot, _| {
+            snapshot.part_design_views = Some(Default::default());
+            Ok::<_, String>(())
+        })
+        .unwrap();
+    let mut slot = PartSlot::default();
+    publish(&mut owner, &mut slot);
+    let prefix = slot.candidate_prefix(&owner).unwrap();
+    let (capture, transition) = owner
+        .run_projected_with_transition(
+            "View options",
+            |snapshot, _| {
+                snapshot.part_design_views.as_mut().unwrap().set_options(
+                    &oblikovati_api::wire::SetPartDesignViewOptionsArgs {
+                        id: 1,
+                        published: Some(Box::new(false)),
+                        ..Default::default()
+                    },
+                )
+            },
+            |candidate, (), history| {
+                prefix.capture_unchanged(history, candidate, |_, body| Ok(*body))
+            },
+        )
+        .unwrap();
+    let completed = capture
+        .try_complete(&transition, &owner, |_, body, _| Ok(body))
+        .unwrap();
+    owner.adopt_part_evaluation(completed, &mut slot).unwrap();
+    assert_eq!(slot.current(&owner).unwrap().ordered_bodies().count(), 1);
+    let prefix = slot.candidate_prefix(&owner).unwrap();
+    let result = owner.run_projected_with_transition(
+        "Add geometry",
+        |snapshot, ids| {
+            snapshot
+                .create_sketch_prism("Second", fixture::selected_prism_definition(), ids)
+                .map_err(|cause| cause.to_string())
+        },
+        |candidate, _, history| prefix.capture_unchanged(history, candidate, |_, body| Ok(*body)),
+    );
+    assert!(result.is_err());
+    assert_eq!(slot.current(&owner).unwrap().ordered_bodies().count(), 1);
+}
