@@ -575,5 +575,25 @@
     "scenario_inventory_sha256": "70f8abe46124087cc04d5b0e998333cd715596b65fdb8fb0cd865f8e4a7fa07d",
     "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-new-sketch-full-60c48f25f/scenario-arguments.json",
     "scenario_arguments_sha256": "f09d2136e6fe528318a9ba6c3b6e45615edec6f7e411c2ebf8b60ad74a7527bb"
+  },
+  "features/sketch/constraint-settings/scenario.feature": {
+    "feature_sha256": "b68e527f1199915eb593449dc8d971a526d7e56cbd2485511568b9e5fdd56862",
+    "supporting_files": {
+      "features/sketch/constraint-settings/BLOCKERS.md": "93e4415d049067bcc5f28a6842f1d6d24e541a736181b999d42d04a2d2f3c8e8",
+      "features/sketch/constraint-settings/FIXTURES.md": "6f848dd439efd1c4309f4cd2c2eb445758409abb1117c050d321b23ee0710994",
+      "features/sketch/constraint-settings/FUNCTIONAL.md": "08a096e83e79011bda0f1cce97390c77b01ee65bf665168bb0306d7d3da431c3",
+      "features/sketch/constraint-settings/VISUAL.md": "302d8aea9f7cc37c391bea3377ec4b13ced2526386da9f03b7736ca8eb7ab8eb",
+      "features/sketch/constraint-settings/feature-icon.svg": "6f0e47d5b2e6ed3bf1cb0e851c06eae62963c4264e0cf0f38fa1629a864ce848"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-constraint-settings-baseline-fcda72a8f/cucumber.json",
+    "cucumber_sha256": "3fd29cfbe1019d28602b7f901058d0c198f983ca7e3dc39805d8c5be08ec22d7",
+    "application_commit": "fcda72a8f",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=constraint-settings OBK_BDD_REPORTS=/tmp/obk-constraint-settings-fcda72a8f CARGO_BUILD_JOBS=4 cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe",
+    "notes": "Full baseline: 0 of 8 scenarios passed; six first steps undefined and two fail an overly strict shared precondition (#4159). Feature and supporting hashes matched before and after the run; BLOCKERS.md was updated afterward. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-explode-block-baseline-c87a73c50/scenario-inventory.json",
+    "scenario_inventory_sha256": "70f8abe46124087cc04d5b0e998333cd715596b65fdb8fb0cd865f8e4a7fa07d",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-constraint-settings-baseline-fcda72a8f/scenario-arguments.json",
+    "scenario_arguments_sha256": "98a7d104d728acc0e1ec0db3bbd624bea1e394e0e121e090a99d3efb47102460"
   }
 }
