@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T13:59:32.772618531Z" time="10.322216719"><testcase name="Scenario: Show an empty browser search result: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:216:3" time="10.322216719"><system-out><![CDATA[  Scenario: Show an empty browser search result
+   ✔  Given a populated part is open in the MCAD Software
+   ✔  And the model browser search field is open
+   ✔  When the user enters a query that matches no browser entry
+   ✔  Then the browser shows a no-results message instead of feature rows
+   ✔  And the search query remains visible in the field
+   ✔  And the model remains displayed in the viewport
+   ✔  When the user clears the search query
+   ✔  Then the unfiltered model browser tree is shown again
+]]></system-out></testcase></testsuite></testsuites>

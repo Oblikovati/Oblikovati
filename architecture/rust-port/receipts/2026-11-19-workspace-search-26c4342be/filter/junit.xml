@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T13:59:10.922957036Z" time="21.096629561"><testcase name="Scenario: Filter model browser entries by name: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:200:3" time="21.096629561"><system-out><![CDATA[  Scenario: Filter model browser entries by name
+   ✔  Given a part with multiple work points and other features is open in the MCAD Software
+   ✔  And the model browser is visible
+   ✔  When the user opens the browser search field
+   ✔  And the user enters "Work Point"
+   ✔  Then matching work point rows are shown in the browser
+   ✔  And the matching text is highlighted in those rows
+   ✔  And unrelated visible feature rows are filtered from the browser
+   ✔  And the model remains displayed in the viewport
+   ✔  When the user activates the search field close control
+   ✔  Then the search text is cleared
+   ✔  And the unfiltered browser tree is shown again
+   ✔  When the user activates the close control again
+   ✔  Then the browser search field is hidden
+]]></system-out></testcase></testsuite></testsuites>
