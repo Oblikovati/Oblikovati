@@ -5,6 +5,7 @@ use super::find::{
     input_value,
 };
 use super::*;
+use crate::work::HeadWork;
 
 fn click(world: &mut ApplicationWorld, label: &str) {
     let center = diagnostics::pointer_pixels(world.run(label).center());
@@ -40,11 +41,47 @@ fn native_sketch_parameter_starts_empty_and_disables_add() {
     open_native_find(&mut world);
     choose(&mut world, "Find", "Sketches");
     choose(&mut world, "Property", "Sketch Parameter Name");
+    world.save_capture("find-property-label");
+    world.expect_text("Sketch Parameter Name");
     expect_control(&world, "Condition", "contains");
     expect_empty_input(&world, "Value");
     assert!(!add_is_enabled(&world), "expected an empty criterion");
     world.save_capture("find-sketch-parameter-empty");
     change_and_clear_value(&mut world);
+    narrow_find_dialog(&mut world);
+    click(&mut world, "Close");
+    world.close();
+}
+
+fn narrow_find_dialog(world: &mut ApplicationWorld) {
+    let (position, size) = diagnostics::window_geometry("Find: Sketches###find-dialog").unwrap();
+    let corner = [position[0] + size[0] - 5., position[1] + size[1] - 5.];
+    let start = diagnostics::pointer_pixels(corner);
+    world.drag(start, [start[0] - 250, start[1]]);
+    settle(world);
+    let (_, resized) = diagnostics::window_geometry("Find: Sketches###find-dialog").unwrap();
+    assert!(resized[0] < size[0] - 100., "dialog was not resized");
+    world.save_capture("find-property-narrow");
+    world.expect_text("Sketch Parameter Name");
+    world.expect_text("Condition");
+    world.expect_text("Or");
+}
+
+#[test]
+fn native_find_property_remains_readable_at_larger_text_scale() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    open_native_find(&mut world);
+    choose(&mut world, "Find", "Sketches");
+    choose(&mut world, "Property", "Sketch Parameter Name");
+    let scale = oblikovati_model::ui_scale::UiScaleOptions::new(2., 1.).unwrap();
+    world.app().owner.set_ui_scale_from_gui(scale).unwrap();
+    settle(&mut world);
+    world.save_capture("find-property-scale-200");
+    world.expect_text("Sketch Parameter Name");
+    world.expect_text("Condition");
+    world.expect_text("Value");
+    world.expect_text("Close");
     click(&mut world, "Close");
     world.close();
 }

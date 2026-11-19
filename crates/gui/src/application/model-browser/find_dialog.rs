@@ -140,6 +140,17 @@ impl FindDialog {
         self.buttons(ui, state, browser, still_open, actions);
     }
     fn object_row(&mut self, ui: &Ui) {
+        let style = ui.clone_style();
+        let available = ui.content_region_avail()[0];
+        let find_width = CONTROL_WIDTH + style.item_inner_spacing[0] + ui.calc_text_size("Find")[0];
+        let case_width =
+            ui.frame_height() + style.item_inner_spacing[0] + ui.calc_text_size("Match case")[0];
+        let joins_width = 2. * (ui.frame_height() + style.item_inner_spacing[0])
+            + ui.calc_text_size("And")[0]
+            + ui.calc_text_size("Or")[0];
+        let case_on_line = find_width + style.item_spacing[0] + case_width <= available;
+        let joins_on_line = case_on_line
+            && find_width + case_width + joins_width + 3. * style.item_spacing[0] <= available;
         ui.set_next_item_width(CONTROL_WIDTH);
         if let Some(_list) = ui.begin_combo("Find##object", self.object.label()) {
             for (object, label) in FindObject::ALL {
@@ -155,15 +166,22 @@ impl FindDialog {
                 }
             }
         }
-        ui.same_line();
+        if case_on_line {
+            ui.same_line();
+        }
         ui.checkbox("Match case", &mut self.match_case);
-        ui.same_line();
+        if joins_on_line {
+            ui.same_line();
+        }
         ui.radio_button("And", &mut self.pending.join, FindJoin::And);
         ui.same_line();
         ui.radio_button("Or", &mut self.pending.join, FindJoin::Or);
     }
     fn criterion_row(&mut self, ui: &Ui) {
-        ui.set_next_item_width(CONTROL_WIDTH);
+        let property_width = combo_width(ui, self.object.properties());
+        let condition_width = combo_width(ui, conditions_of(self.pending.property));
+        let together = criteria_fit_on_one_line(ui, property_width, condition_width);
+        ui.set_next_item_width(property_width);
         if let Some(_list) = ui.begin_combo("Property", self.pending.property) {
             for property in self.object.properties() {
                 let chosen = *property == self.pending.property;
@@ -174,8 +192,10 @@ impl FindDialog {
                 }
             }
         }
-        ui.same_line();
-        ui.set_next_item_width(CONTROL_WIDTH);
+        if together {
+            ui.same_line();
+        }
+        ui.set_next_item_width(condition_width);
         if let Some(_list) = ui.begin_combo("Condition", self.pending.condition) {
             for condition in conditions_of(self.pending.property) {
                 let chosen = *condition == self.pending.condition;
@@ -373,4 +393,19 @@ impl FindDialog {
         self.criteria = search.criteria.clone();
         self.selected = None;
     }
+}
+
+fn combo_width(ui: &Ui, options: &[&str]) -> f32 {
+    let text = options
+        .iter()
+        .map(|option| ui.calc_text_size(option)[0])
+        .fold(0., f32::max);
+    (text + ui.frame_height() + 2. * ui.clone_style().frame_padding[0]).max(CONTROL_WIDTH)
+}
+
+fn criteria_fit_on_one_line(ui: &Ui, property_width: f32, condition_width: f32) -> bool {
+    let style = ui.clone_style();
+    let labels = ui.calc_text_size("Property")[0] + ui.calc_text_size("Condition")[0];
+    let spacing = 2. * style.item_inner_spacing[0] + style.item_spacing[0];
+    property_width + condition_width + labels + spacing <= ui.content_region_avail()[0]
 }
