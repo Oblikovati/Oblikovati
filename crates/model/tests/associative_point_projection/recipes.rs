@@ -20,12 +20,13 @@ fn version_four_round_trip_preserves_sources_without_saving_verification() {
 fn old_versions_cannot_accept_bindings_and_invalid_anchors_are_refused_on_restore() {
     let snapshot = snapshot();
     let recipe = snapshot.sketches.recipe();
-    for version in [0, 1, 2, 3, 17] {
+    for version in [0, 1, 2, 3, 18] {
         let mut invalid = recipe.clone();
         invalid.version = version;
-        assert!(DocumentSketches::from_recipe(&invalid).is_err());
+        let error = DocumentSketches::from_recipe(&invalid).unwrap_err();
+        assert!(error.to_string().contains(&format!("version {version}")));
     }
-    for version in 4..=16 {
+    for version in 4..=17 {
         let mut compatible = recipe.clone();
         compatible.version = version;
         assert!(
