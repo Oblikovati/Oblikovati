@@ -63,6 +63,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
     for FileQueryHost<'_, O, W, F>
 {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
+        if method == METHOD_MODEL_STATES_VERIFY_TABLE {
+            let request = crate::decode(method, request)?;
+            return encode(&crate::model_states::verify_table(
+                self.files.workspace(),
+                request,
+                |id, candidate| self.files.verify_named_candidate(id, candidate),
+            )?);
+        }
         if method == METHOD_ASSEMBLY_OCCURRENCES {
             let _: oblikovati_api::json::EmptyObject = crate::decode(method, request)?;
             return encode(&assembly::occurrences(self.files)?);

@@ -63,8 +63,15 @@ pub use dimension_names::SketchDimensionNameReservations;
 mod sketch_ids;
 pub use sketch_constraints::{SketchConstraintReservationError, SketchConstraintReservations};
 pub use sketch_delete::{DocumentSketchDeleteError, DocumentSketchDeleteReport};
+mod transition_kind;
+pub use transition_kind::HistoryTransitionKind;
 mod preview;
-pub use preview::SnapshotReplay;
+pub(crate) mod publication;
+pub use preview::{PreparedCandidateSeal, PreparedNavigation, PreparedPrivateEdit, SnapshotReplay};
+pub use publication::{
+    PreparedChoice, PreparedMapped, PreparedPublication, PreparedValue, PublicationToken,
+    publish_prepared,
+};
 mod sketch_placement;
 mod sketch_projection;
 mod sketch_recompute;
@@ -84,7 +91,7 @@ pub use sketch_edit_history::SketchEditTransition;
 mod refresh;
 mod sketch_consequence;
 pub use error::{EditError, HistoryError};
-pub use refresh::PreparedRefresh;
+pub use refresh::{PreparedDependentPublication, PreparedDependentRefresh, PreparedRefresh};
 use std::sync::{
     Arc,
     atomic::{AtomicU64, Ordering},
@@ -172,6 +179,7 @@ struct OpenTransaction {
 }
 #[derive(Debug)]
 struct HistoryStep {
+    kind: HistoryTransitionKind,
     label: String,
     saved: bool,
     before: DocumentSnapshot,
@@ -206,6 +214,7 @@ impl DocumentEditHistory {
         snapshot.validate_datum_metadata()?;
         snapshot.validate_model_state_members()?;
         snapshot.validate_part_design_views()?;
+        snapshot.validate_member_parameter_expressions()?;
         snapshot
             .validate_scalar_ownership()
             .map_err(HistoryError::ScalarOwnership)?;
@@ -362,12 +371,14 @@ impl DocumentEditHistory {
                 step.sketch_edit.is_none()
                     && step.part_view_display.is_none()
                     && frame.part_view_display.is_none()
+                    && step.kind == HistoryTransitionKind::Ordinary
             })
         {
             previous.after = self.current.clone();
             previous.saved = false;
         } else {
             self.done.push(HistoryStep {
+                kind: HistoryTransitionKind::Ordinary,
                 label: frame.label,
                 saved: false,
                 before: frame.before,
@@ -456,6 +467,7 @@ mod tests;
 
 mod metadata_recipe;
 mod model_state_ids;
+mod model_state_parameter_validation;
 mod model_state_suppression;
 
 mod sketch_split;

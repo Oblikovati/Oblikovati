@@ -121,3 +121,186 @@ fn typed_model_state_lifecycle_keeps_copy_inactive_and_rename_identity_stable() 
     assert_eq!(remaining.len(), 2);
     assert!(remaining[0].active);
 }
+
+#[test]
+fn property_table_edit_uses_one_undoable_generation_checked_transaction() {
+    use oblikovati_api::types::{ModelStatePropertyKey, Variant, VariantValue};
+    let (mut workspace, id) = member_workspace();
+    let key = ModelStatePropertyKey {
+        set: "Summary Information".into(),
+        name: "Category".into(),
+    };
+    let draft;
+    {
+        let client = Client::new(SessionHost::new(&mut workspace));
+        let before = client
+            .model_states()
+            .get_table(&EmptyObject::default())
+            .unwrap();
+        let generation = before.generation;
+        draft = with_property_column(
+            before,
+            key.clone(),
+            &[(
+                1,
+                Variant {
+                    value: VariantValue::String("Review".into()),
+                    unit: String::new(),
+                },
+            )],
+        );
+        client.model_states().set_table(&draft).unwrap();
+        let after = client
+            .model_states()
+            .get_table(&EmptyObject::default())
+            .unwrap();
+        assert_eq!(after.generation, generation + 1);
+        assert_eq!(after.columns.unwrap().len(), 1);
+        assert!(client.model_states().set_table(&draft).is_err());
+    }
+    assert_eq!(
+        workspace
+            .session(id)
+            .unwrap()
+            .snapshot()
+            .properties
+            .get(&key.set, &key.name)
+            .unwrap()
+            .value,
+        VariantValue::String("Review".into())
+    );
+    workspace.commands(id).unwrap().undo().unwrap();
+    assert!(
+        workspace
+            .session(id)
+            .unwrap()
+            .snapshot()
+            .properties
+            .get(&key.set, &key.name)
+            .is_none()
+    );
+    assert!(
+        workspace
+            .session(id)
+            .unwrap()
+            .snapshot()
+            .model_states
+            .as_ref()
+            .unwrap()
+            .table_columns()
+            .is_empty()
+    );
+    workspace.commands(id).unwrap().redo().unwrap();
+    assert_eq!(
+        workspace
+            .session(id)
+            .unwrap()
+            .snapshot()
+            .properties
+            .get(&key.set, &key.name)
+            .unwrap()
+            .value,
+        VariantValue::String("Review".into())
+    );
+}
+
+#[test]
+fn ordinary_property_edit_follows_model_state_scope() {
+    use oblikovati_api::types::{ModelStatePropertyKey, Variant, VariantValue};
+    use oblikovati_model::model_state::ModelStateEditScope;
+    let (mut workspace, id) = member_workspace();
+    let key = ModelStatePropertyKey {
+        set: "Summary Information".into(),
+        name: "Category".into(),
+    };
+    let second;
+    {
+        let client = Client::new(SessionHost::new(&mut workspace));
+        second = client
+            .model_states()
+            .create(&CreateModelStateArgs {
+                name: "Second".into(),
+                ..Default::default()
+            })
+            .unwrap()
+            .model_state
+            .id;
+        let before = client
+            .model_states()
+            .get_table(&EmptyObject::default())
+            .unwrap();
+        let draft = with_property_column(before, key.clone(), &[]);
+        client.model_states().set_table(&draft).unwrap();
+        client
+            .model_states()
+            .activate(&RepRef { id: second })
+            .unwrap();
+        client
+            .documents()
+            .set_property(&SetPropertyArgs {
+                document: id,
+                set: key.set.clone(),
+                name: key.name.clone(),
+                value: Variant {
+                    value: VariantValue::String("Second".into()),
+                    unit: String::new(),
+                },
+            })
+            .unwrap();
+        client.model_states().activate(&RepRef { id: 1 }).unwrap();
+    }
+    assert!(
+        workspace
+            .session(id)
+            .unwrap()
+            .snapshot()
+            .properties
+            .get(&key.set, &key.name)
+            .is_none()
+    );
+    workspace
+        .commands(id)
+        .unwrap()
+        .run("Edit scope", |snapshot, _| {
+            snapshot
+                .model_states
+                .as_mut()
+                .unwrap()
+                .set_edit_scope(ModelStateEditScope::AllMembers);
+            Ok::<_, String>(())
+        })
+        .unwrap();
+    {
+        let client = Client::new(SessionHost::new(&mut workspace));
+        client
+            .documents()
+            .set_property(&SetPropertyArgs {
+                document: id,
+                set: key.set.clone(),
+                name: key.name.clone(),
+                value: Variant {
+                    value: VariantValue::String("Shared".into()),
+                    unit: String::new(),
+                },
+            })
+            .unwrap();
+        client
+            .model_states()
+            .activate(&RepRef { id: second })
+            .unwrap();
+    }
+    assert_eq!(
+        workspace
+            .session(id)
+            .unwrap()
+            .snapshot()
+            .properties
+            .get(&key.set, &key.name)
+            .unwrap()
+            .value,
+        VariantValue::String("Shared".into())
+    );
+}
+
+#[path = "model_state_parameter_tests.rs"]
+mod parameter_tests;

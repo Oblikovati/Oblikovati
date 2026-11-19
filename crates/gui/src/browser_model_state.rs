@@ -172,6 +172,9 @@ impl BrowserTree<'_> {
         let Some(_menu) = self.ui.begin_popup("##model-state-menu") else {
             return;
         };
+        if self.ui.menu_item("Edit Table") {
+            actions.push(GuiShellAction::OpenModelStateTable);
+        }
         self.ui.menu("New Model State", || {
             if self.ui.menu_item("New Model State") {
                 view.model_state_edit

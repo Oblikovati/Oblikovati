@@ -105,7 +105,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     }
 }
 
-fn source_values(
+pub(super) fn source_values(
     name: &str,
     parameters: &oblikovati_model::parameter::ParameterCollection<u64>,
     target: &oblikovati_model::units::UnitsOfMeasure,

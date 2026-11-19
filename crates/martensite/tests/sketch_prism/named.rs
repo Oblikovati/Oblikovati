@@ -323,3 +323,6 @@ fn complete_named_checkpoints<O: oblikovati_session::TransactionObserver, F>(
     )?;
     session.complete_checkpoint_transfer(completed)
 }
+
+#[path = "named/private_full_replay.rs"]
+mod private_full_replay;

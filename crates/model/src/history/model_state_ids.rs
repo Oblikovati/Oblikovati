@@ -21,7 +21,30 @@ impl DocumentSnapshot {
                 "model-state content None: expected retained part members".into(),
             ));
         }
-        self.validate_model_state_members()
+        self.validate_model_state_members()?;
+        let before_table = before
+            .model_states
+            .as_ref()
+            .map(|members| members.parameter_table());
+        let after_table = self
+            .model_states
+            .as_ref()
+            .map(|members| members.parameter_table());
+        if before_table != after_table || self.parameter_names_changed(before) {
+            self.validate_member_parameter_expressions()?;
+        }
+        Ok(())
+    }
+
+    fn parameter_names_changed(&self, before: &Self) -> bool {
+        let ids = self.parameters.ids();
+        if ids != before.parameters.ids() {
+            return true;
+        }
+        ids.iter().any(|id| {
+            self.parameters.get(*id).map(|state| &state.name)
+                != before.parameters.get(*id).map(|state| &state.name)
+        })
     }
 
     pub(super) fn validate_model_state_members(&self) -> Result<(), HistoryError> {
@@ -31,6 +54,9 @@ impl DocumentSnapshot {
         members
             .validate()
             .map_err(HistoryError::ModelStateMembers)?;
+        self.validate_model_state_property_ownership(members)?;
+        self.validate_model_state_property_projection(members)?;
+        self.validate_model_state_parameters(members)?;
         for feature in members.referenced_features() {
             self.work_geometry
                 .get(crate::feature::FeatureId(feature))
@@ -39,6 +65,90 @@ impl DocumentSnapshot {
                         "model-state feature {feature}: expected an existing feature"
                     ))
                 })?;
+        }
+        Ok(())
+    }
+    fn validate_model_state_parameters(
+        &self,
+        members: &crate::model_state::ModelStateMembers,
+    ) -> Result<(), HistoryError> {
+        let active = members
+            .active()
+            .ok_or_else(|| {
+                HistoryError::ModelStateMembers(
+                    "model-state parameter projection: expected an active member".into(),
+                )
+            })?
+            .id;
+        for base in members.parameter_table().bases() {
+            let parameter = self.parameters.get(base.parameter).ok_or_else(|| {
+                HistoryError::ModelStateMembers(format!(
+                    "model-state parameter {}: expected an existing parameter",
+                    base.parameter
+                ))
+            })?;
+            let expected = members.parameter_table().expression(active, base.parameter);
+            if expected != Some(parameter.source.as_str()) {
+                return Err(HistoryError::ModelStateMembers(format!(
+                    "model-state parameter {} expression {:?}: expected the active member expression {:?}",
+                    base.parameter, parameter.source, expected
+                )));
+            }
+        }
+        Ok(())
+    }
+    fn validate_model_state_property_projection(
+        &self,
+        members: &crate::model_state::ModelStateMembers,
+    ) -> Result<(), HistoryError> {
+        let active = members
+            .active()
+            .ok_or_else(|| {
+                HistoryError::ModelStateMembers(
+                    "model-state property projection: expected an active member".into(),
+                )
+            })?
+            .id;
+        for base in members.property_table().bases() {
+            let key = &base.property;
+            let expected = members.property_table().effective_value(active, key);
+            let actual = self.properties.get(&key.set, &key.name);
+            let matches = match (expected, actual) {
+                (None, None) => true,
+                (Some(expected), Some(actual)) => {
+                    crate::metadata_value::same(&expected.value, &actual.value)
+                }
+                _ => false,
+            };
+            if !matches {
+                return Err(HistoryError::ModelStateMembers(format!(
+                    "model-state property {key:?}: expected the active member value"
+                )));
+            }
+        }
+        Ok(())
+    }
+    fn validate_model_state_property_ownership(
+        &self,
+        members: &crate::model_state::ModelStateMembers,
+    ) -> Result<(), HistoryError> {
+        for base in members.property_table().bases() {
+            let key = &base.property;
+            let owned = self
+                .properties
+                .get(&key.set, &key.name)
+                .is_some_and(|property| !property.from_parameter.is_empty());
+            let exposed = key.set == crate::property::USER_DEFINED
+                && self
+                    .parameters
+                    .find(&key.name)
+                    .and_then(|id| self.parameters.get(id))
+                    .is_some_and(|parameter| parameter.annotations.exposed_as_property);
+            if owned || exposed {
+                return Err(HistoryError::ModelStateMembers(format!(
+                    "model-state property {key:?}: expected a property not owned by a parameter"
+                )));
+            }
         }
         Ok(())
     }

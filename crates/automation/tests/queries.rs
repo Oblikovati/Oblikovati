@@ -17,6 +17,53 @@ use oblikovati_model::{
 use oblikovati_session::{TransactionObserver, workspace::*};
 use std::path::Path;
 
+fn with_property_column(
+    view: ModelStateTableView,
+    key: ModelStatePropertyKey,
+    values: &[(u64, Variant)],
+) -> SetModelStateTableArgs {
+    let cells = view
+        .rows
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .map(|row| ModelStateTablePropertyCell {
+            row: row.ref_.clone(),
+            value: values
+                .iter()
+                .find(|(id, _)| *id == row.ref_.member_id)
+                .map(|(_, value)| std::boxed::Box::new(value.clone())),
+        })
+        .collect();
+    let base = view
+        .available_properties
+        .as_deref()
+        .unwrap_or_default()
+        .iter()
+        .find(|choice| choice.property == key)
+        .and_then(|choice| choice.base.clone());
+    let mut columns = view.columns.unwrap_or_default();
+    columns.push(ModelStateTableColumnRef {
+        kind: MODEL_STATE_TABLE_PROPERTY_COLUMN,
+        property: Some(std::boxed::Box::new(key.clone())),
+        ..Default::default()
+    });
+    let mut properties = view.properties.unwrap_or_default();
+    properties.push(ModelStateTableProperty {
+        property: key,
+        base,
+        cells: Some(cells),
+    });
+    SetModelStateTableArgs {
+        expected_generation: view.generation,
+        rows: view.rows,
+        columns: Some(columns),
+        properties: Some(properties),
+        suppressions: view.suppressions,
+        parameters: view.parameters,
+    }
+}
+
 #[derive(Default)]
 struct QueryObserver {
     interest_notices: Vec<(u64, String, Vec<String>)>,
@@ -432,6 +479,8 @@ mod derived_delete;
 #[path = "queries/sketch_updates.rs"]
 mod sketch_updates;
 
+#[path = "application/model-browser/model_state_unified.rs"]
+mod model_state_unified;
 #[path = "application/model-browser/model_states.rs"]
 mod model_states;
 #[path = "application/model-browser/part_design_views.rs"]

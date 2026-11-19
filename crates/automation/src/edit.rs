@@ -9,11 +9,12 @@ use oblikovati_api::{Error, wire::*};
 use oblikovati_model::history::{DocumentSnapshot, RecipeReservations};
 
 /// Implemented edits; queries are enumerated by `QUERY_METHODS`.
-pub const EDIT_METHODS: [&str; 33] = [
+pub const EDIT_METHODS: [&str; 34] = [
     METHOD_PART_DESIGN_VIEWS_CAPTURE_CAMERA,
     METHOD_PART_DESIGN_VIEWS_COPY,
     METHOD_PART_DESIGN_VIEWS_RENAME,
     METHOD_PART_DESIGN_VIEWS_SET_OPTIONS,
+    METHOD_MODEL_STATES_SET_TABLE,
     METHOD_MODEL_STATES_CREATE,
     METHOD_MODEL_STATES_RENAME,
     METHOD_MODEL_STATES_COPY,
@@ -74,8 +75,16 @@ pub(super) enum PreparedEdit {
 }
 
 impl PreparedEdit {
-    pub(super) fn is_parameter_value_edit(&self) -> bool {
-        matches!(self, Self::Set(_) | Self::Update(_))
+    pub(super) fn requires_checkpoint_replay(&self) -> bool {
+        matches!(
+            self,
+            Self::Set(_)
+                | Self::Update(_)
+                | Self::ModelState(
+                    crate::model_states::MemberEdit::Activate(_)
+                        | crate::model_states::MemberEdit::Delete(_)
+                )
+        )
     }
 
     pub(super) fn decode(method: &str, request: &[u8]) -> Result<Self, Error> {
@@ -183,8 +192,23 @@ impl PreparedEdit {
         snapshot: &mut DocumentSnapshot,
         reservations: &mut RecipeReservations<'_>,
     ) -> Result<Vec<u8>, Error> {
+        let rename_plan = if let Self::Rename(request) = &self {
+            crate::model_states::plan_parameter_rename(snapshot, request)?
+        } else {
+            None
+        };
+        let record_parameters = matches!(
+            &self,
+            Self::Add(_)
+                | Self::Set(_)
+                | Self::Update(_)
+                | Self::Convert(_)
+                | Self::Delete(_)
+                | Self::Import(_)
+                | Self::DerivedDelete(_)
+        );
         let parameters = &mut snapshot.parameters;
-        match self {
+        let response = match self {
             Self::PartDesignView(edit) => edit.apply(snapshot, reservations),
             Self::ModelState(edit) => edit.apply(snapshot, reservations),
             Self::AttachmentRemove(request) => encode(&crate::attachments::remove(
@@ -206,11 +230,11 @@ impl PreparedEdit {
             )?),
             Self::DerivedDelete(request) => crate::derived_edit::delete(parameters, request),
             Self::Units(request) => encode(&crate::units_edit::apply(parameters, request)?),
-            Self::Property(request) => encode(&properties::set(
-                &mut snapshot.properties,
-                parameters,
-                request,
-            )?),
+            Self::Property(request) => {
+                let result = properties::set(&mut snapshot.properties, parameters, request)?;
+                crate::model_states::record_property_edit(snapshot, &result.property)?;
+                encode(&result)
+            }
             Self::Update(request) => encode(&parameter_update::apply(parameters, request)?),
             Self::Tolerance(request) => encode(&parameter_tolerance::apply(parameters, request)?),
             Self::Choices(request) => encode(&parameter_choices::replace(parameters, request)?),
@@ -235,7 +259,19 @@ impl PreparedEdit {
             Self::GroupMember(request, add) => {
                 encode(&groups_edit::membership(parameters, request, add)?)
             }
+        }?;
+        if let Some(table) = rename_plan {
+            snapshot
+                .model_states
+                .as_mut()
+                .expect("rename plan requires members")
+                .set_parameter_table(table)
+                .map_err(Error)?;
         }
+        if record_parameters {
+            crate::model_states::record_parameter_edits(snapshot)?;
+        }
+        Ok(response)
     }
 }
 

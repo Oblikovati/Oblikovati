@@ -227,3 +227,6 @@ mod asset_catalog;
 
 #[path = "window_capture.rs"]
 mod window_capture;
+
+#[path = "table_jump_failure.rs"]
+mod table_jump_failure;

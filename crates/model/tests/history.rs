@@ -378,3 +378,6 @@ mod preview;
 
 #[path = "history/sketch_consequence.rs"]
 mod sketch_consequence;
+
+#[path = "history/private_prepared.rs"]
+mod private_prepared;

@@ -83,6 +83,7 @@ impl DocumentEditHistory {
     }
     fn record_validated_sketch_finish(&mut self, sketch: DocumentSketchId) {
         self.done.push(HistoryStep {
+            kind: super::HistoryTransitionKind::Ordinary,
             label: "Finish Sketch".into(),
             saved: false,
             before: self.current.clone(),

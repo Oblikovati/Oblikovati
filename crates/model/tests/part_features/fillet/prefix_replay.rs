@@ -351,3 +351,35 @@ fn parameter_driven_fillet_replays_only_its_dirty_suffix() {
     assert_eq!(actual.deleted, expected.deleted);
     assert_eq!(actual.radius, expected.radius);
 }
+
+#[test]
+fn prepared_checkpoint_bodies_publish_with_their_exact_candidate() {
+    use oblikovati_model::{
+        history::{DocumentEditHistory, PreparedValue, publish_prepared},
+        identity::RecipeIdAllocator,
+    };
+    let snapshot = document();
+    let ids = RecipeIdAllocator::restore(None, snapshot.parameters.ids()).unwrap();
+    let mut history = DocumentEditHistory::new(snapshot, ids).unwrap();
+    let (candidate, ()) = history
+        .prepare_private_edit("fillet", |snapshot, ids, _| {
+            assert_eq!(ids.allocate_feature().unwrap(), FeatureId(3));
+            add_fillet(snapshot, 3, 2);
+            Ok::<_, String>(())
+        })
+        .unwrap();
+    let replay = candidate
+        .snapshot()
+        .evaluate_part_with_checkpoints(&mut CountingBackend::default())
+        .unwrap();
+    let prepared = replay
+        .try_map_bodies(|_, body| Ok::<_, String>(PreparedValue::new(&candidate, body.clone())))
+        .unwrap();
+    let (published, _) = publish_prepared(candidate, prepared).unwrap();
+    assert_eq!(published.len(), replay.len());
+    assert_eq!(
+        published.result().ordered_bodies().count(),
+        replay.result().ordered_bodies().count()
+    );
+    assert_eq!(history.undo_labels(), ["fillet"]);
+}

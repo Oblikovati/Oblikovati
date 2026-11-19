@@ -97,6 +97,34 @@ impl<O: TransactionObserver> DocumentSession<O> {
         self.part_replay = owners;
         result
     }
+    pub(crate) fn validate_prepared_named_destination(
+        &self,
+        policy: Option<PrismResolutionPolicy>,
+    ) -> Result<(), String> {
+        self.validate_prepared_replay_destination(
+            self.owned_part_slot(policy),
+            self.owned_checkpoint_slot(policy),
+        )
+        .map_err(|error| error.to_string())
+    }
+
+    pub(crate) fn publish_prepared_named_replay(
+        &mut self,
+        policy: Option<PrismResolutionPolicy>,
+        prepared: oblikovati_model::feature::part::PartReplayCheckpoints<
+            NamedSolid,
+            EvaluationFailure,
+        >,
+    ) {
+        install_prepared_named_replay(
+            &mut self.part_replay,
+            self.document,
+            policy,
+            self.history.evaluation_scope(),
+            prepared,
+        );
+    }
+
     /// Publish a named part into its document-owned slot.
     /// Example: `session.adopt_owned_part(policy, completed)?`.
     pub fn adopt_owned_part(
@@ -193,5 +221,29 @@ impl<O: TransactionObserver> DocumentSession<O> {
                 .adopt_replayed_checkpoints(completed, &mut owner.part, &mut owner.checkpoints)
                 .map_err(|error| error.to_string())
         })
+    }
+}
+
+pub(crate) fn install_prepared_named_replay(
+    owners: &mut Vec<DocumentPartReplay>,
+    document: u64,
+    policy: Option<PrismResolutionPolicy>,
+    scope: oblikovati_model::history::EvaluationScope,
+    prepared: oblikovati_model::feature::part::PartReplayCheckpoints<NamedSolid, EvaluationFailure>,
+) {
+    let index = owners.iter().position(|owner| owner.policy == policy);
+    let mut owner = index
+        .map(|index| owners.remove(index))
+        .unwrap_or_else(|| DocumentPartReplay::new(policy));
+    crate::part_evaluation::install_prepared_replay(
+        document,
+        scope,
+        prepared,
+        &mut owner.part,
+        &mut owner.checkpoints,
+    );
+    owners.push(owner);
+    if owners.len() > MAX_RETAINED_POLICIES {
+        owners.remove(0);
     }
 }

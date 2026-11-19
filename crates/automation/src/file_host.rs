@@ -414,15 +414,27 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             return command_owner::edit(self.files, method, request);
         }
         if TRANSACTION_METHODS.contains(&method) {
-            let (result, needs_sync) = match crate::part_view_transactions::apply(
+            let mut pending_sync = false;
+            let routed = crate::part_view_transactions::apply(
                 self.files,
                 &mut self.part_topology,
                 &mut self.part_view_display,
                 method,
                 request,
-            )? {
-                Some(reply) => reply,
-                None => (transactions::apply(self.files, method, request)?, true),
+                &mut pending_sync,
+            );
+            let (result, needs_sync) = match routed {
+                Ok(Some(reply)) => reply,
+                Ok(None) => (transactions::apply(self.files, method, request)?, true),
+                Err(cause) => {
+                    if pending_sync {
+                        self.synchronize_drawing_references();
+                        self.synchronize_assembly_references().map_err(|error| {
+                            Error(format!("transaction {method} failed: {cause}; reference synchronization failed: {error}"))
+                        })?;
+                    }
+                    return Err(cause);
+                }
             };
             if method != METHOD_TRANSACTION_BEGIN && needs_sync {
                 self.synchronize_drawing_references();

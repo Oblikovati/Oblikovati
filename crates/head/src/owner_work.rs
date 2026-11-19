@@ -12,6 +12,9 @@ mod document_work;
 #[macro_use]
 #[path = "owner_work_selection.rs"]
 mod selection_work;
+#[macro_use]
+#[path = "owner_work_model_state.rs"]
+mod model_state_work;
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -328,12 +331,7 @@ impl<
     ) -> Result<bool, String> {
         self.clear_selected_body_appearances(document, keys)
     }
-    fn set_document_property_from_gui(
-        &mut self,
-        request: &oblikovati_api::wire::SetPropertyArgs,
-    ) -> Result<bool, String> {
-        self.set_typed_document_property(request)
-    }
+    model_state_table_work_methods!();
     fn activate_document_from_gui(
         &mut self,
         request: &oblikovati_api::wire::ActivateDocumentArgs,

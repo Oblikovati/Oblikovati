@@ -13,13 +13,14 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     display: &mut Option<&mut dyn crate::PartViewDisplayAccess>,
     method: &str,
     request: &[u8],
+    pending_sync: &mut bool,
 ) -> Result<Option<(Vec<u8>, bool)>, Error> {
     if method == METHOD_TRANSACTION_JUMP_TO {
         let request: TransactionJumpToArgs = crate::decode(method, request)?;
         if !crosses_view(files, &request)? {
             return Ok(None);
         }
-        return jump(files, topology, display, request).map(Some);
+        return jump(files, topology, display, request, pending_sync).map(Some);
     }
     let direction = match method {
         METHOD_TRANSACTION_UNDO => PartViewNavigationDirection::Undo,
@@ -29,6 +30,9 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     let Some(document) = files.workspace().active_document() else {
         return Ok(None);
     };
+    if is_table_step(files, document, direction)? {
+        return Ok(None);
+    }
     if !is_tagged(files, document, direction)? {
         if !crate::part_view_replay::navigate_unchanged(files, topology, document, direction)? {
             return Ok(None);
@@ -91,6 +95,7 @@ fn jump<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     topology: &mut Option<&mut dyn crate::PartTopologyAccess<O, W, F>>,
     display: &mut Option<&mut dyn crate::PartViewDisplayAccess>,
     request: TransactionJumpToArgs,
+    pending_sync: &mut bool,
 ) -> Result<(Vec<u8>, bool), Error> {
     let document = if request.document == 0 {
         files
@@ -120,6 +125,9 @@ fn jump<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
             "history jump with an open group: expected all transactions closed".into(),
         ));
     }
+    let prepared = session
+        .prepared_jump_required(request.position)
+        .map_err(Error)?;
     let mut needs_reference_sync = false;
     while cursor != destination {
         let direction = if cursor > destination {
@@ -127,7 +135,9 @@ fn jump<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         } else {
             PartViewNavigationDirection::Redo
         };
-        needs_reference_sync |= step(files, topology, display, document, direction)?;
+        let changed = step(files, topology, display, document, direction, prepared)?;
+        needs_reference_sync |= changed;
+        *pending_sync |= changed;
         if direction == PartViewNavigationDirection::Undo {
             cursor -= 1;
         } else {
@@ -148,10 +158,15 @@ fn step<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     display: &mut Option<&mut dyn crate::PartViewDisplayAccess>,
     document: u64,
     direction: PartViewNavigationDirection,
+    prepared: bool,
 ) -> Result<bool, Error> {
     if is_tagged(files, document, direction)? {
         crate::part_view_display::navigate(files, topology, display, document, direction)?;
         return Ok(false);
+    }
+    if prepared || is_table_step(files, document, direction)? {
+        navigate_prepared(files, document, direction)?;
+        return Ok(true);
     }
     if crate::part_view_replay::navigate_unchanged(files, topology, document, direction)? {
         crate::command_owner::CommandOwner::refresh_after_command(files, document)?;
@@ -167,4 +182,42 @@ fn step<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     .map_err(|cause| Error(cause.to_string()))?;
     crate::command_owner::CommandOwner::refresh_after_command(files, document)?;
     Ok(true)
+}
+
+fn is_table_step<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+    direction: PartViewNavigationDirection,
+) -> Result<bool, Error> {
+    use oblikovati_model::history::HistoryTransitionKind;
+    let session = files
+        .workspace()
+        .session(document)
+        .map_err(|error| Error(error.to_string()))?;
+    let kind = match direction {
+        PartViewNavigationDirection::Undo => session.undo_transition_kind(),
+        PartViewNavigationDirection::Redo => session.redo_transition_kind(),
+    };
+    Ok(kind == Some(HistoryTransitionKind::ModelStateTable))
+}
+
+fn navigate_prepared<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    direction: PartViewNavigationDirection,
+) -> Result<(), Error> {
+    use oblikovati_model::history::PreparedNavigation;
+    let policy = files
+        .workspace()
+        .session(document)
+        .map_err(|error| Error(error.to_string()))?
+        .owned_checkpoint_prefix()
+        .and_then(|(policy, _)| policy);
+    let direction = match direction {
+        PartViewNavigationDirection::Undo => PreparedNavigation::Undo,
+        PartViewNavigationDirection::Redo => PreparedNavigation::Redo,
+    };
+    files
+        .navigate_named_prepared(document, policy, direction)
+        .map_err(Error)
 }

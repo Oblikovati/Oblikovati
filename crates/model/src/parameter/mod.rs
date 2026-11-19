@@ -3,6 +3,8 @@
 //! Typed parameter ownership, evaluation health, and deterministic dependency edits.
 mod annotations;
 mod authored;
+mod batch_expressions;
+pub use batch_expressions::ParameterBatchError;
 mod conversion;
 mod copy;
 mod presentation;

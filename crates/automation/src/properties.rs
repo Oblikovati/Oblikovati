@@ -95,7 +95,7 @@ pub(super) fn set(
     read(properties, &request.set, &request.name)
 }
 
-fn exposed_parameter<'a>(
+pub(super) fn exposed_parameter<'a>(
     parameters: &'a ParameterCollection<u64>,
     set: &str,
     name: &str,

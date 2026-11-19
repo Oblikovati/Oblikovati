@@ -79,6 +79,7 @@ pub use part_append_engine::{OwnedPartCandidate, OwnedPartReplay};
 pub use part_candidate_engine::{OwnedCheckpointCandidate, OwnedCheckpointReplay};
 mod part_replay_engine;
 mod part_replay_store;
+mod prepared_command;
 
 struct BoundedGroup {
     token: TransactionToken,
@@ -197,6 +198,22 @@ impl<O: TransactionObserver> DocumentSession<O> {
         self.history.committed_redo_label()
     }
 
+    /// Read the next undo kind; example: `session.undo_transition_kind()`.
+    pub fn undo_transition_kind(&self) -> Option<oblikovati_model::history::HistoryTransitionKind> {
+        self.history.undo_transition_kind()
+    }
+    /// Read the next redo kind; example: `session.redo_transition_kind()`.
+    pub fn redo_transition_kind(&self) -> Option<oblikovati_model::history::HistoryTransitionKind> {
+        self.history.redo_transition_kind()
+    }
+    /// Check whether a jump crosses a staged table transition.
+    /// Example: `session.prepared_jump_required(0)?`.
+    pub fn prepared_jump_required(&self, position: i64) -> Result<bool, String> {
+        if self.in_transaction() {
+            return Err("history jump: expected a closed transaction".into());
+        }
+        self.history.prepared_jump_required(position)
+    }
     /// Read committed labels in order; example: `session.undo_labels()`.
     pub fn undo_labels(&self) -> Vec<&str> {
         self.history.undo_labels()

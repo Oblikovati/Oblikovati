@@ -103,10 +103,12 @@ use oblikovati_session::{
 pub use transactions::TRANSACTION_METHODS;
 
 /// The exact query inventory; version compatibility alone does not imply other methods exist.
-pub const QUERY_METHODS: [&str; 39] = [
+pub const QUERY_METHODS: [&str; 41] = [
     METHOD_PART_DESIGN_VIEWS_GET_CAMERA,
     METHOD_PART_DESIGN_VIEWS_LIST,
+    METHOD_MODEL_STATES_VERIFY_TABLE,
     METHOD_MODEL_STATES_LIST,
+    METHOD_MODEL_STATES_GET_TABLE,
     METHOD_APPLICATION_API_VERSION,
     METHOD_CLIENT_APPS_LIST,
     METHOD_MODEL_SELECTION,
@@ -182,6 +184,15 @@ impl<O: TransactionObserver, W: WorkspaceObserver> Caller for SessionQueryHost<'
             )?),
             METHOD_PART_DESIGN_VIEWS_LIST => encode(&part_design_views::list(self.workspace)?),
             METHOD_MODEL_STATES_LIST => encode(&model_states::list(self.workspace)?),
+            METHOD_MODEL_STATES_GET_TABLE => encode(&model_states::table(self.workspace)?),
+            METHOD_MODEL_STATES_VERIFY_TABLE => encode(&model_states::verify_table(
+                self.workspace,
+                decode(method, request)?,
+                |id, candidate| {
+                    self.workspace
+                        .verify_unlinked_named_candidate(id, candidate)
+                },
+            )?),
             METHOD_MODEL_SELECTION => encode(&model_selection::read(self.workspace)?),
             METHOD_APPLICATION_API_VERSION => encode(&ApplicationApiVersionResult {
                 version: oblikovati_api::VERSION.into(),

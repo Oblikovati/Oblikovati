@@ -10,7 +10,7 @@ mod bindings;
 mod derived;
 mod prism_name;
 mod semantic;
-pub use bindings::ExactReferenceBindings;
+pub use bindings::{ExactReferenceBindings, PreparedExactReferenceBindings};
 pub use derived::{DerivedReferenceName, topology_reference_document};
 pub use prism_name::{SketchPrismReferenceRole, sketch_prism_reference_name};
 pub use semantic::SemanticReferenceName;

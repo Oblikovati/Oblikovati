@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Generation-checked adoption; retained kernel results are not undo recipe contents.
 mod checkpoints;
+pub(crate) use checkpoints::install_prepared_replay;
 mod error;
 mod owner;
 mod request;

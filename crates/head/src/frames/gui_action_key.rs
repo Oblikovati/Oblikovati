@@ -51,6 +51,9 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::Parameter { .. }
         | GuiShellAction::SetDocumentProperty(_)
         | GuiShellAction::OpenIProperties
+        | GuiShellAction::OpenModelStateTable
+        | GuiShellAction::SetModelStateTable { .. }
+        | GuiShellAction::VerifyModelStateTable { .. }
         | GuiShellAction::UpdatePart
         | GuiShellAction::SetSelectionMode(_)
         | GuiShellAction::OpenSelectionFilter

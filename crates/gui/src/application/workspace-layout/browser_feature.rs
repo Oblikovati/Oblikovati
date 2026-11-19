@@ -8,6 +8,9 @@ use crate::{
 };
 use imgui::{Condition, MouseButton, TreeNodeFlags, Ui};
 
+#[path = "browser_feature_states.rs"]
+mod states;
+
 const FEATURE_MENU: &str = "##feature-menu";
 const BODIES_MENU: &str = "##bodies-menu";
 const BODY_MENU: &str = "##body-menu";
@@ -68,6 +71,7 @@ pub(crate) fn feature_row<'ui>(
     }
     choose_on_press(ui, state, feature, view, actions);
     feature_menu(ui, state, browser, feature, view, actions);
+    states::model_state_indicator(ui, browser, feature);
     token
 }
 fn strike_feature_name(ui: &Ui, name: &str) {

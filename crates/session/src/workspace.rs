@@ -16,6 +16,7 @@ mod interests;
 mod lifecycle;
 mod save;
 mod sketch_inference;
+mod staged_publication;
 pub use sketch_inference::SketchInferenceCommandError;
 mod fillet_create;
 mod prism_create;

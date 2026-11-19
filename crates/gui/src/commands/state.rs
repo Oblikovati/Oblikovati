@@ -73,6 +73,14 @@ pub struct GuiCommandState {
     pub parameters: Vec<oblikovati_api::wire::ParameterInfo>,
     /// Typed document metadata for the iProperties editor.
     pub document_properties: Vec<oblikovati_api::wire::PropertyInfo>,
+    /// The active part model-state property table.
+    pub model_state_table: Option<std::sync::Arc<oblikovati_api::wire::ModelStateTableView>>,
+    /// The last checked table draft and its diagnostics.
+    pub model_state_verification: Option<(
+        u64,
+        oblikovati_api::wire::SetModelStateTableArgs,
+        oblikovati_api::wire::ModelStateTableVerification,
+    )>,
     pub authoring: GuiAuthoringContext,
     pub undo_label: Option<String>,
     pub redo_label: Option<String>,
