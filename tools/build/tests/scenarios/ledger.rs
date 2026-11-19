@@ -50,6 +50,25 @@ fn fixture(text: &str) -> FakeScenarioFiles {
 }
 const REVISION: &str = "35f4a77b1519e2f29005be009c35fb7c5bdf4e89";
 #[test]
+fn local_inventory_is_labeled_unversioned() {
+    let source = "Feature: local\n Scenario: test\n  Given value\n";
+    let ledger = local_inventory(Path::new("root"), &mut fixture(source)).unwrap();
+    assert_eq!(ledger.source_revision, "unversioned");
+    assert!(ledger.scenarios[0].arguments_recorded);
+}
+#[test]
+fn records_step_tables_and_docstrings_in_background_and_scenario() {
+    let text = "Feature: arguments\n Background:\n  Given settings\n   | key | value |\n   | a | b |\n Scenario: example\n  When submitting\n   \"\"\"\n   body\n   \"\"\"\n";
+    let ledger = inventory(Path::new("root"), REVISION, &mut fixture(text)).unwrap();
+    let row = &ledger.scenarios[0];
+    assert!(row.arguments_recorded);
+    assert_eq!(
+        row.background_steps[0].table.as_ref().unwrap()[1],
+        ["a", "b"]
+    );
+    assert_eq!(row.scenario_steps[0].docstring.as_deref(), Some("\nbody\n"));
+}
+#[test]
 fn records_outline_once_and_keeps_identity_when_lines_move() {
     let text = "Feature: example\n Scenario: normal\n  Given a value\n Scenario Outline: template\n  When value <x>\n  Examples:\n   | x |\n   | one |\n   | two |\n";
     let first = inventory(Path::new("root"), REVISION, &mut fixture(text)).unwrap();

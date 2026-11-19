@@ -39,6 +39,21 @@ pub(crate) fn print_ledger(
     );
     Ok(())
 }
+pub(crate) fn print_local_ledger(root: &Path) -> BuildResult<()> {
+    let ledger = ledger::local_inventory(root, &mut NativeScenarioSource)?;
+    let second = ledger::local_inventory(root, &mut NativeScenarioSource)?;
+    if ledger != second {
+        return Err(format!(
+            "scenario root {root:?}: expected unchanged files during local inventory"
+        ));
+    }
+    println!(
+        "{}",
+        serde_json::to_string(&ledger)
+            .map_err(|error| format!("local scenario inventory: expected JSON: {error}"))?
+    );
+    Ok(())
+}
 pub(crate) fn print_inventory(root: &Path) -> BuildResult<()> {
     let inventory = scan(root, &mut NativeScenarioSource)?;
     println!(

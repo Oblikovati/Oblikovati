@@ -24,6 +24,7 @@ struct ScenarioRow {
     rule: Option<String>,
     background_steps: Vec<StepSignature>,
     scenario_steps: Vec<StepSignature>,
+    arguments_recorded: bool,
     outline: bool,
     #[serde(skip_serializing_if = "is_false")]
     capture_only: bool,
@@ -90,6 +91,19 @@ pub(super) fn inventory(
             "scenario revision {revision:?}: expected a 40-character Git commit"
         ));
     }
+    build_inventory(root, revision, source)
+}
+pub(super) fn local_inventory(
+    root: &Path,
+    source: &mut impl ScenarioSource,
+) -> BuildResult<ScenarioLedger> {
+    build_inventory(root, "unversioned", source)
+}
+fn build_inventory(
+    root: &Path,
+    revision: &str,
+    source: &mut impl ScenarioSource,
+) -> BuildResult<ScenarioLedger> {
     let mut paths = source.feature_paths(root)?;
     paths.sort();
     let rows = collect_rows(root, paths, source)?;
@@ -167,6 +181,10 @@ fn unique_rows(
 struct StepSignature {
     line: usize,
     name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    table: Option<Vec<Vec<String>>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    docstring: Option<String>,
 }
 #[derive(Clone, Debug, Serialize, PartialEq, Eq)]
 struct ExampleRow {
@@ -285,6 +303,8 @@ fn step_signature(step: &Step) -> StepSignature {
     StepSignature {
         line: step.position.line,
         name: step.value.clone(),
+        table: step.table.as_ref().map(|table| table.rows.clone()),
+        docstring: step.docstring.clone(),
     }
 }
 
@@ -374,6 +394,7 @@ fn describe_scenario(
         rule: scenario.rule.clone(),
         background_steps: scenario.background_steps.clone(),
         scenario_steps: scenario.scenario_steps.clone(),
+        arguments_recorded: error.is_none(),
         outline: scenario.outline,
         capture_only: scenario.capture_only,
         capture_host_only: scenario.capture_host_only,

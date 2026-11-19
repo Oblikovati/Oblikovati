@@ -266,8 +266,19 @@ checks every example against a parsed scenario snapshot when its feature hash
 matches. A run may provide a separate parsed inventory and its SHA-256 in
 `scenario_inventory` and `scenario_inventory_sha256`; generate it with the
 standard `cargo xtask scenario-ledger` from a clean snapshot of the source.
-Changed outlines without a matching parsed inventory, and ordinary features with
-backgrounds, rules, or step tables, need further review before they are green.
+For a local unversioned source, `cargo xtask scenario-local-ledger "$OBK_BDD_ROOT"`
+generates a double-read snapshot labeled `unversioned`. It supports the feature
+progress inventory but does not establish strict verified acceptance.
+Changed outlines without a matching parsed inventory need further review.
+Ordinary scenarios with backgrounds, rules, tables, or docstrings require a
+parsed inventory with `arguments_recorded` set and the native runner's
+`scenario-arguments.json`. Record the latter as `scenario_arguments` and its
+SHA-256 as `scenario_arguments_sha256`. The runner captures parsed arguments
+before each scenario and binds the capture to the Cucumber report hash. The
+inventory compares every argument and background
+against the source snapshot, then checks results and cleanup. Old reports and
+source snapshots without argument evidence remain uncounted. Outline arguments
+retain their separate, stricter review rule.
 
 After running a whole feature, retain its Cucumber report and other artifacts
 under `receipts/`, then add the source hash, report path and hash, tested commit,

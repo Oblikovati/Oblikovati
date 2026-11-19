@@ -30,6 +30,9 @@ mod main_window_frame_resize;
 mod quick_access_icons;
 mod refinements;
 mod report_destination;
+mod scenario_arguments;
+mod scenario_capture;
+use scenario_capture::{capture_name, scenario_capture_namespace};
 mod scenario_revision;
 mod scenario_source;
 mod solid_visibility;
@@ -263,46 +266,6 @@ fn application_scenarios_use_the_native_window() {
         .join()
         .unwrap();
 }
-fn scenario_capture_namespace(
-    feature: &cucumber::gherkin::Feature,
-    scenario: &cucumber::gherkin::Scenario,
-) -> String {
-    use sha2::{Digest, Sha256};
-    let path = fs::canonicalize(feature.path.as_ref().expect("scenario feature path"))
-        .expect("scenario feature path must exist");
-    let root = fs::canonicalize(scenario_root()).expect("scenario root must exist");
-    let relative = path
-        .strip_prefix(root)
-        .expect("scenario feature must be inside scenario root");
-    let identity = format!(
-        "{}:{}:{}",
-        relative.display(),
-        scenario.position.line,
-        scenario.name
-    );
-    format!("{:x}", Sha256::digest(identity.as_bytes()))
-}
-fn capture_name(
-    feature: &cucumber::gherkin::Feature,
-    scenario: &cucumber::gherkin::Scenario,
-) -> String {
-    if scenario.examples.is_empty() {
-        return scenario.name.clone();
-    }
-    use sha2::{Digest, Sha256};
-    let path = fs::canonicalize(feature.path.as_ref().expect("outline feature path"))
-        .expect("outline feature path must exist");
-    let root = fs::canonicalize(scenario_root()).expect("scenario root must exist");
-    let relative = path
-        .strip_prefix(root)
-        .expect("outline feature must be inside scenario root")
-        .components()
-        .map(|part| part.as_os_str().to_str().expect("UTF-8 feature path"))
-        .collect::<Vec<_>>()
-        .join("/");
-    let digest = Sha256::digest(relative.as_bytes());
-    format!("example-{digest:x}-{}", scenario.position.line)
-}
 fn selected_area(setting: Option<&str>) -> Result<&str, String> {
     match setting {
         None | Some("application") => Ok("application"),
@@ -343,6 +306,9 @@ fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) ->
     }
     let reports = world::reports_folder();
     fs::create_dir_all(&reports).unwrap();
+    let arguments = scenario_arguments::Capture::default();
+    let capture = arguments.clone();
+    let capture_root = scenario_root();
     let json = report_destination::create_file(&reports.join("cucumber.json")).unwrap();
     let junit = report_destination::create_file(&reports.join("junit.xml")).unwrap();
     let writer = writer::Basic::stdout()
@@ -357,8 +323,9 @@ fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) ->
             // After `with_writer`, which resets the CLI: libtest's arguments are not Cucumber's.
             .with_default_cli()
             .fail_on_skipped_with(|_, _, _| true)
-            .before(|feature, _, scenario, world| {
+            .before(move |feature, rule, scenario, world| {
                 let namespace = scenario_capture_namespace(feature, scenario);
+                scenario_arguments::record(&capture, &capture_root, feature, rule, scenario);
                 Box::pin(async move { world.set_capture_namespace(namespace) })
             })
             .after(|feature, _, scenario, _, world| {
@@ -379,6 +346,11 @@ fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) ->
             }),
     );
     let after = scenario_revision::inspect(&root);
+    scenario_arguments::save(
+        &reports.join("scenario-arguments.json"),
+        &reports.join("cucumber.json"),
+        &arguments,
+    );
     let source_changed = source != gap_runner::read_sources(&root);
     scenario_revision::save(
         &reports.join("source-revision.json"),
@@ -388,7 +360,12 @@ fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) ->
     );
     let cucumber = reports.join("cucumber.json");
     let junit = reports.join("junit.xml");
-    let results = [cucumber.as_path(), junit.as_path()];
+    let argument_report = reports.join("scenario-arguments.json");
+    let results = [
+        cucumber.as_path(),
+        junit.as_path(),
+        argument_report.as_path(),
+    ];
     scenario_revision::require_pinned(&scenario_root(), &results);
     scenario_revision::require_unchanged(&before, &after, source_changed, &results);
     if result.execution_has_failed() {

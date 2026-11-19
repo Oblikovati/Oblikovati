@@ -173,6 +173,94 @@ class FeatureProgressTests(unittest.TestCase):
         )
         self.assertEqual(summary["removed_features"], ["removed.feature"])
 
+    def argument_fixture(self) -> tuple[dict[str, object], dict[str, object], list[dict[str, object]]]:
+        self.feature.write_text(
+            "Feature: example\n Background: shared\n  Given setup\n"
+            "   | x | y |\n Scenario: case\n  When choose\n   | a | b |\n"
+        )
+        self.record["feature_sha256"] = inventory.feature_record(self.feature)["sha256"]
+        row = {"id": "case", "path": self.path, "line": 5, "scenario": "case",
+               "rule": None, "outline": False, "arguments_recorded": True,
+               "source_sha256": self.record["feature_sha256"], "source_error": None,
+               "background_steps": [{"line": 3, "name": "setup", "table": [["x", "y"]]}],
+               "scenario_steps": [{"line": 6, "name": "choose", "table": [["a", "b"]]}]}
+        entry = {"path": self.path, "line": 5, "name": "case",
+                 "background_steps": row["background_steps"], "scenario_steps": row["scenario_steps"]}
+        return row, entry, self.argument_elements()
+
+    def argument_elements(self) -> list[dict[str, object]]:
+        success = {"status": "passed"}
+        return [{"type": "background", "name": "case", "line": 5,
+                 "steps": [{"line": 3, "name": "setup", "result": success}]},
+                {"type": "scenario", "name": "case", "line": 5,
+                 "steps": [{"line": 6, "name": "choose", "result": success}],
+                 "after": [{"result": success}]}]
+
+    def write_argument_report(self, elements: list[dict[str, object]]) -> None:
+        self.report.write_text(json.dumps([{"uri": self.path, "elements": elements}]))
+        self.record["cucumber_sha256"] = progress.digest(self.report)
+
+    def write_argument_capture(self, entries: list[dict[str, object]]) -> None:
+        capture = self.root / "arguments.json"
+        capture.write_text(json.dumps({"cucumber_sha256": self.record["cucumber_sha256"],
+                                       "scenarios": entries}))
+        self.record["scenario_arguments"] = "arguments.json"
+        self.record["scenario_arguments_sha256"] = progress.digest(capture)
+
+    def argument_status(self, row: dict[str, object]) -> tuple[str, int]:
+        with patch.object(progress, "source_inventory", return_value=[row]):
+            return self.status()
+
+    def test_valid_table_and_background_arguments_are_green(self) -> None:
+        row, entry, elements = self.argument_fixture()
+        self.write_argument_report(elements)
+        self.write_argument_capture([entry])
+        self.assertEqual(self.argument_status(row), ("green", 1))
+        row["source_sha256"] = "incorrect"
+        self.assertEqual(self.argument_status(row), ("needs_source_review", 0))
+        row["source_sha256"] = self.record["feature_sha256"]
+        row["arguments_recorded"] = False
+        self.assertEqual(self.argument_status(row), ("needs_source_review", 0))
+
+    def test_changed_table_and_background_are_not_counted(self) -> None:
+        row, entry, elements = self.argument_fixture()
+        self.write_argument_report(elements)
+        entry["scenario_steps"] = [{"line": 6, "name": "choose", "table": [["a", "changed"]]}]
+        self.write_argument_capture([entry])
+        self.assertEqual(self.argument_status(row), ("incomplete", 0))
+        entry["scenario_steps"] = row["scenario_steps"]
+        entry["background_steps"] = [{"line": 3, "name": "setup", "table": [["x"]]}]
+        self.write_argument_capture([entry])
+        self.assertEqual(self.argument_status(row), ("incomplete", 0))
+
+    def test_duplicate_or_unbound_argument_captures_fail_closed(self) -> None:
+        row, entry, elements = self.argument_fixture()
+        self.write_argument_report(elements)
+        self.write_argument_capture([entry, entry])
+        self.assertEqual(self.argument_status(row), ("incomplete", 0))
+        self.write_argument_capture([entry])
+        self.write_argument_report(elements + [{"type": "scenario", "name": "extra", "line": 9}])
+        self.assertEqual(self.argument_status(row), ("needs_source_review", 0))
+        self.write_argument_capture([entry])
+        self.assertEqual(self.argument_status(row), ("incomplete", 0))
+        self.record["scenario_arguments"] = "../outside.json"
+        self.assertEqual(self.argument_status(row), ("needs_source_review", 0))
+
+    def test_missing_cleanup_invalid_report_and_missing_capture_fail(self) -> None:
+        row, entry, elements = self.argument_fixture()
+        elements[1]["after"] = []
+        self.write_argument_report(elements)
+        self.write_argument_capture([entry])
+        self.assertEqual(self.argument_status(row), ("incomplete", 0))
+        self.report.write_text("not JSON")
+        self.record["cucumber_sha256"] = progress.digest(self.report)
+        self.write_argument_capture([entry])
+        self.assertEqual(self.argument_status(row), ("invalid_result", 0))
+        self.record["scenario_arguments_sha256"] = "wrong"
+        self.assertEqual(self.argument_status(row), ("needs_source_review", 0))
+        (self.root / "arguments.json").unlink()
+        self.assertEqual(self.argument_status(row), ("needs_source_review", 0))
+
 
 if __name__ == "__main__":
     unittest.main()

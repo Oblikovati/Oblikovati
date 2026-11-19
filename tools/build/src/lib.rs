@@ -56,6 +56,7 @@ fn dispatch(arguments: &[&str], root: &Path, runner: &dyn Runner) -> BuildResult
         ["scenario-ledger", path, revision] => {
             scenarios::print_ledger(Path::new(path), revision, runner)
         }
+        ["scenario-local-ledger", path] => scenarios::print_local_ledger(Path::new(path)),
         ["native-validation", directory, environment] => {
             native_validation::prepare(root, runner, Path::new(directory), Path::new(environment))
         }
