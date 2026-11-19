@@ -22,11 +22,11 @@ using this status; the live scenario directory can change.
   angle needs tapered extrusion (#4127, Martensite #463). The feature is not
   done. The scenario source is unversioned, so strict verified acceptance is
   still blocked by #3978.
-- The full workspace-layout run at `f7194a098` passed 44 of 52 executed
-  cases, including both outline examples. Its inventory counts 43 of 51
-  declarations; eight remain incomplete. Status-bar and splitter fixes passed
-  focused reruns, but the full feature has not been rerun after those fixes.
-- The current feature-run inventory has 11 green features and 391 passing
+- The full workspace-layout run at `c0060be36` passed 50 of 52 executed
+  cases, including both outline examples. Its inventory counts 49 of 51
+  declarations. The spacing and User Interface menu scenarios remain
+  incomplete; their source questions are in the feature's `BLOCKERS.md`.
+- The current feature-run inventory has 11 green features and 397 passing
   scenario declarations out of 3,088, across 256 features. These counts are
   tied to source hashes and must be regenerated when the scenario source changes.
 - The live feature-run inventory reports application closing green: 3 of 3
