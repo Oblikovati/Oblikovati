@@ -92,10 +92,35 @@ fn select_view(world: &mut ApplicationWorld) {
     world.click_text("View");
 }
 #[then("the ribbon displays view, appearance, window and navigation controls")]
+#[then("the ribbon displays Visibility, Appearance and Windows panels")]
 fn view_groups(world: &mut ApplicationWorld) {
     for group in ["Visibility", "Appearance", "Windows", "Navigate"] {
         world.expect_text(group);
     }
+}
+#[then("the viewport navigation controls remain at the right edge")]
+fn navigation_controls_on_right(world: &mut ApplicationWorld) {
+    let extent = world.extent();
+    let area = world
+        .app()
+        .window
+        .native
+        .gui
+        .as_ref()
+        .unwrap()
+        .document_area(extent)
+        .unwrap();
+    for name in ["##orientation-control", "##navigation-bar"] {
+        assert_navigation_on_right(name, area[0] as f32, area[2] as f32);
+    }
+}
+fn assert_navigation_on_right(name: &str, left: f32, right: f32) {
+    let (position, size) = window_geometry(name).expect("expected viewport navigation control");
+    let control_right = position[0] + size[0];
+    assert!(
+        control_right <= right && control_right >= left + (right - left) * 0.9,
+        "navigation control {name} at {control_right}: expected viewport right edge {right}"
+    );
 }
 #[then("the active document remains displayed")]
 fn document_displayed(world: &mut ApplicationWorld) {
