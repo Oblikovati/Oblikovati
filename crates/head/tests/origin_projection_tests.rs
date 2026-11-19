@@ -36,9 +36,11 @@ fn automatic_extent_tracks_scene_and_keeps_fixed_projection_separate() {
     let window = FakeOriginWindow {
         bounds: Some([[-20., -5., 0.], [30., 8., 2.]]),
     };
-    let mut state = oblikovati_gui::GuiCommandState::default();
-    state.document = Some(1);
-    state.authoring = oblikovati_gui::GuiAuthoringContext::Part;
+    let state = oblikovati_gui::GuiCommandState {
+        document: Some(1),
+        authoring: oblikovati_gui::GuiAuthoringContext::Part,
+        ..Default::default()
+    };
     let planes = origin_plane_outlines(&window, &state);
     assert_eq!(planes[0].corners[0], [-6, -6]);
     assert_eq!(planes[0].automatic_corners[0], [-33, -33]);

@@ -229,8 +229,10 @@ fn origin_auto_resize_overrides_are_removed_when_documents_close() {
     let mut view = BrowserView::default();
     view.toggle_origin_auto_resize(1, 0);
     view.toggle_origin_auto_resize(2, 1);
-    let mut state = GuiCommandState::default();
-    state.document = Some(2);
+    let state = GuiCommandState {
+        document: Some(2),
+        ..Default::default()
+    };
     view.prune_origin_sizes(&state);
     assert!(view.origin_auto_resize(1, 0));
     assert!(!view.origin_auto_resize(2, 1));
