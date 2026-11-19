@@ -1,0 +1,17 @@
+{
+  "application_commit": "a253124c1",
+  "feature": "features/application/model-browser/model-browser.feature",
+  "feature_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e",
+  "environment": "Linux X11, Xvfb, software Vulkan, native mouse and keyboard input",
+  "scenarios": {
+    "copy": {
+      "passed_steps": 15,
+      "name": "Copy and activates a view representation in an empty part"
+    },
+    "publish": {
+      "passed_steps": 8,
+      "name": "Toggle the publication setting of an active copied view"
+    }
+  },
+  "scope": "Focused scenarios only; this is not a full-feature run. The source was unversioned."
+}

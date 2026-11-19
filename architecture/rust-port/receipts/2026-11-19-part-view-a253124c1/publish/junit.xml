@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T08:36:04.402238808Z" time="20.72057717"><testcase name="Scenario: Toggle the publication setting of an active copied view: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1156:3" time="20.72057717"><system-out><![CDATA[  Scenario: Toggle the publication setting of an active copied view
+   ✔  Given The MCAD Software has an empty part with a copied view active
+   ✔  And Publish is checked in the copied view context menu
+   ✔  When the user chooses Publish from the copied view context menu
+   ✔  Then Publish is unchecked when the context menu is reopened
+   ✔  And the copied view remains active
+   ✔  When the user chooses Publish from the copied view context menu again
+   ✔  Then Publish is checked when the context menu is reopened
+   ✔  And the copied view remains active
+]]></system-out></testcase></testsuite></testsuites>
