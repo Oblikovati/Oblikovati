@@ -41,6 +41,8 @@ pub(crate) struct BrowserView {
     pub selected_row: Option<(usize, usize)>,
     /// The origin row a click chose.
     pub selected_origin_row: Option<usize>,
+    /// The last origin row retains a focus outline after viewport selection clears.
+    pub focused_origin_row: Option<usize>,
     pub arrow_consumed: bool,
     pub feature_keyboard_focus: bool,
     pub feature_rows: Vec<crate::application::model_browser::feature_keys::FeatureRow>,
@@ -196,6 +198,7 @@ impl BrowserView {
     pub(crate) fn follow_relationships(&mut self) {
         if let Some(row) = self.relationships.take_chosen_origin() {
             self.selected_origin_row = Some(row);
+            self.focused_origin_row = Some(row);
         }
     }
     pub(crate) fn set_origin_open(&mut self, open: Option<bool>) {

@@ -56,6 +56,15 @@ pub(crate) fn origin_row(
         choose_origin_row(state, view, row, actions);
         ui.open_popup(ROW_MENU);
     }
+    if !selected && view.focused_origin_row == Some(row) {
+        ui.get_window_draw_list()
+            .add_rect(
+                ui.item_rect_min(),
+                ui.item_rect_max(),
+                ui.style_color(imgui::StyleColor::NavHighlight),
+            )
+            .build();
+    }
     let Some(_menu) = ui.begin_popup(ROW_MENU) else {
         return;
     };
@@ -69,6 +78,7 @@ fn choose_origin_row(
     actions: &mut Vec<GuiShellAction>,
 ) {
     view.selected_origin_row = Some(row);
+    view.focused_origin_row = Some(row);
     view.origin_folder_chosen = false;
     actions.push(GuiShellAction::BrowserChoice {
         document: state.document.unwrap_or(0),
@@ -142,6 +152,7 @@ pub(crate) fn follow_keys(
     };
     let step = moved(cursor, key);
     view.selected_origin_row = step.cursor.row;
+    view.focused_origin_row = step.cursor.row;
     view.origin_folder_chosen = step.cursor.folder;
     view.set_origin_open(step.set_open);
     if step.cursor.row != cursor.row {
@@ -247,3 +258,7 @@ fn draw_origin_row(ui: &Ui, request: &GuiFrameRequest, row: usize, fill: Color, 
             .build();
     }
 }
+
+#[cfg(test)]
+#[path = "../../../tests/application/workspace-layout/browser_origin_focus.rs"]
+mod focus_tests;

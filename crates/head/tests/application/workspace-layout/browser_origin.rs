@@ -115,6 +115,7 @@ fn plane_gone(world: &mut ApplicationWorld) {
     assert!(!plane_shows(world), "expected no plane surface in the view");
 }
 #[when("I right-click the Y Axis row")]
+#[when("the user right-clicks the Y Axis row")]
 fn right_click_axis(world: &mut ApplicationWorld) {
     right_click_row(world, "Y Axis");
 }

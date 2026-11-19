@@ -46,9 +46,11 @@ mod link_close_native;
 #[cfg(target_os = "linux")]
 #[path = "model_dock_native.rs"]
 mod model_dock_native;
-#[cfg(target_os = "linux")]
 #[path = "orientation_close_native.rs"]
 mod orientation_close_native;
+#[cfg(target_os = "linux")]
+#[path = "origin_focus_native.rs"]
+mod origin_focus_native;
 #[cfg(target_os = "linux")]
 #[path = "precise_close_native.rs"]
 mod precise_close_native;

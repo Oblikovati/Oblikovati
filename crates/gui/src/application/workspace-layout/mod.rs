@@ -96,6 +96,7 @@ impl WorkspaceLayout {
     pub(crate) fn sync_origin_document(&mut self, document: Option<u64>) {
         if self.origin_selection_document != document {
             self.view.selected_origin_row = None;
+            self.view.focused_origin_row = None;
             self.view.origin_folder_chosen = false;
             self.origin_selection_document = document;
         }
