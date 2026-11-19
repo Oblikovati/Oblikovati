@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
     Sketch2D, SketchDirectionInference, SketchEntityId, SketchError, SketchInferencePolicy,
+    SketchSettings, allows_type,
 };
 use crate::sketch::{normalize_direction, point_difference};
 use oblikovati_api::types::*;
@@ -8,16 +9,17 @@ use std::f64::consts::FRAC_PI_2;
 pub(super) fn winner(
     sketch: &Sketch2D,
     endpoints: [[f64; 2]; 2],
-    priority: ConstraintInferencePriority,
+    settings: &SketchSettings,
     policy: SketchInferencePolicy,
     candidates: &super::scope::ResolvedCandidates,
 ) -> Result<Option<SketchDirectionInference>, SketchError> {
     let Some(direction) = segment_direction(endpoints) else {
         return Ok(None);
     };
-    let axial = axial_suggestion(direction, policy);
-    let relative = relative_suggestion(sketch, direction, policy, candidates)?;
-    Ok(choose_family(axial, relative, priority))
+    let axial =
+        axial_suggestion(direction, policy).filter(|value| allows_direction(settings, value.kind));
+    let relative = relative_suggestion(sketch, direction, policy, candidates, settings)?;
+    Ok(choose_family(axial, relative, settings.constraint_priority))
 }
 fn choose_family(
     axial: Option<SketchDirectionInference>,
@@ -55,6 +57,7 @@ fn relative_suggestion(
     direction: [f64; 2],
     policy: SketchInferencePolicy,
     candidates: &super::scope::ResolvedCandidates,
+    settings: &SketchSettings,
 ) -> Result<Option<SketchDirectionInference>, SketchError> {
     let mut strongest: Option<SketchDirectionInference> = None;
     for line in sketch
@@ -63,9 +66,10 @@ fn relative_suggestion(
         .filter(|line| candidates.contains(line.id))
     {
         let candidate = relative_for_line(sketch, line, direction, policy)?;
-        if let Some(candidate) =
-            candidate.filter(|candidate| strongest.is_none_or(|best| candidate.score > best.score))
-        {
+        if let Some(candidate) = candidate.filter(|candidate| {
+            allows_direction(settings, candidate.kind)
+                && strongest.is_none_or(|best| candidate.score > best.score)
+        }) {
             strongest = Some(candidate);
         }
     }
@@ -141,4 +145,15 @@ fn classified_suggestion(
 fn quality_score(miss: f64, tolerance: f64) -> u8 {
     // Go truncates this quality to an integer; family and target ties depend on that quantization.
     (100.0 * (1.0 - miss / tolerance)).clamp(0.0, 100.0) as u8
+}
+
+fn allows_direction(settings: &SketchSettings, kind: ConstraintInferenceKind) -> bool {
+    let selected = match kind {
+        INFER_HORIZONTAL => SKETCH_INFER_HORIZONTAL,
+        INFER_VERTICAL => SKETCH_INFER_VERTICAL,
+        INFER_PARALLEL => SKETCH_INFER_PARALLEL,
+        INFER_PERPENDICULAR => SKETCH_INFER_PERPENDICULAR,
+        _ => return false,
+    };
+    allows_type(settings, selected)
 }

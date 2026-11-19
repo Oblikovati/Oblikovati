@@ -304,3 +304,69 @@ fn construction_lines_are_still_valid_direction_reference_candidates() {
     );
     assert!(sketch.same_recipe(&before));
 }
+
+#[test]
+fn selected_direction_types_filter_before_family_priority() {
+    let mut sketch = Sketch2D::default();
+    add_line(&mut sketch, 5, [[0.0, 5.0], [4.0, 5.02]]);
+    let endpoints = [[0.0; 2], [4.0, 0.04]];
+    let mut settings = options(PRIORITY_HORIZONTAL_VERTICAL, false);
+    settings.custom_inference_types = true;
+    settings.inference_types = SKETCH_INFER_PARALLEL;
+    let report = sketch
+        .infer_line_placement(endpoints, &settings, policy())
+        .unwrap();
+    assert_eq!(report.direction.unwrap().kind, INFER_PARALLEL);
+    settings.inference_types = SKETCH_INFER_HORIZONTAL;
+    let report = sketch
+        .infer_line_placement(endpoints, &settings, policy())
+        .unwrap();
+    assert_eq!(report.direction.unwrap().kind, INFER_HORIZONTAL);
+    settings.inference_types = SketchInferenceTypes(0);
+    assert!(
+        sketch
+            .infer_line_placement(endpoints, &settings, policy())
+            .unwrap()
+            .direction
+            .is_none()
+    );
+}
+
+#[test]
+fn disabling_coincident_type_suppresses_line_endpoint_proposals() {
+    let mut sketch = Sketch2D::default();
+    sketch.add_point(SketchEntityId(1), [0.0, 0.0]).unwrap();
+    let mut settings = options(PRIORITY_NONE, true);
+    settings.custom_inference_types = true;
+    settings.inference_types = SKETCH_INFER_HORIZONTAL;
+    let endpoints = [[0.0005, 0.0], [4.0, 0.0]];
+    let report = sketch
+        .infer_line_placement(endpoints, &settings, policy())
+        .unwrap();
+    assert!(report.points.is_empty());
+    assert_eq!(report.candidate_endpoints, endpoints);
+    settings.inference_types = SKETCH_INFER_COINCIDENT;
+    let report = sketch
+        .infer_line_placement(endpoints, &settings, policy())
+        .unwrap();
+    assert_eq!(report.points.len(), 1);
+    assert_eq!(report.candidate_endpoints[0], [0.0, 0.0]);
+}
+
+#[test]
+fn disabled_best_relative_proposal_does_not_hide_enabled_alternative() {
+    let mut sketch = Sketch2D::default();
+    add_line(&mut sketch, 5, [[0.0, 5.0], [4.0, 5.0]]);
+    add_line(&mut sketch, 9, [[5.0, 0.0], [5.04, 4.0]]);
+    let mut settings = options(PRIORITY_NONE, false);
+    settings.custom_inference_types = true;
+    settings.inference_types = SKETCH_INFER_PERPENDICULAR;
+    let report = sketch
+        .infer_line_placement([[0.0; 2], [4.0, 0.0]], &settings, policy())
+        .unwrap();
+    let direction = report.direction.unwrap();
+    assert_eq!(
+        (direction.kind, direction.target),
+        (INFER_PERPENDICULAR, Some(SketchEntityId(9)))
+    );
+}

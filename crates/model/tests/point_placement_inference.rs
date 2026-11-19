@@ -67,3 +67,26 @@ fn disabled_inference_and_points_outside_reach_do_not_propose_coincidence() {
             .is_err()
     );
 }
+
+#[test]
+fn custom_coincident_selection_controls_point_proposals() {
+    use oblikovati_api::types::{SKETCH_INFER_COINCIDENT, SKETCH_INFER_HORIZONTAL};
+    let sketch = coincident_candidates();
+    let policy = SketchInferencePolicy::for_units(&UnitsOfMeasure::default());
+    let mut settings = default_sketch_settings();
+    settings.custom_inference_types = true;
+    settings.inference_types = SKETCH_INFER_HORIZONTAL;
+    assert_eq!(
+        sketch
+            .infer_point_coincidence([2., 3.], &[], &settings, policy)
+            .unwrap(),
+        None
+    );
+    settings.inference_types = SKETCH_INFER_COINCIDENT;
+    assert_eq!(
+        sketch
+            .infer_point_coincidence([2., 3.], &[], &settings, policy)
+            .unwrap(),
+        Some(SketchEntityId(3))
+    );
+}
