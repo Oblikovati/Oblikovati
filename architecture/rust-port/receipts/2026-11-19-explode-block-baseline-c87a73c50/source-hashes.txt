@@ -1,0 +1,6 @@
+36d2314f1b23604b8d209a462d1b62274da7da97cc65a1bf92d6f3091de545e0  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/BLOCKERS.md
+84b4201a244040befc73b799b4d05cc83a40a0b69aa113b3de92f971f2fb1143  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/FIXTURES.md
+8dfd0913b77e70b67f5a718dd7c44c346e9afdd3d998d244c4a50ec36149017d  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/FUNCTIONAL.md
+183a61abb468c7b82a18c61c729b8a0fde6031c107c4d21084318ebff6cfb45f  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/VISUAL.md
+7db943db05a4f72b8adb3dc26d7951bc896de7051287e937b800dff538cbc7cf  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/feature-icon.svg
+0aa6d0c36bc26bfac8ea4d9963fd67ba7874fc2f90f34c4d2b73cc3b9220056a  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/explode-block/scenario.feature

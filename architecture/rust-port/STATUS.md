@@ -14,6 +14,10 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- Explode Block (#4153): all five scenarios stopped at unbound setup steps in
+  the full baseline at `c87a73c50`. API contract work is in
+  Oblikovati.API#310; portable geometry and styling were requested from the
+  scenario owner.
 - Constraint inference scope (#4152): the full native run at `f7186111b`
   passed two of four scenarios. The recorded selection fixtures still need
   portable geometry; the scenario owner has been asked in `BLOCKERS.md`.
