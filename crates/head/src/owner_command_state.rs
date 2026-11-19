@@ -70,6 +70,9 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         let (inference_scope, inference_scope_error) = self.gui_inference_scope()?;
+        let active_edit = self
+            .active_sketch_edit()
+            .filter(|edit| edit.document == document);
         Ok(oblikovati_gui::GuiCommandState {
             window_maximized: false,
             selection_mode: self.selection_mode,
@@ -121,10 +124,9 @@ impl<
             sketch_block_created: self.block_created.clone(),
             sketch_pattern_created: self.pattern_result,
             sketch_pattern_available: true,
-            active_sketch: self
-                .active_sketch_edit()
-                .filter(|edit| edit.document == document)
-                .map(|edit| edit.sketch),
+            active_sketch: active_edit.map(|edit| edit.sketch),
+            active_sketch_plane: active_edit.map(|edit| edit.plane),
+            sketch_axes: Vec::new(),
             documents: self.gui_document_rows()?,
             document_model_states: self.gui_document_model_states()?,
             document_storage: self.gui_document_storage()?,

@@ -66,6 +66,7 @@ pub(super) fn advance_gui(
         .ok()
         .map(|camera| crate::view_orientation::view_axes(&camera));
     commands.constraint_glyphs = dimension_labels::projected_constraint_glyphs(window, owner);
+    commands.sketch_axes = dimension_labels::projected_sketch_axes(window, &commands);
     dimension_labels::project_precise_triad(window, owner, &mut commands);
     let mut update = window.gui_frame(event, &commands)?;
     update.changed |= metadata_changed;

@@ -32,13 +32,9 @@ impl GuiFrameEngine {
         self.dock_lifecycle.reconcile(|title| {
             crate::widget_abi::close_dock_tab(ui, title);
         })?;
-        crate::sketch_pick_cue::draw_sketch_pick_cue(ui, request);
-        crate::sketch_pick_cue::draw_model_pick_cue(ui, request);
         self.workspace
             .sync_origin_document(request.commands.document);
-        crate::dimension_labels::draw_dimension_labels(ui, request);
-        let constraint_hover =
-            crate::sketch::constraint_glyphs::draw_constraint_glyphs(ui, request);
+        let constraint_hover = crate::sketch::draw_viewport_overlays(ui, request);
         crate::application::workspace_layout::browser_feature::draw_feature_edges(ui, request);
         self.workspace.draw_selected_origin(ui, request);
         self.document_files.home_in_front = self.home.active;

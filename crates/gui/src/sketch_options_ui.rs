@@ -5,7 +5,8 @@ use imgui::Ui;
 use oblikovati_model::application_options::SketchApplicationOptions;
 
 type ToggleField = fn(&mut SketchApplicationOptions) -> &mut bool;
-const TOGGLES: [(&str, ToggleField); 12] = [
+const TOGGLES: [(&str, ToggleField); 13] = [
+    ("Axes", |o| &mut o.axes_visible),
     ("Show grid in sketch", |o| &mut o.grid_visible),
     ("Sketch HUD", |o| &mut o.heads_up_display),
     ("Pointer input", |o| &mut o.pointer_input),

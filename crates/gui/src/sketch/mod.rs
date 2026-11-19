@@ -17,4 +17,17 @@ pub(crate) mod rectangular_pattern;
 #[path = "region-properties/mod.rs"]
 pub(crate) mod region_properties;
 
+pub(crate) mod axes;
+
+/// Draw sketch reading aids and return the relation under the pointer.
+pub(crate) fn draw_viewport_overlays(
+    ui: &imgui::Ui,
+    request: &crate::GuiFrameRequest,
+) -> Option<crate::GuiConstraintHover> {
+    crate::sketch_pick_cue::draw_sketch_pick_cue(ui, request);
+    crate::sketch_pick_cue::draw_model_pick_cue(ui, request);
+    axes::draw(ui, request);
+    crate::dimension_labels::draw_dimension_labels(ui, request);
+    constraint_glyphs::draw_constraint_glyphs(ui, request)
+}
 pub(crate) mod move_tool;

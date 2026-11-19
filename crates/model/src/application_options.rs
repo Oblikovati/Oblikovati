@@ -5,6 +5,7 @@
 pub struct SketchApplicationOptions {
     pub grid_spacing_cm: f64,
     pub grid_visible: bool,
+    pub axes_visible: bool,
     pub grid_major_every: i64,
     pub snap_to_points: bool,
     pub snap_to_grid: bool,
@@ -24,6 +25,7 @@ impl Default for SketchApplicationOptions {
         Self {
             grid_spacing_cm: 1.0,
             grid_visible: true,
+            axes_visible: true,
             grid_major_every: 5,
             snap_to_points: true,
             snap_to_grid: true,

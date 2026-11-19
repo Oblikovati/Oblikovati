@@ -30,6 +30,16 @@ fn missing_and_empty_files_use_go_defaults_including_the_origin_anchor() {
     }
 }
 #[test]
+fn sketch_axes_default_to_visible_and_survive_an_explicit_change() {
+    let disk = disk(b"sketch: {}\n");
+    let mut owner = load(&disk).unwrap();
+    assert!(owner.sketch_options().axes_visible);
+    let mut options = owner.sketch_options().clone();
+    options.axes_visible = false;
+    owner.set_sketch_options(options).unwrap();
+    assert!(!load(&disk).unwrap().sketch_options().axes_visible);
+}
+#[test]
 fn legacy_partial_group_keeps_defaults_but_explicit_false_survives_reload() {
     let disk =
         disk(b"sketch: {gridSpacingCm: 2, headsUpDisplay: false}\ngeneral: {startupAction: 9}\n");

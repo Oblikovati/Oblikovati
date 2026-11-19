@@ -4,6 +4,32 @@ use oblikovati_gui::GuiDimensionLabel;
 #[path = "gui_dimension_projection.rs"]
 mod dimension_projection;
 
+/// Project the active sketch axes using the Go grid span (20 cells per side).
+pub(super) fn projected_sketch_axes(
+    window: &dyn HeadWindow,
+    commands: &oblikovati_gui::GuiCommandState,
+) -> Vec<[[i32; 2]; 2]> {
+    let Some(options) = commands
+        .sketch_options
+        .as_ref()
+        .filter(|options| options.axes_visible)
+    else {
+        return Vec::new();
+    };
+    let Some(plane) = commands.active_sketch_plane else {
+        return Vec::new();
+    };
+    let half = options.grid_spacing_cm * 20.;
+    if !half.is_finite() || half <= 0. {
+        return Vec::new();
+    }
+    let points = [[-half, 0.], [half, 0.], [0., -half], [0., half]];
+    match window.sketch_pixels(plane, &points) {
+        Ok(pixels) if pixels.len() == 4 => vec![[pixels[0], pixels[1]], [pixels[2], pixels[3]]],
+        _ => Vec::new(),
+    }
+}
+
 pub(super) fn projected_dimension_labels(
     window: &mut dyn HeadWindow,
     owner: &dyn HeadWork,

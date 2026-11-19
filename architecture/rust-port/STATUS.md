@@ -15,9 +15,10 @@ using this status; the live scenario directory can change.
 ## Current evidence
 
 - Sketch preferences (#4148): the full baseline has three unbound scenarios.
-  Sketch edits now stay in a draft until Apply and Escape discards them; native
-  and GUI tests cover that behavior. Axes display, HUD Settings, and complete
-  scenario bindings remain. The focused Line scenario `line-30` fails when its
+  Sketch edits stay in a draft until Apply and Escape discards them. Axes can
+  be applied off and on; a native display test checks both axes, the global
+  triad, and sketch exit. HUD Settings and complete scenario bindings remain.
+  The focused Line scenario `line-30` fails when its
   setup tries to start a second sketch; the cause is not yet established.
 - Model browser: the full native run at `0890f84e0` passed 97 of 100
   scenarios against feature SHA-256

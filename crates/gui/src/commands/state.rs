@@ -41,6 +41,10 @@ pub struct GuiCommandState {
     /// The host provides the rectangular sketch-pattern command.
     pub sketch_pattern_available: bool,
     pub active_sketch: Option<oblikovati_model::document_sketch::DocumentSketchId>,
+    /// The current sketch plane, used to project display-only axes.
+    pub active_sketch_plane: Option<oblikovati_model::sketch::SketchPlane>,
+    /// Sketch axes projected into framebuffer pixels by the desktop frame.
+    pub sketch_axes: Vec<[[i32; 2]; 2]>,
     pub color_scheme: Option<crate::GuiColorSchemeState>,
     pub theme: Option<crate::GuiThemeState>,
     pub browser: Option<crate::GuiModelBrowser>,
