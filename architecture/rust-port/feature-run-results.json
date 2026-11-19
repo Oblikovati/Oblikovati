@@ -272,16 +272,16 @@
       "features/application/ribbon-display/wheel-tab-navigation.svg": "a7768245a07ca78c28a2ccd4aca1a0533df328fb2d22abc4caf6027b3742e9da",
       "features/application/ribbon-display/wheel-tabs-only.svg": "3647e88e7456c04629f2b42536e16cfa2d5f07860ff29826711a5c11879f2a34"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-19-ribbon-full-5f33ffaf7/cucumber.json",
-    "cucumber_sha256": "94fa160fb4b3884af286fc63f0610c627c5d6f7b96f56443679c4404bd1ed86b",
-    "application_commit": "5f33ffaf7",
-    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-display OBK_BDD_REPORTS=/tmp/obk-ribbon-full-5f33ffaf7 sh architecture/rust-port/receipts/2026-11-18-ribbon-display-maximize/run.sh",
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-ribbon-full-de0b6548b/cucumber.json",
+    "cucumber_sha256": "49acfb4db3a127ae18df6ecc6d5b949b5881d08c8fc947248de97112e9cf0f27",
+    "application_commit": "de0b6548b",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-display OBK_BDD_REPORTS=/tmp/obk-ribbon-full-de0b6548b sh architecture/rust-port/receipts/2026-11-18-ribbon-display-maximize/run.sh",
     "environment": "Linux X11, Xvfb, Openbox and Vulkan lavapipe; mixed native and scripted input",
-    "notes": "Complete diagnostic: 39 of 50 scenarios passed; 11 failed or had unbound steps. Two overflow checks matched a browser View label after the popup closed; a correction is in progress. Other gaps are recorded in BLOCKERS.md and #4095, #4096, #4142, #4144 and #4145. Feature and supporting files matched before and after. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "notes": "Complete diagnostic: 41 of 50 scenarios passed; nine failed or had unbound steps. Remaining gaps are recorded in BLOCKERS.md and #4095, #4096, #4142, #4144 and #4145; Shell also depends on Martensite #554. Feature and supporting files matched before and after. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
     "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-docking-baseline-ffc5f785d/scenario-inventory.json",
     "scenario_inventory_sha256": "c4fe86998c8b053dd4505cbcce28704cf8279d0c4be561b2f6ceb64187ebaac0",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-ribbon-full-5f33ffaf7/scenario-arguments.json",
-    "scenario_arguments_sha256": "74bee615b1c79d4a6ecf0b2c0fd17174a154b6d927f23a2e61e742a621f738a6"
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-ribbon-full-de0b6548b/scenario-arguments.json",
+    "scenario_arguments_sha256": "ba416563dddc6188f17002fc14a8937e4906a7c9a6a36ec54da9ef8fca65cbde"
   },
   "features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature": {
     "feature_sha256": "645576c3b62e89cdb6c668d5579123e6880a33f9e4a8020f922f1b08e0502ca2",
