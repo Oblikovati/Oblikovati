@@ -213,13 +213,15 @@ fn hud_enabled(world: &mut ApplicationWorld) {
 }
 #[when("HUD is temporarily disabled and Line acquires the original source endpoint")]
 fn hud_off(world: &mut ApplicationWorld) {
+    let original = world.app().owner.active_sketch_edit().unwrap();
     toggle_sketch_hud(world);
-    world.start_sketch_on("YZ Plane");
+    assert_eq!(world.app().owner.active_sketch_edit(), Some(original));
+    world.click_text("Sketch");
     world.seed_dimensions_needed(SEEDED_BEFORE_SOURCE);
     let source_end = source_end_for_drag(world);
     let in_mm = source_end.map(|value| value * MM_PER_CM);
-    world.open_precise_input();
     world.select_line_tool();
+    world.open_precise_input();
     // Clear of the seeds' directions, so no relation moves this end off its exact position.
     world.precise_point([in_mm[0] + 8., in_mm[1] + 1.2]);
     world.precise_point(in_mm);
@@ -227,6 +229,18 @@ fn hud_off(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.observed_view = Some(world.sketch_pixel_of(source_end));
     world.select_line_tool();
+}
+
+#[test]
+fn disabling_hud_keeps_the_background_sketch_active_for_line_input() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    let original = world.app().owner.active_sketch_edit().unwrap();
+    hud_off(&mut world);
+    assert_eq!(world.app().owner.active_sketch_edit(), Some(original));
+    assert_eq!(world.parts.len(), 1);
+    assert!(!world.edited_geometry().lines().is_empty());
+    world.close();
 }
 #[when("a drag from 1232,355 to 1400,500 is released")]
 fn drag_released(world: &mut ApplicationWorld) {
