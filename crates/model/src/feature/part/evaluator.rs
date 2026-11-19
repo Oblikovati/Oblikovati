@@ -14,6 +14,12 @@ pub trait PartFeatureEvaluator {
         body: &Self::Body,
         key: &[u8],
     ) -> Result<crate::sketch::SketchPlane, String>;
+    /// Resolve a named vertex or circular edge center; example: `backend.resolve_frame_origin(body, key)?`.
+    fn resolve_frame_origin(&self, _body: &Self::Body, key: &[u8]) -> Result<[f64; 3], String> {
+        Err(format!(
+            "frame origin {key:?}: expected an exact named vertex or circular-edge resolver"
+        ))
+    }
     /// Construct and validate one blend or return a named decline.
     /// Example: `backend.evaluate_blend(kind, feature, body, edges, distance)`.
     fn evaluate_blend(

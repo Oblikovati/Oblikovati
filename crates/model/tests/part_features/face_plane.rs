@@ -60,6 +60,12 @@ impl PartFeatureEvaluator for FaceEvaluator {
         }
         Ok(())
     }
+    fn resolve_frame_origin(&self, _: &(), key: &[u8]) -> Result<[f64; 3], String> {
+        if self.fail_face || key != face_key(2) {
+            return Err(format!("edge key {key:?}: expected current circular edge"));
+        }
+        Ok([3., 4., 0.])
+    }
     fn resolve_planar_face(&self, _: &(), key: &[u8]) -> Result<SketchPlane, String> {
         if self.fail_face || key != face_key(1) {
             return Err(format!("face key {key:?}: expected current face"));
@@ -483,3 +489,6 @@ fn go_face_frame_survives_recipe_and_uses_the_legacy_basis() {
 
 #[path = "face_plane/go_versions.rs"]
 mod go_versions;
+
+#[path = "face_plane/frame_origin.rs"]
+mod frame_origin;

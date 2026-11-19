@@ -7,6 +7,9 @@ use oblikovati_model::feature::{
     hole::{HoleDefinition, HoleExtent, HolePosition, HoleRecipe},
 };
 
+#[path = "hole_frame_origin.rs"]
+mod hole_frame_origin;
+
 fn hole_document() -> DocumentSnapshot {
     let mut snapshot = cube_document();
     snapshot

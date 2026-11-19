@@ -133,6 +133,7 @@ mod edge_pick;
 mod evaluate;
 mod face_mesh;
 mod face_pick;
+mod frame_origin;
 pub use face_mesh::NamedFaceMesh;
 mod captured;
 mod face_topology;

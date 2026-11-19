@@ -25,6 +25,21 @@ impl WorkPlaneResolver for WorkGeometryEvaluation {
     }
 }
 impl WorkGeometryEvaluation {
+    /// Resolve a current exact frame-origin reference; example: `evaluation.sketch_frame_origin(&reference)?`.
+    pub fn sketch_frame_origin(
+        &self,
+        reference: &crate::document_sketch::SketchFrameTopologyOrigin,
+    ) -> Result<[f64; 3], WorkPlaneError> {
+        self.sketch_frame_origins
+            .get(reference.key())
+            .cloned()
+            .unwrap_or_else(|| {
+                Err(WorkPlaneError::BodyReference(format!(
+                    "frame origin {:?}: expected current named topology",
+                    reference.key()
+                )))
+            })
+    }
     /// Iterate successful current planes by identity; example: `evaluation.planes().count()`.
     pub fn planes(&self) -> impl Iterator<Item = (FeatureId, SketchPlane)> + '_ {
         self.datums

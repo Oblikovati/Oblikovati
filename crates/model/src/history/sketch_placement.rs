@@ -185,6 +185,10 @@ fn placement_needs_datums(placed: &PlacedSketch, owned_axes: bool) -> bool {
             )
         });
     needs_axis
+        || (owned_axes
+            && placed
+                .frame_edit()
+                .is_some_and(|edit| edit.requires_datums()))
         || !matches!(
             placed.placement(),
             SketchPlacement::Fixed(_) | SketchPlacement::OriginPlane(_)

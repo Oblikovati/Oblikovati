@@ -18,6 +18,7 @@ use std::collections::BTreeMap;
 pub struct WorkGeometryEvaluation {
     datums: BTreeMap<FeatureId, WorkGeometryResult>,
     sketch_faces: BTreeMap<Vec<u8>, Result<crate::sketch::SketchPlane, WorkPlaneError>>,
+    sketch_frame_origins: BTreeMap<Vec<u8>, Result<[f64; 3], WorkPlaneError>>,
     pub health: Vec<FeatureHealthRecord<WorkPlaneError>>,
 }
 
@@ -67,6 +68,12 @@ impl WorkGeometryEvaluation {
     ) {
         self.sketch_faces
             .insert(reference.key().to_vec(), Ok(plane));
+    }
+    pub(crate) fn replace_sketch_frame_origins(
+        &mut self,
+        origins: BTreeMap<Vec<u8>, Result<[f64; 3], WorkPlaneError>>,
+    ) {
+        self.sketch_frame_origins = origins;
     }
     pub(crate) fn replace_sketch_faces(
         &mut self,

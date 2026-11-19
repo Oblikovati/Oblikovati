@@ -92,6 +92,21 @@ impl FeatureSequence<WorkGeometryDefinition> {
     }
 }
 impl crate::document_sketch::SketchAxisResolver for WorkGeometryEvaluation {
+    fn frame_topology_origin(
+        &self,
+        reference: &crate::document_sketch::SketchFrameTopologyOrigin,
+    ) -> Result<[f64; 3], crate::sketch::SketchError> {
+        self.sketch_frame_origin(reference)
+            .map_err(|cause| crate::sketch::SketchError::Definition(cause.to_string()))
+    }
+    fn frame_origin(
+        &self,
+        reference: WorkPointReference,
+    ) -> Result<[f64; 3], crate::sketch::SketchError> {
+        reference
+            .position(self)
+            .map_err(|cause| crate::sketch::SketchError::Definition(cause.to_string()))
+    }
     fn axis_direction(&self, feature: FeatureId) -> Result<[f64; 3], crate::sketch::SketchError> {
         self.axis(feature)
             .map(WorkAxisLine::direction)

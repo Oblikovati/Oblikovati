@@ -8,7 +8,32 @@ pub enum SketchFrameAxis {
     Y,
 }
 
+/// One evaluated axis reference; example: `SketchFrameAlignment { direction: [1., 0., 0.], axis: SketchFrameAxis::X, reverse: false }`.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SketchFrameAlignment {
+    pub direction: [f64; 3],
+    pub axis: SketchFrameAxis,
+    pub reverse: bool,
+}
 impl SketchPlane {
+    /// Apply independent origin and alignment changes; example: `frame.with_frame_edit(Some([1., 2., 0.]), None)?`.
+    pub fn with_frame_edit(
+        self,
+        origin: Option<[f64; 3]>,
+        alignment: Option<SketchFrameAlignment>,
+    ) -> Result<Self, SketchError> {
+        let origin = origin.unwrap_or(self.recipe().origin);
+        if let Some(alignment) = alignment {
+            return self.with_orientation(
+                alignment.direction,
+                alignment.axis,
+                alignment.reverse,
+                Some(origin),
+            );
+        }
+        let recipe = self.recipe();
+        Self::new(origin, recipe.x_axis, recipe.y_axis, self.options())
+    }
     /// Reframe from a current resolved direction without a stale fallback; example: `plane.with_orientation([0.0, 0.0, 1.0], SketchFrameAxis::Y, false, None)?`.
     pub fn with_orientation(
         self,

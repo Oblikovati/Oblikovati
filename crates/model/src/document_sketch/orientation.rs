@@ -21,6 +21,28 @@ pub struct SketchOrientationDefinition {
 pub trait SketchAxisResolver {
     /// Resolve one current stable identity; example: `axes.axis_direction(FeatureId(7))?`.
     fn axis_direction(&self, feature: FeatureId) -> Result<[f64; 3], SketchError>;
+    /// Resolve a current named edge center or vertex; example: `axes.frame_topology_origin(&reference)?`.
+    fn frame_topology_origin(
+        &self,
+        reference: &super::SketchFrameTopologyOrigin,
+    ) -> Result<[f64; 3], SketchError> {
+        Err(SketchError::Definition(format!(
+            "frame origin topology {:?}: expected a current exact named topology resolver",
+            reference.key()
+        )))
+    }
+    /// Resolve a datum origin from the current model; example: `axes.frame_origin(reference)?`.
+    fn frame_origin(
+        &self,
+        reference: crate::feature::work_geometry::WorkPointReference,
+    ) -> Result<[f64; 3], SketchError> {
+        match reference {
+            crate::feature::work_geometry::WorkPointReference::Origin => Ok([0.; 3]),
+            _ => Err(SketchError::Definition(format!(
+                "frame origin {reference:?}: expected a current datum resolver"
+            ))),
+        }
+    }
 }
 pub(crate) struct UnavailableSketchAxes;
 impl SketchAxisResolver for UnavailableSketchAxes {
@@ -58,13 +80,16 @@ impl SketchOrientationDefinition {
             _ => Vec::new(),
         }
     }
-    fn direction(self, axes: &dyn SketchAxisResolver) -> Result<[f64; 3], SketchError> {
-        match self.reference {
-            SketchAxisReference::OriginX => Ok([1.0, 0.0, 0.0]),
-            SketchAxisReference::OriginY => Ok([0.0, 1.0, 0.0]),
-            SketchAxisReference::OriginZ => Ok([0.0, 0.0, 1.0]),
-            SketchAxisReference::Feature(id) => axes.axis_direction(id),
-        }
+}
+pub(super) fn resolve_axis_reference(
+    reference: SketchAxisReference,
+    axes: &dyn SketchAxisResolver,
+) -> Result<[f64; 3], SketchError> {
+    match reference {
+        SketchAxisReference::OriginX => Ok([1.0, 0.0, 0.0]),
+        SketchAxisReference::OriginY => Ok([0.0, 1.0, 0.0]),
+        SketchAxisReference::OriginZ => Ok([0.0, 0.0, 1.0]),
+        SketchAxisReference::Feature(id) => axes.axis_direction(id),
     }
 }
 pub(super) fn orient_current(
@@ -76,7 +101,7 @@ pub(super) fn orient_current(
         return Ok(base);
     };
     base.with_orientation(
-        definition.direction(axes)?,
+        resolve_axis_reference(definition.reference, axes)?,
         definition.sketch_axis,
         definition.reverse,
         definition.origin,

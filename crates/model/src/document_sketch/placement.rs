@@ -17,6 +17,10 @@ impl DocumentSketches {
                 sketch.placement,
                 SketchPlacement::Fixed(_) | SketchPlacement::OriginPlane(_)
             ) || sketch.orientation.is_some()
+                || sketch
+                    .frame_edit
+                    .as_ref()
+                    .is_some_and(|edit| edit.requires_datums())
                 || !sketch.point_projections.is_empty()
         })
     }
@@ -103,6 +107,9 @@ impl PlacedSketch {
         if let Some(orientation) = self.orientation {
             keys.extend(orientation.read_keys());
         }
+        if let Some(edit) = &self.frame_edit {
+            keys.extend(edit.read_keys());
+        }
         keys
     }
     /// Resolve the frame without a stale fallback; example: `placed.plane(Some(&current_planes))?`.
@@ -119,8 +126,12 @@ impl PlacedSketch {
         axes: &dyn super::SketchAxisResolver,
     ) -> Result<SketchPlane, WorkPlaneError> {
         let base = self.base_plane(planes)?;
-        super::orientation::orient_current(base, self.orientation, axes)
-            .map_err(WorkPlaneError::Frame)
+        let frame = super::orientation::orient_current(base, self.orientation, axes)
+            .map_err(WorkPlaneError::Frame)?;
+        match &self.frame_edit {
+            Some(edit) => edit.resolve(frame, axes).map_err(WorkPlaneError::Frame),
+            None => Ok(frame),
+        }
     }
     fn base_plane(
         &self,

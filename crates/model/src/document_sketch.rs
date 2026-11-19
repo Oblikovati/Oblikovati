@@ -17,8 +17,13 @@ mod spatial;
 pub use block_definitions::{SketchBlockDefinition, SketchBlockDefinitionRecipe};
 pub use block_instances::SketchBlockInstance;
 mod translation;
+mod version;
 mod visibility;
 pub use construction::SketchConstructionReport;
+mod frame_edit;
+mod frame_topology;
+pub use frame_edit::{SketchFrameAxisEdit, SketchFrameEditDefinition, SketchFrameOrigin};
+pub use frame_topology::SketchFrameTopologyOrigin;
 mod orientation;
 pub(crate) use orientation::UnavailableSketchAxes;
 pub use orientation::{SketchAxisReference, SketchAxisResolver, SketchOrientationDefinition};
@@ -68,6 +73,7 @@ pub struct PlacedSketch {
     line_style: SketchLineStyle,
     placement: SketchPlacement,
     orientation: Option<SketchOrientationDefinition>,
+    frame_edit: Option<SketchFrameEditDefinition>,
     point_projections: Vec<SketchPointProjection>,
     block_instances: Vec<SketchBlockInstance>,
     geometry: Sketch2D,
@@ -109,6 +115,9 @@ pub struct PlacedSketchRecipe {
     pub plane_face: Option<crate::feature::work_plane::WorkPlaneFaceReference>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub orientation: Option<SketchOrientationDefinition>,
+    /// Version 15 stores frame edits independently of the creation orientation.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frame_edit: Option<SketchFrameEditDefinition>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub point_projections: Vec<SketchPointProjection>,
     /// Version 11 stores each instance number; version 10 assigns numbers in document order.
@@ -142,6 +151,7 @@ impl PlacedSketch {
             line_style: SketchLineStyle::default(),
             placement,
             orientation: None,
+            frame_edit: None,
             point_projections: Vec::new(),
             block_instances: Vec::new(),
             geometry,
@@ -187,40 +197,11 @@ impl PlacedSketch {
             plane_face,
             plane_origin,
             orientation: self.orientation,
+            frame_edit: self.frame_edit.clone(),
             point_projections: self.point_projections.clone(),
             block_instances: self.block_instances.clone(),
             geometry: self.geometry.recipe(),
         }
-    }
-    fn recipe_version(&self) -> u32 {
-        if matches!(self.placement, SketchPlacement::OriginPlane(_)) {
-            return 13;
-        }
-        if matches!(self.placement, SketchPlacement::Face(_)) {
-            return 12;
-        }
-        if !self.block_instances.is_empty() {
-            return 11;
-        }
-        if self.line_style != SketchLineStyle::default() {
-            return 7;
-        }
-        if self.constraints_shown {
-            return 6;
-        }
-        if !self.visible {
-            return 5;
-        }
-        if !self.point_projections.is_empty() {
-            return 4;
-        }
-        if self.orientation.is_some() {
-            return 3;
-        }
-        if matches!(self.placement, SketchPlacement::WorkPlane(_)) {
-            return 2;
-        }
-        1
     }
 }
 impl DocumentSketches {
@@ -246,6 +227,7 @@ impl DocumentSketches {
                         && first.line_style == second.line_style
                         && first.placement.same_recipe(&second.placement)
                         && orientation::same_orientation(first.orientation, second.orientation)
+                        && frame_edit::same(first.frame_edit.as_ref(), second.frame_edit.as_ref())
                         && first.point_projections == second.point_projections
                         && block_instances::same_instances(
                             &first.block_instances,
@@ -350,52 +332,11 @@ impl DocumentSketches {
                 .collect(),
         }
     }
-    fn placement_recipe_version(&self) -> u32 {
-        if !self.spatial_sketches.is_empty() {
-            return 14;
-        }
-        if self
-            .sketches
-            .iter()
-            .any(|sketch| matches!(sketch.placement, SketchPlacement::OriginPlane(_)))
-        {
-            return 13;
-        }
-        if self
-            .sketches
-            .iter()
-            .any(|sketch| matches!(sketch.placement, SketchPlacement::Face(_)))
-        {
-            return 12;
-        }
-        if self
-            .sketches
-            .iter()
-            .any(|sketch| !sketch.block_instances.is_empty())
-        {
-            return 11;
-        }
-        if self
-            .block_definitions
-            .iter()
-            .any(|block| !block.geometry().owned_entity_ids().is_empty())
-        {
-            return 9;
-        }
-        if !self.block_definitions.is_empty() {
-            return 8;
-        }
-        self.sketches
-            .iter()
-            .map(PlacedSketch::recipe_version)
-            .max()
-            .unwrap_or(1)
-    }
     /// Restore a complete collection before replacing a document owner; example: `DocumentSketches::from_recipe(&recipe)?`.
     pub fn from_recipe(recipe: &DocumentSketchRecipe) -> Result<Self, SketchError> {
-        if !matches!(recipe.version, 1..=14) {
+        if !matches!(recipe.version, 1..=15) {
             return Err(SketchError::Definition(format!(
-                "document sketch recipe version {}: expected 1 through 14",
+                "document sketch recipe version {}: expected 1 through 15",
                 recipe.version
             )));
         }
@@ -412,6 +353,7 @@ impl DocumentSketches {
             let geometry = Sketch2D::from_recipe(&sketch.geometry)?;
             restored.insert_placed(sketch.id, &sketch.name, placement, geometry)?;
             orientation::restore_orientation(&mut restored, sketch, recipe.version)?;
+            frame_edit::restore(&mut restored, sketch, recipe.version)?;
             point_projection::restore_bindings(&mut restored, sketch, recipe.version)?;
             visibility::restore_visibility(&mut restored, sketch, recipe.version)?;
             visibility::restore_constraints_shown(&mut restored, sketch, recipe.version)?;

@@ -457,3 +457,6 @@ mod sketch_owned_deletion;
 
 #[path = "lifecycle/sketch_curve_formats.rs"]
 mod sketch_curve_formats;
+
+#[path = "lifecycle/sketch_coordinate_frame.rs"]
+mod sketch_coordinate_frame;
