@@ -120,6 +120,7 @@ impl BrowserTree<'_> {
                 choice: crate::GuiBrowserChoice::CopyPartView(entry.id()),
             });
         }
+        self.ui.menu_item_config("Edit View").enabled(false).build();
         if entry.active() {
             for (label, visible) in [("All Visible", true), ("All Hidden", false)] {
                 if self.ui.menu_item(label) {
