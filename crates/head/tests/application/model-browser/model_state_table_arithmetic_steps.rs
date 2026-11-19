@@ -130,3 +130,100 @@ fn native_parameter_panel_distinguishes_nominal_and_toleranced_model_value() {
     }
     world.close();
 }
+
+#[given("The MCAD Software has a Primary model state with d0 set to 1 in")]
+fn primary_parameter_fixture(world: &mut ApplicationWorld) {
+    three_state_prism(world);
+    Client::new(world.app().owner.document_host())
+        .documents()
+        .set_units(&SetDocumentUnitsArgs {
+            length_unit: Some(Box::new("in".into())),
+            ..Default::default()
+        })
+        .unwrap();
+    persist_parameter_column(world);
+}
+#[given("Copy State has d0 set to \"1 in + 0.5 in\"")]
+fn copy_expression_fixture(world: &mut ApplicationWorld) {
+    use oblikovati_api::wire::SetModelStateTableArgs;
+    let client = Client::new(world.app().owner.document_host());
+    let view = client
+        .model_states()
+        .get_table(&Default::default())
+        .unwrap();
+    let mut parameters = view.parameters.unwrap();
+    let column = parameters
+        .iter_mut()
+        .find(|column| column.parameter_id == 3)
+        .unwrap();
+    let cell = column
+        .cells
+        .as_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|cell| cell.row.member_id == view.active_member_id)
+        .unwrap();
+    cell.expression = Some(Box::new("1 in + 0.5 in".into()));
+    client
+        .model_states()
+        .set_table(&SetModelStateTableArgs {
+            expected_generation: view.generation,
+            rows: view.rows,
+            columns: view.columns,
+            properties: view.properties,
+            suppressions: view.suppressions,
+            parameters: Some(parameters),
+        })
+        .unwrap();
+    world.pump(Vec::new());
+}
+#[when("the user opens Parameters")]
+#[when("opens Parameters again")]
+fn open_parameter_editor(world: &mut ApplicationWorld) {
+    open_manage_parameters(world);
+}
+fn assert_parameter_row(world: &mut ApplicationWorld, expression: &str, value: &str) {
+    let row = world.run("d0").center()[1];
+    let expression = expression
+        .chars()
+        .filter(|character| !character.is_whitespace())
+        .collect::<String>();
+    let value = value
+        .chars()
+        .filter(|character| !character.is_whitespace())
+        .collect::<String>();
+    assert!(
+        world
+            .frame
+            .runs
+            .iter()
+            .any(|run| (run.center()[1] - row).abs() < 4. && run.text == expression)
+    );
+    assert!(
+        world
+            .frame
+            .runs
+            .iter()
+            .filter(|run| (run.center()[1] - row).abs() < 4. && run.text == value)
+            .count()
+            >= 2,
+        "expected nominal and model values {value:?} in d0 row"
+    );
+}
+#[then("d0 shows the arithmetic equation and nominal and model values of 1.5 in")]
+fn copy_parameter_values(world: &mut ApplicationWorld) {
+    assert_parameter_row(world, "1 in + 0.5 in", "1.5 in");
+}
+#[when("the user closes Parameters and activates Primary")]
+fn activate_primary(world: &mut ApplicationWorld) {
+    click(world, "Done");
+    world.click_text("Model State");
+    let point = diagnostics::pointer_pixels(world.run("Primary").center());
+    super::super::x11_input::click(point);
+    super::super::x11_input::click(point);
+    world.pump(Vec::new());
+}
+#[then("d0 shows equation 1 in and nominal and model values of 1 in")]
+fn primary_parameter_values(world: &mut ApplicationWorld) {
+    assert_parameter_row(world, "1 in", "1 in");
+}
