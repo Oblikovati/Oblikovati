@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Render additional ribbon commands and their context menus.
 use super::*;
+#[path = "coordinate_restriction.rs"]
+mod coordinate_restriction;
 pub(super) fn draw(
     context: &mut PanelDrawContext<'_>,
     tab: RibbonTab,
@@ -50,21 +52,27 @@ pub(super) fn draw(
             continue;
         }
         let action = (label == "Move Bodies").then_some(GuiShellAction::OpenMoveBody);
+        let coordinate = coordinate_restriction::ready(label, context.state);
         let disabled = ui.begin_disabled(
-            action
-                .as_ref()
-                .is_none_or(|action| !action.dispatchable(context.state)),
+            !coordinate
+                && action
+                    .as_ref()
+                    .is_none_or(|action| !action.dispatchable(context.state)),
         );
-        if ui.button(label)
-            && let Some(action) = action
-        {
+        let clicked = ui.button(label);
+        if clicked && coordinate {
+            coordinate_restriction::open(ui);
+        } else if clicked && let Some(action) = action {
             context.actions.push(action);
         }
         drop(disabled);
         if label == "Move Bodies" && context.owners.key_tips_active {
             crate::ribbon_key_tips::badge(ui, "OD");
         }
-        unavailable_tooltip(ui, tab, panel, label, display);
+        unavailable_tooltip(ui, tab, panel, label, display, coordinate);
+        if label == coordinate_restriction::LABEL {
+            coordinate_restriction::dialog(ui);
+        }
     }
 }
 fn additional_icons(
@@ -85,21 +93,27 @@ fn additional_icons(
         let (position, size) = icons.appearance.cell(index);
         icons.cursor(ui, origin, position);
         let action = (label == "Move Bodies").then_some(GuiShellAction::OpenMoveBody);
+        let coordinate = coordinate_restriction::ready(label, context.state);
         let disabled = ui.begin_disabled(
-            action
-                .as_ref()
-                .is_none_or(|action| !action.dispatchable(context.state)),
+            !coordinate
+                && action
+                    .as_ref()
+                    .is_none_or(|action| !action.dispatchable(context.state)),
         );
-        if icons.button(ui, label, glyph, size)
-            && let Some(action) = action
-        {
+        let clicked = icons.button(ui, label, glyph, size);
+        if clicked && coordinate {
+            coordinate_restriction::open(ui);
+        } else if clicked && let Some(action) = action {
             context.actions.push(action);
         }
         drop(disabled);
         if label == "Move Bodies" && context.owners.key_tips_active {
             crate::ribbon_key_tips::badge(ui, "OD");
         }
-        unavailable_tooltip(ui, tab, panel, label, display);
+        unavailable_tooltip(ui, tab, panel, label, display, coordinate);
+        if label == coordinate_restriction::LABEL {
+            coordinate_restriction::dialog(ui);
+        }
     }
     icons.cursor(ui, origin, [0., icons.appearance.command_height()]);
 }
@@ -131,6 +145,7 @@ fn unavailable_tooltip(
     panel: RibbonPanel,
     label: &'static str,
     display: &mut RibbonDisplayState,
+    available: bool,
 ) {
     if !crate::widget_abi::disabled_item_mouse_hovered(ui) {
         return;
@@ -147,6 +162,10 @@ fn unavailable_tooltip(
     } else {
         ""
     };
+    if available {
+        ui.tooltip_text(format!("{label}\n{help}"));
+        return;
+    }
     ui.tooltip_text(format!(
         "{label}\n{help}This command is not available in this build."
     ));

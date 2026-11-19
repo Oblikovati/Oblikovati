@@ -273,7 +273,7 @@
   "features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature": {
     "feature_sha256": "645576c3b62e89cdb6c668d5579123e6880a33f9e4a8020f922f1b08e0502ca2",
     "supporting_files": {
-      "features/application/ribbon-panel-expansion/BLOCKERS.md": "e8ad6217b1ce64fe7a6031c48d92af9bc3bdd059b6925b1575b14cfcbe563e68",
+      "features/application/ribbon-panel-expansion/BLOCKERS.md": "49605b8217a06a8b2185fc7f53095b2e60427becbb0b08cb766fa9e2461de21c",
       "features/application/ribbon-panel-expansion/FIXTURES.md": "38eec46e771394c170aefded5c1bb0714115da364c692a84fd83860158310d24",
       "features/application/ribbon-panel-expansion/FUNCTIONAL.md": "6cfb93ea59eeb1a2cd6767d490cf939421d12bc2d255666d7a9d53b316889e36",
       "features/application/ribbon-panel-expansion/VISUAL.md": "33e331d90ccd383b2d96e4a65435256747ed5b75004cf45622c460d01855b361",
@@ -329,6 +329,6 @@
     "application_commit": "aefc6751f",
     "command": "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-panel-expansion xvfb-run -a -s \"-screen 0 1600x1000x24\" cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --test-threads=1",
     "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted native scenario input",
-    "notes": "Diagnostic full run: 49 of 67 scenarios passed; 18 stopped at undefined steps. Feature and all supporting Markdown and SVG hashes matched before and after the run. The unversioned source prevents strict verified acceptance; BLOCKERS.md records a scenario/documentation conflict."
+    "notes": "Diagnostic full run: 49 of 67 scenarios passed; 18 stopped at undefined steps. Feature and all supporting Markdown and SVG hashes matched before and after the run. The unversioned source prevents strict verified acceptance; BLOCKERS.md records a scenario/documentation conflict. After the run BLOCKERS.md gained requests for Options fixture and Explore panel details; this administrative change was reviewed and did not change the tested feature or behavior notes."
   }
 }

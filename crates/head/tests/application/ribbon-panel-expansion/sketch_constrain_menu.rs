@@ -5,6 +5,27 @@ use cucumber::{given, then, when};
 
 const CONSTRAIN: &str = "##ribbon-additional-Constrain";
 
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_edit_coordinate_system_during_sketch_shows_exit_instruction() {
+    let mut world = sketch_with_constrain_area();
+    let command = world.run_in_window(CONSTRAIN, "EditCoordinateSystem");
+    super::super::x11_input::click(diagnostics::pointer_pixels(command.center()));
+    world.pump(Vec::new());
+    world.expect_text("Finish the sketch");
+    world.expect_text("context menu");
+    let ok = world.run("OK").center();
+    super::super::x11_input::click(diagnostics::pointer_pixels(ok));
+    world.pump(Vec::new());
+    world.expect_no_text("Finish the sketch");
+    assert!(
+        world
+            .edited_geometry()
+            .same_recipe(&world.observed_sketch.as_ref().unwrap().geometry)
+    );
+    world.close();
+}
+
 #[given("the full Sketch ribbon is visible")]
 #[then("the full Sketch ribbon is visible")]
 fn full_sketch_ribbon(world: &mut ApplicationWorld) {
@@ -186,9 +207,7 @@ fn command_menu_closes(world: &mut ApplicationWorld) {
 )]
 fn unavailable_command_tooltip(world: &mut ApplicationWorld) {
     for _ in 0..32 {
-        if world.shows("Change the sketch origin and coordinate axes.")
-            && world.shows("This command is not available in this build.")
-        {
+        if world.shows("Change the sketch origin and coordinate axes.") {
             return;
         }
         world.pump(Vec::new());
