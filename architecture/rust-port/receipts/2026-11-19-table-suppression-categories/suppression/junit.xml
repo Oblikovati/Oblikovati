@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T11:44:48.545073321Z" time="15.94992428"><testcase name="Scenario: Apply a feature suppression change through the model-state table: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1248:3" time="15.94992428"><system-out><![CDATA[  Scenario: Apply a feature suppression change through the model-state table
+   ✔  Given The MCAD Software has an extrusion suppressed in Primary and computed in Copy State
+   ✔  And Copy State is active
+   ✔  And the active view representation permits the extrusion's solid body to be visible
+   ✔  When the user opens the model-state table
+   ✔  And changes the Primary extrusion cell to Compute
+   ✔  And accepts the table
+   ✔  And activates the Primary model state
+   ✔  Then the solid produced by the extrusion is visible
+   ✔  When the user reopens the model-state table
+   ✔  Then the Primary extrusion cell displays Compute
+   ✔  When the user changes the Primary extrusion cell to Suppress and accepts the table
+   ✔  Then the solid is absent from the viewport
+   ✔  And the extrusion row is struck through
+   ✔  When the user activates Copy State
+   ✔  Then the solid is visible again
+   ✔  And the extrusion row is no longer struck through
+]]></system-out></testcase></testsuite></testsuites>
