@@ -19,6 +19,9 @@ mod draw_controls;
 mod external_panels;
 mod work_plane;
 use work_plane::selected_work_plane;
+#[path = "engine/quick_access.rs"]
+mod quick_access;
+use quick_access::apply_quick_access;
 #[path = "engine/workspace_layout.rs"]
 mod workspace_layout;
 #[derive(Clone, Debug)]
@@ -76,6 +79,7 @@ pub struct GuiFrameEngine {
     extrude_dialog: crate::extrude_dialog::ExtrudeDialog,
     blend_dialog: crate::blend_dialog::BlendDialog,
     hole_dialog: crate::hole_dialog::HoleDialog,
+    shell_feature_dialog: crate::shell_feature_dialog::ShellFeatureDialog,
     move_body_dialog: crate::move_body_dialog::MoveBodyDialog,
     part_context_open: bool,
     offset_plane: crate::offset_plane::OffsetPlaneDialog,
@@ -152,6 +156,7 @@ impl GuiFrameEngine {
             extrude_dialog: Default::default(),
             blend_dialog: Default::default(),
             hole_dialog: Default::default(),
+            shell_feature_dialog: Default::default(),
             move_body_dialog: Default::default(),
             part_context_open: false,
             offset_plane: Default::default(),
@@ -427,66 +432,6 @@ fn home_follows_actions(
         }
     }
     home.active != before
-}
-/// The toolbar and ribbon ask; the owners that can answer are the engine's other parts.
-fn apply_quick_access(
-    toolbar: &mut crate::application::quick_access_toolbar::QuickAccessToolbar,
-    files: &mut crate::files::GuiDocumentFiles,
-    sketch_support: (
-        &mut crate::application::quick_access_toolbar::plane_selection::PlaneSelection,
-        &mut crate::application::workspace_layout::WorkspaceLayout,
-    ),
-    extrude: &mut crate::extrude_dialog::ExtrudeDialog,
-    browsers: (
-        &mut crate::material_browser::MaterialBrowser,
-        &mut crate::material_browser::MaterialBrowser,
-    ),
-    parameters: (
-        &mut crate::parameters::GuiParameterEditor,
-        &crate::GuiCommandState,
-    ),
-    selected: &mut Vec<GuiShellAction>,
-) {
-    let (planes, workspace) = sketch_support;
-    let requests = toolbar.take_requests();
-    if requests.new_document {
-        files.request_new();
-    }
-    if requests.open_document {
-        files.request_open();
-    }
-    if requests.open_material_browser {
-        browsers.0.open();
-    }
-    if requests.open_appearance_browser {
-        browsers.1.open();
-    }
-    if requests.open_projects {
-        files.request_projects();
-    }
-    if requests.open_parameters {
-        parameters.0.open(parameters.1.document);
-    }
-    let extrude_sketch = requests.choose_plane_for_extrude
-        || selected.contains(&GuiShellAction::ChooseSketchPlaneForExtrude);
-    if extrude_sketch {
-        extrude.wait_for_sketch(parameters.1.document);
-    }
-    if requests.choose_plane
-        || extrude_sketch
-        || selected.contains(&GuiShellAction::ChooseSketchPlane)
-    {
-        if let Some(plane) = workspace.take_selected_origin_plane() {
-            planes.active = false;
-            selected.push(GuiShellAction::StartSketchOn(plane));
-        } else if let Some(plane) = selected_work_plane(parameters.1) {
-            planes.active = false;
-            selected.push(GuiShellAction::StartSketchOnWorkPlane(plane));
-        } else {
-            planes.active = true;
-        }
-    }
-    extrude.requested |= requests.open_extrude || selected.contains(&GuiShellAction::OpenExtrude);
 }
 #[cfg(test)]
 #[path = "../tests/parameter_journey/platform.rs"]

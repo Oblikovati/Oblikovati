@@ -49,6 +49,7 @@ glyph_catalog! {
     Extrude => "extrude",
     Revolve => "revolve",
     Hole => "hole",
+    Shell => "shell",
     Fillet => "fillet",
     Chamfer => "chamfer",
     Move => "move",

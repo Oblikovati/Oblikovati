@@ -427,6 +427,9 @@ fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::OpenMoveBody
         | GuiShellAction::PreviewMoveBody(_)
         | GuiShellAction::CreateMoveBody(_)
+        | GuiShellAction::OpenShellFeature
+        | GuiShellAction::PreviewShellFeature(_)
+        | GuiShellAction::CreateShellFeature(_)
         | GuiShellAction::OpenHole
         | GuiShellAction::PreviewHole(_)
         | GuiShellAction::CreateHole(_)

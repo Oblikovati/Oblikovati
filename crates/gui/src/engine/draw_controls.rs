@@ -2,6 +2,8 @@
 use super::*;
 #[path = "blend_actions.rs"]
 mod blend_actions;
+#[path = "feature_actions.rs"]
+mod feature_actions;
 
 impl GuiFrameEngine {
     pub(super) fn draw_controls(
@@ -266,36 +268,14 @@ impl GuiFrameEngine {
             self.part_context_open = false;
         }
         blend_actions::open_blend_edits(&mut self.blend_dialog, &request.commands, &mut selected);
-        if selected.contains(&GuiShellAction::OpenMoveBody) {
-            self.blend_dialog.close(&mut selected);
-            self.hole_dialog.close(&mut selected);
-            self.move_body_dialog.open(&request.commands);
-            selected.retain(|action| !matches!(action, GuiShellAction::OpenMoveBody));
-        }
-        if selected.contains(&GuiShellAction::OpenHole) {
-            self.move_body_dialog.close(&mut selected);
-            self.blend_dialog.close(&mut selected);
-            self.hole_dialog.open(&request.commands);
-            selected.retain(|action| !matches!(action, GuiShellAction::OpenHole));
-        }
-        if selected.contains(&GuiShellAction::OpenFillet) {
-            self.move_body_dialog.close(&mut selected);
-            self.hole_dialog.close(&mut selected);
-            if self.blend_dialog.active() {
-                self.blend_dialog.close(&mut selected);
-            }
-            self.blend_dialog.open(&request.commands);
-            selected.retain(|action| !matches!(action, GuiShellAction::OpenFillet));
-        }
-        if selected.contains(&GuiShellAction::OpenChamfer) {
-            self.move_body_dialog.close(&mut selected);
-            self.hole_dialog.close(&mut selected);
-            if self.blend_dialog.active() {
-                self.blend_dialog.close(&mut selected);
-            }
-            self.blend_dialog.open_chamfer(&request.commands);
-            selected.retain(|action| !matches!(action, GuiShellAction::OpenChamfer));
-        }
+        feature_actions::open_drafts(
+            &request.commands,
+            &mut selected,
+            &mut self.shell_feature_dialog,
+            &mut self.hole_dialog,
+            &mut self.move_body_dialog,
+            &mut self.blend_dialog,
+        );
         self.home.panel(ui, &request.commands, area, &mut selected);
         let home_requests = std::mem::take(&mut self.home.requests);
         if home_requests.new_document {
@@ -328,6 +308,8 @@ impl GuiFrameEngine {
         self.blend_dialog
             .panel(ui, &request.commands, &mut selected);
         self.hole_dialog.panel(ui, &request.commands, &mut selected);
+        self.shell_feature_dialog
+            .panel(ui, &request.commands, &mut selected);
         self.move_body_dialog
             .panel(ui, &request.commands, &mut selected);
         self.offset_plane

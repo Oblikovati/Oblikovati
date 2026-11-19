@@ -61,12 +61,9 @@ impl DesktopPartScenes {
             .map_err(|error| error.to_string())?;
         let evaluated = preview.evaluation;
         let used_checkpoint = preview.used_checkpoint;
-        let edited = evaluated.body(feature).ok_or_else(|| {
-            format!(
-                "feature {feature:?} preview: expected a valid body; health {:?}",
-                evaluated.health()
-            )
-        })?;
+        let edited = evaluated
+            .body(feature)
+            .ok_or_else(|| preview_failure(&evaluated, feature))?;
         let edited_key =
             bodies::body_reference_text(edited.body_reference_key(session.history(), guid)?);
         #[cfg(test)]
@@ -86,6 +83,26 @@ impl DesktopPartScenes {
             document,
         )
     }
+}
+fn preview_failure(evaluated: &PreviewEvaluation, feature: FeatureId) -> String {
+    use oblikovati_model::feature::{FeatureEvaluationStatus, part::PartFeatureFailure};
+    let records: Vec<_> = evaluated
+        .health()
+        .iter()
+        .filter(|record| record.feature == feature)
+        .collect();
+    if let [record] = records.as_slice()
+        && let FeatureEvaluationStatus::Failed(PartFeatureFailure::Kernel(cause)) = &record.status
+    {
+        return format!(
+            "{cause}; feature {feature:?} preview: expected a valid body; health {:?}",
+            evaluated.health()
+        );
+    }
+    format!(
+        "feature {feature:?} preview: expected a valid body; health {:?}",
+        evaluated.health()
+    )
 }
 fn render_preview<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,

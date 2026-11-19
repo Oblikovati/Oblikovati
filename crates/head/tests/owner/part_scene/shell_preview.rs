@@ -102,6 +102,10 @@ fn shell_desktop_request_validates_selection_and_reports_kernel_refusal() {
         error.contains("tolerance"),
         "unexpected Shell refusal: {error}"
     );
+    assert!(
+        error.contains("health") && error.contains("FeatureId"),
+        "missing full diagnostic: {error}"
+    );
     assert!(owner.extrusion_preview.is_none());
     assert!(!owner.files.workspace().needs_save(document).unwrap());
 }

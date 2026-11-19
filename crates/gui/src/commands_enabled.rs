@@ -8,6 +8,10 @@ mod dispatchable;
 mod hole_enabled;
 #[path = "commands/move_body_enabled.rs"]
 mod motion;
+#[path = "commands/offset_enabled.rs"]
+mod offset_enabled;
+#[path = "commands/shell_enabled.rs"]
+mod shell_enabled;
 #[path = "commands/sketch_enabled.rs"]
 mod sketch_enabled;
 impl GuiShellAction {
@@ -310,39 +314,20 @@ impl GuiShellAction {
                 document,
                 base,
                 offset,
-            } => {
-                state.authoring == GuiAuthoringContext::Part
-                    && !state.transaction_open
-                    && state.document == Some(*document)
-                    && !offset.trim().is_empty()
-                    && !offset.contains('\0')
-                    && state
-                        .offset_plane_validation
-                        .as_ref()
-                        .is_some_and(|result| {
-                            result.document == *document
-                                && result.offset == *offset
-                                && result.error.is_none()
-                        })
-                    && match base {
-                        crate::GuiOffsetPlaneBase::Origin(_) => true,
-                        crate::GuiOffsetPlaneBase::WorkPlane(id) => {
-                            state.browser.as_ref().is_some_and(|browser| {
-                                browser
-                                    .features
-                                    .iter()
-                                    .any(|row| row.id == *id && row.kind == "Work Plane")
-                            })
-                        }
-                        crate::GuiOffsetPlaneBase::SelectedFace => state.model_face_chosen,
-                    }
-            }
+            } => offset_enabled::create(state, *document, base, offset),
             Self::LookAtSelection => state.look_at_available,
-            Self::OpenMoveBody | Self::OpenHole => hole_enabled::open(state),
-            Self::PreviewMoveBody(None) | Self::PreviewHole(None) => true,
+            Self::OpenMoveBody | Self::OpenHole | Self::OpenShellFeature => {
+                hole_enabled::open(state)
+            }
+            Self::PreviewMoveBody(None)
+            | Self::PreviewHole(None)
+            | Self::PreviewShellFeature(None) => true,
             Self::PreviewMoveBody(Some(r)) | Self::CreateMoveBody(r) => motion::request(state, r),
             Self::PreviewHole(Some(request)) | Self::CreateHole(request) => {
                 hole_enabled::request(state, request)
+            }
+            Self::PreviewShellFeature(Some(request)) | Self::CreateShellFeature(request) => {
+                shell_enabled::request(state, request)
             }
             Self::OpenFillet => blend_enabled::create(state),
             Self::OpenChamfer => blend_enabled::create(state),
