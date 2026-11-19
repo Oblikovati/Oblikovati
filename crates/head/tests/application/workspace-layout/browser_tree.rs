@@ -327,13 +327,29 @@ pub(in super::super) fn expand_display_preferences(world: &mut ApplicationWorld)
     world.pump(Vec::new());
 }
 #[when("I open the browser header menu")]
+#[when("the user opens the browser header menu")]
 fn open_header_menu(world: &mut ApplicationWorld) {
     open_browser_menu(world);
 }
 #[when("I expand Display Preferences")]
+#[when("the user expands Display Preferences")]
 fn expand_preferences(world: &mut ApplicationWorld) {
     world.click_text("Display Preferences");
     world.pump(Vec::new());
+}
+#[given("Auto expand Representations Folder on Open is enabled for the captured session")]
+fn enable_representation_expansion(world: &mut ApplicationWorld) {
+    expand_display_preferences(world);
+    if !world.checked("Auto expand Representations Folder on Open") {
+        world.click_text("Auto expand Representations Folder on Open");
+    }
+    let extent = world.extent();
+    world.click([(extent[0] * 3 / 4) as i32, (extent[1] * 3 / 4) as i32]);
+    world.pump(Vec::new());
+}
+#[then("Auto expand Representations Folder on Open is checked")]
+fn representation_expansion_checked(world: &mut ApplicationWorld) {
+    assert!(world.checked("Auto expand Representations Folder on Open"));
 }
 fn expect_rows(world: &ApplicationWorld, rows: &[&str]) {
     for row in rows {
