@@ -5,7 +5,6 @@ use oblikovati_api::wire::featureargs::Shell;
 use oblikovati_automation::{FileHost, PartReplayService, PartUpdateAccess};
 
 #[test]
-#[ignore = "#4108: rejected candidate reserves a feature ID and marks the document dirty"]
 fn typed_shell_refusal_preserves_recipe_history_and_dirty_state() {
     let (mut owner, _) = owner();
     let document = open_prism(&mut owner, false);
