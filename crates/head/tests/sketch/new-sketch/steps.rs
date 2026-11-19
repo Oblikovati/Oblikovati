@@ -47,7 +47,7 @@ fn second_sketch_active(world: &mut ApplicationWorld) {
 }
 #[then("the ViewCube reads TOP")]
 fn cube_reads_top(world: &mut ApplicationWorld) {
-    assert_eq!(viewport_orientation::control_letters(world), "Top");
+    viewport_orientation::expect_control_shows(world, "TOP");
 }
 #[then("the empty sketch status reads Fully Constrained")]
 fn empty_fully_constrained(world: &mut ApplicationWorld) {
@@ -146,7 +146,19 @@ fn third_sketch_started(world: &mut ApplicationWorld) {
 }
 #[then("the ViewCube reads RIGHT")]
 fn cube_reads_right(world: &mut ApplicationWorld) {
-    assert_eq!(viewport_orientation::control_letters(world), "Rghit");
+    viewport_orientation::expect_control_shows(world, "RIGHT");
+}
+
+#[test]
+fn viewcube_assertion_rejects_another_visible_orientation() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    viewport_orientation::expect_control_shows(&world, "FRONT");
+    let wrong_label = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        viewport_orientation::expect_control_shows(&world, "RIGHT");
+    }));
+    assert!(wrong_label.is_err(), "RIGHT must not match the FRONT view");
+    world.close();
 }
 
 #[test]
