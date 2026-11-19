@@ -324,11 +324,11 @@
       "features/application/ribbon-panel-expansion/unpinned-expansion-face-selection.svg": "db3c031bc230282b079d15f6f85a40c054b25f32fe77893bf03e6358a9237eff",
       "features/application/ribbon-panel-expansion/unpinned-tab-switch.svg": "ce5b07d3e0fee7c9de7f41b0210ce566b173add27dce5a2637acdbc0c93f4065"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-19-ribbon-expansion-aefc6751f/cucumber.json",
-    "cucumber_sha256": "c6bd054288c5526f08978345f165aa16b8a9eefa1a6274f6a602cc6fbae37273",
-    "application_commit": "aefc6751f",
-    "command": "VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-panel-expansion xvfb-run -a -s \"-screen 0 1600x1000x24\" cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --test-threads=1",
-    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted native scenario input",
-    "notes": "Diagnostic full run: 49 of 67 scenarios passed; 18 stopped at undefined steps. Feature and all supporting Markdown and SVG hashes matched before and after the run. The unversioned source prevents strict verified acceptance; BLOCKERS.md records a scenario/documentation conflict. After the run BLOCKERS.md gained requests for Options fixture and Explore panel details; this administrative change was reviewed and did not change the tested feature or behavior notes."
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-ribbon-expansion-c3a218f02/cucumber.json",
+    "cucumber_sha256": "b22be02bea96c6b8f40d26d116bceb034a1eb9406c2d18f95fb9fb08f19f7c68",
+    "application_commit": "c3a218f02",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-panel-expansion OBK_BDD_REPORTS=/tmp/obk-ribbon-full-c3a218f02 cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe; scripted native scenario input",
+    "notes": "Full diagnostic run: 53 of 67 scenarios passed; 14 stopped at undefined steps. The feature hash matched before and after; supporting files matched the prior recorded hashes after the run, but no separate before-run support snapshot was captured. The scenario source is unversioned, so strict verified acceptance remains unavailable. Options, pin-state and Explore scenario questions are in BLOCKERS.md. Shell preview is blocked by Martensite #554; Bend Part and further step bindings remain open."
   }
 }
