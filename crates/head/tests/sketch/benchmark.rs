@@ -69,6 +69,8 @@ mod rectangle_three_point;
 mod rectangle_three_point_center;
 #[path = "rectangle-two-point/steps.rs"]
 mod rectangle_two_point;
+#[path = "sketch-preferences/axes.rs"]
+mod sketch_preferences_axes;
 
 #[path = "viewport-entity-interaction/steps.rs"]
 mod viewport_entity_interaction;

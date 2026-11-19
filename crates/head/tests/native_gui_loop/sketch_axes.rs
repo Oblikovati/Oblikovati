@@ -40,7 +40,7 @@ fn change_axes(window: &mut ScriptedGuiWindow, owner: &mut NativeDesktopOwner) {
     click_labels(
         window,
         owner,
-        &["Tools", "Application Options", "Axes", "Apply Sketch"],
+        &["Tools", "Application Options", "Axes", "Apply"],
     );
     window.scripted = [true, false]
         .map(|pressed| {

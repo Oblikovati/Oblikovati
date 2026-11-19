@@ -47,7 +47,7 @@ fn sketch_preferences_change_the_owned_application_options() {
     click_shell_position(
         &mut window,
         &mut owner,
-        application_bdd::rendered_label_center("Apply Sketch"),
+        application_bdd::rendered_label_center("Apply"),
     );
     assert!(
         !owner
@@ -95,7 +95,7 @@ fn escaping_sketch_preferences_discards_the_pending_edit() {
         })
         .collect();
     crate::frames::run_frames(&mut window, HeadOptions { frames: Some(3) }, &mut owner).unwrap();
-    for label in ["Application Options", "Show grid in sketch", "Apply Sketch"] {
+    for label in ["Application Options", "Show grid in sketch", "Apply"] {
         click_shell_position(
             &mut window,
             &mut owner,

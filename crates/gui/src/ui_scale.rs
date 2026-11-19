@@ -81,6 +81,7 @@ impl GuiScalePreferences {
         };
         preference_geometry(ui);
         let mut open = self.open.is_open();
+        let mut close_requested = false;
         let escape = Self::dockable_window(ui, "Application Options", &mut open)
             .build(|| {
                 ui.text("UI");
@@ -94,11 +95,11 @@ impl GuiScalePreferences {
                     &mut self.scale_200_bounds,
                 );
                 self.part_draft.draw(ui, state.part_options, actions);
-                self.sketch_draft.draw(ui, state, actions);
+                close_requested = self.sketch_draft.draw(ui, state, actions);
                 ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape)
             })
             .unwrap_or(false);
-        if escape {
+        if escape || close_requested {
             self.open.set_open(false);
         }
         if !open {

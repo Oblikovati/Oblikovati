@@ -49,14 +49,14 @@ impl SketchOptionsDraft {
         ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
-    ) {
+    ) -> bool {
         let Some(accepted) = &state.sketch_options else {
             self.clear();
-            return;
+            return false;
         };
         self.synchronize(accepted);
         let Some(edited) = self.edited.as_mut() else {
-            return;
+            return false;
         };
         ui.separator();
         ui.text("Sketch");
@@ -64,21 +64,40 @@ impl SketchOptionsDraft {
         if conflict {
             ui.text("Sketch settings changed. Revert before applying.");
         }
-        let disabled = ui.begin_disabled(edited == accepted || conflict);
-        if ui.button("Apply Sketch") {
-            actions.push(GuiShellAction::SetSketchOptions(edited.clone()));
-        }
-        disabled.end();
-        ui.same_line();
-        if ui.button("Revert Sketch") {
-            *edited = accepted.clone();
-            self.original = Some(accepted.clone());
-        }
+        let close = draw_actions(ui, edited, accepted, conflict, actions);
         draw_grid(ui, edited);
         for (label, field) in TOGGLES {
             ui.checkbox(label, field(edited));
         }
+        close
     }
+}
+
+fn draw_actions(
+    ui: &Ui,
+    edited: &SketchApplicationOptions,
+    accepted: &SketchApplicationOptions,
+    conflict: bool,
+    actions: &mut Vec<GuiShellAction>,
+) -> bool {
+    let changed = edited != accepted;
+    let disabled = ui.begin_disabled(!changed || conflict);
+    if ui.button("Apply") {
+        actions.push(GuiShellAction::SetSketchOptions(edited.clone()));
+    }
+    disabled.end();
+    ui.same_line();
+    if !changed {
+        return ui.button("Close");
+    }
+    let disabled = ui.begin_disabled(conflict);
+    let ok = ui.button("OK");
+    disabled.end();
+    if ok {
+        actions.push(GuiShellAction::SetSketchOptions(edited.clone()));
+    }
+    ui.same_line();
+    ok || ui.button("Cancel")
 }
 
 fn draw_grid(ui: &Ui, options: &mut SketchApplicationOptions) {
