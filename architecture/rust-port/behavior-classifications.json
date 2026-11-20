@@ -2239,23 +2239,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected.",
-      "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
-      "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
-      "kernel_capabilities": "A visible solid fixture is required; view orientation changes the camera and does not modify the B-rep.",
-      "platforms": "Go reference: Linux. Current native scenarios and other platforms not established.",
-      "kernel_integration": "The native viewport renders a host-prepared solid while the orientation control changes the camera.",
-      "rust_tests": "Scenario bindings in crates/head/tests/application/viewport-orientation/steps.rs; the complete current native scenarios require verification.",
-      "oracle": "Pinned scenario steps, camera and visible-solid assertions, orientation-control state and reviewed native captures; Go is a partial reference.",
-      "expected_result": "Top shows the block face-on; Home returns to an isometric view with the same part active.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/view_test.go, head/ui/viewcube.go and head/ui/viewcube_arrows.go.",
+      "go_test_premise": "The Go Home, hit-test, snap, roll, adjacent-view and arrow animation tests check camera behavior. They do not prove the full native interaction, exact visible faces, a retained selection, or the unchanged active Part. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/steps.rs, navigation.rs, behaviour.rs and wireframe.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The viewport shows the top of the block face-on as a rectangle. The orientation control displays Top. The same part and model browser remain active. The viewport returns to the block's isometric home view. The same part and model browser remain active.",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-850db3b6578b8bc2.json",
           "sha256": "a74eba670418a275342307c45f4d3e4dbc62005a12ceb08e6fd9f7a34797ccb0"
         }
-      ]
+      ],
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:7bef0e59d8d04c35eebfc80cfe094bf50d73589c6c3caecd5a2d67c6a34864bb",
@@ -2271,23 +2272,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
-      "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
-      "kernel_capabilities": "A visible solid fixture is required; view orientation changes the camera and does not modify the B-rep.",
-      "platforms": "Go reference: Linux. Current native scenarios and other platforms not established.",
-      "kernel_integration": "The native viewport renders a host-prepared solid while the orientation control changes the camera.",
-      "rust_tests": "Scenario bindings in crates/head/tests/application/viewport-orientation/steps.rs; the complete current native scenarios require verification.",
-      "oracle": "Pinned scenario steps, camera and visible-solid assertions, orientation-control state and reviewed native captures; Go is a partial reference.",
-      "expected_result": "Adjacent arrows switch Front to Right and back while the same part remains active.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/view_test.go, head/ui/viewcube.go and head/ui/viewcube_arrows.go.",
+      "go_test_premise": "The Go Home, hit-test, snap, roll, adjacent-view and arrow animation tests check camera behavior. They do not prove the full native interaction, exact visible faces, a retained selection, or the unchanged active Part. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/steps.rs, navigation.rs, behaviour.rs and wireframe.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The control displays Right. The block is displayed face-on from the right. The control displays Front. The block returns to the face-on front view. The same part and model browser remain active.",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-7bef0e59d8d04c35.json",
           "sha256": "f3a947ef3ded4a108fe3d00756ea4f1f5d7f883a0be5d6b137f255611717c1cb"
         }
-      ]
+      ],
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:aa29f8c72c9d56c6dec4065257a97859719597aa79646dedb4a3a735de6a63f1",
@@ -2303,23 +2305,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
-      "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
-      "kernel_capabilities": "A visible solid fixture is required; view orientation changes the camera and does not modify the B-rep.",
-      "platforms": "Go reference: Linux. Current native scenarios and other platforms not established.",
-      "kernel_integration": "The native viewport renders a host-prepared solid while the orientation control changes the camera.",
-      "rust_tests": "Scenario bindings in crates/head/tests/application/viewport-orientation/steps.rs; the complete current native scenarios require verification.",
-      "oracle": "Pinned scenario steps, camera and visible-solid assertions, orientation-control state and reviewed native captures; Go is a partial reference.",
-      "expected_result": "Curved arrows rotate and restore the Front label and apparent face orientation.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/view_test.go, head/ui/viewcube.go and head/ui/viewcube_arrows.go.",
+      "go_test_premise": "The Go Home, hit-test, snap, roll, adjacent-view and arrow animation tests check camera behavior. They do not prove the full native interaction, exact visible faces, a retained selection, or the unchanged active Part. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/steps.rs, navigation.rs, behaviour.rs and wireframe.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The control still displays Front with its label rotated by a quarter turn. The block's front face is taller than it is wide on screen. The Front label is upright again. The block's front face is wider than it is tall again. The same part and model browser remain active.",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-aa29f8c72c9d56c6.json",
           "sha256": "968fa609184587ce45363d174ad7b2601aaeb59d1b4ea6ff98bd076113c1f20c"
         }
-      ]
+      ],
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:95ba01a785c74c7d2f3d409d33e90d1d230ceee6ab55e201183fb8e2a249e484",
@@ -2335,23 +2338,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "go_reference": "Go aa8297d1b: app/view_test.go and head/ui/viewcube_test.go and viewcube_arrows_test.go; see receipts/2026-11-14-go-orientation-baseline/README.md.",
-      "go_test_premise": "Go default Home, face/corner hit testing, snap direction, roll and adjacent-view tests passed. They do not establish the complete native scenarios.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
-      "kernel_capabilities": "A visible solid fixture is required; view orientation changes the camera and does not modify the B-rep.",
-      "platforms": "Go reference: Linux. Current native scenarios and other platforms not established.",
-      "kernel_integration": "The native viewport renders a host-prepared solid while the orientation control changes the camera.",
-      "rust_tests": "Scenario bindings in crates/head/tests/application/viewport-orientation/steps.rs; the complete current native scenarios require verification.",
-      "oracle": "Pinned scenario steps, camera and visible-solid assertions, orientation-control state and reviewed native captures; Go is a partial reference.",
-      "expected_result": "Selecting the upper-right corner shows an oblique Top, Front and Right view.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/view_test.go, head/ui/viewcube.go and head/ui/viewcube_arrows.go.",
+      "go_test_premise": "The Go Home, hit-test, snap, roll, adjacent-view and arrow animation tests check camera behavior. They do not prove the full native interaction, exact visible faces, a retained selection, or the unchanged active Part. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/steps.rs, navigation.rs, behaviour.rs and wireframe.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The block is displayed obliquely with its top, front and right faces visible. The orientation control shows the Top, Front and Right faces. The same part and model browser remain active.",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-95ba01a785c74c7d.json",
           "sha256": "b918810a8ea0ce94a9b49498df8af9194a5157a08aa164c7b8a6a880ce4ad2d7"
         }
-      ]
+      ],
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:086b5824dec6ba073f6ec32b3099e762f0582633834d0bc80c1daa21a6345f37",
@@ -2367,15 +2371,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-086b5824dec6ba07.json",
           "sha256": "32896a8b8c194e16178adacc14c3782de063b8338aa293929bc1573a2ba86e19"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/views.go and head/ui/viewcube_draw.go.",
+      "go_test_premise": "Go compass and ViewCube preference tests check the session toggle and persisted values. They do not prove the specific rendered dialog, cancel, placement, size, or opacity in this benchmark. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/appearance.rs, compass_observation.rs and option_rows.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The options dialog displays controls for position, size and inactive opacity. It displays view transition and orientation settings. The compass option is unchecked and the north angle field is unavailable. The north angle field becomes available. The compass option is unchecked. The north angle field is unavailable.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:f398fd9e4f521e56584341adc094ffde02cb8deb31b95de61bbcdd96e76487fa",
@@ -2391,15 +2404,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-f398fd9e4f521e56.json",
           "sha256": "7aaeb4711e4bbffe0b2ddb63a8f6950820e399c7f95da7a8b58a31638ac4e115"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/views.go and head/ui/viewcube_draw.go.",
+      "go_test_premise": "Go compass and ViewCube preference tests check the session toggle and persisted values. They do not prove the specific rendered dialog, cancel, placement, size, or opacity in this benchmark. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/appearance.rs, compass_observation.rs and option_rows.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The list offers Top Right, Bottom Right, Top Left and Bottom Left. The orientation control appears at the upper left of the viewport. The navigation bar appears on the left side of the viewport. The part remains in its existing view. The on-screen position displays Top Left. The orientation control and navigation bar return to the right side. The same part and model browser remain active.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:4be0b6deff3b8c366641922b441d8f3b46f4ecad4a233e4bcf9274082f8d1fd7",
@@ -2415,15 +2437,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-4be0b6deff3b8c36.json",
           "sha256": "b5cbcb8ffad33283087cf1bc271ca04f192046f13ec6a50fb4fb296ca921d777"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/views.go and head/ui/viewcube_draw.go.",
+      "go_test_premise": "Go compass and ViewCube preference tests check the session toggle and persisted values. They do not prove the specific rendered dialog, cancel, placement, size, or opacity in this benchmark. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/appearance.rs, compass_observation.rs and option_rows.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The list offers Automatic, Tiny, Small, Normal and Large. The orientation control is visibly larger in the viewport. The part remains in its existing view. The size displays Large. The orientation control returns to its earlier size in this viewport. The same part and model browser remain active.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:23f8ef84b30b00f65873806e853d2db7c9202d73f6a2eff32d9cac641da1597c",
@@ -2439,15 +2470,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-23f8ef84b30b00f6.json",
           "sha256": "2182e393fddd3499815598c07ff10363d9ec8c0f7cac0791f9a743a65d6a91a4"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/views.go and head/ui/viewcube_draw.go.",
+      "go_test_premise": "Go compass and ViewCube preference tests check the session toggle and persisted values. They do not prove the specific rendered dialog, cancel, placement, size, or opacity in this benchmark. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/appearance.rs, compass_observation.rs and option_rows.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The list offers 0, 25, 50, 75 and 100 percent. The inactive control appears more opaque than at 50 percent. The part remains in its existing view. The control returns to its earlier translucent appearance. The same part remains active.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:28010315b21fd5146fa2224e8080256dfe607ca18da797aca130d13550f08fc5",
@@ -2463,15 +2503,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-28010315b21fd514.json",
           "sha256": "b8d32e221ddb8556e204f81427f08eb61b79c9c7222544d405b2e9faeacac5ee"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/views.go and app/view_projection_default_test.go.",
+      "go_test_premise": "TestViewProjectionRoundTripsOverTheWireEnum checks set and read through the Go wire API. It does not prove rendered perspective changes or retained hybrid mode after a face click. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/appearance.rs and behaviour.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "Orthographic is marked as the current projection. Perspective and Perspective with Ortho Faces are offered. The block remains visible in an oblique view with a changed projection. The same part and model browser remain active. Perspective is marked as the current projection. The block returns to its orthographic appearance. The same part remains active.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:8bc8ccc922a08e9bc9119656a4291ac8a0b51efe31682ae50860f9d44bef6560",
@@ -2487,15 +2536,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-8bc8ccc922a08e9b.json",
           "sha256": "d9a12b6bfe4f1681923f938a49be3c6350c997505fec67cb3abd626c0a8c8798"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/views.go and app/view_projection_default_test.go.",
+      "go_test_premise": "TestViewProjectionRoundTripsOverTheWireEnum checks set and read through the Go wire API. It does not prove rendered perspective changes or retained hybrid mode after a face click. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/appearance.rs and behaviour.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The block remains visible in an oblique view with a changed projection. The block is displayed face-on from the top. The orientation control displays Top. Perspective with Ortho Faces is marked as the current mode. The same part remains active in the top view.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:da8c6a9eb2ac44c8a8e216bbd79c83f73a0ce0b1002337446dc822a6211e033a",
@@ -2511,15 +2569,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-da8c6a9eb2ac44c8.json",
           "sha256": "155f78597cbfc34774e027dbd7034551e96e8c886d7ae326e1808da8a3002298"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/views.go and head/ui/viewcube_draw.go.",
+      "go_test_premise": "Go compass and ViewCube preference tests check the session toggle and persisted values. They do not prove the specific rendered dialog, cancel, placement, size, or opacity in this benchmark. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/appearance.rs, compass_observation.rs and option_rows.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "A compass with north, east, south and west indicators appears around the orientation control. The part remains in the Top view. The compass option is checked and its north angle field is available. The compass disappears. The orientation control and the same part remain visible.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:93f4129513062b45bde2ccfa8d138522f0685ac9a0ae9e0068c64316cc5d824f",
@@ -2535,15 +2602,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-93f4129513062b45.json",
           "sha256": "db0ee6b9875820c9d4871a7f5759f50229a6297082892a20abaf7d1dbff76ee4"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/views.go and head/ui/viewcube_draw.go.",
+      "go_test_premise": "Go compass and ViewCube preference tests check the session toggle and persisted values. They do not prove the specific rendered dialog, cancel, placement, size, or opacity in this benchmark. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/appearance.rs, compass_observation.rs and option_rows.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The All 3D Views and Only in Current View choices are unavailable. The position, size and inactive opacity controls remain available. Both visibility scope choices are available. Only in Current View remains selected. All 3D Views is selected and Only in Current View is cleared. Only in Current View is selected and All 3D Views is cleared. The options close and the part view remains displayed.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:db4e530572d7fcea85192727af29240bd906d7c3335a30b142fac4c1abe8c204",
@@ -2559,15 +2635,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-db4e530572d7fcea.json",
           "sha256": "85e18778b2b0de5fdf24d0984f13d0ff0da753723660e485cf49e7b6a4b8af61"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/view_test.go, head/ui/viewcube.go and head/ui/viewcube_arrows.go.",
+      "go_test_premise": "The Go Home, hit-test, snap, roll, adjacent-view and arrow animation tests check camera behavior. They do not prove the full native interaction, exact visible faces, a retained selection, or the unchanged active Part. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/steps.rs, navigation.rs, behaviour.rs and wireframe.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "It offers XY(+Z), XY(-Z), XZ(+Y), XZ(-Y), YZ(+X) and YZ(-X). The Front View Plane displays XZ(+Y). The Top View Plane displays XY(+Z). The Front View Plane displays XY(+Z). The Top View Plane displays XZ(+Y).",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:713a5b9cd069a960b64a9da39f0cc4f0304c4bb7118620001b30cedd70bf0c71",
@@ -2583,15 +2668,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-713a5b9cd069a960.json",
           "sha256": "14e5a063740e354fd1fea2416f5a94af0347376eeac4587f5f9aa46ac3cbd74a"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/views.go and head/ui/viewcube_draw.go.",
+      "go_test_premise": "Go compass and ViewCube preference tests check the session toggle and persisted values. They do not prove the specific rendered dialog, cancel, placement, size, or opacity in this benchmark. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/appearance.rs, compass_observation.rs and option_rows.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The compass is visible around the orientation control. Its north indicator appears to the right of the Top face. The block remains in Top view. The compass is enabled and the north angle is 90 degrees. The compass north indicator appears above the Top face. The compass is hidden and the block remains visible.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:1fcedf70e80d0e4231731b9a4f03d28547336c4bca8000c56f5a735c9bb75573",
@@ -2607,15 +2701,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-1fcedf70e80d0e42.json",
           "sha256": "4cf4c36a335ab91ce11d2fbdb029b47164351e3c2aa84a68169b73608963e82f"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/view_test.go, head/ui/viewcube.go and head/ui/viewcube_arrows.go.",
+      "go_test_premise": "The Go Home, hit-test, snap, roll, adjacent-view and arrow animation tests check camera behavior. They do not prove the full native interaction, exact visible faces, a retained selection, or the unchanged active Part. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/steps.rs, navigation.rs, behaviour.rs and wireframe.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The whole block is visible within the viewport. The block remains magnified beyond the viewport. The whole block is visible within the viewport.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:5dc28fc1fc27c43c7fb3491c7d535c60de2450049fee5bbc273477afe4af921f",
@@ -2631,15 +2734,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-5dc28fc1fc27c43c.json",
           "sha256": "ab8c9737d32daec06133ef8c527479c4aa5277ac3b30b0f8dec759a9be45c2e4"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/view_test.go, head/ui/viewcube.go and head/ui/viewcube_arrows.go.",
+      "go_test_premise": "The Go Home, hit-test, snap, roll, adjacent-view and arrow animation tests check camera behavior. They do not prove the full native interaction, exact visible faces, a retained selection, or the unchanged active Part. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/steps.rs, navigation.rs, behaviour.rs and wireframe.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The Front view and its label rotate by a quarter turn in the screen plane. The rectangular block remains visible. Keep model upright is checked. The active part remains visible.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:fabd09ea098f7cd5a899d3de75b5b519126fc60a0e414af5159f100db69a1a66",
@@ -2655,15 +2767,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-fabd09ea098f7cd5.json",
           "sha256": "e0fd037eafa93c18107506bcc53a4a1125effc2dbb61d5cd728fe46f76e4f908"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/views.go and head/ui/viewcube_draw.go.",
+      "go_test_premise": "Go compass and ViewCube preference tests check the session toggle and persisted values. They do not prove the specific rendered dialog, cancel, placement, size, or opacity in this benchmark. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/appearance.rs, compass_observation.rs and option_rows.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The orientation control appears near the lower-right viewport corner. The navigation bar appears above it on the right. The part view remains visible. The position is Bottom Right. The orientation control appears near the lower-left viewport corner. The navigation bar appears above it on the left. The part view remains visible. The orientation control and navigation bar return to the right side.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:b85e1d1835926b35730c4ba10e32f74d328ba8b2abef3bda6c902d453fba0d9d",
@@ -2679,15 +2800,15 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency. Face picking is a dependent behavior where model geometry is selected.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
-      "go_test_premise": "Go aa8297d1b: TestSessionViewPreferences and TestViewCubeTogglesPersist pass for preference state; the tests do not drive the face-selection menu or prove pivot geometry.",
-      "kernel_capabilities": "The host resolves current named face and body bounds through Martensite analytic geometry.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
-      "kernel_integration": "The selected pivot uses named B-rep bounds; the fit operation uses displayed bounds only for presentation.",
-      "rust_tests": "application_scenarios_use_the_native_window: Toggle orientation lock for a selected face",
-      "oracle": "Pinned native scenario assertions and reviewed final capture; separate native regression tests cover selection pivot and fit.",
-      "expected_result": "Lock is available for a selected face, toggles its indicator and check mark, and becomes unavailable when selection is cleared.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "go_test_premise": "The Go Home, hit-test, snap, roll, adjacent-view and arrow animation tests check camera behavior. They do not prove the full native interaction, exact visible faces, a retained selection, or the unchanged active Part. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/steps.rs, navigation.rs, behaviour.rs and wireframe.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "Lock to Current Selection is unavailable. Lock to Current Selection is available. A lock indicator appears beside the orientation control. Lock to Current Selection is checked. The lock indicator disappears. Lock to Current Selection is unavailable.",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
@@ -2699,7 +2820,9 @@
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-b85e1d1835926b35.json",
           "sha256": "74c55290f10639126c8fb4220bc90d292a51401af96568b310dbc74002b0f060"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/view_test.go, head/ui/viewcube.go and head/ui/viewcube_arrows.go.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:a4c3b2c129840d0d7e059a72934d14a0f90de9b3b1e8b59c872501f2ba3c7523",
@@ -2715,15 +2838,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-a4c3b2c129840d0d.json",
           "sha256": "cc33a7797cabe559e9b2181fd8d339fb1b7e29766d1d4b23ee9df981d2f56d20"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/view_test.go, head/ui/viewcube.go and head/ui/viewcube_arrows.go.",
+      "go_test_premise": "The Go Home, hit-test, snap, roll, adjacent-view and arrow animation tests check camera behavior. They do not prove the full native interaction, exact visible faces, a retained selection, or the unchanged active Part. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/steps.rs, navigation.rs, behaviour.rs and wireframe.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The submenu offers Top and Front. The submenu offers Fixed Distance and Fit to View. The menus close and the same part view remains visible.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:73b06ab1c6f39f2b85d135952774a17c7772b5ff7102faeb467ffcfb56a9a12a",
@@ -2739,15 +2871,24 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-orientation-verified/receipt-73b06ab1c6f39f2b.json",
           "sha256": "142caa2ac3274241297191a3ad15354448cf54e9cae890c1f9bd0c11d05d9278"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/views.go and head/ui/viewcube_draw.go.",
+      "go_test_premise": "Go compass and ViewCube preference tests check the session toggle and persisted values. They do not prove the specific rendered dialog, cancel, placement, size, or opacity in this benchmark. See receipts/2026-11-20-viewport-orientation-r0-3961/README.md.",
+      "kernel_capabilities": "The orientation interaction requires existing visible Part geometry and a rendered viewport. It does not require a new modeling result.",
+      "platforms": "Reviewed Go and Rust UI baseline on Linux X11 with Xvfb. Rust renderer uses Vulkan Lavapipe. The Windows GNU desktop compile is distinct from UI acceptance. See the live receipt for those checks.",
+      "kernel_integration": "The desktop maps orientation commands to the viewport camera in crates/head/src/view_orientation.rs. ImGui controls and camera source are in crates/gui/src/application/viewport-orientation and crates/viewport. Martensite renders the retained Part.",
+      "rust_tests": "Native entry application_scenarios_use_the_native_window and matching camera/option steps in crates/head/tests/application/viewport-orientation/appearance.rs, compass_observation.rs and option_rows.rs. The current live receipt uses an updated feature and proves only its own hash.",
+      "oracle": "Pinned .feature Then and And steps, orientation wireframes, camera direction and rendered Part observations. Go tests cover related state and camera behavior under the listed premises.",
+      "expected_result": "The orientation control is visibly smaller in the same viewport. The part view remains visible. The size is Tiny. The orientation control returns to its earlier apparent size. The same part view remains visible.",
+      "baseline_source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62"
     },
     {
       "id": "scenario:f02c3c29dc2a2cf21cf6493e15fa73c1370f5c53eea3da44ee08d525de514047",

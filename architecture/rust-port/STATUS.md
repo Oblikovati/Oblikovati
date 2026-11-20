@@ -18,7 +18,8 @@ using this status; the live scenario directory can change.
   current native Part fixture. A separate X11 click under Openbox showed an
   intermediate frame before the model and ViewCube reached Top. See
   `receipts/2026-11-20-orientation-transition-3961/`. Strict verification
-  remains open under #3978.
+  remains open under #3978. All 20 declarations in the older pinned snapshot
+  have R0 records. See `receipts/2026-11-20-viewport-orientation-r0-3961/`.
 - Workspace Layout (#3897) passed all 53 native desktop cases and 523 steps.
   The current feature hash covers 52 declarations, including both examples
   in one outline. The foreground X11 check captured the View checklist and
