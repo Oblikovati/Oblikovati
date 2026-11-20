@@ -48,15 +48,15 @@
       "features/application/viewport-navigation-wheel/wheel-wireframe.svg": "815bfe6431fb7e677e44adf5d2bc24fee0e55d0ed6addd9efd4a662798d8c324",
       "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-wheel-x11-full-3881/cucumber.json",
-    "cucumber_sha256": "be4f2d05b3d9f1ad6cd0877cb63906441e74774bb2825ed4b2ed9723c30fce03",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-wheel-x11-full-3881/scenario-arguments.json",
-    "scenario_arguments_sha256": "fd0594e44aae6e9bfe93543c84f9b400ea146163cd8ee9d2fe7df6977cdfb762",
-    "application_commit": "b7ac6f34a",
-    "blocker": "Scenario source and build are unsealed (#3978); fixture path typing is scripted.",
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-wheel-x11-keyboard-3881/cucumber.json",
+    "cucumber_sha256": "b5a0cc37c8ada0c7f54acf65318e8c41f47559cfedccbcc78f627d093d768177",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-wheel-x11-keyboard-3881/scenario-arguments.json",
+    "scenario_arguments_sha256": "adae39a0523ca3da9647a92235ea0dd928cec4d3fa6746ea8643b361652a28be",
+    "application_commit": "771c175da94d46c026ce5c50ecc917dfcc3077eb",
+    "blocker": "Scenario source and build are unsealed (#3978).",
     "command": "Filtered native head test on viewport-navigation-wheel; see receipt run.log",
-    "environment": "Linux Xvfb 1440x900, Openbox, Vulkan Lavapipe; X11 mouse and Escape; scripted fixture typing; XMODIFIERS unset",
-    "notes": "All 12 scenarios and 143 steps passed with X11 actions. This is diagnostic, not verified acceptance."
+    "environment": "Linux Xvfb 1600x1000, Openbox, Vulkan Lavapipe; X11 mouse, Escape, fixture path entry and Enter; XMODIFIERS unset",
+    "notes": "All 12 scenarios and 143 steps passed. Built and run before the tested change was committed; diagnostic only, not verified acceptance."
   },
   "features/application/viewport-orbit/viewport-orbit.feature": {
     "feature_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
