@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_api::types::{SketchTextStyle, TEXT_ALIGN_CENTER, TEXT_ALIGN_UPPER};
+use oblikovati_api::types::{SketchTextRun, SketchTextStyle, TEXT_ALIGN_CENTER, TEXT_ALIGN_UPPER};
 use oblikovati_model::sketch::{SKETCH_RECIPE_VERSION, SketchText2D};
 
 const TEXT: SketchEntityId = SketchEntityId(10);
@@ -9,9 +9,26 @@ const PLACED: DocumentSketchId = DocumentSketchId(7);
 
 #[test]
 fn native_yaml_round_trips_authored_text_style_and_its_hidden_anchor() {
+    check_text_round_trip(None);
+}
+
+#[test]
+fn native_yaml_round_trips_formatting_in_unicode_scalar_ranges() {
+    check_text_round_trip(Some(vec![SketchTextRun {
+        start: 6,
+        end: 7,
+        bold: true,
+        width_percent: Some(Box::new(50.)),
+        ..Default::default()
+    }]));
+}
+
+fn check_text_round_trip(formatting: Option<Vec<SketchTextRun>>) {
     let mut owner = sketches();
     let mut geometry = geometry();
-    let text = add_text(&mut geometry);
+    let mut text = add_text(&mut geometry);
+    text.style.formatting_runs = formatting;
+    geometry.set_text_style(TEXT, text.style.clone()).unwrap();
     geometry.add_point(SketchEntityId(12), [1., 2.]).unwrap();
     owner.replace_geometry(PLACED, geometry).unwrap();
     let bytes = DocumentPackage::empty(DOCUMENT_PART, "Text")
@@ -40,6 +57,7 @@ fn add_text(geometry: &mut Sketch2D) -> SketchText2D {
             rotation: 0.125,
             h_align: TEXT_ALIGN_CENTER,
             v_align: TEXT_ALIGN_UPPER,
+            formatting_runs: None,
         },
     };
     geometry.add_text(text.clone()).unwrap();

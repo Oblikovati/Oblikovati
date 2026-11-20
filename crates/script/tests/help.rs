@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use oblikovati_api::wire::{METHOD_DOCUMENTS_CREATE, METHOD_DOCUMENTS_LIST};
+use oblikovati_api::wire::{
+    METHOD_DOCUMENTS_CREATE, METHOD_DOCUMENTS_LIST, METHOD_SKETCH_ADD_TEXT, METHOD_SKETCH_EDIT_TEXT,
+};
 use oblikovati_script::{
     editor::{EditorPosition, ScriptEditor},
     help::{MethodHelp, MethodHelpCatalog, MethodHelpSnapshot, MethodParameter},
@@ -129,12 +131,26 @@ fn hover_help_requires_full_method_and_rejects_invalid_positions() {
 fn complete_embedded_catalog_round_trips_with_unique_named_fields() {
     let snapshot: MethodHelpSnapshot =
         serde_json::from_str(include_str!("../resources/method-help.json")).unwrap();
-    assert_eq!(snapshot.api_version, "0.160.0");
+    assert_eq!(snapshot.api_version, "0.161.0");
     assert_eq!(
         snapshot.api_revision,
-        "803f3122e1d19e461fefa60c90b1b138c3b8214c"
+        "98425811b462c18ec573dfdcc33f2c7b264a6e25"
     );
     assert_eq!(snapshot.methods.len(), 654);
+    for wire in [METHOD_SKETCH_ADD_TEXT, METHOD_SKETCH_EDIT_TEXT] {
+        let schema = snapshot
+            .methods
+            .iter()
+            .find(|help| help.wire == wire)
+            .unwrap();
+        assert!(
+            schema
+                .parameters
+                .iter()
+                .any(|field| field.name == "formattingRuns"),
+            "{wire} must expose the released formatting ranges"
+        );
+    }
     verify_snapshot_names(&snapshot);
     MethodHelpCatalog::new(snapshot).unwrap();
 }

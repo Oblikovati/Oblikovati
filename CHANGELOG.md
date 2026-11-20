@@ -4,6 +4,10 @@
 
 ### Added
 
+- Added paragraph numbering and diameter-symbol insertion to Format Text. (#3907)
+
+- Preserved valid character-format ranges in native sketch files and sketch history. (#3907)
+
 - Added a saved Mini-Toolbar visibility option to the View ribbon. (#3897)
 
 - Add an exact best-fit certificate for explicit affine equations; sketch drag integration remains open. (#4171)

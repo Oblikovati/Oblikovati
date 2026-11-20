@@ -88,6 +88,10 @@ using this status; the live scenario directory can change.
   the current run and `receipts/2026-11-20-sketch-text-style-3907/` for the
   formatting preview and save and reopen checks. Strict verification still
   requires bounded build and runtime inputs under #3978.
+  The model uses API v0.161.0 to validate Unicode character-format ranges.
+  Tests cover atomic rejection of out-of-range edits, undo and redo, and
+  native YAML reopen. Mixed-font rendering remains open under
+  [Martensite #576](https://github.com/Oblikovati/Martensite/issues/576).
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
   Midpoint Line tool has native mouse and keyboard tests. A native YAML
