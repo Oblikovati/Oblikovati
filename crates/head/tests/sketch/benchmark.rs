@@ -23,6 +23,9 @@ mod constraint_glyph_hover;
 mod constraint_inference_scope;
 #[path = "dimension-expression/steps.rs"]
 mod dimension_expression;
+#[cfg(target_os = "linux")]
+#[path = "dimension-label-overlap/native.rs"]
+mod dimension_label_overlap;
 #[path = "ellipse/steps.rs"]
 mod ellipse;
 #[path = "explode-block/steps.rs"]
