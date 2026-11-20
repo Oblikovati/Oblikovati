@@ -14,6 +14,12 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- Ribbon Appearance (#3957): the 2026-11-20 diagnostic passed 14 of 18
+  scenarios. Three failed at missing Tools panels; one used an unpinned
+  expansion where the fixture notes require a pinned expansion. The shared
+  part setup also lacks the visible solid required by the fixture notes.
+  `BLOCKERS.md` changed during the run, so the result is not inventory
+  evidence. See `receipts/2026-11-20-ribbon-appearance-diagnostic/`.
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
   unfinished feature worktree is retained, and a native YAML fixture is
