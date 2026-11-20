@@ -423,6 +423,17 @@ impl ApplicationWorld {
     pub fn open_fixture(&mut self, path: &std::path::Path) {
         self.click_text("File");
         self.click_text("Open...");
+        #[cfg(target_os = "linux")]
+        if self.navigation_wheel_scenario() {
+            for character in path.to_str().expect("fixture path: expected UTF-8").chars() {
+                super::x11_input::press_path_character(character);
+                self.pump(Vec::new());
+            }
+            super::x11_input::press_keysym(0xff0d);
+            self.pump(Vec::new());
+            self.expect_no_text("Look in");
+            return;
+        }
         self.type_text(path.to_str().expect("fixture path: expected UTF-8"));
         self.key(ViewportPhysicalKey::Enter, false);
         self.pump(Vec::new());
