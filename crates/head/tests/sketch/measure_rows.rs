@@ -58,6 +58,36 @@ fn a_point_reads_its_model_position_and_never_a_negative_zero() {
     assert_eq!(rows[1], "Position X -5.000 Y 0.000 Z 0.000 mm");
 }
 #[test]
+fn a_curve_middle_reads_as_a_named_point() {
+    let (sketch, _) = segments();
+    assert_eq!(
+        rows(&sketch, &[MeasurePick::Middle([0.5, 0.])]),
+        [
+            "Selection 1: Middle Point",
+            "Position X 5.000 Y 0.000 Z 0.000 mm"
+        ]
+    );
+}
+#[test]
+fn an_unresolved_block_curve_cannot_be_measured() {
+    let (sketch, [member, _]) = segments();
+    let units = UnitsOfMeasure::default();
+    let context = MeasureContext {
+        sketch: &sketch,
+        plane: SketchPlane::xy(),
+        units: &units,
+    };
+    let pick = MeasurePick::BlockCurve {
+        instance: SketchEntityId(30),
+        member,
+    };
+    let error = measure_rows(&context, &[pick]).unwrap_err();
+    assert!(
+        error.contains("expected resolved placed geometry"),
+        "{error}"
+    );
+}
+#[test]
 fn a_third_selection_starts_over_and_a_repeat_changes_nothing() {
     let (_, [first, second]) = segments();
     let mut state = SketchMeasureState {
@@ -69,14 +99,17 @@ fn a_third_selection_starts_over_and_a_repeat_changes_nothing() {
         },
         generation: 0,
         picks: Vec::new(),
-        rows: Vec::new(),
+        rows: vec!["previous measurement".into()],
     };
     state.add_pick(MeasurePick::Curve(first));
     state.add_pick(MeasurePick::Curve(first));
     assert_eq!(state.picks.len(), 1);
+    assert_eq!(state.rows, ["previous measurement"]);
     state.add_pick(MeasurePick::Curve(second));
     state.add_pick(MeasurePick::Point([0., 0.]));
     assert_eq!(state.picks, [MeasurePick::Point([0., 0.])]);
+    assert_eq!(state.edit.document, 1);
+    assert_eq!(state.generation, 0);
 }
 
 fn ellipse_for_measurement() -> (Sketch2D, SketchEntityId) {

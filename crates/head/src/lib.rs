@@ -2,10 +2,12 @@
 //! Desktop window lifetime and document-owned frame dispatch. Native UI and model display remain open.
 #[cfg(any(target_os = "linux", target_os = "windows", test))]
 mod accessibility;
+#[cfg(any(target_os = "linux", target_os = "windows", test))]
 mod assembly_producer;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[allow(unsafe_code)]
 mod native_services;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod part_view_display;
 #[cfg(all(test, any(target_os = "linux", target_os = "windows")))]
 #[path = "../../gui/src/test_context.rs"]
@@ -50,12 +52,19 @@ mod orientation_work;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[macro_use]
 mod work_datum;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_blend;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_drawing;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_hole;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_inference_scope;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_move_body;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_part_view;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_shell_feature;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[macro_use]
@@ -68,6 +77,7 @@ mod work_appearance;
 mod work_selection;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_forwarding;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[path = "work_idle.rs"]
@@ -76,6 +86,7 @@ mod work_idle;
 mod work_inspect;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_sketch;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_sketch_forwarding;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_status;
@@ -148,7 +159,7 @@ fn write_output(output: &mut dyn Write, text: &str) -> Result<(), String> {
 #[path = "../tests/fixture_color.rs"]
 mod fixture_color;
 
-#[cfg(test)]
+#[cfg(all(test, any(target_os = "linux", target_os = "windows")))]
 #[path = "../tests/drawing_fixture_replay.rs"]
 mod drawing_fixture_replay;
 
@@ -184,7 +195,9 @@ pub use sketch_scene::HeadSketchSceneUpdate;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod sketch_geometric;
 /// Ids of extra document windows, which never collide with a document's own id.
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub(crate) const FIRST_EXTRA_WINDOW: u64 = 1 << 40;
+#[cfg(any(target_os = "linux", target_os = "windows", test))]
 #[path = "sketch/mod.rs"]
 mod sketch_inspect;
 #[cfg(any(target_os = "linux", target_os = "windows"))]

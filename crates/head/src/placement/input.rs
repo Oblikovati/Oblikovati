@@ -18,26 +18,15 @@ mod formats;
 mod line;
 #[path = "midpoint_line.rs"]
 mod midpoint_line;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
+#[path = "pending_dimension.rs"]
+mod pending_dimension;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
+pub(crate) use pending_dimension::{PendingDimensionChoice, PendingDimensionPlacement};
 #[path = "typed_stage.rs"]
 mod typed_stage;
-#[derive(Clone)]
-pub(crate) enum PendingDimensionPlacement {
-    Recipe {
-        recipe: SketchPlacementRecipe,
-        locks: Vec<Option<oblikovati_model::history::SketchPlacementFieldLock>>,
-    },
-    Line {
-        input: oblikovati_model::history::SketchLineChainCreation,
-        pixel: Option<[i32; 2]>,
-    },
-}
-#[derive(Clone)]
-pub(crate) struct PendingDimensionChoice {
-    pub id: u64,
-    pub index: usize,
-    pub placement: PendingDimensionPlacement,
-}
 pub(crate) struct SketchPlacementState {
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     pub pending_dimension: Option<PendingDimensionChoice>,
     pub document: u64,
     pub sketch: DocumentSketchId,
@@ -51,6 +40,7 @@ pub(crate) struct SketchPlacementState {
     line: line::LineChain,
     cursor_point: Option<[f64; 2]>,
     /// Where the numeric fields follow the pointer, in window pixels.
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     pub(crate) cursor_pixel: Option<[i32; 2]>,
     /// Explicit vertex under the Point tool pointer, shared by preview and click (#4107).
     pub(crate) cursor_vertex: Option<([f64; 2], oblikovati_model::sketch::SketchEntityId)>,
@@ -89,6 +79,7 @@ impl SketchPlacementState {
     ) -> Result<Self, String> {
         tool.validate()?;
         Ok(Self {
+            #[cfg(any(target_os = "linux", target_os = "windows"))]
             pending_dimension: None,
             document,
             sketch,
@@ -103,6 +94,7 @@ impl SketchPlacementState {
             cursor_point: None,
             center_point: false,
             repeated_click: false,
+            #[cfg(any(target_os = "linux", target_os = "windows"))]
             cursor_pixel: None,
             cursor_vertex: None,
             formats: Default::default(),
@@ -147,10 +139,12 @@ impl SketchPlacementState {
         self.tool.stage_fields(self.accepted.len()).end
     }
     /// The fields showing beside the pointer; example: for the field display.
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     pub(crate) fn placement_field_range(&self) -> std::ops::Range<usize> {
         self.tool.stage_fields(self.accepted.len())
     }
     /// A field's value before there is a shape to read it from, as the pointer gives it.
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     pub(crate) fn stage_field_value(&self, index: usize) -> f64 {
         if let Some(typed) = self.fields.typed_values().get(index).copied().flatten() {
             return typed;
@@ -188,6 +182,7 @@ impl SketchPlacementState {
         self.accepted.len() + 1 == self.tool.point_count()
     }
     /// Keys typed now reach no field, so they open the command box.
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     pub(crate) fn takes_command_alias(&self) -> bool {
         self.tool != crate::SketchPlacementTool::Line && self.field_count() == 0
     }
@@ -221,6 +216,7 @@ impl SketchPlacementState {
             })
     }
     /// Keep Point preview and commit bound to the same authored role and coincidence.
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     pub(crate) fn point_placement(
         &self,
         position: [f64; 2],
@@ -233,6 +229,7 @@ impl SketchPlacementState {
         }
     }
     /// The pointer's sketch position, once it has moved over the sketch.
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     pub(crate) fn pointer_position(&self) -> Option<[f64; 2]> {
         self.cursor_point
     }

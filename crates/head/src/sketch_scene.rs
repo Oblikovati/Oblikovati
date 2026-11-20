@@ -12,6 +12,7 @@ pub struct HeadSketchSceneUpdate {
 }
 /// A hidden sketch still shows while it is chosen in the browser or edited.
 /// Example: `sketch_shows(sketch, &session.selected_browser_sketches())`.
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 pub(crate) fn sketch_shows(
     sketch: &oblikovati_model::document_sketch::PlacedSketch,
     called_up: &[DocumentSketchId],

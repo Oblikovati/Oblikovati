@@ -50,4 +50,6 @@ fn clicking_an_accepted_loop_again_releases_it_and_any_change_drops_the_result()
     assert_eq!(state.loop_names(), ["Sketch Loop1"]);
     state.toggle_loop(TWO_SQUARES[0]);
     assert!(state.loops.is_empty());
+    assert_eq!(state.edit.document, 1);
+    assert_eq!(state.generation, 0);
 }

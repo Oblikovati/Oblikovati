@@ -3,6 +3,7 @@
 use super::*;
 
 impl SketchPlacementState {
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     pub(crate) fn midpoint_awaits_center(&self) -> bool {
         self.tool == crate::SketchPlacementTool::MidpointLine && self.accepted.is_empty()
     }
