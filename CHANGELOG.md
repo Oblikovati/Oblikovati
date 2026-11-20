@@ -10,6 +10,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Added
 
+- Add an exact best-fit certificate for explicit affine equations; sketch drag integration remains open. (#4171)
+
 - Draw midpoint lines with pointer or typed length and angle, including explicit point selection. (#4178)
 
 - Choose and select one relation when sketch constraint glyphs overlap. (#4169)

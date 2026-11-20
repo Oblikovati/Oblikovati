@@ -10,3 +10,7 @@ publish.workspace = true
 
 [lints]
 workspace = true
+
+[dependencies]
+num-rational = "=0.4.2"
+num-traits = "=0.2.19"
