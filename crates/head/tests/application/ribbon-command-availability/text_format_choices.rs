@@ -4,6 +4,7 @@ use super::*;
 use oblikovati_api::types::{SketchTextStyle, TEXT_ALIGN_CENTER, TEXT_ALIGN_MIDDLE};
 
 const MONOSPACE: &str = "DejaVu Sans Mono";
+pub(super) const GLYPH_CROP_WIDTH: usize = 90;
 
 #[test]
 fn sketch_text_format_choices_preview_and_preserve_the_original_on_cancel() {
@@ -66,7 +67,7 @@ pub(super) fn choose_font(world: &mut ApplicationWorld, family: &str) {
     assert_eq!(world.state().sketch_text.unwrap().family, family);
 }
 
-fn choose_format(world: &mut ApplicationWorld, caption: &str, selection: &str) {
+pub(super) fn choose_format(world: &mut ApplicationWorld, caption: &str, selection: &str) {
     click_format_row(world, caption);
     click_format_row(world, selection);
 }
@@ -83,13 +84,15 @@ pub(super) fn glyph_pixels(world: &mut ApplicationWorld) -> Vec<u8> {
 }
 
 pub(super) fn glyph_region(capture: &oblikovati_viewport::ViewportCapture) -> Vec<u8> {
+    let left = 860 * 4;
+    let right = left + GLYPH_CROP_WIDTH * 4;
     let stride = capture.extent[0] as usize * 4;
     capture
         .rgba
         .chunks_exact(stride)
         .skip(545)
         .take(72)
-        .flat_map(|row| row[860 * 4..950 * 4].iter().copied())
+        .flat_map(|row| row[left..right].iter().copied())
         .collect()
 }
 

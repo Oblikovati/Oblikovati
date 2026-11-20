@@ -15,6 +15,8 @@ mod text_creation;
 mod text_double_click;
 #[path = "text_edit.rs"]
 mod text_edit;
+#[path = "text_font_height.rs"]
+mod text_font_height;
 #[path = "text_format_choices.rs"]
 mod text_format_choices;
 #[path = "text_italic.rs"]
