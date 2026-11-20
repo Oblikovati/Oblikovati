@@ -167,6 +167,33 @@ def sandbox_build_command(probe: BuildProbe) -> list[str]:
     return command + list(BUILD_PROGRAM)
 
 
+def sandbox_desktop_command(probe: BuildProbe) -> list[str]:
+    """Build the desktop in the same sandbox; example: sandbox_desktop_command(probe)."""
+    command = sandbox_build_command(probe)
+    return command[:-len(BUILD_PROGRAM)] + [
+        "--chdir", "/source", "/toolchain/bin/cargo", "--config", "/config/config.toml",
+        "build", "--locked", "--offline", "-p", "oblikovati-head", "--bin", "oblikovati",
+        "--message-format=json-render-diagnostics",
+    ]
+
+
+def desktop_path(messages: Path, target: Path) -> Path:
+    """Find one production desktop artifact; example: desktop_path(messages, target)."""
+    records = (json.loads(line) for line in messages.read_text(encoding="utf-8").splitlines())
+    matches = []
+    for record in records:
+        if (record.get("reason") != "compiler-artifact"
+                or record.get("target", {}).get("name") != "oblikovati"
+                or record.get("profile", {}).get("test")
+                or not record.get("executable")):
+            continue
+        guest = Path(record["executable"])
+        if not guest.is_absolute() or not guest.is_relative_to("/build") or ".." in guest.parts:
+            raise ValueError(f"desktop {guest}: expected an absolute path inside /build")
+        matches.append(target / guest.relative_to("/build"))
+    return require_runner(matches, target)
+
+
 def run_process(command: list[str], messages: Path, log: Path) -> int:
     """Run the sandbox and retain its output; example: run_process(command, messages, log)."""
     with messages.open("xb") as stdout, log.open("xb") as stderr:
@@ -277,6 +304,10 @@ def run_build_probe(
     code = run(sandbox_build_command(probe), messages, log)
     if code != 0:
         raise ValueError(f"build exit {code}: expected success; inspect {log}")
+    desktop_messages, desktop_log = probe.logs / "desktop.jsonl", probe.logs / "desktop.log"
+    desktop_code = run(sandbox_desktop_command(probe), desktop_messages, desktop_log)
+    if desktop_code != 0:
+        raise ValueError(f"desktop build exit {desktop_code}: expected success; inspect {desktop_log}")
     if (
         snapshot_inputs(probe, snapshot) != before
         or file_identity(probe.bwrap) != sandbox
@@ -285,6 +316,9 @@ def run_build_probe(
             "build inputs changed: expected unchanged mounted inputs and sandbox"
         )
     result = probe_result(runner_path(messages, probe.target), before, sandbox)
+    desktop = desktop_path(desktop_messages, probe.target)
+    result["desktop"] = str(desktop)
+    result["desktop_sha256"] = file_identity(desktop)["sha256"]
     if vendor_report is not None:
         key = "vendor_check" if "git" in vendor_report else "registry_check"
         result[key] = vendor_report
