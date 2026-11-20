@@ -48,15 +48,15 @@
       "features/application/viewport-navigation-wheel/wheel-wireframe.svg": "815bfe6431fb7e677e44adf5d2bc24fee0e55d0ed6addd9efd4a662798d8c324",
       "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-wheel-segments-3881/cucumber.json",
-    "cucumber_sha256": "b35d7bbcdeff4425b23eb5b6b5af995cb3acc3f376e8f87378df62784e393e8c",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-wheel-segments-3881/scenario-arguments.json",
-    "scenario_arguments_sha256": "ccd1c88ad5ddda82f082e32b31ee7e04d519a33a46c9c510b9782e1ba6c237a6",
-    "application_commit": "5191487aa",
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-wheel-visual-3881/cucumber.json",
+    "cucumber_sha256": "7f3204531bf476b10cb7050ec247bebb78c612c767b3c5e6019c086240b68b3f",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-wheel-visual-3881/scenario-arguments.json",
+    "scenario_arguments_sha256": "6a76bb5349d47372d7f3c1cd6a4f837d0296b9b5f89428dc2f8959dca44b1f6e",
+    "application_commit": "c7dd08609",
     "blocker": "Scenario source and build are unsealed (#3978).",
     "command": "Filtered native head test on viewport-navigation-wheel; see receipt run.log",
     "environment": "Linux Xvfb 1600x1000, Openbox, Vulkan Lavapipe; X11 mouse, Escape, fixture path entry and Enter; XMODIFIERS unset",
-    "notes": "All 12 scenarios and 143 steps passed; compact wheel segment checks use rendered pixels. Diagnostic only, not verified acceptance."
+    "notes": "All 12 scenarios and 143 steps passed. Built and run before the tested change was committed; diagnostic only, not verified acceptance."
   },
   "features/application/viewport-orbit/viewport-orbit.feature": {
     "feature_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",

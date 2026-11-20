@@ -121,8 +121,10 @@ using this status; the live scenario directory can change.
 - Viewport navigation wheel (#3881): all 12 scenarios and 143 steps passed
   with X11 mouse, Escape, fixture path entry and Enter, a native part, and
   unchanged source/support hashes. Compact wheel segment checks use rendered
-  pixels. The source and build are unsealed, so this remains blocked from
-  verified acceptance. See `receipts/2026-11-20-wheel-segments-3881/`.
+  pixels. Full-wheel partitions, non-overlapping labels, and visible menu and
+  close controls were checked in the native window. The source and build are
+  unsealed, so this remains blocked from verified acceptance. See
+  `receipts/2026-11-20-wheel-visual-3881/`.
   A later feature-scoped local snapshot pins the same feature, support files,
   and native fixture; the earlier run did not use that snapshot. See
   `receipts/2026-11-20-wheel-local-snapshot-3881/`.
