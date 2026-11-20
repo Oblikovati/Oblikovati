@@ -2,6 +2,11 @@
 //! Exercise midpoint-line selection and placement with native input.
 use super::super::ApplicationWorld;
 use oblikovati_model::sketch::{PlanarConstraint, Sketch2D};
+#[cfg(target_os = "linux")]
+use oblikovati_model::{
+    document_sketch::SketchPlacement,
+    feature::{work_geometry::WorkPointReference, work_plane::WorkPlaneOrigin},
+};
 
 #[cfg(target_os = "linux")]
 fn start_midpoint_line(world: &mut ApplicationWorld) {
@@ -182,6 +187,7 @@ fn fully_constrained(world: &mut ApplicationWorld) {
 fn native_midpoint_at_origin_with_typed_dimensions_has_no_freedom() {
     let mut world = ApplicationWorld::new();
     world.start_sketch_on("YZ Plane");
+    disable_grid_snapping(&mut world);
     let origin_id = world
         .edited_geometry()
         .points()
@@ -256,4 +262,107 @@ fn original_length_remains(world: &mut ApplicationWorld) {
         text.contains("10mm"),
         "expected 10 mm in the editor: {text:?}"
     );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_empty_right_sketch_fixture_survives_save_and_reopen() {
+    let mut world = ApplicationWorld::new();
+    world.start_sketch_on("YZ Plane");
+    disable_grid_snapping(&mut world);
+    assert_empty_projected_origin(&mut world);
+    world.finish_sketch();
+    let document = world.active_id();
+    let path = world.save_part_to_file(document, "empty-planar-sketch-right.opd");
+    reopen_and_check_right_sketch(&mut world, &path);
+    world.finish_sketch();
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../test-utilities/fixtures/empty-planar-sketch-right.opd");
+    reopen_and_check_right_sketch(&mut world, &fixture);
+    assert!(!world.state().sketch_options.unwrap().snap_to_grid);
+    if let Some(output) = std::env::var_os("OBK_EXPORT_RIGHT_SKETCH") {
+        export_new_fixture(&path, &std::path::PathBuf::from(output));
+    }
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+fn disable_grid_snapping(world: &mut ApplicationWorld) {
+    let mut options = world.state().sketch_options.unwrap();
+    options.snap_to_grid = false;
+    world.app().owner.change_sketch_options(options).unwrap();
+}
+
+#[cfg(target_os = "linux")]
+fn assert_saved_right_sketch(path: &std::path::Path) {
+    let bytes = std::fs::read(path).unwrap();
+    let package = oblikovati_persistence::package::DocumentPackage::decode(&bytes).unwrap();
+    let restored = package.restore_sketches().unwrap();
+    let [sketch] = restored.sketches.sketches() else {
+        panic!("expected one saved sketch")
+    };
+    assert_eq!(sketch.name(), "Sketch1");
+    assert_eq!(
+        sketch.placement(),
+        SketchPlacement::OriginPlane(WorkPlaneOrigin::YZ)
+    );
+    assert!(
+        sketch
+            .projected_point_for_source(WorkPointReference::Origin)
+            .is_some()
+    );
+}
+
+#[cfg(target_os = "linux")]
+fn reopen_and_check_right_sketch(world: &mut ApplicationWorld, path: &std::path::Path) {
+    assert_saved_right_sketch(path);
+    reopen_right_sketch(world, path);
+    assert_empty_projected_origin(world);
+    super::super::viewport_orientation::expect_control_shows(world, "Right");
+}
+
+#[cfg(target_os = "linux")]
+fn assert_empty_projected_origin(world: &mut ApplicationWorld) {
+    let geometry = world.edited_geometry();
+    assert!(geometry.lines().is_empty());
+    assert!(geometry.circles().is_empty());
+    assert!(geometry.arcs().is_empty());
+    assert!(
+        geometry
+            .points()
+            .iter()
+            .any(|point| point.position == [0., 0.])
+    );
+    assert_eq!(world.dimensions_needed(), 0);
+}
+
+#[cfg(target_os = "linux")]
+fn reopen_right_sketch(world: &mut ApplicationWorld, path: &std::path::Path) {
+    world.close_active_tab();
+    world.pump(Vec::new());
+    world.reopen_through_dialog(path);
+    world.pump(Vec::new());
+    let row = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text.starts_with("[DOF"))
+        .expect("expected a saved sketch row")
+        .center()
+        .map(|value| value as i32);
+    world.double_click(row);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+}
+
+#[cfg(target_os = "linux")]
+fn export_new_fixture(source: &std::path::Path, output: &std::path::Path) {
+    use std::io::Write;
+    let bytes = std::fs::read(source).unwrap();
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(output)
+        .unwrap();
+    file.write_all(&bytes).unwrap();
 }
