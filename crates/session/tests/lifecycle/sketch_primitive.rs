@@ -477,3 +477,9 @@ mod chain_preview;
 
 #[path = "sketch_primitive/point_preview.rs"]
 mod point_preview;
+
+#[path = "sketch_primitive/picked_placement.rs"]
+mod picked_placement;
+
+#[path = "sketch_primitive/picked_bench.rs"]
+mod picked_bench;

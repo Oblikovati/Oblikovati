@@ -12,6 +12,7 @@ impl SketchPlacementRecipe {
             members: polygon_members(seed.sides, radius),
             fields,
             relations: SketchPlacementRelation::polygon(seed.sides).collect(),
+            picked_points: Default::default(),
             circular_checks: vec![],
         };
         recipe.validate()?;

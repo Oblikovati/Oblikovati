@@ -20,6 +20,7 @@ impl SketchPlacementRecipe {
         relations.push(SketchPlacementRelation::EqualRadius([1, 3]));
         let fields = straight_fields(centers, width, &layout.points);
         Ok(Self {
+            picked_points: Default::default(),
             circular_checks: Vec::new(),
             points: layout.points,
             members,
@@ -58,6 +59,7 @@ impl SketchPlacementRecipe {
             .to_vec();
         let fields = curved_fields(center, endpoints, width, points[1]);
         Ok(Self {
+            picked_points: Default::default(),
             circular_checks: Vec::new(),
             points,
             members,

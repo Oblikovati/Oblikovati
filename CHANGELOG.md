@@ -153,6 +153,10 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Changed
 
+- Preserved explicitly selected sketch points during placement previews and commits. (#4179)
+
+- Reduced repeated constraint analysis during sketch dimension placement. (#4179)
+
 - Kept Point placement at the cursor when sketch inference or auto-apply was disabled. (#4177)
 
 - Kept inferred line directions temporary when constraint persistence is off. (#4160)

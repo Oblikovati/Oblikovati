@@ -10,6 +10,7 @@ impl SketchPlacementRecipe {
             points: vec![center],
             members: vec![ellipse_member(major_axis, radii)],
             relations: vec![],
+            picked_points: Default::default(),
             circular_checks: vec![],
             fields: ellipse_fields(center, major_axis, radii),
         };
