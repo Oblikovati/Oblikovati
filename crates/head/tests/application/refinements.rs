@@ -356,7 +356,9 @@ fn search_cleared(world: &mut ApplicationWorld) {
 #[then("the search query remains visible in the field")]
 fn query_visible(world: &mut ApplicationWorld) {
     assert!(
-        world.shows("zzz") || world.shows("no such"),
+        ["zzq-nomatch", "zzz", "no such"]
+            .iter()
+            .any(|query| world.shows(query)),
         "expected the query in the field"
     );
 }

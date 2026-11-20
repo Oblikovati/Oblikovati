@@ -6,6 +6,18 @@ const ORIENTATION_PART: &str = "fixtures/cad/docking-visible-solid-current.opd";
 
 #[given("`fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software")]
 #[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with a visible solid"
+)]
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with a solid extrusion"
+)]
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with an extrusion and its underlying sketch"
+)]
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with one solid body made from an extrusion and sketch"
+)]
+#[given(
     "`fixtures/cad/docking-visible-solid-current.opd` is active with its rectangular block visible in the MCAD Software"
 )]
 fn open_orientation_part(world: &mut ApplicationWorld) {

@@ -20,9 +20,10 @@ using this status; the live scenario directory can change.
   `receipts/2026-11-20-orientation-transition-3961/`. Strict verification
   remains open under #3978.
 - Workspace Layout (#3897): the current source baseline passed 15 of 53 cases.
-  Three focused Part cases passed after fixture setup corrections. The saved
-  Drawing passed nine of ten drawing browser cases. The panel-add control
-  remains absent after closing the Drawing browser. See
+  Three focused Part cases passed after fixture setup corrections. On the
+  saved Drawing, the panel-add control now restores the browser after it
+  closes. The other focused run opened and selected Log in the same dock.
+  See the baseline at
   `receipts/2026-11-20-workspace-native-baseline-3897/`.
 - Document Tabs (#3900): all 39 scenarios and 343 steps passed locally.
   Openbox confirmed two separate operating-system windows and verified input

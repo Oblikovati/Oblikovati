@@ -107,10 +107,18 @@ fn work_point_rows(world: &mut ApplicationWorld) {
 }
 #[then("the matching text is highlighted in those rows")]
 fn matches_highlighted(world: &mut ApplicationWorld) {
-    assert!(
-        world.text_is_selected("WorkPoint1"),
-        "expected a highlight behind the match"
-    );
+    let current = super::native_part::INSPECTION_POINTS;
+    let rows = if world.shows(current[0]) {
+        current.as_slice()
+    } else {
+        &["WorkPoint1"]
+    };
+    for row in rows {
+        assert!(
+            world.text_is_selected(row),
+            "{row}: expected a highlight behind the match"
+        );
+    }
 }
 #[then("unrelated visible feature rows are filtered from the browser")]
 fn unrelated_filtered(world: &mut ApplicationWorld) {
@@ -217,9 +225,12 @@ fn part_with_sketch_under_edit(world: &mut ApplicationWorld) {
 #[given("the model browser shows an expanded Origin branch")]
 #[given("the Origin branch is expanded in the model browser")]
 fn origin_expanded(world: &mut ApplicationWorld) {
-    // Outside a sketch, the scenarios go on to watch a solid: this fixture part has one.
-    if world.state().authoring == oblikovati_gui::GuiAuthoringContext::Part {
+    // The current fixture owns the browser; only open the historical test part when no file is active.
+    if world.state().document.is_none() {
         super::browser_feature::open_extruded_part(world);
+    }
+    if !origin_row_shown(world) {
+        super::browser_feature::click_branch_arrow(world, "Origin");
     }
     world.expect_text("Center Point");
     world.expect_text("Sketches");

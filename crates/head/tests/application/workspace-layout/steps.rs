@@ -36,6 +36,8 @@ mod drawing_browser_steps;
 #[cfg(target_os = "linux")]
 #[path = "external_close_native.rs"]
 mod external_close_native;
+#[path = "native_part.rs"]
+mod native_part;
 #[cfg(target_os = "linux")]
 #[path = "representation_preference_native.rs"]
 mod representation_preference_native;

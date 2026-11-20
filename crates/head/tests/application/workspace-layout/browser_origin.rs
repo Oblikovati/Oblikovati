@@ -14,8 +14,12 @@ const ORIGIN_CHILDREN: [&str; 3] = ["XY Plane", "X Axis", "Center Point"];
 // Origin's own menus. These open on the same part, for the solid the scenarios keep watching.
 #[given("the Origin branch is collapsed in the model browser")]
 fn origin_collapsed(world: &mut ApplicationWorld) {
-    open_extruded_part(world);
-    click_branch_arrow(world, "Origin");
+    if world.state().document.is_none() {
+        open_extruded_part(world);
+    }
+    if world.shows("X Axis") {
+        click_branch_arrow(world, "Origin");
+    }
     world.expect_no_text("X Axis");
 }
 #[when("I right-click Origin")]

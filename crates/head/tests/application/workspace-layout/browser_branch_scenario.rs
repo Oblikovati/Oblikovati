@@ -6,6 +6,18 @@ use cucumber::{given, then, when};
 #[given("a part document with an expanded Extrusion1 branch is open in the MCAD Software")]
 fn expanded_feature_part(world: &mut ApplicationWorld) {
     browser_feature::open_extruded_part_for_face_sketch(world);
+    expand_extrusion_row(world);
+}
+
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software with an expanded Extrusion1 branch"
+)]
+fn expanded_named_extrusion(world: &mut ApplicationWorld) {
+    super::native_part::open_named_extrusion(world);
+    expand_extrusion_row(world);
+}
+
+fn expand_extrusion_row(world: &mut ApplicationWorld) {
     world.expect_text("Extrusion1");
     if !world.shows("Sketch1") {
         browser_feature::click_branch_arrow(world, "Extrusion1");
