@@ -27424,8 +27424,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry.go, model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go tests cover saved text style, derived glyphs, glyph placement, and typed add/edit/get. Those checks do not cover desktop preview cancellation, glyph picking, or the undo/redo sequence.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Glyph construction and analytic nearest-point query on an outline. Text content edits keep the original anchor and do not add sketch constraints.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. Windows and macOS UI evidence is pending.",
+      "kernel_integration": "The desktop uses the same Martensite glyph builder for committed text, draft text, and analytic glyph picking. Edit commit uses document history; canceled drafts do not write to the model.",
+      "rust_tests": "sketch_scenarios_use_the_native_window, focused by the pinned case ID; sketch_text_context_replaces_the_same_entity_and_restores_history; native_text_edit_preview_masks_the_original_and_cancel_restores_it.",
+      "oracle": "Pinned Then steps. Inspect draft content and format, compare visible committed and draft glyphs, and query the sketch for text count, entity ID, anchor, and remaining degrees of freedom.",
+      "expected_result": "The next Format Text editor opens empty. Formatting defaults are inspected separately from the canceled content.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:e5e3fdf4adf799b45f03a9e8a0311882cc587ee1df05b1d2623dea2798f6e1f5",
@@ -27441,8 +27451,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry.go, model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go tests cover saved text style, derived glyphs, glyph placement, and typed add/edit/get. Those checks do not cover desktop preview cancellation, glyph picking, or the undo/redo sequence.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Glyph construction and analytic nearest-point query on an outline. Text content edits keep the original anchor and do not add sketch constraints.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. Windows and macOS UI evidence is pending.",
+      "kernel_integration": "The desktop uses the same Martensite glyph builder for committed text, draft text, and analytic glyph picking. Edit commit uses document history; canceled drafts do not write to the model.",
+      "rust_tests": "sketch_scenarios_use_the_native_window, focused by the pinned case ID; sketch_text_context_replaces_the_same_entity_and_restores_history; native_text_edit_preview_masks_the_original_and_cancel_restores_it.",
+      "oracle": "Pinned Then steps. Inspect draft content and format, compare visible committed and draft glyphs, and query the sketch for text count, entity ID, anchor, and remaining degrees of freedom.",
+      "expected_result": "Edit Text opens the existing b and its format. Ctrl+A and c replace b in the preview. Cancel restores b and the Ready solver count and creates no new entity.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:14866976d7128a80d84d6354fc1d6a0a14a31cf2d2a6382b2669c10a874609e3",
@@ -27458,8 +27478,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry.go, model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go tests cover saved text style, derived glyphs, glyph placement, and typed add/edit/get. Those checks do not cover desktop preview cancellation, glyph picking, or the undo/redo sequence.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Glyph construction and analytic nearest-point query on an outline. Text content edits keep the original anchor and do not add sketch constraints.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. Windows and macOS UI evidence is pending.",
+      "kernel_integration": "The desktop uses the same Martensite glyph builder for committed text, draft text, and analytic glyph picking. Edit commit uses document history; canceled drafts do not write to the model.",
+      "rust_tests": "sketch_scenarios_use_the_native_window, focused by the pinned case ID; sketch_text_context_replaces_the_same_entity_and_restores_history; native_text_edit_preview_masks_the_original_and_cancel_restores_it.",
+      "oracle": "Pinned Then steps. Inspect draft content and format, compare visible committed and draft glyphs, and query the sketch for text count, entity ID, anchor, and remaining degrees of freedom.",
+      "expected_result": "OK replaces b with c at the same location and returns to Ready with the same solver count. Ctrl+Z restores b in the original object. Ctrl+Y restores c at the same location.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:26da58d8e6992233617e90c3c5137d6a59bad1ff0fbf6a1acf6ae27744c9c706",

@@ -66,9 +66,12 @@ using this status; the live scenario directory can change.
   `receipts/2026-11-20-ribbon-command-availability-complete-3956/`.
 - Sketch Text (#3907) opens the dockable Format Text editor from the Sketch
   ribbon. Point placement, preview, Cancel, OK, and creation undo and redo
-  passed native input checks. Published case `text-08` passed its four steps.
-  Existing-text editing, richer formatting, and the remaining standalone Text
-  scenarios are open.
+  passed native input checks. Existing text now opens for editing from its
+  glyph. Cancel restores the glyph. An accepted edit preserves the entity and
+  anchor and uses one undo step. Pinned `text-08`, `text-09`, and `text-10`
+  passed all 23 steps and have R0 baseline records. Rich formatting and the
+  remaining Text scenarios are open. See
+  `receipts/2026-11-20-sketch-text-edit-3907/`.
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
   Midpoint Line tool has native mouse and keyboard tests. A native YAML
