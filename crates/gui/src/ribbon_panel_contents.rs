@@ -191,6 +191,8 @@ pub(crate) fn draw_panel_content(
         RibbonPanel::ToolClipboard | RibbonPanel::ToolMeasure => {
             crate::ribbon_panels::builtin::draw(ui, panel, state, owners, actions, false);
         }
+        // The captured Tutorials panel contains no commands. Its title follows Show Panels.
+        RibbonPanel::ToolTutorials => {}
         RibbonPanel::ToolFind => {
             if owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal {
                 appearance_tools::find(ui, state, owners);

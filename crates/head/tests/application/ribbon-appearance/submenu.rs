@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Steps for switching between the appearance and panel visibility lists.
+use super::super::ribbon_customization::{
+    click_in_customize, open_tools_customization, stage_sketch_visibility,
+};
 use super::*;
 
 fn open_tools_panel_list(world: &mut ApplicationWorld) {
@@ -26,19 +29,31 @@ fn set_tools_panel_visibility(world: &mut ApplicationWorld, label: &str, visible
     world.escape();
 }
 
+fn enable_user_commands(world: &mut ApplicationWorld) {
+    open_tools_panel_list(world);
+    let present = world.text().lines().any(|line| line == "User Commands");
+    world.escape();
+    world.escape();
+    if !present {
+        open_tools_customization(world);
+        stage_sketch_visibility(world);
+        click_in_customize(world, "OK");
+    }
+    set_tools_panel_visibility(world, "User Commands", true);
+}
+
 #[given("Team Web, Tutorials, and User Commands are enabled in Show Panels")]
 fn enable_captured_panels(world: &mut ApplicationWorld) {
-    for label in ["Team Web", "Tutorials", "User Commands"] {
-        set_tools_panel_visibility(world, label, true);
-    }
+    enable_user_commands(world);
+    set_tools_panel_visibility(world, "Tutorials", true);
+    set_tools_panel_visibility(world, "Team Web", true);
 }
 
 #[given("Team Web is disabled while Tutorials and User Commands are enabled in Show Panels")]
 fn setup_reset_panels(world: &mut ApplicationWorld) {
+    enable_user_commands(world);
+    set_tools_panel_visibility(world, "Tutorials", true);
     set_tools_panel_visibility(world, "Team Web", false);
-    for label in ["Tutorials", "User Commands"] {
-        set_tools_panel_visibility(world, label, true);
-    }
 }
 
 #[then("Team Web, Tutorials, and User Commands are checked in the captured panel state")]
@@ -58,6 +73,25 @@ fn tools_panel_fixture_changes_and_restores_visibility() {
     world.expect_no_text("Find");
     set_tools_panel_visibility(&mut world, "Find", true);
     world.expect_text("Find");
+    world.close();
+}
+
+#[test]
+fn optional_tools_panels_follow_show_panels_and_reset() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    select_tab(&mut world, "Tools");
+    world.expect_no_text("Tutorials");
+    enable_user_commands(&mut world);
+    world.expect_text("User Commands");
+    set_tools_panel_visibility(&mut world, "Tutorials", true);
+    world.expect_text("Tutorials");
+    open_panel_appearance(&mut world, "Options");
+    world.click_text("Reset Ribbon");
+    world.click_text("Yes");
+    select_tab(&mut world, "Tools");
+    world.expect_no_text("Tutorials");
+    world.expect_no_text("User Commands");
     world.close();
 }
 

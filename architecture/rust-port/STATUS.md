@@ -54,8 +54,10 @@ using this status; the live scenario directory can change.
   `receipts/2026-11-20-midpoint-line-4178/`.
 - Ribbon Appearance (#3957): the full diagnostic passed 15 of 18 scenarios
   and 166 of 169 executed steps. The part fixture has a visible solid, and
-  the pinned Modify expansion passes Text Off and Normal. The three remaining
-  scenarios stop at Tools panel visibility setup. See
+  the pinned Modify expansion passes Text Off and Normal. A focused native
+  test verifies that Show Panels reveals Tutorials, Customize sets up a real
+  User Commands panel, and Reset Ribbon restores both defaults. Team Web
+  remains open in the three Tools panel scenarios. See
   `receipts/2026-11-20-ribbon-appearance-fixture-3957/`.
 - Ribbon Command Availability (#3956): the full run passed three of five
   scenarios. Existing Create placement tools now enter the only planar sketch

@@ -402,7 +402,7 @@ fn scroll_source_to_line(world: &mut ApplicationWorld) {
     })]);
     world.pump(Vec::new());
 }
-fn open_tools_customization(world: &mut ApplicationWorld) {
+pub(super) fn open_tools_customization(world: &mut ApplicationWorld) {
     world.click_text("Tools");
     world.click_text("Customize");
     world.pump(Vec::new());

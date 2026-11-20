@@ -165,6 +165,7 @@ impl Default for RibbonDisplayState {
                 (RibbonTab::Model, RibbonPanel::Parameters),
                 (RibbonTab::Sketch, RibbonPanel::Layout),
                 (RibbonTab::Sketch, RibbonPanel::Parameters),
+                (RibbonTab::Tools, RibbonPanel::ToolTutorials),
             ]),
             show_panel_titles: true,
         }
