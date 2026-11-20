@@ -7,7 +7,22 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from sealed_execution import SealedRequest, run_process, run_sealed
+from sealed_execution import SealedRequest, docking_program, run_process, run_sealed, sandbox_program
+
+
+class DockingSandboxProgramTests(unittest.TestCase):
+    def test_docking_uses_fixed_display_and_window_manager(self) -> None:
+        command = docking_program("application_scenarios_use_the_native_window")
+        self.assertIn("-screen 0 1440x900x24 -noreset", command)
+        self.assertIn("/bin/sh", command)
+        self.assertTrue(any("openbox" in argument and "trap" in argument for argument in command))
+        self.assertEqual(command[-3:], ["/runner", "application_scenarios_use_the_native_window", "--nocapture"])
+
+    def test_other_features_keep_their_display(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            command = sandbox_program(SealedFixture(Path(folder)).request())
+            self.assertIn("-screen 0 1920x1080x24 -noreset", command)
+            self.assertNotIn("/bin/sh", command)
 
 
 class FakeSourceVerifier:

@@ -78,13 +78,25 @@ fn desktop_executable() -> std::path::PathBuf {
 }
 
 fn run_desktop_restart_check() {
-    let script = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tools/bdd/docking_process_restart.py");
+    let script = tempfile::NamedTempFile::new().expect("restart driver: expected a temporary file");
+    std::fs::write(
+        script.path(),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../tools/bdd/docking_process_restart.py"
+        )),
+    )
+    .expect("restart driver: expected to write the embedded source");
     let fixture =
         super::super::scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
     let output = super::super::world::reports_folder().join("docking-process-restart");
     let result = std::process::Command::new("python3")
-        .args([script, desktop_executable(), fixture, output])
+        .args([
+            script.path(),
+            desktop_executable().as_path(),
+            fixture.as_path(),
+            output.as_path(),
+        ])
         .output()
         .expect("docking restart: expected python3 and the native desktop test");
     assert!(
