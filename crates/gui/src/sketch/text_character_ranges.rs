@@ -3,14 +3,47 @@
 use oblikovati_api::types::SketchTextRun;
 use std::ops::Range;
 
-/// Read the selection state, for example `selection_is_bold(&runs, 2..4)`.
-pub(super) fn selection_is_bold(runs: &[SketchTextRun], selection: Range<u32>) -> bool {
+#[derive(Clone, Copy)]
+pub(super) enum TextFaceFlag {
+    Bold,
+    Italic,
+}
+
+impl TextFaceFlag {
+    pub(super) fn label(self) -> &'static str {
+        match self {
+            Self::Bold => "Bold",
+            Self::Italic => "Italic",
+        }
+    }
+
+    fn enabled(self, run: &SketchTextRun) -> bool {
+        match self {
+            Self::Bold => run.bold,
+            Self::Italic => run.italic,
+        }
+    }
+
+    fn set(self, run: &mut SketchTextRun, value: bool) {
+        match self {
+            Self::Bold => run.bold = value,
+            Self::Italic => run.italic = value,
+        }
+    }
+}
+
+/// Read the selection state, for example `selection_has(&runs, 2..4, TextFaceFlag::Italic)`.
+pub(super) fn selection_has(
+    runs: &[SketchTextRun],
+    selection: Range<u32>,
+    flag: TextFaceFlag,
+) -> bool {
     if selection.is_empty() {
         return false;
     }
     let mut covered = selection.start;
     for run in runs.iter().filter(|run| run.end > selection.start) {
-        if run.start > covered || !run.bold {
+        if run.start > covered || !flag.enabled(run) {
             return false;
         }
         covered = run.end;
@@ -21,12 +54,16 @@ pub(super) fn selection_is_bold(runs: &[SketchTextRun], selection: Range<u32>) -
     false
 }
 
-/// Toggle the selected range, for example `toggle_bold(&runs, 2..4)`.
-pub(super) fn toggle_bold(runs: &[SketchTextRun], selection: Range<u32>) -> Vec<SketchTextRun> {
+/// Toggle the selected range, for example `toggle_face_flag(&runs, 2..4, TextFaceFlag::Bold)`.
+pub(super) fn toggle_face_flag(
+    runs: &[SketchTextRun],
+    selection: Range<u32>,
+    flag: TextFaceFlag,
+) -> Vec<SketchTextRun> {
     if selection.is_empty() {
         return runs.to_vec();
     }
-    let bold = !selection_is_bold(runs, selection.clone());
+    let value = !selection_has(runs, selection.clone(), flag);
     let edges = span_edges(runs, selection.clone());
     let mut formatted = Vec::with_capacity(runs.len() + 2);
     let mut source = runs.iter().peekable();
@@ -38,7 +75,7 @@ pub(super) fn toggle_bold(runs: &[SketchTextRun], selection: Range<u32>) -> Vec<
         let style = source.peek().filter(|run| run.start <= start).copied();
         let mut piece = style.cloned().unwrap_or_default();
         if selection.contains(&start) {
-            piece.bold = bold;
+            flag.set(&mut piece, value);
         }
         append_style(&mut formatted, piece, start..span[1]);
     }
@@ -137,6 +174,25 @@ mod tests {
     use super::*;
 
     #[test]
+    fn toggling_italic_preserves_bold_and_only_changes_the_selected_range() {
+        let bold = SketchTextRun {
+            start: 0,
+            end: 3,
+            bold: true,
+            ..Default::default()
+        };
+        let styled = toggle_face_flag(std::slice::from_ref(&bold), 1..3, TextFaceFlag::Italic);
+        assert_eq!(styled.len(), 2);
+        assert!(selection_has(&styled, 0..3, TextFaceFlag::Bold));
+        assert!(!selection_has(&styled, 0..3, TextFaceFlag::Italic));
+        assert!(selection_has(&styled, 1..3, TextFaceFlag::Italic));
+        assert_eq!(
+            toggle_face_flag(&styled, 1..3, TextFaceFlag::Italic),
+            [bold]
+        );
+    }
+
+    #[test]
     fn toggling_mixed_selection_preserves_existing_style_and_gaps() {
         let original = vec![SketchTextRun {
             start: 1,
@@ -144,9 +200,9 @@ mod tests {
             italic: true,
             ..Default::default()
         }];
-        let updated = toggle_bold(&original, 2..6);
-        assert!(selection_is_bold(&updated, 2..6));
-        assert!(!selection_is_bold(&updated, 1..6));
+        let updated = toggle_face_flag(&original, 2..6, TextFaceFlag::Bold);
+        assert!(selection_has(&updated, 2..6, TextFaceFlag::Bold));
+        assert!(!selection_has(&updated, 1..6, TextFaceFlag::Bold));
         assert_eq!(
             updated
                 .iter()
@@ -154,7 +210,10 @@ mod tests {
                 .collect::<Vec<_>>(),
             [(1, 2, false, true), (2, 4, true, true), (4, 6, true, false)]
         );
-        assert_eq!(toggle_bold(&updated, 2..6), original);
+        assert_eq!(
+            toggle_face_flag(&updated, 2..6, TextFaceFlag::Bold),
+            original
+        );
     }
 
     #[test]
@@ -172,11 +231,14 @@ mod tests {
             ..first.clone()
         };
         let existing = [first, second];
-        assert!(selection_is_bold(&existing, 0..2));
-        assert!(!selection_is_bold(&existing, 1..1));
-        assert_eq!(toggle_bold(&existing, 1..1), existing);
+        assert!(selection_has(&existing, 0..2, TextFaceFlag::Bold));
+        assert!(!selection_has(&existing, 1..1, TextFaceFlag::Bold));
         assert_eq!(
-            toggle_bold(&existing, 0..2),
+            toggle_face_flag(&existing, 1..1, TextFaceFlag::Bold),
+            existing
+        );
+        assert_eq!(
+            toggle_face_flag(&existing, 0..2, TextFaceFlag::Bold),
             [SketchTextRun {
                 start: 1,
                 end: 2,

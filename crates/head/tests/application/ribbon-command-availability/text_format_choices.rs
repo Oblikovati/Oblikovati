@@ -79,6 +79,10 @@ fn click_format_row(world: &mut ApplicationWorld, label: &str) {
 
 pub(super) fn glyph_pixels(world: &mut ApplicationWorld) -> Vec<u8> {
     let capture = super::super::super::capture_framebuffer(&mut world.app().window.native);
+    glyph_region(&capture)
+}
+
+pub(super) fn glyph_region(capture: &oblikovati_viewport::ViewportCapture) -> Vec<u8> {
     let stride = capture.extent[0] as usize * 4;
     capture
         .rgba

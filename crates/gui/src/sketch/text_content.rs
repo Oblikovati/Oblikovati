@@ -4,11 +4,14 @@ use super::GuiSketchTextDraft;
 use imgui::{InputTextCallbackHandler, InputTextMultilineCallback, TextCallbackData, Ui};
 use std::ops::Range;
 
-#[path = "text_bold_ranges.rs"]
-mod bold_ranges;
+#[path = "text_character_ranges.rs"]
+mod character_ranges;
+use character_ranges::{TextFaceFlag, selection_has};
 #[path = "text_numbering.rs"]
 mod numbering;
 use numbering::NumberingStyle;
+
+const CONTENT_PICKER_WIDTH: f32 = 130.;
 
 #[derive(Default)]
 pub(super) struct TextContentEditor {
@@ -24,34 +27,46 @@ impl TextContentEditor {
             ui.set_keyboard_focus_here();
         }
         let runs = draft.formatting.runs.as_deref().unwrap_or_default();
-        let all_bold = all_scalars(&draft.content)
-            .is_some_and(|range| bold_ranges::selection_is_bold(runs, range));
+        let whole_text = all_scalars(&draft.content);
+        let face = [TextFaceFlag::Bold, TextFaceFlag::Italic].map(|flag| {
+            whole_text
+                .clone()
+                .is_some_and(|range| selection_has(runs, range, flag))
+        });
         let before = (!runs.is_empty()).then(|| draft.content.clone());
         let changed =
-            self.input(ui, &mut draft.content, all_bold) | self.controls(ui, &mut draft.content);
+            self.input(ui, &mut draft.content, face) | self.controls(ui, &mut draft.content);
         if let Some(before) = before.filter(|text| text != &draft.content) {
-            let retained = bold_ranges::retain_unchanged_runs(runs, &before, &draft.content);
+            let retained = character_ranges::retain_unchanged_runs(runs, &before, &draft.content);
             draft.formatting.runs = (!retained.is_empty()).then_some(retained);
         }
-        changed | self.bold_control(ui, draft)
+        changed
+            | self.face_control(ui, draft, TextFaceFlag::Bold)
+            | self.face_control(ui, draft, TextFaceFlag::Italic)
     }
 
-    fn input(&mut self, ui: &Ui, content: &mut String, bold: bool) -> bool {
-        let typed = self.content_field(ui, content, bold);
+    fn input(&mut self, ui: &Ui, content: &mut String, face: [bool; 2]) -> bool {
+        let typed = self.content_field(ui, content, face);
         ui.same_line();
         ui.text("Content");
         typed
     }
 
-    fn content_field(&mut self, ui: &Ui, content: &mut String, bold: bool) -> bool {
+    fn content_field(&mut self, ui: &Ui, content: &mut String, [bold, italic]: [bool; 2]) -> bool {
         const SIZE: [f32; 2] = [295., 100.];
-        let _font = crate::ui_scale::sketch_content_font(ui, bold).map(|font| ui.push_font(font));
+        let _font =
+            crate::ui_scale::sketch_content_font(ui, bold, italic).map(|font| ui.push_font(font));
         ui.input_text_multiline("##Content", content, SIZE)
             .callback(InputTextMultilineCallback::ALWAYS, SelectionCallback(self))
             .build()
     }
 
-    fn bold_control(&mut self, ui: &Ui, draft: &mut GuiSketchTextDraft) -> bool {
+    fn face_control(
+        &mut self,
+        ui: &Ui,
+        draft: &mut GuiSketchTextDraft,
+        flag: TextFaceFlag,
+    ) -> bool {
         ui.same_line();
         let range = all_scalars(&draft.content).filter(|range| !range.is_empty());
         // Partial changes need the mixed-font layout tracked in Martensite #576.
@@ -59,13 +74,13 @@ impl TextContentEditor {
         let runs = draft.formatting.runs.as_deref().unwrap_or_default();
         let active = range
             .clone()
-            .is_some_and(|range| bold_ranges::selection_is_bold(runs, range));
+            .is_some_and(|range| selection_has(runs, range, flag));
         let _disabled = ui.begin_disabled(!enabled);
-        let clicked = crate::widget_abi::toggle_button(ui, "Bold", [0.; 2], active);
+        let clicked = crate::widget_abi::toggle_button(ui, flag.label(), [0.; 2], active);
         let Some(range) = range.filter(|_| enabled && clicked) else {
             return false;
         };
-        let edited = bold_ranges::toggle_bold(runs, range);
+        let edited = character_ranges::toggle_face_flag(runs, range, flag);
         draft.formatting.runs = (!edited.is_empty()).then_some(edited);
         self.restore = Some(self.selection.clone());
         true
@@ -148,7 +163,7 @@ impl InputTextCallbackHandler for SelectionCallback<'_> {
 }
 
 fn numbering_choice(ui: &Ui) -> Option<NumberingStyle> {
-    ui.set_next_item_width(145.);
+    ui.set_next_item_width(CONTENT_PICKER_WIDTH);
     let _list = ui.begin_combo("##text-numbering", "Numbering")?;
     NumberingStyle::CHOICES
         .into_iter()
@@ -156,7 +171,7 @@ fn numbering_choice(ui: &Ui) -> Option<NumberingStyle> {
 }
 
 fn symbol_choice(ui: &Ui) -> Option<&'static str> {
-    ui.set_next_item_width(145.);
+    ui.set_next_item_width(CONTENT_PICKER_WIDTH);
     let _symbols = ui.begin_combo("##text-symbols", "Symbols")?;
     [("Diameter", "⌀"), ("Degree", "°"), ("Plus or minus", "±")]
         .into_iter()

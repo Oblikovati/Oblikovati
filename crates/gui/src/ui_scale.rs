@@ -48,6 +48,8 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
     for face in [
         include_bytes!("../assets/fonts/LiberationSans-Regular.ttf").as_slice(),
         include_bytes!("../assets/fonts/LiberationSans-Bold.ttf").as_slice(),
+        include_bytes!("../assets/fonts/LiberationSans-Italic.ttf").as_slice(),
+        include_bytes!("../assets/fonts/LiberationSans-BoldItalic.ttf").as_slice(),
     ] {
         context.fonts().add_font(&[
             FontSource::TtfData {
@@ -68,10 +70,11 @@ fn sketch_symbols(config: FontConfig) -> FontSource<'static> {
     }
 }
 
-/// Pick the matching editor face, for example `sketch_content_font(ui, true)` for Bold.
-pub(crate) fn sketch_content_font(ui: &Ui, bold: bool) -> Option<FontId> {
-    // Atlas installation adds the chrome face first, then the two content faces.
-    ui.fonts().fonts().get(1 + usize::from(bold)).copied()
+/// Pick the editor face, for example `sketch_content_font(ui, true, true)` for Bold Italic.
+pub(crate) fn sketch_content_font(ui: &Ui, bold: bool, italic: bool) -> Option<FontId> {
+    // Atlas installation adds the chrome face first, then the four content faces in this order.
+    let index = 1 + usize::from(bold) + 2 * usize::from(italic);
+    ui.fonts().fonts().get(index).copied()
 }
 
 #[derive(Default)]

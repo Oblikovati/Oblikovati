@@ -13,6 +13,8 @@ mod text_double_click;
 mod text_edit;
 #[path = "text_format_choices.rs"]
 mod text_format_choices;
+#[path = "text_italic.rs"]
+mod text_italic;
 #[path = "text_numbering.rs"]
 mod text_numbering;
 #[path = "text_presets.rs"]
