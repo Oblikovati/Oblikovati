@@ -62,6 +62,7 @@ def result_status(
         result = compare_report(source, path, report)
         if result[0] == "needs_source_review":
             result = compare_argument_report(path, info, report, record)
+    result = exclude_unproven(source / path, record, result)
     if digest(source / path) != info["sha256"]:
         return "source_changed", 0
     if not supporting_files_match(source, record.get("supporting_files", {})):
@@ -69,6 +70,23 @@ def result_status(
     if blocked and result[0] in ("green", "incomplete"):
         return "blocked", result[1]
     return result
+
+
+def exclude_unproven(
+    feature: Path, record: dict[str, object], result: tuple[str, int]
+) -> tuple[str, int]:
+    """Exclude reviewed but unproven passes; for example, exclude_unproven(feature, record, result)."""
+    unproven = record.get("unproven_scenarios")
+    if unproven is None:
+        return result
+    scenarios = ordinary_scenarios(feature)
+    if not isinstance(unproven, dict) or scenarios is None or result[0] != "green":
+        return "needs_source_review", 0
+    if any(name not in scenarios or not isinstance(reason, str) or not reason.strip()
+           for name, reason in unproven.items()):
+        return "needs_source_review", 0
+    count = result[1] - len(unproven)
+    return ("incomplete" if unproven else "green"), count
 
 
 def supporting_files_match(source: Path, values: object) -> bool:

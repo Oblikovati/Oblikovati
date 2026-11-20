@@ -59,6 +59,17 @@ class FeatureProgressTests(unittest.TestCase):
         self.feature.write_text(self.feature.read_text() + "# correction\n")
         self.assertEqual(self.status(), ("source_changed", 0))
 
+    def test_unproven_passing_scenarios_do_not_count_as_green(self) -> None:
+        self.record["blocker"] = "Restart was simulated in process"
+        self.record["unproven_scenarios"] = {"Exit": "Requires a process restart"}
+        self.assertEqual(self.status(), ("blocked", 1))
+        self.record["unproven_scenarios"] = {"Unknown": "Missing scenario"}
+        self.assertEqual(self.status(), ("needs_source_review", 0))
+        self.record["unproven_scenarios"] = {"Exit": ""}
+        self.assertEqual(self.status(), ("needs_source_review", 0))
+        self.record["unproven_scenarios"] = ["Exit"]
+        self.assertEqual(self.status(), ("needs_source_review", 0))
+
     def test_missing_skipped_and_altered_results_are_not_green(self) -> None:
         self.write_report(["Cancel"])
         self.record["cucumber_sha256"] = progress.digest(self.report)
