@@ -41,9 +41,11 @@ using this status; the live scenario directory can change.
 - Project Dialog (#3895): all eight scenarios and 100 steps passed locally
   with X11 mouse and keyboard input on the current Part and project fixtures.
   Desktop startup opens native projects and the dialog wraps long paths.
-  See `receipts/2026-11-20-native-project-dialog-3895/`. Strict verification
-  still requires pinned scenario source and bounded build and runtime inputs
-  under #3978.
+  See `receipts/2026-11-20-native-project-dialog-3895/`. All eight scenarios and
+  101 steps also passed on the pinned source under Xvfb. The eight declarations
+  have R0 baseline records. See `receipts/2026-11-21-project-dialog-r0-3895/`.
+  Strict verification still requires bounded build and runtime inputs under
+  #3978.
 - Docking System (#4133): all 11 scenarios and 108 steps passed in one
   local run, including the corrected native fixture and a desktop restart.
   Feature, support, and fixture hashes matched the live source. See

@@ -6556,22 +6556,23 @@
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: four project-file codec tests pass; none tests project activation, a dialog or wizard. See receipts/2026-11-14-go-project-baseline/README.md.",
-      "kernel_capabilities": "Project inspection and wizard navigation require no solid modeling operation.",
-      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
-      "kernel_integration": "The dialog uses desktop project and file state and does not request solid geometry.",
-      "rust_tests": "application_scenarios_use_the_native_window: Inspect project information from the template chooser",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after test-source changes and Go dialog parity is not established.",
-      "expected_result": "the Projects dialog closes; the template chooser is displayed again; the selected template details remain displayed",
+      "kernel_capabilities": "Project inspection and wizard navigation require the native viewport and no solid modeling operation.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. Windows and macOS were outside this run.",
+      "kernel_integration": "The desktop project owner and file state supply dialog behavior. The viewport renders the native window.",
+      "rust_tests": "Pinned native scenario: application_scenarios_use_the_native_window: Inspect project information from the template chooser. Reports: architecture/rust-port/receipts/2026-11-21-project-dialog-r0-3895/.",
+      "oracle": "The pinned scenario and its fixture notes specify the expected dialog state. The Go codec tests cover file format only. Strict native verification remains open under #3978.",
+      "expected_result": "Projects opens above the chooser and shows the active project, its settings, and all five controls. Done restores the chooser with the same template details.",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-project-dialog-full/receipt-b389189024e3e0b0.json",
           "sha256": "a4896ab89b8e656cae53f2ab0d8edef98b1f4a0dc4b9c19c07a5c95eb804340b"
         }
-      ]
+      ],
+      "baseline_source_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d"
     },
     {
       "id": "scenario:b41e4db379935547b5e7e175c950cf083301b98c4b154c18d82dd007c11d61a3",
@@ -6589,8 +6590,8 @@
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
@@ -6619,12 +6620,13 @@
         }
       ],
       "go_test_premise": "Go aa8297d1b: four project-file codec tests pass; none tests project activation, a dialog or wizard. See receipts/2026-11-14-go-project-baseline/README.md.",
-      "kernel_capabilities": "Project inspection and wizard navigation require no solid modeling operation.",
-      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
-      "kernel_integration": "The dialog uses desktop project and file state and does not request solid geometry.",
-      "rust_tests": "application_scenarios_use_the_native_window: Inspect an inactive project without activating it",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after test-source changes and Go dialog parity is not established.",
-      "expected_result": "the user chooses Done; the Projects dialog closes; the chooser still displays the original active project"
+      "kernel_capabilities": "Project inspection and wizard navigation require the native viewport and no solid modeling operation.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. Windows and macOS were outside this run.",
+      "kernel_integration": "The desktop project owner and file state supply dialog behavior. The viewport renders the native window.",
+      "rust_tests": "Pinned native scenario: application_scenarios_use_the_native_window: Inspect an inactive project without activating it. Reports: architecture/rust-port/receipts/2026-11-21-project-dialog-r0-3895/.",
+      "oracle": "The pinned scenario and its fixture notes specify the expected dialog state. The Go codec tests cover file format only. Strict native verification remains open under #3978.",
+      "expected_result": "One click highlights the other row and shows its settings. The original project retains the active marker and remains active in the chooser after Done.",
+      "baseline_source_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d"
     },
     {
       "id": "scenario:543cafe456aa7eca5f10af48340a3b37ded3aebdd661bbe92cfeae903a2624a6",
@@ -6642,22 +6644,23 @@
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: four project-file codec tests pass; none tests project activation, a dialog or wizard. See receipts/2026-11-14-go-project-baseline/README.md.",
-      "kernel_capabilities": "Project inspection and wizard navigation require no solid modeling operation.",
-      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
-      "kernel_integration": "The dialog uses desktop project and file state and does not request solid geometry.",
-      "rust_tests": "application_scenarios_use_the_native_window: Inspect and cancels the new single-user project wizard",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after test-source changes and Go dialog parity is not established.",
-      "expected_result": "the wizard closes and the Projects dialog is displayed; the provisional project entry is no longer listed; the original project remains marked active",
+      "kernel_capabilities": "Project inspection and wizard navigation require the native viewport and no solid modeling operation.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. Windows and macOS were outside this run.",
+      "kernel_integration": "The desktop project owner and file state supply dialog behavior. The viewport renders the native window.",
+      "rust_tests": "Pinned native scenario: application_scenarios_use_the_native_window: Inspect and cancels the new single-user project wizard. Reports: architecture/rust-port/receipts/2026-11-21-project-dialog-r0-3895/.",
+      "oracle": "The pinned scenario and its fixture notes specify the expected dialog state. The Go codec tests cover file format only. Strict native verification remains open under #3978.",
+      "expected_result": "The wizard shows the selected project type, file fields, and empty library lists. Cancel removes the provisional project and retains the active project.",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-project-dialog-full/receipt-543cafe456aa7eca.json",
           "sha256": "21f9933277429659137ef9a42aef91ab456b15f29f3786247e0899418193311f"
         }
-      ]
+      ],
+      "baseline_source_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d"
     },
     {
       "id": "scenario:5e1de9529939e057f970d9d61baba73669387cbc26e6e782afaa32c2c5b84e8d",
@@ -6675,8 +6678,8 @@
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
@@ -6695,12 +6698,13 @@
         }
       ],
       "go_test_premise": "Go aa8297d1b: four project-file codec tests pass; none tests project activation, a dialog or wizard. See receipts/2026-11-14-go-project-baseline/README.md.",
-      "kernel_capabilities": "Project inspection and wizard navigation require no solid modeling operation.",
-      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
-      "kernel_integration": "The dialog uses desktop project and file state and does not request solid geometry.",
-      "rust_tests": "application_scenarios_use_the_native_window: Navigate backward through the new-project wizard",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after test-source changes and Go dialog parity is not established.",
-      "expected_result": "Back and Finish are unavailable; the user chooses Cancel; the wizard closes and the Projects dialog is displayed"
+      "kernel_capabilities": "Project inspection and wizard navigation require the native viewport and no solid modeling operation.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. Windows and macOS were outside this run.",
+      "kernel_integration": "The desktop project owner and file state supply dialog behavior. The viewport renders the native window.",
+      "rust_tests": "Pinned native scenario: application_scenarios_use_the_native_window: Navigate backward through the new-project wizard. Reports: architecture/rust-port/receipts/2026-11-21-project-dialog-r0-3895/.",
+      "oracle": "The pinned scenario and its fixture notes specify the expected dialog state. The Go codec tests cover file format only. Strict native verification remains open under #3978.",
+      "expected_result": "Back restores the file page values, then returns to the selected single-user type with Back and Finish unavailable. Cancel returns to Projects.",
+      "baseline_source_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d"
     },
     {
       "id": "scenario:d4a00f9d11f032e76d0516079bb461fa58b84af5777a682fe4c697b6ea9c51e9",
@@ -6718,8 +6722,8 @@
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
@@ -6733,12 +6737,13 @@
         }
       ],
       "go_test_premise": "Go aa8297d1b: four project-file codec tests pass; none tests project activation, a dialog or wizard. See receipts/2026-11-14-go-project-baseline/README.md.",
-      "kernel_capabilities": "Project inspection and wizard navigation require no solid modeling operation.",
-      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
-      "kernel_integration": "The dialog uses desktop project and file state and does not request solid geometry.",
-      "rust_tests": "application_scenarios_use_the_native_window: Cancel browsing for a project workspace folder",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after test-source changes and Go dialog parity is not established.",
-      "expected_result": "the wizard still displays the previous workspace folder and project file location; the user cancels the project wizard; the Projects dialog is displayed"
+      "kernel_capabilities": "Project inspection and wizard navigation require the native viewport and no solid modeling operation.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. Windows and macOS were outside this run.",
+      "kernel_integration": "The desktop project owner and file state supply dialog behavior. The viewport renders the native window.",
+      "rust_tests": "Pinned native scenario: application_scenarios_use_the_native_window: Cancel browsing for a project workspace folder. Reports: architecture/rust-port/receipts/2026-11-21-project-dialog-r0-3895/.",
+      "oracle": "The pinned scenario and its fixture notes specify the expected dialog state. The Go codec tests cover file format only. Strict native verification remains open under #3978.",
+      "expected_result": "The folder browser shows Documents and its children. Cancel preserves the previous workspace and project-file fields. Canceling the wizard returns to Projects.",
+      "baseline_source_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d"
     },
     {
       "id": "scenario:729a2f28119be985460f6c288528dcf64a1174a65a8404d483666cca998a1b0f",
@@ -6756,8 +6761,8 @@
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
@@ -6771,12 +6776,13 @@
         }
       ],
       "go_test_premise": "Go aa8297d1b: four project-file codec tests pass; none tests project activation, a dialog or wizard. See receipts/2026-11-14-go-project-baseline/README.md.",
-      "kernel_capabilities": "Project inspection and wizard navigation require no solid modeling operation.",
-      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
-      "kernel_integration": "The dialog uses desktop project and file state and does not request solid geometry.",
-      "rust_tests": "application_scenarios_use_the_native_window: Choose the workspace folder for a new project",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after test-source changes and Go dialog parity is not established.",
-      "expected_result": "the user cancels the project wizard; the Projects dialog is displayed; the original project remains marked active"
+      "kernel_capabilities": "Project inspection and wizard navigation require the native viewport and no solid modeling operation.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. Windows and macOS were outside this run.",
+      "kernel_integration": "The desktop project owner and file state supply dialog behavior. The viewport renders the native window.",
+      "rust_tests": "Pinned native scenario: application_scenarios_use_the_native_window: Choose the workspace folder for a new project. Reports: architecture/rust-port/receipts/2026-11-21-project-dialog-r0-3895/.",
+      "oracle": "The pinned scenario and its fixture notes specify the expected dialog state. The Go codec tests cover file format only. Strict native verification remains open under #3978.",
+      "expected_result": "Selecting Documents sets the workspace and derives the project-file location from the displayed name. Cancel returns to Projects with the original project active.",
+      "baseline_source_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d"
     },
     {
       "id": "scenario:b45b5713b0fbca389639d8bbcbda33f3807ae53c0b011abb73375cbc8ace935f",
@@ -6794,8 +6800,8 @@
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
@@ -6819,12 +6825,13 @@
         }
       ],
       "go_test_premise": "Go aa8297d1b: four project-file codec tests pass; none tests project activation, a dialog or wizard. See receipts/2026-11-14-go-project-baseline/README.md.",
-      "kernel_capabilities": "Project inspection and wizard navigation require no solid modeling operation.",
-      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
-      "kernel_integration": "The dialog uses desktop project and file state and does not request solid geometry.",
-      "rust_tests": "application_scenarios_use_the_native_window: Expand and collapse project settings with the keyboard",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after test-source changes and Go dialog parity is not established.",
-      "expected_result": "the user presses the Right Arrow key; the group expands to show project options including old versions to keep and unique file names; the active project remains marked in the project list"
+      "kernel_capabilities": "Project inspection and wizard navigation require the native viewport and no solid modeling operation.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. Windows and macOS were outside this run.",
+      "kernel_integration": "The desktop project owner and file state supply dialog behavior. The viewport renders the native window.",
+      "rust_tests": "Pinned native scenario: application_scenarios_use_the_native_window: Expand and collapse project settings with the keyboard. Reports: architecture/rust-port/receipts/2026-11-21-project-dialog-r0-3895/.",
+      "oracle": "The pinned scenario and its fixture notes specify the expected dialog state. The Go codec tests cover file format only. Strict native verification remains open under #3978.",
+      "expected_result": "Right Arrow opens Folder Options and Options. Left Arrow hides the Folder Options children. The active project stays marked.",
+      "baseline_source_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d"
     },
     {
       "id": "scenario:ffc9cb9e3eee8e369f8b39e15f50ed5a77e0e8ed66cc90fc0a7cb523ab177466",
@@ -6842,8 +6849,8 @@
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
@@ -6867,12 +6874,13 @@
         }
       ],
       "go_test_premise": "Go aa8297d1b: four project-file codec tests pass; none tests project activation, a dialog or wizard. See receipts/2026-11-14-go-project-baseline/README.md.",
-      "kernel_capabilities": "Project inspection and wizard navigation require no solid modeling operation.",
-      "platforms": "Historical native run: Linux Xvfb with Vulkan Lavapipe. Other platforms were not checked.",
-      "kernel_integration": "The dialog uses desktop project and file state and does not request solid geometry.",
-      "rust_tests": "application_scenarios_use_the_native_window: Expand library groups independently in the project tree",
-      "oracle": "Pinned scenario assertions and reviewed final native capture; the receipt is stale after test-source changes and Go dialog parity is not established.",
-      "expected_result": "the material library entries are hidden; the appearance library entries remain visible; the active project remains marked in the project list"
+      "kernel_capabilities": "Project inspection and wizard navigation require the native viewport and no solid modeling operation.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. Windows and macOS were outside this run.",
+      "kernel_integration": "The desktop project owner and file state supply dialog behavior. The viewport renders the native window.",
+      "rust_tests": "Pinned native scenario: application_scenarios_use_the_native_window: Expand library groups independently in the project tree. Reports: architecture/rust-port/receipts/2026-11-21-project-dialog-r0-3895/.",
+      "oracle": "The pinned scenario and its fixture notes specify the expected dialog state. The Go codec tests cover file format only. Strict native verification remains open under #3978.",
+      "expected_result": "Each library group expands independently. Collapsing Material Libraries keeps the Appearance Libraries entries visible and the project active.",
+      "baseline_source_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d"
     },
     {
       "id": "scenario:c7ba450af37d734189db69babb196c916130b976697b5d8a8aaff4ef43eae240",
