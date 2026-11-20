@@ -104,6 +104,39 @@ fn dispatch_frame_actions(
     Ok(())
 }
 
+fn dispatch_constraint_settings(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    action: &GuiShellAction,
+    document: u64,
+    expected: &oblikovati_api::types::SketchSettings,
+    settings: &oblikovati_api::types::SketchSettings,
+) -> Result<bool, String> {
+    // #4172: the owner call and acknowledgement run in one dispatcher turn, without another GUI frame.
+    let active = match owner.gui_command_state() {
+        Ok(state) => state.document,
+        Err(error) => {
+            window.acknowledge_gui_constraint_settings(action, Some(document), Err(error))?;
+            return Ok(true);
+        }
+    };
+    if active != Some(document) {
+        window.acknowledge_gui_constraint_settings(
+            action,
+            active,
+            Err(format!(
+                "sketch settings document {document}: expected the active document"
+            )),
+        )?;
+        return Ok(true);
+    }
+    let result = window
+        .validate_gui_constraint_settings(action)
+        .and_then(|()| owner.set_document_sketch_settings_from_gui(document, expected, settings));
+    window.acknowledge_gui_constraint_settings(action, active, result.map(|_| ()))?;
+    Ok(true)
+}
+
 fn orient_view(
     window: &mut dyn HeadWindow,
     owner: &mut dyn HeadWork,
@@ -205,6 +238,16 @@ pub(super) fn dispatch_gui_action(
         window.set_tool_feedback(None)?;
     }
     match action {
+        GuiShellAction::SetDocumentSketchSettings {
+            document,
+            expected,
+            settings,
+            ..
+        } => {
+            return dispatch_constraint_settings(
+                window, owner, action, *document, expected, settings,
+            );
+        }
         GuiShellAction::JumpHistoryTo { document, position } => {
             return owner.jump_history_with_window(*document, *position, window);
         }

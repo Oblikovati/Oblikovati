@@ -101,3 +101,9 @@ pub(super) fn format_available(state: &GuiCommandState) -> bool {
         && state.sketch_format_available
         && !state.transaction_open
 }
+
+pub(super) fn settings_available(state: &GuiCommandState, document: u64) -> bool {
+    state.document == Some(document)
+        && state.document_sketch_settings.is_some()
+        && !state.transaction_open
+}

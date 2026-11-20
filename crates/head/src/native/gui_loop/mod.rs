@@ -67,7 +67,6 @@ impl NativeGui {
         self.engine.request_application_close();
         self.parameter_changed = true;
     }
-
     pub(super) fn has_pending_ribbon_model_pick(&self) -> bool {
         self.engine.has_pending_ribbon_model_pick()
     }
@@ -166,6 +165,23 @@ impl NativeGui {
     }
     pub(super) fn acknowledge_document_units(&mut self, document: u64, result: Result<(), String>) {
         self.engine.acknowledge_document_units(document, result);
+        self.parameter_changed = true;
+        self.deadline = Some(self.last_frame.unwrap_or_default());
+    }
+    pub(super) fn validate_constraint_settings(
+        &self,
+        action: &oblikovati_gui::GuiShellAction,
+    ) -> Result<(), String> {
+        self.engine.validate_constraint_settings(action)
+    }
+    pub(super) fn acknowledge_constraint_settings(
+        &mut self,
+        action: &oblikovati_gui::GuiShellAction,
+        active_document: Option<u64>,
+        result: Result<(), String>,
+    ) {
+        self.engine
+            .acknowledge_constraint_settings(action, active_document, result);
         self.parameter_changed = true;
         self.deadline = Some(self.last_frame.unwrap_or_default());
     }

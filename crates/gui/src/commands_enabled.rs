@@ -175,6 +175,9 @@ impl GuiShellAction {
                 !state.transaction_open
             }
             Self::SetSketchOptions(_) => state.sketch_options.is_some(),
+            Self::SetDocumentSketchSettings { document, .. } => {
+                sketch_enabled::settings_available(state, *document)
+            }
             Self::SetSketchIsolation(isolated) => {
                 state.sketch_at_ready
                     && state.document_type == Some(oblikovati_api::types::DOCUMENT_PART)

@@ -14,6 +14,8 @@ struct FakeGuiWindow {
     parameters_open: bool,
     parameter_views: Vec<Option<oblikovati_gui::GuiParameterSnapshot>>,
     parameter_results: Vec<Result<(), String>>,
+    constraint_results: Vec<(GuiShellAction, Option<u64>, Result<(), String>)>,
+    constraint_preflight_rejected: bool,
     parameter_view_decline: bool,
     parameter_issues: Vec<String>,
     permit_idle_motion: bool,
@@ -81,6 +83,23 @@ impl HeadWindow for FakeGuiWindow {
         result: Result<(), String>,
     ) -> Result<(), String> {
         self.parameter_results.push(result);
+        Ok(())
+    }
+
+    fn validate_gui_constraint_settings(&self, _: &GuiShellAction) -> Result<(), String> {
+        if self.constraint_preflight_rejected {
+            return Err("parent draft changed".into());
+        }
+        Ok(())
+    }
+    fn acknowledge_gui_constraint_settings(
+        &mut self,
+        action: &GuiShellAction,
+        document: Option<u64>,
+        result: Result<(), String>,
+    ) -> Result<(), String> {
+        self.constraint_results
+            .push((action.clone(), document, result));
         Ok(())
     }
 
@@ -172,6 +191,10 @@ struct FakeGuiOwner {
     parameter_view_failure: bool,
     ready_sketch: bool,
     transaction_open: bool,
+    settings_document: Option<u64>,
+    settings_rejected: bool,
+    settings_calls: usize,
+    settings_state_rejected: bool,
 }
 impl HeadWork for FakeGuiOwner {
     fn create_part_document(&mut self) -> Result<bool, String> {
@@ -227,6 +250,9 @@ impl HeadWork for FakeGuiOwner {
         Ok(!events.is_empty())
     }
     fn gui_command_state(&mut self) -> Result<oblikovati_gui::GuiCommandState, String> {
+        if self.settings_state_rejected {
+            return Err("state unavailable".into());
+        }
         Ok(oblikovati_gui::GuiCommandState {
             undo_label: Some("Dimension".into()),
             authoring: if self.ready_sketch {
@@ -239,6 +265,7 @@ impl HeadWork for FakeGuiOwner {
                 .then_some(oblikovati_model::document_sketch::DocumentSketchId(1)),
             sketch_at_ready: self.ready_sketch,
             transaction_open: self.transaction_open,
+            document: self.settings_document,
             ..Default::default()
         })
     }
@@ -392,63 +419,22 @@ fn owner_and_gui_wake_use_the_earliest_deadline() {
     }
 }
 
-#[test]
-fn annotation_projection_preserves_other_labels_and_names_local_declines() {
-    use oblikovati_gui::GuiDimensionLabelRole::Driving;
-    let mut owner = FakeGuiOwner::default();
-    owner.annotations.declines.push("unavailable plane".into());
-    for position in [[3., 5.], [-1., 2.]] {
-        owner
-            .annotations
-            .labels
-            .push(crate::HeadDimensionAnnotation {
-                plane: oblikovati_model::sketch::SketchPlane::xy(),
-                position,
-                line: Some([[1., 2.], [4., 5.]]),
-                text: "d0 = 10 mm".into(),
-                role: Driving,
-                edit: None,
-            });
-    }
-    let mut window = FakeGuiWindow::default();
-    advance_gui(&mut window, &mut owner, None).unwrap();
-    assert_eq!(
-        window.states[0].dimension_labels,
-        [oblikovati_gui::GuiDimensionLabel {
-            pixel: [6, 15],
-            line: Some([[2, 6], [8, 15]]),
-            text: "d0 = 10 mm".into(),
-            role: Driving,
-            edit: None,
-        }]
-    );
-    assert_eq!(window.notices.len(), 1);
-    assert!(window.notices[0].message().contains("unavailable plane"));
-    assert!(window.notices[0].message().contains("[-1.0, 2.0]"));
-    assert!(owner.inputs.is_empty());
-}
-
-#[test]
-fn unprojectable_dimension_line_reports_its_failure_without_hiding_the_label() {
-    let mut owner = FakeGuiOwner::default();
-    owner
-        .annotations
-        .labels
-        .push(crate::HeadDimensionAnnotation {
-            plane: oblikovati_model::sketch::SketchPlane::xy(),
-            position: [3., 5.],
-            line: Some([[-1., 2.], [4., 5.]]),
-            text: "10".into(),
-            role: oblikovati_gui::GuiDimensionLabelRole::Driving,
-            edit: None,
-        });
-    let mut window = FakeGuiWindow::default();
-    advance_gui(&mut window, &mut owner, None).unwrap();
-    assert_eq!(window.states[0].dimension_labels[0].line, None);
-    assert!(window.notices[0].message().contains("dimension line"));
-}
+#[path = "gui_frames/annotations.rs"]
+mod annotations;
 
 impl crate::HeadSketchWork for FakeGuiOwner {
+    fn set_document_sketch_settings_from_gui(
+        &mut self,
+        _: u64,
+        _: &oblikovati_api::types::SketchSettings,
+        _: &oblikovati_api::types::SketchSettings,
+    ) -> Result<bool, String> {
+        self.settings_calls += 1;
+        if self.settings_rejected {
+            return Err("settings rejected".into());
+        }
+        Ok(false)
+    }
     fn start_sketch_on_plane_from_gui(
         &mut self,
         plane: oblikovati_gui::GuiOriginPlaneKind,
@@ -484,3 +470,6 @@ mod sketch_scene_order;
 
 #[path = "gui_frames/ready_motion.rs"]
 mod ready_motion;
+
+#[path = "gui_frames/document_settings.rs"]
+mod document_settings;

@@ -64,6 +64,21 @@ impl GuiScalePreferences {
     pub(crate) fn acknowledge_document_units(&mut self, document: u64, result: Result<(), String>) {
         self.document_units.acknowledge(document, result);
     }
+    pub(crate) fn validate_constraint_settings(
+        &self,
+        action: &GuiShellAction,
+    ) -> Result<(), String> {
+        self.sketch_draft.validate_constraint_settings(action)
+    }
+    pub(crate) fn acknowledge_constraint_settings(
+        &mut self,
+        action: &GuiShellAction,
+        active_document: Option<u64>,
+        result: Result<(), String>,
+    ) {
+        self.sketch_draft
+            .acknowledge_constraint_settings(action, active_document, result);
+    }
     pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState, home_active: bool) {
         self.document_units.sync_before_docking(state, home_active);
     }
@@ -73,6 +88,7 @@ impl GuiScalePreferences {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
         home_active: bool,
+        icons: &crate::icons::GuiRibbonIcons,
     ) {
         self.document_units.panel(ui, state, actions, home_active);
         let Some(options) = state.ui_scale.filter(|_| self.open.is_open()) else {
@@ -101,6 +117,7 @@ impl GuiScalePreferences {
             })
             .unwrap_or(false);
         self.sketch_draft.draw_hud(ui);
+        self.sketch_draft.draw_constraint(ui, state, actions, icons);
         if escape || close_requested {
             self.open.set_open(false);
         }

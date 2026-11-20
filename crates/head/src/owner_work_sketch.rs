@@ -68,6 +68,41 @@ impl<
     ) -> (bool, Option<oblikovati_gui::GuiShellAction>) {
         self.route_sketch_alias(event)
     }
+    fn set_document_sketch_settings_from_gui(
+        &mut self,
+        document: u64,
+        expected: &oblikovati_api::types::SketchSettings,
+        settings: &oblikovati_api::types::SketchSettings,
+    ) -> Result<bool, String> {
+        if self.files.workspace().active_document() != Some(document) {
+            return Err(format!(
+                "sketch settings for document {document}: expected the active document"
+            ));
+        }
+        let current = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|error| error.to_string())?
+            .snapshot()
+            .effective_sketch_settings();
+        if current != *expected {
+            return Err(format!(
+                "sketch settings {expected:?}: expected current settings {current:?}"
+            ));
+        }
+        if current == *settings {
+            return Ok(false);
+        }
+        oblikovati_api::client::Client::new(self.document_host())
+            .documents()
+            .set_sketch_settings(&oblikovati_api::wire::SetSketchSettingsArgs {
+                document,
+                settings: settings.clone(),
+            })
+            .map_err(|error| error.to_string())?;
+        Ok(true)
+    }
     fn set_sketch_options_from_gui(
         &mut self,
         options: oblikovati_model::application_options::SketchApplicationOptions,

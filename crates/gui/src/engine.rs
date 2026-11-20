@@ -242,6 +242,23 @@ impl GuiFrameEngine {
         self.preferences
             .acknowledge_document_units(document, result);
     }
+    /// Check the pending settings before a document write; example: `engine.validate_constraint_settings(action)?`.
+    pub fn validate_constraint_settings(
+        &self,
+        action: &crate::GuiShellAction,
+    ) -> Result<(), String> {
+        self.preferences.validate_constraint_settings(action)
+    }
+    /// Return the document settings result; example: `engine.acknowledge_constraint_settings(action, Some(1), Ok(()))`.
+    pub fn acknowledge_constraint_settings(
+        &mut self,
+        action: &crate::GuiShellAction,
+        active_document: Option<u64>,
+        result: Result<(), String>,
+    ) {
+        self.preferences
+            .acknowledge_constraint_settings(action, active_document, result);
+    }
     /// Attach owner-thread clipboard I/O; example: `GuiFrameEngine::with_clipboard(clipboard)?`.
     pub fn with_clipboard(clipboard: crate::GuiClipboard) -> Result<Self, String> {
         let mut owner = Self::new()?;

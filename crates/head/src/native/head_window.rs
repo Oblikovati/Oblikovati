@@ -85,6 +85,26 @@ impl HeadWindow for NativeHeadWindow {
         }
         Ok(())
     }
+    fn validate_gui_constraint_settings(
+        &self,
+        action: &oblikovati_gui::GuiShellAction,
+    ) -> Result<(), String> {
+        self.gui
+            .as_ref()
+            .ok_or("Constraint settings: expected an initialized GUI")?
+            .validate_constraint_settings(action)
+    }
+    fn acknowledge_gui_constraint_settings(
+        &mut self,
+        action: &oblikovati_gui::GuiShellAction,
+        active_document: Option<u64>,
+        result: Result<(), String>,
+    ) -> Result<(), String> {
+        if let Some(gui) = &mut self.gui {
+            gui.acknowledge_constraint_settings(action, active_document, result);
+        }
+        Ok(())
+    }
     fn window_capture_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
         self.view.drawable_extent().map(Some)
     }

@@ -4,7 +4,6 @@ use super::*;
 mod blend_actions;
 #[path = "feature_actions.rs"]
 mod feature_actions;
-
 impl GuiFrameEngine {
     pub(super) fn draw_controls(
         &mut self,
@@ -319,8 +318,13 @@ impl GuiFrameEngine {
             &mut selected,
             &self.icons.presentation,
         );
-        self.preferences
-            .panel(ui, &request.commands, &mut selected, self.home.active);
+        self.preferences.panel(
+            ui,
+            &request.commands,
+            &mut selected,
+            self.home.active,
+            &self.icons.presentation,
+        );
         self.material_browser
             .panel(ui, &request.commands, &mut selected);
         self.appearance_browser

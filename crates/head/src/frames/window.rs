@@ -111,6 +111,24 @@ pub trait HeadWindow {
         Ok(())
     }
 
+    /// Check a pending settings draft; example: `window.validate_gui_constraint_settings(action)?`.
+    fn validate_gui_constraint_settings(
+        &self,
+        _: &oblikovati_gui::GuiShellAction,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+
+    /// Return the document settings result; example: `window.acknowledge_gui_constraint_settings(action, Some(1), Ok(()))?`.
+    fn acknowledge_gui_constraint_settings(
+        &mut self,
+        _: &oblikovati_gui::GuiShellAction,
+        _: Option<u64>,
+        _: Result<(), String>,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+
     /// Advance GUI work before routing one input; example: `window.gui_frame(Some(event), &commands)?`.
     fn gui_frame(
         &mut self,

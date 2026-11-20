@@ -76,6 +76,17 @@ pub trait HeadSketchWork {
             "block context {token}, instance {instance:?}: expected an active sketch owner"
         ))
     }
+    /// Apply a document sketch settings draft; example: `work.set_document_sketch_settings_from_gui(id, &old, &settings)?`.
+    fn set_document_sketch_settings_from_gui(
+        &mut self,
+        document: u64,
+        expected: &oblikovati_api::types::SketchSettings,
+        settings: &oblikovati_api::types::SketchSettings,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "sketch settings {settings:?}, prior {expected:?}, for document {document}: expected a document owner"
+        ))
+    }
     /// Save the sketch options; example: `work.set_sketch_options_from_gui(options)`.
     fn set_sketch_options_from_gui(
         &mut self,
