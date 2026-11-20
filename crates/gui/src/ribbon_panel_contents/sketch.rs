@@ -88,9 +88,6 @@ pub(super) fn sketch_create_controls(
         crate::GuiSketchTool::Line,
         icons,
     );
-    if ui.is_item_hovered() {
-        ui.tooltip_text("Draw connected line segments. For arcs, choose Center Arc.");
-    }
     icons.cursor(ui, origin, [240., 60.]);
     let disabled = ui.begin_disabled(true);
     crate::widget_abi::button(ui, "Project Geometry", icons.cell([150., 18.]));

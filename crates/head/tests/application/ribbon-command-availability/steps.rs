@@ -4,6 +4,9 @@ use super::workspace_layout::browser_feature::{SKETCH, right_click_row};
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
 
+#[path = "document_kinds.rs"]
+mod document_kinds;
+
 #[given("sketch edit is inactive")]
 fn sketch_edit_inactive(world: &mut ApplicationWorld) {
     assert_eq!(

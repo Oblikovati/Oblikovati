@@ -29,6 +29,10 @@ pub(crate) fn sketch_tool_flyout_button(
         size,
         actions,
     );
+    // The arrow is a separate widget. Describe Line while its own button is the current item.
+    if primary == GuiSketchTool::Line && ui.is_item_hovered() {
+        ui.tooltip_text("Draw connected line segments. For arcs, choose Center Arc.");
+    }
     if let Some(alternate) = alternate {
         circular_tool_menu(ui, state, actions, primary, alternate, icons);
     }
