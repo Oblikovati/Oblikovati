@@ -14,6 +14,11 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- Viewport Pan (#3881): all four pinned scenarios and 32 steps passed
+  under Xvfb. Two X11 input tests also passed. The four declarations now
+  have R0 records. The live feature requires a native Part fixture, and strict
+  acceptance remains open under #3978. See
+  `receipts/2026-11-20-viewport-pan-r0-3881/`.
 - Viewport Orientation (#3961): all 23 scenarios and 253 steps passed on the
   current native Part fixture. A separate X11 click under Openbox showed an
   intermediate frame before the model and ViewCube reached Top. See

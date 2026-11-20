@@ -2906,12 +2906,12 @@
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-pan-baseline/README.md.",
       "go_test_premise": "Go gesture, middle-drag pan and modal navigation tests pass. They do not cover the navigation bar, status text, click cancellation or context menu.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "kernel_capabilities": "A visible solid is required as a view fixture; pan changes the camera and does not modify the B-rep.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS not checked.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS remain untested.",
       "kernel_integration": "The native viewport renders a host-prepared solid fixture while camera navigation remains in the viewport layer.",
-      "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-pan/steps.rs; native_pan_drag_moves_the_view_and_keeps_pan_active also passed.",
+      "rust_tests": "Pinned native scenario in crates/head/tests/application/viewport-pan/steps.rs and both x11_pan tests passed. See architecture/rust-port/receipts/2026-11-20-viewport-pan-r0-3881/README.md.",
       "oracle": "Pinned scenario steps, camera equality for no-drag cancellation, observed UI state and reviewed native capture; Go is a partial navigation reference.",
       "expected_result": "Pan is highlighted with its status prompt; Escape restores Ready and retains the solid.",
       "historical_receipts": [
@@ -2920,7 +2920,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-pan-f02c3c29dc2a2cf2-head/receipt-f02c3c29dc2a2cf2.json",
           "sha256": "3b57268d8b6609f2733432c3ed1c1e5e9e6c8bc0a979f7be941d376b22df6ea8"
         }
-      ]
+      ],
+      "baseline_source_sha256": "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647"
     },
     {
       "id": "scenario:5fbf81f76125990bad831562631fa233b9fba2b85d0110933a03eca9612e4ed9",
@@ -2938,12 +2939,12 @@
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-pan-baseline/README.md.",
       "go_test_premise": "Go gesture, middle-drag pan and modal navigation tests pass. They do not cover the navigation bar, status text, click cancellation or context menu.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "kernel_capabilities": "A visible solid is required as a view fixture; pan changes the camera and does not modify the B-rep.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS not checked.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS remain untested.",
       "kernel_integration": "The native viewport renders a host-prepared solid fixture while camera navigation remains in the viewport layer.",
-      "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-pan/steps.rs; native_pan_drag_moves_the_view_and_keeps_pan_active also passed.",
+      "rust_tests": "Pinned native scenario in crates/head/tests/application/viewport-pan/steps.rs and both x11_pan tests passed. See architecture/rust-port/receipts/2026-11-20-viewport-pan-r0-3881/README.md.",
       "oracle": "Pinned scenario steps, camera equality for no-drag cancellation, observed UI state and reviewed native capture; Go is a partial navigation reference.",
       "expected_result": "A click without drag ends Pan; the same solid and camera view remain.",
       "historical_receipts": [
@@ -2952,7 +2953,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-pan-5fbf81f76125990b-head/receipt-5fbf81f76125990b.json",
           "sha256": "e1634c0afce93efa9be2fa18a55044a867f8cd1679487886f55a79c9a8f490cc"
         }
-      ]
+      ],
+      "baseline_source_sha256": "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647"
     },
     {
       "id": "scenario:fbde41be98323fb4a9f0d5e8124131b706a7a0ab5745d38df17300a4afba53b7",
@@ -2970,12 +2972,12 @@
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-pan-baseline/README.md.",
       "go_test_premise": "Go gesture, middle-drag pan and modal navigation tests pass. They do not cover the navigation bar, status text, click cancellation or context menu.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "kernel_capabilities": "A visible solid is required as a view fixture; pan changes the camera and does not modify the B-rep.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS not checked.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS remain untested.",
       "kernel_integration": "The native viewport renders a host-prepared solid fixture while camera navigation remains in the viewport layer.",
-      "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-pan/steps.rs; native_pan_drag_moves_the_view_and_keeps_pan_active also passed.",
+      "rust_tests": "Pinned native scenario in crates/head/tests/application/viewport-pan/steps.rs and both x11_pan tests passed. See architecture/rust-port/receipts/2026-11-20-viewport-pan-r0-3881/README.md.",
       "oracle": "Pinned scenario steps, camera equality for no-drag cancellation, observed UI state and reviewed native capture; Go is a partial navigation reference.",
       "expected_result": "The Pan context menu offers the listed commands; Done closes it and restores Ready.",
       "historical_receipts": [
@@ -2984,7 +2986,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-pan-fbde41be98323fb4-head/receipt-fbde41be98323fb4.json",
           "sha256": "7de2f3d1be0c70be58a93e4252ffa26fbc94939590e27f35ca1b88c1f6dcbd06"
         }
-      ]
+      ],
+      "baseline_source_sha256": "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647"
     },
     {
       "id": "scenario:d6296175cbca7baa1559a479c565a9f4f35af5e800a1fe8770b08201077f93f0",
@@ -3002,12 +3005,12 @@
       "mapping_reason": "Viewport navigation controls, view preferences and their interaction states belong to the full desktop shell (R7). A visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-pan-baseline/README.md.",
       "go_test_premise": "Go gesture, middle-drag pan and modal navigation tests pass. They do not cover the navigation bar, status text, click cancellation or context menu.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "kernel_capabilities": "A visible solid is required as a view fixture; pan changes the camera and does not modify the B-rep.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS not checked.",
+      "platforms": "Linux Xvfb with Vulkan Lavapipe. Windows and macOS remain untested.",
       "kernel_integration": "The native viewport renders a host-prepared solid fixture while camera navigation remains in the viewport layer.",
-      "rust_tests": "Native scenario steps in crates/head/tests/application/viewport-pan/steps.rs; native_pan_drag_moves_the_view_and_keeps_pan_active also passed.",
+      "rust_tests": "Pinned native scenario in crates/head/tests/application/viewport-pan/steps.rs and both x11_pan tests passed. See architecture/rust-port/receipts/2026-11-20-viewport-pan-r0-3881/README.md.",
       "oracle": "Pinned scenario steps, camera equality for no-drag cancellation, observed UI state and reviewed native capture; Go is a partial navigation reference.",
       "expected_result": "Zoom replaces Pan from its context menu; Escape restores Ready while retaining the solid.",
       "historical_receipts": [
@@ -3016,7 +3019,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-pan-d6296175cbca7baa-head/receipt-d6296175cbca7baa.json",
           "sha256": "82abbf659184e7c972774a1ad5c7cd83e807d2139e5b72718aa2357b5729d481"
         }
-      ]
+      ],
+      "baseline_source_sha256": "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647"
     },
     {
       "id": "scenario:1edb7a1739ca5af4c11ba9cfac9a045f7936deb734b9151220b600a3f4edd506",
