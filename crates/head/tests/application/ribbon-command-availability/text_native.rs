@@ -9,6 +9,8 @@ mod text_creation;
 mod text_edit;
 #[path = "text_format_choices.rs"]
 mod text_format_choices;
+#[path = "text_numbering.rs"]
+mod text_numbering;
 #[path = "text_presets.rs"]
 mod text_presets;
 use oblikovati_viewport::ViewportSketchPreview;

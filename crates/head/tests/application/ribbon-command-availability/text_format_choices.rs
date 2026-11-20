@@ -29,7 +29,7 @@ fn sketch_text_format_choices_preview_and_preserve_the_original_on_cancel() {
 
 fn choose_formats(world: &mut ApplicationWorld) {
     let before = glyph_pixels(world);
-    choose_font(world);
+    choose_font(world, MONOSPACE);
     let font_pixels = glyph_pixels(world);
     assert_ne!(font_pixels, before, "font changed the glyph pixels");
     choose_format(world, "Choose height", "6.10 mm");
@@ -45,9 +45,9 @@ fn choose_formats(world: &mut ApplicationWorld) {
     assert_preview_style(world);
 }
 
-fn choose_font(world: &mut ApplicationWorld) {
+pub(super) fn choose_font(world: &mut ApplicationWorld, family: &str) {
     let families = world.state().sketch_text_font_families.unwrap();
-    assert!(families.iter().any(|family| family == MONOSPACE));
+    assert!(families.iter().any(|installed| installed == family));
     click_format_row(world, "Choose font");
     let label = world.run("Filter fonts").clone();
     x11_input::click(diagnostics::pointer_pixels([
@@ -59,8 +59,8 @@ fn choose_font(world: &mut ApplicationWorld) {
         x11_input::press_keysym(u32::from(*letter));
     }
     world.pump(Vec::new());
-    click_format_row(world, MONOSPACE);
-    assert_eq!(world.state().sketch_text.unwrap().family, MONOSPACE);
+    click_format_row(world, family);
+    assert_eq!(world.state().sketch_text.unwrap().family, family);
 }
 
 fn choose_format(world: &mut ApplicationWorld, caption: &str, selection: &str) {
@@ -74,7 +74,7 @@ fn click_format_row(world: &mut ApplicationWorld, label: &str) {
     world.pump(Vec::new());
 }
 
-fn glyph_pixels(world: &mut ApplicationWorld) -> Vec<u8> {
+pub(super) fn glyph_pixels(world: &mut ApplicationWorld) -> Vec<u8> {
     let capture = super::super::super::capture_framebuffer(&mut world.app().window.native);
     let stride = capture.extent[0] as usize * 4;
     capture

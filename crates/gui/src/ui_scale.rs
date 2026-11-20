@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::dockable_window::DockableWindow;
 use crate::{GuiAtlas, GuiCommandState, GuiFrameRequest, GuiShellAction};
-use imgui::{Context, FontConfig, FontSource, TextureId, Ui};
+use imgui::{Context, FontConfig, FontGlyphRanges, FontSource, TextureId, Ui};
 use oblikovati_model::ui_scale::UiScaleOptions;
 
 // ImGui's default font is 13 pixels. Refuse unbounded atlas allocations at the input boundary.
@@ -20,21 +20,37 @@ pub(crate) fn font_raster_scale(request: &GuiFrameRequest) -> Result<f32, String
 }
 pub(crate) fn rebuild_font_atlas(context: &mut Context, scale: f32) -> GuiAtlas {
     context.fonts().clear();
-    context.fonts().add_font(&[FontSource::DefaultFontData {
-        config: Some(FontConfig {
-            size_pixels: DEFAULT_FONT_PIXELS * scale,
-            oversample_h: 1,
-            oversample_v: 1,
-            pixel_snap_h: true,
-            ..Default::default()
-        }),
-    }]);
+    install_editor_fonts(context, scale);
     context.io_mut().font_global_scale = scale.recip();
     let atlas = crate::engine::copy_atlas(context);
     // imgui-rs rebuild clears TexID; bind the new owned atlas before the next frame (#3850).
     context.fonts().tex_id = TextureId::new(crate::snapshot::FONT_TEXTURE_ID);
     atlas
 }
+fn install_editor_fonts(context: &mut Context, scale: f32) {
+    let config = FontConfig {
+        size_pixels: DEFAULT_FONT_PIXELS * scale,
+        oversample_h: 1,
+        oversample_v: 1,
+        pixel_snap_h: true,
+        ..Default::default()
+    };
+    let symbols = FontConfig {
+        glyph_ranges: FontGlyphRanges::from_slice(&[0x2300, 0x2300, 0]),
+        ..config.clone()
+    };
+    context.fonts().add_font(&[
+        FontSource::DefaultFontData {
+            config: Some(config),
+        },
+        FontSource::TtfData {
+            data: include_bytes!("../assets/fonts/OblikovatiSketchSymbols.ttf"),
+            size_pixels: symbols.size_pixels,
+            config: Some(symbols),
+        },
+    ]);
+}
+
 #[derive(Default)]
 pub(crate) struct GuiScalePreferences {
     open: crate::dockable_lifecycle::DockableState,

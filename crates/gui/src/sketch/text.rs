@@ -11,6 +11,8 @@ use oblikovati_api::types::{
 use std::cell::{Cell, RefCell};
 #[path = "text_format.rs"]
 mod format_controls;
+#[path = "text_content.rs"]
+mod text_content;
 #[path = "text_height.rs"]
 mod text_height;
 #[path = "text_presets.rs"]
@@ -59,6 +61,7 @@ pub(crate) struct SketchTextDialog {
     dock_state: DockableState,
     font_filter: RefCell<String>,
     height_input: RefCell<text_height::TextHeightInput>,
+    content: RefCell<text_content::TextContentEditor>,
     presets: RefCell<text_presets::TextPresets>,
     escape_consumed: Cell<bool>,
 }
@@ -80,6 +83,7 @@ impl SketchTextDialog {
             .synchronize(state.sketch_text.is_some());
         if state.sketch_text.is_none() {
             *self.height_input.borrow_mut() = Default::default();
+            *self.content.borrow_mut() = Default::default();
         }
     }
 
@@ -129,11 +133,11 @@ impl SketchTextDialog {
         let changed_preset = presets.begin(existing, &mut draft) | presets.draw(ui, &mut draft);
         if changed_preset {
             *height = Default::default();
+            *self.content.borrow_mut() = Default::default();
         }
         let escape_used = presets.draw_name(ui, &draft);
         let changed = changed_preset
-            | ui.input_text_multiline("Content", &mut draft.content, [295., 100.])
-                .build()
+            | self.content.borrow_mut().draw(ui, &mut draft.content)
             | format_controls::draw(
                 ui,
                 &mut draft,

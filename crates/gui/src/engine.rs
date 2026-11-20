@@ -7,9 +7,9 @@ use crate::{
     context_owner::{frame_activity, require_vacant_context},
     frame_keys::prepare_frame_inputs,
     input::{input_capture, validate_input},
-    snapshot::{FONT_TEXTURE_ID, capture_frame},
+    snapshot::capture_frame,
 };
-use imgui::{ConfigFlags, Context, TextureId};
+use imgui::{ConfigFlags, Context};
 use std::sync::Arc;
 #[path = "engine/close_prompt_scale.rs"]
 mod close_prompt_scale;
@@ -371,10 +371,7 @@ pub(crate) fn configure_owner_context(context: &mut Context) -> GuiAtlas {
         .io_mut()
         .config_flags
         .insert(ConfigFlags::DOCKING_ENABLE | ConfigFlags::NAV_ENABLE_KEYBOARD);
-    let atlas = copy_atlas(context);
-    // imgui-rs e246a334 rebuilds and clears TexID; bind after the atlas is built.
-    context.fonts().tex_id = TextureId::new(FONT_TEXTURE_ID);
-    atlas
+    crate::ui_scale::rebuild_font_atlas(context, 1.)
 }
 pub(crate) fn copy_atlas(context: &mut Context) -> GuiAtlas {
     let atlas = context.fonts().build_rgba32_texture();
