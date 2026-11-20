@@ -8,6 +8,24 @@ pub(super) struct AnnotationPixels {
     pub(super) line: Option<Result<[[i32; 2]; 2], String>>,
 }
 
+/// Project against one stable drawable; example: `project_consistent(window, &annotations)?`.
+pub(super) fn project_consistent(
+    window: &mut dyn HeadWindow,
+    annotations: &[HeadDimensionAnnotation],
+) -> Result<(Vec<AnnotationPixels>, bool), String> {
+    if annotations.is_empty() {
+        return Ok((Vec::new(), false));
+    }
+    let projected = project(window, annotations);
+    let failed = projected
+        .iter()
+        .any(|item| item.position.is_err() || item.line.as_ref().is_some_and(Result::is_err));
+    if failed && window.synchronize_projection_extent()? {
+        return Ok((Vec::new(), true));
+    }
+    Ok((projected, false))
+}
+
 pub(super) fn project(
     window: &dyn HeadWindow,
     annotations: &[HeadDimensionAnnotation],

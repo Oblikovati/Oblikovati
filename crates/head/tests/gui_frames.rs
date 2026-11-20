@@ -20,6 +20,7 @@ struct FakeGuiWindow {
     parameter_issues: Vec<String>,
     permit_idle_motion: bool,
     pointer_down: bool,
+    projection_resize: bool,
 }
 #[test]
 fn physical_command_dispatch_reuses_the_semantic_command_path() {
@@ -39,6 +40,9 @@ fn physical_command_dispatch_reuses_the_semantic_command_path() {
     assert_eq!(semantic_command_event(text), text);
 }
 impl HeadWindow for FakeGuiWindow {
+    fn synchronize_projection_extent(&mut self) -> Result<bool, String> {
+        Ok(std::mem::take(&mut self.projection_resize))
+    }
     fn sketch_pixel(
         &self,
         _: oblikovati_model::sketch::SketchPlane,

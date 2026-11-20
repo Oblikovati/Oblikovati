@@ -1,6 +1,24 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::sketch::SketchPlane;
+
+#[test]
+fn explicit_projection_synchronization_observes_resize_and_refreshes_camera() {
+    let (runtime, _) = runtime();
+    let mut view = runtime.open_offscreen([100, 100]).unwrap();
+    assert!(!view.synchronize_projection_extent().unwrap());
+    view.target.as_ref().unwrap().resize([200, 100]).unwrap();
+    assert!(view.synchronize_projection_extent().unwrap());
+    assert!(!view.synchronize_projection_extent().unwrap());
+    let point = view
+        .sketch_point([125, 24], SketchPlane::xy())
+        .unwrap()
+        .unwrap();
+    assert!((point[0] - 5.).abs() < 1e-10);
+    assert!((point[1] - 5.).abs() < 1e-10);
+    view.close();
+    assert!(view.synchronize_projection_extent().is_err());
+}
 #[test]
 fn unobserved_surface_resize_cannot_mix_old_camera_aspect_with_new_pixels() {
     let (runtime, _) = runtime();

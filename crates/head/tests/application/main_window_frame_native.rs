@@ -363,3 +363,50 @@ fn resize_handles_show_direction_specific_cursors() {
     }
     world.close();
 }
+
+fn open_projection_fixture(world: &mut ApplicationWorld) {
+    let source = super::scenario_root().join("fixtures/cad/main-window-frame-start.opd");
+    let copy = world.scratch_folder().join("projection-fixture.opd");
+    std::fs::copy(source, &copy).unwrap();
+    world.open_fixture(&copy);
+    world.start_sketch();
+    world.finish_sketch();
+}
+
+fn expect_no_projection_error(world: &ApplicationWorld, stage: &str) {
+    assert!(
+        !world.shows("Command failed"),
+        "after {stage}: {}",
+        world.text()
+    );
+}
+
+fn restore_from_taskbar(world: &mut ApplicationWorld) {
+    pump_minimize_button(world);
+    std::thread::sleep(Duration::from_millis(500));
+    x11_input::click_test_taskbar();
+    wait_for_hidden(false);
+    world.pump(Vec::new());
+}
+
+#[test]
+#[ignore = "requires an X11 window manager and taskbar"]
+fn native_frame_minimize_restores_without_dimension_projection_error() {
+    let mut world = ApplicationWorld::new();
+    open_projection_fixture(&mut world);
+    x11_input::focus_window();
+    let bounds = x11_input::application_bounds();
+    drag_resize_handle(&mut world, [bounds[2] - 2, bounds[3] - 2], [100, 100]);
+    expect_no_projection_error(&world, "shrink");
+    press_maximize(&mut world);
+    pump_until(&mut world, true);
+    expect_no_projection_error(&world, "maximize");
+    press_maximize(&mut world);
+    pump_until(&mut world, false);
+    expect_no_projection_error(&world, "restore");
+    world.expect_text("40");
+    world.expect_text("25");
+    restore_from_taskbar(&mut world);
+    expect_no_projection_error(&world, "taskbar restore");
+    world.close();
+}

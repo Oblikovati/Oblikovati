@@ -46,7 +46,8 @@ pub(super) fn advance_gui(
             Err(_) => commands.model_pick_cue = None,
         }
     }
-    commands.dimension_labels = dimension_labels::projected_dimension_labels(window, owner)?;
+    let (labels, projection_resized) = dimension_labels::projected_dimension_labels(window, owner)?;
+    commands.dimension_labels = labels;
     commands.origin_planes = dimension_labels::origin_plane_outlines(window, &commands);
     if commands.selected_edge_count > 0 {
         commands.selected_edge_outlines = dimension_labels::projected_selected_edges(window, owner);
@@ -69,7 +70,7 @@ pub(super) fn advance_gui(
     commands.sketch_axes = dimension_labels::projected_sketch_axes(window, &commands);
     dimension_labels::project_precise_triad(window, owner, &mut commands);
     let mut update = window.gui_frame(event, &commands)?;
-    update.changed |= metadata_changed;
+    update.changed |= metadata_changed || projection_resized;
     if let Err(cause) = dispatch_frame_actions(window, owner, &mut update) {
         if window.has_pending_ribbon_model_pick() {
             window.resolve_ribbon_model_pick(false);

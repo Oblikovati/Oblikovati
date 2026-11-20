@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 impl HeadWindow for ScriptedGuiWindow {
+    fn synchronize_projection_extent(&mut self) -> Result<bool, String> {
+        self.native.synchronize_projection_extent()
+    }
     fn hovered_constraint_glyph(
         &self,
     ) -> Option<(

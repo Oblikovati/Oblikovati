@@ -196,6 +196,14 @@ impl Viewport {
         self.completed = None;
         self.resized(actual)
     }
+    /// Synchronize the drawable and camera without consuming input events.
+    /// Example: `view.synchronize_projection_extent()?` before projecting annotations.
+    pub fn synchronize_projection_extent(&mut self) -> Result<bool, String> {
+        self.live()?;
+        let before = self.extent;
+        self.refresh_extent()?;
+        Ok(self.extent != before)
+    }
     /// Map or hide a native target without a second renderer; example: `viewport.set_mapped(false)?`.
     pub fn set_mapped(&mut self, mapped: bool) -> Result<(), String> {
         self.live()?;

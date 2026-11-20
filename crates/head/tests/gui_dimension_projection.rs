@@ -2,6 +2,7 @@
 use super::*;
 use oblikovati_model::sketch::SketchPlane;
 use std::cell::Cell;
+use std::collections::VecDeque;
 
 #[derive(Default)]
 struct ProjectionWindow {
@@ -9,8 +10,14 @@ struct ProjectionWindow {
     single: Cell<usize>,
     fail_batch: bool,
     short_batch: bool,
+    sync_outcomes: VecDeque<bool>,
+    sync_calls: usize,
 }
 impl HeadWindow for ProjectionWindow {
+    fn synchronize_projection_extent(&mut self) -> Result<bool, String> {
+        self.sync_calls += 1;
+        Ok(self.sync_outcomes.pop_front().unwrap_or(false))
+    }
     fn sketch_pixel(&self, _: SketchPlane, point: [f64; 2]) -> Pixel {
         self.single.set(self.single.get() + 1);
         if point[0] < 0. {
@@ -53,6 +60,51 @@ impl HeadWindow for ProjectionWindow {
     fn finish(&mut self) -> Result<(), String> {
         Ok(())
     }
+}
+
+#[test]
+fn extent_change_during_projection_defers_the_stale_batch() {
+    let mut window = ProjectionWindow {
+        fail_batch: true,
+        sync_outcomes: VecDeque::from([true]),
+        ..Default::default()
+    };
+    let values = [annotation(SketchPlane::xy(), [1., 2.], None)];
+    let (pixels, redraw) = project_consistent(&mut window, &values).unwrap();
+    assert!(pixels.is_empty());
+    assert!(redraw);
+    assert_eq!(window.batches.get(), 1);
+}
+
+#[test]
+fn genuine_projection_failure_is_retained_when_extent_is_stable() {
+    let mut window = ProjectionWindow {
+        fail_batch: true,
+        ..Default::default()
+    };
+    let values = [annotation(SketchPlane::xy(), [1., 2.], None)];
+    let (pixels, redraw) = project_consistent(&mut window, &values).unwrap();
+    assert!(!redraw);
+    assert!(
+        pixels[0]
+            .position
+            .as_ref()
+            .unwrap_err()
+            .contains("expected a valid extent")
+    );
+}
+
+#[test]
+fn successful_projection_does_not_add_surface_synchronization() {
+    let mut window = ProjectionWindow {
+        sync_outcomes: VecDeque::from([true]),
+        ..Default::default()
+    };
+    let values = [annotation(SketchPlane::xy(), [1., 2.], None)];
+    let (pixels, redraw) = project_consistent(&mut window, &values).unwrap();
+    assert!(!redraw);
+    assert_eq!(window.sync_calls, 0);
+    assert_eq!(pixels[0].position, Ok([1, 2]));
 }
 fn annotation(
     plane: SketchPlane,

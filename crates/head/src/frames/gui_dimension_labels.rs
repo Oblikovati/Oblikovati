@@ -33,11 +33,12 @@ pub(super) fn projected_sketch_axes(
 pub(super) fn projected_dimension_labels(
     window: &mut dyn HeadWindow,
     owner: &dyn HeadWork,
-) -> Result<Vec<GuiDimensionLabel>, String> {
+) -> Result<(Vec<GuiDimensionLabel>, bool), String> {
     let annotations = owner.sketch_dimension_annotations()?;
     let mut declines = annotations.declines;
     let mut labels = Vec::new();
-    let projections = dimension_projection::project(window, &annotations.labels);
+    let (projections, resized) =
+        dimension_projection::project_consistent(window, &annotations.labels)?;
     for (annotation, projection) in annotations.labels.into_iter().zip(projections) {
         match projection.position {
             Ok(pixel) => {
@@ -67,7 +68,7 @@ pub(super) fn projected_dimension_labels(
             cause: declines.join("; "),
         })?;
     }
-    Ok(labels)
+    Ok((labels, resized))
 }
 /// Marks the camera cannot place are left out: a mark is a reading aid, never a modelling input.
 pub(super) fn projected_constraint_glyphs(

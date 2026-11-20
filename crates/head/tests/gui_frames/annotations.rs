@@ -56,3 +56,36 @@ fn unprojectable_dimension_line_reports_its_failure_without_hiding_the_label() {
     assert_eq!(window.states[0].dimension_labels[0].line, None);
     assert!(window.notices[0].message().contains("dimension line"));
 }
+
+#[test]
+fn projection_failure_during_resize_retries_and_reports_a_persistent_error() {
+    let mut owner = FakeGuiOwner::default();
+    owner
+        .annotations
+        .labels
+        .push(crate::HeadDimensionAnnotation {
+            plane: oblikovati_model::sketch::SketchPlane::xy(),
+            position: [-1., 2.],
+            line: None,
+            text: "10".into(),
+            role: oblikovati_gui::GuiDimensionLabelRole::Driving,
+            edit: None,
+        });
+    let mut window = FakeGuiWindow {
+        projection_resize: true,
+        ..Default::default()
+    };
+    let first = advance_gui(&mut window, &mut owner, None).unwrap();
+    assert!(first.changed, "a resize must schedule a fresh frame");
+    assert!(window.states[0].dimension_labels.is_empty());
+    assert!(
+        window.notices.is_empty(),
+        "a stale projection is not a command error"
+    );
+    advance_gui(&mut window, &mut owner, None).unwrap();
+    assert!(
+        window.notices[0]
+            .message()
+            .contains("expected a projectable test point")
+    );
+}

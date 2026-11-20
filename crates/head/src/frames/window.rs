@@ -14,6 +14,10 @@ pub struct HeadOrientationFitFrame {
 
 /// The desktop owns this boundary; implementations contain all native I/O.
 pub trait HeadWindow {
+    /// Synchronize camera and drawable extents; example: `window.synchronize_projection_extent()?`.
+    fn synchronize_projection_extent(&mut self) -> Result<bool, String> {
+        Ok(false)
+    }
     /// Dispatch an application-bar window request; example: `window.window_action(action)?`.
     fn window_action(&mut self, action: oblikovati_gui::GuiWindowAction) -> Result<bool, String> {
         Err(format!(

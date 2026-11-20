@@ -3,6 +3,9 @@
 use super::*;
 
 impl HeadWindow for NativeHeadWindow {
+    fn synchronize_projection_extent(&mut self) -> Result<bool, String> {
+        self.view.synchronize_projection_extent()
+    }
     fn hovered_constraint_glyph(
         &self,
     ) -> Option<(
