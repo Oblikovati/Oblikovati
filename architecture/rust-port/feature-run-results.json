@@ -69,17 +69,25 @@
   "features/application/main-window-frame/main-window-frame.feature": {
     "feature_sha256": "382162b5c11e33a252989ae65fee05e83d2e53a9ec3cac2f8ccad9ee05d7fe55",
     "supporting_files": {
-      "features/application/main-window-frame/FUNCTIONAL.md": "fccd47cb75b957dfaa171f4cb132f1553c4ef086c4fc9f1b402f2cf8517ca794",
-      "features/application/main-window-frame/VISUAL.md": "9ed34b18c720015394a39da6c660d72f089cc5aa056c90de0e8208acbe107fc0",
-      "features/application/main-window-frame/BLOCKERS.md": "aebc922c7c04ba61ba14d3a26546de0fd5c6d30bb6b71d94dff3e0b5cefc8c17"
+      "features/application/main-window-frame/BLOCKERS.md": "74497d26b6ca0dc34b56447a7a1ce81021d16bc00122103f5b286d22fcc3cff0",
+      "features/application/main-window-frame/FIXTURES.md": "89c46382a472f0db91ed43bbe1f3b45d5abb401349e50e32c232da0b3d721742",
+      "features/application/main-window-frame/FUNCTIONAL.md": "4d140cfb084123cf194059d5e29e043abfd9bca75d17d3d763e7764b7c1a07a3",
+      "features/application/main-window-frame/VISUAL.md": "9522fc3d5774efaa3e0ecd73dba0f295f523d1c1a97e7de71ca67bbd0bfa7f2c",
+      "features/application/main-window-frame/references/oblikovati-rust-work-de1cfac9-docking-visible-solid.png": "943622da5c4748205d7dd6c847dc57be9cc8f66fbffb5772e10ccb43c22cff3f",
+      "features/application/main-window-frame/references/oblikovati-rust-work-de1cfac9-no-document.png": "57ab786d7b3b0a7a77dfdb62b9ee603d56ea0e1b210239b967260a723285f4c3",
+      "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-main-window-frame/cucumber.json",
-    "cucumber_sha256": "98924d576091e5a6728a757286d110d780c841888eddf383e431db02a2d99ae3",
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-main-frame-native-4063/cucumber.json",
+    "cucumber_sha256": "40032e696fb3265984e2718660ecac82029b57b85c7a0040f138a395aea37495",
     "scenario_inventory": "architecture/rust-port/receipts/2026-11-18-main-window-frame/scenario-inventory.json",
     "scenario_inventory_sha256": "2bea7f0088cecbf2d607b39c6811c70c1af7bd12c865aa1191d6c928c7a91747",
-    "application_commit": "8460b6dd4dbe78156e9b3bcfc3d75d54b55fc11f",
-    "command": "OBK_BDD_FEATURE=main-window-frame tools/with-xvfb.sh dbus-run-session -- architecture/rust-port/receipts/2026-11-18-main-window-frame/run.sh",
-    "environment": "Linux X11, Xvfb, Openbox, tint2, AT-SPI and Vulkan Lavapipe; X11 window input; earlier full run had intermittent double-click failure"
+    "application_commit": "a590fedfe3a56e0ddf804d6c90ea7052213dbc57",
+    "command": "See receipt run.log; Xvfb, D-Bus and Openbox with test-only accessibility settings.",
+    "environment": "Linux X11, Xvfb, Openbox, tint2, AT-SPI and Vulkan Lavapipe; X11 window input; scripted fixture setup",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-main-frame-native-4063/scenario-arguments.json",
+    "scenario_arguments_sha256": "573e664b83b2cef207cfb62ac7eaa69d6cc171015e3a428a937af0d75ef0afa0",
+    "blocker": "Minimum-size Close setup needs scenario clarification; source and build are unsealed (#3978).",
+    "notes": "20 of 20 executed cases and 149 steps passed. Minimum-size Close used a dirty copy; see BLOCKERS.md. Diagnostic only."
   },
   "features/application/document-saving/document-saving.feature": {
     "feature_sha256": "36a191c754b03fb3e90c113a2b7eeade2982c8bb3a099ba921999502aa53f54f",

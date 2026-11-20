@@ -129,11 +129,12 @@ using this status; the live scenario directory can change.
   and native fixture; the earlier run did not use that snapshot. See
   `receipts/2026-11-20-wheel-local-snapshot-3881/`.
 
-- Main-window-frame passed 20 executed cases and 149 steps using X11,
-  Openbox, tint2, and AT-SPI. Functional and visual notes were reviewed;
-  minimize and maximize use a saved-part fixture. One prior full run failed
-  intermittently at the application-bar double-click; its report is retained
-  beside the passing run (#4063).
+- Main-window-frame (#4063): 20 executed cases and 149 steps passed with X11,
+  Openbox, tint2, AT-SPI, and the current native solid fixture. A resize race
+  that showed a command error was fixed in #4181. The minimum-size Close check
+  used a disposable dirty copy, which conflicts with the current fixture notes;
+  clarification is in the scenario folder. The run is diagnostic, not verified;
+  see `receipts/2026-11-20-main-frame-native-4063/`.
 - Viewport orbit has a full-feature diagnostic: all 10 executed cases,
   including both examples of one outline, passed at SHA-256
   `d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6`.
