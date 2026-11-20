@@ -68,6 +68,15 @@ probe of this component took 24.027 ms median on a denser 32-variable example.
 Real sketch and UI performance remain unmeasured. Test and probe details are
 in `receipts/2026-11-20-affine-component-4171/`.
 
+The model can now derive conditional affine rows from the shared sketch interval
+equations over a caller-supplied finite box. It requires singleton derivatives and
+an exactly representable intercept, then checks that the exact optimum enclosure
+stays inside that box. It rejects uncertain targets and unsupported or nonsmooth
+relations. The retained system is a snapshot: callers must check source changes.
+The proof depends on the interval implementation and supplied target bounds; it
+does not cover projected document anchors, rounded geometry, or sketch validity.
+It is not connected to dragging and does not establish interactive performance.
+
 SolveSpace forces dragged points toward the pointer, then solves authored
 constraints with weighted Newton iterations. Its success and rank checks do not
 certify the closest feasible drag target. OCCT's `math_Uzawa` accepts an
