@@ -66,13 +66,11 @@ fn dock_search_item(dock: u32) -> Option<[f32; 3]> {
         // The dock node can amend the bar after laying out window tabs. Anchor
         // the trailing button to the actual bounds of a normal dock tab.
         let origin = log.DockTabItemRect.Min.x - (anchor.Offset - bar.ScrollingAnim).floor();
-        (tab.Width > 0.).then(|| {
-            [
-                origin + tab.Offset + tab.Width * 0.5,
-                (bar.BarRect.Min.y + bar.BarRect.Max.y) * 0.5,
-                tab.Width,
-            ]
-        })
+        (tab.Width > 0.).then_some([
+            origin + tab.Offset + tab.Width * 0.5,
+            (bar.BarRect.Min.y + bar.BarRect.Max.y) * 0.5,
+            tab.Width,
+        ])
     }
 }
 

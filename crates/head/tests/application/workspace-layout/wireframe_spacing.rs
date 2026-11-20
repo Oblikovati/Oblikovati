@@ -125,8 +125,10 @@ fn ribbon_gaps(image: &ViewportCapture, left: u32, end: u32, y: u32) -> Vec<u32>
     let pixels = &image.rgba[row..row + span];
     let background = &pixels[span - 4..span];
     let samples = pixels
-        .chunks_exact(4)
-        .map(|pixel| pixel == background)
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|pixel| pixel.as_slice() == background)
         .collect::<Vec<_>>();
     let Some(first) = samples.iter().position(|&is_background| !is_background) else {
         return Vec::new();
