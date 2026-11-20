@@ -1,0 +1,23 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "feature_sha256": "eb8db1ebcfbc8bc1fbe6ea219d3cde103b5df27ab9ee48e2d5576553274bde73",
+  "published_feature_sha256_at_inspection": "cfc78feb7ecf3402f55c5fb30eafe1e6195f9c87b8205e136290103282731e90",
+  "source_changes": "Only the two Inventor fixture paths were replaced with candidate native YAML paths.",
+  "application_base": "fba8157b9",
+  "application_state": "Uncommitted feature worktree; later merged as 9aafdb1c4 with additional changes. This run is not attributed to the merge.",
+  "counts": {
+    "scenarios": 8,
+    "passed": 6,
+    "failed": 2,
+    "steps_passed": 63,
+    "steps_failed": 2
+  },
+  "renderer": "Vulkan Lavapipe on Xvfb, 1440x900",
+  "limitations": [
+    "The feature text differs from the published source.",
+    "The source is not a pinned checkout and build provenance is not sealed.",
+    "Only final scenario screenshots are recorded; they do not show every intermediate dialog.",
+    "The run stopped scenarios 02 and 08 at unbound steps."
+  ],
+  "screenshot_review": "Scenario 07 final image shows the sketch and Tools ribbon after the options dialog closed; its intermediate settings are not visible in that image."
+}
