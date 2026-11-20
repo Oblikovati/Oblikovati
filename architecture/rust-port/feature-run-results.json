@@ -266,15 +266,16 @@
       "features/application/ribbon-appearance/reset-entry-hover.svg": "e46ea0391d8b37385d9fbf6b584e84ce4813223bb0e6fc3ffd211fce98eb49b1",
       "features/application/ribbon-appearance/text-off-tab-switch.svg": "51d32e76cf907ebc51824930746035a8eac9b7b17f02d2fc5d69863f26ce0cc3"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-fixture-3957/cucumber.json",
-    "cucumber_sha256": "b7daffa5a4eb4b27d9f7186c466b15c834a5dca93f88d0a0f19902cd4b1376ef",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-fixture-3957/scenario-arguments.json",
-    "scenario_arguments_sha256": "8b97d93f064a3f62147c1fed84c9e162ea92d2a1e0ba02fa4d997b02f086fb25",
-    "application_commit": "2b13407ecf3ac622d104ac8ab1da6ffbc88cb5c2",
-    "command": "Full ribbon-appearance run; see receipt README.",
-    "environment": "Linux Xvfb 1600x1200, Vulkan Lavapipe",
-    "notes": "15 of 18 scenarios and 166 of 169 executed steps passed. All three failures occur at Tools panel visibility setup.",
-    "blocker": "Team Web, Tutorials and User Commands visibility setup remains incomplete (#3957)."
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-complete-3957/cucumber.json",
+    "cucumber_sha256": "debf942c5cdb8003bc2490902d1165561d39351ae01963b209f9b6762ea67434",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-complete-3957/scenario-arguments.json",
+    "scenario_arguments_sha256": "630583388ec93969c50ff0a8867d18b566fd4a8d88e111bd4344ee76ebba8b68",
+    "application_commit": "07a996c9a17f792bd54b814bbd229e86f28dabdf",
+    "command": "Full Ribbon Appearance run on the pinned feature. See the receipt README.",
+    "environment": "Linux X11, Xvfb 1600x1200 and Vulkan Lavapipe",
+    "notes": "All 18 cases and 201 steps passed. Pinned and live feature hashes matched. Strict verification still needs bounded build and runtime inputs under #3978.",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-complete-3957/scenario-inventory.json",
+    "scenario_inventory_sha256": "8a616afb8082eed961217b8642d5b966700c706af719392eac0af8434d152ebf"
   },
   "features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature": {
     "feature_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",

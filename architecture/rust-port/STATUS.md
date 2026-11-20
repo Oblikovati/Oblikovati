@@ -52,13 +52,13 @@ using this status; the live scenario directory can change.
   selected-point preview median was 14.182 ms before rendering; GUI frame rate
   remains unverified. See `receipts/2026-11-20-picked-point-4179/` and
   `receipts/2026-11-20-midpoint-line-4178/`.
-- Ribbon Appearance (#3957): the full diagnostic passed 15 of 18 scenarios
-  and 166 of 169 executed steps. The part fixture has a visible solid, and
-  the pinned Modify expansion passes Text Off and Normal. A focused native
-  test verifies that Show Panels reveals Tutorials, Customize sets up a real
-  User Commands panel, and Reset Ribbon restores both defaults. Team Web
-  remains open in the three Tools panel scenarios. See
-  `receipts/2026-11-20-ribbon-appearance-fixture-3957/`.
+- Ribbon Appearance (#3957) passed all 18 pinned desktop scenarios and 201
+  steps. The pinned and live feature hashes match. Team Web opens a dockable
+  window and hands the documentation URL to the system browser. The foreground
+  X11 check used MCPBridge and captured the same Part before and after.
+  See `receipts/2026-11-20-ribbon-appearance-complete-3957/`. All 18 scenarios
+  have R0 baseline records. Strict acceptance still requires bounded build
+  and runtime inputs under #3978.
 - Ribbon Command Availability (#3956): the full run passed three of five
   scenarios. Existing Create placement tools now enter the only planar sketch
   in an active part. X11 input verified Line entry and cancellation with no
