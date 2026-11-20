@@ -44,13 +44,6 @@ impl ViewportWake {
             )),
         }
     }
-    pub(crate) fn wait(
-        &self,
-        native: BorrowedFd<'_>,
-        timeout: Option<Duration>,
-    ) -> Result<ViewportReady, String> {
-        self.wait_sources(&[native], timeout)
-    }
     pub(crate) fn wait_sources(
         &self,
         sources: &[BorrowedFd<'_>],

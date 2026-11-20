@@ -251,11 +251,15 @@ fn assert_native_a_press(pressed: &[ViewportEvent]) {
 fn assert_copied_input_ready(fixture: &NativeInputFixture) {
     let wake = crate::ViewportWake::new().unwrap();
     assert!(
-        fixture
-            .window
-            .wait_events(&wake, Some(std::time::Duration::ZERO))
-            .unwrap()
-            .native_events
+        crate::runtime::event_sources::wait_for_native_sources(
+            &fixture.window,
+            &[],
+            &wake,
+            Some(std::time::Duration::ZERO),
+            None
+        )
+        .unwrap()
+        .native_events
     );
 }
 

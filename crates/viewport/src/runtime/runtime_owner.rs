@@ -19,6 +19,19 @@ impl ViewportRuntime {
     }
     /// Create an application-owned native target; example: `runtime.open_window("Oblikovati", [640,480])?`.
     pub fn open_window(&self, title: &str, extent: [u32; 2]) -> Result<Viewport, String> {
+        self.open_native_target(title, extent, false)
+    }
+    /// Open a separately managed window with a system title bar.
+    /// Example: `runtime.open_document_window("Drawing1", [640, 480])?`.
+    pub fn open_document_window(&self, title: &str, extent: [u32; 2]) -> Result<Viewport, String> {
+        self.open_native_target(title, extent, true)
+    }
+    fn open_native_target(
+        &self,
+        title: &str,
+        extent: [u32; 2],
+        system_frame: bool,
+    ) -> Result<Viewport, String> {
         #[cfg(target_os = "linux")]
         let window = NativeWindow::create(
             self.state
@@ -28,9 +41,10 @@ impl ViewportRuntime {
                 .clone(),
             title,
             extent,
+            system_frame,
         )?;
         #[cfg(target_os = "windows")]
-        let window = NativeWindow::create(title, extent)?;
+        let window = NativeWindow::create(title, extent, system_frame)?;
         self.create(ViewTarget::Native(Box::new(window)))
     }
     /// Set up a native Windows window before it becomes visible.

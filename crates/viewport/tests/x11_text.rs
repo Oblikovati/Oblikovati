@@ -175,7 +175,7 @@ fn provider_retirement_is_idempotent_and_invalidates_its_owned_liveness_flag() {
 #[test]
 fn retired_or_missing_context_is_refused_before_focus_and_commit_calls() {
     let window =
-        NativeWindow::create(NativeX11::open().unwrap(), "XIM admission", [64, 48]).unwrap();
+        NativeWindow::create(NativeX11::open().unwrap(), "XIM admission", [64, 48], false).unwrap();
     let mut input = NativeInputMethod::open(
         window.x11.clone(),
         window.display.clone(),

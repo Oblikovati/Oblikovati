@@ -18,12 +18,13 @@ fn wait_distinguishes_worker_native_timeout_and_broken_sources() {
     let (native, peer) = UnixStream::pair().unwrap();
     let wake = ViewportWake::new().unwrap();
     assert_eq!(
-        wake.wait(native.as_fd(), Some(Duration::ZERO)).unwrap(),
+        wake.wait_sources(&[native.as_fd()], Some(Duration::ZERO))
+            .unwrap(),
         ViewportReady::default()
     );
     wake.wake().unwrap();
     assert_eq!(
-        wake.wait(native.as_fd(), None).unwrap(),
+        wake.wait_sources(&[native.as_fd()], None).unwrap(),
         ViewportReady {
             native_events: false,
             worker_wake: true
@@ -35,16 +36,19 @@ fn verify_native_and_failed_sources(wake: &ViewportWake, native: &UnixStream, pe
     rustix::io::write(&peer, b"event").unwrap();
     wake.wake().unwrap();
     assert_eq!(
-        wake.wait(native.as_fd(), None).unwrap(),
+        wake.wait_sources(&[native.as_fd()], None).unwrap(),
         ViewportReady {
             native_events: true,
             worker_wake: true
         }
     );
-    assert!(wake.wait(native.as_fd(), Some(Duration::MAX)).is_err());
+    assert!(
+        wake.wait_sources(&[native.as_fd()], Some(Duration::MAX))
+            .is_err()
+    );
     drop(peer);
     assert!(
-        wake.wait(native.as_fd(), Some(Duration::ZERO))
+        wake.wait_sources(&[native.as_fd()], Some(Duration::ZERO))
             .unwrap_err()
             .contains("live event source")
     );

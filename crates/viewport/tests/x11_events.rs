@@ -10,6 +10,7 @@ impl NativeEventFixture {
                 NativeX11::open().unwrap(),
                 "Oblikovati event fixture",
                 [64, 48],
+                false,
             )
             .unwrap(),
         }
@@ -124,20 +125,28 @@ fn native_capture_buffer_rejects_invalid_sizes_before_allocating() {
 fn native_wait_preserves_pending_events_and_consumes_worker_wakes() {
     let fixture = NativeEventFixture::new();
     let wake = crate::ViewportWake::new().unwrap();
-    let ready = fixture
-        .window
-        .wait_events(&wake, Some(Duration::ZERO))
-        .unwrap();
+    let ready = crate::runtime::event_sources::wait_for_native_sources(
+        &fixture.window,
+        &[],
+        &wake,
+        Some(Duration::ZERO),
+        None,
+    )
+    .unwrap();
     assert!(ready.native_events);
     assert!(!fixture.window.poll(64).unwrap().is_empty());
     let worker = wake.clone();
     std::thread::spawn(move || worker.wake().unwrap())
         .join()
         .unwrap();
-    let ready = fixture
-        .window
-        .wait_events(&wake, Some(Duration::ZERO))
-        .unwrap();
+    let ready = crate::runtime::event_sources::wait_for_native_sources(
+        &fixture.window,
+        &[],
+        &wake,
+        Some(Duration::ZERO),
+        None,
+    )
+    .unwrap();
     assert!(ready.worker_wake);
 }
 

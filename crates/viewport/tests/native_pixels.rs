@@ -47,7 +47,8 @@ fn open_fixture_window(name: &str, extent: [u32; 2]) -> NativeWindow {
         )
         .unwrap(),
     );
-    NativeWindow::create_with_display(x11, display, "Oblikovati checked capture", extent).unwrap()
+    NativeWindow::create_with_display(x11, display, "Oblikovati checked capture", extent, false)
+        .unwrap()
 }
 #[test]
 fn clipped_native_capture_is_a_named_decline_and_the_window_remains_readable_after_resize() {

@@ -75,18 +75,24 @@ pub(crate) struct NativeWindow {
     state_atom: xlib::Atom,
 }
 impl NativeWindow {
-    pub fn create(x11: Rc<NativeX11>, title: &str, extent: [u32; 2]) -> Result<Self, String> {
+    pub fn create(
+        x11: Rc<NativeX11>,
+        title: &str,
+        extent: [u32; 2],
+        system_frame: bool,
+    ) -> Result<Self, String> {
         valid_extent(extent)?;
         validate_title(title)?;
         let display =
             Handle::new(AspectDisplayConnection::new().map_err(|error| error.to_string())?);
-        Self::create_with_display(x11, display, title, extent)
+        Self::create_with_display(x11, display, title, extent, system_frame)
     }
     pub(super) fn create_with_display(
         x11: Rc<NativeX11>,
         display: Handle<AspectDisplayConnection>,
         title: &str,
         extent: [u32; 2],
+        system_frame: bool,
     ) -> Result<Self, String> {
         let [width, height] = valid_extent(extent)?;
         validate_title(title)?;
@@ -116,7 +122,9 @@ impl NativeWindow {
             display,
             x11,
         };
-        result.set_application_frame()?;
+        if !system_frame {
+            result.set_application_frame()?;
+        }
         result.activate_window()?;
         Ok(result)
     }
@@ -213,36 +221,11 @@ impl NativeWindow {
         }
         Ok(())
     }
-    pub fn wait_events(
-        &self,
-        wake: &crate::ViewportWake,
-        timeout: Option<Duration>,
-    ) -> Result<crate::ViewportReady, String> {
-        self.wait_native_sources(wake, timeout, None)
-    }
-    pub(crate) fn wait_native_sources(
-        &self,
-        wake: &crate::ViewportWake,
-        timeout: Option<Duration>,
-        clipboard: Option<&crate::NativeClipboardEndpoint>,
-    ) -> Result<crate::ViewportReady, String> {
-        if self.has_pending_input() {
-            return Ok(crate::ViewportReady {
-                native_events: true,
-                worker_wake: wake.consume()?,
-            });
-        }
-        let native = self.connection_descriptor()?;
-        match clipboard {
-            Some(clipboard) => clipboard.wait_with_sources(wake, &[native], timeout),
-            None => wake.wait(native, timeout),
-        }
-    }
-    fn has_pending_input(&self) -> bool {
+    pub(crate) fn has_pending_input(&self) -> bool {
         !self.copied_input.borrow().is_empty()
             || unsafe { (self.x11.api.XPending)(self.pointer()) } != 0
     }
-    fn connection_descriptor(&self) -> Result<rustix::fd::BorrowedFd<'_>, String> {
+    pub(crate) fn connection_descriptor(&self) -> Result<rustix::fd::BorrowedFd<'_>, String> {
         let descriptor = unsafe { (self.x11.api.XConnectionNumber)(self.pointer()) };
         if descriptor < 0 {
             return Err(format!(

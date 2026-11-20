@@ -10,9 +10,6 @@ use x11rb::protocol::xproto::{
 use x11rb::rust_connection::RustConnection;
 use x11rb::wrapper::ConnectionExt as _;
 
-fn connection() -> Result<(RustConnection, usize), String> {
-    x11rb::connect(None).map_err(|error| format!("window manager connection: {error}"))
-}
 fn atom(connection: &RustConnection, name: &[u8]) -> Result<Atom, String> {
     connection
         .intern_atom(false, name)
@@ -42,8 +39,19 @@ fn request(
     connection.flush().map_err(|error| error.to_string())
 }
 impl NativeWindow {
+    fn frame_connection(&self) -> Result<(RustConnection, usize), String> {
+        let display_name = self.display.get_display_name();
+        let display = std::str::from_utf8(display_name.as_bytes()).map_err(|cause| {
+            format!(
+                "window manager display {display_name:?}: expected a UTF-8 display name: {cause}"
+            )
+        })?;
+        x11rb::connect(Some(display))
+            .map_err(|cause| format!("window manager display {display:?}: {cause}"))
+    }
+
     pub(super) fn set_application_frame(&self) -> Result<(), String> {
-        let (connection, _) = connection()?;
+        let (connection, _) = self.frame_connection()?;
         let hints = atom(&connection, b"_MOTIF_WM_HINTS")?;
         // Motif decorations=0 makes the application bar the sole caption.
         connection
@@ -66,7 +74,7 @@ impl NativeWindow {
         connection.flush().map_err(|error| error.to_string())
     }
     pub fn window_action(&self, action: ViewportWindowAction) -> Result<(), String> {
-        let (connection, screen) = connection()?;
+        let (connection, screen) = self.frame_connection()?;
         let root = connection.setup().roots[screen].root;
         let window = self.window.native_handle() as u32;
         match action {
@@ -114,7 +122,7 @@ impl NativeWindow {
         }
     }
     pub fn window_screen_bounds(&self) -> Result<[i32; 4], String> {
-        let (connection, screen) = connection()?;
+        let (connection, screen) = self.frame_connection()?;
         let window = self.window.native_handle() as u32;
         let root = connection.setup().roots[screen].root;
         let position = connection
@@ -136,7 +144,7 @@ impl NativeWindow {
         ])
     }
     pub fn request_accessible_focus(&self) -> Result<(), String> {
-        let (connection, screen) = connection()?;
+        let (connection, screen) = self.frame_connection()?;
         let root = connection.setup().roots[screen].root;
         request(
             &connection,
@@ -150,7 +158,7 @@ impl NativeWindow {
         Ok(self.maximized.get())
     }
     pub(super) fn refresh_maximized(&self) -> Result<(), String> {
-        let (connection, _) = connection()?;
+        let (connection, _) = self.frame_connection()?;
         let state = atom(&connection, b"_NET_WM_STATE")?;
         let horizontal = atom(&connection, b"_NET_WM_STATE_MAXIMIZED_HORZ")?;
         let vertical = atom(&connection, b"_NET_WM_STATE_MAXIMIZED_VERT")?;
@@ -250,7 +258,7 @@ impl NativeWindow {
     }
     fn begin_resize(&self, direction: u32) -> Result<(), String> {
         self.release_frame_pointer();
-        let (connection, screen) = connection()?;
+        let (connection, screen) = self.frame_connection()?;
         let root = connection.setup().roots[screen].root;
         let pointer = connection
             .query_pointer(root)

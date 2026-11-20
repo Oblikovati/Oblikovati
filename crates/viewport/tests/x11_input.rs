@@ -12,6 +12,7 @@ impl NativeInputFixture {
                 NativeX11::open().unwrap(),
                 "Oblikovati input acceptance",
                 [64, 48],
+                false,
             )
             .unwrap(),
         }
@@ -30,6 +31,7 @@ impl NativeInputFixture {
                 display,
                 "Oblikovati compose acceptance",
                 [64, 48],
+                false,
             )
             .unwrap(),
         }

@@ -338,21 +338,6 @@ impl Viewport {
         }
         Ok(())
     }
-    /// Wait without rendering, preserving queued native events; example: `view.wait_events(&wake, None)?;`.
-    pub fn wait_events(
-        &self,
-        wake: &crate::ViewportWake,
-        timeout: Option<std::time::Duration>,
-    ) -> Result<crate::ViewportReady, String> {
-        self.live()?;
-        match self.target.as_ref().expect("live target") {
-            ViewTarget::Native(native) => native.wait_events(wake, timeout),
-            ViewTarget::Offscreen(_) => Err(format!(
-                "viewport {}: expected a native event source",
-                self.id
-            )),
-        }
-    }
     #[cfg(target_os = "linux")]
     /// Capture the actual X11 drawable independently of GPU readback; example: `viewport.native_pixels()?`.
     pub fn native_pixels(&self) -> Result<Vec<u8>, String> {
@@ -431,8 +416,7 @@ impl Viewport {
     }
 }
 
-#[cfg(target_os = "linux")]
-mod clipboard;
+pub(crate) mod event_sources;
 mod gui_composition;
 
 mod gui_outcomes;

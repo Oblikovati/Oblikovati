@@ -31,6 +31,7 @@ impl NativeTextChannelFixture {
             crate::x11::NativeX11::open().unwrap(),
             "Text channel health",
             [64, 48],
+            false,
         )
         .unwrap();
         let method = NativeInputMethod::open(

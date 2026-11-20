@@ -34,17 +34,31 @@ pub(crate) struct NativeWindow {
     // The pointer installed in GWLP_USERDATA stays valid until DestroyWindow returns.
     events: std::rc::Rc<WindowEvents>,
     hwnd: HWND,
+    style: u32,
     pub window: Handle<AspectNeutralWindow>,
 }
 const STYLE: u32 = WS_POPUP | WS_THICKFRAME | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX;
 
 impl NativeWindow {
-    pub fn create(title: &str, extent: [u32; 2]) -> Result<Self, String> {
-        Self::create_with_setup(title, extent, |_| {})
+    pub fn create(title: &str, extent: [u32; 2], system_frame: bool) -> Result<Self, String> {
+        let style = if system_frame {
+            WS_OVERLAPPEDWINDOW
+        } else {
+            STYLE
+        };
+        Self::create_with_style(title, extent, style, |_| {})
     }
     pub fn create_with_setup(
         title: &str,
         extent: [u32; 2],
+        setup: impl FnOnce(isize),
+    ) -> Result<Self, String> {
+        Self::create_with_style(title, extent, STYLE, setup)
+    }
+    fn create_with_style(
+        title: &str,
+        extent: [u32; 2],
+        style: u32,
         setup: impl FnOnce(isize),
     ) -> Result<Self, String> {
         let [width, height] = valid_extent(extent)?;
@@ -52,13 +66,13 @@ impl NativeWindow {
         let class = windows_sys::w!("OblikovatiViewport");
         let instance = unsafe { GetModuleHandleW(ptr::null()) };
         register_class(instance, class)?;
-        let rect = window_rect(width, height)?;
+        let rect = window_rect(width, height, style)?;
         let hwnd = unsafe {
             CreateWindowExW(
                 0,
                 class,
                 title.as_ptr(),
-                STYLE,
+                style,
                 CW_USEDEFAULT,
                 CW_USEDEFAULT,
                 rect.right - rect.left,
@@ -80,6 +94,7 @@ impl NativeWindow {
         let native = Self {
             events,
             hwnd,
+            style,
             window,
         };
         setup(hwnd as isize);
@@ -130,7 +145,7 @@ impl NativeWindow {
 
     pub fn resize(&self, extent: [u32; 2]) -> Result<(), String> {
         let [width, height] = valid_extent(extent)?;
-        let rect = window_rect(width, height)?;
+        let rect = window_rect(width, height, self.style)?;
         if unsafe {
             SetWindowPos(
                 self.hwnd,
@@ -187,12 +202,15 @@ impl NativeWindow {
         wake: &ViewportWake,
         timeout: Option<Duration>,
     ) -> Result<ViewportReady, String> {
-        if !self.events.queue.borrow().is_empty() {
+        if self.has_pending_input() {
             let mut ready = wake.wait(Some(Duration::ZERO))?;
             ready.native_events = true;
             return Ok(ready);
         }
         wake.wait(timeout)
+    }
+    pub(crate) fn has_pending_input(&self) -> bool {
+        !self.events.queue.borrow().is_empty()
     }
 
     pub fn set_title(&self, title: &str) -> Result<(), String> {
@@ -326,14 +344,14 @@ fn register_class(
     Ok(())
 }
 
-fn window_rect(width: i32, height: i32) -> Result<RECT, String> {
+fn window_rect(width: i32, height: i32, style: u32) -> Result<RECT, String> {
     let mut rect = RECT {
         left: 0,
         top: 0,
         right: width,
         bottom: height,
     };
-    if unsafe { AdjustWindowRectEx(&mut rect, STYLE, 0, 0) } == 0 {
+    if unsafe { AdjustWindowRectEx(&mut rect, style, 0, 0) } == 0 {
         return Err(win_error("size viewport window frame"));
     }
     Ok(rect)
