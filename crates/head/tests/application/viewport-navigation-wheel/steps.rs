@@ -14,6 +14,8 @@ const FULL_WHEEL_SIDE: f32 = 160.;
 mod big_size;
 #[path = "preferences.rs"]
 mod preferences;
+#[path = "segment_pixels.rs"]
+mod segment_pixels;
 #[cfg(test)]
 #[path = "size_regression.rs"]
 mod size_regression;
@@ -233,8 +235,16 @@ fn choose_mini_view(world: &mut ApplicationWorld) {
 }
 #[then("a small segmented circular wheel appears")]
 #[then("a small segmented circular wheel remains visible")]
-fn small_wheel(_: &mut ApplicationWorld) {
+fn small_wheel(world: &mut ApplicationWorld) {
     assert!(wheel_side() < MINI_SIDE, "side {}", wheel_side());
+    world.hover([500, 500]);
+    settle(world);
+    let count = visible_mini_segments(world);
+    assert!(
+        count >= 2,
+        "mini wheel segments {count}: expected a segmented wheel"
+    );
+    world.observed_counts = vec![count];
 }
 #[then("the hovered segment is identified as Rewind")]
 fn hovered_rewind(world: &mut ApplicationWorld) {
@@ -263,9 +273,22 @@ fn mini_tour_marked(world: &mut ApplicationWorld) {
 fn choose_mini_full(world: &mut ApplicationWorld) {
     choose_row(world, "Mini Full Navigation Wheel");
 }
+fn visible_mini_segments(world: &mut ApplicationWorld) -> usize {
+    let bounds = diagnostics::window_pixel_bounds(WHEEL).expect("expected mini wheel bounds");
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    segment_pixels::visible_separators(&capture, bounds)
+}
 #[then("a small circular wheel with more segments appears")]
-fn more_segments(_: &mut ApplicationWorld) {
+fn more_segments(world: &mut ApplicationWorld) {
+    world.hover([500, 500]);
+    settle(world);
+    let count = visible_mini_segments(world);
     assert!(wheel_side() < MINI_SIDE, "side {}", wheel_side());
+    assert!(
+        count > world.observed_counts[0],
+        "mini full segments {count}: expected more than {}",
+        world.observed_counts[0]
+    );
 }
 #[then("Mini Full Navigation Wheel is marked as the selected layout")]
 fn mini_full_marked(world: &mut ApplicationWorld) {
