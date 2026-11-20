@@ -249,6 +249,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Animated ViewCube turns when the animated transitions option is enabled. (#3961)
+
 - Restored Ready after closing the navigation wheel. (#3881)
 
 - Refreshed dock tabs when workspace panels open or close. (#4133)

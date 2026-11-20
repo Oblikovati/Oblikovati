@@ -14,6 +14,11 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- Viewport Orientation (#3961): all 23 scenarios and 253 steps passed on the
+  current native Part fixture. A separate X11 click under Openbox showed an
+  intermediate frame before the model and ViewCube reached Top. See
+  `receipts/2026-11-20-orientation-transition-3961/`. Strict verification
+  remains open under #3978.
 - Document Tabs (#3900): all 39 scenarios and 343 steps passed locally.
   Openbox confirmed two separate operating-system windows and verified input
   to the drawing tab, sheet, and main Part tab. Closing the drawing window

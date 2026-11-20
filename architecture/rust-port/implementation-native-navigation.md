@@ -153,3 +153,12 @@ and anchored-zoom assertions remain on an offscreen target, where no window
 manager can change those dimensions. Native image round trips, scene and
 camera generations, and X11 presented-pixel checks remain active. No renderer
 code, validation setting, or test concurrency was changed for this correction.
+
+## ViewCube animated transitions
+
+When animation is enabled, the desktop frame loop turns the model and
+ViewCube with the same camera. The 350 ms transition uses rigid rotation
+between the start and target orientations, including opposite views. A slow
+renderer can extend the turn so that it can present intermediate frames.
+Direct navigation and document changes end the active turn. See the
+[desktop acceptance receipt](receipts/2026-11-20-orientation-transition-3961/README.md).

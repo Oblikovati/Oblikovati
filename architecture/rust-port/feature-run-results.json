@@ -224,19 +224,26 @@
     "blocker": "Strict verification requires pinned scenario source and bounded build and runtime inputs (#3978)."
   },
   "features/application/viewport-orientation/viewport-orientation.feature": {
-    "feature_sha256": "65989d7b418fdc203bed1c3050624c407208d6019eaed74364fa5fa1330775d4",
+    "feature_sha256": "4368a0cdb1767d8a80ddad9966f82709f610fdbd6c48987cc4073273cc939f62",
     "supporting_files": {
-      "features/application/viewport-orientation/FUNCTIONAL.md": "a4c7d2f874d08a126462298ef4f646a0191fb551d3d06322ca704638d0a2b20c",
-      "features/application/viewport-orientation/VISUAL.md": "2715359ed8d3e62d0cc3113bd20df24d014b0346351d5ed2daaa2b25c1ec731d",
-      "features/application/viewport-orientation/FIXTURES.md": "9d1692ab576a5bbb1294868771aec1cddde6c2980b018629d9e15cdf3c3fb3f2",
-      "features/application/viewport-orientation/BLOCKERS.md": "1e1842ab23a2ce1b6e6300486320b8850bd763bfb62604b6146d285bd4e271d7"
+      "features/application/viewport-orientation/BLOCKERS.md": "10a64066f582c916e4cca165e35ea1371e5c5a258c5e2aef49f41e932138a4ed",
+      "features/application/viewport-orientation/FIXTURES.md": "86615dd74f586912716f3b1ed2f087bb47ce48e763a8b65c0ea617c4c1b819d7",
+      "features/application/viewport-orientation/FUNCTIONAL.md": "d16bc245264456ecdecc0961ea65f5d6e89a300d12a0afd2b0603d312a3441a7",
+      "features/application/viewport-orientation/VISUAL.md": "f170821a79d31b3ba5b6a62987df492511a0e59a970f50e5ad5908fb5a81fdf1",
+      "features/application/viewport-orientation/orientation-control.svg": "17b7f50eea8d5272b5cd8e346485134f6854b8e7727d2e237ef8fe5eb110284c",
+      "features/application/viewport-orientation/orientation-states.svg": "7872830e2a252c7d5a7d08f1ac72cc45f2e1416412288cc7ba25d6b326e8c10b",
+      "features/application/viewport-orientation/preferences-concept.svg": "afff50856b21a56358b51b28179846879f6e62edc033d01128201de9514f4679",
+      "features/application/viewport-orientation/viewcube-axis-triad.svg": "d5c76c95dc1ac1a3554f8b0b3cfca47accbbd5c2509a9874b183ae790f837a3d",
+      "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-viewport-orientation/cucumber.json",
-    "cucumber_sha256": "5647e456ba7cfc5dd81405698d26a6932182e697f30b9fb0db596f940a817289",
-    "application_commit": "ad879407f7b46b9a34456890533f8a70850c322e",
-    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=viewport-orientation XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input",
-    "notes": "The rotated-front image is from the initial failing diagnostic; the full passing run uses the corrected draw-data collector. A separate native X11 pointer test rotates and restores Front, checking the label, camera and active part."
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-orientation-transition-3961/cucumber.json",
+    "cucumber_sha256": "97528aaa2bd184afa6f3f3a86a2fb8f1ab2e66db10fa462c133637a7f631c0d3",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-orientation-transition-3961/scenario-arguments.json",
+    "scenario_arguments_sha256": "b19cb2f29aea3a82aeb85b727b7b0bba7f38220591a35565ec87734ac67a7105",
+    "application_commit": "7550ae9f2561ef0c0c5e894a5fc49a3c36e0218b",
+    "command": "Full viewport-orientation desktop run. See the receipt README.",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe. Focused animation run under Openbox.",
+    "notes": "All 23 scenarios and 253 steps passed. Strict receipt provenance remains open under #3978."
   },
   "features/application/ribbon-appearance/ribbon-appearance.feature": {
     "feature_sha256": "7ebd05f3a8b347bd7eee5a132e7782ba9731a16f1bb0e8ac26a756fe5da312fa",
