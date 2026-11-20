@@ -4,7 +4,7 @@
 
 ### Added
 
-- Added paragraph numbering and diameter-symbol insertion to Format Text. (#3907)
+- Added paragraph bullets, numbering, and diameter-symbol insertion to Format Text. (#3907)
 
 - Preserved valid character-format ranges in native sketch files and sketch history. (#3907)
 

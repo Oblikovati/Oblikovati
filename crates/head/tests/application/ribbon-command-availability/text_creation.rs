@@ -102,7 +102,6 @@ fn commit_and_exit_creation(world: &mut ApplicationWorld) {
     click_editor_button(world, "OK");
     x11_input::press_keysym(0xff1b);
     world.pump(Vec::new());
-    observe_committed_text(world, RECORDED_INSERTION);
 }
 
 fn observe_committed_text(world: &mut ApplicationWorld, pointer: [i32; 2]) {
@@ -121,6 +120,7 @@ fn observe_committed_text(world: &mut ApplicationWorld, pointer: [i32; 2]) {
 
 #[then("b remains visible and the sketch returns Ready")]
 fn ready_after_text_creation(world: &mut ApplicationWorld) {
+    observe_committed_text(world, RECORDED_INSERTION);
     world.expect_ready();
     assert_creation_restored(world);
 }

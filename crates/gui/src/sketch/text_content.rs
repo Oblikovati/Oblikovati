@@ -31,7 +31,10 @@ impl TextContentEditor {
         let numbering = numbering_choice(ui);
         ui.same_line();
         let symbol = symbol_choice(ui);
-        if let Some(style) = numbering {
+        ui.same_line();
+        let bullet = NumberingStyle::Bullet;
+        let bullets = ui.button(bullet.label()).then_some(bullet);
+        if let Some(style) = numbering.or(bullets) {
             return self.number_paragraphs(content, style);
         }
         symbol.is_some_and(|symbol| self.insert_symbol(content, symbol))

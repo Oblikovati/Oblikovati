@@ -36,7 +36,7 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
         ..Default::default()
     };
     let symbols = FontConfig {
-        glyph_ranges: FontGlyphRanges::from_slice(&[0x2300, 0x2300, 0]),
+        glyph_ranges: FontGlyphRanges::from_slice(&[0x2022, 0x2022, 0x2300, 0x2300, 0]),
         ..config.clone()
     };
     context.fonts().add_font(&[

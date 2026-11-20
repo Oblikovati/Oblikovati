@@ -3,9 +3,11 @@
 use std::ops::Range;
 
 const INDENT: &str = "  ";
+const BULLET_PREFIX: &str = "• ";
 
 #[derive(Clone, Copy)]
 pub(super) enum NumberingStyle {
+    Bullet,
     Numeric,
     LowerAlphabetic,
     UpperAlphabetic,
@@ -24,6 +26,7 @@ impl NumberingStyle {
 
     pub(super) fn label(self) -> &'static str {
         match self {
+            Self::Bullet => "Bullets",
             Self::Numeric => "Numeric",
             Self::LowerAlphabetic => "Lower alphabetic",
             Self::UpperAlphabetic => "Upper alphabetic",
@@ -32,14 +35,16 @@ impl NumberingStyle {
         }
     }
 
-    fn marker(self, number: usize) -> String {
-        match self {
+    fn prefix(self, number: usize) -> String {
+        let marker = match self {
+            Self::Bullet => return BULLET_PREFIX.into(),
             Self::Numeric => number.to_string(),
             Self::LowerAlphabetic => alphabetical(number),
             Self::UpperAlphabetic => alphabetical(number).to_ascii_uppercase(),
             Self::LowerRoman => roman(number).to_ascii_lowercase(),
             Self::UpperRoman => roman(number),
-        }
+        };
+        format!("{marker}. ")
     }
 }
 
@@ -54,8 +59,8 @@ pub(super) fn replace_numbering(
         .enumerate()
         .map(|(index, paragraph)| {
             format!(
-                "{INDENT}{}. {}",
-                style.marker(index + 1),
+                "{INDENT}{}{}",
+                style.prefix(index + 1),
                 without_list_marker(paragraph, index + 1)
             )
         })
@@ -80,20 +85,16 @@ fn paragraph_bounds(content: &str, selection: Range<usize>) -> Option<Range<usiz
 }
 
 fn without_list_marker(paragraph: &str, number: usize) -> &str {
-    let Some((marker, value)) = paragraph
-        .strip_prefix(INDENT)
-        .and_then(|rest| rest.split_once(". "))
-    else {
+    let Some(indented) = paragraph.strip_prefix(INDENT) else {
         return paragraph;
     };
-    if NumberingStyle::CHOICES
-        .into_iter()
-        .any(|style| style.marker(number) == marker)
-    {
-        value
-    } else {
-        paragraph
+    if let Some(content) = indented.strip_prefix(BULLET_PREFIX) {
+        return content;
     }
+    NumberingStyle::CHOICES
+        .into_iter()
+        .find_map(|style| indented.strip_prefix(&style.prefix(number)))
+        .unwrap_or(paragraph)
 }
 
 fn alphabetical(mut number: usize) -> String {
@@ -159,8 +160,26 @@ mod tests {
         let (_, replacement) =
             replace_numbering(content, 0..content.len(), NumberingStyle::LowerRoman).unwrap();
         assert_eq!(replacement, "  i. a\n  ii. b");
-        assert_eq!(NumberingStyle::LowerAlphabetic.marker(27), "aa");
-        assert_eq!(NumberingStyle::UpperAlphabetic.marker(27), "AA");
-        assert_eq!(NumberingStyle::UpperRoman.marker(49), "XLIX");
+        assert_eq!(NumberingStyle::LowerAlphabetic.prefix(27), "aa. ");
+        assert_eq!(NumberingStyle::UpperAlphabetic.prefix(27), "AA. ");
+        assert_eq!(NumberingStyle::UpperRoman.prefix(49), "XLIX. ");
+    }
+
+    #[test]
+    fn numbering_replaces_bullets_without_removing_paragraph_content() {
+        let content = "  • a\n  • β";
+        let (_, replacement) =
+            replace_numbering(content, 0..content.len(), NumberingStyle::Numeric).unwrap();
+        assert_eq!(replacement, "  1. a\n  2. β");
+    }
+
+    #[test]
+    fn bullets_replace_numbering_only_for_selected_paragraphs() {
+        let content = "  1. a\n  2. β\nkeep";
+        let selection = 0..content.rfind('\n').unwrap();
+        let (range, replacement) =
+            replace_numbering(content, selection, NumberingStyle::Bullet).unwrap();
+        assert_eq!(&content[range.end..], "\nkeep");
+        assert_eq!(replacement, "  • a\n  • β");
     }
 }

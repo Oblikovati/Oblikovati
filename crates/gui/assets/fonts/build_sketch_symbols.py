@@ -29,13 +29,33 @@ def diameter_glyph():
     return pen.glyph()
 
 
+def bullet_glyph():
+    """Draw the circular bullet used for paragraph lists."""
+    pen = TTGlyphPen(None)
+    pen.moveTo((275, 350))
+    pen.qCurveTo((275, 455), (380, 455))
+    pen.qCurveTo((485, 455), (485, 350))
+    pen.qCurveTo((485, 245), (380, 245))
+    pen.qCurveTo((275, 245), (275, 350))
+    pen.closePath()
+    return pen.glyph()
+
+
 def build_font(destination: Path) -> None:
-    """Write a repeatable TrueType font with one U+2300 glyph."""
+    """Write a repeatable TrueType font for the bullet and diameter signs."""
     font = FontBuilder(1000, isTTF=True)
-    font.setupGlyphOrder([".notdef", "diameter"])
-    font.setupCharacterMap({0x2300: "diameter"})
-    font.setupGlyf({".notdef": TTGlyphPen(None).glyph(), "diameter": diameter_glyph()})
-    font.setupHorizontalMetrics({".notdef": (760, 0), "diameter": (760, 70)})
+    font.setupGlyphOrder([".notdef", "bullet", "diameter"])
+    font.setupCharacterMap({0x2022: "bullet", 0x2300: "diameter"})
+    font.setupGlyf({
+        ".notdef": TTGlyphPen(None).glyph(),
+        "bullet": bullet_glyph(),
+        "diameter": diameter_glyph(),
+    })
+    font.setupHorizontalMetrics({
+        ".notdef": (760, 0),
+        "bullet": (760, 275),
+        "diameter": (760, 70),
+    })
     font.setupHorizontalHeader(ascent=800, descent=-200)
     font.setupNameTable({"familyName": "Oblikovati Sketch Symbols", "styleName": "Regular",
         "uniqueFontIdentifier": "OblikovatiSketchSymbols-Regular", "fullName": "Oblikovati Sketch Symbols",
