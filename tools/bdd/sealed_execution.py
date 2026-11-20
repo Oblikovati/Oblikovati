@@ -215,18 +215,18 @@ def sandbox_program(request: SealedRequest) -> list[str]:
         if request.area == "sketch"
         else "application_scenarios_use_the_native_window"
     )
-    return [
-        "--chdir",
-        "/tmp",
-        "--",
-        "/usr/bin/xvfb-run",
-        "-a",
-        "-s",
-        "-screen 0 1920x1080x24 -noreset",
-        "/runner",
-        runner,
-        "--nocapture",
-    ]
+    if request.area == "application" and request.feature == "docking-system":
+        return docking_program(runner)
+    return ["--chdir", "/tmp", "--", "/usr/bin/xvfb-run", "-a", "-s",
+            "-screen 0 1920x1080x24 -noreset", "/runner", runner, "--nocapture"]
+
+
+def docking_program(runner: str) -> list[str]:
+    """Run the docking test with a window manager; example: docking_program('test')."""
+    launch = 'openbox >/tmp/openbox.log 2>&1 & wm=$!; trap "kill $wm 2>/dev/null || true" EXIT; "$@"'
+    return ["--chdir", "/tmp", "--", "/usr/bin/xvfb-run", "-a", "-s",
+            "-screen 0 1440x900x24 -noreset", "/bin/sh", "-c", launch,
+            "docking-run", "/runner", runner, "--nocapture"]
 
 
 def run_process(command: list[str], log: Path) -> int:
