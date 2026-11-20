@@ -78,8 +78,10 @@ using this status; the live scenario directory can change.
   save and reopen. Invalid height keeps the last valid glyph and selects the
   rejected value after the warning closes. Selected-character formatting is
   tracked in [API PR #315](https://github.com/Oblikovati/Oblikovati.API/pull/315).
-  The full live Text run passed seven of 38 declarations. The other 31 lack
-  step bindings. See `receipts/2026-11-20-sketch-text-height-3907/` for the
+  The preset list, inline naming, and checked defaults passed pinned `text-24`.
+  The native session preset applies to a fresh draft without committing geometry.
+  The full live Text run passed eight of 38 declarations. The other 30 lack
+  step bindings. See `receipts/2026-11-20-sketch-text-presets-3907/` for the
   current run and `receipts/2026-11-20-sketch-text-style-3907/` for the
   formatting preview and save and reopen checks.
 - Midpoint Line (#4178): the scenario source changed and now requires an

@@ -27766,8 +27766,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/sketch_create_tools.go, head/ui/sketch_placement_boxes.go; preset settings baseline comes from the pinned capture.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go sketch text geometry tests cover authored content and derived glyphs. They provide no preset settings or inline naming evidence.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Existing Martensite sketch text glyph preview. Preset settings make no document geometry or solver change.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. Windows and macOS UI evidence is pending.",
+      "kernel_integration": "The session preset selector edits the Format Text draft. Canceling name entry leaves the draft and its current analytic glyph preview active.",
+      "rust_tests": "sketch_scenarios_use_the_native_window, focused by pinned text-24; sketch_text_can_save_and_apply_a_session_preset_without_committing_geometry.",
+      "oracle": "Pinned text-24 steps. Inspect the rendered preset list and inline name, test native Escape, and check the enabled and checked states in Preset settings.",
+      "expected_result": "The list offers No Preset and Last Used. Escape discards proposed ab and leaves Format Text open. The current-preset actions are disabled. Recently Used and the No Preset default are checked.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:3eac6d5535a701965ae493acdb06806a90220d65c8471f0558f559e2bb0710b1",
