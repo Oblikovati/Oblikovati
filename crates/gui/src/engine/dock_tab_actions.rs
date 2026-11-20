@@ -18,6 +18,7 @@ pub(super) fn apply(
     owners: DockTabOwners<'_>,
 ) {
     let Some(action) = action else { return };
+    owners.workspace.pending_layout = true;
     match action {
         DockTabAction::ModelBrowser => owners.workspace.panels.open_panel(DockPanel::Model),
         DockTabAction::LogPanel => owners.workspace.panels.open_panel(DockPanel::Log),
@@ -52,6 +53,7 @@ mod tests {
             },
         );
         assert!(engine.workspace.panels.favorites_visible());
+        assert!(engine.workspace.pending_layout);
         apply(
             Some(DockTabAction::AppearanceBrowser),
             true,

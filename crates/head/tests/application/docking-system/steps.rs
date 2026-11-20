@@ -6,6 +6,9 @@ use workspace_layout::dockspace_native::{native_drag, resize_boundary, viewport}
 
 #[path = "browser_scenarios.rs"]
 mod browser_scenarios;
+#[cfg(test)]
+#[path = "dock_menu_native.rs"]
+mod dock_menu_native;
 #[path = "edges_scenario.rs"]
 mod edges_scenario;
 #[cfg(test)]

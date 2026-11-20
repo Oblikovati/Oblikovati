@@ -68,3 +68,15 @@ fn favorites_visibility_follows_menu_toggles_and_keeps_the_model() {
     assert!(!panels.favorites_visible());
     assert!(panels.model_open && !panels.favorites_open);
 }
+
+#[test]
+fn panel_visibility_requests_one_follow_up_layout() {
+    let mut panels = super::DockPanels::default();
+    assert!(!panels.visibility_changed_since_layout());
+    panels.open_panel(super::DockPanel::Log);
+    assert!(panels.visibility_changed_since_layout());
+    assert!(!panels.visibility_changed_since_layout());
+    panels.set_open(super::DockPanel::Log, false);
+    assert!(panels.visibility_changed_since_layout());
+    assert!(!panels.visibility_changed_since_layout());
+}

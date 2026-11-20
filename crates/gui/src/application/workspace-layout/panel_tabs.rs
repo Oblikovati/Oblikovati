@@ -40,6 +40,7 @@ pub(crate) struct DockPanels {
     pub model_open: bool,
     pub log_open: bool,
     favorites_open: bool,
+    laid_out_visibility: [bool; 3],
     pub favorites: crate::application::model_browser::favorites::FavoritesPane,
     model_dock: crate::dockable_lifecycle::DockableState,
     log_dock: crate::dockable_lifecycle::DockableState,
@@ -53,6 +54,7 @@ impl Default for DockPanels {
             model_open: true,
             log_open: false,
             favorites_open: false,
+            laid_out_visibility: [true, false, false],
             favorites: Default::default(),
             model_dock: Default::default(),
             log_dock: Default::default(),
@@ -63,6 +65,14 @@ impl Default for DockPanels {
 }
 
 impl DockPanels {
+    /// Request a follow-up layout after a panel changes; example: opening Log returns true once.
+    pub(crate) fn visibility_changed_since_layout(&mut self) -> bool {
+        let current = [self.model_open, self.log_open, self.favorites_open];
+        let changed = current != self.laid_out_visibility;
+        self.laid_out_visibility = current;
+        changed
+    }
+
     pub(crate) fn settings(&self) -> BrowserPanelSettings {
         BrowserPanelSettings {
             model: self.model_open,

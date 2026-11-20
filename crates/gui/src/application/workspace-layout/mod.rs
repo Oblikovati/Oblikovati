@@ -168,6 +168,7 @@ impl WorkspaceLayout {
         part_context_open: bool,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        self.pending_layout |= self.panels.visibility_changed_since_layout();
         self.view.arrow_consumed = false;
         self.view.feature_keyboard_focus = false;
         self.view.document_area = Some(document_area);
