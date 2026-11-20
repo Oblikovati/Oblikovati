@@ -101,7 +101,8 @@ Run the linked diagnostic with explicit, disjoint inputs. The source must be a
 verified export of the selected application commit. The vendor and Cargo
 configuration must be prepared as described under the offline build experiment.
 The target, build logs, and reports directories must be empty. The runtime must
-contain the slots required by the sealed runner, Xvfb, and its runtime files.
+contain regular `runner` and `desktop` mount-point files, the other slots
+required by the sealed runner, Xvfb, and its runtime files.
 The command needs Linux memfd sealing and Bubblewrap `--ro-bind-data` support.
 For `docking-system`, preflight also requires executable `python3`, `openbox`,
 ImageMagick `import` and `compare`, `xvfb-run`, `Xvfb`, and `xauth` under the

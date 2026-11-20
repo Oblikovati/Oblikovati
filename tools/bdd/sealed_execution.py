@@ -65,6 +65,13 @@ def require_slots(runtime: Path) -> None:
         raise ValueError(f"runtime slot {runner}: expected a regular file")
 
 
+def require_desktop_slot(runtime: Path) -> None:
+    """Require a mount point for the pinned desktop; example: require_desktop_slot(runtime)."""
+    path = runtime / "desktop"
+    if path.is_symlink() or not path.is_file():
+        raise ValueError(f"runtime slot {path}: expected a regular file for the desktop mount")
+
+
 def require_request(request: SealedRequest) -> None:
     """Reject invalid filters or occupied output; example: require_request(request)."""
     if sys.platform != "linux":
@@ -74,6 +81,8 @@ def require_request(request: SealedRequest) -> None:
     require_empty_output(request)
     require_disjoint_paths(request)
     require_slots(request.runtime)
+    if request.desktop is not None:
+        require_desktop_slot(request.runtime)
     require_docking_tools(request)
 
 
