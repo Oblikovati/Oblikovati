@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Panel visibility and the model browser's dock; the viewport fills whatever they leave free.
+use crate::application::document_creation::workspaces::WorkspaceArea;
 use crate::dockable_window::TabbedDockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{Ui, WindowFlags};
+use imgui::{Condition, StyleVar, Ui, WindowFlags};
 
 pub(crate) mod body_properties;
 pub(crate) mod browser_feature;
@@ -174,11 +175,15 @@ impl WorkspaceLayout {
         self.view.document_area = Some(document_area);
         self.view.view_clicks_taken = self.view_clicks_taken;
         browser_origin::follow_view_click(ui, state, &mut self.view, part_context_open, actions);
+        let focus = self.panels.take_tab_focus();
         if self.panels.model_open {
             let mut open = true;
             panel_tabs::ModelBrowserWindow::tabbed_dockable_window(ui, "Model", "Model", &mut open)
                 .flags(WindowFlags::NO_FOCUS_ON_APPEARING)
-                .focused(state.browser.is_some() && self.view.focus_search)
+                .focused(
+                    focus == Some(panel_tabs::DockPanel::Model)
+                        || (state.browser.is_some() && self.view.focus_search),
+                )
                 .build(|| {
                     crate::browser::browser_contents(ui, state, &mut self.view, actions);
                     self.pending_layout |= self.view.needs_frame();
@@ -189,6 +194,7 @@ impl WorkspaceLayout {
             let mut open = true;
             panel_tabs::LogPanelWindow::tabbed_dockable_window(ui, "Log", "Model", &mut open)
                 .flags(WindowFlags::NO_FOCUS_ON_APPEARING)
+                .focused(focus == Some(panel_tabs::DockPanel::Log))
                 .build(|| self.panels.log_area(ui));
             self.panels.set_open(panel_tabs::DockPanel::Log, open);
         }
@@ -201,11 +207,33 @@ impl WorkspaceLayout {
                 &mut open,
             )
             .flags(WindowFlags::NO_FOCUS_ON_APPEARING)
+            .focused(focus == Some(panel_tabs::DockPanel::Favorites))
             .build(|| self.panels.favorites.panel(ui));
             self.panels.set_open(panel_tabs::DockPanel::Favorites, open);
         }
         self.draw_find(ui, state, actions);
         self.draw_browser_dialogs(ui, state, actions);
+    }
+    /// Keep the panel menu available after the last browser tab closes.
+    /// Example: `layout.empty_browser_menu(ui, document_area)` before rendering.
+    pub(crate) fn empty_browser_menu(
+        &self,
+        ui: &Ui,
+        area: WorkspaceArea,
+    ) -> Option<crate::widget_abi::DockTabAction> {
+        let panels = &self.panels;
+        if panels.model_open || panels.log_open || panels.favorites_visible() {
+            return None;
+        }
+        let _padding = ui.push_style_var(StyleVar::WindowPadding([3., 3.]));
+        let _minimum = ui.push_style_var(StyleVar::WindowMinSize([1., 1.]));
+        let side = ui.frame_height() + 6.;
+        ui.window("##panel-plus")
+            .position([area.left + 8., area.top + 4.], Condition::Always)
+            .size([side, side], Condition::Always)
+            .flags(panel_launcher_flags())
+            .build(|| crate::widget_abi::workspace_panel_menu(ui))
+            .flatten()
     }
     /// Leave room for a docked ribbon; example: `layout.reserve_for_ribbon(196., 0.)`.
     /// Show which origin row is chosen, in the view; example: each frame, under the panels.
@@ -385,6 +413,15 @@ impl WorkspaceLayout {
         }
     }
 }
+fn panel_launcher_flags() -> WindowFlags {
+    WindowFlags::NO_DECORATION
+        | WindowFlags::NO_BACKGROUND
+        | WindowFlags::NO_MOVE
+        | WindowFlags::NO_DOCKING
+        | WindowFlags::NO_SAVED_SETTINGS
+        | WindowFlags::NO_FOCUS_ON_APPEARING
+}
+
 #[cfg(test)]
 #[path = "../../../tests/application/workspace-layout/layout.rs"]
 mod tests;

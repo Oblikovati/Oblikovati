@@ -44,6 +44,17 @@ void draw_ribbon_icon(const char* label, std::uint32_t texture, ImVec2 icon, boo
     if (show_caption) draw->AddText(caption, ImGui::GetColorU32(ImGuiCol_Text), label, end);
     draw->PopClipRect();
 }
+std::uint32_t dock_panel_menu() {
+    if (!ImGui::BeginPopup("##dock-panel-menu-popup")) return 0;
+    const char* labels[] = {"Model Browser", "Log Panel", "Favorites", "Material Browser",
+                            "Appearance Browser", "Parameters", "Selection Filter", "History Browser"};
+    std::uint32_t actions = 0;
+    for (std::uint32_t index = 0; index < sizeof(labels) / sizeof(labels[0]); ++index) {
+        if (ImGui::MenuItem(labels[index])) actions |= 1u << index;
+    }
+    ImGui::EndPopup();
+    return actions;
+}
 }
 extern "C" {
 bool oblikovati_gui_window_is_moving() {
@@ -222,17 +233,7 @@ std::uint32_t oblikovati_gui_draw_dock_tab_actions() {
         draw->AddLine(ImVec2(menu_center.x, menu_center.y - menu_extent),
                       ImVec2(menu_center.x, menu_center.y + menu_extent), icon_color, 1.5f);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Open dockable windows");
-        if (ImGui::BeginPopup("##dock-panel-menu-popup")) {
-            if (ImGui::MenuItem("Model Browser")) actions |= 1u << 0;
-            if (ImGui::MenuItem("Log Panel")) actions |= 1u << 1;
-            if (ImGui::MenuItem("Favorites")) actions |= 1u << 2;
-            if (ImGui::MenuItem("Material Browser")) actions |= 1u << 3;
-            if (ImGui::MenuItem("Appearance Browser")) actions |= 1u << 4;
-            if (ImGui::MenuItem("Parameters")) actions |= 1u << 5;
-            if (ImGui::MenuItem("Selection Filter")) actions |= 1u << 6;
-            if (ImGui::MenuItem("History Browser")) actions |= 1u << 7;
-            ImGui::EndPopup();
-        }
+        actions |= dock_panel_menu();
 
         if (ImGui::TabItemButton("   ##dock-search", trailing)) actions |= 1u << 8;
         const ImVec2 search_min = ImGui::GetItemRectMin();
@@ -249,5 +250,11 @@ std::uint32_t oblikovati_gui_draw_dock_tab_actions() {
     }
     if (actions & (1u << 8)) actions = 1u << 8;
     return actions;
+}
+
+std::uint32_t oblikovati_gui_draw_workspace_panel_menu() {
+    if (ImGui::Button("+##workspace-panel-add")) ImGui::OpenPopup("##dock-panel-menu-popup");
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Open dockable windows");
+    return dock_panel_menu();
 }
 }

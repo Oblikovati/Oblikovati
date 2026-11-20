@@ -6,6 +6,7 @@ unsafe extern "C" {
     fn oblikovati_gui_outer_dockspace(width: f32, height: f32) -> u32;
     fn oblikovati_gui_ensure_tabbed_window(title: *const u8, group: *const u8);
     fn oblikovati_gui_draw_dock_tab_actions() -> u32;
+    fn oblikovati_gui_draw_workspace_panel_menu() -> u32;
     fn oblikovati_gui_prepare_dock_hit_test(x: f32, y: f32);
     fn oblikovati_gui_outer_bottom_span(id: u32, left: *mut f32, right: *mut f32) -> bool;
     fn oblikovati_gui_dockspace_center(
@@ -79,7 +80,15 @@ pub(crate) fn ensure_tabbed_window(_: &Ui, title: &str, group: &str) {
 }
 /// Read the action selected from native ImGui dock-tab buttons after all windows are submitted.
 pub(crate) fn dock_tab_action(_: &Ui) -> Option<DockTabAction> {
-    match unsafe { oblikovati_gui_draw_dock_tab_actions() } {
+    decode_dock_action(unsafe { oblikovati_gui_draw_dock_tab_actions() })
+}
+/// Draw the same panel menu when the workspace has no browser tabs.
+/// Example: `workspace_panel_menu(ui)` inside the panel launcher overlay.
+pub(crate) fn workspace_panel_menu(_: &Ui) -> Option<DockTabAction> {
+    decode_dock_action(unsafe { oblikovati_gui_draw_workspace_panel_menu() })
+}
+fn decode_dock_action(code: u32) -> Option<DockTabAction> {
+    match code {
         1 => Some(DockTabAction::ModelBrowser),
         2 => Some(DockTabAction::LogPanel),
         4 => Some(DockTabAction::Favorites),

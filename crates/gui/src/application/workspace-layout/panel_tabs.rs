@@ -40,6 +40,7 @@ pub(crate) struct DockPanels {
     pub model_open: bool,
     pub log_open: bool,
     favorites_open: bool,
+    pending_tab_focus: Option<DockPanel>,
     laid_out_visibility: [bool; 3],
     pub favorites: crate::application::model_browser::favorites::FavoritesPane,
     model_dock: crate::dockable_lifecycle::DockableState,
@@ -54,6 +55,7 @@ impl Default for DockPanels {
             model_open: true,
             log_open: false,
             favorites_open: false,
+            pending_tab_focus: None,
             laid_out_visibility: [true, false, false],
             favorites: Default::default(),
             model_dock: Default::default(),
@@ -107,6 +109,12 @@ impl DockPanels {
 
     pub(crate) fn open_panel(&mut self, panel: DockPanel) {
         self.set_open(panel, true);
+        self.pending_tab_focus = Some(panel);
+    }
+
+    /// Consume focus requested by the panel menu, for example when selecting Log Panel.
+    pub(crate) fn take_tab_focus(&mut self) -> Option<DockPanel> {
+        self.pending_tab_focus.take()
     }
 
     pub(crate) fn set_open(&mut self, panel: DockPanel, open: bool) {

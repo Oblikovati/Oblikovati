@@ -21,6 +21,14 @@ fn closing_the_last_native_tab_empties_the_dock() {
 }
 
 #[test]
+fn a_menu_choice_requests_native_tab_focus_once() {
+    let mut panels = DockPanels::default();
+    panels.open_panel(DockPanel::Log);
+    assert_eq!(panels.take_tab_focus(), Some(DockPanel::Log));
+    assert_eq!(panels.take_tab_focus(), None);
+}
+
+#[test]
 fn the_log_keeps_each_new_message_once_and_never_the_idle_status() {
     let mut panels = DockPanels::default();
     for status in [

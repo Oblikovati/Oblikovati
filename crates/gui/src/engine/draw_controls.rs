@@ -395,6 +395,19 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands)?;
         self.document_files
             .closing_panel(ui, &request.commands, &mut selected);
+        super::dock_tab_actions::draw(
+            ui,
+            request.commands.browser.is_some(),
+            (!self.home.active).then_some(area),
+            super::dock_tab_actions::DockTabOwners {
+                workspace: &mut self.workspace,
+                material: &mut self.material_browser,
+                appearance: &mut self.appearance_browser,
+                parameters: &mut self.parameter_editor,
+                selection: &mut self.selection_filter,
+                history: &mut self.history_browser,
+            },
+        );
         let close_prompt = super::close_prompt_scale::scale_optional(
             self.document_files.close_prompt_semantics(),
             request.layout_scale(),
@@ -415,18 +428,6 @@ impl GuiFrameEngine {
         let constraint_hover =
             crate::sketch::constraint_glyphs::unobstructed_hover(ui, constraint_hover);
         self.external_docks.observe_actions(&selected);
-        super::dock_tab_actions::apply(
-            crate::widget_abi::dock_tab_action(ui),
-            request.commands.browser.is_some(),
-            super::dock_tab_actions::DockTabOwners {
-                workspace: &mut self.workspace,
-                material: &mut self.material_browser,
-                appearance: &mut self.appearance_browser,
-                parameters: &mut self.parameter_editor,
-                selection: &mut self.selection_filter,
-                history: &mut self.history_browser,
-            },
-        );
         let dock_lifecycle_changed = self.dock_lifecycle.reconcile(|title| {
             crate::widget_abi::close_dock_tab(ui, title);
         })?;

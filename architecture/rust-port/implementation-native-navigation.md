@@ -162,3 +162,11 @@ between the start and target orientations, including opposite views. A slow
 renderer can extend the turn so that it can present intermediate frames.
 Direct navigation and document changes end the active turn. See the
 [desktop acceptance receipt](receipts/2026-11-20-orientation-transition-3961/README.md).
+
+## Workspace browser panel menu
+
+When the last browser tab closes, the document uses the freed viewport area.
+The workspace keeps a small panel-add button at its upper left. This button
+and the dock tab bar open the same panel menu. Selecting a browser panel from
+either menu opens its dockable window and gives its tab focus. Saved dock
+placement remains under ImGui control.

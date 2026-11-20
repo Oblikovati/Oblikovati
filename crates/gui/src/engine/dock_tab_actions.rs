@@ -12,6 +12,19 @@ pub(super) struct DockTabOwners<'a> {
     pub history: &'a mut crate::history_browser::HistoryBrowser,
 }
 
+pub(super) fn draw(
+    ui: &imgui::Ui,
+    browser_available: bool,
+    workspace_area: Option<crate::application::document_creation::workspaces::WorkspaceArea>,
+    owners: DockTabOwners<'_>,
+) {
+    let tab_action = crate::widget_abi::dock_tab_action(ui);
+    let launcher_action = workspace_area
+        .filter(|_| browser_available)
+        .and_then(|area| owners.workspace.empty_browser_menu(ui, area));
+    apply(tab_action.or(launcher_action), browser_available, owners);
+}
+
 pub(super) fn apply(
     action: Option<DockTabAction>,
     browser_available: bool,

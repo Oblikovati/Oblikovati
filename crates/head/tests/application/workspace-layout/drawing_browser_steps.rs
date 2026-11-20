@@ -84,7 +84,26 @@ fn plus_remains(world: &mut ApplicationWorld) {
 #[when("I open the panel-add control")]
 #[when("the user opens the panel-add control")]
 fn open_plus(world: &mut ApplicationWorld) {
-    world.click_text("+");
+    let center = if world.shows("+") {
+        world.run("+").center()
+    } else {
+        let (minimum, maximum) = super::super::diagnostics::window_dock_tab_bounds("Model")
+            .expect("panel-add button: expected a visible Model dock tab");
+        let height = maximum[1] - minimum[1];
+        [maximum[0] + height, (minimum[1] + maximum[1]) * 0.5]
+    };
+    click_panel_action(world, center);
+}
+
+fn click_panel_action(world: &mut ApplicationWorld, center: [f32; 2]) {
+    let point = super::super::diagnostics::pointer_pixels(center);
+    #[cfg(target_os = "linux")]
+    {
+        super::super::x11_input::focus_window();
+        super::super::x11_input::click(point);
+    }
+    #[cfg(not(target_os = "linux"))]
+    world.click(point);
     world.pump(Vec::new());
 }
 #[then("the panel list offers Model Browser")]
@@ -94,8 +113,8 @@ fn offers_model(world: &mut ApplicationWorld) {
 #[when("I select Model Browser")]
 #[when("the user selects Model Browser")]
 fn select_model_browser(world: &mut ApplicationWorld) {
-    world.click_text("Model Browser");
-    world.pump(Vec::new());
+    let center = world.run("Model Browser").center();
+    click_panel_action(world, center);
 }
 #[then("the browser returns to the left")]
 #[then("the model browser returns to the left")]
@@ -118,8 +137,8 @@ fn log_available(world: &mut ApplicationWorld) {
 #[when("the user adds the log panel from the plus menu")]
 fn add_log(world: &mut ApplicationWorld) {
     open_plus(world);
-    world.click_text("Log Panel");
-    world.pump(Vec::new());
+    let center = world.run("Log Panel").center();
+    click_panel_action(world, center);
 }
 fn expect_log_area(world: &mut ApplicationWorld) {
     world.expect_text("Application messages");
@@ -132,27 +151,28 @@ fn log_active(world: &mut ApplicationWorld) {
     expect_docked_left(world);
 }
 #[then("the Model browser remains available as a tab")]
-fn model_tab_remains(world: &mut ApplicationWorld) {
-    // The window's title and the tab both read Model.
-    let tabs = world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| run.text == BROWSER)
-        .count();
-    assert_eq!(tabs, 2, "expected the title and the Model tab");
+fn model_tab_remains(_: &mut ApplicationWorld) {
+    use super::super::diagnostics::{window_dock_id, window_dock_tab_visible};
+    let dock = window_dock_id(BROWSER).filter(|id| *id != 0);
+    assert!(dock.is_some(), "expected Model to remain docked");
+    assert_eq!(window_dock_id("Log"), dock);
+    assert_eq!(window_dock_tab_visible("Log"), Some(true));
 }
 #[when("I select the Model browser tab")]
 #[when("the user selects the Model browser tab")]
 fn select_model_tab(world: &mut ApplicationWorld) {
-    world.click_text(BROWSER);
-    world.pump(Vec::new());
+    select_dock_tab(world, BROWSER);
 }
 #[when("I select the log panel tab")]
 #[when("the user selects the log panel tab")]
 fn select_log_tab(world: &mut ApplicationWorld) {
-    world.click_text("Log");
-    world.pump(Vec::new());
+    select_dock_tab(world, "Log");
+}
+fn select_dock_tab(world: &mut ApplicationWorld, name: &str) {
+    let (minimum, maximum) = super::super::diagnostics::window_dock_tab_bounds(name)
+        .unwrap_or_else(|| panic!("{name:?}: expected a dock tab"));
+    let center = std::array::from_fn(|axis| (minimum[axis] + maximum[axis]) * 0.5);
+    click_panel_action(world, center);
 }
 #[when("I close the log panel tab")]
 #[when("the user closes the log panel tab")]
