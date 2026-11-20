@@ -11,7 +11,11 @@ use crate::{
 };
 use imgui::{ConfigFlags, Context, TextureId};
 use std::sync::Arc;
+#[path = "engine/close_prompt_scale.rs"]
+mod close_prompt_scale;
 pub(crate) mod dock_registration;
+#[path = "engine/dock_tab_actions.rs"]
+mod dock_tab_actions;
 #[path = "engine/document_name.rs"]
 mod document_name;
 #[path = "engine/draw_controls.rs"]

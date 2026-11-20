@@ -66,10 +66,7 @@ impl GuiFrameEngine {
         self.selection_filter.set_open(visibility.selection_filter);
         self.history_browser.set_open(visibility.history);
         let focus = self.accessible_focus.take();
-        let frame_focus = match focus {
-            Some(crate::GuiAccessibleFocus::Frame(index)) => Some(index),
-            _ => None,
-        };
+        let frame_focus = super::frame_inputs::frame_focus(focus);
         if let Some(crate::GuiAccessibleFocus::ClosePrompt(choice)) = focus {
             self.document_files.focus_close_prompt(choice);
         }
@@ -398,21 +395,10 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands)?;
         self.document_files
             .closing_panel(ui, &request.commands, &mut selected);
-        let close_prompt = self
-            .document_files
-            .close_prompt_semantics()
-            .map(|mut prompt| {
-                let scale = request.layout_scale();
-                for bounds in std::iter::once(&mut prompt.bounds)
-                    .chain(prompt.buttons.iter_mut().map(|button| &mut button.bounds))
-                {
-                    for axis in 0..2 {
-                        bounds[axis] *= scale[axis];
-                        bounds[axis + 2] *= scale[axis];
-                    }
-                }
-                prompt
-            });
+        let close_prompt = super::close_prompt_scale::scale_optional(
+            self.document_files.close_prompt_semantics(),
+            request.layout_scale(),
+        );
         let cancelled_pick = self.ribbon.cancel_unrouted_model_pick(&selected);
         let home_changed = home_follows_actions(&mut self.home, &selected);
         self.known_documents.clone_from(&request.commands.documents);
@@ -429,35 +415,18 @@ impl GuiFrameEngine {
         let constraint_hover =
             crate::sketch::constraint_glyphs::unobstructed_hover(ui, constraint_hover);
         self.external_docks.observe_actions(&selected);
-        if let Some(action) = crate::widget_abi::dock_tab_action(ui) {
-            match action {
-                crate::widget_abi::DockTabAction::ModelBrowser => self
-                    .workspace
-                    .panels
-                    .open_panel(crate::application::workspace_layout::panel_tabs::DockPanel::Model),
-                crate::widget_abi::DockTabAction::LogPanel => self
-                    .workspace
-                    .panels
-                    .open_panel(crate::application::workspace_layout::panel_tabs::DockPanel::Log),
-                crate::widget_abi::DockTabAction::Favorites => self.workspace.panels.open_panel(
-                    crate::application::workspace_layout::panel_tabs::DockPanel::Favorites,
-                ),
-                crate::widget_abi::DockTabAction::MaterialBrowser => self.material_browser.open(),
-                crate::widget_abi::DockTabAction::AppearanceBrowser => {
-                    self.appearance_browser.open()
-                }
-                crate::widget_abi::DockTabAction::Parameters => {
-                    self.parameter_editor.set_open(true)
-                }
-                crate::widget_abi::DockTabAction::SelectionFilter => self.selection_filter.open(),
-                crate::widget_abi::DockTabAction::HistoryBrowser => self.history_browser.open(),
-                crate::widget_abi::DockTabAction::Search => {
-                    if request.commands.browser.is_some() {
-                        self.workspace.request_browser_search();
-                    }
-                }
-            }
-        }
+        super::dock_tab_actions::apply(
+            crate::widget_abi::dock_tab_action(ui),
+            request.commands.browser.is_some(),
+            super::dock_tab_actions::DockTabOwners {
+                workspace: &mut self.workspace,
+                material: &mut self.material_browser,
+                appearance: &mut self.appearance_browser,
+                parameters: &mut self.parameter_editor,
+                selection: &mut self.selection_filter,
+                history: &mut self.history_browser,
+            },
+        );
         let dock_lifecycle_changed = self.dock_lifecycle.reconcile(|title| {
             crate::widget_abi::close_dock_tab(ui, title);
         })?;

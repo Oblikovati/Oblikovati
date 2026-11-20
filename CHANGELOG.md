@@ -2,16 +2,6 @@
 
 ## [Unreleased]
 
-### Changed
-
-- Used native ImGui dock tabs for workspace, material, and appearance panels and added tab bar controls for panel visibility and Model Browser filtering. (#4133)
-
-Fillet and Chamfer validation reuse a current matching part prefix before commit. (#4079)
-
-Stored prism diagnostics now use document-scoped complete replay. (#4079)
-
-Model tree reads reuse current part results and refresh them after edits. (#4079)
-
 ### Added
 
 - Add an exact best-fit certificate for explicit affine equations; sketch drag integration remains open. (#4171)
@@ -160,6 +150,14 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Added keyboard access to compact and side-docked ribbon groups for part documents. (#3856)
 
 ### Changed
+
+- Used native ImGui dock tabs for workspace, material, and appearance panels and added tab bar controls for panel visibility and Model Browser filtering. (#4133)
+
+Fillet and Chamfer validation reuse a current matching part prefix before commit. (#4079)
+
+Stored prism diagnostics now use document-scoped complete replay. (#4079)
+
+Model tree reads reuse current part results and refresh them after edits. (#4079)
 
 - Preserved explicitly selected sketch points during placement previews and commits. (#4179)
 
