@@ -27537,10 +27537,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go glyph profiles, anchor translation, style round-trip, and typed add/edit/get passed. The tests do not exercise the Bold control or desktop Cancel.",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Analytic glyph geometry from the requested font aspect, including Bold.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. Windows and macOS remain untested.",
+      "kernel_integration": "Preview, committed drawing and analytic picking share the Martensite glyph path. Cancel discards the independent edit draft.",
+      "rust_tests": "Pinned native text-11 and bold_face_increases_native_glyph_area_at_the_same_size. See architecture/rust-port/receipts/2026-11-20-sketch-text-bold-3907/README.md.",
+      "oracle": "Pinned Then steps, native pixels, active Bold control, authored text and solver count, and independent comparison of regular and bold face area.",
+      "expected_result": "Ctrl+A and Bold thicken the existing c without changing its content. Cancel restores the original text and solver count at Ready.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:00a5d5a30bc38e9a3e6bd334544a34c60fadb53e3f589ffbbd3ccc0fb1695eba",

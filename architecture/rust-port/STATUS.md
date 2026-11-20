@@ -96,9 +96,13 @@ using this status; the live scenario directory can change.
   `g` after Save Current. The preset actions preserved the committed sketch.
   The full live Text run passed 11 of 38 declarations. The other 27
   lack step bindings. See `receipts/2026-11-20-sketch-text-preset-rename-3907/` for
-  the current run and `receipts/2026-11-20-sketch-text-style-3907/` for the
+  the prior full run and `receipts/2026-11-20-sketch-text-style-3907/` for the
   earlier formatting preview and save and reopen checks. Strict verification
   still requires bounded build and runtime inputs under #3978.
+  Pinned `text-11` passed all eight steps after that full run. Bold thickened
+  the selected text in the editor and on the canvas. Cancel preserved the
+  original text and solver count. See
+  `receipts/2026-11-20-sketch-text-bold-3907/`.
   The model uses API v0.161.0 to validate Unicode character-format ranges.
   Tests cover atomic rejection of out-of-range edits, undo and redo, and
   native YAML reopen. Mixed-font rendering remains open under
