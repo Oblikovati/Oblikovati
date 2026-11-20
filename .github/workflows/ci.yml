@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 env:
+  # Windows needs this before checkout to admit the benchmark evidence paths.
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: core.longpaths
+  GIT_CONFIG_VALUE_0: 'true'
   # Keep every check, but avoid retaining full type debug data on ephemeral runners.
   CARGO_INCREMENTAL: '0'
   CARGO_PROFILE_DEV_DEBUG: line-tables-only

@@ -96,6 +96,7 @@ impl Default for ViewportCamera {
 impl ViewportCamera {
     /// The angle that shows `scale` of height at the target, in degrees: switching projection
     /// keeps what lies at the target the same size on screen.
+    #[cfg(any(target_os = "linux", target_os = "windows", test))]
     pub(crate) fn perspective_field_of_view(&self) -> f64 {
         let delta: [f64; 3] = std::array::from_fn(|axis| self.eye[axis] - self.target[axis]);
         let distance = delta.iter().map(|value| value * value).sum::<f64>().sqrt();
