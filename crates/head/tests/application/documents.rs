@@ -114,6 +114,12 @@ impl ApplicationWorld {
     }
     /// As the window system reports it: the physical key carrying its Cancel command.
     pub fn escape(&mut self) {
+        #[cfg(target_os = "linux")]
+        if self.navigation_wheel_scenario() {
+            super::x11_input::press_keysym(0xff1b);
+            self.pump(Vec::new());
+            return;
+        }
         let event = |pressed| {
             ViewportEvent::Input(ViewportInput::PhysicalKey {
                 key: ViewportPhysicalKey::Escape,
@@ -133,12 +139,24 @@ impl ApplicationWorld {
         self.pump(events);
     }
     pub fn hover(&mut self, position: [i32; 2]) {
+        #[cfg(target_os = "linux")]
+        if self.navigation_wheel_scenario() {
+            super::x11_input::move_pointer(position);
+            self.pump(Vec::new());
+            return;
+        }
         self.pump(vec![ViewportEvent::Input(ViewportInput::Motion {
             position,
             modifiers: Default::default(),
         })]);
     }
     pub fn right_click(&mut self, position: [i32; 2]) {
+        #[cfg(target_os = "linux")]
+        if self.navigation_wheel_scenario() {
+            super::x11_input::right_click(position);
+            self.pump(Vec::new());
+            return;
+        }
         self.hover(position);
         let press = |pressed| {
             ViewportEvent::Input(ViewportInput::Button {

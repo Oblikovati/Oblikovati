@@ -3,6 +3,26 @@
 use super::scenario_root;
 use std::fs;
 
+/// Select the wheel feature by source path; example: `is_navigation_wheel(None)` is false.
+pub(super) fn is_navigation_wheel(path: Option<&std::path::Path>) -> bool {
+    path.is_some_and(|path| {
+        path.ends_with(
+            "features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature",
+        )
+    })
+}
+
+#[test]
+fn wheel_feature_selection_requires_the_matching_source_path() {
+    assert!(is_navigation_wheel(Some(std::path::Path::new(
+        "/fixture/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature"
+    ))));
+    assert!(!is_navigation_wheel(Some(std::path::Path::new(
+        "/fixture/features/application/viewport-zoom/viewport-zoom.feature"
+    ))));
+    assert!(!is_navigation_wheel(None));
+}
+
 pub(super) fn scenario_capture_namespace(
     feature: &cucumber::gherkin::Feature,
     scenario: &cucumber::gherkin::Scenario,

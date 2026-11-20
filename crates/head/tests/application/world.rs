@@ -158,7 +158,17 @@ impl ApplicationWorld {
         .unwrap();
         self.frame = diagnostics::rendered_frame();
     }
+    /// Identify wheel scenarios; example: `world.navigation_wheel_scenario()`.
+    pub(super) fn navigation_wheel_scenario(&self) -> bool {
+        super::scenario_capture::is_navigation_wheel(self.scenario_feature_path.as_deref())
+    }
     pub fn click(&mut self, position: [i32; 2]) {
+        #[cfg(target_os = "linux")]
+        if self.navigation_wheel_scenario() {
+            super::x11_input::click(position);
+            self.pump(Vec::new());
+            return;
+        }
         self.pump(pointer_click_events(position, 1));
     }
     pub fn key(&mut self, key: oblikovati_viewport::ViewportPhysicalKey, control: bool) {
