@@ -38,12 +38,25 @@
     "failed_report": "architecture/rust-port/receipts/2026-11-18-viewport-selection-gap/cucumber.json"
   },
   "features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature": {
-    "feature_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-navigation-wheel/cucumber.json",
-    "cucumber_sha256": "0b51c3ceb975f2d7de81ef76b87f0e08f045ac05385c3837d8d345c3c580cfed",
-    "application_commit": "850f63345e268b39fbde47f235c040f56dc807bf",
-    "command": "OBK_BDD_FEATURE=viewport-navigation-wheel tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb, Vulkan Lavapipe; scripted window input"
+    "feature_sha256": "8b6164be54d7a3bd307b4de24d7750079ce4d23b9ada2e6fec7a3b83149e2cfa",
+    "supporting_files": {
+      "features/application/viewport-navigation-wheel/BLOCKERS.md": "152dc52515efe9f281296196c765ccaea2b7362398911c79d1e5b1c646b96fa0",
+      "features/application/viewport-navigation-wheel/FIXTURES.md": "300c9883ff90476331951639b50fbb48baeeea8f970c3fc6724e90a512f6e7eb",
+      "features/application/viewport-navigation-wheel/FUNCTIONAL.md": "b7d51bf90bc99f9513b29d2bd83773e2eba8a98de4acb5b24897eed3e5e9fe57",
+      "features/application/viewport-navigation-wheel/VISUAL.md": "789a8a1cee984139e03833db50f0cd6d73b15d84d8bbbf0e4a16b3bf12f908dd",
+      "features/application/viewport-navigation-wheel/wheel-preferences-wireframe.svg": "4489e6624ae205f0d74a93290a2c25d96f3ad8343ea536ecd351ec9db12e1c6c",
+      "features/application/viewport-navigation-wheel/wheel-wireframe.svg": "815bfe6431fb7e677e44adf5d2bc24fee0e55d0ed6addd9efd4a662798d8c324",
+      "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-wheel-native-full-3881/cucumber.json",
+    "cucumber_sha256": "076351b16f1b9b71ef664958d8af7e2836322245d6f7c8177b737d63d5eecc22",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-wheel-native-full-3881/scenario-arguments.json",
+    "scenario_arguments_sha256": "9a3a572f950fb8c5358727ecec463eb917b306bc52a71d9e7fcbf17bc03115b7",
+    "application_commit": "6d36e5b4e",
+    "blocker": "Source and build are unsealed; scenario input is scripted (#3978).",
+    "command": "Filtered native head test on viewport-navigation-wheel; see receipt run.log",
+    "environment": "Linux Xvfb 1440x900, Openbox, Vulkan Lavapipe; XMODIFIERS unset; scripted window input",
+    "notes": "All 12 scenarios and 143 steps passed against the native fixture. This is diagnostic, not verified acceptance."
   },
   "features/application/viewport-orbit/viewport-orbit.feature": {
     "feature_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",

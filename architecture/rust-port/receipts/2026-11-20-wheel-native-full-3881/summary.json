@@ -1,0 +1,10 @@
+{
+  "kind": "unsealed full-feature diagnostic",
+  "application_commit": "6d36e5b4e",
+  "feature_sha256": "8b6164be54d7a3bd307b4de24d7750079ce4d23b9ada2e6fec7a3b83149e2cfa",
+  "scenarios_total": 12,
+  "scenarios_passed": 12,
+  "steps_passed": 143,
+  "fixture": "fixtures/cad/main-window-frame-start.opd",
+  "limitations": "The source and build are unsealed, so the run is not verified acceptance evidence. Scenario interactions use scripted window input; a separate Escape regression uses X11. XMODIFIERS was unset for Xvfb."
+}

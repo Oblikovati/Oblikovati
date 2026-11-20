@@ -118,9 +118,12 @@ using this status; the live scenario directory can change.
 - Viewport zoom has a full-feature diagnostic: all seven scenarios and 74
   steps passed at SHA-256 `cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c`.
   The wheel steps used X11 input; other actions used scripted window input.
-- Viewport navigation wheel has a full-feature diagnostic: all 12 scenarios
-  and 143 steps passed at SHA-256 `9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a`.
-  This run used scripted window input.
+- Viewport navigation wheel (#3881): all 12 scenarios and 143 steps passed
+  with the native part and unchanged source/support hashes. The run uses
+  scripted window input and unsealed source/build inputs, so it is recorded as
+  blocked diagnostic evidence, not verified acceptance. The Escape regression
+  uses X11. See `receipts/2026-11-20-wheel-native-full-3881/`.
+
 - Main-window-frame passed 20 executed cases and 149 steps using X11,
   Openbox, tint2, and AT-SPI. Functional and visual notes were reviewed;
   minimize and maximize use a saved-part fixture. One prior full run failed
