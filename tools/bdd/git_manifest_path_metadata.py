@@ -60,6 +60,15 @@ def locked_highest_priority_readme(tree: Mapping[str, str], root: str) -> str | 
     return None
 
 
+def require_missing_default_readme(tree: Mapping[str, str], root: str, label: str) -> bool:
+    """Refuse unchecked default files; example: require_missing_default_readme(tree, 'crate', label)."""
+    for name in ("README.md", "README.txt", "README"):
+        path = posixpath.join(root, name) if root != "." else name
+        if path in tree or any(entry.startswith(path + "/") for entry in tree):
+            raise ValueError(f"manifest {label} readme {path!r}: expected a supported tracked default")
+    return False
+
+
 def check_inherited_path(actual: object, name: str, workspace: Mapping[str, object], workspace_root: str, root: str, label: str, tree: Mapping[str, str]) -> None:
     """Compare an explicit inherited path; example: check_inherited_path(actual, name, workspace, '.', 'crate', label, tree)."""
     names = ("license-file", "license_file") if name == "license-file" else ("readme",)
@@ -67,7 +76,7 @@ def check_inherited_path(actual: object, name: str, workspace: Mapping[str, obje
     if name == "readme" and expected is None:
         expected = locked_highest_priority_readme(tree, workspace_root)
         if expected is None:
-            return
+            raise ValueError(f"manifest {label} workspace readme: expected a supported declared or default path")
     if name == "readme" and expected is True:
         expected = "README.md"
     path = relative_workspace_path(expected, workspace_root, root, label, name)
@@ -98,6 +107,8 @@ def check_git_manifest_path_metadata(source: bytes, generated: bytes, repository
     readme_inherited = inherited_path(readme, label, "readme")
     if readme is None:
         readme = locked_highest_priority_readme(tree, root)
+        if readme is None:
+            readme = require_missing_default_readme(tree, root, label)
     if readme is not None and not readme_inherited:
         compare_path_value(output.get("readme"), explicit_readme(readme, label), label, "readme")
     names = ("license-file", "license_file")

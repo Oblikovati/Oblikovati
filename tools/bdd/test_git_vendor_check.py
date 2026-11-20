@@ -38,6 +38,7 @@ class GitVendorFixture:
         (self.package / "src").mkdir(parents=True)
         (self.package / "Cargo.toml").write_text(
             '[package]\nname="witness"\nversion="1.2.3"\nedition="2015"\n'
+            'readme=false\n'
             'autolib=false\nautobins=false\nautoexamples=false\nautotests=false\nautobenches=false\n'
             '[lib]\nname="witness"\npath="src/lib.rs"\n'
         )
@@ -127,7 +128,7 @@ class GitVendorCheckTests(unittest.TestCase):
 
     def test_unchecked_manifest_metadata_remains_unverified(self) -> None:
         manifest = self.fixture.package / "Cargo.toml"
-        manifest.write_text(manifest.read_text().replace('[lib]', 'readme="not independently checked"\n[lib]'))
+        manifest.write_text(manifest.read_text().replace('[lib]', 'unverified-field="value"\n[lib]'))
         self.fixture.write_checksum()
         result = self.fixture.verify()
         self.assertEqual(result["git_manifest_declarations_checked"], 1)

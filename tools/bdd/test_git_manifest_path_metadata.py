@@ -35,11 +35,35 @@ class PathMetadataTests(unittest.TestCase):
                                   ('license_file="LICENSE"\n', 'license-file="other"\n')):
             with self.subTest(source=source):
                 with self.assertRaisesRegex(ValueError, 'license-file.*expected locked'):
-                    self.check(source, generated)
+                    self.check(source, 'readme=false\n' + generated)
 
-    def test_default_and_inherited_paths_remain_unchecked(self) -> None:
-        self.check('', 'readme="unknown"\n')
-        self.check('readme.workspace=true\n', 'readme="unknown"\n')
+    def test_missing_default_rejects_a_forged_generated_path(self) -> None:
+        self.check('', 'readme=false\n')
+        for generated in ('readme="unknown"\n', ''):
+            with self.subTest(generated=generated):
+                with self.assertRaisesRegex(ValueError, 'readme.*expected locked'):
+                    self.check('', generated)
+
+    def test_missing_inherited_default_is_not_accepted(self) -> None:
+        with self.assertRaisesRegex(ValueError, 'workspace readme.*expected'):
+            self.check('readme.workspace=true\n', 'readme="unknown"\n')
+
+    def test_unresolved_default_files_are_refused(self) -> None:
+        for name in ('README', 'README.txt', 'README.md'):
+            with self.subTest(name=name):
+                self.fixture.tree[f'crate/{name}'] = '120000:blob:' + 'a' * 40
+                with self.assertRaisesRegex(ValueError, 'readme.*expected'):
+                    self.check('', 'readme=false\n')
+                del self.fixture.tree[f'crate/{name}']
+        for name in ('README', 'README.txt'):
+            with self.subTest(name=name):
+                self.fixture.tree[f'crate/{name}'] = '100644:blob:' + 'a' * 40
+                with self.assertRaisesRegex(ValueError, 'readme.*expected'):
+                    self.check('', 'readme=false\n')
+                del self.fixture.tree[f'crate/{name}']
+        self.fixture.tree['crate/README.md/child'] = '100644:blob:' + 'a' * 40
+        with self.assertRaisesRegex(ValueError, 'readme.*expected'):
+            self.check('', 'readme=false\n')
 
     def test_inherited_paths_use_locked_workspace_and_reject_forgeries(self) -> None:
         workspace = self.fixture.repository / 'Cargo.toml'

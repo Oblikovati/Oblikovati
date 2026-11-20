@@ -186,6 +186,13 @@ class DiagnosticTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "expected no build script"):
             self.run_diagnostic()
 
+    def test_forged_default_readme_with_forged_checksum_is_refused(self) -> None:
+        manifest = self.fixture.package / "Cargo.toml"
+        manifest.write_text(manifest.read_text().replace('readme=false', 'readme="forged"'))
+        self.fixture.write_checksum()
+        with self.assertRaisesRegex(ValueError, "readme.*expected locked"):
+            self.run_diagnostic()
+
     def test_vendor_changed_during_selection_is_refused(self) -> None:
         self.runner.vendor_to_mutate = self.fixture.package / "src/lib.rs"
         with self.assertRaisesRegex(ValueError, "expected unchanged source and vendor"):

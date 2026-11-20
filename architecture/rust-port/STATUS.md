@@ -269,6 +269,9 @@ using this status; the live scenario directory can change.
   blobs and detects source or vendor changes. Its host and build inputs remain
   unsealed; it cannot make a receipt reusable. See
   `receipts/2026-11-20-git-package-selection-3978/` (#3978).
+- Git package checks reject a generated README path when the locked source has
+  no supported README default, including a forged vendor checksum. Unsupported
+  defaults and missing inherited defaults are refused rather than assumed (#3978).
 
 ## Work queue
 
