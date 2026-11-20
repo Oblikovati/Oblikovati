@@ -95,7 +95,7 @@ fn open_plus(world: &mut ApplicationWorld) {
     click_panel_action(world, center);
 }
 
-fn click_panel_action(world: &mut ApplicationWorld, center: [f32; 2]) {
+pub(super) fn click_panel_action(world: &mut ApplicationWorld, center: [f32; 2]) {
     let point = super::super::diagnostics::pointer_pixels(center);
     #[cfg(target_os = "linux")]
     {
@@ -135,7 +135,7 @@ fn log_available(world: &mut ApplicationWorld) {
 }
 #[when("I add the log panel from the plus menu")]
 #[when("the user adds the log panel from the plus menu")]
-fn add_log(world: &mut ApplicationWorld) {
+pub(super) fn add_log(world: &mut ApplicationWorld) {
     open_plus(world);
     let center = world.run("Log Panel").center();
     click_panel_action(world, center);
@@ -165,7 +165,7 @@ fn select_model_tab(world: &mut ApplicationWorld) {
 }
 #[when("I select the log panel tab")]
 #[when("the user selects the log panel tab")]
-fn select_log_tab(world: &mut ApplicationWorld) {
+pub(super) fn select_log_tab(world: &mut ApplicationWorld) {
     select_dock_tab(world, "Log");
 }
 fn select_dock_tab(world: &mut ApplicationWorld, name: &str) {

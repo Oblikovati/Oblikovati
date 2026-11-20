@@ -21,6 +21,8 @@ mod browser_search_axes;
 mod browser_sketch_native;
 #[path = "browser_tree.rs"]
 pub(super) mod browser_tree;
+#[path = "dock_search.rs"]
+mod dock_search;
 #[path = "dock_splitter.rs"]
 mod dock_splitter;
 #[cfg(target_os = "linux")]
@@ -36,6 +38,8 @@ mod drawing_browser_steps;
 #[cfg(target_os = "linux")]
 #[path = "external_close_native.rs"]
 mod external_close_native;
+#[path = "interface_menu.rs"]
+mod interface_menu;
 #[path = "native_part.rs"]
 mod native_part;
 #[cfg(target_os = "linux")]
@@ -68,6 +72,8 @@ mod view_controls_native;
 #[cfg(target_os = "linux")]
 #[path = "wheel_close_native.rs"]
 mod wheel_close_native;
+#[path = "wireframe_spacing.rs"]
+mod wireframe_spacing;
 #[path = "wireframe_tabs.rs"]
 mod wireframe_tabs;
 const BROWSER: &str = "Model";

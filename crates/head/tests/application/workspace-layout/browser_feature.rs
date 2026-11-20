@@ -204,7 +204,8 @@ fn unchecked(world: &mut ApplicationWorld) {
 #[given("the extrusion is displayed with its short feature name")]
 #[then("the extrusion is displayed with its short feature name")]
 fn short_name(world: &mut ApplicationWorld) {
-    world.expect_text(FEATURE);
+    let name = super::native_part::single_extrusion_name(world);
+    world.expect_text(&name);
     world.expect_no_text("NewSolid");
 }
 #[when("I select Show Extended Names")]
@@ -217,7 +218,8 @@ fn select_extended_names(world: &mut ApplicationWorld) {
 }
 #[then("the extrusion's browser label includes its new-solid operation and 20 mm depth")]
 fn extended_label(world: &mut ApplicationWorld) {
-    world.expect_text("Extrude1(NewSolid,20mm)");
+    let name = super::native_part::single_extrusion_name(world);
+    world.expect_text(&format!("{name} (New Solid, 20 mm)"));
 }
 #[then("the solid remains visible in the viewport")]
 fn solid_visible(world: &mut ApplicationWorld) {
@@ -302,16 +304,19 @@ fn collapse_extrusion(world: &mut ApplicationWorld) {
 // Inspect the context menu for a sketch under an extrusion
 #[given("the extrusion branch is expanded in the model browser")]
 fn extrusion_expanded(world: &mut ApplicationWorld) {
-    world.expect_text(SKETCH);
+    let name = super::native_part::prepare_sketch_menu_fixture(world);
+    world.expect_text(&name);
 }
 #[when("I right-click the sketch child in the browser")]
 #[when("the user right-clicks the sketch child in the browser")]
 fn right_click_sketch(world: &mut ApplicationWorld) {
-    right_click_row(world, SKETCH);
+    let sketch = super::native_part::fixture_sketch(world);
+    right_click_row(world, &sketch.name);
 }
 #[then("a context menu opens beside the sketch row")]
 fn sketch_menu_beside(world: &mut ApplicationWorld) {
-    expect_menu_beside(world, SKETCH, "Edit Sketch");
+    let sketch = super::native_part::fixture_sketch(world);
+    expect_menu_beside(world, &sketch.name, "Edit Sketch");
 }
 #[then("the menu offers Edit Sketch, Redefine, Share Sketch and Properties")]
 fn sketch_first_rows(world: &mut ApplicationWorld) {
@@ -326,14 +331,10 @@ fn sketch_more_rows(world: &mut ApplicationWorld) {
 }
 #[then("the sketch row is highlighted")]
 fn sketch_row_highlighted(world: &mut ApplicationWorld) {
+    let sketch = super::native_part::fixture_sketch(world);
     let browser = world.state().browser.expect("expected a model browser");
-    let sketch = browser
-        .sketches
-        .iter()
-        .find(|row| row.name == SKETCH)
-        .unwrap();
     assert!(browser.selected_sketches.contains(&sketch.id));
-    let row = world.run(SKETCH).clone();
+    let row = world.run(&sketch.name).clone();
     // The open context menu covers the right side of this row.
     let x = (row.minimum[0] as usize).saturating_sub(3);
     let (position, size) =
@@ -375,8 +376,9 @@ fn sketch_remains(world: &mut ApplicationWorld) {
 }
 #[then("the sketch row is no longer highlighted")]
 fn sketch_row_plain(world: &mut ApplicationWorld) {
+    let sketch = super::native_part::fixture_sketch(world);
     assert!(
-        !world.row_highlighted(SKETCH),
+        !world.row_highlighted(&sketch.name),
         "expected the sketch row plain"
     );
 }
