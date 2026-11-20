@@ -146,12 +146,25 @@ fn declared_request(source: &GoSource<'_>, body: Node<'_>, name: &str) -> Option
     None
 }
 fn summary_before(source: &GoSource<'_>, method: Node<'_>) -> String {
-    source.text[..method.start_byte()]
+    let comments: Vec<_> = source.text[..method.start_byte()]
         .lines()
         .rev()
         .take_while(|line| line.trim_start().starts_with("//"))
         .filter_map(|line| line.trim_start().strip_prefix("//").map(str::trim))
-        .find_map(|line| line.strip_prefix("mcp:summary ").map(String::from))
+        .collect();
+    let name = method
+        .child_by_field_name("name")
+        .map(|node| source.text(node));
+    comments
+        .iter()
+        .find_map(|line| line.strip_prefix("mcp:summary "))
+        .or_else(|| {
+            comments.iter().rev().copied().find(|line| {
+                name.and_then(|name| line.strip_prefix(name))
+                    .is_some_and(|rest| rest.starts_with(' '))
+            })
+        })
+        .map(String::from)
         .unwrap_or_default()
 }
 

@@ -1,5 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+
+#[test]
+fn client_method_summary_falls_back_to_its_go_doc() {
+    let methods = parse_client("package client\n// GetTable reads the table.\n// Example: GetTable().\nfunc (c Client) GetTable() { return call[R](c, wire.MethodTable, nil) }\n").unwrap();
+    assert_eq!(methods[0].summary, "GetTable reads the table.");
+}
 #[test]
 fn client_request_forms_and_summaries_are_parsed_from_real_syntax() {
     let text = r#"package client
