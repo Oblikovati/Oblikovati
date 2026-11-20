@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/oblikovati-bdd-nQNmlS/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/oblikovati-bdd-nQNmlS/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-20T23:49:30.301762938Z" time="55.180447492"><testcase name="Scenario: text-18 Observe font and height selection previews: tmp/oblikovati-bdd-nQNmlS/checkout/features/sketch/text/scenario.feature:172:3" time="55.180447492"><system-out><![CDATA[  Scenario: text-18 Observe font and height selection previews
+   ✔  Given existing bold italic characters are selected in Format Text
+   ✔  When the user opens the font list and choose Arial
+   ✔  Then the font field shows Arial and the preview changes
+   ✔  When the user opens the height list and choose 6.10 mm
+   ✔  Then the preview enlarges and the height field shows 6.10 mm
+]]></system-out></testcase></testsuite></testsuites>

@@ -113,6 +113,10 @@ using this status; the live scenario directory can change.
   Italic preserved Bold. Undo restored the upright outline, and Redo
   restored the slanted outline. See
   `receipts/2026-11-20-sketch-text-italic-3907/`.
+  Pinned `text-18` passed all five steps with an isolated Arial fixture.
+  The font and height controls retained Bold and Italic, the 6.10 mm
+  preset enlarged the visible outline, and Cancel kept the prior text.
+  See `receipts/2026-11-21-sketch-text-arial-3907/`.
   The native width test applied 50 percent, then rejected zero. The
   warning kept the live preview and selected zero for replacement.
   The test used ordinary text. Pinned `text-36` still needs the recorded

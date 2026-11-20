@@ -27700,10 +27700,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "The Go glyph profile, anchor placement, style round-trip, and typed add/edit/get tests passed. The Rust desktop scenario covers the Arial font and height controls.",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native glyph outlines for the installed DejaVu Sans and Arial Bold Italic faces.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe and an isolated Fontconfig installation. Windows and macOS remain untested.",
+      "kernel_integration": "The sketch text preview renders outlines from Martensite at the font family and height of the active edit.",
+      "rust_tests": "Pinned native text-18. See architecture/rust-port/receipts/2026-11-21-sketch-text-arial-3907/README.md.",
+      "oracle": "Pinned Then steps, exact preview style and original recipe, rendered glyph pixels, and measured glyph height.",
+      "expected_result": "Selecting Arial changes the preview and preserves Bold and Italic. The 6.10 mm preset enlarges the glyph and updates the height field. Cancel keeps the original text.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:7f1e25811933580ac4fec55ac7c99759db158de03ab4fdb4057f3b2ab180a6eb",
