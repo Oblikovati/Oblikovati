@@ -2,6 +2,8 @@
 //! Midpoint Line observations driven through the sketch viewport.
 use super::ApplicationWorld;
 use cucumber::{then, when};
+#[path = "measure_steps.rs"]
+mod measure_steps;
 #[path = "precise_steps.rs"]
 mod precise_steps;
 
