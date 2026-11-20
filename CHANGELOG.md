@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Used native ImGui dock tabs for workspace, material, and appearance panels and added tab bar controls for panel visibility and Model Browser filtering. (#4133)
+
 Fillet and Chamfer validation reuse a current matching part prefix before commit. (#4079)
 
 Stored prism diagnostics now use document-scoped complete replay. (#4079)

@@ -80,7 +80,7 @@ pub(crate) struct DockRegistry {
     windows: Vec<DockRegistryEntry>,
 }
 impl DockRegistry {
-    pub(crate) fn register<T: crate::dockable_window::DockableWindow + 'static>(
+    pub(crate) fn register<T: crate::dockable_window::TabbedDockableWindow + 'static>(
         &mut self,
         title: &str,
         state: &DockableState,

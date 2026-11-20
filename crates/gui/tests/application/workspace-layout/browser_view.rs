@@ -85,6 +85,16 @@ fn the_match_starts_where_the_query_begins() {
     assert_eq!(match_start("Work Point1", "axis"), None);
 }
 #[test]
+fn opening_search_again_requests_focus_and_keeps_the_query() {
+    let mut view = BrowserView::default();
+    view.open_search();
+    assert!(std::mem::take(&mut view.focus_search));
+    view.query = Some("work".into());
+    view.open_search();
+    assert!(view.focus_search);
+    assert_eq!(view.query(), Some("work"));
+}
+#[test]
 fn the_close_control_clears_first_and_closes_second() {
     let mut view = BrowserView::default();
     view.open_search();

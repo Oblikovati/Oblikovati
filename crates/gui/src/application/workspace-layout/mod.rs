@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Panel visibility and the model browser's dock; the viewport fills whatever they leave free.
-use crate::dockable_window::DockableWindow;
+use crate::dockable_window::TabbedDockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::{Condition, Ui, WindowFlags};
+use imgui::{Ui, WindowFlags};
 
 pub(crate) mod body_properties;
 pub(crate) mod browser_feature;
@@ -15,7 +15,6 @@ pub(crate) mod panel_tabs;
 pub(crate) mod status_bar;
 /// The document tab row and the gap above it.
 const TAB_STRIP_HEIGHT: f32 = 26.;
-const EDGE_MARGIN: f32 = 8.;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct ToolVisibility {
@@ -29,7 +28,6 @@ pub(crate) struct ToolVisibility {
 #[derive(Debug)]
 pub(crate) struct WorkspaceLayout {
     pub panels: panel_tabs::DockPanels,
-    dock_state: crate::dockable_lifecycle::DockableState,
     pub tool_visibility: ToolVisibility,
     pub tabs_visible: bool,
     pub view_cube_visible: bool,
@@ -55,7 +53,6 @@ impl Default for WorkspaceLayout {
     fn default() -> Self {
         Self {
             panels: Default::default(),
-            dock_state: Default::default(),
             tool_visibility: Default::default(),
             tabs_visible: true,
             view_cube_visible: true,
@@ -76,7 +73,6 @@ impl Default for WorkspaceLayout {
         }
     }
 }
-impl DockableWindow for WorkspaceLayout {}
 impl WorkspaceLayout {
     /// Inspect test-only browser geometry; example: `layout.test_browser_view()`.
     #[cfg(test)]
@@ -93,7 +89,7 @@ impl WorkspaceLayout {
         &self,
         registry: &mut crate::dockable_lifecycle::DockRegistry,
     ) -> Result<(), String> {
-        registry.register::<Self>("Model", &self.dock_state)?;
+        self.panels.register_dockables(registry)?;
         self.view.body_properties.register_dockable(registry)?;
         self.view.feature_properties.register_dockable(registry)?;
         self.view.geometry.register_dockable(registry)?;
@@ -124,7 +120,13 @@ impl WorkspaceLayout {
         self.view.selected_origin_row = None;
         Some(plane)
     }
-    /// Open the shared browser search; example: `layout.request_find()`.
+    /// Open the Model Browser's tree filter; example: `layout.request_browser_search()`.
+    pub(crate) fn request_browser_search(&mut self) {
+        self.panels.open_panel(panel_tabs::DockPanel::Model);
+        self.view.open_search();
+        self.pending_layout = true;
+    }
+    /// Open the Find criteria dialog; example: `layout.request_find()`.
     pub(crate) fn request_find(&mut self) {
         self.view.find.request();
     }
@@ -147,7 +149,7 @@ impl WorkspaceLayout {
         self.pending_layout |= self.view.needs_frame();
     }
     pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
-        self.dock_state.set_open(self.panels.dock_visible());
+        self.panels.sync_dock_states();
         self.view.sync_before_docking(state);
     }
     pub(crate) fn browser_consumed_arrow(&self) -> bool {
@@ -161,70 +163,48 @@ impl WorkspaceLayout {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
-        bounds: (f32, f32),
+        _bounds: (f32, f32),
         document_area: crate::application::document_creation::workspaces::WorkspaceArea,
         part_context_open: bool,
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.view.arrow_consumed = false;
         self.view.feature_keyboard_focus = false;
-        let (_, band_height) = bounds;
         self.view.document_area = Some(document_area);
         self.view.view_clicks_taken = self.view_clicks_taken;
         browser_origin::follow_view_click(ui, state, &mut self.view, part_context_open, actions);
-        self.dock_state.set_open(self.panels.dock_visible());
-        if !self.panels.dock_visible() {
-            self.empty_dock_control(ui, band_height);
-            self.draw_find(ui, state, actions);
-            self.draw_browser_dialogs(ui, state, actions);
-            return;
+        if self.panels.model_open {
+            let mut open = true;
+            panel_tabs::ModelBrowserWindow::tabbed_dockable_window(ui, "Model", "Model", &mut open)
+                .flags(WindowFlags::NO_FOCUS_ON_APPEARING)
+                .focused(state.browser.is_some() && self.view.focus_search)
+                .build(|| {
+                    crate::browser::browser_contents(ui, state, &mut self.view, actions);
+                    self.pending_layout |= self.view.needs_frame();
+                });
+            self.panels.set_open(panel_tabs::DockPanel::Model, open);
         }
-        let mut open = true;
-        // Restoring the panel must not take focus, which would close the menu that restored it.
-        Self::dockable_window(ui, "Model", &mut open)
+        if self.panels.log_open {
+            let mut open = true;
+            panel_tabs::LogPanelWindow::tabbed_dockable_window(ui, "Log", "Model", &mut open)
+                .flags(WindowFlags::NO_FOCUS_ON_APPEARING)
+                .build(|| self.panels.log_area(ui));
+            self.panels.set_open(panel_tabs::DockPanel::Log, open);
+        }
+        if self.panels.favorites_visible() {
+            let mut open = true;
+            panel_tabs::FavoritesPanelWindow::tabbed_dockable_window(
+                ui,
+                "Favorites",
+                "Model",
+                &mut open,
+            )
             .flags(WindowFlags::NO_FOCUS_ON_APPEARING)
-            .build(|| self.dock_contents(ui, state, actions));
-        if !open {
-            self.panels.close_all();
-            self.dock_state.set_open(false);
+            .build(|| self.panels.favorites.panel(ui));
+            self.panels.set_open(panel_tabs::DockPanel::Favorites, open);
         }
-        self.pending_layout |= self.panels.needs_frame();
         self.draw_find(ui, state, actions);
         self.draw_browser_dialogs(ui, state, actions);
-    }
-    fn dock_contents(
-        &mut self,
-        ui: &Ui,
-        state: &GuiCommandState,
-        actions: &mut Vec<GuiShellAction>,
-    ) {
-        self.panels.plus_control(ui);
-        ui.same_line();
-        let active = self.panels.tabs(ui);
-        if active == panel_tabs::DockPanel::Log {
-            self.panels.log_area(ui);
-        } else if active == panel_tabs::DockPanel::Favorites {
-            self.panels.favorites.panel(ui);
-        } else if self.panels.model_open {
-            crate::browser::browser_contents(ui, state, &mut self.view, actions);
-            self.pending_layout |= self.view.needs_frame();
-        }
-    }
-    /// With every panel closed, only the plus control remains to bring one back.
-    fn empty_dock_control(&mut self, ui: &Ui, band_height: f32) {
-        let position = [self.ribbon_left + EDGE_MARGIN, band_height + 2.];
-        ui.window("##panel-plus")
-            .position(position, Condition::Always)
-            .flags(
-                WindowFlags::NO_DECORATION
-                    | WindowFlags::NO_MOVE
-                    | WindowFlags::NO_DOCKING
-                    | WindowFlags::NO_SAVED_SETTINGS
-                    | WindowFlags::ALWAYS_AUTO_RESIZE
-                    | WindowFlags::NO_FOCUS_ON_APPEARING,
-            )
-            .build(|| self.panels.plus_control(ui));
-        self.pending_layout |= self.panels.needs_frame();
     }
     /// Leave room for a docked ribbon; example: `layout.reserve_for_ribbon(196., 0.)`.
     /// Show which origin row is chosen, in the view; example: each frame, under the panels.
@@ -378,7 +358,15 @@ impl WorkspaceLayout {
             ui.checkbox("Navigation Bar", &mut self.navigation_bar_visible);
             ui.checkbox("Status Bar", &mut self.status_bar_visible);
             ui.checkbox("Marking Menu", &mut self.marking_menu_enabled);
-            ui.checkbox("Model Browser", &mut self.panels.model_open);
+            let mut model_open = self.panels.model_open;
+            if ui.checkbox("Model Browser", &mut model_open) {
+                self.panels
+                    .set_open(panel_tabs::DockPanel::Model, model_open);
+            }
+            let mut log_open = self.panels.log_open;
+            if ui.checkbox("Log Panel", &mut log_open) {
+                self.panels.set_open(panel_tabs::DockPanel::Log, log_open);
+            }
             ui.checkbox("Document Tabs", &mut self.tabs_visible);
             let mut favorites = self.panels.favorites_visible();
             if ui.checkbox("Favorites", &mut favorites) {

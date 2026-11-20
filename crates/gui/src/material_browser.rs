@@ -8,7 +8,6 @@ use imgui::Ui;
 pub(crate) struct MaterialBrowser {
     open: crate::dockable_lifecycle::DockableState,
     appearance_browser: bool,
-    select_preferred: bool,
     document: Option<u64>,
     material: Option<String>,
     appearance: Option<String>,
@@ -46,7 +45,6 @@ impl MaterialBrowser {
     /// Open the browser; example: `browser.open()` from the quick access toolbar.
     pub(crate) fn open(&mut self) {
         self.open.set_open(true);
-        self.select_preferred = true;
     }
     /// Draw the current part's asset choices and queue explicit assignments.
     /// Example: `browser.panel(ui, state, actions)` once per frame.
@@ -99,27 +97,17 @@ impl MaterialBrowser {
             ui.text("Select a part to browse its assets.");
             return ui.button("Close");
         };
-        self.tabs(ui, state, browser, actions);
-        ui.separator();
-        ui.button("Close")
-    }
-    fn tabs(
-        &mut self,
-        ui: &Ui,
-        state: &GuiCommandState,
-        browser: &crate::GuiModelBrowser,
-        actions: &mut Vec<GuiShellAction>,
-    ) {
-        let Some(_tabs) = ui.tab_bar("##material-browser-tabs") else {
-            return;
-        };
-        let requested = std::mem::take(&mut self.select_preferred);
-        let material_flags = if requested && !self.appearance_browser {
-            imgui::TabItemFlags::SET_SELECTED
+        if self.appearance_browser {
+            asset_tab(
+                ui,
+                state,
+                &browser.appearances,
+                &mut self.appearance,
+                browser.part_appearance.as_deref(),
+                GuiPartAssetKind::Appearance,
+                actions,
+            );
         } else {
-            imgui::TabItemFlags::empty()
-        };
-        if let Some(_tab) = ui.tab_item_with_flags("Materials", None, material_flags) {
             asset_tab(
                 ui,
                 state,
@@ -130,22 +118,8 @@ impl MaterialBrowser {
                 actions,
             );
         }
-        let appearance_flags = if requested && self.appearance_browser {
-            imgui::TabItemFlags::SET_SELECTED
-        } else {
-            imgui::TabItemFlags::empty()
-        };
-        if let Some(_tab) = ui.tab_item_with_flags("Appearances", None, appearance_flags) {
-            asset_tab(
-                ui,
-                state,
-                &browser.appearances,
-                &mut self.appearance,
-                browser.part_appearance.as_deref(),
-                GuiPartAssetKind::Appearance,
-                actions,
-            );
-        }
+        ui.separator();
+        ui.button("Close")
     }
 }
 fn asset_tab(

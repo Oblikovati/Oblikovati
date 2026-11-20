@@ -226,6 +226,16 @@ fn engine_registers_every_dockable_owner() {
 }
 
 #[test]
+fn dockable_owners_use_the_window_dockable_tabbed_inheritance_chain() {
+    fn assert_tabbed<T: crate::dockable_window::TabbedDockableWindow>() {}
+    assert_tabbed::<ExampleOwner>();
+    assert_tabbed::<crate::material_browser::MaterialBrowser>();
+    assert_tabbed::<crate::application::workspace_layout::panel_tabs::ModelBrowserWindow>();
+    assert_tabbed::<crate::application::workspace_layout::panel_tabs::LogPanelWindow>();
+    assert_tabbed::<crate::application::workspace_layout::panel_tabs::FavoritesPanelWindow>();
+}
+
+#[test]
 fn engine_registers_each_multi_instance_and_multi_title_owner() {
     let engine = crate::GuiFrameEngine::new().unwrap();
     let counts = crate::engine::dock_registration::owner_instance_counts(&engine);

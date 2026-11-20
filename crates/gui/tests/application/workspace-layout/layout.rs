@@ -155,7 +155,18 @@ fn hiding_all_model_panels_closes_the_dock_before_layout() {
     let state = GuiCommandState::default();
     layout.sync_before_docking(&state);
     registry.reconcile(|_| {}).unwrap();
-    layout.panels.close_all();
+    layout.panels.set_open(
+        crate::application::workspace_layout::panel_tabs::DockPanel::Model,
+        false,
+    );
+    layout.panels.set_open(
+        crate::application::workspace_layout::panel_tabs::DockPanel::Log,
+        false,
+    );
+    layout.panels.set_open(
+        crate::application::workspace_layout::panel_tabs::DockPanel::Favorites,
+        false,
+    );
     layout.sync_before_docking(&state);
     let mut titles = Vec::new();
     assert!(

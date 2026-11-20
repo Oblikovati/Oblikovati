@@ -46,18 +46,6 @@ void draw_ribbon_icon(const char* label, std::uint32_t texture, ImVec2 icon, boo
 }
 }
 extern "C" {
-bool oblikovati_gui_drag_current_window() {
-    ImGuiWindow* window = ImGui::GetCurrentWindow();
-    if (window->DockNode) {
-        ImGui::DockContextQueueUndockWindow(ImGui::GetCurrentContext(), window);
-        return false;
-    }
-    ImGui::StartMouseMovingWindow(window);
-    // ImGui starts docking only for a title-bar grip; the inner Model tab is below it (#4069).
-    ImGui::GetCurrentContext()->ActiveIdClickOffset.y = ImGui::GetFrameHeight() * 0.5f;
-    return true;
-}
-
 bool oblikovati_gui_window_is_moving() {
     return ImGui::GetCurrentContext()->MovingWindow != nullptr;
 }
@@ -102,10 +90,20 @@ std::uint32_t oblikovati_gui_outer_dockspace(float width, float height) {
         ImGuiID center = id;
         const ImGuiID left = ImGui::DockBuilderSplitNode(center, ImGuiDir_Left, 0.25f, nullptr, &center);
         ImGui::DockBuilderDockWindow("Model", left);
+        ImGui::DockBuilderDockWindow("Log", left);
+        ImGui::DockBuilderDockWindow("Favorites", left);
         ImGui::DockBuilderFinish(id);
     }
     return ImGui::DockSpace(id, ImVec2(width, height),
-                           ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
+                            ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
+}
+
+void oblikovati_gui_ensure_tabbed_window(const char* title, const char* group) {
+    if (ImGui::FindWindowByName(title)) return;
+    if (ImGui::FindWindowSettings(ImHashStr(title))) return;
+    ImGuiWindow* group_window = ImGui::FindWindowByName(group);
+    if (!group_window || !group_window->DockNode) return;
+    ImGui::DockBuilderDockWindow(title, group_window->DockNode->ID);
 }
 
 bool oblikovati_gui_outer_bottom_span(std::uint32_t id, float* left, float* right) {
@@ -199,5 +197,57 @@ void oblikovati_gui_literal_text(const unsigned char* text, std::size_t length,
     // #3839: annotations need the same scalar ABI even before a window is active.
     ImDrawList* draw = background ? ImGui::GetBackgroundDrawList() : ImGui::GetWindowDrawList();
     draw->AddText(ImVec2(x, y), color, begin, begin + length);
+}
+std::uint32_t oblikovati_gui_draw_dock_tab_actions() {
+    ImGuiContext* context = ImGui::GetCurrentContext();
+    if (!context) return 0;
+    std::uint32_t actions = 0;
+    for (int index = 0; index < context->DockContext.Nodes.Data.Size; ++index) {
+        ImGuiDockNode* node = static_cast<ImGuiDockNode*>(context->DockContext.Nodes.Data[index].val_p);
+        if (!node || !node->TabBar || node->TabBar->CurrFrameVisible != context->FrameCount)
+            continue;
+        if (!ImGui::DockNodeBeginAmendTabBar(node)) continue;
+
+        const ImGuiTabItemFlags trailing = ImGuiTabItemFlags_Trailing;
+        if (ImGui::TabItemButton("   ##dock-panel-menu", trailing))
+            ImGui::OpenPopup("##dock-panel-menu-popup");
+        const ImVec2 menu_min = ImGui::GetItemRectMin();
+        const ImVec2 menu_max = ImGui::GetItemRectMax();
+        const ImVec2 menu_center((menu_min.x + menu_max.x) * 0.5f, (menu_min.y + menu_max.y) * 0.5f);
+        const float menu_extent = ImGui::GetFontSize() * 0.18f;
+        ImDrawList* draw = ImGui::GetWindowDrawList();
+        const ImU32 icon_color = ImGui::GetColorU32(ImGuiCol_Text);
+        draw->AddLine(ImVec2(menu_center.x - menu_extent, menu_center.y),
+                      ImVec2(menu_center.x + menu_extent, menu_center.y), icon_color, 1.5f);
+        draw->AddLine(ImVec2(menu_center.x, menu_center.y - menu_extent),
+                      ImVec2(menu_center.x, menu_center.y + menu_extent), icon_color, 1.5f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Open dockable windows");
+        if (ImGui::BeginPopup("##dock-panel-menu-popup")) {
+            if (ImGui::MenuItem("Model Browser")) actions |= 1u << 0;
+            if (ImGui::MenuItem("Log Panel")) actions |= 1u << 1;
+            if (ImGui::MenuItem("Favorites")) actions |= 1u << 2;
+            if (ImGui::MenuItem("Material Browser")) actions |= 1u << 3;
+            if (ImGui::MenuItem("Appearance Browser")) actions |= 1u << 4;
+            if (ImGui::MenuItem("Parameters")) actions |= 1u << 5;
+            if (ImGui::MenuItem("Selection Filter")) actions |= 1u << 6;
+            if (ImGui::MenuItem("History Browser")) actions |= 1u << 7;
+            ImGui::EndPopup();
+        }
+
+        if (ImGui::TabItemButton("   ##dock-search", trailing)) actions |= 1u << 8;
+        const ImVec2 search_min = ImGui::GetItemRectMin();
+        const ImVec2 search_max = ImGui::GetItemRectMax();
+        const ImVec2 search_center((search_min.x + search_max.x) * 0.5f,
+                                   (search_min.y + search_max.y) * 0.5f);
+        const float lens = ImGui::GetFontSize() * 0.18f;
+        draw->AddCircle(ImVec2(search_center.x - lens * 0.2f, search_center.y - lens * 0.2f),
+                        lens, icon_color, 12, 1.5f);
+        draw->AddLine(ImVec2(search_center.x + lens * 0.45f, search_center.y + lens * 0.45f),
+                      ImVec2(search_center.x + lens, search_center.y + lens), icon_color, 1.5f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Find in Model Browser");
+        ImGui::DockNodeEndAmendTabBar();
+    }
+    if (actions & (1u << 8)) actions = 1u << 8;
+    return actions;
 }
 }

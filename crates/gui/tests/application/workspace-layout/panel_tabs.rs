@@ -1,37 +1,25 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+
 #[test]
-fn a_new_panel_takes_the_selection_and_the_dock_stays_open() {
+fn native_dock_tab_windows_open_and_close_independently() {
     let mut panels = DockPanels::default();
     panels.open_panel(DockPanel::Log);
-    assert_eq!(panels.select, Some(DockPanel::Log));
-    assert!(panels.model_open && panels.log_open && panels.needs_frame());
+    panels.open_panel(DockPanel::Favorites);
+    assert!(panels.model_open && panels.log_open && panels.favorites_open);
+    panels.set_open(DockPanel::Log, false);
+    assert!(panels.model_open && !panels.log_open && panels.favorites_open);
 }
+
 #[test]
-fn closing_the_active_log_returns_to_the_model() {
+fn closing_the_last_native_tab_empties_the_dock() {
     let mut panels = DockPanels::default();
-    panels.open_panel(DockPanel::Log);
-    panels.close_panel(DockPanel::Log);
-    assert_eq!(panels.select, Some(DockPanel::Model));
-    assert!(panels.dock_visible());
-}
-#[test]
-fn closing_the_last_panel_empties_the_dock() {
-    let mut panels = DockPanels::default();
-    panels.close_panel(DockPanel::Model);
-    assert!(!panels.dock_visible());
-    assert_eq!(panels.select, None);
+    panels.set_open(DockPanel::Model, false);
+    assert!(!panels.model_open && !panels.log_open && !panels.favorites_open);
     panels.open_panel(DockPanel::Model);
-    assert!(panels.dock_visible());
+    assert!(panels.model_open);
 }
-#[test]
-fn closing_the_model_leaves_an_open_log_in_the_dock() {
-    let mut panels = DockPanels::default();
-    panels.open_panel(DockPanel::Log);
-    panels.close_panel(DockPanel::Model);
-    assert_eq!(panels.select, Some(DockPanel::Log));
-    assert!(panels.dock_visible() && !panels.model_open);
-}
+
 #[test]
 fn the_log_keeps_each_new_message_once_and_never_the_idle_status() {
     let mut panels = DockPanels::default();
@@ -47,6 +35,7 @@ fn the_log_keeps_each_new_message_once_and_never_the_idle_status() {
     }
     assert_eq!(panels.messages, ["Saved", "Closed"]);
 }
+
 #[test]
 fn the_log_stays_within_its_capacity() {
     let mut panels = DockPanels::default();
@@ -56,17 +45,17 @@ fn the_log_stays_within_its_capacity() {
     assert_eq!(panels.messages.len(), MESSAGE_CAPACITY);
     assert_eq!(panels.messages[0], "1");
 }
+
 #[test]
-fn browser_settings_restore_visibility_and_active_tab() {
+fn saved_open_panels_restore_without_overriding_imgui_active_tab() {
     let mut original = DockPanels::default();
     original.open_panel(DockPanel::Log);
-    original.active = DockPanel::Log;
     original.model_open = false;
     let saved = original.settings();
     let mut restored = DockPanels::default();
     restored.restore(&saved);
     assert!(!restored.model_open && restored.log_open);
-    assert_eq!(restored.select, Some(DockPanel::Log));
+    assert!(restored.log_open);
 }
 
 #[test]
@@ -75,9 +64,7 @@ fn favorites_visibility_follows_menu_toggles_and_keeps_the_model() {
     assert!(!panels.favorites_visible());
     panels.toggle_favorites();
     assert!(panels.favorites_visible());
-    assert_eq!(panels.select, Some(DockPanel::Favorites));
     panels.toggle_favorites();
     assert!(!panels.favorites_visible());
-    assert!(panels.model_open && panels.dock_visible());
-    assert_eq!(panels.select, Some(DockPanel::Model));
+    assert!(panels.model_open && !panels.favorites_open);
 }

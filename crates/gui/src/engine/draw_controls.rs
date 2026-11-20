@@ -429,6 +429,35 @@ impl GuiFrameEngine {
         let constraint_hover =
             crate::sketch::constraint_glyphs::unobstructed_hover(ui, constraint_hover);
         self.external_docks.observe_actions(&selected);
+        if let Some(action) = crate::widget_abi::dock_tab_action(ui) {
+            match action {
+                crate::widget_abi::DockTabAction::ModelBrowser => self
+                    .workspace
+                    .panels
+                    .open_panel(crate::application::workspace_layout::panel_tabs::DockPanel::Model),
+                crate::widget_abi::DockTabAction::LogPanel => self
+                    .workspace
+                    .panels
+                    .open_panel(crate::application::workspace_layout::panel_tabs::DockPanel::Log),
+                crate::widget_abi::DockTabAction::Favorites => self.workspace.panels.open_panel(
+                    crate::application::workspace_layout::panel_tabs::DockPanel::Favorites,
+                ),
+                crate::widget_abi::DockTabAction::MaterialBrowser => self.material_browser.open(),
+                crate::widget_abi::DockTabAction::AppearanceBrowser => {
+                    self.appearance_browser.open()
+                }
+                crate::widget_abi::DockTabAction::Parameters => {
+                    self.parameter_editor.set_open(true)
+                }
+                crate::widget_abi::DockTabAction::SelectionFilter => self.selection_filter.open(),
+                crate::widget_abi::DockTabAction::HistoryBrowser => self.history_browser.open(),
+                crate::widget_abi::DockTabAction::Search => {
+                    if request.commands.browser.is_some() {
+                        self.workspace.request_browser_search();
+                    }
+                }
+            }
+        }
         let dock_lifecycle_changed = self.dock_lifecycle.reconcile(|title| {
             crate::widget_abi::close_dock_tab(ui, title);
         })?;

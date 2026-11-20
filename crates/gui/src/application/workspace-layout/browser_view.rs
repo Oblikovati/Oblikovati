@@ -36,6 +36,7 @@ pub(crate) struct BrowserView {
     autoscroll: bool,
     /// Present while the field is open; an empty query still shows the whole tree.
     query: Option<String>,
+    pub(super) focus_search: bool,
     expansion: Option<bool>,
     /// The drawing tree row a click chose, as its branch and row.
     pub selected_row: Option<(usize, usize)>,
@@ -260,14 +261,18 @@ impl BrowserView {
         }
         opened
     }
-    fn open_search(&mut self) {
+    pub(crate) fn open_search(&mut self) {
         self.query.get_or_insert_with(String::new);
+        self.focus_search = true;
     }
     fn search_field(&mut self, ui: &Ui) {
         let Some(query) = &mut self.query else {
             return;
         };
         ui.set_next_item_width(-32.);
+        if std::mem::take(&mut self.focus_search) {
+            ui.set_keyboard_focus_here();
+        }
         ui.input_text("##browser-search", query)
             .hint(SEARCH_HINT)
             .build();

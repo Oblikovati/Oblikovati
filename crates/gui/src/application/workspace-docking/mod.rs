@@ -18,7 +18,12 @@ pub(crate) fn draw(
         (outer.bottom - outer.top).max(1.),
     ];
     let _padding = ui.push_style_var(StyleVar::WindowPadding([0., 0.]));
-    ui.window("##workspace-outer-host")
+    let mut host_open = true;
+    <crate::application::workspace_layout::WorkspaceLayout as crate::dockable_window::Window>::window(
+        ui,
+        "##workspace-outer-host",
+        &mut host_open,
+    )
         .position([outer.left, outer.top], Condition::Always)
         .size(size, Condition::Always)
         .flags(host_flags())

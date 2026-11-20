@@ -2,9 +2,10 @@
 use imgui::{Condition, ImColor32, ImString, SelectableFlags, Ui};
 unsafe extern "C" {
     fn oblikovati_gui_window_is_moving() -> bool;
-    fn oblikovati_gui_drag_current_window() -> bool;
     fn oblikovati_gui_workspace_dockspace(width: f32, height: f32) -> u32;
     fn oblikovati_gui_outer_dockspace(width: f32, height: f32) -> u32;
+    fn oblikovati_gui_ensure_tabbed_window(title: *const u8, group: *const u8);
+    fn oblikovati_gui_draw_dock_tab_actions() -> u32;
     fn oblikovati_gui_prepare_dock_hit_test(x: f32, y: f32);
     fn oblikovati_gui_outer_bottom_span(id: u32, left: *mut f32, right: *mut f32) -> bool;
     fn oblikovati_gui_dockspace_center(
@@ -42,11 +43,6 @@ unsafe extern "C" {
     );
 }
 
-/// Transfer an active tab drag to its owning window.
-/// Example: call `drag_current_window(ui)` while the Model tab is held.
-pub(crate) fn drag_current_window(_: &Ui) -> bool {
-    unsafe { oblikovati_gui_drag_current_window() }
-}
 /// Let workspace targets receive pointer input while an ImGui window is dragged.
 /// Example: `moving_window(ui)` when drawing a fixed document-tab strip.
 pub(crate) fn moving_window(_: &Ui) -> bool {
@@ -71,6 +67,43 @@ pub(crate) fn outer_dockspace(_: &Ui, size: [f32; 2]) -> Option<([f32; 4], Optio
     let [left, right] = &mut span;
     let has_bottom = unsafe { oblikovati_gui_outer_bottom_span(id, left, right) };
     dockspace_center(id).map(|center| (center, has_bottom.then_some(span)))
+}
+/// Dock a newly-created tab beside its group window; existing placement remains user-controlled.
+pub(crate) fn ensure_tabbed_window(_: &Ui, title: &str, group: &str) {
+    let title = ImString::new(title);
+    let group = ImString::new(group);
+    // SAFETY: the UI frame owns the current ImGui context; C++ copies these strings immediately.
+    unsafe {
+        oblikovati_gui_ensure_tabbed_window(title.as_ptr().cast(), group.as_ptr().cast());
+    }
+}
+/// Read the action selected from native ImGui dock-tab buttons after all windows are submitted.
+pub(crate) fn dock_tab_action(_: &Ui) -> Option<DockTabAction> {
+    match unsafe { oblikovati_gui_draw_dock_tab_actions() } {
+        1 => Some(DockTabAction::ModelBrowser),
+        2 => Some(DockTabAction::LogPanel),
+        4 => Some(DockTabAction::Favorites),
+        8 => Some(DockTabAction::MaterialBrowser),
+        16 => Some(DockTabAction::AppearanceBrowser),
+        32 => Some(DockTabAction::Parameters),
+        64 => Some(DockTabAction::SelectionFilter),
+        128 => Some(DockTabAction::HistoryBrowser),
+        256 => Some(DockTabAction::Search),
+        _ => None,
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum DockTabAction {
+    ModelBrowser,
+    LogPanel,
+    Favorites,
+    MaterialBrowser,
+    AppearanceBrowser,
+    Parameters,
+    SelectionFilter,
+    HistoryBrowser,
+    Search,
 }
 fn dockspace_center(id: u32) -> Option<[f32; 4]> {
     let mut bounds = [0.; 4];
