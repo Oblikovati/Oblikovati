@@ -163,8 +163,11 @@ mod clear_appearance;
 #[path = "../tests/context/parallel.rs"]
 mod context_parallel_tests;
 
+#[allow(unsafe_code)]
+mod detached_drawing;
 mod popup_press;
 mod window_frame;
+pub use detached_drawing::{GuiDetachedDrawing, GuiDetachedDrawingFrame};
 
 mod model_state_table;
 mod model_state_table_acceptance;

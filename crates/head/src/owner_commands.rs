@@ -33,6 +33,10 @@ pub enum DesktopCommandNotice {
         path: std::path::PathBuf,
         cause: String,
     },
+    DrawingWindowFailed {
+        document: u64,
+        cause: String,
+    },
     AuthoringFailed {
         cause: String,
     },
@@ -114,6 +118,9 @@ impl DesktopCommandNotice {
             Self::DocumentClosed { document } => format!("Closed document {document}"),
             Self::WindowCaptureFailed { path, cause } => {
                 format!("Window capture {path:?} failed: {cause}")
+            }
+            Self::DrawingWindowFailed { document, cause } => {
+                format!("Drawing window for document {document} closed: {cause}")
             }
             Self::AuthoringFailed { cause } => format!("Command failed: {cause}"),
             Self::SketchEditFailed { cause } => format!("Sketch edit could not be opened: {cause}"),

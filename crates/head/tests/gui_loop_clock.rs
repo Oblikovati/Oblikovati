@@ -109,6 +109,19 @@ fn hover_uses_a_deadline_and_focus_or_unmap_suspends_it() {
     assert_eq!(gui.wake_after(GUI_TICK * 6), Some(GUI_TICK));
 }
 #[test]
+fn an_unfocused_mapped_window_can_finish_layout_after_a_document_switch() {
+    let mut gui = NativeGui::new(None).unwrap();
+    gui.focused = false;
+    gui.deadline = Some(GUI_TICK);
+    gui.activity.pending_layout = true;
+    assert_eq!(gui.wake_after(Duration::ZERO), Some(GUI_TICK));
+    gui.activity.pending_layout = false;
+    assert_eq!(gui.wake_after(Duration::ZERO), None);
+    gui.mapped = false;
+    gui.activity.pending_layout = true;
+    assert_eq!(gui.wake_after(Duration::ZERO), None);
+}
+#[test]
 fn repeated_timestamp_is_valid_but_reversed_time_is_refused() {
     let mut gui = NativeGui::new(None).unwrap();
     gui_step(&mut gui, 2, None);

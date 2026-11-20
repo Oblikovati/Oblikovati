@@ -59,7 +59,6 @@ impl DocumentTabs {
         if !layout.tabs_visible || !(any_document || home.active) {
             self.order.cancel_input();
             self.pressed_tab = None;
-            self.detached_windows(ui, &request.commands, actions);
             return;
         }
         let height = request.extent[1] as f32 / request.layout_scale()[1];
@@ -91,7 +90,6 @@ impl DocumentTabs {
             crate::application::document_tabs::previews::front_key(&request.commands, home.active);
         self.previews.panel(ui, hovered.as_ref(), front);
         self.detach_on_release(ui, request, strip_top, actions);
-        self.detached_windows(ui, &request.commands, actions);
         crate::application::document_tabs::document_list_control(
             ui,
             [span.0 + strip.1, strip_top + 2.],
@@ -102,6 +100,13 @@ impl DocumentTabs {
     }
 }
 impl DocumentTabs {
+    pub(crate) fn detached_drawings(&self) -> &[u64] {
+        &self.detached
+    }
+    pub(crate) fn restore_detached_drawing(&mut self, drawing: u64) {
+        self.detached.retain(|id| *id != drawing);
+        self.settling_frames = SETTLING_FRAMES;
+    }
     /// Dear ImGui lays a new tab out in its second frame, and GUI frames otherwise wait for an
     /// event: without this, a new document's tab stays invisible until the pointer moves.
     fn track_labels(&mut self, state: &crate::GuiCommandState) {
@@ -190,21 +195,6 @@ impl DocumentTabs {
             self.settling_frames = SETTLING_FRAMES;
         }
     }
-    fn detached_windows(
-        &mut self,
-        ui: &Ui,
-        state: &crate::GuiCommandState,
-        actions: &mut Vec<GuiShellAction>,
-    ) {
-        let menu = &mut self.menu;
-        self.detached.retain(|id| {
-            state
-                .documents
-                .iter()
-                .find(|row| row.id == *id)
-                .is_some_and(|row| detached_window(ui, state, row, menu, actions))
-        });
-    }
 }
 fn is_drawing(state: &crate::GuiCommandState, id: u64) -> bool {
     state
@@ -219,52 +209,6 @@ fn next_attached(state: &crate::GuiCommandState, id: u64, detached: &[u64]) -> O
         .iter()
         .find(|row| row.visible && row.id != id && !detached.contains(&row.id))
         .map(|row| row.id)
-}
-/// One floating window for a drawing, with its own tab; closing it returns the tab to the strip.
-/// A click in it moves the shared ribbon and browser to the drawing.
-fn detached_window(
-    ui: &Ui,
-    state: &crate::GuiCommandState,
-    row: &DocumentInfo,
-    menu: &mut crate::application::document_tabs::TabMenu,
-    actions: &mut Vec<GuiShellAction>,
-) -> bool {
-    let mut keep = true;
-    crate::widget_abi::window_geometry(ui, [420., 240.], [640., 480.], Condition::FirstUseEver);
-    ui.window(format!("{}###detached-document-{}", row.name, row.id))
-        .opened(&mut keep)
-        .flags(imgui::WindowFlags::NO_DOCKING | imgui::WindowFlags::NO_COLLAPSE)
-        .build(|| {
-            if let Some(drawing) = state.drawing_documents.get(&row.id) {
-                crate::application::document_creation::workspaces::draw_sheet_in_window(
-                    ui,
-                    &row.name,
-                    drawing,
-                    state.drawing_projections.get(&row.id),
-                );
-            }
-            detached_tab(ui, state, row, menu, actions);
-            let clicked = ui.is_window_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
-            if clicked && state.document != Some(row.id) {
-                actions.push(GuiShellAction::ActivateDocument(ActivateDocumentArgs {
-                    id: row.id,
-                }));
-            }
-        });
-    keep
-}
-fn detached_tab(
-    ui: &Ui,
-    state: &crate::GuiCommandState,
-    row: &DocumentInfo,
-    menu: &mut crate::application::document_tabs::TabMenu,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    let Some(_bar) = ui.tab_bar("##detached-tabs") else {
-        return;
-    };
-    let _tab = ui.tab_item(&row.name);
-    menu.popup(ui, state, row, actions);
 }
 fn document_strip(
     ui: &Ui,

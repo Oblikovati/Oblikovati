@@ -47,6 +47,7 @@ pub(super) struct ApplicationWorld {
     pub observed_annotations: Option<bool>,
     /// Text read before a later step changes what the window shows.
     pub observed_rows: Option<String>,
+    pub detached_drawing_menu: bool,
     /// Quick-access choices captured before dismissing their menu.
     pub observed_quick_access: Option<Vec<(String, bool)>>,
     /// The toolbar icon selected for a tooltip scenario.
@@ -123,6 +124,7 @@ impl ApplicationWorld {
             observed_second_view: None,
             observed_annotations: None,
             observed_rows: None,
+            detached_drawing_menu: false,
             observed_quick_access: None,
             observed_toolbar_command: None,
             docking_resize: None,
@@ -396,7 +398,7 @@ pub(super) fn reports_folder() -> std::path::PathBuf {
     );
     folder
 }
-fn write_png(
+pub(super) fn write_png(
     path: &std::path::Path,
     capture: &oblikovati_viewport::ViewportCapture,
 ) -> Result<(), png::EncodingError> {

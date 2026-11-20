@@ -7,7 +7,10 @@ use oblikovati_gui::{
 };
 use oblikovati_viewport::{GuiFrame, GuiFrameCompiler, ViewportEvent};
 use std::time::Duration;
+mod advance;
+mod drawing_windows;
 mod input;
+pub(super) use drawing_windows::DrawingWindows;
 // Go head/cmd/oblikovati-head/main.go uses animationTickSeconds = 1/60.
 const GUI_TICK: Duration = Duration::from_nanos(1_000_000_000 / 60);
 pub(super) struct NativeGui {
@@ -353,7 +356,10 @@ impl NativeGui {
             || self.wake_after(now) == Some(Duration::ZERO)
     }
     fn wake_after(&self, now: Duration) -> Option<Duration> {
-        if !self.mapped || !self.focused {
+        // A detached drawing can change the main ribbon while the drawing holds native focus.
+        // ImGui needs the pending layout frames to admit newly visible tabs.
+        let finishing_layout = self.activity.pending_layout || self.activity.queued_input;
+        if !self.mapped || (!self.focused && !finishing_layout) {
             return None;
         }
         self.deadline.map(|deadline| deadline.saturating_sub(now))
@@ -434,26 +440,8 @@ impl NativeHeadWindow {
                 .and_then(GuiClipboard::issue)
         })
     }
-    pub(super) fn advance_native_gui(
-        &mut self,
-        event: Option<&ViewportEvent>,
-        commands: &GuiCommandState,
-    ) -> Result<HeadGuiUpdate, String> {
-        if self.gui.is_none() && event == Some(&ViewportEvent::CloseRequested) {
-            return Ok(Default::default());
-        }
-        let extent = self.view.drawable_extent()?;
-        self.ensure_native_gui()?;
-        let now = self.gui_epoch.elapsed();
-        let notice = self.native_gui_notice()?;
-        let gui = self.gui.as_mut().expect("initialized GUI");
-        let mut update = gui.step(now, extent, event, commands, notice.as_deref())?;
-        if gui.dirty {
-            publish_gui(&mut self.view, gui, now, &mut update)?;
-        }
-        Ok(update)
-    }
 }
+
 fn publish_gui(
     view: &mut oblikovati_viewport::Viewport,
     gui: &mut NativeGui,

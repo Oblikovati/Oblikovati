@@ -13,15 +13,11 @@ fn drag_drawing_out(world: &mut ApplicationWorld) {
     let name = world.document_name(drawing_of(world));
     let from = world.expect_tab(&name).center().map(|value| value as i32);
     let target = [800, 500];
-    #[cfg(target_os = "linux")]
     drag_tab_with_x11(world, from, target);
-    #[cfg(not(target_os = "linux"))]
-    world.drag(from, target);
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
 
-#[cfg(target_os = "linux")]
 fn drag_tab_with_x11(world: &mut ApplicationWorld, from: [i32; 2], target: [i32; 2]) {
     use super::super::x11_input::{left_button, move_pointer};
     move_pointer(from);
@@ -40,8 +36,11 @@ fn drawing_detached(world: &mut ApplicationWorld) {
 }
 #[then("the drawing sheet remains visible in that window")]
 fn sheet_in_window(world: &mut ApplicationWorld) {
-    let at = sheet_point(world).map(|coordinate| coordinate as usize);
-    let sheet = world.pixel_at(at);
+    let capture = detached_capture(world);
+    let [width, height] = capture.extent.map(|dimension| dimension as usize);
+    let at = [width / 2, height / 2];
+    let index = (at[1] * width + at[0]) * 4;
+    let sheet = &capture.rgba[index..index + 4];
     assert!(
         sheet[..3].iter().all(|channel| *channel > 200),
         "pixel {at:?} {sheet:?}"
@@ -56,7 +55,10 @@ fn part_in_main(world: &mut ApplicationWorld) {
 #[when("the user selects another open part tab in the main workspace")]
 #[when("the user selects the part tab in the main workspace")]
 fn select_main_part_tab(world: &mut ApplicationWorld) {
-    world.click_tab(part_of(world));
+    let name = world.document_name(part_of(world));
+    let at = super::super::diagnostics::pointer_pixels(world.expect_tab(&name).center());
+    super::super::x11_input::click(at);
+    world.pump(Vec::new());
 }
 #[then("that part becomes active in the main workspace")]
 fn that_part_active(world: &mut ApplicationWorld) {
@@ -68,48 +70,92 @@ fn expect_drawing_window(world: &mut ApplicationWorld) {
         world.tab_run(&name).is_none(),
         "tab {name:?}: expected it out of the strip"
     );
-    let labels = world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| run.text == name)
-        .count();
-    assert!(
-        labels >= 2,
-        "expected the window title and its tab to read {name:?}"
-    );
+    assert_native_drawing(world, &name);
     detached_tab_position(world);
 }
-fn detached_window_geometry(world: &mut ApplicationWorld) -> ([f32; 2], [f32; 2]) {
-    let drawing = drawing_of(world);
-    let name = world.document_name(drawing);
-    window_geometry(&format!("{name}###detached-document-{drawing}"))
-        .expect("expected detached drawing geometry")
+
+fn assert_native_drawing(world: &mut ApplicationWorld, name: &str) {
+    let id = drawing_of(world);
+    let title = world
+        .app()
+        .window
+        .native
+        .drawing_windows
+        .inspect(id, |view| {
+            view.native_title()
+                .expect("expected an operating-system drawing title")
+        })
+        .expect("expected a drawing viewport");
+    assert_eq!(title, name);
+    assert!(super::super::x11_input::window_is_separate(name));
 }
+
+fn detached_frame(world: &mut ApplicationWorld) -> super::super::diagnostics::RenderedFrame {
+    let id = drawing_of(world);
+    world
+        .app()
+        .window
+        .native
+        .drawing_windows
+        .inspect(id, |_| super::super::diagnostics::rendered_frame())
+        .expect("expected a completed drawing GUI")
+}
+
+fn detached_capture(world: &mut ApplicationWorld) -> oblikovati_viewport::ViewportCapture {
+    let id = drawing_of(world);
+    world
+        .app()
+        .window
+        .native
+        .drawing_windows
+        .inspect(id, |view| {
+            view.capture()
+                .expect("expected a presented drawing surface")
+        })
+        .expect("expected a detached drawing viewport")
+}
+
 fn detached_tab_position(world: &mut ApplicationWorld) -> [i32; 2] {
-    let (position, size) = detached_window_geometry(world);
+    let frame = detached_frame(world);
+    let height = detached_extent(world)[1] as f32;
     let name = world.document_name(drawing_of(world));
-    let run = world
-        .frame
+    let run = frame
         .runs
         .iter()
-        .find(|run| {
-            let [x, y] = run.center();
-            run.text == name
-                && x >= position[0]
-                && x < position[0] + size[0]
-                && y >= position[1] + size[1] * 0.8
-                && y < position[1] + size[1]
-        })
+        .find(|run| run.text == name && run.center()[1] > height * 0.8)
         .expect("expected the drawing tab below the sheet");
     super::super::diagnostics::pointer_pixels(run.center())
 }
-fn sheet_point(world: &mut ApplicationWorld) -> [i32; 2] {
-    let (position, size) = detached_window_geometry(world);
-    super::super::diagnostics::pointer_pixels(std::array::from_fn(|axis| {
-        position[axis] + size[axis] / 2.
-    }))
+
+fn detached_extent(world: &mut ApplicationWorld) -> [u32; 2] {
+    let id = drawing_of(world);
+    world
+        .app()
+        .window
+        .native
+        .drawing_windows
+        .inspect(id, |view| {
+            view.capture().expect("expected drawing geometry").extent
+        })
+        .expect("expected a detached drawing viewport")
 }
+
+fn drawing_point_in_main_coordinates(world: &mut ApplicationWorld, point: [i32; 2]) -> [i32; 2] {
+    let id = drawing_of(world);
+    let drawing = world
+        .app()
+        .window
+        .native
+        .drawing_windows
+        .inspect(id, |view| {
+            view.window_screen_bounds()
+                .expect("expected drawing screen bounds")
+        })
+        .expect("expected a detached drawing viewport");
+    let main = super::super::x11_input::application_bounds();
+    std::array::from_fn(|axis| point[axis] + drawing[axis] - main[axis])
+}
+
 #[then("the drawing remains open in its separate window")]
 #[then("the detached drawing remains open")]
 #[given("the drawing has a document tab in that window")]
@@ -125,13 +171,23 @@ fn drawing_in_window(world: &mut ApplicationWorld) {
 #[when("I open the detached drawing tab context menu")]
 #[when("the user opens the detached drawing tab context menu")]
 fn open_detached_menu(world: &mut ApplicationWorld) {
-    let center = detached_tab_position(world);
-    #[cfg(target_os = "linux")]
-    super::super::x11_input::right_click(center);
-    #[cfg(not(target_os = "linux"))]
-    world.right_click(center);
+    let point = detached_tab_position(world);
+    super::super::x11_input::right_click(drawing_point_in_main_coordinates(world, point));
     world.pump(Vec::new());
+    world.frame = detached_frame(world);
+    world.detached_drawing_menu = true;
 }
+
+pub(super) fn dismiss_detached_menu(world: &mut ApplicationWorld) {
+    let name = world.document_name(drawing_of(world));
+    super::super::x11_input::press_window_key(&name, 0xff1b);
+    world.pump(Vec::new());
+    let auxiliary_frame = detached_frame(world);
+    let main_frame = std::mem::replace(&mut world.frame, auxiliary_frame);
+    world.expect_no_text("Close Tabs");
+    world.frame = main_frame;
+}
+
 #[given("a part is open in the main workspace")]
 #[given("the part context is active in the main workspace")]
 fn part_context(world: &mut ApplicationWorld) {
@@ -140,11 +196,8 @@ fn part_context(world: &mut ApplicationWorld) {
 #[when("I click the detached drawing sheet")]
 #[when("the user clicks the detached drawing sheet")]
 fn click_detached_sheet(world: &mut ApplicationWorld) {
-    let point = sheet_point(world);
-    #[cfg(target_os = "linux")]
-    super::super::x11_input::click(point);
-    #[cfg(not(target_os = "linux"))]
-    world.click(point);
+    let point = detached_extent(world).map(|dimension| dimension as i32 / 2);
+    super::super::x11_input::click(drawing_point_in_main_coordinates(world, point));
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
@@ -176,6 +229,35 @@ fn detached_drawing_keeps_its_bottom_tab_when_the_main_strip_is_hidden() {
     assert!(window_geometry(TAB_STRIP).is_none());
     expect_drawing_window(&mut world);
     sheet_in_window(&mut world);
-    world.save_capture("detached-drawing-with-main-strip-hidden");
+    let path = super::super::world::reports_folder().join("detached-drawing-native-sheet.png");
+    if let Some(folder) = path.parent() {
+        std::fs::create_dir_all(folder).unwrap();
+    }
+    super::super::world::write_png(&path, &detached_capture(&mut world)).unwrap();
+    world.close();
+}
+
+#[test]
+fn closing_the_native_drawing_window_restores_the_same_open_tab() {
+    let mut world = ApplicationWorld::new();
+    drawing_in_window(&mut world);
+    expect_drawing_window(&mut world);
+    let id = drawing_of(&world);
+    let name = world.document_name(id);
+    super::super::x11_input::request_named_window_close(&name);
+    for _ in 0..4 {
+        world.pump(Vec::new());
+    }
+    assert!(
+        world
+            .app()
+            .window
+            .native
+            .drawing_windows
+            .inspect(id, |_| ())
+            .is_none()
+    );
+    world.expect_tab(&name);
+    world.expect_active(part_of(&world));
     world.close();
 }

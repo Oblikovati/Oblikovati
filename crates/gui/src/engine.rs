@@ -128,6 +128,16 @@ pub struct GuiFrameEngine {
     theme_editor: crate::theme_editor::GuiThemeEditor,
 }
 impl GuiFrameEngine {
+    /// Read the drawings for which the desktop owns secondary windows.
+    /// Example: `engine.detached_drawings()` before synchronizing native targets.
+    pub fn detached_drawings(&self) -> &[u64] {
+        self.document_tabs.detached_drawings()
+    }
+    /// Restore a drawing tab when its native window closes.
+    /// Example: `engine.restore_detached_drawing(drawing_id)` after a native close.
+    pub fn restore_detached_drawing(&mut self, drawing: u64) {
+        self.document_tabs.restore_detached_drawing(drawing);
+    }
     /// Open an extrusion draft for the active part. Example: `engine.request_extrusion()`.
     pub fn request_extrusion(&mut self) {
         self.pending_extrusion_shortcut = true;
@@ -352,7 +362,7 @@ impl GuiFrameEngine {
             .request_save_path(document, &name, self.known_document_type)
     }
 }
-fn configure_owner_context(context: &mut Context) -> GuiAtlas {
+pub(crate) fn configure_owner_context(context: &mut Context) -> GuiAtlas {
     context.set_ini_filename(None);
     context.set_log_filename(None);
     context

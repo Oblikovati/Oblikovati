@@ -128,6 +128,10 @@ fn menu_shortcuts(world: &mut ApplicationWorld) {
 #[when("I dismiss the menu")]
 #[when("the user dismisses the menu")]
 fn dismiss_menu(world: &mut ApplicationWorld) {
+    if std::mem::take(&mut world.detached_drawing_menu) {
+        detached::dismiss_detached_menu(world);
+        return;
+    }
     world.escape();
     world.expect_no_text("Close Tabs");
 }

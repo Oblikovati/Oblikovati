@@ -17,6 +17,7 @@ pub struct NativeHeadWindow {
     runtime: ViewportRuntime,
     validate_vulkan: bool,
     view: Viewport,
+    drawing_windows: gui_loop::DrawingWindows,
     view_projection: oblikovati_gui::GuiViewProjection,
     marked_view: Option<oblikovati_viewport::ViewportCamera>,
     wake: ViewportWake,

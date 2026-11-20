@@ -442,15 +442,20 @@ impl HeadWindow for NativeHeadWindow {
         })
     }
     fn wait(&mut self, timeout: Option<std::time::Duration>) -> Result<bool, String> {
+        let windows = self.drawing_windows.targets();
         #[cfg(target_os = "linux")]
         let ready = match self.clipboard.endpoint() {
             Some(clipboard) => self
                 .view
-                .wait_events_with_clipboard(&self.wake, clipboard, timeout),
-            None => self.view.wait_events(&self.wake, timeout),
+                .wait_events_for_windows_with_clipboard(&windows, &self.wake, clipboard, timeout),
+            None => self
+                .view
+                .wait_events_for_windows(&windows, &self.wake, timeout),
         }?;
         #[cfg(target_os = "windows")]
-        let ready = self.view.wait_events(&self.wake, timeout)?;
+        let ready = self
+            .view
+            .wait_events_for_windows(&windows, &self.wake, timeout)?;
         Ok(ready.worker_wake)
     }
     fn finish(&mut self) -> Result<(), String> {
@@ -461,6 +466,7 @@ impl HeadWindow for NativeHeadWindow {
                 .err(),
             _ => None,
         };
+        self.drawing_windows.close();
         self.gui.take();
         #[cfg(target_os = "windows")]
         self.accessibility.take();

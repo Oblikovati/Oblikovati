@@ -2,7 +2,10 @@
 //! Send the window manager close protocol through the real X11 connection.
 
 mod cursor;
+mod window_targets;
 pub(super) use cursor::{cursor_sprite, reference_cursor};
+use window_targets::application_window;
+pub(super) use window_targets::{press_window_key, request_named_window_close, window_is_separate};
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::{
     Atom, AtomEnum, BUTTON_PRESS_EVENT, BUTTON_RELEASE_EVENT, ClientMessageEvent, ConnectionExt,
@@ -15,8 +18,12 @@ pub(super) fn request_native_close() {
     let (connection, screen) = x11rb::connect(None).expect("X11: expected a display connection");
     let root = connection.setup().roots[screen].root;
     let window = application_window(&connection, root);
-    let protocol = atom(&connection, b"WM_PROTOCOLS");
-    let delete = atom(&connection, b"WM_DELETE_WINDOW");
+    send_window_close(&connection, window);
+}
+
+fn send_window_close(connection: &RustConnection, window: Window) {
+    let protocol = atom(connection, b"WM_PROTOCOLS");
+    let delete = atom(connection, b"WM_DELETE_WINDOW");
     let event = ClientMessageEvent::new(32, window, protocol, [delete, 0, 0, 0, 0]);
     connection
         .send_event(false, window, EventMask::NO_EVENT, event)
@@ -105,9 +112,13 @@ pub(super) fn focus_window() {
 /// Send a mapped key; example: `press_keysym(u32::from(b'a'))` types a letter.
 pub(super) fn press_keysym(keysym: u32) {
     let (connection, root) = keyboard_target();
-    let key = keyboard_keycode(&connection, keysym);
+    press_target_key(&connection, root, keysym);
+}
+
+fn press_target_key(connection: &RustConnection, root: Window, keysym: u32) {
+    let key = keyboard_keycode(connection, keysym);
     send_key_sequence(
-        &connection,
+        connection,
         root,
         &[(KEY_PRESS_EVENT, key), (KEY_RELEASE_EVENT, key)],
     );
@@ -220,12 +231,16 @@ fn keyboard_target() -> (RustConnection, Window) {
     let (connection, screen) = x11rb::connect(None).expect("X11: expected a display connection");
     let root = connection.setup().roots[screen].root;
     let window = application_window(&connection, root);
+    focus_target(&connection, window);
+    (connection, root)
+}
+
+fn focus_target(connection: &RustConnection, window: Window) {
     connection
         .set_input_focus(InputFocus::PARENT, window, 0_u32)
         .unwrap()
         .check()
         .unwrap();
-    (connection, root)
 }
 
 fn keyboard_keycode(connection: &RustConnection, keysym: u32) -> u8 {
@@ -303,42 +318,6 @@ fn send_click(connection: &RustConnection, root: Window, x: i16, y: i16, button:
     connection
         .flush()
         .expect("X11 click: expected a flushed request");
-}
-
-fn application_window(connection: &RustConnection, root: Window) -> Window {
-    let windows = application_descendants(connection, root);
-    let [window] = windows.as_slice() else {
-        panic!("X11 application windows {windows:?}: expected exactly one Oblikovati window");
-    };
-    *window
-}
-
-fn application_descendants(connection: &RustConnection, root: Window) -> Vec<Window> {
-    let mut pending = vec![root];
-    let mut matches = Vec::new();
-    while let Some(parent) = pending.pop() {
-        let Ok(query) = connection.query_tree(parent) else {
-            continue;
-        };
-        let Ok(tree) = query.reply() else { continue };
-        for child in tree.children {
-            if is_application(connection, child) {
-                matches.push(child);
-            }
-            pending.push(child);
-        }
-    }
-    matches
-}
-
-fn is_application(connection: &RustConnection, window: Window) -> bool {
-    let reply =
-        connection.get_property(false, window, AtomEnum::WM_NAME, AtomEnum::STRING, 0, 1024);
-    let Ok(reply) = reply else { return false };
-    let Ok(property) = reply.reply() else {
-        return false;
-    };
-    String::from_utf8_lossy(&property.value).contains("Oblikovati")
 }
 
 fn atom(connection: &RustConnection, name: &[u8]) -> Atom {
