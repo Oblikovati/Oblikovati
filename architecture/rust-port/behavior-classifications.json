@@ -7091,7 +7091,7 @@
       "kernel_capabilities": "Replay and display the native extruded Part fixture. The availability checks do not create or change a solid.",
       "platforms": "Native diagnostic on Linux X11, Xvfb and Vulkan Lavapipe. Windows and macOS rendered checks are pending.",
       "kernel_integration": "The Part fixture replays through Martensite. The ribbon uses the active document and sketch state. The separate Fillet regression calls the typed Sketch API to round the corner.",
-      "rust_tests": "Native bindings in crates/head/tests/application/ribbon-command-availability/steps.rs. The in-edit scenario passed. The two outside-edit scenarios reach the missing Sketch Text command. See receipts/2026-11-20-sketch-fillet-3956/README.md.",
+      "rust_tests": "Native bindings in crates/head/tests/application/ribbon-command-availability/steps.rs. All three pinned ribbon scenarios passed and the two live document-context cases passed. See receipts/2026-11-20-ribbon-command-availability-complete-3956/README.md.",
       "oracle": "Pinned scenario steps and native interaction, including enabled states, visible profile, tooltip, and workspace return; Go is a partial and conflicting reference outside sketch edit.",
       "expected_result": "The seven named Create commands are enabled. Project Geometry and the five named groups are disabled. The active Part and browser stay visible.",
       "baseline_source_sha256": "59959ff37cf45000a2fc634c665c70a0b784ae721f6fe8db1dd7d4399d659a0d"
@@ -7119,7 +7119,7 @@
       "kernel_capabilities": "Replay and display the native extruded Part fixture. The availability checks do not create or change a solid.",
       "platforms": "Native diagnostic on Linux X11, Xvfb and Vulkan Lavapipe. Windows and macOS rendered checks are pending.",
       "kernel_integration": "The Part fixture replays through Martensite. The ribbon uses the active document and sketch state. The separate Fillet regression calls the typed Sketch API to round the corner.",
-      "rust_tests": "Native bindings in crates/head/tests/application/ribbon-command-availability/steps.rs. The in-edit scenario passed. The two outside-edit scenarios reach the missing Sketch Text command. See receipts/2026-11-20-sketch-fillet-3956/README.md.",
+      "rust_tests": "Native bindings in crates/head/tests/application/ribbon-command-availability/steps.rs. All three pinned ribbon scenarios passed and the two live document-context cases passed. See receipts/2026-11-20-ribbon-command-availability-complete-3956/README.md.",
       "oracle": "Pinned scenario steps and native interaction, including enabled states, visible profile, tooltip, and workspace return; Go is a partial and conflicting reference outside sketch edit.",
       "expected_result": "After a round trip through 3D Model, the same seven Create commands stay enabled and the same groups stay disabled. The active Part and browser stay visible.",
       "baseline_source_sha256": "59959ff37cf45000a2fc634c665c70a0b784ae721f6fe8db1dd7d4399d659a0d"
@@ -7147,7 +7147,7 @@
       "kernel_capabilities": "Replay and display the native extruded Part fixture. The availability checks do not create or change a solid.",
       "platforms": "Native diagnostic on Linux X11, Xvfb and Vulkan Lavapipe. Windows and macOS rendered checks are pending.",
       "kernel_integration": "The Part fixture replays through Martensite. The ribbon uses the active document and sketch state. The separate Fillet regression calls the typed Sketch API to round the corner.",
-      "rust_tests": "Native bindings in crates/head/tests/application/ribbon-command-availability/steps.rs. The in-edit scenario passed. The two outside-edit scenarios reach the missing Sketch Text command. See receipts/2026-11-20-sketch-fillet-3956/README.md.",
+      "rust_tests": "Native bindings in crates/head/tests/application/ribbon-command-availability/steps.rs. All three pinned ribbon scenarios passed and the two live document-context cases passed. See receipts/2026-11-20-ribbon-command-availability-complete-3956/README.md.",
       "oracle": "Pinned scenario steps and native interaction, including enabled states, visible profile, tooltip, and workspace return; Go is a partial and conflicting reference outside sketch edit.",
       "expected_result": "Editing from the browser shows the profile, the Sketch groups and Finish. Line requests a start point and its tooltip describes lines and arcs. Finish restores the Part workspace and preserves the sketch.",
       "historical_receipts": [

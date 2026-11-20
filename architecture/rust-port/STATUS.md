@@ -59,18 +59,16 @@ using this status; the live scenario directory can change.
   See `receipts/2026-11-20-ribbon-appearance-complete-3957/`. All 18 scenarios
   have R0 baseline records. Strict acceptance still requires bounded build
   and runtime inputs under #3978.
-- Ribbon Command Availability (#3956) passed three of five live scenarios and
-  one of three pinned scenarios. A native X11 test started Fillet from the
-  Part ribbon, canceled a pending pick, rounded a corner at the default 5 mm
-  radius, and verified undo and redo. The two failing scenarios now reach the
-  missing Sketch Text command. The three pinned declarations have R0 baseline
-  records. See `receipts/2026-11-20-sketch-fillet-3956/`.
-- Sketch Text (#3907) has a saved model entity with editable content and style.
-  Native YAML preserves the text and its anchor. The session can undo and redo
-  creation and edits. Preview and saved text now share the Martensite glyph
-  outline path. A native X11 test confirmed matching viewport pixels and
-  verified that clearing the preview leaves a blank viewport. The ribbon still
-  needs the text editor and command wiring.
+- Ribbon Command Availability (#3956) passed all five live scenarios and 39
+  steps, and all three pinned scenarios and 29 steps. The current live hash and
+  support files match the recorded run. Native X11 input also verified actual
+  Text placement and the earlier two-line Fillet command. See
+  `receipts/2026-11-20-ribbon-command-availability-complete-3956/`.
+- Sketch Text (#3907) opens the dockable Format Text editor from the Sketch
+  ribbon. Point placement, preview, Cancel, OK, and creation undo and redo
+  passed native input checks. Published case `text-08` passed its four steps.
+  Existing-text editing, richer formatting, and the remaining standalone Text
+  scenarios are open.
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
   Midpoint Line tool has native mouse and keyboard tests. A native YAML

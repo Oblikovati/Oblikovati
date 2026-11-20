@@ -172,15 +172,14 @@
       "fixtures/cad/blank-metric-assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
       "fixtures/cad/blank-drawing.odd": "74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-sketch-ribbon-entry-3956/cucumber.json",
-    "cucumber_sha256": "8b5ac8a4ab0f0f07dbe9e9672c44e113ef24b337b4a9066e74fcfb4677c78289",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-sketch-ribbon-entry-3956/scenario-arguments.json",
-    "scenario_arguments_sha256": "ded5717d0a329ec48afce30a8a43b2051bce815944896ee72a0124c835a1fe34",
-    "application_commit": "e897d388613f6e33636fe42cf33d72501558e62b",
-    "command": "Full ribbon-command-availability run; see receipt README.",
-    "environment": "Linux Xvfb 1600x1200, Vulkan Lavapipe",
-    "notes": "3 of 5 scenarios and 31 of 33 executed steps passed. Both failing scenarios now pass the checks for Line, Circle, Arc and Rectangle before stopping at Sketch Fillet.",
-    "blocker": "The outside-edit scenarios include Sketch Fillet and Sketch Text, which have no integrated authoring path (#3956)."
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-ribbon-command-availability-complete-3956/live/cucumber.json",
+    "cucumber_sha256": "1580cc22f2b7ad9d42b0ff2f3c3ff2dc28716043d8cea0da2db1546d5b2e57ef",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-ribbon-command-availability-complete-3956/live/scenario-arguments.json",
+    "scenario_arguments_sha256": "ac9ccb7060793d8b0710eed9c0d6b6359a0a58c48ee07e6ead84d3afb2ae3b35",
+    "application_commit": "200d549ef2c372db275009fb3bc21e54b51deada",
+    "command": "Full ribbon-command-availability live run; see receipt README.",
+    "environment": "Linux X11 under Xvfb at 1920x1080, Vulkan Lavapipe",
+    "notes": "All five live scenarios and 39 steps passed. The separate pinned run passed three scenarios and 29 steps."
   },
   "features/application/body-properties/body-properties.feature": {
     "feature_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
