@@ -1,0 +1,9 @@
+./tools/with-xvfb.sh make gate
+make[1]: Entering directory '/home/vmiguel/git/oblikovati-workspace/oblikovati-rust'
+"cargo" xtask gate
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+     Running `target/xtask/debug/oblikovati-build gate`
+oblikovati-build: locked oblikovati-api 0.159.0 source "git+https://github.com/Oblikovati/Oblikovati.API.git?rev=57ae73ca46bfcadcc09e3ec1d0c424d803cadc44#57ae73ca46bfcadcc09e3ec1d0c424d803cadc44": expected released 0.159.0 at f0943c724a6e07ec49533769c9e680137bb3d55c
+make[1]: *** [Makefile:27: gate] Error 1
+make[1]: Leaving directory '/home/vmiguel/git/oblikovati-workspace/oblikovati-rust'
+make: *** [Makefile:30: gate-xvfb] Error 2

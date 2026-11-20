@@ -267,9 +267,12 @@ using this status; the live scenario directory can change.
 - The 60 fps sketch target remains unproven. The recorded 1440 × 900 probe
   measured 20.738 ms median and 24.861 ms p95 against a 16.67 ms frame budget.
   See `receipts/2026-11-16-sketch-frame-baseline-4031/` and #4032.
-- The full gate is not green. The unreleased API contract is #3965; the native
-  build-provenance and receipt-reuse gaps are #3978 and #3974. Do not count an
-  excluded or unexecuted scenario as a pass.
+- The full gate is not green. At `0c6943c4a` it stopped before workspace tests
+  because the API revision differs from the released pin (#3965). The separate
+  BDD tooling suite passed 342 tests; see
+  `receipts/2026-11-20-full-gate-3965/`. Native build-provenance and receipt-reuse
+  gaps remain #3978 and #3974. Do not count an excluded or unexecuted scenario
+  as a pass.
 - A Git package-selection diagnostic checks Cargo-selected files against locked
   blobs and detects source or vendor changes. Its host and build inputs remain
   unsealed; it cannot make a receipt reusable. See
