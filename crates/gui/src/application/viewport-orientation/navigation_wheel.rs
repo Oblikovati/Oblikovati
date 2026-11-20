@@ -4,6 +4,8 @@ use super::navigation_bar::{GuiNavigationMode, GuiViewCommand, drag_command};
 use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Key, MouseButton, StyleColor, Ui, WindowFlags};
+#[path = "wheel_decoration.rs"]
+mod wheel_decoration;
 
 const WINDOW: &str = "##navigation-wheel";
 const MENU: &str = "##wheel-menu";
@@ -100,14 +102,16 @@ fn tool_at(layout: WheelLayout, [x, y]: [f32; 2]) -> Option<&'static str> {
         return None;
     }
     let (rim, hub) = layout.tools();
-    let tools = if reach < HUB_SHARE && !hub.is_empty() {
-        hub
-    } else {
-        rim
-    };
+    let in_hub = reach < HUB_SHARE && !hub.is_empty();
+    let tools = if in_hub { hub } else { rim };
     let angle = x.atan2(-y).rem_euclid(std::f32::consts::TAU);
     let share = std::f32::consts::TAU / tools.len() as f32;
-    let place = ((angle + share / 2.) / share) as usize % tools.len();
+    let place = if in_hub {
+        angle / share
+    } else {
+        (angle + share / 2.) / share
+    };
+    let place = place as usize % tools.len();
     Some(tools[place])
 }
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -152,6 +156,7 @@ pub(super) struct NavigationWheel {
     options_opening: bool,
     options_visible: crate::dockable_lifecycle::DockableState,
     dragging: Option<GuiNavigationMode>,
+    popup_was_open: bool,
 }
 impl NavigationWheel {
     pub(super) fn register_dockable(
@@ -169,6 +174,7 @@ impl NavigationWheel {
         self.placed = None;
         self.options_visible.set_open(false);
         self.options_opening = false;
+        self.popup_was_open = false;
     }
     /// It has been up since the part opened, so the view's menu can bring it back.
     pub(super) fn can_repeat(&self) -> bool {
@@ -214,9 +220,11 @@ impl NavigationWheel {
             .build(|| self.contents(ui, state, center, side, actions));
         let options_were_open = self.options_visible.is_open() || self.options_opening;
         self.options_dialog(ui);
-        if !options_were_open {
+        let popup_open = crate::widget_abi::any_popup_open(ui);
+        if !options_were_open && !self.popup_was_open && !popup_open {
             self.close_on_escape(ui);
         }
+        self.popup_was_open = popup_open;
         if !self.open {
             actions.push(GuiShellAction::ViewCommand(GuiViewCommand::Prompt(None)));
         }
@@ -242,16 +250,26 @@ impl NavigationWheel {
         side: f32,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        ui.invisible_button("##wheel-area", [side, side]);
-        let hovered = ui.is_item_hovered();
         let offset = [
             (ui.io().mouse_pos[0] - center[0]) / side,
             (ui.io().mouse_pos[1] - center[1]) / side,
         ];
-        let under = hovered.then(|| tool_at(self.layout, offset)).flatten();
+        let under = ui
+            .is_window_hovered()
+            .then(|| tool_at(self.layout, offset))
+            .flatten();
         self.draw(ui, center, side, under);
+        let cursor = ui.cursor_screen_pos();
+        if !self.layout.is_mini() {
+            self.wheel_controls(ui, center, side);
+        }
+        ui.set_cursor_screen_pos(cursor);
+        ui.invisible_button("##wheel-area", [side, side]);
+        let hovered = ui.is_item_hovered();
+        let right_clicked = ui.is_item_clicked_with_button(MouseButton::Right);
+        let under = hovered.then(|| tool_at(self.layout, offset)).flatten();
         self.press_tools(ui, under, actions);
-        if ui.is_item_clicked_with_button(MouseButton::Right) {
+        if right_clicked {
             ui.open_popup(MENU);
         }
         self.context_menu(ui, state, actions);
@@ -266,7 +284,7 @@ impl NavigationWheel {
             .build();
         let (rim, hub) = self.layout.tools();
         if self.layout.is_mini() {
-            draw_mini_segments(
+            wheel_decoration::draw_mini_segments(
                 &list,
                 center,
                 side,
@@ -279,10 +297,15 @@ impl NavigationWheel {
             }
             return;
         }
+        wheel_decoration::draw_partitions(&list, center, side, rim.len(), !hub.is_empty());
         let text = ui.style_color(StyleColor::Text);
         for (tools, reach) in [(rim, OUTER_REACH), (hub, INNER_REACH)] {
             for (place, tool) in tools.iter().enumerate() {
-                let [across, down] = tool_direction(place, tools.len());
+                let [across, down] = if reach == INNER_REACH {
+                    wheel_decoration::hub_direction(place, tools.len())
+                } else {
+                    tool_direction(place, tools.len())
+                };
                 let at = [
                     center[0] + across * side * reach,
                     center[1] + down * side * reach,
@@ -293,9 +316,23 @@ impl NavigationWheel {
                         .num_segments(16)
                         .filled(true)
                         .build();
+                    list.add_circle(at, height + 2., text)
+                        .num_segments(16)
+                        .build();
                 }
                 list.add_text([at[0] - width / 2., at[1] - height / 2.], text, tool);
             }
+        }
+    }
+    fn wheel_controls(&mut self, ui: &Ui, center: [f32; 2], side: f32) {
+        let top = center[1] - side / 2. + 4.;
+        ui.set_cursor_screen_pos([center[0] + side / 2. - 48., top]);
+        if ui.small_button("v##wheel-menu-button") {
+            ui.open_popup(MENU);
+        }
+        ui.same_line();
+        if ui.small_button("x##wheel-close-button") {
+            self.open = false;
         }
     }
     /// A press on a view tool drags as that tool does; the rest have nothing to move yet.
@@ -423,38 +460,6 @@ fn wheel_flags() -> WindowFlags {
         | WindowFlags::NO_SAVED_SETTINGS
         | WindowFlags::NO_NAV
 }
-fn draw_mini_segments(
-    list: &imgui::DrawListMut,
-    center: [f32; 2],
-    side: f32,
-    count: usize,
-    under: Option<usize>,
-) {
-    let radius = side * RING_SHARE;
-    if let Some(place) = under {
-        let [across, down] = tool_direction(place, count);
-        let at = [
-            center[0] + across * radius * 0.6,
-            center[1] + down * radius * 0.6,
-        ];
-        list.add_circle(at, radius * 0.3, HOVER_FILL)
-            .num_segments(12)
-            .filled(true)
-            .build();
-    }
-    for place in 0..count {
-        let half_turn = std::f32::consts::TAU / count as f32 / 2.;
-        let [across, down] = tool_direction(place, count);
-        let (sin, cos) = half_turn.sin_cos();
-        let edge = [across * cos - down * sin, across * sin + down * cos];
-        list.add_line(
-            center,
-            [center[0] + edge[0] * radius, center[1] + edge[1] * radius],
-            HOVER_FILL,
-        )
-        .build();
-    }
-}
 fn muted_row(ui: &Ui, label: &str) {
     let _muted = ui.begin_disabled(true);
     ui.menu_item(label);
@@ -471,24 +476,5 @@ fn choice_list(ui: &Ui, label: &str, choices: &[&str], chosen: &mut usize) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn the_full_ring_has_its_tools_where_a_pointer_finds_them() {
-        assert_eq!(tool_at(WheelLayout::Full, [0., -0.4]), Some("Zoom"));
-        assert_eq!(tool_at(WheelLayout::Full, [0.4, 0.]), Some("Orbit"));
-        assert_eq!(tool_at(WheelLayout::Full, [0., -0.1]), Some("Center"));
-        assert_eq!(tool_at(WheelLayout::Full, [0.6, 0.]), None);
-    }
-    #[test]
-    fn the_mini_ring_has_rewind_on_its_right() {
-        assert_eq!(
-            tool_at(WheelLayout::MiniViewObject, [0.3, 0.]),
-            Some("Rewind")
-        );
-        assert!(
-            WheelLayout::MiniFull.tools().0.len() > WheelLayout::MiniViewObject.tools().0.len()
-        );
-        assert!(WheelLayout::MiniFull.side() < WheelLayout::Full.side());
-    }
-}
+#[path = "navigation_wheel_tests.rs"]
+mod tests;

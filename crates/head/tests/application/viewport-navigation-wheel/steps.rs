@@ -19,6 +19,9 @@ mod segment_pixels;
 #[cfg(test)]
 #[path = "size_regression.rs"]
 mod size_regression;
+#[cfg(target_os = "linux")]
+#[path = "wheel_controls.rs"]
+mod wheel_controls;
 /// How much further away the "small" block's view stands.
 const SMALL: f64 = 5.;
 const LAYOUTS: [&str; 6] = [
