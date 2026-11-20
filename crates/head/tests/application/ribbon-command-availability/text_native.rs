@@ -3,6 +3,8 @@ use super::super::x11_input;
 use super::{ApplicationWorld, diagnostics, select_sketch_tab};
 use crate::HeadSketchWork;
 use cucumber::{given, then, when};
+#[path = "text_edit.rs"]
+mod text_edit;
 use oblikovati_viewport::ViewportSketchPreview;
 
 #[test]
@@ -93,11 +95,7 @@ fn open_editor(world: &mut ApplicationWorld, anchor: [i32; 2]) {
 }
 
 fn type_content(world: &mut ApplicationWorld, letter: u8) {
-    let label = world.run_in_window("Format Text", "Content").clone();
-    let x = label.minimum[0] - 80.;
-    let y = label.minimum[1] + 8.;
-    x11_input::click(diagnostics::pointer_pixels([x, y]));
-    world.pump(Vec::new());
+    focus_content(world);
     x11_input::press_keysym(u32::from(letter));
     world.pump(Vec::new());
     let Some(ViewportSketchPreview::Text { style, .. }) = world.app().owner.sketch_preview() else {
@@ -123,4 +121,12 @@ fn check_history(world: &mut ApplicationWorld, text: &oblikovati_model::sketch::
     x11_input::press_control_letter(b'y');
     world.pump(Vec::new());
     assert_eq!(world.edited_geometry().texts(), std::slice::from_ref(text));
+}
+
+fn focus_content(world: &mut ApplicationWorld) {
+    let label = world.run_in_window("Format Text", "Content").clone();
+    let x = label.minimum[0] - 80.;
+    let y = label.minimum[1] + 8.;
+    x11_input::click(diagnostics::pointer_pixels([x, y]));
+    world.pump(Vec::new());
 }

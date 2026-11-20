@@ -201,3 +201,45 @@ fn place_samples(
     }
     Ok(placed)
 }
+
+/// Find the nearest point on the analytic glyph shape. For example,
+/// `pick_sketch_text(&style, anchor, scale, cursor)?` for a canvas context menu.
+pub fn pick_sketch_text(
+    style: &SketchTextStyle,
+    anchor: [f64; 2],
+    scale: f64,
+    cursor: [f64; 2],
+) -> Result<Option<[f64; 2]>, String> {
+    let size = working_em(style, anchor, scale)?;
+    if style.content.trim().is_empty() {
+        return Ok(None);
+    }
+    let shape = glyph_shape(style, size)?;
+    let shift = vertical_shift(&shape, &style.v_align.0)?;
+    let (sin, cos) = style.rotation.sin_cos();
+    let [x, y] = [cursor[0] - anchor[0], cursor[1] - anchor[1]];
+    let local = [x * cos + y * sin, y * cos - x * sin - shift];
+    let [x, y] = closest_glyph_point(&shape, local)?;
+    let y = y + shift;
+    Ok(Some([
+        anchor[0] + x * cos - y * sin,
+        anchor[1] + x * sin + y * cos,
+    ]))
+}
+
+fn closest_glyph_point(shape: &topods::Shape, [x, y]: [f64; 2]) -> Result<[f64; 2], String> {
+    use martensite_tkmath::gp::Point3;
+    use martensite_tktopalgo::{
+        brep_builder_api::BRepBuilderAPIMakeVertex, brep_extrema::BRepExtremaDistShapeShape,
+    };
+    let target: topods::Shape = BRepBuilderAPIMakeVertex::new(Point3::new(x, y, 0.))
+        .and_then(|builder| builder.vertex())
+        .map_err(|cause| cause.to_string())?
+        .into();
+    let distance = BRepExtremaDistShapeShape::with_shapes(&target, shape, Default::default())
+        .map_err(|cause| cause.to_string())?;
+    let point = distance
+        .point_on_shape2(1)
+        .map_err(|cause| cause.to_string())?;
+    Ok([point.x(), point.y()])
+}

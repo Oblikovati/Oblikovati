@@ -5,6 +5,12 @@ use super::*;
 #[when("the user clicks \"Cancel\"")]
 #[when("the user clicks Cancel")]
 pub(super) fn cancel_customization(world: &mut ApplicationWorld) {
+    if world.state().sketch_text.is_some() {
+        let at = world.run_in_window("Format Text", "Cancel").center();
+        super::super::x11_input::click(diagnostics::pointer_pixels(at));
+        world.pump(Vec::new());
+        return;
+    }
     for title in [
         "Import Customization Settings",
         "Export Customization Settings",

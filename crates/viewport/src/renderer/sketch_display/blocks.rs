@@ -56,7 +56,14 @@ impl SketchDisplayOverlay {
         match transform_primitive(&entity.primitive, instance) {
             Ok(primitive) => {
                 entity.primitive = primitive;
-                self.append_entity_for(viewer, sketch, &entity, instance.id(), instance.color());
+                self.append_entity_for(
+                    viewer,
+                    sketch,
+                    &entity,
+                    instance.id(),
+                    instance.color(),
+                    None,
+                );
             }
             Err(cause) => self.declines.push(display_decline(
                 sketch,

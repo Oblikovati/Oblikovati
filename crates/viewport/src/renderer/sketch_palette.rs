@@ -35,7 +35,10 @@ impl RenderView {
             .source
             .as_ref()
             .map_or(&[][..], |(source, _)| source.as_slice());
-        SketchDisplayOverlay::replacement(&self.viewer, source, deflection, palette, selected)
+        let mut replacement =
+            SketchDisplayOverlay::replacement(&self.viewer, source, deflection, palette, selected)?;
+        replacement.replaced_text = self.sketches.replaced_text;
+        Ok(replacement)
     }
     fn restyle_preview(
         &self,

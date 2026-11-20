@@ -34,6 +34,10 @@ pub enum GuiSketchTextAction {
     Preview(GuiSketchTextDraft),
     Accept(GuiSketchTextDraft),
     Cancel,
+    Edit {
+        token: u64,
+        entity: oblikovati_model::sketch::SketchEntityId,
+    },
 }
 
 #[derive(Default)]
@@ -98,4 +102,42 @@ fn text_fields(ui: &Ui, draft: &mut GuiSketchTextDraft) -> bool {
         | ui.input_text("Height (mm)", &mut draft.height_mm).build()
         | ui.input_text("Rotation (deg)", &mut draft.rotation_degrees)
             .build()
+}
+
+pub(super) fn edit_menu_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    let Some(menu) = &state.sketch_context else {
+        return;
+    };
+    let Some(entity) = menu.text else {
+        return;
+    };
+    let action = GuiShellAction::SketchText(GuiSketchTextAction::Edit {
+        token: menu.token,
+        entity,
+    });
+    if ui
+        .menu_item_config("Edit Text")
+        .enabled(action.enabled(state))
+        .build()
+    {
+        actions.push(action);
+    }
+}
+
+impl GuiSketchTextAction {
+    pub(crate) fn enabled(&self, state: &GuiCommandState) -> bool {
+        if state.transaction_open {
+            return false;
+        }
+        match self {
+            Self::Edit { token, entity } => {
+                state.sketch_at_ready
+                    && state
+                        .sketch_context
+                        .as_ref()
+                        .is_some_and(|menu| menu.token == *token && menu.text == Some(*entity))
+            }
+            _ => state.sketch_text.is_some(),
+        }
+    }
 }

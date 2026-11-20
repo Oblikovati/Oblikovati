@@ -216,12 +216,17 @@ impl RenderView {
         preview: Option<&crate::ViewportSketchPreview>,
     ) -> Result<bool, String> {
         let deflection = self.sketch_deflection()?;
-        self.preview.submit(
+        let changed = self.preview.submit(
             &self.viewer,
             preview,
             deflection,
             &self.sketch_palette.preview,
-        )
+        )?;
+        let replacement = match preview {
+            Some(crate::ViewportSketchPreview::Text { replaces, .. }) => *replaces,
+            _ => None,
+        };
+        Ok(self.sketches.replace_text(replacement) || changed)
     }
 }
 

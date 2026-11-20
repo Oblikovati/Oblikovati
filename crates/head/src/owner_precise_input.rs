@@ -16,6 +16,7 @@ use oblikovati_viewport::{
     ViewportButton, ViewportEvent, ViewportInput, ViewportKey, ViewportPhysicalKey,
 };
 use relation_marks::relation_marks;
+pub(super) use sketch_context::SketchContextTarget;
 use sketch_context::context_target;
 
 impl<
@@ -335,6 +336,15 @@ impl<
             target.curve = None;
             target.candidates.clear();
         }
+        if target.block.is_none() {
+            target.text = super::sketch_text::pick_existing_text(
+                geometry,
+                edit.plane,
+                position,
+                snapshot.parameters.units().working_scale(),
+                window,
+            )?;
+        }
         if let Some((sketch_id, candidates)) = window.hovered_constraint_glyphs() {
             let relation_ids: std::collections::BTreeSet<_> =
                 geometry.geometric_relation_ids().collect();
@@ -353,6 +363,7 @@ impl<
                 target.glyph = (candidates.len() == 1).then_some(candidates[0].constraint);
                 target.glyph_candidates = candidates;
                 target.block = None;
+                target.text = None;
                 target.point = None;
                 target.curve = None;
                 target.candidates.clear();
@@ -438,20 +449,6 @@ impl Default for SketchCommandMemory {
 pub(super) enum TriadPick {
     Source,
     Target,
-}
-/// What a right press landed on.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct SketchContextTarget {
-    pub(super) token: u64,
-    pub(super) point: Option<SketchEntityId>,
-    pub(super) curve: Option<SketchEntityId>,
-    pub(super) block: Option<SketchEntityId>,
-    pub(super) glyph: Option<oblikovati_model::sketch::SketchConstraintId>,
-    pub(super) glyph_candidates: Vec<oblikovati_gui::GuiConstraintCandidate>,
-    pub(super) generation: u64,
-    pub(super) document: u64,
-    pub(super) sketch: oblikovati_model::document_sketch::DocumentSketchId,
-    pub(super) candidates: Vec<oblikovati_gui::GuiSketchCandidate>,
 }
 fn cancels_pick(event: ViewportEvent) -> bool {
     matches!(

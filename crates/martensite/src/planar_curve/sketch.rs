@@ -98,7 +98,7 @@ pub use presentation::{
     SketchDisplayDecline, SketchDisplayEntity, SketchDisplayPrimitive, SketchDisplayReport,
     sample_sketch_display, sample_sketch_entity,
 };
-pub use text_outline::sample_sketch_text;
+pub use text_outline::{pick_sketch_text, sample_sketch_text};
 
 mod measure;
 pub use measure::{

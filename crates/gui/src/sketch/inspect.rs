@@ -91,6 +91,8 @@ pub struct GuiSketchContext {
     pub point: Option<u64>,
     /// The placed block under the context pointer, when one was hit.
     pub block: Option<oblikovati_model::sketch::SketchEntityId>,
+    /// The authored text hit by the context pointer.
+    pub text: Option<oblikovati_model::sketch::SketchEntityId>,
     /// The geometric constraint whose displayed glyph was hit.
     pub glyph: Option<oblikovati_model::sketch::SketchConstraintId>,
     /// Exact overlapping glyphs captured when this context opened.
@@ -234,6 +236,7 @@ pub(crate) fn canvas_menu(
             super::marking_menu::draw(ui, menu, state, actions);
         }
     }
+    super::text::edit_menu_row(ui, state, actions);
     repeat_row(ui, state, actions);
     center_point_row(ui, state, actions);
     explode_block_row(ui, state, actions);

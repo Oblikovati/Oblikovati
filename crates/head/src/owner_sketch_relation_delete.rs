@@ -61,6 +61,7 @@ impl<
             token: target.token,
             point: point.map(|point| point.0),
             block: target.block,
+            text: target.text,
             glyph: target
                 .glyph
                 .filter(|id| geometry.has_geometric_relation(*id)),

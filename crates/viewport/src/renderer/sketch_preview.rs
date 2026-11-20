@@ -81,6 +81,7 @@ fn build(
             anchor,
             style,
             working_scale,
+            ..
         } => {
             return text_preview(
                 viewer,

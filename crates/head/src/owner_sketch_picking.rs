@@ -319,7 +319,8 @@ fn eligible_curves(
         let kind = query
             .entity_kind(entity)
             .map_err(|cause| cause.to_string())?;
-        if filter.accepts(&kind) {
+        // Text has a glyph compound. The context menu asks its analytic text picker separately.
+        if kind != oblikovati_api::types::SKETCH_ENTITY_TEXT && filter.accepts(&kind) {
             curves.push(entity);
         }
     }

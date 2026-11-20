@@ -18,6 +18,10 @@ pub enum ViewportSketchPreview {
         anchor: [f64; 2],
         style: Box<oblikovati_api::types::SketchTextStyle>,
         working_scale: f64,
+        replaces: Option<(
+            oblikovati_model::document_sketch::DocumentSketchId,
+            SketchEntityId,
+        )>,
     },
 }
 impl ViewportSketchPreview {

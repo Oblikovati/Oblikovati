@@ -2,10 +2,25 @@
 //! Analytic candidates for a sketch context menu.
 use super::*;
 
+/// What a right press landed on.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(in crate::owner) struct SketchContextTarget {
+    pub(in crate::owner) token: u64,
+    pub(in crate::owner) point: Option<SketchEntityId>,
+    pub(in crate::owner) curve: Option<SketchEntityId>,
+    pub(in crate::owner) block: Option<SketchEntityId>,
+    pub(in crate::owner) text: Option<SketchEntityId>,
+    pub(in crate::owner) glyph: Option<oblikovati_model::sketch::SketchConstraintId>,
+    pub(in crate::owner) glyph_candidates: Vec<oblikovati_gui::GuiConstraintCandidate>,
+    pub(in crate::owner) generation: u64,
+    pub(in crate::owner) document: u64,
+    pub(in crate::owner) sketch: oblikovati_model::document_sketch::DocumentSketchId,
+    pub(in crate::owner) candidates: Vec<oblikovati_gui::GuiSketchCandidate>,
+}
 /// A right press acts on a point within this reach, in pixels.
 const CONTEXT_POINT_REACH: f64 = 6.;
 
-pub(super) fn context_target(
+pub(in crate::owner) fn context_target(
     geometry: &Sketch2D,
     edit: crate::HeadSketchEdit,
     generation: u64,
@@ -24,6 +39,7 @@ pub(super) fn context_target(
         point: points.first().map(|(_, id)| *id),
         curve,
         block: None,
+        text: None,
         glyph: None,
         glyph_candidates: Vec::new(),
         generation,

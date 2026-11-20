@@ -9,11 +9,19 @@ use oblikovati_martensite::planar_curve::sketch::{
 use oblikovati_model::theme::Rgba;
 #[path = "sketch_display/blocks.rs"]
 pub(super) mod blocks;
+type SketchTextIdentity = (
+    oblikovati_model::document_sketch::DocumentSketchId,
+    oblikovati_model::sketch::SketchEntityId,
+);
+
 #[derive(Default)]
 pub(super) struct SketchDisplayOverlay {
     pub(super) source: Option<(Vec<ViewportSketchDisplay>, f64)>,
     pub(super) declines: Vec<ViewportSketchDecline>,
     structures: Vec<SketchStructure>,
+    text_structures:
+        std::collections::BTreeMap<(u64, oblikovati_model::sketch::SketchEntityId), usize>,
+    pub(super) replaced_text: Option<SketchTextIdentity>,
     color: Rgba,
     selected_color: Rgba,
     selected: crate::ViewportSketchSelection,
@@ -34,7 +42,8 @@ impl SketchDisplayOverlay {
         if self.matches(source, deflection, palette, selected) {
             return Ok(false);
         }
-        let replacement = Self::replacement(viewer, source, deflection, palette, selected)?;
+        let mut replacement = Self::replacement(viewer, source, deflection, palette, selected)?;
+        replacement.replaced_text = self.replaced_text;
         replacement.show();
         *self = replacement;
         Ok(true)
@@ -74,8 +83,13 @@ impl SketchDisplayOverlay {
         Ok(result)
     }
     pub(super) fn show(&self) {
-        for structure in &self.structures {
-            structure.0.display();
+        let hidden = self
+            .replaced_text
+            .and_then(|id| self.text_structure_index(id));
+        for (index, structure) in self.structures.iter().enumerate() {
+            if Some(index) != hidden {
+                structure.0.display();
+            }
         }
     }
     fn append_sketch(
@@ -148,7 +162,9 @@ impl SketchDisplayOverlay {
         sketch: &ViewportSketchDisplay,
         entity: &SketchDisplayEntity,
     ) {
-        self.append_entity_for(viewer, sketch, entity, entity.entity, None);
+        let text = matches!(entity.primitive, SketchDisplayPrimitive::GlyphEdges(_))
+            .then_some((sketch.sketch, entity.entity));
+        self.append_entity_for(viewer, sketch, entity, entity.entity, None, text);
     }
     fn append_entity_for(
         &mut self,
@@ -157,6 +173,7 @@ impl SketchDisplayOverlay {
         entity: &SketchDisplayEntity,
         identity: oblikovati_model::sketch::SketchEntityId,
         instance_color: Option<&oblikovati_api::types::Color>,
+        text: Option<SketchTextIdentity>,
     ) {
         if matches!(&entity.primitive, SketchDisplayPrimitive::GlyphEdges(edges) if edges.is_empty())
         {
@@ -173,12 +190,40 @@ impl SketchDisplayOverlay {
             &self.selected_color,
         );
         match build_entity(viewer, sketch, entity, &color, false) {
-            Ok(structure) => self.structures.push(structure),
+            Ok(structure) => {
+                if let Some((sketch_id, entity_id)) = text {
+                    self.text_structures
+                        .insert((sketch_id.0, entity_id), self.structures.len());
+                }
+                self.structures.push(structure);
+            }
             Err(cause) => self.declines.push(display_decline(sketch, identity, cause)),
         }
     }
+    fn text_structure_index(&self, (sketch, entity): SketchTextIdentity) -> Option<usize> {
+        self.text_structures.get(&(sketch.0, entity)).copied()
+    }
+
+    pub(super) fn replace_text(&mut self, target: Option<SketchTextIdentity>) -> bool {
+        if target == self.replaced_text {
+            return false;
+        }
+        if let Some(index) = target.and_then(|text| self.text_structure_index(text)) {
+            self.structures[index].0.erase();
+        }
+        if let Some(index) = self
+            .replaced_text
+            .and_then(|text| self.text_structure_index(text))
+        {
+            self.structures[index].0.display();
+        }
+        self.replaced_text = target;
+        true
+    }
+
     pub(super) fn clear(&mut self) {
         self.structures.clear();
+        self.text_structures.clear();
         self.declines.clear();
         self.source = None;
     }

@@ -23,6 +23,7 @@ fn native_sketch_text_draws_matching_preview_and_committed_pixels() {
         anchor: ANCHOR,
         style: Box::new(style.clone()),
         working_scale: WORKING_SCALE,
+        replaces: None,
     };
     view.set_sketch_preview(Some(&preview)).unwrap();
     let draft = lit_pixels(&view.redraw().unwrap());
@@ -66,4 +67,55 @@ fn lit_pixels(capture: &ViewportCapture) -> Vec<bool> {
         .iter()
         .map(|pixel| pixel[..3].iter().any(|&channel| channel != 0))
         .collect()
+}
+
+#[test]
+fn native_text_edit_preview_masks_the_original_and_cancel_restores_it() {
+    let (runtime, mut view) = open_display("Edit sketch text");
+    let original = committed_text(fixture_text("OO"));
+    view.set_sketch_display(std::slice::from_ref(&original))
+        .unwrap();
+    let before = view.redraw().unwrap().rgba;
+    let preview = replacement_preview(fixture_text("I"));
+    view.set_sketch_preview(Some(&preview)).unwrap();
+    let during = lit_pixels(&view.redraw().unwrap());
+    assert!(during.iter().filter(|&&pixel| pixel).count() > 0);
+    assert_ne!(view.redraw().unwrap().rgba, before);
+    view.set_sketch_preview(None).unwrap();
+    assert_eq!(view.redraw().unwrap().rgba, before);
+    assert_only_replacement_is_visible(&mut view, &preview, &during);
+    close_display(&runtime, &mut view);
+}
+
+fn fixture_text(content: &str) -> SketchTextStyle {
+    SketchTextStyle {
+        content: content.into(),
+        family: "DejaVu Sans".into(),
+        height: 0.8,
+        ..Default::default()
+    }
+}
+
+fn replacement_preview(style: SketchTextStyle) -> ViewportSketchPreview {
+    ViewportSketchPreview::Text {
+        plane: SketchPlane::xy(),
+        anchor: ANCHOR,
+        style: Box::new(style),
+        working_scale: WORKING_SCALE,
+        replaces: Some((DocumentSketchId(1), Id(2))),
+    }
+}
+
+fn assert_only_replacement_is_visible(
+    view: &mut Viewport,
+    preview: &ViewportSketchPreview,
+    during: &[bool],
+) {
+    view.set_sketch_display(&[]).unwrap();
+    view.set_sketch_preview(Some(preview)).unwrap();
+    let alone = lit_pixels(&view.redraw().unwrap());
+    assert!(
+        alone == during,
+        "original text was visible during its replacement preview"
+    );
 }

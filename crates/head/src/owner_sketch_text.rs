@@ -4,7 +4,10 @@ use super::{sketch_picking::ordinary_click, *};
 use crate::{HeadSketchEdit, HeadWindow, sketch_tool::SketchToolState};
 use oblikovati_api::types::SketchTextStyle;
 use oblikovati_gui::{GuiSketchTextAction, GuiSketchTextDraft};
-use oblikovati_model::document_sketch::DocumentSketchId;
+use oblikovati_model::{
+    document_sketch::DocumentSketchId,
+    sketch::{Sketch2D, SketchEntityId, SketchPlane, SketchText2D},
+};
 use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportKey, ViewportSketchPreview};
 
 pub(crate) struct SketchTextTool {
@@ -17,6 +20,7 @@ pub(crate) struct SketchTextTool {
 struct TextPlacementDraft {
     anchor: [f64; 2],
     fields: GuiSketchTextDraft,
+    existing: Option<SketchText2D>,
 }
 
 impl<
@@ -69,7 +73,11 @@ impl<
                 pressed: true
             })
         ) {
-            if tool.placement.take().is_some() {
+            if tool
+                .placement
+                .take()
+                .is_some_and(|placement| placement.existing.is_none())
+            {
                 self.sketch_tool = Some(SketchToolState::Text(tool));
                 self.sketch_text_prompt();
             } else {
@@ -102,12 +110,16 @@ impl<
         if !self.sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation) {
             return None;
         }
-        let style = text_style(&placement.fields).ok()?;
+        let style = placement.style().ok()?;
         Some(ViewportSketchPreview::Text {
             plane: tool.edit.plane,
             anchor: placement.anchor,
             style: Box::new(style),
             working_scale: tool.working_scale,
+            replaces: placement
+                .existing
+                .as_ref()
+                .map(|text| (tool.edit.sketch, text.id)),
         })
     }
 
@@ -116,6 +128,9 @@ impl<
         action: GuiSketchTextAction,
     ) -> Result<bool, String> {
         self.check_sketch_tool_context();
+        if let GuiSketchTextAction::Edit { token, entity } = action {
+            return self.start_text_edit(token, entity);
+        }
         let Some(SketchToolState::Text(tool)) = &mut self.sketch_tool else {
             return Ok(false);
         };
@@ -124,23 +139,102 @@ impl<
         };
         match action {
             GuiSketchTextAction::Preview(fields) => placement.fields = fields,
-            GuiSketchTextAction::Cancel => {
-                tool.placement = None;
-                self.sketch_text_prompt();
-            }
+            GuiSketchTextAction::Cancel => return self.cancel_text_editor(),
             GuiSketchTextAction::Accept(fields) => return self.accept_sketch_text(fields),
+            GuiSketchTextAction::Edit { .. } => unreachable!("handled before reading the draft"),
         }
         Ok(true)
+    }
+
+    fn cancel_text_editor(&mut self) -> Result<bool, String> {
+        let Some(SketchToolState::Text(mut tool)) = self.sketch_tool.take() else {
+            return Ok(false);
+        };
+        if tool
+            .placement
+            .take()
+            .is_some_and(|draft| draft.existing.is_none())
+        {
+            self.sketch_tool = Some(SketchToolState::Text(tool));
+            self.sketch_text_prompt();
+        } else {
+            self.command_notice = Some(DesktopCommandNotice::Ready);
+        }
+        Ok(true)
+    }
+
+    fn start_text_edit(&mut self, token: u64, entity: SketchEntityId) -> Result<bool, String> {
+        let (edit, generation) = self.capture_sketch_tool_context()?;
+        let target_matches = self.sketch_memory.context.as_ref().is_some_and(|target| {
+            target.token == token
+                && target.text == Some(entity)
+                && target.generation == generation
+                && target.document == edit.document
+                && target.sketch == edit.sketch
+        });
+        if !target_matches || self.sketch_tool.is_some() {
+            return Err(format!(
+                "text context {token}, entity {entity:?}: expected the current glyph in a Ready sketch"
+            ));
+        }
+        self.sketch_tool = Some(SketchToolState::Text(Box::new(
+            self.existing_text_tool(edit, generation, entity)?,
+        )));
+        self.sketch_memory.context = None;
+        Ok(true)
+    }
+
+    fn existing_text_tool(
+        &self,
+        edit: HeadSketchEdit,
+        generation: u64,
+        entity: SketchEntityId,
+    ) -> Result<SketchTextTool, String> {
+        let snapshot = self
+            .files
+            .workspace()
+            .session(edit.document)
+            .map_err(|e| e.to_string())?
+            .snapshot();
+        let geometry = snapshot
+            .sketches
+            .get(edit.sketch)
+            .map_err(|e| e.to_string())?
+            .geometry();
+        let text = geometry.text(entity).map_err(|e| e.to_string())?.clone();
+        let anchor = geometry
+            .point(text.anchor)
+            .map_err(|e| e.to_string())?
+            .position;
+        let fields = fields_from_style(&text.style);
+        Ok(SketchTextTool {
+            edit,
+            generation,
+            working_scale: snapshot.parameters.units().working_scale(),
+            placement: Some(TextPlacementDraft {
+                anchor,
+                fields,
+                existing: Some(text),
+            }),
+        })
     }
 
     fn accept_sketch_text(&mut self, fields: GuiSketchTextDraft) -> Result<bool, String> {
         let Some(SketchToolState::Text(mut tool)) = self.sketch_tool.take() else {
             return Ok(false);
         };
+        let editing = tool
+            .placement
+            .as_ref()
+            .is_some_and(|draft| draft.existing.is_some());
         let result = self.commit_text_candidate(&mut tool, fields);
-        self.sketch_tool = Some(SketchToolState::Text(tool));
-        if result.is_ok() {
-            self.sketch_text_prompt();
+        if editing && result.is_ok() {
+            self.command_notice = Some(DesktopCommandNotice::Ready);
+        } else {
+            self.sketch_tool = Some(SketchToolState::Text(tool));
+            if result.is_ok() {
+                self.sketch_text_prompt();
+            }
         }
         result
     }
@@ -154,14 +248,33 @@ impl<
             return Ok(false);
         };
         placement.fields = fields;
-        if !placement.fields.content.trim().is_empty() {
-            let style = text_style(&placement.fields)?;
+        if let Some(existing) = &placement.existing {
+            let style = placement.style()?;
+            verify_text_outline(&style, placement.anchor, tool.working_scale)?;
+            self.change_sketch_text(tool.edit, existing.id, style)?;
+        } else if !placement.fields.content.trim().is_empty() {
+            let style = placement.style()?;
             verify_text_outline(&style, placement.anchor, tool.working_scale)?;
             self.commit_sketch_text(tool.edit, placement.anchor, style)?;
             tool.generation = self.capture_sketch_tool_context()?.1;
         }
         tool.placement = None;
         Ok(true)
+    }
+
+    fn change_sketch_text(
+        &mut self,
+        edit: HeadSketchEdit,
+        entity: SketchEntityId,
+        style: SketchTextStyle,
+    ) -> Result<(), String> {
+        self.files
+            .commands(edit.document)
+            .map_err(|e| e.to_string())?
+            .run("Edit sketch text", |snapshot, _| {
+                snapshot.edit_sketch_text(edit.sketch, entity, style)
+            })
+            .map_err(|e| e.to_string())
     }
 
     fn commit_sketch_text(
@@ -201,6 +314,7 @@ fn pick_text_anchor(
     tool.placement = Some(TextPlacementDraft {
         anchor,
         fields: GuiSketchTextDraft::default(),
+        existing: None,
     });
     Ok(true)
 }
@@ -247,4 +361,81 @@ fn verify_text_outline(
         maximum_curve_points: 4096,
     };
     sample_sketch_text(style, anchor, options).map(|_| ())
+}
+
+impl TextPlacementDraft {
+    fn style(&self) -> Result<SketchTextStyle, String> {
+        let draft = text_style(&self.fields)?;
+        let Some(text) = &self.existing else {
+            return Ok(draft);
+        };
+        let initial = fields_from_style(&text.style);
+        let mut style = text.style.clone();
+        style.content = draft.content;
+        style.family = draft.family;
+        if self.fields.height_mm != initial.height_mm {
+            style.height = draft.height;
+        }
+        if self.fields.rotation_degrees != initial.rotation_degrees {
+            style.rotation = draft.rotation;
+        }
+        Ok(style)
+    }
+}
+
+fn fields_from_style(style: &SketchTextStyle) -> GuiSketchTextDraft {
+    GuiSketchTextDraft {
+        content: style.content.clone(),
+        family: style.family.clone(),
+        height_mm: (style.height * 10.).to_string(),
+        rotation_degrees: style.rotation.to_degrees().to_string(),
+    }
+}
+
+pub(super) fn pick_existing_text(
+    geometry: &Sketch2D,
+    plane: SketchPlane,
+    pixel: [i32; 2],
+    scale: f64,
+    window: &dyn HeadWindow,
+) -> Result<Option<SketchEntityId>, String> {
+    if geometry.texts().is_empty() {
+        return Ok(None);
+    }
+    let Some(cursor) = window.sketch_point(pixel, plane)? else {
+        return Ok(None);
+    };
+    let mut candidates = Vec::new();
+    for text in geometry.texts() {
+        if let Some(distance) =
+            text_hit_distance(geometry, text, cursor, scale, plane, pixel, window)?
+        {
+            candidates.push((distance, text.id));
+        }
+    }
+    candidates.sort_by(|first, next| first.0.total_cmp(&next.0).then(first.1.cmp(&next.1)));
+    Ok(candidates.first().map(|(_, id)| *id))
+}
+
+fn text_hit_distance(
+    geometry: &Sketch2D,
+    text: &SketchText2D,
+    cursor: [f64; 2],
+    scale: f64,
+    plane: SketchPlane,
+    pixel: [i32; 2],
+    window: &dyn HeadWindow,
+) -> Result<Option<f64>, String> {
+    use oblikovati_martensite::planar_curve::sketch::pick_sketch_text;
+    let anchor = geometry
+        .point(text.anchor)
+        .map_err(|cause| cause.to_string())?
+        .position;
+    // Unavailable fonts already have an entity-specific display decline.
+    let Ok(Some(point)) = pick_sketch_text(&text.style, anchor, scale, cursor) else {
+        return Ok(None);
+    };
+    let projected = window.sketch_pixel(plane, point)?;
+    let distance = super::sketch_picking::screen_distance(projected, pixel);
+    Ok((distance <= 6.).then_some(distance))
 }
