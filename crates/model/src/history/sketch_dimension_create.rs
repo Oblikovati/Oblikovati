@@ -68,10 +68,9 @@ impl DocumentSnapshot {
         let super::sketch_placement_recipe::inference::PlacementSolveContext { datums, transient } =
             context;
         let geometry = self.prepare_dimension_creation(sketch, input, options, datums)?;
-        let prior_redundancy =
+        let (prior_redundancy, anchors) =
             self.dimension_prior_redundancy(sketch, &geometry, options, datums)?;
-        let probe =
-            self.prepare_dimension_role(sketch, &geometry, input, policy, options, datums)?;
+        let probe = self.prepare_dimension_role(input, policy, prior_redundancy, anchors);
         let reserved = self.reserve_dimension_creation(sketch, ids)?;
         let mut candidate = self.clone();
         candidate.append_owned_dimension(sketch, input, geometry, &reserved)?;
@@ -107,11 +106,12 @@ impl DocumentSnapshot {
         geometry: &Sketch2D,
         options: SolveOptions,
         datums: AuthoringDatums<'_>,
-    ) -> Result<usize, SketchError> {
+    ) -> Result<(usize, Vec<crate::sketch::SketchPoint2D>), SketchError> {
         let anchors = self.sketch_authoring_anchors(sketch, datums)?;
-        Ok(geometry
+        let prior = geometry
             .analyze_with_grounded_points(&self.parameters, &anchors, options.rank_tolerance)?
-            .redundant_equations)
+            .redundant_equations;
+        Ok((prior, anchors))
     }
     fn confirm_dimension_creation(
         &self,

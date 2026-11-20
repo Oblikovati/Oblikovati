@@ -15,6 +15,7 @@ impl SketchPlacementRecipe {
             members: super::geometry::chain_members(points.len(), closed),
             relations: vec![],
             fields: chain_tail_fields(points, closed),
+            picked_points: Default::default(),
             circular_checks: vec![],
         };
         recipe.validate()?;

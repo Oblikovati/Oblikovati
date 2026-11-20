@@ -10,6 +10,7 @@ impl SketchPlacementRecipe {
         require_arc_points(center, endpoints)?;
         let [start, end] = endpoints;
         let recipe = Self {
+            picked_points: Default::default(),
             circular_checks: Vec::new(),
             points: vec![center, start, end],
             members: vec![arc_member(ccw)],

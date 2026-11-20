@@ -1,6 +1,6 @@
 # Rust port status
 
-Last checked: 2026-11-19. Recheck the branch, issues, and scenario source before
+Last checked: 2026-11-20. Recheck the branch, issues, and scenario source before
 using this status; the live scenario directory can change.
 
 ## Start here
@@ -14,6 +14,26 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- Selected sketch point identity (#4179): the shared placement recipe now
+  retains explicitly picked point IDs and preserves existing geometry. Session
+  tests cover preview, commit, dimension edit, and undo/redo. Midpoint Line
+  still needs to pass its selected point into this seam and verify it through
+  native input. The 1,000-line selected-point preview median was 14.182 ms
+  before rendering; GUI frame rate remains unverified. See
+  `receipts/2026-11-20-picked-point-4179/`.
+- Ribbon Appearance (#3957): the 2026-11-20 diagnostic passed 14 of 18
+  scenarios. Three failed at missing Tools panels; one used an unpinned
+  expansion where the fixture notes require a pinned expansion. The shared
+  part setup also lacks the visible solid required by the fixture notes.
+  `BLOCKERS.md` changed during the run, so the result is not inventory
+  evidence. See `receipts/2026-11-20-ribbon-appearance-diagnostic/`. A native
+  mouse test passes the pinned expansion through Text Off and Normal; see
+  `receipts/2026-11-20-ribbon-pinned-3957/`.
+- Midpoint Line (#4178): the scenario source changed and now requires an
+  Inventor fixture for all six scenarios. Inventor interop is deferred. The
+  unfinished feature worktree is retained, and a native YAML fixture is
+  requested in `BLOCKERS.md`. Earlier runs do not verify the current source.
+  Selected-origin identity is tracked separately in #4179.
 - Constraint Settings (#4158): a full diagnostic on the uncommitted feature
   worktree passed five of eight scenarios with the feature and support hashes
   unchanged during the run. Three scenarios stopped at undefined setup steps;
@@ -220,10 +240,14 @@ using this status; the live scenario directory can change.
 
 ## Work queue
 
-1. Work on Constraint Settings (#4158), including its shared precondition
-   (#4159) and inference persistence (#4160). Revisit `new-sketch` when its
-   accumulated-document fixture (#4011) and circular patterns (#3905) are
-   available. Defer Inventor-file, assembly, and 3D-sketch scenarios.
+1. Diagnose Ribbon Appearance (#3957) against its current source. Its fixture
+   notes require a visible solid, but the shared part setup creates an empty
+   part; clarification was requested. Midpoint Line (#4178)
+   now requires a deferred Inventor fixture; retain its unfinished worktree.
+   Constraint Settings (#4158) is paused with uncommitted work while its
+   fixture questions and Relax Mode (#4164) remain open. Revisit `new-sketch`
+   when fixture #4011 and circular patterns #3905 are available. Defer
+   Inventor-file, assembly, and 3D-sketch scenarios.
 2. Complete the evaluation owner and safe dirty-prefix replay in #4079, with
    generation, policy, invalidation, naming, and replay-count evidence.
 3. Repair and verify the GUI integration targets in #4078. The separate

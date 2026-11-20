@@ -13,6 +13,7 @@ impl SketchPlacementRecipe {
             }],
             relations: vec![],
             fields: vec![],
+            picked_points: Default::default(),
             circular_checks: vec![],
         })
     }

@@ -95,3 +95,26 @@ fn open_native_title_menu(world: &mut ApplicationWorld) {
     super::super::x11_input::right_click(position);
     world.pump(Vec::new());
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_pinned_expansion_survives_appearance_changes() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_modify_native(&mut world);
+    let pin = world.run("Pin");
+    let position = [pin.minimum[0] + 6., pin.center()[1]];
+    super::super::x11_input::click(diagnostics::pointer_pixels(position));
+    world.pump(Vec::new());
+    open_native_title_menu(&mut world);
+    click_native(&mut world, "Ribbon Appearance");
+    click_native(&mut world, "Text Off");
+    assert!(diagnostics::window_geometry(WINDOW).is_some());
+    icon_only_ribbon(&mut world);
+    open_native_title_menu(&mut world);
+    click_native(&mut world, "Ribbon Appearance");
+    click_native(&mut world, "Normal");
+    assert!(diagnostics::window_geometry(WINDOW).is_some());
+    world.expect_text("Move Bodies");
+    world.close();
+}
