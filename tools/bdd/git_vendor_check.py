@@ -100,6 +100,7 @@ def verify_git_vendor(
     vendor: Path,
     inventory: Mapping[str, object],
     repositories: Mapping[str, Path],
+    allow_partial: bool = False,
 ) -> dict[str, object]:
     """Compare Git crate files and report the unverified manifests; example: verify_git_vendor(lock, vendor, inventory, repositories)."""
     packages = locked_packages(lock)
@@ -108,13 +109,12 @@ def verify_git_vendor(
         key: item for key, item in packages.items() if item.source.startswith("git+")
     }
     sources = {item.source for item in git_packages.values()}
-    if set(repositories) != sources:
-        raise ValueError(
-            f"Git repositories {sorted(repositories)!r}: expected exactly {sorted(sources)!r}"
-        )
+    selected = set(repositories)
+    if not selected.issubset(sources) or (allow_partial and not selected) or (not allow_partial and selected != sources):
+        raise ValueError(f"Git repositories {sorted(repositories)!r}: expected {'a nonempty subset of' if allow_partial else 'exactly'} {sorted(sources)!r}")
     checked = 0
     manifests: list[str] = []
-    for source in sorted(sources):
+    for source in sorted(selected):
         revision = source.rpartition("#")[2]
         if not re.fullmatch(r"[0-9a-f]{40}", revision):
             raise ValueError(f"Git source {source!r}: expected a full locked SHA-1")
@@ -137,13 +137,15 @@ def verify_git_vendor(
                 manifests.append(f"{key[0]} {key[1]}")
     return {
         "git_packages_partially_checked": len(manifests),
+        "git_sources_unchecked": sorted(sources - selected),
+        "git_packages_unchecked": sorted(f"{key[0]} {key[1]}" for key, item in git_packages.items() if item.source not in selected),
         "git_files_checked": checked,
         "git_manifest_declarations_checked": len(manifests),
         "git_manifest_check_scope": [
             "dependencies", "dev-dependencies", "build-dependencies",
             "target", "features", "no-build-script", "conventional-library", "target-autodiscovery", "package-links", "bin-example-test-bench-targets", "selected-package-metadata", "lints", "package-default-run-resolver-metadata", "badges-hints", "explicit-readme-and-direct-license-file", "portable-explicit-workspace-paths", "tracked-highest-priority-default-readme",
         ],
-        "git_manifests_unverified": manifests,
+        "git_manifests_unverified": sorted(f"{key[0]} {key[1]}" for key in git_packages),
         "complete": False,
         "reusable": False,
     }
@@ -161,6 +163,7 @@ def main() -> None:
         required=True,
         metavar=("SOURCE", "REPO"),
     )
+    parser.add_argument("--allow-partial", action="store_true", help="check a nonempty subset; unchecked sources remain explicit")
     args = parser.parse_args()
     repositories = {source: Path(path) for source, path in args.git_repo}
     if len(repositories) != len(args.git_repo):
@@ -172,6 +175,7 @@ def main() -> None:
                 args.vendor,
                 snapshot_runtime(args.vendor),
                 repositories,
+                allow_partial=args.allow_partial,
             ),
             indent=2,
         )

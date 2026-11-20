@@ -303,6 +303,11 @@ metadata. It reads Git objects, not checkout files. The check conservatively
 requires tracked package files, apart from Cargo's VCS metadata exclusions.
 A package that omits tracked files or inherits its version is refused.
 
+For diagnosis, `--allow-partial` accepts a nonempty subset of locked Git
+sources. The output names every unchecked source and package, retains every
+Git manifest as unverified, and remains non-reusable. The linked build probe
+still requires mappings for every locked Git source.
+
 Cargo 1.99.0 [normalizes Git vendor manifests](https://github.com/rust-lang/cargo/blob/5f94df4789f005f9a352888e8355ffc645b7ed0e/src/ops/cargo_vendor.rs#L454-L466)
 after resolving workspace inheritance and filtering build scripts and targets.
 The Git check now independently compares the parsed dependency, development and

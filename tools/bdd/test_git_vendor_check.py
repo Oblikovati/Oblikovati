@@ -4,6 +4,7 @@
 import hashlib
 import json
 import os
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -81,6 +82,35 @@ class GitVendorCheckTests(unittest.TestCase):
         self.assertEqual(result["git_manifests_unverified"], ["witness 1.2.3"])
         self.assertFalse(result["complete"])
         self.assertFalse(result["reusable"])
+
+    def test_partial_mode_reports_unchecked_sources_and_keeps_strict_default(self) -> None:
+        other = self.fixture.vendor / "other"
+        shutil.copytree(self.fixture.package, other)
+        manifest = other / "Cargo.toml"
+        manifest.write_text(manifest.read_text().replace('name="witness"', 'name="other"'))
+        checksum = json.loads((other / ".cargo-checksum.json").read_text())
+        checksum["files"]["Cargo.toml"] = hashlib.sha256(manifest.read_bytes()).hexdigest()
+        (other / ".cargo-checksum.json").write_text(json.dumps(checksum, sort_keys=True, separators=(",", ":")))
+        missing = "git+https://example.invalid/other?rev=" + "b" * 40 + "#" + "b" * 40
+        lock = self.fixture.lock + f'[[package]]\nname="other"\nversion="1.2.3"\nsource="{missing}"\n'.encode()
+        repositories = {self.fixture.source: self.fixture.repo}
+        observed = snapshot_runtime(self.fixture.vendor)
+        with self.assertRaisesRegex(ValueError, "expected exactly"):
+            verify_git_vendor(lock, self.fixture.vendor, observed, repositories)
+        result = verify_git_vendor(lock, self.fixture.vendor, observed, repositories, allow_partial=True)
+        self.assertEqual(result["git_sources_unchecked"], [missing])
+        self.assertEqual(result["git_packages_unchecked"], ["other 1.2.3"])
+        self.assertEqual(result["git_manifests_unverified"], ["other 1.2.3", "witness 1.2.3"])
+        self.assertFalse(result["complete"])
+        self.assertFalse(result["reusable"])
+        checked_file = self.fixture.package / "src/lib.rs"
+        checked_file.write_text("tampered\n")
+        with self.assertRaises(ValueError):
+            verify_git_vendor(lock, self.fixture.vendor, snapshot_runtime(self.fixture.vendor), repositories, allow_partial=True)
+        with self.assertRaisesRegex(ValueError, "nonempty subset"):
+            verify_git_vendor(lock, self.fixture.vendor, observed, {}, allow_partial=True)
+        with self.assertRaisesRegex(ValueError, "nonempty subset"):
+            verify_git_vendor(lock, self.fixture.vendor, observed, {"unexpected": self.fixture.repo}, allow_partial=True)
 
     def test_forged_vendor_checksum_does_not_hide_modified_blob(self) -> None:
         (self.fixture.package / "src/lib.rs").write_text("changed")
