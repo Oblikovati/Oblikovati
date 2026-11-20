@@ -1,73 +1,60 @@
-# Oblikovati Rust application
+# Oblikovati
 
-This branch contains the Rust application port in progress. It uses the Rust
-contract in **Oblikovati.API**. The native Vulkan/TKV3D viewport uses the
-**Martensite** repository. The model adapter still consumes the previous
-**RustyCADKernel** packages while its Martensite migration is qualified. The
-[v0.11 release intake](architecture/rust-port/implementation-martensite-0-11.md)
-records the current renderer and authored sketch geometry pins and qualification.
+Oblikovati is an open-source, parametric mechanical CAD application. It is
+designed to build 3D parts from sketches, dimensions, and features. Parameters
+and feature history let you change a design and recompute its geometry.
 
-Go-kernel capabilities that support application features and are outside OCCT
-must be ported and adapted into Martensite as required kernel extensions.
+The desktop application provides a model browser, a ribbon, and a 3D viewport.
+It uses the [Martensite](https://github.com/Oblikovati/Martensite) geometry
+kernel and Vulkan rendering. A command-line application is also available.
 
-The branch contains the port plan and consolidated Rust ADRs. All 66 legacy
-Go ADRs have a recorded disposition. The Rust build and release tools are present;
-model, parameter, file lifecycle, and storage foundations are present. The headless CLI supports document creation, recipe open/save-as, script execution,
-manifest inspection, version, and help. The first desktop executable supplies
-native window lifetime, saved prism display, camera navigation, and document
-startup. Dear ImGui controls create a Part, start and finish an XY sketch, draw
-an anchored rectangle, and create or edit its driving size parameter. Native
-Horizontal, Vertical and Coincident tools use analytic picks and the typed API.
-General Dimension supplies explicit label placement, expression entry and
-parameter-driven values. Line, circular-tool flyouts, checked Delete, and
-Construction/Centerline curve formats also use the shared owner operations.
-Native tests verify zero DOF, recomputation, undo/redo and save/reopen. The complete cube UI
-journey, ribbon and model-browser parity, and native file dialogs remain open.
-Publication remains blocked. Current dependencies are pinned in `release.toml`
-and the adapter manifests; the
-[kernel release intake](architecture/rust-port/implementation-kernel-release.md)
-records the earlier release probes.
+**Status:** The Rust application is in development. Modeling tools and platform
+support are not yet complete. Follow the
+[project milestones](https://github.com/Oblikovati/Oblikovati/milestones) for
+planned work.
 
-Run `cargo run -p oblikovati-cli -- info path/to/part.opd --json` to inspect a
-package manifest without reconstructing geometry or changing the file.
+## Install and run
 
-The GUI executable is `oblikovati`; the headless executable is `oblikovati-cli`.
-Run `cargo run -p oblikovati-head --bin oblikovati -- --frames 3` on the local Linux display for a
-bounded native window smoke run. Add a native document path to display its
-supported stored geometry, for example
-`cargo run -p oblikovati-head --bin oblikovati -- --frames 3 "path/to/part.opd"`.
-See [startup behavior and checks](architecture/rust-port/implementation-desktop-startup.md).
-See [native parameter authoring evidence](architecture/rust-port/implementation-native-parameters.md).
-See [native dimension creation evidence](architecture/rust-port/implementation-native-dimension-tool.md).
+The Rust application is not yet published as an installable release. To try the
+current development version, build it from source. The existing GitHub releases
+are for the earlier Go application.
 
-- [Implementation evidence](architecture/rust-port/implementation.md): tested
-  behavior, source mapping, and remaining work.
+Clone the repository:
 
-- [Build cache](architecture/rust-port/implementation-build-cache.md): pinned Kache,
-  shared worktree cache, measured reuse, and cache controls.
+```sh
+git clone --branch rust-work https://github.com/Oblikovati/Oblikovati.git
+cd Oblikovati
+```
 
-- [Build and release commands](RELEASING.md): local gate, CI, native packaging,
-  released API/kernel dependencies, versioning, and publication requirements.
+On Linux or macOS, build and start the desktop application:
 
-- [Port plan](architecture/rust-port/plan.md): scope, architecture, and decisions.
-- [Rust ADR policy and index](architecture/decisions/README.md): a fresh decision
-  set, with applicable legacy decisions adapted and consolidated by boundary.
-- [Legacy ADR map](architecture/decisions/legacy-map.md): fixed source links,
-  retained decisions, rejected implementation choices, and remaining evidence.
-- [Domain glossary](CONTEXT.md): shared document, feature, and identity terms.
-- [Source map](architecture/rust-port/source-map.md): inspected revisions and
-  the Go modules that must move or be replaced.
-- [Martensite integration](architecture/rust-port/martensite.md): required
-  kernel capabilities and their acceptance checks.
-- [Milestones](architecture/rust-port/milestones.md): work order, dependencies,
-  and completion criteria.
-- [Verification and release](architecture/rust-port/verification.md): parity,
-  live tests, platform checks, and cutover.
+```sh
+./build.sh run
+```
 
-`rust` is the repository's default and integration branch. It has an independent
-root commit. Topic branches retain the implementation commits before integration.
+On Windows, use PowerShell:
 
-`go-legacy` preserves the Go application history. It was the `develop` default
-branch before the branch change on 2026-10-10; the repository had no `main`
-branch. Keep it as the port reference. Do not merge its unrelated history into
-`rust`.
+```powershell
+.\build.ps1 run
+```
+
+The scripts check for build dependencies and install missing dependencies when
+possible. Installation can require administrator permission. A Vulkan-capable
+GPU and driver are required to run the desktop application. On Linux, the GUI
+also needs an X11 or XWayland display.
+
+The desktop executable is `oblikovati` (`oblikovati.exe` on Windows). The
+command-line executable is `oblikovati-cli`. See [Build and run](BUILDING.md)
+for prerequisites, platform details, and other build commands.
+
+## Learn more
+
+- [Project website](https://oblikovati.org)
+- [Build and run](BUILDING.md)
+- [Application architecture](architecture/rust-port/plan.md)
+- [Public API](https://github.com/Oblikovati/Oblikovati.API)
+
+## License
+
+Oblikovati is licensed under [GPL-2.0-only](LICENSE). The separate public API
+is licensed under Apache-2.0.

@@ -19,6 +19,11 @@ kernel-internal decisions still belong to Martensite.
 These observations describe the original RustyCAD inspection. Use the current
 adoption record for the released Martensite candidate's capabilities and limits.
 
+The historical kernel improvement roadmap was referenced at
+`RustyCADKernel/docs/kernel-improvement-roadmap-2026-10-12.md`. It described
+staged refactors and architecture changes based on OCCT, Go, and Parasolid
+lessons. This path is not part of this repository.
+
 - The package `rustycad-kernel` currently re-exports only `rustycad_tkernel`
   as `foundation`. A dependency on that facade alone will not provide modeling.
 - Modeling lives in toolkit crates, including `rustycad-tkbrep`,
