@@ -72,13 +72,15 @@ using this status; the live scenario directory can change.
   passed all 23 steps and have R0 baseline records. Pinned `text-02`,
   `text-04`, `text-07`, and `text-12` passed all 31 steps and also have R0
   records. They cover empty acceptance at 28 degrees of freedom and creation
-  history with the same rendered text and position after Redo. Selected
-  character formatting needs a
-  [typed API extension](https://github.com/Oblikovati/Oblikovati.API/issues/314).
+  history with the same rendered text and position after Redo. The native
+  editor offers installed fonts, height presets, and horizontal and vertical
+  alignment. X11 checks cover visible preview changes, Cancel, history, and
+  save and reopen. Selected-character formatting is tracked in
+  [API PR #315](https://github.com/Oblikovati/Oblikovati.API/pull/315).
   The full live Text run passed seven of 38 declarations. The other 31 lack
-  step bindings. See
-  `receipts/2026-11-20-sketch-text-edit-3907/` and
-  `receipts/2026-11-20-sketch-text-creation-3907/`.
+  step bindings. See `receipts/2026-11-20-sketch-text-style-3907/` for the
+  current run and `receipts/2026-11-20-sketch-text-creation-3907/` for the
+  focused creation and empty-content baseline.
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
   Midpoint Line tool has native mouse and keyboard tests. A native YAML
