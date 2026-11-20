@@ -27339,8 +27339,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry.go, model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go tests cover no outlines for empty content, text insertion and edit through the typed host, and stable glyph placement. The desktop placement and history cases are separate checks.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite constructs analytic glyph outlines for nonempty content. Empty acceptance needs neither outline construction nor a solver change.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. The window is 1440 × 900. Windows and macOS rendered UI evidence is pending.",
+      "kernel_integration": "The desktop samples the shared glyph outline for preview and display. The document stores the text recipe and its anchor in one transaction.",
+      "rust_tests": "sketch_scenarios_use_the_native_window, focused by pinned case ID; sketch_text_ribbon_accepts_cancels_and_round_trips_in_history; native_sketch_text_draws_matching_preview_and_committed_pixels.",
+      "oracle": "The pinned steps and native controls. Verify the solver count, model state and glyph preview against the initial state and the original pointer location.",
+      "expected_result": "Empty OK closes Format Text without creating a text entity or displaying validation. The insertion prompt and 28 remaining degrees of freedom stay active.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:18e2187c10a4c7e4c4c3a942bf0ca2a0f47d1de1e70c8ab3685cdf78d71da5a1",
@@ -27356,8 +27366,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry.go, model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go tests cover no outlines for empty content, text insertion and edit through the typed host, and stable glyph placement. The desktop placement and history cases are separate checks.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite constructs analytic glyph outlines for nonempty content. Empty acceptance needs neither outline construction nor a solver change.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. The window is 1440 × 900. Windows and macOS rendered UI evidence is pending.",
+      "kernel_integration": "The desktop samples the shared glyph outline for preview and display. The document stores the text recipe and its anchor in one transaction.",
+      "rust_tests": "sketch_scenarios_use_the_native_window, focused by pinned case ID; sketch_text_ribbon_accepts_cancels_and_round_trips_in_history; native_sketch_text_draws_matching_preview_and_committed_pixels.",
+      "oracle": "The pinned steps and native controls. Verify the solver count, model state and glyph preview against the initial state and the original pointer location.",
+      "expected_result": "One Undo restores the pre-creation sketch. Redo restores the original text entity, anchor, style, and solver count.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:e08a0993ea668e17e53631bc66ce3e11726ab957b58203d2d76fb428e7ed21a7",
@@ -27407,8 +27427,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry.go, model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go tests cover no outlines for empty content, text insertion and edit through the typed host, and stable glyph placement. The desktop placement and history cases are separate checks.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite constructs analytic glyph outlines for nonempty content. Empty acceptance needs neither outline construction nor a solver change.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. The window is 1440 × 900. Windows and macOS rendered UI evidence is pending.",
+      "kernel_integration": "The desktop samples the shared glyph outline for preview and display. The document stores the text recipe and its anchor in one transaction.",
+      "rust_tests": "sketch_scenarios_use_the_native_window, focused by pinned case ID; sketch_text_ribbon_accepts_cancels_and_round_trips_in_history; native_sketch_text_draws_matching_preview_and_committed_pixels.",
+      "oracle": "The pinned steps and native controls. Verify the solver count, model state and glyph preview against the initial state and the original pointer location.",
+      "expected_result": "Typing b creates a preview. OK and Escape leave b visible at the insertion point and return to Ready. Undo restores the baseline. Redo restores the same text recipe and position.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:a693e46d9a8160d4f743f1f22b5d214988a758ad7a00fb941a390341d770aa9a",
@@ -27522,8 +27552,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry.go, model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go tests cover no outlines for empty content, text insertion and edit through the typed host, and stable glyph placement. The desktop placement and history cases are separate checks.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite constructs analytic glyph outlines for nonempty content. Empty acceptance needs neither outline construction nor a solver change.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. The window is 1440 × 900. Windows and macOS rendered UI evidence is pending.",
+      "kernel_integration": "The desktop samples the shared glyph outline for preview and display. The document stores the text recipe and its anchor in one transaction.",
+      "rust_tests": "sketch_scenarios_use_the_native_window, focused by pinned case ID; sketch_text_ribbon_accepts_cancels_and_round_trips_in_history; native_sketch_text_draws_matching_preview_and_committed_pixels.",
+      "oracle": "The pinned steps and native controls. Verify the solver count, model state and glyph preview against the initial state and the original pointer location.",
+      "expected_result": "In a 28-degree sketch, empty OK closes the editor without creating geometry or showing a validation dialog. The placement prompt stays active. Picking the same insertion point opens an empty editor.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:06a7c309817f17b3e94c693f9fcaa66c294f42666b3ff7122cff4c63de8b1575",

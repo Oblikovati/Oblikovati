@@ -69,9 +69,16 @@ using this status; the live scenario directory can change.
   passed native input checks. Existing text now opens for editing from its
   glyph. Cancel restores the glyph. An accepted edit preserves the entity and
   anchor and uses one undo step. Pinned `text-08`, `text-09`, and `text-10`
-  passed all 23 steps and have R0 baseline records. Rich formatting and the
-  remaining Text scenarios are open. See
-  `receipts/2026-11-20-sketch-text-edit-3907/`.
+  passed all 23 steps and have R0 baseline records. Pinned `text-02`,
+  `text-04`, `text-07`, and `text-12` passed all 31 steps and also have R0
+  records. They cover empty acceptance at 28 degrees of freedom and creation
+  history with the same rendered text and position after Redo. Selected
+  character formatting needs a
+  [typed API extension](https://github.com/Oblikovati/Oblikovati.API/issues/314).
+  The full live Text run passed seven of 38 declarations. The other 31 lack
+  step bindings. See
+  `receipts/2026-11-20-sketch-text-edit-3907/` and
+  `receipts/2026-11-20-sketch-text-creation-3907/`.
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
   Midpoint Line tool has native mouse and keyboard tests. A native YAML

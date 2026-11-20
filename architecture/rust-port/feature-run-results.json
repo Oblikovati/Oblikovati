@@ -680,5 +680,21 @@
     "scenario_inventory_sha256": "70f8abe46124087cc04d5b0e998333cd715596b65fdb8fb0cd865f8e4a7fa07d",
     "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-constraint-settings-full-f59421482/scenario-arguments.json",
     "scenario_arguments_sha256": "6db3c60a46d10a54309a799a3a581a8a4025dd525a3aa26e56f31190fa541ac4"
+  },
+  "features/sketch/text/scenario.feature": {
+    "feature_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d",
+    "supporting_files": {
+      "features/sketch/text/FUNCTIONAL.md": "ddb0381bff97e2e83aaac8832fecabafb9f20d49668444754193ad4893185796",
+      "features/sketch/text/VISUAL.md": "fd0e1444c421ebad300c59bb1c07589adfc0b97bd46c4a6f64c50b1af2aa2398",
+      "features/sketch/text/feature-icon.svg": "42e957b40212d450898c00e75e693943d6556aca7e752e72c7859f854eab14d6"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-sketch-text-creation-3907/cucumber.json",
+    "cucumber_sha256": "904b3fea71c6574ee8c4dc117ac5a81e21d479b51ec468291580dd20d2957d89",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-sketch-text-creation-3907/scenario-arguments.json",
+    "scenario_arguments_sha256": "05f730fc12aad4a47d55abfa8e2ea6c92829a46f62b451eeb37c1bc8cb1ad5ef",
+    "application_commit": "2dbf5d04e89f7ff2ef9dde005f802102a68ba66e",
+    "command": "Unfiltered Text feature; see receipt README.",
+    "environment": "Linux X11 under Xvfb, 1440 × 900 native window, Vulkan Lavapipe",
+    "notes": "Seven of 38 scenario declarations passed. Other scenarios have missing step bindings. This native diagnostic does not seal build and runtime provenance (#3978)."
   }
 }
