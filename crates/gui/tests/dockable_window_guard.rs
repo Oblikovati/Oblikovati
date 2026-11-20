@@ -60,7 +60,7 @@ const INFRASTRUCTURE: &[(&str, &str)] = &[
     ("chrome/side.rs", "title"),
     ("chrome.rs", "##application-ribbon"),
     ("window_frame.rs", "##application-window-controls"),
-    ("document_tabs.rs", "<dynamic>"),
+    ("detached_drawing.rs", "##detached-drawing"),
     ("document_tabs/strip_render.rs", "##open-document-tabs"),
     ("ribbon_panel_additional.rs", "<dynamic>"),
     ("ribbon_panel_additional/bend_notice.rs", "modal:TITLE"),
@@ -71,6 +71,7 @@ const INFRASTRUCTURE: &[(&str, &str)] = &[
     ("ribbon_panels.rs", "##ribbon-temporary-panel"),
     ("sketch/command_alias.rs", "##command-alias"),
     ("sketch/line/mod.rs", "##sketch-hud"),
+    ("dockable_window.rs", "title"),
     ("dockable_window.rs", "title"),
     ("ribbon_reset.rs", "modal:RESET_TITLE"),
     ("application/document-creation/mod.rs", "modal:New document"),
@@ -148,6 +149,9 @@ const INFRASTRUCTURE: &[(&str, &str)] = &[
         "modal:MISSING_FILE",
     ),
     ("sketch/dimension-edit/mod.rs", "modal:WARNING"),
+    // The same dimension choice modal is also opened to close it when its draft ends.
+    ("sketch/dimension-edit/mod.rs", "modal:TITLE"),
+    ("sketch/dimension-edit/mod.rs", "modal:TITLE"),
     // Validation prompts are transient modals; their owning tools remain dockable.
     ("browser_part_view_edit.rs", "modal:View Name Already Used"),
     ("model_state_table_names.rs", "modal:Model state names"),
@@ -184,18 +188,7 @@ impl<'ast> Visit<'ast> for WindowCalls {
     }
     fn visit_expr_call(&mut self, call: &'ast ExprCall) {
         if let Expr::Path(path) = call.func.as_ref() {
-            let segments: Vec<_> = path
-                .path
-                .segments
-                .iter()
-                .map(|part| part.ident.to_string())
-                .collect();
-            if segments.ends_with(&["Window".into(), "new".into()])
-                || segments.ends_with(&["Ui".into(), "window".into()])
-                || segments.last().is_some_and(|part| part == "igBegin")
-            {
-                self.direct_constructors += 1;
-            }
+            self.qualified_window(call, &path.path);
         }
         visit::visit_expr_call(self, call);
     }
@@ -221,6 +214,24 @@ impl<'ast> Visit<'ast> for WindowCalls {
         visit::visit_item_impl(self, item);
     }
 }
+impl WindowCalls {
+    fn qualified_window(&mut self, call: &ExprCall, path: &syn::Path) {
+        let parts: Vec<_> = path
+            .segments
+            .iter()
+            .map(|part| part.ident.to_string())
+            .collect();
+        if parts.ends_with(&["Window".into(), "window".into()]) {
+            self.names.push(window_label(call.args.iter().nth(1)));
+        }
+        if parts.ends_with(&["Window".into(), "new".into()])
+            || parts.ends_with(&["Ui".into(), "window".into()])
+            || parts.last().is_some_and(|part| part == "igBegin")
+        {
+            self.direct_constructors += 1;
+        }
+    }
+}
 #[derive(Default)]
 struct DockPolicy {
     builder: bool,
@@ -229,7 +240,7 @@ struct DockPolicy {
 impl<'ast> Visit<'ast> for DockPolicy {
     fn visit_path(&mut self, path: &'ast syn::Path) {
         for part in &path.segments {
-            self.builder |= part.ident == "dockable_window";
+            self.builder |= is_dockable_constructor(&part.ident);
             self.forbidden |= part.ident == "NO_DOCKING"
                 || part.ident == "NO_TITLE_BAR"
                 || part.ident == "NO_DECORATION";
@@ -259,7 +270,10 @@ fn test_only(attributes: &[syn::Attribute]) -> bool {
     })
 }
 fn window_name(call: &ExprMethodCall) -> String {
-    match call.args.first() {
+    window_label(call.args.first())
+}
+fn window_label(label: Option<&Expr>) -> String {
+    match label {
         Some(Expr::Lit(expr)) => match &expr.lit {
             Lit::Str(text) => text.value(),
             _ => "<non-string>".into(),
@@ -317,10 +331,12 @@ fn inventory(root: &Path) -> BTreeMap<(String, String), usize> {
 #[test]
 fn tool_windows_use_the_dockable_window_trait() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-    let expected: BTreeMap<_, _> = INFRASTRUCTURE
-        .iter()
-        .map(|(path, name)| ((path.to_string(), name.to_string()), 1))
-        .collect();
+    let mut expected = BTreeMap::new();
+    for (path, name) in INFRASTRUCTURE {
+        *expected
+            .entry((path.to_string(), name.to_string()))
+            .or_insert(0) += 1;
+    }
     assert_eq!(
         inventory(&root),
         expected,
@@ -341,7 +357,7 @@ fn guard_detects_direct_windows_and_ignores_test_fixtures() {
         calls_in("fn f(ui: &Ui) { ui.begin_modal_popup(\"New Tool\"); }").names,
         ["modal:New Tool"]
     );
-    assert_eq!(calls_in("fn f(ui: &Ui, open: &mut bool) { Tool::dockable_window(ui, \"Tool\", open).flags(WindowFlags::NO_DOCKING); }").disabled_docking, 1);
+    assert_eq!(calls_in("fn f(ui: &Ui, open: &mut bool) { Tool::tabbed_dockable_window(ui, \"Tool\", \"Group\", open).flags(WindowFlags::NO_DOCKING); }").disabled_docking, 1);
     assert_eq!(calls_in("fn f(ui: &Ui, open: &mut bool) { Tool::dockable_window(ui, \"Tool\", open).title_bar(false); }").disabled_docking, 1);
     assert_eq!(
         calls_in("impl DockableWindow for Tool { fn dockable_window() {} }").overridden_trait,
@@ -358,6 +374,10 @@ fn guard_counts_each_modal_call_for_the_same_title() {
         calls.names,
         ["modal:REJECTION_POPUP", "modal:REJECTION_POPUP"]
     );
+}
+
+fn is_dockable_constructor(ident: &syn::Ident) -> bool {
+    ident == "dockable_window" || ident == "tabbed_dockable_window"
 }
 
 #[derive(Default)]
@@ -382,11 +402,6 @@ impl<'ast> Visit<'ast> for DockableInventory {
         {
             self.implementations.insert(owner.clone());
         }
-        if item.trait_.is_none() && item.items.iter().any(|member| {
-            matches!(member, syn::ImplItem::Fn(method) if method.sig.ident == "register_dockable" || method.sig.ident == "register_dockables")
-        }) && let Some(owner) = &self.owner {
-            self.lifecycle_owners.insert(owner.clone());
-        }
         visit::visit_item_impl(self, item);
         self.owner = previous;
     }
@@ -396,20 +411,23 @@ impl<'ast> Visit<'ast> for DockableInventory {
             if parts.len() >= 2
                 && parts
                     .last()
-                    .is_some_and(|part| part.ident == "dockable_window")
+                    .is_some_and(|part| is_dockable_constructor(&part.ident))
             {
                 let name = parts.iter().nth(parts.len() - 2).unwrap().ident.to_string();
-                let owner = if name == "Self" {
-                    self.owner.as_deref()
-                } else {
-                    Some(name.as_str())
-                };
-                if let Some(owner) = owner {
-                    self.constructions.insert(owner.to_owned());
+                if let Some(owner) = resolve_owner(&name, self.owner.as_deref()) {
+                    self.constructions.insert(owner.to_string());
                 }
             }
         }
         visit::visit_expr_call(self, call);
+    }
+    fn visit_expr_method_call(&mut self, call: &'ast ExprMethodCall) {
+        if let Some(owner) = registration_type(call)
+            .and_then(|name| resolve_owner(&name, self.owner.as_deref()).map(str::to_owned))
+        {
+            self.lifecycle_owners.insert(owner);
+        }
+        visit::visit_expr_method_call(self, call);
     }
     fn visit_item_mod(&mut self, item: &'ast ItemMod) {
         if !test_only(&item.attrs) {
@@ -422,30 +440,54 @@ impl<'ast> Visit<'ast> for DockableInventory {
         }
     }
 }
-#[test]
-fn every_dockable_window_uses_the_shared_constructor() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+
+fn resolve_owner<'a>(name: &'a str, enclosing: Option<&'a str>) -> Option<&'a str> {
+    if name == "Self" {
+        enclosing
+    } else {
+        Some(name)
+    }
+}
+
+fn registration_type(call: &ExprMethodCall) -> Option<String> {
+    if call.method != "register"
+        || !matches!(call.receiver.as_ref(), Expr::Path(path) if path.path.is_ident("registry"))
+    {
+        return None;
+    }
+    let Some(syn::GenericArgument::Type(syn::Type::Path(owner))) =
+        call.turbofish.as_ref()?.args.first()
+    else {
+        return None;
+    };
+    owner
+        .path
+        .segments
+        .last()
+        .map(|part| part.ident.to_string())
+}
+
+fn dockable_inventory(root: &Path) -> DockableInventory {
     let mut files = Vec::new();
-    source_files(&root, &mut files);
+    source_files(root, &mut files);
     let mut inventory = DockableInventory::default();
     for path in files {
         let source = std::fs::read_to_string(path).unwrap();
         inventory.visit_file(&syn::parse_file(&source).unwrap());
     }
+    inventory
+}
+
+#[test]
+fn every_dockable_window_uses_the_shared_constructor() {
+    let inventory = dockable_inventory(&Path::new(env!("CARGO_MANIFEST_DIR")).join("src"));
     assert!(!inventory.implementations.is_empty());
     assert_eq!(inventory.implementations, inventory.constructions);
 }
 
 #[test]
 fn every_dockable_window_registers_with_the_lifecycle_owner() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
-    let mut files = Vec::new();
-    source_files(&root, &mut files);
-    let mut inventory = DockableInventory::default();
-    for path in files {
-        let source = std::fs::read_to_string(path).unwrap();
-        inventory.visit_file(&syn::parse_file(&source).unwrap());
-    }
+    let inventory = dockable_inventory(&Path::new(env!("CARGO_MANIFEST_DIR")).join("src"));
     let unregistered: Vec<_> = inventory
         .implementations
         .difference(&inventory.lifecycle_owners)
