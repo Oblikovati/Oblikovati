@@ -31,7 +31,7 @@ fn drag_to_panel(world: &mut ApplicationWorld) {
     let (position, size) = diagnostics::window_geometry(PANEL).unwrap();
     let end = [
         (position[0] + size[0] * 0.5) as i32,
-        (position[1] + 10.) as i32,
+        (position[1] + size[1] * 0.5) as i32,
     ];
     super::super::x11_input::move_pointer(from);
     world.pump(Vec::new());
