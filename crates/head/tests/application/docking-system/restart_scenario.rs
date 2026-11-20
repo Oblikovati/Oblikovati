@@ -42,6 +42,8 @@ fn workspace_is_saveable(world: &mut ApplicationWorld) {
 
 #[when("the user closes and restarts the MCAD Software")]
 fn restart_application(world: &mut ApplicationWorld) {
+    world.close();
+    run_desktop_restart_check();
     world.reopen_application();
     super::open_docking_fixture(world);
     world.pump(Vec::new());
@@ -59,4 +61,35 @@ fn restored_group(world: &mut ApplicationWorld) {
     let (area, width) = world.docking_resize.unwrap();
     assert_eq!(viewport(world), area);
     assert_eq!(diagnostics::window_geometry(PANEL).unwrap().1[0], width);
+}
+
+fn desktop_executable() -> std::path::PathBuf {
+    std::env::var_os("OBK_BDD_DESKTOP_BINARY")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| {
+            std::env::current_exe()
+                .unwrap()
+                .parent()
+                .unwrap()
+                .parent()
+                .unwrap()
+                .join("oblikovati")
+        })
+}
+
+fn run_desktop_restart_check() {
+    let script = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tools/bdd/docking_process_restart.py");
+    let fixture =
+        super::super::scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
+    let output = super::super::world::reports_folder().join("docking-process-restart");
+    let result = std::process::Command::new("python3")
+        .args([script, desktop_executable(), fixture, output])
+        .output()
+        .expect("docking restart: expected python3 and the native desktop test");
+    assert!(
+        result.status.success(),
+        "desktop restart failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
 }
