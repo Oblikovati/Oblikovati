@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from typing import Callable
 
+from local_snapshot_evidence import committed_object, scoped_selection
 from sandbox_build_probe import BuildProbe
 from sealed_build_chain import run_sealed_build
 from sealed_execution import SealedRequest, require_request
@@ -32,6 +33,7 @@ def parse_arguments(arguments: list[str] | None = None) -> argparse.Namespace:
     for name in ("revision", "area", "feature", "scenario"):
         parser.add_argument(f"--{name}", required=True)
     parser.add_argument("--capture", help="one PNG filename when a scenario produced multiple captures")
+    parser.add_argument("--local-snapshot", help="committed feature-scoped receipt directory for a diagnostic run")
     parser.add_argument("--registry-archives", type=Path)
     parser.add_argument("--git-repo", nargs=2, action="append", metavar=("SOURCE", "REPOSITORY"))
     args = parser.parse_args(arguments)
@@ -62,8 +64,14 @@ def main(
     args = parse_arguments(arguments)
     probe, request = requests(args)
     require_request(request)
-    source_revision = verify(request.checkout)
-    row = selected_row(inventory_reader(args.repository, args.revision), request, source_revision)
+    if args.local_snapshot:
+        metadata = committed_object(args.repository, args.revision, args.local_snapshot, "snapshot.json")
+        local_inventory = committed_object(args.repository, args.revision, args.local_snapshot, "inventory.json")
+        row, verify = scoped_selection(request, metadata, local_inventory)
+        source_revision = verify(request.checkout)
+    else:
+        source_revision = verify(request.checkout)
+        row = selected_row(inventory_reader(args.repository, args.revision), request, source_revision)
     require_scenario_source(request.checkout, row)
     repositories = None if not args.git_repo else {source: Path(path) for source, path in args.git_repo}
     result = invoke(probe, request, args.repository, args.revision, verify, archives=args.registry_archives, git_repositories=repositories)
