@@ -99,6 +99,17 @@ class SealedReportTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "PNG"):
             self.fixture.check()
 
+    def test_namespaced_final_capture_is_checked(self) -> None:
+        reports = self.fixture.request.reports
+        capture = reports / "capture.png"
+        folder = reports / "scenarios" / "scenario-id" / "final"
+        folder.mkdir(parents=True)
+        capture.rename(folder / capture.name)
+        self.assertFalse(self.fixture.check()["reusable"])
+        (folder / "capture.png").write_bytes(b"invalid")
+        with self.assertRaisesRegex(ValueError, "PNG"):
+            self.fixture.check()
+
     def test_wrong_sealed_source_root_and_invalid_xml_are_rejected(self) -> None:
         state = {"commit": self.fixture.revision, "dirty": False, "root": "/elsewhere"}
         self.fixture.write_json("source-revision.json", {"before": state, "after": state, "source_changed": False})

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Dockable workspace panels: scenario/features/application/docking-system/docking-system.feature" package="testsuite/Feature: Dockable workspace panels: scenario/features/application/docking-system/docking-system.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-20T07:10:00.195630585Z" time="75.225523657"><testcase name="Scenario: Restore the saved panel arrangement after restarting the application: scenario/features/application/docking-system/docking-system.feature:125:3" time="75.225523657"><system-out><![CDATA[  Scenario: Restore the saved panel arrangement after restarting the application
+   ✔  Given the user has changed the workspace panel arrangement
+   ✔  And the MCAD Software has saved that arrangement
+   ✔  When the user closes and restarts the MCAD Software
+   ✔  Then the saved panel positions, sizes and tab groups are restored
+]]></system-out></testcase></testsuite></testsuites>

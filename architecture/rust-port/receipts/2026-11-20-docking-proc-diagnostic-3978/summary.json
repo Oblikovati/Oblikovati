@@ -1,0 +1,12 @@
+{
+  "kind": "non-reusable diagnostic",
+  "application_commit": "5909058cfb127689b3176978f761e1e819fba910",
+  "local_scenario_commit": "028492efd6fad2a4fb740048e4810c7c6e29234a",
+  "feature_sha256": "11567ca6f598b1b812d635e5bb7fed2eb75abd1e2b5a087c91ef962e78e679e7",
+  "runner_sha256": "832c82be103de0f6784b89277ed096a74410bae34acd33cad38271dc69b2dd05",
+  "desktop_sha256": "ad69639e91eaaf854dbc3466e8a39599cde5124b9bd15d2ebdc1e2bee9664b83",
+  "scenarios_passed": 1,
+  "steps_passed": 4,
+  "report_check": "passed afterward using the corrected namespaced capture path",
+  "limitations": "Separate pinned-artifact retry after build; private /proc mounted for desktop worker, mutable unauthenticated build/runtime inputs, partial dependency checks, and local scenario snapshot. Not a verified receipt."
+}

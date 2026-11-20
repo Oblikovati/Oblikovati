@@ -100,8 +100,8 @@ def require_report_captures(root: Path, row: Mapping[str, object], capture: str 
     else:
         names = [selected_capture(root, capture).name]
     for name in names:
-        selected_capture(root, name)
-        check_capture(root, regular_artifact(root, name))
+        path = selected_capture(root, name)
+        check_capture(root, artifact(root, path))
 
 
 def check_sealed_report(request: SealedRequest, row: Mapping[str, object], revision: str, capture: str | None) -> dict[str, object]:
