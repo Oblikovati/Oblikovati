@@ -143,7 +143,7 @@ impl<
         let Some(at) = window.sketch_point(pixel, tool.plane)? else {
             return Ok(());
         };
-        let acquired = self.vertex_under_pointer(tool, window, pixel)?;
+        let acquired = self.point_vertex_under_pointer(tool, window, pixel)?;
         let position = acquired.map_or(at, |(position, _)| position);
         self.commit_point(tool, position, acquired.map(|(_, vertex)| vertex))
     }
