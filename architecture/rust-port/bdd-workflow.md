@@ -179,6 +179,13 @@ cargo test --locked -p oblikovati-head --lib \
   sketch_scenarios_use_the_native_window -- --nocapture
 ```
 
+The Linux docking-system restart scenario also starts the desktop executable
+twice. Build `oblikovati` from the same source as the test, and set
+`OBK_BDD_DESKTOP_BINARY` to its absolute path. Run with an X11 window manager,
+a 1440 × 900 display, XTest, and ImageMagick `import` and `compare`. The
+scenario writes the before and after images and saved layout to the report.
+It uses an isolated settings directory and closes both application processes.
+
 The report directory is local output, not durable evidence. Preserve its
 required artifacts in the repository and link them from the receipt. If reports
 are lost, the run remains historical context, not current acceptance evidence.
