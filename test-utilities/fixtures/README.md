@@ -16,3 +16,10 @@ need a populated viewport. The native test
 `docking_solid_and_visible_sketch_survive_save_and_reopen` checks the saved
 file and the checked-in fixture. Its optional `OBK_EXPORT_DOCKING_FIXTURE`
 output must name a new file.
+
+`planar-sketch-empty-xy.opd` and `constraint-settings-line.opd` are candidates
+for Constraint Settings. Each has one XY sketch named `Sketch1`. The second
+has one 40 mm line with a Horizontal relation and no dimensions; the first
+has no curves. Preferences are session state and must be set separately.
+The native test `constraint_settings_native_fixtures_reopen_with_expected_geometry`
+checks the saved and checked-in files.
