@@ -1,0 +1,2 @@
+        0x400001 "Part1 <Primary> - Oblikovati - document 1 generation 0 - 0 solids, 0 unavailable features - 0 sketches, 0 sketch display failures": ()  1440x900+0+0  +240+90
+        0x800001 "Drawing1": ()  640x480+1+22  +101+122
