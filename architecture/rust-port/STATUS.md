@@ -225,7 +225,9 @@ using this status; the live scenario directory can change.
 
 ## Work queue
 
-1. Select a feature with an available native fixture. Midpoint Line (#4178)
+1. Diagnose Ribbon Appearance (#3957) against its current source. Its fixture
+   notes require a visible solid, but the shared part setup creates an empty
+   part; clarification was requested. Midpoint Line (#4178)
    now requires a deferred Inventor fixture; retain its unfinished worktree.
    Constraint Settings (#4158) is paused with uncommitted work while its
    fixture questions and Relax Mode (#4164) remain open. Revisit `new-sketch`
