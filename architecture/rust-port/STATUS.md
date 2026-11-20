@@ -32,6 +32,10 @@ using this status; the live scenario directory can change.
   the pinned Modify expansion passes Text Off and Normal. The three remaining
   scenarios stop at Tools panel visibility setup. See
   `receipts/2026-11-20-ribbon-appearance-fixture-3957/`.
+- Ribbon Command Availability (#3956): the full run passed three of five
+  scenarios and 31 of 33 steps. The Line tooltip, native assembly and drawing
+  contexts passed. Two scenarios expect Create commands to be enabled outside
+  sketch edit. See `receipts/2026-11-20-ribbon-command-contexts-3956/`.
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
   Midpoint Line tool has native mouse and keyboard tests. A native YAML

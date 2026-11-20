@@ -161,19 +161,26 @@
     "notes": "A separate native X11 mouse and keyboard test opens the File menu, dismisses it with Escape and an outside click, and checks the active part."
   },
   "features/application/ribbon-command-availability/ribbon-command-availability.feature": {
-    "feature_sha256": "59959ff37cf45000a2fc634c665c70a0b784ae721f6fe8db1dd7d4399d659a0d",
-    "blocker": "Outside-edit Create commands need an established sketch selection and cancellation workflow; no enabled placeholders (#3956).",
+    "feature_sha256": "b3be8114d042b3b5d7c160569262657afed7c6e167711c2e6abc485bdc6ee9c9",
     "supporting_files": {
-      "features/application/ribbon-command-availability/FUNCTIONAL.md": "27f79a33563fe74970c552aa9cb4b8dc9617a048a0673f0c25076ffe891b71e9",
+      "features/application/ribbon-command-availability/BLOCKERS.md": "f31184ef578a0eed0d476531fd27f7d8be00a3b4a73266a58c341c5fa9d0cc1d",
+      "features/application/ribbon-command-availability/FIXTURES.md": "7cb4a5be128f32c8af7d070aa7cffe0056b99508a80b464ff65633e646d0323b",
+      "features/application/ribbon-command-availability/FUNCTIONAL.md": "877449f60d78e323659011bd008fc63d1eb821aecd2d580967c07834a945f811",
       "features/application/ribbon-command-availability/VISUAL.md": "343ed7f280cecad6372b24b4590b613c37d5664a66f1e6af8e6e0ce180939f66",
-      "features/application/ribbon-command-availability/FIXTURES.md": "31a9ce49e8582ecc3f1fd8c264319422fc1c3a3c1805c63357c9facec3a0684d",
-      "features/application/ribbon-command-availability/BLOCKERS.md": "ef3a58272f56720b51f1db72ffa483924d338b8066f986b450e6fdb51224be0c"
+      "features/application/ribbon-command-availability/sketch-availability.svg": "67762709be3def71e9e8c45d5646b52915ca2757ab313521ee86daaf8b7c7e9f",
+      "features/application/ribbon-command-availability/sketch-edit.svg": "272f5e636e7f6addb2706aa9eb95ada23960d9eafc69440c90f28ce6e547a37f",
+      "fixtures/cad/blank-metric-assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
+      "fixtures/cad/blank-drawing.odd": "74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-availability/cucumber.json",
-    "cucumber_sha256": "a95c0f0a413bde3f65b3f021efdb7778a09665cf7a759e3e17d2a502f48f6b35",
-    "application_commit": "8ddb2767f",
-    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-command-availability XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input"
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-ribbon-command-contexts-3956/cucumber.json",
+    "cucumber_sha256": "a1217a2a8dc9eb4f1131cb70b655648e8d065e9ce2469232e2d17d2921ddf9c3",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-ribbon-command-contexts-3956/scenario-arguments.json",
+    "scenario_arguments_sha256": "6d540a2fad6d387c21d60692d24fe0e241c38856d1c4a691121eb6a93392a989",
+    "application_commit": "c79d5592aef3990e7bfccd6f5b7b4f3fc3a767b6",
+    "command": "Full ribbon-command-availability run; see receipt README.",
+    "environment": "Linux Xvfb 1600x1200, Vulkan Lavapipe",
+    "notes": "3 of 5 scenarios and 31 of 33 executed steps passed.",
+    "blocker": "Create commands are disabled outside sketch edit. The scenario expects the opposite, but an outside-edit command needs a defined sketch selection and cancellation path (#3956)."
   },
   "features/application/body-properties/body-properties.feature": {
     "feature_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",

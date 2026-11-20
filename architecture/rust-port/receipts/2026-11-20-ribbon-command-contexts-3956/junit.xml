@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect ribbon command availability: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature" package="testsuite/Feature: Inspect ribbon command availability: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature" tests="5" errors="0" failures="2" hostname="localhost" timestamp="2026-11-20T14:19:34.218722129Z" time="33.232707718"><testcase name="Scenario: Inspect Sketch commands outside sketch edit: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature:5:3" time="5.578505122"><failure type="Step Panicked" message="Step panicked. Captured output: Line: expected enabled in Create"/><system-out><![CDATA[  Scenario: Inspect Sketch commands outside sketch edit
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✔  And sketch edit is inactive
+   ✔  When the user selects the Sketch ribbon tab
+   ✘  Then Line, Circle, Arc, Rectangle, Fillet, Text and Point are enabled in Create
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature:9:5
+      Matched: crates/head/src/../tests/application/ribbon-command-availability/steps.rs:33:1
+      Step panicked. Captured output: Line: expected enabled in Create
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nReady\nRibbonDisplay\nv\nv\n...\nextruded\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nv\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit\nHome\nextruded<Primary>\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Revisit Sketch from another ribbon tab: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature:14:3" time="6.459496264"><failure type="Step Panicked" message="Step panicked. Captured output: Line: expected enabled in Create"/><system-out><![CDATA[  Scenario: Revisit Sketch from another ribbon tab
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✔  And sketch edit is inactive
+   ✔  And the Sketch ribbon tab is selected
+   ✔  When the user selects the 3D Model ribbon tab
+   ✔  And the user selects the Sketch ribbon tab again
+   ✘  Then Line, Circle, Arc, Rectangle, Fillet, Text and Point remain enabled in Create
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature:20:5
+      Matched: crates/head/src/../tests/application/ribbon-command-availability/steps.rs:34:1
+      Step panicked. Captured output: Line: expected enabled in Create
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nReady\nRibbonDisplay\nv\nv\n...\nextruded\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nv\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit\nHome\nextruded<Primary>\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Inspect Sketch ribbon while editing an existing sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature:25:3" time="9.520537194"><system-out><![CDATA[  Scenario: Inspect Sketch ribbon while editing an existing sketch
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✔  And sketch edit is inactive
+   ✔  When the user opens the existing sketch from the model browser
+   ✔  Then the Sketch ribbon tab is selected
+   ✔  And the 2D sketch workspace shows the existing profile
+   ✔  And Create, Modify, Pattern, Constrain, Insert and Format groups are displayed
+   ✔  And Finish is available to exit sketch editing
+   ✔  When the user selects Line
+   ✔  Then the Line command prompt requests a start point
+   ✔  And the Line tooltip indicates line and arc creation
+   ✔  When the user exits sketch editing with Finish
+   ✔  Then the previous part workspace and ribbon context return
+   ✔  And the existing sketch remains in the model browser
+]]></system-out></testcase><testcase name="Scenario: Inspect component commands in an active assembly: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature:41:3" time="5.212609525"><system-out><![CDATA[  Scenario: Inspect component commands in an active assembly
+   ✔  Given the saved empty assembly fixture "fixtures/cad/blank-metric-assembly.oad" is active in the MCAD Software
+   ✔  Then the assembly ribbon offers commands to place and create components
+   ✔  And the assembly document remains active
+   ✔  And no assembly command has been started
+]]></system-out></testcase><testcase name="Scenario: Inspect view and annotation commands in an active drawing: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature:48:3" time="6.461559613"><system-out><![CDATA[  Scenario: Inspect view and annotation commands in an active drawing
+   ✔  Given `fixtures/cad/blank-drawing.odd` is open and active in the MCAD Software
+   ✔  When the user selects the Place Views ribbon tab
+   ✔  Then the Place Views ribbon displays Create, Modify, Sketch and Sheets groups
+   ✔  When the user selects the Annotate ribbon tab
+   ✔  Then the Annotate ribbon displays Dimension, Text and Symbols commands
+   ✔  And the drawing sheet remains visible
+]]></system-out></testcase></testsuite></testsuites>
