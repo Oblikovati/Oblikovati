@@ -89,6 +89,7 @@ impl<
         // #3816: one press belongs to one tool, including the press that completes it.
         match self.sketch_tool.take() {
             Some(SketchToolState::Fillet(tool)) => self.process_sketch_fillet(tool, event, window),
+            Some(SketchToolState::Text(tool)) => self.process_sketch_text(tool, event, window),
             Some(SketchToolState::Block(tool)) => self.process_block_placement(tool, event, window),
             Some(SketchToolState::Move(tool)) => self.process_sketch_move(tool, event, window),
             Some(SketchToolState::Placement(tool)) => {

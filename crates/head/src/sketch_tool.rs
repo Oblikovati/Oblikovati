@@ -5,6 +5,7 @@ use oblikovati_model::document_sketch::DocumentSketchId;
 
 pub(crate) enum SketchToolState {
     Fillet(Box<crate::owner::sketch_fillet::SketchFilletState>),
+    Text(Box<crate::owner::sketch_text::SketchTextTool>),
     Block(Box<crate::owner::block_placement::SketchBlockPlacement>),
     Move(Box<crate::owner::sketch_move::SketchMoveState>),
     Placement(Box<SketchPlacementState>),
@@ -19,6 +20,7 @@ impl SketchToolState {
             Self::Block(tool) => (tool.edit.document, tool.edit.sketch, tool.generation),
             Self::Move(tool) => (tool.edit.document, tool.edit.sketch, tool.generation),
             Self::Placement(tool) => (tool.document, tool.sketch, tool.generation),
+            Self::Text(tool) => (tool.edit.document, tool.edit.sketch, tool.generation),
             Self::Fillet(tool) => (tool.edit.document, tool.edit.sketch, tool.generation),
             Self::Geometric(tool) => (tool.edit.document, tool.edit.sketch, tool.generation),
             Self::Dimension(tool) => (tool.edit.document, tool.edit.sketch, tool.generation),
@@ -32,6 +34,7 @@ impl SketchToolState {
             Self::Move(_) => "Move",
             Self::Placement(tool) => tool.tool.name(),
             Self::Fillet(_) => "Fillet",
+            Self::Text(_) => "Text",
             Self::Geometric(tool) => tool.choice.label(),
             Self::Dimension(_) => "Dimension",
             Self::Measure(_) => "Measure",

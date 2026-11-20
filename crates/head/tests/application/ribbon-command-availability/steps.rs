@@ -11,6 +11,10 @@ mod document_kinds;
 #[path = "fillet_native.rs"]
 mod fillet_native;
 
+#[cfg(target_os = "linux")]
+#[path = "text_native.rs"]
+mod text_native;
+
 #[given("sketch edit is inactive")]
 fn sketch_edit_inactive(world: &mut ApplicationWorld) {
     assert_eq!(

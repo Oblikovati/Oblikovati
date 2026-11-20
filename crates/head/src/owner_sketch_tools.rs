@@ -18,7 +18,9 @@ pub(super) fn gui_placement_tool(tool: Gui, scale: f64) -> Result<Tool, String> 
         Gui::CenterRectangle => Tool::CenterRectangle,
         Gui::ThreePointRectangle => Tool::ThreePointRectangle,
         Gui::ThreePointCenterRectangle => Tool::ThreePointCenterRectangle,
-        Gui::Fillet => return Err(format!("{tool:?}: expected a point placement tool")),
+        Gui::Fillet | Gui::Text => {
+            return Err(format!("{tool:?}: expected a point placement tool"));
+        }
     })
 }
 fn gui_circular_accuracy(scale: f64) -> Result<CircumcircleOptions, String> {

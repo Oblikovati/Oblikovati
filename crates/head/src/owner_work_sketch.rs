@@ -312,6 +312,12 @@ impl<
     ) -> Result<bool, String> {
         self.edit_gui_pattern(pattern, request)
     }
+    fn sketch_text_from_gui(
+        &mut self,
+        action: oblikovati_gui::GuiSketchTextAction,
+    ) -> Result<bool, String> {
+        self.sketch_text_command(action)
+    }
     fn sketch_move_from_gui(
         &mut self,
         action: oblikovati_gui::GuiSketchMoveAction,
@@ -360,8 +366,16 @@ impl<
                 format!("{tool:?}: expected an active sketch edit or one existing sketch in the active part")
             })?,
         };
-        if tool == oblikovati_gui::GuiSketchTool::Fillet {
-            self.start_sketch_fillet(document, sketch)?;
+        if matches!(
+            tool,
+            oblikovati_gui::GuiSketchTool::Fillet | oblikovati_gui::GuiSketchTool::Text
+        ) {
+            match tool {
+                oblikovati_gui::GuiSketchTool::Fillet => {
+                    self.start_sketch_fillet(document, sketch)?
+                }
+                _ => self.start_sketch_text(document, sketch)?,
+            }
             self.sketch_memory.repeat_command =
                 Some(oblikovati_gui::GuiSketchRepeat::Placement(tool));
             return Ok(true);
@@ -421,6 +435,9 @@ impl<
                 .sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation)
                 .then(|| tool.preview.clone())
                 .flatten();
+        }
+        if let Some(crate::sketch_tool::SketchToolState::Text(tool)) = &self.sketch_tool {
+            return self.sketch_text_preview(tool);
         }
         let recipe = self.placement_preview()?.clone();
         let tool = self.placement_state()?;

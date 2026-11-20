@@ -14,6 +14,7 @@ fn register_application_windows(engine: &mut GuiFrameEngine) -> Result<(), Strin
     engine.ribbon.customization.register_dockable(registry)?;
     engine.ribbon.team_web.register_dockable(registry)?;
     engine.create_block.register_dockable(registry)?;
+    engine.sketch_text.register_dockable(registry)?;
     engine.inference_scope.register_dockable(registry)?;
     engine.preferences.register_dockable(registry)?;
     engine.precise_input.register_dockable(registry)?;
@@ -76,6 +77,7 @@ impl GuiFrameEngine {
     ) {
         self.ribbon.customization.sync_before_docking(state);
         self.create_block.sync_before_docking(state, actions);
+        self.sketch_text.synchronize(state);
         self.workspace.sync_before_docking(state);
         self.home.sync_before_docking();
         self.document_tabs

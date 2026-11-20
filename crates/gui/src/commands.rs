@@ -70,6 +70,7 @@ pub enum GuiShellAction {
     SetSketchIsolation(bool),
     SetPartOptions(oblikovati_model::application_options::PartApplicationOptions),
     SketchMove(crate::GuiSketchMoveAction),
+    SketchText(crate::GuiSketchTextAction),
     PreviewSketchPattern(Option<oblikovati_model::history::SketchRectangularPatternRequest>),
     CreateSketchPattern(oblikovati_model::history::SketchRectangularPatternRequest),
     OpenSketchPattern {
@@ -472,18 +473,10 @@ mod parameter_mutation;
 pub use parameter_mutation::GuiParameterMutation;
 /// A bounded owner snapshot; the GUI holds no document history or transaction token.
 mod asset_kind;
-pub use asset_kind::GuiPartAssetKind;
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum GuiAuthoringContext {
-    #[default]
-    NoDocument,
-    OtherDocument,
-    Part,
-    Sketch,
-}
 pub use crate::application::model_browser::feature_properties::{
     GuiFeatureCondition, GuiFeatureEdit,
 };
+pub use asset_kind::GuiPartAssetKind;
 mod line_style;
 pub use line_style::GuiSketchLineStyle;
 mod browser_choice;
@@ -491,7 +484,7 @@ pub use browser_choice::GuiBrowserChoice;
 mod presentation;
 pub use presentation::{GuiDocumentStorage, GuiPreviewImage, GuiProject, GuiProjectGroup};
 mod state;
-pub use state::GuiCommandState;
+pub use state::{GuiAuthoringContext, GuiCommandState};
 #[path = "commands_enabled.rs"]
 mod enabled;
 #[cfg(test)]

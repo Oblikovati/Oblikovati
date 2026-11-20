@@ -109,6 +109,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::PreviewSketchPatternEdit { .. }
         | GuiShellAction::EditSketchPattern { .. }
         | GuiShellAction::SketchMove(_)
+        | GuiShellAction::SketchText(_)
         | GuiShellAction::ConstrainSketch(_)
         | GuiShellAction::PlaceSketchTool(_)
         | GuiShellAction::ToggleSketchFormat(_)

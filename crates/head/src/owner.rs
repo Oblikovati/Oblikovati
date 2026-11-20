@@ -17,6 +17,8 @@ mod datum_pick;
 mod documents_gui;
 #[path = "owner_offset_plane.rs"]
 mod offset_plane;
+#[path = "owner_sketch_text.rs"]
+pub(crate) mod sketch_text;
 #[path = "owner_sketch_tools.rs"]
 mod sketch_tools_gui;
 use sketch_tools_gui::gui_placement_tool;

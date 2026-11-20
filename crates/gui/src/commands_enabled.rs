@@ -59,6 +59,7 @@ impl GuiShellAction {
             | Self::EditSketchPattern { .. } => {
                 state.sketch_pattern_available && state.sketch_at_ready && !state.transaction_open
             }
+            Self::SketchText(_) => state.sketch_text.is_some() && !state.transaction_open,
             Self::SketchMove(crate::GuiSketchMoveAction::Start) => {
                 state.sketch_at_ready && !state.transaction_open
             }

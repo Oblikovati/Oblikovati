@@ -16,6 +16,7 @@ pub(crate) mod precise_input;
 pub(crate) mod rectangular_pattern;
 #[path = "region-properties/mod.rs"]
 pub(crate) mod region_properties;
+pub(crate) mod text;
 
 pub(crate) mod axes;
 

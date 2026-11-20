@@ -58,6 +58,15 @@ pub(super) fn create(
         9,
         crate::GuiSketchTool::Fillet,
     );
+    sketch_tool(
+        ui,
+        origin,
+        state,
+        icons,
+        actions,
+        10,
+        crate::GuiSketchTool::Text,
+    );
 }
 fn sketch_tool(
     ui: &Ui,

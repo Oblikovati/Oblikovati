@@ -348,6 +348,7 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands, &mut selected);
         self.sketch_pattern
             .panel(ui, &request.commands, &mut selected);
+        self.sketch_text.panel(ui, &request.commands, &mut selected);
         crate::sketch::line::command_menu(ui, &request.commands, &mut selected);
         self.precise_input
             .panel(ui, &request.commands, &mut selected);

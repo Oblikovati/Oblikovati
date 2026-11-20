@@ -2,6 +2,15 @@
 //! Snapshot of command availability and validation.
 use super::*;
 
+/// The current authoring workspace.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum GuiAuthoringContext {
+    #[default]
+    NoDocument,
+    OtherDocument,
+    Part,
+    Sketch,
+}
 /// Command availability derived from the active document owner.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiCommandState {
@@ -132,6 +141,7 @@ pub struct GuiCommandState {
     pub sketch_isolated: bool,
     /// Current canvas move stage when the Move tool is open.
     pub sketch_move: Option<crate::GuiSketchMoveStatus>,
+    pub sketch_text: Option<crate::GuiSketchTextDraft>,
     pub origin_planes: Vec<crate::GuiOriginPlane>,
     /// The chosen browser row's outline in the view, in pixels: a solid's edges or a sketch.
     pub feature_edges: Vec<[[i32; 2]; 2]>,

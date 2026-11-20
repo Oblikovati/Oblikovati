@@ -147,6 +147,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
             owner.edit_sketch_pattern_from_gui(*pattern, request.clone())
         }
         GuiShellAction::SketchMove(action) => owner.sketch_move_from_gui(*action),
+        GuiShellAction::SketchText(action) => owner.sketch_text_from_gui(action.clone()),
         GuiShellAction::ConstrainSketch(choice) => owner.constrain_sketch_from_gui(*choice),
         GuiShellAction::PlaceSketchTool(tool) => owner.place_sketch_tool_from_gui(*tool),
         _ => unsupported(action),
