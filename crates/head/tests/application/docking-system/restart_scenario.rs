@@ -6,7 +6,7 @@ const APPEARANCE: &str = "Appearance Browser";
 
 #[given("the user has changed the workspace panel arrangement")]
 fn arrange_tabbed_panels(world: &mut ApplicationWorld) {
-    world.add_part();
+    super::open_docking_fixture(world);
     panel_docked(world);
     super::super::workspace_layout::dockspace_native::open_toolbar_tool(world, APPEARANCE);
     let (source, size) = diagnostics::window_geometry(APPEARANCE).unwrap();
@@ -43,7 +43,7 @@ fn workspace_is_saveable(world: &mut ApplicationWorld) {
 #[when("the user closes and restarts the MCAD Software")]
 fn restart_application(world: &mut ApplicationWorld) {
     world.reopen_application();
-    world.add_part();
+    super::open_docking_fixture(world);
     world.pump(Vec::new());
 }
 

@@ -6,8 +6,7 @@ const SOURCE: &str = "Appearance Browser";
 
 #[given("two dockable panels are open in separate workspace regions")]
 fn separate_panels(world: &mut ApplicationWorld) {
-    super::super::workspace_layout::browser_feature::open_visible_extruded_part(world);
-    world.previous_document = Some(world.active_id());
+    super::open_docking_fixture(world);
     panel_docked(world);
     super::super::workspace_layout::dockspace_native::open_toolbar_tool(world, SOURCE);
     let (position, size) = diagnostics::window_geometry(SOURCE).unwrap();

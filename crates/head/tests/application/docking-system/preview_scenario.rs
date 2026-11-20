@@ -5,8 +5,7 @@ use cucumber::{given, then, when};
 
 #[given("a dockable panel is floating over the workspace")]
 fn floating_panel(world: &mut ApplicationWorld) {
-    super::super::workspace_layout::browser_feature::open_visible_extruded_part(world);
-    world.previous_document = Some(world.active_id());
+    super::open_docking_fixture(world);
     let area = viewport(world);
     super::super::workspace_layout::dockspace_native::open_toolbar_tool(world, PANEL);
     assert_eq!(diagnostics::window_dock_id(PANEL), Some(0));

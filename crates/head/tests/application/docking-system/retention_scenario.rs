@@ -5,7 +5,7 @@ use cucumber::{given, then, when};
 
 #[given("two documents are open in the MCAD Software")]
 fn two_open_documents(world: &mut ApplicationWorld) {
-    let first = world.add_part();
+    let first = super::open_docking_fixture(world);
     let second = world.add_part();
     assert_ne!(first, second);
     world.previous_document = Some(first);

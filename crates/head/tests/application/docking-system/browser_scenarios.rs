@@ -7,10 +7,7 @@ const MATERIAL: &str = "Material Browser";
 
 #[given("Appearance Browser is floating over the workspace")]
 fn appearance_floating(world: &mut ApplicationWorld) {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../test-utilities/fixtures/docking-visible-solid.opd");
-    world.reopen_through_dialog(&path);
-    world.previous_document = Some(world.active_id());
+    super::open_docking_fixture(world);
     open_floating(world, APPEARANCE);
 }
 
