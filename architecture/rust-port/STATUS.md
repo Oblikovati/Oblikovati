@@ -45,6 +45,15 @@ using this status; the live scenario directory can change.
   copy using the native fixture. Overlapping dimension labels were fixed in
   #4180. This copy does not verify the live source. See
   `receipts/2026-11-20-midpoint-full-diagnostic-4178/`.
+- Sketch drag (#4171): partial motion is still refused. Conditional affine
+  equation and optimum checks are merged, but they do not verify rounded sketch
+  validity or prove interactive performance. The direct-drag worktree remains
+  unmerged. The action-plan stop rule applies: do not continue isolated solver
+  iterations without a passing scenario; return to a runnable feature.
+- Constraint Settings source check: all eight scenarios now specify session
+  preference baselines, but still require Inventor `.ipt` fixtures. Inventor
+  interop is deferred; native fixture equivalents were requested in the feature
+  `BLOCKERS.md`. The recorded 19.597 mm clicks also lack source coordinates.
 - Constraint Settings (#4158): a full diagnostic on the uncommitted feature
   worktree passed five of eight scenarios with the feature and support hashes
   unchanged during the run. Three scenarios stopped at undefined setup steps;
