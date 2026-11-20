@@ -52,6 +52,22 @@ frame-rate or application-memory result. The method still lacks sketch input
 bounds, nonlinear certification, and an interactive workload test. See
 `receipts/2026-11-20-affine-zero-skip-4171/`.
 
+The solver now has a bounded certificate for explicitly supplied affine
+equations whose binary64 inputs are treated as exact binary rationals. It
+checks feasibility and KKT stationarity with exact arithmetic. The squared
+coordinate-preference objective is convex, so these conditions establish a
+global best fit for those supplied equations. Free coordinates can be
+non-unique. The returned binary64 bounds enclose an exact optimizer; a rounded
+coordinate is not asserted to satisfy the equations exactly.
+
+This does not establish that the supplied equations represent the sketch,
+bound parameter-source uncertainty, certify nonlinear geometry, or satisfy
+the sketch tolerance policy after rounding. It is not connected to dragging.
+The bounded solver has explicit cancellation and resource refusals. A release
+probe of this component took 24.027 ms median on a denser 32-variable example.
+Real sketch and UI performance remain unmeasured. Test and probe details are
+in `receipts/2026-11-20-affine-component-4171/`.
+
 SolveSpace forces dragged points toward the pointer, then solves authored
 constraints with weighted Newton iterations. Its success and rank checks do not
 certify the closest feasible drag target. OCCT's `math_Uzawa` accepts an

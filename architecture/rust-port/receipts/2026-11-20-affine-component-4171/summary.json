@@ -1,0 +1,50 @@
+{
+  "classification": "exact affine component; not sketch or frame acceptance",
+  "assumption": "all supplied binary64 coefficients, right sides, initial values and targets are exact binary rationals",
+  "solver_tests": "full oblikovati-solve suite passed; two existing manual benchmarks ignored",
+  "analytic_projection_cases": 240,
+  "model_regressions": "sketch point preference and geometric constraint creation passed",
+  "compiler": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "platform": "Linux-7.2.15-76070215-generic-x86_64-with-glibc2.39",
+  "cpu": "AMD RYZEN AI MAX+ 395 w/ Radeon 8060S",
+  "release_probe": "nine samples per system; synthetic and isolated",
+  "timings": [
+    {
+      "case": "chain",
+      "variables": 8,
+      "equations": 7,
+      "median_ms": 0.096,
+      "max_ms": 0.127
+    },
+    {
+      "case": "chain",
+      "variables": 16,
+      "equations": 15,
+      "median_ms": 0.377,
+      "max_ms": 0.4
+    },
+    {
+      "case": "chain",
+      "variables": 32,
+      "equations": 31,
+      "median_ms": 1.467,
+      "max_ms": 1.572
+    },
+    {
+      "case": "chain",
+      "variables": 64,
+      "equations": 63,
+      "median_ms": 6.059,
+      "max_ms": 6.343
+    },
+    {
+      "case": "dense",
+      "variables": 32,
+      "equations": 16,
+      "median_ms": 24.027,
+      "max_ms": 26.498
+    }
+  ],
+  "peak_process_rss_kib": 7728,
+  "limits": "No trusted sketch equation extraction, parameter uncertainty, rounded sketch tolerance check, nonlinear certificate, UI timing, or application-memory comparison."
+}

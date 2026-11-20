@@ -2228,6 +2228,10 @@ dependencies = [
 [[package]]
 name = "oblikovati-solve"
 version = "0.1.0"
+dependencies = [
+ "num-rational",
+ "num-traits",
+]
 
 [[package]]
 name = "oblikovati-viewport"
