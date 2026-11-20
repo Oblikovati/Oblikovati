@@ -115,7 +115,7 @@ impl SketchTextDialog {
         let Some(draft) = state.sketch_text.clone() else {
             return;
         };
-        Self::fit_dockable(ui, TITLE, [560., 175.], [460., 365.]);
+        Self::fit_dockable(ui, TITLE, [560., 175.], [460., 385.]);
         let mut open = true;
         let action = Self::dockable_window(ui, TITLE, &mut open)
             .build(|| {

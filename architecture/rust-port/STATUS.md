@@ -115,6 +115,11 @@ using this status; the live scenario directory can change.
   warning kept the live preview and selected zero for replacement.
   The test used ordinary text. Pinned `text-36` still needs the recorded
   fraction fixture or a source correction.
+  Native input left unselected `ab` unchanged and converted selected
+  characters to `AB` in the editor and preview. The accepted edit kept
+  the text ID and anchor. Pinned `text-25` also requires strike-through.
+  Font decoration metrics are tracked in
+  [Martensite #578](https://github.com/Oblikovati/Martensite/issues/578).
   The model uses API v0.161.0 to validate Unicode character-format ranges.
   Tests cover atomic rejection of out-of-range edits, undo and redo, and
   native YAML reopen. Mixed-font rendering remains open under

@@ -5,6 +5,8 @@ use crate::HeadSketchWork;
 use cucumber::{given, then, when};
 #[path = "text_bold.rs"]
 mod text_bold;
+#[path = "text_case.rs"]
+mod text_case;
 #[path = "text_creation.rs"]
 mod text_creation;
 #[path = "text_double_click.rs"]

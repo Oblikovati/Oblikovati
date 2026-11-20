@@ -9,6 +9,8 @@ mod character_ranges;
 use character_ranges::{TextFaceFlag, selection_has};
 #[path = "text_numbering.rs"]
 mod numbering;
+#[path = "text_case.rs"]
+mod text_case;
 use numbering::NumberingStyle;
 
 const CONTENT_PICKER_WIDTH: f32 = 130.;
@@ -53,6 +55,15 @@ impl TextContentEditor {
         changed
             | self.face_control(ui, draft, TextFaceFlag::Bold)
             | self.face_control(ui, draft, TextFaceFlag::Italic)
+            | self.case_control(ui, draft)
+    }
+
+    fn case_control(&mut self, ui: &Ui, draft: &mut GuiSketchTextDraft) -> bool {
+        if !ui.button("UPPERCASE") {
+            return false;
+        }
+        self.restore = text_case::uppercase_selection(draft, self.selection.clone());
+        self.restore.is_some()
     }
 
     fn input(&mut self, ui: &Ui, content: &mut String, face: [bool; 2]) -> bool {
