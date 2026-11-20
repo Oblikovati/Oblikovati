@@ -27940,8 +27940,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/sketch_create_tools.go, SketchTextTool keeps authored content and its chosen font.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go sketch text tests cover authored content and outline generation. The paragraph controls and recorded status are specified by pinned text-33.",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The default sketch font supplies the round U+2022 outline. Martensite supplies the glyph geometry for both paragraphs.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. Windows and macOS UI evidence is pending.",
+      "kernel_integration": "The Text editor applies markers to selected paragraphs. Draft and committed display use the same analytic glyph outlines from Martensite.",
+      "rust_tests": "sketch_scenarios_use_the_native_window, focused by pinned text-33, and Sketch Text paragraph transformation unit tests.",
+      "oracle": "Pinned text-33 steps, visible editor and canvas captures, sampled curved bullet outline, committed anchor coordinates, and solver degrees of freedom.",
+      "expected_result": "Two typed paragraphs obtain bullet markers, then 1. and 2. Numeric Text keeps the picked anchor, ends at Ready with 42 dimensions needed, and has no active preview.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:d71bb535f95fca1550a273c58b49f12f40fac0b8ac850a6da47b6f25805669dc",

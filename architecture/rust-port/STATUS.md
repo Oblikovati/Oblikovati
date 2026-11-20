@@ -83,11 +83,14 @@ using this status; the live scenario directory can change.
   Pinned `text-22` passed numbering and diameter-symbol insertion with DejaVu
   Sans, including a check of the curved outline and visual review of the canvas.
   The default font fallback is open under [Martensite #575](https://github.com/Oblikovati/Martensite/issues/575).
-  The full live Text run passed nine of 38 declarations. The other 29 lack
-  step bindings. See `receipts/2026-11-20-sketch-text-numbering-3907/` for
+  Pinned `text-33` passed all eight steps. The native editor applied bullets
+  to two selected paragraphs, replaced them with sequential numbers, and
+  committed the Text at the selected point. Ready showed 42 dimensions
+  needed. The full live Text run passed 10 of 38 declarations. The other 28
+  lack step bindings. See `receipts/2026-11-20-sketch-text-bullets-3907/` for
   the current run and `receipts/2026-11-20-sketch-text-style-3907/` for the
-  formatting preview and save and reopen checks. Strict verification still
-  requires bounded build and runtime inputs under #3978.
+  earlier formatting preview and save and reopen checks. Strict verification
+  still requires bounded build and runtime inputs under #3978.
   The model uses API v0.161.0 to validate Unicode character-format ranges.
   Tests cover atomic rejection of out-of-range edits, undo and redo, and
   native YAML reopen. Mixed-font rendering remains open under
