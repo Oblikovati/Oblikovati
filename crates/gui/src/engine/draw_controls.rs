@@ -282,13 +282,12 @@ impl GuiFrameEngine {
                 );
                 selected.extend(menu_actions);
             }
-            if !self.blend_dialog.active() && !self.part_context_open {
-                crate::application::workspace_layout::browser_feature::selection_toolbar(
-                    ui,
-                    request,
-                    &mut selected,
-                );
-            }
+            self.workspace.selection_toolbar(
+                ui,
+                request,
+                &mut selected,
+                self.blend_dialog.active() || self.part_context_open,
+            );
         } else {
             self.part_context_open = false;
         }

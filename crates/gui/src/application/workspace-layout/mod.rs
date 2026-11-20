@@ -35,6 +35,7 @@ pub(crate) struct WorkspaceLayout {
     pub navigation_bar_visible: bool,
     pub status_bar_visible: bool,
     pub marking_menu_enabled: bool,
+    pub selection_toolbar_visible: bool,
     outer_center: Option<crate::application::document_creation::workspaces::WorkspaceArea>,
     outer_bottom_docked: bool,
     pub(crate) outer_bottom_span: Option<[f32; 2]>,
@@ -60,6 +61,7 @@ impl Default for WorkspaceLayout {
             navigation_bar_visible: true,
             status_bar_visible: true,
             marking_menu_enabled: true,
+            selection_toolbar_visible: true,
             outer_center: None,
             outer_bottom_docked: false,
             outer_bottom_span: None,
@@ -158,6 +160,19 @@ impl WorkspaceLayout {
     }
     pub(crate) fn feature_keyboard_focus(&self) -> bool {
         self.view.feature_keyboard_focus
+    }
+    /// Draw the mini-toolbar when its workspace preference and current tool allow it.
+    /// Example: `layout.selection_toolbar(ui, request, actions, menu_open)`.
+    pub(crate) fn selection_toolbar(
+        &self,
+        ui: &Ui,
+        request: &crate::GuiFrameRequest,
+        actions: &mut Vec<GuiShellAction>,
+        suppressed: bool,
+    ) {
+        if self.selection_toolbar_visible && !suppressed {
+            browser_feature::selection_toolbar(ui, request, actions);
+        }
     }
     /// Draw the browser in its dock; example: `layout.browser_panel(ui, state, 900., 158., actions)`.
     pub(crate) fn browser_panel(
@@ -385,6 +400,7 @@ impl WorkspaceLayout {
         if let Some(_menu) = ui.begin_popup("##user-interface") {
             ui.checkbox("ViewCube", &mut self.view_cube_visible);
             ui.checkbox("Navigation Bar", &mut self.navigation_bar_visible);
+            ui.checkbox("Mini-Toolbar", &mut self.selection_toolbar_visible);
             ui.checkbox("Status Bar", &mut self.status_bar_visible);
             ui.checkbox("Marking Menu", &mut self.marking_menu_enabled);
             let mut model_open = self.panels.model_open;

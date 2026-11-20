@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added a saved Mini-Toolbar visibility option to the View ribbon. (#3897)
+
 - Add an exact best-fit certificate for explicit affine equations; sketch drag integration remains open. (#4171)
 
 - Draw midpoint lines with pointer or typed length and angle, including explicit point selection. (#4178)

@@ -65,3 +65,41 @@ fn hidden_regions_are_unchecked(world: &mut ApplicationWorld) {
 fn part_visible_behind_menu(world: &mut ApplicationWorld) {
     browser_feature::expect_solid_visible(world);
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_view_menu_toggles_the_mini_toolbar_without_clearing_selection() {
+    let mut world = ApplicationWorld::new();
+    super::native_part::open_named_extrusion(&mut world);
+    let name = super::native_part::single_extrusion_name(&mut world);
+    click_visible(&mut world, &name);
+    let selected = world.state().browser.unwrap().selected_feature;
+    assert!(selected.is_some());
+    assert!(super::window_geometry("##selection-toolbar").is_some());
+    click_visible(&mut world, "View");
+    toggle_mini_toolbar(&mut world, true);
+    assert!(super::window_geometry("##selection-toolbar").is_none());
+    assert_eq!(world.state().browser.unwrap().selected_feature, selected);
+    toggle_mini_toolbar(&mut world, false);
+    assert!(super::window_geometry("##selection-toolbar").is_some());
+    assert_eq!(world.state().browser.unwrap().selected_feature, selected);
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+fn click_visible(world: &mut ApplicationWorld, label: &str) {
+    let center = world.run(label).center();
+    super::drawing_browser_steps::click_panel_action(world, center);
+}
+
+#[cfg(target_os = "linux")]
+fn toggle_mini_toolbar(world: &mut ApplicationWorld, checked: bool) {
+    click_visible(world, "User Interface");
+    world.expect_text("Mini-Toolbar");
+    assert_eq!(world.checked("Mini-Toolbar"), checked);
+    click_visible(world, "Mini-Toolbar");
+    world.expect_text("Mini-Toolbar");
+    assert_eq!(world.checked("Mini-Toolbar"), !checked);
+    super::super::x11_input::press_escape();
+    world.pump(Vec::new());
+}

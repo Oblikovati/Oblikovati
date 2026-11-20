@@ -24,6 +24,8 @@ pub(crate) struct WorkspaceDockSettings {
     #[serde(default = "enabled_by_default")]
     pub marking_menu_enabled: bool,
     #[serde(default = "enabled_by_default")]
+    pub selection_toolbar_visible: bool,
+    #[serde(default = "enabled_by_default")]
     pub auto_expand_representations: bool,
     #[serde(default)]
     pub browser_panels:
@@ -82,6 +84,7 @@ impl WorkspaceDockSettings {
             navigation_bar_visible: true,
             status_bar_visible: true,
             marking_menu_enabled: true,
+            selection_toolbar_visible: true,
             ..Self::default()
         }
     }
@@ -154,10 +157,10 @@ mod tests {
         );
     }
     #[test]
-    fn marking_menu_visibility_defaults_and_round_trips() {
+    fn marking_menu_and_mini_toolbar_visibility_default_and_round_trip() {
         let legacy = br#"{"version":1,"imgui_ini":"","material_browser":false,"appearance_browser":false,"parameters":false,"selection_filter":false,"history_browser":false}"#;
         let mut settings = WorkspaceDockSettings::decode(legacy).unwrap();
-        assert!(settings.marking_menu_enabled);
+        assert!(settings.marking_menu_enabled && settings.selection_toolbar_visible);
         settings.marking_menu_enabled = false;
         let mut engine = crate::GuiFrameEngine::new().unwrap();
         engine
@@ -166,6 +169,15 @@ mod tests {
         let saved =
             WorkspaceDockSettings::decode(&engine.save_workspace_layout().unwrap()).unwrap();
         assert!(!saved.marking_menu_enabled);
+        assert!(saved.selection_toolbar_visible);
+        settings.marking_menu_enabled = true;
+        settings.selection_toolbar_visible = false;
+        engine
+            .load_workspace_layout(&settings.encode().unwrap())
+            .unwrap();
+        let saved =
+            WorkspaceDockSettings::decode(&engine.save_workspace_layout().unwrap()).unwrap();
+        assert!(saved.marking_menu_enabled && !saved.selection_toolbar_visible);
     }
     #[test]
     fn old_settings_default_and_round_trip_representation_preference() {

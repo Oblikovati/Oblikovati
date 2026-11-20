@@ -170,3 +170,8 @@ The workspace keeps a small panel-add button at its upper left. This button
 and the dock tab bar open the same panel menu. Selecting a browser panel from
 either menu opens its dockable window and gives its tab focus. Saved dock
 placement remains under ImGui control.
+
+The View ribbon's User Interface menu can show or hide the selection
+mini-toolbar without changing the selected face, edge, or feature. The
+workspace saves the choice independently of the marking menu. Existing
+workspace layouts continue to show the mini-toolbar until it is hidden.
