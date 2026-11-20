@@ -391,15 +391,15 @@
       "features/application/docking-system/right-dock-tabs.svg": "f07847f1b581581045032a3cf5d17d8d67de6f3a3ac82c4f035b5b692982ca55",
       "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-docking-process-4133/cucumber.json",
-    "cucumber_sha256": "78d98d1fbf981725620d907593dc86ca43d61fca9f99990c7fd84991eb3b2506",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-docking-process-4133/scenario-arguments.json",
-    "scenario_arguments_sha256": "30f7a9949ec05a4dd85ac859b5a87f541dbe047b11eedd77f698639b7d8fd27e",
-    "application_commit": "2da9b654f",
-    "command": "OBK_BDD_FEATURE=docking-system; xvfb-run with Openbox; cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture; see receipt summary",
-    "environment": "Linux, Xvfb 1440x900, Openbox, Vulkan Lavapipe; isolated application settings",
-    "notes": "10 of 10 scenarios and 96 steps passed, including a separate-process restart; uncommitted test source and live unversioned scenario source; see diagnostic receipt.",
-    "blocker": "Scenario source is unversioned and native runner build provenance is unproven (issue #3978)."
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-docking-feature-diagnostic-3978/cucumber.json",
+    "cucumber_sha256": "072cd874e4fa4a519d02c2eb9d32953c2bf4b0615abba735f845f228d4679ec6",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-docking-feature-diagnostic-3978/scenario-arguments.json",
+    "scenario_arguments_sha256": "ef300d149f1a38e2a08703652f5727d6da0cdeb6b0b9190896edc7eec3cbe0bf",
+    "application_commit": "877eaf134",
+    "command": "sealed_build_cli.py --area application --feature docking-system --all-scenarios --local-snapshot ... --diagnostic-proc; see diagnostic README",
+    "environment": "Linux Bubblewrap, Xvfb 1440x900, Openbox, Vulkan Lavapipe; private proc",
+    "notes": "All 10 scenarios and 96 steps passed in one linked offline build and isolated execution. The feature report checker passed; see diagnostic receipt.",
+    "blocker": "The snapshot is local and build/runtime provenance is unauthenticated (issue #3978); the diagnostic is non-reusable."
   },
   "features/application/workspace-layout/workspace-layout.feature": {
     "feature_sha256": "3910a3c0a4e77f5417ae7e6b08019330b2fdc621c6af1c4f7f42ff9acb329b1a",

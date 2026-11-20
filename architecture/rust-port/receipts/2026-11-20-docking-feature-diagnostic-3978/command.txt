@@ -1,0 +1,20 @@
+python3 -B tools/bdd/sealed_build_cli.py \
+  --source /tmp/obk-feature-all-XOS0QQ/source \
+  --vendor /tmp/obk-feature-all-XOS0QQ/vendor \
+  --toolchain /home/vmiguel/.rustup/toolchains/1.99.0-x86_64-unknown-linux-gnu \
+  --config /tmp/obk-feature-all-XOS0QQ/config \
+  --target /tmp/obk-feature-all-XOS0QQ/target \
+  --build-logs /tmp/obk-feature-all-XOS0QQ/build-logs \
+  --bwrap /tmp/obk-feature-all-XOS0QQ/bwrap \
+  --system /tmp/obk-feature-all-XOS0QQ/system \
+  --repository /home/vmiguel/git/oblikovati-workspace/oblikovati-rust \
+  --revision 877eaf1342f13a2dcd65c57c6f48a4e0ca9c7a83 \
+  --runtime /tmp/obk-feature-all-XOS0QQ/runtime \
+  --checkout /tmp/obk-feature-all-XOS0QQ/scenarios \
+  --reports /tmp/obk-feature-all-XOS0QQ/reports \
+  --run-log /tmp/obk-feature-all-XOS0QQ/native.log \
+  --area application --feature docking-system \
+  --all-scenarios \
+  --registry-archives /home/vmiguel/.cargo/registry/cache/index.crates.io-1949cf8c6b5b557f \
+  --local-snapshot architecture/rust-port/receipts/2026-11-20-docking-local-snapshot-3978 \
+  --diagnostic-proc
