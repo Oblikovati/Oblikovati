@@ -12,6 +12,7 @@ fn block_packet() -> ViewportSketchDisplay {
         SketchBlockInstance::new(Id(42), "Rib", [-3., -2.], std::f64::consts::FRAC_PI_2, 2.)
             .unwrap();
     ViewportSketchDisplay {
+        working_scale: 1.,
         sketch: DocumentSketchId(1),
         plane: SketchPlane::xy(),
         geometry: Sketch2D::default(),

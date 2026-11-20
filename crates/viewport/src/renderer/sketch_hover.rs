@@ -123,6 +123,7 @@ impl RenderView {
             &sketch.geometry,
             id,
             SketchSamplingOptionsV1 {
+                working_scale: sketch.working_scale,
                 deflection: self.sketch_deflection()?,
                 maximum_curve_points: 4096,
             },
@@ -145,6 +146,7 @@ impl RenderView {
             &block.geometry,
             member,
             SketchSamplingOptionsV1 {
+                working_scale: sketch.working_scale,
                 deflection: self.sketch_deflection()? / block.instance.scale().abs(),
                 maximum_curve_points: 4096,
             },

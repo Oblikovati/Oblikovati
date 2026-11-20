@@ -63,6 +63,7 @@ fn build(
     color: &Rgba,
 ) -> Result<Vec<SketchStructure>, String> {
     let options = SketchSamplingOptionsV1 {
+        working_scale: 1.,
         deflection,
         maximum_curve_points: 4096,
     };
@@ -75,6 +76,24 @@ fn build(
         ViewportSketchPreview::Resolved {
             geometry, members, ..
         } => sample_sketch_preview_members(geometry, members, options)?,
+        ViewportSketchPreview::Text {
+            plane,
+            anchor,
+            style,
+            working_scale,
+        } => {
+            return text_preview(
+                viewer,
+                *plane,
+                *anchor,
+                style,
+                SketchSamplingOptionsV1 {
+                    working_scale: *working_scale,
+                    ..options
+                },
+                color,
+            );
+        }
     };
     sampled
         .iter()
@@ -97,7 +116,29 @@ fn build_member(
         SketchDisplayPrimitive::Curve(points) => {
             sketch_structure::curve(viewer, plane, points, color, kind, true)
         }
+        SketchDisplayPrimitive::GlyphEdges(edges) => {
+            sketch_structure::curve_paths(viewer, plane, edges, color, kind, true)
+        }
     }
+}
+
+fn text_preview(
+    viewer: &V3dViewer,
+    plane: oblikovati_model::sketch::SketchPlane,
+    anchor: [f64; 2],
+    style: &oblikovati_api::types::SketchTextStyle,
+    options: SketchSamplingOptionsV1,
+    color: &Rgba,
+) -> Result<Vec<SketchStructure>, String> {
+    let edges =
+        oblikovati_martensite::planar_curve::sketch::sample_sketch_text(style, anchor, options)?;
+    if edges.is_empty() {
+        return Ok(Vec::new());
+    }
+    let kind = super::sketch_display::curve_role_line_style(false, false);
+    Ok(vec![sketch_structure::curve_paths(
+        viewer, plane, &edges, color, kind, true,
+    )?])
 }
 
 struct HiddenPreview<'a>(&'a [SketchStructure]);

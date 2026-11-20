@@ -31,6 +31,7 @@ fn failure_update() -> crate::HeadSketchSceneUpdate {
         .add_line(SketchEntityId(2), [SketchEntityId(1); 2])
         .unwrap();
     let packet = oblikovati_viewport::ViewportSketchDisplay {
+        working_scale: 1.,
         sketch: DocumentSketchId(4),
         plane: SketchPlane::xy(),
         geometry,

@@ -6,6 +6,7 @@ use oblikovati_model::{
 /// Owned committed geometry. The document keeps identity; native samples remain disposable.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ViewportSketchDisplay {
+    pub working_scale: f64,
     pub sketch: DocumentSketchId,
     pub plane: SketchPlane,
     pub geometry: Sketch2D,

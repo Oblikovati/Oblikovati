@@ -87,6 +87,7 @@ impl SketchDisplayOverlay {
         let report = sample_sketch_display(
             &sketch.geometry,
             SketchSamplingOptionsV1 {
+                working_scale: sketch.working_scale,
                 deflection,
                 maximum_curve_points: 4096,
             },
@@ -157,6 +158,10 @@ impl SketchDisplayOverlay {
         identity: oblikovati_model::sketch::SketchEntityId,
         instance_color: Option<&oblikovati_api::types::Color>,
     ) {
+        if matches!(&entity.primitive, SketchDisplayPrimitive::GlyphEdges(edges) if edges.is_empty())
+        {
+            return;
+        }
         let selected = self.selected.sketches.contains(&sketch.sketch)
             || self.selected.entities.contains(&(sketch.sketch, identity));
         let color = entity_color(
@@ -229,6 +234,9 @@ pub(super) fn build_entity(
         }
         SketchDisplayPrimitive::Curve(points) => {
             sketch_structure::curve(viewer, sketch.plane, points, color, kind, transient)
+        }
+        SketchDisplayPrimitive::GlyphEdges(edges) => {
+            sketch_structure::curve_paths(viewer, sketch.plane, edges, color, kind, transient)
         }
     }
 }
@@ -359,6 +367,7 @@ mod role_style_tests {
             a: 1.0,
         };
         let sketch = ViewportSketchDisplay {
+            working_scale: 1.,
             sketch: DocumentSketchId(1),
             plane: SketchPlane::xy(),
             geometry,

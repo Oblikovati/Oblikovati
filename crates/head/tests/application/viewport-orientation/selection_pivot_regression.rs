@@ -195,6 +195,7 @@ fn display_distant_sketch(world: &mut ApplicationWorld) {
         .add_line(SketchEntityId(3), [SketchEntityId(1), SketchEntityId(2)])
         .unwrap();
     let sketch = oblikovati_viewport::ViewportSketchDisplay {
+        working_scale: 1.,
         sketch: DocumentSketchId(99),
         plane: SketchPlane::xy(),
         geometry,

@@ -23,6 +23,7 @@ fn parallel_lines(offset: f64) -> ViewportSketchDisplay {
     geometry.add_line(Id(5), [Id(1), Id(2)]).unwrap();
     geometry.add_line(Id(6), [Id(3), Id(4)]).unwrap();
     ViewportSketchDisplay {
+        working_scale: 1.,
         sketch: DocumentSketchId(1),
         plane: SketchPlane::xy(),
         geometry,

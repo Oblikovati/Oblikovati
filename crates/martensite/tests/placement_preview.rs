@@ -6,6 +6,7 @@ use oblikovati_martensite::planar_curve::sketch::{
 use oblikovati_model::sketch::{SketchPathMember, SketchPlacementGeometry, SketchPlacementRecipe};
 fn options(deflection: f64) -> SketchSamplingOptionsV1 {
     SketchSamplingOptionsV1 {
+        working_scale: 1.,
         deflection,
         maximum_curve_points: 4096,
     }
@@ -98,6 +99,7 @@ fn preview_refuses_invalid_options_and_excessive_native_sampling() {
     }
     for maximum_curve_points in [0, 3, u32::MAX] {
         let options = SketchSamplingOptionsV1 {
+            working_scale: 1.,
             deflection: 0.1,
             maximum_curve_points,
         };

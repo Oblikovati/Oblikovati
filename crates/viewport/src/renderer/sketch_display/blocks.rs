@@ -13,7 +13,7 @@ impl SketchDisplayOverlay {
         block: &ViewportSketchBlock,
         deflection: f64,
     ) {
-        let report = match sample_block(block, deflection) {
+        let report = match sample_block(block, deflection, sketch.working_scale) {
             Ok(report) => report,
             Err(cause) => {
                 self.declines
@@ -69,10 +69,12 @@ impl SketchDisplayOverlay {
 fn sample_block(
     block: &ViewportSketchBlock,
     deflection: f64,
+    working_scale: f64,
 ) -> Result<SketchDisplayReport, String> {
     sample_sketch_display(
         &block.geometry,
         SketchSamplingOptionsV1 {
+            working_scale,
             deflection: deflection / block.instance.scale().abs(),
             maximum_curve_points: 4096,
         },
@@ -83,6 +85,7 @@ pub(in crate::renderer) fn block_display(
     block: &ViewportSketchBlock,
 ) -> ViewportSketchDisplay {
     ViewportSketchDisplay {
+        working_scale: sketch.working_scale,
         sketch: sketch.sketch,
         plane: sketch.plane,
         geometry: block.geometry.clone(),
@@ -116,6 +119,15 @@ pub(in crate::renderer) fn transform_primitive(
                 .map(|point| transform_point(*point, instance))
                 .collect::<Result<Vec<_>, _>>()?,
         )),
+        SketchDisplayPrimitive::GlyphEdges(edges) => edges
+            .iter()
+            .map(|path| {
+                path.iter()
+                    .map(|&point| transform_point(point, instance))
+                    .collect()
+            })
+            .collect::<Result<_, _>>()
+            .map(SketchDisplayPrimitive::GlyphEdges),
     }
 }
 fn transform_point([x, y]: [f64; 2], instance: &SketchBlockInstance) -> Result<[f64; 2], String> {

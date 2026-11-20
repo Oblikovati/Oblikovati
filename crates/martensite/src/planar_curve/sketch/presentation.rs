@@ -6,6 +6,7 @@ use oblikovati_model::sketch::{OwnedSketchGeometry, Sketch2D, SketchEntityId, Sk
 pub enum SketchDisplayPrimitive {
     Point([f64; 2]),
     Curve(Vec<[f64; 2]>),
+    GlyphEdges(Vec<Vec<[f64; 2]>>),
 }
 /// One visible authored entity, with its independent construction and axis roles.
 #[derive(Clone, Debug, PartialEq)]
@@ -86,6 +87,13 @@ pub(super) fn display_primitive(
 ) -> Result<SketchDisplayPrimitive, String> {
     match index.entity(entity).map_err(|cause| cause.to_string())? {
         OwnedSketchGeometry::Point(point) => Ok(SketchDisplayPrimitive::Point(point.position)),
+        OwnedSketchGeometry::Text(text) => {
+            let anchor = index
+                .point(text.anchor)
+                .map_err(|cause| cause.to_string())?;
+            super::sample_sketch_text(&text.style, anchor.position, options)
+                .map(SketchDisplayPrimitive::GlyphEdges)
+        }
         _ => {
             let curve =
                 shape::resolve(index, entity, SketchLineDomain::Segment, options.deflection)

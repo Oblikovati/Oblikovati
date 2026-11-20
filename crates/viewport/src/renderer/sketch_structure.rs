@@ -36,6 +36,17 @@ pub(super) fn curve(
     kind: AspectTypeOfLine,
     transient: bool,
 ) -> Result<SketchStructure, String> {
+    curve_paths(viewer, plane, &[points], color, kind, transient)
+}
+
+pub(super) fn curve_paths<P: AsRef<[[f64; 2]]>>(
+    viewer: &V3dViewer,
+    plane: SketchPlane,
+    paths: &[P],
+    color: &oblikovati_model::theme::Rgba,
+    kind: AspectTypeOfLine,
+    transient: bool,
+) -> Result<SketchStructure, String> {
     let (structure, group) = grouped_structure(viewer, transient)?;
     let rgba = srgb_rgba(color)?;
     let style = Handle::new(
@@ -45,7 +56,9 @@ pub(super) fn curve(
     // v0.7 line rasterization admits blending through the explicit MaskBlend aspect.
     style.set_alpha_mode(Graphic3dAlphaMode::MaskBlend, 0.);
     group.set_group_primitives_aspect(&style.cast());
-    group.add_primitive_array(&sketch_vertices::polyline(plane, points)?.cast(), true);
+    if !paths.is_empty() {
+        group.add_primitive_array(&sketch_vertices::polylines(plane, paths)?.cast(), true);
+    }
     Ok(structure)
 }
 pub(super) fn point(

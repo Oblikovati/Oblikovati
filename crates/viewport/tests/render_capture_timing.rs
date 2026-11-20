@@ -42,6 +42,7 @@ fn sketch_display() -> crate::ViewportSketchDisplay {
             .unwrap();
     }
     crate::ViewportSketchDisplay {
+        working_scale: 1.,
         sketch: DocumentSketchId(1),
         plane: SketchPlane::xy(),
         geometry,

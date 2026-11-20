@@ -274,7 +274,7 @@ fn sketch_outline(
     sketch: DocumentSketchId,
 ) -> Result<Vec<[[f64; 3]; 2]>, String> {
     use oblikovati_martensite::planar_curve::sketch::{
-        SketchDisplayPrimitive::Curve, SketchSamplingOptionsV1, sample_sketch_display,
+        SketchDisplayPrimitive, SketchSamplingOptionsV1, sample_sketch_display,
     };
     let geometry = snapshot
         .sketches
@@ -287,16 +287,19 @@ fn sketch_outline(
     let report = sample_sketch_display(
         geometry,
         SketchSamplingOptionsV1 {
+            working_scale: snapshot.parameters.units().working_scale(),
             deflection: OUTLINE_DEFLECTION,
             maximum_curve_points: 4096,
         },
     )?;
     let mut segments = Vec::new();
     for entity in report.entities {
-        let Curve(points) = entity.primitive else {
-            continue;
+        let paths = match &entity.primitive {
+            SketchDisplayPrimitive::Point(_) => continue,
+            SketchDisplayPrimitive::Curve(points) => std::slice::from_ref(points),
+            SketchDisplayPrimitive::GlyphEdges(paths) => paths,
         };
-        for pair in points.windows(2) {
+        for pair in paths.iter().flat_map(|points| points.windows(2)) {
             segments.push([
                 plane.to_model(pair[0]).map_err(|cause| cause.to_string())?,
                 plane.to_model(pair[1]).map_err(|cause| cause.to_string())?,

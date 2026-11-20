@@ -67,7 +67,10 @@ using this status; the live scenario directory can change.
   records. See `receipts/2026-11-20-sketch-fillet-3956/`.
 - Sketch Text (#3907) has a saved model entity with editable content and style.
   Native YAML preserves the text and its anchor. The session can undo and redo
-  creation and edits. The ribbon still needs glyph rendering and the editor.
+  creation and edits. Preview and saved text now share the Martensite glyph
+  outline path. A native X11 test confirmed matching viewport pixels and
+  verified that clearing the preview leaves a blank viewport. The ribbon still
+  needs the text editor and command wiring.
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
   Midpoint Line tool has native mouse and keyboard tests. A native YAML

@@ -6,6 +6,8 @@ use martensite_tkmath::geom_abs::Shape;
 /// Presentation error and resource policy, separate from modelling tolerance.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SketchSamplingOptionsV1 {
+    /// Centimetres per coordinate unit of the sketch that owns the text.
+    pub working_scale: f64,
     pub deflection: f64,
     pub maximum_curve_points: u32,
 }
@@ -61,7 +63,7 @@ pub(crate) fn require_round_sampling_capacity(
     }
     Ok(())
 }
-fn sampled_positions(
+pub(super) fn sampled_positions(
     sampled: &QuasiUniformDeflection,
     limit: u32,
 ) -> Result<Vec<[f64; 2]>, String> {

@@ -176,7 +176,7 @@ pub(super) fn recipe_parts(
             solve_options,
             plane,
         } => (recipe, solve_options, plane),
-        ViewportSketchPreview::Resolved { .. } => panic!("expected a standalone recipe fixture"),
+        _ => panic!("expected a standalone recipe fixture"),
     }
 }
 

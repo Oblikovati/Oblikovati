@@ -2,11 +2,16 @@
 use oblikovati_martensite::planar_curve::sketch::{
     SketchDisplayPrimitive, SketchSamplingOptionsV1, sample_sketch_display, sample_sketch_entity,
 };
+// Linux CI provisions the native font runtime for glyph rendering checks.
+#[cfg(target_os = "linux")]
+#[path = "sketch_display/text.rs"]
+mod text;
 use oblikovati_model::sketch::{
     Sketch2D, SketchEllipse2D, SketchEntityId as Id, SketchSpline2D, SketchSplineKind,
 };
 fn options() -> SketchSamplingOptionsV1 {
     SketchSamplingOptionsV1 {
+        working_scale: 1.,
         deflection: 0.01,
         maximum_curve_points: 4096,
     }

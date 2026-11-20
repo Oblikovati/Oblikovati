@@ -93,10 +93,12 @@ pub use preview::{
 pub use sampling::SketchSamplingOptionsV1;
 mod presentation;
 pub(crate) mod sampling;
+mod text_outline;
 pub use presentation::{
     SketchDisplayDecline, SketchDisplayEntity, SketchDisplayPrimitive, SketchDisplayReport,
     sample_sketch_display, sample_sketch_entity,
 };
+pub use text_outline::sample_sketch_text;
 
 mod measure;
 pub use measure::{

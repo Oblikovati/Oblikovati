@@ -13,12 +13,20 @@ pub enum ViewportSketchPreview {
         geometry: Box<Sketch2D>,
         members: Vec<SketchEntityId>,
     },
+    Text {
+        plane: SketchPlane,
+        anchor: [f64; 2],
+        style: Box<oblikovati_api::types::SketchTextStyle>,
+        working_scale: f64,
+    },
 }
 impl ViewportSketchPreview {
     /// Read the common placement frame; example: `preview.plane().to_model(point)?`.
     pub fn plane(&self) -> SketchPlane {
         match self {
-            Self::Recipe { plane, .. } | Self::Resolved { plane, .. } => *plane,
+            Self::Recipe { plane, .. }
+            | Self::Resolved { plane, .. }
+            | Self::Text { plane, .. } => *plane,
         }
     }
     /// Count only transient members, excluding existing source geometry.
@@ -27,6 +35,7 @@ impl ViewportSketchPreview {
         match self {
             Self::Recipe { recipe, .. } => recipe.members.len(),
             Self::Resolved { members, .. } => members.len(),
+            Self::Text { style, .. } => usize::from(!style.content.trim().is_empty()),
         }
     }
 }

@@ -21,6 +21,7 @@ fn unsupported_window_accepts_clear_but_refuses_committed_sketches() {
 }
 fn nonempty_update() -> crate::HeadSketchSceneUpdate {
     let packet = oblikovati_viewport::ViewportSketchDisplay {
+        working_scale: 1.,
         sketch: oblikovati_model::document_sketch::DocumentSketchId(3),
         plane: oblikovati_model::sketch::SketchPlane::xy(),
         geometry: Default::default(),

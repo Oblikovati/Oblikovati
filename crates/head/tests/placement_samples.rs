@@ -6,6 +6,7 @@ use oblikovati_martensite::planar_curve::sketch::{
 use oblikovati_model::sketch::{Sketch2D, SketchPlacementRecipe};
 pub(crate) fn assert_recipe_tail(geometry: &Sketch2D, recipe: &SketchPlacementRecipe) {
     let options = SketchSamplingOptionsV1 {
+        working_scale: 1.,
         deflection: 0.01,
         maximum_curve_points: 4096,
     };

@@ -23,6 +23,8 @@ martensite-tkg3d = { git = "https://github.com/Oblikovati/Martensite", rev = "be
 martensite-tkprim = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.3.10" }
 martensite-tkbrep = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.3.11" }
 martensite-tktopalgo = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.4.3" }
+martensite-tkservice = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.4.1" }
+martensite-tkv3d = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.7.1" }
 
 martensite-tkbo = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.8.2" }
 martensite-tkfillet = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.8.1" }

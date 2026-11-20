@@ -140,6 +140,7 @@ fn collect_sketches(
             Ok(plane) => {
                 let blocks = scene_blocks(snapshot, sketch, update);
                 update.sketches.push(ViewportSketchDisplay {
+                    working_scale: snapshot.parameters.units().working_scale(),
                     sketch: sketch.id(),
                     plane,
                     geometry: sketch.geometry().clone(),
