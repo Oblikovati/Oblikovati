@@ -103,6 +103,10 @@ using this status; the live scenario directory can change.
   the selected text in the editor and on the canvas. Cancel preserved the
   original text and solver count. See
   `receipts/2026-11-20-sketch-text-bold-3907/`.
+  A native double-click reopens bold Text after Redo. Cancel keeps the text
+  and solver count. The native regression uses DejaVu Sans. Pinned
+  `text-14` still requires Tahoma. See
+  `receipts/2026-11-20-sketch-text-double-click-3907/`.
   The model uses API v0.161.0 to validate Unicode character-format ranges.
   Tests cover atomic rejection of out-of-range edits, undo and redo, and
   native YAML reopen. Mixed-font rendering remains open under

@@ -337,6 +337,14 @@ pub trait HeadSketchWork {
             "sketch move {action:?}: expected an active sketch owner"
         ))
     }
+    /// Open a text hit in a Ready sketch, for example `work.edit_sketch_text_at(pixel, window)?`.
+    fn edit_sketch_text_at(
+        &mut self,
+        _: [i32; 2],
+        _: &dyn crate::HeadWindow,
+    ) -> Result<bool, String> {
+        Ok(false)
+    }
     /// Update the text tool draft, for example `work.sketch_text_from_gui(action)?`.
     fn sketch_text_from_gui(
         &mut self,

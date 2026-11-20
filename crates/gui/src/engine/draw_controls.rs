@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::*;
+use super::{frame_inputs::sketch_activation, *};
 #[path = "blend_actions.rs"]
 mod blend_actions;
 #[path = "feature_actions.rs"]
@@ -419,8 +419,7 @@ impl GuiFrameEngine {
         self.known_document_type = request.commands.document_type;
         self.workspaces.note_created(&selected);
         // A popup that closed this frame still owned the key that closed it.
-        let popup_open = self.popup_was_open || crate::widget_abi::any_popup_open(ui);
-        self.popup_was_open = crate::widget_abi::any_popup_open(ui);
+        let (popup_open, doubled) = sketch_activation(ui, request, &mut self.popup_was_open);
         // A dialog over the workspace is not a picture of the document, nor of its tab.
         if popup_open {
             self.document_tabs.previews.showing = None;
@@ -492,6 +491,7 @@ impl GuiFrameEngine {
             parameter_actions,
             constraint_hover,
             capture,
+            sketch_double_click: doubled,
             activity,
             document_area: area.framebuffer_region(request.layout_scale(), request.extent),
         })

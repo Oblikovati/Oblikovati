@@ -7,6 +7,8 @@ use cucumber::{given, then, when};
 mod text_bold;
 #[path = "text_creation.rs"]
 mod text_creation;
+#[path = "text_double_click.rs"]
+mod text_double_click;
 #[path = "text_edit.rs"]
 mod text_edit;
 #[path = "text_format_choices.rs"]

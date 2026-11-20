@@ -23,6 +23,7 @@ pub struct HeadGuiUpdate {
     pub window_action: Option<oblikovati_gui::GuiWindowAction>,
     pub changed: bool,
     pub consumed_input: bool,
+    pub sketch_double_click: bool,
     pub deferred: bool,
     pub actions: Vec<GuiShellAction>,
     pub parameter_actions: Vec<oblikovati_gui::GuiParameterAction>,
@@ -444,6 +445,27 @@ pub(super) fn dispatch_frame_input(
     changed |= synchronize_sketch_view(window, owner)?;
     changed |= update_tool_candidate(window, owner, event)?;
     Ok(changed)
+}
+
+pub(super) fn dispatch_sketch_double_click(
+    window: &dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    event: ViewportEvent,
+) -> Result<bool, String> {
+    use oblikovati_viewport::{ViewportButton, ViewportModifiers};
+    let ViewportEvent::Input(ViewportInput::Button {
+        button: ViewportButton::Left,
+        pressed: true,
+        position,
+        modifiers,
+    }) = event
+    else {
+        return Ok(false);
+    };
+    if modifiers != ViewportModifiers::default() || window.navigation_active() {
+        return Ok(false);
+    }
+    owner.edit_sketch_text_at(position, window)
 }
 pub(super) fn earliest_wake(left: Option<Duration>, right: Option<Duration>) -> Option<Duration> {
     left.into_iter().chain(right).min()

@@ -265,6 +265,7 @@ impl NativeGui {
         Ok(HeadGuiUpdate {
             window_action: output.window_action,
             consumed_input: self.pointer.consumed(event, output.capture),
+            sketch_double_click: output.sketch_double_click,
             actions: output.actions,
             parameter_actions: output.parameter_actions,
             constraint_hover: Some(output.constraint_hover),

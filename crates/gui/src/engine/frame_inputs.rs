@@ -1,6 +1,21 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Inspect frame navigation input without changing keyboard capture.
 use super::*;
+pub(super) fn sketch_activation(
+    ui: &imgui::Ui,
+    request: &GuiFrameRequest,
+    popup_was_open: &mut bool,
+) -> (bool, bool) {
+    let now_open = crate::widget_abi::any_popup_open(ui);
+    let popup = std::mem::replace(popup_was_open, now_open) || now_open;
+    let activation = request.commands.sketch_at_ready
+        && !request.commands.transaction_open
+        && !popup
+        && !ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel())
+        && ui.is_mouse_double_clicked(imgui::MouseButton::Left);
+    (popup, activation)
+}
+
 pub(super) fn has_arrow_press(request: &GuiFrameRequest) -> bool {
     request.events.iter().any(|event| {
         matches!(

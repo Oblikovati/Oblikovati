@@ -14,6 +14,8 @@ use oblikovati_model::{
 use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportKey, ViewportSketchPreview};
 use std::sync::{Arc, OnceLock};
 
+#[path = "owner_sketch_text_activation.rs"]
+mod activation;
 #[path = "owner_sketch_text_commit.rs"]
 mod commit;
 
@@ -223,6 +225,15 @@ impl<
                 "text context {token}, entity {entity:?}: expected the current glyph in a Ready sketch"
             ));
         }
+        self.open_text_draft(edit, generation, entity)
+    }
+
+    fn open_text_draft(
+        &mut self,
+        edit: HeadSketchEdit,
+        generation: u64,
+        entity: SketchEntityId,
+    ) -> Result<bool, String> {
         self.sketch_tool = Some(SketchToolState::Text(Box::new(
             self.existing_text_tool(edit, generation, entity)?,
         )));

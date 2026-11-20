@@ -61,6 +61,7 @@ pub struct GuiFrameOutput {
     pub parameter_actions: Vec<crate::GuiParameterAction>,
     pub constraint_hover: Option<crate::GuiConstraintHover>,
     pub capture: GuiInputCapture,
+    pub sketch_double_click: bool,
     pub activity: GuiFrameActivity,
     /// The unobstructed document area in framebuffer pixels, if it has positive size.
     pub document_area: Option<[u32; 4]>,

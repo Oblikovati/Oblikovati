@@ -47,7 +47,10 @@ fn choose_formats(world: &mut ApplicationWorld) {
 
 pub(super) fn choose_font(world: &mut ApplicationWorld, family: &str) {
     let families = world.state().sketch_text_font_families.unwrap();
-    assert!(families.iter().any(|installed| installed == family));
+    assert!(
+        families.iter().any(|installed| installed == family),
+        "Sketch Text fixture: expected installed font family {family:?}"
+    );
     click_format_row(world, "Choose font");
     let label = world.run("Filter fonts").clone();
     x11_input::click(diagnostics::pointer_pixels([
@@ -55,8 +58,8 @@ pub(super) fn choose_font(world: &mut ApplicationWorld, family: &str) {
         label.center()[1],
     ]));
     world.pump(Vec::new());
-    for letter in b"dejavu" {
-        x11_input::press_keysym(u32::from(*letter));
+    for letter in family.split_ascii_whitespace().next().unwrap().bytes() {
+        x11_input::press_keysym(u32::from(letter.to_ascii_lowercase()));
     }
     world.pump(Vec::new());
     click_format_row(world, family);

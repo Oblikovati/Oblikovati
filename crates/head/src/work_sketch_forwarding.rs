@@ -143,6 +143,13 @@ macro_rules! forward_owner_sketch_work {
         ) -> Result<bool, String> {
             self.$owner.edit_sketch_pattern_from_gui(pattern, request)
         }
+        fn edit_sketch_text_at(
+            &mut self,
+            pixel: [i32; 2],
+            window: &dyn crate::HeadWindow,
+        ) -> Result<bool, String> {
+            self.$owner.edit_sketch_text_at(pixel, window)
+        }
         fn sketch_text_from_gui(
             &mut self,
             action: oblikovati_gui::GuiSketchTextAction,

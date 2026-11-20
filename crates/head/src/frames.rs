@@ -230,6 +230,10 @@ fn process_frame_inputs(
             changed |= window.set_tool_feedback(None)?;
         }
         if !gui.consumed_input {
+            if gui.sketch_double_click && gui::dispatch_sketch_double_click(window, owner, event)? {
+                changed = true;
+                continue;
+            }
             if let Some(action) = shortcut {
                 changed |= gui::dispatch_shortcut_action(window, owner, &action)?;
             } else {

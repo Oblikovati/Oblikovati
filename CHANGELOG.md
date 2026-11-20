@@ -4,6 +4,8 @@
 
 ### Added
 
+- Opened the editor for existing Sketch Text on a double-click of the glyph. (#3907)
+
 - Added Bold preview and editing for a full Sketch Text selection. (#3907)
 
 - Added paragraph bullets, numbering, and diameter-symbol insertion to Format Text. (#3907)
