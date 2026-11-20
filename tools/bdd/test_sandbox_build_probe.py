@@ -23,6 +23,7 @@ from sandbox_build_probe import (
     run_build_probe,
     run_committed_build_probe,
     runner_path,
+    desktop_path,
     sandbox_build_command,
 )
 
@@ -36,6 +37,14 @@ class FakeBuildProcess:
 
     def __call__(self, command: list[str], messages: Path, log: Path) -> int:
         self.command = command
+        if messages.name == "desktop.jsonl":
+            desktop = self.target / "debug/oblikovati"
+            desktop.parent.mkdir(parents=True, exist_ok=True)
+            desktop.write_bytes(b"desktop executable")
+            desktop.chmod(0o755)
+            messages.write_text(json.dumps({"reason": "compiler-artifact", "target": {"name": "oblikovati"}, "profile": {"test": False}, "executable": "/build/debug/oblikovati"}) + "\n")
+            log.write_text("desktop build log")
+            return self.code
         runner = self.target / "debug/deps/head-test"
         runner.parent.mkdir(parents=True)
         runner.write_bytes(b"test runner")
@@ -53,6 +62,14 @@ class FakeBuildProcess:
         )
         log.write_text("build log")
         return self.code
+
+
+class FailingDesktopBuild(FakeBuildProcess):
+    """Fail only the production desktop build after a successful runner build."""
+
+    def __call__(self, command: list[str], messages: Path, log: Path) -> int:
+        result = super().__call__(command, messages, log)
+        return 7 if messages.name == "desktop.jsonl" else result
 
 
 class FakeInputSnapshot:
@@ -109,6 +126,8 @@ class SandboxBuildProbeTests(unittest.TestCase):
         result = run_build_probe(self.probe, process, FakeInputSnapshot())
         self.assertFalse(result["reusable"])
         self.assertEqual(len(result["runner_sha256"]), 64)
+        self.assertEqual(len(result["desktop_sha256"]), 64)
+        self.assertEqual(Path(result["desktop"]).read_bytes(), b"desktop executable")
         self.assertEqual(
             set(result["input_inventory_sha256"]),
             {"source", "vendor", "toolchain", "config", "system"},
@@ -122,6 +141,14 @@ class SandboxBuildProbeTests(unittest.TestCase):
         self.assertIn("/config/config.toml", sandbox_build_command(self.probe))
         self.assertIn(str(self.probe.system), process.command)
         self.assertNotIn(["--ro-bind", "/usr", "/usr"], [process.command[i:i+3] for i in range(len(process.command)-2)])
+
+    def test_desktop_build_failure_stops_the_probe(self) -> None:
+        process = FailingDesktopBuild(self.probe.target)
+        with self.assertRaisesRegex(ValueError, "desktop build exit 7"):
+            run_build_probe(self.probe, process, FakeInputSnapshot())
+        self.assertIn("--bin", process.command)
+        self.assertIn("oblikovati", process.command)
+        self.assertIn("--offline", process.command)
 
     def test_changed_system_input_rejects_the_build(self) -> None:
         (self.probe.system / "compiler-input").write_text("original")
@@ -312,6 +339,21 @@ class SandboxBuildProbeTests(unittest.TestCase):
         with patch("sandbox_build_probe.platform.machine", return_value="arm64"):
             with self.assertRaisesRegex(ValueError, "Linux x86_64"):
                 require_probe(self.probe)
+
+    def test_desktop_rejects_escaping_and_duplicate_artifacts(self) -> None:
+        messages = self.probe.logs / "desktop-messages"
+        record = {"reason": "compiler-artifact", "target": {"name": "oblikovati"},
+                  "profile": {"test": False}, "executable": "/build/../outside"}
+        messages.write_text(json.dumps(record) + "\n")
+        with self.assertRaisesRegex(ValueError, "inside /build"):
+            desktop_path(messages, self.probe.target)
+        desktop = self.probe.target / "desktop"
+        desktop.write_text("desktop")
+        desktop.chmod(0o755)
+        record["executable"] = "/build/desktop"
+        messages.write_text((json.dumps(record) + "\n") * 2)
+        with self.assertRaisesRegex(ValueError, "one regular"):
+            desktop_path(messages, self.probe.target)
 
     def test_runner_rejects_a_symlink_parent(self) -> None:
         outside = self.probe.source / "outside"
