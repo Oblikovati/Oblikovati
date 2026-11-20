@@ -193,6 +193,8 @@ using this status; the live scenario directory can change.
 - Viewport zoom has a full-feature diagnostic: all seven scenarios and 74
   steps passed at SHA-256 `cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c`.
   The wheel steps used X11 input; other actions used scripted window input.
+  All seven pinned scenarios have R0 baseline records. The live feature hash
+  has changed. See `receipts/2026-11-20-viewport-zoom-r0-3940/`.
 - Viewport navigation wheel (#3881): all 12 scenarios and 143 steps passed
   with X11 mouse, Escape, fixture path entry and Enter, a native part, and
   unchanged source/support hashes. Compact wheel segment checks use rendered
