@@ -132,7 +132,6 @@ fn solid_and_browser(world: &mut ApplicationWorld) {
 #[given("the Modify additional command area is open and unpinned")]
 #[given("the 3D Model Modify panel is expanded and unpinned")]
 #[given("the 3D Model Modify additional command area is open")]
-#[given("the Modify additional command area is open")]
 pub(super) fn opened_unpinned(world: &mut ApplicationWorld) {
     if diagnostics::window_geometry("##ribbon-column").is_some() {
         world.click_text("Modify");
@@ -142,6 +141,14 @@ pub(super) fn opened_unpinned(world: &mut ApplicationWorld) {
     }
     open_modify(world);
     world.expect_text("Pin");
+}
+#[given("the Modify additional command area is open")]
+fn opened_modify_area(world: &mut ApplicationWorld) {
+    opened_unpinned(world);
+    // The appearance fixture specifies a pinned area even when the step only says open.
+    if super::ribbon_appearance::uses_appearance_fixture(world) {
+        toggle_pin(world);
+    }
 }
 #[given("the Modify additional command area is open and pinned")]
 #[given("the Modify panel is visible with its additional commands expanded and pinned")]

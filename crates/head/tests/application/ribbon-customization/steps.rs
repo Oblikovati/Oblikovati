@@ -121,7 +121,11 @@ fn target_still_model(world: &mut ApplicationWorld) {
 #[given("a part is active in the MCAD Software with the Tools ribbon visible")]
 #[given("a part is active in the MCAD Software with the full Tools ribbon visible")]
 fn part_with_tools(world: &mut ApplicationWorld) {
-    world.add_part();
+    if super::ribbon_appearance::uses_appearance_fixture(world) {
+        super::ribbon_appearance::open_appearance_part(world);
+    } else {
+        world.add_part();
+    }
     world.click_text("Tools");
 }
 #[given("the Ribbon customization dialog has an initially empty Part Tools custom panel")]

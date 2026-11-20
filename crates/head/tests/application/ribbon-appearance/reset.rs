@@ -4,7 +4,7 @@ use super::*;
 
 #[given("a part is active in the MCAD Software with the full Tools ribbon selected")]
 fn part_with_tools(world: &mut ApplicationWorld) {
-    world.previous_document = Some(world.add_part());
+    world.previous_document = Some(open_appearance_part(world));
     select_tab(world, "Tools");
     world.expect_text("Application Options");
 }

@@ -16,6 +16,23 @@ mod reset;
 #[path = "submenu.rs"]
 mod submenu;
 
+/// Identify the appearance fixture scope. For example, an unscoped unit test returns false.
+pub(super) fn uses_appearance_fixture(world: &ApplicationWorld) -> bool {
+    world.scenario_feature_path.as_deref().is_some_and(|path| {
+        path.ends_with("features/application/ribbon-appearance/ribbon-appearance.feature")
+    })
+}
+
+/// Set up the visible solid required by the appearance notes. For example, use before selecting Tools.
+pub(super) fn open_appearance_part(world: &mut ApplicationWorld) -> u64 {
+    use super::workspace_layout::browser_feature::{
+        expect_solid_visible, open_visible_extruded_part,
+    };
+    open_visible_extruded_part(world);
+    expect_solid_visible(world);
+    world.active_id()
+}
+
 #[test]
 fn model_ribbon_shows_unavailable_work_and_pattern_commands() {
     let mut world = ApplicationWorld::new();

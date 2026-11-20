@@ -77,7 +77,12 @@ fn expect_vertical(world: &mut ApplicationWorld, labels: &[&str]) {
 #[given("a part is active in the MCAD Software")]
 #[given("a part is active in the MCAD Software with the full 3D Model ribbon selected")]
 fn part_active(world: &mut ApplicationWorld) {
-    world.previous_document = Some(world.add_part());
+    let id = if super::ribbon_appearance::uses_appearance_fixture(world) {
+        super::ribbon_appearance::open_appearance_part(world)
+    } else {
+        world.add_part()
+    };
+    world.previous_document = Some(id);
 }
 #[given("the ribbon is docked at the top with the 3D Model tab selected")]
 fn docked_top_on_model_tab(world: &mut ApplicationWorld) {
