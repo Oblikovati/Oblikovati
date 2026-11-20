@@ -1,0 +1,9 @@
+{
+  "kind": "unsealed package-selection diagnostic",
+  "application_base_commit": "347653fc3",
+  "diagnostic_source_sha256": "f028ff47c899f4528d7ab55232ade2dea9f9c5b08a7c1cbd6ba4a1abf1e5b4ff",
+  "tests_source_sha256": "ae2655683db3826659c3857ee9f3f6f540134df4643cc5dfb0cfbf6a15b7317d",
+  "tests_passed": 57,
+  "real_package": "corliss-0.1.0",
+  "limitations": "Diagnostic output is not a build receipt and cannot be used as verified evidence. The executable, host and build inputs are not authenticated."
+}

@@ -1,0 +1,10 @@
+{
+  "package": "corliss-0.1.0",
+  "source_commit": "872ff91ea0fd9ebb3ad34d0030c67bbc7b5989fb",
+  "selected_files_checked": 166,
+  "selection_sha256": "12cede9a93b9de75dc587036c372010a33439bedacf3053ebdc0aa42ec26dbf1",
+  "manifest_complete": false,
+  "complete": false,
+  "reusable": false,
+  "limitations": "Cargo, host system, cache, kernel and process observations are not independently authenticated."
+}
