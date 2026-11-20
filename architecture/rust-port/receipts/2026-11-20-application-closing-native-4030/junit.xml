@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Close the application: mnt/vininas-projects/MCAD-Scenarios/features/application/application-closing/application-closing.feature" package="testsuite/Feature: Close the application: mnt/vininas-projects/MCAD-Scenarios/features/application/application-closing/application-closing.feature" tests="4" errors="0" failures="0" hostname="localhost" timestamp="2026-11-20T14:08:27.675526872Z" time="34.070072212"><testcase name="Scenario: Cancel closing the application when a document has unsaved changes: mnt/vininas-projects/MCAD-Scenarios/features/application/application-closing/application-closing.feature:5:3" time="11.172721138"><system-out><![CDATA[  Scenario: Cancel closing the application when a document has unsaved changes
+   ✔  Given a writable copy of `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open in the MCAD Software
+   ✔  And the user creates a sketch on a datum plane without saving the document
+   ✔  When the user selects the application window's Close control
+   ✔  Then a save-changes prompt identifies the part document
+   ✔  And the prompt offers Yes, No and Cancel
+   ✔  When the user chooses Cancel
+   ✔  Then the save-changes prompt closes
+   ✔  And the part document remains open
+   ✔  And the MCAD Software remains open
+]]></system-out></testcase><testcase name="Scenario: Cancel closing the application when an assembly has unsaved changes: mnt/vininas-projects/MCAD-Scenarios/features/application/application-closing/application-closing.feature:17:3" time="12.497180681"><system-out><![CDATA[  Scenario: Cancel closing the application when an assembly has unsaved changes
+   ✔  Given a writable copy of `fixtures/cad/blank-metric-assembly.oad` is open in the MCAD Software
+   ✔  And the user inserts `fixtures/cad/extrusion/extrusion-rect-8mm.opd` as an occurrence without saving the assembly
+   ✔  When the user presses Alt+F4
+   ✔  Then a save-changes prompt identifies the assembly document
+   ✔  And the prompt offers Yes, No and Cancel
+   ✔  And the prompt shows the "Always show this message" setting
+   ✔  When the user presses Escape
+   ✔  Then the save-changes prompt closes
+   ✔  And the assembly document remains open
+   ✔  And the MCAD Software remains open
+]]></system-out></testcase><testcase name="Scenario: Close the application when the open document has no unsaved changes: mnt/vininas-projects/MCAD-Scenarios/features/application/application-closing/application-closing.feature:30:3" time="5.549790989"><system-out><![CDATA[  Scenario: Close the application when the open document has no unsaved changes
+   ✔  Given the saved assembly fixture "fixtures/cad/blank-metric-assembly.oad" is the only open model document and is unchanged in the MCAD Software
+   ✔  When the user selects the application window's Close control
+   ✔  Then the MCAD Software closes without a save-changes prompt
+]]></system-out></testcase><testcase name="Scenario: Close the application when no document is open: mnt/vininas-projects/MCAD-Scenarios/features/application/application-closing/application-closing.feature:36:3" time="4.850379404"><system-out><![CDATA[  Scenario: Close the application when no document is open
+   ✔  Given Home is the only open document tab with no model, drawing, or presentation document open in the MCAD Software
+   ✔  When the user selects the application window's Close control
+   ✔  Then the MCAD Software closes without a save-changes prompt
+]]></system-out></testcase></testsuite></testsuites>

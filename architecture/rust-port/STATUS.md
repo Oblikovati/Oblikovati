@@ -98,11 +98,12 @@ using this status; the live scenario directory can change.
   reported as green. Counts are tied to source hashes and must be regenerated
   with `tools/bdd/feature_progress.py` before reporting them.
 - Sketch constraint-glyph hover passed its complete one-scenario native run at
-  `e33bac9dd`. Application closing previously passed 3 of 3 scenarios, but its
-  source has changed and now includes assembly scenarios, which are deferred.
-  Run `python3 -B tools/bdd/feature_progress.py /mnt/vininas-projects/MCAD-Scenarios`
-  for current feature hashes and counts. This result is a full-feature diagnostic
-  at its recorded application commit; the strict acceptance ledger is separate.
+  `e33bac9dd`.
+- Application Closing (#4030): all four scenarios and 25 steps passed against
+  the current native fixtures. Dirty part and assembly cancellation, clean
+  assembly exit and Home-only exit passed together. See
+  `receipts/2026-11-20-application-closing-native-4030/`. Strict verification
+  still depends on build and runtime provenance (#3978).
 - Viewport pan has a full-feature diagnostic: all four scenarios and 32 steps
   passed at SHA-256 `4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647`.
   Two separate X11 mouse tests passed for pan dragging and context-menu actions.
