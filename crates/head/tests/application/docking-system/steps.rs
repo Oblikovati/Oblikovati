@@ -6,6 +6,9 @@ use workspace_layout::dockspace_native::{native_drag, resize_boundary, viewport}
 
 #[path = "edges_scenario.rs"]
 mod edges_scenario;
+#[cfg(test)]
+#[path = "fixture_native.rs"]
+mod fixture_native;
 #[path = "float_scenario.rs"]
 mod float_scenario;
 #[path = "preview_scenario.rs"]
