@@ -35,6 +35,21 @@ impl HeadWindow for ScriptedGuiWindow {
     ) -> Result<bool, String> {
         self.native.set_tool_feedback(feedback)
     }
+    fn validate_gui_constraint_settings(
+        &self,
+        action: &oblikovati_gui::GuiShellAction,
+    ) -> Result<(), String> {
+        self.native.validate_gui_constraint_settings(action)
+    }
+    fn acknowledge_gui_constraint_settings(
+        &mut self,
+        action: &oblikovati_gui::GuiShellAction,
+        active_document: Option<u64>,
+        result: Result<(), String>,
+    ) -> Result<(), String> {
+        self.native
+            .acknowledge_gui_constraint_settings(action, active_document, result)
+    }
     fn window_capture_extent(&mut self) -> Result<Option<[u32; 2]>, String> {
         self.native.window_capture_extent()
     }

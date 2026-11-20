@@ -24,6 +24,12 @@ mod constraint_fixture;
 mod constraint_glyph_hover;
 #[path = "constraint-inference-scope/steps.rs"]
 mod constraint_inference_scope;
+#[path = "constraint-settings/application_options.rs"]
+mod constraint_settings_application_options;
+#[path = "constraint-settings/inference.rs"]
+mod constraint_settings_inference;
+#[path = "constraint-settings/relax.rs"]
+mod constraint_settings_relax;
 #[path = "dimension-expression/steps.rs"]
 mod dimension_expression;
 #[cfg(target_os = "linux")]

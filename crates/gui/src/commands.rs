@@ -58,6 +58,13 @@ pub enum GuiShellAction {
         frequency: oblikovati_model::application_prompts::PromptFrequency,
     },
     SetSketchOptions(oblikovati_model::application_options::SketchApplicationOptions),
+    /// Accept the edited constraint settings for a specific document.
+    SetDocumentSketchSettings {
+        request_id: u64,
+        document: u64,
+        expected: oblikovati_api::types::SketchSettings,
+        settings: oblikovati_api::types::SketchSettings,
+    },
     /// Hide or restore surrounding model bodies while a sketch is edited.
     SetSketchIsolation(bool),
     SetPartOptions(oblikovati_model::application_options::PartApplicationOptions),
@@ -458,18 +465,11 @@ pub struct GuiExtrudeDistanceValidation {
     pub distance: String,
     pub error: Option<String>,
 }
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum GuiParameterMutation {
-    Add,
-    Set,
-}
+mod parameter_mutation;
+pub use parameter_mutation::GuiParameterMutation;
 /// A bounded owner snapshot; the GUI holds no document history or transaction token.
-/// The part-level asset a ribbon selection changes.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum GuiPartAssetKind {
-    Material,
-    Appearance,
-}
+mod asset_kind;
+pub use asset_kind::GuiPartAssetKind;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum GuiAuthoringContext {
     #[default]

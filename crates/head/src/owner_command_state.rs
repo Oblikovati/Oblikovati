@@ -98,6 +98,8 @@ impl<
             ),
             ui_scale: self.gui_ui_scale(),
             sketch_options: Some(self.sketch_options.clone()),
+            document_sketch_settings: is_part
+                .then(|| session.snapshot().effective_sketch_settings()),
             sketch_isolated: session.sketch_isolated(),
             part_options: self.part_store.as_ref().map(|store| store.part_options()),
             // Projected by the frame, which owns the camera.

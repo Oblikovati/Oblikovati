@@ -115,3 +115,44 @@ fn gui_units_actions_use_the_typed_document_route() {
     assert_eq!(after.length_unit, "cm");
     assert_eq!(after.length_display_precision, 5);
 }
+
+#[test]
+fn gui_constraint_settings_apply_to_the_active_document_only() {
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    let initial = owner
+        .gui_command_state()
+        .unwrap()
+        .document_sketch_settings
+        .unwrap();
+    assert!(
+        !owner
+            .set_document_sketch_settings_from_gui(document, &initial, &initial)
+            .unwrap()
+    );
+    let mut changed = initial.clone();
+    changed.infer_constraints = false;
+    assert!(
+        owner
+            .set_document_sketch_settings_from_gui(document + 1, &initial, &changed)
+            .is_err()
+    );
+    assert_eq!(
+        owner.gui_command_state().unwrap().document_sketch_settings,
+        Some(initial.clone())
+    );
+    assert!(
+        owner
+            .set_document_sketch_settings_from_gui(document, &initial, &changed)
+            .unwrap()
+    );
+    assert!(
+        owner
+            .set_document_sketch_settings_from_gui(document, &initial, &initial)
+            .is_err()
+    );
+    assert_eq!(
+        owner.gui_command_state().unwrap().document_sketch_settings,
+        Some(changed)
+    );
+}

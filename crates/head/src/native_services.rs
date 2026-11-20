@@ -423,6 +423,15 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> crate::HeadSketchWork
     ) -> (bool, Option<oblikovati_gui::GuiShellAction>) {
         self.owner.accept_sketch_alias(event)
     }
+    fn set_document_sketch_settings_from_gui(
+        &mut self,
+        document: u64,
+        expected: &oblikovati_api::types::SketchSettings,
+        settings: &oblikovati_api::types::SketchSettings,
+    ) -> Result<bool, String> {
+        self.owner
+            .set_document_sketch_settings_from_gui(document, expected, settings)
+    }
     fn set_sketch_options_from_gui(
         &mut self,
         options: oblikovati_model::application_options::SketchApplicationOptions,

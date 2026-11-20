@@ -24,6 +24,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::PreviewComponentFile { .. }
         | GuiShellAction::PreviewDrawingBaseView(_)
         | GuiShellAction::SetSketchOptions(_)
+        | GuiShellAction::SetDocumentSketchSettings { .. }
         | GuiShellAction::SetSketchIsolation(_)
         | GuiShellAction::SetPartOptions(_)
         | GuiShellAction::LineCommand(_)

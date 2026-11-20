@@ -28,6 +28,8 @@ fn defaults_match_go_creation_and_relax_values() {
     );
     assert!(!defaults.enable_relax_mode);
     assert!(defaults.keep_dimensions_with_equation_in_relax_mode);
+    assert!(!defaults.custom_inference_types && !defaults.custom_relax_types);
+    assert_eq!((defaults.inference_types.0, defaults.relax_types.0), (0, 0));
 }
 #[test]
 fn read_defaults_keeps_record_absent_and_explicit_zero_values_remain_explicit() {

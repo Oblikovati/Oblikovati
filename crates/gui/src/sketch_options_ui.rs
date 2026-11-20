@@ -34,6 +34,7 @@ pub(crate) struct SketchOptionsDraft {
     original: Option<SketchApplicationOptions>,
     edited: Option<SketchApplicationOptions>,
     hud: crate::sketch_options_hud::HudSettings,
+    constraint: crate::constraint_settings_ui::ConstraintSettingsWindow,
 }
 impl SketchOptionsDraft {
     fn synchronize(&mut self, accepted: &SketchApplicationOptions) {
@@ -46,12 +47,46 @@ impl SketchOptionsDraft {
         self.original = None;
         self.edited = None;
         self.hud.close();
+        self.constraint.close();
     }
     pub(crate) fn register_dockable(
         &self,
         registry: &mut crate::dockable_lifecycle::DockRegistry,
     ) -> Result<(), String> {
-        self.hud.register_dockable(registry)
+        self.hud.register_dockable(registry)?;
+        self.constraint.register_dockable(registry)
+    }
+    pub(crate) fn draw_constraint(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+        icons: &crate::icons::GuiRibbonIcons,
+    ) {
+        if let Some(edited) = self.edited.as_mut() {
+            self.constraint.panel(ui, state, edited, actions, icons);
+        }
+    }
+    pub(crate) fn validate_constraint_settings(
+        &self,
+        action: &GuiShellAction,
+    ) -> Result<(), String> {
+        let options = self
+            .edited
+            .as_ref()
+            .ok_or("Application options: expected an open draft")?;
+        self.constraint.validate_pending(action, options)
+    }
+    pub(crate) fn acknowledge_constraint_settings(
+        &mut self,
+        action: &GuiShellAction,
+        active_document: Option<u64>,
+        result: Result<(), String>,
+    ) {
+        if let Some(options) = self.edited.as_mut() {
+            self.constraint
+                .acknowledge(action, active_document, result, options);
+        }
     }
     pub(crate) fn draw_hud(&mut self, ui: &Ui) {
         if let Some(edited) = self.edited.as_mut() {
@@ -79,6 +114,12 @@ impl SketchOptionsDraft {
             ui.text("Sketch settings changed. Revert before applying.");
         }
         let close = draw_actions(ui, edited, accepted, conflict, actions);
+        if let (Some(document), Some(settings)) =
+            (state.document, state.document_sketch_settings.as_ref())
+            && ui.button("Constraint Settings")
+        {
+            self.constraint.request(document, settings, edited);
+        }
         if ui.button("HUD Settings") {
             self.hud.request(edited);
         }
