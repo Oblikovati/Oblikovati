@@ -27,14 +27,11 @@ using this status; the live scenario directory can change.
   selected-point preview median was 14.182 ms before rendering; GUI frame rate
   remains unverified. See `receipts/2026-11-20-picked-point-4179/` and
   `receipts/2026-11-20-midpoint-line-4178/`.
-- Ribbon Appearance (#3957): the 2026-11-20 diagnostic passed 14 of 18
-  scenarios. Three failed at missing Tools panels; one used an unpinned
-  expansion where the fixture notes require a pinned expansion. The shared
-  part setup also lacks the visible solid required by the fixture notes.
-  `BLOCKERS.md` changed during the run, so the result is not inventory
-  evidence. See `receipts/2026-11-20-ribbon-appearance-diagnostic/`. A native
-  mouse test passes the pinned expansion through Text Off and Normal; see
-  `receipts/2026-11-20-ribbon-pinned-3957/`.
+- Ribbon Appearance (#3957): the full diagnostic passed 15 of 18 scenarios
+  and 166 of 169 executed steps. The part fixture has a visible solid, and
+  the pinned Modify expansion passes Text Off and Normal. The three remaining
+  scenarios stop at Tools panel visibility setup. See
+  `receipts/2026-11-20-ribbon-appearance-fixture-3957/`.
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
   Midpoint Line tool has native mouse and keyboard tests. A native YAML
