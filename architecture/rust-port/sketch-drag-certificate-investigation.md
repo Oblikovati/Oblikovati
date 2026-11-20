@@ -43,6 +43,15 @@ Use a scalable method and measure real sketch interaction before enabling it.
 The input, output, environment and limitations are in
 `receipts/2026-11-20-affine-cost-4171/`.
 
+A test-only variant skips exact zero factors and coefficients during the same
+elimination. It matched the original result, feasibility, and KKT stationarity
+on 240 small deterministic systems. On a 64-variable equality chain, median
+time fell from 133.786 ms to 8.384 ms in one run. A denser 32-variable case
+took 23.153 ms in a single sample. These are synthetic measurements, not a
+frame-rate or application-memory result. The method still lacks sketch input
+bounds, nonlinear certification, and an interactive workload test. See
+`receipts/2026-11-20-affine-zero-skip-4171/`.
+
 SolveSpace forces dragged points toward the pointer, then solves authored
 constraints with weighted Newton iterations. Its success and rank checks do not
 certify the closest feasible drag target. OCCT's `math_Uzawa` accepts an
