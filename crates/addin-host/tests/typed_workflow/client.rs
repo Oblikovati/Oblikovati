@@ -28,16 +28,13 @@ fn parameter_input(name: &str, expression: &str) -> ParameterSetArgs {
 fn create_constrained_circle<T: Caller>(client: &Client<T>) -> u64 {
     let circle = add_circle(client);
     ground_circle(client, circle);
-    let dimension = client
-        .dimension()
-        .add(&AddDimensionArgs {
-            kind: "radius".into(),
-            entities: Some(vec![circle]),
-            expression: "width".into(),
-            ..Default::default()
-        })
-        .unwrap();
-    assert_eq!(dimension.dof, 0);
+    // API #187 binds the radius expression during creation.
+    let dimensions = client.sketch().dimensions(&Default::default()).unwrap();
+    let dimensions = dimensions.dimensions.unwrap();
+    assert_eq!(dimensions.len(), 1);
+    assert_eq!(dimensions[0].kind, "radius");
+    assert_eq!(dimensions[0].expression, "width");
+    assert!(!dimensions[0].driven);
     circle
 }
 fn circle_radius<T: Caller>(client: &Client<T>, circle: u64) -> f64 {

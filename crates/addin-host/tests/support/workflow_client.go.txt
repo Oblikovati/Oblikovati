@@ -58,10 +58,15 @@ func createWorkflowCircle(c *client.Client) uint64 {
 	requireWorkflowSuccess(err)
 	_, err = c.Sketch().Constrain(0).Ground(circle.EntityID)
 	requireWorkflowSuccess(err)
-	dimension, err := c.Sketch().Dimension(0).Radius(circle.EntityID, "width")
+	// API #187 binds the radius expression during creation.
+	dimensions, err := c.Sketch().Dimensions(0)
 	requireWorkflowSuccess(err)
-	if dimension.DOF != 0 {
-		panic(fmt.Sprintf("dimension DOF %d: expected zero", dimension.DOF))
+	if len(dimensions.Dimensions) != 1 {
+		panic(fmt.Sprintf("dimension count %d: expected one", len(dimensions.Dimensions)))
+	}
+	dimension := dimensions.Dimensions[0]
+	if dimension.Kind != "radius" || dimension.Expression != "width" || dimension.Driven {
+		panic(fmt.Sprintf("dimension %+v: expected a driving radius with expression width", dimension))
 	}
 	return circle.EntityID
 }
