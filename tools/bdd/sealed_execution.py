@@ -25,6 +25,7 @@ class SealedRequest:
     area: str
     feature: str
     scenario: str
+    desktop: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -36,6 +37,7 @@ class SealedInputs:
     runtime: Mapping[str, object]
     runner: Mapping[str, object]
     sandbox: Mapping[str, object]
+    desktop: Mapping[str, object] | None = None
 
 
 SealedProcess = Callable[[list[str], Path], int]
@@ -84,6 +86,8 @@ def require_absolute_paths(request: SealedRequest) -> None:
         request.log,
         request.bwrap,
     )
+    if request.desktop is not None:
+        paths += (request.desktop,)
     for path in paths:
         if not path.is_absolute():
             raise ValueError(f"sealed path {path}: expected an absolute path")
@@ -168,6 +172,8 @@ def scenario_environment(request: SealedRequest) -> list[tuple[str, str]]:
         ("OBK_BDD_FEATURE", request.feature),
         ("OBK_BDD_SCENARIO", request.scenario),
     ]
+    if request.desktop is not None:
+        result.append(("OBK_BDD_DESKTOP_BINARY", "/desktop"))
     if request.area == "solid-model":
         result.append(("OBK_BDD_AREA", "solid-model"))
     return result
@@ -195,6 +201,8 @@ def sandbox_mounts(request: SealedRequest) -> list[str]:
     command.extend(["--ro-bind", str(request.runtime), "/"])
     command.extend(["--dev", "/dev", "--tmpfs", "/tmp"])
     command.extend(["--ro-bind", str(request.binary), "/runner"])
+    if request.desktop is not None:
+        command.extend(["--ro-bind", str(request.desktop), "/desktop"])
     command.extend(["--ro-bind", str(request.checkout), "/scenario"])
     command.extend(["--bind", str(request.reports), "/reports"])
     return command
@@ -251,6 +259,7 @@ def collect_inputs(request: SealedRequest, verify: SourceVerifier) -> SealedInpu
         snapshot_runtime(request.runtime),
         file_identity(request.binary),
         file_identity(request.bwrap),
+        file_identity(request.desktop) if request.desktop is not None else None,
     )
 
 
@@ -271,6 +280,7 @@ def execution_observation(
         "reusable": False,
         "runtime_inputs": inputs.runtime,
         "runner_input": inputs.runner,
+        "desktop_input": inputs.desktop,
         "sandbox_input": inputs.sandbox,
         "area": request.area,
         "feature": request.feature,
@@ -293,5 +303,7 @@ def require_stable_inputs(request: SealedRequest, before: SealedInputs) -> None:
         )
     if file_identity(request.binary) != before.runner:
         raise ValueError("runner input: expected the same executable during the run")
+    if request.desktop is not None and file_identity(request.desktop) != before.desktop:
+        raise ValueError("desktop input: expected the same executable during the run")
     if file_identity(request.bwrap) != before.sandbox:
         raise ValueError("sandbox input: expected the same executable during the run")
