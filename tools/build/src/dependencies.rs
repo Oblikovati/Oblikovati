@@ -79,11 +79,12 @@ pub(crate) fn check_pins(root: &Path) -> BuildResult<()> {
     for dependency in [&config.api, &config.kernel] {
         locked_crates(&root.join("Cargo.lock"), dependency)?;
     }
-    check_renderer_pin(root)?;
-    Ok(())
+    check_renderer_pin(root)
 }
 
-fn check_renderer_pin(root: &Path) -> BuildResult<()> {
+/// Verify the pinned renderer SDK before using its tools.
+/// For example, call `check_renderer_pin(root)?` before locating its installer.
+pub(crate) fn check_renderer_pin(root: &Path) -> BuildResult<()> {
     let lock = read_lockfile(&root.join("Cargo.lock"))?;
     for required in ["martensite-vulkan", "martensite-tkv3d"] {
         if !lock.package.iter().any(|package| package.name == required) {

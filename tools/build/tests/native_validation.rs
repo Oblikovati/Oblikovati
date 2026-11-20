@@ -81,6 +81,24 @@ fn a_changed_or_local_sdk_cannot_execute_its_installer() {
 }
 
 #[test]
+fn a_changed_renderer_pin_is_rejected_before_fetching_the_installer() {
+    let fixture = NativeRuntimeFixture::new();
+    let lock = include_str!("../../../Cargo.lock")
+        .replace("bef25f47548431c8f128f08f66a1f719bcee4982", &"0".repeat(40));
+    fixture.files.put("Cargo.lock", &lock);
+    let runner = fixture.runner();
+    let error = prepare(
+        fixture.files.root(),
+        &runner,
+        Path::new("cache"),
+        Path::new("env"),
+    )
+    .unwrap_err();
+    assert!(error.contains("renderer") && error.contains("expected"));
+    assert!(runner.calls.borrow().is_empty());
+}
+
+#[test]
 fn missing_installer_and_invalid_manifest_layout_are_named_declines() {
     let fixture = FixtureTree::new();
     let manifest = fixture.root().join("crates/martensite-vulkan/Cargo.toml");

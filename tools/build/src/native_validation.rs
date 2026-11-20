@@ -28,7 +28,7 @@ pub(crate) fn prepare(
 }
 
 fn locked_vulkan_installer(root: &Path, runner: &dyn Runner) -> BuildResult<PathBuf> {
-    dependencies::check_pins(root)?;
+    dependencies::check_renderer_pin(root)?;
     let package = locked_source_package(root, runner, "martensite-vulkan")?;
     dependencies::require_locked_source(root, &package)?;
     installer_from_manifest(&package.manifest_path)
