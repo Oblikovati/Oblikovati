@@ -256,7 +256,7 @@ mod tests {
             bold: true,
             ..Default::default()
         };
-        let grown = retain_unchanged_runs(&[run.clone()], "a界", "a界!");
+        let grown = retain_unchanged_runs(std::slice::from_ref(&run), "a界", "a界!");
         assert_eq!(
             grown,
             [SketchTextRun {

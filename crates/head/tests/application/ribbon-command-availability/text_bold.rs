@@ -91,7 +91,10 @@ fn editor_ink(world: &mut ApplicationWorld) -> usize {
         .chunks_exact(stride)
         .skip(top as usize)
         .take((bottom - top) as usize)
-        .flat_map(|row| row[left as usize * 4..right as usize * 4].chunks_exact(4))
+        .flat_map(|row| {
+            let selected = &row[left as usize * 4..right as usize * 4];
+            selected.as_chunks::<4>().0
+        })
         .filter(|color| color[..3].iter().all(|value| *value > 140))
         .count()
 }
