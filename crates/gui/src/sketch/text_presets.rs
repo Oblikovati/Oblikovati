@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Session presets outlive any one Format Text draft.
-use super::GuiSketchTextDraft;
+use super::{GuiSketchTextDraft, GuiSketchTextPresetId};
 use imgui::{Key, Ui};
 
 const NONE: &str = "No Preset";
@@ -11,12 +11,13 @@ enum PresetChoice {
     #[default]
     None,
     LastUsed,
-    Named(String),
+    Named(GuiSketchTextPresetId),
 }
 
 #[derive(Default)]
 pub(super) struct TextPresets {
-    entries: Vec<(String, GuiSketchTextDraft)>,
+    entries: Vec<PresetEntry>,
+    next_id: u64,
     current: PresetChoice,
     initial: PresetChoice,
     last: Option<GuiSketchTextDraft>,
@@ -25,6 +26,12 @@ pub(super) struct TextPresets {
     name: Option<PresetName>,
     open: bool,
     starting: bool,
+}
+
+struct PresetEntry {
+    id: GuiSketchTextPresetId,
+    name: String,
+    fields: GuiSketchTextDraft,
 }
 
 struct PresetName {
@@ -50,21 +57,30 @@ impl TextPresets {
         self.open = open;
     }
 
-    pub(super) fn begin(&mut self, existing: bool, draft: &mut GuiSketchTextDraft) -> bool {
+    pub(super) fn begin(
+        &mut self,
+        existing: bool,
+        preset: Option<GuiSketchTextPresetId>,
+        draft: &mut GuiSketchTextDraft,
+    ) -> bool {
         if !std::mem::take(&mut self.starting) {
             return false;
         }
         self.current = if existing {
-            self.entries
-                .iter()
-                .find(|(_, fields)| fields == draft)
-                .map_or(PresetChoice::None, |(name, _)| {
-                    PresetChoice::Named(name.clone())
-                })
+            preset
+                .filter(|id| self.entries.iter().any(|entry| entry.id == *id))
+                .map_or(PresetChoice::None, PresetChoice::Named)
         } else {
             self.initial.clone()
         };
         !existing && self.apply(draft)
+    }
+
+    pub(super) fn selected_preset(&self) -> Option<GuiSketchTextPresetId> {
+        match self.current {
+            PresetChoice::Named(id) => Some(id),
+            _ => None,
+        }
     }
 
     pub(super) fn submit(&mut self, draft: &GuiSketchTextDraft) {
@@ -116,36 +132,43 @@ impl TextPresets {
             self.current = PresetChoice::LastUsed;
             return self.apply(draft);
         }
-        if let Some(name) = self.choose_named(ui) {
-            self.current = PresetChoice::Named(name);
+        if let Some(id) = self.choose_named(ui) {
+            self.current = PresetChoice::Named(id);
             return self.apply(draft);
         }
         false
     }
 
-    fn choose_named(&self, ui: &Ui) -> Option<String> {
-        let mut names: Vec<_> = self.entries.iter().map(|(name, _)| name).rev().collect();
+    fn choose_named(&self, ui: &Ui) -> Option<GuiSketchTextPresetId> {
+        let mut entries: Vec<_> = self.entries.iter().rev().collect();
         if self.alphabetical {
-            names.sort_by_cached_key(|name| name.to_lowercase());
+            entries.sort_by_cached_key(|entry| entry.name.to_lowercase());
         }
-        names
+        entries
             .into_iter()
-            .find(|name| {
-                ui.selectable_config(*name)
-                    .selected(self.current == PresetChoice::Named((*name).clone()))
+            .find(|entry| {
+                ui.selectable_config(&entry.name)
+                    .selected(self.current == PresetChoice::Named(entry.id))
                     .build()
             })
-            .cloned()
+            .map(|entry| entry.id)
     }
 
     fn caption(&self, draft: &GuiSketchTextDraft) -> String {
         match &self.current {
             PresetChoice::None => NONE.into(),
             PresetChoice::LastUsed => LAST.into(),
-            PresetChoice::Named(name) if self.fields(&self.current) != Some(draft) => {
-                format!("*{name}")
-            }
-            PresetChoice::Named(name) => name.clone(),
+            PresetChoice::Named(_) => self.current_index().map_or_else(
+                || NONE.into(),
+                |index| {
+                    let entry = &self.entries[index];
+                    if &entry.fields == draft {
+                        entry.name.clone()
+                    } else {
+                        format!("*{}", entry.name)
+                    }
+                },
+            ),
         }
     }
 
@@ -153,11 +176,11 @@ impl TextPresets {
         match choice {
             PresetChoice::None => None,
             PresetChoice::LastUsed => self.last.as_ref(),
-            PresetChoice::Named(name) => self
+            PresetChoice::Named(id) => self
                 .entries
                 .iter()
-                .find(|(entry, _)| entry == name)
-                .map(|(_, fields)| fields),
+                .find(|entry| entry.id == *id)
+                .map(|entry| &entry.fields),
         }
     }
 
@@ -195,7 +218,7 @@ impl TextPresets {
             .enabled(index.is_some())
             .build()
         {
-            self.entries[index.unwrap()].1.clone_from(draft);
+            self.entries[index.unwrap()].fields.clone_from(draft);
         }
         if ui
             .menu_item_config("Rename Current")
@@ -203,7 +226,7 @@ impl TextPresets {
             .build()
         {
             self.name = Some(PresetName {
-                value: self.entries[index.unwrap()].0.clone(),
+                value: self.entries[index.unwrap()].name.clone(),
                 rename: true,
                 focus: true,
             });
@@ -213,8 +236,8 @@ impl TextPresets {
             .enabled(index.is_some())
             .build()
         {
-            let (name, _) = self.entries.remove(index.unwrap());
-            if self.initial == PresetChoice::Named(name) {
+            let entry = self.entries.remove(index.unwrap());
+            if self.initial == PresetChoice::Named(entry.id) {
                 self.initial = PresetChoice::None;
             }
             self.current = PresetChoice::None;
@@ -277,28 +300,31 @@ impl TextPresets {
         if self
             .entries
             .iter()
-            .any(|(name, _)| name.eq_ignore_ascii_case(value))
+            .any(|entry| entry.name.eq_ignore_ascii_case(value))
         {
             return false;
         }
-        let choice = PresetChoice::Named(value.into());
         if let Some(index) = self.current_index().filter(|_| rename) {
-            if self.initial == self.current {
-                self.initial = choice.clone();
-            }
-            self.entries[index].0 = value.into();
+            self.entries[index].name = value.into();
         } else {
-            self.entries.push((value.into(), draft.clone()));
+            let Some(next) = self.next_id.checked_add(1) else {
+                return false;
+            };
+            self.next_id = next;
+            let id = GuiSketchTextPresetId(next);
+            self.entries.push(PresetEntry {
+                id,
+                name: value.into(),
+                fields: draft.clone(),
+            });
+            self.current = PresetChoice::Named(id);
         }
-        self.current = choice;
         true
     }
 
     fn current_index(&self) -> Option<usize> {
-        let PresetChoice::Named(name) = &self.current else {
-            return None;
-        };
-        self.entries.iter().position(|(entry, _)| entry == name)
+        let id = self.selected_preset()?;
+        self.entries.iter().position(|entry| entry.id == id)
     }
 }
 
@@ -339,7 +365,7 @@ mod tests {
         shelf.initial = shelf.current.clone();
         shelf.synchronize(true);
         let mut next = GuiSketchTextDraft::default();
-        assert!(shelf.begin(false, &mut next));
+        assert!(shelf.begin(false, None, &mut next));
         assert_eq!(next, saved);
     }
 
@@ -358,5 +384,43 @@ mod tests {
         shelf.cancel();
         shelf.synchronize(false);
         assert_eq!(shelf.fields(&PresetChoice::LastUsed), Some(&draft));
+    }
+
+    #[test]
+    fn reopened_modified_text_keeps_its_preset_through_rename() {
+        let mut shelf = TextPresets::default();
+        let original = GuiSketchTextDraft {
+            content: "ab".into(),
+            ..Default::default()
+        };
+        assert!(shelf.save_name("f", &original));
+        let preset = shelf.selected_preset();
+        let mut changed = original.clone();
+        changed.content = "c".into();
+        shelf.synchronize(true);
+        assert!(!shelf.begin(true, preset, &mut changed));
+        assert_eq!(shelf.caption(&changed), "*f");
+        shelf.name = Some(PresetName {
+            value: "g".into(),
+            rename: true,
+            focus: false,
+        });
+        assert!(shelf.save_name("g", &changed));
+        assert_eq!(shelf.selected_preset(), preset);
+        assert_eq!(shelf.caption(&changed), "*g");
+        assert_eq!(shelf.fields(&shelf.current), Some(&original));
+    }
+
+    #[test]
+    fn matching_content_does_not_assign_a_preset_to_unrelated_text() {
+        let mut shelf = TextPresets::default();
+        let mut draft = GuiSketchTextDraft {
+            content: "ab".into(),
+            ..Default::default()
+        };
+        assert!(shelf.save_name("f", &draft));
+        shelf.synchronize(true);
+        assert!(!shelf.begin(true, None, &mut draft));
+        assert_eq!(shelf.caption(&draft), NONE);
     }
 }

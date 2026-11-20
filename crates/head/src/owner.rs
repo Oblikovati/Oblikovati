@@ -173,6 +173,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
         oblikovati_session::workspace::WorkspaceFocusIdentity,
     )>,
     sketch_tool: Option<crate::sketch_tool::SketchToolState>,
+    text_preset_links: sketch_text::TextPresetLinks,
     pattern_preview: Option<(
         crate::HeadSketchEdit,
         u64,
@@ -306,6 +307,7 @@ impl<
             sketch_store: None,
             part_store: None,
             sketch_tool: None,
+            text_preset_links: Default::default(),
             pattern_preview: None,
             pattern_result: None,
             dimension_serial: 0,

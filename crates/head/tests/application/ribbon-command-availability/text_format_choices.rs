@@ -123,6 +123,13 @@ fn check_committed_format_history(
 fn check_formatted_text_reopens(world: &mut ApplicationWorld) {
     let committed = world.edited_geometry();
     click_editor_button(world, "Cancel");
+    reopen_text_sketch_from_file(world);
+    assert_eq!(world.edited_geometry(), committed);
+    text_edit::open_existing(world);
+    assert_preview_style(world);
+}
+
+pub(super) fn reopen_text_sketch_from_file(world: &mut ApplicationWorld) {
     world.finish_sketch();
     x11_input::press_control_letter(b's');
     world.pump(Vec::new());
@@ -133,9 +140,6 @@ fn check_formatted_text_reopens(world: &mut ApplicationWorld) {
     x11_input::right_click(diagnostics::pointer_pixels(row));
     world.pump(Vec::new());
     click_format_row(world, "Edit Sketch");
-    assert_eq!(world.edited_geometry(), committed);
-    text_edit::open_existing(world);
-    assert_preview_style(world);
 }
 
 #[test]

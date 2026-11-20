@@ -3,13 +3,21 @@
 use super::{sketch_picking::ordinary_click, *};
 use crate::{HeadSketchEdit, HeadWindow, sketch_tool::SketchToolState};
 use oblikovati_api::types::{SketchTextStyle, TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT};
-use oblikovati_gui::{GuiSketchTextAction, GuiSketchTextDraft};
+use oblikovati_gui::{GuiSketchTextAction, GuiSketchTextDraft, GuiSketchTextPresetId};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
+    identity::DocumentGuid,
     sketch::{Sketch2D, SketchEntityId, SketchPlane, SketchText2D},
 };
 use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportKey, ViewportSketchPreview};
 use std::sync::{Arc, OnceLock};
+
+#[path = "owner_sketch_text_commit.rs"]
+mod commit;
+
+/// Session links use the document recipe identity so reopening a file keeps the same link.
+pub(super) type TextPresetLinks = std::collections::BTreeMap<TextPresetKey, GuiSketchTextPresetId>;
+type TextPresetKey = (DocumentGuid, u64, SketchEntityId);
 
 pub(crate) struct SketchTextTool {
     pub(crate) edit: HeadSketchEdit,
@@ -110,6 +118,17 @@ impl<
             if tool.placement.as_ref().is_some_and(|draft| draft.existing.is_some()))
     }
 
+    pub(super) fn gui_sketch_text_preset(&self) -> Option<GuiSketchTextPresetId> {
+        let Some(SketchToolState::Text(tool)) = &self.sketch_tool else {
+            return None;
+        };
+        let entity = tool.placement.as_ref()?.existing.as_ref()?.id;
+        let document = self.files.workspace().identity(tool.edit.document).ok()?;
+        self.text_preset_links
+            .get(&(document.internal_name, tool.edit.sketch.0, entity))
+            .copied()
+    }
+
     pub(super) fn gui_sketch_text_font_families(&self) -> Option<Arc<[String]>> {
         let Some(SketchToolState::Text(tool)) = &self.sketch_tool else {
             return None;
@@ -163,7 +182,9 @@ impl<
         match action {
             GuiSketchTextAction::Preview(fields) => placement.fields = fields,
             GuiSketchTextAction::Cancel => return self.cancel_text_editor(),
-            GuiSketchTextAction::Accept(fields) => return self.accept_sketch_text(fields),
+            GuiSketchTextAction::Accept { draft, preset } => {
+                return self.accept_sketch_text(draft, preset);
+            }
             GuiSketchTextAction::Edit { .. } => unreachable!("handled before reading the draft"),
         }
         Ok(true)
@@ -243,7 +264,11 @@ impl<
         })
     }
 
-    fn accept_sketch_text(&mut self, fields: GuiSketchTextDraft) -> Result<bool, String> {
+    fn accept_sketch_text(
+        &mut self,
+        fields: GuiSketchTextDraft,
+        preset: Option<GuiSketchTextPresetId>,
+    ) -> Result<bool, String> {
         let Some(SketchToolState::Text(mut tool)) = self.sketch_tool.take() else {
             return Ok(false);
         };
@@ -251,7 +276,7 @@ impl<
             .placement
             .as_ref()
             .is_some_and(|draft| draft.existing.is_some());
-        let result = self.commit_text_candidate(&mut tool, fields);
+        let result = self.commit_text_candidate(&mut tool, fields, preset);
         if editing && result.is_ok() {
             self.command_notice = Some(DesktopCommandNotice::Ready);
         } else {
@@ -261,60 +286,6 @@ impl<
             }
         }
         result
-    }
-
-    fn commit_text_candidate(
-        &mut self,
-        tool: &mut SketchTextTool,
-        fields: GuiSketchTextDraft,
-    ) -> Result<bool, String> {
-        let Some(placement) = tool.placement.as_mut() else {
-            return Ok(false);
-        };
-        placement.fields = fields;
-        if let Some(existing) = &placement.existing {
-            let style = placement.style()?;
-            verify_text_outline(&style, placement.anchor, tool.working_scale)?;
-            self.change_sketch_text(tool.edit, existing.id, style)?;
-        } else if !placement.fields.content.trim().is_empty() {
-            let style = placement.style()?;
-            verify_text_outline(&style, placement.anchor, tool.working_scale)?;
-            self.commit_sketch_text(tool.edit, placement.anchor, style)?;
-            tool.generation = self.capture_sketch_tool_context()?.1;
-        }
-        tool.placement = None;
-        Ok(true)
-    }
-
-    fn change_sketch_text(
-        &mut self,
-        edit: HeadSketchEdit,
-        entity: SketchEntityId,
-        style: SketchTextStyle,
-    ) -> Result<(), String> {
-        self.files
-            .commands(edit.document)
-            .map_err(|e| e.to_string())?
-            .run("Edit sketch text", |snapshot, _| {
-                snapshot.edit_sketch_text(edit.sketch, entity, style)
-            })
-            .map_err(|e| e.to_string())
-    }
-
-    fn commit_sketch_text(
-        &mut self,
-        edit: HeadSketchEdit,
-        anchor: [f64; 2],
-        style: SketchTextStyle,
-    ) -> Result<(), String> {
-        self.files
-            .commands(edit.document)
-            .map_err(|e| e.to_string())?
-            .run("Create sketch text", |snapshot, ids| {
-                snapshot.create_sketch_text(edit.sketch, anchor, style, ids)
-            })
-            .map(|_| ())
-            .map_err(|e| e.to_string())
     }
 
     fn sketch_text_prompt(&mut self) {

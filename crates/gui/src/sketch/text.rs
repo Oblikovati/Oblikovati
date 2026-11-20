@@ -48,13 +48,20 @@ impl Default for GuiSketchTextDraft {
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiSketchTextAction {
     Preview(GuiSketchTextDraft),
-    Accept(GuiSketchTextDraft),
+    Accept {
+        draft: GuiSketchTextDraft,
+        preset: Option<GuiSketchTextPresetId>,
+    },
     Cancel,
     Edit {
         token: u64,
         entity: oblikovati_model::sketch::SketchEntityId,
     },
 }
+
+/// Stable session identity of a named Format Text preset, independent of its caption.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct GuiSketchTextPresetId(u64);
 
 #[derive(Default)]
 pub(crate) struct SketchTextDialog {
@@ -105,6 +112,7 @@ impl SketchTextDialog {
                     draft,
                     state.sketch_text_font_families.as_deref().unwrap_or(&[]),
                     state.sketch_text_existing,
+                    state.sketch_text_preset,
                 )
             })
             .flatten();
@@ -127,10 +135,12 @@ impl SketchTextDialog {
         mut draft: GuiSketchTextDraft,
         families: &[String],
         existing: bool,
+        preset: Option<GuiSketchTextPresetId>,
     ) -> Option<GuiSketchTextAction> {
         let mut presets = self.presets.borrow_mut();
         let mut height = self.height_input.borrow_mut();
-        let changed_preset = presets.begin(existing, &mut draft) | presets.draw(ui, &mut draft);
+        let changed_preset =
+            presets.begin(existing, preset, &mut draft) | presets.draw(ui, &mut draft);
         if changed_preset {
             *height = Default::default();
             *self.content.borrow_mut() = Default::default();
@@ -158,7 +168,10 @@ impl SketchTextDialog {
             height.apply(&mut draft.height_mm);
             if !height.blocked() {
                 presets.submit(&draft);
-                return Some(GuiSketchTextAction::Accept(draft));
+                return Some(GuiSketchTextAction::Accept {
+                    draft,
+                    preset: presets.selected_preset(),
+                });
             }
         }
         height.warning(ui);
