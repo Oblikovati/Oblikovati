@@ -27906,8 +27906,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/sketch_create_tools.go keeps a sketch text recipe and a chosen font.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go sketch text tests cover authored content and glyph generation. The preset rename and save behavior is specified by pinned text-31.",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Existing glyph output and selection. Changing a session preset does not change Martensite geometry.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. Windows and macOS UI evidence is pending.",
+      "kernel_integration": "The session tracks a stable preset identity by document GUID, sketch and text entity. Rename and Save Current operate on the preset library without changing the displayed sketch.",
+      "rust_tests": "sketch_scenarios_use_the_native_window, focused by pinned text-31, and the GUI preset reopening and rename tests.",
+      "oracle": "Pinned text-31 steps, native save and file reopen, visible selector captions, captured editor states, and unchanged committed sketch geometry.",
+      "expected_result": "Modified Text reopens as *f, shows *g after rename, and shows g after Save Current without changing the committed Text.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:0d3c2c7ad71350b83515ac4f846f912f94a02e685d18205c826740a3d643467c",

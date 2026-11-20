@@ -688,13 +688,13 @@
       "features/sketch/text/VISUAL.md": "fd0e1444c421ebad300c59bb1c07589adfc0b97bd46c4a6f64c50b1af2aa2398",
       "features/sketch/text/feature-icon.svg": "42e957b40212d450898c00e75e693943d6556aca7e752e72c7859f854eab14d6"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-sketch-text-bullets-3907/cucumber.json",
-    "cucumber_sha256": "fa0c55f524400c623163707faacf1fa424609c971a3fdc92d2ffb38175c7479e",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-sketch-text-bullets-3907/scenario-arguments.json",
-    "scenario_arguments_sha256": "0e2f22697f19863db0385ad72977c982a4fe80f562b63b5797681c979ca4a9f6",
-    "application_commit": "c73a81a1b166cecd6f0714368480d52a49b712b8",
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-sketch-text-preset-rename-3907/cucumber.json",
+    "cucumber_sha256": "4e1e4401b513d64d16b24d96b874357ebea47506460b6fc255a340b4384fbb8a",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-sketch-text-preset-rename-3907/scenario-arguments.json",
+    "scenario_arguments_sha256": "64dfdadfeea19393fe56606f921a18fc4f1c0183bc113ccbbcb9324f67da90f6",
+    "application_commit": "5345616c69d68e61c4a16145d98887aba2d60cf5",
     "command": "Unfiltered Text feature with native X11 input. See the receipt README.",
     "environment": "Linux X11 under Xvfb, 1440 × 900 native window, Vulkan Lavapipe",
-    "notes": "Ten scenarios passed. Twenty-eight have undefined steps. The bullet fixture starts at 40 degrees of freedom and reaches 42 on commit. Diameter still uses DejaVu Sans because the default fallback is tracked in Martensite #575."
+    "notes": "Eleven scenarios passed. Twenty-seven have undefined steps. The preset rename case saves and reopens the part within the same application session."
   }
 }

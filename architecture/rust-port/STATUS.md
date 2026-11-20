@@ -86,8 +86,11 @@ using this status; the live scenario directory can change.
   Pinned `text-33` passed all eight steps. The native editor applied bullets
   to two selected paragraphs, replaced them with sequential numbers, and
   committed the Text at the selected point. Ready showed 42 dimensions
-  needed. The full live Text run passed 10 of 38 declarations. The other 28
-  lack step bindings. See `receipts/2026-11-20-sketch-text-bullets-3907/` for
+  needed. Pinned `text-31` saved and reopened a modified Text in the same
+  application session and verified `*f` on reopen, `*g` after rename, and
+  `g` after Save Current. The preset actions preserved the committed sketch.
+  The full live Text run passed 11 of 38 declarations. The other 27
+  lack step bindings. See `receipts/2026-11-20-sketch-text-preset-rename-3907/` for
   the current run and `receipts/2026-11-20-sketch-text-style-3907/` for the
   earlier formatting preview and save and reopen checks. Strict verification
   still requires bounded build and runtime inputs under #3978.
