@@ -99,6 +99,7 @@ mod tangent_distance;
 mod tangent_distance_compile;
 mod tangent_distance_residual;
 mod tangent_residual;
+mod text;
 mod variables;
 pub use angle::AngleTurn;
 pub use arc::SketchArc2D;
@@ -118,6 +119,7 @@ pub use solve::{SketchResidualOperand, SketchResidualRow, SketchSolveOutcome};
 pub use source::SketchRelationId;
 pub use tangent::{CircleContact, LineContactSide};
 pub use tangent_distance::{TangentDistanceContact, TangentDistanceOptions, TangentLean};
+pub use text::SketchText2D;
 
 /// Ordered sketch ownership; shared endpoints use the same local point identity.
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -137,6 +139,7 @@ pub struct Sketch2D {
     splines: Vec<SketchSpline2D>,
     spline_handles: Vec<SketchSplineHandle2D>,
     offset_splines: Vec<SketchOffsetSpline2D>,
+    texts: Vec<SketchText2D>,
     constraints: Vec<SketchConstraint>,
     owned_relations: std::collections::BTreeMap<SketchConstraintId, SketchEntityId>,
     pattern_point_links: Vec<SketchPatternPointLink>,

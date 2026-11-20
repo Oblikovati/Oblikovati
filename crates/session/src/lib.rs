@@ -240,6 +240,7 @@ mod sketch_split;
 pub use sketch_split::SketchSplitProjectionInput;
 
 mod sketch_polyline;
+mod sketch_text;
 pub use sketch_polyline::SketchPolylineProjectionInput;
 mod sketch_placement_recipe;
 pub use sketch_placement_recipe::SketchPlacementPreview;

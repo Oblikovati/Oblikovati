@@ -93,3 +93,6 @@ mod ellipse;
 
 #[path = "package_entity_order/spline.rs"]
 mod spline;
+
+#[path = "package_entity_order/text.rs"]
+mod text;

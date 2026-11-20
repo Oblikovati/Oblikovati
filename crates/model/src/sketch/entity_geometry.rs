@@ -6,7 +6,7 @@ use crate::sketch::{
 use oblikovati_api::types::{
     SKETCH_ENTITY_ARC, SKETCH_ENTITY_CIRCLE, SKETCH_ENTITY_CONTROL_POINT_SPLINE,
     SKETCH_ENTITY_ELLIPSE, SKETCH_ENTITY_LINE, SKETCH_ENTITY_OFFSET_SPLINE, SKETCH_ENTITY_POINT,
-    SKETCH_ENTITY_SPLINE, SketchEntityKind,
+    SKETCH_ENTITY_SPLINE, SKETCH_ENTITY_TEXT, SketchEntityKind,
 };
 use std::collections::BTreeMap;
 /// Read-only owned entity geometry; defining point identities stay in the sketch namespace.
@@ -19,6 +19,7 @@ pub enum OwnedSketchGeometry<'a> {
     Ellipse(SketchEllipse2D),
     Spline(&'a super::SketchSpline2D),
     OffsetSpline(super::SketchOffsetSpline2D),
+    Text(&'a super::SketchText2D),
 }
 impl OwnedSketchGeometry<'_> {
     pub(crate) fn ownership_dependencies(self) -> Vec<SketchEntityId> {
@@ -45,6 +46,7 @@ impl OwnedSketchGeometry<'_> {
             Self::Ellipse(shape) => shape.id(),
             Self::Spline(shape) => shape.id(),
             Self::OffsetSpline(shape) => shape.id(),
+            Self::Text(shape) => shape.id,
         }
     }
     pub(crate) fn kind(self) -> SketchEntityKind {
@@ -56,12 +58,21 @@ impl OwnedSketchGeometry<'_> {
             Self::Ellipse(_) => SKETCH_ENTITY_ELLIPSE,
             Self::Spline(shape) => spline_entity_kind(shape.kind()),
             Self::OffsetSpline(_) => SKETCH_ENTITY_OFFSET_SPLINE,
+            Self::Text(_) => SKETCH_ENTITY_TEXT,
         }
     }
     pub(crate) fn transform_points(
         self,
         transform: super::SketchSelectionTransform,
     ) -> Result<Vec<SketchEntityId>, SketchError> {
+        if !matches!(transform, super::SketchSelectionTransform::Move(_))
+            && matches!(self, Self::Text(_))
+        {
+            return Err(SketchError::Definition(format!(
+                "text transform {transform:?} for {:?}: expected a translation",
+                self.id()
+            )));
+        }
         if !matches!(transform, super::SketchSelectionTransform::Move(_))
             && matches!(self, Self::OffsetSpline(_))
         {
@@ -82,6 +93,7 @@ impl OwnedSketchGeometry<'_> {
             Self::Ellipse(shape) => vec![shape.center()],
             Self::Spline(shape) => shape.points().to_vec(),
             Self::OffsetSpline(_) => Vec::new(),
+            Self::Text(shape) => vec![shape.anchor],
         }
     }
     pub(crate) fn radius(self, sketch: &Sketch2D) -> Result<f64, SketchError> {
@@ -120,6 +132,7 @@ pub(super) fn catalogue(sketch: &Sketch2D) -> BTreeMap<SketchEntityId, OwnedSket
                 .map(OwnedSketchGeometry::Ellipse),
         )
         .chain(spline_shapes(sketch))
+        .chain(sketch.texts().iter().map(OwnedSketchGeometry::Text))
         .map(|shape| (shape.id(), shape))
         .collect()
 }

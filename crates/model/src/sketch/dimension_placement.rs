@@ -73,9 +73,11 @@ impl Sketch2D {
     ) -> Result<(), SketchError> {
         match (recipe.version, &recipe.dimension_placements) {
             (1..=4, None) => Ok(()),
-            (5..=21, Some(placements)) => self.adopt_dimension_placements(placements),
+            (5..=super::SKETCH_RECIPE_VERSION, Some(placements)) => {
+                self.adopt_dimension_placements(placements)
+            }
             shape => Err(SketchError::Definition(format!(
-                "dimension placement recipe {shape:?}: expected no metadata in versions 1-4 or explicit dimensional placements in versions 5-21"
+                "dimension placement recipe {shape:?}: expected no metadata in versions 1-4 or explicit dimensional placements in versions 5 or later"
             ))),
         }
     }

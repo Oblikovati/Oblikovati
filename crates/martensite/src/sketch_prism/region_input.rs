@@ -82,6 +82,7 @@ fn curve(
         }
         OwnedSketchGeometry::Spline(spline) => Err(unsupported(spline.id())),
         OwnedSketchGeometry::OffsetSpline(spline) => Err(unsupported(spline.id())),
+        OwnedSketchGeometry::Text(text) => Err(unsupported(text.id)),
         OwnedSketchGeometry::Point(point) => Err(unsupported(point.id)),
     }
 }

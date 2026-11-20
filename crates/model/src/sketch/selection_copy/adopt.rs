@@ -3,7 +3,7 @@ use super::{
     CopyIdentities, OwnedSketchGeometry, PreparedSelectionCopy, Sketch2D, SketchEntityId,
     SketchError, copy_selection_error, entity_geometry,
 };
-use crate::sketch::{SketchArc2D, SketchSpline2D};
+use crate::sketch::{SketchArc2D, SketchSpline2D, SketchText2D};
 impl PreparedSelectionCopy {
     pub(super) fn append(
         &self,
@@ -55,6 +55,11 @@ fn append_curve(
             target.add_ellipse(ellipse.copy_identity(id, ids.get(ellipse.center())?)?)
         }
         OwnedSketchGeometry::Spline(spline) => append_spline(target, spline, ids, id),
+        OwnedSketchGeometry::Text(text) => target.add_text(SketchText2D {
+            id,
+            anchor: ids.get(text.anchor)?,
+            style: text.style.clone(),
+        }),
         _ => Err(copy_selection_error(shape.id())),
     }
 }

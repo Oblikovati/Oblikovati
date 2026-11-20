@@ -27,6 +27,7 @@ impl Sketch2D {
         });
         self.offset_splines
             .retain(|offset| !retired.contains(&offset.id()));
+        self.texts.retain(|text| !retired.contains(&text.id));
         self.entity_order.retain(|id| !retired.contains(id));
         self.defining_points.retain(|id| !retired.contains(id));
         self.construction_curves.retain(|id| !retired.contains(id));

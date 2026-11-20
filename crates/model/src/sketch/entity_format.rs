@@ -83,10 +83,12 @@ impl Sketch2D {
         recipe: &SketchRecipe,
     ) -> Result<(), SketchError> {
         match (recipe.version, &recipe.entity_formats) {
-            (1..=20, None) => Ok(()),
-            (21, Some(entries)) if !entries.is_empty() => self.adopt_entity_formats(entries),
+            (1..=20 | 22..=super::SKETCH_RECIPE_VERSION, None) => Ok(()),
+            (21..=super::SKETCH_RECIPE_VERSION, Some(entries)) if !entries.is_empty() => {
+                self.adopt_entity_formats(entries)
+            }
             shape => Err(SketchError::Definition(format!(
-                "entity format recipe {shape:?}: expected no overrides before version 21 or a nonempty override list in version 21"
+                "entity format recipe {shape:?}: expected no overrides before version 21 or a nonempty override list from version 21"
             ))),
         }
     }

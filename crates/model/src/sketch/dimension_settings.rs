@@ -129,9 +129,11 @@ impl Sketch2D {
             &recipe.dimension_limits,
         ) {
             (1..=5, None, None) => Ok(()),
-            (6..=21, Some(ids), Some(limits)) => self.adopt_dimension_settings(ids, limits),
+            (6..=super::SKETCH_RECIPE_VERSION, Some(ids), Some(limits)) => {
+                self.adopt_dimension_settings(ids, limits)
+            }
             shape => Err(SketchError::Definition(format!(
-                "dimension settings recipe {shape:?}: expected no settings in versions 1-5 or explicit owned reference IDs and limits in versions 6-21"
+                "dimension settings recipe {shape:?}: expected no settings in versions 1-5 or explicit owned reference IDs and limits in versions 6 or later"
             ))),
         }
     }

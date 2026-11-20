@@ -68,8 +68,8 @@ impl Sketch2D {
         recipe: &SketchRecipe,
     ) -> Result<(), SketchError> {
         match (recipe.version, &recipe.pattern_offsets) {
-            (1..=14, None) | (16..=21, None) => Ok(()),
-            (15..=21, Some(offsets)) if !offsets.is_empty() => {
+            (1..=14, None) | (16..=super::SKETCH_RECIPE_VERSION, None) => Ok(()),
+            (15..=super::SKETCH_RECIPE_VERSION, Some(offsets)) if !offsets.is_empty() => {
                 for offset in offsets {
                     if self
                         .pattern_offsets

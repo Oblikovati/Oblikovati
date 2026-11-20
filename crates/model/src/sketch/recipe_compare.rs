@@ -30,6 +30,7 @@ impl Sketch2D {
             && self.circles == other.circles
             && same_ellipses(&self.ellipses, &other.ellipses)
             && self.same_spline_recipes(other)
+            && self.texts == other.texts
             && same_points(&self.points, &other.points)
             && same_constraints(&self.constraints, &other.constraints)
     }

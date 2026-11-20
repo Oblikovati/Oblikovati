@@ -46,9 +46,11 @@ impl Sketch2D {
         require_minor_dimension_schema(recipe)?;
         match (recipe.version, &recipe.ellipses) {
             (1..=6, None) => Ok(()),
-            (7..=21, Some(shapes)) => shapes.iter().try_for_each(|shape| self.add_ellipse(*shape)),
+            (7..=crate::sketch::SKETCH_RECIPE_VERSION, Some(shapes)) => {
+                shapes.iter().try_for_each(|shape| self.add_ellipse(*shape))
+            }
             shape => Err(SketchError::Definition(format!(
-                "ellipse recipe {shape:?}: expected no ellipses in versions 1-6 or explicit ellipse values in versions 7-21"
+                "ellipse recipe {shape:?}: expected no ellipses in versions 1-6 or explicit ellipse values in versions 7 or later"
             ))),
         }
     }

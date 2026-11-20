@@ -36,6 +36,10 @@ pub(crate) fn resolve(
         )),
         OwnedSketchGeometry::Spline(value) => super::spline::resolve(sketch, value, limit),
         OwnedSketchGeometry::OffsetSpline(value) => super::spline::offset(sketch, value, limit),
+        OwnedSketchGeometry::Text(_) => Err(SketchCurveFailure::input(
+            entity,
+            "text geometry: expected a single analytic curve".into(),
+        )),
     }
 }
 fn line(

@@ -476,6 +476,7 @@ mod sketch_split;
 mod sketch_endpoint;
 
 mod sketch_polyline;
+mod sketch_text;
 pub use sketch_polyline::{SketchPolylineCreation, SketchPolylineCreationReport};
 
 mod sketch_polygon;
