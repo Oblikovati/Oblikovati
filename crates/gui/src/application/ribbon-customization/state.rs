@@ -30,6 +30,7 @@ impl Command {
                 GuiSketchTool::Point => "sketch-point",
                 GuiSketchTool::CenterPointArc => "sketch-center-arc",
                 GuiSketchTool::Ellipse => "sketch-ellipse",
+                GuiSketchTool::Fillet => "sketch-fillet",
                 GuiSketchTool::CenterRectangle => "sketch-center-rectangle",
                 GuiSketchTool::ThreePointRectangle => "sketch-three-point-rectangle",
                 GuiSketchTool::ThreePointCenterRectangle => "sketch-three-point-center-rectangle",
@@ -63,7 +64,7 @@ impl Command {
         }
     }
 }
-pub(super) const COMMANDS: [Command; 27] = [
+pub(super) const COMMANDS: [Command; 28] = [
     Command::Separator,
     Command::Tool(GuiSketchTool::Line),
     Command::Tool(GuiSketchTool::MidpointLine),
@@ -75,6 +76,7 @@ pub(super) const COMMANDS: [Command; 27] = [
     Command::Tool(GuiSketchTool::Point),
     Command::Tool(GuiSketchTool::CenterPointArc),
     Command::Tool(GuiSketchTool::Ellipse),
+    Command::Tool(GuiSketchTool::Fillet),
     Command::Tool(GuiSketchTool::CenterRectangle),
     Command::Tool(GuiSketchTool::ThreePointRectangle),
     Command::Tool(GuiSketchTool::ThreePointCenterRectangle),

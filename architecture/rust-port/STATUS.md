@@ -59,11 +59,12 @@ using this status; the live scenario directory can change.
   See `receipts/2026-11-20-ribbon-appearance-complete-3957/`. All 18 scenarios
   have R0 baseline records. Strict acceptance still requires bounded build
   and runtime inputs under #3978.
-- Ribbon Command Availability (#3956): the full run passed three of five
-  scenarios. Existing Create placement tools now enter the only planar sketch
-  in an active part. X11 input verified Line entry and cancellation with no
-  geometry or history changes. The two remaining scenarios expect Sketch
-  Fillet and Sketch Text. See `receipts/2026-11-20-sketch-ribbon-entry-3956/`.
+- Ribbon Command Availability (#3956) passed three of five live scenarios and
+  one of three pinned scenarios. A native X11 test started Fillet from the
+  Part ribbon, canceled a pending pick, rounded a corner at the default 5 mm
+  radius, and verified undo and redo. The two failing scenarios now reach the
+  missing Sketch Text command. The three pinned declarations have R0 baseline
+  records. See `receipts/2026-11-20-sketch-fillet-3956/`.
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
   Midpoint Line tool has native mouse and keyboard tests. A native YAML

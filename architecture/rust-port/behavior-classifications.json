@@ -7078,21 +7078,23 @@
       "acceptance_test": "application_scenarios_use_the_native_window: Inspect Sketch commands outside sketch edit",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3856",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3956"
       ],
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: app/ribbon_registry_test.go and app/ribbon_alignment_test.go; see receipts/2026-11-14-go-sketch-ribbon-baseline/README.md.",
       "mapping_reason": "Ribbon or quick-access UI behavior in the active document and sketch context.",
       "go_test_premise": "Go contextual-tab, panel-alignment, button-style and in-sketch variant tests passed. Go hides Sketch outside sketch edit, unlike the pinned scenarios; these tests do not establish native availability or tooltips.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
-      "kernel_capabilities": "No solid operation is required to inspect ribbon availability; the editing scenario requires an existing visible sketch.",
-      "platforms": "Reference and partial Rust unit checks: Linux. Native scenario and other platforms not established.",
-      "kernel_integration": "Ribbon context is derived from document and authoring state; no kernel operation is required by the ribbon availability checks.",
-      "rust_tests": "Partial: crates/gui/tests/ribbon/unit.rs document_tabs_keep_sketch_context_off_other_document_types. No complete native bindings for these three scenarios were found.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Replay and display the native extruded Part fixture. The availability checks do not create or change a solid.",
+      "platforms": "Native diagnostic on Linux X11, Xvfb and Vulkan Lavapipe. Windows and macOS rendered checks are pending.",
+      "kernel_integration": "The Part fixture replays through Martensite. The ribbon uses the active document and sketch state. The separate Fillet regression calls the typed Sketch API to round the corner.",
+      "rust_tests": "Native bindings in crates/head/tests/application/ribbon-command-availability/steps.rs. The in-edit scenario passed. The two outside-edit scenarios reach the missing Sketch Text command. See receipts/2026-11-20-sketch-fillet-3956/README.md.",
       "oracle": "Pinned scenario steps and native interaction, including enabled states, visible profile, tooltip, and workspace return; Go is a partial and conflicting reference outside sketch edit.",
-      "expected_result": "Select the Sketch tab and inspect the specified command states outside edit, or edit the existing sketch and verify Line, Finish, and the restored workspace as specified by this scenario."
+      "expected_result": "The seven named Create commands are enabled. Project Geometry and the five named groups are disabled. The active Part and browser stay visible.",
+      "baseline_source_sha256": "59959ff37cf45000a2fc634c665c70a0b784ae721f6fe8db1dd7d4399d659a0d"
     },
     {
       "id": "scenario:09c4149204b9a35a59a54bc5becec4c59f0a7f3c4c0204394cdb51608742b2f6",
@@ -7104,21 +7106,23 @@
       "acceptance_test": "application_scenarios_use_the_native_window: Revisit Sketch from another ribbon tab",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3856",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3956"
       ],
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: app/ribbon_registry_test.go and app/ribbon_alignment_test.go; see receipts/2026-11-14-go-sketch-ribbon-baseline/README.md.",
       "mapping_reason": "Ribbon or quick-access UI behavior in the active document and sketch context.",
       "go_test_premise": "Go contextual-tab, panel-alignment, button-style and in-sketch variant tests passed. Go hides Sketch outside sketch edit, unlike the pinned scenarios; these tests do not establish native availability or tooltips.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
-      "kernel_capabilities": "No solid operation is required to inspect ribbon availability; the editing scenario requires an existing visible sketch.",
-      "platforms": "Reference and partial Rust unit checks: Linux. Native scenario and other platforms not established.",
-      "kernel_integration": "Ribbon context is derived from document and authoring state; no kernel operation is required by the ribbon availability checks.",
-      "rust_tests": "Partial: crates/gui/tests/ribbon/unit.rs document_tabs_keep_sketch_context_off_other_document_types. No complete native bindings for these three scenarios were found.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Replay and display the native extruded Part fixture. The availability checks do not create or change a solid.",
+      "platforms": "Native diagnostic on Linux X11, Xvfb and Vulkan Lavapipe. Windows and macOS rendered checks are pending.",
+      "kernel_integration": "The Part fixture replays through Martensite. The ribbon uses the active document and sketch state. The separate Fillet regression calls the typed Sketch API to round the corner.",
+      "rust_tests": "Native bindings in crates/head/tests/application/ribbon-command-availability/steps.rs. The in-edit scenario passed. The two outside-edit scenarios reach the missing Sketch Text command. See receipts/2026-11-20-sketch-fillet-3956/README.md.",
       "oracle": "Pinned scenario steps and native interaction, including enabled states, visible profile, tooltip, and workspace return; Go is a partial and conflicting reference outside sketch edit.",
-      "expected_result": "Select the Sketch tab and inspect the specified command states outside edit, or edit the existing sketch and verify Line, Finish, and the restored workspace as specified by this scenario."
+      "expected_result": "After a round trip through 3D Model, the same seven Create commands stay enabled and the same groups stay disabled. The active Part and browser stay visible.",
+      "baseline_source_sha256": "59959ff37cf45000a2fc634c665c70a0b784ae721f6fe8db1dd7d4399d659a0d"
     },
     {
       "id": "scenario:c7a7f9038a6c19bfc43cc6da954d8c377dd6501f8e276344dc6f4690a1b6694a",
@@ -7130,28 +7134,30 @@
       "acceptance_test": "application_scenarios_use_the_native_window: Inspect Sketch ribbon while editing an existing sketch",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3856",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Oblikovati/issues/3956"
       ],
       "state": "inventoried",
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: app/ribbon_registry_test.go and app/ribbon_alignment_test.go; see receipts/2026-11-14-go-sketch-ribbon-baseline/README.md.",
       "mapping_reason": "Ribbon or quick-access UI behavior in the active document and sketch context.",
       "go_test_premise": "Go contextual-tab, panel-alignment, button-style and in-sketch variant tests passed. Go hides Sketch outside sketch edit, unlike the pinned scenarios; these tests do not establish native availability or tooltips.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
-      "kernel_capabilities": "No solid operation is required to inspect ribbon availability; the editing scenario requires an existing visible sketch.",
-      "platforms": "Reference and partial Rust unit checks: Linux. Native scenario and other platforms not established.",
-      "kernel_integration": "Ribbon context is derived from document and authoring state; no kernel operation is required by the ribbon availability checks.",
-      "rust_tests": "Partial: crates/gui/tests/ribbon/unit.rs document_tabs_keep_sketch_context_off_other_document_types. No complete native bindings for these three scenarios were found.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Replay and display the native extruded Part fixture. The availability checks do not create or change a solid.",
+      "platforms": "Native diagnostic on Linux X11, Xvfb and Vulkan Lavapipe. Windows and macOS rendered checks are pending.",
+      "kernel_integration": "The Part fixture replays through Martensite. The ribbon uses the active document and sketch state. The separate Fillet regression calls the typed Sketch API to round the corner.",
+      "rust_tests": "Native bindings in crates/head/tests/application/ribbon-command-availability/steps.rs. The in-edit scenario passed. The two outside-edit scenarios reach the missing Sketch Text command. See receipts/2026-11-20-sketch-fillet-3956/README.md.",
       "oracle": "Pinned scenario steps and native interaction, including enabled states, visible profile, tooltip, and workspace return; Go is a partial and conflicting reference outside sketch edit.",
-      "expected_result": "Select the Sketch tab and inspect the specified command states outside edit, or edit the existing sketch and verify Line, Finish, and the restored workspace as specified by this scenario.",
+      "expected_result": "Editing from the browser shows the profile, the Sketch groups and Finish. Line requests a start point and its tooltip describes lines and arcs. Finish restores the Part workspace and preserves the sketch.",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-ribbon-edit-verified/receipt-c7a7f9038a6c19bf.json",
           "sha256": "0b8b02b84789b901f08b7105ad1bea0e0e9e9ceee9ac5767625c98d5d6bc2628"
         }
-      ]
+      ],
+      "baseline_source_sha256": "59959ff37cf45000a2fc634c665c70a0b784ae721f6fe8db1dd7d4399d659a0d"
     },
     {
       "id": "scenario:64f007a28e5ee3fbdced220b07b862cf48038b47a30c3fa81a3cb0fee5935fd1",

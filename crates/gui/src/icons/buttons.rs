@@ -133,6 +133,7 @@ fn tool_glyph(tool: GuiSketchTool) -> IconGlyph {
         GuiSketchTool::CenterPointArc | GuiSketchTool::ThreePointArc => IconGlyph::Arc,
         GuiSketchTool::Point => IconGlyph::Point,
         GuiSketchTool::Ellipse => IconGlyph::Ellipse,
+        GuiSketchTool::Fillet => IconGlyph::Fillet,
     }
 }
 fn constraint_glyph(constraint: GuiSketchConstraint) -> IconGlyph {

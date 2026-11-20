@@ -7,6 +7,10 @@ use cucumber::{given, then, when};
 #[path = "document_kinds.rs"]
 mod document_kinds;
 
+#[cfg(target_os = "linux")]
+#[path = "fillet_native.rs"]
+mod fillet_native;
+
 #[given("sketch edit is inactive")]
 fn sketch_edit_inactive(world: &mut ApplicationWorld) {
     assert_eq!(

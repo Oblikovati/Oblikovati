@@ -29,6 +29,7 @@ impl<
     }
     pub(super) fn retire_sketch_tool(&mut self) -> Result<(), String> {
         let edit = match self.sketch_tool.take() {
+            Some(SketchToolState::Fillet(tool)) => tool.edit,
             Some(SketchToolState::Geometric(tool)) => tool.edit,
             Some(SketchToolState::Dimension(tool)) => tool.edit,
             Some(SketchToolState::Move(tool)) => tool.edit,
@@ -87,6 +88,7 @@ impl<
         }
         // #3816: one press belongs to one tool, including the press that completes it.
         match self.sketch_tool.take() {
+            Some(SketchToolState::Fillet(tool)) => self.process_sketch_fillet(tool, event, window),
             Some(SketchToolState::Block(tool)) => self.process_block_placement(tool, event, window),
             Some(SketchToolState::Move(tool)) => self.process_sketch_move(tool, event, window),
             Some(SketchToolState::Placement(tool)) => {

@@ -80,6 +80,15 @@ pub(super) fn sketch_create_controls(
         );
         crate::sketch_flyouts::sketch_tool_flyout_button(ui, state, actions, tool, icons);
     }
+    icons.cursor(ui, origin, [356., 0.]);
+    icons.command_button(
+        ui,
+        "Fillet",
+        GuiShellAction::PlaceSketchTool(crate::GuiSketchTool::Fillet),
+        state,
+        [108., 18.],
+        actions,
+    );
     icons.cursor(ui, origin, [124., 60.]);
     crate::sketch_flyouts::sketch_tool_flyout_button(
         ui,

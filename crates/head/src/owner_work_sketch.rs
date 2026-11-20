@@ -360,6 +360,12 @@ impl<
                 format!("{tool:?}: expected an active sketch edit or one existing sketch in the active part")
             })?,
         };
+        if tool == oblikovati_gui::GuiSketchTool::Fillet {
+            self.start_sketch_fillet(document, sketch)?;
+            self.sketch_memory.repeat_command =
+                Some(oblikovati_gui::GuiSketchRepeat::Placement(tool));
+            return Ok(true);
+        }
         let scale = self
             .files
             .workspace()

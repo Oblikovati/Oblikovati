@@ -49,6 +49,15 @@ pub(super) fn create(
     if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
         ui.tooltip_text("This command is not available in this build.");
     }
+    sketch_tool(
+        ui,
+        origin,
+        state,
+        icons,
+        actions,
+        9,
+        crate::GuiSketchTool::Fillet,
+    );
 }
 fn sketch_tool(
     ui: &Ui,

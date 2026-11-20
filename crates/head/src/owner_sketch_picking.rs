@@ -12,6 +12,7 @@ pub(super) enum SketchPickFilter {
     Any,
     /// Everything but a point; example: Measure once its point reach has been checked.
     Curves,
+    Lines,
     Geometric(GuiSketchConstraint),
     Dimension,
 }
@@ -19,6 +20,7 @@ impl SketchPickFilter {
     fn accepts(self, kind: &oblikovati_api::types::SketchEntityKind) -> bool {
         match self {
             Self::Any => true,
+            Self::Lines => *kind == oblikovati_api::types::SKETCH_ENTITY_LINE,
             Self::Curves => *kind != oblikovati_api::types::SKETCH_ENTITY_POINT,
             Self::Dimension => crate::sketch_operands::category(kind).is_some(),
             Self::Geometric(choice) => crate::sketch_geometric::accepts(choice, kind),
@@ -80,6 +82,7 @@ impl<
     fn tool_candidate_filter(&self) -> Option<(HeadSketchEdit, SketchPickFilter)> {
         use crate::sketch_tool::SketchToolState;
         match self.sketch_tool.as_ref() {
+            Some(SketchToolState::Fillet(tool)) => Some((tool.edit, SketchPickFilter::Lines)),
             Some(SketchToolState::Geometric(tool)) => {
                 Some((tool.edit, SketchPickFilter::Geometric(tool.choice)))
             }
@@ -105,6 +108,7 @@ impl<
             .map_err(|cause| cause.to_string())?;
         let picks = session.selected_sketch_picks(edit.sketch);
         match self.sketch_tool.as_ref() {
+            Some(SketchToolState::Fillet(tool)) => Ok(tool.first != Some(entity)),
             Some(SketchToolState::Move(_)) => Ok(true),
             Some(SketchToolState::Geometric(_)) => Ok(!picks
                 .iter()

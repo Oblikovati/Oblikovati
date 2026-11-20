@@ -78,6 +78,8 @@ mod sketch_block_pick;
 mod sketch_delete;
 #[path = "owner_sketch_dimension.rs"]
 mod sketch_dimension;
+#[path = "owner_sketch_fillet.rs"]
+pub(crate) mod sketch_fillet;
 #[path = "owner_sketch_formats.rs"]
 mod sketch_formats;
 #[path = "owner_sketch_geometric.rs"]

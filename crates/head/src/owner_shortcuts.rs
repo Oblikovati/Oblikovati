@@ -237,6 +237,7 @@ fn sketch_action(id: &str) -> Option<oblikovati_gui::GuiShellAction> {
         "sketch-point" => GuiSketchTool::Point,
         "sketch-center-arc" => GuiSketchTool::CenterPointArc,
         "sketch-ellipse" => GuiSketchTool::Ellipse,
+        "sketch-fillet" => GuiSketchTool::Fillet,
         "sketch-center-rectangle" => GuiSketchTool::CenterRectangle,
         "sketch-three-point-rectangle" => GuiSketchTool::ThreePointRectangle,
         "sketch-three-point-center-rectangle" => GuiSketchTool::ThreePointCenterRectangle,
