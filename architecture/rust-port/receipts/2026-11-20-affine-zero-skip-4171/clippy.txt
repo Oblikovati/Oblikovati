@@ -1,0 +1,2 @@
+    Checking obk-affine-sparse-4171 v0.1.0 (/tmp/obk-affine-sparse-4171)
+    Finished `release` profile [optimized] target(s) in 0.09s
