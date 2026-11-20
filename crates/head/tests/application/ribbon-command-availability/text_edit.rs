@@ -69,7 +69,7 @@ fn open_existing(world: &mut ApplicationWorld) {
     world.expect_text("Format Text");
 }
 
-fn glyph_pixel(world: &mut ApplicationWorld) -> [i32; 2] {
+pub(super) fn glyph_pixel(world: &mut ApplicationWorld) -> [i32; 2] {
     let geometry = world.edited_geometry();
     let text = &geometry.texts()[0];
     let anchor = geometry.point(text.anchor).unwrap().position;

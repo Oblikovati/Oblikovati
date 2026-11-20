@@ -252,6 +252,13 @@ fn click_cancel(world: &mut ApplicationWorld) {
 #[when("the user clicks OK")]
 #[when("the user chooses OK")]
 fn click_ok(world: &mut ApplicationWorld) {
+    #[cfg(target_os = "linux")]
+    if world.state().sketch_text.is_some() {
+        let button = world.run_in_window("Format Text", "OK").center();
+        super::x11_input::click(diagnostics::pointer_pixels(button));
+        world.pump(Vec::new());
+        return;
+    }
     choose(world, "OK");
 }
 #[then("the changed view remains visible")]

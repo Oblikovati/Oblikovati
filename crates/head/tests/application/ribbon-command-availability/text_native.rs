@@ -3,6 +3,8 @@ use super::super::x11_input;
 use super::{ApplicationWorld, diagnostics, select_sketch_tab};
 use crate::HeadSketchWork;
 use cucumber::{given, then, when};
+#[path = "text_creation.rs"]
+mod text_creation;
 #[path = "text_edit.rs"]
 mod text_edit;
 use oblikovati_viewport::ViewportSketchPreview;
@@ -41,6 +43,10 @@ fn start_text_from_part(world: &mut ApplicationWorld) {
     world.add_part();
     world.start_sketch();
     world.finish_sketch();
+    activate_text(world);
+}
+
+fn activate_text(world: &mut ApplicationWorld) {
     select_sketch_tab(world);
     assert!(world.run_is_enabled("Text"));
     x11_input::focus_window();

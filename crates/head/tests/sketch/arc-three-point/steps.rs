@@ -180,6 +180,13 @@ fn committed(world: &mut ApplicationWorld) {
 #[given("I have exited the creation or edit command")]
 #[given("the user has exited the creation or edit command")]
 fn exited(world: &mut ApplicationWorld) {
+    #[cfg(target_os = "linux")]
+    if world.text_creation_baseline.is_some() {
+        super::super::x11_input::press_keysym(0xff1b);
+        world.pump(Vec::new());
+        world.expect_ready();
+        return;
+    }
     exit_tool(world);
 }
 #[when("I press Ctrl+Z once")]
@@ -188,6 +195,14 @@ fn undo_once(world: &mut ApplicationWorld) {
 }
 #[then("the last feature transaction is undone")]
 fn undone(world: &mut ApplicationWorld) {
+    if let Some(expected) = world.text_creation_baseline.clone() {
+        assert_eq!(
+            world.edited_geometry(),
+            expected,
+            "sketch before Text creation"
+        );
+        return;
+    }
     assert_eq!(arcs(world), 0, "arcs");
     surrounding_unchanged(world);
 }
@@ -198,6 +213,11 @@ fn redo_once(world: &mut ApplicationWorld) {
 }
 #[then("that transaction is restored")]
 fn restored(world: &mut ApplicationWorld) {
+    if world.text_creation_baseline.is_some() {
+        let current = world.edited_geometry();
+        assert_eq!(current, world.observed_sketch.as_ref().unwrap().geometry);
+        return;
+    }
     assert_eq!(arcs(world), 1, "arcs");
     surrounding_unchanged(world);
     let current = world.edited_geometry();
