@@ -1,0 +1,131 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Synthetic dense rational KKT timing probe.
+use num_rational::BigRational;
+use std::time::Instant;
+fn exact(v: f64) -> BigRational {
+    BigRational::from_float(v).unwrap()
+}
+// Preserve the prototype elimination order for this timing probe.
+#[allow(clippy::needless_range_loop)]
+fn solve_rational_rows(
+    mut matrix: Vec<Vec<BigRational>>,
+    seed: &[BigRational],
+) -> Option<Vec<BigRational>> {
+    let columns = seed.len();
+    let mut pivots = Vec::new();
+    let mut next = 0;
+    for column in 0..columns {
+        let Some(pivot) = (next..matrix.len()).find(|&row| matrix[row][column] != exact(0.0))
+        else {
+            continue;
+        };
+        matrix.swap(next, pivot);
+        let divisor = matrix[next][column].clone();
+        for value in &mut matrix[next][column..=columns] {
+            *value /= divisor.clone();
+        }
+        for row in 0..matrix.len() {
+            if row == next {
+                continue;
+            }
+            let factor = matrix[row][column].clone();
+            for index in column..=columns {
+                let change = factor.clone() * matrix[next][index].clone();
+                matrix[row][index] -= change;
+            }
+        }
+        pivots.push((next, column));
+        next += 1;
+        if next == matrix.len() {
+            break;
+        }
+    }
+    if matrix
+        .iter()
+        .any(|row| row[..columns].iter().all(|v| *v == exact(0.0)) && row[columns] != exact(0.0))
+    {
+        return None;
+    }
+    let mut result = seed.to_vec();
+    for (row, column) in pivots {
+        let remainder: BigRational = (0..columns)
+            .filter(|&i| i != column)
+            .map(|i| matrix[row][i].clone() * result[i].clone())
+            .sum();
+        result[column] = matrix[row][columns].clone() - remainder;
+    }
+    Some(result)
+}
+
+fn exact_affine_best_fit(
+    rows: &[Vec<f64>],
+    rhs: &[f64],
+    targets: &[Option<f64>],
+    initial: &[f64],
+) -> Option<Vec<BigRational>> {
+    let coordinates = targets.len();
+    if initial.len() != coordinates || rows.len() != rhs.len() {
+        return None;
+    }
+    if rows.iter().any(|row| row.len() != coordinates) {
+        return None;
+    }
+    let system = kkt_equations(rows, rhs, targets);
+    let seed = initial
+        .iter()
+        .map(|value| exact(*value))
+        .chain(rows.iter().map(|_| exact(0.)))
+        .collect::<Vec<_>>();
+    let solution = solve_rational_rows(system, &seed)?;
+    Some(solution[..coordinates].to_vec())
+}
+
+fn kkt_equations(rows: &[Vec<f64>], rhs: &[f64], targets: &[Option<f64>]) -> Vec<Vec<BigRational>> {
+    let count = targets.len();
+    let width = count + rows.len() + 1;
+    let mut system = vec![vec![exact(0.); width]; count + rows.len()];
+    for (index, target) in targets.iter().enumerate() {
+        if let Some(target) = target {
+            system[index][index] = exact(1.);
+            system[index][width - 1] = exact(*target);
+        }
+        for (row, coefficients) in rows.iter().enumerate() {
+            system[index][count + row] = exact(coefficients[index]);
+            system[count + row][index] = exact(coefficients[index]);
+        }
+    }
+    for (row, value) in rhs.iter().enumerate() {
+        system[count + row][width - 1] = exact(*value);
+    }
+    system
+}
+
+fn main() {
+    for n in [8_usize, 16, 32, 64] {
+        let mut rows = Vec::new();
+        for i in 0..n - 1 {
+            let mut row = vec![0.; n];
+            row[i] = 1.;
+            row[i + 1] = -1.;
+            rows.push(row);
+        }
+        let mut targets = vec![None; n];
+        targets[0] = Some(1.);
+        let mut durations = Vec::new();
+        for _ in 0..3 {
+            let started = Instant::now();
+            let answer =
+                exact_affine_best_fit(&rows, &vec![0.; n - 1], &targets, &vec![0.; n]).unwrap();
+            let elapsed = started.elapsed();
+            assert!(answer.iter().all(|x| *x == exact(1.)));
+            durations.push(elapsed.as_secs_f64() * 1000.);
+        }
+        durations.sort_by(f64::total_cmp);
+        println!(
+            "variables={n} equations={} median_ms={:.3} max_ms={:.3}",
+            n - 1,
+            durations[1],
+            durations[2]
+        );
+    }
+}

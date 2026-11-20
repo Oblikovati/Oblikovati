@@ -34,6 +34,15 @@ certificate does not prove the global closest point. Singular, nonsmooth, and
 numerically indeterminate cases need explicit outcomes, not a success fallback.
 Evaluation and certificate costs must be measured on realistic sketches.
 
+A synthetic release-mode probe of dense exact-rational KKT elimination took
+20.416 ms median for 32 variables and 129.027 ms for 64 variables on the
+recorded machine. It used a simple equality chain and three samples per size;
+it did not run the application or compare application memory. This rules out
+assuming that this prototype meets a 16.67 ms frame budget at those sizes.
+Use a scalable method and measure real sketch interaction before enabling it.
+The input, output, environment and limitations are in
+`receipts/2026-11-20-affine-cost-4171/`.
+
 SolveSpace forces dragged points toward the pointer, then solves authored
 constraints with weighted Newton iterations. Its success and rank checks do not
 certify the closest feasible drag target. OCCT's `math_Uzawa` accepts an

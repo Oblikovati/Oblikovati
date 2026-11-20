@@ -1,0 +1,33 @@
+{
+  "kind": "synthetic isolated release probe; not an application frame benchmark",
+  "scenario": "chain of n variables, n-1 equality constraints, one coordinate preference; 3 samples per size",
+  "compiler": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "platform": "Linux-7.2.15-76070215-generic-x86_64-with-glibc2.39",
+  "cpu": "AMD RYZEN AI MAX+ 395 w/ Radeon 8060S",
+  "dependencies": {
+    "num-rational": "0.4.2",
+    "num-bigint": "0.4.6"
+  },
+  "source_sha256": "0827c46e4169d4b495acdc9d84019e9017c95b7e4fce7c89aa39e92d76a348c4",
+  "lock_sha256": "9ad34ccaca6eff14699286ba0db710508704c44807590d5cf253c9ed31708125",
+  "timings_ms": {
+    "8": {
+      "median": 0.328,
+      "max": 0.342
+    },
+    "16": {
+      "median": 2.228,
+      "max": 2.377
+    },
+    "32": {
+      "median": 20.416,
+      "max": 20.429
+    },
+    "64": {
+      "median": 129.027,
+      "max": 140.325
+    }
+  },
+  "peak_process_rss_kib": 7160,
+  "limits": "One synthetic system, three samples, no baseline app memory, no GUI or real pointer workload. Does not prove 60 fps."
+}
