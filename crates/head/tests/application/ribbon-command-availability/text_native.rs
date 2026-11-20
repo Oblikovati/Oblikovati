@@ -3,6 +3,8 @@ use super::super::x11_input;
 use super::{ApplicationWorld, diagnostics, select_sketch_tab};
 use crate::HeadSketchWork;
 use cucumber::{given, then, when};
+#[path = "text_bold.rs"]
+mod text_bold;
 #[path = "text_creation.rs"]
 mod text_creation;
 #[path = "text_edit.rs"]

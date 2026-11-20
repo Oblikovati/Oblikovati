@@ -3,7 +3,9 @@
 use super::{sketch_picking::ordinary_click, *};
 use crate::{HeadSketchEdit, HeadWindow, sketch_tool::SketchToolState};
 use oblikovati_api::types::{SketchTextStyle, TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT};
-use oblikovati_gui::{GuiSketchTextAction, GuiSketchTextDraft, GuiSketchTextPresetId};
+use oblikovati_gui::{
+    GuiSketchTextAction, GuiSketchTextDraft, GuiSketchTextFormatting, GuiSketchTextPresetId,
+};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     identity::DocumentGuid,
@@ -330,6 +332,7 @@ fn text_style(fields: &GuiSketchTextDraft) -> Result<SketchTextStyle, String> {
         rotation,
         h_align: fields.h_align.clone(),
         v_align: fields.v_align.clone(),
+        formatting_runs: fields.formatting.runs.clone(),
         ..Default::default()
     })
 }
@@ -372,6 +375,7 @@ impl TextPlacementDraft {
         style.family = draft.family;
         style.h_align = draft.h_align;
         style.v_align = draft.v_align;
+        style.formatting_runs = draft.formatting_runs;
         if self.fields.height_mm != initial.height_mm {
             style.height = draft.height;
         }
@@ -398,6 +402,9 @@ fn fields_from_style(style: &SketchTextStyle) -> GuiSketchTextDraft {
         } else {
             style.v_align.clone()
         },
+        formatting: Box::new(GuiSketchTextFormatting {
+            runs: style.formatting_runs.clone(),
+        }),
     }
 }
 

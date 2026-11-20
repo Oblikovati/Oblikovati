@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::dockable_window::DockableWindow;
 use crate::{GuiAtlas, GuiCommandState, GuiFrameRequest, GuiShellAction};
-use imgui::{Context, FontConfig, FontGlyphRanges, FontSource, TextureId, Ui};
+use imgui::{Context, FontConfig, FontGlyphRanges, FontId, FontSource, TextureId, Ui};
 use oblikovati_model::ui_scale::UiScaleOptions;
 
 // ImGui's default font is 13 pixels. Refuse unbounded atlas allocations at the input boundary.
@@ -41,14 +41,37 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
     };
     context.fonts().add_font(&[
         FontSource::DefaultFontData {
-            config: Some(config),
+            config: Some(config.clone()),
         },
-        FontSource::TtfData {
-            data: include_bytes!("../assets/fonts/OblikovatiSketchSymbols.ttf"),
-            size_pixels: symbols.size_pixels,
-            config: Some(symbols),
-        },
+        sketch_symbols(symbols.clone()),
     ]);
+    for face in [
+        include_bytes!("../assets/fonts/LiberationSans-Regular.ttf").as_slice(),
+        include_bytes!("../assets/fonts/LiberationSans-Bold.ttf").as_slice(),
+    ] {
+        context.fonts().add_font(&[
+            FontSource::TtfData {
+                data: face,
+                size_pixels: config.size_pixels,
+                config: Some(config.clone()),
+            },
+            sketch_symbols(symbols.clone()),
+        ]);
+    }
+}
+
+fn sketch_symbols(config: FontConfig) -> FontSource<'static> {
+    FontSource::TtfData {
+        data: include_bytes!("../assets/fonts/OblikovatiSketchSymbols.ttf"),
+        size_pixels: config.size_pixels,
+        config: Some(config),
+    }
+}
+
+/// Pick the matching editor face, for example `sketch_content_font(ui, true)` for Bold.
+pub(crate) fn sketch_content_font(ui: &Ui, bold: bool) -> Option<FontId> {
+    // Atlas installation adds the chrome face first, then the two content faces.
+    ui.fonts().fonts().get(1 + usize::from(bold)).copied()
 }
 
 #[derive(Default)]

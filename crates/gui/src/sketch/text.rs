@@ -6,7 +6,7 @@ use crate::{
 };
 use imgui::{Key, Ui};
 use oblikovati_api::types::{
-    TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT, TextHorizontalAlign, TextVerticalAlign,
+    SketchTextRun, TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT, TextHorizontalAlign, TextVerticalAlign,
 };
 use std::cell::{Cell, RefCell};
 #[path = "text_format.rs"]
@@ -29,6 +29,13 @@ pub struct GuiSketchTextDraft {
     pub rotation_degrees: String,
     pub h_align: TextHorizontalAlign,
     pub v_align: TextVerticalAlign,
+    pub formatting: Box<GuiSketchTextFormatting>,
+}
+
+/// Text formatting retained by the dialog and its named presets.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GuiSketchTextFormatting {
+    pub runs: Option<Vec<SketchTextRun>>,
 }
 
 impl Default for GuiSketchTextDraft {
@@ -40,6 +47,7 @@ impl Default for GuiSketchTextDraft {
             rotation_degrees: "0".into(),
             h_align: TEXT_ALIGN_LEFT,
             v_align: TEXT_ALIGN_BASELINE,
+            formatting: Box::default(),
         }
     }
 }
@@ -147,7 +155,7 @@ impl SketchTextDialog {
         }
         let escape_used = presets.draw_name(ui, &draft);
         let changed = changed_preset
-            | self.content.borrow_mut().draw(ui, &mut draft.content)
+            | self.content.borrow_mut().draw(ui, &mut draft)
             | format_controls::draw(
                 ui,
                 &mut draft,

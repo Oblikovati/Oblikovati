@@ -8,7 +8,7 @@ use martensite_tkg3d::top_abs::ShapeEnum;
 use martensite_tkgeombase::gcpnts::QuasiUniformDeflection;
 use martensite_tkmath::{bnd::BoundingBox3, geom_abs::Shape};
 use martensite_tkservice::{
-    font::{FontFontAspect, FontFontMgr, FontStrictLevel},
+    font::{FontFontMgr, FontStrictLevel},
     graphic3d::{
         Graphic3dHorizontalTextAlignment as AlignX, Graphic3dVerticalTextAlignment as AlignY,
     },
@@ -16,6 +16,9 @@ use martensite_tkservice::{
 use martensite_tktopalgo::brep_bnd_lib::BRepBndLib;
 use martensite_tkv3d::std_prs::{StdPrsBRepFont, StdPrsBRepFontTextOptions};
 use oblikovati_api::types::SketchTextStyle;
+
+#[path = "text_font_aspect.rs"]
+mod text_font_aspect;
 
 /// Derive independent glyph edge paths for preview or committed display.
 /// Example: `sample_sketch_text(&style, anchor, options)?`.
@@ -69,7 +72,7 @@ fn glyph_shape(style: &SketchTextStyle, size: f64) -> Result<topods::Shape, Stri
     };
     let font = StdPrsBRepFont::from_name(
         &native_string(family)?,
-        FontFontAspect::Regular,
+        text_font_aspect::font_aspect(style)?,
         size,
         search,
     );

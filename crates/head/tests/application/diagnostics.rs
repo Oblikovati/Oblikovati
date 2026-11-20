@@ -196,18 +196,27 @@ pub(super) fn current_font_size() -> f32 {
         .FontSize
 }
 pub(super) fn glyph_lookup() -> BTreeMap<GlyphCoordinates, char> {
-    let context =
-        unsafe { sys::igGetCurrentContext().as_ref() }.expect("expected a live native GUI");
-    let font = unsafe { context.Font.as_ref() }.expect("expected the rendered font");
-    let glyphs = unsafe { std::slice::from_raw_parts(font.Glyphs.Data, font.Glyphs.Size as usize) };
-    glyphs
+    let io = unsafe { sys::igGetIO().as_ref() }.expect("expected live GUI input");
+    let atlas = unsafe { io.Fonts.as_ref() }.expect("expected the font atlas");
+    if atlas.Fonts.Data.is_null() || atlas.Fonts.Size <= 0 {
+        return BTreeMap::new();
+    }
+    // The current context owns all fonts used by the frame, including native editor faces.
+    let fonts = unsafe { std::slice::from_raw_parts(atlas.Fonts.Data, atlas.Fonts.Size as usize) };
+    fonts
         .iter()
-        .filter_map(|glyph| {
-            let letter = char::from_u32(glyph.Codepoint())?;
-            let uv = [glyph.U0, glyph.V0, glyph.U1, glyph.V1].map(f32::to_bits);
-            Some((uv, letter))
-        })
+        .flat_map(|&font| font_glyph_entries(unsafe { &*font }))
         .collect()
+}
+
+fn font_glyph_entries(font: &sys::ImFont) -> impl Iterator<Item = (GlyphCoordinates, char)> + '_ {
+    // Each installed face has live glyphs until its atlas is replaced between frames.
+    let glyphs = unsafe { std::slice::from_raw_parts(font.Glyphs.Data, font.Glyphs.Size as usize) };
+    glyphs.iter().filter_map(|glyph| {
+        let letter = char::from_u32(glyph.Codepoint())?;
+        let uv = [glyph.U0, glyph.V0, glyph.U1, glyph.V1].map(f32::to_bits);
+        Some((uv, letter))
+    })
 }
 fn list_shapes(
     list: &imgui::DrawList,
