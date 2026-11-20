@@ -7,7 +7,18 @@ projected tangent step shows only that a first-order search found no direction.
 On the unit circle, the point `(1, 0)` is stationary for the preference
 `x = -1`, but it is the farthest feasible point from that target. A singular
 constraint can also have a zero Jacobian at a constrained point. The host must
-therefore decline `Unavailable` and `Stalled` rather than adopt their candidate.
+therefore decline `Unavailable`, `ZeroProjectedStep`, and `Stalled` rather than
+adopt their candidate as a certified drag.
+
+The solver now also reports `ZeroProjectedStep` when its computed step is
+exactly zero but the augmented linearized system has a numerical free
+direction. `Unavailable` covers a zero step with no numerical free direction
+and model-level blocked targets. The rank includes fixed coordinates and uses
+the configured numerical tolerance. Neither result proves that a nonlinear
+minimum exists, that it is unique, or that a useful drag is impossible. The
+circle counterexample and a constrained coordinate with an unrelated free
+coordinate exercise the distinction. Partial drag remains disabled until an
+appropriate optimality certificate is available.
 
 The residual interface currently accepts arbitrary Rust in `evaluate`, including
 branches that inspect scalar values. Two residual evaluations can have identical
