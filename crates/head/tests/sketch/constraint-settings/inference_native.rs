@@ -44,6 +44,7 @@ fn draw_near_horizontal_line(world: &mut ApplicationWorld) {
     super::super::x11_input::click(line);
     world.pump(Vec::new());
     world.expect_status("Select start of line");
+    prepare_precise_input(world);
     for point in TEST_CLICKS {
         super::super::x11_input::click(point);
         world.pump(Vec::new());
@@ -60,4 +61,17 @@ fn horizontal_constraints(world: &mut ApplicationWorld) -> usize {
         .iter()
         .filter(|item| matches!(item.relation, PlanarConstraint::LineHorizontal { .. }))
         .count()
+}
+
+fn prepare_precise_input(world: &mut ApplicationWorld) {
+    if super::super::diagnostics::window_geometry("Precise Input").is_none() {
+        world.open_precise_input();
+    }
+    let mode = world.run_in_window("Precise Input", "Mode").center();
+    world.click(super::super::diagnostics::pointer_pixels(mode));
+    world.pump(Vec::new());
+    world.click_text("Y coordinate and X axis angle");
+    world.pump(Vec::new());
+    let _ = world.precise_field_position("Y");
+    let _ = world.precise_field_position("Angle");
 }
