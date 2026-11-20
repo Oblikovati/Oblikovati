@@ -235,6 +235,10 @@ mod linear_equations;
 pub use interval_equations::{SketchIntervalEquation, SketchIntervalError, SketchIntervalTarget};
 mod conditional_root;
 pub use conditional_root::{ConditionalSketchRoot, FixedCoordinateAssumption};
+mod conditional_affine;
+pub use conditional_affine::{
+    ConditionalSketchAffineOptimum, ConditionalSketchAffineSystem, SketchAffineError,
+};
 
 mod parameter_bound;
 mod parameter_stamp;
