@@ -64,6 +64,24 @@ pub(super) fn toggle_face_flag(
         return runs.to_vec();
     }
     let value = !selection_has(runs, selection.clone(), flag);
+    revise_runs(runs, selection, |piece| flag.set(piece, value))
+}
+
+pub(super) fn set_text_width(
+    runs: &[SketchTextRun],
+    range: Range<u32>,
+    width: f64,
+) -> Vec<SketchTextRun> {
+    revise_runs(runs, range, |piece| {
+        piece.width_percent = (width != 100.).then(|| Box::new(width));
+    })
+}
+
+fn revise_runs(
+    runs: &[SketchTextRun],
+    selection: Range<u32>,
+    apply: impl Fn(&mut SketchTextRun),
+) -> Vec<SketchTextRun> {
     let edges = span_edges(runs, selection.clone());
     let mut formatted = Vec::with_capacity(runs.len() + 2);
     let mut source = runs.iter().peekable();
@@ -75,7 +93,7 @@ pub(super) fn toggle_face_flag(
         let style = source.peek().filter(|run| run.start <= start).copied();
         let mut piece = style.cloned().unwrap_or_default();
         if selection.contains(&start) {
-            flag.set(&mut piece, value);
+            apply(&mut piece);
         }
         append_style(&mut formatted, piece, start..span[1]);
     }
@@ -172,6 +190,26 @@ fn replacement_bounds(before: &str, after: &str) -> Option<(Range<u32>, Range<u3
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn uniform_width_covers_plain_gaps_and_resets_without_losing_bold() {
+        let bold = SketchTextRun {
+            start: 0,
+            end: 1,
+            bold: true,
+            ..Default::default()
+        };
+        let narrowed = set_text_width(std::slice::from_ref(&bold), 0..2, 50.);
+        assert_eq!(narrowed.len(), 2);
+        assert!(narrowed[0].bold);
+        assert!(!narrowed[1].bold);
+        assert!(
+            narrowed
+                .iter()
+                .all(|run| run.width_percent.as_deref() == Some(&50.))
+        );
+        assert_eq!(set_text_width(&narrowed, 0..2, 100.), vec![bold]);
+    }
 
     #[test]
     fn toggling_italic_preserves_bold_and_only_changes_the_selected_range() {

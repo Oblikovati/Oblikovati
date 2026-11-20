@@ -13,10 +13,12 @@ use std::cell::{Cell, RefCell};
 mod format_controls;
 #[path = "text_content.rs"]
 mod text_content;
-#[path = "text_height.rs"]
-mod text_height;
+#[path = "text_number.rs"]
+mod text_number;
 #[path = "text_presets.rs"]
 mod text_presets;
+#[path = "text_width.rs"]
+mod text_width;
 
 const TITLE: &str = "Format Text";
 
@@ -75,7 +77,8 @@ pub struct GuiSketchTextPresetId(u64);
 pub(crate) struct SketchTextDialog {
     dock_state: DockableState,
     font_filter: RefCell<String>,
-    height_input: RefCell<text_height::TextHeightInput>,
+    height_input: RefCell<text_number::TextNumberInput>,
+    width_input: RefCell<text_number::TextNumberInput>,
     content: RefCell<text_content::TextContentEditor>,
     presets: RefCell<text_presets::TextPresets>,
     escape_consumed: Cell<bool>,
@@ -98,6 +101,7 @@ impl SketchTextDialog {
             .synchronize(state.sketch_text.is_some());
         if state.sketch_text.is_none() {
             *self.height_input.borrow_mut() = Default::default();
+            *self.width_input.borrow_mut() = Default::default();
             *self.content.borrow_mut() = Default::default();
         }
     }
@@ -111,7 +115,7 @@ impl SketchTextDialog {
         let Some(draft) = state.sketch_text.clone() else {
             return;
         };
-        Self::fit_dockable(ui, TITLE, [560., 175.], [460., 345.]);
+        Self::fit_dockable(ui, TITLE, [560., 175.], [460., 365.]);
         let mut open = true;
         let action = Self::dockable_window(ui, TITLE, &mut open)
             .build(|| {
@@ -147,10 +151,12 @@ impl SketchTextDialog {
     ) -> Option<GuiSketchTextAction> {
         let mut presets = self.presets.borrow_mut();
         let mut height = self.height_input.borrow_mut();
+        let mut width = self.width_input.borrow_mut();
         let changed_preset =
             presets.begin(existing, preset, &mut draft) | presets.draw(ui, &mut draft);
         if changed_preset {
             *height = Default::default();
+            *width = Default::default();
             *self.content.borrow_mut() = Default::default();
         }
         let escape_used = presets.draw_name(ui, &draft);
@@ -162,7 +168,8 @@ impl SketchTextDialog {
                 families,
                 &mut self.font_filter.borrow_mut(),
                 &mut height,
-            );
+            )
+            | text_width::draw(ui, &mut draft, &mut width);
         let accept = ui.button("OK");
         ui.same_line();
         let escape_editor =
@@ -173,8 +180,9 @@ impl SketchTextDialog {
             return Some(GuiSketchTextAction::Cancel);
         }
         if accept {
-            height.apply(&mut draft.height_mm);
-            if !height.blocked() {
+            height.apply(&mut draft.height_mm, &text_number::HEIGHT);
+            text_width::apply(&mut draft, &mut width);
+            if !height.blocked() && !width.blocked() {
                 presets.submit(&draft);
                 return Some(GuiSketchTextAction::Accept {
                     draft,
@@ -182,7 +190,10 @@ impl SketchTextDialog {
                 });
             }
         }
-        height.warning(ui);
+        height.warning(ui, &text_number::HEIGHT);
+        if !height.blocked() {
+            width.warning(ui, &text_number::WIDTH);
+        }
         changed.then_some(GuiSketchTextAction::Preview(draft))
     }
 }

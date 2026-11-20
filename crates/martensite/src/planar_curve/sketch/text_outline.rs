@@ -16,6 +16,7 @@ use martensite_tkservice::{
 use martensite_tktopalgo::brep_bnd_lib::BRepBndLib;
 use martensite_tkv3d::std_prs::{StdPrsBRepFont, StdPrsBRepFontTextOptions};
 use oblikovati_api::types::SketchTextStyle;
+use oblikovati_model::sketch::{sketch_text_width_factor, uniform_sketch_text_width};
 
 #[path = "text_font_aspect.rs"]
 mod text_font_aspect;
@@ -81,6 +82,7 @@ fn glyph_shape(style: &SketchTextStyle, size: f64) -> Result<topods::Shape, Stri
             "sketch text font {family:?}: expected an available font family"
         ));
     }
+    configure_glyph_width(&font, style)?;
     let options = StdPrsBRepFontTextOptions {
         horizontal_alignment: horizontal_alignment(&style.h_align.0)?,
         vertical_alignment: AlignY::Topfirstline,
@@ -93,6 +95,21 @@ fn glyph_shape(style: &SketchTextStyle, size: f64) -> Result<topods::Shape, Stri
         ));
     }
     Ok(shape)
+}
+
+fn configure_glyph_width(font: &StdPrsBRepFont, style: &SketchTextStyle) -> Result<(), String> {
+    let runs = style.formatting_runs.as_deref().unwrap_or_default();
+    let percent = uniform_sketch_text_width(&style.content, runs)
+        .ok_or("sketch text width: expected one width until mixed glyph layout is available (Martensite #576)")?;
+    let factor = sketch_text_width_factor(percent).ok_or_else(|| {
+        format!("sketch text width {percent:?}: expected positive native font scale")
+    })?;
+    if font.set_width_scaling(factor) {
+        return Ok(());
+    }
+    Err(format!(
+        "sketch text width {percent:?}: native font declined this scale"
+    ))
 }
 
 fn native_string(value: &str) -> Result<String8, String> {

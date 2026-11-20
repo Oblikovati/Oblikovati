@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{GuiSketchTextDraft, text_height::TextHeightInput};
+use super::{
+    GuiSketchTextDraft,
+    text_number::{HEIGHT, TextNumberInput},
+};
 use imgui::Ui;
 use oblikovati_api::types::{
     TEXT_ALIGN_BASELINE, TEXT_ALIGN_CENTER, TEXT_ALIGN_LEFT, TEXT_ALIGN_LOWER, TEXT_ALIGN_MIDDLE,
@@ -14,7 +17,7 @@ pub(super) fn draw(
     draft: &mut GuiSketchTextDraft,
     families: &[String],
     filter: &mut String,
-    height_input: &mut TextHeightInput,
+    height_input: &mut TextNumberInput,
 ) -> bool {
     font_row(ui, &mut draft.family, families, filter)
         | height_row(ui, &mut draft.height_mm, height_input)
@@ -57,8 +60,8 @@ fn font_row(ui: &Ui, family: &mut String, families: &[String], filter: &mut Stri
     typed
 }
 
-fn height_row(ui: &Ui, height_mm: &mut String, input: &mut TextHeightInput) -> bool {
-    let typed = input.draw(ui, height_mm);
+fn height_row(ui: &Ui, height_mm: &mut String, input: &mut TextNumberInput) -> bool {
+    let typed = input.draw(ui, height_mm, &HEIGHT);
     ui.same_line();
     ui.set_next_item_width(145.);
     let Some(_list) = ui.begin_combo("##font-height-list", "Choose height") else {

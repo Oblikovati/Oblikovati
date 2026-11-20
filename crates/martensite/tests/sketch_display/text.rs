@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_api::types::{SketchTextStyle, TEXT_ALIGN_UPPER};
-use oblikovati_martensite::planar_curve::sketch::sample_sketch_text;
+use oblikovati_api::types::{SketchTextRun, SketchTextStyle, TEXT_ALIGN_UPPER};
+use oblikovati_martensite::planar_curve::sketch::{pick_sketch_text, sample_sketch_text};
 use oblikovati_model::sketch::SketchText2D;
 
 #[test]
@@ -82,6 +82,49 @@ fn invalid_or_empty_text_does_not_yield_fake_outline_geometry() {
             .unwrap_err()
             .contains("font")
     );
+}
+
+#[test]
+fn width_scales_the_native_outline_horizontally_and_picking_uses_the_same_shape() {
+    let mut style = SketchTextStyle {
+        height: 0.8,
+        content: "O".into(),
+        family: "DejaVu Sans".into(),
+        ..Default::default()
+    };
+    let options = options();
+    let before = sample_sketch_text(&style, [0.; 2], options).unwrap();
+    style.formatting_runs = Some(vec![SketchTextRun {
+        end: 1,
+        width_percent: Some(Box::new(50.)),
+        ..Default::default()
+    }]);
+    let after = sample_sketch_text(&style, [0.; 2], options).unwrap();
+    assert_scaled_width(&before, &after, options.deflection);
+    let point = after[0][0];
+    let picked = pick_sketch_text(&style, [0.; 2], options.working_scale, point)
+        .unwrap()
+        .unwrap();
+    assert!((picked[0] - point[0]).hypot(picked[1] - point[1]) <= options.deflection);
+}
+
+fn assert_scaled_width(before: &[Vec<[f64; 2]>], after: &[Vec<[f64; 2]>], tolerance: f64) {
+    let original = glyph_extents(before);
+    let scaled = glyph_extents(after);
+    assert!((scaled[0] - original[0] * 0.5).abs() <= 2. * tolerance);
+    assert!((scaled[1] - original[1]).abs() <= 2. * tolerance);
+}
+
+fn glyph_extents(paths: &[Vec<[f64; 2]>]) -> [f64; 2] {
+    std::array::from_fn(|axis| {
+        let (low, high) = paths
+            .iter()
+            .flatten()
+            .fold((f64::INFINITY, f64::NEG_INFINITY), |(low, high), point| {
+                (low.min(point[axis]), high.max(point[axis]))
+            });
+        high - low
+    })
 }
 
 fn authored_text(style: SketchTextStyle, anchor: [f64; 2]) -> Sketch2D {

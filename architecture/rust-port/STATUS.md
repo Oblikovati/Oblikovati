@@ -111,6 +111,10 @@ using this status; the live scenario directory can change.
   Italic preserved Bold. Undo restored the upright outline, and Redo
   restored the slanted outline. See
   `receipts/2026-11-20-sketch-text-italic-3907/`.
+  The native width test applied 50 percent, then rejected zero. The
+  warning kept the live preview and selected zero for replacement.
+  The test used ordinary text. Pinned `text-36` still needs the recorded
+  fraction fixture or a source correction.
   The model uses API v0.161.0 to validate Unicode character-format ranges.
   Tests cover atomic rejection of out-of-range edits, undo and redo, and
   native YAML reopen. Mixed-font rendering remains open under

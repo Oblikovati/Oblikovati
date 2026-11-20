@@ -13,6 +13,16 @@ use numbering::NumberingStyle;
 
 const CONTENT_PICKER_WIDTH: f32 = 130.;
 
+pub(super) fn apply_text_width(draft: &mut GuiSketchTextDraft, percent: f64) -> bool {
+    let Some(range) = all_scalars(&draft.content).filter(|range| !range.is_empty()) else {
+        return false;
+    };
+    let runs = draft.formatting.runs.as_deref().unwrap_or_default();
+    let edited = character_ranges::set_text_width(runs, range, percent);
+    draft.formatting.runs = (!edited.is_empty()).then_some(edited);
+    true
+}
+
 #[derive(Default)]
 pub(super) struct TextContentEditor {
     selection: Range<usize>,

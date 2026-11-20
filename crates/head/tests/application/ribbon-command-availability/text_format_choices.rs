@@ -158,19 +158,19 @@ fn sketch_text_rejects_zero_height_without_losing_the_last_valid_preview() {
     choose_format(&mut world, "Choose height", "6.10 mm");
     let valid_preview = world.app().owner.sketch_preview().unwrap();
     let valid_pixels = glyph_pixels(&mut world);
-    focus_height_field(&mut world);
+    focus_text_number(&mut world, "Height(mm)");
     x11_input::press_control_a();
     world.pump(Vec::new());
-    enter_height_and_tab(&mut world, b'0');
+    enter_text_number(&mut world, b"0");
     world.expect_text("Enter a size greater than 0.01 mm.");
     if std::env::var_os("OBK_BDD_REPORTS").is_some() {
         world.save_capture("sketch-text-height-warning");
     }
     assert_eq!(world.state().sketch_text.unwrap().height_mm, "6.10");
     assert_eq!(world.app().owner.sketch_preview(), Some(valid_preview));
-    acknowledge_height_warning(&mut world);
+    acknowledge_number_warning(&mut world, "Text Height");
     assert_eq!(glyph_pixels(&mut world), valid_pixels);
-    enter_height_and_tab(&mut world, b'6');
+    enter_text_number(&mut world, b"6");
     assert_eq!(world.state().sketch_text.unwrap().height_mm, "6");
     world.expect_no_text("Enter a size greater than 0.01 mm.");
     click_editor_button(&mut world, "Cancel");
@@ -178,22 +178,74 @@ fn sketch_text_rejects_zero_height_without_losing_the_last_valid_preview() {
     world.close();
 }
 
-fn focus_height_field(world: &mut ApplicationWorld) {
-    let label = world.run_in_window("Format Text", "Height(mm)");
+#[test]
+fn sketch_text_width_rejects_zero_and_restores_the_native_editor() {
+    let mut world = ApplicationWorld::new();
+    prepare_narrow_text(&mut world);
+    let original = world.edited_geometry();
+    text_edit::open_existing(&mut world);
+    let preview = world.app().owner.sketch_preview().unwrap();
+    focus_text_number(&mut world, "Width(%)");
+    x11_input::press_control_a();
+    world.pump(Vec::new());
+    enter_text_number(&mut world, b"0");
+    world.expect_text("Width is out of the expected range. Enter a positive width.");
+    assert_eq!(world.app().owner.sketch_preview(), Some(preview.clone()));
+    acknowledge_number_warning(&mut world, "Text Width");
+    type_digits(&mut world, b"50");
+    world.run_in_window("Format Text", "50");
+    tab_out_of_number(&mut world);
+    world.expect_no_text("Width is out of the expected range. Enter a positive width.");
+    assert_eq!(world.app().owner.sketch_preview(), Some(preview));
+    click_editor_button(&mut world, "Cancel");
+    assert_eq!(world.edited_geometry(), original);
+    world.close();
+}
+
+fn prepare_narrow_text(world: &mut ApplicationWorld) {
+    text_edit::committed_b(world);
+    text_edit::open_existing(world);
+    let full = glyph_pixels(world);
+    focus_text_number(world, "Width(%)");
+    x11_input::press_control_a();
+    world.pump(Vec::new());
+    enter_text_number(world, b"50");
+    assert_ne!(glyph_pixels(world), full);
+    click_editor_button(world, "OK");
+    let geometry = world.edited_geometry();
+    let style = &geometry.texts()[0].style;
+    let [run] = style.formatting_runs.as_deref().unwrap() else {
+        panic!("expected one width run");
+    };
+    assert_eq!(run.width_percent.as_deref(), Some(&50.));
+}
+
+fn focus_text_number(world: &mut ApplicationWorld, name: &str) {
+    let label = world.run_in_window("Format Text", name);
     let position = [label.minimum[0] - 70., label.center()[1]];
     x11_input::click(diagnostics::pointer_pixels(position));
     world.pump(Vec::new());
 }
 
-fn enter_height_and_tab(world: &mut ApplicationWorld, digit: u8) {
-    x11_input::press_keysym(u32::from(digit));
-    world.pump(Vec::new());
+fn enter_text_number(world: &mut ApplicationWorld, digits: &[u8]) {
+    type_digits(world, digits);
+    tab_out_of_number(world);
+}
+
+fn type_digits(world: &mut ApplicationWorld, digits: &[u8]) {
+    for digit in digits {
+        x11_input::press_keysym(u32::from(*digit));
+        world.pump(Vec::new());
+    }
+}
+
+fn tab_out_of_number(world: &mut ApplicationWorld) {
     x11_input::press_keysym(0xff09);
     world.pump(Vec::new());
 }
 
-fn acknowledge_height_warning(world: &mut ApplicationWorld) {
-    let button = world.run_in_window("Text Height", "OK").center();
+fn acknowledge_number_warning(world: &mut ApplicationWorld, title: &str) {
+    let button = world.run_in_window(title, "OK").center();
     x11_input::click(diagnostics::pointer_pixels(button));
     world.pump(Vec::new());
 }
