@@ -14,6 +14,13 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- Selected sketch point identity (#4179): the shared placement recipe now
+  retains explicitly picked point IDs and preserves existing geometry. Session
+  tests cover preview, commit, dimension edit, and undo/redo. Midpoint Line
+  still needs to pass its selected point into this seam and verify it through
+  native input. The 1,000-line selected-point preview median was 14.182 ms
+  before rendering; GUI frame rate remains unverified. See
+  `receipts/2026-11-20-picked-point-4179/`.
 - Ribbon Appearance (#3957): the 2026-11-20 diagnostic passed 14 of 18
   scenarios. Three failed at missing Tools panels; one used an unpinned
   expansion where the fixture notes require a pinned expansion. The shared
