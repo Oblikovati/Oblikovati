@@ -285,10 +285,10 @@
     "notes": "18 of 18 scenarios and 219 steps passed; feature and supporting documentation hashes matched before and after the run."
   },
   "features/application/document-tabs/document-tabs.feature": {
-    "feature_sha256": "ca0b3da74bc2530d09ad87fdc7f326185694ed8e5565df225b151331cb6ed720",
+    "feature_sha256": "ee2022e13728cfe8fcda1ef61e60b25f01c308816e6860da91b6dceac3430de9",
     "supporting_files": {
-      "features/application/document-tabs/BLOCKERS.md": "8f51a63b06af3ed3288fefb91bbcb4736b98088a18c7bed238c52ba0058f04a8",
-      "features/application/document-tabs/FIXTURES.md": "4897e2e9d5b3717736d2f8b9ec5c423305f525bbb2a2e9f60c65dac861af62ea",
+      "features/application/document-tabs/BLOCKERS.md": "ab9902488b25be44f30ee09c7392542e1d90d5fd7b143d99ccccbce00beb76df",
+      "features/application/document-tabs/FIXTURES.md": "a8461bb1e0b6dbc6ad15cbbb19e9eaf9a6e7b76e76397b284bea6014df3af153",
       "features/application/document-tabs/FUNCTIONAL.md": "571664b71a0f06692bdb032b093a6a657998e89c6d1a1a82fc7d677c7f3a744c",
       "features/application/document-tabs/VISUAL.md": "38d8c16255619e8b72d4835f1278fc40b62fc32997e3d1af8302ab75019b5d73",
       "features/application/document-tabs/close-sketch-dialogs.svg": "31b60f05dd3aadd95b72dcc3fea4dea8185e14ec75d4aa45aca7d9c01eb35a77",
@@ -299,12 +299,20 @@
       "features/application/document-tabs/tab-overflow.svg": "548cf3d0eb8fc1a9a6dd0d7674686d282f31fcb4931d55bf060828f0e295707f",
       "features/application/document-tabs/tab-preview.svg": "57a81535d6de8ae73815cd939a5680c8cd4ac8a146605c1694769989190890c5"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-19-document-tabs-4c9fffd2b/cucumber.json",
-    "cucumber_sha256": "50eb3c461e798349b13d883af1057383161ca5e4113a7c19e3a71c6858f70f0e",
-    "application_commit": "4c9fffd2b",
-    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=document-tabs OBK_BDD_REPORTS=/tmp/obk-document-tabs-4c9fffd2b cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb and Vulkan lavapipe; scripted native window input; forward, reverse and wrap switching also passed with X11 key events",
-    "notes": "All 39 scenarios and 343 steps passed. The feature and supporting Markdown and SVG files had matching hashes before and after the run. The unversioned source and build provenance prevent strict verified acceptance (#3978)."
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-document-tabs-detached-3900/cucumber.json",
+    "cucumber_sha256": "37a3a685d15da2746abefd99d172c71e7635473e31604472aa1df4e258dd32e1",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-document-tabs-detached-3900/scenario-arguments.json",
+    "scenario_arguments_sha256": "6a21bb27f2d0da1e89e50d748e95fcfcaba60ccce270175cda4180252e1d838b",
+    "application_commit": "340ff8651b59e4dae4f52f44d31dc57591f1ddbb",
+    "command": "Full document-tabs desktop run. See the receipt README.",
+    "environment": "Linux Xvfb and Vulkan Lavapipe. Scripted window input plus X11 drawing gestures and tab shortcuts.",
+    "notes": "The runner reported all 39 scenarios and 343 steps passed. The operating-system window probe excludes three detachment scenarios.",
+    "unproven_scenarios": {
+      "Detach an active drawing from the tab strip": "The drawing is rendered in the main operating-system window. The functional notes require a separate top-level window (#3900).",
+      "Inspect the detached drawing tab context menu": "The drawing is rendered in the main operating-system window. The functional notes require a separate top-level window (#3900).",
+      "Switch shared controls between a detached drawing and a part": "The drawing is rendered in the main operating-system window. The functional notes require a separate top-level window (#3900)."
+    },
+    "blocker": "A native detached drawing window is still required (#3900). Strict verification also requires build and runtime provenance (#3978)."
   },
   "features/application/ribbon-display/ribbon-display.feature": {
     "feature_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e",

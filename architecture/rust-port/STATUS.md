@@ -14,6 +14,12 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- Document Tabs (#3900): the detached drawing keeps its bottom tab and sheet
+  when the main tab strip is hidden. X11 confirmed that the drawing still
+  uses the main operating-system window. The three scenarios that require
+  a native detached window remain open. The inventory reports 36 of 39
+  supported by the local run. See
+  `receipts/2026-11-20-document-tabs-detached-3900/`.
 - Project Dialog (#3895): all eight scenarios and 100 steps passed locally
   with X11 mouse and keyboard input on the current Part and project fixtures.
   Desktop startup opens native projects and the dialog wraps long paths.
