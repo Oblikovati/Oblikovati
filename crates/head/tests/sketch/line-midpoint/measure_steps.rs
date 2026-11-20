@@ -51,6 +51,7 @@ fn endpoint_differences(world: &mut ApplicationWorld) {
 }
 
 #[then("their average equals the chosen origin within displayed precision")]
+#[then("their average remains the origin within displayed precision")]
 fn displayed_midpoint_is_origin(world: &mut ApplicationWorld) {
     let panel = world.state().measure.expect("expected Measure rows");
     let positions: Vec<_> = panel
