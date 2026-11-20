@@ -117,6 +117,7 @@ fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
         GuiShellAction::Save => IconGlyph::Save,
         GuiShellAction::Undo => IconGlyph::Undo,
         GuiShellAction::Redo => IconGlyph::Redo,
+        GuiShellAction::OpenShellFeature => IconGlyph::Shell,
         _ => return None,
     })
 }
