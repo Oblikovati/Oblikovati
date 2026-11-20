@@ -20,6 +20,10 @@ using this status; the live scenario directory can change.
   support hashes stayed unchanged. See
   `receipts/2026-11-20-docking-corrected-full-4133/`. The scenario source is
   unversioned, so this is not verified inventory evidence.
+  A separate native plus-menu test is unfinished: it opens Log but did not
+  observe the Log tab before another pointer event. The test and diagnosis
+  remain in worktree `docking-menu-4133`; see
+  `receipts/2026-11-20-docking-menu-diagnostic-4133/`.
 - Selected sketch point identity (#4179): the shared placement recipe now
   retains explicitly picked point IDs and preserves existing geometry. Session
   tests cover preview, commit, dimension edit, and undo/redo. Midpoint Line
