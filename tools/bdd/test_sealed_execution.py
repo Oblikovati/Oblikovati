@@ -178,6 +178,33 @@ class SealedExecutionTests(unittest.TestCase):
             run_sealed(request, self.fixture.process, self.fixture.verify)
         self.assertEqual(self.fixture.process.command, [])
 
+    def test_private_proc_is_explicit_and_requires_a_real_slot(self) -> None:
+        from dataclasses import replace
+
+        request = replace(self.fixture.request(), diagnostic_proc=True)
+        with self.assertRaisesRegex(ValueError, "diagnostic proc"):
+            run_sealed(request, self.fixture.process, self.fixture.verify)
+        slot = self.fixture.runtime / "proc"
+        slot.symlink_to(self.fixture.runtime / "tmp")
+        with self.assertRaisesRegex(ValueError, "diagnostic proc"):
+            run_sealed(request, self.fixture.process, self.fixture.verify)
+        slot.unlink()
+        slot.mkdir()
+        (slot / "existing").write_text("preserve")
+        with self.assertRaisesRegex(ValueError, "diagnostic proc"):
+            run_sealed(request, self.fixture.process, self.fixture.verify)
+        (slot / "existing").unlink()
+        result = run_sealed(request, self.fixture.process, self.fixture.verify)
+        self.assertTrue(result["diagnostic_proc"])
+        self.assertFalse(result["reusable"])
+        command = self.fixture.process.command
+        self.assertIn(["--proc", "/proc"], [command[i:i+2] for i in range(len(command)-1)])
+
+    def test_default_execution_has_no_proc_mount(self) -> None:
+        result = run_sealed(self.fixture.request(), self.fixture.process, self.fixture.verify)
+        self.assertFalse(result["diagnostic_proc"])
+        self.assertNotIn("--proc", self.fixture.process.command)
+
     def test_runtime_mutation_is_refused(self) -> None:
         request = self.fixture.request()
         self.fixture.process.change = self.fixture.runtime / "runner"

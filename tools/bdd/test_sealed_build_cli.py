@@ -90,6 +90,17 @@ class SealedBuildCliTests(unittest.TestCase):
             self.assertEqual(fixture.verify.calls, [fixture.checkout])
             self.assertIsNone(options["archives"])
 
+    def test_cli_passes_explicit_private_proc_request(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            fixture = SealedFixture(root)
+            (fixture.runtime / "proc").mkdir()
+            arguments = self.arguments(root, fixture) + ["--diagnostic-proc"]
+            invoke = FakeChainRun()
+            with contextlib.redirect_stdout(io.StringIO()):
+                main(arguments, invoke, fixture.verify, FakeInventoryReader(fixture.checkout), FakeReportChecker())
+            self.assertTrue(invoke.calls[0][1].diagnostic_proc)
+
     def test_cli_passes_vendor_check_inputs_to_the_chain(self) -> None:
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)

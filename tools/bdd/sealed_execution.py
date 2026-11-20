@@ -26,6 +26,7 @@ class SealedRequest:
     feature: str
     scenario: str
     desktop: Path | None = None
+    diagnostic_proc: bool = False
 
 
 @dataclass(frozen=True)
@@ -72,6 +73,13 @@ def require_desktop_slot(runtime: Path) -> None:
         raise ValueError(f"runtime slot {path}: expected a regular file for the desktop mount")
 
 
+def require_proc_slot(runtime: Path) -> None:
+    """Require a private proc mount point; example: require_proc_slot(runtime)."""
+    path = runtime / "proc"
+    if path.is_symlink() or not path.is_dir() or any(path.iterdir()):
+        raise ValueError(f"runtime slot {path}: expected an empty real directory for diagnostic proc")
+
+
 def require_request(request: SealedRequest) -> None:
     """Reject invalid filters or occupied output; example: require_request(request)."""
     if sys.platform != "linux":
@@ -83,6 +91,8 @@ def require_request(request: SealedRequest) -> None:
     require_slots(request.runtime)
     if request.desktop is not None:
         require_desktop_slot(request.runtime)
+    if request.diagnostic_proc:
+        require_proc_slot(request.runtime)
     require_docking_tools(request)
 
 
@@ -223,6 +233,8 @@ def sandbox_mounts(request: SealedRequest) -> list[str]:
     ]
     command.extend(["--ro-bind", str(request.runtime), "/"])
     command.extend(["--dev", "/dev", "--tmpfs", "/tmp"])
+    if request.diagnostic_proc:
+        command.extend(["--proc", "/proc"])
     command.extend(["--ro-bind", str(request.binary), "/runner"])
     if request.desktop is not None:
         command.extend(["--ro-bind", str(request.desktop), "/desktop"])
@@ -298,6 +310,7 @@ def execution_observation(
     """Record checked inputs without claiming reuse; example: execution_observation(request, inputs)."""
     return {
         "runtime_coverage": "unbounded",
+        "diagnostic_proc": request.diagnostic_proc,
         "source_identity": inputs.source,
         "source_namespace": inputs.checkout,
         "reusable": False,
