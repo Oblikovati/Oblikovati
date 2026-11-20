@@ -25,7 +25,8 @@ using this status; the live scenario directory can change.
   assertions stopped five cases. See `receipts/2026-11-20-workspace-fixtures-3897/`.
   Four focused reruns passed after those corrections. The View menu now
   controls the mini-toolbar, with X11 and settings round-trip checks.
-  The full View menu scenario still requires Rule Log and Rule Automation.
+  Its checklist scenario passed with the captured session preferences.
+  Rule Log and Rule Automation are disabled under #4185.
 - Document Tabs (#3900): all 39 scenarios and 343 steps passed locally.
   Openbox confirmed two separate operating-system windows and verified input
   to the drawing tab, sheet, and main Part tab. Closing the drawing window

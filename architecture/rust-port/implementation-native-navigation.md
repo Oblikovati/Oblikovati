@@ -175,3 +175,5 @@ The View ribbon's User Interface menu can show or hide the selection
 mini-toolbar without changing the selected face, edge, or feature. The
 workspace saves the choice independently of the marking menu. Existing
 workspace layouts continue to show the mini-toolbar until it is hidden.
+Rule Log and Rule Automation are listed as disabled choices under #4185.
+The application Log Panel remains available for application messages.

@@ -18,6 +18,12 @@ fn activate_view(world: &mut ApplicationWorld) {
     world.click_text("View");
     world.expect_text("Visibility");
     world.expect_text("User Interface");
+    // FUNCTIONAL.md describes a captured session with the toolbar already hidden.
+    show_visibility_options(world);
+    if world.checked("Mini-Toolbar") {
+        world.click_text("Mini-Toolbar");
+    }
+    world.escape();
 }
 
 #[when("the user opens the User Interface menu")]
@@ -64,6 +70,32 @@ fn hidden_regions_are_unchecked(world: &mut ApplicationWorld) {
 #[then("the part remains visible in the viewport")]
 fn part_visible_behind_menu(world: &mut ApplicationWorld) {
     browser_feature::expect_solid_visible(world);
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_rule_panel_choices_are_visible_and_disabled() {
+    let mut world = ApplicationWorld::new();
+    super::native_part::open_named_extrusion(&mut world);
+    click_visible(&mut world, "View");
+    click_visible(&mut world, "User Interface");
+    assert_disabled_rule_choices(&mut world);
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+fn assert_disabled_rule_choices(world: &mut ApplicationWorld) {
+    let available = world.run("Log Panel").alpha;
+    for label in ["Rule Log", "Rule Automation"] {
+        assert!(
+            world.run(label).alpha < available,
+            "{label}: expected a disabled option"
+        );
+        click_visible(world, label);
+        assert!(!world.checked(label));
+        assert!(super::window_geometry("Log").is_none());
+        assert!(super::window_geometry(label).is_none());
+    }
 }
 
 #[cfg(target_os = "linux")]

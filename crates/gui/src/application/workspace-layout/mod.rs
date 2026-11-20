@@ -408,6 +408,7 @@ impl WorkspaceLayout {
                 self.panels
                     .set_open(panel_tabs::DockPanel::Model, model_open);
             }
+            deferred_rule_panel_checkboxes(ui);
             let mut log_open = self.panels.log_open;
             if ui.checkbox("Log Panel", &mut log_open) {
                 self.panels.set_open(panel_tabs::DockPanel::Log, log_open);
@@ -429,6 +430,17 @@ impl WorkspaceLayout {
         }
     }
 }
+fn deferred_rule_panel_checkboxes(ui: &Ui) {
+    // Rule tools have no desktop workflow in this release (#4185).
+    let _disabled = ui.begin_disabled(true);
+    for label in ["Rule Log", "Rule Automation"] {
+        ui.checkbox(label, &mut false);
+        if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+            ui.tooltip_text("Rule panels are unavailable in this build.");
+        }
+    }
+}
+
 fn panel_launcher_flags() -> WindowFlags {
     WindowFlags::NO_DECORATION
         | WindowFlags::NO_BACKGROUND

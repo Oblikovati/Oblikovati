@@ -153,6 +153,8 @@
 
 ### Changed
 
+- Listed Rule Log and Rule Automation as disabled in the View menu. (#4185)
+
 - Enabled existing sketch placement tools from the Part ribbon when the part has one planar sketch. (#3956)
 
 - Used native ImGui dock tabs for workspace, material, and appearance panels and added tab bar controls for panel visibility and Model Browser filtering. (#4133)
