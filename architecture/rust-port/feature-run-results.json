@@ -172,15 +172,15 @@
       "fixtures/cad/blank-metric-assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
       "fixtures/cad/blank-drawing.odd": "74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-ribbon-command-contexts-3956/cucumber.json",
-    "cucumber_sha256": "a1217a2a8dc9eb4f1131cb70b655648e8d065e9ce2469232e2d17d2921ddf9c3",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-ribbon-command-contexts-3956/scenario-arguments.json",
-    "scenario_arguments_sha256": "6d540a2fad6d387c21d60692d24fe0e241c38856d1c4a691121eb6a93392a989",
-    "application_commit": "c79d5592aef3990e7bfccd6f5b7b4f3fc3a767b6",
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-sketch-ribbon-entry-3956/cucumber.json",
+    "cucumber_sha256": "8b5ac8a4ab0f0f07dbe9e9672c44e113ef24b337b4a9066e74fcfb4677c78289",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-sketch-ribbon-entry-3956/scenario-arguments.json",
+    "scenario_arguments_sha256": "ded5717d0a329ec48afce30a8a43b2051bce815944896ee72a0124c835a1fe34",
+    "application_commit": "e897d388613f6e33636fe42cf33d72501558e62b",
     "command": "Full ribbon-command-availability run; see receipt README.",
     "environment": "Linux Xvfb 1600x1200, Vulkan Lavapipe",
-    "notes": "3 of 5 scenarios and 31 of 33 executed steps passed.",
-    "blocker": "Create commands are disabled outside sketch edit. The scenario expects the opposite, but an outside-edit command needs a defined sketch selection and cancellation path (#3956)."
+    "notes": "3 of 5 scenarios and 31 of 33 executed steps passed. Both failing scenarios now pass the checks for Line, Circle, Arc and Rectangle before stopping at Sketch Fillet.",
+    "blocker": "The outside-edit scenarios include Sketch Fillet and Sketch Text, which have no integrated authoring path (#3956)."
   },
   "features/application/body-properties/body-properties.feature": {
     "feature_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
