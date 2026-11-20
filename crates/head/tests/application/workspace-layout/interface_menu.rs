@@ -76,7 +76,7 @@ fn part_visible_behind_menu(world: &mut ApplicationWorld) {
 #[test]
 fn native_rule_panel_choices_are_visible_and_disabled() {
     let mut world = ApplicationWorld::new();
-    super::native_part::open_named_extrusion(&mut world);
+    browser_feature::open_visible_extruded_part(&mut world);
     click_visible(&mut world, "View");
     click_visible(&mut world, "User Interface");
     assert_disabled_rule_choices(&mut world);
@@ -102,7 +102,7 @@ fn assert_disabled_rule_choices(world: &mut ApplicationWorld) {
 #[test]
 fn native_view_menu_toggles_the_mini_toolbar_without_clearing_selection() {
     let mut world = ApplicationWorld::new();
-    super::native_part::open_named_extrusion(&mut world);
+    browser_feature::open_visible_extruded_part(&mut world);
     let name = super::native_part::single_extrusion_name(&mut world);
     click_visible(&mut world, &name);
     let selected = world.state().browser.unwrap().selected_feature;
