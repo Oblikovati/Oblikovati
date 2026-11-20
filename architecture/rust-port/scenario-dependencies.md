@@ -104,6 +104,11 @@ The target, build logs, and reports directories must be empty. The runtime must
 contain regular `runner` and `desktop` mount-point files, the other slots
 required by the sealed runner, Xvfb, and its runtime files.
 The command needs Linux memfd sealing and Bubblewrap `--ro-bind-data` support.
+The desktop restart diagnostic can use `--diagnostic-proc` with an empty real
+`proc` directory in the runtime. This mounts a private proc filesystem so the
+desktop can discover its script worker executable. The default has no proc
+mount. Proc exposes kernel inputs, and this option does not make the result
+reusable or establish trusted runtime provenance.
 For `docking-system`, preflight also requires executable `python3`, `openbox`,
 ImageMagick `import` and `compare`, `xvfb-run`, `Xvfb`, and `xauth` under the
 runtime's `usr/bin`. Each resolved tool must remain inside the runtime. This

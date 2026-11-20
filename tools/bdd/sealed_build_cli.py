@@ -34,6 +34,7 @@ def parse_arguments(arguments: list[str] | None = None) -> argparse.Namespace:
         parser.add_argument(f"--{name}", required=True)
     parser.add_argument("--capture", help="one PNG filename when a scenario produced multiple captures")
     parser.add_argument("--local-snapshot", help="committed feature-scoped receipt directory for a diagnostic run")
+    parser.add_argument("--diagnostic-proc", action="store_true", help="mount private proc for non-reusable diagnostics")
     parser.add_argument("--registry-archives", type=Path)
     parser.add_argument("--git-repo", nargs=2, action="append", metavar=("SOURCE", "REPOSITORY"))
     args = parser.parse_args(arguments)
@@ -49,7 +50,7 @@ def parse_arguments(arguments: list[str] | None = None) -> argparse.Namespace:
 def requests(args: argparse.Namespace) -> tuple[BuildProbe, SealedRequest]:
     """Construct the linked build and execution requests; example: requests(args)."""
     probe = BuildProbe(args.source, args.vendor, args.toolchain, args.config, args.target, args.build_logs, args.bwrap, args.system)
-    run = SealedRequest(args.runtime, args.target / "build-runner", args.checkout, args.reports, args.run_log, args.bwrap, args.area, args.feature, args.scenario)
+    run = SealedRequest(args.runtime, args.target / "build-runner", args.checkout, args.reports, args.run_log, args.bwrap, args.area, args.feature, args.scenario, diagnostic_proc=args.diagnostic_proc)
     return probe, run
 
 
