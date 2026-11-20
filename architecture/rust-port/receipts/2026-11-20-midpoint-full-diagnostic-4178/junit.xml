@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Line midpoint: tmp/obk-midpoint-native-diagnostic-4178/features/sketch/line-midpoint/scenario.feature" package="testsuite/Feature: Line midpoint: tmp/obk-midpoint-native-diagnostic-4178/features/sketch/line-midpoint/scenario.feature" tests="6" errors="0" failures="0" hostname="localhost" timestamp="2026-11-20T02:45:34.673974599Z" time="99.928545907"><testcase name="Scenario: line-midpoint-06 Cancel after selecting a midpoint: tmp/obk-midpoint-native-diagnostic-4178/features/sketch/line-midpoint/scenario.feature:3:3" time="11.381461502"><system-out><![CDATA[  Scenario: line-midpoint-06 Cancel after selecting a midpoint
+   ✔  Given `fixtures/cad/empty-planar-sketch-right.opd` is open with Sketch1 active in Right view and Ready with Snap to Grid disabled
+   ✔  When the user invoke Midpoint Line
+   ✔  And the user select the sketch origin as the midpoint
+   ✔  Then the prompt requests the end of the line
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software returns to Ready
+   ✔  And no segment is added
+]]></system-out></testcase><testcase name="Scenario: line-midpoint-07 Retain a completed segment and undo and redo it: tmp/obk-midpoint-native-diagnostic-4178/features/sketch/line-midpoint/scenario.feature:11:3" time="21.402431241"><system-out><![CDATA[  Scenario: line-midpoint-07 Retain a completed segment and undo and redo it
+   ✔  Given `fixtures/cad/empty-planar-sketch-right.opd` is open with Sketch1 active in Right view and Ready with Snap to Grid disabled
+   ✔  When the user invoke Midpoint Line
+   ✔  And the user select the sketch origin as the midpoint and a point 7.673 mm along positive sketch X as the endpoint
+   ✔  Then a segment extends to both sides of the chosen midpoint
+   ✔  And the command requests another midpoint
+   ✔  When the user press Escape
+   ✔  Then the segment is retained
+   ✔  When the user undo
+   ✔  Then the segment is removed
+   ✔  When the user redo
+   ✔  Then the segment returns
+   ✔  When the user measure the restored segment
+   ✔  Then Measure displays Curve length 15.346 mm
+]]></system-out></testcase><testcase name="Scenario: line-midpoint-08 Reject a same-position endpoint without advancing: tmp/obk-midpoint-native-diagnostic-4178/features/sketch/line-midpoint/scenario.feature:25:3" time="12.185624654"><system-out><![CDATA[  Scenario: line-midpoint-08 Reject a same-position endpoint without advancing
+   ✔  Given `fixtures/cad/empty-planar-sketch-right.opd` is open with Sketch1 active in Right view and Ready with Snap to Grid disabled
+   ✔  When the user invoke Midpoint Line
+   ✔  And the user select the sketch origin as its midpoint
+   ✔  And the user select the sketch origin again for the endpoint
+   ✔  Then Select end of line remains active
+   ✔  And the displayed length is 0.000 mm
+   ✔  And no error dialog or new segment appears
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software returns to Ready
+]]></system-out></testcase><testcase name="Scenario: line-midpoint-09 Create a full-length numeric segment symmetric about the origin: tmp/obk-midpoint-native-diagnostic-4178/features/sketch/line-midpoint/scenario.feature:36:3" time="16.938679344"><system-out><![CDATA[  Scenario: line-midpoint-09 Create a full-length numeric segment symmetric about the origin
+   ✔  Given `fixtures/cad/empty-planar-sketch-right.opd` is open with Sketch1 active in Right view and Ready with Snap to Grid disabled
+   ✔  When the user invoke Midpoint Line and choose the sketch origin as midpoint
+   ✔  And the user press 1 and then 0 in the length field
+   ✔  And the user press Tab
+   ✔  Then length 10.000 mm is locked and the angle field is selected
+   ✔  When the user press 3 and then 0 in the angle field
+   ✔  And the user press Return
+   ✔  Then the command requests another midpoint
+   ✔  When the user press Escape
+   ✔  Then the segment remains with 10 mm and 30.00-degree annotations
+   ✔  And the sketch reports Fully Constrained in this fixture
+   ✔  When the user open Measure and select the segment away from its midpoint
+   ✔  Then the curve length is 10.000 mm
+   ✔  When the user click empty canvas to clear the selection
+   ✔  And the user select both endpoints
+   ✔  Then their distance is 10.000 mm
+   ✔  And their coordinates are (0.000, 4.330, 2.500) and (0.000, -4.330, -2.500) mm
+   ✔  And their displayed coordinate differences are (0.000, 8.660, 5.000) mm
+   ✔  And their average equals the chosen origin within displayed precision
+   ✔  When the user click empty canvas to clear the endpoint pair
+   ✔  And the user select the origin
+   ✔  Then Measure reports Point (0.000, 0.000, 0.000) mm
+]]></system-out></testcase><testcase name="Scenario: line-midpoint-10 Cancel an unaccepted length expression: tmp/obk-midpoint-native-diagnostic-4178/features/sketch/line-midpoint/scenario.feature:59:3" time="17.533221669"><system-out><![CDATA[  Scenario: line-midpoint-10 Cancel an unaccepted length expression
+   ✔  Given `fixtures/cad/empty-planar-sketch-right.opd` is open with Sketch1 active in Right view and Ready with Snap to Grid disabled
+   ✔  And an origin-centered midpoint line with a 10 mm driving length and 30-degree driving angle has been created
+   ✔  When the user open the length dimension and enter 12 using separate key presses
+   ✔  And the user press Escape and reopen the length dimension
+   ✔  Then its stored expression remains 10 mm
+]]></system-out></testcase><testcase name="Scenario: line-midpoint-11 Preserve midpoint when accepting a length edit: tmp/obk-midpoint-native-diagnostic-4178/features/sketch/line-midpoint/scenario.feature:65:3" time="20.487127497"><system-out><![CDATA[  Scenario: line-midpoint-11 Preserve midpoint when accepting a length edit
+   ✔  Given `fixtures/cad/empty-planar-sketch-right.opd` is open with Sketch1 active in Right view and Ready with Snap to Grid disabled
+   ✔  And an origin-centered midpoint line with a 10 mm driving length and 30-degree driving angle has been created
+   ✔  When the user change the length dimension to 12 mm and accept
+   ✔  And the user measure both endpoints
+   ✔  Then their distance is 12.000 mm
+   ✔  And their global coordinates are (0.000, 5.196, 3.000) and (0.000, -5.196, -3.000) mm
+   ✔  And their displayed coordinate differences are (0.000, 10.392, 6.000) mm
+   ✔  And their average remains the origin within displayed precision
+   ✔  When the user close Measure and undo the accepted edit
+   ✔  Then the visible length and extent return to 10 mm
+   ✔  When the user redo the edit
+   ✔  Then the visible length and extent return to 12 mm
+   ✔  And the 30.00-degree annotation remains
+   ✔  When the user undo once more
+   ✔  Then the recorded 10 mm baseline is restored
+]]></system-out></testcase></testsuite></testsuites>
