@@ -120,9 +120,9 @@ using this status; the live scenario directory can change.
   The wheel steps used X11 input; other actions used scripted window input.
 - Viewport navigation wheel (#3881): all 12 scenarios and 143 steps passed
   with X11 mouse, Escape, fixture path entry and Enter, a native part, and
-  unchanged source/support hashes. The source and build are unsealed, so the
-  inventory records the diagnostic as blocked from verified acceptance.
-  See `receipts/2026-11-20-wheel-x11-keyboard-3881/`.
+  unchanged source/support hashes. Compact wheel segment checks use rendered
+  pixels. The source and build are unsealed, so this remains blocked from
+  verified acceptance. See `receipts/2026-11-20-wheel-segments-3881/`.
 
 - Main-window-frame passed 20 executed cases and 149 steps using X11,
   Openbox, tint2, and AT-SPI. Functional and visual notes were reviewed;

@@ -1,0 +1,167 @@
+
+running 1 test
+Feature: Viewport navigation wheel
+  Scenario: Open the full navigation wheel and close it from its menu
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  And the viewport navigation bar is visible
+   ✔  And the full navigation wheel is the selected wheel layout
+   ✔  When the user opens the navigation wheel from the navigation bar
+   ✔  And the user clicks within the viewport
+   ✔  Then a circular navigation wheel is visible over the model
+   ✔  And the wheel offers Zoom, Orbit, Pan, Rewind, Center, Walk, Look and Up Down
+   ✔  When the user right-clicks the navigation wheel
+   ✔  Then its menu marks Full Navigation Wheel as selected
+   ✔  And the menu offers alternate mini and basic wheel layouts
+   ✔  And the menu offers Go Home, Fit to Window, Restore Original Center, Options and Close Wheel
+   ✔  When the user chooses Close Wheel
+   ✔  Then the wheel and its menu disappear
+   ✔  And the model remains visible in the same apparent view
+   ✔  And the status area displays Ready
+  Scenario: Switch between the basic wheel layouts
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window has been running for over 60 seconds
+   ✔  Given the full navigation wheel is open over a visible model in the MCAD Software
+   ✔  When the user right-clicks the wheel and chooses Basic View Object Wheel
+   ✔  Then the wheel shows Center, Zoom, Rewind and Orbit controls
+   ✔  When the user right-clicks the wheel
+   ✔  Then Basic View Object Wheel is marked as the selected layout
+   ✔  When the user chooses Basic Tour Building Wheel
+   ✔  Then the wheel shows Forward, Look, Rewind and Up Down controls
+   ✔  When the user right-clicks the wheel
+   ✔  Then Basic Tour Building Wheel is marked as the selected layout
+   ✔  When the user chooses Full Navigation Wheel
+   ✔  And the user presses Escape
+   ✔  Then the wheel disappears
+   ✔  And the model remains visible in the same apparent view
+   ✔  And the status area displays Ready
+  Scenario: Switch among compact wheel layouts
+   ✔  Given the full navigation wheel is open over a visible model in the MCAD Software
+   ✔  When the user right-clicks the wheel and chooses Mini View Object Wheel
+   ✔  Then a small segmented circular wheel appears
+   ✔  When the user right-clicks the wheel and chooses Mini Tour Building Wheel
+   ✔  Then a small segmented circular wheel remains visible
+   ✔  When the user right-clicks the wheel
+   ✔  Then Mini Tour Building Wheel is marked as the selected layout
+   ✔  When the user chooses Mini Full Navigation Wheel
+   ✔  Then a small circular wheel with more segments appears
+   ✔  When the user right-clicks the wheel
+   ✔  Then Mini Full Navigation Wheel is marked as the selected layout
+   ✔  When the user chooses Full Navigation Wheel
+   ✔  And the user presses Escape
+   ✔  Then the wheel disappears
+   ✔  And the model remains visible in the same apparent view
+   ✔  And the status area displays Ready
+  Scenario: Cancel a mini wheel size preference change
+   ✔  Given the full navigation wheel is open over a model in the MCAD Software
+   ✔  And the saved mini wheel size is Normal
+   ✔  When the user opens Options from the wheel context menu
+   ✔  Then the dialog shows tool message and tool tip controls
+   ✔  And it shows mini wheel size, big wheel size and wheel opacity controls
+   ✔  And it shows navigation options and a walk speed factor slider
+   ✔  When the user opens the mini wheel size list
+   ✔  Then it offers Small, Normal, Large and Extra Large
+   ✔  When the user chooses Extra Large
+   ✔  Then the mini wheel size field displays Extra Large
+   ✔  And OK is enabled
+   ✔  When the user clicks Cancel
+   ✔  And the user reopens Options from the wheel context menu
+   ✔  Then the mini wheel size field displays Normal
+   ✔  When the user clicks Cancel and presses Escape
+   ✔  Then the options dialog and wheel are closed
+  Scenario: Inspect wheel display preference choices
+   ✔  Given the navigation wheel options dialog is open in the MCAD Software
+   ✔  When the user opens the big wheel size list
+   ✔  Then it offers Small, Normal and Large
+   ✔  When the user dismisses that list and opens the wheel opacity list
+   ✔  Then it offers 25%, 50%, 75% and 90%
+   ✔  When the user dismisses the list and clicks Cancel
+   ✔  Then the options dialog closes and the navigation wheel remains visible
+  Scenario: Apply and restore the big wheel size
+   ✔  Given the full navigation wheel is visible in the MCAD Software
+   ✔  And its big wheel size preference is Normal
+   ✔  When the user opens the wheel options and chooses Large for big wheel size
+   ✔  And the user clicks OK
+   ✔  Then the options dialog closes
+   ✔  And the full wheel appears larger than before
+   ✔  When the user reopens wheel options
+   ✔  Then the big wheel size field displays Large
+   ✔  When the user chooses Normal for big wheel size and clicks OK
+   ✔  Then the full wheel returns to its previous apparent size
+   ✔  When the user presses Escape
+   ✔  Then the wheel closes
+  Scenario: Fit a small model from the wheel menu
+   ✔  Given a single rectangular block appears small in an active part in the MCAD Software
+   ✔  And the full navigation wheel is open
+   ✔  When the user right-clicks the wheel and chooses Fit to Window
+   ✔  Then the block appears larger and its visible outline fits within the viewport
+   ✔  And the wheel remains open
+   ✔  And the same part and orientation remain active
+   ✔  When the user presses Escape
+   ✔  Then the wheel closes and the status area displays Ready
+  Scenario: Return to the home view from the wheel menu
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  And the home view has a known three-face orientation
+   ✔  And the current view differs from the home view
+   ✔  And the full navigation wheel is open
+   ✔  When the user right-clicks the wheel and chooses Go Home
+   ✔  Then the block returns to the known home orientation
+   ✔  And the navigation wheel remains open
+   ✔  And the same part remains active
+   ✔  When the user presses Escape
+   ✔  Then the wheel closes and the status area displays Ready
+  Scenario: Apply and restore wheel opacity
+   ✔  Given the full navigation wheel is open in the MCAD Software
+   ✔  And its wheel opacity preference is 50%
+   ✔  When the user opens the wheel options and chooses 90% wheel opacity
+   ✔  And the user clicks OK
+   ✔  Then the options dialog closes and the wheel remains visible
+   ✔  When the user reopens the wheel options
+   ✔  Then the wheel opacity field displays 90%
+   ✔  When the user chooses 50% wheel opacity and clicks OK
+   ✔  Then the options dialog closes and the wheel remains visible
+   ✔  When the user presses Escape
+   ✔  Then the wheel closes and the status area displays Ready
+  Scenario: Apply and restore the mini wheel size
+   ✔  Given the Mini View Object Wheel is open in the MCAD Software
+   ✔  And the mini wheel size preference is Normal
+   ✔  When the user opens wheel options and chooses Extra Large for mini wheel size
+   ✔  And the user clicks OK
+   ✔  Then the options dialog closes
+   ✔  And the mini wheel appears larger than before
+   ✔  When the user reopens wheel options
+   ✔  Then the mini wheel size field displays Extra Large
+   ✔  When the user chooses Normal for mini wheel size and clicks OK
+   ✔  Then the mini wheel returns to its earlier apparent size
+   ✔  When the user chooses Full Navigation Wheel from the wheel menu
+   ✔  And the user presses Escape
+   ✔  Then the wheel closes and the status area displays Ready
+  Scenario: Change the wheel tool-tip preference
+   ✔  Given the full navigation wheel is open in the MCAD Software
+   ✔  And Show Tool Tips is enabled in wheel options
+   ✔  When the user opens wheel options and clear Show Tool Tips
+   ✔  And the user clicks OK
+   ✔  Then the options dialog closes and the wheel remains visible
+   ✔  When the user reopens wheel options
+   ✔  Then Show Tool Tips is unchecked
+   ✔  When the user selects Show Tool Tips and clicks OK
+   ✔  Then the options dialog closes and the wheel remains visible
+   ✔  When the user presses Escape
+   ✔  Then the wheel closes and the status area displays Ready
+  Scenario: Repeat the last navigation wheel command
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  And the full navigation wheel was the last command used
+   ✔  And the wheel is closed
+   ✔  When the user right-clicks the model viewport
+   ✔  Then the context menu offers to repeat the navigation wheel command
+   ✔  When the user chooses the repeat navigation wheel command
+   ✔  Then the full navigation wheel appears over the model
+   ✔  And the same part remains active
+   ✔  When the user presses Escape
+   ✔  Then the wheel closes and the status area displays Ready
+[Summary]
+1 feature
+12 scenarios (12 passed)
+143 steps (143 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1549 filtered out; finished in 673.43s
+
