@@ -205,6 +205,26 @@ class SealedExecutionTests(unittest.TestCase):
         self.assertFalse(result["diagnostic_proc"])
         self.assertNotIn("--proc", self.fixture.process.command)
 
+    def test_complete_feature_run_omits_the_scenario_filter(self) -> None:
+        from dataclasses import replace
+
+        request = replace(self.fixture.request(), scenario="", all_scenarios=True)
+        result = run_sealed(request, self.fixture.process, self.fixture.verify)
+        self.assertTrue(result["all_scenarios"])
+        self.assertNotIn("OBK_BDD_SCENARIO", self.fixture.process.command)
+        self.assertFalse(result["reusable"])
+
+    def test_complete_feature_rejects_an_incompatible_filter(self) -> None:
+        from dataclasses import replace
+
+        request = replace(self.fixture.request(), all_scenarios=True)
+        with self.assertRaisesRegex(ValueError, "no scenario filter"):
+            run_sealed(request, self.fixture.process, self.fixture.verify)
+        request = replace(request, area="sketch", scenario="")
+        with self.assertRaisesRegex(ValueError, "application feature"):
+            run_sealed(request, self.fixture.process, self.fixture.verify)
+        self.assertEqual(self.fixture.process.command, [])
+
     def test_runtime_mutation_is_refused(self) -> None:
         request = self.fixture.request()
         self.fixture.process.change = self.fixture.runtime / "runner"

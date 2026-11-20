@@ -139,6 +139,11 @@ scenario emits more than one PNG. Outline cases require one capture per example.
 The CLI writes a diagnostic observation only; it does not publish or authorize a
 receipt. The builder and reports remain unauthenticated and `reusable` stays false.
 
+For a committed feature-scoped local snapshot, `--all-scenarios` replaces
+`--scenario`. It is supported for application features with `--local-snapshot`.
+The checker requires every inventoried scenario, its own final screenshot, and
+the complete passing JUnit count. This is still non-reusable diagnostic evidence.
+
 ## Native build provenance
 
 Native capture receipts remain available as historical evidence, and their
