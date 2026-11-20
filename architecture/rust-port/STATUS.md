@@ -14,12 +14,13 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
-- Docking System (#4133): the 2026-11-20 native diagnostic passed all ten
-  scenarios and 96 steps with the native solid and visible-sketch fixture.
-  Feature and support hashes were unchanged. The support notes still require
-  an Inventor fixture, so this is not inventory evidence; the native fixture
-  is awaiting scenario-owner review. See
-  `receipts/2026-11-20-docking-native-fixture-4133/`.
+- Docking System (#4133): the current 11-scenario feature diagnostic passed
+  eight scenarios. The new tab-menu scenario names an Inventor fixture that is
+  deferred; the tab insertion preview failed in both full and isolated runs;
+  the following float setup also failed in the full run. A failed drag may
+  leave its mouse button held. Feature and support hashes were unchanged.
+  See `receipts/2026-11-20-docking-current-full-4133/`. The source is not a
+  versioned checkout, so this is diagnostic evidence, not verified inventory.
 - Selected sketch point identity (#4179): the shared placement recipe now
   retains explicitly picked point IDs and preserves existing geometry. Session
   tests cover preview, commit, dimension edit, and undo/redo. Midpoint Line
