@@ -354,19 +354,22 @@ impl<
         &mut self,
         tool: oblikovati_gui::GuiSketchTool,
     ) -> Result<bool, String> {
-        let edit = self
-            .active_sketch_edit()
-            .ok_or_else(|| format!("{tool:?}: expected an active sketch edit"))?;
+        let (document, sketch) = match self.active_sketch_edit() {
+            Some(edit) => (edit.document, edit.sketch),
+            None => self.gui_command_snapshot()?.placement_sketch_entry().ok_or_else(|| {
+                format!("{tool:?}: expected an active sketch edit or one existing sketch in the active part")
+            })?,
+        };
         let scale = self
             .files
             .workspace()
-            .session(edit.document)
+            .session(document)
             .map_err(|cause| cause.to_string())?
             .snapshot()
             .parameters
             .units()
             .working_scale();
-        self.start_sketch_placement(edit.document, edit.sketch, gui_placement_tool(tool, scale)?)?;
+        self.start_sketch_placement(document, sketch, gui_placement_tool(tool, scale)?)?;
         self.sketch_memory.repeat_command = Some(oblikovati_gui::GuiSketchRepeat::Placement(tool));
         Ok(true)
     }

@@ -170,6 +170,24 @@ pub struct GuiCommandState {
     pub sketch_formats: oblikovati_api::types::SketchFormatModes,
 }
 impl GuiCommandState {
+    /// Find an unambiguous sketch for starting a placement from the Part workspace.
+    /// For example, `state.placement_sketch_entry()` returns None for an empty Part.
+    pub fn placement_sketch_entry(
+        &self,
+    ) -> Option<(u64, oblikovati_model::document_sketch::DocumentSketchId)> {
+        if self.authoring != GuiAuthoringContext::Part
+            || self.document_type != Some(oblikovati_api::types::DOCUMENT_PART)
+            || self.transaction_open
+        {
+            return None;
+        }
+        let [sketch] = self.browser.as_ref()?.sketches.as_slice() else {
+            return None;
+        };
+        sketch.inspection.as_ref().ok()?;
+        Some((self.document?, sketch.id))
+    }
+
     pub(crate) fn active_express(&self) -> bool {
         self.documents
             .iter()

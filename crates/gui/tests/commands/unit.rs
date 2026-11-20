@@ -46,6 +46,49 @@ fn sketch_commands_follow_the_active_document_and_edit_context() {
         );
     }
 }
+
+#[test]
+fn placement_entry_refuses_ambiguous_or_unavailable_sketches() {
+    use oblikovati_model::document_sketch::DocumentSketchId;
+    let sketch = crate::GuiBrowserSketch {
+        id: DocumentSketchId(5),
+        inspection: Ok(Default::default()),
+        name: "Profile".into(),
+        visible: true,
+        consumed_by: None,
+        line_style: Default::default(),
+        dimensions_shown: false,
+    };
+    let mut state = GuiCommandState {
+        authoring: GuiAuthoringContext::Part,
+        document: Some(2),
+        document_type: Some(oblikovati_api::types::DOCUMENT_PART),
+        browser: Some(crate::GuiModelBrowser::default()),
+        ..Default::default()
+    };
+    let tool = GuiShellAction::PlaceSketchTool(crate::GuiSketchTool::Line);
+    assert!(!tool.dispatchable(&state));
+    state
+        .browser
+        .as_mut()
+        .unwrap()
+        .sketches
+        .push(sketch.clone());
+    assert_eq!(state.placement_sketch_entry(), Some((2, sketch.id)));
+    assert!(tool.dispatchable(&state));
+    state.transaction_open = true;
+    assert!(!tool.dispatchable(&state));
+    state.transaction_open = false;
+    state.browser.as_mut().unwrap().sketches[0].inspection = Err("no plane".into());
+    assert!(!tool.dispatchable(&state));
+    let sketches = &mut state.browser.as_mut().unwrap().sketches;
+    sketches[0] = sketch.clone();
+    sketches.push(crate::GuiBrowserSketch {
+        id: DocumentSketchId(6),
+        ..sketch
+    });
+    assert!(!tool.dispatchable(&state));
+}
 fn verify_history_commands(state: &GuiCommandState, enabled: [bool; 2], dispatch: [bool; 2]) {
     for (index, action) in [GuiShellAction::Undo, GuiShellAction::Redo]
         .into_iter()

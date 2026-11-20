@@ -102,6 +102,13 @@ pub(super) fn format_available(state: &GuiCommandState) -> bool {
         && !state.transaction_open
 }
 
+pub(super) fn placement_available(state: &GuiCommandState, tool: crate::GuiSketchTool) -> bool {
+    (tool != crate::GuiSketchTool::Point || !state.sketch_formats.construction)
+        && !state.transaction_open
+        && (state.authoring == GuiAuthoringContext::Sketch
+            || state.placement_sketch_entry().is_some())
+}
+
 pub(super) fn settings_available(state: &GuiCommandState, document: u64) -> bool {
     state.document == Some(document)
         && state.document_sketch_settings.is_some()

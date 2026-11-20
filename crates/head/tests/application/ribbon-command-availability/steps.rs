@@ -276,3 +276,26 @@ fn non_create_groups_are_unavailable_outside_sketch_edit() {
     other_groups_unavailable(&mut world);
     world.close();
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn line_from_part_enters_the_only_sketch_without_committing_geometry() {
+    let mut world = ApplicationWorld::new();
+    super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    let before = world.state();
+    let sketch = before.browser.unwrap().sketches[0].id;
+    select_sketch_tab(&mut world);
+    assert!(world.run_is_enabled("Line"));
+    super::x11_input::focus_window();
+    super::x11_input::click(diagnostics::pointer_pixels(world.run("Line").center()));
+    world.pump(Vec::new());
+    assert_eq!(world.state().active_sketch, Some(sketch));
+    line_prompt(&mut world);
+    world.save_capture("line-from-part");
+    super::x11_input::press_escape();
+    world.pump(Vec::new());
+    world.expect_status("Ready");
+    assert_eq!(world.edited_geometry().lines().len(), 4);
+    assert_eq!(world.state().undo_labels, before.undo_labels);
+    world.close();
+}

@@ -483,11 +483,7 @@ impl GuiShellAction {
                 sketch_enabled::dimension_cancel(state, *id)
             }
             Self::ToggleSketchFormat(_) => sketch_enabled::format_available(state),
-            Self::PlaceSketchTool(tool) => {
-                (*tool != crate::GuiSketchTool::Point || !state.sketch_formats.construction)
-                    && state.authoring == GuiAuthoringContext::Sketch
-                    && !state.transaction_open
-            }
+            Self::PlaceSketchTool(tool) => sketch_enabled::placement_available(state, *tool),
             Self::Dimension(crate::GuiDimensionAction::Start)
             | Self::ConstrainSketch(_)
             | Self::FinishSketch => {

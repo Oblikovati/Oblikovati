@@ -72,16 +72,51 @@ fn gui_tool_selection_uses_the_existing_engine_without_a_history_edit() {
         );
         assert!(owner.placement_preview().is_none());
     }
+}
+
+#[test]
+fn gui_placement_can_reenter_one_sketch_without_writing_history() {
+    let mut owner = prepared_gui_tool_owner();
+    let original = owner.active_sketch_edit().unwrap();
     owner.finish_sketch_edit().unwrap();
+    let before = owner.gui_command_state().unwrap();
     assert!(!owner.placement_active());
-    for (choice, _) in TOOL_ENGINE_CASES {
-        assert!(
-            owner
-                .place_sketch_tool_from_gui(choice)
-                .unwrap_err()
-                .contains("active sketch edit")
-        );
-    }
+    assert!(
+        owner
+            .place_sketch_tool_from_gui(GuiSketchTool::Line)
+            .unwrap()
+    );
+    let edit = owner.active_sketch_edit().unwrap();
+    assert_eq!(
+        (edit.document, edit.sketch),
+        (original.document, original.sketch)
+    );
+    assert!(owner.placement_active());
+    assert_eq!(
+        owner.gui_command_state().unwrap().undo_labels,
+        before.undo_labels
+    );
+}
+
+#[test]
+fn gui_placement_does_not_enter_a_sketch_when_the_part_has_two() {
+    let mut owner = prepared_gui_tool_owner();
+    let document = owner.active_sketch_edit().unwrap().document;
+    owner.finish_sketch_edit().unwrap();
+    let mut request = sketch_edit::request(SketchPlane::xy());
+    request.name = "Other sketch".into();
+    owner.create_sketch_for_edit(document, &request).unwrap();
+    owner.finish_sketch_edit().unwrap();
+    let before = owner.gui_command_state().unwrap();
+    let error = owner
+        .place_sketch_tool_from_gui(GuiSketchTool::Line)
+        .unwrap_err();
+    assert!(error.contains("one existing sketch"), "{error}");
+    assert!(owner.active_sketch_edit().is_none());
+    assert_eq!(
+        owner.gui_command_state().unwrap().undo_labels,
+        before.undo_labels
+    );
 }
 #[test]
 fn gui_tool_switch_and_cancel_retire_the_preview_without_committing_geometry() {
