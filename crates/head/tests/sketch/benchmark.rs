@@ -26,6 +26,9 @@ mod constraint_glyph_hover;
 mod constraint_inference_scope;
 #[path = "constraint-settings/application_options.rs"]
 mod constraint_settings_application_options;
+#[cfg(target_os = "linux")]
+#[path = "constraint-settings/glyph_native.rs"]
+mod constraint_settings_glyph_native;
 #[path = "constraint-settings/inference.rs"]
 mod constraint_settings_inference;
 #[path = "constraint-settings/relax.rs"]
