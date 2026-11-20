@@ -112,7 +112,7 @@ mod scripts;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 pub use scripts::{DesktopScripts, ScriptDocumentOwner};
 use std::{ffi::OsString, io::Write};
-const USAGE: &str = "usage: oblikovati [--frames N] [--] [DOCUMENT ...]\n       oblikovati --help\n       oblikovati --version\n\n0 frames runs until the window closes. A positive count bounds a smoke run.";
+const USAGE: &str = "usage: oblikovati [--frames N] [--] [FILE ...]\n       oblikovati --help\n       oblikovati --version\n\nOpen native documents and .opj projects. The first project is active.\n0 frames runs until the window closes. A positive count bounds a smoke run.";
 /// Execute the desktop entry point with injected output; example: `run(&["--help".into()], output)?;`.
 pub fn run(arguments: &[OsString], output: &mut dyn Write) -> Result<(), String> {
     match parse_arguments(arguments)? {

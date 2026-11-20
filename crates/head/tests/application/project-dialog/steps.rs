@@ -5,8 +5,13 @@ use cucumber::{given, then, when};
 
 #[path = "cancellation.rs"]
 mod cancellation;
+#[cfg(target_os = "linux")]
 #[path = "native_input.rs"]
-mod native_input;
+pub(super) mod native_input;
+#[path = "role_fixtures.rs"]
+mod role_fixtures;
+#[path = "settings_tree.rs"]
+mod settings_tree;
 const PROJECT_NAME: &str = "Gearbox";
 #[test]
 fn projects_window_closes_to_the_document_chooser() {
@@ -26,7 +31,7 @@ fn projects_window_closes_to_the_document_chooser() {
 fn project_active(world: &mut ApplicationWorld) {
     let path = world.scratch_folder().join("gearbox.opj");
     std::fs::write(&path, "schemaVersion: 1\nname: Gearbox\nworkspace: work\n").unwrap();
-    world.app().owner.load_project_for_test(&path);
+    world.app().owner.load_desktop_project(&path).unwrap();
     world.pump(Vec::new());
 }
 #[when("I choose Projects in the chooser")]
@@ -49,16 +54,42 @@ fn projects_above(world: &mut ApplicationWorld) {
 #[then("it lists project names and locations")]
 #[then("the dialog lists project names and locations")]
 fn project_rows_listed(world: &mut ApplicationWorld) {
-    world.expect_text(PROJECT_NAME);
-    world.expect_text("gearbox.opj");
+    let project = role_fixtures::original_project(world);
+    world.expect_text(&format!("(active) {project}"));
+    expect_list_location(world, role_fixtures::active_file(project));
+}
+
+fn expect_list_location(world: &ApplicationWorld, file: &str) {
+    let heading = world.run("Location");
+    let settings_y = world.run("Project Settings").minimum[1];
+    let column: String = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| {
+            run.minimum[0] >= heading.minimum[0]
+                && run.minimum[1] > heading.maximum[1]
+                && run.maximum[1] < settings_y
+        })
+        .map(|run| run.text.as_str())
+        .collect();
+    assert!(
+        column.contains(file),
+        "location column {column:?}: expected {file}"
+    );
 }
 #[then("the active project is marked")]
 fn project_marked(world: &mut ApplicationWorld) {
-    world.expect_text(&format!("(active) {PROJECT_NAME}"));
+    expect_project_marked(world);
 }
 #[then("the dialog displays a project settings tree")]
 fn project_tree(world: &mut ApplicationWorld) {
-    world.expect_text("Workspace: work");
+    let workspace = if world.shows("ActiveProject.opj") {
+        "workspace-active"
+    } else {
+        "work"
+    };
+    world.expect_text(&format!("Workspace: {workspace}"));
 }
 #[when("I choose Done without changing the project")]
 #[when("the user chooses Done without changing the project")]
@@ -89,13 +120,11 @@ fn load_project(world: &mut ApplicationWorld, file: &str, name: &str) {
         "schemaVersion: 1\nname: {name}\nworkspace: work\ntemplates: Forms\ndesignData: Design\n"
     );
     std::fs::write(&path, text).unwrap();
-    world.app().owner.load_project_for_test(&path);
+    world.app().owner.load_desktop_project(&path).unwrap();
     world.pump(Vec::new());
 }
 fn open_projects(world: &mut ApplicationWorld) {
-    world.click_text("Projects");
-    world.pump(Vec::new());
-    world.pump(Vec::new());
+    choose_projects(world);
 }
 fn open_projects_dialog(world: &mut ApplicationWorld) {
     load_project(world, "gearbox.opj", PROJECT_NAME);
@@ -119,24 +148,13 @@ fn choose_button(world: &mut ApplicationWorld, label: &str) {
     world.pump(Vec::new());
 }
 fn expect_project_marked(world: &ApplicationWorld) {
-    world.expect_text(&format!("(active) {PROJECT_NAME}"));
+    let project = role_fixtures::original_project(world);
+    world.expect_text(&format!("(active) {project}"));
 }
 fn expect_projects_dialog(world: &ApplicationWorld) {
     world.expect_no_text(NEW_PROJECT_ROW);
     world.expect_no_text("Project File to be Created");
     world.expect_text("Project Settings");
-}
-/// The run that holds this text; rendered runs have no spaces.
-fn run_holding(world: &ApplicationWorld, text: &str) -> String {
-    let wanted = text.replace(' ', "");
-    world
-        .frame
-        .runs
-        .iter()
-        .find(|run| run.text.replace(' ', "").contains(&wanted))
-        .unwrap_or_else(|| panic!("expected {text:?} in a rendered run"))
-        .text
-        .clone()
 }
 /// A wrapped path comes in several runs, so this reads them as one line.
 fn holds_text(world: &ApplicationWorld, text: &str) -> bool {
@@ -154,7 +172,7 @@ fn two_projects(world: &mut ApplicationWorld) {
     load_project(world, "gearbox.opj", PROJECT_NAME);
     load_project(world, "turbine.opj", OTHER_PROJECT);
     open_projects(world);
-    world.expect_text(&run_holding(world, OTHER_PROJECT));
+    world.expect_text(OTHER_PROJECT);
 }
 #[given("the active project is marked in the list")]
 fn marked_in_list(world: &mut ApplicationWorld) {
@@ -163,18 +181,44 @@ fn marked_in_list(world: &mut ApplicationWorld) {
 #[when("I select the other project with a single click")]
 #[when("the user selects the other project with a single click")]
 fn select_other(world: &mut ApplicationWorld) {
-    let row = run_holding(world, "turbine.opj");
-    choose_button(world, &row);
+    choose_button(world, role_fixtures::alternate_name(world));
+    let point = world
+        .run("Project Settings")
+        .center()
+        .map(|coord| coord as i32);
+    world.hover(point);
+    world.pump(Vec::new());
 }
 #[then("the other project row is highlighted")]
 fn other_highlighted(world: &mut ApplicationWorld) {
-    let row = run_holding(world, "turbine.opj");
-    assert!(world.row_highlighted(&row), "expected the row's accent");
+    assert!(
+        world.row_highlighted(role_fixtures::alternate_name(world)),
+        "expected the alternate project's row accent"
+    );
 }
 #[then("the settings tree displays information for the selected project")]
 fn tree_shows_other(world: &mut ApplicationWorld) {
-    let location = run_holding(world, "Location:");
-    assert!(location.contains("turbine.opj"), "tree shows {location:?}");
+    let file = role_fixtures::alternate_file(world);
+    let label = world.run("Location:");
+    let workspace = world.run("Workspace:");
+    let location: String = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| {
+            run.list == label.list
+                && run.minimum[1] >= label.minimum[1]
+                && run.minimum[1] < workspace.minimum[1]
+        })
+        .map(|run| run.text.as_str())
+        .collect();
+    assert!(
+        location.contains(file),
+        "tree shows {location:?}: expected {file}"
+    );
+    if file == "AlternateProject.opj" {
+        world.expect_text("Workspace: workspace-alternate");
+    }
 }
 #[then("the active-project mark remains beside the original project")]
 #[then("the active project remains marked in the project list")]
@@ -394,106 +438,5 @@ fn file_in_documents(world: &mut ApplicationWorld) {
     assert!(
         holds_text(world, "/Documents/New Project.opj"),
         "expected the derived file"
-    );
-}
-// The settings tree and the arrow keys
-fn press_arrow(world: &mut ApplicationWorld, key: oblikovati_viewport::ViewportPhysicalKey) {
-    world.key(key, false);
-    world.pump(Vec::new());
-}
-fn select_group(world: &mut ApplicationWorld, group: &str) {
-    choose_button(world, group);
-}
-#[given("an active project with Folder Options and Options groups is displayed")]
-fn groups_shown(world: &mut ApplicationWorld) {
-    world.expect_text("Folder Options");
-    world.expect_text("Options");
-}
-#[when("I select the collapsed Folder Options group")]
-#[when("the user selects the collapsed Folder Options group")]
-fn select_folder_options(world: &mut ApplicationWorld) {
-    assert!(
-        !holds_text(world, "Presets"),
-        "expected the group collapsed"
-    );
-    select_group(world, "Folder Options");
-}
-#[when("I press the Right Arrow key")]
-fn press_right(world: &mut ApplicationWorld) {
-    press_arrow(world, oblikovati_viewport::ViewportPhysicalKey::RightArrow);
-}
-#[when("I press the Left Arrow key")]
-fn press_left(world: &mut ApplicationWorld) {
-    press_arrow(world, oblikovati_viewport::ViewportPhysicalKey::LeftArrow);
-}
-#[then("the group expands to show folder entries including Templates, Design Data and Presets")]
-fn folder_entries(world: &mut ApplicationWorld) {
-    for row in ["Templates:", "Design Data:", "Presets:"] {
-        assert!(holds_text(world, row), "expected {row} in the tree");
-    }
-}
-#[then("the Folder Options children are hidden")]
-fn folder_entries_hidden(world: &mut ApplicationWorld) {
-    assert!(
-        !holds_text(world, "Presets:"),
-        "expected the group collapsed"
-    );
-}
-#[when("I select the collapsed Options group")]
-#[when("the user selects the collapsed Options group")]
-fn select_options(world: &mut ApplicationWorld) {
-    select_group(world, "Options");
-}
-#[then(
-    "the group expands to show project options including old versions to keep and unique file names"
-)]
-fn option_entries(world: &mut ApplicationWorld) {
-    for row in ["Old Versions To Keep", "Using Unique File Names"] {
-        assert!(holds_text(world, row), "expected {row} in the tree");
-    }
-}
-#[given(
-    "the selected project has collapsed Appearance Libraries and Material Libraries groups with entries"
-)]
-fn library_groups(world: &mut ApplicationWorld) {
-    world.expect_text("Appearance Libraries");
-    world.expect_text("Material Libraries");
-    assert!(
-        !holds_text(world, "Default Appearances"),
-        "expected the group collapsed"
-    );
-}
-#[when("I select Appearance Libraries and press the Right Arrow key")]
-#[when("the user selects Appearance Libraries and presses the Right Arrow key")]
-fn open_appearances(world: &mut ApplicationWorld) {
-    select_group(world, "Appearance Libraries");
-    press_right(world);
-}
-#[then("the appearance library entries are visible beneath their group")]
-#[then("the appearance library entries remain visible")]
-fn appearance_entries(world: &mut ApplicationWorld) {
-    assert!(
-        holds_text(world, "Default Appearances"),
-        "expected the entries"
-    );
-}
-#[when("I select Material Libraries and press the Right Arrow key")]
-#[when("the user selects Material Libraries and presses the Right Arrow key")]
-fn open_materials(world: &mut ApplicationWorld) {
-    select_group(world, "Material Libraries");
-    press_right(world);
-}
-#[then("the material library entries are visible beneath their group")]
-fn material_entries(world: &mut ApplicationWorld) {
-    assert!(
-        holds_text(world, "Default Materials"),
-        "expected the entries"
-    );
-}
-#[then("the material library entries are hidden")]
-fn material_hidden(world: &mut ApplicationWorld) {
-    assert!(
-        !holds_text(world, "Default Materials"),
-        "expected the group collapsed"
     );
 }

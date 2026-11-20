@@ -9,12 +9,9 @@ fn only_the_active_project_is_marked() {
         settings: Vec::new(),
         groups: Vec::new(),
     };
-    assert_eq!(
-        project_row_text(&project),
-        "(active) Gearbox  /work/gearbox.opj"
-    );
+    assert_eq!(project_row_name(&project), "(active) Gearbox");
     project.active = false;
-    assert_eq!(project_row_text(&project), "Gearbox  /work/gearbox.opj");
+    assert_eq!(project_row_name(&project), "Gearbox");
 }
 #[test]
 fn a_request_asks_for_one_frame_until_it_is_drawn() {

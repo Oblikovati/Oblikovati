@@ -41,6 +41,13 @@ fn open_narrow_scaled_details(world: &mut ApplicationWorld) {
 #[then("the selected template details remain displayed")]
 fn previous_details(world: &mut ApplicationWorld) {
     world.expect_text("Template details");
+    if let Some(details) = &world.proposed_name {
+        assert_eq!(
+            super::super::super::refinements::selected_template_details(world),
+            *details,
+            "expected the same selected template details"
+        );
+    }
 }
 fn expect_part_tiles_ordered(world: &mut ApplicationWorld, plain_first: bool) {
     let plain = world.run(METRIC_PART).center()[1];

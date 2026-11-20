@@ -43,7 +43,7 @@ fn load_library_project(world: &mut ApplicationWorld) {
         "schemaVersion: 1\nname: Library\nworkspace: work\ndesignData: design\n",
     )
     .unwrap();
-    world.app().owner.load_project_for_test(&path);
+    world.app().owner.load_desktop_project(&path).unwrap();
 }
 fn part_with_body(world: &mut ApplicationWorld) {
     load_library_project(world);

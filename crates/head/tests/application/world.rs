@@ -162,9 +162,15 @@ impl ApplicationWorld {
     pub(super) fn navigation_wheel_scenario(&self) -> bool {
         super::scenario_capture::is_navigation_wheel(self.scenario_feature_path.as_deref())
     }
+    #[cfg(target_os = "linux")]
+    pub(super) fn project_dialog_native_input(&self) -> bool {
+        self.scenario_feature_path.as_ref().is_some_and(|path| {
+            path.ends_with("features/application/project-dialog/project-dialog.feature")
+        })
+    }
     pub fn click(&mut self, position: [i32; 2]) {
         #[cfg(target_os = "linux")]
-        if self.navigation_wheel_scenario() {
+        if self.navigation_wheel_scenario() || self.project_dialog_native_input() {
             super::x11_input::click(position);
             self.pump(Vec::new());
             return;
@@ -172,6 +178,12 @@ impl ApplicationWorld {
         self.pump(pointer_click_events(position, 1));
     }
     pub fn key(&mut self, key: oblikovati_viewport::ViewportPhysicalKey, control: bool) {
+        #[cfg(target_os = "linux")]
+        if self.project_dialog_native_input() {
+            super::project_dialog::native_input::press_project_key(key, control);
+            self.pump(Vec::new());
+            return;
+        }
         use oblikovati_viewport::ViewportInput;
         let modifiers = oblikovati_viewport::ViewportModifiers {
             control,

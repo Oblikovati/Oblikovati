@@ -55,9 +55,11 @@ impl<
             })
             .collect()
     }
-    #[cfg(test)]
-    pub(crate) fn load_project_for_test(&mut self, path: &std::path::Path) {
-        self.files.load_project(path).unwrap();
+    /// Register a validated project. Example: `owner.load_desktop_project(path)?`.
+    pub(crate) fn load_desktop_project(&mut self, path: &std::path::Path) -> Result<(), String> {
+        self.files.load_project(path).map(|_| ()).map_err(|cause| {
+            format!("startup project {path:?}: expected a readable native project: {cause}")
+        })
     }
     /// Report each document's file and whether closing it would lose work.
     /// Example: `owner.gui_document_storage()?` for one GUI snapshot.

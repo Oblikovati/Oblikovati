@@ -6,7 +6,13 @@ use cucumber::{given, then};
 // The scenario uses a project without configured libraries.
 #[given("the wizard fixture has no entries in either library list")]
 fn empty_library_fixture(world: &mut ApplicationWorld) {
-    let path = world.scratch_folder().join("gearbox.opj");
+    let role = super::role_fixtures::original_project(world);
+    let name = super::role_fixtures::active_file(role);
+    let path = if role == super::PROJECT_NAME {
+        world.scratch_folder().join(name)
+    } else {
+        super::role_fixtures::fixture_file(name)
+    };
     let project = std::fs::read_to_string(path).expect("expected fixture project");
     assert!(
         !project.contains("libraries:"),
@@ -38,5 +44,9 @@ fn provisional_visible(world: &mut ApplicationWorld) {
 
 #[then("the chooser still displays the original active project")]
 fn chooser_keeps_project(world: &mut ApplicationWorld) {
-    world.expect_text(&format!("Project: {}", super::PROJECT_NAME));
+    let original = world
+        .observed_rows
+        .as_deref()
+        .unwrap_or(super::PROJECT_NAME);
+    world.expect_text(&format!("Project: {original}"));
 }

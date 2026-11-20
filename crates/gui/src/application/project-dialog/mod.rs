@@ -2,7 +2,9 @@
 //! The Projects dialog the template chooser opens: what is loaded, and which project is active.
 use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiProject, GuiProjectGroup};
-use imgui::{Condition, Key, TreeNodeFlags, Ui};
+use imgui::{
+    Condition, Key, SelectableFlags, TableColumnFlags, TableColumnSetup, TreeNodeFlags, Ui,
+};
 
 #[path = "new_project_wizard.rs"]
 mod new_project_wizard;
@@ -90,21 +92,26 @@ impl ProjectsDialog {
         if projects.is_empty() {
             ui.text_disabled("No projects loaded");
         }
-        let shown = self.shown_project(projects).map(|row| row.location.clone());
-        for project in projects {
-            let selected = shown.as_deref() == Some(project.location.as_str());
-            let row = ui
-                .selectable_config(project_row_text(project))
-                .selected(selected)
-                // Inside a dialog a plain selectable would close it.
-                .flags(imgui::SelectableFlags::DONT_CLOSE_POPUPS)
-                .build();
-            if row {
-                self.inspected = Some(project.location.clone());
-            }
-        }
+        self.project_table(ui, projects);
         if let Some(provisional) = self.wizard.provisional_name() {
             ui.text_disabled(provisional);
+        }
+    }
+    fn project_table(&mut self, ui: &Ui, projects: &[GuiProject]) {
+        let Some(_table) = ui.begin_table("project-list", 2) else {
+            return;
+        };
+        let mut name = TableColumnSetup::new("Name");
+        name.flags = TableColumnFlags::WIDTH_FIXED;
+        name.init_width_or_weight = ui.current_font_size() * 13.;
+        ui.table_setup_column_with(name);
+        ui.table_setup_column("Location");
+        ui.table_headers_row();
+        let shown = self.shown_project(projects).map(|row| row.location.clone());
+        for project in projects {
+            if project_row(ui, project, shown.as_deref()) {
+                self.inspected = Some(project.location.clone());
+            }
         }
     }
     /// The project the tree describes: the row a click chose, or else the active one.
@@ -126,7 +133,8 @@ impl ProjectsDialog {
         else {
             return;
         };
-        ui.bullet_text(format!("Location: {}", project.location));
+        ui.bullet();
+        ui.text_wrapped(format!("Location: {}", project.location));
         for (label, value) in &project.settings {
             ui.bullet_text(format!("{label}: {value}"));
         }
@@ -171,9 +179,23 @@ impl ProjectsDialog {
         }
     }
 }
-fn project_row_text(project: &GuiProject) -> String {
+fn project_row(ui: &Ui, project: &GuiProject, inspected: Option<&str>) -> bool {
+    ui.table_next_row();
+    ui.table_next_column();
+    let _identity = ui.push_id(&project.location);
+    let chose = ui
+        .selectable_config(project_row_name(project))
+        .selected(inspected == Some(project.location.as_str()))
+        // Inside a dialog a plain selectable would close it.
+        .flags(SelectableFlags::DONT_CLOSE_POPUPS | SelectableFlags::SPAN_ALL_COLUMNS)
+        .build();
+    ui.table_next_column();
+    ui.text_wrapped(&project.location);
+    chose
+}
+fn project_row_name(project: &GuiProject) -> String {
     let mark = if project.active { "(active) " } else { "" };
-    format!("{mark}{}  {}", project.name, project.location)
+    format!("{mark}{}", project.name)
 }
 fn muted_button(ui: &Ui, label: &str) {
     {

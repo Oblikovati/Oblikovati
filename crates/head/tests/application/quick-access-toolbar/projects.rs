@@ -11,7 +11,7 @@ fn quick_access_projects_opens_the_active_project_without_closing_the_part() {
         "schemaVersion: 1\nname: Toolbar Project\nworkspace: work\n",
     )
     .unwrap();
-    world.app().owner.load_project_for_test(&path);
+    world.app().owner.load_desktop_project(&path).unwrap();
     part_active(&mut world);
     assert!(on_row(&world, "Projects"));
     world.click(row_center(&world, "Projects"));

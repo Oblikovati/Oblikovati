@@ -10,7 +10,21 @@ use cucumber::{given, then, when};
 fn template_selected(world: &mut ApplicationWorld) {
     world.click_text("Standard");
     world.pump(Vec::new());
-    world.proposed_name = Some(world.text());
+    world.proposed_name = Some(selected_template_details(world));
+}
+
+pub(super) fn selected_template_details(world: &ApplicationWorld) -> String {
+    let title = world.run("Template details");
+    let kind = world.run("Document type:");
+    world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.list == title.list && (run.minimum[0] - title.minimum[0]).abs() < 2.)
+        .filter(|run| run.minimum[1] > title.minimum[1] && run.minimum[1] <= kind.minimum[1])
+        .map(|run| run.text.as_str())
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 #[then("it offers OK and Cancel")]
 fn offers_ok_cancel(world: &mut ApplicationWorld) {
