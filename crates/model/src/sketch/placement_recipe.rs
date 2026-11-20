@@ -21,6 +21,8 @@ pub use verification::SketchCircularPlacementCheck;
 #[derive(Clone, Debug, PartialEq)]
 pub struct SketchPlacementRecipe {
     pub points: Vec<[f64; 2]>,
+    /// Explicit existing point identities indexed by the local recipe point.
+    pub picked_points: std::collections::BTreeMap<usize, super::SketchEntityId>,
     pub members: Vec<SketchPlacementMember>,
     pub relations: Vec<SketchPlacementRelation>,
     pub fields: Vec<SketchPlacementField>,

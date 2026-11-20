@@ -34,6 +34,7 @@ impl SketchPlacementRecipe {
             SketchRectangleSeed::ThreePoints([base[0], base[1], height]).vertices()?;
         let delta = [b[0] - a[0], b[1] - a[1]];
         checked_rectangle(Self {
+            picked_points: Default::default(),
             circular_checks: Vec::new(),
             points: vec![a, b, c, d],
             members: super::geometry::chain_members(4, true),
@@ -78,6 +79,7 @@ impl SketchPlacementRecipe {
             construction: true,
         }));
         checked_rectangle(Self {
+            picked_points: Default::default(),
             circular_checks: Vec::new(),
             points: vec![a, b, c, d],
             members,
@@ -96,6 +98,7 @@ fn axis_rectangle(points: Vec<[f64; 2]>) -> Result<SketchPlacementRecipe, Sketch
     let [a, b, c] = [points[0], points[1], points[2]];
     use SketchPlacementRelation::{LineHorizontal, LineVertical};
     checked_rectangle(SketchPlacementRecipe {
+        picked_points: Default::default(),
         circular_checks: Vec::new(),
         points,
         members: super::geometry::chain_members(4, true),

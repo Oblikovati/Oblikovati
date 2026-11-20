@@ -6,7 +6,7 @@ use super::{
 use crate::{
     document_sketch::DocumentSketchId,
     sketch::{
-        PlacementPrimitive, Sketch2D, SketchConstraintId, SketchEntityId,
+        PlacementPrimitive, Sketch2D, SketchConstraintId, SketchEntityId, SketchError,
         SketchInferenceCandidates, SketchPlacementRecipe,
     },
 };
@@ -14,6 +14,7 @@ use oblikovati_solve::nonlinear::SolveOptions;
 mod error;
 mod fields;
 pub(super) mod inference;
+mod picked;
 pub use error::SketchPlacementCreationError;
 /// A user-entered expression and the preview's optional annotation position, in working units.
 #[derive(Clone, Debug, PartialEq)]
@@ -167,19 +168,29 @@ impl DocumentSnapshot {
     > {
         let mut geometry = self.current_sketch_authoring_geometry_from(sketch, options, datums)?;
         let settings = self.effective_sketch_settings();
-        let source = if settings.infer_constraints && settings.auto_apply_constraints {
+        let source = if !recipe.picked_points.is_empty()
+            || (settings.infer_constraints && settings.auto_apply_constraints)
+        {
             Some(crate::sketch::SketchInferenceFreeze::capture(&geometry)?)
         } else {
             None
         };
-        let points = append_defining_positions(&mut geometry, &recipe.points, ids)
-            .map_err(SketchPlacementCreationError::Primitive)?;
+        let (points, fresh) = picked::append_points(&mut geometry, recipe, ids)?;
         // Primitives can add auxiliary points; infer before those can become fresh targets.
-        let inferred = inference::append(self, &mut geometry, sketch, &points, ids, scope)?;
+        let inferred = inference::append(
+            self,
+            &mut geometry,
+            sketch,
+            fresh.as_deref().unwrap_or(&points),
+            ids,
+            scope,
+        )?;
         let members = append_members(&mut geometry, sketch, recipe, &points, ids)?;
         let mut relations =
             append_relations(&mut geometry, sketch, recipe, &points, &members, ids)?;
-        let has_inference = !inferred.relations.is_empty() || !inferred.anchors.is_empty();
+        let has_inference = !recipe.picked_points.is_empty()
+            || !inferred.relations.is_empty()
+            || !inferred.anchors.is_empty();
         relations.extend(inferred.relations);
         let transient =
             source
