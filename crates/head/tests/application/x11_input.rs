@@ -200,7 +200,7 @@ pub(super) fn press_control_tab(reverse: bool) {
     send_key_sequence(&connection, root, &events);
 }
 
-fn press_control_letter(key: u8) {
+pub(super) fn press_control_letter(key: u8) {
     let (connection, root) = keyboard_target();
     let control = keyboard_keycode(&connection, 0xffe3);
     let letter = keyboard_keycode(&connection, u32::from(key));

@@ -17,10 +17,11 @@ using this status; the live scenario directory can change.
 - Selected sketch point identity (#4179): the shared placement recipe now
   retains explicitly picked point IDs and preserves existing geometry. Session
   tests cover preview, commit, dimension edit, and undo/redo. Midpoint Line
-  still needs to pass its selected point into this seam and verify it through
-  native input. The 1,000-line selected-point preview median was 14.182 ms
-  before rendering; GUI frame rate remains unverified. See
-  `receipts/2026-11-20-picked-point-4179/`.
+  now passes its selected point into this seam; the native origin test checks
+  identity, zero degrees of freedom, and undo/redo. The 1,000-line
+  selected-point preview median was 14.182 ms before rendering; GUI frame rate
+  remains unverified. See `receipts/2026-11-20-picked-point-4179/` and
+  `receipts/2026-11-20-midpoint-line-4178/`.
 - Ribbon Appearance (#3957): the 2026-11-20 diagnostic passed 14 of 18
   scenarios. Three failed at missing Tools panels; one used an unpinned
   expansion where the fixture notes require a pinned expansion. The shared
@@ -31,9 +32,10 @@ using this status; the live scenario directory can change.
   `receipts/2026-11-20-ribbon-pinned-3957/`.
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
-  unfinished feature worktree is retained, and a native YAML fixture is
-  requested in `BLOCKERS.md`. Earlier runs do not verify the current source.
-  Selected-origin identity is tracked separately in #4179.
+  Midpoint Line tool has native mouse and keyboard tests, but a native YAML
+  fixture is requested in `BLOCKERS.md` before the full feature can run.
+  Earlier runs do not verify the current source. Selected-origin identity is
+  covered by #4179.
 - Constraint Settings (#4158): a full diagnostic on the uncommitted feature
   worktree passed five of eight scenarios with the feature and support hashes
   unchanged during the run. Three scenarios stopped at undefined setup steps;
@@ -243,7 +245,8 @@ using this status; the live scenario directory can change.
 1. Diagnose Ribbon Appearance (#3957) against its current source. Its fixture
    notes require a visible solid, but the shared part setup creates an empty
    part; clarification was requested. Midpoint Line (#4178)
-   now requires a deferred Inventor fixture; retain its unfinished worktree.
+   now requires a deferred Inventor fixture; revisit it when a native fixture
+   is available.
    Constraint Settings (#4158) is paused with uncommitted work while its
    fixture questions and Relax Mode (#4164) remain open. Revisit `new-sketch`
    when fixture #4011 and circular patterns #3905 are available. Defer

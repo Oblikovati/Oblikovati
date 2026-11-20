@@ -182,6 +182,9 @@ impl SketchPlacementState {
     }
     /// The point that finishes the shape once typed values have had their say over the pointer's.
     pub(super) fn typed_finishing_point(&self, pointer: [f64; 2]) -> [f64; 2] {
+        if self.tool == crate::SketchPlacementTool::MidpointLine {
+            return self.midpoint_line_end(pointer);
+        }
         if matches!(self.tool, crate::SketchPlacementTool::ThreePointArc { .. }) {
             return self.arc_point_at_radius(pointer);
         }
@@ -189,6 +192,9 @@ impl SketchPlacementState {
             .unwrap_or(self.arc_end_at_sweep(pointer))
     }
     pub(super) fn typed_end(&self, start: [f64; 2]) -> [f64; 2] {
+        if self.tool == crate::SketchPlacementTool::MidpointLine {
+            return self.midpoint_line_end(self.cursor_point.unwrap_or(start));
+        }
         if self.tool == crate::SketchPlacementTool::CenterPointArc {
             return self.arc_end_at_sweep(self.cursor_point.unwrap_or(start));
         }

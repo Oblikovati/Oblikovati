@@ -23,6 +23,7 @@ glyph_catalog! {
     CreateSketch => "create-sketch",
     FinishSketch => "finish-sketch",
     Line => "line",
+    MidpointLine => "midpoint-line",
     Rectangle => "rectangle",
     Circle => "circle",
     Arc => "arc",

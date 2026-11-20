@@ -123,6 +123,7 @@ fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
 fn tool_glyph(tool: GuiSketchTool) -> IconGlyph {
     match tool {
         GuiSketchTool::Line => IconGlyph::Line,
+        GuiSketchTool::MidpointLine => IconGlyph::MidpointLine,
         GuiSketchTool::Rectangle
         | GuiSketchTool::CenterRectangle
         | GuiSketchTool::ThreePointRectangle

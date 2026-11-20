@@ -3,6 +3,7 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiSketchTool {
     Line,
+    MidpointLine,
     Rectangle,
     Circle,
     Point,
@@ -37,6 +38,7 @@ impl GuiSketchTool {
     pub fn label(self) -> &'static str {
         match self {
             Self::Line => "Line",
+            Self::MidpointLine => "Midpoint Line",
             Self::Rectangle => "Rectangle",
             Self::Circle => "Circle",
             Self::Point => "Point",

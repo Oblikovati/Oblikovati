@@ -2,7 +2,7 @@
 use crate::{GuiCommandState, GuiShellAction, GuiSketchTool, widget_abi};
 use imgui::Ui;
 
-pub(crate) fn circular_tool_button(
+pub(crate) fn sketch_tool_flyout_button(
     ui: &Ui,
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
@@ -10,6 +10,7 @@ pub(crate) fn circular_tool_button(
     icons: &crate::icons::GuiRibbonIcons,
 ) {
     let alternate = match primary {
+        GuiSketchTool::Line => Some(GuiSketchTool::MidpointLine),
         GuiSketchTool::Circle => Some(GuiSketchTool::ThreePointCircle),
         GuiSketchTool::CenterPointArc => Some(GuiSketchTool::ThreePointArc),
         GuiSketchTool::ThreePointRectangle => Some(GuiSketchTool::ThreePointCenterRectangle),

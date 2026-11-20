@@ -78,16 +78,15 @@ pub(super) fn sketch_create_controls(
             origin,
             [124. + (index % 2) as f32 * 116., (index / 2) as f32 * 20.],
         );
-        crate::sketch_flyouts::circular_tool_button(ui, state, actions, tool, icons);
+        crate::sketch_flyouts::sketch_tool_flyout_button(ui, state, actions, tool, icons);
     }
     icons.cursor(ui, origin, [124., 60.]);
-    icons.command_button(
+    crate::sketch_flyouts::sketch_tool_flyout_button(
         ui,
-        "Line",
-        GuiShellAction::PlaceSketchTool(crate::GuiSketchTool::Line),
         state,
-        [108., 18.],
         actions,
+        crate::GuiSketchTool::Line,
+        icons,
     );
     if ui.is_item_hovered() {
         ui.tooltip_text("Draw connected line segments. For arcs, choose Center Arc.");
