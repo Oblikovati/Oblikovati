@@ -24,7 +24,21 @@ mod tabs_scenario;
 
 const PANEL: &str = "Material Browser";
 
+fn open_docking_fixture(world: &mut ApplicationWorld) -> u64 {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../test-utilities/fixtures/docking-visible-solid.opd");
+    world.reopen_through_dialog(&path);
+    let document = world.active_id();
+    world.previous_document = Some(document);
+    document
+}
+
 #[given("a dockable panel is docked beside the viewport")]
+fn prepare_docked_panel(world: &mut ApplicationWorld) {
+    open_docking_fixture(world);
+    panel_docked(world);
+}
+
 fn panel_docked(world: &mut ApplicationWorld) {
     let before = viewport(world);
     let icon = quick_access_icons::standard_icon_center(PANEL).expect("material browser icon");
@@ -82,6 +96,7 @@ fn content_remains(world: &mut ApplicationWorld) {
     let area = viewport(world);
     assert!(area[0] < area[2] && area[1] < area[3]);
     world.expect_text("End of Part");
+    workspace_layout::browser_feature::expect_solid_visible(world);
 }
 
 #[when("the user drags the boundary back")]
@@ -109,6 +124,7 @@ fn proportions_restored(world: &mut ApplicationWorld) {
 
 #[given("a dockable panel is the active tab in a dock region")]
 fn active_panel_in_dock(world: &mut ApplicationWorld) {
+    open_docking_fixture(world);
     panel_docked(world);
     assert_eq!(diagnostics::window_dock_tab_visible(PANEL), Some(true));
 }

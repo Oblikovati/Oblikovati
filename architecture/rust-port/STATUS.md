@@ -15,11 +15,11 @@ using this status; the live scenario directory can change.
 ## Current evidence
 
 - Docking System (#4133): the 2026-11-20 native diagnostic passed all ten
-  scenarios and 96 steps, with feature and support hashes unchanged. Some
-  setups used a generated part instead of the Inventor fixture required by
-  the support notes, so this is not inventory evidence. A native solid and
-  visible-sketch fixture has been saved and reopened for scenario-owner review.
-  See `receipts/2026-11-20-docking-browsers-4133/`.
+  scenarios and 96 steps with the native solid and visible-sketch fixture.
+  Feature and support hashes were unchanged. The support notes still require
+  an Inventor fixture, so this is not inventory evidence; the native fixture
+  is awaiting scenario-owner review. See
+  `receipts/2026-11-20-docking-native-fixture-4133/`.
 - Selected sketch point identity (#4179): the shared placement recipe now
   retains explicitly picked point IDs and preserves existing geometry. Session
   tests cover preview, commit, dimension edit, and undo/redo. Midpoint Line
