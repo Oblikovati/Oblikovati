@@ -5,6 +5,12 @@ use crate::{
     dockable_window::DockableWindow,
 };
 use imgui::{Key, Ui};
+use oblikovati_api::types::{
+    TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT, TextHorizontalAlign, TextVerticalAlign,
+};
+use std::cell::RefCell;
+#[path = "text_format.rs"]
+mod format_controls;
 
 const TITLE: &str = "Format Text";
 
@@ -15,6 +21,8 @@ pub struct GuiSketchTextDraft {
     pub family: String,
     pub height_mm: String,
     pub rotation_degrees: String,
+    pub h_align: TextHorizontalAlign,
+    pub v_align: TextVerticalAlign,
 }
 
 impl Default for GuiSketchTextDraft {
@@ -24,6 +32,8 @@ impl Default for GuiSketchTextDraft {
             family: String::new(),
             height_mm: "3.05".into(),
             rotation_degrees: "0".into(),
+            h_align: TEXT_ALIGN_LEFT,
+            v_align: TEXT_ALIGN_BASELINE,
         }
     }
 }
@@ -43,6 +53,7 @@ pub enum GuiSketchTextAction {
 #[derive(Default)]
 pub(crate) struct SketchTextDialog {
     dock_state: DockableState,
+    font_filter: RefCell<String>,
 }
 impl DockableWindow for SketchTextDialog {}
 
@@ -67,10 +78,18 @@ impl SketchTextDialog {
         let Some(draft) = state.sketch_text.clone() else {
             return;
         };
-        Self::fit_dockable(ui, TITLE, [560., 175.], [440., 285.]);
+        Self::fit_dockable(ui, TITLE, [560., 175.], [460., 345.]);
         let mut open = true;
         let action = Self::dockable_window(ui, TITLE, &mut open)
-            .build(|| text_editor(ui, draft))
+            .build(|| {
+                let mut filter = self.font_filter.borrow_mut();
+                text_editor(
+                    ui,
+                    draft,
+                    state.sketch_text_font_families.as_deref().unwrap_or(&[]),
+                    &mut filter,
+                )
+            })
             .flatten();
         if !open {
             self.dock_state.set_open(false);
@@ -81,8 +100,16 @@ impl SketchTextDialog {
     }
 }
 
-fn text_editor(ui: &Ui, mut draft: GuiSketchTextDraft) -> Option<GuiSketchTextAction> {
-    let changed = text_fields(ui, &mut draft);
+fn text_editor(
+    ui: &Ui,
+    mut draft: GuiSketchTextDraft,
+    families: &[String],
+    filter: &mut String,
+) -> Option<GuiSketchTextAction> {
+    let changed = ui
+        .input_text_multiline("Content", &mut draft.content, [295., 100.])
+        .build()
+        | format_controls::draw(ui, &mut draft, families, filter);
     if ui.button("OK") {
         return Some(GuiSketchTextAction::Accept(draft));
     }
@@ -91,17 +118,6 @@ fn text_editor(ui: &Ui, mut draft: GuiSketchTextDraft) -> Option<GuiSketchTextAc
         return Some(GuiSketchTextAction::Cancel);
     }
     changed.then_some(GuiSketchTextAction::Preview(draft))
-}
-
-fn text_fields(ui: &Ui, draft: &mut GuiSketchTextDraft) -> bool {
-    ui.input_text_multiline("Content", &mut draft.content, [295., 100.])
-        .build()
-        | ui.input_text("Font family", &mut draft.family)
-            .hint("System default")
-            .build()
-        | ui.input_text("Height (mm)", &mut draft.height_mm).build()
-        | ui.input_text("Rotation (deg)", &mut draft.rotation_degrees)
-            .build()
 }
 
 pub(super) fn edit_menu_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {

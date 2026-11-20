@@ -29,7 +29,7 @@ fn sketch_text_context_replaces_the_same_entity_and_restores_history() {
 }
 
 #[given("committed b text and Ready sketch state")]
-fn committed_b(world: &mut ApplicationWorld) {
+pub(super) fn committed_b(world: &mut ApplicationWorld) {
     start_text_from_part(world);
     open_editor(world, INSERT);
     type_content(world, b'b');
@@ -52,7 +52,7 @@ fn cancel_replacement(world: &mut ApplicationWorld) {
 
 #[when("the user right-clicks the glyph and choose Edit text")]
 #[when("the user chooses Edit text again")]
-fn open_existing(world: &mut ApplicationWorld) {
+pub(super) fn open_existing(world: &mut ApplicationWorld) {
     let at = glyph_pixel(world);
     x11_input::right_click(at);
     world.pump(Vec::new());
@@ -159,13 +159,13 @@ fn replacement_text_is_visible(world: &mut ApplicationWorld) {
 }
 
 #[when("the user presses Ctrl+Z")]
-fn undo_edit(world: &mut ApplicationWorld) {
+pub(super) fn undo_edit(world: &mut ApplicationWorld) {
     x11_input::press_control_letter(b'z');
     world.pump(Vec::new());
 }
 
 #[when("the user presses Ctrl+Y")]
-fn redo_edit(world: &mut ApplicationWorld) {
+pub(super) fn redo_edit(world: &mut ApplicationWorld) {
     x11_input::press_control_letter(b'y');
     world.pump(Vec::new());
 }

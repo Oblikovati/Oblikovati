@@ -8,7 +8,7 @@ use martensite_tkg3d::top_abs::ShapeEnum;
 use martensite_tkgeombase::gcpnts::QuasiUniformDeflection;
 use martensite_tkmath::{bnd::BoundingBox3, geom_abs::Shape};
 use martensite_tkservice::{
-    font::{FontFontAspect, FontStrictLevel},
+    font::{FontFontAspect, FontFontMgr, FontStrictLevel},
     graphic3d::{
         Graphic3dHorizontalTextAlignment as AlignX, Graphic3dVerticalTextAlignment as AlignY,
     },
@@ -242,4 +242,20 @@ fn closest_glyph_point(shape: &topods::Shape, [x, y]: [f64; 2]) -> Result<[f64; 
         .point_on_shape2(1)
         .map_err(|cause| cause.to_string())?;
     Ok([point.x(), point.y()])
+}
+
+/// List registered fonts for the sketch editor. For example, offer the returned
+/// family names beside the system-default choice in a font picker.
+pub fn available_sketch_font_families() -> Vec<String> {
+    let fonts = FontFontMgr::get_instance().get_available_fonts();
+    let mut families: Vec<_> = fonts
+        .iter()
+        .filter_map(|font| {
+            let name = std::str::from_utf8(font.font_name().as_bytes()).ok()?;
+            (!name.is_empty()).then(|| name.to_owned())
+        })
+        .collect();
+    families.sort_by_cached_key(|name| (name.to_lowercase(), name.clone()));
+    families.dedup_by(|first, second| first.eq_ignore_ascii_case(second));
+    families
 }

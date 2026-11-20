@@ -2,19 +2,21 @@
 //! Format Text owns a transient draft until the existing document command accepts it.
 use super::{sketch_picking::ordinary_click, *};
 use crate::{HeadSketchEdit, HeadWindow, sketch_tool::SketchToolState};
-use oblikovati_api::types::SketchTextStyle;
+use oblikovati_api::types::{SketchTextStyle, TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT};
 use oblikovati_gui::{GuiSketchTextAction, GuiSketchTextDraft};
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     sketch::{Sketch2D, SketchEntityId, SketchPlane, SketchText2D},
 };
 use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportKey, ViewportSketchPreview};
+use std::sync::{Arc, OnceLock};
 
 pub(crate) struct SketchTextTool {
     pub(crate) edit: HeadSketchEdit,
     pub(crate) generation: u64,
     working_scale: f64,
     placement: Option<TextPlacementDraft>,
+    font_families: OnceLock<Arc<[String]>>,
 }
 
 struct TextPlacementDraft {
@@ -55,6 +57,7 @@ impl<
             generation,
             working_scale,
             placement: None,
+            font_families: OnceLock::new(),
         })));
         self.sketch_text_prompt();
         Ok(())
@@ -100,6 +103,21 @@ impl<
         tool.placement
             .as_ref()
             .map(|placement| placement.fields.clone())
+    }
+
+    pub(super) fn gui_sketch_text_font_families(&self) -> Option<Arc<[String]>> {
+        let Some(SketchToolState::Text(tool)) = &self.sketch_tool else {
+            return None;
+        };
+        tool.placement.as_ref()?;
+        Some(
+            tool.font_families
+                .get_or_init(|| {
+                    oblikovati_martensite::planar_curve::sketch::available_sketch_font_families()
+                        .into()
+                })
+                .clone(),
+        )
     }
 
     pub(super) fn sketch_text_preview(
@@ -211,6 +229,7 @@ impl<
             edit,
             generation,
             working_scale: snapshot.parameters.units().working_scale(),
+            font_families: OnceLock::new(),
             placement: Some(TextPlacementDraft {
                 anchor,
                 fields,
@@ -333,6 +352,8 @@ fn text_style(fields: &GuiSketchTextDraft) -> Result<SketchTextStyle, String> {
         family: fields.family.trim().into(),
         height,
         rotation,
+        h_align: fields.h_align.clone(),
+        v_align: fields.v_align.clone(),
         ..Default::default()
     })
 }
@@ -373,6 +394,8 @@ impl TextPlacementDraft {
         let mut style = text.style.clone();
         style.content = draft.content;
         style.family = draft.family;
+        style.h_align = draft.h_align;
+        style.v_align = draft.v_align;
         if self.fields.height_mm != initial.height_mm {
             style.height = draft.height;
         }
@@ -389,6 +412,16 @@ fn fields_from_style(style: &SketchTextStyle) -> GuiSketchTextDraft {
         family: style.family.clone(),
         height_mm: (style.height * 10.).to_string(),
         rotation_degrees: style.rotation.to_degrees().to_string(),
+        h_align: if style.h_align.0.is_empty() {
+            TEXT_ALIGN_LEFT
+        } else {
+            style.h_align.clone()
+        },
+        v_align: if style.v_align.0.is_empty() {
+            TEXT_ALIGN_BASELINE
+        } else {
+            style.v_align.clone()
+        },
     }
 }
 

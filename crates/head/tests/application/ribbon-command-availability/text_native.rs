@@ -7,6 +7,8 @@ use cucumber::{given, then, when};
 mod text_creation;
 #[path = "text_edit.rs"]
 mod text_edit;
+#[path = "text_format_choices.rs"]
+mod text_format_choices;
 use oblikovati_viewport::ViewportSketchPreview;
 
 #[test]
