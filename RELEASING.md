@@ -5,6 +5,11 @@ The workflows replace the Go build, test, package, and publish commands on the
 and [ADR-0013](architecture/decisions/ADR-0013-packaging-and-release.md).
 [Issue #3560](https://github.com/Oblikovati/Oblikovati/issues/3560) tracks this port.
 
+Pushes to `rust` and `rust-work` run the Rust CI gate and native build matrix.
+An unsigned manual package build accepts a commit on either branch. Signed
+packages and publication require a commit on `rust`; they also require released
+dependencies and the existing publication checks.
+
 The application port is incomplete. The Cargo workspace contains the build tool,
 model/storage/session foundations, a CLI, and a native head with saved prism
 display and camera navigation. Dear ImGui controls create Parts, start and finish

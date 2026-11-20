@@ -50,3 +50,19 @@ fn universal_package_declines_the_retired_sonoma_runner() {
         "universal package workflow: expected a supported GitHub runner after 2026-11-02"
     );
 }
+
+#[test]
+fn rust_ci_runs_for_the_working_branch() {
+    let workflow = include_str!("../../../.github/workflows/ci.yml");
+    assert!(workflow.contains("branches: [rust, rust-work]"));
+    assert!(workflow.contains("cargo xtask native"));
+    assert!(workflow.contains("make gate-xvfb"));
+}
+
+#[test]
+fn development_package_accepts_the_working_branch() {
+    let workflow = include_str!("../../../.github/workflows/build.yml");
+    assert!(workflow.contains("git merge-base --is-ancestor HEAD origin/rust-work"));
+    assert!(workflow.contains("cargo xtask preflight \"$mode\""));
+    assert!(workflow.contains("cargo xtask \"${args[@]}\""));
+}

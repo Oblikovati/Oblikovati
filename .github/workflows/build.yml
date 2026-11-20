@@ -25,7 +25,7 @@ on:
   workflow_dispatch:
     inputs:
       revision:
-        description: Full commit on rust to build
+        description: Full commit on rust or rust-work to build
         required: true
       version:
         description: Four-field development product version
@@ -55,9 +55,14 @@ jobs:
         run: |
           [[ "$REVISION" =~ ^[0-9a-f]{40}$ ]] || { echo 'Expected a full commit SHA'; exit 1; }
           test "$(git rev-parse HEAD)" = "$REVISION"
-          git merge-base --is-ancestor HEAD origin/rust
           mode=build
-          if [ "$SIGNED" = true ]; then mode=publish; fi
+          if [ "$SIGNED" = true ]; then
+            git merge-base --is-ancestor HEAD origin/rust
+            mode=publish
+          else
+            git merge-base --is-ancestor HEAD origin/rust || \
+              git merge-base --is-ancestor HEAD origin/rust-work
+          fi
           cargo xtask preflight "$mode"
       - id: matrix
         run: echo "platforms=$(cargo xtask matrix)" >> "$GITHUB_OUTPUT"
