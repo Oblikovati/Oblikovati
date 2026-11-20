@@ -4,6 +4,8 @@ use super::{ApplicationWorld, diagnostics, quick_access_icons, workspace_layout}
 use cucumber::{given, then, when};
 use workspace_layout::dockspace_native::{native_drag, resize_boundary, viewport};
 
+#[path = "browser_scenarios.rs"]
+mod browser_scenarios;
 #[path = "edges_scenario.rs"]
 mod edges_scenario;
 #[cfg(test)]
@@ -152,5 +154,13 @@ fn restored_panel_docked(_: &mut ApplicationWorld) {
 
 #[then("its contents are visible")]
 fn restored_panel_contents(world: &mut ApplicationWorld) {
-    world.run_in_window(PANEL, "Assigntopart");
+    let panel = world
+        .docking_selected_tab
+        .as_deref()
+        .unwrap_or(PANEL)
+        .to_owned();
+    world.run_in_window(&panel, "Assigntopart");
+    if panel == "Appearance Browser" {
+        workspace_layout::browser_feature::expect_solid_visible(world);
+    }
 }

@@ -364,12 +364,29 @@ fn browser_wider(world: &mut ApplicationWorld) {
 }
 #[then("the viewport becomes narrower")]
 fn viewport_narrower(world: &mut ApplicationWorld) {
+    if let Some((before, _)) = world.docking_resize {
+        let now = world.viewport_bounds();
+        assert!(now[2] < before[2], "viewport {before:?} -> {now:?}");
+        return;
+    }
     let before = world.strip_left.expect("expected a starting strip");
     let now = viewport_left(world);
     assert!(
         now > before + 40.,
         "document area starts at {now}: expected past {before}"
     );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn model_browser_resize_retains_viewport_narrowing_check() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    docked_left_of_viewport(&mut world);
+    drag_right_boundary(&mut world);
+    browser_wider(&mut world);
+    viewport_narrower(&mut world);
+    world.close();
 }
 #[then("the document and model tree remain displayed")]
 fn tree_remains(world: &mut ApplicationWorld) {
