@@ -200,3 +200,48 @@ fn restore_appearance(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.docking_selected_tab = Some(APPEARANCE.to_owned());
 }
+
+#[then("a single tab bar contains both browser tabs")]
+fn browser_tabs_share_one_bar(_: &mut ApplicationWorld) {
+    let appearance = diagnostics::window_dock_id(APPEARANCE).expect("appearance dock node");
+    assert_ne!(appearance, 0, "expected a docked appearance browser");
+    assert_eq!(diagnostics::window_dock_id(MATERIAL), Some(appearance));
+    let (a_min, a_max) = diagnostics::window_dock_tab_bounds(APPEARANCE).expect("appearance tab");
+    let (m_min, m_max) = diagnostics::window_dock_tab_bounds(MATERIAL).expect("material tab");
+    assert!(
+        (a_min[1] - m_min[1]).abs() <= 1. && (a_max[1] - m_max[1]).abs() <= 1.,
+        "browser tabs must share one row: {a_min:?}..{a_max:?}, {m_min:?}..{m_max:?}"
+    );
+    assert!(
+        a_max[0] <= m_min[0] || m_max[0] <= a_min[0],
+        "browser tabs must be distinct"
+    );
+}
+
+#[then("the panel presents appearance choices without a second browser tab bar")]
+fn appearance_has_no_nested_tabs(world: &mut ApplicationWorld) {
+    assert_single_asset_panel(world, APPEARANCE, "Appearance");
+}
+
+#[then("the panel presents material choices without a second browser tab bar")]
+fn material_has_no_nested_tabs(world: &mut ApplicationWorld) {
+    assert_single_asset_panel(world, MATERIAL, "Material");
+}
+
+fn assert_single_asset_panel(world: &ApplicationWorld, panel: &str, label: &str) {
+    assert_eq!(diagnostics::window_dock_tab_visible(panel), Some(true));
+    world.run_in_window(panel, label);
+    world.run_in_window(panel, "Assigntopart");
+    let (position, size) = diagnostics::window_geometry(panel).expect("browser panel geometry");
+    for run in &world.frame.runs {
+        let center = run.center();
+        let inside = (0..2).all(|axis| {
+            center[axis] >= position[axis] && center[axis] <= position[axis] + size[axis]
+        });
+        assert!(
+            !inside || !matches!(run.text.as_str(), "Materials" | "Appearances"),
+            "unexpected inner browser tab {:?}",
+            run.text
+        );
+    }
+}

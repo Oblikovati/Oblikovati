@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Dockable workspace panels: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature" package="testsuite/Feature: Dockable workspace panels: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-20T09:03:45.690285862Z" time="27.142562834"><testcase name="Scenario: Tab, switch, close, and restore docked browser panels: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:58:3" time="27.142562834"><system-out><![CDATA[  Scenario: Tab, switch, close, and restore docked browser panels
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And Appearance Browser is docked on the right
+   ✔  And Material Browser is floating over the workspace
+   ✔  When the user drags the Material Browser title bar onto the Appearance Browser tab strip
+   ✔  Then both browsers occupy one right-side dock region as tabs
+   ✔  And one browser is active while the other remains available
+   ✔  And a single tab bar contains both browser tabs
+   ✔  And the viewport remains visible to the left of the dock region
+   ✔  When the user selects the Appearance Browser tab
+   ✔  Then Appearance Browser contents become visible in the dock region
+   ✔  And the panel presents appearance choices without a second browser tab bar
+   ✔  When the user selects the Material Browser tab
+   ✔  Then Material Browser contents become visible in the dock region
+   ✔  And the panel presents material choices without a second browser tab bar
+   ✔  When the user selects Appearance Browser and closes it from its panel controls
+   ✔  Then Appearance Browser is removed from the tab group
+   ✔  And Material Browser remains visible in the right dock region
+   ✔  When the user opens View and then User Interface
+   ✔  And the user selects Appearance Browser
+   ✔  Then Appearance Browser returns as a tab in the right dock region
+   ✔  And its contents are visible
+]]></system-out></testcase></testsuite></testsuites>
