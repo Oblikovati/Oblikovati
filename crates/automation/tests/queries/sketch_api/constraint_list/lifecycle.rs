@@ -71,6 +71,7 @@ fn inferred_line_reply_index_addresses_the_same_canonical_geometric_row() {
     let (mut files, _, mut source) = configured_files(DOCUMENT_PART, Default::default());
     let client = Client::new(FileHost::new(&mut files, &mut source, "test"));
     client.sketch().create(&Default::default()).unwrap();
+    infer_from_all_geometry(&client);
     let result = client
         .sketch()
         .add_entity(&AddSketchEntityArgs {

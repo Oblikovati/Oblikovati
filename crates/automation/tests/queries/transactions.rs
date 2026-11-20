@@ -278,7 +278,13 @@ fn history_commands_only_change_the_active_document() {
         .chain(TRANSACTION_METHODS)
         .chain(oblikovati_automation::CLIENT_COMMAND_METHODS)
         .collect();
-    assert_eq!(inventory.len(), 73);
+    assert_eq!(
+        inventory.len(),
+        QUERY_METHODS.len()
+            + oblikovati_automation::EDIT_METHODS.len()
+            + TRANSACTION_METHODS.len()
+            + oblikovati_automation::CLIENT_COMMAND_METHODS.len()
+    );
     assert!(inventory.contains(METHOD_MODEL_SELECTION));
 }
 

@@ -9,6 +9,17 @@ use oblikovati_model::{
 };
 use oblikovati_solve::nonlinear::SolveOptions;
 
+fn infer_from_all_geometry(client: &Client<impl Caller>) {
+    client
+        .sketch()
+        .set_inference_scope(&SketchInferenceScopeView {
+            sketch_index: 0,
+            scope: INFERENCE_SCOPE_ALL_GEOMETRY,
+            entities: None,
+        })
+        .unwrap();
+}
+
 fn create_kind(files: &mut DiscoveryWorkspace, kind: DocumentType, source: &mut QueryGuids) -> u64 {
     let contents = format!(
         "schemaVersion: 2\ndocumentType: {}\nmodel:\n  parameters: [{{name: width, kind: user, expression: '1 cm'}}]\n",

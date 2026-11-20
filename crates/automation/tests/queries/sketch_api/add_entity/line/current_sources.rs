@@ -4,6 +4,7 @@ use oblikovati_model::{history::RecipeReservations, sketch::DistanceMeasure};
 #[test]
 fn current_dimensions_move_snap_targets_and_are_excluded_from_reply_indices() {
     let (mut files, document, mut source) = fresh();
+    infer_from_all_geometry(&Client::new(FileHost::new(&mut files, &mut source, "test")));
     let seed = add_line(&mut files, &mut source, [[2.0, 3.0], [5.0, 5.0]]);
     files
         .commands(document)

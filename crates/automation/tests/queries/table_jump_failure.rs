@@ -129,8 +129,9 @@ fn typed_jump_stops_at_last_published_step_when_dependent_replay_fails() {
         )
         .unwrap()
         .session_id;
+    let source_name = files.parameter_source_name(source).unwrap();
     files
-        .add_derived_table(target, "/source.opd", &["master".into()])
+        .add_derived_table(target, &source_name, &["master".into()])
         .unwrap();
     files.activate(source).unwrap();
     let initial = Client::new(FileHost::new(&mut files, &mut guids, "test"))

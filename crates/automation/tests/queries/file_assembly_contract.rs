@@ -53,8 +53,9 @@ fn file_placement_keeps_focus_and_releases_refused_background_documents() {
         .with_observer_factory(&mut factory)
         .place_component_file(path, "Part:1", matrix)
         .unwrap();
+    let reference = fixture_native_path(path);
     let target = files
-        .document_reference(root, path.to_str().unwrap())
+        .document_reference(root, reference.to_str().unwrap())
         .unwrap();
     assert!(!files.document_info(target).unwrap().visible);
     assert_eq!(files.workspace().active_document(), Some(root));
@@ -122,6 +123,7 @@ fn redo_reopens_a_component_closed_after_undo() {
         .with_observer_factory(&mut factory)
         .open_path(Path::new("/fixtures/redo-part.opd"), true)
         .unwrap();
+    let reference = files.parameter_source_name(part).unwrap();
     let root = FileHost::new(&mut files, &mut source, "test")
         .with_observer_factory(&mut factory)
         .open_path(path, true)
@@ -156,18 +158,8 @@ fn redo_reopens_a_component_closed_after_undo() {
         .unwrap();
     assert_eq!((rows.len(), rows[0].name.as_str()), (1, "Part:1"));
     drop(client);
-    assert_ne!(
-        files.document_reference(root, "/fixtures/redo-part.opd"),
-        Some(part)
-    );
-    assert!(
-        files
-            .document_reference(root, "/fixtures/redo-part.opd")
-            .is_some()
-    );
-    let reopened = files
-        .document_reference(root, "/fixtures/redo-part.opd")
-        .unwrap();
+    let reopened = files.document_reference(root, &reference).unwrap();
+    assert_ne!(reopened, part);
     Client::new(FileHost::new(&mut files, &mut source, "test"))
         .transactions()
         .undo()

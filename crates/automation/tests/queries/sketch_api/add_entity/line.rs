@@ -69,6 +69,7 @@ fn vertical_reply_uses_the_canonical_kind_and_owned_line_operand() {
 #[test]
 fn both_endpoint_snap_records_use_created_point_ids_and_existing_target_ids() {
     let (mut files, _, mut source) = fresh();
+    infer_from_all_geometry(&Client::new(FileHost::new(&mut files, &mut source, "test")));
     add_call(
         &mut files,
         &mut source,
@@ -102,6 +103,7 @@ fn parallel_and_perpendicular_replies_name_the_new_line_and_reference_line() {
 }
 fn assert_line_relation_wire(end: [f64; 2], kind: &str, relation: LineRelation) {
     let (mut files, document, mut source) = fresh();
+    infer_from_all_geometry(&Client::new(FileHost::new(&mut files, &mut source, "test")));
     let first = add_line(&mut files, &mut source, [[0.0, 1.0], [3.0, 3.0]]);
     let reply = add_line(&mut files, &mut source, [[10.0, 10.0], end]);
     assert_direction(&reply, kind, 0, Some(first.entity_id));
@@ -120,6 +122,7 @@ fn assert_line_relation_wire(end: [f64; 2], kind: &str, relation: LineRelation) 
 #[test]
 fn audit_mode_reports_point_proposals_without_a_phantom_applied_direction() {
     let (mut files, document, mut source) = fresh();
+    infer_from_all_geometry(&Client::new(FileHost::new(&mut files, &mut source, "test")));
     set_inference(&mut files, &mut source, true, false, "horizontalVertical");
     let reply = add_line(&mut files, &mut source, [[0.0001, 0.0001], [4.0, 0.01]]);
     assert!(reply.inferred_constraints.is_none());
