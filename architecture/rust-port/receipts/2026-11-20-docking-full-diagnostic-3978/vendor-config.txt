@@ -1,0 +1,20 @@
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/Oblikovati/Corliss?rev=872ff91ea0fd9ebb3ad34d0030c67bbc7b5989fb"]
+git = "https://github.com/Oblikovati/Corliss"
+rev = "872ff91ea0fd9ebb3ad34d0030c67bbc7b5989fb"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982"]
+git = "https://github.com/Oblikovati/Martensite"
+rev = "bef25f47548431c8f128f08f66a1f719bcee4982"
+replace-with = "vendored-sources"
+
+[source."git+https://github.com/Oblikovati/Oblikovati.API.git?rev=57ae73ca46bfcadcc09e3ec1d0c424d803cadc44"]
+git = "https://github.com/Oblikovati/Oblikovati.API.git"
+rev = "57ae73ca46bfcadcc09e3ec1d0c424d803cadc44"
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "/tmp/obk-sealed-full-wdWuAQ/vendor"
