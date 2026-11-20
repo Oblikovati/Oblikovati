@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/oblikovati-bdd-IARdCe/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/oblikovati-bdd-IARdCe/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-20T22:13:01.255148333Z" time="48.431127934"><testcase name="Scenario: text-15 Undo and redo an accepted existing-text formatting edit: tmp/oblikovati-bdd-IARdCe/checkout/features/sketch/text/scenario.feature:142:3" time="48.431127934"><system-out><![CDATA[  Scenario: text-15 Undo and redo an accepted existing-text formatting edit
+   ✔  Given existing bold characters
+   ✔  When the user reopens Text, focus the editor and select both characters
+   ✔  And the user applies Italic and accept
+   ✔  Then slanted bold characters remain at Ready with 33 dimensions needed
+   ✔  When the user undoes
+   ✔  Then upright bold characters remain
+   ✔  When the user redoes
+   ✔  Then the slanted appearance returns without changing the 33-dimension count
+]]></system-out></testcase></testsuite></testsuites>

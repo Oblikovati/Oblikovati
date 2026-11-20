@@ -107,6 +107,10 @@ using this status; the live scenario directory can change.
   and solver count. The native regression uses DejaVu Sans. Pinned
   `text-14` still requires Tahoma. See
   `receipts/2026-11-20-sketch-text-double-click-3907/`.
+  Pinned `text-15` passed all eight steps with 33 dimensions needed.
+  Italic preserved Bold. Undo restored the upright outline, and Redo
+  restored the slanted outline. See
+  `receipts/2026-11-20-sketch-text-italic-3907/`.
   The model uses API v0.161.0 to validate Unicode character-format ranges.
   Tests cover atomic rejection of out-of-range edits, undo and redo, and
   native YAML reopen. Mixed-font rendering remains open under

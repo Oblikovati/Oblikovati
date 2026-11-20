@@ -27625,10 +27625,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "The Go glyph profile, anchor placement, style round-trip, and typed add/edit/get tests passed. Italic controls and history are covered by the Rust desktop tests.",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native analytic glyph outlines from the Bold and Bold Italic font faces.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. Windows and macOS remain untested.",
+      "kernel_integration": "The font aspect comes from authored character runs. Sketch Text and its edit preview share the same Martensite glyph construction and analytic picking path.",
+      "rust_tests": "Pinned native text-15 and native_italic_text_history_keeps_bold_content_and_anchor. See architecture/rust-port/receipts/2026-11-20-sketch-text-italic-3907/README.md.",
+      "oracle": "Pinned Then steps, before and after framebuffer pixels, exact text recipe, and the displayed and model degrees of freedom.",
+      "expected_result": "Accepting Italic keeps the existing Bold text and 33 dimensions needed. Undo restores upright text; Redo restores the slanted outline at the same count.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:bd197b74bf3cf6ce89cd1736714d18307436e0565db5a13dbc87701215cd05e4",
