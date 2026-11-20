@@ -15,4 +15,5 @@ not a passing gate.
 
 A separate `python3 -B -m unittest discover -s tools/bdd` run passed all 342
 tests. The test log contains expected errors from a deliberately corrupted Git
-fixture. This separate run does not replace the full gate.
+fixture; NUL bytes are shown as `\0` in the saved log. This separate run does
+not replace the full gate.
