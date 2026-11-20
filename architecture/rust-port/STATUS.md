@@ -14,6 +14,13 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- Docking System (#4133): the 2026-11-20 native diagnostic passed eight of
+  ten scenarios; the two browser-specific scenarios stopped at unbound setup
+  steps. Feature and support hashes were unchanged. The run used a generated
+  part, rather than the Inventor fixture required by the support notes, and is
+  not inventory evidence. A native solid and visible-sketch fixture has been
+  saved and reopened for scenario-owner review. See
+  `receipts/2026-11-20-docking-baseline-4133/`.
 - Selected sketch point identity (#4179): the shared placement recipe now
   retains explicitly picked point IDs and preserves existing geometry. Session
   tests cover preview, commit, dimension edit, and undo/redo. Midpoint Line

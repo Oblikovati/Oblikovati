@@ -1,0 +1,10 @@
+{
+  "classification": "diagnostic only; documented Inventor fixture not used",
+  "scenarios_passed": 8,
+  "scenarios_failed": 2,
+  "passed_steps": 67,
+  "failed_steps": 2,
+  "feature_and_support_unchanged": true,
+  "native_fixture_sha256": "f631ff7cb37606f518e7d28a73c999a11362c0683d9c78e31306ba835beb2eef",
+  "fixture_test": "native solid and visible sketch saved and reopened"
+}
