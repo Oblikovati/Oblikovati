@@ -50,8 +50,27 @@ fn return_to_first(world: &mut ApplicationWorld) {
 
 fn select_document(world: &mut ApplicationWorld, document: u64) {
     let name = world.document_name(document);
+    reveal_tab(world, &name);
     let point = diagnostics::pointer_pixels(world.expect_tab(&name).center());
     super::super::x11_input::click(point);
     world.pump(Vec::new());
     assert_eq!(world.state().document, Some(document));
+}
+
+fn reveal_tab(world: &mut ApplicationWorld, name: &str) {
+    let attempts = world.state().documents.len() + 1;
+    for arrow in [">", "<"] {
+        for _ in 0..attempts {
+            if world.tab_run(name).is_some() {
+                return;
+            }
+            let point = world.exact_run_center(arrow);
+            super::super::x11_input::click(point);
+            world.pump(Vec::new());
+        }
+    }
+    assert!(
+        world.tab_run(name).is_some(),
+        "expected document tab {name:?} after scrolling"
+    );
 }
