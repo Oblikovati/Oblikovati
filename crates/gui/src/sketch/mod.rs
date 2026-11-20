@@ -23,11 +23,12 @@ pub(crate) mod axes;
 pub(crate) fn draw_viewport_overlays(
     ui: &imgui::Ui,
     request: &crate::GuiFrameRequest,
+    dimension_positions: &[Option<crate::dimension_labels::LabelPosition>],
 ) -> Option<crate::GuiConstraintHover> {
     crate::sketch_pick_cue::draw_sketch_pick_cue(ui, request);
     crate::sketch_pick_cue::draw_model_pick_cue(ui, request);
     axes::draw(ui, request);
-    crate::dimension_labels::draw_dimension_labels(ui, request);
+    crate::dimension_labels::draw_dimension_labels(ui, request, dimension_positions);
     constraint_glyphs::draw_constraint_glyphs(ui, request)
 }
 pub(crate) mod move_tool;

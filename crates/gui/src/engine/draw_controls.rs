@@ -34,7 +34,6 @@ impl GuiFrameEngine {
         })?;
         self.workspace
             .sync_origin_document(request.commands.document);
-        let constraint_hover = crate::sketch::draw_viewport_overlays(ui, request);
         crate::application::workspace_layout::browser_feature::draw_feature_edges(ui, request);
         self.workspace.draw_selected_origin(ui, request);
         self.document_files.home_in_front = self.home.active;
@@ -119,6 +118,10 @@ impl GuiFrameEngine {
             logical,
             band_height,
         );
+        let dimension_positions =
+            crate::dimension_labels::dimension_label_layout(ui, request, area);
+        let constraint_hover =
+            crate::sketch::draw_viewport_overlays(ui, request, &dimension_positions);
         let over_fields = crate::sketch::line::hud_panel(ui, request);
         self.document_tabs.previews.synchronize(&request.commands);
         self.document_tabs.panel(
@@ -358,7 +361,7 @@ impl GuiFrameEngine {
             self.workspace.marking_menu_enabled,
         );
         self.dimension_value_editor
-            .panel(ui, request, &mut selected);
+            .panel(ui, request, &dimension_positions, &mut selected);
         external_panels::draw(
             &self.external_docks,
             ui,

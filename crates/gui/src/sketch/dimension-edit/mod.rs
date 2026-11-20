@@ -3,6 +3,7 @@
 use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Key, Ui};
+mod overlap;
 
 /// What a label's editor needs; example: `d34` and its stored expression `4 mm`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -42,6 +43,7 @@ pub(crate) struct GuiDimensionValueEditor {
     reference: bool,
     choice_open: bool,
     choice_id: Option<u64>,
+    overlap_chooser: overlap::DimensionChooser,
 }
 fn dimension_choice_action(
     ui: &Ui,
@@ -98,7 +100,10 @@ impl GuiDimensionValueEditor {
     }
     /// The editor owned this frame's keys; the Escape that closed it was not the command's.
     pub(crate) fn had_keyboard(&self) -> bool {
-        self.open.is_some() || self.closed_this_frame || self.choice_open
+        self.open.is_some()
+            || self.closed_this_frame
+            || self.choice_open
+            || self.overlap_chooser.is_open()
     }
     pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
         if !state.sketch_at_ready && !state.dimension_tool_active {
@@ -110,6 +115,7 @@ impl GuiDimensionValueEditor {
         &mut self,
         ui: &Ui,
         request: &GuiFrameRequest,
+        dimension_positions: &[Option<crate::dimension_labels::LabelPosition>],
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.closed_this_frame = false;
@@ -117,9 +123,15 @@ impl GuiDimensionValueEditor {
         if self.dimension_choice(ui, request, actions) {
             return;
         }
-        self.open_from_draft(request);
+        self.open_from_draft(request, dimension_positions);
         if self.owner_draft.is_none() {
-            self.open_at_pointer(ui, request);
+            self.open_at_pointer(ui, request, dimension_positions);
+        }
+        if let Some((edit, position)) = self.overlap_chooser.panel(ui, &request.commands) {
+            self.text.clone_from(&edit.expression);
+            self.set_edit(Some(edit));
+            self.focus = true;
+            self.position = position;
         }
         let state = &request.commands;
         self.sync_before_docking(state);
@@ -250,7 +262,11 @@ impl GuiDimensionValueEditor {
         }
         true
     }
-    fn open_from_draft(&mut self, request: &GuiFrameRequest) {
+    fn open_from_draft(
+        &mut self,
+        request: &GuiFrameRequest,
+        dimension_positions: &[Option<crate::dimension_labels::LabelPosition>],
+    ) {
         let draft = request.commands.dimension_draft.as_ref();
         let id = draft.map(|draft| draft.id);
         if id == self.seen_draft {
@@ -278,14 +294,9 @@ impl GuiDimensionValueEditor {
             .commands
             .dimension_labels
             .iter()
-            .find(|label| label.edit.as_ref() == Some(&edit))
-            .map(|label| {
-                let scale = request.layout_scale();
-                [
-                    label.pixel[0] as f32 / scale[0],
-                    label.pixel[1] as f32 / scale[1],
-                ]
-            })
+            .zip(dimension_positions)
+            .find(|(label, _)| label.edit.as_ref() == Some(&edit))
+            .and_then(|(_, position)| position.map(|position| position.center))
             .unwrap_or([640., 240.]);
         self.set_edit(Some(edit));
         self.focus = true;
@@ -317,7 +328,12 @@ impl GuiDimensionValueEditor {
         }
         false
     }
-    fn open_at_pointer(&mut self, ui: &Ui, request: &GuiFrameRequest) {
+    fn open_at_pointer(
+        &mut self,
+        ui: &Ui,
+        request: &GuiFrameRequest,
+        dimension_positions: &[Option<crate::dimension_labels::LabelPosition>],
+    ) {
         self.over_label = false;
         let state = &request.commands;
         if !(state.sketch_at_ready || state.dimension_tool_active)
@@ -325,7 +341,12 @@ impl GuiDimensionValueEditor {
         {
             return;
         }
-        let Some(edit) = label_under_pointer(ui, request, &request.commands) else {
+        let Some(hit) = overlap::dimension_hits(
+            ui.io().mouse_pos,
+            &request.commands.dimension_labels,
+            dimension_positions,
+            request.layout_scale(),
+        ) else {
             return;
         };
         self.over_label = true;
@@ -338,64 +359,23 @@ impl GuiDimensionValueEditor {
         if !opens {
             return;
         }
-        self.text.clone_from(&edit.expression);
-        self.set_edit(Some(edit));
-        self.focus = true;
-        self.position = ui.io().mouse_pos;
+        match hit {
+            overlap::DimensionHit::One(edit) => {
+                self.text.clone_from(&edit.expression);
+                self.set_edit(Some(edit));
+                self.focus = true;
+                self.position = ui.io().mouse_pos;
+            }
+            overlap::DimensionHit::Multiple(choices) => {
+                self.overlap_chooser
+                    .request(choices, ui.io().mouse_pos, &request.commands);
+            }
+        }
     }
 }
 fn expression_syntax_valid(source: &str) -> bool {
     let units = oblikovati_model::units::UnitsOfMeasure::default();
     oblikovati_model::expression::Expression::parse(source, &units).is_ok()
-}
-
-fn label_under_pointer(
-    ui: &Ui,
-    request: &GuiFrameRequest,
-    state: &GuiCommandState,
-) -> Option<GuiDimensionEdit> {
-    let [x, y] = ui.io().mouse_pos;
-    let scale = request.layout_scale();
-    // Labels can overlap on a small shape; the one nearest the pointer is the one meant.
-    let hits = state
-        .dimension_labels
-        .iter()
-        .enumerate()
-        .filter_map(|(index, label)| {
-            let size = ui.calc_text_size(&label.text);
-            let [cx, cy] = [
-                label.pixel[0] as f32 / scale[0],
-                label.pixel[1] as f32 / scale[1],
-            ];
-            let hit = (x - cx).abs() <= size[0] / 2. + 2. && (y - cy).abs() <= size[1] / 2. + 2.;
-            let edit = label.edit.clone()?;
-            if hit {
-                return Some(((x - cx).hypot(y - cy), index, edit));
-            }
-            let [from, to] = label.line?;
-            let logical =
-                |point: [i32; 2]| [point[0] as f32 / scale[0], point[1] as f32 / scale[1]];
-            let distance = line_distance([x, y], logical(from), logical(to));
-            (distance <= 5.).then_some((distance, index, edit))
-        });
-    hits.min_by(|first, second| {
-        first
-            .0
-            .total_cmp(&second.0)
-            .then_with(|| second.1.cmp(&first.1))
-    })
-    .map(|(_, _, edit)| edit)
-}
-fn line_distance(point: [f32; 2], from: [f32; 2], to: [f32; 2]) -> f32 {
-    let direction = [to[0] - from[0], to[1] - from[1]];
-    let length_squared = direction[0] * direction[0] + direction[1] * direction[1];
-    if length_squared == 0. {
-        return (point[0] - from[0]).hypot(point[1] - from[1]);
-    }
-    let along = (((point[0] - from[0]) * direction[0] + (point[1] - from[1]) * direction[1])
-        / length_squared)
-        .clamp(0., 1.);
-    (point[0] - from[0] - along * direction[0]).hypot(point[1] - from[1] - along * direction[1])
 }
 
 #[cfg(test)]
@@ -428,8 +408,17 @@ mod tests {
     }
     #[test]
     fn dimension_line_hit_distance_is_limited_to_the_segment() {
-        assert_eq!(super::line_distance([5., 3.], [0., 0.], [10., 0.]), 3.);
-        assert_eq!(super::line_distance([13., 4.], [0., 0.], [10., 0.]), 5.);
-        assert_eq!(super::line_distance([3., 4.], [0., 0.], [0., 0.]), 5.);
+        assert_eq!(
+            super::overlap::line_distance([5., 3.], [0., 0.], [10., 0.]),
+            3.
+        );
+        assert_eq!(
+            super::overlap::line_distance([13., 4.], [0., 0.], [10., 0.]),
+            5.
+        );
+        assert_eq!(
+            super::overlap::line_distance([3., 4.], [0., 0.], [0., 0.]),
+            5.
+        );
     }
 }

@@ -243,6 +243,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Keep sketch dimension labels readable and select the dimension under the pointer. (#4180)
+
 - Asked before creating a redundant sketch dimension when the warning preference is selected. (#4163)
 
 - Honored the edit-on-creation preference for new sketch dimensions. (#4167)
