@@ -483,10 +483,10 @@
     "blocker": "Build and runtime provenance remain unsealed (#3978)."
   },
   "features/application/workspace-layout/workspace-layout.feature": {
-    "feature_sha256": "3910a3c0a4e77f5417ae7e6b08019330b2fdc621c6af1c4f7f42ff9acb329b1a",
+    "feature_sha256": "be0be85ba65d57c0aa35258ec78f23fd62f2b0984337e2ed729170e19fc70e11",
     "supporting_files": {
-      "features/application/workspace-layout/BLOCKERS.md": "5be33e141d800df8f7f9edd46e82807c18e3b58386859440754d070fa7087d42",
-      "features/application/workspace-layout/FIXTURES.md": "87ea26864e120a9b46bfd8e0a3602588cecfe06a55f7ac0876241a65ac7c2b21",
+      "features/application/workspace-layout/BLOCKERS.md": "623f89e2f8b943d40994d67a06c9cead47cd6c824aa068a9d7c556bad6f007b9",
+      "features/application/workspace-layout/FIXTURES.md": "79b957deccc48048288d4e75323585d947ef55bbdf95bb40bf9f23a7fb5f1093",
       "features/application/workspace-layout/FUNCTIONAL.md": "2eb3e11cef2da0d78ff0ba5489ab78ef092fef73a2ecbabb9132a9f5baa5c034",
       "features/application/workspace-layout/VISUAL.md": "095864bfc062a20d40696269cec79b5013afd53e5f4bffaee61ddbf04b5bd9f8",
       "features/application/workspace-layout/WIRE-FRAME-GAP-NOTES.md": "f16336d8121f1e1e8901cf50a3bf962249829d7938de4a1300b8bcdec96ee682",
@@ -509,18 +509,22 @@
       "features/application/workspace-layout/solid-body-tree-states.svg": "b232a7874513cab236d42cf9f5aaa84d03e8e0c36bfcac6e04d20503cac6c439",
       "features/application/workspace-layout/view-ribbon-groups.svg": "81f74e1cd3d0818abf697d2c50b68a733685f17780ac2e643097c52e716f0666",
       "features/application/workspace-layout/view-user-interface-menu.svg": "27cf5530201fec3789ce9d591ab8603ffa7a610feba1e64b90b94b02e71d6dd5",
-      "features/application/workspace-layout/workspace-states.svg": "0d3c78266d6b29de48ed39a8ef5100d0acf5266053a8eeeb6ede888562516e80"
+      "features/application/workspace-layout/workspace-states.svg": "0d3c78266d6b29de48ed39a8ef5100d0acf5266053a8eeeb6ede888562516e80",
+      "fixtures/cad/blank-drawing.odd": "74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e",
+      "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+      "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9",
+      "fixtures/cad/workspace-layout-points.opd": "69fafcac8264775600b11dbdd2793a563bdf2677be2d419940891e11e32d331a"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-19-workspace-full-c0060be36/cucumber.json",
-    "cucumber_sha256": "43638ff9686a81daeef4b20d5f5b6f8982bfb5769e63d03e59880098f7dc02aa",
-    "application_commit": "c0060be36",
-    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=workspace-layout OBK_BDD_REPORTS=/tmp/obk-workspace-full-c0060be36 cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb and Vulkan lavapipe; mixed native and scripted window input",
-    "notes": "Complete diagnostic: 50 of 52 executed cases passed, including both outline examples; two cases stopped at unbound steps for spacing and the User Interface menu. Source and supporting files matched before and after. The local scenario source is unversioned; strict verified acceptance remains unavailable (#3978).",
-    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-docking-baseline-ffc5f785d/scenario-inventory.json",
-    "scenario_inventory_sha256": "c4fe86998c8b053dd4505cbcce28704cf8279d0c4be561b2f6ceb64187ebaac0",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-workspace-full-c0060be36/scenario-arguments.json",
-    "scenario_arguments_sha256": "26a8dddec79c0602b68830180f1e0f52e445d7c0f550d2ac7f78283e48d3291e"
+    "application_commit": "782829a16c5756860d04993296015b0ae69bc3b5",
+    "command": "Full workspace-layout diagnostic. See the receipt README.",
+    "environment": "Linux X11, Xvfb at 1600 by 1000, Vulkan Lavapipe",
+    "notes": "15 of 53 executed cases passed. Two outline cases count as one declaration. The current named fixture steps accounted for most stops.",
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-workspace-native-baseline-3897/cucumber.json",
+    "cucumber_sha256": "3dc0ab7d53cc27eff60c4d9b8ccaec4950481f4cba8a79ea92b157989cf842b6",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-20-workspace-native-baseline-3897/scenario-inventory.json",
+    "scenario_inventory_sha256": "04afd775d30b62ed47b6d1dfb4da09c2326b043689c51f40b8bde96aad8c10e5",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-workspace-native-baseline-3897/scenario-arguments.json",
+    "scenario_arguments_sha256": "bb63bda2511bb325a1c03628cfae49a82c25abfc624d1541307e515391067340"
   },
   "features/sketch/degrees-of-freedom/scenario.feature": {
     "feature_sha256": "637b9d731edef63577801a11efc8baefc9331cec4929bb57d4c3ba4c75f984ec",

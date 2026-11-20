@@ -13,6 +13,30 @@ const SHEET_TITLE_BLOCK: &str = "Title Block";
 fn drawing_open(world: &mut ApplicationWorld) {
     world.previous_document = Some(world.add_drawing());
 }
+#[given("`fixtures/cad/blank-drawing.odd` is active in the MCAD Software")]
+#[given(
+    "`fixtures/cad/blank-drawing.odd` is open in the MCAD Software with drawing resources and a sheet"
+)]
+#[given(
+    "`fixtures/cad/blank-drawing.odd` is open in the MCAD Software with border entries in its resources and sheet"
+)]
+#[given("`fixtures/cad/blank-drawing.odd` is open in the MCAD Software with browser entries")]
+#[given(
+    "`fixtures/cad/blank-drawing.odd` is open in the MCAD Software with a border and title block"
+)]
+#[given(
+    "`fixtures/cad/blank-drawing.odd` is open in the MCAD Software with a sheet and drawing resources"
+)]
+#[given(
+    "`fixtures/cad/blank-drawing.odd` is open in the MCAD Software with a border resource and a sheet border"
+)]
+fn native_drawing_open(world: &mut ApplicationWorld) {
+    let path = super::super::scenario_root().join("fixtures/cad/blank-drawing.odd");
+    world.open_fixture(&path);
+    world.previous_document = Some(world.active_id());
+    drawing_tree(world);
+}
+
 #[given("the nested title block branch is expanded")]
 #[then("the nested title block branch appears expanded")]
 fn title_block_open(world: &mut ApplicationWorld) {
