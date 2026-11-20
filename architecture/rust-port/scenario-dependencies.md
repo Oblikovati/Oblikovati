@@ -36,6 +36,8 @@ the current pinned inventory, and an untampered complete recorded Git tree.
 Added, removed, renamed, changed and mode-changed tracked inputs are reported.
 The optional runtime inventory requires Linux no-follow and no-atime file
 descriptors; unsupported platforms decline instead of claiming completeness.
+Runtime comparisons use file identity, change times, and content. Reading a
+link or running a program can update access time, so comparisons omit it.
 Git commands use a restricted environment and ignore replacement objects. The
 requested checkout root and HEAD must match before and after mapping or
 comparison. The check refuses a redirected `core.worktree`, disables Git's

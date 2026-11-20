@@ -79,6 +79,20 @@ class RuntimeSnapshotTests(unittest.TestCase):
         self.assertNotEqual(before["link"], after["link"])
         self.assertNotEqual(before["runner"], after["runner"])
 
+    def test_symlink_snapshot_accepts_an_access_time_change(self) -> None:
+        link = self.fixture.root / "link"
+        link.symlink_to("runner")
+        info = link.lstat()
+        before_access = os.stat_result(tuple(info), {
+            "st_atime_ns": info.st_atime_ns - 1,
+            "st_mtime_ns": info.st_mtime_ns,
+            "st_ctime_ns": info.st_ctime_ns,
+        })
+        parent = os.open(link.parent, runtime_snapshot.open_flags(True))
+        self.addCleanup(os.close, parent)
+        before = runtime_snapshot.snapshot_link(parent, link.name, link.name, before_access)
+        self.assertEqual(before, snapshot_runtime(self.fixture.root)[link.name])
+
     def test_mutation_during_hash_is_refused(self) -> None:
         fake = MutatingDigest(self.fixture.root / "lib" / "library")
         with patch("runtime_snapshot.file_digest", fake):

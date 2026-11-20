@@ -26,7 +26,8 @@ def open_flags(directory: bool) -> int:
 
 
 def metadata(info: os.stat_result, kind: str) -> Metadata:
-    """Record observable metadata; example: metadata(os.stat(path), 'file')."""
+    """Record file identity and change metadata; example: metadata(os.stat(path), 'file')."""
+    # readlink and exec can update access time on the CI filesystem (#3978).
     return {
         "kind": kind,
         "mode": info.st_mode,
@@ -36,7 +37,6 @@ def metadata(info: os.stat_result, kind: str) -> Metadata:
         "inode": info.st_ino,
         "links": info.st_nlink,
         "size": info.st_size,
-        "atime_ns": info.st_atime_ns,
         "mtime_ns": info.st_mtime_ns,
         "ctime_ns": info.st_ctime_ns,
     }
