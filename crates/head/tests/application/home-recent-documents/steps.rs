@@ -59,7 +59,8 @@ fn click_home(world: &mut ApplicationWorld, text: &str) {
 fn home_shows(world: &ApplicationWorld, name: &str) -> bool {
     home_run(world, name).is_some()
 }
-fn open_home(world: &mut ApplicationWorld) {
+/// Open the Home workspace using its visible control, for example before checking recent files.
+pub(super) fn open_home(world: &mut ApplicationWorld) {
     world.click_text("Home");
     world.pump(Vec::new());
     world.pump(Vec::new());

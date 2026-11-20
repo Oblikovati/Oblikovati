@@ -5,6 +5,9 @@ use cucumber::{given, then, when};
 #[cfg(not(target_os = "linux"))]
 use oblikovati_viewport::ViewportEvent;
 
+#[path = "fixtures.rs"]
+mod fixtures;
+
 #[given("the MCAD Software has an open part document with unsaved changes")]
 fn dirty_part(world: &mut ApplicationWorld) {
     let document =
@@ -30,6 +33,15 @@ fn clean_saved_part(world: &mut ApplicationWorld) {
 fn no_document(world: &mut ApplicationWorld) {
     assert!(world.state().documents.is_empty());
     assert!(world.app().owner.close_allowed().unwrap());
+}
+
+#[given(
+    "Home is the only open document tab with no model, drawing, or presentation document open in the MCAD Software"
+)]
+fn home_only(world: &mut ApplicationWorld) {
+    super::home_recent_documents::open_home(world);
+    world.expect_tab("Home");
+    no_document(world);
 }
 
 #[when("the user selects the application window's Close control")]
@@ -97,8 +109,9 @@ pub(super) fn cancel_application_close(world: &mut ApplicationWorld) {
 }
 
 #[then("a save-changes prompt identifies the part document")]
-fn prompt_identifies_part(world: &mut ApplicationWorld) {
-    let document = world.closed_document.expect("expected the edited part");
+#[then("a save-changes prompt identifies the assembly document")]
+fn prompt_identifies_document(world: &mut ApplicationWorld) {
+    let document = world.closed_document.expect("expected the edited document");
     let name = world.document_name(document);
     world.expect_text(&format!("Save changes to {name}"));
     world.save_capture("application-closing-dirty-prompt");
@@ -110,9 +123,16 @@ fn prompt_closes(world: &mut ApplicationWorld) {
 }
 
 #[then("the part document remains open")]
+#[then("the assembly document remains open")]
 fn document_remains_open(world: &mut ApplicationWorld) {
-    let document = world.closed_document.expect("expected the edited part");
+    let document = world.closed_document.expect("expected the edited document");
     assert!(world.document_is_open(document));
+}
+
+#[then("the prompt shows the \"Always show this message\" setting")]
+fn prompt_shows_frequency(world: &mut ApplicationWorld) {
+    world.expect_text("before closing");
+    world.expect_text("Always show this message");
 }
 
 #[then("the MCAD Software remains open")]

@@ -7,8 +7,10 @@ mod fixture;
 pub(super) use fixture::{open_dirty_frame_part, open_frame_part};
 
 #[when("the user invokes the desktop window Close shortcut")]
+#[when("the user presses Alt+F4")]
 fn invoke_desktop_close(world: &mut ApplicationWorld) {
     world.application_close_requested = true;
+    super::x11_input::focus_window();
     super::x11_input::press_alt_f4();
     world.pump(Vec::new());
     world.pump(Vec::new());
