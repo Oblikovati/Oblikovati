@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Dockable workspace panels: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature" package="testsuite/Feature: Dockable workspace panels: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature" tests="11" errors="0" failures="3" hostname="localhost" timestamp="2026-11-20T09:06:45.797291925Z" time="280.723828189"><testcase name="Scenario: Dock a floating panel to an edge with a visible target preview: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:6:3" time="14.839920145"><system-out><![CDATA[  Scenario: Dock a floating panel to an edge with a visible target preview
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a dockable panel is floating over the workspace
+   ✔  When the user drags the panel title bar toward the left workspace edge
+   ✔  Then the left docking target is indicated before the panel is released
+   ✔  When the user releases the panel over that target
+   ✔  Then the panel docks along the left edge of the workspace
+   ✔  And the viewport resizes to occupy the remaining workspace
+   ✔  And the active part remains visible
+]]></system-out></testcase><testcase name="Scenario: Dock a panel to each supported workspace edge: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:17:3" time="27.47386362"><system-out><![CDATA[  Scenario: Dock a panel to each supported workspace edge
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a dockable panel is floating over the workspace
+   ✔  When the user docks the panel to the right workspace edge
+   ✔  Then the panel is attached along the right edge
+   ✔  And the viewport occupies the workspace to its left
+   ✔  When the user docks the panel to the top workspace edge
+   ✔  Then the panel is attached below the ribbon
+   ✔  And the viewport occupies the workspace below the panel
+   ✔  When the user docks the panel to the bottom workspace edge
+   ✔  Then the panel is attached above the document tabs and status area
+   ✔  And the viewport occupies the workspace above the panel
+]]></system-out></testcase><testcase name="Scenario: Resize a docked panel from its shared boundary: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:31:3" time="27.165374461"><system-out><![CDATA[  Scenario: Resize a docked panel from its shared boundary
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a dockable panel is docked beside the viewport
+   ✔  When the user drags the panel boundary away from the viewport
+   ✔  Then the panel becomes wider
+   ✔  And the viewport becomes narrower by the corresponding amount
+   ✔  And the panel contents and active part remain visible
+   ✔  When the user drags the boundary back
+   ✔  Then the panel and viewport return to their previous proportions
+]]></system-out></testcase><testcase name="Scenario: Dock and resize Appearance Browser on the right: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:42:3" time="27.087335922"><system-out><![CDATA[  Scenario: Dock and resize Appearance Browser on the right
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And Appearance Browser is floating over the workspace
+   ✔  When the user drags the Appearance Browser title bar to the far right workspace edge
+   ✔  Then Appearance Browser docks along the right edge
+   ✔  And the Model Browser remains visible on the left
+   ✔  And the viewport occupies the space between both browser panels
+   ✔  And the active part document remains open
+   ✔  When the user drags the shared boundary toward the viewport to widen Appearance Browser
+   ✔  Then Appearance Browser becomes wider
+   ✔  And the viewport becomes narrower
+   ✔  And the view orientation control remains visible in the viewport
+   ✔  When the user restores the boundary to its earlier position
+   ✔  Then the docked panel and viewport return to their earlier proportions
+]]></system-out></testcase><testcase name="Scenario: Tab, switch, close, and restore docked browser panels: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:58:3" time="28.327315098"><system-out><![CDATA[  Scenario: Tab, switch, close, and restore docked browser panels
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And Appearance Browser is docked on the right
+   ✔  And Material Browser is floating over the workspace
+   ✔  When the user drags the Material Browser title bar onto the Appearance Browser tab strip
+   ✔  Then both browsers occupy one right-side dock region as tabs
+   ✔  And one browser is active while the other remains available
+   ✔  And a single tab bar contains both browser tabs
+   ✔  And the viewport remains visible to the left of the dock region
+   ✔  When the user selects the Appearance Browser tab
+   ✔  Then Appearance Browser contents become visible in the dock region
+   ✔  And the panel presents appearance choices without a second browser tab bar
+   ✔  When the user selects the Material Browser tab
+   ✔  Then Material Browser contents become visible in the dock region
+   ✔  And the panel presents material choices without a second browser tab bar
+   ✔  When the user selects Appearance Browser and closes it from its panel controls
+   ✔  Then Appearance Browser is removed from the tab group
+   ✔  And Material Browser remains visible in the right dock region
+   ✔  When the user opens View and then User Interface
+   ✔  And the user selects Appearance Browser
+   ✔  Then Appearance Browser returns as a tab in the right dock region
+   ✔  And its contents are visible
+]]></system-out></testcase><testcase name="Scenario: Open a workspace panel from the dock tab bar: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:82:3" time="3.476460043"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open a workspace panel from the dock tab bar
+   ✘  Given `fixtures/cad/workspace-layout/WorkspacePartBrowser.ipt` is open in the MCAD Software
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:83:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Join panels in one dock region as selectable tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:94:3" time="25.850985233"><failure type="Step Panicked" message="Step panicked. Captured output: tab preview color [42, 42, 42]"/><system-out><![CDATA[  Scenario: Join panels in one dock region as selectable tabs
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And two dockable panels are open in separate workspace regions
+   ✔  When the user drags one panel onto the center of the other panel's dock region
+   ✘  Then the destination region indicates a tab insertion target
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:98:5
+      Matched: crates/head/src/../tests/application/docking-system/tabs_scenario.rs:48:1
+      Step panicked. Captured output: tab preview color [42, 42, 42]
+      ApplicationWorld {
+          text: "40\nW\nP\nZ\nv\nO\nv\nFRONT\nAppearanceBrowser\nModel\nMaterialBrowser\nMenu\nSearch\ndocking-visible-solid-current<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS\nMaterial\nAssigntopart\nClose\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument2:/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/docking-visible-solid-current.opd\nRibbonDisplay\nv\nv\n...\ndocking-visible-solid-current\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\n<\n>\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Float a docked panel and dock it again: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:107:3" time="13.837432403"><failure type="Step Panicked" message="Step panicked. Captured output: assertion `left != right` failed
+  left: Some(0)
+ right: Some(0)"/><system-out><![CDATA[  Scenario: Float a docked panel and dock it again
+   ✔  Given a part document is active in the MCAD Software
+   ✘  And a dockable panel is docked beside the viewport
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:109:5
+      Matched: crates/head/src/../tests/application/docking-system/steps.rs:40:1
+      Step panicked. Captured output: assertion `left != right` failed
+        left: Some(0)
+       right: Some(0)
+      ApplicationWorld {
+          text: "40\n30\nW\nP\nZ\nv\nO\nv\nFRONT\nModel\nMenu\nSearch\ndocking-visible-solid-current<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nOpeneddocument2:/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/docking-visible-solid-current.opd\nRibbonDisplay\nv\nv\n...\ndocking-visible-solid-current\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\nPart1<Primary>*\ndocking-visible-solid-current<Primary>\nDocuments\nX\nY\nZ\nMaterialBrowser\nABS\nMaterial\nAssigntopart\nClose",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Close a docked panel and restore it from the interface menu: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:118:3" time="16.642515199"><system-out><![CDATA[  Scenario: Close a docked panel and restore it from the interface menu
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And a dockable panel is the active tab in a dock region
+   ✔  When the user closes the panel
+   ✔  Then the panel is removed from the visible workspace
+   ✔  And the remaining dock regions and viewport use the freed space
+   ✔  When the user opens the interface visibility menu
+   ✔  And the user selects the closed panel
+   ✔  Then the panel is restored to the workspace
+   ✔  And its contents are visible
+]]></system-out></testcase><testcase name="Scenario: Retain a panel layout while switching active documents: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:130:3" time="18.385451258"><system-out><![CDATA[  Scenario: Retain a panel layout while switching active documents
+   ✔  Given two documents are open in the MCAD Software
+   ✔  And a dockable panel has been moved, resized, or tabbed in the workspace
+   ✔  When the user switches to the other document
+   ✔  Then the docked panel arrangement remains in place
+   ✔  And the active document changes in the viewport
+   ✔  When the user returns to the first document
+   ✔  Then the panel arrangement remains available
+]]></system-out></testcase><testcase name="Scenario: Restore the saved panel arrangement after restarting the application: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:140:3" time="77.637174807"><system-out><![CDATA[  Scenario: Restore the saved panel arrangement after restarting the application
+   ✔  Given the user has changed the workspace panel arrangement
+   ✔  And the MCAD Software has saved that arrangement
+   ✔  When the user closes and restarts the MCAD Software
+   ✔  Then the saved panel positions, sizes and tab groups are restored
+]]></system-out></testcase></testsuite></testsuites>
