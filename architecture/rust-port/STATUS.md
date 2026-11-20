@@ -1,6 +1,6 @@
 # Rust port status
 
-Last checked: 2026-11-19. Recheck the branch, issues, and scenario source before
+Last checked: 2026-11-20. Recheck the branch, issues, and scenario source before
 using this status; the live scenario directory can change.
 
 ## Start here
@@ -14,13 +14,11 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
-- Midpoint Line (#4178): the baseline ran six scenarios; none passed because
-  setup or command steps were undefined. In the feature worktree, native mouse
-  tests pass for pointer placement, typed full length and angle, and undo/redo.
-  The Right-view scenario reaches its Fully Constrained check but reports two
-  remaining degrees of freedom; selected-origin identity is tracked in #4179.
-  Fixture questions are in the feature's `BLOCKERS.md`. The worktree result is
-  diagnostic only and is not counted in the inventory.
+- Midpoint Line (#4178): the scenario source changed and now requires an
+  Inventor fixture for all six scenarios. Inventor interop is deferred. The
+  unfinished feature worktree is retained, and a native YAML fixture is
+  requested in `BLOCKERS.md`. Earlier runs do not verify the current source.
+  Selected-origin identity is tracked separately in #4179.
 - Constraint Settings (#4158): a full diagnostic on the uncommitted feature
   worktree passed five of eight scenarios with the feature and support hashes
   unchanged during the run. Three scenarios stopped at undefined setup steps;
@@ -227,11 +225,12 @@ using this status; the live scenario directory can change.
 
 ## Work queue
 
-1. Work on Midpoint Line (#4178). Constraint Settings (#4158) is paused with
-   uncommitted work in its task worktree while its fixture questions and Relax
-   Mode (#4164) remain open. Revisit `new-sketch` when fixture #4011 and
-   circular patterns #3905 are available. Defer Inventor-file, assembly, and
-   3D-sketch scenarios.
+1. Select a feature with an available native fixture. Midpoint Line (#4178)
+   now requires a deferred Inventor fixture; retain its unfinished worktree.
+   Constraint Settings (#4158) is paused with uncommitted work while its
+   fixture questions and Relax Mode (#4164) remain open. Revisit `new-sketch`
+   when fixture #4011 and circular patterns #3905 are available. Defer
+   Inventor-file, assembly, and 3D-sketch scenarios.
 2. Complete the evaluation owner and safe dirty-prefix replay in #4079, with
    generation, policy, invalidation, naming, and replay-count evidence.
 3. Repair and verify the GUI integration targets in #4078. The separate
