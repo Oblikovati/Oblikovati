@@ -25,6 +25,7 @@ fn open_orientation_part(world: &mut ApplicationWorld) {
         hide_profile_overlay(world);
     }
     solid_extent(world);
+    world.previous_document = Some(document);
     world.parts.push(document);
 }
 

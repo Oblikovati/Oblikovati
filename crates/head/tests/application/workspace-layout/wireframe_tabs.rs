@@ -207,7 +207,7 @@ fn status_at_bottom(world: &mut ApplicationWorld) {
 
 #[given("the model browser is docked at the left with its default width")]
 fn default_browser_left(world: &mut ApplicationWorld) {
-    super::browser_feature::open_visible_extruded_part(world);
+    assert_eq!(Some(world.active_id()), world.previous_document);
     model_browser_docked_left(world);
 }
 
