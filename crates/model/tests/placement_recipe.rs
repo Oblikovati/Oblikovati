@@ -240,3 +240,6 @@ mod chains;
 
 #[path = "placement_recipe/formats.rs"]
 mod formats;
+
+#[path = "placement_recipe/midpoint_line.rs"]
+mod midpoint_line;

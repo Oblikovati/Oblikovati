@@ -8,6 +8,7 @@ mod ellipses;
 mod fields;
 mod formats;
 mod geometry;
+mod midpoint_line;
 mod points;
 mod polygons;
 mod rectangles;

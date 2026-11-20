@@ -9,6 +9,7 @@ pub(super) fn gui_placement_tool(tool: Gui, scale: f64) -> Result<Tool, String> 
         Gui::ThreePointCircle => Tool::ThreePointCircle { options },
         Gui::ThreePointArc => Tool::ThreePointArc { options },
         Gui::Line => Tool::Line,
+        Gui::MidpointLine => Tool::MidpointLine,
         Gui::Rectangle => Tool::Rectangle,
         Gui::Circle => Tool::Circle,
         Gui::Point => Tool::Point,

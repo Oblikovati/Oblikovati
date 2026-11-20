@@ -6,13 +6,18 @@ use oblikovati_model::{
 use oblikovati_viewport::{
     ViewportButton, ViewportEvent, ViewportInput, ViewportKey, ViewportPhysicalKey,
 };
+#[path = "annotations.rs"]
+mod annotations;
 #[path = "fields.rs"]
 mod fields;
+use annotations::{annotation_beside, annotation_outside};
 use fields::{PlacementFieldAction, PlacementFieldEntry};
 #[path = "formats.rs"]
 mod formats;
 #[path = "line.rs"]
 mod line;
+#[path = "midpoint_line.rs"]
+mod midpoint_line;
 #[path = "typed_stage.rs"]
 mod typed_stage;
 #[derive(Clone)]
@@ -42,6 +47,7 @@ pub(crate) struct SketchPlacementState {
     pub preview: Option<SketchPlacementRecipe>,
     pub resolved_preview: Option<oblikovati_viewport::ViewportSketchPreview>,
     accepted: Vec<[f64; 2]>,
+    midpoint_vertex: Option<oblikovati_model::sketch::SketchEntityId>,
     line: line::LineChain,
     cursor_point: Option<[f64; 2]>,
     /// Where the numeric fields follow the pointer, in window pixels.
@@ -57,24 +63,6 @@ pub(crate) struct SketchPlacementState {
     press: Option<PlacementPress>,
     navigation: [bool; 3],
     fields: PlacementFieldEntry,
-}
-/// A witness's middle, moved off it by a fraction of its length so the text clears the line.
-fn annotation_beside([from, to]: [[f64; 2]; 2]) -> [f64; 2] {
-    const SIDE: f64 = 0.2;
-    let delta = [to[0] - from[0], to[1] - from[1]];
-    [
-        (from[0] + to[0]) * 0.5 - delta[1] * SIDE,
-        (from[1] + to[1]) * 0.5 + delta[0] * SIDE,
-    ]
-}
-/// Past a chord's middle, away from the center it turns about.
-fn annotation_outside(center: [f64; 2], [from, to]: [[f64; 2]; 2]) -> [f64; 2] {
-    const REACH: f64 = 1.6;
-    let middle = [(from[0] + to[0]) * 0.5, (from[1] + to[1]) * 0.5];
-    [
-        center[0] + (middle[0] - center[0]) * REACH,
-        center[1] + (middle[1] - center[1]) * REACH,
-    ]
 }
 /// How far from its first point a shape starts when values were typed with no pointer motion.
 const TYPED_SEED_REACH: f64 = 1.;
@@ -110,6 +98,7 @@ impl SketchPlacementState {
             preview: None,
             resolved_preview: None,
             accepted: Vec::new(),
+            midpoint_vertex: None,
             line: Default::default(),
             cursor_point: None,
             center_point: false,
@@ -184,7 +173,11 @@ impl SketchPlacementState {
     }
     /// A centered rectangle's second point is half a side from its center.
     fn first_axis_scale(&self) -> f64 {
-        if self.tool == crate::SketchPlacementTool::ThreePointCenterRectangle {
+        if matches!(
+            self.tool,
+            crate::SketchPlacementTool::ThreePointCenterRectangle
+                | crate::SketchPlacementTool::MidpointLine
+        ) {
             2.
         } else {
             1.
@@ -209,6 +202,7 @@ impl SketchPlacementState {
         };
         let end = self.typed_end(start);
         let mut recipe = self.tool.recipe(&self.accepted, end, construction)?;
+        self.bind_midpoint_vertex(&mut recipe);
         recipe
             .apply_creation_formats(self.formats.construction, self.formats.centerline)
             .map_err(|cause| cause.to_string())?;
@@ -397,6 +391,12 @@ impl SketchPlacementState {
             if place {
                 let point = self.typed_stage_point(self.arc_start_at_radius(point));
                 self.accept_stage_point(point)?;
+                if self.tool == crate::SketchPlacementTool::MidpointLine {
+                    self.midpoint_vertex = self
+                        .cursor_vertex
+                        .filter(|(at, _)| *at == point)
+                        .map(|(_, id)| id);
+                }
             }
             return Ok(None);
         }
@@ -408,6 +408,7 @@ impl SketchPlacementState {
             return Ok(None);
         }
         let mut recipe = self.tool.recipe(&self.accepted, point, construction)?;
+        self.bind_midpoint_vertex(&mut recipe);
         recipe
             .apply_creation_formats(self.formats.construction, self.formats.centerline)
             .map_err(|cause| cause.to_string())?;
@@ -424,6 +425,7 @@ impl SketchPlacementState {
         self.fields = Default::default();
         self.generation = generation;
         self.accepted.clear();
+        self.midpoint_vertex = None;
         self.cursor_point = None;
         self.cursor_vertex = None;
         self.press = None;
@@ -488,3 +490,7 @@ mod tests {
 #[cfg(test)]
 #[path = "input_tests.rs"]
 mod interaction_tests;
+
+#[cfg(test)]
+#[path = "midpoint_line_tests.rs"]
+mod midpoint_line_tests;

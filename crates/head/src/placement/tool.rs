@@ -12,6 +12,7 @@ mod ellipse_recipe;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum SketchPlacementTool {
     Line,
+    MidpointLine,
     Point,
     StraightSlot {
         width: f64,
@@ -73,6 +74,7 @@ impl SketchPlacementTool {
         match self {
             Self::StraightSlot { .. } => "Slot",
             Self::Line => "Line",
+            Self::MidpointLine => "Midpoint Line",
             Self::Point => "Point",
             Self::Circle => "Circle",
             Self::CenterPointArcSlot { .. } => "Centre-point arc slot",
@@ -94,6 +96,7 @@ impl SketchPlacementTool {
             Self::StraightSlot { .. }
             | Self::Circle
             | Self::Line
+            | Self::MidpointLine
             | Self::Rectangle
             | Self::CenterRectangle
             | Self::Polygon { .. } => 2,
@@ -138,6 +141,7 @@ impl SketchPlacementTool {
         let next = accepted.get(1).copied().unwrap_or(cursor);
         let result = match self {
             Self::Line => Recipe::line_chain(&[first, cursor], false),
+            Self::MidpointLine => Recipe::midpoint_line(first, cursor),
             Self::Point => Recipe::point(cursor),
             Self::CenterPointArcSlot { width } => {
                 center_slot_recipe([first, next, cursor], width, service)
@@ -213,7 +217,7 @@ impl SketchPlacementTool {
     pub(crate) fn typed_field_count(self) -> usize {
         match self {
             Self::Circle => 1,
-            Self::Rectangle | Self::CenterRectangle => 2,
+            Self::Rectangle | Self::CenterRectangle | Self::MidpointLine => 2,
             _ => 0,
         }
     }
@@ -224,6 +228,7 @@ impl SketchPlacementTool {
     ) -> oblikovati_model::quantity::Dimension {
         let angle = match self {
             Self::CenterPointArc => index == 1 || index == 2,
+            Self::MidpointLine => index == 1,
             Self::ThreePointRectangle
             | Self::ThreePointCenterRectangle
             | Self::ThreePointArc { .. } => index == 1,
@@ -244,6 +249,7 @@ impl SketchPlacementTool {
             && matches!(
                 self,
                 Self::CenterPointArc
+                    | Self::MidpointLine
                     | Self::ThreePointRectangle
                     | Self::ThreePointCenterRectangle
                     | Self::ThreePointArc { .. }
@@ -252,6 +258,8 @@ impl SketchPlacementTool {
     }
     pub(crate) fn prompt(self, placed: usize) -> String {
         match (self, placed) {
+            (Self::MidpointLine, 0) => return "Select midpoint of line".into(),
+            (Self::MidpointLine, _) => return "Select end of line".into(),
             (Self::Circle, 0) => return "Select center of circle".into(),
             (Self::Circle, _) => return "Select point on circle".into(),
             (Self::Rectangle, 0) => return "Select first corner".into(),
@@ -283,6 +291,7 @@ impl SketchPlacementTool {
         match self {
             Self::StraightSlot { .. } => &["the first centre point", "the second centre point"],
             Self::Line => &["the first point", "the next point"],
+            Self::MidpointLine => &["the midpoint", "the endpoint"],
             Self::Point => &["the point position"],
             Self::Circle => &["the centre point", "a circumference point"],
             Self::Polygon { .. } => &["the centre point", "a vertex"],

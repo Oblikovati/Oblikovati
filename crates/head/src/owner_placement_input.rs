@@ -321,13 +321,19 @@ impl<
         tool.cursor_pixel = Some(pixel);
         let acquired = if tool.tool == crate::SketchPlacementTool::Point {
             self.point_vertex_under_pointer(tool, window, pixel)
+        } else if place && tool.midpoint_awaits_center() {
+            self.vertex_under_pointer(tool, window, pixel)
         } else {
             Ok(None)
         };
         let outcome = acquired
             .and_then(|vertex| {
                 tool.cursor_vertex = vertex;
-                window.sketch_point(pixel, tool.plane)
+                if tool.midpoint_awaits_center() && vertex.is_some() {
+                    Ok(vertex.map(|(position, _)| position))
+                } else {
+                    window.sketch_point(pixel, tool.plane)
+                }
             })
             .and_then(|point| tool.cursor(point, place, &self.sketch_construction))
             .and_then(|recipe| {
@@ -416,6 +422,7 @@ impl<
         tool: &mut SketchPlacementState,
         position: [f64; 2],
     ) -> Result<(), String> {
+        tool.cursor_vertex = None;
         let recipe = tool.cursor(Some(position), true, &self.sketch_construction)?;
         self.commit_placement_cursor(tool, recipe)?;
         self.placement_notice(tool.prompt());

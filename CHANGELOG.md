@@ -10,6 +10,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Added
 
+- Draw midpoint lines with pointer or typed length and angle, including explicit point selection. (#4178)
+
 - Choose and select one relation when sketch constraint glyphs overlap. (#4169)
 
 - Added individual sketch constraint glyph hiding and Show All through the viewport and typed API. (#4166)

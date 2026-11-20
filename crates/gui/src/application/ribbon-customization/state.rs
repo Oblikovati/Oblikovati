@@ -24,6 +24,7 @@ impl Command {
             Self::Dimension => "dimension",
             Self::Tool(tool) => match tool {
                 GuiSketchTool::Line => "sketch-line",
+                GuiSketchTool::MidpointLine => "sketch-midpoint-line",
                 GuiSketchTool::Rectangle => "sketch-rectangle",
                 GuiSketchTool::Circle => "sketch-circle",
                 GuiSketchTool::Point => "sketch-point",
@@ -62,9 +63,10 @@ impl Command {
         }
     }
 }
-pub(super) const COMMANDS: [Command; 26] = [
+pub(super) const COMMANDS: [Command; 27] = [
     Command::Separator,
     Command::Tool(GuiSketchTool::Line),
+    Command::Tool(GuiSketchTool::MidpointLine),
     Command::Sketches,
     Command::Annotations,
     Command::Tool(GuiSketchTool::Circle),

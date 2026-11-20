@@ -25,7 +25,7 @@ pub(super) fn create(
     {
         let (position, _) = icons.appearance.flyout_cell(index + 1);
         icons.cursor(ui, origin, position);
-        crate::sketch_flyouts::circular_tool_button(ui, state, actions, tool, icons);
+        crate::sketch_flyouts::sketch_tool_flyout_button(ui, state, actions, tool, icons);
     }
     sketch_tool(
         ui,
@@ -61,6 +61,10 @@ fn sketch_tool(
 ) {
     let (position, size) = icons.appearance.flyout_cell(index);
     icons.cursor(ui, origin, position);
+    if tool == crate::GuiSketchTool::Line {
+        crate::sketch_flyouts::sketch_tool_flyout_button(ui, state, actions, tool, icons);
+        return;
+    }
     icons.command_button(
         ui,
         tool.label(),
