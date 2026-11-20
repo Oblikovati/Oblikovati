@@ -2,6 +2,8 @@
 //! Exercise midpoint-line selection and placement with native input.
 use super::super::ApplicationWorld;
 use oblikovati_model::sketch::{PlanarConstraint, Sketch2D};
+#[path = "native_steps.rs"]
+mod native_steps;
 #[cfg(target_os = "linux")]
 use oblikovati_model::{
     document_sketch::SketchPlacement,
@@ -135,6 +137,19 @@ fn empty_right_sketch(world: &mut ApplicationWorld) {
     assert!(world.edited_geometry().lines().is_empty());
 }
 
+#[cucumber::given(
+    "`fixtures/cad/empty-planar-sketch-right.opd` is open with Sketch1 active in Right view and Ready with Snap to Grid disabled"
+)]
+fn native_right_fixture(world: &mut ApplicationWorld) {
+    let fixture = super::super::scenario_root().join("fixtures/cad/empty-planar-sketch-right.opd");
+    disable_grid_snapping(world);
+    open_saved_right_sketch(world, &fixture);
+    assert_empty_projected_origin(world);
+    super::super::viewport_orientation::expect_control_shows(world, "Right");
+    assert!(world.state().sketch_at_ready);
+    assert!(!world.state().sketch_options.unwrap().snap_to_grid);
+}
+
 #[cucumber::when("the user invoke Midpoint Line and choose the sketch origin as midpoint")]
 fn midpoint_at_origin(world: &mut ApplicationWorld) {
     invoke_midpoint_line(world);
@@ -226,6 +241,13 @@ fn native_midpoint_at_origin_with_typed_dimensions_has_no_freedom() {
 #[cucumber::given("the same midpoint line has length 10 mm and angle 30 degrees")]
 fn origin_line_with_dimensions(world: &mut ApplicationWorld) {
     empty_right_sketch(world);
+    create_origin_midpoint_line(world);
+}
+
+#[cucumber::given(
+    "an origin-centered midpoint line with a 10 mm driving length and 30-degree driving angle has been created"
+)]
+fn create_origin_midpoint_line(world: &mut ApplicationWorld) {
     midpoint_at_origin(world);
     enter_length(world);
     world.key(oblikovati_viewport::ViewportPhysicalKey::Tab, false);
@@ -286,7 +308,6 @@ fn native_empty_right_sketch_fixture_survives_save_and_reopen() {
     world.close();
 }
 
-#[cfg(target_os = "linux")]
 fn disable_grid_snapping(world: &mut ApplicationWorld) {
     let mut options = world.state().sketch_options.unwrap();
     options.snap_to_grid = false;
@@ -321,7 +342,6 @@ fn reopen_and_check_right_sketch(world: &mut ApplicationWorld, path: &std::path:
     super::super::viewport_orientation::expect_control_shows(world, "Right");
 }
 
-#[cfg(target_os = "linux")]
 fn assert_empty_projected_origin(world: &mut ApplicationWorld) {
     let geometry = world.edited_geometry();
     assert!(geometry.lines().is_empty());
@@ -340,6 +360,10 @@ fn assert_empty_projected_origin(world: &mut ApplicationWorld) {
 fn reopen_right_sketch(world: &mut ApplicationWorld, path: &std::path::Path) {
     world.close_active_tab();
     world.pump(Vec::new());
+    open_saved_right_sketch(world, path);
+}
+
+fn open_saved_right_sketch(world: &mut ApplicationWorld, path: &std::path::Path) {
     world.reopen_through_dialog(path);
     world.pump(Vec::new());
     let row = world

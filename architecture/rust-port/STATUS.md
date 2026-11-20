@@ -35,8 +35,10 @@ using this status; the live scenario directory can change.
   Midpoint Line tool has native mouse and keyboard tests. A native YAML
   fixture is in `test-utilities/fixtures/empty-planar-sketch-right.opd` and
   has been supplied for scenario-owner review; the current steps still name
-  the Inventor file. Earlier runs do not verify the current source.
-  Selected-origin identity is covered by #4179.
+  the Inventor file. In a temporary copy using the native fixture, the cancel
+  and same-position scenarios pass. A full diagnostic also found overlapping
+  dimension labels (#4180). This copy does not verify the live source. See
+  `receipts/2026-11-20-midpoint-native-diagnostic-4178/`.
 - Constraint Settings (#4158): a full diagnostic on the uncommitted feature
   worktree passed five of eight scenarios with the feature and support hashes
   unchanged during the run. Three scenarios stopped at undefined setup steps;
