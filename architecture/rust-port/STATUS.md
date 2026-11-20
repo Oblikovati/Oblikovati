@@ -19,12 +19,10 @@ using this status; the live scenario directory can change.
   intermediate frame before the model and ViewCube reached Top. See
   `receipts/2026-11-20-orientation-transition-3961/`. Strict verification
   remains open under #3978.
-- Workspace Layout (#3897): the current source baseline passed 15 of 53 cases.
-  Three focused Part cases passed after fixture setup corrections. On the
-  saved Drawing, the panel-add control now restores the browser after it
-  closes. The other focused run opened and selected Log in the same dock.
-  See the baseline at
-  `receipts/2026-11-20-workspace-native-baseline-3897/`.
+- Workspace Layout (#3897): the full run on the named fixtures passed 48 of
+  53 cases, or 47 of 52 declarations. Drawing browser restore and Log tab
+  switching passed with X11 input. Three missing steps and two saved-name
+  assertions stopped five cases. See `receipts/2026-11-20-workspace-fixtures-3897/`.
 - Document Tabs (#3900): all 39 scenarios and 343 steps passed locally.
   Openbox confirmed two separate operating-system windows and verified input
   to the drawing tab, sheet, and main Part tab. Closing the drawing window
