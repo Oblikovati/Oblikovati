@@ -27,6 +27,7 @@ class SealedRequest:
     scenario: str
     desktop: Path | None = None
     diagnostic_proc: bool = False
+    all_scenarios: bool = False
 
 
 @dataclass(frozen=True)
@@ -136,10 +137,12 @@ def require_filter(request: SealedRequest) -> None:
         raise ValueError(
             f"feature {request.feature!r}: expected a lowercase feature folder"
         )
+    if request.all_scenarios:
+        if request.scenario or request.area != "application":
+            raise ValueError(f"scenario {request.scenario!r}: expected no scenario filter for an application feature run")
+        return
     if not request.scenario or "\0" in request.scenario:
-        raise ValueError(
-            f"scenario {request.scenario!r}: expected a nonempty scenario name"
-        )
+        raise ValueError(f"scenario {request.scenario!r}: expected a nonempty scenario name")
 
 
 def require_empty_output(request: SealedRequest) -> None:
@@ -203,8 +206,9 @@ def scenario_environment(request: SealedRequest) -> list[tuple[str, str]]:
         ("OBK_BDD_ROOT", "/scenario"),
         ("OBK_BDD_REPORTS", "/reports"),
         ("OBK_BDD_FEATURE", request.feature),
-        ("OBK_BDD_SCENARIO", request.scenario),
     ]
+    if not request.all_scenarios:
+        result.append(("OBK_BDD_SCENARIO", request.scenario))
     if request.desktop is not None:
         result.append(("OBK_BDD_DESKTOP_BINARY", "/desktop"))
     if request.area == "solid-model":
@@ -321,6 +325,7 @@ def execution_observation(
         "area": request.area,
         "feature": request.feature,
         "scenario": request.scenario,
+        "all_scenarios": request.all_scenarios,
     }
 
 

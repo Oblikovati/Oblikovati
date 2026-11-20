@@ -7,6 +7,7 @@ import json
 import re
 import subprocess
 import sys
+from dataclasses import replace
 from pathlib import Path
 from typing import Callable
 
@@ -14,6 +15,7 @@ from local_snapshot_evidence import committed_object, scoped_selection
 from sandbox_build_probe import BuildProbe
 from sealed_build_chain import run_sealed_build
 from sealed_execution import SealedRequest, require_request
+from sealed_feature_report import check_feature_report, selected_feature_rows
 from sealed_report_check import check_sealed_report, committed_inventory, require_scenario_source, selected_row
 from verify_snapshot import git_revision, read_snapshot_metadata, verify_checkout
 
@@ -30,8 +32,11 @@ def parse_arguments(arguments: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("source", "vendor", "toolchain", "config", "target", "build-logs", "bwrap", "system", "repository", "runtime", "checkout", "reports", "run-log"):
         parser.add_argument(f"--{name}", required=True, type=Path)
-    for name in ("revision", "area", "feature", "scenario"):
+    for name in ("revision", "area", "feature"):
         parser.add_argument(f"--{name}", required=True)
+    selector = parser.add_mutually_exclusive_group(required=True)
+    selector.add_argument("--scenario")
+    selector.add_argument("--all-scenarios", action="store_true")
     parser.add_argument("--capture", help="one PNG filename when a scenario produced multiple captures")
     parser.add_argument("--local-snapshot", help="committed feature-scoped receipt directory for a diagnostic run")
     parser.add_argument("--diagnostic-proc", action="store_true", help="mount private proc for non-reusable diagnostics")
@@ -40,6 +45,8 @@ def parse_arguments(arguments: list[str] | None = None) -> argparse.Namespace:
     args = parser.parse_args(arguments)
     if not re.fullmatch(r"[0-9a-f]{40}", args.revision):
         parser.error("--revision: expected a full lowercase SHA-1 commit")
+    if args.all_scenarios and (args.area != "application" or not args.local_snapshot or args.capture):
+        parser.error("--all-scenarios requires an application local snapshot and no --capture")
     if args.git_repo and args.registry_archives is None:
         parser.error("--git-repo requires --registry-archives")
     if args.git_repo and len(dict(args.git_repo)) != len(args.git_repo):
@@ -50,7 +57,7 @@ def parse_arguments(arguments: list[str] | None = None) -> argparse.Namespace:
 def requests(args: argparse.Namespace) -> tuple[BuildProbe, SealedRequest]:
     """Construct the linked build and execution requests; example: requests(args)."""
     probe = BuildProbe(args.source, args.vendor, args.toolchain, args.config, args.target, args.build_logs, args.bwrap, args.system)
-    run = SealedRequest(args.runtime, args.target / "build-runner", args.checkout, args.reports, args.run_log, args.bwrap, args.area, args.feature, args.scenario, diagnostic_proc=args.diagnostic_proc)
+    run = SealedRequest(args.runtime, args.target / "build-runner", args.checkout, args.reports, args.run_log, args.bwrap, args.area, args.feature, args.scenario or "", diagnostic_proc=args.diagnostic_proc, all_scenarios=args.all_scenarios)
     return probe, run
 
 
@@ -68,17 +75,27 @@ def main(
     if args.local_snapshot:
         metadata = committed_object(args.repository, args.revision, args.local_snapshot, "snapshot.json")
         local_inventory = committed_object(args.repository, args.revision, args.local_snapshot, "inventory.json")
-        row, verify = scoped_selection(request, metadata, local_inventory)
+        if request.all_scenarios:
+            rows = selected_feature_rows(local_inventory, request, str(metadata.get("revision")))
+            scoped_request = replace(request, scenario=str(rows[0]["scenario"]), all_scenarios=False)
+            _, verify = scoped_selection(scoped_request, metadata, local_inventory)
+            row = rows[0]
+        else:
+            row, verify = scoped_selection(request, metadata, local_inventory)
         source_revision = verify(request.checkout)
     else:
         source_revision = verify(request.checkout)
         row = selected_row(inventory_reader(args.repository, args.revision), request, source_revision)
-    require_scenario_source(request.checkout, row)
+    for source_row in rows if request.all_scenarios else [row]:
+        require_scenario_source(request.checkout, source_row)
     repositories = None if not args.git_repo else {source: Path(path) for source, path in args.git_repo}
     result = invoke(probe, request, args.repository, args.revision, verify, archives=args.registry_archives, git_repositories=repositories)
     if result.get("reusable") is not False:
         raise ValueError(f"chain reusable {result.get('reusable')!r}: expected false")
-    result["report_check"] = report_checker(request, row, source_revision, args.capture)
+    if request.all_scenarios:
+        result["report_check"] = check_feature_report(request, rows, source_revision)
+    else:
+        result["report_check"] = report_checker(request, row, source_revision, args.capture)
     print(json.dumps(result, sort_keys=True))
 
 

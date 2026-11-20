@@ -26,6 +26,16 @@ class FakeCommittedSnapshot:
         return self.values[name]
 
 
+class FakeFeatureReportChecker:
+    """Record feature report validation without reading external output."""
+    def __init__(self) -> None:
+        self.rows: list[dict[str, object]] = []
+
+    def __call__(self, request: object, rows: list[dict[str, object]], revision: str) -> dict[str, object]:
+        self.rows = rows
+        return {"content_checked": True, "reusable": False}
+
+
 class ScopedSnapshotTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
@@ -86,6 +96,29 @@ class ScopedSnapshotTests(unittest.TestCase):
         self.assertFalse(json.loads(output.getvalue())["reusable"])
         self.assertEqual(len(chain.calls), 1)
         self.assertEqual(len(report.calls), 1)
+
+    def test_cli_dispatches_all_scenarios_from_one_local_feature(self) -> None:
+        bindir = self.fixture.runtime / "usr/bin"
+        bindir.mkdir(parents=True)
+        for name in ("python3", "openbox", "import", "compare", "xvfb-run", "Xvfb", "xauth"):
+            path = bindir / name
+            path.write_bytes(b"fixture")
+            path.chmod(0o755)
+        arguments = cli_tests.SealedBuildCliTests().arguments(self.root, self.fixture)
+        arguments[arguments.index("--checkout") + 1] = str(self.checkout)
+        arguments[arguments.index("--feature") + 1] = self.request.feature
+        scenario_index = arguments.index("--scenario")
+        del arguments[scenario_index:scenario_index + 2]
+        arguments += ["--all-scenarios", "--local-snapshot", "architecture/rust-port/receipts/fixture"]
+        chain, report = cli_tests.FakeChainRun(), FakeFeatureReportChecker()
+        output = io.StringIO()
+        with patch("sealed_build_cli.committed_object", FakeCommittedSnapshot(self.metadata, self.inventory)):
+            with patch("sealed_build_cli.check_feature_report", report):
+                with contextlib.redirect_stdout(output):
+                    main(arguments, chain, self.fixture.verify)
+        self.assertFalse(json.loads(output.getvalue())["reusable"])
+        self.assertTrue(chain.calls[0][1].all_scenarios)
+        self.assertEqual(len(report.rows), 10)
 
     def test_wrong_scope_or_scenario_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValueError, "snapshot scope"):
