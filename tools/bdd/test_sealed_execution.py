@@ -65,6 +65,7 @@ class SealedFixture:
         for name in ("scenario", "reports", "tmp", "dev"):
             (self.runtime / name).mkdir()
         (self.runtime / "runner").write_bytes(b"")
+        (self.runtime / "desktop").write_bytes(b"")
         self.binary = parent / "runner-bin"
         self.binary.write_bytes(b"fixture binary")
         self.checkout = parent / "checkout"
@@ -163,6 +164,19 @@ class SealedExecutionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "expected an executable"):
             run_sealed(request, self.fixture.process, self.fixture.verify)
         self.assertFalse(self.fixture.log.exists())
+
+    def test_desktop_mount_requires_a_regular_slot(self) -> None:
+        from dataclasses import replace
+
+        request = replace(self.fixture.request(), desktop=self.fixture.binary)
+        slot = self.fixture.runtime / "desktop"
+        slot.unlink()
+        with self.assertRaisesRegex(ValueError, "desktop mount"):
+            run_sealed(request, self.fixture.process, self.fixture.verify)
+        slot.symlink_to(self.fixture.binary)
+        with self.assertRaisesRegex(ValueError, "desktop mount"):
+            run_sealed(request, self.fixture.process, self.fixture.verify)
+        self.assertEqual(self.fixture.process.command, [])
 
     def test_runtime_mutation_is_refused(self) -> None:
         request = self.fixture.request()

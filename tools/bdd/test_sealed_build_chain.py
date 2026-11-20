@@ -76,6 +76,15 @@ class SealedBuildChainTests(unittest.TestCase):
             self.assertEqual(result["execution"]["runner_input"]["sha256"], result["build"]["runner_sha256"])
             self.assertEqual(fixture.log.read_text(), "executed")
 
+    def test_missing_desktop_slot_fails_before_build(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            probe, fixture = self.fixture(Path(folder))
+            (fixture.runtime / "desktop").unlink()
+            with patch("sealed_build_chain.run_committed_build_probe", FakeCommittedBuild()):
+                with self.assertRaisesRegex(ValueError, "desktop mount"):
+                    run_sealed_build(probe, fixture.request(), probe.source, "a" * 40, fixture.verify)
+            self.assertFalse((probe.target / "runner").exists())
+
     def test_missing_docking_runtime_fails_before_build(self) -> None:
         from dataclasses import replace
 

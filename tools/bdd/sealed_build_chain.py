@@ -7,7 +7,7 @@ from typing import Mapping
 
 from pinned_runner import PinnedRunnerProcess
 from sandbox_build_probe import BuildProbe, require_runner, run_committed_build_probe
-from sealed_execution import SealedRequest, SourceVerifier, file_identity, require_disjoint, require_request, run_sealed
+from sealed_execution import SealedRequest, SourceVerifier, file_identity, require_disjoint, require_desktop_slot, require_request, run_sealed
 
 
 def require_chain_paths(probe: BuildProbe, request: SealedRequest) -> None:
@@ -60,6 +60,7 @@ def run_sealed_build(
 ) -> dict[str, object]:
     """Run one committed build then its pinned executable; example: run_sealed_build(probe, request, repo, sha, verify)."""
     require_request(request)
+    require_desktop_slot(request.runtime)
     require_chain_paths(probe, request)
     built = run_committed_build_probe(
         probe, repository, revision, archives=archives, git_repositories=git_repositories,
