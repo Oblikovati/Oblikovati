@@ -31,7 +31,13 @@ fn set_tools_panel_visibility(world: &mut ApplicationWorld, label: &str, visible
 
 fn enable_user_commands(world: &mut ApplicationWorld) {
     open_tools_panel_list(world);
-    let present = world.text().lines().any(|line| line == "User Commands");
+    let present = world.shows("User Commands")
+        && world
+            .run("User Commands")
+            .text
+            .chars()
+            .filter(|character| !character.is_whitespace())
+            .eq("UserCommands".chars());
     world.escape();
     world.escape();
     if !present {
@@ -83,6 +89,7 @@ fn optional_tools_panels_follow_show_panels_and_reset() {
     select_tab(&mut world, "Tools");
     world.expect_no_text("Tutorials");
     enable_user_commands(&mut world);
+    enable_user_commands(&mut world);
     world.expect_text("User Commands");
     set_tools_panel_visibility(&mut world, "Tutorials", true);
     world.expect_text("Tutorials");
@@ -105,7 +112,10 @@ fn team_web_opens_a_closeable_resource_window() {
     world.pump(Vec::new());
     let content = world.window_text("Team Web");
     assert!(content.contains("OpeninBrowser"), "{content:?}");
-    assert!(content.contains("https://docs.oblikovati.org/"), "{content:?}");
+    assert!(
+        content.contains("https://docs.oblikovati.org/"),
+        "{content:?}"
+    );
     world.save_capture("team-web-resource");
     let (position, size) = diagnostics::window_geometry("Team Web").unwrap();
     let close = [position[0] + size[0] - 10., position[1] + 10.];
