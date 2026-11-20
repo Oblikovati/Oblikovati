@@ -10,12 +10,16 @@ use oblikovati_viewport::ViewportPhysicalKey;
 mod navigation;
 use navigation::{front_displayed, label_turned, taller, top_face_on};
 
+#[path = "animation.rs"]
+mod animation;
 #[path = "appearance.rs"]
 mod appearance;
 #[path = "behaviour.rs"]
 mod behaviour;
 #[path = "compass_observation.rs"]
 mod compass_observation;
+#[path = "fixture.rs"]
+mod fixture;
 pub(super) use behaviour::whole_block_visible;
 #[path = "native_input.rs"]
 mod native_input;
@@ -44,10 +48,15 @@ fn layout() -> ([f32; 2], GuiOrientationLayout) {
     (position, GuiOrientationLayout::for_side(size[0]))
 }
 fn press_at(world: &mut ApplicationWorld, position: [f32; 2], local: [f32; 2]) {
-    world.click([
+    let point = [
         (position[0] + local[0]) as i32,
         (position[1] + local[1]) as i32,
-    ]);
+    ];
+    if world.app().window.orientation_trace.is_some() {
+        super::x11_input::click(point);
+    } else {
+        world.click(point);
+    }
     world.pump(Vec::new());
     world.pump(Vec::new());
 }

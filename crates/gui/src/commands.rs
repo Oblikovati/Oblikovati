@@ -207,6 +207,8 @@ pub enum GuiShellAction {
         command: crate::GuiOrientCommand,
         /// The options ask to fit the model to the new view.
         fit: bool,
+        /// The options ask the desktop to display intermediate camera frames.
+        animate: bool,
     },
     SetViewProjection(crate::GuiViewProjection),
     /// Persist the orientation control selection pivot preference.

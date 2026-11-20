@@ -126,6 +126,7 @@ mod tests {
         let front = ViewportCamera {
             eye: [2., -7., 4.],
             target: [2., 3., 4.],
+            up: [0., 0., 1.],
             ..Default::default()
         };
         let back = ViewportCamera {

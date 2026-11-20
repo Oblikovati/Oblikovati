@@ -317,15 +317,14 @@ impl HeadWindow for NativeHeadWindow {
         &mut self,
         camera: oblikovati_viewport::ViewportCamera,
     ) -> Result<bool, String> {
-        self.view.set_camera(camera)?;
-        self.view
-            .navigate(oblikovati_viewport::ViewportNavigation::FitDepth)?;
-        Ok(true)
+        self.orientation_transition = None;
+        self.apply_orientation_camera(camera)
     }
     fn set_view_camera_recorded(
         &mut self,
         camera: oblikovati_viewport::ViewportCamera,
     ) -> Result<bool, String> {
+        self.orientation_transition = None;
         let changed = self.view.set_camera_recorded(camera)?;
         if changed {
             self.view
@@ -345,6 +344,7 @@ impl HeadWindow for NativeHeadWindow {
     }
 
     fn previous_view(&mut self) -> Result<bool, String> {
+        self.orientation_transition = None;
         self.restore_previous_scene_view()
     }
 
@@ -357,6 +357,7 @@ impl HeadWindow for NativeHeadWindow {
         let Some(camera) = self.marked_view else {
             return Ok(false);
         };
+        self.orientation_transition = None;
         self.view.set_camera(camera)?;
         self.refresh_current_scene_depth()?;
         Ok(true)
@@ -427,6 +428,7 @@ impl HeadWindow for NativeHeadWindow {
         self.refresh_title()?;
         Ok(match presentation {
             ViewportPresentation::Completed(capture) => {
+                self.note_orientation_presented();
                 if let Some(gui) = &mut self.gui {
                     gui.note_presented_frame(capture.extent, &capture.rgba);
                 }

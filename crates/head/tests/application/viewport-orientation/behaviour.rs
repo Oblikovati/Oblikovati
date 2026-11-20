@@ -247,16 +247,10 @@ fn lower_right(_: &mut ApplicationWorld) {
 }
 #[then("the part view remains visible")]
 fn view_remains(world: &mut ApplicationWorld) {
-    expect_empty_part_view(world);
+    expect_unchanged_part_view(world);
 }
-// The shared Given creates an empty part. The gradient is its visible viewport, not a solid.
-fn expect_empty_part_view(world: &mut ApplicationWorld) {
+fn expect_unchanged_part_view(world: &mut ApplicationWorld) {
     expect_same_part(world);
-    let browser = world
-        .state()
-        .browser
-        .expect("expected the active part browser");
-    assert!(browser.bodies.is_empty(), "expected the empty part fixture");
     let before = world
         .observed_view_camera
         .expect("expected the view before opening options");
@@ -265,7 +259,19 @@ fn expect_empty_part_view(world: &mut ApplicationWorld) {
         before,
         "expected the same view camera"
     );
-    world.expect_blank_region([400, 600], [250, 300]);
+    expect_part_surface(world);
+}
+
+fn expect_part_surface(world: &mut ApplicationWorld) {
+    let browser = world
+        .state()
+        .browser
+        .expect("expected the active part browser");
+    if browser.bodies.is_empty() {
+        world.expect_blank_region([400, 600], [250, 300]);
+    } else {
+        solid_extent(world);
+    }
 }
 #[then("the position is Bottom Right")]
 fn position_shown(world: &mut ApplicationWorld) {
@@ -340,7 +346,7 @@ fn click_block_face(world: &mut ApplicationWorld) {
     assert!(after.model_face_chosen, "expected face selection retained");
 }
 #[given("no model geometry is selected")]
-fn nothing_selected(world: &mut ApplicationWorld) {
+pub(super) fn nothing_selected(world: &mut ApplicationWorld) {
     world.click(AWAY);
     world.pump(Vec::new());
     let state = world.state();
@@ -429,7 +435,7 @@ fn menus_closed(world: &mut ApplicationWorld) {
     world.expect_no_text("Orthographic");
     world.expect_text("Origin");
     expect_same_part(world);
-    world.expect_blank_region([400, 600], [250, 300]);
+    expect_part_surface(world);
 }
 // Tiny
 #[given("the orientation control size is Automatic")]
@@ -468,7 +474,7 @@ fn apparent_size(world: &mut ApplicationWorld) {
 }
 #[then("the same part view remains visible")]
 fn same_view(world: &mut ApplicationWorld) {
-    expect_empty_part_view(world);
+    expect_unchanged_part_view(world);
 }
 
 #[test]

@@ -36,6 +36,11 @@ use scenario_capture::{capture_name, scenario_capture_namespace};
 mod scenario_revision;
 mod scenario_source;
 mod solid_visibility;
+pub(super) fn observe_orientation_solid(
+    capture: &oblikovati_viewport::ViewportCapture,
+) -> Option<([usize; 2], [usize; 2])> {
+    solid_visibility::visible_fixture_bounds(capture, &diagnostics::window_occlusions())
+}
 mod viewport_background;
 mod world;
 #[cfg(target_os = "linux")]

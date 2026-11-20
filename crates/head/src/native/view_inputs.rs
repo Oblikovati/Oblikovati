@@ -6,6 +6,7 @@ impl NativeHeadWindow {
         &mut self,
         command: oblikovati_viewport::ViewportNavigation,
     ) -> Result<bool, String> {
+        self.orientation_transition = None;
         if matches!(
             command,
             oblikovati_viewport::ViewportNavigation::Fit { .. }
@@ -44,6 +45,7 @@ impl NativeHeadWindow {
         for event in inputs {
             let command = self.navigation.command(event)?;
             if previous_view_pressed(event) {
+                self.orientation_transition = None;
                 changed |= self.restore_previous_scene_view()?;
                 continue;
             }
@@ -77,6 +79,18 @@ pub(super) fn validate_window_extent(extent: [u32; 2]) -> Result<(), String> {
 // The trait methods share one native navigation owner.
 macro_rules! native_view_inputs {
     () => {
+        fn start_orientation_transition(
+            &mut self,
+            camera: oblikovati_viewport::ViewportCamera,
+            finish: Option<oblikovati_viewport::ViewportNavigation>,
+        ) -> Result<bool, String> {
+            self.schedule_orientation(camera, finish)
+        }
+        fn tick_orientation_transition(
+            &mut self,
+        ) -> Result<(bool, Option<std::time::Duration>), String> {
+            self.advance_orientation()
+        }
         fn process_view_input(&mut self, event: &ViewportEvent) -> Result<bool, String> {
             self.apply_navigation_inputs(&[*event])
         }

@@ -160,6 +160,16 @@ impl HeadWindow for ScriptedGuiWindow {
     ) -> Result<bool, String> {
         self.native.set_view_camera(camera)
     }
+    fn start_orientation_transition(
+        &mut self,
+        camera: oblikovati_viewport::ViewportCamera,
+        finish: Option<oblikovati_viewport::ViewportNavigation>,
+    ) -> Result<bool, String> {
+        self.native.start_orientation_transition(camera, finish)
+    }
+    fn tick_orientation_transition(&mut self) -> Result<(bool, Option<Duration>), String> {
+        self.native.tick_orientation_transition()
+    }
     fn navigation_active(&self) -> bool {
         self.native.navigation_active()
     }
@@ -192,6 +202,9 @@ impl HeadWindow for ScriptedGuiWindow {
             current.template_size_issue = Some(cause.clone());
         }
         let result = self.native.gui_frame(event, &current)?;
+        if let Some(trace) = &mut self.orientation_trace {
+            trace.axes = current.view_axes;
+        }
         if self.observe_sketch_after_prompt
             && self.sketch_after_prompt.is_none()
             && self
@@ -277,7 +290,28 @@ impl HeadWindow for ScriptedGuiWindow {
         if !self.presentation_delay.is_zero() {
             std::thread::sleep(self.presentation_delay);
         }
-        self.native.present()
+        let outcome = self.native.present()?;
+        if outcome == HeadPresentation::Completed
+            && let Some(trace) = &mut self.orientation_trace
+        {
+            let capture = self.native.capture_window()?;
+            let camera = self.native.view_camera()?;
+            let top = crate::view_orientation::view_axes(&camera).toward[1];
+            let bounds = application_bdd::observe_orientation_solid(&capture);
+            trace.presentations.push(PresentedOrientation {
+                camera,
+                axes: trace.axes,
+                bounds,
+            });
+            if trace.intermediate.is_none()
+                && bounds.is_some()
+                && top > trace.initial_top_direction + 0.01
+                && top < 0.99
+            {
+                trace.intermediate = Some(capture);
+            }
+        }
+        Ok(outcome)
     }
     fn wait(&mut self, timeout: Option<std::time::Duration>) -> Result<bool, String> {
         self.native.wait(timeout)

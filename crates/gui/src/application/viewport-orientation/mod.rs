@@ -308,8 +308,7 @@ impl OrientationControl {
                     draw_compass(ui, &layout, position, alpha, self.options.north_angle());
                 }
                 if ui.is_item_clicked_with_button(MouseButton::Left) {
-                    let fit = self.options.fits_on_change();
-                    press(ui, &axes, &layout, position, fit, actions);
+                    press(ui, &axes, &layout, position, &self.options, actions);
                 }
                 if ui.is_item_clicked_with_button(MouseButton::Right) {
                     ui.open_popup(CONTROL_MENU);
@@ -471,7 +470,7 @@ fn press(
     axes: &GuiViewAxes,
     layout: &GuiOrientationLayout,
     origin: [f32; 2],
-    fit: bool,
+    options: &OrientationOptions,
     actions: &mut Vec<GuiShellAction>,
 ) {
     let point = ui.io().mouse_pos;
@@ -482,7 +481,11 @@ fn press(
     }
     let command = arrow_at(local, axes, layout).or_else(|| cube_pick(point, axes, layout, origin));
     if let Some(command) = command {
-        actions.push(GuiShellAction::OrientView { command, fit });
+        actions.push(GuiShellAction::OrientView {
+            command,
+            fit: options.fits_on_change(),
+            animate: options.animates_transitions(),
+        });
     }
 }
 #[cfg(test)]

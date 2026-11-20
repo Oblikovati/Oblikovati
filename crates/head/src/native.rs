@@ -17,6 +17,7 @@ pub struct NativeHeadWindow {
     runtime: ViewportRuntime,
     validate_vulkan: bool,
     view: Viewport,
+    orientation_transition: Option<orientation_transition::OrientationTransition>,
     drawing_windows: gui_loop::DrawingWindows,
     view_projection: oblikovati_gui::GuiViewProjection,
     marked_view: Option<oblikovati_viewport::ViewportCamera>,
@@ -65,6 +66,7 @@ pub struct NativeHeadWindow {
     _context_lease: crate::test_context::TestContextLease,
 }
 mod open;
+mod orientation_transition;
 mod scene_depth;
 mod scene_status;
 #[macro_use]

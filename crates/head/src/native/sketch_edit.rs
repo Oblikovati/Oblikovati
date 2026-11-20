@@ -13,6 +13,7 @@ impl NativeHeadWindow {
         if current == requested {
             return Ok(false);
         }
+        self.orientation_transition = None;
         let Some(edit) = edit else {
             return self.restore_sketch_camera();
         };
@@ -35,6 +36,7 @@ impl NativeHeadWindow {
         if slot == self.view_slot {
             return Ok(false);
         }
+        self.orientation_transition = None;
         let camera = self.view.camera_state()?;
         self.saved_views
             .insert(self.view_slot, (camera, self.sketch_view.take()));

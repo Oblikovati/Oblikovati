@@ -32,6 +32,7 @@ pub(super) fn advance_gui(
     owner: &mut dyn HeadWork,
     event: Option<&ViewportEvent>,
 ) -> Result<HeadGuiUpdate, String> {
+    let (camera_changed, camera_wake) = window.tick_orientation_transition()?;
     let metadata_changed = window.gui_parameters_open() && publish_parameter_view(window, owner)?;
     let mut commands = owner.gui_command_state()?;
     if let Some(cue) = commands.sketch_pick_cue.as_mut() {
@@ -70,7 +71,8 @@ pub(super) fn advance_gui(
     commands.sketch_axes = dimension_labels::projected_sketch_axes(window, &commands);
     dimension_labels::project_precise_triad(window, owner, &mut commands);
     let mut update = window.gui_frame(event, &commands)?;
-    update.changed |= metadata_changed || projection_resized;
+    update.changed |= metadata_changed || projection_resized || camera_changed;
+    update.wake_after = earliest_wake(update.wake_after, camera_wake);
     if let Err(cause) = dispatch_frame_actions(window, owner, &mut update) {
         if window.has_pending_ribbon_model_pick() {
             window.resolve_ribbon_model_pick(false);
@@ -143,9 +145,13 @@ fn orient_view(
     owner: &mut dyn HeadWork,
     command: oblikovati_gui::GuiOrientCommand,
     fit: bool,
+    animate: bool,
 ) -> Result<bool, String> {
     let current = window.view_camera()?;
     let (camera, selection_pivot) = orientation_camera(owner, &current, command)?;
+    if animate {
+        return animate_orientation(window, camera, fit, selection_pivot);
+    }
     if fit && selection_pivot {
         return fit_selection_view(window, current, camera);
     }
@@ -155,6 +161,24 @@ fn orient_view(
     } else {
         Ok(changed)
     }
+}
+fn animate_orientation(
+    window: &mut dyn HeadWindow,
+    camera: oblikovati_viewport::ViewportCamera,
+    fit: bool,
+    selection_pivot: bool,
+) -> Result<bool, String> {
+    if fit && selection_pivot {
+        let frame = window.orientation_fit_frame()?;
+        let target = crate::view_orientation::selection_fit::fit_about_selection(
+            &camera,
+            &[frame.bounds],
+            frame.extent,
+            frame.area,
+        )?;
+        return window.start_orientation_transition(target, None);
+    }
+    window.start_orientation_transition(camera, fit.then_some(FIT_THE_MODEL))
 }
 fn orientation_camera(
     owner: &mut dyn HeadWork,
@@ -268,8 +292,12 @@ pub(super) fn dispatch_gui_action(
             return window.capture_isometric_preview(*document);
         }
         GuiShellAction::Exit => return window.request_close(),
-        GuiShellAction::OrientView { command, fit } => {
-            let result = orient_view(window, owner, *command, *fit);
+        GuiShellAction::OrientView {
+            command,
+            fit,
+            animate,
+        } => {
+            let result = orient_view(window, owner, *command, *fit, *animate);
             return report_authoring_result(window, result);
         }
         GuiShellAction::SetOrientationSelectionLock(locked) => {

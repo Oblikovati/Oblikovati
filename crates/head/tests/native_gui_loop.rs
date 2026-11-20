@@ -36,6 +36,21 @@ struct ScriptedGuiWindow {
     presentation_delay: Duration,
     template_material_override: Option<oblikovati_gui::GuiTemplateMaterialEntry>,
     template_size_issue_override: Option<String>,
+    orientation_trace: Option<OrientationTrace>,
+}
+
+#[derive(Default)]
+struct OrientationTrace {
+    axes: Option<oblikovati_gui::GuiViewAxes>,
+    initial_top_direction: f32,
+    intermediate: Option<oblikovati_viewport::ViewportCapture>,
+    presentations: Vec<PresentedOrientation>,
+}
+
+struct PresentedOrientation {
+    camera: oblikovati_viewport::ViewportCamera,
+    axes: Option<oblikovati_gui::GuiViewAxes>,
+    bounds: Option<([usize; 2], [usize; 2])>,
 }
 fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
     ScriptedGuiWindow {
@@ -51,6 +66,7 @@ fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
         presentation_delay: Duration::ZERO,
         template_material_override: None,
         template_size_issue_override: None,
+        orientation_trace: None,
     }
 }
 #[path = "native_gui_loop/scripted_window.rs"]

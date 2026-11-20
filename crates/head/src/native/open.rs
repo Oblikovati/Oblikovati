@@ -77,6 +77,7 @@ impl NativeHeadWindow {
             runtime,
             validate_vulkan: options.validation,
             view,
+            orientation_transition: None,
             drawing_windows: Default::default(),
             view_projection: Default::default(),
             marked_view: None,

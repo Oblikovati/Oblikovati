@@ -76,7 +76,11 @@ pub use gui_render::{GuiFrameCompiler, compile_gui_frame};
 mod sketch_preview;
 pub use sketch_preview::ViewportSketchPreview;
 
+#[cfg(any(target_os = "linux", target_os = "windows"))]
+mod camera_transition;
 mod sketch_camera;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
+pub use camera_transition::ViewportCameraTransition;
 
 mod sketch_display;
 pub use sketch_display::{

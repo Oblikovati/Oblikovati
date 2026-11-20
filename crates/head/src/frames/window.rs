@@ -346,6 +346,24 @@ pub trait HeadWindow {
     ) -> Result<bool, String> {
         self.set_view_camera(camera)
     }
+    /// Schedule a camera transition. Example: `window.start_orientation_transition(camera, None)?`.
+    fn start_orientation_transition(
+        &mut self,
+        camera: oblikovati_viewport::ViewportCamera,
+        finish: Option<oblikovati_viewport::ViewportNavigation>,
+    ) -> Result<bool, String> {
+        let changed = self.set_view_camera(camera)?;
+        match finish {
+            Some(command) => self.navigate_view(command),
+            None => Ok(changed),
+        }
+    }
+    /// Advance the camera before computing GUI projections. Example: `window.tick_orientation_transition()?`.
+    fn tick_orientation_transition(
+        &mut self,
+    ) -> Result<(bool, Option<std::time::Duration>), String> {
+        Ok((false, None))
+    }
     /// The line of sight through a pixel, as a point and a direction away from the viewer.
     fn view_line(&self, pixel: [i32; 2]) -> Result<[[f64; 3]; 2], String> {
         Err(format!(

@@ -172,6 +172,9 @@ impl OrientationOptions {
     pub(super) fn fits_on_change(&self) -> bool {
         self.applied.fit_on_change
     }
+    pub(super) fn animates_transitions(&self) -> bool {
+        self.applied.animate_transitions
+    }
     pub(super) fn north_angle(&self) -> f32 {
         self.applied.north_angle
     }
