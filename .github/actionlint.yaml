@@ -1,5 +1,5 @@
 # The pinned actionlint predates these GitHub-hosted images.
 self-hosted-runner:
   labels:
-    - ubuntu-26.04
+    - ubuntu-24.04
     - macos-26

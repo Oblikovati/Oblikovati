@@ -60,6 +60,18 @@ fn rust_ci_runs_for_the_working_branch() {
 }
 
 #[test]
+fn linux_validation_uses_the_compatible_ubuntu_release() {
+    for entry in PLATFORMS
+        .iter()
+        .filter(|entry| entry.target.contains("linux"))
+    {
+        assert!(entry.runner.starts_with("ubuntu-24.04"));
+    }
+    let workflow = include_str!("../../../.github/workflows/ci.yml");
+    assert!(workflow.contains("runs-on: ubuntu-24.04"));
+}
+
+#[test]
 fn development_package_accepts_the_working_branch() {
     let workflow = include_str!("../../../.github/workflows/build.yml");
     assert!(workflow.contains("git merge-base --is-ancestor HEAD origin/rust-work"));

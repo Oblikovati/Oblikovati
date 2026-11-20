@@ -14,13 +14,13 @@ pub(crate) struct Platform {
 pub(crate) const PLATFORMS: [Platform; 6] = [
     Platform {
         target: "x86_64-unknown-linux-gnu",
-        runner: "ubuntu-26.04",
+        runner: "ubuntu-24.04",
         suffix: "linux-amd64",
         head: true,
     },
     Platform {
         target: "aarch64-unknown-linux-gnu",
-        runner: "ubuntu-26.04-arm",
+        runner: "ubuntu-24.04-arm",
         suffix: "linux-arm64",
         head: false,
     },
