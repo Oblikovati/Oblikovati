@@ -18,7 +18,7 @@ using this status; the live scenario directory can change.
   passed ten of 11 scenarios and 99 of 100 executed steps. The remaining
   scenario names an Inventor fixture; its Given step is undefined and Inventor
   support is deferred. Feature and support hashes stayed unchanged. See
-  `receipts/2026-11-20-docking-menu-fix-full-4133/`. The source and build are
+  `receipts/2026-11-20-docking-steps-live-4133/`. The source and build are
   unsealed, so this is not verified inventory evidence. A separate native mouse
   test passes the plus-menu, Log selection and close path with the native part;
   see `receipts/2026-11-20-docking-menu-refresh-4133/`. The menu scenario's
