@@ -61,6 +61,39 @@ class PinnedRunnerTests(unittest.TestCase):
                 process(["bwrap", "--", "/runner"], root / "log")
             self.assertFalse((root / "log").exists())
 
+    def test_desktop_is_sealed_and_requires_its_mount(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            runner, desktop = root / "runner", root / "desktop"
+            runner.write_bytes(b"runner")
+            desktop.write_bytes(b"desktop")
+            runner.chmod(0o755)
+            desktop.chmod(0o755)
+            digest = lambda value: hashlib.sha256(value).hexdigest()
+            process = PinnedRunnerProcess(runner, digest(b"runner"), desktop=(desktop, digest(b"desktop")))
+            command = ["bwrap", "--ro-bind", str(runner), "/runner"]
+            with self.assertRaisesRegex(ValueError, "expected exactly one matching bind"):
+                process(command, root / "log")
+            self.assertFalse((root / "log").exists())
+            desktop.write_bytes(b"changed")
+            command.extend(["--ro-bind", str(desktop), "/desktop"])
+            with self.assertRaisesRegex(ValueError, "expected build SHA-256"):
+                process(command, root / "log")
+            self.assertFalse((root / "log").exists())
+
+    @unittest.skipUnless(shutil.which("bwrap"), "requires Bubblewrap")
+    def test_real_sandbox_executes_pinned_desktop_after_replacement(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            runner, desktop = root / "runner", root / "desktop"
+            for path in (runner, desktop):
+                shutil.copyfile("/usr/bin/true", path)
+                path.chmod(0o755)
+            digest = hashlib.sha256(runner.read_bytes()).hexdigest()
+            command = [shutil.which("bwrap"), "--unshare-all", "--unshare-user", "--disable-userns", "--ro-bind", "/usr", "/usr", "--symlink", "usr/lib", "/lib", "--symlink", "usr/lib64", "/lib64", "--ro-bind", str(runner), "/runner", "--ro-bind", str(desktop), "/desktop", "--", "/desktop"]
+            process = PinnedRunnerProcess(runner, digest, ReplaceRunnerLauncher(desktop), desktop=(desktop, digest))
+            self.assertEqual(process(command, root / "log"), 0, (root / "log").read_text())
+
     @unittest.skipUnless(shutil.which("bwrap") and shutil.which("rustc"), "requires Bubblewrap and rustc")
     def test_real_rust_test_binary_runs_from_the_pinned_copy(self) -> None:
         with tempfile.TemporaryDirectory() as folder:

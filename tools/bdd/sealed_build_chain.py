@@ -64,6 +64,13 @@ def run_sealed_build(
         probe, repository, revision, archives=archives, git_repositories=git_repositories,
     )
     runner, digest, sandbox_digest = checked_build_runner(probe, request, built, revision)
-    execution = run_sealed(replace(request, binary=runner), PinnedRunnerProcess(runner, digest), verify)
+    desktop = require_runner([Path(str(built["desktop"]))], probe.target)
+    desktop_digest = str(built["desktop_sha256"])
+    if file_identity(desktop)["sha256"] != desktop_digest:
+        raise ValueError(f"desktop {desktop}: expected build SHA-256 {desktop_digest}")
+    pinned = PinnedRunnerProcess(runner, digest, desktop=(desktop, desktop_digest))
+    execution = run_sealed(replace(request, binary=runner, desktop=desktop), pinned, verify)
     require_built_execution(execution, runner, digest, sandbox_digest)
+    if observation_digest(execution, "desktop_input") != desktop_digest:
+        raise ValueError(f"desktop {desktop}: expected build SHA-256 {desktop_digest}")
     return {"build": built, "execution": execution, "reusable": False}

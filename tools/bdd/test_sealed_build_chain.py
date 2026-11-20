@@ -25,23 +25,32 @@ class FakeCommittedBuild:
         runner.write_bytes(b"built runner")
         runner.chmod(0o755)
         digest = hashlib.sha256(b"built runner").hexdigest()
+        desktop = probe.target / "desktop"
+        desktop.write_bytes(b"built desktop")
+        desktop.chmod(0o755)
+        desktop_digest = hashlib.sha256(b"built desktop").hexdigest()
+        if self.change == "desktop":
+            desktop.write_bytes(b"changed desktop")
         sandbox = file_identity(probe.bwrap)["sha256"]
         if self.change == "runner":
             runner.write_bytes(b"changed runner")
         if self.change == "sandbox":
             probe.bwrap.write_bytes(b"changed sandbox")
-        return {"runner": str(runner), "runner_sha256": digest, "sandbox_sha256": sandbox, "source_commit": revision, "reusable": True}
+        return {"runner": str(runner), "runner_sha256": digest, "sandbox_sha256": sandbox, "source_commit": revision, "desktop": str(desktop), "desktop_sha256": desktop_digest, "reusable": True}
 
 
 class FakePinnedExecution:
     """Record the expected build digest and produce one successful run log."""
 
-    def __init__(self, runner: Path, digest: str) -> None:
+    def __init__(self, runner: Path, digest: str, desktop: tuple[Path, str]) -> None:
         self.runner, self.digest = runner, digest
+        self.desktop = desktop
 
     def __call__(self, command: list[str], log: Path) -> int:
         if hashlib.sha256(self.runner.read_bytes()).hexdigest() != self.digest:
             raise ValueError("runner digest: expected build bytes")
+        if hashlib.sha256(self.desktop[0].read_bytes()).hexdigest() != self.desktop[1]:
+            raise ValueError("desktop digest: expected build bytes")
         log.write_text("executed")
         return 0
 
@@ -79,7 +88,7 @@ class SealedBuildChainTests(unittest.TestCase):
             self.assertFalse((probe.target / "runner").exists())
 
     def test_changed_build_artifact_and_sandbox_are_refused(self) -> None:
-        for change in ("runner", "sandbox"):
+        for change in ("runner", "sandbox", "desktop"):
             with self.subTest(change=change), tempfile.TemporaryDirectory() as folder:
                 probe, fixture = self.fixture(Path(folder))
                 with patch("sealed_build_chain.run_committed_build_probe", FakeCommittedBuild(change)):

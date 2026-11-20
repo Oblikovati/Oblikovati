@@ -65,27 +65,34 @@ def seal_memory_file(descriptor: int, seals: ModuleType) -> None:
     seals.fcntl(descriptor, seals.F_ADD_SEALS, flags)
 
 
-def bind_pinned_runner(command: list[str], source: Path, descriptor: int) -> list[str]:
+def bind_pinned_runner(command: list[str], source: Path, descriptor: int, destination: str = "/runner") -> list[str]:
     """Bind the pinned bytes where the runner belongs; example: bind_pinned_runner(command, path, fd)."""
-    expected = ["--ro-bind", str(source), "/runner"]
+    expected = ["--ro-bind", str(source), destination]
     positions = [index for index in range(len(command) - 2) if command[index:index + 3] == expected]
     if len(positions) != 1:
         raise ValueError(f"runner mount {expected!r}: expected exactly one matching bind")
     index = positions[0]
-    return command[:index] + ["--perms", "0555", "--ro-bind-data", str(descriptor), "/runner"] + command[index + 3:]
+    return command[:index] + ["--perms", "0555", "--ro-bind-data", str(descriptor), destination] + command[index + 3:]
 
 
 class PinnedRunnerProcess:
     """Run Bubblewrap with immutable bytes from one observed build artifact."""
 
-    def __init__(self, source: Path, digest: str, launch: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run) -> None:
+    def __init__(self, source: Path, digest: str, launch: Callable[..., subprocess.CompletedProcess[str]] = subprocess.run, desktop: tuple[Path, str] | None = None) -> None:
         self.source, self.digest, self.launch = source, digest, launch
+        self.desktop = desktop
 
     def __call__(self, command: list[str], log: Path) -> int:
         descriptor = seal_runner(self.source, self.digest)
+        desktop_descriptor = None
         try:
             pinned = bind_pinned_runner(command, self.source, descriptor)
+            if self.desktop is not None:
+                desktop_descriptor = seal_runner(*self.desktop)
+                pinned = bind_pinned_runner(pinned, self.desktop[0], desktop_descriptor, "/desktop")
             with log.open("x", encoding="utf-8") as output:
-                return self.launch(pinned, stdout=output, stderr=subprocess.STDOUT, check=False, env={}, pass_fds=(descriptor,)).returncode
+                return self.launch(pinned, stdout=output, stderr=subprocess.STDOUT, check=False, env={}, pass_fds=((descriptor, desktop_descriptor) if desktop_descriptor is not None else (descriptor,))).returncode
         finally:
+            if desktop_descriptor is not None:
+                os.close(desktop_descriptor)
             os.close(descriptor)
