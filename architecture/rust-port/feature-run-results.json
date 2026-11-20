@@ -382,24 +382,27 @@
     "scenario_arguments_sha256": "769b6b8afbe77d607d7c99fa0cf10fbc68635d4dd4e7c43a51dc1089dd4293ae"
   },
   "features/application/docking-system/docking-system.feature": {
-    "feature_sha256": "1406edc4ac8267dbaa75f7305a7c090dfe544fd7638fee646578a8aca2332db2",
+    "feature_sha256": "11567ca6f598b1b812d635e5bb7fed2eb75abd1e2b5a087c91ef962e78e679e7",
     "supporting_files": {
-      "features/application/docking-system/BLOCKERS.md": "0361cffae1744a998577ce1a82cdb824a601ec3bf9695df744325881f086c216",
-      "features/application/docking-system/FIXTURES.md": "5989bba3c2dc829b0a46b0749616b1a177a7bcbcde6a847aa1445f1ed01d4f49",
-      "features/application/docking-system/FUNCTIONAL.md": "4e9078b8aa820d3c7377463e6c11a5301fc9f0e68e0ac30dcb1c8d2068f2eb8e",
+      "features/application/docking-system/BLOCKERS.md": "10f22572c3e6b5795b073ffdbc780ff5f3bfa17ee0e1db5b4256cd7c8eb646e6",
+      "features/application/docking-system/FIXTURES.md": "0f809bba03ca954b1e368e4e49e19dd1e0d5f1b80c9f01d32ce8b286dbd8b2b2",
+      "features/application/docking-system/FUNCTIONAL.md": "c0d837930944c7b61411ce194e9395046a27d15021977c435b1b29a373b94e50",
       "features/application/docking-system/VISUAL.md": "ab88095125af0b4dd5b5859fc743f1606837210ea54a787e9a45b3dc7aae875c",
-      "features/application/docking-system/right-dock-tabs.svg": "f07847f1b581581045032a3cf5d17d8d67de6f3a3ac82c4f035b5b692982ca55"
+      "features/application/docking-system/right-dock-tabs.svg": "f07847f1b581581045032a3cf5d17d8d67de6f3a3ac82c4f035b5b692982ca55",
+      "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-19-docking-baseline-ffc5f785d/cucumber.json",
-    "cucumber_sha256": "b7e99675691c1ac70e4369da3036f6b64af30dff016058b73f8c369a3af2e457",
-    "application_commit": "ffc5f785d",
-    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=docking-system OBK_BDD_REPORTS=/tmp/obk-docking-baseline-ffc5f785d cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb and Vulkan lavapipe; mixed native and scripted input",
-    "notes": "Full diagnostic passed 8 of 10 declarations and 65 steps. Two capture_host_only scenarios were excluded because host fixture attestation is unavailable; the feature is not complete. Source and support files matched before and after; the source is unversioned.",
-    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-docking-baseline-ffc5f785d/scenario-inventory.json",
-    "scenario_inventory_sha256": "c4fe86998c8b053dd4505cbcce28704cf8279d0c4be561b2f6ceb64187ebaac0",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-docking-baseline-ffc5f785d/scenario-arguments.json",
-    "scenario_arguments_sha256": "a313aecfe73922c8242fb0dbbf684a4b58c79308ce982e0cc36677e4d985fda7"
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-docking-current-4133/cucumber.json",
+    "cucumber_sha256": "54a17af4a00aa388d93c092e1f588df183c94eba212b6167b15fd1cc6af854ad",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-docking-current-4133/scenario-arguments.json",
+    "scenario_arguments_sha256": "30f7a9949ec05a4dd85ac859b5a87f541dbe047b11eedd77f698639b7d8fd27e",
+    "application_commit": "9fb94bf6b",
+    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=docking-system OBK_BDD_REPORTS=/tmp/obk-docking-current-4133/final VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json xvfb-run -a -s '-screen 0 1440x900x24' with Openbox; cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture",
+    "environment": "Linux Xvfb 1440x900, Openbox, Vulkan Lavapipe; native pointer and scripted input",
+    "notes": "10 of 10 scenarios and 96 steps reported passed; this is a diagnostic from an unversioned source.",
+    "blocker": "The restart scenario uses a direct layout-save helper and same-process window recreation; a real application restart and sealed build provenance remain unverified.",
+    "unproven_scenarios": {
+      "Restore the saved panel arrangement after restarting the application": "The test recreates a window and owner in the same process after saving layout through a helper."
+    }
   },
   "features/application/workspace-layout/workspace-layout.feature": {
     "feature_sha256": "3910a3c0a4e77f5417ae7e6b08019330b2fdc621c6af1c4f7f42ff9acb329b1a",

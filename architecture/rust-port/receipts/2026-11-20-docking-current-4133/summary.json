@@ -1,0 +1,19 @@
+{
+  "kind": "diagnostic; one scenario unproven",
+  "tested_source_commit": "9fb94bf6b",
+  "test_build_state": "The two committed test files were uncommitted during the run; their bytes were committed unchanged after it. Build provenance is not sealed.",
+  "feature_sha256": "11567ca6f598b1b812d635e5bb7fed2eb75abd1e2b5a087c91ef962e78e679e7",
+  "fixture_sha256": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+  "counts": {
+    "reported_scenarios_passed": 10,
+    "reported_steps_passed": 96,
+    "scenarios_unproven": 1
+  },
+  "environment": "Linux Xvfb 1440x900, Openbox, Vulkan Lavapipe; native pointer and scripted input",
+  "limitations": [
+    "Source is unversioned.",
+    "The restart case saves the layout through a test helper and recreates a window and owner in the same process; it does not test an application process restart.",
+    "The sealed build provenance gate is not met."
+  ],
+  "visual_review": "Left-edge preview capture shows the dock target, material browser, model browser, and visible solid."
+}
