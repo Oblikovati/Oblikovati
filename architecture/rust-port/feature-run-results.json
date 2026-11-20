@@ -403,24 +403,24 @@
     "scenario_arguments_sha256": "769b6b8afbe77d607d7c99fa0cf10fbc68635d4dd4e7c43a51dc1089dd4293ae"
   },
   "features/application/docking-system/docking-system.feature": {
-    "feature_sha256": "11567ca6f598b1b812d635e5bb7fed2eb75abd1e2b5a087c91ef962e78e679e7",
+    "feature_sha256": "e2c0ece1141b9973d0b4909965eefe666f5c70ab7371a3cea41cbe16d89080a5",
     "supporting_files": {
-      "features/application/docking-system/BLOCKERS.md": "10f22572c3e6b5795b073ffdbc780ff5f3bfa17ee0e1db5b4256cd7c8eb646e6",
-      "features/application/docking-system/FIXTURES.md": "0f809bba03ca954b1e368e4e49e19dd1e0d5f1b80c9f01d32ce8b286dbd8b2b2",
-      "features/application/docking-system/FUNCTIONAL.md": "c0d837930944c7b61411ce194e9395046a27d15021977c435b1b29a373b94e50",
+      "features/application/docking-system/BLOCKERS.md": "595b5650f83d51833444b25abfff9e2d20729c68e6b7d5cbbee56dfce809b837",
+      "features/application/docking-system/FIXTURES.md": "3da12afe826fca2927d6762c8a4ab086392a265a5f5319357ee9b8a04b319d56",
+      "features/application/docking-system/FUNCTIONAL.md": "f2636375408a6ba29bfac139d2687203f08044de3b7642ad0f41457107f7dbb0",
       "features/application/docking-system/VISUAL.md": "ab88095125af0b4dd5b5859fc743f1606837210ea54a787e9a45b3dc7aae875c",
       "features/application/docking-system/right-dock-tabs.svg": "f07847f1b581581045032a3cf5d17d8d67de6f3a3ac82c4f035b5b692982ca55",
       "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-docking-feature-diagnostic-3978/cucumber.json",
-    "cucumber_sha256": "072cd874e4fa4a519d02c2eb9d32953c2bf4b0615abba735f845f228d4679ec6",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-docking-feature-diagnostic-3978/scenario-arguments.json",
-    "scenario_arguments_sha256": "ef300d149f1a38e2a08703652f5727d6da0cdeb6b0b9190896edc7eec3cbe0bf",
-    "application_commit": "877eaf134",
-    "command": "sealed_build_cli.py --area application --feature docking-system --all-scenarios --local-snapshot ... --diagnostic-proc; see diagnostic README",
-    "environment": "Linux Bubblewrap, Xvfb 1440x900, Openbox, Vulkan Lavapipe; private proc",
-    "notes": "All 10 scenarios and 96 steps passed in one linked offline build and isolated execution. The feature report checker passed; see diagnostic receipt.",
-    "blocker": "The snapshot is local and build/runtime provenance is unauthenticated (issue #3978); the diagnostic is non-reusable."
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-docking-api-0160-4133/cucumber.json",
+    "cucumber_sha256": "7bbd49d434ba0d14b16eb317d179065a8b21a832dc62ef9e2e8389b1402a8044",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-docking-api-0160-4133/scenario-arguments.json",
+    "scenario_arguments_sha256": "a61c284dca37a40bdf933c6635b1f89f5fb1835ddbc9118d3db372f5ac7f8bec",
+    "application_commit": "5ccb98c7bda6778405a69d163a12e1b2db03c76b",
+    "command": "Full docking-system run; see receipt README.",
+    "environment": "Linux Xvfb 1440x900, Openbox, Vulkan Lavapipe",
+    "notes": "All 11 scenarios and 108 steps passed against a local snapshot matching the live hashes.",
+    "blocker": "Build and runtime provenance remain unsealed (#3978)."
   },
   "features/application/workspace-layout/workspace-layout.feature": {
     "feature_sha256": "3910a3c0a4e77f5417ae7e6b08019330b2fdc621c6af1c4f7f42ff9acb329b1a",

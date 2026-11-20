@@ -14,17 +14,11 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
-- Docking System (#4133): after the dock-menu refresh fix, the full diagnostic
-  passed ten of 11 scenarios and 99 of 100 executed steps. The remaining
-  scenario names an Inventor fixture; its Given step is undefined and Inventor
-  support is deferred. Feature and support hashes stayed unchanged. See
-  `receipts/2026-11-20-docking-steps-live-4133/`. The source and build are
-  unsealed, so this is not verified inventory evidence. A separate native mouse
-  test passes the plus-menu, Log selection and close path with the native part;
-  see `receipts/2026-11-20-docking-menu-refresh-4133/`. The menu scenario's
-  steps also passed on a temporary copy that uses the documented native part;
-  see `receipts/2026-11-20-docking-menu-steps-4133/`. This does not verify
-  the live Inventor-fixture scenario.
+- Docking System (#4133): all 11 scenarios and 108 steps passed in one
+  local run, including the corrected native fixture and a desktop restart.
+  Feature, support, and fixture hashes matched the live source. See
+  `receipts/2026-11-20-docking-api-0160-4133/`. The build and runtime
+  were unsealed, so strict verification remains blocked by #3978.
 - Selected sketch point identity (#4179): the shared placement recipe now
   retains explicitly picked point IDs and preserves existing geometry. Session
   tests cover preview, commit, dimension edit, and undo/redo. Midpoint Line
