@@ -21,7 +21,10 @@ using this status; the live scenario directory can change.
   `receipts/2026-11-20-docking-menu-fix-full-4133/`. The source and build are
   unsealed, so this is not verified inventory evidence. A separate native mouse
   test passes the plus-menu, Log selection and close path with the native part;
-  see `receipts/2026-11-20-docking-menu-refresh-4133/`.
+  see `receipts/2026-11-20-docking-menu-refresh-4133/`. The menu scenario's
+  steps also passed on a temporary copy that uses the documented native part;
+  see `receipts/2026-11-20-docking-menu-steps-4133/`. This does not verify
+  the live Inventor-fixture scenario.
 - Selected sketch point identity (#4179): the shared placement recipe now
   retains explicitly picked point IDs and preserves existing geometry. Session
   tests cover preview, commit, dimension edit, and undo/redo. Midpoint Line

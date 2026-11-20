@@ -1,0 +1,5 @@
+
+running 1 test
+test native::gui_loop_tests::application_bdd::docking_system::dock_menu_steps::native_dock_menu_opens_and_closes_log_beside_model ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1546 filtered out; finished in 8.56s
