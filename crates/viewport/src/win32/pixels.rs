@@ -21,7 +21,8 @@ impl WindowFrame {
             ));
         }
         let mut bgra = rgba.to_vec();
-        for pixel in bgra.chunks_exact_mut(4) {
+        let (pixels, _) = bgra.as_chunks_mut::<4>();
+        for pixel in pixels {
             pixel.swap(0, 2);
         }
         let mut info = BITMAPINFO::default();
