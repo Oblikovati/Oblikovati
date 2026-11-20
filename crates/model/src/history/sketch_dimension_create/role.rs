@@ -37,30 +37,24 @@ impl DocumentSnapshot {
     }
     pub(super) fn prepare_dimension_role(
         &self,
-        sketch: DocumentSketchId,
-        geometry: &Sketch2D,
         input: &SketchDimensionCreation,
         policy: DimensionRolePolicy,
-        options: SolveOptions,
-        datums: AuthoringDatums<'_>,
-    ) -> Result<DimensionRoleProbe, SketchError> {
+        prior: usize,
+        anchors: Vec<SketchPoint2D>,
+    ) -> DimensionRoleProbe {
         let behavior = self.effective_sketch_settings().over_constrained_behavior;
         if input.reference
             || behavior == OVER_CONSTRAINED_APPLY_DRIVING
             || (matches!(policy, DimensionRolePolicy::Explicit)
                 && behavior != OVER_CONSTRAINED_PROMPT)
         {
-            return Ok(DimensionRoleProbe::Explicit);
+            return DimensionRoleProbe::Explicit;
         }
-        let anchors = self.sketch_authoring_anchors(sketch, datums)?;
-        let prior = geometry
-            .analyze_with_grounded_points(&self.parameters, &anchors, options.rank_tolerance)?
-            .redundant_equations;
-        Ok(DimensionRoleProbe::Redundancy {
+        DimensionRoleProbe::Redundancy {
             prior,
             anchors,
             prompt: behavior == OVER_CONSTRAINED_PROMPT,
-        })
+        }
     }
     pub(super) fn classify_dimension_role(
         &mut self,
