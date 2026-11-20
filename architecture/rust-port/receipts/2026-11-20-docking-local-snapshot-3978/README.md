@@ -11,7 +11,10 @@ It excludes unrelated features, reference images, blockers, and non-native CAD
 fixtures. The first full-source attempts detected unrelated files changing
 while the scenario agent worked. The feature-scoped capture then passed.
 
+The sealed diagnostic can select this local snapshot with `--local-snapshot`
+and this receipt directory's repository-relative path. It reads the manifest
+and inventory from the selected application commit and checks the checkout
+before and after execution. The result remains diagnostic and non-reusable.
+
 This bundle does not replace the global pinned scenario snapshot or make a
-receipt verified. The sealed diagnostic still requires integration with a
-feature-scoped inventory, and build and runtime provenance remain unproven
-under issue #3978.
+receipt verified. Build and runtime provenance remain unproven under #3978.
