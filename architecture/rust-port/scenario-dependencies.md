@@ -1,5 +1,14 @@
 # Scenario dependency maps
 
+For a local diagnostic while other scenario folders are changing, capture one
+feature and its named native fixtures with
+`python3 tools/bdd/local_scenario_snapshot.py SOURCE OUTPUT --feature AREA/FEATURE --fixture fixtures/cad/part.opd`.
+The tool checks selected hashes before and after copying, then creates a local
+Git checkout and a manifest. It excludes unrelated features, reference images,
+blocker notes, and non-native CAD fixtures. Its commit is local, not an upstream
+revision, and does not replace the global pinned snapshot or establish trusted
+build provenance.
+
 `tools/bdd/dependency_cli.py` generates one record for each pinned scenario.
 Each record names the exact feature hash and runner. The shared map stores the
 complete tracked Git tree, including file modes and symlink object identities.
