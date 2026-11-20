@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_api::types::{SketchTextRun, SketchTextStyle, TEXT_ALIGN_CENTER, TEXT_ALIGN_UPPER};
+use oblikovati_api::types::{
+    Color, OVERRIDE_COLOR_SOURCE, SketchTextRun, SketchTextStyle, TEXT_ALIGN_CENTER,
+    TEXT_ALIGN_UPPER,
+};
 use oblikovati_model::sketch::{SKETCH_RECIPE_VERSION, SketchText2D};
 
 const TEXT: SketchEntityId = SketchEntityId(10);
@@ -19,6 +22,13 @@ fn native_yaml_round_trips_formatting_in_unicode_scalar_ranges() {
         end: 7,
         bold: true,
         width_percent: Some(Box::new(50.)),
+        color: Some(Box::new(Color {
+            r: 0,
+            g: 128,
+            b: 255,
+            opacity: 1.,
+            source: OVERRIDE_COLOR_SOURCE,
+        })),
         ..Default::default()
     }]));
 }

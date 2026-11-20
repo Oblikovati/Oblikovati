@@ -119,7 +119,9 @@ pub use solve::{SketchResidualOperand, SketchResidualRow, SketchSolveOutcome};
 pub use source::SketchRelationId;
 pub use tangent::{CircleContact, LineContactSide};
 pub use tangent_distance::{TangentDistanceContact, TangentDistanceOptions, TangentLean};
-pub use text::{SketchText2D, sketch_text_width_factor, uniform_sketch_text_width};
+pub use text::{
+    SketchText2D, sketch_text_width_factor, uniform_sketch_text_color, uniform_sketch_text_width,
+};
 
 /// Ordered sketch ownership; shared endpoints use the same local point identity.
 #[derive(Clone, Debug, Default, PartialEq)]

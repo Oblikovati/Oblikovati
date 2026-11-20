@@ -11,6 +11,8 @@ use character_ranges::{TextFaceFlag, selection_has};
 mod numbering;
 #[path = "text_case.rs"]
 mod text_case;
+#[path = "text_color.rs"]
+mod text_color;
 use numbering::NumberingStyle;
 
 const CONTENT_PICKER_WIDTH: f32 = 130.;
@@ -30,6 +32,7 @@ pub(super) struct TextContentEditor {
     selection: Range<usize>,
     cursor: usize,
     restore: Option<Range<usize>>,
+    color_dialog: crate::application::model_browser::color_dialog::ColorDialog,
 }
 
 impl TextContentEditor {
@@ -56,6 +59,7 @@ impl TextContentEditor {
             | self.face_control(ui, draft, TextFaceFlag::Bold)
             | self.face_control(ui, draft, TextFaceFlag::Italic)
             | self.case_control(ui, draft)
+            | text_color::draw(ui, draft, &self.selection, &mut self.color_dialog)
     }
 
     fn case_control(&mut self, ui: &Ui, draft: &mut GuiSketchTextDraft) -> bool {

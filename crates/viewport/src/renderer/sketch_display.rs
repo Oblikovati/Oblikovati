@@ -181,11 +181,22 @@ impl SketchDisplayOverlay {
         }
         let selected = self.selected.sketches.contains(&sketch.sketch)
             || self.selected.entities.contains(&(sketch.sketch, identity));
+        let text_color = text
+            .and_then(|_| sketch.geometry.text(entity.entity).ok())
+            .map(|text| sketch_text_color(&text.style))
+            .transpose();
+        let text_color = match text_color {
+            Ok(color) => color.flatten(),
+            Err(cause) => {
+                self.declines.push(display_decline(sketch, identity, cause));
+                return;
+            }
+        };
         let color = entity_color(
             sketch,
             entity.entity,
             selected,
-            instance_color,
+            instance_color.or(text_color),
             &self.color,
             &self.selected_color,
         );
@@ -253,7 +264,15 @@ fn entity_color(
     }
     sketch.line_color.clone().unwrap_or_else(|| default.clone())
 }
-fn api_color(color: &oblikovati_api::types::Color) -> Rgba {
+pub(super) fn sketch_text_color(
+    style: &oblikovati_api::types::SketchTextStyle,
+) -> Result<Option<&oblikovati_api::types::Color>, String> {
+    let runs = style.formatting_runs.as_deref().unwrap_or_default();
+    oblikovati_model::sketch::uniform_sketch_text_color(&style.content, runs)
+        .ok_or_else(|| "sketch text color: expected one color until per-run glyph layout is available (Martensite #576)".into())
+}
+
+pub(super) fn api_color(color: &oblikovati_api::types::Color) -> Rgba {
     Rgba {
         r: f32::from(color.r) / 255.0,
         g: f32::from(color.g) / 255.0,

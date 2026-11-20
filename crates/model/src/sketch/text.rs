@@ -2,7 +2,7 @@
 //! Retain authored sketch text independently of its derived glyph outlines.
 use super::{Sketch2D, SketchEntityId, SketchError, SketchRecipe};
 use oblikovati_api::types::{
-    SketchTextRun, SketchTextStyle, TEXT_ALIGN_BASELINE, TEXT_ALIGN_CENTER, TEXT_ALIGN_LEFT,
+    Color, SketchTextRun, SketchTextStyle, TEXT_ALIGN_BASELINE, TEXT_ALIGN_CENTER, TEXT_ALIGN_LEFT,
     TEXT_ALIGN_LOWER, TEXT_ALIGN_MIDDLE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_UPPER,
 };
 
@@ -10,19 +10,39 @@ const TEXT_RECIPE_VERSION: u32 = 22;
 
 /// Read a uniform width in percent, for example a label with no runs returns `Some(100.)`.
 pub fn uniform_sketch_text_width(content: &str, runs: &[SketchTextRun]) -> Option<f64> {
-    let length = u32::try_from(content.chars().count()).ok()?;
+    uniform_text_property(content, runs, 100., |run| {
+        *run.width_percent.as_deref().unwrap_or(&100.)
+    })
+}
+
+/// Read an overall color, for example `Some(None)` means all characters inherit their color.
+/// Mixed inherited and explicit colors, or different explicit colors, return `None`.
+pub fn uniform_sketch_text_color<'a>(
+    content: &str,
+    runs: &'a [SketchTextRun],
+) -> Option<Option<&'a Color>> {
+    uniform_text_property(content, runs, None, |run| run.color.as_deref())
+}
+
+fn uniform_text_property<'a, T: Copy + PartialEq>(
+    content: &str,
+    runs: &'a [SketchTextRun],
+    base: T,
+    value: impl Fn(&'a SketchTextRun) -> T,
+) -> Option<T> {
     let mut prior_end = 0;
-    let mut width = None;
+    let mut result = None;
     for run in runs {
-        let current = run.width_percent.as_deref().copied().unwrap_or(100.);
-        let expected = *width.get_or_insert(if run.start == 0 { current } else { 100. });
-        if current != expected || (run.start != prior_end && expected != 100.) {
+        let current = value(run);
+        let expected = *result.get_or_insert(if run.start == 0 { current } else { base });
+        if current != expected || (run.start != prior_end && expected != base) {
             return None;
         }
         prior_end = run.end;
     }
-    let width = width.unwrap_or(100.);
-    (prior_end == length || width == 100.).then_some(width)
+    let uniform = result.unwrap_or(base);
+    (uniform == base || usize::try_from(prior_end).ok() == Some(content.chars().count()))
+        .then_some(uniform)
 }
 
 /// Convert percent to the font scale, for example `sketch_text_width_factor(50.) == Some(0.5)`.
@@ -51,6 +71,28 @@ mod width_tests {
         assert_eq!(uniform_sketch_text_width("界", &[]), Some(100.));
         assert_eq!(sketch_text_width_factor(50.), Some(0.5));
         assert_eq!(sketch_text_width_factor(f64::MIN_POSITIVE), None);
+    }
+
+    #[test]
+    fn color_distinguishes_inherited_explicit_and_mixed_runs() {
+        let run = SketchTextRun {
+            start: 0,
+            end: 1,
+            color: Some(Box::new(Color {
+                b: 255,
+                opacity: 1.,
+                source: oblikovati_api::types::OVERRIDE_COLOR_SOURCE,
+                ..Default::default()
+            })),
+            ..Default::default()
+        };
+        let runs = std::slice::from_ref(&run);
+        assert_eq!(uniform_sketch_text_color("界", &[]), Some(None));
+        assert_eq!(
+            uniform_sketch_text_color("界", runs),
+            Some(run.color.as_deref())
+        );
+        assert_eq!(uniform_sketch_text_color("界B", runs), None);
     }
 }
 

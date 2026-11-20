@@ -2,7 +2,7 @@
 //! The color dialog behind Select in a line color list: swatches, slots and defined colors.
 use imgui::{ColorStackToken, StyleColor, Ui};
 
-pub(super) const TITLE: &str = "Color";
+pub(crate) const TITLE: &str = "Color";
 const BASIC_SIZE: [f32; 2] = [300., 360.];
 const DEFINING_WIDTH: f32 = 640.;
 const CHANNEL_AND_ACTION_ROWS: f32 = 8.;
@@ -95,12 +95,12 @@ fn as_floats([red, green, blue]: [u8; 3]) -> [f32; 4] {
 }
 /// What a press on OK or Cancel means; while neither is pressed the dialog stays up.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum ColorAnswer {
+pub(crate) enum ColorAnswer {
     Chosen([u8; 3]),
     Cancelled,
 }
 #[derive(Debug)]
-pub(super) struct ColorDialog {
+pub(crate) struct ColorDialog {
     color: [u8; 3],
     custom: [[u8; 3]; CUSTOM_SLOTS],
     next_slot: usize,
@@ -118,11 +118,15 @@ impl Default for ColorDialog {
 }
 impl ColorDialog {
     /// Start over without defining; the custom slots stay for the session.
-    pub(super) fn begin(&mut self) {
+    pub(crate) fn begin(&mut self) {
         self.defining = false;
     }
+    pub(crate) fn begin_with_color(&mut self, color: Option<[u8; 3]>) {
+        self.begin();
+        self.color = color.unwrap_or(BASIC_COLORS[0]);
+    }
     /// A frame's worth of the dialog, once its popup has been asked for.
-    pub(super) fn panel(&mut self, ui: &Ui) -> Option<ColorAnswer> {
+    pub(crate) fn panel(&mut self, ui: &Ui) -> Option<ColorAnswer> {
         let size = self.fitted_size(ui);
         // Defining grows the dialog while it is open, so its size cannot wait for its appearing.
         let [width, height] = ui.io().display_size;

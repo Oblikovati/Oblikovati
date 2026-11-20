@@ -77,7 +77,7 @@ pub(super) fn set_text_width(
     })
 }
 
-fn revise_runs(
+pub(super) fn revise_runs(
     runs: &[SketchTextRun],
     selection: Range<u32>,
     apply: impl Fn(&mut SketchTextRun),

@@ -120,6 +120,10 @@ using this status; the live scenario directory can change.
   the text ID and anchor. Pinned `text-25` also requires strike-through.
   Font decoration metrics are tracked in
   [Martensite #578](https://github.com/Oblikovati/Martensite/issues/578).
+  The native palette test applied a blue swatch to selected text and found
+  blue glyph pixels in both the live preview and accepted sketch. The YAML
+  test retained color and width together. Pinned `text-19` still needs
+  underline.
   The model uses API v0.161.0 to validate Unicode character-format ranges.
   Tests cover atomic rejection of out-of-range edits, undo and redo, and
   native YAML reopen. Mixed-font rendering remains open under

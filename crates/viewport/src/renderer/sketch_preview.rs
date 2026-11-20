@@ -137,8 +137,15 @@ fn text_preview(
         return Ok(Vec::new());
     }
     let kind = super::sketch_display::curve_role_line_style(false, false);
+    let override_color =
+        super::sketch_display::sketch_text_color(style)?.map(super::sketch_display::api_color);
     Ok(vec![sketch_structure::curve_paths(
-        viewer, plane, &edges, color, kind, true,
+        viewer,
+        plane,
+        &edges,
+        override_color.as_ref().unwrap_or(color),
+        kind,
+        true,
     )?])
 }
 
