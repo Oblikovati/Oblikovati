@@ -72,7 +72,7 @@ impl<
             .collect();
     }
     /// Start a scenario from a known list; the stored file keeps other sessions' entries.
-    #[cfg(test)]
+    #[cfg(all(test, target_os = "linux"))]
     pub(crate) fn forget_recent_documents(&mut self) {
         self.recent_documents.clear();
         self.recent_rows.clear();

@@ -39,7 +39,7 @@ impl super::NativeHeadWindow {
         Ok(())
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, target_os = "linux"))]
     pub(crate) fn presentation_bounds_refresh_count(&self) -> usize {
         self.presentation_bounds_refreshes
     }

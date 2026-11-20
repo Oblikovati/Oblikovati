@@ -154,7 +154,7 @@ fn validate_selected_meshes(
 }
 
 impl DesktopPartScenes {
-    #[cfg(test)]
+    #[cfg(all(test, target_os = "linux"))]
     pub(crate) fn face_mesh_builds(&self) -> usize {
         self.face_mesh_builds
     }

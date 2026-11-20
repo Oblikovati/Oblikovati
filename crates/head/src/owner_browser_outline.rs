@@ -10,7 +10,7 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
-    #[cfg(test)]
+    #[cfg(all(test, target_os = "linux"))]
     pub(crate) fn face_mesh_builds(&self) -> usize {
         self.part_scenes.face_mesh_builds()
     }

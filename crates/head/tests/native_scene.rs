@@ -95,6 +95,7 @@ pub(super) fn capture_native_scene(window: &mut NativeHeadWindow) -> ViewportCap
     capture
 }
 /// Capture the current completed framebuffer; example: `capture_framebuffer(window)` for GUI acceptance.
+#[cfg(target_os = "linux")]
 pub(super) fn capture_framebuffer(window: &mut NativeHeadWindow) -> ViewportCapture {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
     completed_framebuffer_until(window, deadline)

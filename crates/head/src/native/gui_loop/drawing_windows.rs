@@ -73,7 +73,7 @@ impl DrawingWindows {
         Ok(())
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, target_os = "linux"))]
     pub(in crate::native) fn inspect<R>(
         &mut self,
         id: u64,

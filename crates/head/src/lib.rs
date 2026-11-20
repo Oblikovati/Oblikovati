@@ -9,8 +9,11 @@ mod assembly_producer;
 mod native_services;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod part_view_display;
-#[cfg(all(test, any(target_os = "linux", target_os = "windows")))]
+#[cfg(all(test, target_os = "linux"))]
 #[path = "../../gui/src/test_context.rs"]
+mod test_context;
+#[cfg(all(test, target_os = "windows"))]
+#[path = "../../gui/src/test_context_lease.rs"]
 mod test_context;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod view_orientation;

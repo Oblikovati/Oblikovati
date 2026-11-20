@@ -322,7 +322,7 @@ fn publish_owner_sketches(
     Ok(true)
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_os = "linux"))]
 pub(crate) fn advance_gui_for_native_test(
     window: &mut dyn HeadWindow,
     owner: &mut dyn HeadWork,
