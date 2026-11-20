@@ -137,3 +137,52 @@ fn check_formatted_text_reopens(world: &mut ApplicationWorld) {
     text_edit::open_existing(world);
     assert_preview_style(world);
 }
+
+#[test]
+fn sketch_text_rejects_zero_height_without_losing_the_last_valid_preview() {
+    let mut world = ApplicationWorld::new();
+    text_edit::committed_b(&mut world);
+    let original = world.edited_geometry();
+    text_edit::open_existing(&mut world);
+    choose_format(&mut world, "Choose height", "6.10 mm");
+    let valid_preview = world.app().owner.sketch_preview().unwrap();
+    let valid_pixels = glyph_pixels(&mut world);
+    focus_height_field(&mut world);
+    x11_input::press_control_a();
+    world.pump(Vec::new());
+    enter_height_and_tab(&mut world, b'0');
+    world.expect_text("Enter a size greater than 0.01 mm.");
+    if std::env::var_os("OBK_BDD_REPORTS").is_some() {
+        world.save_capture("sketch-text-height-warning");
+    }
+    assert_eq!(world.state().sketch_text.unwrap().height_mm, "6.10");
+    assert_eq!(world.app().owner.sketch_preview(), Some(valid_preview));
+    acknowledge_height_warning(&mut world);
+    assert_eq!(glyph_pixels(&mut world), valid_pixels);
+    enter_height_and_tab(&mut world, b'6');
+    assert_eq!(world.state().sketch_text.unwrap().height_mm, "6");
+    world.expect_no_text("Enter a size greater than 0.01 mm.");
+    click_editor_button(&mut world, "Cancel");
+    assert_eq!(world.edited_geometry(), original);
+    world.close();
+}
+
+fn focus_height_field(world: &mut ApplicationWorld) {
+    let label = world.run_in_window("Format Text", "Height(mm)");
+    let position = [label.minimum[0] - 70., label.center()[1]];
+    x11_input::click(diagnostics::pointer_pixels(position));
+    world.pump(Vec::new());
+}
+
+fn enter_height_and_tab(world: &mut ApplicationWorld, digit: u8) {
+    x11_input::press_keysym(u32::from(digit));
+    world.pump(Vec::new());
+    x11_input::press_keysym(0xff09);
+    world.pump(Vec::new());
+}
+
+fn acknowledge_height_warning(world: &mut ApplicationWorld) {
+    let button = world.run_in_window("Text Height", "OK").center();
+    x11_input::click(diagnostics::pointer_pixels(button));
+    world.pump(Vec::new());
+}

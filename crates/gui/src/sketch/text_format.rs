@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::GuiSketchTextDraft;
+use super::{GuiSketchTextDraft, text_height::TextHeightInput};
 use imgui::Ui;
 use oblikovati_api::types::{
     TEXT_ALIGN_BASELINE, TEXT_ALIGN_CENTER, TEXT_ALIGN_LEFT, TEXT_ALIGN_LOWER, TEXT_ALIGN_MIDDLE,
@@ -14,9 +14,10 @@ pub(super) fn draw(
     draft: &mut GuiSketchTextDraft,
     families: &[String],
     filter: &mut String,
+    height_input: &mut TextHeightInput,
 ) -> bool {
     font_row(ui, &mut draft.family, families, filter)
-        | height_row(ui, &mut draft.height_mm)
+        | height_row(ui, &mut draft.height_mm, height_input)
         | ui.input_text("Rotation (deg)", &mut draft.rotation_degrees)
             .build()
         | alignment_rows(ui, draft)
@@ -56,9 +57,8 @@ fn font_row(ui: &Ui, family: &mut String, families: &[String], filter: &mut Stri
     typed
 }
 
-fn height_row(ui: &Ui, height_mm: &mut String) -> bool {
-    ui.set_next_item_width(145.);
-    let typed = ui.input_text("Height (mm)", height_mm).build();
+fn height_row(ui: &Ui, height_mm: &mut String, input: &mut TextHeightInput) -> bool {
+    let typed = input.draw(ui, height_mm);
     ui.same_line();
     ui.set_next_item_width(145.);
     let Some(_list) = ui.begin_combo("##font-height-list", "Choose height") else {
@@ -71,7 +71,7 @@ fn height_row(ui: &Ui, height_mm: &mut String) -> bool {
             .selected(selected)
             .build()
         {
-            *height_mm = preset.into();
+            input.choose_preset(height_mm, preset);
             return true;
         }
     }

@@ -11,6 +11,8 @@ use oblikovati_api::types::{
 use std::cell::RefCell;
 #[path = "text_format.rs"]
 mod format_controls;
+#[path = "text_height.rs"]
+mod text_height;
 
 const TITLE: &str = "Format Text";
 
@@ -54,6 +56,7 @@ pub enum GuiSketchTextAction {
 pub(crate) struct SketchTextDialog {
     dock_state: DockableState,
     font_filter: RefCell<String>,
+    height_input: RefCell<text_height::TextHeightInput>,
 }
 impl DockableWindow for SketchTextDialog {}
 
@@ -67,6 +70,9 @@ impl SketchTextDialog {
 
     pub(crate) fn synchronize(&self, state: &GuiCommandState) {
         self.dock_state.set_open(state.sketch_text.is_some());
+        if state.sketch_text.is_none() {
+            *self.height_input.borrow_mut() = Default::default();
+        }
     }
 
     pub(crate) fn panel(
@@ -88,6 +94,7 @@ impl SketchTextDialog {
                     draft,
                     state.sketch_text_font_families.as_deref().unwrap_or(&[]),
                     &mut filter,
+                    &mut self.height_input.borrow_mut(),
                 )
             })
             .flatten();
@@ -105,18 +112,24 @@ fn text_editor(
     mut draft: GuiSketchTextDraft,
     families: &[String],
     filter: &mut String,
+    height: &mut text_height::TextHeightInput,
 ) -> Option<GuiSketchTextAction> {
     let changed = ui
         .input_text_multiline("Content", &mut draft.content, [295., 100.])
         .build()
-        | format_controls::draw(ui, &mut draft, families, filter);
-    if ui.button("OK") {
-        return Some(GuiSketchTextAction::Accept(draft));
-    }
+        | format_controls::draw(ui, &mut draft, families, filter, height);
+    let accept = ui.button("OK");
     ui.same_line();
     if ui.button("Cancel") || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape) {
         return Some(GuiSketchTextAction::Cancel);
     }
+    if accept {
+        height.apply(&mut draft.height_mm);
+        if !height.blocked() {
+            return Some(GuiSketchTextAction::Accept(draft));
+        }
+    }
+    height.warning(ui);
     changed.then_some(GuiSketchTextAction::Preview(draft))
 }
 
