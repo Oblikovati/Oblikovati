@@ -76,6 +76,18 @@ class SealedBuildChainTests(unittest.TestCase):
             self.assertEqual(result["execution"]["runner_input"]["sha256"], result["build"]["runner_sha256"])
             self.assertEqual(fixture.log.read_text(), "executed")
 
+    def test_missing_docking_runtime_fails_before_build(self) -> None:
+        from dataclasses import replace
+
+        with tempfile.TemporaryDirectory() as folder:
+            probe, fixture = self.fixture(Path(folder))
+            request = replace(fixture.request(), feature="docking-system")
+            with patch("sealed_build_chain.run_committed_build_probe", FakeCommittedBuild()):
+                with self.assertRaisesRegex(ValueError, "docking runtime tool"):
+                    run_sealed_build(probe, request, probe.source, "a" * 40, fixture.verify)
+            self.assertFalse((probe.target / "runner").exists())
+            self.assertFalse(fixture.log.exists())
+
     def test_build_output_cannot_overlap_execution_reports(self) -> None:
         from dataclasses import replace
 

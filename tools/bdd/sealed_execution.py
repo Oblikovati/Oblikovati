@@ -74,6 +74,20 @@ def require_request(request: SealedRequest) -> None:
     require_empty_output(request)
     require_disjoint_paths(request)
     require_slots(request.runtime)
+    require_docking_tools(request)
+
+
+def require_docking_tools(request: SealedRequest) -> None:
+    """Check the restart runtime before building; example: require_docking_tools(request)."""
+    if request.area != "application" or request.feature != "docking-system":
+        return
+    tools = ("python3", "openbox", "import", "compare", "xvfb-run", "Xvfb", "xauth")
+    for name in tools:
+        path = request.runtime / "usr" / "bin" / name
+        if not path.is_file() or not path.resolve().is_relative_to(request.runtime.resolve()):
+            raise ValueError(f"docking runtime tool {path}: expected a file within the runtime")
+        if not os.access(path, os.X_OK):
+            raise ValueError(f"docking runtime tool {path}: expected an executable file")
 
 
 def require_absolute_paths(request: SealedRequest) -> None:
