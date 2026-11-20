@@ -688,13 +688,13 @@
       "features/sketch/text/VISUAL.md": "fd0e1444c421ebad300c59bb1c07589adfc0b97bd46c4a6f64c50b1af2aa2398",
       "features/sketch/text/feature-icon.svg": "42e957b40212d450898c00e75e693943d6556aca7e752e72c7859f854eab14d6"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-sketch-text-style-3907/cucumber.json",
-    "cucumber_sha256": "212e6648cc6b9c797d0880bb2bb3b2725374a495c9606f4a935f2315c3bdbc35",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-sketch-text-style-3907/scenario-arguments.json",
-    "scenario_arguments_sha256": "1d9bf6455446d7bbba8f66bb032e0ee02a0fa26c330e9f5b93bd1ce5cd4ed39d",
-    "application_commit": "68e0a0508550a93bc9dd36944ac4b637f94028a5",
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-sketch-text-height-3907/cucumber.json",
+    "cucumber_sha256": "f2ed54518a3fee559b5a4358d12ee922f92a4909206e9ebf72d76df5dee36c6e",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-sketch-text-height-3907/scenario-arguments.json",
+    "scenario_arguments_sha256": "582f0a01105cfbf1e3923211a8a293c99df39d5299106d3abc5f06ff00ce3b55",
+    "application_commit": "3817cdc53bd44484da681f360d68c4ed4a647121",
     "command": "Unfiltered Text feature. See receipt README.",
     "environment": "Linux X11 under Xvfb, 1440 × 900 native window, Vulkan Lavapipe",
-    "notes": "Seven of 38 declarations passed after font, height and alignment controls were added. The other 31 lack step bindings. Native tests also cover preview, Cancel, history, and save and reopen. Strict acceptance requires bounded build and runtime inputs (#3978)."
+    "notes": "Seven of 38 declarations passed after height validation. The other 31 lack step bindings. The focused native test also covers invalid height, preserved preview, correction, and Cancel. Strict acceptance requires bounded build and runtime inputs (#3978)."
   }
 }

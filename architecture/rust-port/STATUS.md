@@ -75,12 +75,13 @@ using this status; the live scenario directory can change.
   history with the same rendered text and position after Redo. The native
   editor offers installed fonts, height presets, and horizontal and vertical
   alignment. X11 checks cover visible preview changes, Cancel, history, and
-  save and reopen. Selected-character formatting is tracked in
-  [API PR #315](https://github.com/Oblikovati/Oblikovati.API/pull/315).
+  save and reopen. Invalid height keeps the last valid glyph and selects the
+  rejected value after the warning closes. Selected-character formatting is
+  tracked in [API PR #315](https://github.com/Oblikovati/Oblikovati.API/pull/315).
   The full live Text run passed seven of 38 declarations. The other 31 lack
-  step bindings. See `receipts/2026-11-20-sketch-text-style-3907/` for the
-  current run and `receipts/2026-11-20-sketch-text-creation-3907/` for the
-  focused creation and empty-content baseline.
+  step bindings. See `receipts/2026-11-20-sketch-text-height-3907/` for the
+  current run and `receipts/2026-11-20-sketch-text-style-3907/` for the
+  formatting preview and save and reopen checks.
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
   Midpoint Line tool has native mouse and keyboard tests. A native YAML
