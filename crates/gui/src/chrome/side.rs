@@ -144,6 +144,7 @@ fn side_groups(
                     sketch_pattern: owners.sketch_pattern,
                     create_block: owners.create_block,
                     customization: &mut ribbon.customization,
+                    team_web: &mut ribbon.team_web,
                     active_tab: ribbon.active,
                     plane_selection_active: owners.plane_selection_active,
                     hole_tip: ribbon.tips.model_commands() && ribbon.tips.matching("HO"),

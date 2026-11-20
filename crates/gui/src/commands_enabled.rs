@@ -18,6 +18,7 @@ impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
+            Self::OpenTeamWebInBrowser(_) => true,
             Self::DismissSketchContext { .. } => true,
             Self::SelectContextConstraintGlyph { token, glyph }
             | Self::HideContextConstraintGlyph { token, glyph } => {

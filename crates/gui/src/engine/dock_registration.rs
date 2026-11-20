@@ -12,6 +12,7 @@ fn register_application_windows(engine: &mut GuiFrameEngine) -> Result<(), Strin
     engine.appearance_browser.register_dockable(registry)?;
     engine.parameter_editor.register_dockables(registry)?;
     engine.ribbon.customization.register_dockable(registry)?;
+    engine.ribbon.team_web.register_dockable(registry)?;
     engine.create_block.register_dockable(registry)?;
     engine.inference_scope.register_dockable(registry)?;
     engine.preferences.register_dockable(registry)?;

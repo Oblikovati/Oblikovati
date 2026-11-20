@@ -24,6 +24,7 @@ pub(crate) enum RibbonPanel {
     ToolFind,
     ToolClipboard,
     ToolTutorials,
+    ToolTeamWeb,
     Navigate,
     Appearance,
     Visibility,
@@ -66,6 +67,7 @@ impl RibbonPanel {
             Self::ToolFind => "Find",
             Self::ToolClipboard => "Clipboard",
             Self::ToolTutorials => "Tutorials",
+            Self::ToolTeamWeb => "Team Web",
             Self::Navigate => "Navigate",
             Self::Appearance => "Appearance",
             Self::Visibility => "Visibility",
@@ -111,6 +113,7 @@ impl RibbonPanel {
             | Self::ToolFind
             | Self::ToolClipboard
             | Self::ToolTutorials
+            | Self::ToolTeamWeb
             | Self::Appearance
             | Self::Visibility
             | Self::Windows
@@ -204,7 +207,7 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
     };
     if tab == RibbonTab::Tools && state.document_type == Some(oblikovati_api::types::DOCUMENT_PART)
     {
-        panels.push(ToolTutorials);
+        panels.extend([ToolTeamWeb, ToolTutorials]);
     }
     if state.authoring == crate::GuiAuthoringContext::Sketch && !panels.contains(&Exit) {
         panels.push(Exit);

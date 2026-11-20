@@ -44,6 +44,7 @@ pub(crate) struct RibbonPanelOwners<'a> {
     pub sketch_pattern: &'a mut crate::sketch::rectangular_pattern::RectangularPatternDialog,
     pub create_block: &'a mut crate::sketch::create_block::CreateBlockDialog,
     pub customization: &'a mut crate::application::ribbon_customization::RibbonCustomization,
+    pub team_web: &'a mut crate::ribbon::team_web::TeamWebWindow,
     pub active_tab: RibbonTab,
     pub plane_selection_active: bool,
     pub hole_tip: bool,

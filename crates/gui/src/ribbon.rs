@@ -7,6 +7,8 @@ use oblikovati_api::types::{
 };
 #[path = "ribbon_reset.rs"]
 mod reset;
+#[path = "ribbon_team_web.rs"]
+pub(crate) mod team_web;
 
 impl DocumentRibbon {
     pub(crate) fn apply_context_actions(&mut self, tab: RibbonTab) {
@@ -65,6 +67,7 @@ pub(crate) struct DocumentRibbon {
     pub panels: crate::ribbon_panels::RibbonPanelLayout,
     pub display: crate::application::ribbon_display::RibbonDisplayState,
     pub customization: crate::application::ribbon_customization::RibbonCustomization,
+    pub team_web: team_web::TeamWebWindow,
     settling_frames: u8,
     pending_tab: Option<RibbonTab>,
     pub double_click_tab: Option<RibbonTab>,

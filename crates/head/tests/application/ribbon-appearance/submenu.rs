@@ -95,6 +95,27 @@ fn optional_tools_panels_follow_show_panels_and_reset() {
     world.close();
 }
 
+#[test]
+fn team_web_opens_a_closeable_resource_window() {
+    let mut world = ApplicationWorld::new();
+    let document = open_appearance_part(&mut world);
+    select_tab(&mut world, "Tools");
+    let button = diagnostics::pointer_pixels(world.run("Open Team Web").center());
+    super::super::x11_input::click(button);
+    world.pump(Vec::new());
+    let content = world.window_text("Team Web");
+    assert!(content.contains("OpeninBrowser"), "{content:?}");
+    assert!(content.contains("https://docs.oblikovati.org/"), "{content:?}");
+    world.save_capture("team-web-resource");
+    let (position, size) = diagnostics::window_geometry("Team Web").unwrap();
+    let close = [position[0] + size[0] - 10., position[1] + 10.];
+    super::super::x11_input::click(diagnostics::pointer_pixels(close));
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("Team Web").is_none());
+    assert_eq!(world.active_id(), document);
+    world.close();
+}
+
 #[then("Normal is marked as selected")]
 #[then("Normal is still marked as selected")]
 fn normal_checked(world: &mut ApplicationWorld) {

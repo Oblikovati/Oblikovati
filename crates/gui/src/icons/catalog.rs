@@ -97,6 +97,7 @@ glyph_catalog! {
     WorkPoint => "work-point",
     WorkCoordinateSystem => "coordinate-system",
     Projects => "qat-projects",
+    TeamWeb => "team-web",
     Update => "qat-update",
     Select => "qat-select",
     MaterialBrowser => "qat-material-browser",

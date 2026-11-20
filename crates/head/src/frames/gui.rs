@@ -5,6 +5,8 @@ use oblikovati_viewport::ViewportInput;
 use std::time::Duration;
 #[path = "gui_action_key.rs"]
 mod action_key;
+#[path = "resource_browser.rs"]
+mod resource_browser;
 use action_key::action_key;
 #[path = "gui_authoring.rs"]
 mod authoring;
@@ -292,6 +294,9 @@ pub(super) fn dispatch_gui_action(
             return window.capture_isometric_preview(*document);
         }
         GuiShellAction::Exit => return window.request_close(),
+        GuiShellAction::OpenTeamWebInBrowser(url) => {
+            return report_authoring_result(window, resource_browser::open(url).map(|()| true));
+        }
         GuiShellAction::OrientView {
             command,
             fit,

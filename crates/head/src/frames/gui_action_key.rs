@@ -48,6 +48,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::CaptureWindowPreview
         | GuiShellAction::CaptureIsometricPreview { .. }
         | GuiShellAction::Exit
+        | GuiShellAction::OpenTeamWebInBrowser(_)
         | GuiShellAction::EditThemeColor { .. }
         | GuiShellAction::DuplicateTheme { .. }
         | GuiShellAction::DeleteTheme { .. }

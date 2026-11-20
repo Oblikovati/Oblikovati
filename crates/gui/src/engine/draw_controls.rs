@@ -60,6 +60,7 @@ impl GuiFrameEngine {
             &mut selected,
         );
         let visibility = self.workspace.tool_visibility;
+        self.ribbon.team_web.draw(ui, &mut selected);
         self.material_browser.set_open(visibility.material);
         self.appearance_browser.set_open(visibility.appearance);
         self.parameter_editor.set_open(visibility.parameters);

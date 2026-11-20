@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
+    OpenTeamWebInBrowser(&'static str),
     /// Apply one staged marking menu.
     SetMarkingMenu(oblikovati_api::wire::SetMarkingMenuArgs),
     /// Apply a staged keyboard customization.
