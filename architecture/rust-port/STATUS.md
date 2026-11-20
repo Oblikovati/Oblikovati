@@ -19,7 +19,9 @@ using this status; the live scenario directory can change.
   expansion where the fixture notes require a pinned expansion. The shared
   part setup also lacks the visible solid required by the fixture notes.
   `BLOCKERS.md` changed during the run, so the result is not inventory
-  evidence. See `receipts/2026-11-20-ribbon-appearance-diagnostic/`.
+  evidence. See `receipts/2026-11-20-ribbon-appearance-diagnostic/`. A native
+  mouse test passes the pinned expansion through Text Off and Normal; see
+  `receipts/2026-11-20-ribbon-pinned-3957/`.
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
   unfinished feature worktree is retained, and a native YAML fixture is
