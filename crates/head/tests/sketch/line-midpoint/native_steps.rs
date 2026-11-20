@@ -2,6 +2,8 @@
 //! Midpoint Line observations driven through the sketch viewport.
 use super::ApplicationWorld;
 use cucumber::{then, when};
+#[path = "precise_steps.rs"]
+mod precise_steps;
 
 #[when("the user select the sketch origin as the midpoint")]
 #[when("the user select the sketch origin as its midpoint")]
