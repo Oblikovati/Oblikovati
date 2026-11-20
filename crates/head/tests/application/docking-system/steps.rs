@@ -25,9 +25,13 @@ mod tabs_scenario;
 const PANEL: &str = "Material Browser";
 
 fn open_docking_fixture(world: &mut ApplicationWorld) -> u64 {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../test-utilities/fixtures/docking-visible-solid.opd");
-    world.reopen_through_dialog(&path);
+    let path = super::scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
+    world.click_text("File");
+    world.click_text("Open...");
+    world.type_text(path.to_str().expect("fixture path: expected UTF-8"));
+    world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
+    world.expect_no_text("Look in");
     let document = world.active_id();
     world.previous_document = Some(document);
     document
