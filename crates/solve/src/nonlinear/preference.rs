@@ -11,6 +11,11 @@ use std::collections::BTreeSet;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PreferenceTermination {
     Converged,
+    /// The computed projected step was exactly zero despite a free linearized direction.
+    /// This is not evidence of a minimum, or of a feasible nonlinear motion.
+    ZeroProjectedStep,
+    /// The solver found no numerical free direction; callers may also use this for blocked targets.
+    /// This is not a proof that the nonlinear problem has no other solution.
     Unavailable,
     Stalled,
     IterationLimit,
@@ -96,12 +101,19 @@ fn optimize(
         if step == options.max_iterations {
             break;
         }
-        let Some(seed) = preference_seed(&solution, constants, &pending, options.rank_tolerance)?
-        else {
-            return Ok(PreferenceResult {
-                solution,
-                preference: PreferenceTermination::Unavailable,
-            });
+        let seed = match preference_seed(&solution, constants, &pending, options.rank_tolerance)? {
+            PreferenceSeed::Values(seed) => seed,
+            PreferenceSeed::ZeroStep { free_directions } => {
+                let preference = if free_directions == 0 {
+                    PreferenceTermination::Unavailable
+                } else {
+                    PreferenceTermination::ZeroProjectedStep
+                };
+                return Ok(PreferenceResult {
+                    solution,
+                    preference,
+                });
+            }
         };
         let next = iteration::run(&seed, blocks, constants, options, cancelled)?;
         if next.termination == SolveTermination::Cancelled {
@@ -148,12 +160,17 @@ fn pending_preferences(
     (pending, distance)
 }
 
+enum PreferenceSeed {
+    Values(Vec<f64>),
+    ZeroStep { free_directions: usize },
+}
+
 fn preference_seed(
     solution: &NonlinearResult,
     constants: &[(usize, f64)],
     pending: &[(usize, f64)],
     tolerance: f64,
-) -> Result<Option<Vec<f64>>, SolveError> {
+) -> Result<PreferenceSeed, SolveError> {
     let n = solution.values.len();
     let mut constraints: Vec<Vec<f64>> = solution
         .evaluation
@@ -175,7 +192,9 @@ fn preference_seed(
     let motion =
         qr.best_fit_free_motion(&DenseMatrix::new(pending.len(), rows)?, &targets, tolerance)?;
     if motion.iter().all(|&value| value == 0.0) {
-        return Ok(None);
+        return Ok(PreferenceSeed::ZeroStep {
+            free_directions: n - qr.rank(),
+        });
     }
     let seed = solution
         .values
@@ -183,5 +202,5 @@ fn preference_seed(
         .zip(motion)
         .map(|(&value, delta)| super::checked(value + delta, "preference seed"))
         .collect::<Result<_, _>>()?;
-    Ok(Some(seed))
+    Ok(PreferenceSeed::Values(seed))
 }

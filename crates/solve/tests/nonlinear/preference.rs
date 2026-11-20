@@ -94,6 +94,48 @@ fn unavailable_preference_does_not_change_the_satisfied_constraint() {
 }
 
 #[test]
+fn zero_projected_step_does_not_claim_the_circle_extremum_is_a_minimum() {
+    let circle = UnitCircle;
+    let result = solve_with_preference(
+        &[1.0, 0.0],
+        &[block(&circle, &[0, 1])],
+        &[],
+        &[(0, -1.0)],
+        SolveOptions::default(),
+        || false,
+    )
+    .unwrap();
+    assert_eq!(result.preference, PreferenceTermination::ZeroProjectedStep);
+    assert_eq!(result.solution.values, [1.0, 0.0]);
+    assert_eq!(result.solution.structure.degrees_of_freedom, 1);
+    let alternative = [-1.0_f64, 0.0];
+    let alternative_equations = circle
+        .evaluate(&DualNumber::seed(&alternative).unwrap())
+        .unwrap();
+    assert_eq!(alternative_equations[0].value(), 0.0);
+    assert!((alternative[0] + 1.0).abs() < (result.solution.values[0] + 1.0).abs());
+}
+
+#[test]
+fn zero_projected_step_distinguishes_an_unrelated_free_coordinate() {
+    let target = Target {
+        target: 3.0,
+        coefficient: 1.0,
+    };
+    let result = solve_with_preference(
+        &[3.0, 5.0],
+        &[block(&target, &[0])],
+        &[],
+        &[(0, 0.0)],
+        SolveOptions::default(),
+        || false,
+    )
+    .unwrap();
+    assert_eq!(result.preference, PreferenceTermination::ZeroProjectedStep);
+    assert_eq!(result.solution.values, [3.0, 5.0]);
+}
+
+#[test]
 fn preference_follows_the_local_circle_branch_and_keeps_the_constraint() {
     let circle = UnitCircle;
     let result = solve_with_preference(
