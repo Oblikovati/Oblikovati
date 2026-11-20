@@ -688,13 +688,13 @@
       "features/sketch/text/VISUAL.md": "fd0e1444c421ebad300c59bb1c07589adfc0b97bd46c4a6f64c50b1af2aa2398",
       "features/sketch/text/feature-icon.svg": "42e957b40212d450898c00e75e693943d6556aca7e752e72c7859f854eab14d6"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-sketch-text-presets-3907/cucumber.json",
-    "cucumber_sha256": "ad298e48413e869cc2bfe24ced536f378611f20edfa88830bb017dd203c9a3d0",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-sketch-text-presets-3907/scenario-arguments.json",
-    "scenario_arguments_sha256": "84e1b4bc50e88acca3ff99eb0070c9881f72b5098fb2855d9c35416607dca596",
-    "application_commit": "fae0f799312b24a5d29ed93b6a9a0c088a6b0125",
-    "command": "Unfiltered Text feature. See receipt README.",
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-sketch-text-numbering-3907/cucumber.json",
+    "cucumber_sha256": "fc79ce17dd4a4437b169fc570fb045ae1297da08b202cf3ef935982a9b3e8452",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-sketch-text-numbering-3907/scenario-arguments.json",
+    "scenario_arguments_sha256": "736369ca3f26873cc5e4aed5684ca00cc1bd3a44a24797a3acd80b54a4e42e01",
+    "application_commit": "1b3e45d4a55f4376bed0fa49daa20eebb4d344df",
+    "command": "Unfiltered Text feature with native X11 input. See the receipt README.",
     "environment": "Linux X11 under Xvfb, 1440 × 900 native window, Vulkan Lavapipe",
-    "notes": "Eight of 38 declarations passed. The new text-24 case covers the preset list, Escape in the inline name, disabled current-preset actions, and checked settings. Strict acceptance requires bounded build and runtime inputs (#3978)."
+    "notes": "Nine scenarios passed. Twenty-nine have undefined steps. The diameter fixture selects DejaVu Sans. The default font fallback is tracked in Martensite #575."
   }
 }

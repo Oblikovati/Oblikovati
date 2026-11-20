@@ -76,14 +76,18 @@ using this status; the live scenario directory can change.
   editor offers installed fonts, height presets, and horizontal and vertical
   alignment. X11 checks cover visible preview changes, Cancel, history, and
   save and reopen. Invalid height keeps the last valid glyph and selects the
-  rejected value after the warning closes. Selected-character formatting is
-  tracked in [API PR #315](https://github.com/Oblikovati/Oblikovati.API/pull/315).
+  rejected value after the warning closes. The selected-character formatting
+  contract is available in [API v0.161.0](https://github.com/Oblikovati/Oblikovati.API/releases/tag/v0.161.0).
   The preset list, inline naming, and checked defaults passed pinned `text-24`.
   The native session preset applies to a fresh draft without committing geometry.
-  The full live Text run passed eight of 38 declarations. The other 30 lack
-  step bindings. See `receipts/2026-11-20-sketch-text-presets-3907/` for the
-  current run and `receipts/2026-11-20-sketch-text-style-3907/` for the
-  formatting preview and save and reopen checks.
+  Pinned `text-22` passed numbering and diameter-symbol insertion with DejaVu
+  Sans, including a check of the curved outline and visual review of the canvas.
+  The default font fallback is open under [Martensite #575](https://github.com/Oblikovati/Martensite/issues/575).
+  The full live Text run passed nine of 38 declarations. The other 29 lack
+  step bindings. See `receipts/2026-11-20-sketch-text-numbering-3907/` for
+  the current run and `receipts/2026-11-20-sketch-text-style-3907/` for the
+  formatting preview and save and reopen checks. Strict verification still
+  requires bounded build and runtime inputs under #3978.
 - Midpoint Line (#4178): the scenario source changed and now requires an
   Inventor fixture for all six scenarios. Inventor interop is deferred. The
   Midpoint Line tool has native mouse and keyboard tests. A native YAML

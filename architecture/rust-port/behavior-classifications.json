@@ -27728,12 +27728,23 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: text-22 Preview numeric numbering and a diameter symbol",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Martensite/issues/575"
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/sketch_create_tools.go, SketchTextTool binds a chosen font and keeps the content for glyph generation.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go sketch text tests cover authored content and glyph geometry. The numbering and symbol control sequence comes from pinned text-22.",
+      "api_revision": "803f3122e1d19e461fefa60c90b1b138c3b8214c",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite samples curved outlines from a font containing U+2300. Default font fallback is open under Martensite #575.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe and DejaVu Sans. Windows and macOS UI evidence is pending.",
+      "kernel_integration": "The Format Text draft supplies the same authored Unicode to the editor and Martensite preview. The preview uses the chosen fixture font.",
+      "rust_tests": "sketch_scenarios_use_the_native_window, focused by pinned text-22, and Sketch Text content unit tests.",
+      "oracle": "Pinned text-22 steps, X11 input, font outlines with curved edges, viewport pixel changes, and inspection of the editor and preview framebuffer.",
+      "expected_result": "All five numbering styles appear. Numeric numbering adds an indented 1. prefix. Diameter insertion at the caret shows the same character in the editor and the canvas, without committing the preview.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:712d41eccf5a9cb12a47915e6aeec478a3a9031b336fd1f3d63be9f2f11009f5",
