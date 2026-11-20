@@ -515,16 +515,16 @@
       "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9",
       "fixtures/cad/workspace-layout-points.opd": "69fafcac8264775600b11dbdd2793a563bdf2677be2d419940891e11e32d331a"
     },
-    "application_commit": "6fa4c41c3d96de8198e216eb8410d156ce23e911",
-    "command": "Full workspace-layout diagnostic. See the receipt README.",
-    "environment": "Linux X11, Xvfb and Vulkan Lavapipe",
-    "notes": "48 of 53 cases passed. Both outline examples count as one declaration. Three undefined steps and two saved-name assertions stopped five cases.",
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-workspace-fixtures-3897/cucumber.json",
-    "cucumber_sha256": "819594ce2a7d986bf040351af455e5e81a86123c942282260eb82977481ec14d",
-    "scenario_inventory": "architecture/rust-port/receipts/2026-11-20-workspace-fixtures-3897/scenario-inventory.json",
+    "application_commit": "7f735741ed6c768c89162752f2cd09e14912ba52",
+    "command": "Full Workspace Layout run. See the receipt README.",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe. Separate foreground X11 check with Openbox and MCPBridge.",
+    "notes": "All 53 cases and 523 steps passed. The inventory counts 52 declarations, with two examples in one outline. Strict verification still needs pinned source and bounded build and runtime inputs under #3978.",
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-workspace-layout-3897/cucumber.json",
+    "cucumber_sha256": "48861277451acb3f17019f500d2b10be9923ee4bf492155d6a9a47d2914ce32f",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-20-workspace-layout-3897/scenario-inventory.json",
     "scenario_inventory_sha256": "04afd775d30b62ed47b6d1dfb4da09c2326b043689c51f40b8bde96aad8c10e5",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-workspace-fixtures-3897/scenario-arguments.json",
-    "scenario_arguments_sha256": "f3b4d4cbf2de35638cb65f9a8a5fff3baeeca852fa14289a68a2b6f14bdf482e"
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-workspace-layout-3897/scenario-arguments.json",
+    "scenario_arguments_sha256": "5ad378dc2af6c2572f712b6756848e447074a46ec3b34bc379c8e5259fda1911"
   },
   "features/sketch/degrees-of-freedom/scenario.feature": {
     "feature_sha256": "637b9d731edef63577801a11efc8baefc9331cec4929bb57d4c3ba4c75f984ec",

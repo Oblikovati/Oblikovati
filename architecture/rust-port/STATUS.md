@@ -19,14 +19,14 @@ using this status; the live scenario directory can change.
   intermediate frame before the model and ViewCube reached Top. See
   `receipts/2026-11-20-orientation-transition-3961/`. Strict verification
   remains open under #3978.
-- Workspace Layout (#3897): the full run on the named fixtures passed 48 of
-  53 cases, or 47 of 52 declarations. Drawing browser restore and Log tab
-  switching passed with X11 input. Three missing steps and two saved-name
-  assertions stopped five cases. See `receipts/2026-11-20-workspace-fixtures-3897/`.
-  Four focused reruns passed after those corrections. The View menu now
-  controls the mini-toolbar, with X11 and settings round-trip checks.
-  Its checklist scenario passed with the captured session preferences.
-  Rule Log and Rule Automation are disabled under #4185.
+- Workspace Layout (#3897) passed all 53 native desktop cases and 523 steps.
+  The current feature hash covers 52 declarations, including both examples
+  in one outline. The foreground X11 check captured the View checklist and
+  Mini-Toolbar with MCPBridge. Rule Log and Rule Automation are disabled
+  under #4185. See `receipts/2026-11-20-workspace-layout-3897/`. The 44
+  declarations in the older pinned snapshot have R0 baseline records.
+  Strict verification still needs a current pin and bounded build and runtime
+  inputs under #3978.
 - Document Tabs (#3900): all 39 scenarios and 343 steps passed locally.
   Openbox confirmed two separate operating-system windows and verified input
   to the drawing tab, sheet, and main Part tab. Closing the drawing window
