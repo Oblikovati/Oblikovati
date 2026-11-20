@@ -12,6 +12,24 @@ pub(super) fn is_navigation_wheel(path: Option<&std::path::Path>) -> bool {
     })
 }
 
+/// Select the frame feature by source path; example: `is_main_window_frame(None)` is false.
+pub(super) fn is_main_window_frame(path: Option<&std::path::Path>) -> bool {
+    path.is_some_and(|path| {
+        path.ends_with("features/application/main-window-frame/main-window-frame.feature")
+    })
+}
+
+#[test]
+fn frame_feature_selection_requires_the_matching_source_path() {
+    assert!(is_main_window_frame(Some(std::path::Path::new(
+        "/fixture/features/application/main-window-frame/main-window-frame.feature"
+    ))));
+    assert!(!is_main_window_frame(Some(std::path::Path::new(
+        "/fixture/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature"
+    ))));
+    assert!(!is_main_window_frame(None));
+}
+
 #[test]
 fn wheel_feature_selection_requires_the_matching_source_path() {
     assert!(is_navigation_wheel(Some(std::path::Path::new(

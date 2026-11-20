@@ -7,8 +7,14 @@ use oblikovati_viewport::ViewportEvent;
 
 #[given("the MCAD Software has an open part document with unsaved changes")]
 fn dirty_part(world: &mut ApplicationWorld) {
-    let document = world.add_part();
-    world.start_sketch();
+    let document =
+        if super::scenario_capture::is_main_window_frame(world.scenario_feature_path.as_deref()) {
+            super::main_window_frame::open_dirty_frame_part(world)
+        } else {
+            let document = world.add_part();
+            world.start_sketch();
+            document
+        };
     world.closed_document = Some(document);
     assert!(world.state().document_storage[&document].unsaved_edits);
 }

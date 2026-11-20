@@ -2,6 +2,9 @@
 //! Native window-frame behavior driven by the shared application scenarios.
 use super::ApplicationWorld;
 use cucumber::{given, then, when};
+#[path = "fixture.rs"]
+mod fixture;
+pub(super) use fixture::{open_dirty_frame_part, open_frame_part};
 
 #[when("the user invokes the desktop window Close shortcut")]
 fn invoke_desktop_close(world: &mut ApplicationWorld) {
@@ -64,6 +67,7 @@ fn restored_bounds(world: &mut ApplicationWorld) {
 
 #[given("the main window of the MCAD Software is maximized")]
 fn maximize_main_window(world: &mut ApplicationWorld) {
+    open_frame_part(world);
     super::x11_input::focus_window();
     super::main_window_frame_native::press_maximize(world);
     super::main_window_frame_native::pump_until(world, true);
@@ -221,6 +225,7 @@ fn window_moved_without_resize(world: &mut ApplicationWorld) {
 #[then("the same part remains active in the viewport")]
 fn same_part_in_viewport(world: &mut ApplicationWorld) {
     assert_eq!(world.active_id(), world.previous_document.unwrap());
+    super::workspace_layout::browser_feature::expect_solid_visible(world);
     assert!(
         world
             .app()
@@ -235,8 +240,7 @@ fn same_part_in_viewport(world: &mut ApplicationWorld) {
 
 #[given("the MCAD Software is open in a restored window with an active part")]
 fn restored_window_with_dirty_part(world: &mut ApplicationWorld) {
-    let part = world.add_part();
-    world.start_sketch();
+    let part = open_dirty_frame_part(world);
     world.previous_document = Some(part);
     restored_window(world);
 }
@@ -268,6 +272,7 @@ fn minimum_controls_usable(world: &mut ApplicationWorld) {
 #[then("the active part remains displayed in the resized viewport")]
 fn minimum_viewport_keeps_part(world: &mut ApplicationWorld) {
     same_part_in_viewport(world);
+    world.expect_no_text("Command failed");
     assert_eq!(&super::x11_input::application_bounds()[2..], &[640, 480]);
 }
 
@@ -292,7 +297,7 @@ fn controls_remain_in_bar(world: &mut ApplicationWorld) {
 #[given(regex = r"^the MCAD Software is open in a restored window showing (Home|an active part)$")]
 fn restored_window_in_context(world: &mut ApplicationWorld, context: String) {
     if context == "an active part" {
-        world.add_part();
+        open_frame_part(world);
     }
     restored_window(world);
 }

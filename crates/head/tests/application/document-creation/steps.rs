@@ -14,7 +14,12 @@ const METRIC_DRAWING: &str = "Metric drawing with title block";
 #[given("a document is open in the MCAD Software")]
 #[given("a part document is active in the MCAD Software")]
 fn open_document(world: &mut ApplicationWorld) {
-    let id = world.add_part();
+    let id =
+        if super::scenario_capture::is_main_window_frame(world.scenario_feature_path.as_deref()) {
+            super::main_window_frame::open_frame_part(world)
+        } else {
+            world.add_part()
+        };
     world.previous_document = Some(id);
 }
 #[when("I press Control+N")]
