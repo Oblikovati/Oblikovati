@@ -31,6 +31,9 @@ mod constraint_settings_application_options;
 mod constraint_settings_glyph_native;
 #[path = "constraint-settings/inference.rs"]
 mod constraint_settings_inference;
+#[cfg(target_os = "linux")]
+#[path = "constraint-settings/inference_native.rs"]
+mod constraint_settings_inference_native;
 #[path = "constraint-settings/relax.rs"]
 mod constraint_settings_relax;
 #[path = "dimension-expression/steps.rs"]
