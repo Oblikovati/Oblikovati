@@ -119,6 +119,51 @@ class SealedExecutionTests(unittest.TestCase):
         self.assertFalse(proof["reusable"])
         self.assertIn("input", proof["source_namespace"])
 
+    def test_docking_rejects_missing_or_escaping_runtime_tools_before_execution(self) -> None:
+        from dataclasses import replace
+
+        request = replace(self.fixture.request(), feature="docking-system")
+        with self.assertRaisesRegex(ValueError, "docking runtime tool.*python3"):
+            run_sealed(request, self.fixture.process, self.fixture.verify)
+        bindir = self.fixture.runtime / "usr/bin"
+        bindir.mkdir(parents=True)
+        for name in ("python3", "openbox", "import", "compare", "xvfb-run", "Xvfb", "xauth"):
+            path = bindir / name
+            path.write_bytes(b"fixture")
+            path.chmod(0o755)
+        (bindir / "openbox").unlink()
+        (bindir / "openbox").symlink_to(self.fixture.binary)
+        with self.assertRaisesRegex(ValueError, "docking runtime tool.*openbox"):
+            run_sealed(request, self.fixture.process, self.fixture.verify)
+        self.assertEqual(self.fixture.process.command, [])
+        self.assertFalse(self.fixture.log.exists())
+
+    def test_docking_accepts_runtime_tools_inside_the_runtime(self) -> None:
+        from dataclasses import replace
+
+        request = replace(self.fixture.request(), feature="docking-system")
+        bindir = self.fixture.runtime / "usr/bin"
+        bindir.mkdir(parents=True)
+        for name in ("python3", "openbox", "import", "compare", "xvfb-run", "Xvfb", "xauth"):
+            path = bindir / name
+            path.write_bytes(b"fixture")
+            path.chmod(0o755)
+        result = run_sealed(request, self.fixture.process, self.fixture.verify)
+        self.assertFalse(result["reusable"])
+
+    def test_docking_rejects_non_executable_tool(self) -> None:
+        from dataclasses import replace
+
+        request = replace(self.fixture.request(), feature="docking-system")
+        bindir = self.fixture.runtime / "usr/bin"
+        bindir.mkdir(parents=True)
+        path = bindir / "python3"
+        path.write_bytes(b"fixture")
+        path.chmod(0o644)
+        with self.assertRaisesRegex(ValueError, "expected an executable"):
+            run_sealed(request, self.fixture.process, self.fixture.verify)
+        self.assertFalse(self.fixture.log.exists())
+
     def test_runtime_mutation_is_refused(self) -> None:
         request = self.fixture.request()
         self.fixture.process.change = self.fixture.runtime / "runner"

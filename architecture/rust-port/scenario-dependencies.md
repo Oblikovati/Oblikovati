@@ -94,6 +94,11 @@ configuration must be prepared as described under the offline build experiment.
 The target, build logs, and reports directories must be empty. The runtime must
 contain the slots required by the sealed runner, Xvfb, and its runtime files.
 The command needs Linux memfd sealing and Bubblewrap `--ro-bind-data` support.
+For `docking-system`, preflight also requires executable `python3`, `openbox`,
+ImageMagick `import` and `compare`, `xvfb-run`, `Xvfb`, and `xauth` under the
+runtime's `usr/bin`. Each resolved tool must remain inside the runtime. This
+check detects missing tools before the build; it does not establish their origin
+or prove that their libraries and runtime configuration are complete.
 For example:
 
 ```sh
