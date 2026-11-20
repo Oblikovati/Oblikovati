@@ -189,7 +189,7 @@ fn draw_sheet(
         projection,
     );
 }
-/// A sheet in a window's own content; example: a drawing detached from the tab strip.
+/// Draw a sheet with room for its bottom tab. Example: when a drawing is detached.
 pub(crate) fn draw_sheet_in_window(
     ui: &Ui,
     name: &str,
@@ -197,14 +197,19 @@ pub(crate) fn draw_sheet_in_window(
     projection: Option<&crate::GuiDrawingProjection>,
 ) {
     let minimum = ui.cursor_screen_pos();
-    let size = ui.content_region_avail();
+    let [width, available_height] = ui.content_region_avail();
+    let tab_height = ui.frame_height_with_spacing();
+    let height = (available_height - tab_height).max(0.);
     let area = WorkspaceArea {
         left: minimum[0],
         top: minimum[1],
-        right: minimum[0] + size[0],
-        bottom: minimum[1] + size[1],
+        right: minimum[0] + width,
+        bottom: minimum[1] + height,
     };
-    sheet_on_list(&ui.get_window_draw_list(), name, area, drawing, projection);
+    if height > 0. {
+        sheet_on_list(&ui.get_window_draw_list(), name, area, drawing, projection);
+    }
+    ui.dummy([0., height]);
 }
 fn sheet_on_list(
     list: &imgui::DrawListMut<'_>,

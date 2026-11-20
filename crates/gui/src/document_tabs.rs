@@ -58,6 +58,8 @@ impl DocumentTabs {
         let any_document = request.commands.documents.iter().any(|row| row.visible);
         if !layout.tabs_visible || !(any_document || home.active) {
             self.order.cancel_input();
+            self.pressed_tab = None;
+            self.detached_windows(ui, &request.commands, actions);
             return;
         }
         let height = request.extent[1] as f32 / request.layout_scale()[1];
@@ -233,6 +235,14 @@ fn detached_window(
         .opened(&mut keep)
         .flags(imgui::WindowFlags::NO_DOCKING | imgui::WindowFlags::NO_COLLAPSE)
         .build(|| {
+            if let Some(drawing) = state.drawing_documents.get(&row.id) {
+                crate::application::document_creation::workspaces::draw_sheet_in_window(
+                    ui,
+                    &row.name,
+                    drawing,
+                    state.drawing_projections.get(&row.id),
+                );
+            }
             detached_tab(ui, state, row, menu, actions);
             let clicked = ui.is_window_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
             if clicked && state.document != Some(row.id) {
@@ -253,18 +263,8 @@ fn detached_tab(
     let Some(_bar) = ui.tab_bar("##detached-tabs") else {
         return;
     };
-    let tab = ui.tab_item(&row.name);
+    let _tab = ui.tab_item(&row.name);
     menu.popup(ui, state, row, actions);
-    if tab.is_some()
-        && let Some(drawing) = state.drawing_documents.get(&row.id)
-    {
-        crate::application::document_creation::workspaces::draw_sheet_in_window(
-            ui,
-            &row.name,
-            drawing,
-            state.drawing_projections.get(&row.id),
-        );
-    }
 }
 fn document_strip(
     ui: &Ui,

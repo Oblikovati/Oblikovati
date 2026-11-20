@@ -241,7 +241,7 @@ fn ok_and_cancel(world: &mut ApplicationWorld) {
 #[when("I press Control+Tab")]
 #[when("the user presses Control+Tab")]
 fn control_tab(world: &mut ApplicationWorld) {
-    world.key(ViewportPhysicalKey::Tab, true);
+    switch_document_tab(world, false);
 }
 #[given("the second part has been saved")]
 #[given("the second part is saved and has no unsaved changes")]
@@ -368,7 +368,23 @@ fn right_active(world: &mut ApplicationWorld) {
 #[when("I press Control+Shift+Tab")]
 #[when("the user presses Control+Shift+Tab")]
 fn control_shift_tab(world: &mut ApplicationWorld) {
-    world.control_shift_key(ViewportPhysicalKey::Tab);
+    switch_document_tab(world, true);
+}
+
+fn switch_document_tab(world: &mut ApplicationWorld, reverse: bool) {
+    #[cfg(target_os = "linux")]
+    if world.scenario_feature_path.as_ref().is_some_and(|path| {
+        path.ends_with("features/application/document-tabs/document-tabs.feature")
+    }) {
+        super::x11_input::press_control_tab(reverse);
+        world.pump(Vec::new());
+        return;
+    }
+    if reverse {
+        world.control_shift_key(ViewportPhysicalKey::Tab);
+    } else {
+        world.key(ViewportPhysicalKey::Tab, true);
+    }
 }
 #[then("the part on the left becomes active")]
 #[then("the first document tab becomes active again")]
