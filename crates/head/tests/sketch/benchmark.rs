@@ -17,6 +17,9 @@ mod coincident_multi_move;
 mod coincident_points;
 #[path = "coincident/segments.rs"]
 mod coincident_segments;
+#[cfg(target_os = "linux")]
+#[path = "constraint_fixture.rs"]
+mod constraint_fixture;
 #[path = "constraint-glyph-hover/steps.rs"]
 mod constraint_glyph_hover;
 #[path = "constraint-inference-scope/steps.rs"]
