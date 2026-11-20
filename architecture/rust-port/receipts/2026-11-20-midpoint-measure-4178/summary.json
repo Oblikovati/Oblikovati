@@ -1,0 +1,13 @@
+{
+  "classification": "diagnostic only; not inventory evidence",
+  "live_midpoint_sha256": "b4c08febd5963ce94fadaaea08aaad9eca63d44c5fc9fa0efab4224accc9018e",
+  "diagnostic_midpoint_sha256": "7e4181cff77bca9df6b8ba74c40cc5b3b592da345832be3a3100e41d96661fb6",
+  "diagnostic_change": "native YAML fixture path substituted in a temporary feature copy",
+  "fixture_sha256": "ca21530a916c2adce6c3ae1edf83fddb1510f46e36b2ade6f7a7eeee34e93ee9",
+  "line_feature_sha256": "42814bb6e64eb8f36ba99c07a5083b2156401b4aff4de4bc1120270d0988a554",
+  "results": {
+    "midpoint_07": "passed 13 steps using Precise Input, Measure and undo/redo",
+    "line_22": "passed 9 steps; shared redo assertion",
+    "x11": "native mouse and keyboard exact endpoint and undo/redo passed"
+  }
+}

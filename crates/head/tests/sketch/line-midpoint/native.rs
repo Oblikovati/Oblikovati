@@ -148,6 +148,7 @@ fn native_right_fixture(world: &mut ApplicationWorld) {
     super::super::viewport_orientation::expect_control_shows(world, "Right");
     assert!(world.state().sketch_at_ready);
     assert!(!world.state().sketch_options.unwrap().snap_to_grid);
+    world.remember_sketch_baseline();
 }
 
 #[cucumber::when("the user invoke Midpoint Line and choose the sketch origin as midpoint")]

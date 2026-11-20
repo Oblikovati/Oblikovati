@@ -71,6 +71,7 @@ fn newly_chosen_start(world: &mut ApplicationWorld) {
     world.sketch_click(START);
 }
 #[when("I double-click the intended endpoint as one uninterrupted gesture")]
+#[when("the user double-click the intended endpoint as one uninterrupted gesture")]
 fn double_click_end(world: &mut ApplicationWorld) {
     world.double_click(END);
 }
@@ -80,8 +81,11 @@ fn accepted_new_start(world: &mut ApplicationWorld) {
     world.expect_status("Select start of line");
 }
 #[when("I exit Line then undo once")]
+#[when("the user exit Line then undo once")]
 fn exit_and_undo(world: &mut ApplicationWorld) {
     world.escape();
+    let witness = world.line_point(0, 0.25);
+    world.remember_edited_sketch(vec![witness]);
     world.undo();
 }
 #[then("only that last segment disappears")]
@@ -90,7 +94,7 @@ fn last_segment_gone(world: &mut ApplicationWorld) {
 }
 #[then("the segment returns")]
 fn segment_back(world: &mut ApplicationWorld) {
-    world.expect_segment_drawn(START, END);
+    world.expect_edited_sketch_retained();
 }
 #[when("I redo")]
 #[when("the user redo")]
