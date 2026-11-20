@@ -220,10 +220,11 @@ using this status; the live scenario directory can change.
 
 ## Work queue
 
-1. Work on Constraint Settings (#4158), including its shared precondition
-   (#4159) and inference persistence (#4160). Revisit `new-sketch` when its
-   accumulated-document fixture (#4011) and circular patterns (#3905) are
-   available. Defer Inventor-file, assembly, and 3D-sketch scenarios.
+1. Work on Midpoint Line (#4178). Constraint Settings (#4158) is paused with
+   uncommitted work in its task worktree while its fixture questions and Relax
+   Mode (#4164) remain open. Revisit `new-sketch` when fixture #4011 and
+   circular patterns #3905 are available. Defer Inventor-file, assembly, and
+   3D-sketch scenarios.
 2. Complete the evaluation owner and safe dirty-prefix replay in #4079, with
    generation, policy, invalidation, naming, and replay-count evidence.
 3. Repair and verify the GUI integration targets in #4078. The separate
