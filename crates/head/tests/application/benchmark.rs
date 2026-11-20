@@ -326,7 +326,11 @@ fn run_scenarios(root: PathBuf, keep_feature: fn(&cucumber::gherkin::Feature) ->
             .before(move |feature, rule, scenario, world| {
                 let namespace = scenario_capture_namespace(feature, scenario);
                 scenario_arguments::record(&capture, &capture_root, feature, rule, scenario);
-                Box::pin(async move { world.set_capture_namespace(namespace) })
+                let feature_path = feature.path.clone();
+                Box::pin(async move {
+                    world.set_capture_namespace(namespace);
+                    world.scenario_feature_path = feature_path;
+                })
             })
             .after(|feature, _, scenario, _, world| {
                 let name = capture_name(feature, scenario);

@@ -179,7 +179,7 @@ fn inspect_scenario(
         return;
     }
     let namespace = super::scenario_capture_namespace(feature, scenario);
-    let (outcomes, setup_error) = run_native_steps(steps, namespace);
+    let (outcomes, setup_error) = run_native_steps(steps, namespace, feature.path.clone());
     let classification = if setup_error.is_some() {
         "setup failed"
     } else {
@@ -197,10 +197,12 @@ fn inspect_scenario(
 fn run_native_steps<'a>(
     steps: impl Iterator<Item = &'a Step>,
     namespace: String,
+    feature_path: Option<std::path::PathBuf>,
 ) -> (Vec<StepReport>, Option<String>) {
     match std::panic::catch_unwind(ApplicationWorld::new) {
         Ok(mut world) => {
             world.set_capture_namespace(namespace);
+            world.scenario_feature_path = feature_path;
             let outcomes = execute_steps(&mut world, &ApplicationWorld::collection(), steps);
             world.close();
             (outcomes, None)

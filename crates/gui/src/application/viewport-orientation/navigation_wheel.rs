@@ -217,6 +217,9 @@ impl NavigationWheel {
         if !options_were_open {
             self.close_on_escape(ui);
         }
+        if !self.open {
+            actions.push(GuiShellAction::ViewCommand(GuiViewCommand::Prompt(None)));
+        }
     }
     fn side(&self) -> f32 {
         let scale = if self.layout.is_mini() {

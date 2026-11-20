@@ -401,6 +401,15 @@ impl ApplicationWorld {
             .text
             .clone()
     }
+    /// Open a known fixture by its full path; example: `world.open_fixture(&path)`.
+    pub fn open_fixture(&mut self, path: &std::path::Path) {
+        self.click_text("File");
+        self.click_text("Open...");
+        self.type_text(path.to_str().expect("fixture path: expected UTF-8"));
+        self.key(ViewportPhysicalKey::Enter, false);
+        self.pump(Vec::new());
+        self.expect_no_text("Look in");
+    }
     /// Choose a file through File, Open and the listing a user sees.
     pub fn reopen_through_dialog(&mut self, path: &std::path::Path) {
         self.click_text("File");

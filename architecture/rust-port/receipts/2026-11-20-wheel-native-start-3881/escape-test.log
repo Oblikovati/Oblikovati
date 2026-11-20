@@ -1,0 +1,8 @@
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/navigation-native-3881/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 54.08s
+     Running unittests src/lib.rs (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/deps/oblikovati_head-a63049949246ef13)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::viewport_navigation_wheel::home::escape_from_wheel_clears_the_file_open_notice ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1547 filtered out; finished in 10.20s

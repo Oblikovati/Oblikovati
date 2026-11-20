@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport navigation wheel: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" package="testsuite/Feature: Viewport navigation wheel: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-20T10:23:55.059140313Z" time="28.234897853"><testcase name="Scenario: Open the full navigation wheel and close it from its menu: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature:3:3" time="28.234897853"><system-out><![CDATA[  Scenario: Open the full navigation wheel and close it from its menu
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  And the viewport navigation bar is visible
+   ✔  And the full navigation wheel is the selected wheel layout
+   ✔  When the user opens the navigation wheel from the navigation bar
+   ✔  And the user clicks within the viewport
+   ✔  Then a circular navigation wheel is visible over the model
+   ✔  And the wheel offers Zoom, Orbit, Pan, Rewind, Center, Walk, Look and Up Down
+   ✔  When the user right-clicks the navigation wheel
+   ✔  Then its menu marks Full Navigation Wheel as selected
+   ✔  And the menu offers alternate mini and basic wheel layouts
+   ✔  And the menu offers Go Home, Fit to Window, Restore Original Center, Options and Close Wheel
+   ✔  When the user chooses Close Wheel
+   ✔  Then the wheel and its menu disappear
+   ✔  And the model remains visible in the same apparent view
+   ✔  And the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>

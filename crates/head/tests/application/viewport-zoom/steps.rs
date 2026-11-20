@@ -140,7 +140,16 @@ fn expect_same_orientation(world: &mut ApplicationWorld) {
 // The mouse wheel
 #[given("a rectangular block is visible in an active part in the MCAD Software")]
 fn visible_block(world: &mut ApplicationWorld) {
-    open_block(world);
+    let wheel = world.scenario_feature_path.as_ref().is_some_and(|path| {
+        path.ends_with(
+            "features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature",
+        )
+    });
+    if wheel {
+        super::viewport_navigation_wheel::open_block(world);
+    } else {
+        open_block(world);
+    }
     remember_view(world);
     world.save_capture("native-wheel-before-3881");
 }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! `features/application/viewport-navigation-wheel`: the ring of view tools and its options.
-use super::viewport_orientation::{open_block, solid_extent};
+use super::viewport_orientation::solid_extent;
 use super::viewport_pan::{camera, press_bar};
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
@@ -35,6 +35,14 @@ fn open_wheel(world: &mut ApplicationWorld) {
     press_bar(world, "W");
     world.click(PLACED_AT);
     settle(world);
+}
+/// Open the documented wheel fixture; example: `open_block(world)` before navigation.
+pub(super) fn open_block(world: &mut ApplicationWorld) {
+    let path = super::scenario_root().join("fixtures/cad/main-window-frame-start.opd");
+    world.open_fixture(&path);
+    let id = world.active_id();
+    world.parts.push(id);
+    super::workspace_layout::browser_feature::expect_solid_visible(world);
 }
 fn open_wheel_on_block(world: &mut ApplicationWorld) {
     open_block(world);

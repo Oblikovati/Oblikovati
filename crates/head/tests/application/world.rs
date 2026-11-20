@@ -8,6 +8,7 @@ pub(super) struct ApplicationWorld {
     _preferences: tempfile::TempDir,
     pub frame: diagnostics::RenderedFrame,
     capture_namespace: Option<String>,
+    pub scenario_feature_path: Option<std::path::PathBuf>,
     pub previous_document: Option<u64>,
     #[cfg(target_os = "linux")]
     pub window_frame_before: Option<[i32; 4]>,
@@ -86,6 +87,7 @@ impl ApplicationWorld {
             _preferences: preferences,
             frame: Default::default(),
             capture_namespace: None,
+            scenario_feature_path: None,
             previous_document: None,
             #[cfg(target_os = "linux")]
             window_frame_before: None,

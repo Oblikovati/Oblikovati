@@ -59,3 +59,19 @@ fn home_fixture_recovers_three_face_view_from_a_different_view() {
     at_home(&mut world);
     world.close();
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn escape_from_wheel_clears_the_file_open_notice() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    world.expect_status("Opened document");
+    open_wheel(&mut world);
+    super::super::x11_input::focus_window();
+    super::super::x11_input::press_keysym(0xff1b);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry(WHEEL).is_none());
+    world.expect_ready();
+    world.close();
+}
