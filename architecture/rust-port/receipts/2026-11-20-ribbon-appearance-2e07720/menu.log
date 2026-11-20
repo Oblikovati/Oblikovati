@@ -1,0 +1,22 @@
+   Compiling oblikovati-solve v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/appearance-alpha-4176/crates/solve)
+   Compiling oblikovati-cli v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/appearance-alpha-4176/crates/cli)
+   Compiling oblikovati-gui v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/appearance-alpha-4176/crates/gui)
+   Compiling oblikovati-script v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/appearance-alpha-4176/crates/script)
+   Compiling oblikovati-model v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/appearance-alpha-4176/crates/model)
+   Compiling oblikovati-martensite v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/appearance-alpha-4176/crates/martensite)
+   Compiling oblikovati-persistence v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/appearance-alpha-4176/crates/persistence)
+   Compiling oblikovati-session v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/appearance-alpha-4176/crates/session)
+   Compiling oblikovati-viewport v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/appearance-alpha-4176/crates/viewport)
+   Compiling oblikovati-automation v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/appearance-alpha-4176/crates/automation)
+   Compiling oblikovati-drawing v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/appearance-alpha-4176/crates/drawing)
+   Compiling oblikovati-addin-host v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/appearance-alpha-4176/crates/addin-host)
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/appearance-alpha-4176/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 58s
+     Running unittests src/lib.rs (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/deps/oblikovati_head-c30e712c122cbea1)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::ribbon_appearance::appearance_menu_marks_the_selected_layout has been running for over 60 seconds
+test native::gui_loop_tests::application_bdd::ribbon_appearance::appearance_menu_marks_the_selected_layout ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1518 filtered out; finished in 96.15s
+

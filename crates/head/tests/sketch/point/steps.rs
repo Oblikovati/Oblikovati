@@ -359,3 +359,91 @@ fn precise_input_available_for_point(world: &mut ApplicationWorld) {
     assert_eq!(command.alpha, u8::MAX, "expected Precise Input enabled");
     world.expect_status("Select center point");
 }
+
+#[cfg(target_os = "linux")]
+#[test]
+fn native_point_acquisition_honors_disabled_inference_settings() {
+    use crate::HeadSketchWork;
+    use oblikovati_api::{client::Client, wire::SetSketchSettingsArgs};
+    use oblikovati_model::sketch::{PlanarConstraint, SketchPrimitiveCreation};
+    use oblikovati_viewport::ViewportSketchPreview;
+    for (infer, auto_apply, persist) in [
+        (false, true, false),
+        (true, false, false),
+        (true, true, false),
+    ] {
+        let mut world = ApplicationWorld::new();
+        world.start_empty_sketch();
+        let edit = world.app().owner.active_sketch_edit().unwrap();
+        let source = world
+            .app()
+            .owner
+            .document_commands(edit.document)
+            .create_sketch_primitive(
+                edit.sketch,
+                &SketchPrimitiveCreation::Point {
+                    position: [2.0, 2.0],
+                },
+            )
+            .unwrap()
+            .entity;
+        let mut settings = oblikovati_model::sketch_settings::default_sketch_settings();
+        settings.infer_constraints = infer;
+        settings.auto_apply_constraints = auto_apply;
+        settings.persist_inferred_constraints = persist;
+        Client::new(world.app().owner.document_host())
+            .documents()
+            .set_sketch_settings(&SetSketchSettingsArgs {
+                document: 0,
+                settings,
+            })
+            .unwrap();
+        world.pump(Vec::new());
+        let point_button = super::super::diagnostics::pointer_pixels(world.run("Point").center());
+        super::super::x11_input::click(point_button);
+        world.pump(Vec::new());
+        let [x, y] = world.sketch_pixel_of([2.0, 2.0]);
+        let click = [x + 5, y];
+        let requested = world.sketch_point_of(click);
+        let expected = if infer && auto_apply {
+            [2.0, 2.0]
+        } else {
+            requested
+        };
+        let before = world.edited_geometry();
+        super::super::x11_input::move_pointer(click);
+        world.pump(Vec::new());
+        let Some(ViewportSketchPreview::Resolved {
+            geometry, members, ..
+        }) = world.app().owner.sketch_preview()
+        else {
+            panic!("expected resolved point preview");
+        };
+        assert_eq!(members.len(), 1);
+        assert_eq!(geometry.point(members[0]).unwrap().position, expected);
+        let preview_coincidence = geometry.constraints().iter().any(|entry| matches!(entry.relation,
+            PlanarConstraint::Coincident { points } if points.contains(&source) && points.contains(&members[0])
+        ));
+        assert_eq!(preview_coincidence, infer && auto_apply);
+        super::super::x11_input::click(click);
+        world.pump(Vec::new());
+        super::super::x11_input::press_escape();
+        world.pump(Vec::new());
+        let geometry = world.edited_geometry();
+        let placed = geometry
+            .points()
+            .iter()
+            .find(|point| point.id != source && point.position == expected)
+            .expect("expected the new point at the requested or acquired position");
+        let coincidence = geometry.constraints().iter().any(|entry| matches!(entry.relation,
+            PlanarConstraint::Coincident { points } if points.contains(&source) && points.contains(&placed.id)
+        ));
+        assert_eq!(coincidence, infer && auto_apply);
+        let after = geometry.clone();
+        world.undo();
+        assert!(before.same_recipe(&world.edited_geometry()));
+        world.redo();
+        assert!(after.same_recipe(&world.edited_geometry()));
+        world.close();
+    }
+}

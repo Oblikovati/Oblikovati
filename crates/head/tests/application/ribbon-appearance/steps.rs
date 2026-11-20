@@ -286,26 +286,30 @@ fn model_titles_visible(world: &mut ApplicationWorld) {
 }
 
 #[test]
-fn appearance_menu_marks_normal_and_disables_unavailable_layouts() {
+fn appearance_menu_marks_the_selected_layout() {
     let mut world = ApplicationWorld::new();
     world.add_part();
-    open_tab_menu(&mut world, "3D Model");
-    world.click_text("Ribbon Appearance");
-    world.pump(Vec::new());
-    assert!(world.checked("Normal"), "expected the current appearance");
-    for label in ["Text Off", "Small", "Compact", "Large"] {
-        world.expect_text(label);
-        assert!(
-            !world.run_is_enabled(label),
-            "{label}: expected an unavailable control"
-        );
+    for label in ["Normal", "Text Off", "Small", "Compact", "Large", "Normal"] {
+        select_tab_appearance(&mut world, label);
     }
-    assert!(world.run_is_enabled("Reset Ribbon"));
-    world.click_text("Normal");
-    world.pump(Vec::new());
-    world.expect_no_text("Show Panel Titles");
     world.expect_text("Start 2D Sketch");
     world.close();
+}
+
+fn select_tab_appearance(world: &mut ApplicationWorld, label: &str) {
+    open_tab_menu(world, "3D Model");
+    world.click_text("Ribbon Appearance");
+    world.pump(Vec::new());
+    assert!(world.run_is_enabled(label), "{label} must be available");
+    assert!(world.run_is_enabled("Reset Ribbon"));
+    world.click_text(label);
+    world.pump(Vec::new());
+    world.expect_no_text("Show Panel Titles");
+    open_tab_menu(world, "3D Model");
+    world.click_text("Ribbon Appearance");
+    assert!(world.checked(label), "{label} must be checked");
+    world.escape();
+    world.escape();
 }
 
 #[test]

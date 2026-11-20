@@ -1,0 +1,343 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling cfg-if v1.0.5
+   Compiling libc v0.2.190
+   Compiling syn v3.0.7
+   Compiling bitflags v2.13.2
+   Compiling serde_core v1.0.229
+   Compiling autocfg v1.5.1
+   Compiling errno v0.3.14
+   Compiling rustix v1.1.6
+   Compiling linux-raw-sys v0.12.1
+   Compiling syn v2.0.119
+   Compiling serde v1.0.229
+   Compiling serde_derive v1.0.229
+   Compiling smallvec v1.16.3
+   Compiling num-traits v0.2.19
+   Compiling memchr v2.8.3
+   Compiling bytemuck v1.25.2
+   Compiling cfg_aliases v0.2.2
+   Compiling metallic v0.3.0
+   Compiling nix v0.31.3
+   Compiling fast_polynomial v0.4.1
+   Compiling num-integer v0.1.47
+   Compiling rustc_apfloat v0.2.3+llvm-462a31f5a5ab
+   Compiling equivalent v1.0.2
+   Compiling num-bigint v0.4.6
+   Compiling martensite-cmath v0.3.5 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling xattr v1.7.0
+   Compiling allocator-api2 v0.4.0
+   Compiling martensite-tkernel v0.4.5 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling num-complex v0.4.6
+   Compiling pin-project-lite v0.2.17
+   Compiling winnow v1.0.4
+   Compiling zmij v1.0.23
+   Compiling once_cell v1.21.4
+   Compiling simd-adler32 v0.3.10
+   Compiling itoa v1.0.18
+   Compiling sha1_smol v1.0.1
+   Compiling uuid v1.27.0
+   Compiling hashbrown v0.17.1
+   Compiling adler2 v2.0.1
+   Compiling crc32fast v1.5.2
+   Compiling crossbeam-utils v0.8.23
+   Compiling fastrand v2.5.0
+   Compiling futures-core v0.3.34
+   Compiling indexmap v2.14.2
+   Compiling toml_parser v1.1.5+spec-1.1.0
+   Compiling toml_datetime v1.1.3+spec-1.1.0
+   Compiling toml_edit v0.25.19+spec-1.1.0
+   Compiling miniz_oxide v0.9.1
+   Compiling flate2 v1.1.10
+   Compiling proc-macro-crate v3.5.0
+   Compiling zvariant_utils v4.2.0
+   Compiling martensite-tkmath v0.3.9 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling enumflags2_derive v0.7.12
+   Compiling version_check v0.9.5
+   Compiling futures-io v0.3.34
+   Compiling parking v2.2.1
+   Compiling generic-array v0.14.7
+   Compiling enumflags2 v0.7.12
+   Compiling zvariant_derive v5.15.1
+   Compiling zcheapstr v1.2.0
+   Compiling synstructure v0.14.0
+   Compiling num-conv v0.2.2
+   Compiling shlex v2.0.1
+   Compiling time-core v0.1.9
+   Compiling endi v1.1.1
+   Compiling find-msvc-tools v0.1.14
+   Compiling cc v1.7.0
+   Compiling time-macros v0.2.32
+   Compiling typenum v1.20.1
+   Compiling serde_json v1.0.151
+   Compiling deranged v0.5.8
+   Compiling powerfmt v0.2.1
+   Compiling time v0.3.55
+   Compiling zerofrom-derive v0.1.8
+   Compiling pkg-config v0.3.34
+   Compiling martensite-tkg2d v0.3.7 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkg3d v0.3.9 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling slab v0.4.12
+   Compiling zerofrom v0.1.8
+   Compiling yoke-derive v0.8.4
+   Compiling stable_deref_trait v1.2.1
+   Compiling getrandom v0.4.3
+   Compiling libm v0.2.16
+   Compiling base64 v0.22.1
+   Compiling yoke v0.8.4
+   Compiling martensite-tkgeombase v0.3.6 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling event-listener v5.4.2
+   Compiling concurrent-queue v2.5.0
+   Compiling foldhash v0.2.0
+   Compiling event-listener-strategy v0.5.4
+   Compiling digest v0.10.7
+   Compiling oblikovati-api v0.159.0 (https://github.com/Oblikovati/Oblikovati.API.git?rev=57ae73ca46bfcadcc09e3ec1d0c424d803cadc44#57ae73ca)
+   Compiling martensite-tkbrep v0.3.11 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkgeomalgo v0.3.8 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling zvariant v5.15.1
+   Compiling futures-lite v2.6.1
+   Compiling martensite-tktopalgo v0.4.3 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkshhealing v0.3.9 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkprim v0.3.10 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling zerovec-derive v0.11.7
+   Compiling martensite-tkbo v0.8.2 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling regex-syntax v0.8.11
+   Compiling siphasher v1.0.4
+   Compiling cpufeatures v0.2.17
+   Compiling sha2 v0.10.9
+   Compiling zerovec v0.11.9
+   Compiling zbus_names v4.3.5
+   Compiling maryada v0.2.0
+   Compiling miniz_oxide v0.8.9
+   Compiling fdeflate v0.3.7
+   Compiling displaydoc v0.2.7
+   Compiling async-io v2.6.0
+   Compiling xml v1.4.0
+   Compiling oblikovati-solve v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/point-acquisition-4160/crates/solve)
+   Compiling oblikovati-model v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/point-acquisition-4160/crates/model)
+   Compiling martensite-tkbool v0.8.0 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkmesh v0.3.8 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkfillet v0.8.1 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling martensite-tkhlr v0.3.6 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling polling v3.11.0
+   Compiling async-task v4.7.1
+   Compiling log v0.4.34
+   Compiling writeable v0.6.4
+   Compiling martensite-tkoffset v0.10.1 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling async-channel v2.5.0
+   Compiling signal-hook-registry v1.4.8
+   Compiling twox-hash v2.1.5
+   Compiling either v1.19.0
+   Compiling fnv v1.0.7
+   Compiling strsim v0.11.1
+   Compiling parking_lot_core v0.9.12
+   Compiling unicode-segmentation v1.13.3
+   Compiling bitflags v1.3.2
+   Compiling web-time v1.1.0
+   Compiling atomic-waker v1.1.2
+   Compiling piper v0.2.5
+   Compiling cfb v0.15.0
+   Compiling convert_case v0.10.0
+   Compiling ruzstd v0.9.1
+   Compiling oblikovati-martensite v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/point-acquisition-4160/crates/martensite)
+   Compiling async-signal v0.2.14
+   Compiling which v8.0.6
+   Compiling tinystr v0.8.5
+   Compiling zbus_xml v5.2.1
+   Compiling async-lock v3.5.0
+   Compiling x11-dl v2.21.0
+   Compiling tracing-core v0.1.36
+   Compiling aho-corasick v1.1.5
+   Compiling bstr v1.13.1
+   Compiling tracing-attributes v0.1.31
+   Compiling ryu v1.0.23
+   Compiling color_quant v1.1.0
+   Compiling zune-core v0.4.12
+   Compiling unsafe-libyaml v0.2.11
+   Compiling weezl v0.1.12
+   Compiling unicode-xid v0.2.6
+   Compiling arrayvec v0.7.8
+   Compiling litemap v0.8.3
+   Compiling icu_locale_fallback_data v2.4.0
+   Compiling scopeguard v1.2.0
+   Compiling lock_api v0.4.14
+   Compiling icu_locale_core v2.4.0
+   Compiling serde_yaml_ng v0.10.0
+   Compiling derive_more-impl v2.1.1
+   Compiling gif v0.13.3
+   Compiling zune-jpeg v0.4.21
+   Compiling tracing v0.1.44
+   Compiling regex-automata v0.4.18
+   Compiling zbus-lockstep v0.5.2
+   Compiling async-process v2.5.0
+   Compiling luajit-src v210.7.4+c6ffc14
+   Compiling corliss v0.1.0 (https://github.com/Oblikovati/Corliss?rev=872ff91ea0fd9ebb3ad34d0030c67bbc7b5989fb#872ff91e)
+   Compiling blocking v1.7.0
+   Compiling png v0.17.16
+   Compiling potential_utf v0.1.6
+   Compiling async-executor v1.14.1
+   Compiling zerotrie v0.2.5
+   Compiling zbus_macros v5.19.0
+   Compiling tempfile v3.27.0
+   Compiling async-broadcast v0.7.2
+   Compiling lua-src v551.0.2
+   Compiling ordered-stream v0.2.0
+   Compiling async-trait v0.1.92
+   Compiling serde_repr v0.1.21
+   Compiling async-recursion v1.2.0
+   Compiling utf_types v1.0.0
+   Compiling hex v0.4.3
+   Compiling heck v0.5.0
+   Compiling icu_segmenter_data v2.4.0
+   Compiling crossbeam-epoch v0.9.21
+   Compiling futures-sink v0.3.34
+   Compiling ident_case v1.0.1
+   Compiling byteorder-lite v0.1.0
+   Compiling float-cmp v0.9.0
+   Compiling bytecount v0.6.9
+   Compiling strict-num v0.1.1
+   Compiling image v0.25.6
+   Compiling darling_core v0.24.1
+   Compiling futures-channel v0.3.34
+   Compiling zbus v5.19.0
+   Compiling utf8_iter v1.1.0
+   Compiling oblikovati-persistence v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/point-acquisition-4160/crates/persistence)
+   Compiling mlua-sys v0.13.0
+   Compiling icu_provider v2.4.0
+   Compiling parking_lot v0.12.5
+   Compiling zbus-lockstep-macros v0.5.2
+   Compiling polycool v0.4.0
+   Compiling phf_shared v0.14.0
+   Compiling imgui-sys v0.12.0
+   Compiling sealed v0.6.0
+   Compiling futures-macro v0.3.34
+   Compiling futures-task v0.3.34
+   Compiling ash v0.38.0+1.3.281
+   Compiling crossbeam-deque v0.8.8
+   Compiling arrayref v0.3.9
+   Compiling static_assertions v1.1.0
+   Compiling utf8parse v0.2.2
+   Compiling atspi-common v0.13.0
+   Compiling anstyle-parse v1.0.0
+   Compiling futures-util v0.3.34
+   Compiling tiny-skia-path v0.12.0
+   Compiling phf_generator v0.14.0
+   Compiling synthez-core v0.4.0
+   Compiling martensite-tkservice v0.4.1 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling kurbo v0.13.1
+   Compiling icu_locale_fallback v2.4.0
+   Compiling oblikovati-session v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/point-acquisition-4160/crates/session)
+   Compiling icu_collections v2.4.0
+   Compiling darling_macro v0.24.1
+   Compiling nom v8.0.0
+   Compiling quick-xml v0.39.4
+   Compiling libloading v0.8.9
+   Compiling anstyle v1.0.14
+   Compiling anstyle-query v1.1.5
+   Compiling unicode-width v0.2.3
+   Compiling peg-runtime v0.6.3
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling colorchoice v1.0.5
+   Compiling thiserror v2.0.21
+   Compiling same-file v1.0.6
+   Compiling walkdir v2.5.0
+   Compiling nom_locate v5.0.0
+   Compiling anstream v1.0.0
+   Compiling peg-macros v0.6.3
+   Compiling oblikovati-automation v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/point-acquisition-4160/crates/automation)
+   Compiling icu_segmenter v2.4.0
+   Compiling darling v0.24.1
+   Compiling svgtypes v0.16.2
+   Compiling regex v1.13.1
+   Compiling synthez-codegen v0.4.0
+   Compiling phf_macros v0.14.0
+   Compiling gherkin v0.16.0
+   Compiling globset v0.4.21
+   Compiling derive_more v2.1.1
+   Compiling simplecss v0.2.2
+   Compiling png v0.18.1
+   Compiling accesskit v0.25.1
+   Compiling num-rational v0.4.2
+   Compiling roxmltree v0.21.2
+   Compiling typed-builder-macro v0.23.2
+   Compiling terminal_size v0.4.4
+   Compiling gethostname v1.1.0
+   Compiling thiserror-impl v2.0.21
+   Compiling smawk v0.3.3
+   Compiling chlorine v1.0.13
+   Compiling rustc-hash v2.1.3
+   Compiling x11rb-protocol v0.14.0
+   Compiling data-url v0.3.2
+   Compiling imagesize v0.15.0
+   Compiling ref-cast v1.0.27
+   Compiling anyhow v1.0.104
+   Compiling mint v0.5.9
+   Compiling pico-args v0.5.0
+   Compiling clap_lex v1.1.1
+   Compiling clap_builder v4.6.7
+   Compiling x11rb v0.14.0
+   Compiling usvg v0.49.0
+   Compiling mlua v0.12.2
+   Compiling textwrap v0.16.4
+   Compiling typed-builder v0.23.2
+   Compiling martensite-vulkan v0.7.2 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling tiny-skia v0.12.0
+   Compiling accesskit_consumer v0.39.1
+   Compiling phf v0.14.0
+   Compiling ignore v0.4.34
+   Compiling cucumber-expressions v0.5.0
+   Compiling synthez v0.4.0
+   Compiling serde_with_macros v3.24.0
+   Compiling peg v0.6.3
+   Compiling martensite-tkv3d v0.7.1 (https://github.com/Oblikovati/Martensite?rev=bef25f47548431c8f128f08f66a1f719bcee4982#bef25f47)
+   Compiling atspi-proxies v0.13.0
+   Compiling futures-executor v0.3.34
+   Compiling clap_derive v4.6.7
+   Compiling oblikovati-cli v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/point-acquisition-4160/crates/cli)
+   Compiling itertools v0.14.0
+   Compiling oblikovati-gui v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/point-acquisition-4160/crates/gui)
+   Compiling rgb v0.8.53
+   Compiling quick-xml v0.41.0
+   Compiling pin-project-internal v1.1.13
+   Compiling derive-getters v0.5.0
+   Compiling ref-cast-impl v1.0.27
+   Compiling inflections v1.1.1
+   Compiling cucumber-codegen v0.23.0
+   Compiling junit-report v0.9.1
+   Compiling pin-project v1.1.13
+   Compiling oblikovati-viewport v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/point-acquisition-4160/crates/viewport)
+   Compiling resvg v0.49.0
+   Compiling clap v4.6.7
+   Compiling futures v0.3.32
+   Compiling atspi v0.29.0
+   Compiling serde_with v3.24.0
+   Compiling globwalk v0.9.1
+   Compiling accesskit_atspi_common v0.21.0
+   Compiling oblikovati-script v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/point-acquisition-4160/crates/script)
+   Compiling imgui v0.12.0
+   Compiling oblikovati-drawing v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/point-acquisition-4160/crates/drawing)
+   Compiling console v0.16.6
+   Compiling smart-default v0.7.1
+   Compiling Inflector v0.11.4
+   Compiling humantime v2.4.0
+   Compiling mime v0.3.18
+   Compiling inventory v0.3.25
+   Compiling linked-hash-map v0.5.6
+   Compiling cucumber v0.23.0
+   Compiling accesskit_unix v0.24.0
+   Compiling oblikovati-addin-host v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/point-acquisition-4160/crates/addin-host)
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/point-acquisition-4160/crates/head)
+    Finished `test` profile [unoptimized] target(s) in 3m 29s
+     Running unittests src/lib.rs (/tmp/obk-point-4160-target/debug/deps/oblikovati_head-10ebd026c75ea768)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::sketch::point::characterize_native_point_vertex_acquisition_with_inference_settings ... point_acquisition infer=false auto_apply=true persist=false coincident=true source=SketchEntityId(2) placed=SketchEntityId(3)
+point_acquisition infer=true auto_apply=false persist=false coincident=true source=SketchEntityId(2) placed=SketchEntityId(3)
+point_acquisition infer=true auto_apply=true persist=false coincident=true source=SketchEntityId(2) placed=SketchEntityId(3)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1517 filtered out; finished in 23.93s
+

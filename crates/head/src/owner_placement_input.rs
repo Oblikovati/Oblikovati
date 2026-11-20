@@ -4,7 +4,10 @@ use crate::{
     HeadWindow,
     placement_input::{PlacementAction, SketchPlacementState},
 };
-use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchPlacementRecipe};
+use oblikovati_model::{
+    document_sketch::DocumentSketchId,
+    sketch::{SketchEntityId, SketchPlacementRecipe},
+};
 use oblikovati_viewport::ViewportEvent;
 enum PlacementWindow<'a> {
     Shared(&'a dyn HeadWindow),
@@ -27,6 +30,24 @@ impl<
     S: DispatchWakeup,
 > DesktopOwner<O, W, F, G, R, S>
 {
+    pub(super) fn point_vertex_under_pointer(
+        &self,
+        tool: &SketchPlacementState,
+        window: &dyn HeadWindow,
+        pixel: [i32; 2],
+    ) -> Result<Option<([f64; 2], SketchEntityId)>, String> {
+        let settings = self
+            .files
+            .workspace()
+            .session(tool.document)
+            .map_err(|cause| cause.to_string())?
+            .snapshot()
+            .effective_sketch_settings();
+        if !settings.infer_constraints || !settings.auto_apply_constraints {
+            return Ok(None);
+        }
+        self.vertex_under_pointer(tool, window, pixel)
+    }
     /// Activate slot placement on an explicitly selected sketch; example: `owner.start_slot_placement(document,sketch,0.5)?`.
     pub fn start_slot_placement(
         &mut self,
@@ -299,7 +320,7 @@ impl<
         }
         tool.cursor_pixel = Some(pixel);
         let acquired = if tool.tool == crate::SketchPlacementTool::Point {
-            self.vertex_under_pointer(tool, window, pixel)
+            self.point_vertex_under_pointer(tool, window, pixel)
         } else {
             Ok(None)
         };
