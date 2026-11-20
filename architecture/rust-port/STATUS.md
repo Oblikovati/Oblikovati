@@ -14,6 +14,13 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- Midpoint Line (#4178): the baseline ran six scenarios; none passed because
+  setup or command steps were undefined. In the feature worktree, native mouse
+  tests pass for pointer placement, typed full length and angle, and undo/redo.
+  The Right-view scenario reaches its Fully Constrained check but reports two
+  remaining degrees of freedom; selected-origin identity is tracked in #4179.
+  Fixture questions are in the feature's `BLOCKERS.md`. The worktree result is
+  diagnostic only and is not counted in the inventory.
 - Constraint Settings (#4158): a full diagnostic on the uncommitted feature
   worktree passed five of eight scenarios with the feature and support hashes
   unchanged during the run. Three scenarios stopped at undefined setup steps;
