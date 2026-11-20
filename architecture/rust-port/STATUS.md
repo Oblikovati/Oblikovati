@@ -123,6 +123,9 @@ using this status; the live scenario directory can change.
   unchanged source/support hashes. Compact wheel segment checks use rendered
   pixels. The source and build are unsealed, so this remains blocked from
   verified acceptance. See `receipts/2026-11-20-wheel-segments-3881/`.
+  A later feature-scoped local snapshot pins the same feature, support files,
+  and native fixture; the earlier run did not use that snapshot. See
+  `receipts/2026-11-20-wheel-local-snapshot-3881/`.
 
 - Main-window-frame passed 20 executed cases and 149 steps using X11,
   Openbox, tint2, and AT-SPI. Functional and visual notes were reviewed;
