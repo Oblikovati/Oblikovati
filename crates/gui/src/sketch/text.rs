@@ -8,11 +8,13 @@ use imgui::{Key, Ui};
 use oblikovati_api::types::{
     TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT, TextHorizontalAlign, TextVerticalAlign,
 };
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 #[path = "text_format.rs"]
 mod format_controls;
 #[path = "text_height.rs"]
 mod text_height;
+#[path = "text_presets.rs"]
+mod text_presets;
 
 const TITLE: &str = "Format Text";
 
@@ -57,6 +59,8 @@ pub(crate) struct SketchTextDialog {
     dock_state: DockableState,
     font_filter: RefCell<String>,
     height_input: RefCell<text_height::TextHeightInput>,
+    presets: RefCell<text_presets::TextPresets>,
+    escape_consumed: Cell<bool>,
 }
 impl DockableWindow for SketchTextDialog {}
 
@@ -69,7 +73,11 @@ impl SketchTextDialog {
     }
 
     pub(crate) fn synchronize(&self, state: &GuiCommandState) {
+        self.escape_consumed.set(false);
         self.dock_state.set_open(state.sketch_text.is_some());
+        self.presets
+            .borrow_mut()
+            .synchronize(state.sketch_text.is_some());
         if state.sketch_text.is_none() {
             *self.height_input.borrow_mut() = Default::default();
         }
@@ -88,49 +96,70 @@ impl SketchTextDialog {
         let mut open = true;
         let action = Self::dockable_window(ui, TITLE, &mut open)
             .build(|| {
-                let mut filter = self.font_filter.borrow_mut();
-                text_editor(
+                self.text_editor(
                     ui,
                     draft,
                     state.sketch_text_font_families.as_deref().unwrap_or(&[]),
-                    &mut filter,
-                    &mut self.height_input.borrow_mut(),
+                    state.sketch_text_existing,
                 )
             })
             .flatten();
         if !open {
             self.dock_state.set_open(false);
+            self.presets.borrow_mut().cancel();
             actions.push(GuiShellAction::SketchText(GuiSketchTextAction::Cancel));
         } else if let Some(action) = action {
             actions.push(GuiShellAction::SketchText(action));
         }
     }
-}
 
-fn text_editor(
-    ui: &Ui,
-    mut draft: GuiSketchTextDraft,
-    families: &[String],
-    filter: &mut String,
-    height: &mut text_height::TextHeightInput,
-) -> Option<GuiSketchTextAction> {
-    let changed = ui
-        .input_text_multiline("Content", &mut draft.content, [295., 100.])
-        .build()
-        | format_controls::draw(ui, &mut draft, families, filter, height);
-    let accept = ui.button("OK");
-    ui.same_line();
-    if ui.button("Cancel") || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape) {
-        return Some(GuiSketchTextAction::Cancel);
+    pub(crate) fn escape_consumed(&self) -> bool {
+        self.escape_consumed.get()
     }
-    if accept {
-        height.apply(&mut draft.height_mm);
-        if !height.blocked() {
-            return Some(GuiSketchTextAction::Accept(draft));
+
+    fn text_editor(
+        &self,
+        ui: &Ui,
+        mut draft: GuiSketchTextDraft,
+        families: &[String],
+        existing: bool,
+    ) -> Option<GuiSketchTextAction> {
+        let mut presets = self.presets.borrow_mut();
+        let mut height = self.height_input.borrow_mut();
+        let changed_preset = presets.begin(existing, &mut draft) | presets.draw(ui, &mut draft);
+        if changed_preset {
+            *height = Default::default();
         }
+        let escape_used = presets.draw_name(ui, &draft);
+        let changed = changed_preset
+            | ui.input_text_multiline("Content", &mut draft.content, [295., 100.])
+                .build()
+            | format_controls::draw(
+                ui,
+                &mut draft,
+                families,
+                &mut self.font_filter.borrow_mut(),
+                &mut height,
+            );
+        let accept = ui.button("OK");
+        ui.same_line();
+        let escape_editor =
+            !escape_used && ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape);
+        self.escape_consumed.set(escape_used || escape_editor);
+        if ui.button("Cancel") || escape_editor {
+            presets.cancel();
+            return Some(GuiSketchTextAction::Cancel);
+        }
+        if accept {
+            height.apply(&mut draft.height_mm);
+            if !height.blocked() {
+                presets.submit(&draft);
+                return Some(GuiSketchTextAction::Accept(draft));
+            }
+        }
+        height.warning(ui);
+        changed.then_some(GuiSketchTextAction::Preview(draft))
     }
-    height.warning(ui);
-    changed.then_some(GuiSketchTextAction::Preview(draft))
 }
 
 pub(super) fn edit_menu_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {

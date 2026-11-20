@@ -62,6 +62,10 @@ pub(crate) fn owner_instance_counts(
 }
 
 impl GuiFrameEngine {
+    pub(super) fn dock_editor_consumed_escape(&self) -> bool {
+        self.sketch_text.escape_consumed() || self.dimension_value_editor.had_keyboard()
+    }
+
     pub(super) fn prepare_dock_owners(
         &mut self,
         state: &GuiCommandState,

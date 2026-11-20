@@ -105,6 +105,11 @@ impl<
             .map(|placement| placement.fields.clone())
     }
 
+    pub(super) fn gui_sketch_text_existing(&self) -> bool {
+        matches!(&self.sketch_tool, Some(SketchToolState::Text(tool))
+            if tool.placement.as_ref().is_some_and(|draft| draft.existing.is_some()))
+    }
+
     pub(super) fn gui_sketch_text_font_families(&self) -> Option<Arc<[String]>> {
         let Some(SketchToolState::Text(tool)) = &self.sketch_tool else {
             return None;

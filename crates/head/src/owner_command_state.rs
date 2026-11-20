@@ -233,6 +233,7 @@ impl<
             dimensions_needed: self.gui_dimensions_needed(document),
             sketch_move: self.gui_sketch_move_stage(),
             sketch_text: self.gui_sketch_text(),
+            sketch_text_existing: self.gui_sketch_text_existing(),
             sketch_text_font_families: self.gui_sketch_text_font_families(),
             sketch_at_ready: self.sketch_tool.is_none() && self.active_sketch_edit().is_some(),
             // Projected by the frame, which owns the camera.

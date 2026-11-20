@@ -467,7 +467,7 @@ impl GuiFrameEngine {
                     .iter()
                     .any(|event| matches!(event, GuiInputEvent::Text(_))));
         capture.popup = popup_open
-            || self.dimension_value_editor.had_keyboard()
+            || self.dock_editor_consumed_escape()
             || self.ribbon.tips.consumed
             || self.ribbon.customization.escape_consumed
             || self.ribbon.display.temporary_escape_consumed;

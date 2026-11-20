@@ -142,6 +142,7 @@ pub struct GuiCommandState {
     /// Current canvas move stage when the Move tool is open.
     pub sketch_move: Option<crate::GuiSketchMoveStatus>,
     pub sketch_text: Option<crate::GuiSketchTextDraft>,
+    pub sketch_text_existing: bool,
     pub sketch_text_font_families: Option<std::sync::Arc<[String]>>,
     pub origin_planes: Vec<crate::GuiOriginPlane>,
     /// The chosen browser row's outline in the view, in pixels: a solid's edges or a sketch.
