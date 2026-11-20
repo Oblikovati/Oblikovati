@@ -16,11 +16,13 @@ using this status; the live scenario directory can change.
 
 - Docking System (#4133): the current 11-scenario feature diagnostic passed
   eight scenarios. The new tab-menu scenario names an Inventor fixture that is
-  deferred; the tab insertion preview failed in both full and isolated runs;
-  the following float setup also failed in the full run. A failed drag may
-  leave its mouse button held. Feature and support hashes were unchanged.
-  See `receipts/2026-11-20-docking-current-full-4133/`. The source is not a
-  versioned checkout, so this is diagnostic evidence, not verified inventory.
+  deferred. The tab insertion preview and following float setup failed in the
+  full run. After correcting the drag target to the dock-region center, the
+  tab scenario passed all 10 steps in isolation. A full rerun is still needed.
+  Feature and support hashes were unchanged in the full run. See
+  `receipts/2026-11-20-docking-current-full-4133/` and
+  `receipts/2026-11-20-docking-preview-center-4133/`. The scenario source is
+  unversioned, so these results are not verified inventory evidence.
 - Selected sketch point identity (#4179): the shared placement recipe now
   retains explicitly picked point IDs and preserves existing geometry. Session
   tests cover preview, commit, dimension edit, and undo/redo. Midpoint Line
