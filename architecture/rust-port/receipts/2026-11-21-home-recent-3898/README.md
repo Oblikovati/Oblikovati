@@ -32,3 +32,14 @@ The [checked-row actions](row-checked.json) and
 The [pinned blank-size sort](pinned-blank-size.json) passed its eight steps
 with an entry whose saved file had been removed. The current source omits
 that scenario.
+
+## Pinned Home baseline
+
+Five scenarios passed all 40 steps and their window cleanup hooks on
+`bcabd0c01` under Xvfb, Openbox, and Vulkan Lavapipe. The ledger binds these
+R0 entries to the pinned feature hash. The reports record the
+[row menu](pinned-row-menu-bcabd0c01.json),
+[checked-row menu](pinned-row-checked-bcabd0c01.json),
+[row hover](pinned-row-hover-bcabd0c01.json),
+[column order](pinned-column-reorder-bcabd0c01.json), and
+[file properties](pinned-file-properties-bcabd0c01.json).
