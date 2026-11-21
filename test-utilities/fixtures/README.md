@@ -23,3 +23,21 @@ has one 40 mm line with a Horizontal relation and no dimensions; the first
 has no curves. Preferences are session state and must be set separately.
 The native test `constraint_settings_native_fixtures_reopen_with_expected_geometry`
 checks the saved and checked-in files.
+
+## Document Saving
+
+[SavedEmptyPart.opd](document-saving/SavedEmptyPart.opd) is a saved empty
+metric Part. The Save As folder uses a different empty Part,
+[ExistingPart.opd](document-saving/SaveAsFolder/ExistingPart.opd), and
+[ExistingSolidPart.opd](document-saving/SaveAsFolder/ExistingSolidPart.opd),
+a rectangular 40 × 25 × 20 mm solid with no assembly reference.
+
+Copy the two Save As files to a writable scratch folder and create an empty
+child directory named `Subfolder`. Use those copies for file selection and
+replacement confirmation. Verify that declining replacement leaves both
+files intact.
+
+The native regression
+`document_saving_native_fixtures_reopen_and_survive_declined_replacement`
+opens all three files through the desktop, verifies the solid's physical
+properties, then declines replacing the empty Part.

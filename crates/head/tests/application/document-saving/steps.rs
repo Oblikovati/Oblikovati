@@ -8,6 +8,8 @@ use oblikovati_model::application_prompts::{ApplicationPrompt, PromptFrequency};
 mod cancel_preview_regression;
 #[path = "dialog_navigation.rs"]
 mod dialog_navigation;
+#[path = "native_fixtures.rs"]
+mod native_fixtures;
 #[path = "solid_preview.rs"]
 mod solid_preview;
 const SAVE_IN: &str = "Save in";
