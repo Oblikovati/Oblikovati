@@ -24,7 +24,7 @@ fn model_ribbon_at_top(world: &mut ApplicationWorld) {
     assert!(window_geometry(FLOATING).is_none());
 }
 #[when("the user right-clicks the active 3D Model tab")]
-fn right_click_model(world: &mut ApplicationWorld) {
+pub(super) fn right_click_model(world: &mut ApplicationWorld) {
     let center = world.run("3D Model").center();
     world.right_click(super::super::diagnostics::pointer_pixels(center));
     world.pump(Vec::new());
@@ -62,6 +62,27 @@ fn context_closed_at_top(world: &mut ApplicationWorld) {
     assert!(window_geometry(COLUMN).is_none());
     assert!(window_geometry(FLOATING).is_none());
 }
+#[when("the user right-clicks the Manage panel title")]
+fn right_click_manage_panel_title(world: &mut ApplicationWorld) {
+    let ([_, top], [_, height]) =
+        window_geometry("##application-ribbon").expect("expected the top docked ribbon");
+    let title = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == "Parameters" && (top..top + height).contains(&run.center()[1]))
+        .max_by(|left, right| left.center()[1].total_cmp(&right.center()[1]))
+        .expect("expected the Parameters panel title in the Manage ribbon");
+    world.right_click(super::super::diagnostics::pointer_pixels(title.center()));
+    world.pump(Vec::new());
+}
+
+#[then("the context menu closes and the Manage ribbon remains docked at the top")]
+fn manage_context_closed_at_top(world: &mut ApplicationWorld) {
+    manage_still_visible(world);
+    assert!(window_geometry(COLUMN).is_none());
+    assert!(window_geometry(FLOATING).is_none());
+}
 #[when("the user right-clicks the active Manage tab")]
 fn right_click_manage(world: &mut ApplicationWorld) {
     let center = world.run("Manage").center();
@@ -81,6 +102,11 @@ fn menu_commands(world: &mut ApplicationWorld) {
     ] {
         world.expect_text(label);
     }
+}
+#[then("it offers Customize User Commands and undocks Ribbon")]
+fn customize_and_undock_offered(world: &mut ApplicationWorld) {
+    world.expect_text("Customize User Commands");
+    world.expect_text("Undock Ribbon");
 }
 #[then("the Manage ribbon remains visible")]
 fn manage_still_visible(world: &mut ApplicationWorld) {

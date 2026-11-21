@@ -142,6 +142,7 @@ fn right_checked(world: &mut ApplicationWorld) {
 #[given("the model browser is docked on the left")]
 #[then("the model browser is visible on the left of the viewport")]
 #[then("the model browser remains visible to the left of the viewport")]
+#[then("the model browser remains on the left of the viewport")]
 fn browser_left_side(world: &mut ApplicationWorld) {
     let (position, _) = window_geometry("Model").expect("expected the browser");
     assert!(
@@ -207,6 +208,7 @@ fn ribbon_on_right(world: &mut ApplicationWorld) {
 }
 #[then("the ribbon tabs and command groups are arranged horizontally above the viewport")]
 #[then("the ribbon returns to a horizontal position above the viewport")]
+#[then("the ribbon returns to the top dock")]
 fn ribbon_on_top(world: &mut ApplicationWorld) {
     expect_top_dock(world);
 }
@@ -226,6 +228,7 @@ fn expect_floating(_world: &mut ApplicationWorld) {
 #[then("the ribbon floats over the workspace")]
 #[then("the ribbon floats over the workspace in a vertical panel")]
 #[then("the ribbon remains floating")]
+#[then("the ribbon floats vertically over the workspace")]
 fn ribbon_floats(world: &mut ApplicationWorld) {
     expect_floating(world);
 }
