@@ -27338,10 +27338,12 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "The source expects 210 to 215 after one Text placement. The native point-placement fixture gives 210 to 212. The source needs the earlier fixture or an account of the three additional freedoms. See architecture/rust-port/scenario-defects/text-creation-degrees-of-freedom.md.",
+      "rust_tests": "Native test native_point_text_adds_only_anchor_freedoms_to_the_210_dimension_fixture passed. See architecture/rust-port/receipts/2026-11-21-sketch-text-anchor-freedoms-3907/text-01 at d79e6195f25f15f238341a7e9be8b3768f864a61."
     },
     {
       "id": "scenario:f86a239026744a08b7c94324996beca76cf3861ed6190aefb07a45ad2344b3ee",
@@ -27625,10 +27627,12 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "The source expects 28 to 33 after one Text placement. The native point-placement fixture gives 28 to 30. The source needs the earlier fixture or an account of the three additional freedoms. See architecture/rust-port/scenario-defects/text-creation-degrees-of-freedom.md.",
+      "rust_tests": "Native test native_bold_text_undo_redo_restores_the_same_anchor_and_freedoms passed. See architecture/rust-port/receipts/2026-11-21-sketch-text-anchor-freedoms-3907/text-13 at d79e6195f25f15f238341a7e9be8b3768f864a61."
     },
     {
       "id": "scenario:0a96040d6ce89cf132b26af1a1c817c6f04989e496e34c48de432432c5005890",

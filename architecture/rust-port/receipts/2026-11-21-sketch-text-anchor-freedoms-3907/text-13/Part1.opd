@@ -1,0 +1,261 @@
+schemaVersion: 3
+documentType: 1
+displayName: Part1
+previewPicture:
+  width: 64
+  height: 36
+  rgb: ODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDODxDNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCNztCh4yWh4yWh4yWh4yWNztCNztCNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBNjpBhoyWhoyWhoyWhoyWNjpBNjpBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBNjlBhoyWhoyWhoyWhoyWNjlBNjlBNTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTlANTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NTg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/NDg/KioqNDg/NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+NDc+KioqNDc+MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9MzY9KioqMzY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9MjY9KioqMjY9MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MjU8MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7MTU7KioqMTU7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7MTQ7KioqMTQ7MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6MDM6KioqMDM6MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5MDM5LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LzI4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE4LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LjE3LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LTA2LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81LC81Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ky40Ki0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKi0zKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKiwyKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKSwxKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswKCswJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJyovJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJykvJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJiguJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJSgtJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsJCcsIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyYrIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIyUqIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpIiQpISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMoISMo
+partModelStates:
+  members:
+  - id: 1
+    name: Primary
+  active: 1
+  scope: SingleMember
+model:
+  planarSketches:
+    recipe:
+      version: 13
+      sketches:
+      - id: 1
+        name: Sketch1
+        plane_origin: XY
+        point_projections:
+        - anchor: 1
+          reference: Origin
+        geometry:
+          version: 12
+          points:
+          - id: 1
+            position:
+            - 0.0
+            - 0.0
+          - id: 2
+            position:
+            - 5000.0
+            - 5000.0
+          - id: 3
+            position:
+            - 5003.0
+            - 5001.0
+          - id: 5
+            position:
+            - 5040.0
+            - 5000.0
+          - id: 6
+            position:
+            - 5043.0
+            - 5001.37
+          - id: 8
+            position:
+            - 5080.0
+            - 5000.0
+          - id: 9
+            position:
+            - 5083.0
+            - 5001.74
+          - id: 11
+            position:
+            - 5120.0
+            - 5000.0
+          - id: 12
+            position:
+            - 5123.0
+            - 5002.11
+          - id: 14
+            position:
+            - 5160.0
+            - 5000.0
+          - id: 15
+            position:
+            - 5163.0
+            - 5002.48
+          - id: 17
+            position:
+            - 5200.0
+            - 5000.0
+          - id: 18
+            position:
+            - 5203.0
+            - 5002.85
+          - id: 20
+            position:
+            - 5240.0
+            - 5000.0
+          - id: 21
+            position:
+            - 5243.0
+            - 5003.22
+          lines:
+          - id: 4
+            endpoints:
+            - 2
+            - 3
+          - id: 7
+            endpoints:
+            - 5
+            - 6
+          - id: 10
+            endpoints:
+            - 8
+            - 9
+          - id: 13
+            endpoints:
+            - 11
+            - 12
+          - id: 16
+            endpoints:
+            - 14
+            - 15
+          - id: 19
+            endpoints:
+            - 17
+            - 18
+          - id: 22
+            endpoints:
+            - 20
+            - 21
+          circles: []
+          arcs: []
+          ellipses: []
+          splines: []
+          offset_splines: []
+          defining_points:
+          - 2
+          - 3
+          - 5
+          - 6
+          - 8
+          - 9
+          - 11
+          - 12
+          - 14
+          - 15
+          - 17
+          - 18
+          - 20
+          - 21
+          constraints: []
+          entity_order:
+          - 1
+          - 4
+          - 7
+          - 10
+          - 13
+          - 16
+          - 19
+          - 22
+          construction_curves: []
+          centerlines: []
+          dimension_placements: []
+          reference_dimensions: []
+          dimension_limits: []
+    sketchHighWater: 1
+    entityHighWater: 22
+    constraintHighWater: {}
+    dimensionNameOrdinals: {}
+  properties: []
+  units:
+    angle: deg
+    angleFormat: decimal
+    anglePrecision: '2'
+    area: mm^2
+    length: mm
+    lengthFormat: decimal
+    lengthPrecision: '3'
+    mass: kg
+    time: s
+    volume: mm^3
+  parameters: []
+  parameterGroups: []
+  parameterSettings:
+    linearStandardTolerance: ''
+    angularStandardTolerance: ''
+    useStandardTolerances: false
+    exportStandardTolerances: false
+    linearDimensionPrecision: 3
+    angularDimensionPrecision: 2
+    dimensionDisplayType: value
+    displayParameterAsExpression: false
+  derivedParameterTables: []
+  parameterIds: {}
+  parameterHighWater: 0
+partDesignViews:
+  views:
+  - id: 1
+    name: Primary
+    built_in: true
+    active: true
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 0
+    camera: null
+    hidden_body_keys: []
+  - id: 2
+    name: Isometric
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10759
+    camera: null
+    hidden_body_keys: []
+  - id: 3
+    name: Front
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10764
+    camera: null
+    hidden_body_keys: []
+  - id: 4
+    name: Top
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10754
+    camera: null
+    hidden_body_keys: []
+  - id: 5
+    name: Right
+    built_in: true
+    active: false
+    locked: false
+    published: true
+    autosave_camera: true
+    annotation_scale:
+      mode: auto
+      numerator: 0
+      denominator: 0
+    standard_orientation: 10755
+    camera: null
+    hidden_body_keys: []
+identity:
+  internalName: 3782c170-139e-4c2c-b7f3-df276cf52294
+  revisionId: 67a5e4c4-aeb9-4ce3-be5f-ea8cec9d716a
+  databaseRevisionId: 01f2a58c-89da-43ea-a79b-0a4f155e9f15
+  saveCounter: 1
+  versionCreated: 0.1.0-dev
+  versionSaved: 0.1.0-dev
+  modelDigest: 5baa1194824b59fad41b3cbdf9d06ccf8cef3ff1c74e2dfb23697fc81a9039c9

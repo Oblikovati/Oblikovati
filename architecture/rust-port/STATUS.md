@@ -162,6 +162,11 @@ using this status; the live scenario directory can change.
   recorded drag. The linked `d0` showed `10.000` at Ready and the
   final solver count reached 38. See
   `receipts/2026-11-21-sketch-text-linked-drag-3907/`.
+  Native `text-01` and `text-13` replays start at the recorded solver
+  counts. Point placement adds one free anchor and reaches 212 and 30
+  dimensions needed. Undo and Redo restore the original and accepted Bold
+  states. The pinned source expects three more freedoms in both cases.
+  See `scenario-defects/text-creation-degrees-of-freedom.md`.
   The native replay of `text-37` preserves the saved Arial fraction and
   47 dimensions needed after Cancel. Typing `6` yields a 6 mm preview.
   The scenario expects 6.10 mm before Cancel and awaits source correction.
