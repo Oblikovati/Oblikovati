@@ -33,6 +33,7 @@ fn create_and_restore_bold(world: &mut ApplicationWorld, family: &str) {
     start_text_from_part(world);
     open_editor(world, [900, 580]);
     text_format_choices::choose_font(world, family);
+    world.observed_row_plain = Some(world.pixel_left_of("Bold"));
     type_content(world, b'a');
     x11_input::press_keysym(u32::from(b'b'));
     world.pump(Vec::new());
@@ -49,10 +50,12 @@ fn record_restored_text(world: &mut ApplicationWorld) {
     let accepted = world.edited_geometry();
     assert_eq!(accepted.texts()[0].style.content, "ab");
     let count = world.dimensions_needed();
+    world.sketch_baseline = Some(capture_committed_text(world));
     text_edit::undo_edit(world);
     assert!(world.edited_geometry().texts().is_empty());
     text_edit::redo_edit(world);
     assert_eq!(world.edited_geometry(), accepted);
+    assert_original_glyph_pixels(world);
     world.text_creation_baseline = Some(accepted);
     world.observed_counts = vec![count];
 }
@@ -69,6 +72,7 @@ fn double_click_text(world: &mut ApplicationWorld) {
 #[then("Format Text shows Bold highlighted, Tahoma, 3.05 mm and both entered characters")]
 fn expect_tahoma_format(world: &mut ApplicationWorld) {
     expect_retained_format(world, "Tahoma");
+    world.save_capture("reopened-tahoma-bold");
 }
 
 fn expect_retained_format(world: &mut ApplicationWorld, family: &str) {
@@ -80,8 +84,15 @@ fn expect_retained_format(world: &mut ApplicationWorld, family: &str) {
         panic!("expected one retained Bold run");
     };
     assert_eq!((run.start, run.end, run.bold), (0, 2, true));
-    world.run_in_window("Format Text", "Bold");
-    world.expect_text("ab");
+    // Frame diagnostics collect glyphs and omit the spaces between them.
+    let drawn_family: String = family.split_whitespace().collect();
+    world.run_in_window("Format Text", &drawn_family);
+    world.run_in_window("Format Text", "3.05");
+    world.run_in_window("Format Text", "ab");
+    assert_ne!(
+        world.pixel_left_of("Bold"),
+        world.observed_row_plain.unwrap()
+    );
 }
 
 #[when("the user cancels the unchanged editor")]
@@ -97,4 +108,33 @@ fn accepted_text_remains(world: &mut ApplicationWorld) {
         world.text_creation_baseline.as_ref().unwrap()
     );
     assert_eq!(world.dimensions_needed(), world.observed_counts[0]);
+    assert_original_glyph_pixels(world);
+}
+
+fn capture_committed_text(world: &mut ApplicationWorld) -> oblikovati_viewport::ViewportCapture {
+    super::super::super::capture_framebuffer(&mut world.app().window.native)
+}
+
+fn assert_original_glyph_pixels(world: &mut ApplicationWorld) {
+    let current = text_format_choices::glyph_pixels(world);
+    let original = world.sketch_baseline.as_ref().unwrap();
+    let expected = committed_glyph_pixels(&text_format_choices::glyph_region(original));
+    assert!(!expected.is_empty(), "expected visible committed text");
+    assert!(
+        committed_glyph_pixels(&current) == expected,
+        "expected the same committed glyph outline in the same viewport position"
+    );
+}
+
+fn committed_glyph_pixels(crop: &[u8]) -> Vec<usize> {
+    // The glyph is gray. The blue-tinted canvas and the violet anchor accent
+    // can change independently when the editor closes.
+    crop.as_chunks::<4>()
+        .0
+        .iter()
+        .enumerate()
+        .filter_map(|(index, &[red, green, blue, _])| {
+            (red >= 128 && red == green && green == blue).then_some(index)
+        })
+        .collect()
 }
