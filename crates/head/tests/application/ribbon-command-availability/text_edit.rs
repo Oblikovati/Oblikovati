@@ -175,6 +175,7 @@ pub(super) fn undo_edit(world: &mut ApplicationWorld) {
 }
 
 #[when("the user presses Ctrl+Y")]
+#[when("the user presses Redo")]
 pub(super) fn redo_edit(world: &mut ApplicationWorld) {
     x11_input::press_control_letter(b'y');
     world.pump(Vec::new());

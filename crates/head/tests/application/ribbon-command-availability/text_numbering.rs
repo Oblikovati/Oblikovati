@@ -132,14 +132,19 @@ fn numbered_content_is_visible(world: &mut ApplicationWorld) {
 #[when("the user positions the caret at the end and insert diameter from the symbol palette")]
 fn insert_diameter_at_the_end(world: &mut ApplicationWorld) {
     let before = glyph_pixels(world);
-    x11_input::press_keysym(0xff57);
-    world.pump(Vec::new());
-    click_named_row(world, "Symbols");
-    click_named_row(world, "Diameter");
+    append_diameter_symbol(world);
     assert!(
         glyph_pixels(world) != before,
         "the diameter preview must change the glyph pixels"
     );
+}
+
+/// Append from the symbol palette, for example to change `AB` to `AB⌀`.
+pub(super) fn append_diameter_symbol(world: &mut ApplicationWorld) {
+    x11_input::press_keysym(0xff57);
+    world.pump(Vec::new());
+    click_named_row(world, "Symbols");
+    click_named_row(world, "Diameter");
 }
 
 #[then("the diameter symbol appears in the editor and preview")]

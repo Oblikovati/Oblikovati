@@ -34,7 +34,8 @@ fn create_lowercase_label(world: &mut ApplicationWorld) {
     world.expect_ready();
 }
 
-fn uppercase_selection(world: &mut ApplicationWorld) {
+/// Select and convert the test label, for example from `ab` to `AB`.
+pub(super) fn uppercase_selection(world: &mut ApplicationWorld) {
     focus_content(world);
     x11_input::press_control_a();
     world.pump(Vec::new());

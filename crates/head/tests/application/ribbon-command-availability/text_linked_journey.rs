@@ -17,7 +17,8 @@ fn native_mixed_text_fields_follow_dimension_history_and_file_reopen() {
     world.close();
 }
 
-fn add_default_numeric_text(world: &mut ApplicationWorld) {
+/// Place one live field for the current sketch's `d0`, for example at 10 mm.
+pub(super) fn add_default_numeric_text(world: &mut ApplicationWorld) {
     activate_text(world);
     text_drag_placement::drag_text_to(world, [1050, 710], [1250, 810]);
     assert!(world.state().sketch_text.unwrap().content.is_empty());
@@ -73,7 +74,8 @@ fn insert_model_dimension(world: &mut ApplicationWorld, precision: Option<&str>)
     click_editor_button(world, "Insert");
 }
 
-fn complete_text_placement(world: &mut ApplicationWorld) {
+/// Accept new Text and exit repeated placement, for example after inserting a field.
+pub(super) fn complete_text_placement(world: &mut ApplicationWorld) {
     click_editor_button(world, "OK");
     x11_input::press_escape();
     world.pump(Vec::new());
@@ -114,7 +116,8 @@ fn verify_native_file_round_trip(world: &mut ApplicationWorld) {
     capture_when_requested(world, "linked-text-after-native-reopen");
 }
 
-fn expect_scene_text(world: &mut ApplicationWorld, expected: &[&str]) {
+/// Compare actual resolved scene text in creation order, for example `&["10.000"]`.
+pub(super) fn expect_scene_text(world: &mut ApplicationWorld, expected: &[&str]) {
     let native = &world.app().window.native;
     assert!(native.sketch_display_declines().unwrap().is_empty());
     let scene = &native.sketch_scene_status().unwrap().sketches[0];
@@ -127,7 +130,8 @@ fn expect_scene_text(world: &mut ApplicationWorld, expected: &[&str]) {
     assert_eq!(displayed, expected);
 }
 
-fn capture_when_requested(world: &mut ApplicationWorld, name: &str) {
+/// Save a named native frame when a report folder is configured, for example after Undo.
+pub(super) fn capture_when_requested(world: &mut ApplicationWorld, name: &str) {
     if std::env::var_os("OBK_BDD_REPORTS").is_some() {
         world.save_capture(name);
     }

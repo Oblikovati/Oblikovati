@@ -25,6 +25,8 @@ mod text_font_height;
 mod text_format_choices;
 #[path = "text_fraction.rs"]
 mod text_fraction;
+#[path = "text_fraction_history.rs"]
+mod text_fraction_history;
 #[path = "text_fraction_preset.rs"]
 mod text_fraction_preset;
 #[path = "text_italic.rs"]
