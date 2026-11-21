@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/obk-pinned-text-38-source-q84ibcw_/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/obk-pinned-text-38-source-q84ibcw_/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T03:39:27.824332316Z" time="83.230219272"><testcase name="Scenario: text-38 Retain expanded Text content after saved reopening: tmp/obk-pinned-text-38-source-q84ibcw_/checkout/features/sketch/text/scenario.feature:388:3" time="83.230219272"><system-out><![CDATA[  Scenario: text-38 Retain expanded Text content after saved reopening
+   ✔  Given Sketch2 contains both stacked fractions, numbered paragraphs, and mixed property/model Text
+   ✔  When the user finishes the sketch and save Part6
+   ✔  And the user closes and reopen the saved document in the same application session
+   ✔  And the user chooses Edit Sketch for Sketch2
+   ✔  Then both stacked fractions remain
+   ✔  And the two numbered paragraphs retain a and b with prefixes 1. and 2.
+   ✔  And the mixed field resolves to the current document filename and 10.00
+   ✔  And the earlier linked field remains 10.000
+   ✔  And Ready shows 47 dimensions needed
+]]></system-out></testcase></testsuite></testsuites>

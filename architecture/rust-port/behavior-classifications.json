@@ -28171,10 +28171,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go checks glyph outlines and typed text operations. The Rust desktop case checks the combined text recipe across native save, close, and reopen.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite shapes literal and expanded text. The application persists fractions, formatting ranges and stable parameter identities.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe and DejaVu Sans.",
+      "kernel_integration": "The viewport re-derives glyphs in the reopened sketch from the authored styles, the current file basename and the bound 10 mm dimension.",
+      "rust_tests": "Pinned native text-38. See architecture/rust-port/receipts/2026-11-21-sketch-text-expanded-reopen-3907/README.md and its Part6.opd fixture.",
+      "oracle": "The saved Part6.opd path, the reopened Sketch2 identity and authored geometry, the resolved viewport text and the 47-dimension status.",
+      "expected_result": "Both fractions and both numbered paragraphs survive. The mixed field displays the saved filename and 10.00. The earlier field displays 10.000 and Ready shows 47 dimensions needed.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:47d3736a56244e903e02cd286924358e1233cc8d55e33716af81884459f76473",

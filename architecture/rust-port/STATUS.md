@@ -149,7 +149,11 @@ using this status; the live scenario directory can change.
   Undo and Redo. Saving and reopening the part retains the field sources,
   resolves the saved file name, and permits another dimension edit.
   The test creates its own part. The pinned `text-16`, `text-17`, `text-34`,
-  `text-35`, and `text-38` cases still need their Part6 fixtures.
+  and `text-35` cases still need their Part6 setup.
+  Pinned `text-38` passed all nine steps with a generated native
+  `Part6.opd`. After reopening Sketch2, the two fractions, numbered
+  paragraphs, linked values, and 47 dimensions needed were retained.
+  See `receipts/2026-11-21-sketch-text-expanded-reopen-3907/`.
   Format Text offers quarter-turn angles next to its numeric rotation field.
   A native RIGHT-view test selects 270 degrees and Center, checks that the
   preview is upright and horizontal, and confirms the committed angle.
