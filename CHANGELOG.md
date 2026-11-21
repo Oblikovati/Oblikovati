@@ -269,6 +269,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Restored installed Tahoma and the inherited color swatch when starting Sketch Text without a preset. (#3907)
+
 - Kept a modified Sketch Text linked to its named preset when reopening the editor or changing the preset name. (#3907)
 
 - Restored the panel-add control after the last browser tab closes and activated the tab selected from its menu. (#3897)

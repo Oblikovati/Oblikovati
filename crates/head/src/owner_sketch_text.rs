@@ -148,14 +148,7 @@ impl<
             return None;
         };
         tool.placement.as_ref()?;
-        Some(
-            tool.font_families
-                .get_or_init(|| {
-                    oblikovati_martensite::planar_curve::sketch::available_sketch_font_families()
-                        .into()
-                })
-                .clone(),
-        )
+        Some(tool.installed_text_families().clone())
     }
 
     pub(super) fn sketch_text_command(
