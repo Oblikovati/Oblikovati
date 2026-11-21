@@ -35,7 +35,8 @@ verified. A successful receipt alone does not close a milestone.
 
 Use `python3 -B tools/bdd/behavior_cli.py backlog` for one entry per feature
 file, ordered by the earliest milestone assigned to one of its scenarios.
-Each entry counts verified, blocked, unclassified, stale, and incomplete R0
+Each entry identifies the feature file by its `source_sha256` and counts
+verified, blocked, unclassified, stale, and incomplete R0
 baseline rows. Its milestone counts include an `unassigned` group. Each feature
 also reports the number of rows missing each baseline field. An unbound or
 changed source hash makes every field incomplete. These counts do not verify

@@ -35,6 +35,7 @@ def count_feature(rows: list[Mapping[str, object]]) -> dict[str, object]:
     )
     return {
         "path": path,
+        "source_sha256": common_feature_hash(rows, path),
         "area": area,
         "total": len(rows),
         "verified": sum(row.get("state") == "verified" for row in rows),
@@ -47,6 +48,19 @@ def count_feature(rows: list[Mapping[str, object]]) -> dict[str, object]:
             sorted(milestones.items(), key=lambda item: milestone_order(item[0]))
         ),
     }
+
+
+def common_feature_hash(rows: list[Mapping[str, object]], path: str) -> str:
+    """Bind feature counts to one source version, for example common_feature_hash(rows, path)."""
+    source_hash = text_field(rows[0], "source_sha256", f"feature {path!r}")
+    if not re.fullmatch(r"[0-9a-f]{64}", source_hash):
+        raise ValueError(f"feature {path!r} source_sha256 {source_hash!r}: expected lowercase SHA-256")
+    for row in rows:
+        if row.get("source_sha256") != source_hash:
+            raise ValueError(
+                f"feature {path!r} source_sha256 {row.get('source_sha256')!r}: expected {source_hash!r}"
+            )
+    return source_hash
 
 
 def feature_backlog(rows: list[object]) -> list[dict[str, object]]:
