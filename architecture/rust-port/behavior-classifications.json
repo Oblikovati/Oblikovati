@@ -28337,10 +28337,19 @@
       ],
       "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
       "mapping_reason": "Sketch text creation, formatting, and path references.",
-      "reason": "The source expects 210 to 215 after one Text placement. The native point-placement fixture gives 210 to 212. The source needs the earlier fixture or an account of the three additional freedoms. See architecture/rust-port/scenario-defects/text-creation-degrees-of-freedom.md.",
-      "rust_tests": "Native test native_point_text_adds_only_anchor_freedoms_to_the_210_dimension_fixture passed. See architecture/rust-port/receipts/2026-11-21-sketch-text-anchor-freedoms-3907/text-01 at d79e6195f25f15f238341a7e9be8b3768f864a61."
+      "reason": "Native point placement yields 212 dimensions from 210. The source needs the original fixture or the extra variables that account for 215.",
+      "rust_tests": "native_point_text_adds_only_anchor_freedoms_to_the_210_dimension_fixture. See scenario-defects/text-creation-degrees-of-freedom.md.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles establish point placement and the glyph baseline. Use the published scenario for the recorded formatting or count requirements.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). Point Text uses the typed style and formatting ranges.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "Martensite provides point Text glyph outlines. The remaining source detail is outside glyph derivation.",
+      "platforms": "Native editor diagnostics under Linux X11 and Vulkan Lavapipe. The recorded editor workflow still requires the exact source fixture.",
+      "kernel_integration": "The host owns point placement, formatting and history, and the sketch model owns the reported solver count.",
+      "oracle": "Retain the full pinned scenario assertions and compare the native rendered glyph or editor state. The focused tests cover only the behavior documented in their receipts.",
+      "expected_result": "The formatted character remains after Escape and the reviewed fixture produces the required dimensions-needed count.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:f86a239026744a08b7c94324996beca76cf3861ed6190aefb07a45ad2344b3ee",
@@ -28626,10 +28635,19 @@
       ],
       "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
       "mapping_reason": "Sketch text creation, formatting, and path references.",
-      "reason": "The source expects 28 to 33 after one Text placement. The native point-placement fixture gives 28 to 30. The source needs the earlier fixture or an account of the three additional freedoms. See architecture/rust-port/scenario-defects/text-creation-degrees-of-freedom.md.",
-      "rust_tests": "Native test native_bold_text_undo_redo_restores_the_same_anchor_and_freedoms passed. See architecture/rust-port/receipts/2026-11-21-sketch-text-anchor-freedoms-3907/text-13 at d79e6195f25f15f238341a7e9be8b3768f864a61."
+      "reason": "Bold text adds two anchor freedoms in the native 28-dimension fixture. The source needs the original fixture or the variables responsible for 33.",
+      "rust_tests": "native_bold_text_undo_redo_restores_the_same_anchor_and_freedoms. See scenario-defects/text-creation-degrees-of-freedom.md.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles establish point placement and the glyph baseline. Use the published scenario for the recorded formatting or count requirements.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). Point Text uses the typed style and formatting ranges.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "Martensite provides point Text glyph outlines. The remaining source detail is outside glyph derivation.",
+      "platforms": "Native editor diagnostics under Linux X11 and Vulkan Lavapipe. The recorded editor workflow still requires the exact source fixture.",
+      "kernel_integration": "The host owns point placement, formatting and history, and the sketch model owns the reported solver count.",
+      "oracle": "Retain the full pinned scenario assertions and compare the native rendered glyph or editor state. The focused tests cover only the behavior documented in their receipts.",
+      "expected_result": "Bold thickens both characters, and Undo and Redo restore the recorded creation states and solver counts.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:0a96040d6ce89cf132b26af1a1c817c6f04989e496e34c48de432432c5005890",
@@ -28776,12 +28794,24 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: text-19 Accept underline, color and width formatting",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Martensite/issues/578"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Font decoration metrics for the selected span are still open in Martensite #578.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles establish point placement and the glyph baseline. Use the published scenario for the recorded formatting or count requirements.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). Point Text uses the typed style and formatting ranges.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "Font decoration metrics for the selected span are still open in Martensite #578.",
+      "platforms": "Native editor diagnostics under Linux X11 and Vulkan Lavapipe. The recorded editor workflow still requires the exact source fixture.",
+      "kernel_integration": "The host retains point Text and formatting ranges. The integration requires the font decoration metrics before building the selected span decoration.",
+      "rust_tests": "native_text_palette_blue_reaches_preview_and_committed_glyphs and receipts/2026-11-21-sketch-text-fractions-0163. These cover color and width independently.",
+      "oracle": "Retain the full pinned scenario assertions and compare the native rendered glyph or editor state. The focused tests cover only the behavior documented in their receipts.",
+      "expected_result": "Accept preserves blue underlined characters at width 50.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:7ac581b79c285ed31314746cdc39cb12bf39fccfbc8737e1bac53bac9cb1779d",
@@ -28793,12 +28823,24 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: text-20 Inspect actual formatting after saved document reopening",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Martensite/issues/578"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Font decoration metrics for the selected span are still open in Martensite #578. The source also needs the saved blue Text and linked-value fixture for Sketch2.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles establish point placement and the glyph baseline. Use the published scenario for the recorded formatting or count requirements.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). Point Text uses the typed style and formatting ranges.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "Font decoration metrics for the selected span are still open in Martensite #578.",
+      "platforms": "Native editor diagnostics under Linux X11 and Vulkan Lavapipe. The recorded editor workflow still requires the exact source fixture.",
+      "kernel_integration": "The host retains point Text and formatting ranges. The integration requires the font decoration metrics before building the selected span decoration.",
+      "rust_tests": "sketch_text_format_choices_preview_and_preserve_the_original_on_cancel and the native Sketch2 persistence checks in receipts/2026-11-21-sketch-text-expanded-reopen-3907.",
+      "oracle": "Retain the full pinned scenario assertions and compare the native rendered glyph or editor state. The focused tests cover only the behavior documented in their receipts.",
+      "expected_result": "Reopen preserves both Text entities and 38 solver freedoms. The blue Text editor shows height 6.10 mm, width 50, Tahoma, and Bold, Italic and Underline.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:db2b082020e6a030041d7a8ad66a22f32d4f10bdcaac4c22932210887c78d532",
@@ -28865,12 +28907,24 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: text-23 Cancel the combined paragraph and symbol edits",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Martensite/issues/578"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Font decoration metrics for the selected span are still open in Martensite #578. The saved blue underlined Text is part of the state the Cancel check must retain.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles establish point placement and the glyph baseline. Use the published scenario for the recorded formatting or count requirements.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). Point Text uses the typed style and formatting ranges.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "Font decoration metrics for the selected span are still open in Martensite #578.",
+      "platforms": "Native editor diagnostics under Linux X11 and Vulkan Lavapipe. The recorded editor workflow still requires the exact source fixture.",
+      "kernel_integration": "The host retains point Text and formatting ranges. The integration requires the font decoration metrics before building the selected span decoration.",
+      "rust_tests": "The linked field, numbering, symbol, and spacing checks run separately. See receipts/2026-11-20-sketch-text-numbering-3907 and receipts/2026-11-21-sketch-text-spacing-0162.",
+      "oracle": "Retain the full pinned scenario assertions and compare the native rendered glyph or editor state. The focused tests cover only the behavior documented in their receipts.",
+      "expected_result": "Cancel restores the original unnumbered Text, underline, placement, linked 10.000 and 38 dimensions needed.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:5aabffd707a6914dec081fac822a688723310d675613965e1309c700879ee58a",
@@ -28909,12 +28963,24 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: text-25 Compare selected and unselected case conversion",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Martensite/issues/578"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Font decoration metrics for the selected span are still open in Martensite #578.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles establish point placement and the glyph baseline. Use the published scenario for the recorded formatting or count requirements.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). Point Text uses the typed style and formatting ranges.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "Font decoration metrics for the selected span are still open in Martensite #578.",
+      "platforms": "Native editor diagnostics under Linux X11 and Vulkan Lavapipe. The recorded editor workflow still requires the exact source fixture.",
+      "kernel_integration": "The host retains point Text and formatting ranges. The integration requires the font decoration metrics before building the selected span decoration.",
+      "rust_tests": "native_uppercase_only_changes_selected_sketch_text exercises selection and case conversion through the native editor.",
+      "oracle": "Retain the full pinned scenario assertions and compare the native rendered glyph or editor state. The focused tests cover only the behavior documented in their receipts.",
+      "expected_result": "UPPERCASE leaves unselected text alone, applies to the selected characters, and strike-through crosses the selected result.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:6e16054ed4694004af350e2a1f0a1d475f95fffb1f196b9db2d06f59aaacfb69",
@@ -28928,10 +28994,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "The source must identify the Text Box control, the second orientation choice, and the document context for Sheet Color.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles establish point placement and the glyph baseline. Use the published scenario for the recorded formatting or count requirements.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). Point Text uses the typed style and formatting ranges.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "Martensite provides point Text glyph outlines. The remaining source detail is outside glyph derivation.",
+      "platforms": "Native editor diagnostics under Linux X11 and Vulkan Lavapipe. The recorded editor workflow still requires the exact source fixture.",
+      "kernel_integration": "The host owns point placement, formatting and history, and the sketch model owns the reported solver count.",
+      "rust_tests": "native_text_quarter_turn_rotates_right_view_preview_and_commits covers quarter-turn selection and the RIGHT-view preview.",
+      "oracle": "Retain the full pinned scenario assertions and compare the native rendered glyph or editor state. The focused tests cover only the behavior documented in their receipts.",
+      "expected_result": "The named orientation and center alignment make the preview readable in RIGHT view. Sheet Color stays checked and Cancel preserves the earlier color settings.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:f98fffccdcd0a89bde5c3b445d53164e94cfdb46536539508f54773940581306",
@@ -28943,12 +29020,24 @@
       "acceptance_test": "sketch_scenarios_use_the_native_window: text-27 Commit paragraph and symbol edits and restore history",
       "issues": [
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
-        "https://github.com/Oblikovati/Oblikovati/issues/3861"
+        "https://github.com/Oblikovati/Oblikovati/issues/3861",
+        "https://github.com/Oblikovati/Martensite/issues/578"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Font decoration metrics for the selected span are still open in Martensite #578. The fixture must also account for the recorded change from 38 to 35 freedoms.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles establish point placement and the glyph baseline. Use the published scenario for the recorded formatting or count requirements.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). Point Text uses the typed style and formatting ranges.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "Font decoration metrics for the selected span are still open in Martensite #578.",
+      "platforms": "Native editor diagnostics under Linux X11 and Vulkan Lavapipe. The recorded editor workflow still requires the exact source fixture.",
+      "kernel_integration": "The host retains point Text and formatting ranges. The integration requires the font decoration metrics before building the selected span decoration.",
+      "rust_tests": "native_fraction_history_restores_diameter_without_changing_linked_text covers history and linked Text independently. The source review remains in the Text BLOCKERS.md.",
+      "oracle": "Retain the full pinned scenario assertions and compare the native rendered glyph or editor state. The focused tests cover only the behavior documented in their receipts.",
+      "expected_result": "Accept keeps the blue uppercase result and diameter with the linked value. Undo and Redo restore each glyph state and its recorded solver count.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:591a98b69753c128665c62fa2d5a1f7013743583fa8d419a3106b0c39717ff44",
@@ -29207,10 +29296,19 @@
       ],
       "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
       "mapping_reason": "Sketch text creation, formatting, and path references.",
-      "reason": "The recorded action enters 6 but its next assertion expects 6.10 mm. The native Arial fraction replay shows 6 mm and Cancel restores 6.10 mm. See architecture/rust-port/scenario-defects/text-37.md.",
-      "rust_tests": "Native height regression passed on an Arial fraction with 47 dimensions needed. See architecture/rust-port/receipts/2026-11-21-sketch-text-height-fraction-3907 at c4a2f0ac1700d3f146384c96918ecfd56dd042e1."
+      "reason": "The source asks the user to type 6 and expects 6.10 mm. The native Arial replay shows 6 mm and Cancel restores 6.10 mm.",
+      "rust_tests": "sketch_text_rejects_zero_height_without_losing_the_last_valid_preview. See scenario-defects/text-37.md and the Arial fraction receipt.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles establish point placement and the glyph baseline. Use the published scenario for the recorded formatting or count requirements.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). Point Text uses the typed style and formatting ranges.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "Martensite provides point Text glyph outlines. The remaining source detail is outside glyph derivation.",
+      "platforms": "Native editor diagnostics under Linux X11 and Vulkan Lavapipe. The recorded editor workflow still requires the exact source fixture.",
+      "kernel_integration": "The host owns point placement, formatting and history, and the sketch model owns the reported solver count.",
+      "oracle": "Retain the full pinned scenario assertions and compare the native rendered glyph or editor state. The focused tests cover only the behavior documented in their receipts.",
+      "expected_result": "Zero height is rejected. The corrected input determines the preview height, and Cancel preserves the original fraction and 47 dimensions needed.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:f7a142c1620b6d601a10474dcf891c56be00a4abda72ae7e553d47963897c977",

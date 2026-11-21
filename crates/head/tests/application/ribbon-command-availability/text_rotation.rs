@@ -5,16 +5,16 @@ use super::*;
 #[test]
 fn native_text_quarter_turn_rotates_right_view_preview_and_commits() {
     let mut world = ApplicationWorld::new();
-    open_right_view_text(&mut world);
-    let vertical = preview_glyph_extent(&mut world);
+    let anchor = open_right_view_text(&mut world);
+    let vertical = preview_glyph_extent(&mut world, anchor);
     assert!(
         vertical[1] > vertical[0] * 2,
         "vertical glyphs {vertical:?}"
     );
     choose_quarter_turn(&mut world);
     text_format_choices::choose_format(&mut world, "Left", "Center");
-    expect_upright_right_view(&mut world);
-    let horizontal = preview_glyph_extent(&mut world);
+    expect_upright_right_view(&mut world, anchor);
+    let horizontal = preview_glyph_extent(&mut world, anchor);
     assert!(
         horizontal[0] > horizontal[1] * 2,
         "horizontal glyphs {horizontal:?}"
@@ -26,11 +26,14 @@ fn native_text_quarter_turn_rotates_right_view_preview_and_commits() {
     world.close();
 }
 
-fn open_right_view_text(world: &mut ApplicationWorld) {
+fn open_right_view_text(world: &mut ApplicationWorld) -> [i32; 2] {
     world.start_sketch_on("YZ Plane");
     world.run("RIGHT");
     activate_text(world);
-    open_editor(world, [1110, 670]);
+    let [left, top, right, bottom] = world.viewport_bounds();
+    let anchor =
+        [left + (right - left) * 2 / 3, top + (bottom - top) * 3 / 4].map(|value| value as i32);
+    open_editor(world, anchor);
     text_format_choices::choose_format(world, "Choose height", "6.10 mm");
     focus_content(world);
     for letter in b"abcde" {
@@ -38,6 +41,7 @@ fn open_right_view_text(world: &mut ApplicationWorld) {
         world.pump(Vec::new());
     }
     assert_eq!(world.state().sketch_text.unwrap().content, "abcde");
+    anchor
 }
 
 fn choose_quarter_turn(world: &mut ApplicationWorld) {
@@ -55,8 +59,7 @@ fn choose_quarter_turn(world: &mut ApplicationWorld) {
     assert_eq!(style.rotation, 270_f64.to_radians());
 }
 
-fn expect_upright_right_view(world: &mut ApplicationWorld) {
-    let origin = [1110, 670];
+fn expect_upright_right_view(world: &mut ApplicationWorld, origin: [i32; 2]) {
     let [u, v] = world.sketch_point_of(origin);
     // At 270° the local baseline extends along -V, and glyphs rise along +U.
     let baseline = world.sketch_pixel_of([u, v - 0.5]);
@@ -77,16 +80,17 @@ fn commit_rotated_text(world: &mut ApplicationWorld) {
     );
 }
 
-fn preview_glyph_extent(world: &mut ApplicationWorld) -> [usize; 2] {
+fn preview_glyph_extent(world: &mut ApplicationWorld, anchor: [i32; 2]) -> [usize; 2] {
     let image = super::super::super::capture_framebuffer(&mut world.app().window.native);
     let mut minimum = [usize::MAX; 2];
     let mut maximum = [0; 2];
     let width = image.extent[0] as usize;
+    let [anchor_x, anchor_y] = anchor.map(|value| value as usize);
     for (y, row) in image
         .rgba
         .chunks_exact(width * 4)
         .enumerate()
-        .skip(570)
+        .skip(anchor_y.saturating_sub(100))
         .take(245)
     {
         for (x, pixel) in row
@@ -94,7 +98,7 @@ fn preview_glyph_extent(world: &mut ApplicationWorld) -> [usize; 2] {
             .0
             .iter()
             .enumerate()
-            .skip(1025)
+            .skip(anchor_x.saturating_sub(85))
             .take(255)
         {
             if pixel[..3].iter().all(|&channel| channel > 145) {

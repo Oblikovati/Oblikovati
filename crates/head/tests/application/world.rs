@@ -42,6 +42,8 @@ pub(super) struct ApplicationWorld {
     pub observed_document_windows: Vec<oblikovati_gui::GuiDocumentWindow>,
     pub observed_sketch: Option<ObservedSketch>,
     pub text_creation_baseline: Option<oblikovati_model::sketch::Sketch2D>,
+    /// The empty editor before entering content that the scenario will cancel.
+    pub text_defaults_before_cancel: Option<oblikovati_gui::GuiSketchTextDraft>,
     pub observed_row_gap: Option<f32>,
     pub observed_row_plain: Option<[u8; 4]>,
     pub observed_view: Option<[i32; 2]>,
@@ -123,6 +125,7 @@ impl ApplicationWorld {
             observed_document_windows: Vec::new(),
             observed_sketch: None,
             text_creation_baseline: None,
+            text_defaults_before_cancel: None,
             observed_row_gap: None,
             observed_row_plain: None,
             observed_view: None,

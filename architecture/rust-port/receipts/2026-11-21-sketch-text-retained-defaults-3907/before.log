@@ -1,0 +1,9 @@
+  Scenario: text-08 Canceled new text does not populate the next text editor
+   ✔  Given the user canceled new text containing lowercase a without accepting it
+   ✔  When the user starts Text again and choose a new insertion location
+   ✔  Then Format Text opens with an empty content editor
+   ✘  And the user records the retained formatting defaults separately from content
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:73:5
+      Matched: crates/head/src/../tests/application/ribbon-command-availability/text_native.rs:148:1
+      Step panicked. Captured output: assertion failed: draft.family.is_empty()

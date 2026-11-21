@@ -124,6 +124,7 @@ fn activate_text(world: &mut ApplicationWorld) {
 fn cancel_pending_sample(world: &mut ApplicationWorld) {
     start_text_from_part(world);
     open_editor(world, [850, 550]);
+    world.text_defaults_before_cancel = world.state().sketch_text;
     type_content(world, b'a');
     click_editor_button(world, "Cancel");
     assert!(world.state().sketch_text.is_none());
@@ -148,9 +149,11 @@ fn new_content_is_empty(world: &mut ApplicationWorld) {
 #[then("the user records the retained formatting defaults separately from content")]
 fn observe_retained_text_format(world: &mut ApplicationWorld) {
     let draft = world.state().sketch_text.unwrap();
-    assert_eq!(draft.height_mm, "3.05");
-    assert_eq!(draft.rotation_degrees, "0");
-    assert!(draft.family.is_empty());
+    let before = world
+        .text_defaults_before_cancel
+        .as_ref()
+        .expect("expected the original empty Text editor");
+    assert_eq!(&draft, before, "expected the same empty editor defaults");
     world.run_in_window("Format Text", "Height(mm)");
     if std::env::var_os("OBK_BDD_REPORTS").is_some() {
         world.save_capture("cancelled-text-fresh-editor");
