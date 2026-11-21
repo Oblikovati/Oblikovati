@@ -7,7 +7,13 @@ from pathlib import Path
 from typing import Mapping
 
 from behavior_capture import artifact
-from behavior_evidence import check_capture, check_scenario, check_source_revision, example_capture_name
+from behavior_evidence import (
+    check_capture,
+    check_scenario,
+    check_source_revision,
+    example_capture_name,
+    expand_case,
+)
 from sealed_execution import SealedRequest
 from sealed_report_check import regular_artifact, require_junit
 
@@ -72,20 +78,30 @@ def capture_namespace(row: Mapping[str, object]) -> str:
 
 
 def require_feature_captures(root: Path, row: Mapping[str, object]) -> None:
-    """Check screenshots for one scenario namespace; example: require_feature_captures(root, row)."""
+    """Check screenshots for the scenario's cases; example: require_feature_captures(root, row)."""
+    if not row.get("outline"):
+        require_final_capture(root, row, None)
+        return
+    examples = row.get("examples")
+    if not isinstance(examples, list) or not examples:
+        raise ValueError(f"outline {row.get('id')!r}: expected examples")
+    for example in examples:
+        # The runner hashes the expanded example's source line and name.
+        require_final_capture(root, expand_case(row, example), example_capture_name(row, example))
+
+
+def require_final_capture(root: Path, case: Mapping[str, object], name: str | None) -> None:
+    """Check one case's final screenshot; example: require_final_capture(root, case, None)."""
     scenarios = root / "scenarios"
-    namespace = scenarios / capture_namespace(row)
+    namespace = scenarios / capture_namespace(case)
     folder = namespace / "final"
     if any(path.is_symlink() for path in (scenarios, namespace, folder)) or not folder.is_dir() or not folder.resolve().is_relative_to(root.resolve()):
         raise ValueError(f"capture directory {folder}: expected the selected scenario's final directory")
     images = sorted(path for path in folder.glob("*.png") if path.is_file() and not path.is_symlink())
-    expected = [example_capture_name(row, example) for example in row["examples"]] if row.get("outline") else None
-    if expected is None and len(images) != 1:
-        raise ValueError(f"scenario captures {images!r}: expected one final PNG")
-    if expected is not None and sorted(path.name for path in images) != sorted(expected):
-        raise ValueError(f"outline captures {images!r}: expected {expected!r}")
-    for path in images:
-        check_capture(root, artifact(root, path))
+    if len(images) != 1 or (name is not None and images[0].name != name):
+        expected = name if name is not None else "one final PNG"
+        raise ValueError(f"scenario captures {images!r}: expected {expected}")
+    check_capture(root, artifact(root, images[0]))
 
 
 def check_feature_report(request: SealedRequest, rows: list[dict[str, object]], revision: str) -> dict[str, object]:

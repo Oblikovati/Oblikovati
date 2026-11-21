@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-only
 """Check full-feature diagnostic reports and scenario capture identity."""
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -7,7 +8,14 @@ import tempfile
 import unittest
 from dataclasses import replace
 
-from sealed_feature_report import capture_namespace, check_feature_report, selected_feature_rows
+from behavior_evidence import example_capture_name
+from sealed_feature_report import (
+    capture_namespace,
+    check_feature_report,
+    require_feature_captures,
+    selected_feature_rows,
+)
+from test_behavior_outline import OutlineFixture
 from test_sealed_execution import SealedFixture
 
 
@@ -70,6 +78,26 @@ class FeatureReportTests(unittest.TestCase):
         inventory["scenarios"] = []
         with self.assertRaisesRegex(ValueError, "nonempty"):
             selected_feature_rows(inventory, self.request, self.revision)
+
+
+class OutlineCaptureTests(unittest.TestCase):
+    def test_expanded_examples_require_distinct_native_capture_namespaces(self) -> None:
+        row = OutlineFixture().row
+        with tempfile.TemporaryDirectory() as directory:
+            reports = Path(directory)
+            images = []
+            for example, name in zip(row["examples"], ("Value one", "Value two")):
+                identity = f"{row['path']}:{example['line']}:{name}"
+                namespace = hashlib.sha256(identity.encode()).hexdigest()
+                folder = reports / "scenarios" / namespace / "final"
+                folder.mkdir(parents=True)
+                image = folder / example_capture_name(row, example)
+                image.write_bytes(b"\x89PNG\r\n\x1a\n" + name.encode())
+                images.append(image)
+            require_feature_captures(reports, row)
+            images[1].rename(images[0].parent / images[1].name)
+            with self.assertRaises(ValueError):
+                require_feature_captures(reports, row)
 
 
 if __name__ == "__main__":
