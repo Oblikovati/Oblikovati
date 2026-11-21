@@ -21,10 +21,12 @@ fn empty_field_broad(world: &mut ApplicationWorld) {
     click_home(world, "Search");
     assert!(home_shows(world, OTHERS[0]), "expected the broader list");
 }
+#[when("the user focuses Search recent")]
 #[when("I focus Search recent")]
 fn focus_search(world: &mut ApplicationWorld) {
     click_home(world, "Search recent");
 }
+#[when("the user chooses \"Part26\" from Search History")]
 #[when(regex = r#"^I choose "Part26" from Search History$"#)]
 fn choose_term(world: &mut ApplicationWorld) {
     let panel = home_run(world, "Search History")
@@ -62,8 +64,11 @@ fn toggle_header(world: &mut ApplicationWorld) {
     world.click(at);
     world.pump(Vec::new());
 }
+#[when("the user checks the list header checkbox")]
 #[when("I check the list header checkbox")]
+#[when("the user activates the partially selected header checkbox")]
 #[when("I activate the partially selected header checkbox")]
+#[when("the user clears the header checkbox")]
 #[when("I clear the header checkbox")]
 fn header_box(world: &mut ApplicationWorld) {
     toggle_header(world);
@@ -75,6 +80,7 @@ fn all_checked(world: &mut ApplicationWorld) {
         assert!(row_checked(world, name), "expected {name} checked");
     }
 }
+#[when("the user clears one visible row's checkbox")]
 #[when("I clear one visible row's checkbox")]
 fn clear_one(world: &mut ApplicationWorld) {
     toggle_row(world, SEARCHED);
@@ -112,7 +118,9 @@ fn opened_descending(world: &mut ApplicationWorld) {
         "expected the default sort mark"
     );
 }
+#[when("the user selects the Name column header")]
 #[when("I select the Name column header")]
+#[when("the user selects the Name column header again")]
 #[when("I select the Name column header again")]
 fn select_name_header(world: &mut ApplicationWorld) {
     click_home(world, "Name");
@@ -135,6 +143,7 @@ fn sort_by_up(world: &mut ApplicationWorld) {
 fn nothing_matches(world: &mut ApplicationWorld) {
     assert!(!home_shows(world, NO_MATCH), "expected no match");
 }
+#[when("the user enters \"zzq_no_match_7319\" in Search recent")]
 #[when(regex = r#"^I enter "zzq_no_match_7319" in Search recent$"#)]
 fn enter_no_match(world: &mut ApplicationWorld) {
     enter_search(world, NO_MATCH);
@@ -152,6 +161,7 @@ fn offers_clear(world: &mut ApplicationWorld) {
         "expected the button"
     );
 }
+#[when("the user activates Clear search and filters")]
 #[when("I activate Clear search and filters")]
 fn activate_clear(world: &mut ApplicationWorld) {
     click_home(world, "Clear search and filters");
@@ -163,10 +173,12 @@ fn no_assembly_match(_: &mut ApplicationWorld) {
         "expected the fixture's names apart"
     );
 }
+#[when("the user searches recent documents for \"Part26\"")]
 #[when(regex = r#"^I search recent documents for "Part26"$"#)]
 fn search_part26(world: &mut ApplicationWorld) {
     search_for(world, SEARCHED);
 }
+#[when("the user opens Filter")]
 #[when("I open Filter")]
 fn when_open_filter(world: &mut ApplicationWorld) {
     open_filter(world);
@@ -180,7 +192,9 @@ fn searching_shows(world: &mut ApplicationWorld) {
     search_for(world, SEARCHED);
     assert!(!home_shows(world, OTHERS[0]), "expected only the match");
 }
+#[when("the user activates the clear control beside the active filter indicator")]
 #[when("I activate the clear control beside the active filter indicator")]
+#[when("the user clears the active filter")]
 #[when("I clear the active filter")]
 fn clear_indicator(world: &mut ApplicationWorld) {
     let filter = home_run(world, "Filter (").expect("expected an active filter");

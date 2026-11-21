@@ -12,6 +12,7 @@ fn card_checked(world: &mut ApplicationWorld) {
     });
     assert!(mark, "expected a check on the card near {at:?}");
 }
+#[when("the user checks the second part's card")]
 #[when("I check the second part's card")]
 fn check_card(world: &mut ApplicationWorld) {
     let at = card_check_at(world, OTHERS[0]);
@@ -39,6 +40,7 @@ fn notice_after_properties(world: &mut ApplicationWorld) {
     choose_properties(world);
     notice_shown(world);
 }
+#[when("the user dismisses the informational notice")]
 #[when("I dismiss the informational notice")]
 fn dismiss_notice(world: &mut ApplicationWorld) {
     world.click_text("OK");
@@ -64,6 +66,7 @@ fn general_shown(world: &mut ApplicationWorld) {
         world.expect_text(field);
     }
 }
+#[when("the user dismisses the properties window")]
 #[when("I dismiss the properties window")]
 fn dismiss_properties(world: &mut ApplicationWorld) {
     world.click_text("Close");
@@ -80,6 +83,7 @@ fn mixed_checked(world: &mut ApplicationWorld) {
     toggle_row(world, SEARCHED);
     toggle_row(world, ASSEMBLY);
 }
+#[when("the user opens Filter and selects Part")]
 #[when("I open Filter and select Part")]
 fn filter_part(world: &mut ApplicationWorld) {
     open_filter(world);
@@ -99,7 +103,9 @@ fn assembly_back_clear(world: &mut ApplicationWorld) {
     assert!(!row_checked(world, ASSEMBLY), "expected {ASSEMBLY} clear");
 }
 // Size sort
+#[when("the user selects the Size column header")]
 #[when("I select the Size column header")]
+#[when("the user selects the Size column header again")]
 #[when("I select the Size column header again")]
 fn select_size_header(world: &mut ApplicationWorld) {
     click_home(world, "Size");
@@ -151,6 +157,7 @@ fn shown_as_row(world: &mut ApplicationWorld) {
 fn location_column_gone(world: &mut ApplicationWorld) {
     location_gone(world);
 }
+#[when("the user chooses Reset to default")]
 #[when("I choose Reset to default")]
 fn reset_columns(world: &mut ApplicationWorld) {
     world.click_text("Reset to default");

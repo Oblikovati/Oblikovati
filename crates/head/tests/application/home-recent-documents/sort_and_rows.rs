@@ -6,6 +6,7 @@ use super::*;
 fn names_in_grid(world: &mut ApplicationWorld) {
     click_home(world, "Grid View");
 }
+#[when("the user opens the Sort by menu")]
 #[when("I open the Sort by menu")]
 fn open_sort(world: &mut ApplicationWorld) {
     click_home(world, "Sort by");
@@ -23,6 +24,7 @@ fn sort_offers(world: &mut ApplicationWorld) {
         world.expect_text(field);
     }
 }
+#[when("the user chooses Name")]
 #[when("I choose Name")]
 fn choose_name(world: &mut ApplicationWorld) {
     world.click_text("Name");
@@ -37,6 +39,7 @@ fn field_name(world: &mut ApplicationWorld) {
 fn cards_descending(world: &mut ApplicationWorld) {
     expect_descending_names(world);
 }
+#[when("the user activates the sort direction control")]
 #[when("I activate the sort direction control")]
 fn sort_direction(world: &mut ApplicationWorld) {
     click_home(world, "v");
@@ -53,12 +56,16 @@ fn cards_ascending(world: &mut ApplicationWorld) {
 fn no_checks(world: &mut ApplicationWorld) {
     expect_no_selected_actions(world);
 }
+#[when("the user opens the actions menu on a recent part row")]
 #[when("I open the actions menu on a recent part row")]
+#[when("the user opens a recent row's actions menu")]
 #[when("I open a recent row's actions menu")]
+#[when("the user opens the part row's actions menu")]
 #[when("I open the part row's actions menu")]
 fn open_actions(world: &mut ApplicationWorld) {
     open_row_actions(world);
 }
+#[then("the menu offers Open and opens with options")]
 #[then("the menu offers Open and Open with options")]
 fn menu_open(world: &mut ApplicationWorld) {
     world.expect_text("Open with options");
@@ -88,6 +95,7 @@ fn menu_selected(world: &mut ApplicationWorld) {
     world.expect_text("Open Selected");
     world.expect_text("Remove Selected");
 }
+#[when("the user checks a second recent-document row")]
 #[when("I check a second recent-document row")]
 fn check_second(world: &mut ApplicationWorld) {
     toggle_row(world, OTHERS[0]);
@@ -113,6 +121,7 @@ fn both_checked(world: &mut ApplicationWorld) {
 fn selected_shown(world: &mut ApplicationWorld) {
     expect_selected_actions(world);
 }
+#[when("the user clears the second row's checkbox")]
 #[when("I clear the second row's checkbox")]
 fn clear_second(world: &mut ApplicationWorld) {
     toggle_row(world, OTHERS[0]);
@@ -126,6 +135,7 @@ fn first_checked(world: &mut ApplicationWorld) {
         OTHERS[0]
     );
 }
+#[when("the user clears the first row's checkbox")]
 #[when("I clear the first row's checkbox")]
 fn clear_first(world: &mut ApplicationWorld) {
     toggle_row(world, SEARCHED);
@@ -146,6 +156,7 @@ fn unpinned_in_grid(world: &mut ApplicationWorld) {
     click_home(world, "Grid View");
     assert!(home_shows(world, SEARCHED), "expected {SEARCHED}");
 }
+#[when("the user hovers over the part's card")]
 #[when("I hover over the part's card")]
 fn hover_card(world: &mut ApplicationWorld) {
     let at = row_run(world, SEARCHED).center().map(|value| value as i32);
@@ -157,6 +168,7 @@ fn hover_card(world: &mut ApplicationWorld) {
 fn pin_offered(world: &mut ApplicationWorld) {
     assert!(home_shows(world, "Pin"), "expected Pin");
 }
+#[when("the user activates Pin")]
 #[when("I activate Pin")]
 fn activate_pin(world: &mut ApplicationWorld) {
     click_home(world, "Pin");
@@ -169,10 +181,12 @@ fn unpin_offered(world: &mut ApplicationWorld) {
 fn stays_in_grid(world: &mut ApplicationWorld) {
     assert!(home_shows(world, SEARCHED), "expected {SEARCHED}");
 }
+#[when("the user activates Unpin")]
 #[when("I activate Unpin")]
 fn activate_unpin(world: &mut ApplicationWorld) {
     click_home(world, "Unpin");
 }
+#[when("the user opens Column Settings and clears Location")]
 #[when("I open Column Settings and clear Location")]
 fn clear_location(world: &mut ApplicationWorld) {
     click_home(world, "Column Settings");
@@ -193,6 +207,7 @@ fn clear_location(world: &mut ApplicationWorld) {
 fn location_unchecked(world: &mut ApplicationWorld) {
     assert!(!world.checked("Location"), "expected Location clear");
 }
+#[when("the user selects Location again")]
 #[when("I select Location again")]
 fn select_location(world: &mut ApplicationWorld) {
     world.click_text("Location");
@@ -222,6 +237,7 @@ fn displayed_row(world: &ApplicationWorld, name: &str, above: f32, below: f32) -
         .cloned()
         .unwrap_or_else(|| panic!("expected {name} in Displayed Columns"))
 }
+#[when("the user drags Location above Date Modified in Displayed Columns")]
 #[when("I drag Location above Date Modified in Displayed Columns")]
 fn drag_location(world: &mut ApplicationWorld) {
     let displayed = world.run("Displayed Columns").center()[1];

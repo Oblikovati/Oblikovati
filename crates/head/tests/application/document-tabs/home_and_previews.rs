@@ -179,6 +179,7 @@ fn part_open(world: &mut ApplicationWorld) {
     world.other_document = Some(part);
 }
 #[when("I choose Home from the View tab's Switch menu")]
+#[when("the user chooses Home from the View ribbon Switch menu")]
 #[when("I choose Home from the View ribbon Switch menu")]
 #[when("the user chooses Home from the View tab's Switch menu")]
 fn home_from_switch(world: &mut ApplicationWorld) {

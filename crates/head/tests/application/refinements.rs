@@ -384,6 +384,7 @@ fn sort_opened_down(world: &mut ApplicationWorld) {
     world.expect_text("Sort by Last Opened");
     world.expect_text("v");
 }
+#[when("the user inspects the recent-document list")]
 #[when("I inspect the recent-document list")]
 fn inspect_list(world: &mut ApplicationWorld) {
     world.pump(Vec::new());

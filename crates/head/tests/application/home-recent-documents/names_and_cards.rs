@@ -16,6 +16,7 @@ fn add_partial_files(world: &mut ApplicationWorld) {
 fn partial_named(world: &mut ApplicationWorld) {
     add_partial_files(world);
 }
+#[when("the user enters \"part2\" in Search recent")]
 #[when(regex = r#"^I enter "part2" in Search recent$"#)]
 fn enter_partial(world: &mut ApplicationWorld) {
     enter_search(world, PARTIAL);
@@ -50,6 +51,7 @@ fn results_checked(world: &mut ApplicationWorld) {
         assert!(row_checked(world, name), "expected {name} checked");
     }
 }
+#[when("the user clears the search field and activates Search")]
 #[when("I clear the search field and activate Search")]
 fn clear_and_search(world: &mut ApplicationWorld) {
     clear_field(world);
@@ -110,6 +112,7 @@ fn field_empty_given(world: &mut ApplicationWorld) {
         "expected the field's hint"
     );
 }
+#[when("the user clears the search field")]
 #[when("I clear the search field")]
 fn clear_search_field(world: &mut ApplicationWorld) {
     clear_field(world);
@@ -130,12 +133,14 @@ fn in_grid(world: &mut ApplicationWorld) {
 fn no_cards_checked(world: &mut ApplicationWorld) {
     expect_no_selected_actions(world);
 }
+#[when("the user hovers over a recent part card")]
 #[when("I hover over a recent part card")]
 fn hover_recent_card(world: &mut ApplicationWorld) {
     let at = row_run(world, SEARCHED).center().map(|value| value as i32);
     world.hover(at);
     world.pump(Vec::new());
 }
+#[when("the user opens its actions menu")]
 #[when("I open its actions menu")]
 fn open_card_menu(world: &mut ApplicationWorld) {
     let name = row_run(world, SEARCHED);
@@ -154,6 +159,7 @@ fn open_card_menu(world: &mut ApplicationWorld) {
     world.click(control.center().map(|value| value as i32));
     world.pump(Vec::new());
 }
+#[when("the user clicks outside the menu")]
 #[when("I click outside the menu")]
 fn click_outside(world: &mut ApplicationWorld) {
     world.click([900, 800]);

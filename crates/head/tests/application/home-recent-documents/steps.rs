@@ -10,10 +10,12 @@ const ASSEMBLY: &str = "Frame";
 const NO_MATCH: &str = "zzq_no_match_7319";
 const SELECTED_ACTIONS: [&str; 2] = ["Open Selected", "Remove Selected"];
 const ROW_REACH: f32 = 4.;
-#[path = "lists.rs"]
-mod lists;
 #[path = "layout_bounds.rs"]
 mod layout_bounds;
+#[path = "lists.rs"]
+mod lists;
+#[path = "startup_observation.rs"]
+mod startup_observation;
 
 /// Real files through a real save: each lands on the recent list as a person's would.
 fn save_recent_files(world: &mut ApplicationWorld) {
@@ -169,11 +171,14 @@ fn home_behind_menu(_: &mut ApplicationWorld) {
 fn displayed_as_list(world: &mut ApplicationWorld) {
     assert!(home_shows(world, "Location"), "expected the list's columns");
 }
+#[when("the user enters \"Part26\" in Search recent")]
 #[when(regex = r#"^I enter "Part26" in Search recent$"#)]
 fn enter_part26(world: &mut ApplicationWorld) {
     enter_search(world, SEARCHED);
 }
+#[when("the user activates the Search control")]
 #[when("I activate the Search control")]
+#[when("the user activates the Search control again")]
 #[when("I activate the Search control again")]
 fn activate_search(world: &mut ApplicationWorld) {
     click_home(world, "Search");
@@ -199,6 +204,7 @@ fn shows_match(world: &mut ApplicationWorld) {
 fn others_hidden(world: &mut ApplicationWorld) {
     assert!(!home_shows(world, OTHERS[0]), "expected no {}", OTHERS[0]);
 }
+#[when("the user clears the search field with its clear control")]
 #[when("I clear the search field with its clear control")]
 pub(super) fn clear_field(world: &mut ApplicationWorld) {
     let run = world
@@ -229,6 +235,7 @@ fn filtered_remains(world: &mut ApplicationWorld) {
 fn others_back(world: &mut ApplicationWorld) {
     assert!(home_shows(world, OTHERS[0]), "expected {}", OTHERS[0]);
 }
+#[given("the user has searched recent documents for \"Part26\"")]
 #[given(regex = r#"^I have searched recent documents for "Part26"$"#)]
 fn searched(world: &mut ApplicationWorld) {
     search_for(world, SEARCHED);
@@ -258,7 +265,9 @@ fn history_includes(world: &mut ApplicationWorld) {
         .any(|run| in_home(run) && run.text.ends_with(SEARCHED) && run.center()[1] > panel);
     assert!(term, "expected {SEARCHED} under the panel title");
 }
+#[when("the user selects Grid View")]
 #[when("I select Grid View")]
+#[when("the user switches to Grid View")]
 #[when("I switch to Grid View")]
 fn select_grid(world: &mut ApplicationWorld) {
     click_home(world, "Grid View");
@@ -286,7 +295,9 @@ fn card_facts(world: &mut ApplicationWorld) {
 fn sort_shown(world: &mut ApplicationWorld) {
     assert!(home_shows(world, "Sort by"), "expected Sort by");
 }
+#[when("the user selects List View")]
 #[when("I select List View")]
+#[when("the user switches back to List View")]
 #[when("I switch back to List View")]
 fn select_list(world: &mut ApplicationWorld) {
     click_home(world, "List View");
@@ -308,6 +319,7 @@ fn parts_and_assemblies(world: &mut ApplicationWorld) {
 fn no_filters(world: &mut ApplicationWorld) {
     world.expect_no_text("Filter (");
 }
+#[when("the user opens Filter and selects Assembly")]
 #[when("I open Filter and select Assembly")]
 fn filter_assembly(world: &mut ApplicationWorld) {
     select_assembly_filter(world);
@@ -321,6 +333,7 @@ fn assemblies_shown(world: &mut ApplicationWorld) {
 fn one_filter(world: &mut ApplicationWorld) {
     expect_filter_count(world, 1);
 }
+#[when("the user chooses Clear filters")]
 #[when("I choose Clear filters")]
 fn clear_filters(world: &mut ApplicationWorld) {
     if !world.shows("Clear filters") {
@@ -340,6 +353,7 @@ fn both_again(world: &mut ApplicationWorld) {
     assert!(home_shows(world, ASSEMBLY), "expected {ASSEMBLY}");
     assert!(home_shows(world, SEARCHED), "expected {SEARCHED}");
 }
+#[when("the user opens Filter and chooses Today under Date Modified")]
 #[when("I open Filter and choose Today under Date Modified")]
 fn filter_today(world: &mut ApplicationWorld) {
     open_filter(world);
@@ -352,6 +366,7 @@ fn today_list(world: &mut ApplicationWorld) {
     assert!(home_shows(world, SEARCHED), "expected {SEARCHED}");
     assert!(home_shows(world, ASSEMBLY), "expected {ASSEMBLY}");
 }
+#[when("the user selects Part under File Types")]
 #[when("I select Part under File Types")]
 fn select_part_type(world: &mut ApplicationWorld) {
     world.click_text("Part");
@@ -369,6 +384,7 @@ fn parts_today(world: &mut ApplicationWorld) {
 fn assembly_hidden(world: &mut ApplicationWorld) {
     assert!(!home_shows(world, ASSEMBLY), "expected no {ASSEMBLY}");
 }
+#[when("the user also selects Assembly")]
 #[when("I also select Assembly")]
 fn also_assembly(world: &mut ApplicationWorld) {
     world.click_text("Assembly");

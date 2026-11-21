@@ -15,6 +15,7 @@ fn front_view_part(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     assert!(home_shows(world, SEARCHED), "expected the part on the list");
 }
+#[when("the user chooses Open with options")]
 #[when("I choose Open with options")]
 fn choose_open_options(world: &mut ApplicationWorld) {
     world.click_text("Open with options");
@@ -61,6 +62,7 @@ fn view_list_rows(world: &mut ApplicationWorld) {
     world.expect_text("Primary");
     world.expect_text("Front");
 }
+#[when("the user chooses Front")]
 #[when("I choose Front")]
 fn choose_front(world: &mut ApplicationWorld) {
     world.click_text("Front");
@@ -79,6 +81,7 @@ fn dialog_closed(world: &mut ApplicationWorld) {
 fn assembly_listed(world: &mut ApplicationWorld) {
     assert!(home_shows(world, ASSEMBLY), "expected {ASSEMBLY}");
 }
+#[when("the user opens the assembly row's actions menu")]
 #[when("I open the assembly row's actions menu")]
 fn assembly_actions(world: &mut ApplicationWorld) {
     open_actions_of(world, ASSEMBLY);
@@ -110,6 +113,7 @@ fn change_mode(world: &mut ApplicationWorld, mode: &str) {
     world.click_text(mode);
     world.pump(Vec::new());
 }
+#[when("the user changes the opening mode to Express")]
 #[when("I change the opening mode to Express")]
 fn mode_express(world: &mut ApplicationWorld) {
     change_mode(world, "Express");
@@ -144,6 +148,7 @@ fn drawing_listed(world: &mut ApplicationWorld) {
         "expected the drawing on the list"
     );
 }
+#[when("the user opens the drawing row's actions menu")]
 #[when("I open the drawing row's actions menu")]
 fn drawing_actions(world: &mut ApplicationWorld) {
     open_actions_of(world, "Sheet");
@@ -152,6 +157,7 @@ fn drawing_actions(world: &mut ApplicationWorld) {
 fn offers_defer(world: &mut ApplicationWorld) {
     world.expect_text("Defer Open");
 }
+#[when("the user changes the opening mode to Defer")]
 #[when("I change the opening mode to Defer")]
 fn mode_defer(world: &mut ApplicationWorld) {
     change_mode(world, "Defer");
@@ -187,6 +193,7 @@ fn others_have_sizes(world: &mut ApplicationWorld) {
     assert!(home_shows(world, "KB"), "expected displayed sizes");
 }
 #[when("I select the Size column header twice")]
+#[when("the user selects the Size column header twice")]
 fn size_twice(world: &mut ApplicationWorld) {
     click_home(world, "Size");
     click_home(world, "Size");
@@ -214,6 +221,7 @@ fn known_ascending(world: &mut ApplicationWorld) {
 fn part_row_visible(world: &mut ApplicationWorld) {
     assert!(home_shows(world, SEARCHED), "expected {SEARCHED}");
 }
+#[when("the user hovers over the part row")]
 #[when("I hover over the part row")]
 fn hover_row(world: &mut ApplicationWorld) {
     let at = row_run(world, SEARCHED).center().map(|value| value as i32);
@@ -243,6 +251,7 @@ fn row_controls(world: &mut ApplicationWorld) {
         .any(|run| in_home(run) && run.text == "..." && (run.center()[1] - row).abs() < 12.);
     assert!(control, "expected the row's actions control");
 }
+#[when("the user opens the row's actions control")]
 #[when("I open the row's actions control")]
 fn open_row_control(world: &mut ApplicationWorld) {
     open_row_actions(world);
