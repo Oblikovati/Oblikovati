@@ -15,6 +15,8 @@ mod text_case;
 mod text_color;
 #[path = "text_creation.rs"]
 mod text_creation;
+#[path = "text_degrees_of_freedom.rs"]
+mod text_degrees_of_freedom;
 #[path = "text_double_click.rs"]
 mod text_double_click;
 #[path = "text_drag_placement.rs"]
