@@ -235,11 +235,20 @@ mod tests {
     use super::*;
     #[test]
     fn the_project_file_is_named_for_the_project_inside_its_folder() {
+        use std::path::Path;
+
         let mut wizard = NewProjectWizard::default();
         wizard.request();
         wizard.name = "Gearbox".into();
-        wizard.workspace = "/work/Documents".into();
-        assert_eq!(wizard.project_file(), "/work/Documents/Gearbox.opj");
+        let workspace = std::env::temp_dir().join("Documents");
+        wizard.workspace = workspace
+            .to_str()
+            .expect("expected a UTF-8 workspace")
+            .into();
+        let file = wizard.project_file();
+        let file = Path::new(&file);
+        assert_eq!(file.parent(), Some(workspace.as_path()));
+        assert_eq!(file.file_name(), Some("Gearbox.opj".as_ref()));
         assert_eq!(folder_label(&wizard.workspace), "Documents");
     }
     #[test]

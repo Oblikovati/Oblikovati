@@ -241,30 +241,49 @@
     "notes": "All 6 pinned scenarios and 69 steps passed. The published scenarios require the replaced native fixture. Strict build and runtime provenance remains open under #3978."
   },
   "features/application/project-dialog/project-dialog.feature": {
-    "feature_sha256": "c1d2f5a8b0864de55e5f7f8edd7c6bc17e8363dc71ffe208ec1751ec7caddd26",
-    "supporting_files": {
-      "features/application/project-dialog/BLOCKERS.md": "1dae9e015e5869d6384b8b70a76c8906dde119aade81fe050be3612eece2632f",
-      "features/application/project-dialog/FIXTURES.md": "0e08f0d4a238b6407b86fa3c5da1f9b69a34d478919cdad4835cf56f207103a3",
-      "features/application/project-dialog/FUNCTIONAL.md": "10aa53fcfee1fad6a1fe0d4e0c7a93feddb36c1e73f837a799c92dcf8de7bf98",
-      "features/application/project-dialog/VISUAL.md": "5cc404e8e057f48092d0d1ee701b005361dc72ee63635b003285b75e33b2db2a",
-      "features/application/project-dialog/folder-browser-wireframe.svg": "ffa2069cac2d8754727ee67a3bfc47b0595b9163129098f4ece49659b23f623b",
-      "features/application/project-dialog/project-dialog-wireframe.svg": "513c7f59121c9359f654f9eed1b2770322469d649ed282d2c77d29bfc271a4aa",
-      "features/application/project-dialog/project-settings-icon.svg": "274b586092248b78e13e56f1861a45cd8d25c633ea5f80214d71ed0e105d3a03",
-      "features/application/project-dialog/project-wizard-wireframe.svg": "a3d3774569ef4435d209077726999eaa6136ce0a456eac81b4c942ed70ffa221",
-      "fixtures/cad/project-dialog-native/ActiveProject.opj": "7bea6f1c2f32e6ad4c1fa9f6ca63fb38bc83b55a0af1d378db213b052b9a908d",
-      "fixtures/cad/project-dialog-native/AlternateProject.opj": "98327ca2a00d32244033f65b95f2a9997a39deb8a7d5cd630b569b6a97950fa1",
-      "fixtures/cad/project-dialog-native/WizardProject.opj": "5b4f31be0a2ff003aa301792364676ea8dfb05069043320bc6b516319b12c39d",
-      "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
-    },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-native-project-dialog-3895/cucumber.json",
-    "cucumber_sha256": "1c10d5a31b49bce82d69f9ffb909b0493cd70d93154d73994d8e23a6c89e75d2",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-native-project-dialog-3895/scenario-arguments.json",
-    "scenario_arguments_sha256": "fd71784c35aa10e58b1a1e375a31bc221a541c595b885e15439a733f9934d41e",
-    "application_commit": "93114018c2e7c965d9dcef0ffb2a9edb28dd16be",
-    "command": "Full project-dialog desktop run. See the receipt README.",
-    "environment": "Linux Xvfb, Lavapipe, and X11 mouse and keyboard",
-    "notes": "All eight scenarios and 100 steps passed on the supplied native part and project fixtures.",
-    "blocker": "Strict verification requires pinned scenario source and bounded build and runtime inputs (#3978)."
+    "by_source_sha256": {
+      "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d": {
+        "feature_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d",
+        "supporting_files": {
+          "features/application/project-dialog/FIXTURES.md": "db5f22c3e158bc47b2317dd2e29b9e3b1eb3796fb129e64ed13511bd06331bc0",
+          "features/application/project-dialog/FUNCTIONAL.md": "10aa53fcfee1fad6a1fe0d4e0c7a93feddb36c1e73f837a799c92dcf8de7bf98",
+          "features/application/project-dialog/VISUAL.md": "5cc404e8e057f48092d0d1ee701b005361dc72ee63635b003285b75e33b2db2a",
+          "features/application/project-dialog/folder-browser-wireframe.svg": "ffa2069cac2d8754727ee67a3bfc47b0595b9163129098f4ece49659b23f623b",
+          "features/application/project-dialog/project-dialog-wireframe.svg": "513c7f59121c9359f654f9eed1b2770322469d649ed282d2c77d29bfc271a4aa",
+          "features/application/project-dialog/project-settings-icon.svg": "274b586092248b78e13e56f1861a45cd8d25c633ea5f80214d71ed0e105d3a03",
+          "features/application/project-dialog/project-wizard-wireframe.svg": "a3d3774569ef4435d209077726999eaa6136ce0a456eac81b4c942ed70ffa221"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-project-dialog-current-3895/pinned-cucumber.json",
+        "cucumber_sha256": "ecfb44576b44e0e532841cdf0e09c1a44baf464ff426d26414890c2b9bf5130e",
+        "application_commit": "750c2b67f084e1d8689ac29754fe0017b2c9b6e1",
+        "command": "OBK_BDD_FEATURE=project-dialog cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 8 pinned scenarios and 101 steps passed. Build and runtime provenance remains open under #3978."
+      },
+      "c1d2f5a8b0864de55e5f7f8edd7c6bc17e8363dc71ffe208ec1751ec7caddd26": {
+        "feature_sha256": "c1d2f5a8b0864de55e5f7f8edd7c6bc17e8363dc71ffe208ec1751ec7caddd26",
+        "supporting_files": {
+          "features/application/project-dialog/BLOCKERS.md": "1dae9e015e5869d6384b8b70a76c8906dde119aade81fe050be3612eece2632f",
+          "features/application/project-dialog/FIXTURES.md": "0e08f0d4a238b6407b86fa3c5da1f9b69a34d478919cdad4835cf56f207103a3",
+          "features/application/project-dialog/FUNCTIONAL.md": "10aa53fcfee1fad6a1fe0d4e0c7a93feddb36c1e73f837a799c92dcf8de7bf98",
+          "features/application/project-dialog/VISUAL.md": "5cc404e8e057f48092d0d1ee701b005361dc72ee63635b003285b75e33b2db2a",
+          "features/application/project-dialog/folder-browser-wireframe.svg": "ffa2069cac2d8754727ee67a3bfc47b0595b9163129098f4ece49659b23f623b",
+          "features/application/project-dialog/project-dialog-wireframe.svg": "513c7f59121c9359f654f9eed1b2770322469d649ed282d2c77d29bfc271a4aa",
+          "features/application/project-dialog/project-settings-icon.svg": "274b586092248b78e13e56f1861a45cd8d25c633ea5f80214d71ed0e105d3a03",
+          "features/application/project-dialog/project-wizard-wireframe.svg": "a3d3774569ef4435d209077726999eaa6136ce0a456eac81b4c942ed70ffa221",
+          "fixtures/cad/project-dialog-native/ActiveProject.opj": "7bea6f1c2f32e6ad4c1fa9f6ca63fb38bc83b55a0af1d378db213b052b9a908d",
+          "fixtures/cad/project-dialog-native/AlternateProject.opj": "98327ca2a00d32244033f65b95f2a9997a39deb8a7d5cd630b569b6a97950fa1",
+          "fixtures/cad/project-dialog-native/WizardProject.opj": "5b4f31be0a2ff003aa301792364676ea8dfb05069043320bc6b516319b12c39d",
+          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-project-dialog-current-3895/published-cucumber.json",
+        "cucumber_sha256": "fc1182c3e1a03077c289096b76428db7d244e49438d79af455bf0d447e8dd926",
+        "application_commit": "750c2b67f084e1d8689ac29754fe0017b2c9b6e1",
+        "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=project-dialog cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 8 published scenarios and 100 steps passed. Build and runtime provenance remains open under #3978."
+      }
+    }
   },
   "features/application/viewport-orientation/viewport-orientation.feature": {
     "feature_sha256": "4368a0cdb1767d8a80ddad9966f82709f610fdbd6c48987cc4073273cc939f62",
