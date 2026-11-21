@@ -11,4 +11,6 @@ if ! command -v xvfb-run >/dev/null 2>&1; then
     exit 1
 fi
 # Native capture compares the complete 1440x900 window with the X11 drawable.
+# The private display has no IBus or Fcitx server from the caller's desktop.
+export XMODIFIERS=@im=none
 exec xvfb-run -a -s '-screen 0 1920x1080x24 -noreset' "$@"

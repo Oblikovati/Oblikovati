@@ -270,7 +270,11 @@ mod xvfb_wrapper {
         fn new() -> Self {
             let directory = tempfile::tempdir().unwrap();
             let executable = directory.path().join("xvfb-run");
-            std::fs::write(&executable, "#!/bin/sh\nprintf '%s\\n' \"$@\"\nexit 37\n").unwrap();
+            std::fs::write(
+                &executable,
+                "#!/bin/sh\nprintf '%s\\n' \"$XMODIFIERS\" \"$@\"\nexit 37\n",
+            )
+            .unwrap();
             std::fs::set_permissions(executable, std::fs::Permissions::from_mode(0o755)).unwrap();
             Self(directory)
         }
@@ -288,13 +292,14 @@ mod xvfb_wrapper {
         let fake = XvfbRunFake::new();
         let result = Command::new(wrapper())
             .env("PATH", fake.path())
+            .env("XMODIFIERS", "@im=ibus")
             .args(["example command", "two words"])
             .output()
             .unwrap();
         assert_eq!(result.status.code(), Some(37));
         assert_eq!(
             String::from_utf8(result.stdout).unwrap(),
-            "-a\n-s\n-screen 0 1920x1080x24 -noreset\nexample command\ntwo words\n"
+            "@im=none\n-a\n-s\n-screen 0 1920x1080x24 -noreset\nexample command\ntwo words\n"
         );
     }
 
