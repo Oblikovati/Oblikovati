@@ -268,7 +268,8 @@ feature is `green` only when the source hash matches, the report hash matches,
 every scenario and its source steps are present, and every step and cleanup
 hook passed. A source change becomes `source_changed`; a change to a recorded
 supporting file becomes `support_changed`. A removed feature is listed separately. A `blocker` on a hash-matched result reports the feature as
-`blocked` without counting its scenarios as passed. For outlines, the inventory
+`blocked`. Matching scenario passes still count unless the record lists them
+as unproven. For outlines, the inventory
 checks every example against a parsed scenario snapshot when its feature hash
 matches. A run may provide a separate parsed inventory and its SHA-256 in
 `scenario_inventory` and `scenario_inventory_sha256`; generate it with the
