@@ -125,19 +125,13 @@ fn location_gone(world: &mut ApplicationWorld) {
     assert!(list_row.center()[0] > 0., "expected the row to remain");
 }
 fn rows_by_size(world: &mut ApplicationWorld) -> Vec<(f32, u64)> {
-    let state = world
-        .app
-        .as_mut()
-        .map(|app| crate::HeadWork::gui_command_state(&mut app.owner).unwrap())
-        .expect("expected an application");
-    let mut rows: Vec<(f32, u64)> = state
+    let mut rows: Vec<(f32, u64)> = world
+        .state()
         .recent_documents
         .iter()
-        .map(|row| {
-            (
-                row_run(world, &row.name).center()[1],
-                row.size_bytes.unwrap_or(0),
-            )
+        .filter_map(|row| {
+            row.size_bytes
+                .map(|size| (row_run(world, &row.name).center()[1], size))
         })
         .collect();
     rows.sort_by(|a, b| a.0.total_cmp(&b.0));

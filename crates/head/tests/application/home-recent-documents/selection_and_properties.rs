@@ -103,6 +103,15 @@ fn assembly_back_clear(world: &mut ApplicationWorld) {
     assert!(!row_checked(world, ASSEMBLY), "expected {ASSEMBLY} clear");
 }
 // Size sort
+#[given("recent documents with different known file sizes are displayed in List View")]
+fn different_sizes_are_visible(world: &mut ApplicationWorld) {
+    displayed_as_list(world);
+    let values = rows_by_size(world);
+    assert!(
+        values.windows(2).any(|pair| pair[0].1 != pair[1].1),
+        "expected two different known sizes, found {values:?}"
+    );
+}
 #[when("the user selects the Size column header")]
 #[when("I select the Size column header")]
 #[when("the user selects the Size column header again")]
@@ -112,19 +121,23 @@ fn select_size_header(world: &mut ApplicationWorld) {
 }
 #[then("the visible rows with known sizes are ordered from larger to smaller")]
 fn larger_first(world: &mut ApplicationWorld) {
+    assert!(home_shows(world, "Size v"), "expected Size descending");
     let rows = rows_by_size(world);
     assert!(
         rows.windows(2).all(|pair| pair[0].1 >= pair[1].1),
         "sizes {rows:?}"
     );
+    world.save_capture("home-size-descending");
 }
 #[then("the visible rows with known sizes are ordered from smaller to larger")]
 fn smaller_first(world: &mut ApplicationWorld) {
+    assert!(home_shows(world, "Size ^"), "expected Size ascending");
     let rows = rows_by_size(world);
     assert!(
         rows.windows(2).all(|pair| pair[0].1 <= pair[1].1),
         "sizes {rows:?}"
     );
+    world.save_capture("home-size-ascending");
 }
 // Views keep the search and filter
 #[given(regex = r#"^a recent part named "Part26" is displayed in List View$"#)]

@@ -60,6 +60,20 @@ The [pinned blank-size sort](pinned-blank-size.json) passed its eight steps
 with an entry whose saved file had been removed. The current source omits
 that scenario.
 
+## Sort headings with the right dock open
+
+The [earlier Size run](compact-size-sort-before.log.gz) showed the descending
+order after both clicks. In the compact list, the active heading was clipped
+to `Si...`. The list now measures each heading and reserves room for its
+direction mark before it assigns width to the cell values.
+
+The [published](published-compact-size-sort.json) and
+[pinned](pinned-compact-size-sort.json) cases each passed seven steps. The
+[ascending capture](home-compact-size-ascending.png) shows the visible Size
+heading and the smallest file at the top. The
+[pinned blank-size sort](pinned-compact-blank-size.json) and the
+[published column reorder](published-compact-columns.json) also passed.
+
 ## Pinned Home baseline
 
 Five scenarios passed all 40 steps and their window cleanup hooks on

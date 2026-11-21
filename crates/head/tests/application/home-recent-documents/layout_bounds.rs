@@ -33,13 +33,23 @@ fn save_long_recent_labels(world: &mut ApplicationWorld) -> std::path::PathBuf {
 }
 
 fn expect_recent_cell_fits(world: &ApplicationWorld, full: &str, next_column: &str) -> RenderedRun {
-    let prefix = &full[..full.floor_char_boundary(7)];
-    let cell = home_run(world, prefix).unwrap_or_else(|| {
-        panic!(
-            "expected a cell starting with {prefix:?} in {:?}",
-            world.window_text(HOME)
-        )
-    });
+    let cell = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| {
+            in_home(run)
+                && run
+                    .text
+                    .strip_suffix("...")
+                    .is_some_and(|prefix| !prefix.is_empty() && full.starts_with(prefix))
+        })
+        .unwrap_or_else(|| {
+            panic!(
+                "expected an ellipsized cell for {full:?} in {:?}",
+                world.window_text(HOME)
+            )
+        });
     let next = home_run(world, next_column).expect("expected the adjacent column header");
     assert!(
         cell.maximum[0] < next.minimum[0],
@@ -48,5 +58,5 @@ fn expect_recent_cell_fits(world: &ApplicationWorld, full: &str, next_column: &s
         cell.maximum[0],
         next.minimum[0]
     );
-    cell
+    cell.clone()
 }

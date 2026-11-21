@@ -173,7 +173,6 @@ fn home_behind_menu(_: &mut ApplicationWorld) {
 #[given("recent documents are in List View")]
 #[given("several recent documents are displayed in List View")]
 #[given("recent documents with different names are displayed in List View")]
-#[given("recent documents with different known file sizes are displayed in List View")]
 #[given("two recent parts are displayed in List View")]
 #[given("recent parts and assemblies are displayed in List View")]
 #[given("a recent part is displayed in List View")]

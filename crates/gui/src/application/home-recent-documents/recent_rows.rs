@@ -18,10 +18,11 @@ const ACTION_GAP: f32 = 4.;
 const CARD_SIZE: [f32; 2] = [180., 90.];
 const MAX_CARDS_PER_ROW: usize = 4;
 const NOT_AVAILABLE: &str = "This command is not available in this build.";
+type RecentColumnWidths = [(SortField, f32); SortField::MENU.len()];
 
 #[derive(Clone, Copy)]
 struct RecentListLayout {
-    scale: f32,
+    widths: RecentColumnWidths,
     spacing: f32,
     frame_padding: f32,
 }
@@ -33,20 +34,63 @@ impl RecentListLayout {
         let frame_padding = 2. * style.frame_padding[0];
         let actions = ui.calc_text_size("...")[0] + frame_padding + spacing + ACTION_GAP;
         let available = ui.content_region_avail()[0] - CHECK_COLUMN - KIND_COLUMN - actions;
-        let requested = NAME_COLUMN + columns.iter().copied().map(column_width).sum::<f32>();
+        let marks = ui.calc_text_size(" v")[0].max(ui.calc_text_size(" ^")[0]);
+        let minimum = SortField::MENU.map(|field| {
+            let width = ui.calc_text_size(field.label())[0] + marks + spacing + frame_padding;
+            (field, width)
+        });
         Self {
-            scale: (available / requested).clamp(0., 1.),
+            widths: fit_recent_columns(minimum, columns, available),
             spacing,
             frame_padding,
         }
     }
 
     fn width(self, column: SortField) -> f32 {
-        if column == SortField::Name {
-            return self.scale * NAME_COLUMN;
-        }
-        self.scale * column_width(column)
+        self.widths
+            .iter()
+            .find(|(field, _)| *field == column)
+            .unwrap_or_else(|| panic!("recent column {column:?}: expected a measured width"))
+            .1
     }
+}
+
+fn fit_recent_columns(
+    minima: RecentColumnWidths,
+    shown: &[SortField],
+    available: f32,
+) -> RecentColumnWidths {
+    let (minimum, extra) = minima
+        .iter()
+        .filter(|(field, _)| *field == SortField::Name || shown.contains(field))
+        .fold((0., 0.), |(minimum, extra), &(field, width)| {
+            (
+                minimum + width,
+                extra + extra_recent_column_width(field, width),
+            )
+        });
+    // Keep headings and sort marks legible before assigning the space for longer cell values.
+    let heading_scale = (available / minimum).clamp(0., 1.);
+    let extra_scale = if extra > 0. {
+        ((available - minimum) / extra).clamp(0., 1.)
+    } else {
+        0.
+    };
+    minima.map(|(field, width)| {
+        (
+            field,
+            heading_scale * width + extra_scale * extra_recent_column_width(field, width),
+        )
+    })
+}
+
+fn extra_recent_column_width(field: SortField, minimum: f32) -> f32 {
+    let preferred = if field == SortField::Name {
+        NAME_COLUMN
+    } else {
+        column_width(field)
+    };
+    (preferred - minimum).max(0.)
 }
 
 fn open_action(path: &str) -> GuiShellAction {
@@ -375,6 +419,28 @@ fn recent_cards_wrap_at_the_available_width() {
     assert_eq!(recent_card_grid(367., 8.), (180., 1));
     assert_eq!(recent_card_grid(368., 8.), (180., 2));
     assert_eq!(recent_card_grid(140., 8.), (140., 1));
+}
+
+#[cfg(test)]
+#[test]
+fn compact_recent_columns_keep_width_for_size_and_its_sort_mark() {
+    let shown = &super::recent_view::ADJUSTABLE;
+    let minimum =
+        SortField::MENU.map(|field| (field, if field == SortField::Size { 62. } else { 108. }));
+    let widths = fit_recent_columns(minimum, shown, 560.);
+    let size = widths
+        .into_iter()
+        .find(|(field, _)| *field == SortField::Size)
+        .unwrap()
+        .1;
+    assert!(size >= 62.);
+    for width in [560., 320.] {
+        let widths = fit_recent_columns(minimum, shown, width);
+        let visible = widths
+            .iter()
+            .filter(|(field, _)| *field == SortField::Name || shown.contains(field));
+        assert!((visible.map(|(_, width)| width).sum::<f32>() - width).abs() < 0.01);
+    }
 }
 /// The letter beside a row's name: the same kinds read the same everywhere on the list.
 pub(crate) fn kind_mark(kind: crate::GuiTemplateKind) -> &'static str {

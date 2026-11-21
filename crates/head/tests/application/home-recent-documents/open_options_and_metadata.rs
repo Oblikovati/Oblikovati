@@ -210,8 +210,7 @@ fn blank_first(world: &mut ApplicationWorld) {
 }
 #[then("the entries with known sizes are ordered from smaller to larger")]
 fn known_ascending(world: &mut ApplicationWorld) {
-    let mut rows = rows_by_size(world);
-    rows.retain(|row| row.1 > 0);
+    let rows = rows_by_size(world);
     assert!(
         rows.windows(2).all(|pair| pair[0].1 <= pair[1].1),
         "sizes {rows:?}"
