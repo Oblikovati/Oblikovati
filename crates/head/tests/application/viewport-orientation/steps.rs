@@ -21,7 +21,7 @@ mod compass_observation;
 #[path = "fixture.rs"]
 mod fixture;
 pub(super) use behaviour::whole_block_visible;
-pub(super) use fixture::open_saved_navigation_block;
+pub(super) use fixture::{open_saved_navigation_block, orientation_part_upright};
 #[path = "native_input.rs"]
 mod native_input;
 #[path = "option_rows.rs"]

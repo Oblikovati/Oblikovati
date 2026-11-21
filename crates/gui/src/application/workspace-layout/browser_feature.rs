@@ -8,6 +8,8 @@ use crate::{
 };
 use imgui::{Condition, MouseButton, TreeNodeFlags, Ui};
 
+#[path = "face_toolbar_placement.rs"]
+mod face_toolbar_placement;
 #[path = "browser_feature_states.rs"]
 mod states;
 
@@ -363,11 +365,13 @@ fn edge_selection_toolbar(ui: &Ui, request: &GuiFrameRequest, actions: &mut Vec<
     });
 }
 fn face_selection_toolbar(ui: &Ui, request: &GuiFrameRequest, actions: &mut Vec<GuiShellAction>) {
-    let Some(corner) = outline_corner(request) else {
+    let placement = face_toolbar_placement::near_pick(ui, request)
+        .or_else(|| outline_corner(request).map(|[x, y]| ([x, y - TOOLBAR_RISE], [0.; 2])));
+    let Some((position, pivot)) = placement else {
         return;
     };
-    selection_toolbar_window(ui, corner, || {
-        if crate::widget_abi::button(ui, "Zoom Selected", [0.; 2]) {
+    selection_toolbar_at(ui, position, pivot, || {
+        if crate::widget_abi::button(ui, face_toolbar_placement::ZOOM_LABEL, [0.; 2]) {
             actions.push(GuiShellAction::ViewCommand(
                 crate::GuiViewCommand::ZoomSelected {
                     extent: request.extent,
@@ -377,8 +381,12 @@ fn face_selection_toolbar(ui: &Ui, request: &GuiFrameRequest, actions: &mut Vec<
     });
 }
 fn selection_toolbar_window(ui: &Ui, corner: [f32; 2], draw: impl FnOnce()) {
+    selection_toolbar_at(ui, [corner[0], corner[1] - TOOLBAR_RISE], [0.; 2], draw);
+}
+fn selection_toolbar_at(ui: &Ui, position: [f32; 2], pivot: [f32; 2], draw: impl FnOnce()) {
     ui.window(SELECTION_TOOLBAR)
-        .position([corner[0], corner[1] - TOOLBAR_RISE], Condition::Always)
+        .position(position, Condition::Always)
+        .position_pivot(pivot)
         .always_auto_resize(true)
         .no_decoration()
         .focus_on_appearing(false)

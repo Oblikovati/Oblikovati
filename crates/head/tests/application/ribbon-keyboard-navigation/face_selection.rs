@@ -135,6 +135,7 @@ fn native_face_click_cue_retires_when_pointer_leaves() {
         world.text()
     );
     toolbar_visible(&mut world);
+    let toolbar_before = super::super::diagnostics::window_geometry("##selection-toolbar");
     let cue = world.state().model_pick_cue.clone();
     assert!(cue.is_some(), "selected face should retain its model cue");
     let projected = world
@@ -151,6 +152,10 @@ fn native_face_click_cue_retires_when_pointer_leaves() {
     super::super::x11_input::move_pointer([at[0] + 40, at[1] + 40]);
     world.pump(Vec::new());
     world.expect_no_text("1. Face");
+    assert_eq!(
+        super::super::diagnostics::window_geometry("##selection-toolbar"),
+        toolbar_before
+    );
     assert!(
         world.state().model_face_chosen,
         "pointer movement should retain the face"

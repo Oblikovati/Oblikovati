@@ -44,6 +44,8 @@ pub struct GuiCommandState {
     pub sketch_pick_cue: Option<crate::GuiSketchPickCue>,
     /// Transient type cue for a checked model face pick.
     pub model_pick_cue: Option<crate::GuiModelPickCue>,
+    /// The picked point remains the toolbar anchor until the selected face changes.
+    pub face_toolbar_anchor: Option<crate::GuiModelPickCue>,
     /// Names in the active document's block registry.
     pub sketch_block_names: Vec<String>,
     /// Last block creation acknowledged by the document owner during this dialog.

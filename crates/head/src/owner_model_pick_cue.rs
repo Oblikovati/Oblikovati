@@ -10,6 +10,7 @@ pub(super) struct ModelPickCue {
     feature: oblikovati_model::feature::FeatureId,
     key: Vec<u8>,
     position: [f64; 3],
+    label_visible: bool,
 }
 
 impl<
@@ -46,9 +47,10 @@ impl<
             feature: *feature,
             key: key.clone(),
             position: hit_position(line, *line_parameter)?,
+            label_visible: true,
         }))
     }
-    pub(super) fn gui_model_pick_cue(&self) -> Option<oblikovati_gui::GuiModelPickCue> {
+    fn checked_model_pick(&self) -> Option<&ModelPickCue> {
         let cue = self.model_pick_cue.as_ref()?;
         if self.files.workspace().active_document() != Some(cue.document)
             || self.active_sketch_edit().is_some()
@@ -65,13 +67,27 @@ impl<
         {
             return None;
         }
-        Some(oblikovati_gui::GuiModelPickCue {
+        Some(cue)
+    }
+    /// Keep the toolbar anchor after the transient label disappears.
+    /// Example: `let (face_toolbar_anchor, model_pick_cue) = owner.gui_model_pick_presentation();`.
+    pub(super) fn gui_model_pick_presentation(
+        &self,
+    ) -> (
+        Option<oblikovati_gui::GuiModelPickCue>,
+        Option<oblikovati_gui::GuiModelPickCue>,
+    ) {
+        let Some(cue) = self.checked_model_pick() else {
+            return (None, None);
+        };
+        let anchor = oblikovati_gui::GuiModelPickCue {
             pixel: [0, 0],
             position: cue.position,
-        })
+        };
+        (Some(anchor.clone()), cue.label_visible.then_some(anchor))
     }
     pub(super) fn synchronize_model_pick_cue(&mut self) -> bool {
-        if self.model_pick_cue.is_some() && self.gui_model_pick_cue().is_none() {
+        if self.model_pick_cue.is_some() && self.checked_model_pick().is_none() {
             self.model_pick_cue = None;
             return true;
         }
@@ -82,7 +98,7 @@ impl<
         inputs: &[ViewportEvent],
         window: &dyn crate::HeadWindow,
     ) -> bool {
-        let Some(cue) = self.model_pick_cue.as_ref() else {
+        let Some(cue) = self.model_pick_cue.as_mut().filter(|cue| cue.label_visible) else {
             return false;
         };
         let retire = inputs.iter().any(|event| match event {
@@ -107,7 +123,7 @@ impl<
             _ => false,
         });
         if retire {
-            self.model_pick_cue = None;
+            cue.label_visible = false;
         }
         retire
     }

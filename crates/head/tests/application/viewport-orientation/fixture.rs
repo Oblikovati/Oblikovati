@@ -89,7 +89,7 @@ fn orientation_part_top(world: &mut ApplicationWorld) {
 #[given(
     "`fixtures/cad/docking-visible-solid-current.opd` is active with its rectangular block visible in the MCAD Software in upright Front view"
 )]
-fn orientation_part_upright(world: &mut ApplicationWorld) {
+pub(in super::super) fn orientation_part_upright(world: &mut ApplicationWorld) {
     open_orientation_part(world);
     front_displayed(world);
 }

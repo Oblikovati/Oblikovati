@@ -73,6 +73,7 @@ impl<
         let active_edit = self
             .active_sketch_edit()
             .filter(|edit| edit.document == document);
+        let (face_toolbar_anchor, model_pick_cue) = self.gui_model_pick_presentation();
         Ok(oblikovati_gui::GuiCommandState {
             window_maximized: false,
             selection_mode: self.selection_mode,
@@ -116,7 +117,8 @@ impl<
             sketch_inference_scope: inference_scope,
             sketch_inference_scope_error: inference_scope_error,
             sketch_pick_cue: self.gui_sketch_pick_cue(),
-            model_pick_cue: self.gui_model_pick_cue(),
+            model_pick_cue,
+            face_toolbar_anchor,
             sketch_block_names: session
                 .snapshot()
                 .sketches
