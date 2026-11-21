@@ -148,8 +148,10 @@ using this status; the live scenario directory can change.
   decimals, edits the dimension with the mouse and keyboard, and checks
   Undo and Redo. Saving and reopening the part retains the field sources,
   resolves the saved file name, and permits another dimension edit.
-  The test creates its own part. The pinned `text-16`, `text-17`, `text-34`,
-  and `text-35` cases still need their Part6 setup.
+  Pinned `text-17` passed all six steps. Editing `d0` to 12 refreshed the
+  visible linked Text to `12.000`. Undo restored `10`, `10.000`, and the
+  original sketch. See `receipts/2026-11-21-sketch-text-linked-dimension-3907/`.
+  Pinned `text-16`, `text-34`, and `text-35` still need their Part6 setup.
   Pinned `text-38` passed all nine steps with a generated native
   `Part6.opd`. After reopening Sketch2, the two fractions, numbered
   paragraphs, linked values, and 47 dimensions needed were retained.

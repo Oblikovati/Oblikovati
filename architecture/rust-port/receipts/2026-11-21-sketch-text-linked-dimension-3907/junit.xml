@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/obk-text-17-source-9de7zwlz/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/obk-text-17-source-9de7zwlz/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T03:48:51.045210511Z" time="51.460055579"><testcase name="Scenario: text-17 Update linked Text by changing its source dimension: tmp/obk-text-17-source-9de7zwlz/checkout/features/sketch/text/scenario.feature:163:3" time="51.460055579"><system-out><![CDATA[  Scenario: text-17 Update linked Text by changing its source dimension
+   ✔  Given Text displays the inserted d0 value 10.000
+   ✔  When the user opens the dimension identified as d0
+   ✔  And the user enters 1 then 2 and accept
+   ✔  Then its source annotation is 12 and Text displays 12.000
+   ✔  When the user undoes the source edit
+   ✔  Then the source and Text return to 10 and 10.000 respectively
+]]></system-out></testcase></testsuite></testsuites>
