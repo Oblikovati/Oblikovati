@@ -155,6 +155,10 @@ using this status; the live scenario directory can change.
   preview is upright and horizontal, and confirms the committed angle.
   The pinned `text-26` scenario still needs the Text Box control and
   Background Fill context identified.
+  Pinned `text-05` passed all six steps. A blank Tahoma preset supplied the
+  configured default. After Cancel, the next placement was empty and showed
+  Tahoma, 3.05 mm height, and 100 percent width.
+  See `receipts/2026-11-21-sketch-text-cancel-defaults-3907/`.
   Native input left unselected `ab` unchanged and converted selected
   characters to `AB` in the editor and preview. The accepted edit kept
   the text ID and anchor. Pinned `text-25` also requires strike-through.

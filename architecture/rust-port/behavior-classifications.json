@@ -27409,10 +27409,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/sketch_create_tools.go and app/sketch_create_tools_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "The Go reference verifies placement, style propagation and refusal of blank content. The native Rust scenario checks Cancel and the configured formatting default.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite selects the installed font and shapes the draft glyph. The application owns preset selection and cancellation.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe and isolated Tahoma. The companion native test uses DejaVu Sans.",
+      "kernel_integration": "The desktop previews the authored draft and drops it on Cancel. The next placement reads the configured blank preset.",
+      "rust_tests": "Pinned native text-05 and native_cancelled_text_uses_the_blank_formatting_default_on_restart. See architecture/rust-port/receipts/2026-11-21-sketch-text-cancel-defaults-3907/README.md.",
+      "oracle": "Native editor contents and rendered fields, the empty glyph preview, and the absence of committed text geometry.",
+      "expected_result": "After Cancel and a second placement, Format Text is empty and displays Tahoma, height 3.05 mm, and width 100 percent.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:a731565530279d6642db2fbe60e5ec06bd68470418c1dbcd6786c9ffcdea2c0f",
