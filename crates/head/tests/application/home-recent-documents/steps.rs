@@ -12,6 +12,8 @@ const SELECTED_ACTIONS: [&str; 2] = ["Open Selected", "Remove Selected"];
 const ROW_REACH: f32 = 4.;
 #[path = "lists.rs"]
 mod lists;
+#[path = "layout_bounds.rs"]
+mod layout_bounds;
 
 /// Real files through a real save: each lands on the recent list as a person's would.
 fn save_recent_files(world: &mut ApplicationWorld) {

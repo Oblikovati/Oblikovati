@@ -6,6 +6,10 @@ use crate::GuiShellAction;
 use crate::application::workspace_layout::browser_view::match_start;
 use imgui::Ui;
 
+#[path = "recent_cell_text.rs"]
+mod recent_cell_text;
+use recent_cell_text::{fit_recent_cell, reveal_full_cell, visible_source_text};
+
 const CHECK_COLUMN: f32 = 28.;
 /// The kind mark, wide enough that its letter never reads as part of the name.
 const KIND_COLUMN: f32 = 22.;
@@ -22,6 +26,11 @@ fn open_action(path: &str) -> GuiShellAction {
 }
 fn remove_action(path: &str) -> GuiShellAction {
     GuiShellAction::Recent(GuiRecentAction::Remove(path.to_owned()))
+}
+fn metadata_cell(ui: &Ui, full: &str, width: f32) {
+    let shown = fit_recent_cell(full, width, |text| ui.calc_text_size(text)[0]);
+    ui.text(shown.as_ref());
+    reveal_full_cell(ui, full, &shown);
 }
 fn accent_row(ui: &Ui, height: f32) {
     let [x, y] = ui.cursor_screen_pos();
@@ -113,18 +122,27 @@ impl HomeWorkspace {
         ui.same_line_with_pos(CHECK_COLUMN);
         ui.text(kind_mark(row.kind));
         ui.same_line_with_pos(CHECK_COLUMN + KIND_COLUMN);
-        self.mark_matching_text(ui, row);
-        if ui.button(format!("{}###open-{}", row.name, row.path)) {
-            actions.push(open_action(&row.path));
-        }
+        self.name_cell(ui, row, actions);
         let mut x = CHECK_COLUMN + KIND_COLUMN + NAME_COLUMN;
+        let spacing = ui.clone_style().item_spacing[0];
         for column in &self.columns.shown {
             ui.same_line_with_pos(x);
-            ui.text(cell_text(row, *column));
-            x += column_width(*column);
+            let width = column_width(*column);
+            metadata_cell(ui, cell_text(row, *column), width - spacing);
+            x += width;
         }
         ui.same_line_with_pos(x + 4.);
         self.row_menu_when_shown(ui, row, hovered, actions);
+    }
+    fn name_cell(&self, ui: &Ui, row: &GuiRecentDocument, actions: &mut Vec<GuiShellAction>) {
+        let style = ui.clone_style();
+        let width = NAME_COLUMN - style.item_spacing[0] - 2. * style.frame_padding[0];
+        let shown = fit_recent_cell(&row.name, width, |text| ui.calc_text_size(text)[0]);
+        self.mark_matching_text(ui, visible_source_text(&shown, &row.name));
+        if ui.button(format!("{shown}###open-{}", row.path)) {
+            actions.push(open_action(&row.path));
+        }
+        reveal_full_cell(ui, &row.name, &shown);
     }
     /// A row under the pointer shows its trailing control; an open menu keeps it there.
     fn row_menu_when_shown(
@@ -147,17 +165,23 @@ impl HomeWorkspace {
         ui.is_mouse_hovering_rect([x, y], [x + width, y + ui.frame_height()])
     }
     /// The part of a name the applied search found, lit behind the name about to be drawn.
-    fn mark_matching_text(&self, ui: &Ui, row: &GuiRecentDocument) {
+    fn mark_matching_text(&self, ui: &Ui, name: &str) {
         if self.applied.is_empty() {
             return;
         }
-        let Some(start) = match_start(&row.name, &self.applied) else {
+        let Some(start) = match_start(name, &self.applied) else {
+            return;
+        };
+        let (Some(before), Some(matched)) = (
+            name.get(..start),
+            name.get(start..start + self.applied.len()),
+        ) else {
             return;
         };
         let [x, y] = ui.cursor_screen_pos();
         let padding = ui.clone_style().frame_padding;
-        let before = ui.calc_text_size(&row.name[..start])[0];
-        let width = ui.calc_text_size(&row.name[start..start + self.applied.len()])[0];
+        let before = ui.calc_text_size(before)[0];
+        let width = ui.calc_text_size(matched)[0];
         let color = ui.style_color(imgui::StyleColor::TextSelectedBg);
         let left = x + padding[0] + before;
         ui.get_foreground_draw_list()

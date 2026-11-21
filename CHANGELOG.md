@@ -269,6 +269,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Kept long names and paths inside their columns in Home Recent Documents. (#3898)
+
 - Restored Ready after closing the Rotate at Angle dialog. (#3872)
 
 - Restored installed Tahoma and the inherited color swatch when starting Sketch Text without a preset. (#3907)
