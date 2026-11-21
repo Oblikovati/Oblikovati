@@ -55,24 +55,46 @@
     "failed_report": "architecture/rust-port/receipts/2026-11-18-viewport-selection-gap/cucumber.json"
   },
   "features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature": {
-    "feature_sha256": "8b6164be54d7a3bd307b4de24d7750079ce4d23b9ada2e6fec7a3b83149e2cfa",
-    "supporting_files": {
-      "features/application/viewport-navigation-wheel/BLOCKERS.md": "152dc52515efe9f281296196c765ccaea2b7362398911c79d1e5b1c646b96fa0",
-      "features/application/viewport-navigation-wheel/FIXTURES.md": "300c9883ff90476331951639b50fbb48baeeea8f970c3fc6724e90a512f6e7eb",
-      "features/application/viewport-navigation-wheel/FUNCTIONAL.md": "b7d51bf90bc99f9513b29d2bd83773e2eba8a98de4acb5b24897eed3e5e9fe57",
-      "features/application/viewport-navigation-wheel/VISUAL.md": "789a8a1cee984139e03833db50f0cd6d73b15d84d8bbbf0e4a16b3bf12f908dd",
-      "features/application/viewport-navigation-wheel/wheel-preferences-wireframe.svg": "4489e6624ae205f0d74a93290a2c25d96f3ad8343ea536ecd351ec9db12e1c6c",
-      "features/application/viewport-navigation-wheel/wheel-wireframe.svg": "815bfe6431fb7e677e44adf5d2bc24fee0e55d0ed6addd9efd4a662798d8c324",
-      "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664"
-    },
-    "cucumber": "architecture/rust-port/receipts/2026-11-21-viewport-navigation-wheel-r0-3881/live/cucumber.json",
-    "cucumber_sha256": "500e4734f0c03a3f74a02399f73e7f526b7889ce56d71726253a946c5bab0917",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-viewport-navigation-wheel-r0-3881/live/scenario-arguments.json",
-    "scenario_arguments_sha256": "4ea2aa430c29fe4a87d787f351c5cdd778734cab498d21a7bb616d03daa5c618",
-    "application_commit": "9fe930dabc0852c78922279c2c856ced0293051e",
-    "command": "Full viewport-navigation-wheel native run. See the receipt README.",
-    "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
-    "notes": "All 12 published scenarios and 143 steps passed, including cleanup. Build and runtime provenance remains open under #3978."
+    "by_source_sha256": {
+      "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a": {
+        "feature_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+        "supporting_files": {
+          "features/application/viewport-navigation-wheel/FIXTURES.md": "c32c71a42b98aaf14ec36462330642ddb3c6dab825a58006b2188013422edb2a",
+          "features/application/viewport-navigation-wheel/FUNCTIONAL.md": "b7d51bf90bc99f9513b29d2bd83773e2eba8a98de4acb5b24897eed3e5e9fe57",
+          "features/application/viewport-navigation-wheel/VISUAL.md": "789a8a1cee984139e03833db50f0cd6d73b15d84d8bbbf0e4a16b3bf12f908dd",
+          "features/application/viewport-navigation-wheel/wheel-preferences-wireframe.svg": "4489e6624ae205f0d74a93290a2c25d96f3ad8343ea536ecd351ec9db12e1c6c",
+          "features/application/viewport-navigation-wheel/wheel-wireframe.svg": "815bfe6431fb7e677e44adf5d2bc24fee0e55d0ed6addd9efd4a662798d8c324"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-navigation-wheel-rerun-3881/pinned/cucumber.json",
+        "cucumber_sha256": "df93b888b95d50e49130fe1a8975263f04fee05f7b688eadeb5c7d3a0f099f76",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-navigation-wheel-rerun-3881/pinned/scenario-arguments.json",
+        "scenario_arguments_sha256": "47264cc38dd2337ab9ae5d195e784b00307238fe1709a0392e3f43fcb4c1ebb9",
+        "application_commit": "5e9cad7d0c01192457f348fda856b6f0fb0b7724",
+        "command": "Full viewport-navigation-wheel native run. See the receipt README.",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 12 pinned scenarios and 143 steps passed, including cleanup. Build and runtime provenance remains open under #3978."
+      },
+      "8b6164be54d7a3bd307b4de24d7750079ce4d23b9ada2e6fec7a3b83149e2cfa": {
+        "feature_sha256": "8b6164be54d7a3bd307b4de24d7750079ce4d23b9ada2e6fec7a3b83149e2cfa",
+        "supporting_files": {
+          "features/application/viewport-navigation-wheel/BLOCKERS.md": "152dc52515efe9f281296196c765ccaea2b7362398911c79d1e5b1c646b96fa0",
+          "features/application/viewport-navigation-wheel/FIXTURES.md": "300c9883ff90476331951639b50fbb48baeeea8f970c3fc6724e90a512f6e7eb",
+          "features/application/viewport-navigation-wheel/FUNCTIONAL.md": "b7d51bf90bc99f9513b29d2bd83773e2eba8a98de4acb5b24897eed3e5e9fe57",
+          "features/application/viewport-navigation-wheel/VISUAL.md": "789a8a1cee984139e03833db50f0cd6d73b15d84d8bbbf0e4a16b3bf12f908dd",
+          "features/application/viewport-navigation-wheel/wheel-preferences-wireframe.svg": "4489e6624ae205f0d74a93290a2c25d96f3ad8343ea536ecd351ec9db12e1c6c",
+          "features/application/viewport-navigation-wheel/wheel-wireframe.svg": "815bfe6431fb7e677e44adf5d2bc24fee0e55d0ed6addd9efd4a662798d8c324",
+          "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-navigation-wheel-rerun-3881/published/cucumber.json",
+        "cucumber_sha256": "a1006ad92a45cee2c858a6e1b56caa99069f212ba5e418dbe3a8f1bd5c685cfd",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-navigation-wheel-rerun-3881/published/scenario-arguments.json",
+        "scenario_arguments_sha256": "961cab1c88280222a388a80cf47a2b27d06934f05da9dd4bb4ee878b43049a22",
+        "application_commit": "5e9cad7d0c01192457f348fda856b6f0fb0b7724",
+        "command": "Full viewport-navigation-wheel native run. See the receipt README.",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 12 published scenarios and 143 steps passed, including cleanup. Build and runtime provenance remains open under #3978."
+      }
+    }
   },
   "features/application/viewport-orbit/viewport-orbit.feature": {
     "feature_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
@@ -369,14 +391,14 @@
           "features/application/document-tabs/tab-overflow.svg": "548cf3d0eb8fc1a9a6dd0d7674686d282f31fcb4931d55bf060828f0e295707f",
           "features/application/document-tabs/tab-preview.svg": "57a81535d6de8ae73815cd939a5680c8cd4ac8a146605c1694769989190890c5"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json",
-        "cucumber_sha256": "b1b69d258115e7cdcf876affdbd31fb6ef3e75941600e1a51afd10bc9e13d043",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/scenario-arguments.json",
-        "scenario_arguments_sha256": "a5d12a61541ba81c3afa2b37db8e2414a503c2728db75fe6796c7773eb3ac14b",
-        "application_commit": "d2755f6d5673f02d4389f847fc3845777f9cd58d",
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-document-tabs-rerun-3900/pinned/cucumber.json",
+        "cucumber_sha256": "16d27448c5a3b6d5d904c88eda98c282e1668672eaa4449a1c919d9b087cf04a",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-document-tabs-rerun-3900/pinned/scenario-arguments.json",
+        "scenario_arguments_sha256": "2572eff114d5242d1ba0cfcd8eea1d76c4d7b3c780f1bbb14c3de81e5d50dd9b",
+        "application_commit": "fc44e5d73ead0b7a6f8fccdd79ded35947152239",
         "command": "Full document-tabs desktop run. See the receipt README.",
         "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
-        "notes": "All 38 scenarios and 334 steps passed. Build and runtime provenance remains open under #3978."
+        "notes": "All 38 scenarios and 334 steps passed, including native X11 reordering. Build and runtime provenance remains open under #3978."
       },
       "ee2022e13728cfe8fcda1ef61e60b25f01c308816e6860da91b6dceac3430de9": {
         "feature_sha256": "ee2022e13728cfe8fcda1ef61e60b25f01c308816e6860da91b6dceac3430de9",
@@ -393,14 +415,14 @@
           "features/application/document-tabs/tab-overflow.svg": "548cf3d0eb8fc1a9a6dd0d7674686d282f31fcb4931d55bf060828f0e295707f",
           "features/application/document-tabs/tab-preview.svg": "57a81535d6de8ae73815cd939a5680c8cd4ac8a146605c1694769989190890c5"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/live/cucumber.json",
-        "cucumber_sha256": "3a0d75002bbb4f9654dfe7ef6ac99f9013ad9069ebd5d4561c2510fd4ffe9c84",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/live/scenario-arguments.json",
-        "scenario_arguments_sha256": "aeb38648b004639b888839c87423a9d34cb8c958364cc2960a8b177854ce9c30",
-        "application_commit": "d2755f6d5673f02d4389f847fc3845777f9cd58d",
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-document-tabs-rerun-3900/published/cucumber.json",
+        "cucumber_sha256": "3e0279bfd62524d42019b1f8c4d9e03a6b25e07c1300651cd50d87368993eba8",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-document-tabs-rerun-3900/published/scenario-arguments.json",
+        "scenario_arguments_sha256": "acb2a5e36dea48c6be2a253f63fb074527b3c6b821feaaf7ba82faf0182dca26",
+        "application_commit": "fc44e5d73ead0b7a6f8fccdd79ded35947152239",
         "command": "Full document-tabs desktop run. See the receipt README.",
         "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
-        "notes": "All 39 scenarios and 343 steps passed. Build and runtime provenance remains open under #3978."
+        "notes": "All 39 scenarios and 343 steps passed, including native X11 reordering. Build and runtime provenance remains open under #3978."
       }
     }
   },
