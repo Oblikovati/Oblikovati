@@ -15,6 +15,8 @@ const ROW_REACH: f32 = 4.;
 mod layout_bounds;
 #[path = "lists.rs"]
 mod lists;
+#[path = "native_input.rs"]
+mod native_input;
 #[path = "startup_observation.rs"]
 mod startup_observation;
 

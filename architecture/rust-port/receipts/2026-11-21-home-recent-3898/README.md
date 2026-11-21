@@ -40,6 +40,11 @@ fourth card on the next row. The published
 and [selection](published-grid-selection.json) scenarios passed all 28
 steps and their cleanup hooks.
 
+A [native X11 test](x11-home-grid.log.gz) opened Home from Quick Access,
+selected Grid View, and typed `part26`. The [filtered view](x11-home-grid-search.png)
+shows Part26 alone. Clearing the query and clicking Search
+[restored all four cards](x11-home-grid-restored.png).
+
 ## Recent row actions
 
 At the desktop test width, the fixed column offsets put the row's
