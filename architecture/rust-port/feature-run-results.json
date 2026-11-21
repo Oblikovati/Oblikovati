@@ -1023,15 +1023,15 @@
           "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
           "fixtures/cad/planar-sketch-empty-xy.opd": "d936ef6b165b4bcbe14e04ac1b08bb5b16c81fddb597e70acb781e753c07e9a8"
         },
-        "application_commit": "f518714080d0c4bbca8fe92640e0b275c5c64bf2",
+        "application_commit": "dc6d945fdd80351e3f273fb9b80164386c3c3d25",
         "command": "Full published Ribbon Docking run on a stable local snapshot. See receipt README.",
-        "environment": "Linux, X11 Xvfb, Vulkan Lavapipe. Native X11 viewport pointer input and scripted group selection.",
-        "notes": "Seventeen scenarios and 171 steps passed. Local scenario snapshot dd8add84015816b84f0c9b6aac0b88592d7009cd.",
-        "blocker": "Three scrolling and annotation cases still need implementation. The native Shell case and the mixed-document case also failed.",
-        "cucumber": "architecture/rust-port/receipts/2026-11-21-ribbon-docking-compact-3856/cucumber.json",
-        "cucumber_sha256": "7607cd92af06992e64770e027121c6f40587da068cce55248fadc8ba068c064f",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-ribbon-docking-compact-3856/scenario-arguments.json",
-        "scenario_arguments_sha256": "66758c84d56b80a8dc13240235c01fe274770c4c05a29622162abc106bd2c4fe"
+        "environment": "Linux, X11 Xvfb, Vulkan Lavapipe. The floating cases use X11 wheel and pointer input.",
+        "notes": "Twenty scenarios and 193 steps passed. Local scenario snapshot dd23a2fc6a01a1afb058f5f902d833a7beb97e62.",
+        "blocker": "The Shell preview widens vertex tolerance on the published native Part. Mixed-document switching still needs a native Sheet Metal fixture.",
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-floating-ribbon-3856/cucumber.json",
+        "cucumber_sha256": "721f03b1d2db750c30357d5fceb14224c0b247f596c27fdde0b6de6ec00cddb9",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-floating-ribbon-3856/scenario-arguments.json",
+        "scenario_arguments_sha256": "53ab574cdf515f338d2bcfa5f7896a6d5a18e699e6cfc22fe1d1336a8bd6b8a4"
       }
     }
   }

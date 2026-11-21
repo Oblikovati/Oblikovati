@@ -1,0 +1,7 @@
+
+running 1 test
+test native::gui_loop_tests::application_bdd::ribbon_panel_expansion::shell_native::shell_fixture_preview::x11_observe_shell_preview_on_the_published_docking_fixture ... Shell preview fill: false
+Status: Commandfailed:shellvertextolerance0.0005000000000000589:expectedfinitenonnegativetoleranceatmost0.00000010000000000000002;featureFeatureId(2)preview:expectedavalidbody;health[FeatureH 1Face
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 17.03s
