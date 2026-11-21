@@ -146,6 +146,11 @@ fn full_gate_schedules_coverage_docs_workflow_lint_and_duplication_without_skips
         .iter()
         .find(|call| call.starts_with("cargo llvm-cov --locked"))
         .unwrap();
+    assert!(
+        coverage
+            .split_whitespace()
+            .any(|arg| arg == "--no-fail-fast")
+    );
     assert!(coverage.ends_with(" -- --test-threads=1"));
     assert!(
         runner
@@ -198,6 +203,7 @@ fn gate_reports_ledger_and_workspace_failures_and_still_checks_repository() {
         assert!(error.contains(expected), "{error}");
     }
     let calls = runner.calls.borrow();
+    assert!(calls.iter().any(|call| call.contains("--doc --")));
     assert!(calls.iter().any(|call| call.contains("markdownlint-cli2")));
     assert!(calls.iter().any(|call| call.contains("jscpd")));
 }

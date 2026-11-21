@@ -203,12 +203,7 @@ fn run_gate_checks(root: &Path, runner: &dyn Runner, workspaces: &[Metadata]) ->
         gate_behavior_ledger(root, runner),
     );
     for (index, workspace) in workspaces.iter().enumerate() {
-        let stage = format!("Cargo workspace {}", workspace.workspace_root.display());
-        record_gate_failure(
-            &mut failures,
-            &stage,
-            gate_workspace(root, runner, workspace, index),
-        );
+        run_workspace_checks(root, runner, workspace, index, &mut failures);
     }
     record_gate_failure(
         &mut failures,
@@ -219,6 +214,26 @@ fn run_gate_checks(root: &Path, runner: &dyn Runner, workspaces: &[Metadata]) ->
         return Ok(());
     }
     Err(format!("Gate failed in: {}", failures.join(", ")))
+}
+
+fn run_workspace_checks(
+    root: &Path,
+    runner: &dyn Runner,
+    workspace: &Metadata,
+    index: usize,
+    failures: &mut Vec<String>,
+) {
+    let directory = &workspace.workspace_root;
+    record_gate_failure(
+        failures,
+        &format!("Cargo workspace {}", directory.display()),
+        gate_workspace(root, runner, workspace, index),
+    );
+    record_gate_failure(
+        failures,
+        &format!("Doctests {}", directory.display()),
+        doctests(runner, directory),
+    );
 }
 
 fn record_gate_failure(failures: &mut Vec<String>, stage: &str, result: BuildResult<()>) {
@@ -346,13 +361,13 @@ fn gate_workspace(
             "--workspace",
             "--all-targets",
             "--all-features",
+            "--no-fail-fast",
             "--json",
             "--output-path",
             &report.to_string_lossy(),
         ],
     )?;
-    check_coverage(&read_text(&report)?, workspace)?;
-    doctests(runner, directory)
+    check_coverage(&read_text(&report)?, workspace)
 }
 
 fn check_coverage(json: &str, workspace: &Metadata) -> BuildResult<()> {
