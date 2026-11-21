@@ -17497,17 +17497,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: tab-label identity and per-document history tests pass; neither verifies mouse activation or rendered sketch edges. See receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "A planar rectangle sketch is displayed; no solid modeling operation is required.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe at the captured viewport size; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The desktop owner switches document state and submits the selected sketch scene to the viewport.",
-      "rust_tests": "application_scenarios_use_the_native_window: Switch between open parts",
+      "rust_tests": "Pinned Document Tabs native case at line 5: 13 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
       "oracle": "Pinned native input and document-state assertions; all four rectangle edges are sampled in the second viewport and absent after returning to the first.",
       "expected_result": "Tab clicks activate each part, update the browser and title, show the second rectangle only in its viewport, and retain both tabs.",
       "historical_receipts": [
@@ -17536,19 +17536,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-tab-context-verified/context/receipt.json",
           "sha256": "7ecab57897944f3c8ab86869c3a50b87f18fc6c19a4abced764923093f526a28"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 20: 6 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the menu offers Close, Close Tabs, Close All, Save and Properties / it displays shortcuts for Close and Save / the document remains active",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:fee8e12a0a8914a03bf9e5266f3e4f04c37b0f09027ec0f1621b75789fa63797",
@@ -17562,10 +17570,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 28: 10 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the document tab strip disappears / the active document remains displayed / Document Tabs is unchecked in the User Interface menu / the document tab strip reappears / Document Tabs is checked in the User Interface menu / the open documents are available as tabs",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:53cc5c6197419e5d84b011d3446829d4ad65c602a4ad2c95f4072059caf6d911",
@@ -17579,10 +17597,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 40: 7 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the menu lists open windows and offers More Windows / a Select Window dialog displays a scrollable list of open documents / the dialog offers OK and cancels",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:80019db99e64d943b5a7e3804214af5ad50c52bed6fd7f744d606d44072994bd",
@@ -17596,19 +17624,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-tab-keyboard/receipt-80019db99e64d943.json",
           "sha256": "9ef724b261d2fd573376b7be94199f28394a30466c405c2f475580e3ff17f451"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 50: 6 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the right-hand part becomes active / its model browser and viewport are displayed / the left-hand part remains open",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:2eed412b4b58f5ab363cd4c59474a18a79d54375edac1346f77939fe0320ac2e",
@@ -17622,19 +17658,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-tab-context-verified/properties/receipt.json",
           "sha256": "553a36c08837823a5df09a2747d9341909023324af1231c3ddb7009e6217d533"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 59: 11 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the first part remains active in the workspace / the properties dialog identifies the second part / its General page displays the file name, location, size and timestamps / the first part remains active in the workspace / the second part remains open",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:50f02a102ce485626f02cec5e7d0d7056dcf7d994e11e8c2a7e4f295bc32eb0e",
@@ -17648,17 +17692,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: the background-close session test preserves the active sketch and tool; it does not test tab clicks or file bytes. See receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is required for the saved empty-part close scenario.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The desktop owner closes the selected inactive document and retains the first active document.",
-      "rust_tests": "application_scenarios_use_the_native_window: Close a saved inactive document with its tab close button",
+      "rust_tests": "Pinned Document Tabs native case at line 73: 7 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
       "oracle": "Pinned native steps, active-document state, saved-file byte comparison and reviewed final capture.",
       "expected_result": "The inactive saved part closes without a prompt; the first part stays active and the saved file remains unchanged.",
       "historical_receipts": [
@@ -17687,17 +17731,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: session close cleanup and dirty-document prompt guard tests pass; they do not cover these native tab-cancellation journeys. See receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "The scenarios use empty parts or sketches; no solid modeling operation is required.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The desktop owner controls document activation, sketch environment and close prompts.",
-      "rust_tests": "application_scenarios_use_the_native_window: Close a newly created empty active part",
+      "rust_tests": "Pinned Document Tabs native case at line 83: 8 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
       "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
       "expected_result": "the new part's tab disappears without a save prompt; the previously active part is displayed again; its model browser and viewport are restored",
       "historical_receipts": [
@@ -17726,17 +17770,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: session close cleanup and dirty-document prompt guard tests pass; they do not cover these native tab-cancellation journeys. See receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "The scenarios use empty parts or sketches; no solid modeling operation is required.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The desktop owner controls document activation, sketch environment and close prompts.",
-      "rust_tests": "application_scenarios_use_the_native_window: Cancel closing a part while editing its sketch",
+      "rust_tests": "Pinned Document Tabs native case at line 94: 9 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
       "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
       "expected_result": "the user chooses Cancel; the part remains open; the sketch editing environment remains active",
       "historical_receipts": [
@@ -17765,17 +17809,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: session close cleanup and dirty-document prompt guard tests pass; they do not cover these native tab-cancellation journeys. See receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "The scenarios use empty parts or sketches; no solid modeling operation is required.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The desktop owner controls document activation, sketch environment and close prompts.",
-      "rust_tests": "application_scenarios_use_the_native_window: Cancel the save prompt after leaving sketch editing to close",
+      "rust_tests": "Pinned Document Tabs native case at line 106: 11 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
       "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
       "expected_result": "the part remains open; its sketch remains listed in the model browser; the part modeling environment is active",
       "historical_receipts": [
@@ -17804,17 +17848,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: package-store save/reopen and dirty-close guard tests pass; they do not verify these native tab journeys. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "The scenarios use a finished empty sketch and do not require a solid modeling operation.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The desktop owner controls document close, save, reopen and sketch state.",
-      "rust_tests": "application_scenarios_use_the_native_window: Cancel the first save while closing an unsaved part",
+      "rust_tests": "Pinned Document Tabs native case at line 120: 10 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
       "oracle": "Pinned native scenario assertions, document and file state, and reviewed final capture; Go dialog parity is not established.",
       "expected_result": "the user cancels the Save As dialog; the part remains open and active; its sketch remains listed in the model browser",
       "historical_receipts": [
@@ -17843,17 +17887,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: package-store save/reopen and dirty-close guard tests pass; they do not verify these native tab journeys. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "The scenarios use a finished empty sketch and do not require a solid modeling operation.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The desktop owner controls document close, save, reopen and sketch state.",
-      "rust_tests": "application_scenarios_use_the_native_window: Save a new part while closing its tab",
+      "rust_tests": "Pinned Document Tabs native case at line 133: 13 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
       "oracle": "Pinned native scenario assertions, document and file state, and reviewed final capture; Go dialog parity is not established.",
       "expected_result": "the user reopens the saved part file; the reopened part is active; its sketch is listed in the model browser",
       "historical_receipts": [
@@ -17882,17 +17926,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "First part creation, document activation, or save/close path through the desktop.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: the background-close session test preserves the active sketch and tool; it does not test tab clicks or file bytes. See receipts/2026-11-14-go-tab-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is required for the saved empty-part close scenario.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The desktop owner closes the selected inactive document and retains the first active document.",
-      "rust_tests": "application_scenarios_use_the_native_window: Close an inactive saved document from its tab menu",
+      "rust_tests": "Pinned Document Tabs native case at line 149: 8 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
       "oracle": "Pinned native steps, active-document state, saved-file byte comparison and reviewed final capture.",
       "expected_result": "The inactive saved part closes without a prompt; the first part stays active and the saved file remains unchanged.",
       "historical_receipts": [
@@ -17921,10 +17965,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain."
+      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Project the native drawing sheet and saved views for display.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner routes native window input to the independent drawing view and updates shared Part controls on activation.",
+      "rust_tests": "Pinned Document Tabs native case at line 160: 14 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the part sketch viewport and model browser are displayed / the sketch ribbon is active / the drawing sheet and drawing browser are displayed / the drawing ribbon is active / the drawing resources branch is collapsed / the part remains available as an open tab / the part sketch viewport and model browser are displayed / the sketch editing environment remains active",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:0f7b3a3ce96fbd62b708e7d778630bee5fcd0f14557400f70330b515413811f3",
@@ -17938,10 +17992,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 177: 12 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the list contains the open part and drawing / the active part is marked in the list / the menu offers Arrange, Horizontal Tile, Vertical Tile and Restore All / the menu offers separate Close Tabs and Close All items / the drawing becomes active / its sheet and drawing browser are displayed / the part remains open",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:d2408f7c8839bd079352f57e153c7b04e10728c06452ed7b595fdc7bf208c2db",
@@ -17955,10 +18019,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain."
+      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Project the native drawing sheet and saved views for display.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner routes native window input to the independent drawing view and updates shared Part controls on activation.",
+      "rust_tests": "Pinned Document Tabs native case at line 192: 9 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the drawing tab appears at its new position among the document tabs / the drawing remains active / its sheet and browser remain displayed / the drawing tab returns to its earlier position / the drawing remains active",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:13e4aec1760fed812f36ff5e1e80c2b29cafd399d8380b865f1adb8b08e1609b",
@@ -17972,10 +18046,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 204: 8 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the part tab appears at its new position among the document tabs / the part becomes active / the part viewport and model browser are displayed / the drawing remains open",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:6de7e1d114bbbdb5792b0fc6b7af59a4f8133e35baa551284740f40028a214e5",
@@ -17989,10 +18073,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain."
+      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Project the native drawing sheet and saved views for display.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner routes native window input to the independent drawing view and updates shared Part controls on activation.",
+      "rust_tests": "Pinned Document Tabs native case at line 215: 9 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the drawing is displayed in a separate window with its own document tab / the drawing sheet remains visible in that window / the part remains open in the main workspace / that part becomes active in the main workspace / the drawing remains open in its separate window",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:3d855a414125d97c782853564b396840acaf4601206b548f4a8bc6c2c8fd0d76",
@@ -18006,10 +18100,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain."
+      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Project the native drawing sheet and saved views for display.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner routes native window input to the independent drawing view and updates shared Part controls on activation.",
+      "rust_tests": "Pinned Document Tabs native case at line 227: 7 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the menu offers Close, Close Tabs, Close All, Save and Properties / it displays shortcuts for Close and Save / the drawing remains open in its separate window",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:06c629da33c3ceec57a6e6cffafd9ed65744de4f5275f267ef6546226590d5fb",
@@ -18023,10 +18127,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain."
+      "mapping_reason": "Document-kind creation or drawing workflow depends on the R6 domain.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Project the native drawing sheet and saved views for display.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner routes native window input to the independent drawing view and updates shared Part controls on activation.",
+      "rust_tests": "Pinned Document Tabs native case at line 237: 10 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the main application browser displays the drawing tree / the main application ribbon displays drawing-context tabs / the main application browser displays the part tree / the main application ribbon displays part-context tabs / the detached drawing remains open",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:4aa49dc3280f879e0fa16d0190b67d530e9d1d1a270cd0152bc10ebaae684883",
@@ -18040,19 +18154,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-tab-keyboard/receipt-4aa49dc3280f879e.json",
           "sha256": "0bf29cb76aca2367920a28630e910ec53dd5e7846968cc65ca0b0f2a413c3334"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 250: 8 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the part on the left becomes active / its viewport and model browser are displayed / the part on the right becomes active again / its viewport and model browser are displayed",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:246b23753e36f71eb9da6e25409bff33eef6b0b78c4f6e4d2e9bd57c511f6146",
@@ -18066,10 +18188,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 262: 6 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the Select Window dialog closes / the original part remains displayed in the workspace",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:d12a4ec8f6e41766f5bae1041fa0d57c00b8555ab9cac81916bad9995bfb09fe",
@@ -18083,10 +18215,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 272: 9 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the second part becomes active / its sketch viewport and model browser are displayed / its sketch editing environment remains active / the first part remains open",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:fd65fd2b0ca3401d4d5167973ab76c45904035dce7fd1fbb327d45b467e4240c",
@@ -18100,10 +18242,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 285: 8 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the Home workspace displays its recent documents / the part remains available in the document tab strip / the part's sketch viewport and model browser are displayed / the sketch editing environment remains active",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:49cfcd2a1cb24ca03303eee150abcc3da93968483be933dc7dea501b582cc5b9",
@@ -18117,10 +18269,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 297: 9 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "a thumbnail of the second part's sketch appears above the tab / the second part's name appears above the thumbnail / the first part remains active / the thumbnail and its name disappear / the first part remains active",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:23496f84a08b63d8f71174863de5f65fb02372607749b7637b9f691dbdc01981",
@@ -18134,10 +18296,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 310: 6 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "a thumbnail of the Home workspace appears above the tab / a Home label appears above the thumbnail / the part remains active in the workspace",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:c8cbcd96da075bb593a9c1cd22bfcb96e23b183e16321df5e3438e5947253f2e",
@@ -18151,10 +18323,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 320: 6 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "earlier tabs, including Home, become visible / the presentation remains active in the workspace",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:dbadc1fb64ae32e343da9218e0b08b484cec9163a9f20df0d626a7ecfad33037",
@@ -18168,10 +18350,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 330: 7 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the part becomes active / the tab strip shifts to show its active tab / the part's viewport and model browser are displayed",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:876461b5db5a116d1ac5892b682e66fbcb23ac98ff4a4634ddf31594342d619c",
@@ -18185,10 +18377,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 341: 7 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "a thumbnail of the second part appears above the tab / the preview label displays the saved file's full path and part name on separate lines / the first part remains active",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:5a93725c53b0759d4c497542a81053e5927ac9bdafccbbab471a104b624ed2ce",
@@ -18202,10 +18404,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 352: 6 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "a thumbnail of its sketch viewport appears above the tab / the preview label displays the saved file's full path and part name / the sketch editing environment remains active",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:2698382872dbc16fcaffd57b876814c73e6ff464bfff8332a2420682dcaca104",
@@ -18219,10 +18431,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 362: 8 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the context menu offers separate Close Tabs and Close All items / the context menu closes / the Home workspace remains active / the open documents remain available in the tab strip",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:3f31343d92ca92334704b7de6e22d39495db058ad3a0f97718c4785c540e77f0",
@@ -18236,10 +18458,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 374: 9 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "its context menu offers separate Close Tabs and Close All items / the part's sketch remains displayed and active / the context menu closes / the part's sketch remains active",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:830a8606412e2522ce56cd92c2f7139ac3a3bfaacc44a1a635c8edd78f3266a7",
@@ -18253,10 +18485,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 387: 13 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "a second window for the same part becomes active / the new window has a numbered document tab / the application title identifies the second window number / the part's model browser is displayed / the original part window is listed with a different window number / the original sketch viewport is displayed / the original numbered document tab is active / the second window remains open",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:7cf70010e612d36a18a4c26bb8a760ca7012cb7620b4f058d4de141cb19ac78d",
@@ -18270,19 +18512,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-tab-keyboard/receipt-7cf70010e612d36a.json",
           "sha256": "5ce97ccfa60c99f57d3d9ddc154de52f90063010c7564b8895c09297c212d43f"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 404: 8 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the Home workspace and its recent documents are displayed / the part window remains open / the part window's sketch viewport and model browser are displayed / the sketch editing environment remains active",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:9b503941bee878b650797db2cba8fcfb4480b70cb9c0bc579ace056866f47759",
@@ -18296,19 +18546,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
       "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-tab-keyboard/receipt-9b503941bee878b6.json",
           "sha256": "a84cf885f3922a0a760c43255fe6cd3e9a9a42b7d107d3f1c0cc2b9d701db68f"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 416: 7 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the part's second window becomes active / the Home workspace becomes active again",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:02e282229b300df2bc15bd323eaeda5923c8974c577a73ac394cc7553ca58ce9",
@@ -18322,10 +18580,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 426: 10 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the second window displays its isometric view / the part's model browser is displayed / the first window displays its orthogonal sketch view / its sketch editing environment remains active",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:33a79868ec3ecf5cef50c518ba760beb38f8337326989d2fbcb741e93d38fbb9",
@@ -18339,10 +18607,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 440: 10 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "the second window closes without a save prompt / the Home workspace becomes active / the remaining part tab no longer has a window number / the original sketch viewport and model browser are displayed / the sketch editing environment remains active",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:51f79bf473c5a796516580f61f7ccd34dae32f7cb84bcdf55d722313a870ed78",
@@ -18356,10 +18634,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3900",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_doctabs.go",
-      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell."
+      "mapping_reason": "Chooser, tab, or window presentation and interaction in the desktop shell.",
+      "go_test_premise": "Go aa8297d1b: tab-label identity, per-document history, and background-close tests pass. The Rust desktop scenarios independently cover the visible interaction. See architecture/rust-port/receipts/2026-11-14-go-tab-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Present the retained document or sketch view when the desktop selects it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop owner activates or retains the document through the session and refreshes the tab strip, browser, and available view.",
+      "rust_tests": "Pinned Document Tabs native case at line 454: 9 steps passed. See architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json at d2755f6d5673f02d4389f847fc3845777f9cd58d.",
+      "oracle": "All pinned native scenario steps passed. The Cucumber report records the exact desktop assertions for this case.",
+      "expected_result": "its displayed geometry appears enlarged / the first window retains its previous sketch view and scale / the second window retains its zoomed-in view",
+      "baseline_source_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f"
     },
     {
       "id": "scenario:adde5ab6b7ee269865f6f2a1d2e09910b66917f3426baf10270016937e1488c7",
