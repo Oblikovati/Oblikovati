@@ -318,6 +318,9 @@ std::uint32_t oblikovati_gui_draw_dock_tab_actions() {
         ImGuiDockNode* node = static_cast<ImGuiDockNode*>(context->DockContext.Nodes.Data[index].val_p);
         if (!node || !node->TabBar || node->TabBar->CurrFrameVisible != context->FrameCount)
             continue;
+        // A tab bar can stay current after its host is clipped. ImGui cannot amend
+        // tab items in a host whose Begin call skips its contents.
+        if (!node->HostWindow || node->HostWindow->SkipItems) continue;
         if (!ImGui::DockNodeBeginAmendTabBar(node)) continue;
 
         const ImGuiTabItemFlags trailing = ImGuiTabItemFlags_Trailing;

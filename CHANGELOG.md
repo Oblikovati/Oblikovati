@@ -271,6 +271,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Kept the desktop responsive when a resize clips a dock tab bar. (#3860)
+
 - Kept the Cargo workspace and repository checks running when the BDD ledger failed, and reported all failed stages. (#3860)
 
 - Kept long names and paths inside their columns and reserved space for row actions in Home Recent Documents. (#3898)
