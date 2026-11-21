@@ -1,19 +1,29 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Numeric input without an axis editor belongs to the command alias buffer.
 use super::super::super::ApplicationWorld;
-use super::{CENTER, choose_ellipse};
+use super::{choose_ellipse, select_center};
 use cucumber::{given, then, when};
 use oblikovati_model::sketch::{SketchPointInput, SketchPrimitiveCreation};
 
 #[given("the fixture sketch is Ready with the retained circle and midpoint line")]
 #[given("an editable sketch with existing geometry is Ready")]
 fn retained_fixture(world: &mut ApplicationWorld) {
-    world.start_empty_sketch();
-    world.create_midpoint_line();
-    create_retained_circle(world);
+    if world.ellipse_alias_center.is_none() {
+        world.start_empty_sketch();
+        world.create_midpoint_line();
+        create_retained_circle(world);
+    }
     world.pump(Vec::new());
+    let geometry = world.edited_geometry();
+    assert_eq!(geometry.lines().len(), 1);
+    assert_eq!(geometry.circles().len(), 1);
+    let circle = geometry.circles()[0];
+    let center = geometry.point(circle.center).unwrap().position;
     let line = world.line_point(0, 0.3);
-    let circle = world.sketch_pixel_of([3.5, -3.]);
+    let circle = world.sketch_pixel_of([center[0] + circle.radius, center[1]]);
+    if world.ellipse_alias_center.is_some() {
+        world.sketch_baseline = Some(world.canvas_without_sketches());
+    }
     world.remember_edited_sketch(vec![line, circle]);
     world.expect_ready();
 }
@@ -36,7 +46,7 @@ fn create_retained_circle(world: &mut ApplicationWorld) {
 #[when("Ellipse is selected and a free center is clicked")]
 fn center_selected(world: &mut ApplicationWorld) {
     choose_ellipse(world);
-    world.sketch_click(CENTER);
+    select_center(world);
 }
 #[then("Select first axis point appears without a visible numeric field")]
 fn no_axis_editor(world: &mut ApplicationWorld) {

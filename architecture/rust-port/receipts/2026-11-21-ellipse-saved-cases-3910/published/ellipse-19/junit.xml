@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T11:33:06.953619025Z" time="30.233834766"><testcase name="Scenario: ellipse-19 Retain the dimensioned ellipse through Finish and Edit Sketch: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:223:3" time="30.233834766"><system-out><![CDATA[  Scenario: ellipse-19 Retain the dimensioned ellipse through Finish and Edit Sketch
+   ✔  Given a copy of `fixtures/cad/ellipse/axis-both-8-4.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  Given the fixture sketch contains the ellipse with annotations 8 and 4
+   ✔  When Finish Sketch returns to 3D Model
+   ✔  Then the ellipse and its dimension annotations remain visible in the oblique view
+   ✔  When the sketch is right-clicked in the browser
+   ✔  Then Edit Sketch is available and Visibility and Dimension Visibility are checked
+   ✔  When Edit Sketch is selected
+   ✔  Then the editable sketch returns in Right view with the ellipse and annotations 8 and 4
+]]></system-out></testcase></testsuite></testsuites>

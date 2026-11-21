@@ -124,8 +124,11 @@ fn ellipse_remains(world: &mut ApplicationWorld) {
 
 #[given("the recorded ellipse has a driving minor-radius dimension storing 4 mm")]
 fn dimensioned_ellipse(world: &mut ApplicationWorld) {
-    recorded_ellipse(world);
-    add_minor_dimension(world);
+    if world.app().owner.active_sketch_edit().is_none() {
+        recorded_ellipse(world);
+        add_minor_dimension(world);
+    }
+    ellipse_remains(world);
 }
 fn add_minor_dimension(world: &mut ApplicationWorld) {
     let ellipse = world.edited_geometry().ellipses()[0];
@@ -195,13 +198,12 @@ fn ready_with_ellipse(world: &mut ApplicationWorld) {
 
 #[given("the fixture sketch contains the ellipse with annotations 8 and 4")]
 fn visible_dimensioned_ellipse(world: &mut ApplicationWorld) {
+    if world.app().owner.active_sketch_edit().is_some() {
+        ellipse_remains(world);
+        return;
+    }
     world.add_part();
-    let (position, size) = diagnostics::window_geometry("##orientation-control").unwrap();
-    let home = oblikovati_gui::GuiOrientationLayout::for_side(size[0]).home;
-    world.click([
-        (position[0] + home[0]) as i32,
-        (position[1] + home[1]) as i32,
-    ]);
+    super::fixture::show_home_view(world);
     world.click_text("Start 2D Sketch");
     world.pump(Vec::new());
     world.click_text("YZ Plane");
@@ -244,10 +246,7 @@ fn assert_rendered_ellipse(world: &mut ApplicationWorld) {
     let points = ellipse_pixels(world, &sketches[0]);
     let native = &mut world.app().window.native;
     let visible = super::super::super::capture_framebuffer(native);
-    native.view.set_sketch_display(&[]).unwrap();
-    let hidden = super::super::super::capture_framebuffer(native);
-    native.view.set_sketch_display(&sketches).unwrap();
-    super::super::super::capture_framebuffer(native);
+    let hidden = world.canvas_without_sketches();
     let changed = points
         .iter()
         .filter(|point| pixels_differ_near(&visible, &hidden, **point))

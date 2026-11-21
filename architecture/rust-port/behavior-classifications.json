@@ -34726,10 +34726,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "go_test_premise": "Go aa8297d1b TestEllipseToolDrawsEllipse establishes three-point creation. The Go command vocabulary registers ELLIPSE and EL but does not establish this digit handling or retained geometry.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Planar sketch display presents the ellipse tool and existing geometry. Escape cancels the uncommitted placement before any solver change.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop input route sends digit text to the command alias buffer while the ellipse tool is waiting for its first axis.",
+      "rust_tests": "Published and pinned ellipse-12 passed with cleanup. See receipts/2026-11-21-ellipse-saved-cases-3910.",
+      "oracle": "Status shows the exact alias text. The axis numeric editor is absent. Geometry, relations, history and rendered witnesses for the retained fixture remain.",
+      "expected_result": "At first-axis selection the 8 key appears as command alias input without an axis-length field. Escape leaves the original circle and midpoint line.",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f"
     },
     {
       "id": "scenario:f3004d604430d5baf6b28d3d5ff113ec6ab010844170dda2b3cb1bda00bc9ce9",
@@ -34828,10 +34838,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "go_test_premise": "Go aa8297d1b TestEllipseRadiusDimDrives establishes an analytic ellipse radius dimension. Its model-level test does not establish this dialog, visibility, or re-entry.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The sketch dimension solver retains the accepted positive radii. The sketch scene projects ellipse geometry and dimension labels on the edited plane.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop owner retains the same ellipse and accepted dimensions while the dialog or sketch edit state changes.",
+      "rust_tests": "Published and pinned ellipse-18 passed with cleanup. See receipts/2026-11-21-ellipse-saved-cases-3910.",
+      "oracle": "Check the stored dimension and rendered labels through the recorded desktop sequence. Verify the visible ellipse and the required camera orientation.",
+      "expected_result": "The zero minor-radius edit opens a failure dialog. Dismissing it leaves annotations 8 and 4. The reopened editor still stores 4 mm and Escape retains the ellipse.",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f"
     },
     {
       "id": "scenario:8a327eb92ffbdaf3d7d38b95d871702ac6a01b5f477430b01b0317021edb0914",
@@ -34845,10 +34865,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "go_test_premise": "Go aa8297d1b TestEllipseRadiusDimDrives establishes an analytic ellipse radius dimension. Its model-level test does not establish this dialog, visibility, or re-entry.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The sketch dimension solver retains the accepted positive radii. The sketch scene projects ellipse geometry and dimension labels on the edited plane.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop owner retains the same ellipse and accepted dimensions while the dialog or sketch edit state changes.",
+      "rust_tests": "Published and pinned ellipse-19 passed with cleanup. See receipts/2026-11-21-ellipse-saved-cases-3910.",
+      "oracle": "Check the stored dimension and rendered labels through the recorded desktop sequence. Verify the visible ellipse and the required camera orientation.",
+      "expected_result": "Finish Sketch retains the ellipse and both dimensions in the oblique view. Edit Sketch restores RIGHT view with the same annotations.",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f"
     },
     {
       "id": "scenario:fbf5fff098a959e778b98e3a1f4d32438ea3cee06fdd48772408e4f6c22c09c4",
@@ -34862,10 +34892,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "go_test_premise": "Go aa8297d1b TestEllipseToolDrawsEllipse establishes three-point creation. The Go command vocabulary registers ELLIPSE and EL but does not establish this digit handling or retained geometry.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Planar sketch display presents the ellipse tool and existing geometry. Escape cancels the uncommitted placement before any solver change.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop input route sends digit text to the command alias buffer while the ellipse tool is waiting for its first axis.",
+      "rust_tests": "Published and pinned ellipse-20 passed with cleanup. See receipts/2026-11-21-ellipse-saved-cases-3910.",
+      "oracle": "Status shows the exact alias text. The axis numeric editor is absent. Geometry, relations, history and rendered witnesses for the retained fixture remain.",
+      "expected_result": "At first-axis selection the 6 key appears as command alias input without an axis-length field. Escape leaves the retained sketch unchanged.",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f"
     },
     {
       "id": "scenario:da25fcb15682b524510b2dea373e6c1a007a4f70a20740ace153ed7cc0c740d7",

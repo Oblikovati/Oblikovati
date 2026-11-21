@@ -91,7 +91,10 @@ fn invoke_ellipse(world: &mut ApplicationWorld) {
 #[when("I select the fixture center")]
 #[when("the user select the fixture center")]
 fn select_center(world: &mut ApplicationWorld) {
-    let [center, _, _] = placement_pixels(world);
+    let center = match world.ellipse_alias_center {
+        Some(center) => world.sketch_pixel_of(center),
+        None => placement_pixels(world)[0],
+    };
     world.sketch_click(center);
 }
 #[then("the prompt requests the first axis point")]

@@ -4,6 +4,18 @@ use super::super::super::world::ObservedSketch;
 use super::ApplicationWorld;
 
 impl ApplicationWorld {
+    /// Capture the same viewport without sketch geometry, then restore the scene.
+    /// For example, compare a saved fixture against `world.canvas_without_sketches()`.
+    pub fn canvas_without_sketches(&mut self) -> oblikovati_viewport::ViewportCapture {
+        let native = &mut self.app().window.native;
+        native.view.set_sketch_display(&[]).unwrap();
+        let hidden = super::super::super::capture_framebuffer(native);
+        let sketches = &native.sketch_scene.as_ref().unwrap().sketches;
+        native.view.set_sketch_display(sketches).unwrap();
+        super::super::super::capture_framebuffer(native);
+        hidden
+    }
+
     /// Remember the actual fixture before a cancel-only command; example: `remember_edited_sketch(vec![pixel])`.
     pub fn remember_edited_sketch(&mut self, witnesses: Vec<[i32; 2]>) {
         self.observed_sketch = Some(ObservedSketch {
