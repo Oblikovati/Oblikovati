@@ -847,15 +847,15 @@
       "fixtures/cad/ellipse/empty-yz.opd": "5c55485079cf285f693ca9edd0febdf26ed5d020d023d3ee51205175a2ca62db",
       "fixtures/cad/ellipse/rotated-measured.opd": "1e56bfccbbe8155e103718c525408fb526eebbe76d9bea9237622c8ce9080a53"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-21-ellipse-full-b6c4a99fd/cucumber.json",
-    "cucumber_sha256": "05e46c87b9e624e6b0524d29c23b821012f03fc3815a7859598ba13b3f2ad86e",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-ellipse-full-b6c4a99fd/scenario-arguments.json",
-    "scenario_arguments_sha256": "b4e9a40ee8bdaa4906a058cae4e85e0d4a784989a3b717d3bebef769f13cb645",
-    "application_commit": "b6c4a99fd20910a3271cc6cc6817b1e08b80667d",
-    "command": "Full published Ellipse feature through the native sketch runner. See the receipt README.",
-    "environment": "Linux X11, Xvfb, Vulkan Lavapipe, scripted input",
-    "blocker": "Rotated Measure depends on Martensite #406. Curvature display and axis dimension scenarios need further verification.",
-    "notes": "Nine of 19 scenarios passed. The feature and supporting inputs matched before and after the run."
+    "cucumber": "architecture/rust-port/receipts/2026-11-21-ellipse-full-04a58abd4/cucumber.json",
+    "cucumber_sha256": "f416353ee69bbec2503a557c6a0ff3a8a32cc1b5d97de23017b7c60981a3f4e9",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-ellipse-full-04a58abd4/scenario-arguments.json",
+    "scenario_arguments_sha256": "4b0bd393e99570c68d516fc40437951cfb4c18be5b031f8aba79eeb18c591b50",
+    "application_commit": "04a58abd44fd9ec30f86429d6175b788854a6314",
+    "command": "Unfiltered published Ellipse feature through the native sketch runner. See the receipt README.",
+    "environment": "Linux X11, Xvfb, Vulkan Lavapipe. Curvature controls use X11 mouse input.",
+    "blocker": "Rotated-curve selection in Measure requires the fix for Martensite #406.",
+    "notes": "Eighteen of 19 scenarios passed on the published feature and native Part fixtures. The input hashes matched before and after the run."
   },
   "features/sketch/geometry-text/scenario.feature": {
     "by_source_sha256": {

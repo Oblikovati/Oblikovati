@@ -34673,10 +34673,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861",
         "https://github.com/Oblikovati/Oblikovati/issues/3995"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Sketch display or application preference interaction."
+      "go_reference": "../Oblikovati/head/ui/sketch_overlay.go; published Ellipse FUNCTIONAL.md and VISUAL.md for the inspection controls",
+      "mapping_reason": "Sketch display or application preference interaction.",
+      "go_test_premise": "Go aa8297d1b renders the ellipse boundary through addEllipses. The curvature dialog and comb interaction are specified by the recorded desktop observations.",
+      "kernel_capabilities": "The adapter reads native analytic first and second derivatives on the bounded ellipse domain. The comb is presentation geometry.",
+      "kernel_integration": "The desktop owner uses the analytic sketch picker. The viewport transforms curvature vectors into the green comb and keeps slider preview state outside the sketch model.",
+      "oracle": "Published native Part and curvature interaction observations, the captured green viewport comb, and analytic inward curvature at both axes.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. Curvature controls were exercised using native X11 mouse events.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f",
+      "reason": "The pinned Given requires an existing rotated ellipse. The native rotated-measured Part is present in the published source.",
+      "rust_tests": "Native sketch benchmark ellipse-09. See receipts/2026-11-21-ellipse-curvature-3995/",
+      "expected_result": "The curve starts without a comb. Right-click toggles the green comb, offers Setup while checked, and removes the comb while retaining the oval."
     },
     {
       "id": "scenario:d966ac05b9cb59c7dc021dc4344670fa52776214dc87d019113eda7fd984d817",
@@ -34691,10 +34702,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861",
         "https://github.com/Oblikovati/Oblikovati/issues/3995"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Sketch display or application preference interaction."
+      "go_reference": "../Oblikovati/head/ui/sketch_overlay.go; published Ellipse FUNCTIONAL.md and VISUAL.md for the inspection controls",
+      "mapping_reason": "Sketch display or application preference interaction.",
+      "go_test_premise": "Go aa8297d1b renders the ellipse boundary through addEllipses. The curvature dialog and comb interaction are specified by the recorded desktop observations.",
+      "kernel_capabilities": "The adapter reads native analytic first and second derivatives on the bounded ellipse domain. The comb is presentation geometry.",
+      "kernel_integration": "The desktop owner uses the analytic sketch picker. The viewport transforms curvature vectors into the green comb and keeps slider preview state outside the sketch model.",
+      "oracle": "Published native Part and curvature interaction observations, the captured green viewport comb, and analytic inward curvature at both axes.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. Curvature controls were exercised using native X11 mouse events.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f",
+      "reason": "The pinned Given requires curvature enabled on an existing ellipse. The published feature supplies the saved Part and enables the comb within the scenario.",
+      "rust_tests": "Native sketch benchmark ellipse-10. See receipts/2026-11-21-ellipse-curvature-3995/",
+      "expected_result": "Both sliders have relative labels. Advancing density makes a denser preview and enables Apply and OK. Cancel closes the dialog and restores the sparse visible comb."
     },
     {
       "id": "scenario:bc5393709dd62821c5f7d1174584dc6c5cb5902dd4619bcd7b51988e1db8112e",
@@ -34709,10 +34731,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3861",
         "https://github.com/Oblikovati/Oblikovati/issues/3995"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Sketch display or application preference interaction."
+      "go_reference": "../Oblikovati/head/ui/sketch_overlay.go; published Ellipse FUNCTIONAL.md and VISUAL.md for the inspection controls",
+      "mapping_reason": "Sketch display or application preference interaction.",
+      "go_test_premise": "Go aa8297d1b renders the ellipse boundary through addEllipses. The curvature dialog and comb interaction are specified by the recorded desktop observations.",
+      "kernel_capabilities": "The adapter reads native analytic first and second derivatives on the bounded ellipse domain. The comb is presentation geometry.",
+      "kernel_integration": "The desktop owner uses the analytic sketch picker. The viewport transforms curvature vectors into the green comb and keeps slider preview state outside the sketch model.",
+      "oracle": "Published native Part and curvature interaction observations, the captured green viewport comb, and analytic inward curvature at both axes.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. Curvature controls were exercised using native X11 mouse events.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f",
+      "reason": "The pinned prerequisites require an enabled comb and recorded initial slider positions. The published case establishes them in its own session.",
+      "rust_tests": "Native sketch benchmark ellipse-11. See receipts/2026-11-21-ellipse-curvature-3995/",
+      "expected_result": "Apply retains density through Cancel and reopening. Restoring the original density and choosing OK restores the sparse comb and original positions."
     },
     {
       "id": "scenario:a5f9882666991949f563c0694f78c302ffa5a65bc2efe07573c39ea737e2f5c7",
@@ -34753,10 +34786,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "go_reference": "../Oblikovati/model/sketch/dimension_advanced.go; ../Oblikovati/model/sketch/dimension_advanced_test.go",
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "go_test_premise": "Go aa8297d1b TestEllipseRadiusDimDrives checks that a driving major radius changes an ellipse. The native editor actions and minor radius behavior are specified by the recorded desktop observations.",
+      "kernel_capabilities": "The analytic ellipse supplies model radii and viewport projections. Exact curve Measure reads the selected native analytic curve properties.",
+      "kernel_integration": "General Dimension uses the active sketch owner and parameter history. The edited ellipse redraws from the owner snapshot. Measure uses the native analytic curve path.",
+      "oracle": "The recorded starting ellipse, visible label and expression, sketch history, analytic radii, and the applicable captured Measure values.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe, using native windows with scripted scenario input.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f",
+      "reason": "The pinned Given requires the recorded ellipse in an editable sketch. The published axis-initial Part supplies this geometry.",
+      "rust_tests": "Native sketch benchmark ellipse-13. See receipts/2026-11-21-ellipse-full-b6c4a99fd/focused/",
+      "expected_result": "The original selected expression is 6.3832549 mm. Accepting 8 mm widens the ellipse and Measure reports the captured radii, diameters, length and center."
     },
     {
       "id": "scenario:50cdb8b354023fe682b96d83c2b8724e78db2e171dae97ca7e7d78df50f43538",
@@ -34770,10 +34814,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "go_reference": "../Oblikovati/model/sketch/dimension_advanced.go; ../Oblikovati/model/sketch/dimension_advanced_test.go",
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "go_test_premise": "Go aa8297d1b TestEllipseRadiusDimDrives checks that a driving major radius changes an ellipse. The native editor actions and minor radius behavior are specified by the recorded desktop observations.",
+      "kernel_capabilities": "The analytic ellipse supplies model radii and viewport projections. Exact curve Measure reads the selected native analytic curve properties.",
+      "kernel_integration": "General Dimension uses the active sketch owner and parameter history. The edited ellipse redraws from the owner snapshot. Measure uses the native analytic curve path.",
+      "oracle": "The recorded starting ellipse, visible label and expression, sketch history, analytic radii, and the applicable captured Measure values.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe, using native windows with scripted scenario input.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f",
+      "reason": "The pinned Given starts after Measure closes in a session with a completed radius edit. The published case creates that edit in the same session.",
+      "rust_tests": "Native sketch benchmark ellipse-14. See receipts/2026-11-21-ellipse-full-b6c4a99fd/focused/",
+      "expected_result": "Undo restores the 6.383 annotation and narrower ellipse. Redo restores 8 and the wider ellipse while retaining the major-radius dimension."
     },
     {
       "id": "scenario:7416d9217ea7e6a1ac9e6e7d6b5c0431bb44e9ad546f7ea9edf6a741855cb34f",
@@ -34787,10 +34842,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "go_reference": "../Oblikovati/model/sketch/dimension_advanced.go; ../Oblikovati/model/sketch/dimension_advanced_test.go",
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "go_test_premise": "Go aa8297d1b TestEllipseRadiusDimDrives checks that a driving major radius changes an ellipse. The native editor actions and minor radius behavior are specified by the recorded desktop observations.",
+      "kernel_capabilities": "The analytic ellipse supplies model radii and viewport projections. Exact curve Measure reads the selected native analytic curve properties.",
+      "kernel_integration": "General Dimension uses the active sketch owner and parameter history. The edited ellipse redraws from the owner snapshot. Measure uses the native analytic curve path.",
+      "oracle": "The recorded starting ellipse, visible label and expression, sketch history, analytic radii, and the applicable captured Measure values.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe, using native windows with scripted scenario input.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f",
+      "reason": "The runner builds the captured minor-radius starting geometry through the existing sketch commands. Pinned and published native runs passed.",
+      "rust_tests": "Pinned native sketch benchmark ellipse-15. See receipts/2026-11-21-ellipse-pinned-r0-3910/ellipse-15/.",
+      "expected_result": "Cancel retains the placed annotation 2.979 and reopening selects the stored expression 2.9788523 mm."
     },
     {
       "id": "scenario:0bfc47c941697d924a0858b60be71c575a1d509ab842f70eb05b17b6476f1b09",
@@ -34804,10 +34870,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "go_reference": "../Oblikovati/model/sketch/dimension_advanced.go; ../Oblikovati/model/sketch/dimension_advanced_test.go",
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "go_test_premise": "Go aa8297d1b TestEllipseRadiusDimDrives checks that a driving major radius changes an ellipse. The native editor actions and minor radius behavior are specified by the recorded desktop observations.",
+      "kernel_capabilities": "The analytic ellipse supplies model radii and viewport projections. Exact curve Measure reads the selected native analytic curve properties.",
+      "kernel_integration": "General Dimension uses the active sketch owner and parameter history. The edited ellipse redraws from the owner snapshot. Measure uses the native analytic curve path.",
+      "oracle": "The recorded starting ellipse, visible label and expression, sketch history, analytic radii, and the applicable captured Measure values.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe, using native windows with scripted scenario input.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f",
+      "reason": "The runner builds and reopens the captured radius editor through the existing sketch commands. Pinned and published native runs passed.",
+      "rust_tests": "Pinned native sketch benchmark ellipse-16. See receipts/2026-11-21-ellipse-pinned-r0-3910/ellipse-16/.",
+      "expected_result": "Accepting 4 mm increases the vertical radius and keeps the horizontal 8 mm annotation. The edited ellipse remains visible after Escape."
     },
     {
       "id": "scenario:cc6b0419999cae01aa109863e8e721ed1df2cbd02a4a4e32db440c737ea4b55f",
@@ -34821,10 +34898,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle."
+      "go_reference": "../Oblikovati/model/sketch/dimension_advanced.go; ../Oblikovati/model/sketch/dimension_advanced_test.go",
+      "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
+      "go_test_premise": "Go aa8297d1b TestEllipseRadiusDimDrives checks that a driving major radius changes an ellipse. The native editor actions and minor radius behavior are specified by the recorded desktop observations.",
+      "kernel_capabilities": "The analytic ellipse supplies model radii and viewport projections. Exact curve Measure reads the selected native analytic curve properties.",
+      "kernel_integration": "General Dimension uses the active sketch owner and parameter history. The edited ellipse redraws from the owner snapshot. Measure uses the native analytic curve path.",
+      "oracle": "The recorded starting ellipse, visible label and expression, sketch history, analytic radii, and the applicable captured Measure values.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe, using native windows with scripted scenario input.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f",
+      "reason": "The pinned Given requires the fresh starting ellipse with both dimensions. The published axis-both-8-4-measure Part supplies it.",
+      "rust_tests": "Native sketch benchmark ellipse-17. See receipts/2026-11-21-ellipse-full-b6c4a99fd/focused/",
+      "expected_result": "Measure reports radii 8 and 4 mm, diameters 16 and 8 mm, length 38.754 mm and center X 0.000, Y -7.787, Z 19.076 mm. Closing Measure retains the oval."
     },
     {
       "id": "scenario:afb7a62f51ed6a236eaabc0fdc5bc0d89ded7ba9c62383f133cc70befb050ba5",
@@ -34919,10 +35007,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3910",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
-      "mapping_reason": "Sketch display or application preference interaction."
+      "go_reference": "../Oblikovati/head/ui/sketch_overlay.go; published Ellipse FUNCTIONAL.md and VISUAL.md for the inspection controls",
+      "mapping_reason": "Sketch display or application preference interaction.",
+      "go_test_premise": "Go aa8297d1b renders the ellipse boundary through addEllipses. The curvature dialog and comb interaction are specified by the recorded desktop observations.",
+      "kernel_capabilities": "The adapter reads native analytic first and second derivatives on the bounded ellipse domain. The comb is presentation geometry.",
+      "kernel_integration": "The desktop owner uses the analytic sketch picker. The viewport transforms curvature vectors into the green comb and keeps slider preview state outside the sketch model.",
+      "oracle": "Published native Part and curvature interaction observations, the captured green viewport comb, and analytic inward curvature at both axes.",
+      "platforms": "Linux X11 with Xvfb and Vulkan Lavapipe. Curvature controls were exercised using native X11 mouse events.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f",
+      "reason": "The pinned prerequisites depend on recorded slider positions and an earlier Cancel. The published case establishes them in one session with the saved Part.",
+      "rust_tests": "Native sketch benchmark ellipse-21. See receipts/2026-11-21-ellipse-curvature-3995/",
+      "expected_result": "The lower slider expands the comb envelope while the upper position and sketch geometry stay at their recorded values. Cancel restores the earlier visible comb."
     },
     {
       "id": "scenario:cc0348ac4e30bdb2e953d59bbb113e255485174fbf19ae566a7d16a5a3e29352",

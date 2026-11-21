@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" tests="19" errors="0" failures="1" hostname="localhost" timestamp="2026-11-21T12:27:04.563241127Z" time="803.274081643"><testcase name="Scenario: ellipse-01 Create an ellipse from three defining points: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:5:3" time="29.7650272"><system-out><![CDATA[  Scenario: ellipse-01 Create an ellipse from three defining points
+   ✔  Given a copy of `fixtures/cad/ellipse/empty-yz.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the fixture center is (20, -20) mm, first-axis point is (27, -17) mm and point on the ellipse is (18.8, -17.2) mm in sketch coordinates
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  When the user select Ellipse and specify a center, first-axis point, and point on the ellipse
+   ✔  Then a closed oval appears and the command requests another ellipse center
+   ✔  When the user press Escape
+   ✔  Then the oval remains and the sketch returns to Ready
+]]></system-out></testcase><testcase name="Scenario: ellipse-03 Cancel at the defining stages: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:17:3" time="35.617322996"><system-out><![CDATA[  Scenario: ellipse-03 Cancel at the defining stages
+   ✔  Given a copy of `fixtures/cad/ellipse/empty-yz.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the fixture center is (20, -20) mm, first-axis point is (27, -17) mm and point on the ellipse is (18.8, -17.2) mm in sketch coordinates
+   ✔  And the user starts Ellipse
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given Ellipse is active in an editable sketch
+   ✔  When the user select only a center and press Escape
+   ✔  Then Ready returns without an additional ellipse
+   ✔  When the user invoke Ellipse again, select a center and rotated first axis, and press Escape
+   ✔  Then Ready returns with no new ellipse
+]]></system-out></testcase><testcase name="Scenario: ellipse-05 Measure the restored rotated ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:31:3" time="79.972253225"><failure type="Step Panicked" message="Step panicked. Captured output: expected &quot;Selection 1: Ellipse&quot; in Measure &quot;Measure Selectgeometrytomeasure Done&quot;"/><system-out><![CDATA[  Scenario: ellipse-05 Measure the restored rotated ellipse
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given the rotated ellipse is restored by Redo
+   ✔  When the user open Measure, move its panel aside and select the curve
+   ✘  Then Selection 1 is identified as Ellipse
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:36:5
+      Matched: crates/head/src/../tests/application/../sketch/ellipse/measure.rs:54:1
+      Step panicked. Captured output: expected "Selection 1: Ellipse" in Measure "Measure Selectgeometrytomeasure Done"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nRIGHT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nPart2<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nSketch1\n[DOF5]\nFeatures\nEndofPart\nSelectaparttobrowseitsassets.\nClose\nSelectgeometrytomeasure\n5dimensionsneeded\nRibbonDisplay\nv\nv\n...\nPart2\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nFillet\nText\nLine\nv\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit\nHome\nPart1<Primary>*\nPart2<Primary>*\nDocuments\nX\nY\nZ\nMeasure\nSelectgeometrytomeasure\nDone",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: ellipse-06 Cancel after defining a rotated first axis: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:45:3" time="28.777295504"><system-out><![CDATA[  Scenario: ellipse-06 Cancel after defining a rotated first axis
+   ✔  Given a copy of `fixtures/cad/ellipse/empty-yz.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the fixture center is (20, -20) mm, first-axis point is (27, -17) mm and point on the ellipse is (18.8, -17.2) mm in sketch coordinates
+   ✔  Given an editable sketch is Ready
+   ✔  When the user choose Ellipse from the Circle dropdown
+   ✔  And the user select the fixture center
+   ✔  Then the prompt requests the first axis point
+   ✔  When the user select the fixture first-axis point
+   ✔  Then the prompt requests a point on the ellipse
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software returns to Ready with no new ellipse visible
+]]></system-out></testcase><testcase name="Scenario: ellipse-07 Create and undo a rotated ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:58:3" time="35.339784884"><system-out><![CDATA[  Scenario: ellipse-07 Create and undo a rotated ellipse
+   ✔  Given a copy of `fixtures/cad/ellipse/empty-yz.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the fixture center is (20, -20) mm, first-axis point is (27, -17) mm and point on the ellipse is (18.8, -17.2) mm in sketch coordinates
+   ✔  Given the editable recorded fixture has clear canvas for a rotated ellipse
+   ✔  When the user invoke Ellipse
+   ✔  And the user select the fixture center
+   ✔  And the user select the fixture first-axis point
+   ✔  And the user select the fixture point on the ellipse
+   ✔  Then a tilted closed oval appears and the command requests another center
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software is Ready
+   ✔  When the user press Ctrl+Z
+   ✔  Then the oval disappears
+   ✔  When the user press Ctrl+Y
+   ✔  Then the rotated oval returns
+]]></system-out></testcase><testcase name="Scenario: ellipse-08 Remain at first-axis selection after a coincident click: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:75:3" time="28.133457406"><system-out><![CDATA[  Scenario: ellipse-08 Remain at first-axis selection after a coincident click
+   ✔  Given a copy of `fixtures/cad/ellipse/empty-yz.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the fixture center is (20, -20) mm, first-axis point is (27, -17) mm and point on the ellipse is (18.8, -17.2) mm in sketch coordinates
+   ✔  Given an editable sketch is Ready
+   ✔  When the user invoke Ellipse and select the fixture center
+   ✔  And the user select the same location again as its first-axis point
+   ✔  Then the prompt remains Select first axis point without an error dialog
+   ✔  When the user select a distinct first-axis point
+   ✔  Then the prompt advances to Select point on ellipse
+   ✔  When the user press Escape
+   ✔  Then the MCAD Software is Ready with no additional ellipse visible
+]]></system-out></testcase><testcase name="Scenario: ellipse-09 Toggle the curvature comb on an existing ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:88:3" time="27.239711029"><system-out><![CDATA[  Scenario: ellipse-09 Toggle the curvature comb on an existing ellipse
+   ✔  Given a copy of `fixtures/cad/ellipse/rotated-measured.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  Given the rotated ellipse has no curvature comb visible
+   ✔  When the user right-click its curve and choose Display Curvature
+   ✔  Then a green comb appears around the ellipse
+   ✔  When the user right-click its curve again
+   ✔  Then Display Curvature is checked and Setup Curvature Display is offered
+   ✔  When the user click the checked Display Curvature option
+   ✔  Then the comb disappears and the ellipse remains visible
+]]></system-out></testcase><testcase name="Scenario: ellipse-10 Cancel a curvature-density preview: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:99:3" time="26.850870501"><system-out><![CDATA[  Scenario: ellipse-10 Cancel a curvature-density preview
+   ✔  Given a copy of `fixtures/cad/ellipse/rotated-measured.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the user enables Display Curvature on the ellipse
+   ✔  Given the ellipse has Display Curvature enabled
+   ✔  When the user choose Setup Curvature Display from its context menu
+   ✔  Then Curvature Settings shows two Minimum-to-Maximum sliders without numeric values
+   ✔  And OK and Apply are initially disabled
+   ✔  When the user advance the upper slider
+   ✔  Then the thumb advances and the comb becomes denser
+   ✔  And OK and Apply become enabled
+   ✔  When the user click Cancel
+   ✔  Then the dialog closes and the earlier sparse comb returns
+   ✔  And curvature display stays enabled
+]]></system-out></testcase><testcase name="Scenario: ellipse-11 Retain an applied curvature setting when closing with Cancel: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:114:3" time="47.284338052"><system-out><![CDATA[  Scenario: ellipse-11 Retain an applied curvature setting when closing with Cancel
+   ✔  Given a copy of `fixtures/cad/ellipse/rotated-measured.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the user enables Display Curvature on the ellipse and records the slider positions
+   ✔  Given the ellipse has a sparse curvature comb enabled
+   ✔  And the upper and lower slider positions are recorded
+   ✔  When the user open Setup Curvature Display
+   ✔  And the user advance the upper slider
+   ✔  And the user click Apply
+   ✔  Then the dialog remains open with the denser comb visible
+   ✔  When the user click Cancel
+   ✔  Then the dialog closes and the denser comb remains
+   ✔  When the user reopen Setup Curvature Display
+   ✔  Then the upper slider remains at its applied position
+   ✔  And the lower slider remains at its original position
+   ✔  When the user move the upper slider back to its recorded original position
+   ✔  And the user choose OK
+   ✔  Then the dialog closes and the earlier sparse comb is displayed
+   ✔  When the user reopen Setup Curvature Display
+   ✔  Then both slider thumbs are at their original positions
+   ✔  And OK and Apply are disabled
+   ✔  When the user click Cancel without making changes
+   ✔  Then the dialog closes and curvature display remains enabled
+   ✔  When the user right-click the ellipse and select the checked Display Curvature option
+   ✔  Then the comb disappears and the ellipse remains visible
+]]></system-out></testcase><testcase name="Scenario: ellipse-12 Observe numeric key as alias input during first-axis selection: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:140:3" time="29.502945174"><system-out><![CDATA[  Scenario: ellipse-12 Observe numeric key as alias input during first-axis selection
+   ✔  Given a copy of `fixtures/cad/ellipse/circle-midpoint-line.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the fixture center is the free sketch coordinate (30, 30) mm
+   ✔  Given the fixture sketch is Ready with the retained circle and midpoint line
+   ✔  When Ellipse is selected and a free center is clicked
+   ✔  Then Select first axis point appears without a visible numeric field
+   ✔  When the 8 key is pressed
+   ✔  Then the status shows Command alias input: 8
+   ✔  When Escape is pressed
+   ✔  Then Ready appears with no added ellipse visible
+]]></system-out></testcase><testcase name="Scenario: ellipse-13 Dimension an existing ellipse major radius and measure its result: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:152:3" time="67.769972481"><system-out><![CDATA[  Scenario: ellipse-13 Dimension an existing ellipse major radius and measure its result
+   ✔  Given a copy of `fixtures/cad/ellipse/axis-initial.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  Given the recorded ellipse fixture has been created in an editable sketch
+   ✔  When General Dimension selects its curve and places the horizontal axis extent
+   ✔  Then Edit Dimension displays 6.3832549 mm selected
+   ✔  When the 8 key and Return accept the new value and Escape exits the command
+   ✔  Then annotation 8 and a wider ellipse remain
+   ✔  When Measure selects the ellipse
+   ✔  Then major radius is 8.000 mm and major diameter is 16.000 mm
+   ✔  And minor radius is 2.979 mm and minor diameter is 5.958 mm
+   ✔  And length is 36.320 mm and global center is 0.000, -6.213, 15.221 mm
+]]></system-out></testcase><testcase name="Scenario: ellipse-14 Undo and redo the ellipse major-radius value edit: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:165:3" time="73.062191885"><system-out><![CDATA[  Scenario: ellipse-14 Undo and redo the ellipse major-radius value edit
+   ✔  Given a copy of `fixtures/cad/ellipse/axis-initial.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the user places the major-radius dimension at 6.3832549 mm and edits it to 8 mm in this session
+   ✔  Given Measure has closed after the accepted major-radius value of 8
+   ✔  When Ctrl+Z is pressed
+   ✔  Then the ellipse narrows and the retained dimension annotation becomes 6.383
+   ✔  When Ctrl+Y is pressed
+   ✔  Then the wider ellipse and annotation 8 return
+   ✔  And the major-radius dimension remains
+]]></system-out></testcase><testcase name="Scenario: ellipse-15 Cancel a proposed minor-radius edit while retaining the placed dimension: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:176:3" time="59.556645741"><system-out><![CDATA[  Scenario: ellipse-15 Cancel a proposed minor-radius edit while retaining the placed dimension
+   ✔  Given a copy of `fixtures/cad/ellipse/axis-major-8.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  Given the recorded ellipse has major-radius annotation 8 and minor radius approximately 2.979 mm
+   ✔  When General Dimension selects its curve and places the vertical center-to-axis dimension
+   ✔  Then the minor-radius editor opens with 2.9788523 mm selected
+   ✔  When 4 is entered and Escape cancels the editor
+   ✔  Then the placed dimension remains annotated 2.979
+   ✔  When its annotation is reopened
+   ✔  Then the editor retains expression 2.9788523 mm
+]]></system-out></testcase><testcase name="Scenario: ellipse-16 Accept the minor-radius dimension value: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:187:3" time="94.05685879"><system-out><![CDATA[  Scenario: ellipse-16 Accept the minor-radius dimension value
+   ✔  Given a copy of `fixtures/cad/ellipse/axis-major-8.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the user places the minor-radius dimension at 2.9788523 mm and opens its editor
+   ✔  Given the reopened minor-radius expression is selected
+   ✔  When 4 is entered and Return accepts it
+   ✔  Then the ellipse grows vertically and its vertical annotation becomes 4
+   ✔  And its horizontal annotation remains 8
+   ✔  When Escape exits General Dimension
+   ✔  Then the edited ellipse remains visible
+]]></system-out></testcase><testcase name="Scenario: ellipse-17 Measure both accepted axis radii in the fresh fixture: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:198:3" time="21.752251873"><system-out><![CDATA[  Scenario: ellipse-17 Measure both accepted axis radii in the fresh fixture
+   ✔  Given a copy of `fixtures/cad/ellipse/axis-both-8-4-measure.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  Given the recorded fixture ellipse has driving radii of 8 and 4 mm
+   ✔  When General Dimension is exited and Measure selects the ellipse curve
+   ✔  Then major and minor radii are 8.000 and 4.000 mm
+   ✔  And major and minor diameters are 16.000 and 8.000 mm
+   ✔  And length is 38.754 mm
+   ✔  And global center is 0.000, -7.787, 19.076 mm
+   ✔  When Done closes Measure
+   ✔  Then the retained ellipse remains visible
+]]></system-out></testcase><testcase name="Scenario: ellipse-18 Reject a zero minor radius and retain the prior value: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:210:3" time="28.139004092"><system-out><![CDATA[  Scenario: ellipse-18 Reject a zero minor radius and retain the prior value
+   ✔  Given a copy of `fixtures/cad/ellipse/axis-both-8-4.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  Given the recorded ellipse has a driving minor-radius dimension storing 4 mm
+   ✔  When General Dimension opens the minor-radius dimension and 0 followed by Return attempts an edit
+   ✔  Then Edit Dimension Value reports Failed to edit dimension value
+   ✔  When Cancel dismisses the failure window
+   ✔  Then General Dimension remains active with annotations 8 and 4 visible
+   ✔  When the minor-radius dimension is reopened
+   ✔  Then its stored expression is 4 mm
+   ✔  When Escape closes the editor and another Escape exits the command
+   ✔  Then Ready appears and the ellipse remains visible
+]]></system-out></testcase><testcase name="Scenario: ellipse-19 Retain the dimensioned ellipse through Finish and Edit Sketch: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:223:3" time="28.155640219"><system-out><![CDATA[  Scenario: ellipse-19 Retain the dimensioned ellipse through Finish and Edit Sketch
+   ✔  Given a copy of `fixtures/cad/ellipse/axis-both-8-4.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  Given the fixture sketch contains the ellipse with annotations 8 and 4
+   ✔  When Finish Sketch returns to 3D Model
+   ✔  Then the ellipse and its dimension annotations remain visible in the oblique view
+   ✔  When the sketch is right-clicked in the browser
+   ✔  Then Edit Sketch is available and Visibility and Dimension Visibility are checked
+   ✔  When Edit Sketch is selected
+   ✔  Then the editable sketch returns in Right view with the ellipse and annotations 8 and 4
+]]></system-out></testcase><testcase name="Scenario: ellipse-20 Observe a digit immediately after fresh center selection: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:234:3" time="28.570297607"><system-out><![CDATA[  Scenario: ellipse-20 Observe a digit immediately after fresh center selection
+   ✔  Given a copy of `fixtures/cad/ellipse/circle-midpoint-line.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the fixture center is the free sketch coordinate (30, 30) mm
+   ✔  Given an editable sketch with existing geometry is Ready
+   ✔  When the user open Circle dropdown and choose Ellipse
+   ✔  And the user select the fixture center
+   ✔  Then the prompt requests the first axis point
+   ✔  When the user press 6
+   ✔  Then Command alias input displays 6 instead of an axis-length editor
+   ✔  When the user press Escape
+   ✔  Then Ready returns with the previous geometry retained
+]]></system-out></testcase><testcase name="Scenario: ellipse-21 Cancel the lower-slider preview: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:247:3" time="33.728212984"><system-out><![CDATA[  Scenario: ellipse-21 Cancel the lower-slider preview
+   ✔  Given a copy of `fixtures/cad/ellipse/rotated-measured.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the user enables Display Curvature, records both slider positions, previews an upper-slider change and cancels it
+   ✔  Given the ellipse has curvature display enabled
+   ✔  And the prior upper-slider preview was cancelled
+   ✔  And its original upper and lower thumb positions were recorded
+   ✔  When the user reopen Curvature Settings
+   ✔  Then the upper and lower thumbs have their earlier restored positions
+   ✔  When the user advance only the lower slider
+   ✔  Then the comb envelope expands without a visible ellipse shape change
+   ✔  And the upper slider stays at its earlier position
+   ✔  And OK and Apply are enabled
+   ✔  When the user click Cancel
+   ✔  Then the earlier comb envelope returns with curvature still enabled
+]]></system-out></testcase></testsuite></testsuites>

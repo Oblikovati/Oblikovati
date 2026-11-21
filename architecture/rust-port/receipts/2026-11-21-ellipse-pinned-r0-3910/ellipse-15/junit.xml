@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: tmp/obk-home-recent.74m1LY/pinned-source/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: tmp/obk-home-recent.74m1LY/pinned-source/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T12:32:22.234559066Z" time="93.869026732"><testcase name="Scenario: ellipse-15 Cancel a proposed minor-radius edit while retaining the placed dimension: tmp/obk-home-recent.74m1LY/pinned-source/features/sketch/ellipse/scenario.feature:155:3" time="93.869026732"><system-out><![CDATA[  Scenario: ellipse-15 Cancel a proposed minor-radius edit while retaining the placed dimension
+   ✔  Given the recorded ellipse has major-radius annotation 8 and minor radius approximately 2.979 mm
+   ✔  When General Dimension selects its curve and places the vertical center-to-axis dimension
+   ✔  Then the minor-radius editor opens with 2.9788523 mm selected
+   ✔  When 4 is entered and Escape cancels the editor
+   ✔  Then the placed dimension remains annotated 2.979
+   ✔  When its annotation is reopened
+   ✔  Then the editor retains expression 2.9788523 mm
+]]></system-out></testcase></testsuite></testsuites>

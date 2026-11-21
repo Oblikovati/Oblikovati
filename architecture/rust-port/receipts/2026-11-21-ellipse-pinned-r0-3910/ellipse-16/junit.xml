@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: tmp/obk-home-recent.74m1LY/pinned-source/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: tmp/obk-home-recent.74m1LY/pinned-source/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T12:33:56.802622646Z" time="137.993317715"><testcase name="Scenario: ellipse-16 Accept the minor-radius dimension value: tmp/obk-home-recent.74m1LY/pinned-source/features/sketch/ellipse/scenario.feature:165:3" time="137.993317715"><system-out><![CDATA[  Scenario: ellipse-16 Accept the minor-radius dimension value
+   ✔  Given the reopened minor-radius expression is selected
+   ✔  When 4 is entered and Return accepts it
+   ✔  Then the ellipse grows vertically and its vertical annotation becomes 4
+   ✔  And its horizontal annotation remains 8
+   ✔  When Escape exits General Dimension
+   ✔  Then the edited ellipse remains visible
+]]></system-out></testcase></testsuite></testsuites>

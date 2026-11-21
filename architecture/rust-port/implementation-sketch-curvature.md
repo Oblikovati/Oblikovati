@@ -19,3 +19,6 @@ picking uses the authored curve.
 
 The [native receipt](receipts/2026-11-21-ellipse-curvature-3995/README.md)
 covers display, density, scale, Apply, OK, and Cancel with X11 mouse input.
+The [full Ellipse run](receipts/2026-11-21-ellipse-full-04a58abd4/README.md)
+passed 18 of 19 scenarios. The rotated Measure pick remains open in
+[Martensite #406](https://github.com/Oblikovati/Martensite/issues/406).
