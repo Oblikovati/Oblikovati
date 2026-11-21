@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Select entities in the 3D model viewport: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature" package="testsuite/Feature: Select entities in the 3D model viewport: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature" tests="7" errors="0" failures="4" hostname="localhost" timestamp="2026-11-21T13:39:10.404223709Z" time="126.22420478"><testcase name="Scenario: Pick a 3D sketch endpoint: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:9:3" time="6.523592637"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Pick a 3D sketch endpoint
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✘  Given a visible 3D sketch curve has an exposed endpoint
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:10:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Select a visible 3D sketch curve: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:16:3" time="6.518383112"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Select a visible 3D sketch curve
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✘  Given a visible 3D sketch curve is not selected
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:17:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Select a solid face: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:23:3" time="34.608083433"><system-out><![CDATA[  Scenario: Select a solid face
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with an unselected front face
+   ✔  When the user clicks an unoccupied region of the face
+   ✔  Then the face appears teal with a bright green boundary
+   ✔  And the pick cue identifies "1. Face"
+   ✔  And a compact contextual toolbar appears beside the pointer
+]]></system-out></testcase><testcase name="Scenario: Open the context menus for a selected solid face: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:31:3" time="33.430751631"><system-out><![CDATA[  Scenario: Open the context menus for a selected solid face
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with a solid face selected
+   ✔  When the user right-clicks the face
+   ✔  Then a standard context menu appears
+   ✔  And a radial shortcut menu appears near the pointer
+   ✔  And the radial menu includes "Extrude", "Select Other...", "Select Tangencies", and "New Sketch"
+   ✔  And the standard menu includes "Properties" and "Export Face As..."
+]]></system-out></testcase><testcase name="Scenario: Clear an entity selection from empty viewport space: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:40:3" time="34.039225998"><system-out><![CDATA[  Scenario: Clear an entity selection from empty viewport space
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with a solid face selected
+   ✔  When the user left-clicks empty viewport space
+   ✔  Then the entity returns to its neutral appearance
+   ✔  And the contextual selection cue closes
+]]></system-out></testcase><testcase name="Scenario: Pick a sketch point in the 3D viewport: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:51:3" time="5.560515771"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Pick a sketch point in the 3D viewport
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✘  Given a visible 3D sketch point is exposed in the viewport
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:52:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Open sketch-curve context menus during a 3D sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:57:3" time="5.543652198"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open sketch-curve context menus during a 3D sketch
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✘  Given a 3D sketch is active and a visible sketch segment is exposed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:58:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

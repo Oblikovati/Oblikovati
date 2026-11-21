@@ -91,17 +91,17 @@
           "features/application/viewport-entity-selection/VISUAL.md": "c633080a52ed39d9c0b46f08b8951d1a5d09b8e2cf2a77054eb0af8b1b774697",
           "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-21-viewport-face-selection-4055/cucumber.json",
-        "cucumber_sha256": "04f0e2af372a4c777168755932ce33788953de703cf1c255f9713fc165a7e6ca",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-viewport-face-selection-4055/scenario-arguments.json",
-        "scenario_arguments_sha256": "b0a97d75f4abad6a3d72d5320a6a3609c78b91e8a1ae996c70da29c0af1ac2cd",
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-viewport-face-menu-4055/cucumber.json",
+        "cucumber_sha256": "5afc778c0998d6c8c237649efc02a716ce19bed25c15874ff9436b434a032561",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-viewport-face-menu-4055/scenario-arguments.json",
+        "scenario_arguments_sha256": "59608a440a0828f29ae68186eb496d5cba1b014cf0aced742c8706190cb92161",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-21-viewport-face-selection-4055/scenario-inventory.json",
         "scenario_inventory_sha256": "7aefaa9201297b1c05c2f907bdf2c79f72b340d11f880570b2bc3df7744fc9c9",
-        "application_commit": "5128782e7a8ce4c9a170b1f7739e2a759a48d8dd",
-        "command": "Full published Viewport Entity Selection run. See receipt README.",
+        "application_commit": "61967b9d8899e1e54cb5abd37cf9fc452b856693",
+        "command": "Full published Viewport Entity Selection run. See face-menu receipt README.",
         "environment": "Linux, X11 Xvfb, Vulkan Lavapipe. Face selection, context click and clearing use XTest.",
-        "notes": "Face picking and clearing passed. The feature, supporting notes and native Part hashes matched before and after.",
-        "blocker": "The face-menu scenario stops at the missing Select Other entry (#4055). Four 3D-sketch scenarios are deferred."
+        "notes": "All three solid-face scenarios passed. Native input also confirmed the three deferred menu entries do not dispatch.",
+        "blocker": "Four 3D-sketch scenarios are deferred."
       }
     }
   },
