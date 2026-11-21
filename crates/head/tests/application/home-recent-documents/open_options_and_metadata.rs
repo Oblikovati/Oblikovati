@@ -268,6 +268,13 @@ fn default_columns(world: &mut ApplicationWorld) {
 }
 #[given("the recent list contains a part and a drawing")]
 fn part_and_drawing(world: &mut ApplicationWorld) {
+    let part_path = world.scratch_folder().join(format!("{SEARCHED}.opd"));
+    std::fs::OpenOptions::new()
+        .write(true)
+        .open(part_path)
+        .unwrap()
+        .set_modified(std::time::UNIX_EPOCH + std::time::Duration::from_secs(1_600_000_000))
+        .unwrap();
     save_recent_drawing(world);
     assert!(
         home_shows(world, SEARCHED) && home_shows(world, "Sheet"),
@@ -291,12 +298,68 @@ fn part_row_facts(world: &mut ApplicationWorld) {
         .map(|run| run.text.clone())
         .collect();
     let joined = on_row.join(" ");
-    for part in ["/tmp", "UTC", "KB"] {
+    for part in ["/tmp", "KB"] {
         assert!(
             joined.contains(part),
             "expected {part} on the row {joined:?}"
         );
     }
+    let facts = world
+        .state()
+        .recent_documents
+        .into_iter()
+        .find(|entry| entry.name == SEARCHED)
+        .unwrap();
+    assert_ne!(
+        facts.modified_text, facts.opened_text,
+        "expected different fixture timestamps"
+    );
+    expect_recent_timestamp(
+        world,
+        row,
+        "Date Modified",
+        "Last Opened",
+        &facts.modified_text,
+    );
+    expect_recent_timestamp(world, row, "Last Opened", "Size", &facts.opened_text);
+}
+
+fn expect_recent_timestamp(
+    world: &mut ApplicationWorld,
+    row: f32,
+    heading: &str,
+    next: &str,
+    full: &str,
+) {
+    let date = full.split_once(' ').expect("expected an ISO timestamp").0;
+    let left = home_run(world, heading)
+        .expect("expected the timestamp heading")
+        .minimum[0];
+    let right = home_run(world, next)
+        .expect("expected the next heading")
+        .minimum[0];
+    let cell = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| {
+            let [x, y] = run.center();
+            in_home(run)
+                && (y - row).abs() < 8.
+                && x > left
+                && x < right
+                && run.text.starts_with(date)
+        })
+        .unwrap_or_else(|| panic!("expected {heading} to display {date}"));
+    if cell.text == full.replace(' ', "") {
+        return;
+    }
+    assert_eq!(cell.text, date, "expected the complete date in {heading}");
+    world.hover(super::super::super::diagnostics::pointer_pixels(
+        cell.center(),
+    ));
+    world.pump(Vec::new());
+    world.expect_text(full);
 }
 #[then("the part and drawing rows show different document-type symbols")]
 fn different_symbols(world: &mut ApplicationWorld) {

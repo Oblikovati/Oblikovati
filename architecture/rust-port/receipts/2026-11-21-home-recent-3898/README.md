@@ -74,6 +74,19 @@ heading and the smallest file at the top. The
 [pinned blank-size sort](pinned-compact-blank-size.json) and the
 [published column reorder](published-compact-columns.json) also passed.
 
+## Dates in compact columns
+
+The [earlier metadata run](compact-metadata-before.log.gz) showed clipped
+timestamps beside the asset dock. The compact list now shows full calendar
+dates when there is room for the date alone. Hover shows the full timestamp.
+
+The [pinned](pinned-compact-metadata.json) and
+[published](published-compact-metadata.json) cases each passed eight steps.
+The fixture uses different Date Modified and Last Opened values and checks
+both timestamps. The [capture](home-compact-date-tooltip.png) shows both
+dates and the Last Opened tooltip. The [grid-view case](published-grid-dates.json)
+also passed.
+
 ## Pinned Home baseline
 
 Five scenarios passed all 40 steps and their window cleanup hooks on

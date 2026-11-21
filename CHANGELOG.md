@@ -277,6 +277,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 - Kept Home Recent sort headings and direction marks visible beside the asset dock. (#3898)
 
+- Showed complete calendar dates in compact Home Recent columns and full timestamps on hover. (#3898)
+
 - Restored Ready after closing the Rotate at Angle dialog. (#3872)
 
 - Restored installed Tahoma and the inherited color swatch when starting Sketch Text without a preset. (#3907)

@@ -8,7 +8,9 @@ use imgui::Ui;
 
 #[path = "recent_cell_text.rs"]
 mod recent_cell_text;
-use recent_cell_text::{fit_recent_cell, reveal_full_cell, visible_source_text};
+use recent_cell_text::{
+    fit_recent_cell, fit_recent_timestamp, reveal_full_cell, visible_source_text,
+};
 
 const CHECK_COLUMN: f32 = 28.;
 /// The kind mark, wide enough that its letter never reads as part of the name.
@@ -102,8 +104,13 @@ fn open_action(path: &str) -> GuiShellAction {
 fn remove_action(path: &str) -> GuiShellAction {
     GuiShellAction::Recent(GuiRecentAction::Remove(path.to_owned()))
 }
-fn metadata_cell(ui: &Ui, full: &str, width: f32) {
-    let shown = fit_recent_cell(full, width, |text| ui.calc_text_size(text)[0]);
+fn metadata_cell(ui: &Ui, full: &str, width: f32, timestamp: bool) {
+    let measure = |text: &str| ui.calc_text_size(text)[0];
+    let shown = if timestamp {
+        fit_recent_timestamp(full, width, measure)
+    } else {
+        fit_recent_cell(full, width, measure)
+    };
     ui.text(shown.as_ref());
     reveal_full_cell(ui, full, &shown);
 }
@@ -206,7 +213,13 @@ impl HomeWorkspace {
         for column in &self.columns.shown {
             ui.same_line_with_pos(x);
             let width = layout.width(*column);
-            metadata_cell(ui, cell_text(row, *column), width - layout.spacing);
+            let timestamp = matches!(column, SortField::Modified | SortField::Opened);
+            metadata_cell(
+                ui,
+                cell_text(row, *column),
+                width - layout.spacing,
+                timestamp,
+            );
             x += width;
         }
         ui.same_line_with_pos(x + ACTION_GAP);
@@ -395,12 +408,12 @@ impl HomeWorkspace {
         ) {
             actions.push(open_action(&row.path));
         }
-        metadata_cell(ui, &row.name, width);
+        metadata_cell(ui, &row.name, width, false);
         let _dim = ui.push_style_color(
             imgui::StyleColor::Text,
             ui.style_color(imgui::StyleColor::TextDisabled),
         );
-        metadata_cell(ui, &row.modified_text, width);
+        metadata_cell(ui, &row.modified_text, width, true);
     }
 }
 

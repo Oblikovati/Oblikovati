@@ -35,6 +35,19 @@ fn fitting_recent_prefix(full: &str, width: f32, measure: impl Fn(&str) -> f32) 
     &full[..full.floor_char_boundary(lower)]
 }
 
+pub(super) fn fit_recent_timestamp(
+    full: &str,
+    width: f32,
+    measure: impl Fn(&str) -> f32,
+) -> Cow<'_, str> {
+    if measure(full) <= width {
+        return Cow::Borrowed(full);
+    }
+    // The time is useful only as a complete value. Keep the date and expose the rest on hover.
+    let date = full.split_once(' ').map_or(full, |(date, _)| date);
+    fit_recent_cell(date, width, measure)
+}
+
 pub(super) fn visible_source_text<'a>(shown: &'a str, full: &str) -> &'a str {
     if shown == full {
         return shown;
@@ -51,6 +64,17 @@ pub(super) fn reveal_full_cell(ui: &imgui::Ui, full: &str, shown: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn recent_timestamps_keep_the_full_date_before_dropping_time() {
+        let width = |text: &str| text.len() as f32;
+        let full = "2026-11-21 08:45:00 UTC";
+        assert_eq!(fit_recent_timestamp(full, 24., width), full);
+        assert_eq!(fit_recent_timestamp(full, 18., width), "2026-11-21");
+        assert_eq!(fit_recent_timestamp(full, 10., width), "2026-11-21");
+        assert_eq!(fit_recent_timestamp(full, 9., width), "2026-1...");
+        assert_eq!(fit_recent_timestamp("", 9., width), "");
+    }
 
     #[test]
     fn recent_label_uses_whole_characters_and_keeps_short_text() {
