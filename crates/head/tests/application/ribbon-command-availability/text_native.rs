@@ -43,6 +43,8 @@ mod text_preset_defaults;
 mod text_preset_delete;
 #[path = "text_presets.rs"]
 mod text_presets;
+#[path = "text_rotation.rs"]
+mod text_rotation;
 use oblikovati_viewport::ViewportSketchPreview;
 
 #[test]

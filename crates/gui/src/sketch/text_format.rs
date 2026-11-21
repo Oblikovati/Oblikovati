@@ -8,6 +8,8 @@ use oblikovati_api::types::{
     TEXT_ALIGN_BASELINE, TEXT_ALIGN_CENTER, TEXT_ALIGN_LEFT, TEXT_ALIGN_LOWER, TEXT_ALIGN_MIDDLE,
     TEXT_ALIGN_RIGHT, TEXT_ALIGN_UPPER,
 };
+#[path = "text_rotation.rs"]
+mod text_rotation;
 
 const SYSTEM_DEFAULT: &str = "System default";
 const HEIGHT_PRESETS_MM: [&str; 6] = ["1.50", "2.50", "3.05", "4.00", "5.00", "6.10"];
@@ -21,8 +23,7 @@ pub(super) fn draw(
 ) -> bool {
     font_row(ui, &mut draft.family, families, filter)
         | height_row(ui, &mut draft.height_mm, height_input)
-        | ui.input_text("Rotation (deg)", &mut draft.rotation_degrees)
-            .build()
+        | text_rotation::draw(ui, &mut draft.rotation_degrees)
         | alignment_rows(ui, draft)
         | super::text_spacing::draw(ui, &mut draft.formatting.line_spacing)
 }

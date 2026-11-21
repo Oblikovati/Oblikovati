@@ -150,6 +150,11 @@ using this status; the live scenario directory can change.
   resolves the saved file name, and permits another dimension edit.
   The test creates its own part. The pinned `text-16`, `text-17`, `text-34`,
   `text-35`, and `text-38` cases still need their Part6 fixtures.
+  Format Text offers quarter-turn angles next to its numeric rotation field.
+  A native RIGHT-view test selects 270 degrees and Center, checks that the
+  preview is upright and horizontal, and confirms the committed angle.
+  The pinned `text-26` scenario still needs the Text Box control and
+  Background Fill context identified.
   Native input left unselected `ab` unchanged and converted selected
   characters to `AB` in the editor and preview. The accepted edit kept
   the text ID and anchor. Pinned `text-25` also requires strike-through.
