@@ -14,6 +14,11 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- File Menu (#3894): all eight pinned scenarios and 59 steps passed under
+  Xvfb with Openbox. The live feature passed six of eight. Two scenarios
+  still reference an Inventor Part and need the native fixture. A separate
+  X11 input test passed Escape and outside-click dismissal with the same
+  Part active. See `receipts/2026-11-21-file-menu-r0-3894/`.
 - Viewport Pan (#3881): all four pinned scenarios and 32 steps passed
   under Xvfb. Two X11 input tests also passed. The four declarations now
   have R0 records. The live feature requires a native Part fixture, and strict
