@@ -327,10 +327,6 @@ fn edit_active_cell(world: &mut ApplicationWorld) {
     let y = world.run("Small").center()[1];
     world.double_click(diagnostics::pointer_pixels([x, y]));
 }
-#[when(regex = r#"^the user enters "([^"]*)"$"#)]
-fn enter_cell(world: &mut ApplicationWorld, text: String) {
-    world.type_text(&text);
-}
 #[when(regex = r#"^the user replaces its value with "([^"]*)"$"#)]
 fn replace_cell(world: &mut ApplicationWorld, text: String) {
     world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);

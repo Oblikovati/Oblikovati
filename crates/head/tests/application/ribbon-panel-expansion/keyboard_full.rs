@@ -125,10 +125,16 @@ fn x11_pinned_move_body_cancel_keeps_the_expansion() {
     world.close();
 }
 
-#[when("the user enters \"OD\"")]
-fn enter_move_body_tip(world: &mut ApplicationWorld) {
-    world.key(ViewportPhysicalKey::O, false);
-    world.key(ViewportPhysicalKey::D, false);
+#[when(regex = r#"^the user enters "([^"]*)"$"#)]
+fn enter_quoted_input(world: &mut ApplicationWorld, text: String) {
+    // The pinned ribbon and model browser scenarios share this wording (#3860).
+    let modify = world.window_text("##ribbon-additional-PartModify");
+    if text == "OD" && modify.split_whitespace().any(|word| word == "OD") {
+        world.key(ViewportPhysicalKey::O, false);
+        world.key(ViewportPhysicalKey::D, false);
+        return;
+    }
+    world.type_text(&text);
 }
 #[then("the Modify additional command area opens with key tips for its commands")]
 fn modify_tips_visible(world: &mut ApplicationWorld) {
