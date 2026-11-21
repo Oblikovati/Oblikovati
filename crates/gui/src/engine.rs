@@ -120,6 +120,7 @@ pub struct GuiFrameEngine {
     ribbon: crate::ribbon::DocumentRibbon,
     document_tabs: crate::document_tabs::DocumentTabs,
     workspace: crate::application::workspace_layout::WorkspaceLayout,
+    workspace_layout_restored: bool,
     orientation: crate::application::viewport_orientation::OrientationControl,
     /// The documents of the latest frame, for dialogs an owner notice opens between frames.
     known_documents: Vec<oblikovati_api::wire::DocumentInfo>,
@@ -207,6 +208,7 @@ impl GuiFrameEngine {
             ribbon: Default::default(),
             document_tabs: Default::default(),
             workspace: Default::default(),
+            workspace_layout_restored: false,
             orientation: Default::default(),
             known_documents: Vec::new(),
             known_document_type: None,

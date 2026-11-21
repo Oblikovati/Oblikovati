@@ -27,6 +27,11 @@ mod tabs_scenario;
 const PANEL: &str = "Material Browser";
 
 fn open_docking_fixture(world: &mut ApplicationWorld) -> u64 {
+    world.restore_layout_without_asset_tools();
+    open_docking_part(world)
+}
+
+fn open_docking_part(world: &mut ApplicationWorld) -> u64 {
     let path = super::scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
     world.open_fixture(&path);
     let document = world.active_id();

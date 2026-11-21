@@ -8,7 +8,6 @@ use super::*;
 fn start_without_recent_document(world: &mut ApplicationWorld) {
     let state = world.state();
     assert!(state.documents.is_empty());
-    world.save_capture("home-without-a-document");
 }
 
 #[then("the Get Started tab is selected")]
@@ -32,6 +31,7 @@ fn startup_asset_browsers_are_docked(world: &mut ApplicationWorld) {
     let material = window_dock_id("Material Browser").expect("expected Material Browser docked");
     let appearance =
         window_dock_id("Appearance Browser").expect("expected Appearance Browser docked");
+    assert_ne!(material, 0, "expected an attached asset dock");
     assert_eq!(material, appearance, "expected the same asset dock");
     let (position, _) = window_geometry("Material Browser").expect("expected the asset dock");
     assert!(
@@ -43,4 +43,23 @@ fn startup_asset_browsers_are_docked(world: &mut ApplicationWorld) {
 #[then("the selected browser panel asks the user to select a part to browse its assets")]
 fn selected_asset_browser_requests_a_part(world: &mut ApplicationWorld) {
     world.expect_text("Select a part to browse its assets.");
+    world.save_capture("home-without-a-document");
+}
+
+#[test]
+fn new_part_from_startup_home_opens_the_part_workspace() {
+    let mut world = ApplicationWorld::new();
+    start_without_recent_document(&mut world);
+    assert!(home_shows(&world, "No recent documents"));
+    home_offers_new_part(&mut world);
+    let action = home_run(&world, "New Part").expect("expected New Part in Home");
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(action.center()));
+    world.pump(Vec::new());
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Part
+    );
+    world.run_in_window("##application-ribbon", "3DModel");
+    assert!(!home_shows(&world, "Recent"));
+    world.close();
 }

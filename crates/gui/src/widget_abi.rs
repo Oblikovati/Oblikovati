@@ -15,7 +15,7 @@ unsafe extern "C" {
     );
     fn oblikovati_gui_window_is_moving() -> bool;
     fn oblikovati_gui_workspace_dockspace(width: f32, height: f32) -> u32;
-    fn oblikovati_gui_outer_dockspace(width: f32, height: f32) -> u32;
+    fn oblikovati_gui_outer_dockspace(width: f32, height: f32, seed_asset_dock: bool) -> u32;
     fn oblikovati_gui_ensure_tabbed_window(title: *const u8, group: *const u8);
     fn oblikovati_gui_draw_dock_tab_actions() -> u32;
     fn oblikovati_gui_draw_workspace_panel_menu() -> u32;
@@ -124,9 +124,13 @@ pub(crate) fn workspace_dockspace(_: &Ui, size: [f32; 2]) -> Option<[f32; 4]> {
     dockspace_center(id)
 }
 /// Draw the outer workspace, including the default Model dock.
-/// Example: `outer_dockspace(ui, [800., 600.])` in its transparent host.
-pub(crate) fn outer_dockspace(_: &Ui, size: [f32; 2]) -> Option<([f32; 4], Option<[f32; 2]>)> {
-    let id = unsafe { oblikovati_gui_outer_dockspace(size[0], size[1]) };
+/// Example: `outer_dockspace(ui, [800., 600.], false)` in its transparent host.
+pub(crate) fn outer_dockspace(
+    _: &Ui,
+    size: [f32; 2],
+    seed_asset_dock: bool,
+) -> Option<([f32; 4], Option<[f32; 2]>)> {
+    let id = unsafe { oblikovati_gui_outer_dockspace(size[0], size[1], seed_asset_dock) };
     let mut span = [0.; 2];
     let [left, right] = &mut span;
     let has_bottom = unsafe { oblikovati_gui_outer_bottom_span(id, left, right) };

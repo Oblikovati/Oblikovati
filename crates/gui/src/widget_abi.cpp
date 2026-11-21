@@ -133,7 +133,7 @@ void oblikovati_gui_prepare_dock_hit_test(float x, float y) {
     }
 }
 
-std::uint32_t oblikovati_gui_outer_dockspace(float width, float height) {
+std::uint32_t oblikovati_gui_outer_dockspace(float width, float height, bool seed_asset_dock) {
     const ImGuiID id = ImGui::GetID("##outer-dockspace");
     if (!ImGui::DockBuilderGetNode(id)) {
         ImGui::DockBuilderAddNode(id, ImGuiDockNodeFlags_DockSpace);
@@ -143,6 +143,11 @@ std::uint32_t oblikovati_gui_outer_dockspace(float width, float height) {
         ImGui::DockBuilderDockWindow("Model", left);
         ImGui::DockBuilderDockWindow("Log", left);
         ImGui::DockBuilderDockWindow("Favorites", left);
+        if (seed_asset_dock) {
+            const ImGuiID right = ImGui::DockBuilderSplitNode(center, ImGuiDir_Right, 0.30f, nullptr, &center);
+            ImGui::DockBuilderDockWindow("Material Browser", right);
+            ImGui::DockBuilderDockWindow("Appearance Browser", right);
+        }
         ImGui::DockBuilderFinish(id);
     }
     return ImGui::DockSpace(id, ImVec2(width, height),

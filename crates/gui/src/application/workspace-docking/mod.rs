@@ -5,13 +5,14 @@ use imgui::{Condition, StyleVar, Ui, WindowFlags};
 pub(crate) mod persistence;
 
 /// Draw the nested panel docks and return the document viewport.
-/// Example: `draw(ui, outer, layout, display, band)` once per frame.
+/// Example: `draw(ui, outer, layout, display, band, false)` once per frame.
 pub(crate) fn draw(
     ui: &Ui,
     outer: WorkspaceArea,
     layout: &mut crate::application::workspace_layout::WorkspaceLayout,
     display: [f32; 2],
     band: f32,
+    seed_asset_dock: bool,
 ) -> WorkspaceArea {
     let size = [
         (outer.right - outer.left).max(1.),
@@ -27,7 +28,7 @@ pub(crate) fn draw(
         .position([outer.left, outer.top], Condition::Always)
         .size(size, Condition::Always)
         .flags(host_flags())
-        .build(|| draw_inner_workspace(ui, outer, size, layout, display, band))
+        .build(|| draw_inner_workspace(ui, outer, size, layout, display, band, seed_asset_dock))
         .unwrap_or(outer)
 }
 
@@ -38,8 +39,9 @@ fn draw_inner_workspace(
     layout: &mut crate::application::workspace_layout::WorkspaceLayout,
     display: [f32; 2],
     band: f32,
+    seed_asset_dock: bool,
 ) -> WorkspaceArea {
-    let (bounds, span) = crate::widget_abi::outer_dockspace(ui, size)
+    let (bounds, span) = crate::widget_abi::outer_dockspace(ui, size, seed_asset_dock)
         .and_then(|(bounds, span)| contained_center(outer, bounds).map(|area| (area, span)))
         .unwrap_or((outer, None));
     layout.set_outer_center(bounds, outer);

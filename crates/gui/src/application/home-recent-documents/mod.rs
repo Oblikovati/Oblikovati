@@ -51,6 +51,7 @@ enum SidePanel {
 #[derive(Default)]
 pub(crate) struct HomeWorkspace {
     pub active: bool,
+    observed_document: Option<bool>,
     /// The window in front was reached from Home, so closing it returns there.
     pub reached_from_home: bool,
     grid: bool,
@@ -86,6 +87,16 @@ pub(crate) struct HomeRequests {
     pub file_properties: Option<String>,
 }
 impl HomeWorkspace {
+    /// Follow entry and exit of the no-document workspace. On launch, `observe_document(None)` opens Home.
+    pub(crate) fn observe_document(&mut self, document: Option<u64>) -> bool {
+        let has_document = document.is_some();
+        let previous = self.observed_document.replace(has_document);
+        if previous != Some(has_document) {
+            self.active = !has_document;
+        }
+        previous.is_none() && self.active
+    }
+
     pub(crate) fn register_dockables(
         &self,
         registry: &mut crate::dockable_lifecycle::DockRegistry,
@@ -125,7 +136,7 @@ impl HomeWorkspace {
                     | imgui::WindowFlags::NO_BRING_TO_FRONT_ON_FOCUS,
             )
             .build(|| {
-                self.rail(ui);
+                self.rail(ui, state.document.is_none(), actions);
                 ui.same_line_with_pos(RAIL_WIDTH);
                 ui.group(|| self.recent_area(ui, state, actions));
                 self.open_options.panel(ui, actions);
@@ -133,9 +144,12 @@ impl HomeWorkspace {
             });
         self.side_panel_window(ui, area);
     }
-    fn rail(&mut self, ui: &Ui) {
+    fn rail(&mut self, ui: &Ui, no_document: bool, actions: &mut Vec<GuiShellAction>) {
         ui.group(|| {
             ui.text("Home");
+            if no_document && ui.button("New Part##home-new-part") {
+                actions.push(GuiShellAction::NewPart);
+            }
             self.requests.new_document |= ui.button("New");
             self.requests.open_document |= ui.button("Open");
         });
@@ -148,7 +162,9 @@ impl HomeWorkspace {
         let rows = self.shown_rows(state);
         self.checks.keep_only(&rows);
         self.selected_actions(ui, actions);
-        if rows.is_empty() {
+        if state.recent_documents.is_empty() {
+            ui.text_disabled("No recent documents");
+        } else if rows.is_empty() {
             self.no_results(ui);
         } else if self.grid {
             self.sort_controls(ui);
@@ -433,6 +449,20 @@ fn kind_of_extension(extension: Option<&str>) -> crate::GuiTemplateKind {
 #[cfg(test)]
 mod dock_tests {
     use super::*;
+    #[test]
+    fn home_follows_entry_and_exit_of_the_no_document_workspace() {
+        let mut home = HomeWorkspace::default();
+        assert!(home.observe_document(None));
+        assert!(home.active);
+        assert!(!home.observe_document(Some(1)));
+        assert!(!home.active);
+        home.active = true;
+        assert!(!home.observe_document(Some(1)));
+        assert!(home.active);
+        assert!(!home.observe_document(None));
+        assert!(home.active);
+    }
+
     #[test]
     fn leaving_home_closes_open_options_before_docking() {
         let mut home = HomeWorkspace::default();

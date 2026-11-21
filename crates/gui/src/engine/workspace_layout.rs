@@ -4,6 +4,20 @@ use super::{GuiFrameEngine, GuiFrameRequest, GuiInputEvent};
 use crate::application::workspace_docking::persistence::WorkspaceDockSettings;
 
 impl GuiFrameEngine {
+    /// Update the workspace and report whether it needs the fresh profile's asset dock.
+    /// Example: `let seed_asset_dock = engine.prepare_workspace_frame(&request.commands)`.
+    pub(super) fn prepare_workspace_frame(&mut self, commands: &crate::GuiCommandState) -> bool {
+        self.workspace.pending_layout = false;
+        self.workspace.part_context_open = self.part_context_open && commands.model_face_chosen;
+        let first_home = self.home.observe_document(commands.document);
+        let seed_asset_dock = first_home && !self.workspace_layout_restored;
+        if seed_asset_dock {
+            self.material_browser.open();
+            self.appearance_browser.open();
+        }
+        seed_asset_dock
+    }
+
     pub(super) fn sync_tool_visibility(&mut self) {
         self.workspace.tool_visibility = crate::application::workspace_layout::ToolVisibility {
             material: self.material_browser.is_open(),
@@ -22,6 +36,7 @@ impl GuiFrameEngine {
             self.context.load_ini_settings(&settings.imgui_ini);
         }
         self.restore_workspace_panels(&settings);
+        self.workspace_layout_restored = true;
         Ok(())
     }
 
@@ -89,6 +104,19 @@ pub(super) fn workspace_pointer(context: &imgui::Context, request: &GuiFrameRequ
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
+    #[test]
+    fn restored_settings_keep_assets_closed_on_the_first_home_frame() {
+        let mut engine = GuiFrameEngine::new().unwrap();
+        let settings = WorkspaceDockSettings::new(String::new()).encode().unwrap();
+        engine.load_workspace_layout(&settings).unwrap();
+        assert!(!engine.prepare_workspace_frame(&crate::GuiCommandState::default()));
+        assert!(engine.home.active);
+        assert!(!engine.material_browser.is_open());
+        assert!(!engine.appearance_browser.is_open());
+    }
+
     #[test]
     fn visibility_snapshot_tracks_each_tool_after_open_and_close() {
         let mut engine = crate::GuiFrameEngine::new().unwrap();

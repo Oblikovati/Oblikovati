@@ -33,7 +33,7 @@ fn manage_parameters_button_and_view_menu_share_visibility() {
 
 #[test]
 fn material_browser_docks_at_workspace_right_and_reduces_viewport() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let before = viewport(&mut world);
     let icon = super::super::quick_access_icons::standard_icon_center("Material Browser").unwrap();
@@ -141,7 +141,7 @@ fn floating_tool_docks_to_each_remaining_workspace_edge() {
 }
 
 fn check_workspace_edge(edge: &str) {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let before = viewport(&mut world);
     let icon = super::super::quick_access_icons::standard_icon_center("Material Browser").unwrap();
@@ -203,7 +203,7 @@ pub(in super::super) fn native_drag(world: &mut ApplicationWorld, start: [i32; 2
 
 #[test]
 fn tool_windows_join_as_tabs_in_a_workspace_dock() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let before = viewport(&mut world);
     open_toolbar_tool(&mut world, "Material Browser");
@@ -272,7 +272,7 @@ pub(in super::super) fn open_toolbar_tool(world: &mut ApplicationWorld, label: &
 
 #[test]
 fn docked_tool_can_float_and_return_to_its_workspace_edge() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let before = viewport(&mut world);
     open_toolbar_tool(&mut world, "Material Browser");
@@ -320,7 +320,7 @@ fn docked_tool_can_float_and_return_to_its_workspace_edge() {
 
 #[test]
 fn docked_tool_retains_its_node_when_documents_change() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let first = world.active_id();
     let initial = viewport(&mut world);

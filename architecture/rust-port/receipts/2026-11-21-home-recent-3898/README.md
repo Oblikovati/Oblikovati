@@ -11,12 +11,22 @@ next columns and that hovering shows the full location. The
 [list capture](home-recent-long-cells.png) shows readable dates. The
 [hover capture](home-recent-location-tooltip.png) shows the full folder.
 
-The [published startup case](startup-final.log.gz) reaches the Get Started
-ribbon and then fails because the New Part action is on that ribbon
-and Home is not open. The [startup capture](home-without-a-document.png)
-also shows the Model browser's empty state and no asset browsers in the
-right dock. The scenario folder's `BLOCKERS.md` records the difference
-between this fresh profile and the expected starting layout.
+The [original startup run](startup-final.log.gz) failed after reaching the
+Get Started ribbon. Its [capture](home-without-a-document.png) shows the
+blank document area and the Model browser's empty state.
+
+## Home on first launch
+
+The [published startup scenario](published-home-first-launch.json) passed
+all six steps and its cleanup hook. The [capture](home-first-launch.png)
+shows Home beside the Model browser and both asset tabs in the right dock.
+A [native X11 click on New Part](home-first-launch-new-part.log.gz) opened
+the Part workspace. A saved profile still controls which panels appear.
+
+The [floating Appearance Browser](published-appearance-docking.json)
+and [Material Browser from Quick Access](published-quick-access-material-browser.json)
+scenarios exercised docking, resizing, and reopening with explicit starting
+states. Both passed.
 
 ## Recent row actions
 

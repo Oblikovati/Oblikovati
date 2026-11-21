@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::HeadWindow;
+#[path = "workspace_profile.rs"]
+mod workspace_profile;
 #[derive(cucumber::World)]
 #[world(init = Self::new)]
 pub(super) struct ApplicationWorld {
@@ -77,7 +79,9 @@ impl fmt::Debug for ApplicationWorld {
 }
 impl ApplicationWorld {
     pub(super) fn new() -> Self {
-        let preferences = tempfile::tempdir().unwrap();
+        Self::open_profile(tempfile::tempdir().unwrap())
+    }
+    fn open_profile(preferences: tempfile::TempDir) -> Self {
         let mut native = NativeHeadWindow::open().unwrap();
         native.ribbon_settings_directory = Some(preferences.path().to_owned());
         let owner = native_owner_at(native.wake.clone(), preferences.path()).unwrap();
@@ -362,17 +366,6 @@ impl ApplicationWorld {
             app.owner.finish().unwrap();
             app.window.finish().unwrap();
         }
-    }
-    pub fn reopen_application(&mut self) {
-        self.close();
-        let mut native = NativeHeadWindow::open().unwrap();
-        native.ribbon_settings_directory = Some(self._preferences.path().to_owned());
-        let owner = native_owner_at(native.wake.clone(), self._preferences.path()).unwrap();
-        self.app = Some(NativeApplication {
-            window: scripted_window(native),
-            owner,
-        });
-        self.pump(Vec::new());
     }
     pub fn preferences_directory(&self) -> &std::path::Path {
         self._preferences.path()

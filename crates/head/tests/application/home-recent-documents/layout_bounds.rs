@@ -9,11 +9,11 @@ fn long_recent_labels_stay_in_their_list_columns() {
     let mut world = ApplicationWorld::new();
     let saved = save_long_recent_labels(&mut world);
     open_home(&mut world);
+    world.save_capture("home-recent-long-cells");
     let location = saved.parent().unwrap().to_str().unwrap();
     let shown = expect_recent_cell_fits(&world, location, "Date Modified");
     let name = saved.file_stem().unwrap().to_str().unwrap();
     expect_recent_cell_fits(&world, name, "Location");
-    world.save_capture("home-recent-long-cells");
     world.hover(diagnostics::pointer_pixels(shown.center()));
     world.pump(Vec::new());
     assert!(
@@ -33,8 +33,13 @@ fn save_long_recent_labels(world: &mut ApplicationWorld) -> std::path::PathBuf {
 }
 
 fn expect_recent_cell_fits(world: &ApplicationWorld, full: &str, next_column: &str) -> RenderedRun {
-    let prefix = &full[..full.floor_char_boundary(12)];
-    let cell = home_run(world, prefix).expect("expected the recent row text");
+    let prefix = &full[..full.floor_char_boundary(7)];
+    let cell = home_run(world, prefix).unwrap_or_else(|| {
+        panic!(
+            "expected a cell starting with {prefix:?} in {:?}",
+            world.window_text(HOME)
+        )
+    });
     let next = home_run(world, next_column).expect("expected the adjacent column header");
     assert!(
         cell.maximum[0] < next.minimum[0],

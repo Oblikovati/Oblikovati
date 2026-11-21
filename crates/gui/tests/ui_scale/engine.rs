@@ -126,6 +126,9 @@ fn narrow_two_hundred_percent_content_keeps_pointer_access_to_the_view_centre() 
     let mut request = scale_request(2., 1.);
     request.extent = [640, 900];
     settle(&mut owner, &mut request);
+    request.commands.document = Some(1);
+    request.commands.authoring = crate::GuiAuthoringContext::Part;
+    settle(&mut owner, &mut request);
     request.events = vec![GuiInputEvent::PointerMoved([320., 700.])];
     assert!(!owner.frame(&request).unwrap().capture.pointer);
 }

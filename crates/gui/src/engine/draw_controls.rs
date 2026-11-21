@@ -11,7 +11,7 @@ impl GuiFrameEngine {
     ) -> Result<GuiFrameOutput, String> {
         self.parameter_editor
             .synchronize_document(request.commands.document)?;
-        self.workspace.pending_layout = false;
+        let seed_asset_dock = self.prepare_workspace_frame(&request.commands);
         let keys = prepare_frame_inputs(
             &mut self.context,
             request,
@@ -36,8 +36,6 @@ impl GuiFrameEngine {
         crate::application::workspace_layout::browser_feature::draw_feature_edges(ui, request);
         self.workspace.draw_selected_origin(ui, request);
         self.document_files.home_in_front = self.home.active;
-        self.workspace.part_context_open =
-            self.part_context_open && request.commands.model_face_chosen;
         let band_height = crate::chrome::ribbon_band(
             ui,
             request,
@@ -114,6 +112,7 @@ impl GuiFrameEngine {
             &mut self.workspace,
             logical,
             band_height,
+            seed_asset_dock,
         );
         let dimension_positions =
             crate::dimension_labels::dimension_label_layout(ui, request, area);

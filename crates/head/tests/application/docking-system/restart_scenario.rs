@@ -45,7 +45,7 @@ fn restart_application(world: &mut ApplicationWorld) {
     world.close();
     run_desktop_restart_check();
     world.reopen_application();
-    super::open_docking_fixture(world);
+    super::open_docking_part(world);
     world.pump(Vec::new());
 }
 

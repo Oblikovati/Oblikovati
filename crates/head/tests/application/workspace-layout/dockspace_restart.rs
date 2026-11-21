@@ -5,7 +5,7 @@ use super::*;
 
 #[test]
 fn docked_tool_tabs_and_bounds_survive_a_native_restart() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let initial = viewport(&mut world);
     open_toolbar_tool(&mut world, "Material Browser");
@@ -85,7 +85,7 @@ fn docked_tool_tabs_and_bounds_survive_a_native_restart() {
 
 #[test]
 fn floating_tool_position_and_size_survive_a_native_restart() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     world.add_part();
     open_toolbar_tool(&mut world, "Material Browser");
     let (position, size) = window_geometry("Material Browser").unwrap();
@@ -149,7 +149,7 @@ fn previous_inner_dock_settings_restore_after_reparenting() {
 
 #[test]
 fn browser_closed_from_its_contents_returns_to_shared_dock() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let initial = viewport(&mut world);
     open_toolbar_tool(&mut world, "Appearance Browser");
@@ -247,7 +247,7 @@ pub(super) fn native_click_label(world: &mut ApplicationWorld, label: &str) {
 
 #[test]
 fn parameters_done_selects_next_tab_and_reopens_in_same_dock() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let area = viewport(&mut world);
     open_toolbar_tool(&mut world, "Material Browser");
@@ -301,7 +301,7 @@ fn parameters_done_selects_next_tab_and_reopens_in_same_dock() {
 
 #[test]
 fn customize_close_selects_next_tab_and_reopens_in_same_dock() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let area = viewport(&mut world);
     open_toolbar_tool(&mut world, "Material Browser");
@@ -360,7 +360,7 @@ fn native_open_customize(world: &mut ApplicationWorld) {
 
 #[test]
 fn customize_async_ok_selects_next_tab_and_reopens_in_same_dock() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let area = viewport(&mut world);
     open_toolbar_tool(&mut world, "Material Browser");
@@ -431,7 +431,7 @@ fn customize_async_ok_selects_next_tab_and_reopens_in_same_dock() {
 
 #[test]
 fn application_options_escape_selects_next_tab_and_reopens_in_same_dock() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let area = viewport(&mut world);
     open_toolbar_tool(&mut world, "Material Browser");

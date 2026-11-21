@@ -4,7 +4,7 @@ use super::*;
 
 #[test]
 fn appearance_browser_opens_its_own_window_and_assigns_an_appearance() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     part_active(&mut world);
     world.click(row_center(&world, "MaterialBrowser"));
     world.click(row_center(&world, "AppearanceBrowser"));
@@ -78,6 +78,19 @@ fn browser_command_visible(world: &mut ApplicationWorld) {
     assert_eq!(icon.alpha, 255, "expected an enabled Material Browser icon");
 }
 #[given("the Material Browser window is closed")]
+fn prepare_closed_browser(world: &mut ApplicationWorld) {
+    use super::super::diagnostics::{pointer_pixels, window_dock_tab_bounds};
+    use super::super::workspace_layout::dockspace_native::{native_drag, viewport};
+    if let Some((min, max)) = window_dock_tab_bounds("Material Browser") {
+        let start = pointer_pixels(std::array::from_fn(|axis| (min[axis] + max[axis]) * 0.5));
+        let area = viewport(world);
+        let target = std::array::from_fn(|axis| ((area[axis] + area[axis + 2]) / 2) as i32);
+        native_drag(world, start, target);
+    }
+    close_browser(world);
+    world.pump(Vec::new());
+    browser_closed(world);
+}
 #[then("the browser window closes")]
 fn browser_closed(_world: &mut ApplicationWorld) {
     assert!(window_geometry("Material Browser").is_none());
@@ -88,8 +101,11 @@ fn open_browser(world: &mut ApplicationWorld) {
 }
 #[then("the Material Browser window opens over the part workspace")]
 fn browser_open(world: &mut ApplicationWorld) {
-    assert!(window_geometry("Material Browser").is_some());
-    world.run_in_window("Material Browser", "Materials");
+    assert_eq!(
+        super::super::diagnostics::window_dock_id("Material Browser"),
+        Some(0)
+    );
+    world.run_in_window("Material Browser", "Material");
     world.run_in_window("Material Browser", "Assigntopart");
 }
 #[when("the user closes the Material Browser window")]
@@ -104,7 +120,7 @@ fn tools_and_part(world: &mut ApplicationWorld) {
 }
 #[test]
 fn material_browser_assigns_and_undoes_a_catalog_material() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     part_active(&mut world);
     tools_selected(&mut world);
     open_browser(&mut world);
