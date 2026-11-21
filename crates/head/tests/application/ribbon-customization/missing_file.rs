@@ -24,8 +24,22 @@ fn missing_warning(world: &mut ApplicationWorld) {
 }
 #[when("the user acknowledges the warning")]
 fn acknowledge_warning(world: &mut ApplicationWorld) {
-    let center = world.run_in_window("File Not Found", "OK").center();
-    world.click(diagnostics::pointer_pixels(center));
+    let active: Vec<_> = ["File Not Found", "Text Width"]
+        .into_iter()
+        .filter(|title| diagnostics::window_geometry(title).is_some())
+        .collect();
+    let [warning] = active.as_slice() else {
+        panic!("warning windows {active:?}: expected one active warning");
+    };
+    let center = world.run_in_window(warning, "OK").center();
+    let at = diagnostics::pointer_pixels(center);
+    #[cfg(target_os = "linux")]
+    if *warning == "Text Width" {
+        super::super::x11_input::click(at);
+        world.pump(Vec::new());
+        return;
+    }
+    world.click(at);
     world.pump(Vec::new());
 }
 #[then("the import file picker remains open with the filename selected")]

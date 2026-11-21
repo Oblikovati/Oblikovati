@@ -95,6 +95,7 @@ fn new_text(
         v_align: TextVerticalAlign(request.v_justify.into()),
         formatting_runs: request.formatting_runs,
         line_spacing: request.line_spacing,
+        stacked_fractions: request.stacked_fractions,
         ..Default::default()
     };
     style.height = centimetres(snapshot, &request.height)?;
@@ -116,9 +117,13 @@ fn apply_fields(
     if let Some(text) = request.text {
         style.content = *text;
         style.formatting_runs = None;
+        style.stacked_fractions = None;
     }
     if let Some(runs) = request.formatting_runs {
         style.formatting_runs = *runs;
+    }
+    if let Some(fractions) = request.stacked_fractions {
+        style.stacked_fractions = *fractions;
     }
     if let Some(spacing) = request.line_spacing {
         style.line_spacing = Some(spacing);

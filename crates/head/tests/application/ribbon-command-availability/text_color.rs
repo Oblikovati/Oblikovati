@@ -36,7 +36,7 @@ fn native_text_palette_blue_reaches_preview_and_committed_glyphs() {
     world.close();
 }
 
-fn select_blue(world: &mut ApplicationWorld) {
+pub(super) fn select_blue(world: &mut ApplicationWorld) {
     focus_content(world);
     x11_input::press_control_a();
     world.pump(Vec::new());

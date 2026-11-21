@@ -143,3 +143,60 @@ fn check_rejected_range(files: &mut DiscoveryWorkspace, source: &mut QueryGuids,
 fn spacing(mode: TextLineSpacingMode, value: f64) -> Option<Box<SketchTextLineSpacing>> {
     Some(Box::new(SketchTextLineSpacing { mode, value }))
 }
+
+#[test]
+fn typed_fraction_is_preserved_cleared_and_restored_with_the_original_text() {
+    use oblikovati_api::types::SketchTextFraction;
+    let (mut files, document, mut source) = configured_files(DOCUMENT_PART, Default::default());
+    let entity = add_multiline(&mut files, &mut source);
+    let range = SketchTextFraction { start: 1, end: 4 };
+    let stacked = edit_fraction(
+        &mut files,
+        &mut source,
+        EditTextArgs {
+            entity_id: entity,
+            text: Some(Box::new("⌀1/2".into())),
+            stacked_fractions: Some(Box::new(Some(vec![range]))),
+            ..Default::default()
+        },
+    );
+    let taller = edit_fraction(
+        &mut files,
+        &mut source,
+        EditTextArgs {
+            entity_id: entity,
+            height: "6 mm".into(),
+            ..Default::default()
+        },
+    );
+    assert_eq!(
+        taller.style.stacked_fractions,
+        stacked.style.stacked_fractions
+    );
+    let cleared = edit_fraction(
+        &mut files,
+        &mut source,
+        EditTextArgs {
+            entity_id: entity,
+            stacked_fractions: Some(Box::new(Some(Vec::new()))),
+            ..Default::default()
+        },
+    );
+    assert_eq!(cleared.style.content, "⌀1/2");
+    assert!(cleared.style.stacked_fractions.is_none());
+    files.commands(document).unwrap().undo().unwrap();
+    assert_eq!(read_text(&files, entity), taller);
+    let _document = reopen_with_observer(&mut files, document, &mut source, Default::default());
+    assert_eq!(read_text(&files, entity), taller);
+}
+
+fn edit_fraction(
+    files: &mut DiscoveryWorkspace,
+    source: &mut QueryGuids,
+    request: EditTextArgs,
+) -> SketchTextResult {
+    Client::new(FileHost::new(files, source, "test"))
+        .sketch()
+        .edit_text(&request)
+        .unwrap()
+}

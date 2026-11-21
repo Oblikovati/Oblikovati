@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_api::types::{
-    Color, OVERRIDE_COLOR_SOURCE, SketchTextLineSpacing, SketchTextRun, SketchTextStyle,
-    TEXT_ALIGN_CENTER, TEXT_ALIGN_UPPER, TEXT_LINE_SPACING_DOUBLE, TEXT_LINE_SPACING_EXACTLY,
+    Color, OVERRIDE_COLOR_SOURCE, SketchTextFraction, SketchTextLineSpacing, SketchTextRun,
+    SketchTextStyle, TEXT_ALIGN_CENTER, TEXT_ALIGN_UPPER, TEXT_LINE_SPACING_DOUBLE,
+    TEXT_LINE_SPACING_EXACTLY,
 };
 use oblikovati_model::sketch::{SKETCH_RECIPE_VERSION, SketchText2D};
 
@@ -54,11 +55,25 @@ fn check_text_round_trip(
     formatting: Option<Vec<SketchTextRun>>,
     spacing: Option<SketchTextLineSpacing>,
 ) {
+    check_style_round_trip(|style| {
+        style.formatting_runs = formatting;
+        style.line_spacing = spacing.map(Box::new);
+    });
+}
+
+#[test]
+fn native_yaml_preserves_fraction_source_ranges_and_anchor() {
+    check_style_round_trip(|style| {
+        style.content = "⌀1/2".into();
+        style.stacked_fractions = Some(vec![SketchTextFraction { start: 1, end: 4 }]);
+    });
+}
+
+fn check_style_round_trip(change: impl FnOnce(&mut SketchTextStyle)) {
     let mut owner = sketches();
     let mut geometry = geometry();
     let mut text = add_text(&mut geometry);
-    text.style.formatting_runs = formatting;
-    text.style.line_spacing = spacing.map(Box::new);
+    change(&mut text.style);
     geometry.set_text_style(TEXT, text.style.clone()).unwrap();
     geometry.add_point(SketchEntityId(12), [1., 2.]).unwrap();
     owner.replace_geometry(PLACED, geometry).unwrap();
@@ -90,6 +105,7 @@ fn add_text(geometry: &mut Sketch2D) -> SketchText2D {
             v_align: TEXT_ALIGN_UPPER,
             formatting_runs: None,
             line_spacing: None,
+            stacked_fractions: None,
         },
     };
     geometry.add_text(text.clone()).unwrap();

@@ -14,7 +14,7 @@ fn start_text_without_a_preset(world: &mut ApplicationWorld) {
 }
 
 #[when("the user opens the preset list")]
-fn open_preset_list(world: &mut ApplicationWorld) {
+pub(super) fn open_preset_list(world: &mut ApplicationWorld) {
     click_in_text_editor(world, "No Preset");
 }
 
@@ -51,7 +51,7 @@ fn open_preset_name(world: &mut ApplicationWorld) {
     );
 }
 
-fn click_in_text_editor(world: &mut ApplicationWorld, label: &str) {
+pub(super) fn click_in_text_editor(world: &mut ApplicationWorld, label: &str) {
     let name = label.split_whitespace().collect::<String>();
     let center = world.run_in_window("Format Text", &name).center();
     click_preset_ui(world, center);
@@ -71,7 +71,7 @@ fn name_was_discarded(world: &mut ApplicationWorld) {
 }
 
 #[when("the user opens preset settings")]
-fn open_preset_settings(world: &mut ApplicationWorld) {
+pub(super) fn open_preset_settings(world: &mut ApplicationWorld) {
     click_in_text_editor(world, "Preset settings");
 }
 
@@ -129,7 +129,7 @@ fn rename_current_preset(world: &mut ApplicationWorld) {
     replace_preset_name(world, b'g');
 }
 
-fn replace_preset_name(world: &mut ApplicationWorld, replacement: u8) {
+pub(super) fn replace_preset_name(world: &mut ApplicationWorld, replacement: u8) {
     world.expect_text("Preset name");
     x11_input::press_control_a();
     world.pump(Vec::new());
@@ -138,7 +138,7 @@ fn replace_preset_name(world: &mut ApplicationWorld, replacement: u8) {
 }
 
 #[when("the user confirms the name")]
-fn confirm_preset_name(world: &mut ApplicationWorld) {
+pub(super) fn confirm_preset_name(world: &mut ApplicationWorld) {
     x11_input::press_keysym(0xff0d);
     world.pump(Vec::new());
     world.expect_no_text("Preset name");
@@ -180,7 +180,7 @@ fn expect_preset_caption(world: &mut ApplicationWorld, label: &str) {
     assert_eq!(world.state().sketch_text.unwrap().content, "c");
 }
 
-fn choose_preset_action(world: &mut ApplicationWorld, label: &str) {
+pub(super) fn choose_preset_action(world: &mut ApplicationWorld, label: &str) {
     let center = world.run(label).center();
     click_preset_ui(world, center);
 }

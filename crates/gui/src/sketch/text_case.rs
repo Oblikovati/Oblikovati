@@ -19,6 +19,12 @@ pub(super) fn uppercase_selection(
     if let Some(runs) = &mut draft.formatting.runs {
         remap_runs(runs, scalar_start, &boundaries)?;
     }
+    if let Some(fractions) = &mut draft.formatting.stacked_fractions {
+        for fraction in fractions {
+            fraction.start = expanded_position(fraction.start, scalar_start, &boundaries)?;
+            fraction.end = expanded_position(fraction.end, scalar_start, &boundaries)?;
+        }
+    }
     draft.content.replace_range(selection, &replacement);
     Some(start..start + replacement.len())
 }

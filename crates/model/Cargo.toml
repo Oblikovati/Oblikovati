@@ -15,7 +15,7 @@ workspace = true
 maryada = "=0.2.0"
 oblikovati-solve = { path = "../solve" }
 getrandom = "=0.4.3"
-oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "f489eb15d33bb4fea751bf230a92a65ccafd9dec", version = "=0.162.0" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "c051de97568c0345921f0f900982da31eb9ddca4", version = "=0.163.0" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = { version = "1", features = ["float_roundtrip"] }
 sha2 = "=0.10.9"

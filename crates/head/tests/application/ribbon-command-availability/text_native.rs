@@ -19,6 +19,10 @@ mod text_edit;
 mod text_font_height;
 #[path = "text_format_choices.rs"]
 mod text_format_choices;
+#[path = "text_fraction.rs"]
+mod text_fraction;
+#[path = "text_fraction_preset.rs"]
+mod text_fraction_preset;
 #[path = "text_italic.rs"]
 mod text_italic;
 #[path = "text_line_spacing.rs"]

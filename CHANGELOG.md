@@ -10,6 +10,8 @@
 
 - Added Bold preview and editing for a full Sketch Text selection. (#3907)
 
+- Added stacked fractions to Format Text and preserved them in native sketches and named presets. (#3907)
+
 - Added five line-spacing modes to Format Text and retained the selected spacing in native sketch files. (#3907)
 
 - Added typed Sketch Text creation, editing, and queries for automation. (#3907)

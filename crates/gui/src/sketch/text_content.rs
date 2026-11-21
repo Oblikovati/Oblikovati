@@ -13,6 +13,8 @@ mod numbering;
 mod text_case;
 #[path = "text_color.rs"]
 mod text_color;
+#[path = "text_fraction.rs"]
+mod text_fraction;
 use numbering::NumberingStyle;
 
 const CONTENT_PICKER_WIDTH: f32 = 130.;
@@ -53,18 +55,29 @@ impl TextContentEditor {
                 .clone()
                 .is_some_and(|range| selection_has(runs, range, flag))
         });
-        let before = (!runs.is_empty()).then(|| draft.content.clone());
+        let before = (!runs.is_empty() || draft.formatting.stacked_fractions.is_some())
+            .then(|| draft.content.clone());
         let changed = self.input(ui, &mut draft.content, row_factor, face)
             | self.controls(ui, &mut draft.content);
         if let Some(before) = before.filter(|text| text != &draft.content) {
             let retained = character_ranges::retain_unchanged_runs(runs, &before, &draft.content);
             draft.formatting.runs = (!retained.is_empty()).then_some(retained);
+            text_fraction::retain_unchanged(draft, &before);
         }
         changed
             | self.face_control(ui, draft, TextFaceFlag::Bold)
             | self.face_control(ui, draft, TextFaceFlag::Italic)
             | self.case_control(ui, draft)
             | text_color::draw(ui, draft, &self.selection, &mut self.color_dialog)
+            | self.fraction_control(ui, draft)
+    }
+
+    fn fraction_control(&mut self, ui: &Ui, draft: &mut GuiSketchTextDraft) -> bool {
+        if !text_fraction::draw(ui, draft, &self.selection) {
+            return false;
+        }
+        self.restore = Some(self.selection.clone());
+        true
     }
 
     fn case_control(&mut self, ui: &Ui, draft: &mut GuiSketchTextDraft) -> bool {

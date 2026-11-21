@@ -6,7 +6,7 @@ use crate::{
 };
 use imgui::{Key, Ui};
 use oblikovati_api::types::{
-    SketchTextLineSpacing, SketchTextRun, TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT,
+    SketchTextFraction, SketchTextLineSpacing, SketchTextRun, TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT,
     TextHorizontalAlign, TextVerticalAlign,
 };
 use std::cell::{Cell, RefCell};
@@ -42,6 +42,7 @@ pub struct GuiSketchTextDraft {
 pub struct GuiSketchTextFormatting {
     pub line_spacing: Option<Box<SketchTextLineSpacing>>,
     pub runs: Option<Vec<SketchTextRun>>,
+    pub stacked_fractions: Option<Vec<SketchTextFraction>>,
 }
 
 impl Default for GuiSketchTextDraft {

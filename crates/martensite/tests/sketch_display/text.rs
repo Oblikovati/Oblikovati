@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_api::types::{
-    SketchTextLineSpacing, SketchTextRun, SketchTextStyle, TEXT_ALIGN_UPPER,
+    SketchTextFraction, SketchTextLineSpacing, SketchTextRun, SketchTextStyle, TEXT_ALIGN_UPPER,
     TEXT_LINE_SPACING_DOUBLE, TEXT_LINE_SPACING_EXACTLY,
 };
 use oblikovati_martensite::planar_curve::sketch::{pick_sketch_text, sample_sketch_text};
@@ -181,4 +181,80 @@ fn authored_text(style: SketchTextStyle, anchor: [f64; 2]) -> Sketch2D {
         })
         .unwrap();
     sketch
+}
+
+#[test]
+fn native_fraction_outlines_include_a_separator_between_the_two_terms() {
+    let metrics = SketchSamplingOptionsV1 {
+        working_scale: 0.1,
+        ..options()
+    };
+    let mut style = SketchTextStyle {
+        content: "1/2".into(),
+        family: "DejaVu Sans".into(),
+        height: 0.8,
+        ..Default::default()
+    };
+    let inline = sample_sketch_text(&style, [0.; 2], metrics).unwrap();
+    style.stacked_fractions = Some(vec![SketchTextFraction { start: 0, end: 3 }]);
+    let fraction = sample_sketch_text(&style, [0.; 2], metrics).unwrap();
+    let height = |paths: &[Vec<[f64; 2]>]| outline_height(paths);
+    assert!(height(&fraction) > height(&inline));
+    let [a, b] = widest_horizontal_edge(&fraction).unwrap();
+    assert!(fraction.iter().flatten().any(|point| point[1] < a[1]));
+    assert!(fraction.iter().flatten().any(|point| point[1] > a[1]));
+    let sketch = authored_text(style, [0.; 2]);
+    let report = sample_sketch_display(&sketch, metrics).unwrap();
+    assert!(report.declines.is_empty());
+    assert_eq!(
+        report.entities[0].primitive,
+        SketchDisplayPrimitive::GlyphEdges(fraction)
+    );
+    let center = [a[0].midpoint(b[0]), a[1]];
+    let hit = pick_sketch_text(
+        &sketch.texts()[0].style,
+        [0.; 2],
+        metrics.working_scale,
+        center,
+    )
+    .unwrap()
+    .unwrap();
+    assert!((hit[0] - center[0]).hypot(hit[1] - center[1]) < 1e-6);
+}
+
+fn widest_horizontal_edge(paths: &[Vec<[f64; 2]>]) -> Option<[[f64; 2]; 2]> {
+    paths
+        .iter()
+        .filter_map(|path| {
+            let (&first, &last) = (path.first()?, path.last()?);
+            (first[1] == last[1]).then_some([first, last])
+        })
+        .max_by(|[a, b], [c, d]| (a[0] - b[0]).abs().total_cmp(&(c[0] - d[0]).abs()))
+}
+
+#[test]
+fn stacked_fraction_width_scales_the_separator_without_moving_the_rows() {
+    let mut style = SketchTextStyle {
+        content: "1/2".into(),
+        family: "DejaVu Sans".into(),
+        height: 0.8,
+        stacked_fractions: Some(vec![SketchTextFraction { start: 0, end: 3 }]),
+        ..Default::default()
+    };
+    let metrics = SketchSamplingOptionsV1 {
+        working_scale: 0.1,
+        ..options()
+    };
+    let regular = sample_sketch_text(&style, [0.; 2], metrics).unwrap();
+    style.formatting_runs = Some(vec![SketchTextRun {
+        start: 0,
+        end: 3,
+        width_percent: Some(Box::new(50.)),
+        ..Default::default()
+    }]);
+    let narrow = sample_sketch_text(&style, [0.; 2], metrics).unwrap();
+    let [a, b] = widest_horizontal_edge(&regular).unwrap();
+    let [c, d] = widest_horizontal_edge(&narrow).unwrap();
+    assert!(((a[0] - b[0]).abs() * 0.5 - (c[0] - d[0]).abs()).abs() < 1e-6);
+    assert!((outline_height(&regular) - outline_height(&narrow)).abs() < 1e-6);
 }

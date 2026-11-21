@@ -230,26 +230,26 @@ fn prepare_narrow_text(world: &mut ApplicationWorld) {
     assert_eq!(run.width_percent.as_deref(), Some(&50.));
 }
 
-fn focus_text_number(world: &mut ApplicationWorld, name: &str) {
+pub(super) fn focus_text_number(world: &mut ApplicationWorld, name: &str) {
     let label = world.run_in_window("Format Text", name);
     let position = [label.minimum[0] - 70., label.center()[1]];
     x11_input::click(diagnostics::pointer_pixels(position));
     world.pump(Vec::new());
 }
 
-fn enter_text_number(world: &mut ApplicationWorld, digits: &[u8]) {
+pub(super) fn enter_text_number(world: &mut ApplicationWorld, digits: &[u8]) {
     type_digits(world, digits);
     tab_out_of_number(world);
 }
 
-fn type_digits(world: &mut ApplicationWorld, digits: &[u8]) {
+pub(super) fn type_digits(world: &mut ApplicationWorld, digits: &[u8]) {
     for digit in digits {
         x11_input::press_keysym(u32::from(*digit));
         world.pump(Vec::new());
     }
 }
 
-fn tab_out_of_number(world: &mut ApplicationWorld) {
+pub(super) fn tab_out_of_number(world: &mut ApplicationWorld) {
     x11_input::press_keysym(0xff09);
     world.pump(Vec::new());
 }

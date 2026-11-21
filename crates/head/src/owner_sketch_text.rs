@@ -345,6 +345,7 @@ fn text_style(fields: &GuiSketchTextDraft) -> Result<SketchTextStyle, String> {
         v_align: fields.v_align.clone(),
         line_spacing: fields.formatting.line_spacing.clone(),
         formatting_runs: fields.formatting.runs.clone(),
+        stacked_fractions: fields.formatting.stacked_fractions.clone(),
         ..Default::default()
     })
 }
@@ -389,6 +390,7 @@ impl TextPlacementDraft {
         style.v_align = draft.v_align;
         style.line_spacing = draft.line_spacing;
         style.formatting_runs = draft.formatting_runs;
+        style.stacked_fractions = draft.stacked_fractions;
         if self.fields.height_mm != initial.height_mm {
             style.height = draft.height;
         }
@@ -399,11 +401,21 @@ impl TextPlacementDraft {
     }
 }
 
+fn text_height_field(height_cm: f64) -> String {
+    let mut value = (height_cm * 10.).to_string();
+    match value.split_once('.').map_or(0, |(_, digits)| digits.len()) {
+        0 => value.push_str(".00"),
+        1 => value.push('0'),
+        _ => {}
+    }
+    value
+}
+
 fn fields_from_style(style: &SketchTextStyle) -> GuiSketchTextDraft {
     GuiSketchTextDraft {
         content: style.content.clone(),
         family: style.family.clone(),
-        height_mm: (style.height * 10.).to_string(),
+        height_mm: text_height_field(style.height),
         rotation_degrees: style.rotation.to_degrees().to_string(),
         h_align: if style.h_align.0.is_empty() {
             TEXT_ALIGN_LEFT
@@ -418,6 +430,7 @@ fn fields_from_style(style: &SketchTextStyle) -> GuiSketchTextDraft {
         formatting: Box::new(GuiSketchTextFormatting {
             line_spacing: style.line_spacing.clone(),
             runs: style.formatting_runs.clone(),
+            stacked_fractions: style.stacked_fractions.clone(),
         }),
     }
 }
@@ -468,4 +481,16 @@ fn text_hit_distance(
     let projected = window.sketch_pixel(plane, point)?;
     let distance = super::sketch_picking::screen_distance(projected, pixel);
     Ok((distance <= 6.).then_some(distance))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::text_height_field;
+
+    #[test]
+    fn reopened_text_height_shows_two_decimals_without_rounding_custom_sizes() {
+        assert_eq!(text_height_field(0.61), "6.10");
+        assert_eq!(text_height_field(0.6), "6.00");
+        assert_eq!(text_height_field(0.0125), "0.125");
+    }
 }

@@ -168,7 +168,7 @@ fn replacement_style<'a>(runs: &'a [SketchTextRun], old: &Range<u32>) -> Option<
         .find(|run| run.start < old.start && run.end >= old.start)
 }
 
-fn replacement_bounds(before: &str, after: &str) -> Option<(Range<u32>, Range<u32>)> {
+pub(super) fn replacement_bounds(before: &str, after: &str) -> Option<(Range<u32>, Range<u32>)> {
     let old_len = u32::try_from(before.chars().count()).ok()?;
     let new_len = u32::try_from(after.chars().count()).ok()?;
     let shared = old_len.min(new_len);

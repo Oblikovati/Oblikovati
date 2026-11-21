@@ -364,6 +364,11 @@ impl ApplicationWorld {
     /// Selected text sits on a highlight: the most common colour behind it differs from the field.
     pub fn text_is_selected(&mut self, text: &str) -> bool {
         let run = self.run(text).clone();
+        self.text_run_is_selected(&run)
+    }
+
+    /// Check a particular run when more than one field has the same value.
+    pub fn text_run_is_selected(&mut self, run: &diagnostics::RenderedRun) -> bool {
         let y = run.center()[1] as usize;
         let field = self.pixel_at([run.minimum[0] as usize - 3, y]);
         let mut counts = std::collections::BTreeMap::new();

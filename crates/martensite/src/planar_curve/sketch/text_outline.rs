@@ -16,8 +16,9 @@ use martensite_tkservice::{
 use martensite_tktopalgo::brep_bnd_lib::BRepBndLib;
 use martensite_tkv3d::std_prs::{StdPrsBRepFont, StdPrsBRepFontTextOptions};
 use oblikovati_api::types::{
-    SketchTextLineSpacing, SketchTextStyle, TEXT_LINE_SPACING_DOUBLE, TEXT_LINE_SPACING_EXACTLY,
-    TEXT_LINE_SPACING_MULTIPLE, TEXT_LINE_SPACING_ONE_AND_HALF, TEXT_LINE_SPACING_SINGLE,
+    SketchTextFraction, SketchTextLineSpacing, SketchTextStyle, TEXT_LINE_SPACING_DOUBLE,
+    TEXT_LINE_SPACING_EXACTLY, TEXT_LINE_SPACING_MULTIPLE, TEXT_LINE_SPACING_ONE_AND_HALF,
+    TEXT_LINE_SPACING_SINGLE,
 };
 use oblikovati_model::sketch::{sketch_text_width_factor, uniform_sketch_text_width};
 
@@ -25,6 +26,8 @@ use oblikovati_model::sketch::{sketch_text_width_factor, uniform_sketch_text_wid
 mod text_baselines;
 #[path = "text_font_aspect.rs"]
 mod text_font_aspect;
+#[path = "text_fraction_geometry.rs"]
+mod text_fraction_geometry;
 
 /// Derive independent glyph edge paths for preview or committed display.
 /// Example: `sample_sketch_text(&style, anchor, options)?`.
@@ -71,6 +74,24 @@ fn working_em(style: &SketchTextStyle, anchor: [f64; 2], scale: f64) -> Result<f
 }
 
 fn glyph_shape(style: &SketchTextStyle, size: f64, scale: f64) -> Result<topods::Shape, String> {
+    let width = glyph_width_factor(style)?;
+    let font = sketch_font(style, size, width)?;
+    let options = StdPrsBRepFontTextOptions {
+        horizontal_alignment: horizontal_alignment(&style.h_align.0)?,
+        vertical_alignment: AlignY::Topfirstline,
+        ..Default::default()
+    };
+    let shape = render_glyphs(&font, &options, style, scale, width)?;
+    if shape.is_null() {
+        return Err(format!(
+            "sketch text in font {:?}: expected renderable glyph outlines",
+            style.family
+        ));
+    }
+    Ok(shape)
+}
+
+fn sketch_font(style: &SketchTextStyle, size: f64, width: f32) -> Result<StdPrsBRepFont, String> {
     let (family, search) = if style.family.is_empty() {
         ("sans-serif", FontStrictLevel::Any)
     } else {
@@ -87,34 +108,21 @@ fn glyph_shape(style: &SketchTextStyle, size: f64, scale: f64) -> Result<topods:
             "sketch text font {family:?}: expected an available font family"
         ));
     }
-    configure_glyph_width(&font, style)?;
-    let options = StdPrsBRepFontTextOptions {
-        horizontal_alignment: horizontal_alignment(&style.h_align.0)?,
-        vertical_alignment: AlignY::Topfirstline,
-        ..Default::default()
-    };
-    let shape = render_glyphs(&font, &options, style, scale)?;
-    if shape.is_null() {
+    if !font.set_width_scaling(width) {
         return Err(format!(
-            "sketch text in font {family:?}: expected renderable glyph outlines"
+            "sketch text width {width:?}: native font declined this scale"
         ));
     }
-    Ok(shape)
+    Ok(font)
 }
 
-fn configure_glyph_width(font: &StdPrsBRepFont, style: &SketchTextStyle) -> Result<(), String> {
+fn glyph_width_factor(style: &SketchTextStyle) -> Result<f32, String> {
     let runs = style.formatting_runs.as_deref().unwrap_or_default();
     let percent = uniform_sketch_text_width(&style.content, runs)
         .ok_or("sketch text width: expected one width until mixed glyph layout is available (Martensite #576)")?;
-    let factor = sketch_text_width_factor(percent).ok_or_else(|| {
+    sketch_text_width_factor(percent).ok_or_else(|| {
         format!("sketch text width {percent:?}: expected positive native font scale")
-    })?;
-    if font.set_width_scaling(factor) {
-        return Ok(());
-    }
-    Err(format!(
-        "sketch text width {percent:?}: native font declined this scale"
-    ))
+    })
 }
 
 fn render_glyphs(
@@ -122,11 +130,24 @@ fn render_glyphs(
     options: &StdPrsBRepFontTextOptions,
     style: &SketchTextStyle,
     scale: f64,
+    width: f32,
 ) -> Result<topods::Shape, String> {
     let text = native_string(&style.content)?;
     let spacing = style.line_spacing.as_deref();
     SketchTextLineSpacing::validate(spacing).map_err(|error| error.to_string())?;
-    let Some(spacing) = spacing.filter(|choice| choice.mode != TEXT_LINE_SPACING_SINGLE) else {
+    let spacing = spacing.filter(|choice| choice.mode != TEXT_LINE_SPACING_SINGLE);
+    let fractions = style.stacked_fractions.as_deref().unwrap_or_default();
+    if !fractions.is_empty() {
+        SketchTextFraction::validate(Some(&style.content), fractions)
+            .map_err(|error| error.to_string())?;
+        let natural = font.line_spacing();
+        let advance = spacing
+            .map(|choice| working_baseline_advance(choice, natural, scale))
+            .transpose()?
+            .unwrap_or(natural);
+        return text_fraction_geometry::render(font, options, style, fractions, advance, width);
+    }
+    let Some(spacing) = spacing else {
         return Ok(font.render_text_with(&text, options));
     };
     let natural = font.line_spacing();
