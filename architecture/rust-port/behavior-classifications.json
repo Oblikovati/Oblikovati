@@ -28069,10 +28069,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go model/sketch and addin/router SketchText and Glyph tests passed at aa8297d1b0ac33c024f19e54821536d76e8a447a. They cover glyph rendering and typed calls. The Rust scenario covers native preset defaults.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Installed sketch font catalogue, stacked glyph curves, and Vulkan sketch scene",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe, with and without Tahoma. Windows and macOS remain untested for this scenario.",
+      "kernel_integration": "Select a default from the installed font catalogue and render the named and last-accepted fraction drafts through Martensite.",
+      "rust_tests": "Pinned native text-32: 1 scenario and 10 steps passed. See architecture/rust-port/receipts/2026-11-21-sketch-text-restored-defaults-3907 at a9519616f21c7f601219091cb2ead8e21db9d079. The fallback native and installed-family unit tests also pass.",
+      "oracle": "Native preset selector and checked setting, resolved stacked-fraction outline and width, visible font and purple swatch, and unchanged sketch geometry.",
+      "expected_result": "The named preset and Last Used select their own versions. No Preset opens an empty draft with installed Tahoma, 3.05 mm, inherited purple, and width 100. The named preset remains in the list.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:691c74b92e18c0f788d31c1d5e0659084ca206a198e7105fd364a1b1ddfcb579",

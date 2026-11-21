@@ -132,11 +132,13 @@ using this status; the live scenario directory can change.
   preset `g` from the second fraction's editor. Cancel preserved both
   fractions and the unrelated label with 47 dimensions needed.
   See `receipts/2026-11-21-sketch-text-delete-preset-3907/`.
-  A native preset-default regression distinguishes saved `g` from the
-  last accepted draft. Last Used displays the clock and `*g`. Clearing
-  the default opens an empty editor and leaves `g` available. Pinned
-  `text-32` still needs its Tahoma default fixture.
-  See `receipts/2026-11-21-sketch-text-preset-defaults-3907/`.
+  Pinned `text-32` passed all ten steps with an isolated Tahoma fixture.
+  Named `g` supplies the saved fraction. Last Used displays the clock and
+  `*g` and restores the accepted fraction at a different width. Clearing
+  the default leaves `g` available and opens empty Text with Tahoma,
+  3.05 mm, a purple swatch, and 100 percent width. The native fallback run
+  uses System default on a host without Tahoma.
+  See `receipts/2026-11-21-sketch-text-restored-defaults-3907/`.
   Native Text placement opens Format Text when the mouse button is
   released. A drag keeps its initial insertion point. Escape while
   dragging cancels placement.
