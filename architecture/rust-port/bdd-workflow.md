@@ -179,6 +179,18 @@ cargo test --locked -p oblikovati-head --lib \
   sketch_scenarios_use_the_native_window -- --nocapture
 ```
 
+On Linux, use the private desktop runner for Main Window Frame. It starts
+Xvfb, Openbox, tint2 and AT-SPI and enables accessibility in the test session.
+Install those tools and the Python GI bindings for AT-SPI first.
+
+```sh
+OBK_BDD_ROOT=/path/to/MCAD-Scenarios \
+OBK_BDD_REPORTS=/absolute/path/to/unique-report-directory \
+VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json \
+XMODIFIERS=@im=none \
+  crates/head/tests/accessibility_atspi/frame_run.sh
+```
+
 The Linux docking-system restart scenario also starts the desktop executable
 twice. Build `oblikovati` from the same source as the test, and set
 `OBK_BDD_DESKTOP_BINARY` to its absolute path. Run with an X11 window manager,
