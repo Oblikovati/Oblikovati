@@ -27921,10 +27921,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go checks glyph profiles, anchor placement, style round-trip, and typed add/edit/get. The Rust checks cover fraction rendering, presets, validation, and native history.",
+      "api_revision": "c051de97568c0345921f0f900982da31eb9ddca4",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite shapes and picks analytic glyph outlines and constructs the separator face.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. The preset run used an isolated Arial fixture.",
+      "kernel_integration": "The editable source keeps its slash. The API carries the Unicode range, and the application arranges native glyph plans, supports picking, and saves the range in the text recipe.",
+      "rust_tests": "Pinned native text-28. See architecture/rust-port/receipts/2026-11-21-sketch-text-fractions-0163/README.md.",
+      "oracle": "Keyboard and mouse input, the blue separator and glyph outlines, the persisted source range, text ID, anchor, and solver count.",
+      "expected_result": "Stack renders a blue 1 above 2 from the selected 1/2. Accept preserves the text ID and anchor at 35 dimensions needed.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:37c533976d75dc88462f1fd03f59414b082778d420ce33f5e6886c22cad8b33c",
@@ -27955,10 +27965,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go checks glyph profiles, anchor placement, style round-trip, and typed add/edit/get. The Rust checks cover fraction rendering, presets, validation, and native history.",
+      "api_revision": "c051de97568c0345921f0f900982da31eb9ddca4",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite shapes and picks analytic glyph outlines and constructs the separator face.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. The preset run used an isolated Arial fixture.",
+      "kernel_integration": "The editable source keeps its slash. The API carries the Unicode range, and the application arranges native glyph plans, supports picking, and saves the range in the text recipe.",
+      "rust_tests": "Pinned native text-30. See architecture/rust-port/receipts/2026-11-21-sketch-text-fractions-0163/README.md.",
+      "oracle": "Named preset and popup state, two separate glyph placements, color, font, height, width, and the exact committed recipes.",
+      "expected_result": "Preset f restores the blue stacked fraction in Arial at 6.10 mm and width 50. Accept creates a separate text and anchor while keeping the first fraction, with 37 dimensions needed.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:502c769e13013fdbaa3b198348b638c92503d87146161b02cb2dda62685cfd1e",
@@ -28077,10 +28097,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go checks glyph profiles, anchor placement, style round-trip, and typed add/edit/get. The Rust checks cover fraction rendering, presets, validation, and native history.",
+      "api_revision": "c051de97568c0345921f0f900982da31eb9ddca4",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite shapes and picks analytic glyph outlines and constructs the separator face.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. The preset run used an isolated Arial fixture.",
+      "kernel_integration": "The editable source keeps its slash. The API carries the Unicode range, and the application arranges native glyph plans, supports picking, and saves the range in the text recipe.",
+      "rust_tests": "Pinned native text-36. See architecture/rust-port/receipts/2026-11-21-sketch-text-fractions-0163/README.md.",
+      "oracle": "The visible modal and selected zero, raw replacement digits, retained fraction rendering, restored width, and unmodified recipe after Cancel.",
+      "expected_result": "Width zero opens a separate warning and keeps the preview. Dismissal selects zero and entering 50 restores the width without a second warning.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:c02114c76337c51e0df80d7fe30aef5113618dd64a70a16357b27aea3bbb105f",

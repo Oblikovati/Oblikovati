@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/oblikovati-bdd-TxCK6w/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/oblikovati-bdd-TxCK6w/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T00:44:39.967697198Z" time="52.907128354"><testcase name="Scenario: text-28 Stack selected fraction input: tmp/oblikovati-bdd-TxCK6w/checkout/features/sketch/text/scenario.feature:276:3" time="52.907128354"><system-out><![CDATA[  Scenario: text-28 Stack selected fraction input
+   ✔  Given the existing blue Text is open in Format Text
+   ✔  When the user replaces its content with the characters 1, slash, and 2
+   ✔  And the user selects the fraction and click the enabled stack control
+   ✔  Then the preview displays 1 above 2
+   ✔  When the user accepts the dialog
+   ✔  Then the stacked fraction remains and the status shows 35 dimensions needed
+]]></system-out></testcase></testsuite></testsuites>

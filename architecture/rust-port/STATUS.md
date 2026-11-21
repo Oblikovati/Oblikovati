@@ -122,10 +122,12 @@ using this status; the live scenario directory can change.
   get tests cover history and native reopen. Pinned `text-21` checks
   Center, Middle, and Double spacing through the native editor. See
   `receipts/2026-11-21-sketch-text-spacing-0162/`.
-  The native width test applied 50 percent, then rejected zero. The
-  warning kept the live preview and selected zero for replacement.
-  The test used ordinary text. Pinned `text-36` still needs the recorded
-  fraction fixture or a source correction.
+  Pinned `text-28`, `text-30`, and `text-36` cover stacked fractions,
+  named presets, and width recovery. The accepted blue fraction kept its
+  original text ID and anchor. Applying its Arial preset made a second
+  fraction with the same blue color, height, and width. The width warning
+  selected zero for replacement and preserved the preview. See
+  `receipts/2026-11-21-sketch-text-fractions-0163/`.
   Native input left unselected `ab` unchanged and converted selected
   characters to `AB` in the editor and preview. The accepted edit kept
   the text ID and anchor. Pinned `text-25` also requires strike-through.
@@ -135,7 +137,7 @@ using this status; the live scenario directory can change.
   blue glyph pixels in both the live preview and accepted sketch. The YAML
   test retained color and width together. Pinned `text-19` still needs
   underline.
-  The model uses API v0.161.0 to validate Unicode character-format ranges.
+  The model uses the shared API to validate Unicode character-format ranges.
   Tests cover atomic rejection of out-of-range edits, undo and redo, and
   native YAML reopen. Mixed-font rendering remains open under
   [Martensite #576](https://github.com/Oblikovati/Martensite/issues/576).
