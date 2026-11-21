@@ -432,6 +432,7 @@ pub(super) struct SketchCommandMemory {
     pub triad_pick: Option<TriadPick>,
     pub context: Option<SketchContextTarget>,
     pub context_serial: u64,
+    pub curvature: super::sketch_curvature::CurvaturePresentation,
 }
 impl Default for SketchCommandMemory {
     fn default() -> Self {
@@ -444,6 +445,7 @@ impl Default for SketchCommandMemory {
             triad_pick: None,
             context: None,
             context_serial: 0,
+            curvature: Default::default(),
         }
     }
 }

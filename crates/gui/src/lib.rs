@@ -81,6 +81,7 @@ pub use application::workspace_layout::browser_origin::GuiOriginAxis;
 pub use sketch::constraint_glyphs::{
     GuiConstraintCandidate, GuiConstraintGlyph, GuiConstraintHover,
 };
+pub use sketch::curvature::{GuiCurvatureAction, GuiCurvatureSettings, GuiCurvatureSliders};
 pub use sketch::dimension_edit::{GuiDimensionEdit, GuiDimensionValue};
 pub use sketch::inspect::{
     GuiInspectAction, GuiMeasurePanel, GuiSketchCandidate, GuiSketchContext, GuiSketchRelation,

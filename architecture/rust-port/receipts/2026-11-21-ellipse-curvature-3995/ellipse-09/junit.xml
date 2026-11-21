@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T12:22:10.822676491Z" time="25.086294935"><testcase name="Scenario: ellipse-09 Toggle the curvature comb on an existing ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:88:3" time="25.086294935"><system-out><![CDATA[  Scenario: ellipse-09 Toggle the curvature comb on an existing ellipse
+   ✔  Given a copy of `fixtures/cad/ellipse/rotated-measured.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  Given the rotated ellipse has no curvature comb visible
+   ✔  When the user right-click its curve and choose Display Curvature
+   ✔  Then a green comb appears around the ellipse
+   ✔  When the user right-click its curve again
+   ✔  Then Display Curvature is checked and Setup Curvature Display is offered
+   ✔  When the user click the checked Display Curvature option
+   ✔  Then the comb disappears and the ellipse remains visible
+]]></system-out></testcase></testsuite></testsuites>

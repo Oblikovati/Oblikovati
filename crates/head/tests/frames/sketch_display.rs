@@ -27,6 +27,7 @@ fn nonempty_update() -> crate::HeadSketchSceneUpdate {
         plane: oblikovati_model::sketch::SketchPlane::xy(),
         geometry: Default::default(),
         blocks: vec![],
+        curvature: Vec::new(),
         line_color: None,
     };
     crate::HeadSketchSceneUpdate {

@@ -68,6 +68,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::PrecisePoint(point) => owner.precise_point_from_gui(point),
         GuiShellAction::PreciseTriad(command) => owner.precise_triad_from_gui(*command),
         GuiShellAction::DeleteSketchRelation(id) => owner.delete_sketch_relation_from_gui(*id),
+        GuiShellAction::SketchCurvature(action) => owner.sketch_curvature_from_gui(*action),
         GuiShellAction::DismissSketchContext { token } => owner.dismiss_sketch_context(*token),
         GuiShellAction::SelectContextConstraintGlyph { token, glyph } => {
             owner.select_context_constraint_glyph(*token, *glyph)

@@ -23,6 +23,7 @@ fn block_packet() -> ViewportSketchDisplay {
             geometry,
             definition_color: None,
         }],
+        curvature: Vec::new(),
         line_color: None,
     }
 }

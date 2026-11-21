@@ -76,6 +76,8 @@ mod selection_filter;
 mod sketch_block;
 #[path = "owner_sketch_block_pick.rs"]
 mod sketch_block_pick;
+#[path = "owner_sketch_curvature.rs"]
+mod sketch_curvature;
 #[path = "owner_sketch_delete.rs"]
 mod sketch_delete;
 #[path = "owner_sketch_dimension.rs"]

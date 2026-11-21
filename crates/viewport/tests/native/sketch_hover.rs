@@ -29,6 +29,7 @@ fn parallel_lines(offset: f64) -> ViewportSketchDisplay {
         plane: SketchPlane::xy(),
         geometry,
         blocks: Vec::new(),
+        curvature: Vec::new(),
         line_color: None,
     }
 }

@@ -80,6 +80,7 @@ fn committed_point(
         plane: preview.plane(),
         geometry,
         blocks: vec![],
+        curvature: Vec::new(),
         line_color: None,
     }
 }

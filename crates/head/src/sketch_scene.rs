@@ -24,4 +24,4 @@ pub(crate) fn sketch_shows(
 #[path = "sketch_scene_runtime.rs"]
 mod runtime;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
-pub(crate) use runtime::{DesktopSketchScenes, sketch_document_file_name};
+pub(crate) use runtime::{ActiveCurvature, DesktopSketchScenes, sketch_document_file_name};

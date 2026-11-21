@@ -165,6 +165,12 @@ macro_rules! forward_owner_sketch_work {
         fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
             self.$owner.delete_sketch_selection_from_gui()
         }
+        fn sketch_curvature_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiCurvatureAction,
+        ) -> Result<bool, String> {
+            self.$owner.sketch_curvature_from_gui(action)
+        }
         fn create_sketch_block_from_gui(&mut self, name: &str) -> Result<bool, String> {
             self.$owner.create_sketch_block_from_gui(name)
         }

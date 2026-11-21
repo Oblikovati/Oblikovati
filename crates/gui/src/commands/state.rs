@@ -130,6 +130,7 @@ pub struct GuiCommandState {
     pub center_point_format: bool,
     /// What the pointer was on when the canvas menu was asked for.
     pub sketch_context: Option<crate::GuiSketchContext>,
+    pub curvature_settings: Option<crate::GuiCurvatureSettings>,
     /// The command the canvas menu offers to run again.
     pub repeat_command: Option<crate::GuiSketchRepeat>,
     pub line_command: Option<crate::GuiLineCommandMenu>,

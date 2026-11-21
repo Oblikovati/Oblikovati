@@ -3,6 +3,7 @@
 pub(crate) mod command_alias;
 pub(crate) mod constraint_glyphs;
 pub(crate) mod create_block;
+pub(crate) mod curvature;
 #[path = "dimension-edit/mod.rs"]
 pub(crate) mod dimension_edit;
 pub(crate) mod inference_scope;

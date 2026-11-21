@@ -44,6 +44,8 @@ pub(super) struct ApplicationWorld {
     /// Published ellipse center, first-axis point, and perimeter point in sketch units.
     pub ellipse_fixture_points: Option<[[f64; 2]; 3]>,
     pub ellipse_alias_center: Option<[f64; 2]>,
+    pub curvature_initial: Option<CurvatureObservation>,
+    pub curvature_applied: Option<CurvatureObservation>,
     pub text_creation_baseline: Option<oblikovati_model::sketch::Sketch2D>,
     /// The empty editor before entering content that the scenario will cancel.
     pub text_defaults_before_cancel: Option<oblikovati_gui::GuiSketchTextDraft>,
@@ -129,6 +131,8 @@ impl ApplicationWorld {
             observed_sketch: None,
             ellipse_fixture_points: None,
             ellipse_alias_center: None,
+            curvature_initial: None,
+            curvature_applied: None,
             text_creation_baseline: None,
             text_defaults_before_cancel: None,
             observed_row_gap: None,
@@ -432,6 +436,13 @@ fn pointer_drag_release(position: [i32; 2]) -> Vec<ViewportEvent> {
     vec![pointer_motion(position), pointer_button(position, false)]
 }
 
+/// One observed settings checkpoint and its renderer request.
+#[derive(Clone, Copy)]
+pub(super) struct CurvatureObservation {
+    pub sliders: oblikovati_gui::GuiCurvatureSliders,
+    pub comb: oblikovati_viewport::ViewportSketchCurvature,
+}
+
 /// The fixture's actual geometry, committed history, and visible curve witnesses.
 pub(super) struct ObservedSketch {
     pub geometry: oblikovati_model::sketch::Sketch2D,
@@ -471,28 +482,5 @@ fn capture_folder(root: &std::path::Path, namespace: Option<&str>) -> std::path:
 }
 
 #[cfg(test)]
-mod capture_scope_tests {
-    use super::*;
-
-    #[test]
-    fn scenario_images_are_isolated_and_never_overwritten() {
-        let root = tempfile::tempdir().unwrap();
-        let capture = oblikovati_viewport::ViewportCapture {
-            view_id: 1,
-            scene_generation: 1,
-            camera_generation: 1,
-            surface_generation: 1,
-            overlay_generation: 1,
-            extent: [1, 1],
-            rgba: vec![0, 0, 0, 255],
-        };
-        let first = capture_folder(root.path(), Some("first"));
-        let second = capture_folder(root.path(), Some("second"));
-        std::fs::create_dir_all(&first).unwrap();
-        std::fs::create_dir_all(&second).unwrap();
-        write_png(&first.join("view.png"), &capture).unwrap();
-        write_png(&second.join("view.png"), &capture).unwrap();
-        assert!(write_png(&first.join("view.png"), &capture).is_err());
-        assert_eq!(capture_folder(root.path(), None), root.path());
-    }
-}
+#[path = "world_capture_tests.rs"]
+mod capture_scope_tests;

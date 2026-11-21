@@ -97,6 +97,8 @@ pub struct GuiSketchContext {
     pub glyph: Option<oblikovati_model::sketch::SketchConstraintId>,
     /// Exact overlapping glyphs captured when this context opened.
     pub glyph_candidates: Vec<crate::GuiConstraintCandidate>,
+    /// Whether curvature is shown for the curve under the pointer, when supported.
+    pub curvature: Option<bool>,
     pub center_point: bool,
     /// Every entity within reach; two or more is what Select Other is for.
     pub candidates: Vec<GuiSketchCandidate>,
@@ -237,6 +239,7 @@ pub(crate) fn canvas_menu(
         }
     }
     super::text::edit_menu_row(ui, state, actions);
+    super::curvature::context_menu(ui, state, actions);
     repeat_row(ui, state, actions);
     center_point_row(ui, state, actions);
     explode_block_row(ui, state, actions);

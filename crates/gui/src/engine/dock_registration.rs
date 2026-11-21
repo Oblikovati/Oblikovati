@@ -15,6 +15,7 @@ fn register_application_windows(engine: &mut GuiFrameEngine) -> Result<(), Strin
     engine.ribbon.team_web.register_dockable(registry)?;
     engine.create_block.register_dockable(registry)?;
     engine.sketch_text.register_dockable(registry)?;
+    engine.curvature_settings.register_dockable(registry)?;
     engine.inference_scope.register_dockable(registry)?;
     engine.preferences.register_dockable(registry)?;
     engine.precise_input.register_dockable(registry)?;
@@ -107,5 +108,19 @@ impl GuiFrameEngine {
         self.orientation.set_suspended(self.home.active);
         self.preferences
             .sync_before_docking(state, self.home.active);
+    }
+}
+impl GuiFrameEngine {
+    pub(super) fn draw_sketch_editors(
+        (text, curvature): (
+            &mut crate::sketch::text::SketchTextDialog,
+            &mut crate::sketch::curvature::CurvatureSettingsWindow,
+        ),
+        ui: &imgui::Ui,
+        commands: &crate::GuiCommandState,
+        actions: &mut Vec<crate::GuiShellAction>,
+    ) {
+        text.panel(ui, commands, actions);
+        curvature.panel(ui, commands.curvature_settings, actions);
     }
 }

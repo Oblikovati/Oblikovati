@@ -176,6 +176,8 @@ fn boundary_pixels(world: &mut ApplicationWorld) -> [[i32; 2]; 4] {
     let opposite = |point: [f64; 2]| std::array::from_fn(|axis| 2. * center[axis] - point[axis]);
     [first, third, opposite(first), opposite(third)].map(|point| world.sketch_pixel_of(point))
 }
+mod curvature;
+mod curvature_settings;
 #[path = "dimension_lifecycle.rs"]
 mod dimension_lifecycle;
 #[path = "dimension_major.rs"]

@@ -9,6 +9,8 @@ use oblikovati_martensite::planar_curve::sketch::{
 use oblikovati_model::theme::Rgba;
 #[path = "sketch_display/blocks.rs"]
 pub(super) mod blocks;
+#[path = "sketch_display/curvature.rs"]
+mod curvature;
 type SketchTextIdentity = (
     oblikovati_model::document_sketch::DocumentSketchId,
     oblikovati_model::sketch::SketchEntityId,
@@ -24,6 +26,7 @@ pub(super) struct SketchDisplayOverlay {
     pub(super) replaced_text: Option<SketchTextIdentity>,
     color: Rgba,
     selected_color: Rgba,
+    curvature_color: Rgba,
     selected: crate::ViewportSketchSelection,
 }
 impl SketchDisplayOverlay {
@@ -60,6 +63,7 @@ impl SketchDisplayOverlay {
                 && *error == deflection
                 && self.color == palette.geometry
                 && self.selected_color == palette.selected
+                && self.curvature_color == palette.curvature
                 && self.selected == *selected
         })
     }
@@ -74,6 +78,7 @@ impl SketchDisplayOverlay {
             source: Some((source.to_vec(), deflection)),
             color: palette.geometry.clone(),
             selected_color: palette.selected.clone(),
+            curvature_color: palette.curvature.clone(),
             selected: selected.clone(),
             ..Self::default()
         };
@@ -146,6 +151,7 @@ impl SketchDisplayOverlay {
         for block in &sketch.blocks {
             self.append_block(viewer, sketch, block, deflection);
         }
+        self.append_curvature(viewer, sketch);
         Ok(())
     }
     fn append_marker(
@@ -443,6 +449,7 @@ mod role_style_tests {
             plane: SketchPlane::xy(),
             geometry,
             blocks: Vec::new(),
+            curvature: Vec::new(),
             line_color: Some(blue.clone()),
         };
         assert_eq!(entity_color(&sketch, id, false, None, &green, &blue), red);

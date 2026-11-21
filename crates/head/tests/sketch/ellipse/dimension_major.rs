@@ -60,7 +60,7 @@ fn select_ellipse_for_measure(world: &mut ApplicationWorld) {
     world.expect_measure("Selection 1: Ellipse");
 }
 
-fn ellipse_axis_end_pixel(world: &mut ApplicationWorld) -> [i32; 2] {
+pub(super) fn ellipse_axis_end_pixel(world: &mut ApplicationWorld) -> [i32; 2] {
     let geometry = world.edited_geometry();
     let ellipse = geometry.ellipses()[0];
     let center = geometry.point(ellipse.center()).unwrap().position;

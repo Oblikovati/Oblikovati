@@ -15,6 +15,15 @@ pub struct ViewportSketchDisplay {
     pub blocks: Vec<ViewportSketchBlock>,
     /// What its lines draw in, in place of the palette's geometry colour.
     pub line_color: Option<oblikovati_model::theme::Rgba>,
+    /// Analytic curves with a session-only inspection comb enabled.
+    pub curvature: Vec<ViewportSketchCurvature>,
+}
+/// Requested density and maximum tooth length as a fraction of the curve span.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct ViewportSketchCurvature {
+    pub entity: oblikovati_model::sketch::SketchEntityId,
+    pub intervals: u16,
+    pub envelope_ratio: f64,
 }
 /// One definition rendered through its owning instance's placement.
 #[derive(Clone, Debug, PartialEq)]

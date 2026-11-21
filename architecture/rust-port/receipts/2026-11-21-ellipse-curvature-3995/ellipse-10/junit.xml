@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T12:24:47.551779384Z" time="28.062230861"><testcase name="Scenario: ellipse-10 Cancel a curvature-density preview: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:99:3" time="28.062230861"><system-out><![CDATA[  Scenario: ellipse-10 Cancel a curvature-density preview
+   ✔  Given a copy of `fixtures/cad/ellipse/rotated-measured.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the user enables Display Curvature on the ellipse
+   ✔  Given the ellipse has Display Curvature enabled
+   ✔  When the user choose Setup Curvature Display from its context menu
+   ✔  Then Curvature Settings shows two Minimum-to-Maximum sliders without numeric values
+   ✔  And OK and Apply are initially disabled
+   ✔  When the user advance the upper slider
+   ✔  Then the thumb advances and the comb becomes denser
+   ✔  And OK and Apply become enabled
+   ✔  When the user click Cancel
+   ✔  Then the dialog closes and the earlier sparse comb returns
+   ✔  And curvature display stays enabled
+]]></system-out></testcase></testsuite></testsuites>

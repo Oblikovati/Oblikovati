@@ -4,14 +4,16 @@ use oblikovati_model::document_sketch::DocumentSketchId;
 use oblikovati_model::history::DocumentSnapshot;
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
-use oblikovati_viewport::{ViewportSketchBlock, ViewportSketchDisplay};
+use oblikovati_viewport::{ViewportSketchBlock, ViewportSketchCurvature, ViewportSketchDisplay};
 use std::borrow::Cow;
+pub(crate) type ActiveCurvature = Option<(DocumentSketchId, Vec<ViewportSketchCurvature>)>;
 #[derive(Default)]
 pub(crate) struct DesktopSketchScenes {
     source: Option<(u64, u64)>,
     file_name: String,
     /// The sketches shown although hidden; a new choice redraws without any model change.
     called_up: Vec<DocumentSketchId>,
+    curvature: ActiveCurvature,
 }
 impl DesktopSketchScenes {
     pub(crate) fn refresh<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -19,11 +21,13 @@ impl DesktopSketchScenes {
         files: &mut FileWorkspace<O, W, F>,
         parts: &mut crate::part_scene::DesktopPartScenes,
         opened_hidden: Option<DocumentSketchId>,
+        curvature: ActiveCurvature,
     ) -> Result<Option<HeadSketchSceneUpdate>, String> {
         let source = active_sketch_source(files)?;
         let called_up = called_up_sketches(files, source, opened_hidden);
         if source == self.source
             && called_up == self.called_up
+            && curvature == self.curvature
             && source.map_or(Cow::Borrowed(""), |(id, _)| {
                 sketch_document_file_name(files, id)
             }) == self.file_name
@@ -33,9 +37,18 @@ impl DesktopSketchScenes {
         let datums = scene_datums(files, parts, source)?;
         let source = active_sketch_source(files)?;
         let called_up = called_up_sketches(files, source, opened_hidden);
-        let update = prepare_sketch_scene(files, source, &called_up, datums.as_ref())?;
+        let mut update = prepare_sketch_scene(files, source, &called_up, datums.as_ref())?;
+        if let Some((id, requests)) = &curvature
+            && let Some(sketch) = update
+                .sketches
+                .iter_mut()
+                .find(|sketch| sketch.sketch == *id)
+        {
+            sketch.curvature = requests.clone();
+        }
         self.source = source;
         self.called_up = called_up;
+        self.curvature = curvature;
         self.file_name = source.map_or_else(String::new, |(id, _)| {
             sketch_document_file_name(files, id).into_owned()
         });
@@ -187,6 +200,7 @@ fn collect_sketches(
                     geometry,
                     text_declines,
                     blocks,
+                    curvature: Vec::new(),
                     line_color: sketch.line_style().color.map(line_color),
                 })
             }

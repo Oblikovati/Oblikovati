@@ -70,6 +70,7 @@ pub enum GuiShellAction {
     SetSketchIsolation(bool),
     SetPartOptions(oblikovati_model::application_options::PartApplicationOptions),
     SketchMove(crate::GuiSketchMoveAction),
+    SketchCurvature(crate::GuiCurvatureAction),
     SketchText(crate::GuiSketchTextAction),
     PreviewSketchPattern(Option<oblikovati_model::history::SketchRectangularPatternRequest>),
     CreateSketchPattern(oblikovati_model::history::SketchRectangularPatternRequest),

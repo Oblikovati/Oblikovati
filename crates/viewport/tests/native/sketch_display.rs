@@ -27,6 +27,7 @@ pub(super) fn packet() -> ViewportSketchDisplay {
         plane: SketchPlane::xy(),
         geometry,
         blocks: vec![],
+        curvature: Vec::new(),
         line_color: None,
     }
 }
@@ -259,6 +260,7 @@ fn spline_packet() -> ViewportSketchDisplay {
         plane: SketchPlane::xy(),
         geometry,
         blocks: vec![],
+        curvature: Vec::new(),
         line_color: None,
     }
 }

@@ -331,6 +331,12 @@ impl<
     ) -> Result<bool, String> {
         self.sketch_move_command(action)
     }
+    fn sketch_curvature_from_gui(
+        &mut self,
+        action: oblikovati_gui::GuiCurvatureAction,
+    ) -> Result<bool, String> {
+        self.sketch_curvature_command(action)
+    }
     fn delete_sketch_selection_from_gui(&mut self) -> Result<bool, String> {
         self.delete_gui_sketch_selection()
     }
@@ -464,7 +470,12 @@ impl<
     }
     fn take_sketch_scene(&mut self) -> Result<Option<crate::HeadSketchSceneUpdate>, String> {
         let opened_hidden = self.sketch_opened_while_hidden();
-        self.sketch_scenes
-            .refresh(&mut self.files, &mut self.part_scenes, opened_hidden)
+        let curvature = self.curvature_scene();
+        self.sketch_scenes.refresh(
+            &mut self.files,
+            &mut self.part_scenes,
+            opened_hidden,
+            curvature,
+        )
     }
 }

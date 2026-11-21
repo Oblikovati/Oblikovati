@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T12:25:16.528894603Z" time="45.914366111"><testcase name="Scenario: ellipse-11 Retain an applied curvature setting when closing with Cancel: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:114:3" time="45.914366111"><system-out><![CDATA[  Scenario: ellipse-11 Retain an applied curvature setting when closing with Cancel
+   ✔  Given a copy of `fixtures/cad/ellipse/rotated-measured.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the user enables Display Curvature on the ellipse and records the slider positions
+   ✔  Given the ellipse has a sparse curvature comb enabled
+   ✔  And the upper and lower slider positions are recorded
+   ✔  When the user open Setup Curvature Display
+   ✔  And the user advance the upper slider
+   ✔  And the user click Apply
+   ✔  Then the dialog remains open with the denser comb visible
+   ✔  When the user click Cancel
+   ✔  Then the dialog closes and the denser comb remains
+   ✔  When the user reopen Setup Curvature Display
+   ✔  Then the upper slider remains at its applied position
+   ✔  And the lower slider remains at its original position
+   ✔  When the user move the upper slider back to its recorded original position
+   ✔  And the user choose OK
+   ✔  Then the dialog closes and the earlier sparse comb is displayed
+   ✔  When the user reopen Setup Curvature Display
+   ✔  Then both slider thumbs are at their original positions
+   ✔  And OK and Apply are disabled
+   ✔  When the user click Cancel without making changes
+   ✔  Then the dialog closes and curvature display remains enabled
+   ✔  When the user right-click the ellipse and select the checked Display Curvature option
+   ✔  Then the comb disappears and the ellipse remains visible
+]]></system-out></testcase></testsuite></testsuites>

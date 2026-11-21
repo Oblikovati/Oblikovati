@@ -337,6 +337,15 @@ pub trait HeadSketchWork {
             "sketch move {action:?}: expected an active sketch owner"
         ))
     }
+    /// Apply a curve display intent. Example: `work.sketch_curvature_from_gui(action)?`.
+    fn sketch_curvature_from_gui(
+        &mut self,
+        action: oblikovati_gui::GuiCurvatureAction,
+    ) -> Result<bool, String> {
+        Err(format!(
+            "sketch curvature {action:?}: expected an active sketch owner"
+        ))
+    }
     /// Open a text hit in a Ready sketch, for example `work.edit_sketch_text_at(pixel, window)?`.
     fn edit_sketch_text_at(
         &mut self,

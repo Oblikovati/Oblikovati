@@ -201,6 +201,7 @@ fn display_distant_sketch(world: &mut ApplicationWorld) {
         plane: SketchPlane::xy(),
         geometry,
         blocks: Vec::new(),
+        curvature: Vec::new(),
         line_color: None,
     };
     world

@@ -7,6 +7,7 @@ pub struct ViewportSketchPalette {
     pub(crate) preview: Rgba,
     pub(crate) selected: Rgba,
     pub(crate) candidate: Rgba,
+    pub(crate) curvature: Rgba,
 }
 impl ViewportSketchPalette {
     /// Copy the same semantic tokens as Go's sketchThemeColors; example: `ViewportSketchPalette::from_theme(library.active())`.
@@ -16,6 +17,7 @@ impl ViewportSketchPalette {
             preview: theme.color(&oblikovati_api::types::TOKEN_SKETCH_PREVIEW),
             selected: theme.color(&oblikovati_api::types::TOKEN_SKETCH_SELECTED),
             candidate: theme.color(&oblikovati_api::types::TOKEN_SKETCH_CANDIDATE),
+            curvature: theme.color(&oblikovati_api::types::TOKEN_DIMENSION_SKETCH),
         }
     }
 }
@@ -45,6 +47,10 @@ mod tests {
             assert_eq!(
                 palette.candidate,
                 theme.color(&oblikovati_api::types::TOKEN_SKETCH_CANDIDATE)
+            );
+            assert_eq!(
+                palette.curvature,
+                theme.color(&oblikovati_api::types::TOKEN_DIMENSION_SKETCH)
             );
             let mut custom = theme.duplicate("Workshop").unwrap();
             custom

@@ -6,10 +6,12 @@ mod sketch_construction;
 pub use sketch_construction::MartensiteSketchConstruction;
 mod closest;
 pub(crate) mod construct;
+mod curvature_display;
 pub use circumcircle::{CircumcircleOptions, PlanarCircumcircle, construct_planar_circumcircle};
 pub use closest::{
     PlanarPickOptionsV1, PlanarPickOrigin, PlanarPickPoint, nearest_planar_curve_candidate,
 };
+pub use curvature_display::{PlanarCurvatureStation, sample_planar_curvature};
 mod failure;
 mod report;
 /// Owned sketch curve conversion and native incidence queries.

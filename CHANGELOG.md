@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added a curvature comb and live density and scale settings for sketch ellipses. (#3995)
+
 - Added Italic to the Sketch Text editor and kept Bold when applying it. (#3907)
 
 - Opened the editor for existing Sketch Text on a double-click of the glyph. (#3907)

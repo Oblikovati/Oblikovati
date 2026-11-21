@@ -106,6 +106,7 @@ pub(in crate::renderer) fn block_display(
         geometry: block.geometry.clone(),
         text_declines: Vec::new(),
         blocks: Vec::new(),
+        curvature: Vec::new(),
         line_color: block
             .definition_color
             .as_ref()

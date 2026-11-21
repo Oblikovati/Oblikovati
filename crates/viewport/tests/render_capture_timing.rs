@@ -48,6 +48,7 @@ fn sketch_display() -> crate::ViewportSketchDisplay {
         plane: SketchPlane::xy(),
         geometry,
         blocks: vec![],
+        curvature: Vec::new(),
         line_color: None,
     }
 }

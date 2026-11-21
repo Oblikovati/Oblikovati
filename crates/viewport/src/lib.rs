@@ -84,8 +84,8 @@ pub use camera_transition::ViewportCameraTransition;
 
 mod sketch_display;
 pub use sketch_display::{
-    ViewportSketchBlock, ViewportSketchDecline, ViewportSketchDisplay, ViewportSketchFeedback,
-    ViewportSketchHover, ViewportSketchSelection,
+    ViewportSketchBlock, ViewportSketchCurvature, ViewportSketchDecline, ViewportSketchDisplay,
+    ViewportSketchFeedback, ViewportSketchHover, ViewportSketchSelection,
 };
 
 mod sketch_palette;

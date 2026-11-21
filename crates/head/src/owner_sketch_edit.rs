@@ -193,6 +193,7 @@ impl<
         self.finish_sketch_history_current(edit.document, edit.sketch)?;
         self.retire_sketch_tool()?;
         self.clear_sketch_isolation(edit.document)?;
+        self.sketch_memory.curvature.discard_draft();
         self.sketch_edit = None;
         self.command_notice = Some(DesktopCommandNotice::PlacementPrompt {
             message: "Sketch finished.".into(),

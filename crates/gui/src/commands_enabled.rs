@@ -19,6 +19,7 @@ impl GuiShellAction {
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
             Self::OpenTeamWebInBrowser(_) => true,
+            Self::SketchCurvature(action) => action.enabled(state),
             Self::DismissSketchContext { .. } => true,
             Self::SelectContextConstraintGlyph { token, glyph }
             | Self::HideContextConstraintGlyph { token, glyph } => {

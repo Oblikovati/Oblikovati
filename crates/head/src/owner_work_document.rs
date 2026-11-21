@@ -45,6 +45,7 @@ macro_rules! desktop_document_work {
                 .close(request)
                 .map_err(|cause| cause.to_string())?;
             self.forget_document_windows(request.id);
+            self.sketch_memory.curvature.forget_document(request.id);
             self.command_notice = Some(match super::commands::warning_details(result.warnings) {
                 Some(detail) => DesktopCommandNotice::ClosedWithWarning {
                     document: request.id,

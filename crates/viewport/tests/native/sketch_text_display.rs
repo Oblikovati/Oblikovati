@@ -77,6 +77,7 @@ fn draw_linked_text(
         geometry,
         text_declines,
         blocks: vec![],
+        curvature: Vec::new(),
         line_color: None,
     }])
     .unwrap();
@@ -133,6 +134,7 @@ fn committed_text(style: SketchTextStyle) -> ViewportSketchDisplay {
         plane: SketchPlane::xy(),
         geometry,
         blocks: vec![],
+        curvature: Vec::new(),
         line_color: None,
     }
 }

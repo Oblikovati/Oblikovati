@@ -59,6 +59,7 @@ impl<
         };
         Ok(Some(oblikovati_gui::GuiSketchContext {
             token: target.token,
+            curvature: self.curvature_context_shown(edit, geometry, target.curve),
             point: point.map(|point| point.0),
             block: target.block,
             text: target.text,
