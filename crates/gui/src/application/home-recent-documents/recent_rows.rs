@@ -16,7 +16,7 @@ const KIND_COLUMN: f32 = 22.;
 const NAME_COLUMN: f32 = 170.;
 const ACTION_GAP: f32 = 4.;
 const CARD_SIZE: [f32; 2] = [180., 90.];
-const CARDS_PER_ROW: usize = 4;
+const MAX_CARDS_PER_ROW: usize = 4;
 const NOT_AVAILABLE: &str = "This command is not available in this build.";
 
 #[derive(Clone, Copy)]
@@ -63,9 +63,8 @@ fn metadata_cell(ui: &Ui, full: &str, width: f32) {
     ui.text(shown.as_ref());
     reveal_full_cell(ui, full, &shown);
 }
-fn accent_row(ui: &Ui, height: f32) {
+fn accent_row(ui: &Ui, height: f32, width: f32) {
     let [x, y] = ui.cursor_screen_pos();
-    let width = ui.content_region_avail()[0];
     let color = ui.style_color(imgui::StyleColor::Header);
     ui.get_window_draw_list()
         .add_rect([x, y], [x + width, y + height], color)
@@ -149,7 +148,7 @@ impl HomeWorkspace {
         let hovered = self.note_row_hover(ui);
         let checked = self.checks.contains(&row.path);
         if checked || hovered {
-            accent_row(ui, ui.frame_height());
+            accent_row(ui, ui.frame_height(), ui.content_region_avail()[0]);
         }
         let mut box_state = checked;
         if ui.checkbox(format!("##check-{}", row.path), &mut box_state) {
@@ -301,12 +300,16 @@ impl HomeWorkspace {
         rows: &[&GuiRecentDocument],
         actions: &mut Vec<GuiShellAction>,
     ) {
+        let (card_width, columns) = recent_card_grid(
+            ui.content_region_avail()[0],
+            ui.clone_style().item_spacing[0],
+        );
         let mut hovered = None;
         for (index, row) in rows.iter().enumerate() {
-            if index % CARDS_PER_ROW != 0 {
+            if index % columns != 0 {
                 ui.same_line();
             }
-            ui.group(|| self.card(ui, row, actions));
+            ui.group(|| self.card(ui, row, card_width, actions));
             if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::RECT_ONLY) {
                 hovered = Some(row.path.clone());
             }
@@ -315,10 +318,16 @@ impl HomeWorkspace {
         self.hover_changed = hovered != self.hovered_card;
         self.hovered_card = hovered;
     }
-    fn card(&mut self, ui: &Ui, row: &GuiRecentDocument, actions: &mut Vec<GuiShellAction>) {
+    fn card(
+        &mut self,
+        ui: &Ui,
+        row: &GuiRecentDocument,
+        width: f32,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
         let checked = self.checks.contains(&row.path);
         if checked {
-            accent_row(ui, CARD_SIZE[1]);
+            accent_row(ui, CARD_SIZE[1], width);
         }
         let mut box_state = checked;
         if ui.checkbox(format!("##card-check-{}", row.path), &mut box_state) {
@@ -338,13 +347,34 @@ impl HomeWorkspace {
         if crate::widget_abi::button(
             ui,
             &format!("{:?}###recent-card-{}", row.kind, row.path),
-            [CARD_SIZE[0], CARD_SIZE[1] - 56.],
+            [width, CARD_SIZE[1] - 56.],
         ) {
             actions.push(open_action(&row.path));
         }
-        ui.text(&row.name);
-        ui.text_disabled(&row.modified_text);
+        metadata_cell(ui, &row.name, width);
+        let _dim = ui.push_style_color(
+            imgui::StyleColor::Text,
+            ui.style_color(imgui::StyleColor::TextDisabled),
+        );
+        metadata_cell(ui, &row.modified_text, width);
     }
+}
+
+fn recent_card_grid(available: f32, gap: f32) -> (f32, usize) {
+    let width = available.clamp(1., CARD_SIZE[0]);
+    // The last card reaches the edge without a trailing gap.
+    let columns = ((available + gap) / (width + gap)).floor() as usize;
+    (width, columns.clamp(1, MAX_CARDS_PER_ROW))
+}
+
+#[cfg(test)]
+#[test]
+fn recent_cards_wrap_at_the_available_width() {
+    assert_eq!(recent_card_grid(1000., 8.), (180., 4));
+    assert_eq!(recent_card_grid(600., 8.), (180., 3));
+    assert_eq!(recent_card_grid(367., 8.), (180., 1));
+    assert_eq!(recent_card_grid(368., 8.), (180., 2));
+    assert_eq!(recent_card_grid(140., 8.), (140., 1));
 }
 /// The letter beside a row's name: the same kinds read the same everywhere on the list.
 pub(crate) fn kind_mark(kind: crate::GuiTemplateKind) -> &'static str {

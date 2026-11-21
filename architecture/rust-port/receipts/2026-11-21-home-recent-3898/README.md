@@ -32,6 +32,14 @@ and [Material Browser from Quick Access](published-quick-access-material-browser
 scenarios exercised docking, resizing, and reopening with explicit starting
 states. Both passed.
 
+## Home grid with the right dock open
+
+The [capture](home-wrapped-grid.png) shows all four fixture cards with the
+fourth card on the next row. The published
+[view switch](published-grid-switch.json), [sort](published-grid-sort.json),
+and [selection](published-grid-selection.json) scenarios passed all 28
+steps and their cleanup hooks.
+
 ## Recent row actions
 
 At the desktop test width, the fixed column offsets put the row's

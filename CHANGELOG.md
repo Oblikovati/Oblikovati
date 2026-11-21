@@ -273,6 +273,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 - Opened Home with a New Part action on no-document startup and docked the asset browsers for new profiles. (#3898)
 
+- Wrapped recent-document cards to fit in Home when the asset dock reduces the workspace width. (#3898)
+
 - Restored Ready after closing the Rotate at Angle dialog. (#3872)
 
 - Restored installed Tahoma and the inherited color swatch when starting Sketch Text without a preset. (#3907)

@@ -282,15 +282,21 @@ fn select_grid(world: &mut ApplicationWorld) {
 #[then("recent documents appear as a grid of thumbnail cards")]
 fn grid_cards(world: &mut ApplicationWorld) {
     assert!(!home_shows(world, "Location"), "expected no list columns");
-    // Two cards on one row: a grid, where a list keeps one name per row.
-    let first = home_run(world, SEARCHED).expect("expected a card").center();
-    let second = home_run(world, OTHERS[0])
-        .expect("expected a card")
-        .center();
+    let cards = [SEARCHED, OTHERS[0], OTHERS[1], ASSEMBLY].map(|name| {
+        home_run(world, name)
+            .unwrap_or_else(|| panic!("expected the {name:?} card"))
+            .center()
+    });
     assert!(
-        (first[1] - second[1]).abs() < ROW_REACH && first[0] != second[0],
-        "cards at {first:?} and {second:?}: expected the same row"
+        cards
+            .iter()
+            .enumerate()
+            .any(|(index, first)| cards[index + 1..]
+                .iter()
+                .any(|second| (first[1] - second[1]).abs() < ROW_REACH && first[0] != second[0])),
+        "expected at least two cards on one row, found {cards:?}"
     );
+    world.save_capture("home-recent-grid");
 }
 #[then("each visible card shows a document name and date")]
 fn card_facts(world: &mut ApplicationWorld) {
