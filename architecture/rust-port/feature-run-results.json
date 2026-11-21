@@ -820,15 +820,15 @@
       "features/sketch/text/VISUAL.md": "fd0e1444c421ebad300c59bb1c07589adfc0b97bd46c4a6f64c50b1af2aa2398",
       "features/sketch/text/feature-icon.svg": "42e957b40212d450898c00e75e693943d6556aca7e752e72c7859f854eab14d6"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-21-point-text-tahoma-run-3907/cucumber.json",
-    "cucumber_sha256": "29449aa557d4c48667accb81a6f3109a16e2a45cc4427362ee9a97db101ec160",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-point-text-tahoma-run-3907/scenario-arguments.json",
-    "scenario_arguments_sha256": "7834a09069cf6289489f094340e5fafff5298e8e2b4105a5eb643400cea445e7",
-    "application_commit": "30a723da37acd33f2a5419b004796a0821a677e3",
+    "cucumber": "architecture/rust-port/receipts/2026-11-21-point-text-two-fonts-3907/cucumber.json",
+    "cucumber_sha256": "7d42da94ed3d90fb667371adbdef4f1740b467a0a34bb1de3f1fddae3137cd92",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-point-text-two-fonts-3907/scenario-arguments.json",
+    "scenario_arguments_sha256": "67e37e92792a291f865fd70c9e74e1ee1e6ff3b40ed16835494f6d41d5053033",
+    "application_commit": "1932b4b71a119a3efacadcb2ce7b7303fa53a7c6",
     "command": "Unfiltered Text feature with native X11 input. See the receipt README.",
-    "environment": "Linux X11 under Xvfb, Vulkan Lavapipe, isolated Fontconfig with Tahoma",
+    "environment": "Linux X11 under Xvfb, Vulkan Lavapipe, isolated Fontconfig with Arial and Tahoma",
     "blocker": "Nine scenarios have unresolved source or font-decoration requirements. See the Point Text behavior ledger and Martensite #578.",
-    "notes": "Twenty-six of 38 scenarios passed with cleanup. The run also hit one retained-defaults assertion and two Arial fixture failures."
+    "notes": "Twenty-nine of 38 scenarios passed with cleanup. The other nine stop at undefined steps. The later focused text-25 case-conversion run is recorded separately."
   },
   "features/sketch/geometry-text/scenario.feature": {
     "by_source_sha256": {
