@@ -3,7 +3,7 @@ use super::{
     GuiSketchTextDraft,
     text_number::{HEIGHT, TextNumberInput},
 };
-use imgui::Ui;
+use imgui::{StyleColor, Ui};
 use oblikovati_api::types::{
     TEXT_ALIGN_BASELINE, TEXT_ALIGN_CENTER, TEXT_ALIGN_LEFT, TEXT_ALIGN_LOWER, TEXT_ALIGN_MIDDLE,
     TEXT_ALIGN_RIGHT, TEXT_ALIGN_UPPER,
@@ -24,6 +24,7 @@ pub(super) fn draw(
         | ui.input_text("Rotation (deg)", &mut draft.rotation_degrees)
             .build()
         | alignment_rows(ui, draft)
+        | super::text_spacing::draw(ui, &mut draft.formatting.line_spacing)
 }
 
 fn font_row(ui: &Ui, family: &mut String, families: &[String], filter: &mut String) -> bool {
@@ -107,6 +108,15 @@ fn alignment_row<T: Clone + PartialEq>(
         .iter()
         .find(|(value, _)| value == current)
         .map_or("", |(_, name)| *name);
+    let _highlight = choices
+        .first()
+        .filter(|(default, _)| default != current)
+        .map(|_| {
+            ui.push_style_color(
+                StyleColor::FrameBg,
+                ui.style_color(StyleColor::HeaderActive),
+            )
+        });
     let Some(_list) = ui.begin_combo(label, shown) else {
         return false;
     };

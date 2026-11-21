@@ -131,10 +131,10 @@ fn hover_help_requires_full_method_and_rejects_invalid_positions() {
 fn complete_embedded_catalog_round_trips_with_unique_named_fields() {
     let snapshot: MethodHelpSnapshot =
         serde_json::from_str(include_str!("../resources/method-help.json")).unwrap();
-    assert_eq!(snapshot.api_version, "0.161.0");
+    assert_eq!(snapshot.api_version, "0.162.0");
     assert_eq!(
         snapshot.api_revision,
-        "98425811b462c18ec573dfdcc33f2c7b264a6e25"
+        "f489eb15d33bb4fea751bf230a92a65ccafd9dec"
     );
     assert_eq!(snapshot.methods.len(), 654);
     for wire in [METHOD_SKETCH_ADD_TEXT, METHOD_SKETCH_EDIT_TEXT] {
@@ -143,13 +143,12 @@ fn complete_embedded_catalog_round_trips_with_unique_named_fields() {
             .iter()
             .find(|help| help.wire == wire)
             .unwrap();
-        assert!(
-            schema
-                .parameters
-                .iter()
-                .any(|field| field.name == "formattingRuns"),
-            "{wire} must expose the released formatting ranges"
-        );
+        for name in ["formattingRuns", "lineSpacing"] {
+            assert!(
+                schema.parameters.iter().any(|field| field.name == name),
+                "{wire} must expose {name}"
+            );
+        }
     }
     verify_snapshot_names(&snapshot);
     MethodHelpCatalog::new(snapshot).unwrap();

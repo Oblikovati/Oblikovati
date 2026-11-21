@@ -21,6 +21,8 @@ mod text_font_height;
 mod text_format_choices;
 #[path = "text_italic.rs"]
 mod text_italic;
+#[path = "text_line_spacing.rs"]
+mod text_line_spacing;
 #[path = "text_numbering.rs"]
 mod text_numbering;
 #[path = "text_presets.rs"]

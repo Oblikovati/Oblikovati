@@ -343,6 +343,7 @@ fn text_style(fields: &GuiSketchTextDraft) -> Result<SketchTextStyle, String> {
         rotation,
         h_align: fields.h_align.clone(),
         v_align: fields.v_align.clone(),
+        line_spacing: fields.formatting.line_spacing.clone(),
         formatting_runs: fields.formatting.runs.clone(),
         ..Default::default()
     })
@@ -386,6 +387,7 @@ impl TextPlacementDraft {
         style.family = draft.family;
         style.h_align = draft.h_align;
         style.v_align = draft.v_align;
+        style.line_spacing = draft.line_spacing;
         style.formatting_runs = draft.formatting_runs;
         if self.fields.height_mm != initial.height_mm {
             style.height = draft.height;
@@ -414,6 +416,7 @@ fn fields_from_style(style: &SketchTextStyle) -> GuiSketchTextDraft {
             style.v_align.clone()
         },
         formatting: Box::new(GuiSketchTextFormatting {
+            line_spacing: style.line_spacing.clone(),
             runs: style.formatting_runs.clone(),
         }),
     }

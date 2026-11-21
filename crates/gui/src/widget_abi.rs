@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use imgui::{Condition, ImColor32, ImString, SelectableFlags, Ui};
+#[cfg(test)]
+#[path = "widget_text_line_advance_tests.rs"]
+mod text_line_advance_tests;
 unsafe extern "C" {
+    fn oblikovati_gui_push_text_line_advance(factor: f32) -> f32;
+    fn oblikovati_gui_pop_text_line_advance(original: f32);
     fn oblikovati_gui_window_is_moving() -> bool;
     fn oblikovati_gui_workspace_dockspace(width: f32, height: f32) -> u32;
     fn oblikovati_gui_outer_dockspace(width: f32, height: f32) -> u32;
@@ -42,6 +47,29 @@ unsafe extern "C" {
         color: u32,
         background: bool,
     );
+}
+
+/// Set the row height for one native multiline input, for example `text_line_advance(ui, 2.)`.
+pub(crate) fn text_line_advance(ui: &Ui, factor: f32) -> Option<TextLineAdvance<'_>> {
+    if factor == 1. || !(factor * ui.current_font_size()).is_finite() || factor <= 0. {
+        return None;
+    }
+    // The UI frame owns the current font stack. The guard restores the original size
+    // before any sibling widget reads it, including when the caller unwinds.
+    let original = unsafe { oblikovati_gui_push_text_line_advance(factor) };
+    Some(TextLineAdvance { original, _ui: ui })
+}
+
+pub(crate) struct TextLineAdvance<'ui> {
+    original: f32,
+    _ui: &'ui Ui,
+}
+
+impl Drop for TextLineAdvance<'_> {
+    fn drop(&mut self) {
+        // A borrowed Ui keeps the same frame and font stack live until this call returns.
+        unsafe { oblikovati_gui_pop_text_line_advance(self.original) };
+    }
 }
 
 /// Let workspace targets receive pointer input while an ImGui window is dragged.

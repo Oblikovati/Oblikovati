@@ -36,7 +36,12 @@ pub(super) struct TextContentEditor {
 }
 
 impl TextContentEditor {
-    pub(super) fn draw(&mut self, ui: &Ui, draft: &mut GuiSketchTextDraft) -> bool {
+    pub(super) fn draw(
+        &mut self,
+        ui: &Ui,
+        draft: &mut GuiSketchTextDraft,
+        row_factor: f64,
+    ) -> bool {
         self.keep_valid_selection(&draft.content);
         if self.restore.is_some() {
             ui.set_keyboard_focus_here();
@@ -49,8 +54,8 @@ impl TextContentEditor {
                 .is_some_and(|range| selection_has(runs, range, flag))
         });
         let before = (!runs.is_empty()).then(|| draft.content.clone());
-        let changed =
-            self.input(ui, &mut draft.content, face) | self.controls(ui, &mut draft.content);
+        let changed = self.input(ui, &mut draft.content, row_factor, face)
+            | self.controls(ui, &mut draft.content);
         if let Some(before) = before.filter(|text| text != &draft.content) {
             let retained = character_ranges::retain_unchanged_runs(runs, &before, &draft.content);
             draft.formatting.runs = (!retained.is_empty()).then_some(retained);
@@ -70,17 +75,27 @@ impl TextContentEditor {
         self.restore.is_some()
     }
 
-    fn input(&mut self, ui: &Ui, content: &mut String, face: [bool; 2]) -> bool {
-        let typed = self.content_field(ui, content, face);
+    fn input(&mut self, ui: &Ui, content: &mut String, row_factor: f64, face: [bool; 2]) -> bool {
+        let typed = self.content_field(ui, content, row_factor, face);
         ui.same_line();
         ui.text("Content");
         typed
     }
 
-    fn content_field(&mut self, ui: &Ui, content: &mut String, [bold, italic]: [bool; 2]) -> bool {
+    fn content_field(
+        &mut self,
+        ui: &Ui,
+        content: &mut String,
+        row_factor: f64,
+        [bold, italic]: [bool; 2],
+    ) -> bool {
         const SIZE: [f32; 2] = [295., 100.];
         let _font =
             crate::ui_scale::sketch_content_font(ui, bold, italic).map(|font| ui.push_font(font));
+        let normal = ui.current_font_size();
+        // Keep the native editor inside its measurable pixel range. The canvas retains model units.
+        let height = (row_factor * f64::from(normal)).clamp(1., f64::from(SIZE[1]));
+        let _line_advance = crate::widget_abi::text_line_advance(ui, height as f32 / normal);
         ui.input_text_multiline("##Content", content, SIZE)
             .callback(InputTextMultilineCallback::ALWAYS, SelectionCallback(self))
             .build()

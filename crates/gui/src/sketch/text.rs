@@ -6,7 +6,8 @@ use crate::{
 };
 use imgui::{Key, Ui};
 use oblikovati_api::types::{
-    SketchTextRun, TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT, TextHorizontalAlign, TextVerticalAlign,
+    SketchTextLineSpacing, SketchTextRun, TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT,
+    TextHorizontalAlign, TextVerticalAlign,
 };
 use std::cell::{Cell, RefCell};
 #[path = "text_format.rs"]
@@ -17,6 +18,8 @@ mod text_content;
 mod text_number;
 #[path = "text_presets.rs"]
 mod text_presets;
+#[path = "text_spacing.rs"]
+mod text_spacing;
 #[path = "text_width.rs"]
 mod text_width;
 
@@ -37,6 +40,7 @@ pub struct GuiSketchTextDraft {
 /// Text formatting retained by the dialog and its named presets.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiSketchTextFormatting {
+    pub line_spacing: Option<Box<SketchTextLineSpacing>>,
     pub runs: Option<Vec<SketchTextRun>>,
 }
 
@@ -160,8 +164,9 @@ impl SketchTextDialog {
             *self.content.borrow_mut() = Default::default();
         }
         let escape_used = presets.draw_name(ui, &draft);
+        let row_factor = text_spacing::editor_row_factor(&draft);
         let changed = changed_preset
-            | self.content.borrow_mut().draw(ui, &mut draft)
+            | self.content.borrow_mut().draw(ui, &mut draft, row_factor)
             | format_controls::draw(
                 ui,
                 &mut draft,

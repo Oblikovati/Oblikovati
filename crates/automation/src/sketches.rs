@@ -26,6 +26,7 @@ mod pattern;
 mod properties;
 mod references;
 mod spline_handle;
+mod text;
 mod transform;
 use oblikovati_api::{Error, wire::*};
 use oblikovati_model::{
@@ -43,7 +44,7 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 26] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 28] = [
     METHOD_SKETCH_ADD_ASSOCIATIVE_ENTITY,
     METHOD_SKETCH_ADD_BLOCK_INSTANCE,
     METHOD_SKETCH_EXPLODE_BLOCK_INSTANCE,
@@ -61,6 +62,8 @@ pub const SKETCH_COMMAND_METHODS: [&str; 26] = [
     METHOD_SKETCH_TRANSFORM,
     METHOD_SKETCH_ADD_PATTERN,
     METHOD_SKETCH_ADD_ENTITY,
+    METHOD_SKETCH_ADD_TEXT,
+    METHOD_SKETCH_EDIT_TEXT,
     METHOD_SKETCH_ADD_CONSTRAINT,
     METHOD_SKETCH_DELETE_CONSTRAINT,
     METHOD_SKETCH_SET_CONSTRAINT_GLYPH_VISIBILITY,
@@ -72,7 +75,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 26] = [
     METHOD_SKETCH_SET_SPLINE_HANDLE,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
-pub const SKETCH_QUERY_METHODS: [&str; 13] = [
+pub const SKETCH_QUERY_METHODS: [&str; 14] = [
     METHOD_SKETCH_GET_INFERENCE_SCOPE,
     METHOD_SKETCH_GET_ENTITY_FORMAT,
     METHOD_SKETCH_BLOCK_DEFINITION_LIST,
@@ -84,6 +87,7 @@ pub const SKETCH_QUERY_METHODS: [&str; 13] = [
     METHOD_SKETCH_DIMENSIONS,
     METHOD_SKETCH_CONSTRAINT_STATUS,
     METHOD_SKETCH_ENTITIES,
+    METHOD_SKETCH_GET_TEXT,
     METHOD_SKETCH_REFERENCE_KEY,
     METHOD_SKETCH_RESOLVE_REFERENCE,
 ];
@@ -123,6 +127,9 @@ pub(super) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     }
     if method == METHOD_SKETCH_ENTITIES {
         return entities::query(files, crate::decode(method, request)?);
+    }
+    if method == METHOD_SKETCH_GET_TEXT {
+        return text::get(files, crate::decode(method, request)?);
     }
     references::query(files, method, request)
 }
@@ -200,6 +207,8 @@ fn apply_geometry_command<O: TransactionObserver, W: WorkspaceObserver, F: Docum
         METHOD_SKETCH_ADD_ENTITY => {
             add_entity::apply(files, crate::decode(method, request)?, None, None)
         }
+        METHOD_SKETCH_ADD_TEXT => text::add(files, crate::decode(method, request)?),
+        METHOD_SKETCH_EDIT_TEXT => text::edit(files, crate::decode(method, request)?),
         METHOD_SKETCH_ADD_ASSOCIATIVE_ENTITY => {
             add_entity::apply(files, crate::decode(method, request)?, None, None)
         }

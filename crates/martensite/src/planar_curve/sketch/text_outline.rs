@@ -15,9 +15,14 @@ use martensite_tkservice::{
 };
 use martensite_tktopalgo::brep_bnd_lib::BRepBndLib;
 use martensite_tkv3d::std_prs::{StdPrsBRepFont, StdPrsBRepFontTextOptions};
-use oblikovati_api::types::SketchTextStyle;
+use oblikovati_api::types::{
+    SketchTextLineSpacing, SketchTextStyle, TEXT_LINE_SPACING_DOUBLE, TEXT_LINE_SPACING_EXACTLY,
+    TEXT_LINE_SPACING_MULTIPLE, TEXT_LINE_SPACING_ONE_AND_HALF, TEXT_LINE_SPACING_SINGLE,
+};
 use oblikovati_model::sketch::{sketch_text_width_factor, uniform_sketch_text_width};
 
+#[path = "text_baselines.rs"]
+mod text_baselines;
 #[path = "text_font_aspect.rs"]
 mod text_font_aspect;
 
@@ -33,7 +38,7 @@ pub fn sample_sketch_text(
     if style.content.trim().is_empty() {
         return Ok(Vec::new());
     }
-    let shape = glyph_shape(style, size)?;
+    let shape = glyph_shape(style, size, options.working_scale)?;
     let shift = vertical_shift(&shape, &style.v_align.0)?;
     let placement = TextPlacement {
         anchor,
@@ -65,7 +70,7 @@ fn working_em(style: &SketchTextStyle, anchor: [f64; 2], scale: f64) -> Result<f
     ))
 }
 
-fn glyph_shape(style: &SketchTextStyle, size: f64) -> Result<topods::Shape, String> {
+fn glyph_shape(style: &SketchTextStyle, size: f64, scale: f64) -> Result<topods::Shape, String> {
     let (family, search) = if style.family.is_empty() {
         ("sans-serif", FontStrictLevel::Any)
     } else {
@@ -88,7 +93,7 @@ fn glyph_shape(style: &SketchTextStyle, size: f64) -> Result<topods::Shape, Stri
         vertical_alignment: AlignY::Topfirstline,
         ..Default::default()
     };
-    let shape = font.render_text_with(&native_string(&style.content)?, &options);
+    let shape = render_glyphs(&font, &options, style, scale)?;
     if shape.is_null() {
         return Err(format!(
             "sketch text in font {family:?}: expected renderable glyph outlines"
@@ -110,6 +115,52 @@ fn configure_glyph_width(font: &StdPrsBRepFont, style: &SketchTextStyle) -> Resu
     Err(format!(
         "sketch text width {percent:?}: native font declined this scale"
     ))
+}
+
+fn render_glyphs(
+    font: &StdPrsBRepFont,
+    options: &StdPrsBRepFontTextOptions,
+    style: &SketchTextStyle,
+    scale: f64,
+) -> Result<topods::Shape, String> {
+    let text = native_string(&style.content)?;
+    let spacing = style.line_spacing.as_deref();
+    SketchTextLineSpacing::validate(spacing).map_err(|error| error.to_string())?;
+    let Some(spacing) = spacing.filter(|choice| choice.mode != TEXT_LINE_SPACING_SINGLE) else {
+        return Ok(font.render_text_with(&text, options));
+    };
+    let natural = font.line_spacing();
+    let advance = working_baseline_advance(spacing, natural, scale)?;
+    let plan = font
+        .plan_text(
+            &text,
+            options.horizontal_alignment,
+            options.vertical_alignment,
+        )
+        .ok_or("sketch text line spacing: expected a native glyph plan")?;
+    let spaced = text_baselines::set_baseline_advance(plan, natural, advance)?;
+    Ok(font.render_plan_with(&spaced, options))
+}
+
+fn working_baseline_advance(
+    spacing: &SketchTextLineSpacing,
+    natural: f64,
+    scale: f64,
+) -> Result<f64, String> {
+    [
+        (TEXT_LINE_SPACING_ONE_AND_HALF, natural * 1.5),
+        (TEXT_LINE_SPACING_DOUBLE, natural * 2.),
+        (TEXT_LINE_SPACING_MULTIPLE, natural * spacing.value),
+        (TEXT_LINE_SPACING_EXACTLY, spacing.value / scale),
+    ]
+    .into_iter()
+    .find_map(|(mode, advance)| (spacing.mode == mode).then_some(advance))
+    .ok_or_else(|| {
+        format!(
+            "sketch text spacing {:?}: expected an explicit baseline advance",
+            spacing.mode
+        )
+    })
 }
 
 fn native_string(value: &str) -> Result<String8, String> {
@@ -234,7 +285,7 @@ pub fn pick_sketch_text(
     if style.content.trim().is_empty() {
         return Ok(None);
     }
-    let shape = glyph_shape(style, size)?;
+    let shape = glyph_shape(style, size, scale)?;
     let shift = vertical_shift(&shape, &style.v_align.0)?;
     let (sin, cos) = style.rotation.sin_cos();
     let [x, y] = [cursor[0] - anchor[0], cursor[1] - anchor[1]];

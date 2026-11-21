@@ -57,6 +57,21 @@ std::uint32_t dock_panel_menu() {
 }
 }
 extern "C" {
+float oblikovati_gui_push_text_line_advance(float factor) {
+    ImFont* font = ImGui::GetFont();
+    const float original = font->FontSize;
+    // ImGui uses the effective font size as the row height. Changing the nominal
+    // and effective sizes together keeps the baked glyph advances and quads at the same scale.
+    font->FontSize = original * factor;
+    ImGui::PushFont(font);
+    return original;
+}
+
+void oblikovati_gui_pop_text_line_advance(float original) {
+    ImGui::GetFont()->FontSize = original;
+    ImGui::PopFont();
+}
+
 bool oblikovati_gui_window_is_moving() {
     return ImGui::GetCurrentContext()->MovingWindow != nullptr;
 }

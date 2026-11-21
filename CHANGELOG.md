@@ -10,6 +10,10 @@
 
 - Added Bold preview and editing for a full Sketch Text selection. (#3907)
 
+- Added five line-spacing modes to Format Text and retained the selected spacing in native sketch files. (#3907)
+
+- Added typed Sketch Text creation, editing, and queries for automation. (#3907)
+
 - Added paragraph bullets, numbering, and diameter-symbol insertion to Format Text. (#3907)
 
 - Preserved valid character-format ranges in native sketch files and sketch history. (#3907)

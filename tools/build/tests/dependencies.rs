@@ -166,6 +166,6 @@ fn application_lock_consumes_the_api_release_named_by_packaging() {
     let pin = crate::release_config::load(tree.root()).unwrap().api;
     let names = locked_crates(&tree.root().join("Cargo.lock"), &pin).unwrap();
     assert_eq!(names, ["oblikovati-api"]);
-    assert_eq!(pin.version, "0.161.0");
-    assert_eq!(pin.revision, "98425811b462c18ec573dfdcc33f2c7b264a6e25");
+    assert_eq!(pin.version, "0.162.0");
+    assert_eq!(pin.revision, "f489eb15d33bb4fea751bf230a92a65ccafd9dec");
 }

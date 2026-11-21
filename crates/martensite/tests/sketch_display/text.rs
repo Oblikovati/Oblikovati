@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-use oblikovati_api::types::{SketchTextRun, SketchTextStyle, TEXT_ALIGN_UPPER};
+use oblikovati_api::types::{
+    SketchTextLineSpacing, SketchTextRun, SketchTextStyle, TEXT_ALIGN_UPPER,
+    TEXT_LINE_SPACING_DOUBLE, TEXT_LINE_SPACING_EXACTLY,
+};
 use oblikovati_martensite::planar_curve::sketch::{pick_sketch_text, sample_sketch_text};
 use oblikovati_model::sketch::SketchText2D;
 
@@ -50,6 +53,46 @@ fn glyph_placement_preserves_working_scale_and_rotation() {
     };
     let rotated = sample_sketch_text(&style, anchor, sampled).unwrap();
     assert_rotation(&baseline, &rotated, anchor);
+}
+
+#[test]
+fn line_spacing_changes_baselines_without_scaling_the_glyphs() {
+    let metrics = SketchSamplingOptionsV1 {
+        working_scale: 0.1,
+        ..options()
+    };
+    let mut style = SketchTextStyle {
+        content: "O".into(),
+        family: "DejaVu Sans".into(),
+        height: 0.8,
+        ..Default::default()
+    };
+    let measure = |style: &SketchTextStyle| {
+        outline_height(&sample_sketch_text(style, [0.; 2], metrics).unwrap())
+    };
+    let glyph_height = measure(&style);
+    style.content = "O\n\nO".into();
+    let natural_height = measure(&style);
+    style.line_spacing = Some(Box::new(SketchTextLineSpacing {
+        mode: TEXT_LINE_SPACING_DOUBLE,
+        value: 0.,
+    }));
+    assert!((measure(&style) - glyph_height - 2. * (natural_height - glyph_height)).abs() < 1e-6);
+    style.line_spacing = Some(Box::new(SketchTextLineSpacing {
+        mode: TEXT_LINE_SPACING_EXACTLY,
+        value: 0.7,
+    }));
+    assert!((measure(&style) - glyph_height - 14.).abs() < 1e-6);
+}
+
+fn outline_height(paths: &[Vec<[f64; 2]>]) -> f64 {
+    let [min, max] = paths
+        .iter()
+        .flatten()
+        .fold([f64::INFINITY, f64::NEG_INFINITY], |range, point| {
+            [range[0].min(point[1]), range[1].max(point[1])]
+        });
+    max - min
 }
 
 fn assert_rotation(before: &[Vec<[f64; 2]>], after: &[Vec<[f64; 2]>], anchor: [f64; 2]) {

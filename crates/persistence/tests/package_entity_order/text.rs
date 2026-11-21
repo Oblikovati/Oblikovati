@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_api::types::{
-    Color, OVERRIDE_COLOR_SOURCE, SketchTextRun, SketchTextStyle, TEXT_ALIGN_CENTER,
-    TEXT_ALIGN_UPPER,
+    Color, OVERRIDE_COLOR_SOURCE, SketchTextLineSpacing, SketchTextRun, SketchTextStyle,
+    TEXT_ALIGN_CENTER, TEXT_ALIGN_UPPER, TEXT_LINE_SPACING_DOUBLE, TEXT_LINE_SPACING_EXACTLY,
 };
 use oblikovati_model::sketch::{SKETCH_RECIPE_VERSION, SketchText2D};
 
@@ -12,32 +12,53 @@ const PLACED: DocumentSketchId = DocumentSketchId(7);
 
 #[test]
 fn native_yaml_round_trips_authored_text_style_and_its_hidden_anchor() {
-    check_text_round_trip(None);
+    check_text_round_trip(None, None);
 }
 
 #[test]
 fn native_yaml_round_trips_formatting_in_unicode_scalar_ranges() {
-    check_text_round_trip(Some(vec![SketchTextRun {
-        start: 6,
-        end: 7,
-        bold: true,
-        width_percent: Some(Box::new(50.)),
-        color: Some(Box::new(Color {
-            r: 0,
-            g: 128,
-            b: 255,
-            opacity: 1.,
-            source: OVERRIDE_COLOR_SOURCE,
-        })),
-        ..Default::default()
-    }]));
+    check_text_round_trip(
+        Some(vec![SketchTextRun {
+            start: 6,
+            end: 7,
+            bold: true,
+            width_percent: Some(Box::new(50.)),
+            color: Some(Box::new(Color {
+                r: 0,
+                g: 128,
+                b: 255,
+                opacity: 1.,
+                source: OVERRIDE_COLOR_SOURCE,
+            })),
+            ..Default::default()
+        }]),
+        Some(SketchTextLineSpacing {
+            mode: TEXT_LINE_SPACING_DOUBLE,
+            value: 0.,
+        }),
+    );
 }
 
-fn check_text_round_trip(formatting: Option<Vec<SketchTextRun>>) {
+#[test]
+fn native_yaml_round_trips_exact_baseline_spacing() {
+    check_text_round_trip(
+        None,
+        Some(SketchTextLineSpacing {
+            mode: TEXT_LINE_SPACING_EXACTLY,
+            value: 0.45,
+        }),
+    );
+}
+
+fn check_text_round_trip(
+    formatting: Option<Vec<SketchTextRun>>,
+    spacing: Option<SketchTextLineSpacing>,
+) {
     let mut owner = sketches();
     let mut geometry = geometry();
     let mut text = add_text(&mut geometry);
     text.style.formatting_runs = formatting;
+    text.style.line_spacing = spacing.map(Box::new);
     geometry.set_text_style(TEXT, text.style.clone()).unwrap();
     geometry.add_point(SketchEntityId(12), [1., 2.]).unwrap();
     owner.replace_geometry(PLACED, geometry).unwrap();
@@ -68,6 +89,7 @@ fn add_text(geometry: &mut Sketch2D) -> SketchText2D {
             h_align: TEXT_ALIGN_CENTER,
             v_align: TEXT_ALIGN_UPPER,
             formatting_runs: None,
+            line_spacing: None,
         },
     };
     geometry.add_text(text.clone()).unwrap();
@@ -91,6 +113,13 @@ fn text_style_edit_preserves_identity_and_rejects_invalid_changes() {
     assert!(geometry.set_text_style(TEXT, style.clone()).is_err());
     assert_eq!(geometry.text(TEXT).unwrap(), &text);
     style.height = 0.7;
+    style.line_spacing = Some(Box::new(SketchTextLineSpacing {
+        mode: TEXT_LINE_SPACING_DOUBLE,
+        value: 2.,
+    }));
+    assert!(geometry.set_text_style(TEXT, style.clone()).is_err());
+    assert_eq!(geometry.text(TEXT).unwrap(), &text);
+    style.line_spacing.as_mut().unwrap().value = 0.;
     style.content = "REV B".into();
     geometry.set_text_style(TEXT, style.clone()).unwrap();
     assert_eq!(geometry.text(TEXT).unwrap().style, style);

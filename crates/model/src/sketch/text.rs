@@ -2,8 +2,9 @@
 //! Retain authored sketch text independently of its derived glyph outlines.
 use super::{Sketch2D, SketchEntityId, SketchError, SketchRecipe};
 use oblikovati_api::types::{
-    Color, SketchTextRun, SketchTextStyle, TEXT_ALIGN_BASELINE, TEXT_ALIGN_CENTER, TEXT_ALIGN_LEFT,
-    TEXT_ALIGN_LOWER, TEXT_ALIGN_MIDDLE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_UPPER,
+    Color, SketchTextLineSpacing, SketchTextRun, SketchTextStyle, TEXT_ALIGN_BASELINE,
+    TEXT_ALIGN_CENTER, TEXT_ALIGN_LEFT, TEXT_ALIGN_LOWER, TEXT_ALIGN_MIDDLE, TEXT_ALIGN_RIGHT,
+    TEXT_ALIGN_UPPER,
 };
 
 const TEXT_RECIPE_VERSION: u32 = 22;
@@ -186,6 +187,8 @@ fn normalize_text_style(style: &mut SketchTextStyle) -> Result<(), SketchError> 
         style.v_align = TEXT_ALIGN_BASELINE;
     }
     require_text_alignment(style)?;
+    SketchTextLineSpacing::validate(style.line_spacing.as_deref())
+        .map_err(|error| SketchError::Definition(error.to_string()))?;
     SketchTextRun::validate(
         Some(&style.content),
         style.formatting_runs.as_deref().unwrap_or_default(),

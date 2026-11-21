@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Drive native font, height and alignment controls and inspect their glyph output.
 use super::*;
-use oblikovati_api::types::{SketchTextStyle, TEXT_ALIGN_CENTER, TEXT_ALIGN_MIDDLE};
+use oblikovati_api::types::{
+    SketchTextStyle, TEXT_ALIGN_CENTER, TEXT_ALIGN_MIDDLE, TEXT_LINE_SPACING_DOUBLE,
+};
 
 const MONOSPACE: &str = "DejaVu Sans Mono";
 pub(super) const GLYPH_CROP_WIDTH: usize = 90;
@@ -43,6 +45,7 @@ fn choose_formats(world: &mut ApplicationWorld) {
         taller,
         "alignment changed the glyph pixels"
     );
+    choose_format(world, "Single", "Double");
     assert_preview_style(world);
 }
 
@@ -108,6 +111,10 @@ fn assert_format(style: &SketchTextStyle) {
     assert_eq!(style.height, 6.10 / 10.);
     assert_eq!(style.h_align, TEXT_ALIGN_CENTER);
     assert_eq!(style.v_align, TEXT_ALIGN_MIDDLE);
+    assert_eq!(
+        style.line_spacing.as_ref().unwrap().mode,
+        TEXT_LINE_SPACING_DOUBLE
+    );
 }
 
 fn check_committed_format_history(

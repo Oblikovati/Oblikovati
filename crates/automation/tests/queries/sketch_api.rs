@@ -492,3 +492,6 @@ mod pattern;
 
 #[path = "sketch_api/inference_scope.rs"]
 mod inference_scope;
+
+#[path = "sketch_api/text.rs"]
+mod text;
