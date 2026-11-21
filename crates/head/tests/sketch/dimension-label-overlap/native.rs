@@ -87,6 +87,16 @@ pub(in super::super) fn edit_dimension_with_mouse(
     expected_name: &str,
     replacement: &str,
 ) {
+    open_dimension_with_mouse(world, label, expected_name);
+    accept_dimension_digits(world, replacement);
+}
+
+/// Open a dimension by its visible value and confirm its identity, such as 10 for d0.
+pub(in super::super) fn open_dimension_with_mouse(
+    world: &mut ApplicationWorld,
+    label: &str,
+    expected_name: &str,
+) {
     let position = world.exact_run_center(label);
     eprintln!("clicking dimension {label:?} at {position:?}");
     x11_input::click(position);
@@ -97,8 +107,18 @@ pub(in super::super) fn edit_dimension_with_mouse(
         text.split_whitespace().any(|word| word == expected_name),
         "{label}: expected {expected_name:?} editor, got {text:?}"
     );
-    x11_input::type_digits(replacement);
-    world.pump(Vec::new());
+}
+
+/// Enter a replacement using native key events, for example the digits in "12".
+pub(in super::super) fn accept_dimension_digits(world: &mut ApplicationWorld, replacement: &str) {
+    for digit in replacement.bytes() {
+        assert!(
+            digit.is_ascii_digit(),
+            "expected an ASCII digit, got {digit}"
+        );
+        x11_input::press_keysym(u32::from(digit));
+        world.pump(Vec::new());
+    }
     x11_input::press_keysym(0xff0d);
     world.pump(Vec::new());
 }

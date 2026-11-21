@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exercise live Text fields against a real dimension, through document save and reopen.
 use super::super::super::sketch::dimension_label_overlap::{
-    create_midpoint_dimensions, edit_dimension_with_mouse,
+    accept_dimension_digits, create_midpoint_dimensions, edit_dimension_with_mouse,
+    open_dimension_with_mouse,
 };
 use super::*;
 use text_format_choices::{choose_format, reopen_text_sketch_from_file};
@@ -15,6 +16,43 @@ fn native_mixed_text_fields_follow_dimension_history_and_file_reopen() {
     verify_live_dimension_history(&mut world);
     verify_native_file_round_trip(&mut world);
     world.close();
+}
+
+#[given("Text displays the inserted d0 value 10.000")]
+fn place_linked_dimension_text(world: &mut ApplicationWorld) {
+    create_midpoint_dimensions(world, "10", 1.);
+    add_default_numeric_text(world);
+    world.text_creation_baseline = Some(world.edited_geometry());
+}
+
+#[when("the user opens the dimension identified as d0")]
+fn open_linked_dimension(world: &mut ApplicationWorld) {
+    open_dimension_with_mouse(world, "10", "d0");
+}
+
+#[when("the user enters 1 then 2 and accept")]
+fn accept_linked_dimension(world: &mut ApplicationWorld) {
+    accept_dimension_digits(world, "12");
+}
+
+#[then("its source annotation is 12 and Text displays 12.000")]
+fn linked_dimension_is_updated(world: &mut ApplicationWorld) {
+    world.expect_annotation("12");
+    expect_scene_text(world, &["12.000"]);
+    capture_when_requested(world, "linked-dimension-12");
+}
+
+#[when("the user undoes the source edit")]
+fn undo_linked_dimension(world: &mut ApplicationWorld) {
+    text_edit::undo_edit(world);
+}
+
+#[then("the source and Text return to 10 and 10.000 respectively")]
+fn linked_dimension_is_restored(world: &mut ApplicationWorld) {
+    world.expect_annotation("10");
+    expect_scene_text(world, &["10.000"]);
+    assert_eq!(Some(world.edited_geometry()), world.text_creation_baseline);
+    capture_when_requested(world, "linked-dimension-undo-10");
 }
 
 /// Place one live field for the current sketch's `d0`, for example at 10 mm.
