@@ -190,6 +190,11 @@ pub(crate) fn draw_side_groups(
         &display.hidden_panels,
         context.owners.customization,
     ) {
+        if panel == RibbonPanel::Exit {
+            // Sketch editing needs a direct way out in the vertical ribbon too (#3856).
+            draw_expanded(&mut context, tab, panel, ui.cursor_pos(), layout);
+            continue;
+        }
         let open = display.temporary == Some(TemporaryPanel::Group(panel));
         let lit = ui.style_color(imgui::StyleColor::NavHighlight);
         let _lit = open.then(|| ui.push_style_color(imgui::StyleColor::Button, lit));

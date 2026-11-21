@@ -7,6 +7,8 @@ const SIDE_WIDTH: f32 = 212.;
 
 #[path = "compact_modify.rs"]
 mod compact_modify;
+#[path = "finish_sketch.rs"]
+mod finish_sketch;
 
 /// A point on the ribbon with no control under it, wherever the ribbon sits now.
 fn ribbon_blank_point() -> [i32; 2] {

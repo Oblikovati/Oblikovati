@@ -271,6 +271,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Kept Finish Sketch directly visible in the Exit group when the ribbon is docked at a side. (#3856)
+
 - Highlighted active groups on side and floating ribbons and listed Slot, Draft, and Thread as disabled in Modify. (#3856)
 
 - Kept the desktop responsive when a resize clips a dock tab bar. (#3860)
