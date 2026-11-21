@@ -28103,10 +28103,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go model/sketch and addin/router SketchText and Glyph tests passed at aa8297d1b0ac33c024f19e54821536d76e8a447a. They cover glyph rendering and typed calls. The Rust native scenarios cover property selection and precision.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Sketch constraint solve, font glyph curves, and Vulkan sketch scene",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. Windows and macOS remain untested for this scenario.",
+      "kernel_integration": "Resolve typed filename and model-parameter fields in the session and render their sketch text through Martensite.",
+      "rust_tests": "Pinned native text-34: 1 scenario and 10 steps passed. See architecture/rust-port/receipts/2026-11-21-sketch-text-filename-precision-3907/text-34 at 2a380aa07bcc9e591f74d0e5882171f44cecf5b8.",
+      "oracle": "Native Format Text controls and shaded field, resolved viewport Sketch Text, and visible solver status on the reusable Part6 fixture.",
+      "expected_result": "Standard properties show Part6 as the source with numeric precision disabled. FILENAME is shaded in the editor and resolves to Part6.opd on the canvas. Finish has no source or parameters; User shows Part6 with no parameters. The filename field survives both changes.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:9bbed441840d8d12d575a384533e17f48a41531c31c3b97345be6bd305003a0f",
@@ -28120,10 +28130,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go model/sketch and addin/router SketchText and Glyph tests passed at aa8297d1b0ac33c024f19e54821536d76e8a447a. They cover glyph rendering and typed calls. The Rust native scenarios cover property selection and precision.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Sketch constraint solve, font glyph curves, and Vulkan sketch scene",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. Windows and macOS remain untested for this scenario.",
+      "kernel_integration": "Resolve typed filename and model-parameter fields in the session and render their sketch text through Martensite.",
+      "rust_tests": "Pinned native text-35: 1 scenario and 10 steps passed. See architecture/rust-port/receipts/2026-11-21-sketch-text-filename-precision-3907/text-35 at 2a380aa07bcc9e591f74d0e5882171f44cecf5b8.",
+      "oracle": "Native Format Text controls and shaded field, resolved viewport Sketch Text, and visible solver status on the reusable Part6 fixture.",
+      "expected_result": "Precision offers zero through eight decimal places. Accepting FILENAME and d0 at two decimal places displays Part6.opd and 10.00 on separate lines at Ready. The prior 10.000 field remains and the solver count rises from 45 to 47.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:d4ad2cb5b1f6719dad249f2dd6ad4fc4d21efec567e78bdafca688a1081859bc",

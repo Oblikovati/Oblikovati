@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/obk-mixed-field-source-b93kjxi0/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/obk-mixed-field-source-b93kjxi0/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T04:01:07.607005466Z" time="158.123539465"><testcase name="Scenario: text-35 Accept mixed fields with two-decimal model precision: tmp/obk-mixed-field-source-b93kjxi0/checkout/features/sketch/text/scenario.feature:354:3" time="158.123539465"><system-out><![CDATA[  Scenario: text-35 Accept mixed fields with two-decimal model precision
+   ✔  Given the filename property remains in the fresh editor
+   ✔  When the user selects Parameters - Model and inspect Precision
+   ✔  Then zero through eight decimal examples are offered
+   ✔  When the user chooses the two-decimal example
+   ✔  And the user focuses the editor, move to its end, press Return, and insert d0
+   ✔  Then the added model field displays 10.00
+   ✔  When the user accepts Format Text and press Escape
+   ✔  Then the current document filename and 10.00 remain in separate paragraphs at Ready
+   ✔  And the earlier linked Text still displays 10.000
+   ✔  And the status shows 47 dimensions needed
+]]></system-out></testcase></testsuite></testsuites>

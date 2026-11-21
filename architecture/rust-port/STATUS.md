@@ -151,7 +151,12 @@ using this status; the live scenario directory can change.
   Pinned `text-17` passed all six steps. Editing `d0` to 12 refreshed the
   visible linked Text to `12.000`. Undo restored `10`, `10.000`, and the
   original sketch. See `receipts/2026-11-21-sketch-text-linked-dimension-3907/`.
-  Pinned `text-16`, `text-34`, and `text-35` still need their Part6 setup.
+  Pinned `text-34` and `text-35` passed all 20 steps on the same Part6
+  setup. The filename field kept its source when switching to Finish and
+  User. The model field used two decimal places. The viewport kept the
+  earlier `10.000` and showed 47 dimensions needed at Ready. See
+  `receipts/2026-11-21-sketch-text-filename-precision-3907/`.
+  Pinned `text-16` still needs its Part6 setup.
   Pinned `text-38` passed all nine steps with a generated native
   `Part6.opd`. After reopening Sketch2, the two fractions, numbered
   paragraphs, linked values, and 47 dimensions needed were retained.
