@@ -12,6 +12,9 @@ const MINI_SIDE: f32 = 80.;
 const FULL_WHEEL_SIDE: f32 = 160.;
 #[path = "big_size.rs"]
 mod big_size;
+#[path = "fixture.rs"]
+mod fixture;
+pub(super) use fixture::open_block;
 #[path = "preferences.rs"]
 mod preferences;
 #[path = "segment_pixels.rs"]
@@ -40,14 +43,6 @@ fn open_wheel(world: &mut ApplicationWorld) {
     press_bar(world, "W");
     world.click(PLACED_AT);
     settle(world);
-}
-/// Open the documented wheel fixture; example: `open_block(world)` before navigation.
-pub(super) fn open_block(world: &mut ApplicationWorld) {
-    let path = super::scenario_root().join("fixtures/cad/main-window-frame-start.opd");
-    world.open_fixture(&path);
-    let id = world.active_id();
-    world.parts.push(id);
-    super::workspace_layout::browser_feature::expect_solid_visible(world);
 }
 fn open_wheel_on_block(world: &mut ApplicationWorld) {
     open_block(world);

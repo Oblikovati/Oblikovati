@@ -41,3 +41,11 @@ The native regression
 `document_saving_native_fixtures_reopen_and_survive_declined_replacement`
 opens all three files through the desktop, verifies the solid's physical
 properties, then declines replacing the empty Part.
+
+## Viewport Navigation Wheel
+
+[main-window-frame-start.opd](main-window-frame-start.opd) is the published
+scenario fixture with LF line endings. It contains a 40 × 25 × 20 mm solid and its
+constrained profile. The older pinned wheel scenarios describe the block
+without specifying a file. Their tests use this copy. When the published
+scenario directory is supplied, its fixture is used.
