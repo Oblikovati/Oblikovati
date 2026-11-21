@@ -162,30 +162,78 @@ pub(super) fn reopen_text_sketch_from_file(world: &mut ApplicationWorld) {
 #[test]
 fn sketch_text_rejects_zero_height_without_losing_the_last_valid_preview() {
     let mut world = ApplicationWorld::new();
-    text_edit::committed_b(&mut world);
+    let family = open_recorded_height_fraction(&mut world);
     let original = world.edited_geometry();
-    text_edit::open_existing(&mut world);
-    choose_format(&mut world, "Choose height", "6.10 mm");
+    let pixels = glyph_pixels(&mut world);
+    reject_zero_in_fraction_editor(&mut world);
+    assert_eq!(glyph_pixels(&mut world), pixels);
+    accept_typed_six_as_preview(&mut world, family);
+    click_editor_button(&mut world, "Cancel");
+    world.expect_ready();
+    world.expect_dimensions_needed(47);
+    assert_eq!(world.edited_geometry(), original);
+    text_linked_journey::capture_when_requested(&mut world, "height-fraction-cancel-at-ready");
+    world.close();
+}
+
+fn open_recorded_height_fraction(world: &mut ApplicationWorld) -> &'static str {
+    text_fraction::open_blue_text_with_freedoms(world, 47);
+    text_fraction::replace_with_fraction(world);
+    text_fraction::stack_selected_fraction(world);
+    let catalogue = world.state().sketch_text_font_families.unwrap();
+    let family = if catalogue.iter().any(|family| family == "Arial") {
+        "Arial"
+    } else {
+        "DejaVu Sans"
+    };
+    choose_font(world, family);
+    choose_format(world, "Choose height", "6.10 mm");
+    text_fraction::set_fraction_width(world, b"50");
+    click_editor_button(world, "OK");
+    let authored = world.edited_geometry();
+    reopen_text_sketch_from_file(world);
+    assert_eq!(world.edited_geometry(), authored);
+    capture_height_validation_fixture(world);
+    text_edit::open_existing(world);
+    world.run_in_window("Format Text", "6.10");
+    family
+}
+
+fn capture_height_validation_fixture(world: &ApplicationWorld) {
+    let Some(reports) = std::env::var_os("OBK_BDD_REPORTS") else {
+        return;
+    };
+    let saved = world.saved_path.as_ref().unwrap();
+    std::fs::copy(saved, std::path::PathBuf::from(reports).join("Part1.opd")).unwrap();
+}
+
+fn reject_zero_in_fraction_editor(world: &mut ApplicationWorld) {
     let valid_preview = world.app().owner.sketch_preview().unwrap();
-    let valid_pixels = glyph_pixels(&mut world);
-    focus_text_number(&mut world, "Height(mm)");
+    focus_text_number(world, "Height(mm)");
     x11_input::press_control_a();
     world.pump(Vec::new());
-    enter_text_number(&mut world, b"0");
+    enter_text_number(world, b"0");
     world.expect_text("Enter a size greater than 0.01 mm.");
-    if std::env::var_os("OBK_BDD_REPORTS").is_some() {
-        world.save_capture("sketch-text-height-warning");
-    }
     assert_eq!(world.state().sketch_text.unwrap().height_mm, "6.10");
     assert_eq!(world.app().owner.sketch_preview(), Some(valid_preview));
-    acknowledge_number_warning(&mut world, "Text Height");
-    assert_eq!(glyph_pixels(&mut world), valid_pixels);
-    enter_text_number(&mut world, b"6");
-    assert_eq!(world.state().sketch_text.unwrap().height_mm, "6");
+    text_linked_journey::capture_when_requested(world, "height-fraction-warning");
+    acknowledge_number_warning(world, "Text Height");
+}
+
+fn accept_typed_six_as_preview(world: &mut ApplicationWorld, family: &str) {
+    enter_text_number(world, b"6");
     world.expect_no_text("Enter a size greater than 0.01 mm.");
-    click_editor_button(&mut world, "Cancel");
-    assert_eq!(world.edited_geometry(), original);
-    world.close();
+    world.run_in_window("Format Text", "6");
+    world.run_in_window("Format Text", &family.replace(' ', ""));
+    let draft = world.state().sketch_text.unwrap();
+    assert_eq!(draft.height_mm, "6");
+    assert_eq!(draft.family, family);
+    let Some(ViewportSketchPreview::Text { style, .. }) = world.app().owner.sketch_preview() else {
+        panic!("expected the fraction preview at the corrected height");
+    };
+    text_fraction::assert_stacked(&style);
+    assert_eq!(style.height, 0.6);
+    text_linked_journey::capture_when_requested(world, "height-fraction-typed-six");
 }
 
 #[test]
