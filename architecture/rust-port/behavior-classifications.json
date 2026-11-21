@@ -34546,7 +34546,17 @@
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_tools.go; ../Oblikovati/app/sketch_geometry_tools.go",
       "mapping_reason": "Extended sketch entity, dimension, or reference behavior beyond the first rectangle.",
-      "reason": "The ellipse curve selection returns a distant boundary witness instead of the interior minimum; the exact case is tracked by Martensite #406. See receipts/2026-11-15-ellipse-measure-blocked/."
+      "reason": "The ellipse curve selection returns a distant boundary witness instead of the interior minimum; the exact case is tracked by Martensite #406. See receipts/2026-11-21-ellipse-measure-baseline-3910/.",
+      "go_test_premise": "Go aa8297d1b TestEllipseIsPickable checks that an axis-aligned ellipse can be picked on a curve sample. That test does not establish the reported Measure values or the analytic witness of this case.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Measure resolves the analytic ellipse and reads its properties after selection. The pinned conic extrema implementation loses the interior minimum for the tested cursor.",
+      "platforms": "Linux X11, Xvfb and Vulkan Lavapipe for the desktop scenario. Local Rust adapter integration test for the geometric witness.",
+      "kernel_integration": "The desktop owner selects through the analytic curve picker, which uses the Martensite extrema classification. A boundary witness outside the pick radius leaves Measure without a selection.",
+      "rust_tests": "sketch_scenarios_use_the_native_window ellipse-05 and rotated_ellipse_pick_matches_the_independent_occt_minimum fail at the same selection dependency.",
+      "oracle": "Independent OCCT interior witness, plus the recorded ellipse dimensions and global center after native pointer selection.",
+      "expected_result": "The ellipse is selected after Redo. Measure shows radii 7.579 and 3.806 mm, diameters 15.159 and 7.613 mm, length 36.758 mm, and center X 0.000, Y 27.574, Z -69.211 mm.",
+      "baseline_source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f"
     },
     {
       "id": "scenario:cca2542b3419b7b6eea7bd7f7a68c7375c1fc56bdad52fd19a1f7052e4d5cd70",
