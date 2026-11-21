@@ -37,6 +37,8 @@ mod text_fraction_preset;
 mod text_italic;
 #[path = "text_line_spacing.rs"]
 mod text_line_spacing;
+#[path = "text_linked_drag.rs"]
+mod text_linked_drag;
 #[path = "text_linked_insertion.rs"]
 mod text_linked_insertion;
 #[path = "text_linked_journey.rs"]

@@ -105,7 +105,8 @@ pub(super) fn append_text_paragraph(world: &mut ApplicationWorld) {
     }
 }
 
-fn insert_model_dimension(world: &mut ApplicationWorld, precision: Option<&str>) {
+/// Insert a reference to d0, for example using the default three decimal places.
+pub(super) fn insert_model_dimension(world: &mut ApplicationWorld, precision: Option<&str>) {
     choose_format(world, "Select field", "d0");
     if let Some(precision) = precision {
         choose_format(world, "0.000", precision);

@@ -8,8 +8,9 @@ use window_targets::application_window;
 pub(super) use window_targets::{press_window_key, request_named_window_close, window_is_separate};
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::{
-    Atom, AtomEnum, BUTTON_PRESS_EVENT, BUTTON_RELEASE_EVENT, ClientMessageEvent, ConnectionExt,
-    EventMask, InputFocus, KEY_PRESS_EVENT, KEY_RELEASE_EVENT, MOTION_NOTIFY_EVENT, Window,
+    Atom, AtomEnum, BUTTON_PRESS_EVENT, BUTTON_RELEASE_EVENT, ClientMessageEvent,
+    ConfigureWindowAux, ConnectionExt, EventMask, InputFocus, KEY_PRESS_EVENT, KEY_RELEASE_EVENT,
+    MOTION_NOTIFY_EVENT, Window,
 };
 use x11rb::protocol::xtest::ConnectionExt as _;
 use x11rb::rust_connection::RustConnection;
@@ -364,6 +365,19 @@ pub(super) fn type_digits(digits: &str) {
 #[cfg(test)]
 #[path = "x11_input_tests.rs"]
 mod tests;
+
+/// Resize the test window in client pixels, for example before replaying a recorded drag.
+pub(super) fn resize_application_window(extent: [u32; 2]) {
+    let (connection, screen) = x11rb::connect(None).unwrap();
+    let window = application_window(&connection, connection.setup().roots[screen].root);
+    let size = ConfigureWindowAux::new().width(extent[0]).height(extent[1]);
+    connection
+        .configure_window(window, &size)
+        .unwrap()
+        .check()
+        .unwrap();
+    connection.flush().unwrap();
+}
 
 /// Read application bounds in root pixels; example: `application_bounds()` before a resize.
 pub(super) fn application_bounds() -> [i32; 4] {

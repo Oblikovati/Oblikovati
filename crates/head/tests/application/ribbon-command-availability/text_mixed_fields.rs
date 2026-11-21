@@ -16,14 +16,7 @@ const BEFORE_COUNT: usize = 45;
 
 #[given("a fresh empty Format Text editor in Part6")]
 fn start_part6_text(world: &mut ApplicationWorld) {
-    for _ in 0..6 {
-        world.add_part();
-    }
-    let part = world.active_id();
-    assert_eq!(world.document_name(part), "Part6");
-    world.add_finished_sketch();
-    world.start_sketch();
-    place_midpoint_dimensions(world, "10");
+    let part = begin_part6_sketch_two(world);
     seed_text_before_mixed_fields(world);
     world.seed_dimensions_needed(BEFORE_COUNT);
     world.finish_sketch();
@@ -37,6 +30,19 @@ fn start_part6_text(world: &mut ApplicationWorld) {
     activate_text(world);
     open_editor(world, [975, 600]);
     assert!(world.state().sketch_text.unwrap().content.is_empty());
+}
+
+/// Open an editable Sketch2 in Part6 with a real 10 mm model dimension.
+pub(super) fn begin_part6_sketch_two(world: &mut ApplicationWorld) -> u64 {
+    for _ in 0..6 {
+        world.add_part();
+    }
+    let part = world.active_id();
+    assert_eq!(world.document_name(part), "Part6");
+    world.add_finished_sketch();
+    world.start_sketch();
+    place_midpoint_dimensions(world, "10");
+    part
 }
 
 #[when("the user opens Type and select Standard iProperties")]
