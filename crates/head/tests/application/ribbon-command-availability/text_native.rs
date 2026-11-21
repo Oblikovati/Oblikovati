@@ -13,6 +13,8 @@ mod text_color;
 mod text_creation;
 #[path = "text_double_click.rs"]
 mod text_double_click;
+#[path = "text_drag_placement.rs"]
+mod text_drag_placement;
 #[path = "text_edit.rs"]
 mod text_edit;
 #[path = "text_font_height.rs"]

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Format Text owns a transient draft until the existing document command accepts it.
-use super::{sketch_picking::ordinary_click, *};
+use super::*;
 use crate::{HeadSketchEdit, HeadWindow, sketch_tool::SketchToolState};
 use oblikovati_api::types::{SketchTextStyle, TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT};
 use oblikovati_gui::{
@@ -18,6 +18,8 @@ use std::sync::{Arc, OnceLock};
 mod activation;
 #[path = "owner_sketch_text_commit.rs"]
 mod commit;
+#[path = "owner_sketch_text_placement.rs"]
+mod placement;
 
 /// Session links use the document recipe identity so reopening a file keeps the same link.
 pub(super) type TextPresetLinks = std::collections::BTreeMap<TextPresetKey, GuiSketchTextPresetId>;
@@ -27,6 +29,7 @@ pub(crate) struct SketchTextTool {
     pub(crate) edit: HeadSketchEdit,
     pub(crate) generation: u64,
     working_scale: f64,
+    pressed_anchor: Option<[f64; 2]>,
     placement: Option<TextPlacementDraft>,
     font_families: OnceLock<Arc<[String]>>,
 }
@@ -68,6 +71,7 @@ impl<
             edit,
             generation,
             working_scale,
+            pressed_anchor: None,
             placement: None,
             font_families: OnceLock::new(),
         })));
@@ -100,7 +104,7 @@ impl<
             }
             return true;
         }
-        let result = pick_text_anchor(&mut tool, event, window);
+        let result = tool.place_on_release(event, window);
         self.sketch_tool = Some(SketchToolState::Text(tool));
         result.unwrap_or_else(|cause| {
             self.command_notice = Some(DesktopCommandNotice::AuthoringFailed { cause });
@@ -268,6 +272,7 @@ impl<
             edit,
             generation,
             working_scale: snapshot.parameters.units().working_scale(),
+            pressed_anchor: None,
             font_families: OnceLock::new(),
             placement: Some(TextPlacementDraft {
                 anchor,
@@ -304,27 +309,6 @@ impl<
     fn sketch_text_prompt(&mut self) {
         self.placement_notice("Select text insertion point".into());
     }
-}
-
-fn pick_text_anchor(
-    tool: &mut SketchTextTool,
-    event: ViewportEvent,
-    window: &dyn HeadWindow,
-) -> Result<bool, String> {
-    let Some((pixel, _)) =
-        ordinary_click(event).filter(|_| tool.placement.is_none() && !window.navigation_active())
-    else {
-        return Ok(false);
-    };
-    let Some(anchor) = window.sketch_point(pixel, tool.edit.plane)? else {
-        return Ok(false);
-    };
-    tool.placement = Some(TextPlacementDraft {
-        anchor,
-        fields: GuiSketchTextDraft::default(),
-        existing: None,
-    });
-    Ok(true)
 }
 
 fn text_style(fields: &GuiSketchTextDraft) -> Result<SketchTextStyle, String> {

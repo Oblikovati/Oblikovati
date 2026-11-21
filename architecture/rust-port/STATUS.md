@@ -137,6 +137,11 @@ using this status; the live scenario directory can change.
   the default opens an empty editor and leaves `g` available. Pinned
   `text-32` still needs its Tahoma default fixture.
   See `receipts/2026-11-21-sketch-text-preset-defaults-3907/`.
+  Native Text placement opens Format Text when the mouse button is
+  released. A drag keeps its initial insertion point. Escape while
+  dragging cancels placement. Pinned `text-16` still needs the portable
+  part and its linked model parameter.
+  See `receipts/2026-11-21-sketch-text-drag-3907/`.
   Native input left unselected `ab` unchanged and converted selected
   characters to `AB` in the editor and preview. The accepted edit kept
   the text ID and anchor. Pinned `text-25` also requires strike-through.
