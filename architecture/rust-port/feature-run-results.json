@@ -65,15 +65,14 @@
       "features/application/viewport-navigation-wheel/wheel-wireframe.svg": "815bfe6431fb7e677e44adf5d2bc24fee0e55d0ed6addd9efd4a662798d8c324",
       "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-wheel-visual-3881/cucumber.json",
-    "cucumber_sha256": "7f3204531bf476b10cb7050ec247bebb78c612c767b3c5e6019c086240b68b3f",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-wheel-visual-3881/scenario-arguments.json",
-    "scenario_arguments_sha256": "6a76bb5349d47372d7f3c1cd6a4f837d0296b9b5f89428dc2f8959dca44b1f6e",
-    "application_commit": "c7dd08609",
-    "blocker": "Scenario source and build are unsealed (#3978).",
-    "command": "Filtered native head test on viewport-navigation-wheel; see receipt run.log",
-    "environment": "Linux Xvfb 1600x1000, Openbox, Vulkan Lavapipe; X11 mouse, Escape, fixture path entry and Enter; XMODIFIERS unset",
-    "notes": "All 12 scenarios and 143 steps passed. Built and run before the tested change was committed; diagnostic only, not verified acceptance."
+    "cucumber": "architecture/rust-port/receipts/2026-11-21-viewport-navigation-wheel-r0-3881/live/cucumber.json",
+    "cucumber_sha256": "500e4734f0c03a3f74a02399f73e7f526b7889ce56d71726253a946c5bab0917",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-viewport-navigation-wheel-r0-3881/live/scenario-arguments.json",
+    "scenario_arguments_sha256": "4ea2aa430c29fe4a87d787f351c5cdd778734cab498d21a7bb616d03daa5c618",
+    "application_commit": "9fe930dabc0852c78922279c2c856ced0293051e",
+    "command": "Full viewport-navigation-wheel native run. See the receipt README.",
+    "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+    "notes": "All 12 published scenarios and 143 steps passed, including cleanup. Build and runtime provenance remains open under #3978."
   },
   "features/application/viewport-orbit/viewport-orbit.feature": {
     "feature_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
