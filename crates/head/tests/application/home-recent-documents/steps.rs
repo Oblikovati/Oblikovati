@@ -56,7 +56,8 @@ fn click_home(world: &mut ApplicationWorld, text: &str) {
     world.click(run.center().map(|value| value as i32));
     world.pump(Vec::new());
 }
-fn home_shows(world: &ApplicationWorld, name: &str) -> bool {
+/// Check Home for a rendered label, for example a recent file name.
+pub(super) fn home_shows(world: &ApplicationWorld, name: &str) -> bool {
     home_run(world, name).is_some()
 }
 /// Open the Home workspace using its visible control, for example before checking recent files.

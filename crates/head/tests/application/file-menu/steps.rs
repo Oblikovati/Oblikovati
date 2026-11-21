@@ -5,6 +5,8 @@ use cucumber::{given, then, when};
 #[cfg(test)]
 #[path = "native_input.rs"]
 mod native_input;
+#[path = "saved_part.rs"]
+mod saved_part;
 #[when("I select File")]
 #[when("the user selects File")]
 fn select_file(world: &mut ApplicationWorld) {

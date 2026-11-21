@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native keyboard and mouse checks for File menu dismissal.
 use super::super::{diagnostics, x11_input};
+use super::saved_part::{expect_saved_menu_part_on_home, open_saved_menu_part};
 use super::*;
+use std::path::Path;
+
+const EMPTY_VIEWPORT_PIXEL: [f32; 2] = [1000., 600.];
 
 fn settle(world: &mut ApplicationWorld) {
     for _ in 0..4 {
@@ -27,9 +31,57 @@ fn native_escape_and_outside_click_preserve_the_active_part() {
     world.expect_no_text("Recent documents");
     assert_eq!(world.active_id(), part);
     open_with_mouse(&mut world);
-    x11_input::click(diagnostics::pointer_pixels([1000., 600.]));
+    x11_input::click(diagnostics::pointer_pixels(EMPTY_VIEWPORT_PIXEL));
     settle(&mut world);
     world.expect_no_text("Recent documents");
     assert_eq!(world.active_id(), part);
     world.close();
+}
+
+#[test]
+fn saved_part_and_home_show_contextual_file_commands_with_x11_input() {
+    let mut world = ApplicationWorld::new();
+    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../test-utilities/fixtures/planar-sketch-empty-xy.opd")
+        .canonicalize()
+        .unwrap();
+    let before = std::fs::read(&path).unwrap();
+    open_saved_menu_part(&mut world, &path);
+    inspect_saved_part_file_menu(&mut world);
+    inspect_home_file_menu(&mut world);
+    assert_eq!(std::fs::read(path).unwrap(), before);
+    assert_eq!(world.state().documents.len(), 1);
+    world.close();
+}
+
+fn inspect_saved_part_file_menu(world: &mut ApplicationWorld) {
+    open_with_mouse(world);
+    let at = diagnostics::pointer_pixels(world.run("Save As").center());
+    x11_input::move_pointer(at);
+    settle(world);
+    for command in ["Save Copy As", "Save Copy As Template", "Pack and Go"] {
+        world.expect_text(command);
+        assert!(
+            !world.run_is_enabled(command),
+            "expected {command} disabled"
+        );
+    }
+    world.save_capture("saved-native-part-save-as");
+    x11_input::click(diagnostics::pointer_pixels(EMPTY_VIEWPORT_PIXEL));
+    settle(world);
+    world.expect_no_text("Save Copy As");
+    world.expect_no_text("Recent documents");
+}
+
+fn inspect_home_file_menu(world: &mut ApplicationWorld) {
+    let at = diagnostics::pointer_pixels(world.run("Home").center());
+    x11_input::click(at);
+    settle(world);
+    expect_saved_menu_part_on_home(world);
+    open_with_mouse(world);
+    for command in ["Save As", "Document Properties", "Print"] {
+        assert!(!world.run_is_enabled(command), "expected {command} muted");
+    }
+    expect_saved_menu_part_on_home(world);
+    world.save_capture("saved-native-part-recent-home");
 }
