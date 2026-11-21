@@ -105,10 +105,10 @@ using this status; the live scenario directory can change.
   the selected text in the editor and on the canvas. Cancel preserved the
   original text and solver count. See
   `receipts/2026-11-20-sketch-text-bold-3907/`.
-  A native double-click reopens bold Text after Redo. Cancel keeps the text
-  and solver count. The native regression uses DejaVu Sans. Pinned
-  `text-14` still requires Tahoma. See
-  `receipts/2026-11-20-sketch-text-double-click-3907/`.
+  Pinned `text-14` passed with an isolated Tahoma fixture. A native
+  double-click after Redo showed both characters, the original font and
+  height, and the Bold highlight. Cancel kept the outline and solver count.
+  See `receipts/2026-11-21-sketch-text-tahoma-3907/`.
   Pinned `text-15` passed all eight steps with 33 dimensions needed.
   Italic preserved Bold. Undo restored the upright outline, and Redo
   restored the slanted outline. See

@@ -27622,10 +27622,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go passed its glyph profile, anchor placement, style round-trip, and typed add/edit/get tests. The Rust scenario checks double-click after Redo and Cancel.",
+      "api_revision": "98425811b462c18ec573dfdcc33f2c7b264a6e25",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native Tahoma Bold glyph outlines and closest-point picking.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe and isolated Tahoma fonts. Windows and macOS remain untested.",
+      "kernel_integration": "Martensite builds the rendered glyph and resolves the point picked by double-click. The application owns edit, Cancel, and history.",
+      "rust_tests": "Pinned native text-14 and native_double_click_reopens_redone_bold_text_and_cancel_preserves_it. See architecture/rust-port/receipts/2026-11-21-sketch-text-tahoma-3907/README.md.",
+      "oracle": "Pinned steps, exact draft content and style range, rendered Bold button, committed glyph footprint, and source sketch recipe and solver count.",
+      "expected_result": "After Redo, one double-click on the glyph opens bold Tahoma ab at 3.05 mm. Cancel keeps the committed glyph, sketch geometry, and solver count.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:b357a0c4d62d6504c58498b074c4504451b6deae09a38414dec42e0c51d82bfb",

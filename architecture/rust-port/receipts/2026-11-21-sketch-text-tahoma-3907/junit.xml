@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/oblikovati-bdd-YtOn71/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/oblikovati-bdd-YtOn71/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T00:01:00.848956114Z" time="42.798901757"><testcase name="Scenario: text-14 Inspect retained bold formatting after Redo: tmp/oblikovati-bdd-YtOn71/checkout/features/sketch/text/scenario.feature:134:3" time="42.798901757"><system-out><![CDATA[  Scenario: text-14 Inspect retained bold formatting after Redo
+   ✔  Given the bold text creation was restored by Redo
+   ✔  When the user double-clicks the text in one supported gesture
+   ✔  Then Format Text shows Bold highlighted, Tahoma, 3.05 mm and both entered characters
+   ✔  When the user cancels the unchanged editor
+   ✔  Then the accepted text remains
+]]></system-out></testcase></testsuite></testsuites>

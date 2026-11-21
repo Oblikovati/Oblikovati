@@ -16,6 +16,7 @@ XMODIFIERS=@im=none tools/with-xvfb.sh cargo test --locked --offline \
 
 The native regression uses DejaVu Sans. The pinned `text-14` scenario
 requires Tahoma. The runner checks for the named family when it creates
-the fixture. This machine does not have Tahoma. The full pinned scenario
-remains open. The feature SHA-256 is
+the fixture. This run had no Tahoma fixture. The
+[later pinned run](../2026-11-21-sketch-text-tahoma-3907/README.md) used
+isolated Tahoma fonts. The feature SHA-256 is
 `0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d`.
