@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/obk-pinned-text-06-source-mwes1ei4/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/obk-pinned-text-06-source-mwes1ei4/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T03:28:32.544483896Z" time="44.454222363"><testcase name="Scenario: text-06 Cancel pending text after live preview: tmp/obk-pinned-text-06-source-mwes1ei4/checkout/features/sketch/text/scenario.feature:43:3" time="44.454222363"><system-out><![CDATA[  Scenario: text-06 Cancel pending text after live preview
+   ✔  Given an editable sketch with 210 dimensions needed
+   ✔  When the user starts Text and select insertion location (450,650)
+   ✔  Then Format Text opens with an empty editor and Tahoma, 3.05 mm and width 100
+   ✔  When the user focuses the editor and press lowercase a
+   ✔  Then a appears in the editor and the live canvas preview
+   ✔  When the user clicks Cancel
+   ✔  Then Format Text closes and the pending text preview disappears
+   ✔  And Text remains available for placement
+   ✔  When the user presses Escape
+   ✔  Then the creation command exits without retained text or solver-count change
+]]></system-out></testcase></testsuite></testsuites>

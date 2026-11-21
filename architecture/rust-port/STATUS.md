@@ -159,6 +159,11 @@ using this status; the live scenario directory can change.
   configured default. After Cancel, the next placement was empty and showed
   Tahoma, 3.05 mm height, and 100 percent width.
   See `receipts/2026-11-21-sketch-text-cancel-defaults-3907/`.
+  Pinned `text-06` passed all ten steps on a generated XY sketch with 210
+  dimensions needed. The native preview showed `a` at (450, 650). Cancel
+  removed its pixels and kept Text active. Escape kept the original sketch
+  and the solver count.
+  See `receipts/2026-11-21-sketch-text-cancel-preview-3907/`.
   Pinned `text-29` passed all six steps. Undo restored the blue diameter
   label. Redo restored the fraction and 35 dimensions needed. The linked
   `10.000` field retained its source. The native keyboard test also checked

@@ -27436,10 +27436,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/sketch_create_tools.go and app/sketch_create_tools_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "The Go tests check text placement, style propagation, and blank input. The Rust tests check a visible draft and cancellation in the native editor.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite shapes the draft glyph. The sketch solver evaluates the real freedoms in the fixture.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. The pinned run used an isolated Tahoma font fixture.",
+      "kernel_integration": "The host renders sampled outline geometry at the picked anchor and drops the draft on Cancel without editing the sketch. Escape exits repeated placement.",
+      "rust_tests": "Pinned native text-06 and native_text_cancel_removes_visible_preview_and_preserves_solver_count. See architecture/rust-port/receipts/2026-11-21-sketch-text-cancel-preview-3907/README.md.",
+      "oracle": "Native editor fields and content, actual glyph pixels at the recorded insertion, the placement prompt after Cancel, and equal committed geometry and solver count after Escape.",
+      "expected_result": "Typing a shows a live glyph. Cancel removes it and keeps Text active. Escape exits with the original sketch and 210 dimensions needed.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:f0c29c0c0b900cfb3dfb22f7ccad2186c15feeb5ed109d348fdbedaae6396d47",
