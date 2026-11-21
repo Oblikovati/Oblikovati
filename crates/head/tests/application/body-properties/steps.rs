@@ -3,10 +3,11 @@
 use super::workspace_layout::browser_feature::{
     choose_menu_row, click_branch_arrow, expect_rows, open_visible_extruded_part, right_click_row,
 };
-use super::{ApplicationWorld, diagnostics};
+use super::{ApplicationWorld, diagnostics, scenario_root};
 use cucumber::{given, then, when};
 use oblikovati_api::{client::Client, wire::CreateAppearanceArgs};
 use oblikovati_viewport::{ViewportEvent, ViewportInput};
+use std::path::Path;
 
 #[cfg(test)]
 #[path = "native_input.rs"]
@@ -25,6 +26,17 @@ const VOLUME: &str = "Volume: 24000.000 mm^3";
 const AREA: &str = "Area: 5200.000 mm^2";
 const MASS: &str = "Mass: 24.000 g";
 const CENTER: [&str; 3] = ["X: 20.000 mm", "Y: 15.000 mm", "Z: 10.000 mm"];
+const GENERATED_PHYSICAL: [&str; 6] = [MASS, AREA, VOLUME, CENTER[0], CENTER[1], CENTER[2]];
+const SAVED_PART: &str = "body-properties-start.opd";
+// The saved 40 × 25 × 20 mm prism extends from the origin toward negative X and Y.
+const SAVED_PHYSICAL: [&str; 6] = [
+    "Mass: 20.000 g",
+    "Area: 4600.000 mm^2",
+    "Volume: 20000.000 mm^3",
+    "X: -20.000 mm",
+    "Y: -12.500 mm",
+    "Z: 10.000 mm",
+];
 /// The view between the browser and where the dialog opens.
 const VIEW_COLUMNS: [usize; 2] = [320, 860];
 const VIEW_ROWS: [usize; 2] = [170, 860];
@@ -48,6 +60,9 @@ fn load_library_project(world: &mut ApplicationWorld) {
 fn part_with_body(world: &mut ApplicationWorld) {
     load_library_project(world);
     open_visible_extruded_part(world);
+    prepare_body_appearance(world);
+}
+fn prepare_body_appearance(world: &mut ApplicationWorld) {
     Client::new(world.app().owner.document_host())
         .appearances()
         .create(&CreateAppearanceArgs {
@@ -105,20 +120,36 @@ fn expect_highlighted(world: &mut ApplicationWorld) {
     });
     assert!(outlined > 0, "expected the solid's edges outlined");
 }
-fn expect_physical_calculated(world: &ApplicationWorld) {
+fn expected_physical_rows(world: &mut ApplicationWorld) -> [&'static str; 6] {
+    let document = world.active_id();
+    let state = world.state();
+    match state.document_storage[&document]
+        .path
+        .as_deref()
+        .and_then(|path| Path::new(path).file_name())
+    {
+        Some(name) if name == SAVED_PART => SAVED_PHYSICAL,
+        _ => GENERATED_PHYSICAL,
+    }
+}
+fn expect_physical_calculated(world: &mut ApplicationWorld) {
+    let expected = expected_physical_rows(world);
     let (position, size) = diagnostics::window_geometry(TITLE).expect("expected Body Properties");
     let rows = world.frame.runs.iter().filter(|run| {
         let point = run.center();
         (0..2)
             .all(|axis| point[axis] >= position[axis] && point[axis] <= position[axis] + size[axis])
     });
-    validate_physical_rows(rows.map(|run| run.text.as_str())).unwrap();
+    validate_physical_rows(rows.map(|run| run.text.as_str()), expected).unwrap();
 }
-fn validate_physical_rows<'a>(rows: impl Iterator<Item = &'a str>) -> Result<(), String> {
+fn validate_physical_rows<'a>(
+    rows: impl Iterator<Item = &'a str>,
+    expected: [&str; 6],
+) -> Result<(), String> {
     let rows: Vec<String> = rows
         .map(|row| row.chars().filter(|ch| !ch.is_whitespace()).collect())
         .collect();
-    for expected in [MASS, AREA, VOLUME, CENTER[0], CENTER[1], CENTER[2]] {
+    for expected in expected {
         let expected: String = expected.chars().filter(|ch| !ch.is_whitespace()).collect();
         let label = expected.split(':').next().unwrap();
         let matching: Vec<_> = rows
@@ -146,8 +177,25 @@ fn expect_selector_reads(world: &ApplicationWorld, name: &str) {
 fn given_part(world: &mut ApplicationWorld) {
     part_with_body(world);
 }
+#[given(
+    "`fixtures/cad/body-properties-start.opd` is open in the MCAD Software with `Solid1` visible"
+)]
+fn given_saved_part(world: &mut ApplicationWorld) {
+    let source = scenario_root().join("fixtures/cad").join(SAVED_PART);
+    let copy = world.scratch_folder().join(SAVED_PART);
+    std::fs::copy(&source, &copy).unwrap_or_else(|error| {
+        panic!("body fixture {source:?}: expected a readable native Part: {error}")
+    });
+    load_library_project(world);
+    world.open_fixture(&copy);
+    unavailable(world);
+    prepare_body_appearance(world);
+}
 // Nothing has asked for the values yet, in a session that has just opened the part.
 #[given("the body's physical properties are unavailable in the current session")]
+#[given(
+    "no physical-property update has been requested for `Solid1` since this document instance was opened"
+)]
 fn unavailable(world: &mut ApplicationWorld) {
     let state = world.state();
     let browser = state.browser.expect("expected the active part browser");
@@ -392,7 +440,7 @@ fn body_properties_invalidates_calculated_values_after_an_edit() {
     unavailable(&mut world);
     open_dialog(&mut world);
     choose_update(&mut world);
-    expect_physical_calculated(&world);
+    expect_physical_calculated(&mut world);
     let body = world.state().browser.unwrap().bodies.remove(0);
     assert!(body.physical.is_some());
     select_appearance(&mut world, BLACK);
@@ -407,12 +455,12 @@ fn body_properties_invalidates_calculated_values_after_an_edit() {
 
 #[test]
 fn calculated_physical_rows_reject_missing_non_numeric_and_partial_values() {
-    let valid = [MASS, AREA, VOLUME, CENTER[0], CENTER[1], CENTER[2]];
-    assert!(validate_physical_rows(valid.into_iter()).is_ok());
+    let valid = GENERATED_PHYSICAL;
+    assert!(validate_physical_rows(valid.into_iter(), valid).is_ok());
     for index in 0..valid.len() {
         let mut missing = valid.to_vec();
         missing.remove(index);
-        assert!(validate_physical_rows(missing.into_iter()).is_err());
+        assert!(validate_physical_rows(missing.into_iter(), valid).is_err());
         let mut invalid = valid.to_vec();
         invalid[index] = [
             "Mass: N/A",
@@ -422,9 +470,9 @@ fn calculated_physical_rows_reject_missing_non_numeric_and_partial_values() {
             "Y: N/A",
             "Z: N/A",
         ][index];
-        assert!(validate_physical_rows(invalid.into_iter()).is_err());
+        assert!(validate_physical_rows(invalid.into_iter(), valid).is_err());
     }
     let mut partial = valid;
     partial[1] = "Area: 5200.000 mm^2 extra";
-    assert!(validate_physical_rows(partial.into_iter()).is_err());
+    assert!(validate_physical_rows(partial.into_iter(), valid).is_err());
 }
