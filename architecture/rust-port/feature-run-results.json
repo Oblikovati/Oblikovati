@@ -528,22 +528,19 @@
   "features/application/docking-system/docking-system.feature": {
     "feature_sha256": "e2c0ece1141b9973d0b4909965eefe666f5c70ab7371a3cea41cbe16d89080a5",
     "supporting_files": {
-      "features/application/docking-system/BLOCKERS.md": "595b5650f83d51833444b25abfff9e2d20729c68e6b7d5cbbee56dfce809b837",
+      "features/application/docking-system/BLOCKERS.md": "4559ed8b2cdafe236c83893b4d9d2606ac3c93f94840a00d7cebf10c278158c2",
       "features/application/docking-system/FIXTURES.md": "3da12afe826fca2927d6762c8a4ab086392a265a5f5319357ee9b8a04b319d56",
       "features/application/docking-system/FUNCTIONAL.md": "f2636375408a6ba29bfac139d2687203f08044de3b7642ad0f41457107f7dbb0",
       "features/application/docking-system/VISUAL.md": "ab88095125af0b4dd5b5859fc743f1606837210ea54a787e9a45b3dc7aae875c",
       "features/application/docking-system/right-dock-tabs.svg": "f07847f1b581581045032a3cf5d17d8d67de6f3a3ac82c4f035b5b692982ca55",
       "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-docking-api-0160-4133/cucumber.json",
-    "cucumber_sha256": "7bbd49d434ba0d14b16eb317d179065a8b21a832dc62ef9e2e8389b1402a8044",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-docking-api-0160-4133/scenario-arguments.json",
-    "scenario_arguments_sha256": "a61c284dca37a40bdf933c6635b1f89f5fb1835ddbc9118d3db372f5ac7f8bec",
-    "application_commit": "5ccb98c7bda6778405a69d163a12e1b2db03c76b",
-    "command": "Full docking-system run; see receipt README.",
-    "environment": "Linux Xvfb 1440x900, Openbox, Vulkan Lavapipe",
-    "notes": "All 11 scenarios and 108 steps passed against a local snapshot matching the live hashes.",
-    "blocker": "Build and runtime provenance remain unsealed (#3978)."
+    "cucumber": "architecture/rust-port/receipts/2026-11-21-docking-current-4133/cucumber.json",
+    "cucumber_sha256": "89ebc53de0289325dc8a1c1b0ed68d9f2fd78c564f75c2ef2989ef51ce838c56",
+    "application_commit": "0107fd3e5414fabdc7a21743ec3acee48df794b1",
+    "command": "OBK_BDD_FEATURE=docking-system cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11 with Xvfb (1440x900), Openbox, and Vulkan Lavapipe",
+    "notes": "All 11 published scenarios and 108 steps passed. The desktop restarted in a new process and retained both dock tabs. Strict provenance remains open under #3978."
   },
   "features/application/workspace-layout/workspace-layout.feature": {
     "feature_sha256": "be0be85ba65d57c0aa35258ec78f23fd62f2b0984337e2ed729170e19fc70e11",

@@ -1,0 +1,4 @@
+=== RUN   TestInWindowDockedViewportIsInteractive
+--- PASS: TestInWindowDockedViewportIsInteractive (0.60s)
+PASS
+ok  	oblikovati.org/head/ui	0.613s

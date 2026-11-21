@@ -1,0 +1,6 @@
+=== RUN   TestDockablePanelRegistryMembership
+--- PASS: TestDockablePanelRegistryMembership (0.00s)
+=== RUN   TestDockablePanelOpenCloseRoundTrips
+--- PASS: TestDockablePanelOpenCloseRoundTrips (0.00s)
+PASS
+ok  	oblikovati.org/head/ui	0.006s
