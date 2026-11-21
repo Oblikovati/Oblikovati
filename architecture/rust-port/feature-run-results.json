@@ -115,17 +115,16 @@
       "features/application/main-window-frame/references/oblikovati-rust-work-de1cfac9-no-document.png": "57ab786d7b3b0a7a77dfdb62b9ee603d56ea0e1b210239b967260a723285f4c3",
       "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-main-frame-native-4063/cucumber.json",
-    "cucumber_sha256": "40032e696fb3265984e2718660ecac82029b57b85c7a0040f138a395aea37495",
+    "cucumber": "architecture/rust-port/receipts/2026-11-21-main-window-frame-complete-4063/cucumber.json",
+    "cucumber_sha256": "74a1c5d7d704f373d0b959eed60ccf2dccc3d8093e4a587b52adca4b5f8dff87",
     "scenario_inventory": "architecture/rust-port/receipts/2026-11-18-main-window-frame/scenario-inventory.json",
     "scenario_inventory_sha256": "2bea7f0088cecbf2d607b39c6811c70c1af7bd12c865aa1191d6c928c7a91747",
-    "application_commit": "a590fedfe3a56e0ddf804d6c90ea7052213dbc57",
-    "command": "See receipt run.log; Xvfb, D-Bus and Openbox with test-only accessibility settings.",
-    "environment": "Linux X11, Xvfb, Openbox, tint2, AT-SPI and Vulkan Lavapipe; X11 window input; scripted fixture setup",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-main-frame-native-4063/scenario-arguments.json",
-    "scenario_arguments_sha256": "573e664b83b2cef207cfb62ac7eaa69d6cc171015e3a428a937af0d75ef0afa0",
-    "blocker": "Minimum-size Close setup needs scenario clarification; source and build are unsealed (#3978).",
-    "notes": "20 of 20 executed cases and 149 steps passed. Minimum-size Close used a dirty copy; see BLOCKERS.md. Diagnostic only."
+    "application_commit": "0905065a6d9b0da023f00c8713efcd60cb30d4e1",
+    "command": "crates/head/tests/accessibility_atspi/frame_run.sh. See the receipt README.",
+    "environment": "Linux X11 with Xvfb, Openbox, tint2, AT-SPI and Vulkan Lavapipe",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-main-window-frame-complete-4063/scenario-arguments.json",
+    "scenario_arguments_sha256": "cc11e07e6d744e7053230372a5937e8840840b7a885bb3faa04d81fd7e81fddb",
+    "notes": "All 11 published declarations, 20 native cases and 149 steps passed. Minimum-size checks use an unchanged Part. Build and runtime provenance remains open under #3978."
   },
   "features/application/document-saving/document-saving.feature": {
     "feature_sha256": "36a191c754b03fb3e90c113a2b7eeade2982c8bb3a099ba921999502aa53f54f",
