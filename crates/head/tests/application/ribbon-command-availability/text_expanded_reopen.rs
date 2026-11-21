@@ -28,13 +28,16 @@ fn build_expanded_text_part(world: &mut ApplicationWorld) {
     world.start_sketch();
     expect_sketch_two_active(world);
     place_midpoint_dimensions(world, "10");
-    seed_expanded_text(world);
+    seed_text_before_mixed_fields(world);
+    seed_text_at(world, [975, 600], mixed_text());
+    world.pump(Vec::new());
     assert_eq!(world.edited_geometry().texts().len(), 5);
     world.seed_dimensions_needed(EXPECTED_FREEDOMS);
     world.text_creation_baseline = Some(world.edited_geometry());
 }
 
-fn seed_expanded_text(world: &mut ApplicationWorld) {
+/// Set up the earlier Text objects in Sketch2 before the user adds mixed fields.
+pub(super) fn seed_text_before_mixed_fields(world: &mut ApplicationWorld) {
     let numbered = AddTextArgs {
         text: NUMBERED_TEXT.into(),
         ..Default::default()
@@ -44,19 +47,22 @@ fn seed_expanded_text(world: &mut ApplicationWorld) {
         ([975, 500], fraction_text(50.)),
         ([810, 600], numbered),
         ([1110, 690], numeric_text()),
-        ([975, 600], mixed_text()),
     ];
-    for (pixels, mut request) in placements {
-        request.sketch_index = SKETCH_TWO_INDEX as i64;
-        request.anchor = Some(world.sketch_point_of(pixels).to_vec());
-        request.height = "6.10 mm".into();
-        request.font = "DejaVu Sans".into();
-        Client::new(world.app().owner.document_host())
-            .sketch()
-            .add_text(&request)
-            .unwrap();
+    for (pixels, request) in placements {
+        seed_text_at(world, pixels, request);
     }
     world.pump(Vec::new());
+}
+
+fn seed_text_at(world: &mut ApplicationWorld, pixels: [i32; 2], mut request: AddTextArgs) {
+    request.sketch_index = SKETCH_TWO_INDEX as i64;
+    request.anchor = Some(world.sketch_point_of(pixels).to_vec());
+    request.height = "6.10 mm".into();
+    request.font = "DejaVu Sans".into();
+    Client::new(world.app().owner.document_host())
+        .sketch()
+        .add_text(&request)
+        .unwrap();
 }
 
 fn fraction_text(width: f64) -> AddTextArgs {
@@ -126,7 +132,8 @@ fn save_expanded_part6(world: &mut ApplicationWorld) {
     world.saved_path = Some(path);
 }
 
-fn capture_portable_part(saved: &Path) {
+/// Keep a generated Part6 fixture with a native scenario report, when requested.
+pub(super) fn capture_portable_part(saved: &Path) {
     if let Some(reports) = std::env::var_os("OBK_BDD_REPORTS") {
         std::fs::copy(saved, PathBuf::from(reports).join(FILE_NAME)).unwrap();
     }
@@ -160,6 +167,15 @@ fn reopen_expanded_part(world: &mut ApplicationWorld) {
 
 #[when("the user chooses Edit Sketch for Sketch2")]
 fn edit_reopened_sketch_two(world: &mut ApplicationWorld) {
+    open_sketch_two_editor(world);
+    assert_eq!(
+        &world.edited_geometry(),
+        world.text_creation_baseline.as_ref().unwrap()
+    );
+}
+
+/// Open Sketch2 from its browser row after loading a Part that contains it.
+pub(super) fn open_sketch_two_editor(world: &mut ApplicationWorld) {
     let row = world.run("Sketch2").center();
     x11_input::right_click(diagnostics::pointer_pixels(row));
     world.pump(Vec::new());
@@ -167,10 +183,6 @@ fn edit_reopened_sketch_two(world: &mut ApplicationWorld) {
     x11_input::click(diagnostics::pointer_pixels(edit));
     world.pump(Vec::new());
     expect_sketch_two_active(world);
-    assert_eq!(
-        &world.edited_geometry(),
-        world.text_creation_baseline.as_ref().unwrap()
-    );
 }
 
 fn expect_sketch_two_active(world: &mut ApplicationWorld) {
@@ -226,7 +238,8 @@ fn earlier_field_resolves_after_reopen(world: &mut ApplicationWorld) {
     assert_eq!(reopened_scene_text(world)[3], "10.000");
 }
 
-fn reopened_scene_text(world: &mut ApplicationWorld) -> Vec<String> {
+/// Read the visible Sketch2 glyph source strings in creation order after reopen.
+pub(super) fn reopened_scene_text(world: &mut ApplicationWorld) -> Vec<String> {
     let active = world.app().owner.active_sketch_edit().unwrap().sketch;
     let view = &world.app().window.native;
     assert!(view.sketch_display_declines().unwrap().is_empty());

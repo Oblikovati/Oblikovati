@@ -43,6 +43,8 @@ mod text_linked_insertion;
 mod text_linked_journey;
 #[path = "text_linked_viewport.rs"]
 mod text_linked_viewport;
+#[path = "text_mixed_fields.rs"]
+mod text_mixed_fields;
 #[path = "text_numbering.rs"]
 mod text_numbering;
 #[path = "text_preset_defaults.rs"]

@@ -96,7 +96,8 @@ fn inspect_empty_parameter_sources(world: &mut ApplicationWorld) {
     choose_format(world, "Parameters - User", "Parameters - Model");
 }
 
-fn append_text_paragraph(world: &mut ApplicationWorld) {
+/// Move to the end of the editor and add a paragraph with native key events.
+pub(super) fn append_text_paragraph(world: &mut ApplicationWorld) {
     focus_content(world);
     for key in [0xff57, 0xff0d] {
         x11_input::press_keysym(key);
