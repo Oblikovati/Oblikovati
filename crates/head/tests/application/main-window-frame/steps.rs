@@ -241,18 +241,22 @@ fn same_part_in_viewport(world: &mut ApplicationWorld) {
 }
 
 #[given("the MCAD Software is open in a restored window with an active part")]
-fn restored_window_with_dirty_part(world: &mut ApplicationWorld) {
-    let part = open_dirty_frame_part(world);
+fn restored_window_with_saved_part(world: &mut ApplicationWorld) {
+    let part = open_frame_part(world);
     world.previous_document = Some(part);
     restored_window(world);
 }
 #[when("the user drags the bottom right corner inward past the supported minimum size")]
 fn shrink_past_minimum(world: &mut ApplicationWorld) {
+    resize_from_bottom_right(world, [100, 100]);
+}
+
+fn resize_from_bottom_right(world: &mut ApplicationWorld, target: [i32; 2]) {
     let bounds = super::x11_input::application_bounds();
     super::main_window_frame_native::drag_resize_handle(
         world,
         [bounds[2] - 2, bounds[3] - 2],
-        [100, 100],
+        target,
     );
 }
 #[then("the window stops shrinking at its minimum size")]
@@ -261,21 +265,50 @@ fn minimum_window_bounds(_: &mut ApplicationWorld) {
 }
 #[then("Minimize, Maximize and Close remain fully visible and usable")]
 fn minimum_controls_usable(world: &mut ApplicationWorld) {
+    super::main_window_frame_accessibility::assert_drawn_frame_controls(world);
     super::main_window_frame_native::press_maximize(world);
     super::main_window_frame_native::pump_until(world, true);
     super::main_window_frame_native::press_maximize(world);
     super::main_window_frame_native::pump_until(world, false);
     super::main_window_frame_native::pump_minimize_button(world);
     activate_from_taskbar(world);
-    super::application_closing::request_application_close(world);
-    world.expect_text("Save changes to");
-    super::application_closing::cancel_application_close(world);
 }
 #[then("the active part remains displayed in the resized viewport")]
 fn minimum_viewport_keeps_part(world: &mut ApplicationWorld) {
     same_part_in_viewport(world);
+    assert!(!world.state().document_storage[&world.active_id()].unsaved_edits);
     world.expect_no_text("Command failed");
     assert_eq!(&super::x11_input::application_bounds()[2..], &[640, 480]);
+    let [left, _, right, _] = world.viewport_bounds();
+    let width = world.extent()[0];
+    assert!(
+        (right - left) * 5 >= width * 2,
+        "viewport {left}..{right} in {width} pixels: expected room to see the Part"
+    );
+}
+
+#[test]
+#[ignore = "requires an X11 window manager and the scenario source with the native frame fixture"]
+fn native_close_at_minimum_size_exits_with_a_clean_part() {
+    let mut world = ApplicationWorld::new();
+    restored_window_with_saved_part(&mut world);
+    let original_viewport = world.viewport_bounds();
+    let [width, height] = world.extent().map(|value| value as i32);
+    shrink_past_minimum(&mut world);
+    minimum_viewport_keeps_part(&mut world);
+    resize_from_bottom_right(&mut world, [width - 2, height - 2]);
+    assert_eq!(
+        world.viewport_bounds(),
+        original_viewport,
+        "restored dock widths"
+    );
+    shrink_past_minimum(&mut world);
+    minimum_window_bounds(&mut world);
+    minimum_viewport_keeps_part(&mut world);
+    // Activating Close here can destroy the clean window without obscuring the
+    // minimum-size scenario's final check that the Part is still displayed.
+    super::application_closing::request_application_close(&mut world);
+    assert!(world.app.is_none());
 }
 
 #[then("File and the ribbon tabs appear on a separate row beneath the application bar")]

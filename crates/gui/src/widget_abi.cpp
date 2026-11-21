@@ -28,6 +28,58 @@ bool is_outer_dock_target(const ImGuiWindow* outer, const ImVec2 mouse) {
          ImFabs(mouse.x - outer->Pos.x - size.x + narrow) <= narrow);
     return top_or_bottom || left_or_right;
 }
+
+ImGuiDockNode* horizontal_dock_sibling(ImGuiDockNode* node) {
+    ImGuiDockNode* parent = node->ParentNode;
+    if (parent->SplitAxis != ImGuiAxis_X) return nullptr;
+    ImGuiDockNode* sibling = parent->ChildNodes[parent->ChildNodes[0] == node ? 1 : 0];
+    return sibling && sibling->IsVisible ? sibling : nullptr;
+}
+
+float outer_dock_width_scale(ImGuiDockNode* center, float width) {
+    float preferred = 0.0f;
+    float splitters = 0.0f;
+    for (auto* node = center; node && node->ParentNode; node = node->ParentNode) {
+        if (const auto* sibling = horizontal_dock_sibling(node)) {
+            preferred += sibling->SizeRef.x;
+            splitters += 2.0f; // DOCKING_SPLITTER_SIZE in ImGui 1.89.2.
+        }
+    }
+    // Leave 256 logical pixels for the Part at the minimum desktop width.
+    // Smaller dock hosts may still reserve two fifths of their width (#4063).
+    const float reserved = ImMin(256.0f, width * 0.4f);
+    const float budget = ImMax(0.0f, ImFloor(width - reserved) - splitters);
+    return preferred > budget ? budget / preferred : 1.0f;
+}
+
+struct CompactDockWidth {
+    ImGuiID node;
+    float preferred;
+    float applied;
+};
+
+void compact_outer_docks(ImGuiDockNode* center, float width, ImVector<CompactDockWidth>& widths) {
+    const float scale = outer_dock_width_scale(center, width);
+    if (scale >= 1.0f) return;
+    for (auto* node = center; node && node->ParentNode; node = node->ParentNode) {
+        auto* sibling = horizontal_dock_sibling(node);
+        if (!sibling || sibling->SizeRef.x <= 0.0f) continue;
+        const float applied = ImMax(1.0f, ImFloor(sibling->SizeRef.x * scale));
+        widths.push_back({sibling->ID, sibling->SizeRef.x, applied});
+        sibling->SizeRef.x = applied;
+    }
+}
+
+void restore_outer_dock_widths(const ImVector<CompactDockWidth>& widths) {
+    for (const auto& width : widths) {
+        auto* node = ImGui::DockBuilderGetNode(width.node);
+        if (!node) continue;
+        // Keep an intentional splitter change while discarding the temporary cap.
+        const float delta = node->SizeRef.x - width.applied;
+        node->SizeRef.x = ImMax(1.0f, width.preferred + delta);
+    }
+}
+
 void draw_ribbon_icon(const char* label, std::uint32_t texture, ImVec2 icon, bool large, bool show_caption) {
     const ImVec2 lo = ImGui::GetItemRectMin(), hi = ImGui::GetItemRectMax();
     const char* end = ImGui::FindRenderedTextEnd(label);
@@ -150,8 +202,12 @@ std::uint32_t oblikovati_gui_outer_dockspace(float width, float height, bool see
         }
         ImGui::DockBuilderFinish(id);
     }
-    return ImGui::DockSpace(id, ImVec2(width, height),
-                            ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
+    ImVector<CompactDockWidth> compacted;
+    compact_outer_docks(ImGui::DockBuilderGetCentralNode(id), width, compacted);
+    const ImGuiID dockspace = ImGui::DockSpace(id, ImVec2(width, height),
+        ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
+    restore_outer_dock_widths(compacted);
+    return dockspace;
 }
 
 void oblikovati_gui_ensure_tabbed_window(const char* title, const char* group) {

@@ -5,6 +5,12 @@ use cucumber::then;
 
 #[then("the controls are distinguishable by their icons and accessible names")]
 fn frame_icons_and_native_names(world: &mut ApplicationWorld) {
+    let (position, size) = assert_drawn_frame_controls(world);
+    assert_platform_names(world, position, size);
+}
+
+/// Verify the three rendered frame controls, for example at the minimum window size.
+pub(super) fn assert_drawn_frame_controls(world: &mut ApplicationWorld) -> ([f32; 2], [f32; 2]) {
     let height = world.app().window.native.drawable_extent().unwrap()[1] as i32;
     super::x11_input::move_pointer([5, height - 30]);
     world.pump(Vec::new());
@@ -19,7 +25,7 @@ fn frame_icons_and_native_names(world: &mut ApplicationWorld) {
         masks[0] != masks[1] && masks[1] != masks[2] && masks[0] != masks[2],
         "frame icons must differ"
     );
-    assert_platform_names(world, position, size);
+    (position, size)
 }
 
 fn icon_masks(world: &mut ApplicationWorld, position: [f32; 2], size: [f32; 2]) -> Vec<Vec<bool>> {
