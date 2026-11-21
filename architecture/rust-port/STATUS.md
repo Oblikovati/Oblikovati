@@ -139,8 +139,7 @@ using this status; the live scenario directory can change.
   See `receipts/2026-11-21-sketch-text-preset-defaults-3907/`.
   Native Text placement opens Format Text when the mouse button is
   released. A drag keeps its initial insertion point. Escape while
-  dragging cancels placement. Pinned `text-16` still needs the portable
-  part and its linked model parameter.
+  dragging cancels placement.
   See `receipts/2026-11-21-sketch-text-drag-3907/`.
   [API v0.165.0](https://github.com/Oblikovati/Oblikovati.API/releases/tag/v0.165.0)
   carries model-parameter and file-name fields. The native linked Text
@@ -156,7 +155,11 @@ using this status; the live scenario directory can change.
   User. The model field used two decimal places. The viewport kept the
   earlier `10.000` and showed 47 dimensions needed at Ready. See
   `receipts/2026-11-21-sketch-text-filename-precision-3907/`.
-  Pinned `text-16` still needs its Part6 setup.
+  Pinned `text-16` passed all seven steps. It used a portable Part6
+  with 36 dimensions needed and a 1440 × 1000 X11 window for the
+  recorded drag. The linked `d0` showed `10.000` at Ready and the
+  final solver count reached 38. See
+  `receipts/2026-11-21-sketch-text-linked-drag-3907/`.
   Pinned `text-38` passed all nine steps with a generated native
   `Part6.opd`. After reopening Sketch2, the two fractions, numbered
   paragraphs, linked values, and 47 dimensions needed were retained.

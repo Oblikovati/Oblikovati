@@ -27696,10 +27696,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "Go model/sketch and addin/router SketchText and Glyph tests passed at aa8297d1b0ac33c024f19e54821536d76e8a447a. They cover glyph rendering and typed calls. The Rust native scenario exercises the drag and linked field.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Sketch constraint solve, font glyph curves, and Vulkan sketch scene",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. Windows and macOS remain untested for this scenario.",
+      "kernel_integration": "Resolve the native drag anchor on the sketch plane, preserve the model field reference, and render the resolved text in the Martensite sketch scene.",
+      "rust_tests": "Pinned native text-16: 1 scenario and 7 steps passed. See architecture/rust-port/receipts/2026-11-21-sketch-text-linked-drag-3907 at d594368933b05c7b7569f10bf99128c3ebebc2f4.",
+      "oracle": "Native Format Text projection and visible field, resolved viewport text at the press point, authored field identity, and visible degrees-of-freedom status.",
+      "expected_result": "Release opens empty Format Text. Inserting d0 displays 10.000 without typing digits. Accepting and exiting leaves the linked text at Ready with 38 dimensions needed.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:d371dee4f312a49e438bd79795c14c1d752e1d8eac054453290233c312f7ccc7",
