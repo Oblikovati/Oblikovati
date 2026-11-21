@@ -57,6 +57,7 @@ impl NavigationBar {
         if !open || closed {
             self.rotate_document = None;
             self.rotate_dock.set_open(false);
+            self.end(actions);
         }
     }
 }

@@ -6,6 +6,8 @@ use super::{ApplicationWorld, capture_framebuffer, diagnostics};
 use cucumber::{given, then, when};
 #[path = "fit_region.rs"]
 mod fit_region;
+#[path = "saved_block.rs"]
+mod saved_block;
 
 /// The guide's colour, as it blends over the view; the control's faces are darker.
 const GUIDE_COLOR: [i32; 3] = [200, 200, 212];

@@ -269,6 +269,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Restored Ready after closing the Rotate at Angle dialog. (#3872)
+
 - Restored installed Tahoma and the inherited color swatch when starting Sketch Text without a preset. (#3907)
 
 - Kept a modified Sketch Text linked to its named preset when reopening the editor or changing the preset name. (#3907)
