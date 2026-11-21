@@ -820,14 +820,15 @@
       "features/sketch/text/VISUAL.md": "fd0e1444c421ebad300c59bb1c07589adfc0b97bd46c4a6f64c50b1af2aa2398",
       "features/sketch/text/feature-icon.svg": "42e957b40212d450898c00e75e693943d6556aca7e752e72c7859f854eab14d6"
     },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-sketch-text-preset-rename-3907/cucumber.json",
-    "cucumber_sha256": "4e1e4401b513d64d16b24d96b874357ebea47506460b6fc255a340b4384fbb8a",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-sketch-text-preset-rename-3907/scenario-arguments.json",
-    "scenario_arguments_sha256": "64dfdadfeea19393fe56606f921a18fc4f1c0183bc113ccbbcb9324f67da90f6",
-    "application_commit": "5345616c69d68e61c4a16145d98887aba2d60cf5",
+    "cucumber": "architecture/rust-port/receipts/2026-11-21-point-text-tahoma-run-3907/cucumber.json",
+    "cucumber_sha256": "29449aa557d4c48667accb81a6f3109a16e2a45cc4427362ee9a97db101ec160",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-point-text-tahoma-run-3907/scenario-arguments.json",
+    "scenario_arguments_sha256": "7834a09069cf6289489f094340e5fafff5298e8e2b4105a5eb643400cea445e7",
+    "application_commit": "30a723da37acd33f2a5419b004796a0821a677e3",
     "command": "Unfiltered Text feature with native X11 input. See the receipt README.",
-    "environment": "Linux X11 under Xvfb, 1440 × 900 native window, Vulkan Lavapipe",
-    "notes": "Eleven scenarios passed. Twenty-seven have undefined steps. The preset rename case saves and reopens the part within the same application session."
+    "environment": "Linux X11 under Xvfb, Vulkan Lavapipe, isolated Fontconfig with Tahoma",
+    "blocker": "Nine scenarios have unresolved source or font-decoration requirements. See the Point Text behavior ledger and Martensite #578.",
+    "notes": "Twenty-six of 38 scenarios passed with cleanup. The run also hit one retained-defaults assertion and two Arial fixture failures."
   },
   "features/sketch/geometry-text/scenario.feature": {
     "by_source_sha256": {
