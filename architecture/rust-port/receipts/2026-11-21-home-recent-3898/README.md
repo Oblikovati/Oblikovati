@@ -17,3 +17,18 @@ and Home is not open. The [startup capture](home-without-a-document.png)
 also shows the Model browser's empty state and no asset browsers in the
 right dock. The scenario folder's `BLOCKERS.md` records the difference
 between this fresh profile and the expected starting layout.
+
+## Recent row actions
+
+At the desktop test width, the fixed column offsets put the row's
+actions control past the window edge. The list now reserves room for
+the control before it sets the widths used by headers and rows. The
+[actions scenario](row-menu.json) and [row hover scenario](row-hover.json)
+passed all 17 steps after the change. The [actions capture](home-recent-row-actions.png)
+shows the popup beside the last column.
+
+The [checked-row actions](row-checked.json) and
+[column reorder](column-reorder.json) scenarios also passed all 15 steps.
+The [pinned blank-size sort](pinned-blank-size.json) passed its eight steps
+with an entry whose saved file had been removed. The current source omits
+that scenario.

@@ -14,9 +14,40 @@ const CHECK_COLUMN: f32 = 28.;
 /// The kind mark, wide enough that its letter never reads as part of the name.
 const KIND_COLUMN: f32 = 22.;
 const NAME_COLUMN: f32 = 170.;
+const ACTION_GAP: f32 = 4.;
 const CARD_SIZE: [f32; 2] = [180., 90.];
 const CARDS_PER_ROW: usize = 4;
 const NOT_AVAILABLE: &str = "This command is not available in this build.";
+
+#[derive(Clone, Copy)]
+struct RecentListLayout {
+    scale: f32,
+    spacing: f32,
+    frame_padding: f32,
+}
+
+impl RecentListLayout {
+    fn for_columns(ui: &Ui, columns: &[SortField]) -> Self {
+        let style = ui.clone_style();
+        let spacing = style.item_spacing[0];
+        let frame_padding = 2. * style.frame_padding[0];
+        let actions = ui.calc_text_size("...")[0] + frame_padding + spacing + ACTION_GAP;
+        let available = ui.content_region_avail()[0] - CHECK_COLUMN - KIND_COLUMN - actions;
+        let requested = NAME_COLUMN + columns.iter().copied().map(column_width).sum::<f32>();
+        Self {
+            scale: (available / requested).clamp(0., 1.),
+            spacing,
+            frame_padding,
+        }
+    }
+
+    fn width(self, column: SortField) -> f32 {
+        if column == SortField::Name {
+            return self.scale * NAME_COLUMN;
+        }
+        self.scale * column_width(column)
+    }
+}
 
 fn open_action(path: &str) -> GuiShellAction {
     GuiShellAction::OpenDocument(oblikovati_api::wire::OpenDocumentArgs {
@@ -69,13 +100,14 @@ impl HomeWorkspace {
         rows: &[&GuiRecentDocument],
         actions: &mut Vec<GuiShellAction>,
     ) {
-        self.list_header(ui, rows);
+        let layout = RecentListLayout::for_columns(ui, &self.columns.shown);
+        self.list_header(ui, rows, layout);
         ui.separator();
         for row in rows {
-            self.list_row(ui, row, actions);
+            self.list_row(ui, row, layout, actions);
         }
     }
-    fn list_header(&mut self, ui: &Ui, rows: &[&GuiRecentDocument]) {
+    fn list_header(&mut self, ui: &Ui, rows: &[&GuiRecentDocument], layout: RecentListLayout) {
         let state = self.checks.header(rows);
         let mut all = state == HeaderCheck::All;
         if ui.checkbox("##recent-all", &mut all) {
@@ -84,32 +116,36 @@ impl HomeWorkspace {
         if state == HeaderCheck::Partial {
             partial_mark(ui);
         }
-        self.header_cell(ui, SortField::Name, CHECK_COLUMN + KIND_COLUMN);
-        let mut x = CHECK_COLUMN + KIND_COLUMN + NAME_COLUMN;
+        self.header_cell(ui, SortField::Name, CHECK_COLUMN + KIND_COLUMN, layout);
+        let mut x = CHECK_COLUMN + KIND_COLUMN + layout.width(SortField::Name);
         for column in self.columns.shown.clone() {
-            self.header_cell(ui, column, x);
-            x += column_width(column);
+            self.header_cell(ui, column, x, layout);
+            x += layout.width(column);
         }
     }
     /// A header chooses the sort; the active one carries the direction at its right edge.
-    fn header_cell(&mut self, ui: &Ui, column: SortField, x: f32) {
+    fn header_cell(&mut self, ui: &Ui, column: SortField, x: f32, layout: RecentListLayout) {
         ui.same_line_with_pos(x);
         let marked = self.sort.field == column;
         let label = if marked {
-            format!(
-                "{} {}###header-{}",
-                column.label(),
-                self.sort.mark(),
-                column.label()
-            )
+            format!("{} {}", column.label(), self.sort.mark())
         } else {
-            format!("{}###header-{}", column.label(), column.label())
+            column.label().to_owned()
         };
-        if ui.button(label) {
+        let width = layout.width(column) - layout.spacing - layout.frame_padding;
+        let shown = fit_recent_cell(&label, width, |text| ui.calc_text_size(text)[0]);
+        if ui.button(format!("{shown}###header-{}", column.label())) {
             self.sort.choose(column);
         }
+        reveal_full_cell(ui, &label, &shown);
     }
-    fn list_row(&mut self, ui: &Ui, row: &GuiRecentDocument, actions: &mut Vec<GuiShellAction>) {
+    fn list_row(
+        &mut self,
+        ui: &Ui,
+        row: &GuiRecentDocument,
+        layout: RecentListLayout,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
         let hovered = self.note_row_hover(ui);
         let checked = self.checks.contains(&row.path);
         if checked || hovered {
@@ -122,21 +158,25 @@ impl HomeWorkspace {
         ui.same_line_with_pos(CHECK_COLUMN);
         ui.text(kind_mark(row.kind));
         ui.same_line_with_pos(CHECK_COLUMN + KIND_COLUMN);
-        self.name_cell(ui, row, actions);
-        let mut x = CHECK_COLUMN + KIND_COLUMN + NAME_COLUMN;
-        let spacing = ui.clone_style().item_spacing[0];
+        self.name_cell(ui, row, layout, actions);
+        let mut x = CHECK_COLUMN + KIND_COLUMN + layout.width(SortField::Name);
         for column in &self.columns.shown {
             ui.same_line_with_pos(x);
-            let width = column_width(*column);
-            metadata_cell(ui, cell_text(row, *column), width - spacing);
+            let width = layout.width(*column);
+            metadata_cell(ui, cell_text(row, *column), width - layout.spacing);
             x += width;
         }
-        ui.same_line_with_pos(x + 4.);
+        ui.same_line_with_pos(x + ACTION_GAP);
         self.row_menu_when_shown(ui, row, hovered, actions);
     }
-    fn name_cell(&self, ui: &Ui, row: &GuiRecentDocument, actions: &mut Vec<GuiShellAction>) {
-        let style = ui.clone_style();
-        let width = NAME_COLUMN - style.item_spacing[0] - 2. * style.frame_padding[0];
+    fn name_cell(
+        &self,
+        ui: &Ui,
+        row: &GuiRecentDocument,
+        layout: RecentListLayout,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let width = layout.width(SortField::Name) - layout.spacing - layout.frame_padding;
         let shown = fit_recent_cell(&row.name, width, |text| ui.calc_text_size(text)[0]);
         self.mark_matching_text(ui, visible_source_text(&shown, &row.name));
         if ui.button(format!("{shown}###open-{}", row.path)) {

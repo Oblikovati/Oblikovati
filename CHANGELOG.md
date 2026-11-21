@@ -269,7 +269,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
-- Kept long names and paths inside their columns in Home Recent Documents. (#3898)
+- Kept long names and paths inside their columns and reserved space for row actions in Home Recent Documents. (#3898)
 
 - Restored Ready after closing the Rotate at Angle dialog. (#3872)
 
