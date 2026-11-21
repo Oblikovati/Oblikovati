@@ -1,0 +1,31 @@
+
+running 1 test
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... Feature: Model browser
+  Scenario: Accept and cancels edits to a model-state property cell
+   ✔  Given an empty part with Primary and two named model states is active in the MCAD Software
+   ✔  And the second named state is active
+   ✔  And the model-state table has a Category column with empty cells
+   ✔  When the user opens the model-state table
+   ✔  And the user double-clicks the active state's Category cell
+   ✔  And the user enters "Prototype"
+   ✔  Then the cell displays "Prototype"
+   ✔  And OK is enabled
+   ✔  When the user accepts the table change
+   ✔  And the user reopens the model-state table in the same session
+   ✔  Then the active state's Category cell displays "Prototype"
+   ✔  And the other states' Category cells are empty
+   ✔  When the user double-clicks the active state's Category cell
+   ✔  And the user replaces its value with "Review"
+   ✔  And the user cancels the table
+   ✔  And the user reopens the model-state table
+   ✔  Then the active state's Category cell displays "Prototype"
+   ✔  When the user cancels the table
+   ✔  Then the same part remains active
+[Summary]
+1 feature
+1 scenario (1 passed)
+19 steps (19 passed)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1615 filtered out; finished in 54.48s
+
