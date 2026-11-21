@@ -60,6 +60,18 @@ fn rust_ci_runs_for_the_working_branch() {
 }
 
 #[test]
+fn rust_ci_only_supersedes_runs_for_the_same_branch_or_pull_request() {
+    let workflow = include_str!("../../../.github/workflows/ci.yml");
+    assert!(
+        workflow
+            .contains("group: rust-ci-${{ inputs.revision != '' && github.run_id || github.ref }}")
+    );
+    assert!(workflow.contains("cancel-in-progress: ${{ inputs.revision == '' }}"));
+    let package = include_str!("../../../.github/workflows/build.yml");
+    assert!(package.contains("revision: ${{ inputs.revision }}"));
+}
+
+#[test]
 fn linux_validation_uses_the_compatible_ubuntu_release() {
     for entry in PLATFORMS
         .iter()

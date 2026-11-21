@@ -6,6 +6,7 @@ and [ADR-0013](architecture/decisions/ADR-0013-packaging-and-release.md).
 [Issue #3560](https://github.com/Oblikovati/Oblikovati/issues/3560) tracks this port.
 
 Pushes to `rust` and `rust-work` run the Rust CI gate and native build matrix.
+New runs cancel older CI runs on the same branch or pull request.
 An unsigned manual package build accepts a commit on either branch. Signed
 packages and publication require a commit on `rust`; they also require released
 dependencies and the existing publication checks.

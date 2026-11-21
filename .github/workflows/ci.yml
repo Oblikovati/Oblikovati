@@ -9,6 +9,10 @@ on:
       revision:
         type: string
         default: ''
+concurrency:
+  # Package checks target an explicit revision and must retain their own run.
+  group: rust-ci-${{ inputs.revision != '' && github.run_id || github.ref }}
+  cancel-in-progress: ${{ inputs.revision == '' }}
 permissions:
   contents: read
 env:
