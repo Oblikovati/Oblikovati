@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Session presets outlive any one Format Text draft.
 use super::{GuiSketchTextDraft, GuiSketchTextPresetId};
-use imgui::{Key, Ui};
+use imgui::{DrawListMut, Key, StyleColor, Ui};
 
 const NONE: &str = "No Preset";
 const LAST: &str = "Last Used";
@@ -20,8 +20,8 @@ pub(super) struct TextPresets {
     next_id: u64,
     current: PresetChoice,
     initial: PresetChoice,
-    last: Option<GuiSketchTextDraft>,
-    submitted: Option<GuiSketchTextDraft>,
+    last: Option<AcceptedPreset>,
+    submitted: Option<AcceptedPreset>,
     alphabetical: bool,
     name: Option<PresetName>,
     open: bool,
@@ -32,6 +32,11 @@ struct PresetEntry {
     id: GuiSketchTextPresetId,
     name: String,
     fields: GuiSketchTextDraft,
+}
+
+struct AcceptedPreset {
+    fields: GuiSketchTextDraft,
+    origin: Option<GuiSketchTextPresetId>,
 }
 
 struct PresetName {
@@ -77,14 +82,23 @@ impl TextPresets {
     }
 
     pub(super) fn selected_preset(&self) -> Option<GuiSketchTextPresetId> {
-        match self.current {
+        self.associated_entry().map(|entry| entry.id)
+    }
+
+    fn associated_entry(&self) -> Option<&PresetEntry> {
+        let origin = match self.current {
             PresetChoice::Named(id) => Some(id),
-            _ => None,
-        }
+            PresetChoice::LastUsed => self.last.as_ref().and_then(|last| last.origin),
+            PresetChoice::None => None,
+        }?;
+        self.entry(origin)
     }
 
     pub(super) fn submit(&mut self, draft: &GuiSketchTextDraft) {
-        self.submitted = (!draft.content.trim().is_empty()).then(|| draft.clone());
+        self.submitted = (!draft.content.trim().is_empty()).then(|| AcceptedPreset {
+            fields: draft.clone(),
+            origin: self.selected_preset(),
+        });
     }
 
     pub(super) fn cancel(&mut self) {
@@ -112,9 +126,8 @@ impl TextPresets {
     }
 
     fn draw_choices(&mut self, ui: &Ui, draft: &mut GuiSketchTextDraft) -> bool {
-        let caption = self.caption(draft);
         ui.set_next_item_width(145.);
-        let Some(_list) = ui.begin_combo("##text-preset-selector", &caption) else {
+        let Some(_list) = self.begin_selector(ui, draft) else {
             return false;
         };
         if ui
@@ -155,32 +168,47 @@ impl TextPresets {
     }
 
     fn caption(&self, draft: &GuiSketchTextDraft) -> String {
-        match &self.current {
-            PresetChoice::None => NONE.into(),
-            PresetChoice::LastUsed => LAST.into(),
-            PresetChoice::Named(_) => self.current_index().map_or_else(
-                || NONE.into(),
-                |index| {
-                    let entry = &self.entries[index];
-                    if &entry.fields == draft {
-                        entry.name.clone()
-                    } else {
-                        format!("*{}", entry.name)
-                    }
-                },
-            ),
+        let Some(entry) = self.associated_entry() else {
+            return if self.current == PresetChoice::LastUsed {
+                LAST.into()
+            } else {
+                NONE.into()
+            };
+        };
+        if &entry.fields == draft {
+            entry.name.clone()
+        } else {
+            format!("*{}", entry.name)
         }
+    }
+
+    fn begin_selector<'ui>(
+        &self,
+        ui: &'ui Ui,
+        draft: &GuiSketchTextDraft,
+    ) -> Option<imgui::ComboBoxToken<'ui>> {
+        let caption = self.caption(draft);
+        if self.current != PresetChoice::LastUsed {
+            return ui.begin_combo("##text-preset-selector", caption);
+        }
+        // Reserve caption space so the marker does not depend on a clock glyph in the UI font.
+        let gutter = "   ";
+        let [x, y] = ui.cursor_screen_pos();
+        let center = [
+            x + ui.calc_text_size(gutter)[0] * 0.5 + 2.,
+            y + ui.frame_height() * 0.5,
+        ];
+        let draw = ui.get_window_draw_list();
+        let combo = ui.begin_combo("##text-preset-selector", format!("{gutter}{caption}"));
+        draw_history_clock(ui, &draw, center);
+        combo
     }
 
     fn fields(&self, choice: &PresetChoice) -> Option<&GuiSketchTextDraft> {
         match choice {
             PresetChoice::None => None,
-            PresetChoice::LastUsed => self.last.as_ref(),
-            PresetChoice::Named(id) => self
-                .entries
-                .iter()
-                .find(|entry| entry.id == *id)
-                .map(|entry| &entry.fields),
+            PresetChoice::LastUsed => self.last.as_ref().map(|last| &last.fields),
+            PresetChoice::Named(id) => self.entry(*id).map(|entry| &entry.fields),
         }
     }
 
@@ -247,9 +275,11 @@ impl TextPresets {
     fn draw_default_actions(&mut self, ui: &Ui) {
         if checked_preset_option(ui, NONE, self.initial == PresetChoice::None) {
             self.initial = PresetChoice::None;
+            ui.close_current_popup();
         }
         if checked_preset_option(ui, LAST, self.initial == PresetChoice::LastUsed) {
             self.initial = PresetChoice::LastUsed;
+            ui.close_current_popup();
         }
         let current = matches!(self.current, PresetChoice::Named(_));
         if ui
@@ -323,9 +353,25 @@ impl TextPresets {
     }
 
     fn current_index(&self) -> Option<usize> {
-        let id = self.selected_preset()?;
+        let PresetChoice::Named(id) = self.current else {
+            return None;
+        };
         self.entries.iter().position(|entry| entry.id == id)
     }
+
+    fn entry(&self, id: GuiSketchTextPresetId) -> Option<&PresetEntry> {
+        self.entries.iter().find(|entry| entry.id == id)
+    }
+}
+
+fn draw_history_clock(ui: &Ui, draw: &DrawListMut<'_>, at: [f32; 2]) {
+    let color = ui.style_color(StyleColor::Text);
+    let radius = ui.current_font_size() / 3.;
+    draw.add_circle(at, radius, color).build();
+    draw.add_line(at, [at[0], at[1] - radius * 0.65], color)
+        .build();
+    draw.add_line(at, [at[0] + radius * 0.55, at[1]], color)
+        .build();
 }
 
 fn checked_preset_option(ui: &Ui, label: &str, selected: bool) -> bool {
@@ -351,76 +397,5 @@ fn suggest_name(content: &str) -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn saved_preset_can_apply_to_a_new_draft() {
-        let saved = GuiSketchTextDraft {
-            content: "ab".into(),
-            ..Default::default()
-        };
-        let mut shelf = TextPresets::default();
-        assert!(shelf.save_name(&suggest_name(&saved.content), &saved));
-        assert!(!shelf.save_name("AB", &saved));
-        shelf.initial = shelf.current.clone();
-        shelf.synchronize(true);
-        let mut next = GuiSketchTextDraft::default();
-        assert!(shelf.begin(false, None, &mut next));
-        assert_eq!(next, saved);
-    }
-
-    #[test]
-    fn last_used_requires_a_submitted_draft_and_survives_later_cancel() {
-        let draft = GuiSketchTextDraft {
-            content: "ab".into(),
-            ..Default::default()
-        };
-        let mut shelf = TextPresets::default();
-        shelf.synchronize(true);
-        shelf.submit(&draft);
-        shelf.synchronize(false);
-        shelf.synchronize(true);
-        shelf.submit(&GuiSketchTextDraft::default());
-        shelf.cancel();
-        shelf.synchronize(false);
-        assert_eq!(shelf.fields(&PresetChoice::LastUsed), Some(&draft));
-    }
-
-    #[test]
-    fn reopened_modified_text_keeps_its_preset_through_rename() {
-        let mut shelf = TextPresets::default();
-        let original = GuiSketchTextDraft {
-            content: "ab".into(),
-            ..Default::default()
-        };
-        assert!(shelf.save_name("f", &original));
-        let preset = shelf.selected_preset();
-        let mut changed = original.clone();
-        changed.content = "c".into();
-        shelf.synchronize(true);
-        assert!(!shelf.begin(true, preset, &mut changed));
-        assert_eq!(shelf.caption(&changed), "*f");
-        shelf.name = Some(PresetName {
-            value: "g".into(),
-            rename: true,
-            focus: false,
-        });
-        assert!(shelf.save_name("g", &changed));
-        assert_eq!(shelf.selected_preset(), preset);
-        assert_eq!(shelf.caption(&changed), "*g");
-        assert_eq!(shelf.fields(&shelf.current), Some(&original));
-    }
-
-    #[test]
-    fn matching_content_does_not_assign_a_preset_to_unrelated_text() {
-        let mut shelf = TextPresets::default();
-        let mut draft = GuiSketchTextDraft {
-            content: "ab".into(),
-            ..Default::default()
-        };
-        assert!(shelf.save_name("f", &draft));
-        shelf.synchronize(true);
-        assert!(!shelf.begin(true, None, &mut draft));
-        assert_eq!(shelf.caption(&draft), NONE);
-    }
-}
+#[path = "text_presets_tests.rs"]
+mod tests;

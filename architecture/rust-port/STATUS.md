@@ -132,6 +132,11 @@ using this status; the live scenario directory can change.
   preset `g` from the second fraction's editor. Cancel preserved both
   fractions and the unrelated label with 47 dimensions needed.
   See `receipts/2026-11-21-sketch-text-delete-preset-3907/`.
+  A native preset-default regression distinguishes saved `g` from the
+  last accepted draft. Last Used displays the clock and `*g`. Clearing
+  the default opens an empty editor and leaves `g` available. Pinned
+  `text-32` still needs its Tahoma default fixture.
+  See `receipts/2026-11-21-sketch-text-preset-defaults-3907/`.
   Native input left unselected `ab` unchanged and converted selected
   characters to `AB` in the editor and preview. The accepted edit kept
   the text ID and anchor. Pinned `text-25` also requires strike-through.

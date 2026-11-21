@@ -32,10 +32,15 @@ fn open_styled_fraction(world: &mut ApplicationWorld) {
 
 #[when("the user creates and confirm inline preset name f")]
 fn name_existing_fraction(world: &mut ApplicationWorld) {
+    name_fraction_preset(world, b'f');
+}
+
+/// Name a fraction preset from the current draft, for example with `b'g'`.
+pub(super) fn name_fraction_preset(world: &mut ApplicationWorld, name: u8) {
     click_in_text_editor(world, "+");
-    replace_preset_name(world, b'f');
+    replace_preset_name(world, name);
     confirm_preset_name(world);
-    world.run_in_window("Format Text", "f");
+    world.run_in_window("Format Text", &char::from(name).to_string());
 }
 
 #[when("the user cancels the unchanged existing-text editor")]

@@ -5,8 +5,7 @@ use text_fraction::{
     assert_stacked, open_blue_text_with_freedoms, replace_with_fraction, stack_selected_fraction,
 };
 use text_presets::{
-    choose_preset_action, click_in_text_editor, confirm_preset_name, open_preset_list,
-    open_preset_settings, replace_preset_name,
+    choose_preset_action, click_in_text_editor, open_preset_list, open_preset_settings,
 };
 
 const FIRST_TEXT_FREEDOMS: usize = 43;
@@ -19,10 +18,7 @@ fn create_and_apply_preset(world: &mut ApplicationWorld) {
     stack_selected_fraction(world);
     click_editor_button(world, "OK");
     text_edit::open_existing(world);
-    click_in_text_editor(world, "+");
-    replace_preset_name(world, b'g');
-    confirm_preset_name(world);
-    world.run_in_window("Format Text", "g");
+    text_fraction_preset::name_fraction_preset(world, b'g');
     click_editor_button(world, "Cancel");
     add_second_fraction(world);
     add_unrelated_text(world);
