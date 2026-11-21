@@ -41,6 +41,8 @@ pub(super) struct ApplicationWorld {
     pub observed_counts: Vec<usize>,
     pub observed_document_windows: Vec<oblikovati_gui::GuiDocumentWindow>,
     pub observed_sketch: Option<ObservedSketch>,
+    /// Published ellipse center, first-axis point, and perimeter point in sketch units.
+    pub ellipse_fixture_points: Option<[[f64; 2]; 3]>,
     pub text_creation_baseline: Option<oblikovati_model::sketch::Sketch2D>,
     /// The empty editor before entering content that the scenario will cancel.
     pub text_defaults_before_cancel: Option<oblikovati_gui::GuiSketchTextDraft>,
@@ -124,6 +126,7 @@ impl ApplicationWorld {
             observed_counts: Vec::new(),
             observed_document_windows: Vec::new(),
             observed_sketch: None,
+            ellipse_fixture_points: None,
             text_creation_baseline: None,
             text_defaults_before_cancel: None,
             observed_row_gap: None,

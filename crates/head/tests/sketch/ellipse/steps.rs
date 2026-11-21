@@ -5,6 +5,8 @@ use cucumber::{given, then, when};
 
 #[path = "alias.rs"]
 mod alias;
+#[path = "fixture.rs"]
+mod fixture;
 #[path = "measure.rs"]
 mod measure;
 
@@ -24,7 +26,7 @@ fn count_ellipses(world: &mut ApplicationWorld) -> usize {
 }
 fn expect_oval_visible(world: &mut ApplicationWorld) {
     assert_eq!(count_ellipses(world), 1, "ellipse count");
-    for position in BOUNDARY {
+    for position in boundary_pixels(world) {
         world.expect_segment_drawn(position, position);
     }
 }
@@ -32,7 +34,7 @@ fn expect_oval_visible(world: &mut ApplicationWorld) {
 #[when("the user select Ellipse and specify a center, first-axis point, and point on the ellipse")]
 fn create_ellipse(world: &mut ApplicationWorld) {
     choose_ellipse(world);
-    for position in [CENTER, FIRST_AXIS, MINOR_AXIS] {
+    for position in placement_pixels(world) {
         world.sketch_click(position);
     }
     world.hover(CLEAR_POINTER);
@@ -50,12 +52,15 @@ fn ellipse_at_ready(world: &mut ApplicationWorld) {
 }
 #[given("Ellipse is active in an editable sketch")]
 fn ellipse_active(world: &mut ApplicationWorld) {
-    choose_ellipse(world);
+    if !world.status_shows("Select center") {
+        choose_ellipse(world);
+    }
+    world.expect_status("Select center");
 }
 #[when("I select only a center and press Escape")]
 #[when("the user select only a center and press Escape")]
 fn cancel_after_center(world: &mut ApplicationWorld) {
-    world.sketch_click(CENTER);
+    select_center(world);
     world.escape();
 }
 #[then("Ready returns without an additional ellipse")]
@@ -70,8 +75,8 @@ fn cancelled_ellipse(world: &mut ApplicationWorld) {
 #[when("the user invoke Ellipse again, select a center and rotated first axis, and press Escape")]
 fn cancel_after_axis(world: &mut ApplicationWorld) {
     choose_ellipse(world);
-    world.sketch_click(CENTER);
-    world.sketch_click(FIRST_AXIS);
+    select_center(world);
+    select_first_axis(world);
     world.escape();
 }
 #[when("I choose Ellipse from the Circle dropdown")]
@@ -86,7 +91,8 @@ fn invoke_ellipse(world: &mut ApplicationWorld) {
 #[when("I select the fixture center")]
 #[when("the user select the fixture center")]
 fn select_center(world: &mut ApplicationWorld) {
-    world.sketch_click(CENTER);
+    let [center, _, _] = placement_pixels(world);
+    world.sketch_click(center);
 }
 #[then("the prompt requests the first axis point")]
 fn asks_first_axis(world: &mut ApplicationWorld) {
@@ -97,7 +103,8 @@ fn asks_first_axis(world: &mut ApplicationWorld) {
 #[when("I select a distinct first-axis point")]
 #[when("the user select a distinct first-axis point")]
 fn select_first_axis(world: &mut ApplicationWorld) {
-    world.sketch_click(FIRST_AXIS);
+    let [_, first_axis, _] = placement_pixels(world);
+    world.sketch_click(first_axis);
 }
 #[then("the prompt requests a point on the ellipse")]
 #[then("the prompt advances to Select point on ellipse")]
@@ -106,12 +113,14 @@ fn asks_perimeter(world: &mut ApplicationWorld) {
 }
 #[given("the editable recorded fixture has clear canvas for a rotated ellipse")]
 fn empty_sketch(world: &mut ApplicationWorld) {
-    world.start_empty_sketch();
+    world.ensure_editable_sketch();
+    assert_eq!(count_ellipses(world), 0, "ellipse count");
 }
 #[when("I select the fixture point on the ellipse")]
 #[when("the user select the fixture point on the ellipse")]
 fn select_perimeter(world: &mut ApplicationWorld) {
-    world.sketch_click(MINOR_AXIS);
+    let [_, _, perimeter] = placement_pixels(world);
+    world.sketch_click(perimeter);
     world.hover(CLEAR_POINTER);
 }
 #[then("the MCAD Software is Ready")]
@@ -124,7 +133,7 @@ fn oval_removed(world: &mut ApplicationWorld) {
 }
 fn expect_no_oval_visible(world: &mut ApplicationWorld) {
     assert_eq!(count_ellipses(world), 0, "ellipse count");
-    for position in BOUNDARY {
+    for position in boundary_pixels(world) {
         world.expect_segment_absent(position, position);
     }
 }
@@ -136,18 +145,33 @@ fn oval_restored(world: &mut ApplicationWorld) {
 #[when("the user invoke Ellipse and select the fixture center")]
 fn invoke_and_center(world: &mut ApplicationWorld) {
     choose_ellipse(world);
-    world.sketch_click(CENTER);
+    select_center(world);
 }
 #[when("I select the same location again as its first-axis point")]
 #[when("the user select the same location again as its first-axis point")]
 fn coincident_first_axis(world: &mut ApplicationWorld) {
-    world.sketch_click(CENTER);
+    select_center(world);
 }
 #[then("the prompt remains Select first axis point without an error dialog")]
 fn first_axis_not_advanced(world: &mut ApplicationWorld) {
     world.expect_status("Select first axis point");
     assert_eq!(count_ellipses(world), 0, "ellipse count");
     world.expect_no_text("Error");
+}
+
+fn placement_pixels(world: &mut ApplicationWorld) -> [[i32; 2]; 3] {
+    let Some(points) = world.ellipse_fixture_points else {
+        return [CENTER, FIRST_AXIS, MINOR_AXIS];
+    };
+    points.map(|point| world.sketch_pixel_of(point))
+}
+
+fn boundary_pixels(world: &mut ApplicationWorld) -> [[i32; 2]; 4] {
+    let Some([center, first, third]) = world.ellipse_fixture_points else {
+        return BOUNDARY;
+    };
+    let opposite = |point: [f64; 2]| std::array::from_fn(|axis| 2. * center[axis] - point[axis]);
+    [first, third, opposite(first), opposite(third)].map(|point| world.sketch_pixel_of(point))
 }
 #[path = "dimension_lifecycle.rs"]
 mod dimension_lifecycle;

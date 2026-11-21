@@ -56,7 +56,7 @@ fn measure_side(world: &mut ApplicationWorld, upright: bool) {
 // rectangle-two-point-01
 #[given("an editable planar sketch")]
 fn planar_sketch(world: &mut ApplicationWorld) {
-    world.start_empty_sketch();
+    world.ensure_editable_sketch();
 }
 #[when("I select Two Point Rectangle and click diagonally opposite corners")]
 #[when("the user select Two Point Rectangle and click diagonally opposite corners")]

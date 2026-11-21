@@ -31,7 +31,7 @@ fn no_segment(world: &mut ApplicationWorld) {
 }
 #[given("an editable sketch is Ready")]
 fn sketch_ready(world: &mut ApplicationWorld) {
-    world.start_empty_sketch();
+    world.ensure_editable_sketch();
     world.expect_ready();
 }
 #[then("the dynamic input closes and Ready returns")]

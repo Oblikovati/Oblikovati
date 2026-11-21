@@ -53,6 +53,14 @@ impl ApplicationWorld {
     pub fn add_drawing(&mut self) -> u64 {
         self.add_template(oblikovati_gui::GuiTemplateKind::Drawing)
     }
+    /// Supply an editable sketch for a generic Given while retaining any named fixture.
+    /// For example, `world.ensure_editable_sketch()` keeps an already edited YZ sketch.
+    pub fn ensure_editable_sketch(&mut self) {
+        if self.app().owner.active_sketch_edit().is_none() {
+            self.start_empty_sketch();
+        }
+    }
+
     pub fn scratch_folder(&mut self) -> std::path::PathBuf {
         let scratch = self
             .scratch
