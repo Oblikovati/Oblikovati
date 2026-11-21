@@ -49,7 +49,7 @@ pub(super) fn toolbar_images() -> Vec<ToolbarImage> {
 }
 
 fn on_toolbar(center: [f32; 2]) -> bool {
-    if let Some((position, size)) = super::diagnostics::window_geometry("##quick-access-below") {
+    if let Some((position, size)) = super::drawn_windows::window_geometry("##quick-access-below") {
         return (0..2).all(|axis| {
             center[axis] >= position[axis] && center[axis] < position[axis] + size[axis]
         });
@@ -80,7 +80,7 @@ pub(super) fn standard_icon(label: &str) -> Option<ToolbarImage> {
         "Parameters" => "parameters",
         _ => return None,
     };
-    let catalog = include_str!("../../../gui/src/icons/catalog.rs");
+    let catalog = include_str!("../../crates/gui/src/icons/catalog.rs");
     let index = catalog
         .lines()
         .filter_map(|line| line.trim().split_once(" => \""))

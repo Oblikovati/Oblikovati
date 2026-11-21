@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Read the completed native GUI frame and its live windows.
+pub(super) use super::drawn_windows::window_geometry;
 use imgui::sys;
 use std::ffi::CString;
 
@@ -35,13 +36,6 @@ pub(super) fn window_popup_open(window: &str, popup: &str) -> bool {
     unsafe { std::slice::from_raw_parts(stack.Data, stack.Size as usize) }
         .iter()
         .any(|entry| entry.PopupId == id)
-}
-pub(super) fn window_geometry(title: &str) -> Option<([f32; 2], [f32; 2])> {
-    let title = CString::new(title).unwrap();
-    let window = unsafe { sys::igFindWindowByName(title.as_ptr()).as_ref() }?;
-    window
-        .Active
-        .then_some(([window.Pos.x, window.Pos.y], [window.Size.x, window.Size.y]))
 }
 /// Read a window's dock node; example: compare two visible tool windows after a drag.
 pub(super) fn window_dock_id(title: &str) -> Option<u32> {

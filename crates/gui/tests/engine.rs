@@ -2,6 +2,10 @@
 use oblikovati_gui::*;
 #[cfg(target_os = "linux")]
 use oblikovati_viewport::compile_gui_frame;
+#[path = "support/engine_control_points.rs"]
+mod engine_control_points;
+use engine_control_points::{quick_access_point, ribbon_button_point};
+
 fn request() -> GuiFrameRequest {
     GuiFrameRequest {
         extent: [640, 360],
@@ -103,19 +107,20 @@ fn real_imgui_frames_are_owned_and_context_survives_invalid_input() {
 fn verify_gui_click(
     engine: &mut GuiFrameEngine,
     input: &mut GuiFrameRequest,
-    x: f32,
+    label: &str,
     expected: GuiShellAction,
 ) {
-    let output = click_control(engine, input, x);
+    let point = quick_access_point(engine, input, label);
+    let output = click_control(engine, input, point);
     assert_eq!(output.actions, [expected]);
     assert!(output.capture.pointer);
 }
 fn click_control(
     engine: &mut GuiFrameEngine,
     input: &mut GuiFrameRequest,
-    x: f32,
+    point: [f32; 2],
 ) -> GuiFrameOutput {
-    input.events = vec![GuiInputEvent::PointerMoved([x, 45.])];
+    input.events = vec![GuiInputEvent::PointerMoved(point)];
     engine.frame(input).unwrap();
     input.events = vec![left_button_event(true)];
     engine.frame(input).unwrap();
@@ -220,55 +225,8 @@ fn vertex_positions(frame: &GuiFrame) -> Vec<[f32; 2]> {
 
 fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     let mut input = request();
-    // #3849: these gestures address expanded controls; ribbon_click also covers their narrow flyouts.
-    input.extent[0] = 1440;
-    for (x, expected) in [
-        (110., GuiShellAction::ChooseSketchPlane),
-        (1250., GuiShellAction::FinishSketch),
-    ] {
-        input.commands.authoring = if expected == GuiShellAction::ChooseSketchPlane {
-            GuiAuthoringContext::Part
-        } else {
-            GuiAuthoringContext::Sketch
-        };
-        input.events = vec![GuiInputEvent::PointerMoved([x, 68.])];
-        engine.frame(&input).unwrap();
-        input.events = vec![left_button_event(true)];
-        engine.frame(&input).unwrap();
-        input.events = vec![left_button_event(false)];
-        assert_eq!(engine.frame(&input).unwrap().actions, [expected]);
-    }
-    input.events = vec![GuiInputEvent::PointerMoved([40., 107.])];
-    engine.frame(&input).unwrap();
-    input.events = vec![left_button_event(true)];
-    engine.frame(&input).unwrap();
-    input.events = vec![left_button_event(false)];
-    assert_eq!(
-        engine.frame(&input).unwrap().actions,
-        [GuiShellAction::PlaceSketchTool(
-            oblikovati_gui::GuiSketchTool::Rectangle
-        )]
-    );
-    let active_document = input.commands.clone();
-    input.commands = GuiCommandState::default();
-    input.events = vec![GuiInputEvent::PointerMoved([40., 68.])];
-    engine.frame(&input).unwrap();
-    input.events = vec![left_button_event(true)];
-    engine.frame(&input).unwrap();
-    input.events = vec![left_button_event(false)];
-    assert_eq!(
-        engine.frame(&input).unwrap().actions,
-        [GuiShellAction::NewPart]
-    );
-    input.commands = active_document;
-    for (x, action) in [
-        (111., GuiShellAction::Save),
-        (156., GuiShellAction::Undo),
-        (201., GuiShellAction::Redo),
-        (246., GuiShellAction::ShowHome),
-    ] {
-        verify_gui_click(engine, &mut input, x, action);
-    }
+    verify_ribbon_dispatch(engine, &mut input);
+    verify_quick_access_dispatch(engine, &mut input);
     verify_keyboard_save_activation(engine);
     verify_scaled_frame(engine);
     verify_narrow_backing_click(engine);
@@ -279,9 +237,45 @@ fn exercise_gui_inputs(engine: &mut GuiFrameEngine) {
     verify_queued_clicks_survive_frame_boundaries(engine);
     verify_owner_command_enabling(engine);
 }
+
+fn verify_ribbon_dispatch(engine: &mut GuiFrameEngine, input: &mut GuiFrameRequest) {
+    use GuiShellAction::{ChooseSketchPlane, FinishSketch, NewPart, PlaceSketchTool};
+    // #3849: Keep the commands inline. The dedicated ribbon suite checks collapsed groups.
+    input.extent[0] = 1920;
+    let part = input.commands.clone();
+    let mut sketch = part.clone();
+    sketch.authoring = GuiAuthoringContext::Sketch;
+    for (state, label, action) in [
+        (part, "Start2DSketch", ChooseSketchPlane),
+        (sketch.clone(), "FinishSketch", FinishSketch),
+        (
+            sketch.clone(),
+            "Rectangle",
+            PlaceSketchTool(GuiSketchTool::Rectangle),
+        ),
+        (GuiCommandState::default(), "NewPart", NewPart),
+    ] {
+        input.commands = state;
+        let point = ribbon_button_point(engine, input, label);
+        assert_eq!(click_control(engine, input, point).actions, [action]);
+    }
+    input.commands = sketch;
+}
+
+fn verify_quick_access_dispatch(engine: &mut GuiFrameEngine, input: &mut GuiFrameRequest) {
+    for (label, action) in [
+        ("Save", GuiShellAction::Save),
+        ("Undo", GuiShellAction::Undo),
+        ("Redo", GuiShellAction::Redo),
+        ("Home", GuiShellAction::ShowHome),
+    ] {
+        verify_gui_click(engine, input, label, action);
+    }
+}
 fn verify_keyboard_save_activation(engine: &mut GuiFrameEngine) {
     let mut input = request();
-    click_control(engine, &mut input, 246.);
+    let home = quick_access_point(engine, &mut input, "Home");
+    click_control(engine, &mut input, home);
     input.events = vec![GuiInputEvent::PointerMoved([600., 300.])];
     engine.frame(&input).unwrap();
     let mut actions = Vec::new();
@@ -339,13 +333,14 @@ fn left_button_event(pressed: bool) -> GuiInputEvent {
 
 fn verify_invalid_event_batch_is_atomic(engine: &mut GuiFrameEngine) {
     let mut input = request();
+    let save = quick_access_point(engine, &mut input, "Save");
     input.events = vec![
-        GuiInputEvent::PointerMoved([111., 45.]),
+        GuiInputEvent::PointerMoved(save),
         left_button_event(true),
         GuiInputEvent::Text("bad\0text".into()),
     ];
     assert!(engine.frame(&input).is_err());
-    input.events = vec![GuiInputEvent::PointerMoved([111., 45.])];
+    input.events = vec![GuiInputEvent::PointerMoved(save)];
     engine.frame(&input).unwrap();
     input.events = vec![left_button_event(false)];
     assert!(engine.frame(&input).unwrap().actions.is_empty());
@@ -355,7 +350,8 @@ fn verify_invalid_event_batch_is_atomic(engine: &mut GuiFrameEngine) {
 
 fn verify_queued_clicks_survive_frame_boundaries(engine: &mut GuiFrameEngine) {
     let mut input = request();
-    input.events = vec![GuiInputEvent::PointerMoved([111., 45.])];
+    let save = quick_access_point(engine, &mut input, "Save");
+    input.events = vec![GuiInputEvent::PointerMoved(save)];
     engine.frame(&input).unwrap();
     input.events = [true, false, true, false]
         .into_iter()
@@ -388,17 +384,12 @@ fn verify_owner_command_enabling(engine: &mut GuiFrameEngine) {
         },
     ] {
         input.commands = state;
-        for x in [156., 201.] {
-            assert!(click_control(engine, &mut input, x).actions.is_empty());
+        for label in ["Undo", "Redo"] {
+            let point = quick_access_point(engine, &mut input, label);
+            assert!(click_control(engine, &mut input, point).actions.is_empty());
         }
-        assert_eq!(
-            click_control(engine, &mut input, 111.).actions,
-            [GuiShellAction::Save]
-        );
-        assert_eq!(
-            click_control(engine, &mut input, 246.).actions,
-            [GuiShellAction::ShowHome]
-        );
+        verify_gui_click(engine, &mut input, "Save", GuiShellAction::Save);
+        verify_gui_click(engine, &mut input, "Home", GuiShellAction::ShowHome);
     }
 }
 

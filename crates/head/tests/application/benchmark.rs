@@ -16,6 +16,8 @@ mod diagnostics;
 mod docking_system;
 mod document_save_native;
 mod documents;
+#[path = "../../../../test-utilities/rust/drawn_windows.rs"]
+mod drawn_windows;
 mod gap_runner;
 #[cfg(target_os = "linux")]
 #[path = "main-window-frame/steps.rs"]
@@ -27,6 +29,7 @@ mod main_window_frame_native;
 #[cfg(target_os = "linux")]
 #[path = "main-window-frame/resize.rs"]
 mod main_window_frame_resize;
+#[path = "../../../../test-utilities/rust/quick_access_icons.rs"]
 mod quick_access_icons;
 mod refinements;
 mod report_destination;
