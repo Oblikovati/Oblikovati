@@ -178,3 +178,5 @@ fn boundary_pixels(world: &mut ApplicationWorld) -> [[i32; 2]; 4] {
 }
 #[path = "dimension_lifecycle.rs"]
 mod dimension_lifecycle;
+#[path = "dimension_major.rs"]
+mod dimension_major;

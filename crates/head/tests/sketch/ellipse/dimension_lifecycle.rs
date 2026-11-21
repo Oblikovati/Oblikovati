@@ -16,8 +16,13 @@ const MINOR: f64 = 2.9788523;
     "the recorded ellipse has major-radius annotation 8 and minor radius approximately 2.979 mm"
 )]
 fn recorded_ellipse(world: &mut ApplicationWorld) {
-    world.start_sketch_on("YZ Plane");
-    create_recorded_ellipse(world);
+    if world.app().owner.active_sketch_edit().is_none() {
+        world.start_sketch_on("YZ Plane");
+        create_recorded_ellipse(world);
+    }
+    world.expect_annotation("8");
+    let radius = world.edited_geometry().ellipses()[0].radii()[1];
+    assert!((radius - MINOR / 10.).abs() < 1e-8);
 }
 fn create_recorded_ellipse(world: &mut ApplicationWorld) {
     choose_ellipse(world);
@@ -47,14 +52,20 @@ fn create_recorded_ellipse(world: &mut ApplicationWorld) {
 }
 #[when("General Dimension selects its curve and places the vertical center-to-axis dimension")]
 fn place_minor(world: &mut ApplicationWorld) {
+    place_ellipse_radius(world, false);
+}
+
+pub(super) fn place_ellipse_radius(world: &mut ApplicationWorld, major: bool) {
     world.key(ViewportPhysicalKey::D, false);
     let geometry = world.edited_geometry();
     let ellipse = geometry.ellipses()[0];
     let center = geometry.point(ellipse.center()).unwrap().position;
-    let hit = ellipse.evaluate(center, 0.7).unwrap().position;
+    let hit = ellipse.evaluate(center, 0.).unwrap().position;
     let hit = world.sketch_pixel_of(hit);
     world.sketch_click(hit);
-    let label = world.sketch_pixel_of([center[0] + 1.2, center[1]]);
+    let [u, v] = ellipse.major_axis();
+    let [x, y] = if major { [-v, u] } else { [u, v] };
+    let label = world.sketch_pixel_of([center[0] + 1.2 * x, center[1] + 1.2 * y]);
     world.sketch_click(label);
     world.pump(Vec::new());
 }
@@ -85,13 +96,21 @@ fn retained_expression(world: &mut ApplicationWorld) {
 }
 #[given("the reopened minor-radius expression is selected")]
 fn reopened_minor(world: &mut ApplicationWorld) {
+    if diagnostics::window_geometry("Edit Dimension").is_none() {
+        recorded_ellipse(world);
+        place_minor(world);
+        editor_shows_minor(world);
+        cancel_value(world);
+        reopen(world);
+    }
+    retained_expression(world);
+    assert!(world.text_is_selected("2.9788523"));
+}
+#[given("the user places the minor-radius dimension at 2.9788523 mm and opens its editor")]
+fn place_recorded_minor(world: &mut ApplicationWorld) {
     recorded_ellipse(world);
     place_minor(world);
     editor_shows_minor(world);
-    cancel_value(world);
-    reopen(world);
-    retained_expression(world);
-    assert!(world.text_is_selected("2.9788523"));
 }
 #[when("4 is entered and Return accepts it")]
 fn accept_minor(world: &mut ApplicationWorld) {
@@ -233,7 +252,7 @@ fn dimensions_after_finish(world: &mut ApplicationWorld) {
     );
     assert_rendered_ellipse(world);
 }
-fn assert_rendered_ellipse(world: &mut ApplicationWorld) {
+pub(super) fn assert_rendered_ellipse(world: &mut ApplicationWorld) {
     let sketches = world
         .app()
         .window

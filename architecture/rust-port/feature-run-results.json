@@ -830,6 +830,33 @@
     "blocker": "Nine scenarios have unresolved source or font-decoration requirements. See the Point Text behavior ledger and Martensite #578.",
     "notes": "Twenty-nine of 38 scenarios passed with cleanup. The other nine stop at undefined steps. The later focused text-25 case-conversion run is recorded separately."
   },
+  "features/sketch/ellipse/scenario.feature": {
+    "feature_sha256": "93cca0edae47e061feda329c44e0187581e8a2c500e4f34153c58fef1b59873d",
+    "supporting_files": {
+      "features/sketch/ellipse/FIXTURES.md": "d53177281d2f843414309fe777f1e0bb130457dfb9b2d7ae60a5a455ac5374bc",
+      "features/sketch/ellipse/FUNCTIONAL.md": "fedac8909eabfbfd368fa39686d667d2237458c66d6f98cd29122a14d99203e6",
+      "features/sketch/ellipse/VISUAL.md": "6fbc475295f15abf73b4f1d7b7af24b26a650da897ef9a8850083baa37bc2062",
+      "features/sketch/ellipse/curvature-settings.svg": "2b41e8d79d4745bc88dd4b3cd76885143c719953e12fb2199e0363b290ff430d",
+      "features/sketch/ellipse/ellipse-icon.svg": "04fb21abb4e321a49bce198296d25e10b4a81563a4e2e4d9d7ffd28fd63e964c",
+      "features/sketch/ellipse/ellipse-placement.svg": "9c0cb31edb1c2f3f3f940a234f2708d166a718787ba2a9e1c0033d326a438302",
+      "fixtures/cad/ellipse/axis-both-8-4-measure.opd": "e502192dfa447dcff7b9244e140d6f82ff989025556ebf22f5528a614c0698fc",
+      "fixtures/cad/ellipse/axis-both-8-4.opd": "4ed86de19fbb699c18ed3b698807ff388870174dba9a7a1707143acafd9c6f09",
+      "fixtures/cad/ellipse/axis-initial.opd": "fd37bbcef4ee8d8ba531d40a2a22e932cd4503bb7c7058a815d5c17b8278f6ee",
+      "fixtures/cad/ellipse/axis-major-8.opd": "8532c75785354e5d31fc8d4da765b197c3199a680083f314d55ab2004d068ebb",
+      "fixtures/cad/ellipse/circle-midpoint-line.opd": "8be9477c2d131aa2e26a11b70e536c0478e7acc51df444776933cff864c01c62",
+      "fixtures/cad/ellipse/empty-yz.opd": "5c55485079cf285f693ca9edd0febdf26ed5d020d023d3ee51205175a2ca62db",
+      "fixtures/cad/ellipse/rotated-measured.opd": "1e56bfccbbe8155e103718c525408fb526eebbe76d9bea9237622c8ce9080a53"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-21-ellipse-full-b6c4a99fd/cucumber.json",
+    "cucumber_sha256": "05e46c87b9e624e6b0524d29c23b821012f03fc3815a7859598ba13b3f2ad86e",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-ellipse-full-b6c4a99fd/scenario-arguments.json",
+    "scenario_arguments_sha256": "b4e9a40ee8bdaa4906a058cae4e85e0d4a784989a3b717d3bebef769f13cb645",
+    "application_commit": "b6c4a99fd20910a3271cc6cc6817b1e08b80667d",
+    "command": "Full published Ellipse feature through the native sketch runner. See the receipt README.",
+    "environment": "Linux X11, Xvfb, Vulkan Lavapipe, scripted input",
+    "blocker": "Rotated Measure depends on Martensite #406. Curvature display and axis dimension scenarios need further verification.",
+    "notes": "Nine of 19 scenarios passed. The feature and supporting inputs matched before and after the run."
+  },
   "features/sketch/geometry-text/scenario.feature": {
     "by_source_sha256": {
       "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b": {

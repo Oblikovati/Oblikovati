@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T11:46:53.905197923Z" time="61.986266315"><testcase name="Scenario: ellipse-15 Cancel a proposed minor-radius edit while retaining the placed dimension: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:176:3" time="61.986266315"><system-out><![CDATA[  Scenario: ellipse-15 Cancel a proposed minor-radius edit while retaining the placed dimension
+   ✔  Given a copy of `fixtures/cad/ellipse/axis-major-8.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  Given the recorded ellipse has major-radius annotation 8 and minor radius approximately 2.979 mm
+   ✔  When General Dimension selects its curve and places the vertical center-to-axis dimension
+   ✔  Then the minor-radius editor opens with 2.9788523 mm selected
+   ✔  When 4 is entered and Escape cancels the editor
+   ✔  Then the placed dimension remains annotated 2.979
+   ✔  When its annotation is reopened
+   ✔  Then the editor retains expression 2.9788523 mm
+]]></system-out></testcase></testsuite></testsuites>

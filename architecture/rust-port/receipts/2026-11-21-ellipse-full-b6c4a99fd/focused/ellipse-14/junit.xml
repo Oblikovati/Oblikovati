@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T11:45:21.005892537Z" time="70.411350538"><testcase name="Scenario: ellipse-14 Undo and redo the ellipse major-radius value edit: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:165:3" time="70.411350538"><system-out><![CDATA[  Scenario: ellipse-14 Undo and redo the ellipse major-radius value edit
+   ✔  Given a copy of `fixtures/cad/ellipse/axis-initial.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the user places the major-radius dimension at 6.3832549 mm and edits it to 8 mm in this session
+   ✔  Given Measure has closed after the accepted major-radius value of 8
+   ✔  When Ctrl+Z is pressed
+   ✔  Then the ellipse narrows and the retained dimension annotation becomes 6.383
+   ✔  When Ctrl+Y is pressed
+   ✔  Then the wider ellipse and annotation 8 return
+   ✔  And the major-radius dimension remains
+]]></system-out></testcase></testsuite></testsuites>
