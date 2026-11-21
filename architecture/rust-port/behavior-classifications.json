@@ -885,11 +885,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3872",
         "https://github.com/Oblikovati/Oblikovati/issues/3873"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "mapping_reason": "Viewport navigation belongs to the full desktop shell.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
@@ -905,11 +905,12 @@
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
       "go_test_premise": "Go orbit-zone and camera rotation tests pass; they do not cover the incremental-rotation dialog or paired button scenarios.",
       "kernel_capabilities": "A visible solid fixture is required; view rotation changes the camera and does not modify the B-rep.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
+      "platforms": "Linux X11 under Xvfb with Openbox and Vulkan Lavapipe.",
       "kernel_integration": "A host-prepared solid is rendered while incremental view rotation changes the camera.",
-      "rust_tests": "Native scenario bindings in crates/head/tests/application/viewport-orbit/steps.rs; both example rows and captures reviewed.",
-      "oracle": "Both pinned example rows, camera/view assertions and separate reviewed native captures; Go is a partial navigation reference.",
-      "expected_result": "For both remaining adjacent button pairs, the second rotation reverses the first and Cancel returns Ready."
+      "rust_tests": "Pinned native Viewport Orbit cases at source lines 91, 92: 18 steps passed. See architecture/rust-port/receipts/2026-11-21-viewport-orbit-r0-3872/cucumber.json at 4055c7951575a4712ac900705f20c2dcd6551637.",
+      "oracle": "Pinned camera, guide, status and dialog assertions. Reviewed captures show the accepted increment and one reversed outline example against the rendered block.",
+      "expected_result": "For both remaining adjacent button pairs, the second rotation reverses the first and Cancel returns Ready.",
+      "baseline_source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6"
     },
     {
       "id": "scenario:152ae6bfde300d9b28f59b8d0c51fa6077176ebf1a2c4b0e5bb1b850690a6e39",
@@ -1584,18 +1585,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3872",
         "https://github.com/Oblikovati/Oblikovati/issues/3873"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
       "go_test_premise": "Go orbit-zone, camera rotation, constrained orbit and modal navigation tests passed. They do not cover the required native menus, guide or incremental dialog.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "kernel_capabilities": "A visible solid fixture is required; orbit changes the camera and does not modify the B-rep.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
+      "platforms": "Linux X11 under Xvfb with Openbox and Vulkan Lavapipe.",
       "kernel_integration": "The native viewport renders a host-prepared solid fixture while navigation changes the camera.",
-      "rust_tests": "Native scenario bindings in crates/head/tests/application/viewport-orbit/steps.rs; current scenario and capture reviewed.",
-      "oracle": "Pinned scenario steps, camera/view checks and reviewed native captures; Go is a partial navigation reference.",
+      "rust_tests": "Pinned native Viewport Orbit cases at source lines 5: 13 steps passed. See architecture/rust-port/receipts/2026-11-21-viewport-orbit-r0-3872/cucumber.json at 4055c7951575a4712ac900705f20c2dcd6551637.",
+      "oracle": "Pinned camera, guide, status and dialog assertions. Reviewed captures show the accepted increment and one reversed outline example against the rendered block.",
       "expected_result": "Free rotation shows its guide and context menu; Done removes the guide and restores Ready.",
       "historical_receipts": [
         {
@@ -1603,7 +1604,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-orbit-696c1c624ce655a9-current/receipt-696c1c624ce655a9.json",
           "sha256": "5b487fe99582ef725895b7300194c422607d4a32ccf41461eab775b9b983022b"
         }
-      ]
+      ],
+      "baseline_source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6"
     },
     {
       "id": "scenario:50b890580c8d9393b66713268e83c4e7345495f9602fb9422de8cdb4e789d505",
@@ -1617,18 +1619,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3872",
         "https://github.com/Oblikovati/Oblikovati/issues/3873"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
       "go_test_premise": "Go orbit-zone, camera rotation, constrained orbit and modal navigation tests passed. They do not cover the required native menus, guide or incremental dialog.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "kernel_capabilities": "A visible solid fixture is required; orbit changes the camera and does not modify the B-rep.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
+      "platforms": "Linux X11 under Xvfb with Openbox and Vulkan Lavapipe.",
       "kernel_integration": "The native viewport renders a host-prepared solid fixture while navigation changes the camera.",
-      "rust_tests": "Native scenario bindings in crates/head/tests/application/viewport-orbit/steps.rs; current scenario and capture reviewed.",
-      "oracle": "Pinned scenario steps, camera/view checks and reviewed native captures; Go is a partial navigation reference.",
+      "rust_tests": "Pinned native Viewport Orbit cases at source lines 21: 11 steps passed. See architecture/rust-port/receipts/2026-11-21-viewport-orbit-r0-3872/cucumber.json at 4055c7951575a4712ac900705f20c2dcd6551637.",
+      "oracle": "Pinned camera, guide, status and dialog assertions. Reviewed captures show the accepted increment and one reversed outline example against the rendered block.",
       "expected_result": "Constrained Orbit shows a guide; Escape removes it and leaves that action marked in the menu.",
       "historical_receipts": [
         {
@@ -1636,7 +1638,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-orbit-50b890580c8d9393-current/receipt-50b890580c8d9393.json",
           "sha256": "e5f5e07c7bffa45e9cde292aac0d312e35a6ed13641e8e77bc357c0c7214ec18"
         }
-      ]
+      ],
+      "baseline_source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6"
     },
     {
       "id": "scenario:22baf74f89240b1e2783a101efb7fd35e6386be6e32ebfcf8013f6c6fcfbfcd9",
@@ -1650,18 +1653,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3872",
         "https://github.com/Oblikovati/Oblikovati/issues/3873"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
       "go_test_premise": "Go orbit-zone, camera rotation, constrained orbit and modal navigation tests passed. They do not cover the required native menus, guide or incremental dialog.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "kernel_capabilities": "A visible solid fixture is required; orbit changes the camera and does not modify the B-rep.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
+      "platforms": "Linux X11 under Xvfb with Openbox and Vulkan Lavapipe.",
       "kernel_integration": "The native viewport renders a host-prepared solid fixture while navigation changes the camera.",
-      "rust_tests": "Native scenario bindings in crates/head/tests/application/viewport-orbit/steps.rs; current scenario and capture reviewed.",
-      "oracle": "Pinned scenario steps, camera/view checks and reviewed native captures; Go is a partial navigation reference.",
+      "rust_tests": "Pinned native Viewport Orbit cases at source lines 35: 14 steps passed. See architecture/rust-port/receipts/2026-11-21-viewport-orbit-r0-3872/cucumber.json at 4055c7951575a4712ac900705f20c2dcd6551637.",
+      "oracle": "Pinned camera, guide, status and dialog assertions. Reviewed captures show the accepted increment and one reversed outline example against the rendered block.",
       "expected_result": "Rotate at Angle previews a 10-degree step; Reset and Cancel restore the original view.",
       "historical_receipts": [
         {
@@ -1669,7 +1672,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-orbit-22baf74f89240b1e-current/receipt-22baf74f89240b1e.json",
           "sha256": "c7957753ade09e8eea7d5636c9b3fc3ba139cb6413cd1dc6a08caf1a4a0fa8a3"
         }
-      ]
+      ],
+      "baseline_source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6"
     },
     {
       "id": "scenario:60380109be5bc8ba385e715fe0cfa6f203be037196d11c348aaed8e122b34cb4",
@@ -1683,18 +1687,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3872",
         "https://github.com/Oblikovati/Oblikovati/issues/3873"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
       "go_test_premise": "Go orbit-zone, camera rotation, constrained orbit and modal navigation tests passed. They do not cover the required native menus, guide or incremental dialog.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "kernel_capabilities": "A visible solid fixture is required; orbit changes the camera and does not modify the B-rep.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
+      "platforms": "Linux X11 under Xvfb with Openbox and Vulkan Lavapipe.",
       "kernel_integration": "The native viewport renders a host-prepared solid fixture while navigation changes the camera.",
-      "rust_tests": "Native scenario bindings in crates/head/tests/application/viewport-orbit/steps.rs; current scenario and capture reviewed.",
-      "oracle": "Pinned scenario steps, camera/view checks and reviewed native captures; Go is a partial navigation reference.",
+      "rust_tests": "Pinned native Viewport Orbit cases at source lines 53: 10 steps passed. See architecture/rust-port/receipts/2026-11-21-viewport-orbit-r0-3872/cucumber.json at 4055c7951575a4712ac900705f20c2dcd6551637.",
+      "oracle": "Pinned camera, guide, status and dialog assertions. Reviewed captures show the accepted increment and one reversed outline example against the rendered block.",
       "expected_result": "Rotate at Angle applies a 10-degree step; OK retains the changed view and returns Ready.",
       "historical_receipts": [
         {
@@ -1702,7 +1706,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-orbit-60380109be5bc8ba-current/receipt-60380109be5bc8ba.json",
           "sha256": "7807748e52b17bc509a4fd45e1c4a7c2f820d7fb454c41181ae82e86dda4a72a"
         }
-      ]
+      ],
+      "baseline_source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6"
     },
     {
       "id": "scenario:e3b0703080912b677da97db25de64b0d2bf54a6a0b30286d3592ea0af6020d6b",
@@ -1716,18 +1721,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3872",
         "https://github.com/Oblikovati/Oblikovati/issues/3873"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
       "go_test_premise": "Go orbit-zone, camera rotation, constrained orbit and modal navigation tests passed. They do not cover the native orbit menu, guide or incremental dialog.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "kernel_capabilities": "A visible solid fixture is required; orbit changes the camera and does not modify the B-rep.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
+      "platforms": "Linux X11 under Xvfb with Openbox and Vulkan Lavapipe.",
       "kernel_integration": "The native viewport renders a host-prepared solid while navigation changes the camera.",
-      "rust_tests": "Native scenario bindings in crates/head/tests/application/viewport-orbit/steps.rs; current scenario and capture reviewed.",
-      "oracle": "Pinned scenario steps, camera/view checks and reviewed native capture; Go is a partial navigation reference.",
+      "rust_tests": "Pinned native Viewport Orbit cases at source lines 66: 9 steps passed. See architecture/rust-port/receipts/2026-11-21-viewport-orbit-r0-3872/cucumber.json at 4055c7951575a4712ac900705f20c2dcd6551637.",
+      "oracle": "Pinned camera, guide, status and dialog assertions. Reviewed captures show the accepted increment and one reversed outline example against the rendered block.",
       "expected_result": "Adjacent direction buttons reverse the 10-degree rotation; Cancel closes the dialog and restores Ready.",
       "historical_receipts": [
         {
@@ -1735,7 +1740,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-orbit-exit-e3b0703080912b67-current/receipt-e3b0703080912b67.json",
           "sha256": "249cef5e950133b5f27dcd63f0660cf7a5381f4c151af8a4f82cc3921171aa11"
         }
-      ]
+      ],
+      "baseline_source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6"
     },
     {
       "id": "scenario:1fcd89bdfec26b4baf4a18f2ff9162498db98b0c8f12d1ee8500a7eca3458b8a",
@@ -1749,18 +1755,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3872",
         "https://github.com/Oblikovati/Oblikovati/issues/3873"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
       "go_test_premise": "Go orbit-zone, camera rotation, constrained orbit and modal navigation tests passed. They do not cover the native orbit menu, guide or incremental dialog.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "kernel_capabilities": "A visible solid fixture is required; orbit changes the camera and does not modify the B-rep.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
+      "platforms": "Linux X11 under Xvfb with Openbox and Vulkan Lavapipe.",
       "kernel_integration": "The native viewport renders a host-prepared solid while navigation changes the camera.",
-      "rust_tests": "Native scenario bindings in crates/head/tests/application/viewport-orbit/steps.rs; current scenario and capture reviewed.",
-      "oracle": "Pinned scenario steps, camera/view checks and reviewed native capture; Go is a partial navigation reference.",
+      "rust_tests": "Pinned native Viewport Orbit cases at source lines 95: 6 steps passed. See architecture/rust-port/receipts/2026-11-21-viewport-orbit-r0-3872/cucumber.json at 4055c7951575a4712ac900705f20c2dcd6551637.",
+      "oracle": "Pinned camera, guide, status and dialog assertions. Reviewed captures show the accepted increment and one reversed outline example against the rendered block.",
       "expected_result": "Escape removes the orbit guide and restores Ready while retaining the visible part.",
       "historical_receipts": [
         {
@@ -1768,7 +1774,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-orbit-exit-1fcd89bdfec26b4b-current/receipt-1fcd89bdfec26b4b.json",
           "sha256": "8e2a4206c79eeadaea3ed084e469f17a21adb7ede48782257f72d6be28cf92ce"
         }
-      ]
+      ],
+      "baseline_source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6"
     },
     {
       "id": "scenario:c6efd34023daf5106f806588d47a0bcc19d5c1410946e7b8ef27405d7e011ac9",
@@ -1782,18 +1789,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3872",
         "https://github.com/Oblikovati/Oblikovati/issues/3873"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
       "go_test_premise": "Go orbit-zone, camera rotation, constrained orbit and modal navigation tests passed. They do not cover the native orbit menu, guide or incremental dialog.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "kernel_capabilities": "A visible solid fixture is required; orbit changes the camera and does not modify the B-rep.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
+      "platforms": "Linux X11 under Xvfb with Openbox and Vulkan Lavapipe.",
       "kernel_integration": "The native viewport renders a host-prepared solid while navigation changes the camera.",
-      "rust_tests": "Native scenario bindings in crates/head/tests/application/viewport-orbit/steps.rs; current scenario and capture reviewed.",
-      "oracle": "Pinned scenario steps, camera/view checks and reviewed native capture; Go is a partial navigation reference.",
+      "rust_tests": "Pinned native Viewport Orbit cases at source lines 104: 6 steps passed. See architecture/rust-port/receipts/2026-11-21-viewport-orbit-r0-3872/cucumber.json at 4055c7951575a4712ac900705f20c2dcd6551637.",
+      "oracle": "Pinned camera, guide, status and dialog assertions. Reviewed captures show the accepted increment and one reversed outline example against the rendered block.",
       "expected_result": "The Pan control removes the orbit guide and restores Ready without changing apparent orientation.",
       "historical_receipts": [
         {
@@ -1801,7 +1808,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-orbit-exit-c6efd34023daf510-current/receipt-c6efd34023daf510.json",
           "sha256": "30335867f5ab80c63628bf61dbcdfc4ef200e1b3283104540c1e594d03e41445"
         }
-      ]
+      ],
+      "baseline_source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6"
     },
     {
       "id": "scenario:0a01e4f0b16e1adba3a11923b88f6176a54bed941ac9d2450832fb8db85dde03",
@@ -1815,18 +1823,18 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3872",
         "https://github.com/Oblikovati/Oblikovati/issues/3873"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "mapping_reason": "Viewport orbit controls and their interaction states belong to the full desktop shell (R7); a visible model is a fixture dependency.",
       "go_reference": "Go aa8297d1b: head/ui/navigate.go and head/ui/navigate_test.go; see receipts/2026-11-14-go-orbit-baseline/README.md.",
       "go_test_premise": "Go orbit-zone, camera rotation, constrained orbit and modal navigation tests passed. They do not cover the native orbit menu, guide or incremental dialog.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "kernel_capabilities": "A visible solid fixture is required; orbit changes the camera and does not modify the B-rep.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; Windows and macOS not checked.",
+      "platforms": "Linux X11 under Xvfb with Openbox and Vulkan Lavapipe.",
       "kernel_integration": "The native viewport renders a host-prepared solid while navigation changes the camera.",
-      "rust_tests": "Native scenario bindings in crates/head/tests/application/viewport-orbit/steps.rs; current scenario and capture reviewed.",
-      "oracle": "Pinned scenario steps, camera/view checks and reviewed native capture; Go is a partial navigation reference.",
+      "rust_tests": "Pinned native Viewport Orbit cases at source lines 113: 7 steps passed. See architecture/rust-port/receipts/2026-11-21-viewport-orbit-r0-3872/cucumber.json at 4055c7951575a4712ac900705f20c2dcd6551637.",
+      "oracle": "Pinned camera, guide, status and dialog assertions. Reviewed captures show the accepted increment and one reversed outline example against the rendered block.",
       "expected_result": "The context menu OK action removes the guide and restores Ready without changing apparent orientation.",
       "historical_receipts": [
         {
@@ -1834,7 +1842,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-orbit-exit-0a01e4f0b16e1adb-current/receipt-0a01e4f0b16e1adb.json",
           "sha256": "c2cb9e55fb9a48f8d04c6a4f21cf2a95d58c6f1d11be85bbc8221c3ef40e37d1"
         }
-      ]
+      ],
+      "baseline_source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6"
     },
     {
       "id": "scenario:6fbff7e6230279f35830ec5060b136f4de4e05909878c1dd52eb7388c3754c58",

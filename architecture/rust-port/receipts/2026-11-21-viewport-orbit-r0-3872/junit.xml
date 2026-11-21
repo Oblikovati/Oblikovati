@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/oblikovati-bdd-JEGFfb/checkout/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/oblikovati-bdd-JEGFfb/checkout/features/application/viewport-orbit/viewport-orbit.feature" tests="10" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T05:20:06.062164815Z" time="277.34358524"><testcase name="Scenario: Open and exit the free-rotation mode: tmp/oblikovati-bdd-JEGFfb/checkout/features/application/viewport-orbit/viewport-orbit.feature:5:3" time="33.933896312"><system-out><![CDATA[  Scenario: Open and exit the free-rotation mode
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  And the viewport navigation bar is visible
+   ✔  When the user selects the orbit control on the navigation bar
+   ✔  Then the status area indicates free rotation
+   ✔  And the active part remains visible
+   ✔  When the user moves through the viewport using a drag gesture
+   ✔  Then a circular guide with a central cross and radial marks is visible over the viewport
+   ✔  When the user opens the context menu in the viewport
+   ✔  Then it offers Done, OK, Home View, Pan, Zoom and Previous View
+   ✔  When the user chooses Done
+   ✔  Then the circular guide disappears
+   ✔  And the status area displays Ready
+   ✔  And the same part remains active
+]]></system-out></testcase><testcase name="Scenario: Select and exit constrained orbit: tmp/oblikovati-bdd-JEGFfb/checkout/features/application/viewport-orbit/viewport-orbit.feature:21:3" time="25.310688178"><system-out><![CDATA[  Scenario: Select and exit constrained orbit
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  When the user opens the orbit menu on the navigation bar
+   ✔  Then the menu offers Orbit, Constrained Orbit and Rotate at Angle
+   ✔  When the user chooses Constrained Orbit
+   ✔  Then a circular rotation guide appears over the viewport
+   ✔  And the active part remains visible
+   ✔  When the user presses Escape
+   ✔  Then the guide disappears
+   ✔  And the status area displays Ready
+   ✔  When the user reopens the orbit menu
+   ✔  Then Constrained Orbit is marked as the selected action
+]]></system-out></testcase><testcase name="Scenario: Preview and reset an incremental view rotation: tmp/oblikovati-bdd-JEGFfb/checkout/features/application/viewport-orbit/viewport-orbit.feature:35:3" time="34.414472557"><system-out><![CDATA[  Scenario: Preview and reset an incremental view rotation
+   ✔  Given a rectangular block is visible face-on in an active part in the MCAD Software
+   ✔  When the user chooses Rotate at Angle from the orbit menu
+   ✔  Then an incremental view rotation dialog opens
+   ✔  And it contains an increment field, six direction buttons, Reset, OK and Cancel
+   ✔  And the increment field displays 10
+   ✔  When the user clicks the first direction button
+   ✔  Then the visible view changes while the dialog remains open
+   ✔  When the user clicks Reset
+   ✔  Then the original face-on view is restored
+   ✔  When the user clicks the first direction button again
+   ✔  And the user clicks Cancel
+   ✔  Then the dialog closes
+   ✔  And the original face-on view is restored
+   ✔  And the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Accept an incremental view rotation: tmp/oblikovati-bdd-JEGFfb/checkout/features/application/viewport-orbit/viewport-orbit.feature:53:3" time="29.100047549"><system-out><![CDATA[  Scenario: Accept an incremental view rotation
+   ✔  Given a rectangular block is visible face-on in an active part in the MCAD Software
+   ✔  When the user chooses Rotate at Angle from the orbit menu
+   ✔  And the increment field displays 10
+   ✔  And the user clicks the first direction button
+   ✔  Then the visible view changes while the dialog remains open
+   ✔  When the user clicks OK
+   ✔  Then the dialog closes
+   ✔  And the changed view remains visible
+   ✔  And the same part remains active
+   ✔  And the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Reverse an incremental rotation with the adjacent control: tmp/oblikovati-bdd-JEGFfb/checkout/features/application/viewport-orbit/viewport-orbit.feature:66:3" time="31.26025937"><system-out><![CDATA[  Scenario: Reverse an incremental rotation with the adjacent control
+   ✔  Given a rectangular block is visible at an inclined orientation in the MCAD Software
+   ✔  And the incremental view rotation dialog is open with increment 10
+   ✔  When the user clicks the second direction button
+   ✔  Then the block view changes
+   ✔  When the user clicks the first direction button once
+   ✔  Then the block returns to its initial apparent orientation
+   ✔  And the dialog remains open
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Reverse a rotation using the remaining adjacent pairs: tmp/oblikovati-bdd-JEGFfb/checkout/features/application/viewport-orbit/viewport-orbit.feature:91:5" time="30.496322839"><system-out><![CDATA[  Scenario Outline: Reverse a rotation using the remaining adjacent pairs
+   ✔  Given a rectangular block is visible at an inclined orientation in the MCAD Software
+   ✔  And the incremental view rotation dialog is open with increment 10
+   ✔  When the user clicks direction button 3 once
+   ✔  Then the block view changes
+   ✔  When the user clicks direction button 4 once
+   ✔  Then the block returns to its initial apparent orientation
+   ✔  And the dialog remains open
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Reverse a rotation using the remaining adjacent pairs: tmp/oblikovati-bdd-JEGFfb/checkout/features/application/viewport-orbit/viewport-orbit.feature:92:5" time="30.816496639"><system-out><![CDATA[  Scenario Outline: Reverse a rotation using the remaining adjacent pairs
+   ✔  Given a rectangular block is visible at an inclined orientation in the MCAD Software
+   ✔  And the incremental view rotation dialog is open with increment 10
+   ✔  When the user clicks direction button 5 once
+   ✔  Then the block view changes
+   ✔  When the user clicks direction button 6 once
+   ✔  Then the block returns to its initial apparent orientation
+   ✔  And the dialog remains open
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Exit free orbit with Escape: tmp/oblikovati-bdd-JEGFfb/checkout/features/application/viewport-orbit/viewport-orbit.feature:95:3" time="15.68906573"><system-out><![CDATA[  Scenario: Exit free orbit with Escape
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  When the user selects Orbit on the navigation bar
+   ✔  Then the status area indicates free rotation
+   ✔  When the user presses Escape
+   ✔  Then the status area displays Ready
+   ✔  And the block remains visible in the same apparent orientation
+]]></system-out></testcase><testcase name="Scenario: Leave free orbit using the Pan control: tmp/oblikovati-bdd-JEGFfb/checkout/features/application/viewport-orbit/viewport-orbit.feature:104:3" time="19.066810197"><system-out><![CDATA[  Scenario: Leave free orbit using the Pan control
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  And Orbit is active with its circular guide visible
+   ✔  When the user clicks Pan on the navigation bar
+   ✔  Then the circular orbit guide disappears
+   ✔  And the status area displays Ready
+   ✔  And the block remains visible in the same apparent orientation
+]]></system-out></testcase><testcase name="Scenario: Exit orbit with the context menu OK action: tmp/oblikovati-bdd-JEGFfb/checkout/features/application/viewport-orbit/viewport-orbit.feature:113:3" time="27.255525869"><system-out><![CDATA[  Scenario: Exit orbit with the context menu OK action
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  And Orbit is active with its circular guide visible
+   ✔  When the user opens the orbit context menu
+   ✔  And the user chooses OK
+   ✔  Then the circular guide disappears
+   ✔  And the status area displays Ready
+   ✔  And the block remains visible in the same apparent orientation
+]]></system-out></testcase></testsuite></testsuites>

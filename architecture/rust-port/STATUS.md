@@ -14,6 +14,12 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
+- Viewport Orbit (#3872): all ten pinned cases and 94 steps passed, including
+  both examples of the opposite-button outline. A saved native block
+  reproduced a stale status message after Rotate at Angle. All ten cases
+  also passed after the fix in a copy of the current feature with the native
+  Part. The published feature still uses the Inventor path. See
+  `receipts/2026-11-21-viewport-orbit-r0-3872/`.
 - File Menu (#3894): all eight pinned scenarios and 59 steps passed under
   Xvfb with Openbox. The live feature passed six of eight. Two scenarios
   still reference an Inventor Part and need the native fixture. A separate
