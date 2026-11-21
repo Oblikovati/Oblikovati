@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/oblikovati-bdd-ckpa1C/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/oblikovati-bdd-ckpa1C/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T00:11:58.161491037Z" time="66.467211255"><testcase name="Scenario: text-21 Preview centered and middle-aligned Text with double spacing: tmp/oblikovati-bdd-ckpa1C/checkout/features/sketch/text/scenario.feature:203:3" time="66.467211255"><system-out><![CDATA[  Scenario: text-21 Preview centered and middle-aligned Text with double spacing
+   ✔  Given the existing Text content is selected
+   ✔  When the user selects center horizontal and middle vertical alignment
+   ✔  Then the selected controls are highlighted and canvas placement changes
+   ✔  When the user opens line spacing
+   ✔  Then Single is checked and Double, 1.5 Lines, Multiple and Exactly are offered
+   ✔  When the user chooses Double
+   ✔  Then the displayed editor rows have increased separation
+]]></system-out></testcase></testsuite></testsuites>

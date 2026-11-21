@@ -27771,10 +27771,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "The Go glyph profile, anchor placement, style round-trip, and typed add/edit/get tests passed. The Rust tests cover line spacing and native history.",
+      "api_revision": "f489eb15d33bb4fea751bf230a92a65ccafd9dec",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite produces glyph outlines from the requested baseline positions and supports geometry picking.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe. Windows and macOS desktop runs remain unverified.",
+      "kernel_integration": "The desktop and model share the typed API spacing mode. The editor measures its display rows, while the viewport derives outline placement from the regular font advances.",
+      "rust_tests": "Pinned native text-21 plus typed host, outline, and YAML tests. See architecture/rust-port/receipts/2026-11-21-sketch-text-spacing-0162/README.md.",
+      "oracle": "Pinned steps, visible Center and Middle controls, relative framebuffer position, spacing menu entries, and measured row separation.",
+      "expected_result": "Centered and middle-aligned text moves at the same anchor. The spacing menu shows Single and the available alternatives. Choosing Double increases editor row separation.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:0d2290bf4d33b51a7a40a2ca594f7f2ccd653f1f6241e16af9a2375589ef33ff",
