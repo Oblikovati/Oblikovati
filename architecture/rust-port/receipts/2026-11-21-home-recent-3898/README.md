@@ -43,3 +43,16 @@ R0 entries to the pinned feature hash. The reports record the
 [row hover](pinned-row-hover-bcabd0c01.json),
 [column order](pinned-column-reorder-bcabd0c01.json), and
 [file properties](pinned-file-properties-bcabd0c01.json).
+
+## Open with options
+
+The test now checks the Front view that the native Part already saved.
+The [pinned](pinned-part-open-options.json) and
+[published](published-part-open-options.json) scenarios each passed 14 steps
+and their window cleanup hooks. Both selected Front in File Open Options
+and returned to Recent with Cancel.
+
+The pinned [assembly](pinned-assembly-open-options.json) and
+[drawing](pinned-drawing-open-options.json) cases also passed. They cover
+opening-mode selection, control availability, and cancellation without
+opening either file.

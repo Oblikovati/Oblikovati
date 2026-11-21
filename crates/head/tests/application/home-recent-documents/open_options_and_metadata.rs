@@ -4,15 +4,16 @@ use super::*;
 // Open options
 #[given("a recent part with a Front design view is displayed in List View")]
 fn front_view_part(world: &mut ApplicationWorld) {
-    let part = world.parts[0];
-    world
-        .app()
-        .owner
-        .document_commands(part)
-        .create_design_view("Front")
-        .unwrap();
-    world.save_part_to_file(part, &format!("{SEARCHED}.opd"));
-    world.pump(Vec::new());
+    // Native parts already write Front as a standard design view.
+    let state = world.state();
+    let entry = state
+        .recent_documents
+        .iter()
+        .find(|entry| entry.name == SEARCHED);
+    assert!(
+        entry.is_some_and(|entry| entry.design_views.iter().any(|view| view == "Front")),
+        "expected the saved {SEARCHED} to have a Front design view"
+    );
     assert!(home_shows(world, SEARCHED), "expected the part on the list");
 }
 #[when("the user chooses Open with options")]

@@ -13670,8 +13670,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawOpenRecentMenu; richer Home behavior requires separate baseline review.",
-      "mapping_reason": "Home recent-document UI behavior; opening and persistence prerequisites remain separate."
+      "go_reference": "Go aa8297d1b head/ui/chrome_menubar.go drawOpenRecentMenu lists recent paths. It does not present the Home file open options.",
+      "mapping_reason": "Home recent-document UI behavior; opening and persistence prerequisites remain separate.",
+      "go_test_premise": "app.TestOpenDocumentFromMRUHonorsVetoAndRecords checks MRU open and recording. The pinned scenario supplies the part open-options premise and cancellation.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The dialog reads a saved Part's view names without opening or recomputing the Part.",
+      "platforms": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe.",
+      "kernel_integration": "Native Part save writes the standard design views. The test cancels before any geometry operation.",
+      "rust_tests": "crates/head/tests/application/home-recent-documents/open_options_and_metadata.rs; architecture/rust-port/receipts/2026-11-21-home-recent-3898/pinned-part-open-options.json.",
+      "oracle": "The pinned scenario checks rendered options against the saved native fixture. The Cucumber report records each step and window cleanup.",
+      "expected_result": "Model State shows Primary and Design View starts at Last Active. Front can be selected. Cancel closes File Open Options and returns to Recent.",
+      "baseline_source_sha256": "573d517b49ca58326f70a7c1ebd30509b6f43eb14040efa56e62de36db4028dc"
     },
     {
       "id": "scenario:3cb4b01c3063fbbb5343035b671c4f6bc3461105b7966c19745368e00c924616",
@@ -13687,8 +13697,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawOpenRecentMenu; richer Home behavior requires separate baseline review.",
-      "mapping_reason": "Home recent-document UI behavior; opening and persistence prerequisites remain separate."
+      "go_reference": "Go aa8297d1b head/ui/chrome_menubar.go drawOpenRecentMenu lists recent paths. It does not present the Home file open options.",
+      "mapping_reason": "Home recent-document UI behavior; opening and persistence prerequisites remain separate.",
+      "go_test_premise": "app.TestOpenDocumentFromMRUHonorsVetoAndRecords checks MRU open and recording. The pinned scenario supplies the file options and cancellation.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The dialog observes file type and its opening options without executing the opening mode.",
+      "platforms": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe.",
+      "kernel_integration": "The fixture saves a native assembly to seed Recent. The test cancels before an open or geometry operation.",
+      "rust_tests": "crates/head/tests/application/home-recent-documents/open_options_and_metadata.rs; architecture/rust-port/receipts/2026-11-21-home-recent-3898/pinned-assembly-open-options.json.",
+      "oracle": "The pinned scenario checks rendered modes, control availability, and return to Home. The Cucumber report records each step and window cleanup.",
+      "expected_result": "Full is selected initially. Selecting Express disables the design and position view controls. Cancel returns to Recent.",
+      "baseline_source_sha256": "573d517b49ca58326f70a7c1ebd30509b6f43eb14040efa56e62de36db4028dc"
     },
     {
       "id": "scenario:ca580c773f81337e9423d937ba918ac7a883c9c786f6d791d542c2dfd40a94bf",
@@ -13704,8 +13724,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_menubar.go: drawOpenRecentMenu; richer Home behavior requires separate baseline review.",
-      "mapping_reason": "Home recent-document UI behavior; opening and persistence prerequisites remain separate."
+      "go_reference": "Go aa8297d1b head/ui/chrome_menubar.go drawOpenRecentMenu lists recent paths. It does not present the Home file open options.",
+      "mapping_reason": "Home recent-document UI behavior; opening and persistence prerequisites remain separate.",
+      "go_test_premise": "app.TestOpenDocumentFromMRUHonorsVetoAndRecords checks MRU open and recording. The pinned scenario supplies the file options and cancellation.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The dialog observes file type and its opening options without executing the opening mode.",
+      "platforms": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe.",
+      "kernel_integration": "The fixture saves a native drawing to seed Recent. The test cancels before an open or geometry operation.",
+      "rust_tests": "crates/head/tests/application/home-recent-documents/open_options_and_metadata.rs; architecture/rust-port/receipts/2026-11-21-home-recent-3898/pinned-drawing-open-options.json.",
+      "oracle": "The pinned scenario checks rendered modes, control availability, and return to Home. The Cucumber report records each step and window cleanup.",
+      "expected_result": "Full is selected initially. Selecting Defer disables Skip all unresolved files. Cancel returns to Recent.",
+      "baseline_source_sha256": "573d517b49ca58326f70a7c1ebd30509b6f43eb14040efa56e62de36db4028dc"
     },
     {
       "id": "scenario:622a2425d6fee9a463534cac24e3addc988c35ccdd8df2e0ead4433d645f71ef",
