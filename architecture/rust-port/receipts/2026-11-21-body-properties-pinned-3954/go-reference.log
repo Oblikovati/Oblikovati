@@ -1,0 +1,14 @@
+=== RUN   TestPhysicalPropertiesNotice
+=== PAUSE TestPhysicalPropertiesNotice
+=== RUN   TestPhysicalPropertiesWithoutPart
+=== PAUSE TestPhysicalPropertiesWithoutPart
+=== RUN   TestAssignAppearanceBodyAndFaceScope
+=== PAUSE TestAssignAppearanceBodyAndFaceScope
+=== CONT  TestPhysicalPropertiesNotice
+=== CONT  TestAssignAppearanceBodyAndFaceScope
+=== CONT  TestPhysicalPropertiesWithoutPart
+--- PASS: TestPhysicalPropertiesWithoutPart (0.00s)
+--- PASS: TestPhysicalPropertiesNotice (0.02s)
+--- PASS: TestAssignAppearanceBodyAndFaceScope (0.02s)
+PASS
+ok  	oblikovati.org/app	0.023s
