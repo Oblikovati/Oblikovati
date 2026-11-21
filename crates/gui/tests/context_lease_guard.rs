@@ -61,14 +61,14 @@ fn raw_context_inventory(root: &Path) -> BTreeMap<String, usize> {
 fn unit_test_contexts_use_the_shared_lease() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let expected = BTreeMap::from([
-        ("src/engine.rs".to_owned(), 1),
+        ("src/context_owner.rs".to_owned(), 1),
         ("src/test_context.rs".to_owned(), 1),
         ("tests/context_ownership.rs".to_owned(), 1),
     ]);
     assert_eq!(
         raw_context_inventory(root),
         expected,
-        "raw ImGui constructors: expected the engine, leased test helper, and isolated production probe only"
+        "raw ImGui constructors: expected the owner constructor, leased test helper, and isolated production probe only"
     );
 }
 #[test]

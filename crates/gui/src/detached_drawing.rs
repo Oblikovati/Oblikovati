@@ -25,7 +25,7 @@ impl GuiDetachedDrawing {
     /// Prepare the drawing UI without changing the main frame. Example: `GuiDetachedDrawing::new(id)?`.
     pub fn new(document: u64) -> Result<Self, String> {
         let _restore = RestorePrimaryContext::park();
-        let mut context = Context::create();
+        let mut context = crate::context_owner::create_owner_context()?;
         let atlas = crate::engine::configure_owner_context(&mut context);
         let resources = GuiTextureResources::new(atlas, [])?;
         Ok(Self {

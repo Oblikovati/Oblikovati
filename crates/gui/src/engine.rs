@@ -4,7 +4,7 @@ mod model_click;
 use crate::{
     GuiAtlas, GuiCommandState, GuiFrame, GuiFrameActivity, GuiInputCapture, GuiInputEvent,
     GuiShellAction,
-    context_owner::{frame_activity, require_vacant_context},
+    context_owner::{create_owner_context, frame_activity},
     frame_keys::prepare_frame_inputs,
     input::{input_capture, validate_input},
     snapshot::capture_frame,
@@ -157,8 +157,7 @@ impl GuiFrameEngine {
     pub fn new() -> Result<Self, String> {
         #[cfg(test)]
         let test_context_lease = crate::test_context::acquire();
-        require_vacant_context()?;
-        let mut context = Context::create();
+        let mut context = create_owner_context()?;
         let atlas = configure_owner_context(&mut context);
         let resources = crate::GuiTextureResources::new(atlas.clone(), [])?;
         let icons = crate::icons::GuiIconCache::new(atlas.clone())?;
