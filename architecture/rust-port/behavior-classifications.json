@@ -28977,7 +28977,7 @@
       "kernel_capabilities": "Font decoration metrics for the selected span are still open in Martensite #578.",
       "platforms": "Native editor diagnostics under Linux X11 and Vulkan Lavapipe. The recorded editor workflow still requires the exact source fixture.",
       "kernel_integration": "The host retains point Text and formatting ranges. The integration requires the font decoration metrics before building the selected span decoration.",
-      "rust_tests": "native_uppercase_only_changes_selected_sketch_text exercises selection and case conversion through the native editor.",
+      "rust_tests": "The focused native uppercase test passed. The published text-25 run passed its first five steps and stopped at the undefined strike-through action. See receipts/2026-11-21-point-text-case-conversion-3907.",
       "oracle": "Retain the full pinned scenario assertions and compare the native rendered glyph or editor state. The focused tests cover only the behavior documented in their receipts.",
       "expected_result": "UPPERCASE leaves unselected text alone, applies to the selected characters, and strike-through crosses the selected result.",
       "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
