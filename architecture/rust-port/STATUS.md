@@ -39,6 +39,11 @@ using this status; the live scenario directory can change.
   records. The native checks include separate drawing windows and independent
   Part views. See `receipts/2026-11-21-document-tabs-r0-3900/`.
   Strict verification remains blocked by #3978.
+- Document Saving (#3888): all 23 pinned scenarios and 218 steps passed
+  under Linux X11 with Openbox. The three reusable native Part fixtures
+  passed reopen and replacement checks. The current feature names fixture
+  inputs in nine scenarios and adds an assembly-dependent case. See
+  `receipts/2026-11-21-document-saving-r0-3888/`.
 - Project Dialog (#3895): all eight scenarios and 100 steps passed locally
   with X11 mouse and keyboard input on the current Part and project fixtures.
   Desktop startup opens native projects and the dialog wraps long paths.

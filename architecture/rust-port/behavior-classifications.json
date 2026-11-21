@@ -5013,12 +5013,12 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
@@ -5038,9 +5038,9 @@
       ],
       "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is required by this document and dialog scenario.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The native viewport and document owner are used; the scenario does not request solid geometry.",
-      "rust_tests": "application_scenarios_use_the_native_window: Open and cancel the first save",
+      "rust_tests": "Pinned Document Saving native case at line 4: 12 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
       "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
       "expected_result": "the Save As dialog reopens with the same proposed document name selected; the user cancels the dialog again; the unsaved part remains active",
       "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
@@ -5057,12 +5057,12 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
@@ -5082,9 +5082,9 @@
       ],
       "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is required by this document and dialog scenario.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The native viewport and document owner are used; the scenario does not request solid geometry.",
-      "rust_tests": "application_scenarios_use_the_native_window: Save and reopen a newly created empty part",
+      "rust_tests": "Pinned Document Saving native case at line 19: 12 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
       "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
       "expected_result": "the saved part becomes active; its viewport contains no visible model geometry; its model browser displays the origin and end-of-part marker",
       "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
@@ -5101,12 +5101,12 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
@@ -5126,9 +5126,9 @@
       ],
       "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
       "kernel_capabilities": "The scenario creates and saves a planar rectangular sketch; no solid operation is required.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "Sketch geometry is displayed after reopening through the host; this scenario does not verify a solid.",
-      "rust_tests": "application_scenarios_use_the_native_window: Save changes to an existing part and reopen its sketch",
+      "rust_tests": "Pinned Document Saving native case at line 34: 11 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
       "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
       "expected_result": "the user opens the selected part; the model browser contains the sketch; the rectangular sketch profile is visible in the viewport",
       "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
@@ -5145,19 +5145,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-ec6362e3e986c02e.json",
           "sha256": "39ba5824ef0f300f63929a01d1dfe223e5a447bc880da38bef084fcd174090e5"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: save/reopen, first-save path, and file-dialog confirmation and cancellation tests pass. Native controls and preview are checked in Rust. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-15-go-save-preview/README.md.",
+      "kernel_capabilities": "Render the current view or isometric component preview when the selected source needs it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop save dialog uses the shared owner to capture or present the selected preview without changing the saved part until acceptance.",
+      "rust_tests": "Pinned Document Saving native case at line 47: 13 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
+      "oracle": "The native Cucumber report records each dialog, document, file, or viewport assertion for this case.",
+      "expected_result": "the preview source choices are hidden / the preview area displays a placeholder / the preview source choices reappear / that preview source is selected / Active Component Iso View on Save is not selected / the unsaved part remains active",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:952a5a79e0b3266f11ed9168c99515eb45d96a2e5bf7d78b03b771e8b9031372",
@@ -5171,17 +5179,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: save and file-dialog state tests pass, but matching preview image chooser controls were not found. See receipts/2026-11-15-go-save-preview/README.md.",
       "kernel_capabilities": "No solid modeling operation is required to browse for a preview image and cancel.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "A part viewport is initialized; this scenario does not request a solid modeling operation.",
-      "rust_tests": "application_scenarios_use_the_native_window: Browse for a preview image and cancel the image chooser",
+      "rust_tests": "Pinned Document Saving native case at line 62: 14 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
       "oracle": "Pinned native scenario assertions and reviewed final capture; Go preview chooser parity is not established.",
       "expected_result": "The image chooser closes without closing Save As or losing the selected preview source, and cancelling Save As leaves the part active.",
       "historical_receipts": [
@@ -5190,7 +5198,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-952a5a79e0b3266f.json",
           "sha256": "209fbaab0035b284a6164c3c814f4c04440f06a31197334af7d85f61353609ce"
         }
-      ]
+      ],
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:72ef5d70eb6c0a73857190d527276bf9a406e7ba2fd6a106706065afc9c8eff9",
@@ -5204,19 +5213,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-72ef5d70eb6c0a73.json",
           "sha256": "338502287b4bf93f6192521113047970a026b36b4a66fcf9f7f11fa44b3f225d"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: save/reopen, first-save path, and file-dialog confirmation and cancellation tests pass. Native controls and preview are checked in Rust. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-15-go-save-preview/README.md.",
+      "kernel_capabilities": "Native Part recipe storage and save-dialog state.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The save dialog works against the shared session and file workspace with the existing Part storage path.",
+      "rust_tests": "Pinned Document Saving native case at line 78: 3 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
+      "oracle": "The native Cucumber report records each dialog, document, file, or viewport assertion for this case.",
+      "expected_result": "the list offers the native part file type and an All Files filter",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:52a88b77aefd086f7782feb68b7421f2f95dcd54958176983fc77f5b2e1a1b66",
@@ -5230,17 +5247,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: package-store tests cover save and reopen, not these native close-prompt interactions. See receipts/2026-11-14-go-save-open-baseline/README.md.",
       "kernel_capabilities": "The scenario has a finished empty sketch; no solid modeling operation is required.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The desktop owner retains the part and sketch after the canceled close; no B-rep operation is asserted.",
-      "rust_tests": "application_scenarios_use_the_native_window: Cancel closing a modified unsaved part",
+      "rust_tests": "Pinned Document Saving native case at line 83: 7 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
       "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
       "expected_result": "the user chooses Cancel; the part remains active; its sketch remains in the model browser",
       "historical_receipts": [
@@ -5269,17 +5286,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: package-store tests cover save and reopen, not these native close-prompt interactions. See receipts/2026-11-14-go-save-open-baseline/README.md.",
       "kernel_capabilities": "The scenario has a finished empty sketch; no solid modeling operation is required.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The desktop owner retains the part and sketch after the canceled close; no B-rep operation is asserted.",
-      "rust_tests": "application_scenarios_use_the_native_window: Cancel the first save requested while closing a part",
+      "rust_tests": "Pinned Document Saving native case at line 92: 8 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
       "oracle": "Pinned native scenario assertions and reviewed final capture; Go dialog parity is not established.",
       "expected_result": "the user cancels Save As; the part remains active; its sketch remains in the model browser",
       "historical_receipts": [
@@ -5308,19 +5325,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-688d756622cc25dc.json",
           "sha256": "53bacc494addaa2f03f57e66f3e34f781caaf0a11f1af72d130382eea0d3deed"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: save/reopen, first-save path, and file-dialog confirmation and cancellation tests pass. Native controls and preview are checked in Rust. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-15-go-save-preview/README.md.",
+      "kernel_capabilities": "Native Part recipe storage and save-dialog state.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The save dialog works against the shared session and file workspace with the existing Part storage path.",
+      "rust_tests": "Pinned Document Saving native case at line 102: 8 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
+      "oracle": "The native Cucumber report records each dialog, document, file, or viewport assertion for this case.",
+      "expected_result": "the list offers always show, once per operation, suppress for this session and suppress permanently / the part remains active",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:f9b64673e9d0caa73b8c69814bde87fbec67e340d1d4877052120439c06e62b2",
@@ -5334,12 +5359,12 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
@@ -5359,9 +5384,9 @@
       ],
       "go_test_premise": "Go aa8297d1b: package-store save/reopen, missing-path and MRU tests pass; they do not check this native dialog or saved-sketch scenario. See receipts/2026-11-14-go-save-open-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is required by this document and dialog scenario.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The native viewport and document owner are used; the scenario does not request solid geometry.",
-      "rust_tests": "application_scenarios_use_the_native_window: Save a new modified part while closing it",
+      "rust_tests": "Pinned Document Saving native case at line 113: 12 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
       "oracle": "Pinned scenario assertions and reviewed final native capture; Go file compatibility and visual parity are not established.",
       "expected_result": "the user reopens the newly saved part in the same session; the part becomes active; its model browser contains the finished sketch",
       "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
@@ -5378,19 +5403,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-408b526faa48672c.json",
           "sha256": "efa67eee34989d039c75a079b3180081ef7f30679d284f5c861314b43e389358"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: save/reopen, first-save path, and file-dialog confirmation and cancellation tests pass. Native controls and preview are checked in Rust. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-15-go-save-preview/README.md.",
+      "kernel_capabilities": "Render the current view or isometric component preview when the selected source needs it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop save dialog uses the shared owner to capture or present the selected preview without changing the saved part until acceptance.",
+      "rust_tests": "Pinned Document Saving native case at line 127: 10 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
+      "oracle": "The native Cucumber report records each dialog, document, file, or viewport assertion for this case.",
+      "expected_result": "a capture control appears beside Active Window / the preview area displays a placeholder / the preview area displays a dark image matching the empty workspace / the Save As dialog remains open / the unsaved part remains active",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:b8df3b7d3827c6b5eef28ca3485f0132a1a9a2b98886d81071d8de163ff63386",
@@ -5404,19 +5437,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-b8df3b7d3827c6b5.json",
           "sha256": "70ddcb43a50900c00106b854e3930697e77e9f9a62d9b9abbbf995c602ce3f11"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: save/reopen, first-save path, and file-dialog confirmation and cancellation tests pass. Native controls and preview are checked in Rust. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-15-go-save-preview/README.md.",
+      "kernel_capabilities": "Native Part recipe storage and save-dialog state.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The save dialog works against the shared session and file workspace with the existing Part storage path.",
+      "rust_tests": "Pinned Document Saving native case at line 140: 8 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
+      "oracle": "The native Cucumber report records each dialog, document, file, or viewport assertion for this case.",
+      "expected_result": "the selected file row is highlighted / the file name field displays the selected file's name / the status area reports one selected item / the unsaved part remains active",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:61af1d42795bae99c383bdb47b3c753bd88a690cf1ec4186a48d6f762c8cfeb3",
@@ -5430,17 +5471,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: file-dialog state tests cover directory entry, path joining, cancellation and rearming, but not Back or proposed-name retention. See receipts/2026-11-15-go-save-folder/README.md.",
       "kernel_capabilities": "No solid modeling operation is required to navigate folders in Save As.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "A part viewport is initialized; this scenario does not request a solid modeling operation.",
-      "rust_tests": "application_scenarios_use_the_native_window: Navigate to a subfolder and back while choosing a save location",
+      "rust_tests": "Pinned Document Saving native case at line 151: 9 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
       "oracle": "Pinned native scenario assertions and reviewed final capture; Go Back navigation parity is not established.",
       "expected_result": "The original folder and proposed file name are preserved after navigation or cancelling and reopening Save As.",
       "historical_receipts": [
@@ -5449,7 +5490,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-61af1d42795bae99.json",
           "sha256": "71943142e41408785c9c4074c70fbbed06e16cfe29fa93dc401e8c3d6f996d14"
         }
-      ]
+      ],
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:61741ca27d5d4f42ba36a8379bfd9cdec2b363020d5425ff8740c544a8254c9c",
@@ -5463,17 +5505,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: file-dialog state tests cover directory entry, path joining, cancellation and rearming, but not Back or proposed-name retention. See receipts/2026-11-15-go-save-folder/README.md.",
       "kernel_capabilities": "No solid modeling operation is required to navigate folders in Save As.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "A part viewport is initialized; this scenario does not request a solid modeling operation.",
-      "rust_tests": "application_scenarios_use_the_native_window: Reopen first save after cancelling in a subfolder",
+      "rust_tests": "Pinned Document Saving native case at line 162: 6 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
       "oracle": "Pinned native scenario assertions and reviewed final capture; Go Back navigation parity is not established.",
       "expected_result": "The original folder and proposed file name are preserved after navigation or cancelling and reopening Save As.",
       "historical_receipts": [
@@ -5482,7 +5524,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-61741ca27d5d4f42.json",
           "sha256": "53c6e69667fa4644164f84ec8996a8a4e4934aa9f01fb6f5d52c448bed9a90be"
         }
-      ]
+      ],
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:81bcb1cf994edbed548c28c61bba7cbd6311599bde8c877519cca41ab206d2d9",
@@ -5496,17 +5539,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: save and file-dialog state tests pass; no matching preview controls were found. See receipts/2026-11-15-go-save-preview/README.md. These tests do not prove preview cancellation.",
       "kernel_capabilities": "No solid modeling operation is needed to change or cancel preview options.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "A part viewport is initialized; these cancellation scenarios do not request a solid modeling operation.",
-      "rust_tests": "application_scenarios_use_the_native_window: Cancel disabling the preview picture",
+      "rust_tests": "Pinned Document Saving native case at line 170: 7 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
       "oracle": "Pinned scenario assertions and reviewed final native capture; Go preview-control parity is not established.",
       "expected_result": "Cancelling Save As discards the preview option change and reopening restores the prior selection.",
       "historical_receipts": [
@@ -5515,7 +5558,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-81bcb1cf994edbed.json",
           "sha256": "e4f5d5b320a5ca7ce9c4882b164ee6878564ee56aef06265ffbc0872ca486959"
         }
-      ]
+      ],
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:1fa03adac5a3aba3b0ece0321208be69ab2d13aade9146bf20e93485fc345632",
@@ -5529,17 +5573,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: save and file-dialog state tests pass; no matching preview controls were found. See receipts/2026-11-15-go-save-preview/README.md. These tests do not prove preview cancellation.",
       "kernel_capabilities": "No solid modeling operation is needed to change or cancel preview options.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "A part viewport is initialized; these cancellation scenarios do not request a solid modeling operation.",
-      "rust_tests": "application_scenarios_use_the_native_window: Cancel a change to the preview source",
+      "rust_tests": "Pinned Document Saving native case at line 179: 8 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
       "oracle": "Pinned scenario assertions and reviewed final native capture; Go preview-control parity is not established.",
       "expected_result": "Cancelling Save As discards the preview option change and reopening restores the prior selection.",
       "historical_receipts": [
@@ -5548,7 +5592,8 @@
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-1fa03adac5a3aba3.json",
           "sha256": "f88db7206e21bf08dff221e3870d85387cd3de050b5b8b4d4476095d5361b9c6"
         }
-      ]
+      ],
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:1f1809c95300ef4ec0b23cc8100bb7fd24e08707ece63856a1ced77df2d04545",
@@ -5562,19 +5607,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-1f1809c95300ef4e.json",
           "sha256": "68823eccc58bd36840973f0198f5e9f1d8df23dce81ec95cbee02332e5fc9c15"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: save/reopen, first-save path, and file-dialog confirmation and cancellation tests pass. Native controls and preview are checked in Rust. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-15-go-save-preview/README.md.",
+      "kernel_capabilities": "Native Part recipe storage and save-dialog state.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The save dialog works against the shared session and file workspace with the existing Part storage path.",
+      "rust_tests": "Pinned Document Saving native case at line 190: 12 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
+      "oracle": "The native Cucumber report records each dialog, document, file, or viewport assertion for this case.",
+      "expected_result": "the navigation pane displays system locations and drives / the current folder and proposed file name remain displayed / the preview settings remain displayed / the navigation pane displays libraries and recent folders / the current folder and proposed file name remain displayed / the unsaved part remains active",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:a52579372cdcf9f1a01a067e4555cdd2a16eb96900bc037d37f77837b7921351",
@@ -5588,19 +5641,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-a52579372cdcf9f1.json",
           "sha256": "83081bb1319b0fcd2fe497e27cf6850a10db7e5e12cebcce7c7d9e2175310319"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: save/reopen, first-save path, and file-dialog confirmation and cancellation tests pass. Native controls and preview are checked in Rust. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-15-go-save-preview/README.md.",
+      "kernel_capabilities": "Native Part recipe storage and save-dialog state.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The save dialog works against the shared session and file workspace with the existing Part storage path.",
+      "rust_tests": "Pinned Document Saving native case at line 205: 9 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
+      "oracle": "The native Cucumber report records each dialog, document, file, or viewport assertion for this case.",
+      "expected_result": "the navigation pane shows libraries and recent folders / the proposed file name is selected / the unsaved part remains active",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:2a9bcd9ecc1879a46159f5c0b870b445cc5a36f5934cfaaa257316809fb044c5",
@@ -5614,19 +5675,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-2a9bcd9ecc1879a4.json",
           "sha256": "6ec915759afda362be73d2f36c098d594686272eeab35facea3035464589d158"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: save/reopen, first-save path, and file-dialog confirmation and cancellation tests pass. Native controls and preview are checked in Rust. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-15-go-save-preview/README.md.",
+      "kernel_capabilities": "Native Part recipe storage and save-dialog state.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The save dialog works against the shared session and file workspace with the existing Part storage path.",
+      "rust_tests": "Pinned Document Saving native case at line 217: 12 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
+      "oracle": "The native Cucumber report records each dialog, document, file, or viewport assertion for this case.",
+      "expected_result": "the file list displays thumbnail tiles with names and file information / the proposed file name and preview settings remain displayed / the file list displays rows with name, modification date, type and size columns / the proposed file name remains displayed / the unsaved part remains active",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:9eede5804b59d06f5535a48596c3a86031cc80da50203c62cc669fdc794babf2",
@@ -5640,17 +5709,17 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Native document save, close, or reopen lifecycle.",
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_test_premise": "Go aa8297d1b: the focused package-store tests cover save/reopen, not an overwrite confirmation or No choice; no matching confirmation test was found in head/ui. See receipts/2026-11-14-go-save-open-baseline/README.md.",
       "kernel_capabilities": "No solid modeling operation is required for this file-dialog scenario.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
       "kernel_integration": "The desktop owner retains the unsaved part; the test checks existing file bytes after No.",
-      "rust_tests": "application_scenarios_use_the_native_window: Decline replacing an existing part during first save",
+      "rust_tests": "Pinned Document Saving native case at line 232: 12 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
       "oracle": "Pinned native scenario assertions, existing-file byte comparison, and reviewed final capture; Go dialog parity is not established.",
       "expected_result": "No closes the replacement confirmation, preserves the existing file and Save As dialog; cancel leaves the new unsaved part active.",
       "historical_receipts": [
@@ -5679,19 +5748,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-29faf9bb78c1fe48.json",
           "sha256": "f75360ec0f9b3ab08102bcaed4fc882e7e886e8b6bc51f60ae0d7976ef581923"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: save/reopen, first-save path, and file-dialog confirmation and cancellation tests pass. Native controls and preview are checked in Rust. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-15-go-save-preview/README.md.",
+      "kernel_capabilities": "Native Part recipe storage and save-dialog state.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The save dialog works against the shared session and file workspace with the existing Part storage path.",
+      "rust_tests": "Pinned Document Saving native case at line 246: 6 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
+      "oracle": "The native Cucumber report records each dialog, document, file, or viewport assertion for this case.",
+      "expected_result": "the menu offers Save As and Save Copy As / it offers Save Copy As Template and Pack and Go / the Save Copy As description says the original file remains open",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:c8730b6f8f038570e4a94d87aa0f353589a50a48b73c2d7c9eb5266386097d43",
@@ -5705,19 +5782,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-c8730b6f8f038570.json",
           "sha256": "4c6cab772da9457fa9310fd9072577d9494259007d03a24c31c249fcac64c11c"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: save/reopen, first-save path, and file-dialog confirmation and cancellation tests pass. Native controls and preview are checked in Rust. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-15-go-save-preview/README.md.",
+      "kernel_capabilities": "Render the current view or isometric component preview when the selected source needs it.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The desktop save dialog uses the shared owner to capture or present the selected preview without changing the saved part until acceptance.",
+      "rust_tests": "Pinned Document Saving native case at line 258: 7 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
+      "oracle": "The native Cucumber report records each dialog, document, file, or viewport assertion for this case.",
+      "expected_result": "the Save As dialog opens with a proposed part filename selected / Save Preview Picture is checked / Active Component Iso View on Save is selected / the preview area displays a shaded isometric block",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:db253e66928b18bbd758beb1036bb3bb5dcc585afcb87b5a25a0c14b54786209",
@@ -5731,19 +5816,27 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3888",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/save_ops.go; ../Oblikovati/head/ui/file_dialog.go; ../Oblikovati/head/ui/file_dialog_draw.go",
       "mapping_reason": "Save-dialog controls, presentation, navigation, or prompt preferences.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
           "path": "architecture/rust-port/receipts/2026-11-15-document-saving-full/receipt-db253e66928b18bb.json",
           "sha256": "643829a5fbf859e72009af31d02e1e80d32da1f46231d5a24f5feb9cbb997ce8"
         }
-      ]
+      ],
+      "go_test_premise": "Go aa8297d1b: save/reopen, first-save path, and file-dialog confirmation and cancellation tests pass. Native controls and preview are checked in Rust. See receipts/2026-11-14-go-save-open-baseline/README.md and receipts/2026-11-15-go-save-preview/README.md.",
+      "kernel_capabilities": "Native Part recipe storage and save-dialog state.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe. Windows and macOS were not tested in this run.",
+      "kernel_integration": "The save dialog works against the shared session and file workspace with the existing Part storage path.",
+      "rust_tests": "Pinned Document Saving native case at line 268: 12 steps passed. See architecture/rust-port/receipts/2026-11-21-document-saving-r0-3888/cucumber.json at e93259292f9a15303d4d63c2c1f3412de51ea2c0.",
+      "oracle": "The native Cucumber report records each dialog, document, file, or viewport assertion for this case.",
+      "expected_result": "the file is highlighted and its name appears in the file name field / the subfolder is highlighted without opening / the file name field still displays the selected part file name / no file or folder is highlighted / the file name field still displays the part file name / the new unsaved part remains active",
+      "baseline_source_sha256": "ee58ca1d01af2e1db700be89fa237cee19f7d42c477fbe6c8f5f62d07683cbd2"
     },
     {
       "id": "scenario:65bbddad815509a362f8498b68cd3337ebda9d9485212150714f410d7a855ca7",
