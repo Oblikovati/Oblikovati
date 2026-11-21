@@ -28204,10 +28204,12 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "The recorded action enters 6 but its next assertion expects 6.10 mm. The native Arial fraction replay shows 6 mm and Cancel restores 6.10 mm. See architecture/rust-port/scenario-defects/text-37.md.",
+      "rust_tests": "Native height regression passed on an Arial fraction with 47 dimensions needed. See architecture/rust-port/receipts/2026-11-21-sketch-text-height-fraction-3907 at c4a2f0ac1700d3f146384c96918ecfd56dd042e1."
     },
     {
       "id": "scenario:f7a142c1620b6d601a10474dcf891c56be00a4abda72ae7e553d47963897c977",

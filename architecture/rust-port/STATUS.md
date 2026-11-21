@@ -162,6 +162,11 @@ using this status; the live scenario directory can change.
   recorded drag. The linked `d0` showed `10.000` at Ready and the
   final solver count reached 38. See
   `receipts/2026-11-21-sketch-text-linked-drag-3907/`.
+  The native replay of `text-37` preserves the saved Arial fraction and
+  47 dimensions needed after Cancel. Typing `6` yields a 6 mm preview.
+  The scenario expects 6.10 mm before Cancel and awaits source correction.
+  See `scenario-defects/text-37.md` and
+  `receipts/2026-11-21-sketch-text-height-fraction-3907/`.
   Pinned `text-38` passed all nine steps with a generated native
   `Part6.opd`. After reopening Sketch2, the two fractions, numbered
   paragraphs, linked values, and 47 dimensions needed were retained.
