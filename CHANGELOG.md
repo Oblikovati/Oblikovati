@@ -271,6 +271,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Highlighted active groups on side and floating ribbons and listed Slot, Draft, and Thread as disabled in Modify. (#3856)
+
 - Kept the desktop responsive when a resize clips a dock tab bar. (#3860)
 
 - Kept the Cargo workspace and repository checks running when the BDD ledger failed, and reported all failed stages. (#3860)

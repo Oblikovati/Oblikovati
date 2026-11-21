@@ -8,6 +8,7 @@ mod appearance_sketch;
 mod appearance_tools;
 mod appearance_view;
 mod muted;
+pub(crate) use muted::{compact_modify_commands, compact_modify_width};
 mod sketch;
 use muted::{muted_commands, muted_icon_commands, part_modify_controls};
 

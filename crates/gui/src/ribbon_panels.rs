@@ -30,6 +30,7 @@ pub(crate) struct RibbonPanelLayout {
 mod keyboard;
 #[path = "ribbon_panel_measurements.rs"]
 mod measurements;
+use measurements::temporary_geometry;
 /// Editors and layout a ribbon panel's controls can change.
 pub(crate) struct RibbonPanelOwners<'a> {
     pub home_active: bool,
@@ -63,13 +64,14 @@ struct PanelDrawContext<'a> {
     hidden: std::collections::BTreeSet<(RibbonTab, RibbonPanel)>,
     show_panel_titles: bool,
     additional_allowed: bool,
+    side_groups: bool,
     ribbon_bottom: f32,
     owners: RibbonPanelOwners<'a>,
     actions: &'a mut Vec<GuiShellAction>,
 }
 impl PanelDrawContext<'_> {
     fn content(&mut self, panel: RibbonPanel, origin: [f32; 2]) -> bool {
-        crate::ribbon_panel_contents::draw_panel_content(
+        let acted = crate::ribbon_panel_contents::draw_panel_content(
             self.ui,
             panel,
             origin,
@@ -77,7 +79,15 @@ impl PanelDrawContext<'_> {
             &mut self.owners,
             self.actions,
             self.additional_allowed,
-        )
+        );
+        if self.side_groups && panel == RibbonPanel::PartModify {
+            crate::ribbon_panel_contents::compact_modify_commands(
+                self.ui,
+                origin,
+                self.owners.icons,
+            );
+        }
+        acted
     }
 }
 /// Draw one measured row; example: `draw_panels(ui, tab, state, owners, layout, actions)`.
@@ -110,6 +120,7 @@ pub(crate) fn draw_panels(
         show_panel_titles: display.show_panel_titles,
         additional_allowed: !owners.home_active
             && display.placement == crate::application::ribbon_display::RibbonPlacement::Top,
+        side_groups: false,
         ribbon_bottom: ui.window_pos()[1] + ui.window_size()[1],
         owners,
         actions,
@@ -168,6 +179,7 @@ pub(crate) fn draw_side_groups(
         hidden: display.hidden_panels.clone(),
         show_panel_titles: display.show_panel_titles,
         additional_allowed: !owners.home_active,
+        side_groups: true,
         ribbon_bottom: ui.window_pos()[1] + ui.window_size()[1],
         owners,
         actions,
@@ -179,8 +191,9 @@ pub(crate) fn draw_side_groups(
         context.owners.customization,
     ) {
         let open = display.temporary == Some(TemporaryPanel::Group(panel));
-        let lit = ui.style_color(imgui::StyleColor::ButtonActive);
+        let lit = ui.style_color(imgui::StyleColor::NavHighlight);
         let _lit = open.then(|| ui.push_style_color(imgui::StyleColor::Button, lit));
+        let _hovered = open.then(|| ui.push_style_color(imgui::StyleColor::ButtonHovered, lit));
         let clicked = crate::widget_abi::button(ui, panel.label(), SIDE_GROUP_BUTTON);
         group_key_tip(ui, panel, &context.owners);
         if clicked || display.take_keyboard_group(panel) {
@@ -303,34 +316,6 @@ fn temporary_panel(
         display.temporary = None;
     }
 }
-/// A group's panel opens under its button at its measured width; a whole tab spans the window.
-fn temporary_geometry(
-    ui: &Ui,
-    tab: RibbonTab,
-    layout: &RibbonPanelLayout,
-    display: &RibbonDisplayState,
-    shown: TemporaryPanel,
-    top: f32,
-    factor: f32,
-) -> ([f32; 2], [f32; 2]) {
-    let panel_height = 24. + (20. + display.appearance.command_height()) * factor;
-    let viewport = ui.io().display_size[0];
-    let TemporaryPanel::Group(panel) = shown else {
-        return ([8., top], [viewport - 16., panel_height]);
-    };
-    let measured = layout.widths.get(&(tab, panel)).copied().unwrap_or(108.);
-    let width = (measured + 32.).max(140.).min(viewport - 16.);
-    if let Some(anchor) = display.side_anchor {
-        let x = if anchor.ends_at_x {
-            anchor.x - width
-        } else {
-            anchor.x
-        };
-        return ([x, anchor.y], [width, panel_height]);
-    }
-    let x = display.temporary_anchor.min(viewport - width - 8.).max(8.);
-    ([x, top], [width, panel_height])
-}
 fn temporary_contents(
     context: &mut PanelDrawContext<'_>,
     tab: RibbonTab,
@@ -354,7 +339,9 @@ fn temporary_contents(
     match shown {
         TemporaryPanel::Group(panel) => {
             let (width, local) = draw_expanded(context, tab, panel, [0.; 2], layout);
-            layout.record_width(tab, panel, width);
+            if !context.side_groups || panel != RibbonPanel::PartModify {
+                layout.record_width(tab, panel, width);
+            }
             local
         }
         TemporaryPanel::WholeTab => draw_row(context, tab, layout, available),

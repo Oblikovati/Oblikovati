@@ -96,6 +96,36 @@ pub(super) fn part_modify_controls(
         );
     }
 }
+// Put these unavailable commands after the existing grid, including optional Move Bodies.
+const COMPACT_MODIFY_COMMANDS: [(usize, &str); 3] = [(5, "Slot"), (6, "Draft"), (7, "Thread")];
+
+/// Show available names in the side pane without enabling unported commands.
+/// For example, the left-docked Modify pane lists a disabled Draft button.
+pub(crate) fn compact_modify_commands(
+    ui: &Ui,
+    origin: [f32; 2],
+    icons: &crate::icons::GuiRibbonIcons,
+) {
+    for (slot, label) in COMPACT_MODIFY_COMMANDS {
+        let size = muted_command_position(ui, origin, icons, slot);
+        muted_command(ui, label, NOT_PORTED, icons, None, false, size);
+    }
+}
+
+/// Reserve the outermost command on its first frame.
+/// For example, Normal appearance reserves all four columns of the side pane.
+pub(crate) fn compact_modify_width(
+    appearance: crate::ribbon_command_layout::RibbonAppearance,
+) -> f32 {
+    COMPACT_MODIFY_COMMANDS
+        .iter()
+        .map(|&(slot, _)| {
+            let (position, size) = appearance.cell(slot);
+            position[0] + size[0]
+        })
+        .fold(0., f32::max)
+}
+
 pub(super) fn muted_icon_commands(
     ui: &Ui,
     origin: [f32; 2],

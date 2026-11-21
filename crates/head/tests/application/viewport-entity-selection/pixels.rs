@@ -29,7 +29,7 @@ pub(super) fn expect_neutral_face(world: &mut ApplicationWorld) {
     ));
 }
 
-pub(super) fn empty_viewport_point(world: &mut ApplicationWorld) -> [i32; 2] {
+pub(in super::super) fn empty_viewport_point(world: &mut ApplicationWorld) -> [i32; 2] {
     let [left, top, right, bottom] = world
         .app()
         .window

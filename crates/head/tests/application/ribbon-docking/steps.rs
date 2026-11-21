@@ -5,6 +5,9 @@ const COLUMN: &str = "##ribbon-column";
 const FLOATING: &str = "Ribbon";
 const SIDE_WIDTH: f32 = 212.;
 
+#[path = "compact_modify.rs"]
+mod compact_modify;
+
 /// A point on the ribbon with no control under it, wherever the ribbon sits now.
 fn ribbon_blank_point() -> [i32; 2] {
     if let Some((position, _)) = window_geometry(FLOATING) {
@@ -257,6 +260,13 @@ fn top_from_positions(world: &mut ApplicationWorld) {
 #[given("the ribbon is floating with the 3D Model tab selected")]
 #[given("the floating ribbon shows the 3D Model groups at the top of its scroll area")]
 fn floating_on_model(world: &mut ApplicationWorld) {
+    if world
+        .scenario_feature_path
+        .as_ref()
+        .is_some_and(|path| path.ends_with("ribbon-docking/ribbon-docking.feature"))
+    {
+        compact_modify::open_solid_part(world);
+    }
     undock_ribbon(world);
     expect_floating(world);
     world.expect_text("3D Model");

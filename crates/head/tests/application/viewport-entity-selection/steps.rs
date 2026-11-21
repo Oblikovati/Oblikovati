@@ -8,6 +8,7 @@ use oblikovati_gui::GuiAuthoringContext;
 
 #[path = "pixels.rs"]
 mod pixels;
+pub(super) use pixels::empty_viewport_point;
 
 #[given("the MCAD Software is in the part modeling workspace")]
 fn part_modeling_workspace(world: &mut ApplicationWorld) {
@@ -174,7 +175,7 @@ fn face_menu_disables_deferred_rows_and_opens_properties() {
 
 #[when("the user left-clicks empty viewport space")]
 fn click_empty_viewport_space(world: &mut ApplicationWorld) {
-    let point = pixels::empty_viewport_point(world);
+    let point = empty_viewport_point(world);
     left_click(world, point);
 }
 
