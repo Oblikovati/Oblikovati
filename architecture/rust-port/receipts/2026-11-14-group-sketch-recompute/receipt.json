@@ -1,0 +1,30 @@
+{
+  "application_commit": "6a00b705c7ba584ff83e89c7032f992a21ceb0b4",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "scope": "Current part owners recompute face-dependent sketches, including inside open transactions.",
+  "verification": {
+    "model": {
+      "passed": 1623,
+      "ignored": 0
+    },
+    "session": {
+      "passed": 486,
+      "ignored": 0
+    },
+    "automation": {
+      "passed": 741,
+      "ignored": 0
+    },
+    "head": {
+      "passed": 61,
+      "ignored": 1
+    },
+    "check": "passed",
+    "clippy": "passed"
+  },
+  "limits": [
+    "Desktop sketch creation and continuity on face-based planes remain open.",
+    "The head test uses an internally constructed face-hosted sketch; it is not a mouse/keyboard acceptance test.",
+    "Go migration and full make gate remain open."
+  ]
+}

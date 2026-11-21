@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-viewport"
+autotests = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+[package.metadata.oblikovati]
+requires-display = true
+[dependencies]
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "907cd4c28713b47501b077b8d902dbb6a008aada", version = "=0.165.0" }
+oblikovati-solve = { path = "../solve" }
+oblikovati-model = { path = "../model" }
+oblikovati-martensite = { path = "../martensite" }
+
+[target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
+martensite-vulkan = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.7.2" }
+martensite-tkernel = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.4.5" }
+martensite-tkmath = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.3.9" }
+martensite-tkservice = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.4.1" }
+martensite-tkv3d = { git = "https://github.com/Oblikovati/Martensite", rev = "bef25f47548431c8f128f08f66a1f719bcee4982", version = "=0.7.1" }
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_Graphics_Gdi", "Win32_System_LibraryLoader", "Win32_System_Threading", "Win32_Security", "Win32_UI_WindowsAndMessaging", "Win32_UI_Input_KeyboardAndMouse", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_System_Ole"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+x11-dl = "=2.21.0"
+x11rb = "=0.14.0"
+libc = "=0.2.190"
+rustix = { version = "=1.1.6", features = ["event"] }
+
+[lints.rust]
+unsafe_code = "deny"
+[lints.clippy]
+all = "warn"
+
+[[test]]
+name = "native"
+path = "tests/native.rs"
+
+[[test]]
+name = "gui_render"
+path = "tests/gui_render.rs"
+
+[[test]]
+name = "display_lifetime"
+path = "tests/display_lifetime.rs"

@@ -1,0 +1,250 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use oblikovati_martensite::{CertifiedNamedSolidEvaluator, NamedSolid};
+use oblikovati_model::history::SnapshotReplay;
+use oblikovati_session::{
+    DocumentSession, TransactionObserver,
+    part_evaluation::{PartEvaluationError, PartEvaluationSlot},
+};
+#[derive(Default)]
+struct NativeResultObserver;
+impl TransactionObserver for NativeResultObserver {
+    fn before(
+        &mut self,
+        _: &oblikovati_api::wire::TransactionEventPayload,
+        _: &DocumentSnapshot,
+    ) -> Result<(), String> {
+        Ok(())
+    }
+    fn after(&mut self, _: &oblikovati_api::wire::TransactionEventPayload, _: &DocumentSnapshot) {}
+    fn changed(&mut self, _: u64, _: u64) {}
+}
+type NativePartSession = DocumentSession<NativeResultObserver>;
+type NativePartSlot = PartEvaluationSlot<NamedSolid, oblikovati_martensite::EvaluationFailure>;
+#[test]
+fn session_created_extrusion_builds_exact_faces_through_parameter_history() {
+    let mut snapshot = selected_prism_document();
+    snapshot.work_geometry = Default::default();
+    let ids = RecipeIdAllocator::restore(None, snapshot.parameters.ids()).unwrap();
+    let history = DocumentEditHistory::new(snapshot, ids).unwrap();
+    let mut owner = DocumentSession::new(7, history, NativeResultObserver);
+    let id = owner
+        .create_sketch_prism("Extrude", stored_definition())
+        .unwrap();
+    let mut slot = NativePartSlot::default();
+    assert_created_faces(&mut owner, &mut slot, id, [6., 6., 8., 8., 12., 12.]);
+    native_depth_edit(&mut owner);
+    assert_created_faces(&mut owner, &mut slot, id, [9., 9., 12., 12., 12., 12.]);
+    owner.undo().unwrap();
+    assert_created_faces(&mut owner, &mut slot, id, [6., 6., 8., 8., 12., 12.]);
+    owner.redo().unwrap();
+    assert_created_faces(&mut owner, &mut slot, id, [9., 9., 12., 12., 12., 12.]);
+}
+fn assert_created_faces(
+    owner: &mut NativePartSession,
+    slot: &mut NativePartSlot,
+    id: FeatureId,
+    expected: [f64; 6],
+) {
+    publish_native(owner, slot);
+    let body = slot.current(owner).unwrap().body(id).unwrap();
+    let guid = stored_document_guid();
+    let prism = body.as_prism().unwrap();
+    let key = prism.body_reference_key(owner.history(), guid).unwrap();
+    let report = prism.body_report(owner.history(), guid, key).unwrap();
+    assert!(report.topology.solid);
+    assert_eq!(report.topology.faces, 6);
+    assert_eq!(report.topology.edges, 12);
+    assert_eq!(report.topology.vertices, 8);
+    assert_eq!(report.faces.len(), expected.len());
+    assert_source_roles(report);
+    assert!(report.faces.iter().all(|face| face.loops == 1));
+    let mut areas: Vec<f64> = report.faces.iter().map(|face| face.area).collect();
+    areas.sort_by(f64::total_cmp);
+    for (area, expected_area) in areas.into_iter().zip(expected) {
+        assert_analytic_scalar(area, expected_area);
+    }
+}
+fn native_part_session() -> NativePartSession {
+    let document = selected_prism_document();
+    let ids = RecipeIdAllocator::restore(None, document.parameters.ids()).unwrap();
+    DocumentSession::new(
+        7,
+        DocumentEditHistory::new(document, ids).unwrap(),
+        NativeResultObserver,
+    )
+}
+fn publish_native(owner: &mut NativePartSession, slot: &mut NativePartSlot) {
+    let mut backend = CertifiedNamedSolidEvaluator::with_optional_policy(
+        owner.history(),
+        stored_document_guid(),
+        None,
+    );
+    let completed = owner
+        .prepare_part_evaluation()
+        .evaluate(&mut backend)
+        .unwrap();
+    owner.adopt_part_evaluation(completed, slot).unwrap();
+}
+fn assert_native_volume(slot: &NativePartSlot, owner: &NativePartSession, expected: f64) {
+    let evaluated = slot.current(owner).unwrap();
+    assert_analytic_scalar(
+        evaluated
+            .body(FeatureId(1))
+            .unwrap()
+            .volume(owner.history(), stored_document_guid())
+            .unwrap(),
+        expected,
+    );
+}
+fn native_depth_edit(owner: &mut NativePartSession) {
+    owner
+        .run("Depth", |snapshot, _| {
+            snapshot.parameters.set_expression(3, "3 cm")
+        })
+        .unwrap();
+}
+
+fn certified_resolution(maximum_tolerance: f64) -> oblikovati_martensite::PrismResolution {
+    oblikovati_martensite::PrismResolution {
+        version: 1,
+        weld: 1e-6,
+        sew: 1e-7,
+        angular: 1e-9,
+        display_chordal: 1e-3,
+        display_angular: 0.1,
+        maximum_tolerance,
+    }
+}
+fn certification_document() -> oblikovati_model::identity::DocumentGuid {
+    "11111111-2222-3333-4444-555555555555".parse().unwrap()
+}
+fn create_certified(
+    owner: &mut NativePartSession,
+    limit: f64,
+) -> Result<FeatureId, oblikovati_session::CommandError<String>> {
+    owner.run_projected(
+        "Create extrusion",
+        |snapshot, ids| {
+            snapshot
+                .create_sketch_prism("Extrude", stored_definition(), ids)
+                .map_err(|cause| cause.to_string())
+        },
+        |candidate, id| {
+            let history = oblikovati_model::history::SnapshotReplay::new(candidate)
+                .map_err(|cause| cause.to_string())?;
+            let mut backend = oblikovati_martensite::CertifiedNamedSolidEvaluator::new(
+                history.history(),
+                certification_document(),
+                certified_resolution(limit),
+            );
+            let replay = history
+                .history()
+                .snapshot()
+                .evaluate_part_features(&mut backend)
+                .map_err(|cause| cause.to_string())?;
+            if replay.body(id).is_none() {
+                return Err(format!(
+                    "feature {id:?}: expected certified body; health {:?}",
+                    replay.health()
+                ));
+            }
+            Ok(id)
+        },
+    )
+}
+#[test]
+fn candidate_certification_rolls_back_a_refused_extrusion_before_commit() {
+    let mut snapshot = selected_prism_document();
+    snapshot.work_geometry = Default::default();
+    let ids = RecipeIdAllocator::restore(None, snapshot.parameters.ids()).unwrap();
+    let mut owner = DocumentSession::new(
+        7,
+        DocumentEditHistory::new(snapshot, ids).unwrap(),
+        NativeResultObserver,
+    );
+    let before = owner.snapshot().work_geometry.features().len();
+    assert!(create_certified(&mut owner, 1e-12).is_err());
+    assert_eq!(owner.snapshot().work_geometry.features().len(), before);
+    assert!(owner.snapshot().sketches.get(SKETCH).unwrap().visible());
+    let id = create_certified(&mut owner, 1e-5).unwrap();
+    let mut evaluator = oblikovati_martensite::CertifiedNamedSolidEvaluator::new(
+        owner.history(),
+        certification_document(),
+        certified_resolution(1e-5),
+    );
+    let replay = owner
+        .snapshot()
+        .evaluate_part_features(&mut evaluator)
+        .unwrap();
+    let body = replay.body(id).unwrap();
+    assert_analytic_scalar(
+        body.volume(owner.history(), certification_document())
+            .unwrap(),
+        24.,
+    );
+    use oblikovati_model::feature::part::PartFeatureEvaluator;
+    assert!(evaluator.verify_body_reference(body, b"unscoped").is_err());
+    owner.undo().unwrap();
+    assert_eq!(owner.snapshot().work_geometry.features().len(), before);
+    owner.redo().unwrap();
+    assert_eq!(owner.snapshot().work_geometry.features().len(), before + 1);
+}
+#[test]
+fn retained_current_bodies_reject_late_results_and_track_undo_redo_generations() {
+    let mut owner = native_part_session();
+    let mut slot = NativePartSlot::default();
+    publish_native(&mut owner, &mut slot);
+    assert_native_volume(&slot, &owner, 24.);
+    let older = owner
+        .prepare_part_evaluation()
+        .evaluate(&mut CertifiedNamedSolidEvaluator::with_optional_policy(
+            owner.history(),
+            stored_document_guid(),
+            None,
+        ))
+        .unwrap();
+    native_depth_edit(&mut owner);
+    assert!(!slot.latest().unwrap().is_current);
+    publish_native(&mut owner, &mut slot);
+    assert_native_volume(&slot, &owner, 36.);
+    assert!(matches!(
+        owner.adopt_part_evaluation(older, &mut slot),
+        Err(PartEvaluationError::Superseded { .. })
+    ));
+    assert_native_volume(&slot, &owner, 36.);
+    verify_native_navigation(&mut owner, &mut slot);
+}
+fn verify_native_navigation(owner: &mut NativePartSession, slot: &mut NativePartSlot) {
+    owner.undo().unwrap();
+    assert!(slot.current(owner).is_err());
+    publish_native(owner, slot);
+    assert_native_volume(slot, owner, 24.);
+    owner.redo().unwrap();
+    assert!(slot.current(owner).is_err());
+    publish_native(owner, slot);
+    assert_native_volume(slot, owner, 36.);
+}
+#[test]
+fn closed_native_owner_marks_retained_presentation_stale_and_cancels_queued_input() {
+    let mut owner = native_part_session();
+    let mut slot = NativePartSlot::default();
+    publish_native(&mut owner, &mut slot);
+    let replay = SnapshotReplay::new(owner.snapshot()).unwrap();
+    let queued = owner.prepare_part_evaluation();
+    owner.close();
+    let retained = slot.latest().unwrap();
+    assert!(!retained.is_current);
+    assert!(retained.evaluation.body(FeatureId(1)).is_some());
+    assert!(queued.is_superseded());
+    assert!(
+        queued
+            .evaluate(&mut CertifiedNamedSolidEvaluator::with_optional_policy(
+                replay.history(),
+                stored_document_guid(),
+                None
+            ))
+            .is_err()
+    );
+    slot.clear();
+}

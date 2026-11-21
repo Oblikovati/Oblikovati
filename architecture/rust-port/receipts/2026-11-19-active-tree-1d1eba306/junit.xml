@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T12:51:00.72171859Z" time="8.28580399"><testcase name="Scenario: Show active member parameter values in the table tree: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1440:3" time="8.28580399"><system-out><![CDATA[  Scenario: Show active member parameter values in the table tree
+   ✔  Given The MCAD Software has model states Primary and Copy State
+   ✔  And the table includes length parameter d0 and angular parameter d1
+   ✔  And Primary has d0 equal to 1 in and d1 equal to 0 degrees
+   ✔  And Copy State has d0 equal to "1 in + 0.5 in" and d1 equal to 5 degrees
+   ✔  When the user activates Primary and opens the model-state table
+   ✔  Then the Primary row is highlighted pale green as the active member
+   ✔  And the parameter tree shows d0 at 1 in and d1 at 0 degrees
+   ✔  And the Copy State row still shows its length expression and 5 degree angle
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,17 @@
+
+running 1 test
+Feature: Arc three point
+  Scenario: arc-three-point-03 Cancel before committing a change
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given Three Point Arc is requesting a point on the arc after both endpoints were selected
+   ✔  When the user press Escape
+   ✔  Then the sketch returns to Ready without a new arc
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 905 filtered out; finished in 7.57s
+

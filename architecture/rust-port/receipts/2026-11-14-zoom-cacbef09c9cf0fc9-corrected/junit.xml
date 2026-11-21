@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport zoom: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature" package="testsuite/Feature: Viewport zoom: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:52:39.91787058Z" time="9.019490963"><testcase name="Scenario: Fit a distant block using Zoom All: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature:29:3" time="9.019490963"><system-out><![CDATA[  Scenario: Fit a distant block using Zoom All
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And the block appears small within the viewport
+   ✔  When the user opens the Zoom menu on the navigation bar
+   ✔  Then the menu offers Zoom, Zoom All, Zoom Window and Zoom Selected
+   ✔  When the user chooses Zoom All
+   ✔  Then the block appears larger and its visible outline fits within the viewport
+   ✔  And the same part and orientation remain active
+   ✔  When the user reopens the Zoom menu
+   ✔  Then Zoom All is marked as the selected action
+   ✔  When the user selects Zoom and presses Escape
+   ✔  Then the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>

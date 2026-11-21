@@ -1,0 +1,23 @@
+{
+  "kind": "full-feature-native-run",
+  "scenario_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+  "application_base": "9cd207be3",
+  "test_code_commit": "48a39d822",
+  "application_state": "The test code was uncommitted during this run and matches test_code_commit.",
+  "renderer": "Vulkan Lavapipe under Xvfb",
+  "scenario_counts": {
+    "passed": 5,
+    "failed": 4
+  },
+  "step_counts": {
+    "passed": 50,
+    "failed": 4
+  },
+  "historical_only": true,
+  "limitations": "Window-frame input; runner build provenance remains open in #3978.",
+  "artifacts_sha256": {
+    "source-revision.json": "17884bf0df121d21a12137c46c888b93defc11eaa0e991d163c74778ba55c900",
+    "junit.xml": "c4564a760cc0dd22fa2641434c7f24a096e5dff7cee555b56930cf42abc59739",
+    "cucumber.json": "7941b0fa6b9d61acf751a413ff2f2ec7f98faa55d2691196108b1d6682f42346"
+  }
+}

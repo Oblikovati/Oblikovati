@@ -1,0 +1,11 @@
+#!/bin/bash
+set -eu
+printf '%s\n' "$DISPLAY" > /tmp/obk-live-edit/display
+printf '%s\n' "$XAUTHORITY" > /tmp/obk-live-edit/xauthority
+export OBK_ADDINS_DIR=/tmp/obk-live-edit/addins OBK_MCP_ADDR=127.0.0.1:17900 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json XMODIFIERS=@im=none
+/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/oblikovati /tmp/obk-live-edit/cube.opd > /tmp/obk-live-edit/host.log 2>&1 &
+host_pid=$!
+printf '%s\n' "$host_pid" > /tmp/obk-live-edit/pid
+cleanup() { kill "$host_pid" 2>/dev/null || true; wait "$host_pid" 2>/dev/null || true; }
+trap cleanup EXIT
+wait "$host_pid"

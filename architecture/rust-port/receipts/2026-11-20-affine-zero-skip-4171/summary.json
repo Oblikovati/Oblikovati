@@ -1,0 +1,102 @@
+{
+  "classification": "synthetic prototype; no application or frame-rate evidence",
+  "compiler": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "platform": "Linux-7.2.15-76070215-generic-x86_64-with-glibc2.39",
+  "cpu": "AMD RYZEN AI MAX+ 395 w/ Radeon 8060S",
+  "dependencies": {
+    "num-rational": "0.4.2",
+    "num-bigint": "0.4.6"
+  },
+  "source_sha256": "a24461ce90fda31ae34f8a11d8dfb2bf8ed0796e2758a70c972c3a82761c764e",
+  "lock_sha256": "a5d93fb91359d15523c40bee7a27393dca9baef7f259ef9069ffa187e64336dc",
+  "corpus": "240 deterministic small systems; exact baseline equivalence, feasibility and KKT stationarity checked",
+  "chain_benchmark": "9 samples per size, separate process per algorithm, repeated in reverse order",
+  "measurements": {
+    "dense": {
+      "chain": {
+        "8": {
+          "median_ms": 0.425,
+          "max_ms": 0.597
+        },
+        "16": {
+          "median_ms": 2.351,
+          "max_ms": 2.664
+        },
+        "32": {
+          "median_ms": 19.342,
+          "max_ms": 20.771
+        },
+        "64": {
+          "median_ms": 133.786,
+          "max_ms": 142.458
+        }
+      },
+      "peak_rss_kib": 7460
+    },
+    "zero_skip": {
+      "chain": {
+        "8": {
+          "median_ms": 0.125,
+          "max_ms": 0.154
+        },
+        "16": {
+          "median_ms": 0.51,
+          "max_ms": 0.537
+        },
+        "32": {
+          "median_ms": 1.771,
+          "max_ms": 2.217
+        },
+        "64": {
+          "median_ms": 8.384,
+          "max_ms": 9.393
+        }
+      },
+      "peak_rss_kib": 7476
+    },
+    "dense_reverse": {
+      "chain": {
+        "8": {
+          "median_ms": 0.423,
+          "max_ms": 0.462
+        },
+        "16": {
+          "median_ms": 2.645,
+          "max_ms": 3.103
+        },
+        "32": {
+          "median_ms": 19.383,
+          "max_ms": 21.251
+        },
+        "64": {
+          "median_ms": 132.004,
+          "max_ms": 142.271
+        }
+      },
+      "peak_rss_kib": 6940
+    },
+    "zero_skip_reverse": {
+      "chain": {
+        "8": {
+          "median_ms": 0.123,
+          "max_ms": 0.154
+        },
+        "16": {
+          "median_ms": 0.454,
+          "max_ms": 0.56
+        },
+        "32": {
+          "median_ms": 1.87,
+          "max_ms": 2.013
+        },
+        "64": {
+          "median_ms": 7.564,
+          "max_ms": 9.124
+        }
+      },
+      "peak_rss_kib": 6760
+    }
+  },
+  "dense_case_limitation": "one sample per size; not a statistical comparison",
+  "limits": "Synthetic floating inputs interpreted as exact binary rationals; no model-source bounds, no nonlinear proof, no real pointer input, no application memory comparison."
+}

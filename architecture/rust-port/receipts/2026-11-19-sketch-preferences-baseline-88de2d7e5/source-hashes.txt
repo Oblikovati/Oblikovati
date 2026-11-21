@@ -1,0 +1,5 @@
+458175a3738144b727c1d520480f41bf602308e35f022c0242d82df35c795815  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/BLOCKERS.md
+bffa14ad68c4f24942ffd5bb0c3d8fdf0c1b5a082649c705a3605b04f8b4baee  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/FUNCTIONAL.md
+87f1eb87d333ec795ad59f9d4feb18338ad23c6e4b9f1455ebeb6f97a180f27c  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/VISUAL.md
+9ec690bf4342b0fd854c93aad33595538c0d724ee406fcc98467d705fc260ae0  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/feature-icon.svg
+7a5a5e600f8213f97978d926448c9f7be5431f71e2155e6b2fbf5ed0fa9cd7c6  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature

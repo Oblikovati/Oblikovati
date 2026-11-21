@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: New sketch: tmp/obk-file-menu-receipt-b13d/features/sketch/new-sketch/scenario.feature" package="testsuite/Feature: New sketch: tmp/obk-file-menu-receipt-b13d/features/sketch/new-sketch/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T13:12:15.358045208Z" time="9.794936242"><testcase name="Scenario: new-sketch-04 Creation and finishing have distinct history transactions: tmp/obk-file-menu-receipt-b13d/features/sketch/new-sketch/scenario.feature:27:3" time="9.794936242"><system-out><![CDATA[  Scenario: new-sketch-04 Creation and finishing have distinct history transactions
+   ✔  Given the user have created empty Sketch2 and chosen Finish Sketch
+   ✔  When the user press Ctrl+Z once
+   ✔  Then Sketch2 remains and its editing environment returns
+   ✔  When the user press Ctrl+Z again
+   ✔  Then Sketch2 disappears from the model browser
+   ✔  When the user press Ctrl+Y twice in sequence
+   ✔  Then creation and Finish Sketch are restored in order
+]]></system-out></testcase></testsuite></testsuites>

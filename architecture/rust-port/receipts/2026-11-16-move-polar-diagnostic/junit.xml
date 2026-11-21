@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: tmp/obk-move-polar-source/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: tmp/obk-move-polar-source/features/sketch/move/scenario.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-16T05:28:56.799633474Z" time="29.460452175"><testcase name="Scenario: move-15 accept a numeric distance-and-angle endpoint: tmp/obk-move-polar-source/features/sketch/move/scenario.feature:107:3" time="29.460452175"><failure type="Step Panicked" message="Step panicked. Captured output: expected screen-down: [850, 550] -&gt; [850, 459]"/><system-out><![CDATA[  Scenario: move-15 accept a numeric distance-and-angle endpoint
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given Move reopens with Precise Input and single-selection optimization on and Copy off
+   ✔  When the user selects the ellipse
+   ✔  Then Distance and X axis angle mode is retained
+   ✔  When the user clicks its center as base point
+   ✔  And the user focuses Distance, selects its text and types 2 then 0
+   ✔  And the user presses Tab to Angle, types 0 and presses Enter
+   ✔  Then Move returns to geometry selection without an error dialog
+   ✘  And the ellipse remains at the lower preview position
+      Step failed:
+      Defined: tmp/obk-move-polar-source/features/sketch/move/scenario.feature:116:5
+      Matched: crates/head/src/../tests/application/../sketch/move/polar.rs:65:1
+      Step panicked. Captured output: expected screen-down: [850, 550] -> [850, 459]
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nRight\nMove:Selectgeometry\n5dimensionsneeded\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nSketch1\n[DOF5]\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit\nMove\nSelectgeometry\nOptimizeforSingleSelection\nCopy\nPreciseInput\nBasePoint\nDone",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

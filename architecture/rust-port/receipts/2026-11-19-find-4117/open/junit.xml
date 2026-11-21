@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T05:02:16.40675103Z" time="27.771966392"><testcase name="Scenario: Cancel the open-search picker: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:601:3" time="27.771966392"><system-out><![CDATA[  Scenario: Cancel the open-search picker
+   ✔  Given the MCAD Software Find dialog contains feature search criteria
+   ✔  And at least one saved search is available
+   ✔  When the user chooses Open Search
+   ✔  Then a picker shows a saved-search list and opens, Cancel and Delete actions
+   ✔  When the user clicks Cancel
+   ✔  Then the Find dialog remains open with its original criteria unchanged
+]]></system-out></testcase></testsuite></testsuites>

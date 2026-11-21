@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T03:49:55.288480679Z" time="8.513031882"><testcase name="Scenario: Inspect an origin plane with no listed relationships: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:534:3" time="8.513031882"><system-out><![CDATA[  Scenario: Inspect an origin plane with no listed relationships
+   ✔  Given a part in the MCAD Software contains a sketch on the XY plane and an extrusion using it
+   ✔  When the user chooses Relationships from the YZ plane row context menu
+   ✔  Then the dialog identifies the YZ plane as the selected item
+   ✔  And the Parents list is empty
+   ✔  And the Children list is empty
+   ✔  When the user clicks Done
+   ✔  Then the Relationships dialog closes
+   ✔  And the YZ plane remains highlighted in the viewport
+]]></system-out></testcase></testsuite></testsuites>

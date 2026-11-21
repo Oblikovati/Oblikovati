@@ -1,0 +1,108 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/benchmarks/mcad-scenarios-35f4a77b/features/application/body-properties/body-properties.feature": "Feature: Body properties dialog\r\n  The MCAD Software presents body properties and can calculate physical values on request.\r\n\r\n  @needs_fixture\r\n  Scenario: Update unavailable physical properties for a solid body\r\n    Given a part containing one visible solid body is active in the MCAD Software\r\n    And the body's physical properties are unavailable in the current session\r\n    When the user right-clicks the body in the model browser\r\n    And the user chooses Properties\r\n    Then the Body Properties dialog opens with the body name\r\n    And mass, area, volume, and the X, Y, and Z coordinates of the center of gravity show N/A\r\n    And the dialog displays a body appearance selector and OK and Cancel buttons\r\n    When the user chooses Update\r\n    Then mass, area, volume, and the center of gravity coordinates display calculated values\r\n    And the solid remains highlighted behind the dialog\r\n    When the user chooses Cancel\r\n    Then the dialog closes\r\n    And the solid remains visible\r\n    When the user reopens Body Properties for the same body in the same session\r\n    Then the calculated physical properties remain displayed\r\n    When the user chooses Cancel\r\n    Then the dialog closes\r\n\r\n  @needs_fixture\r\n  Scenario: Cancel a body appearance selection\r\n    Given a part with a visible solid body is active in the MCAD Software\r\n    And the body appearance is set to As Part\r\n    When the user opens Body Properties for the body from the model browser\r\n    And the user opens the Body Appearance list\r\n    Then a scrollable list of named appearances is displayed\r\n    When the user chooses Black\r\n    Then Body Appearance displays Black\r\n    When the user chooses Cancel\r\n    And the user reopens Body Properties for the same body\r\n    Then Body Appearance displays As Part\r\n    And the solid remains visible\r\n    When the user chooses Cancel\r\n    Then the dialog closes\r\n\r\n  @needs_fixture\r\n  Scenario: Apply and restore a body appearance\r\n    Given a part with a visible solid body is active in the MCAD Software\r\n    And the body appearance is set to As Part\r\n    When the user opens Body Properties for the body from the model browser\r\n    And the user selects Black in Body Appearance\r\n    And the user chooses OK\r\n    Then the dialog closes\r\n    And the solid is displayed with the Black appearance\r\n    When the user reopens Body Properties for the same body\r\n    Then Body Appearance displays Black\r\n    When the user selects As Part in Body Appearance\r\n    And the user chooses OK\r\n    Then the dialog closes\r\n    And the solid is displayed with the part appearance\r\n\r\n  @needs_fixture\r\n  Scenario: Dismiss body properties with Escape\r\n    Given a part with a visible solid body is active in the MCAD Software\r\n    And Body Properties is open for the body\r\n    When the user presses Escape\r\n    Then the dialog closes\r\n    And the body row remains selected in the model browser\r\n    And the solid remains highlighted in the viewport\r\n\n  @needs_fixture\n  Scenario: Discard a pending appearance with Escape\n    Given a part with a visible solid body is active in the MCAD Software\n    And the body appearance is set to As Part\n    And Body Properties is open for the body\n    When the user selects Black in Body Appearance\n    And the user presses Escape\n    Then the dialog closes\n    When the user reopens Body Properties for the same body\n    Then Body Appearance displays As Part\n    When the user chooses Cancel\n    Then the dialog closes\r\n\n  @needs_fixture\n  Scenario: Discard a pending appearance using the title-bar close control\n    Given a part with a visible solid body is active in the MCAD Software\n    And the body appearance is set to As Part\n    And Body Properties is open for the body\n    When the user selects Black in Body Appearance\n    And the user closes the dialog using its title-bar close control\n    Then the dialog closes\n    When the user reopens Body Properties for the same body\n    Then Body Appearance displays As Part\n    When the user chooses Cancel\n    Then the dialog closes\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/benchmarks/mcad-scenarios-35f4a77b/features/application/body-properties/body-properties.feature",
+      "scenario": "Cancel a body appearance selection",
+      "line": 25,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 26,
+          "step": "a part with a visible solid body is active in the MCAD Software",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 27,
+          "step": "the body appearance is set to As Part",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 28,
+          "step": "the user opens Body Properties for the body from the model browser",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 29,
+          "step": "the user opens the Body Appearance list",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 30,
+          "step": "a scrollable list of named appearances is displayed",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 31,
+          "step": "the user chooses Black",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 32,
+          "step": "Body Appearance displays Black",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 33,
+          "step": "the user chooses Cancel",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 34,
+          "step": "the user reopens Body Properties for the same body",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 35,
+          "step": "Body Appearance displays As Part",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 36,
+          "step": "the solid remains visible",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 37,
+          "step": "the user chooses Cancel",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 38,
+          "step": "the dialog closes",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}

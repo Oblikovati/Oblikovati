@@ -1,0 +1,438 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use crate::DesktopObservations;
+use crate::HeadSketchWork;
+use oblikovati_api::{client::Client, wire::*};
+use std::{
+    sync::mpsc::{self, Receiver, Sender},
+    thread,
+    time::Duration,
+};
+#[path = "owner/files.rs"]
+pub(crate) mod files;
+use files::{MemoryDocumentFiles, OwnerThreadGuids};
+#[derive(Clone)]
+struct RecordedWake(Sender<()>);
+impl DispatchWakeup for RecordedWake {
+    fn wake(&self) -> Result<(), String> {
+        self.0.send(()).map_err(|error| error.to_string())
+    }
+}
+type TestOwner = DesktopOwner<
+    DesktopObservations,
+    DesktopObservations,
+    MemoryDocumentFiles,
+    OwnerThreadGuids,
+    DesktopObservations,
+    RecordedWake,
+>;
+fn owner() -> (TestOwner, Receiver<()>) {
+    owner_with_options(Default::default())
+}
+
+#[derive(Clone, Default)]
+struct FakeKeymapStore {
+    saved: std::sync::Arc<std::sync::Mutex<KeymapExport>>,
+    fail: std::sync::Arc<std::sync::atomic::AtomicBool>,
+}
+
+#[path = "owner/marking_menu.rs"]
+mod marking_menu;
+
+impl oblikovati_model::keymap::KeymapPreferenceAccess for FakeKeymapStore {
+    fn keymap(&self) -> KeymapExport {
+        self.saved.lock().unwrap().clone()
+    }
+    fn set_keymap(&mut self, delta: &KeymapExport) -> Result<(), String> {
+        if self.fail.load(std::sync::atomic::Ordering::SeqCst) {
+            return Err("keymap write: expected writable preferences".into());
+        }
+        *self.saved.lock().unwrap() = delta.clone();
+        Ok(())
+    }
+}
+fn shortcut_event(
+    key: oblikovati_viewport::ViewportPhysicalKey,
+) -> oblikovati_viewport::ViewportEvent {
+    use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportModifiers};
+    ViewportEvent::Input(ViewportInput::PhysicalKey {
+        key,
+        layout_key: key,
+        command: None,
+        pressed: true,
+        modifiers: ViewportModifiers {
+            control: true,
+            ..Default::default()
+        },
+    })
+}
+#[test]
+fn keymap_api_persists_and_changes_desktop_shortcut_atomically() {
+    use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportKey, ViewportPhysicalKey};
+    let store = FakeKeymapStore::default();
+    let (desktop, awake) = owner();
+    let mut desktop = desktop
+        .with_keymap_preferences(Box::new(store.clone()))
+        .unwrap();
+    invoke(&mut desktop, &awake, |client| {
+        client.keymap().set_chord(&SetChordArgs {
+            action_id: "edit.undo".into(),
+            chord: "Ctrl+U".into(),
+        })
+    })
+    .unwrap();
+    assert!(matches!(
+        desktop.resolve_shortcut(shortcut_event(ViewportPhysicalKey::U)),
+        ViewportEvent::Input(ViewportInput::PhysicalKey {
+            command: Some(ViewportKey::Undo),
+            ..
+        })
+    ));
+    store.fail.store(true, std::sync::atomic::Ordering::SeqCst);
+    assert!(
+        Client::new(desktop.document_host())
+            .keymap()
+            .set_chord(&SetChordArgs {
+                action_id: "edit.undo".into(),
+                chord: "Ctrl+J".into(),
+            })
+            .is_err()
+    );
+    let (fresh, _) = owner();
+    let mut fresh = fresh.with_keymap_preferences(Box::new(store)).unwrap();
+    assert!(matches!(
+        fresh.resolve_shortcut(shortcut_event(ViewportPhysicalKey::U)),
+        ViewportEvent::Input(ViewportInput::PhysicalKey {
+            command: Some(ViewportKey::Undo),
+            ..
+        })
+    ));
+    assert!(matches!(
+        fresh.resolve_shortcut(shortcut_event(ViewportPhysicalKey::J)),
+        ViewportEvent::Input(ViewportInput::PhysicalKey { command: None, .. })
+    ));
+}
+fn owner_with_options(
+    options: oblikovati_solve::nonlinear::SolveOptions,
+) -> (TestOwner, Receiver<()>) {
+    let observations = DesktopObservations::default();
+    let files = FileWorkspace::new_with_sketch_options(
+        observations.clone(),
+        MemoryDocumentFiles::default(),
+        options,
+    );
+    let (signal, awake) = mpsc::channel();
+    (
+        DesktopOwner::new(
+            files,
+            OwnerThreadGuids::default(),
+            observations,
+            "alpha".into(),
+            RecordedWake(signal),
+            DesktopDispatchOptions::default(),
+        ),
+        awake,
+    )
+}
+fn invoke<R: Send + 'static>(
+    owner: &mut TestOwner,
+    awake: &Receiver<()>,
+    call: impl FnOnce(Client<QueuedCaller<RecordedWake>>) -> R + Send + 'static,
+) -> R {
+    let caller = owner.caller();
+    let worker = thread::spawn(move || call(Client::new(caller)));
+    awake.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert!(owner.poll(32).unwrap().changed);
+    worker.join().unwrap()
+}
+fn create(owner: &mut TestOwner, awake: &Receiver<()>) -> u64 {
+    invoke(owner, awake, |client| {
+        client
+            .documents()
+            .create(&CreateDocumentArgs {
+                type_: "part".into(),
+                name: "Owner part".into(),
+                ..Default::default()
+            })
+            .unwrap()
+            .id
+    })
+}
+
+#[test]
+fn selection_filter_updates_owner_state_and_rejects_invalid_moves() {
+    use oblikovati_gui::{GuiSelectionKind, GuiSelectionMode};
+    let (mut owner, awake) = owner();
+    assert!(
+        owner
+            .set_selection_enabled_from_gui(GuiSelectionKind::Face, false)
+            .is_err()
+    );
+    create(&mut owner, &awake);
+    assert!(
+        owner
+            .set_selection_enabled_from_gui(GuiSelectionKind::Face, false)
+            .unwrap()
+    );
+    let state = owner.gui_command_state().unwrap();
+    assert_eq!(state.selection_mode, GuiSelectionMode::Custom);
+    let filter = state.selection_filter.unwrap();
+    assert_eq!(filter.entries.len(), 12);
+    assert!(
+        !filter
+            .entries
+            .iter()
+            .find(|entry| entry.kind == GuiSelectionKind::Face)
+            .unwrap()
+            .enabled
+    );
+    assert!(owner.move_selection_kind_from_gui(7, 0).unwrap());
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .selection_filter
+            .unwrap()
+            .entries[0]
+            .kind,
+        GuiSelectionKind::Face
+    );
+    assert!(owner.move_selection_kind_from_gui(0, 12).is_err());
+    assert!(
+        owner
+            .set_selection_mode_from_gui(GuiSelectionMode::All)
+            .unwrap()
+    );
+    assert!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .selection_filter
+            .unwrap()
+            .entries
+            .iter()
+            .all(|entry| entry.enabled)
+    );
+}
+#[path = "owner/document_lifecycle.rs"]
+mod document_lifecycle;
+#[test]
+fn owner_thread_transport_is_declined_and_retirement_releases_admitted_waiters() {
+    let (mut owner, awake) = owner();
+    assert!(
+        Client::new(owner.caller())
+            .documents()
+            .list()
+            .unwrap_err()
+            .0
+            .contains("owner")
+    );
+    let client = owner.caller();
+    let worker = thread::spawn(move || Client::new(client).documents().list());
+    awake.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert!(!owner.close_allowed().unwrap());
+    owner.finish().unwrap();
+    assert!(worker.join().unwrap().unwrap_err().0.contains("closed"));
+    assert!(owner.documents().workspace().documents().is_empty());
+    assert!(owner.poll(0).unwrap_err().contains("positive bounded"));
+}
+#[test]
+fn drain_budget_preserves_remaining_requests_for_the_next_frame() {
+    let (mut owner, awake) = owner();
+    let first = owner.caller();
+    let first = thread::spawn(move || Client::new(first).documents().list());
+    awake.recv_timeout(Duration::from_secs(2)).unwrap();
+    let second = owner.caller();
+    let second = thread::spawn(move || Client::new(second).documents().list());
+    awake.recv_timeout(Duration::from_secs(2)).unwrap();
+    verify_two_frame_drain(&mut owner, first, second);
+}
+fn verify_two_frame_drain(
+    owner: &mut TestOwner,
+    first: thread::JoinHandle<Result<ListDocumentsResult, oblikovati_api::Error>>,
+    second: thread::JoinHandle<Result<ListDocumentsResult, oblikovati_api::Error>>,
+) {
+    let activity = owner.poll(1).unwrap();
+    assert!(activity.changed && activity.pending && activity.wake_after.is_none());
+    assert!(first.join().unwrap().is_ok());
+    assert_eq!(
+        owner.poll(1).unwrap(),
+        HeadWorkStatus {
+            changed: true,
+            pending: false,
+            wake_after: None
+        }
+    );
+    assert!(second.join().unwrap().is_ok());
+    assert_eq!(owner.poll(1).unwrap(), HeadWorkStatus::default());
+}
+#[test]
+fn retiring_the_queue_preserves_unsaved_document_ownership_for_recovery() {
+    let (mut owner, awake) = owner();
+    let id = create(&mut owner, &awake);
+    let transport = owner.caller();
+    let files = owner.into_documents();
+    assert_eq!(files.workspace().documents(), [id]);
+    assert!(files.path(id).is_err());
+    let worker = thread::spawn(move || Client::new(transport).documents().list());
+    assert!(worker.join().unwrap().unwrap_err().0.contains("closed"));
+}
+#[test]
+fn ui_commands_borrow_the_same_canonical_owner_without_worker_admission() {
+    let (mut owner, awake) = owner();
+    let document = Client::new(owner.document_host())
+        .documents()
+        .create(&CreateDocumentArgs {
+            type_: "part".into(),
+            name: "UI part".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    assert_eq!(owner.documents().workspace().documents(), [document.id]);
+    assert!(awake.try_recv().is_err());
+    let activity = owner.poll(32).unwrap();
+    assert!(activity.changed && !activity.pending);
+    assert_eq!(owner.poll(32).unwrap(), HeadWorkStatus::default());
+    assert!(!owner.close_allowed().unwrap());
+}
+
+#[path = "owner/extrusion.rs"]
+mod extrusion;
+#[path = "owner/part_scene.rs"]
+mod part_scene;
+
+#[path = "owner/commands.rs"]
+mod commands;
+
+#[path = "owner/browser.rs"]
+mod browser;
+#[path = "owner/file_tools.rs"]
+mod file_tools;
+#[path = "owner/gui_commands.rs"]
+mod gui_commands;
+#[path = "owner/parameter_editor.rs"]
+mod parameter_editor;
+#[path = "owner/parameter_view.rs"]
+mod parameter_view;
+#[path = "owner/part_view_history.rs"]
+mod part_view_history;
+#[path = "owner/placement_fields.rs"]
+mod placement_fields;
+#[path = "owner/prompts.rs"]
+mod prompts;
+#[path = "owner/rectangle_input.rs"]
+mod rectangle_input;
+#[path = "owner/sketch_edit.rs"]
+mod sketch_edit;
+#[path = "owner/sketch_history.rs"]
+mod sketch_history;
+#[path = "owner/slot_input.rs"]
+mod slot_input;
+
+#[path = "owner/arc_input.rs"]
+mod arc_input;
+#[path = "owner/circle_input.rs"]
+mod circle_input;
+
+#[path = "owner/ellipse_input.rs"]
+mod ellipse_input;
+
+#[path = "owner/polygon_input.rs"]
+mod polygon_input;
+
+#[path = "owner/arc_slot_input.rs"]
+mod arc_slot_input;
+
+#[path = "owner/point_input.rs"]
+mod point_input;
+
+#[path = "owner/ribbon.rs"]
+mod ribbon;
+
+#[path = "owner/document_tabs.rs"]
+mod document_tabs;
+
+#[path = "owner/sketch_tools.rs"]
+mod sketch_tools;
+
+#[path = "owner/themes.rs"]
+mod themes;
+
+#[path = "owner/color_schemes.rs"]
+mod color_schemes;
+
+#[path = "owner/theme_editor.rs"]
+mod theme_editor;
+
+#[path = "owner/theme_lifecycle.rs"]
+mod theme_lifecycle;
+
+#[path = "owner/sketch_picking.rs"]
+mod sketch_picking;
+
+#[path = "owner/geometric_tools.rs"]
+mod geometric_tools;
+
+#[path = "owner/dimension_tools.rs"]
+mod dimension_tools;
+
+#[path = "owner/browser_visibility.rs"]
+mod browser_visibility;
+
+#[path = "owner/fix_tools.rs"]
+mod fix_tools;
+
+#[path = "owner/fix_veto.rs"]
+mod fix_veto;
+
+#[path = "owner/line_tools.rs"]
+mod line_tools;
+
+#[path = "owner/line_lifecycle.rs"]
+mod line_lifecycle;
+#[path = "owner/line_veto.rs"]
+mod line_veto;
+#[path = "owner/tool_veto.rs"]
+mod tool_veto;
+
+#[path = "owner/line_relations.rs"]
+mod line_relations;
+
+#[path = "owner/curve_relations.rs"]
+mod curve_relations;
+
+#[path = "owner/sketch_delete.rs"]
+mod sketch_delete;
+#[path = "owner/sketch_move.rs"]
+mod sketch_move;
+
+#[path = "owner/sketch_formats.rs"]
+mod sketch_formats;
+
+#[path = "owner/ui_scale.rs"]
+mod ui_scale;
+
+#[path = "application/document-creation/owner.rs"]
+mod document_creation_benchmark;
+
+#[path = "owner/point_preview.rs"]
+mod point_preview;
+
+#[path = "owner/cube_ui.rs"]
+mod cube_ui;
+#[path = "owner/origin_identity.rs"]
+mod origin_identity;
+#[path = "owner/saved_extrude_shortcut.rs"]
+mod saved_extrude_shortcut;
+#[path = "owner/selection_preferences.rs"]
+mod selection_preferences;
+#[path = "owner/sketch_context_selection.rs"]
+mod sketch_context_selection;
+#[path = "owner/sketch_pattern.rs"]
+mod sketch_pattern;
+
+#[path = "owner/part_view_table_history.rs"]
+mod part_view_table_history;
+
+#[path = "owner/model_state_ack.rs"]
+mod model_state_ack;

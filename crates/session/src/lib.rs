@@ -1,0 +1,253 @@
+// SPDX-License-Identifier: GPL-2.0-only
+
+//! Serial document edits and transaction observations, independent of UI and I/O.
+mod body_visibility;
+mod part_view_activation;
+mod part_view_history;
+mod part_view_navigation;
+mod part_view_visibility;
+pub use part_view_activation::PreparedPartViewActivation;
+pub use part_view_navigation::{PartViewNavigationDirection, PreparedPartViewNavigation};
+mod browser_selection;
+pub mod clients;
+mod command;
+mod error;
+mod events;
+pub mod files;
+mod navigation;
+mod sketch_edit_navigation;
+pub use sketch_edit_navigation::SketchEditNavigation;
+pub mod part_evaluation;
+mod refresh;
+pub mod selection;
+mod sketch_inference;
+mod sketch_inference_scope;
+pub use sketch_inference::SketchInferenceProjectionInput;
+mod editor_selection_scope;
+mod fillet_create;
+mod prism_create;
+mod sketch_auto_names;
+mod sketch_construction;
+mod sketch_create;
+mod sketch_curve_format;
+mod sketch_dimension_create;
+mod sketch_dimension_delete;
+mod sketch_entity_delete;
+mod sketch_selection;
+mod sketch_selection_click;
+mod sketch_selection_owned;
+pub use sketch_dimension_create::SketchDimensionCreationProjectionInput;
+pub use sketch_entity_delete::SketchEntityDeleteProjectionInput;
+mod sketch_dimension_edit;
+mod sketch_dimension_placement;
+mod sketch_line;
+mod sketch_relation_create;
+mod sketch_relation_delete;
+mod sketch_visibility;
+pub use sketch_relation_create::SketchGeometricCreationProjectionInput;
+pub use sketch_relation_delete::SketchRelationDeleteProjectionInput;
+mod sketch_copy;
+mod sketch_primitive;
+pub use sketch_line::SketchLineProjectionInput;
+mod sketch_translation;
+pub use sketch_construction::SketchConstructionProjectionInput;
+pub use sketch_copy::{SketchCopyBatchProjectionInput, SketchCopyProjectionInput};
+pub use sketch_create::{PartSketchCreateError, SketchCreationProjectionInput};
+pub use sketch_primitive::SketchPrimitiveProjectionInput;
+pub use sketch_translation::{SketchTransformPreview, SketchTransformProjectionInput};
+mod sketch_delete;
+pub mod sketch_policy;
+mod sketch_precision;
+pub use sketch_precision::{
+    ConditionalPrismAxis, ConditionalPrismDisplacement, ConditionalPrismSweptPoints,
+    PrismPrecisionObligation, SessionConditionalSketch,
+};
+mod sketch_recompute;
+pub use sketch_delete::SketchDeleteProjectionInput;
+pub use sketch_recompute::SketchSolveProjectionInput;
+#[cfg(test)]
+mod tests;
+mod transaction;
+pub mod workspace;
+pub use error::{CommandError, MutationError, SessionError};
+pub use events::TransactionObserver;
+use oblikovati_model::history::{DocumentEditHistory, DocumentSnapshot, TransactionToken};
+
+mod part_append_engine;
+mod part_candidate_engine;
+mod part_checkpoint_engine;
+pub use part_append_engine::{OwnedPartCandidate, OwnedPartReplay};
+pub use part_candidate_engine::{OwnedCheckpointCandidate, OwnedCheckpointReplay};
+mod part_replay_engine;
+mod part_replay_store;
+mod prepared_command;
+
+struct BoundedGroup {
+    token: TransactionToken,
+    label: String,
+    depth: u64,
+}
+
+/// One document owner; observers can inspect snapshots but cannot mutate this owner.
+pub struct DocumentSession<O> {
+    part_replay: Vec<part_replay_store::DocumentPartReplay>,
+    pending_sketch_navigation: Option<sketch_edit_navigation::SketchEditNavigation>,
+    document: u64,
+    browser_selection: selection::SelectionSet<selection::BrowserSketchPick>,
+    browser_feature: Option<oblikovati_model::feature::FeatureId>,
+    /// The solid body row chosen, by its stable reference and the feature that made it.
+    browser_body: selection::SelectionSet<selection::BrowserBodyPick>,
+    /// The document's own row is chosen: everything it holds shows as chosen.
+    browser_root: bool,
+    editor_selection: selection::SelectionSet<selection::SketchPick>,
+    inference_scopes:
+        std::collections::BTreeMap<u64, oblikovati_model::sketch::SketchInferenceCandidates>,
+    inference_validation: std::cell::RefCell<sketch_inference_scope::ScopeValidationCache>,
+    history: DocumentEditHistory,
+    observer: O,
+    group: Option<BoundedGroup>,
+    sketch_options: oblikovati_solve::nonlinear::SolveOptions,
+    next_sketch_name: u64,
+    body_visibility: body_visibility::BodyVisibilityState,
+    sketch_continuity: sketch_continuity::SketchContinuityWatches,
+}
+
+impl<O: TransactionObserver> DocumentSession<O> {
+    /// Identify the owning workspace document; example: `session.document_id()`.
+    pub fn document_id(&self) -> u64 {
+        self.document
+    }
+
+    /// Attach a document's history and observer; example: `DocumentSession::new(id, history, observer)`.
+    pub fn new(document: u64, history: DocumentEditHistory, observer: O) -> Self {
+        Self::new_with_sketch_options(document, history, observer, Default::default())
+    }
+
+    /// Inject bounded numerical policy for automatic readers; example: `DocumentSession::new_with_sketch_options(id, history, observer, options)`.
+    pub fn new_with_sketch_options(
+        document: u64,
+        history: DocumentEditHistory,
+        observer: O,
+        sketch_options: oblikovati_solve::nonlinear::SolveOptions,
+    ) -> Self {
+        Self {
+            part_replay: Vec::new(),
+            pending_sketch_navigation: None,
+            document,
+            browser_selection: Default::default(),
+            browser_feature: None,
+            browser_body: Default::default(),
+            browser_root: false,
+            editor_selection: Default::default(),
+            inference_scopes: Default::default(),
+            inference_validation: Default::default(),
+            history,
+            observer,
+            group: None,
+            body_visibility: Default::default(),
+            sketch_continuity: Default::default(),
+            sketch_options,
+            next_sketch_name: 1,
+        }
+    }
+
+    /// Share the same numerical policy with a transient preview; example: `session.sketch_solve_options()`.
+    pub fn sketch_solve_options(&self) -> oblikovati_solve::nonlinear::SolveOptions {
+        self.sketch_options
+    }
+    /// Inspect the current immutable recipe; example: `session.snapshot().parameters.ids()`.
+    pub fn snapshot(&self) -> &DocumentSnapshot {
+        self.history.snapshot()
+    }
+
+    /// Borrow the immutable history for exact derived queries; example: `named.reference_keys(session.history(), guid)?`.
+    pub fn history(&self) -> &DocumentEditHistory {
+        &self.history
+    }
+
+    /// Read the worker generation; example: `let generation = session.generation();`.
+    pub fn generation(&self) -> u64 {
+        self.history.generation()
+    }
+
+    /// Inspect reserved identities after rollback; example: `session.high_water()`.
+    pub fn high_water(&self) -> u64 {
+        self.history.high_water()
+    }
+
+    /// Inspect the injected observer; example: `session.observer().recorded_events()`.
+    pub fn observer(&self) -> &O {
+        &self.observer
+    }
+
+    /// Check whether a bounded command group is open; example: `session.in_transaction()`.
+    pub fn in_transaction(&self) -> bool {
+        self.group.is_some()
+    }
+
+    /// Identify the current bounded group without opening one; example: `let owned = session.transaction_identity();`.
+    pub fn transaction_identity(&self) -> Option<oblikovati_model::history::TransactionToken> {
+        self.group.as_ref().map(|group| group.token.clone())
+    }
+
+    /// Inspect the next committed undo without validating execution; example: `session.undo_label()` in UI state.
+    pub fn undo_label(&self) -> Option<&str> {
+        self.history.committed_undo_label()
+    }
+    /// Inspect the next committed redo without validating execution; example: `session.redo_label()` in UI state.
+    pub fn redo_label(&self) -> Option<&str> {
+        self.history.committed_redo_label()
+    }
+
+    /// Read the next undo kind; example: `session.undo_transition_kind()`.
+    pub fn undo_transition_kind(&self) -> Option<oblikovati_model::history::HistoryTransitionKind> {
+        self.history.undo_transition_kind()
+    }
+    /// Read the next redo kind; example: `session.redo_transition_kind()`.
+    pub fn redo_transition_kind(&self) -> Option<oblikovati_model::history::HistoryTransitionKind> {
+        self.history.redo_transition_kind()
+    }
+    /// Check whether a jump crosses a staged table transition.
+    /// Example: `session.prepared_jump_required(0)?`.
+    pub fn prepared_jump_required(&self, position: i64) -> Result<bool, String> {
+        if self.in_transaction() {
+            return Err("history jump: expected a closed transaction".into());
+        }
+        self.history.prepared_jump_required(position)
+    }
+    /// Read committed labels in order; example: `session.undo_labels()`.
+    pub fn undo_labels(&self) -> Vec<&str> {
+        self.history.undo_labels()
+    }
+
+    /// Read available labels in redo order; example: `session.redo_labels()`.
+    pub fn redo_labels(&self) -> Vec<&str> {
+        self.history.redo_labels()
+    }
+}
+
+impl<O: TransactionObserver> DocumentSession<O> {
+    /// Read the whole committed timeline, including redo and save markers.
+    /// Example: `session.history_entries()` for a history browser.
+    pub fn history_entries(&self) -> Vec<oblikovati_api::wire::TransactionHistoryEntry> {
+        self.history.entries()
+    }
+}
+
+pub use sketch_dimension_delete::SketchDimensionDeleteProjectionInput;
+
+mod sketch_split;
+pub use sketch_split::SketchSplitProjectionInput;
+
+mod sketch_polyline;
+mod sketch_text;
+pub use sketch_polyline::SketchPolylineProjectionInput;
+mod sketch_placement_recipe;
+pub use sketch_placement_recipe::SketchPlacementPreview;
+
+mod sketch_continuity;
+pub use sketch_continuity::{SketchContinuityResolver, SketchContinuityWatch};
+
+mod sketch_line_chain;
+mod sketch_point_preview;
+pub use sketch_line_chain::SketchLineChainPreview;

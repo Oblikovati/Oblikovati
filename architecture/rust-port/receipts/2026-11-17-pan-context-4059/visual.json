@@ -1,0 +1,13 @@
+{
+  "kind": "native diagnostic",
+  "base": "75a0d3345",
+  "scenario_snapshot": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "environment": "Linux Xvfb, Vulkan Lavapipe, native X11 pointer",
+  "test": "x11_pan_context_menu_owns_right_click_and_restores_part_menu",
+  "visual_review": "Pan menu shows Done, OK, Home View, Zoom, Orbit and Previous View while the Pan status remains visible.",
+  "screenshot_sha256": "19ac686c7ddf3b1607884a9e5b8403ae7ead8e542269a5f84286a99c06fe7f1b",
+  "limitations": [
+    "The full gate was not run.",
+    "Scenario fixture and sealed build provenance remain open."
+  ]
+}

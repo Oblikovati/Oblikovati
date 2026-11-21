@@ -1,0 +1,19 @@
+{
+  "kind": "uncommitted integration diagnostic; not a verified receipt",
+  "scenario_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+  "application_head": "71004d14dba84c9986b1b0c8724a6423c1435814",
+  "staged_tree_before_receipt": "e69ce5a720462353a6dd18735f9d45f6091de4c9",
+  "environment": "Linux, Xvfb 1920x1200, Vulkan lavapipe",
+  "filter": "file-menu",
+  "scenarios_passed": 8,
+  "steps_passed": 59,
+  "visual_review": "The part and Home captures were inspected; the integration was uncommitted.",
+  "artifacts": {
+    "cucumber.json": "bc4724c1fe50fff0dba3d55693e11954cef6546ff45e56abb4c74a50eef64d0c",
+    "junit.xml": "2a4f45fd8de1ea389b3b815e0bd741aa7841169d7e37cf71e337194c6ba4059b",
+    "Open-the-file-menu-while-a-part-is-active.png": "d6e261b0a15835c8ef1c364432c54ae2d8f0f5daf6b22fd8cb2fc005c62f6ffb",
+    "Inspect-the-File-menu-from-Home.png": "e83154f0587863ae2d1236826ce26733eae8ae04d2ab4d857f10ee43a862c0c1"
+  },
+  "scenario_source_unchanged": true,
+  "feature_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91"
+}

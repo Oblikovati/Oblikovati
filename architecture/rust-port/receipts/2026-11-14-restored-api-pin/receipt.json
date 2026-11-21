@@ -1,0 +1,23 @@
+{
+  "kind": "focused-implementation-evidence",
+  "application_commit": "5127a0a8a",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-automation --test queries",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-restored-api-pin/queries.log.gz",
+      "sha256": "3e0b434cb8cef8828d399dcfc381868dcb26f48e68dc95fec7f1c9928d4da059"
+    },
+    {
+      "command": "cargo check --locked -p oblikovati-head",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-restored-api-pin/head.log.gz",
+      "sha256": "3b2951c70f9a988b0a3b67588f54d86d3d9292e0422f919ffee85c736335ace5"
+    }
+  ],
+  "limitations": [
+    "The integration candidate is stashed and is not part of this build.",
+    "The native BDD receipts remain stale, and the full gate remains open."
+  ]
+}

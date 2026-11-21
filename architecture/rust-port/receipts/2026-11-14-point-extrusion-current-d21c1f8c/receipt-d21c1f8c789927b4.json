@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:d21c1f8c789927b46db67abfe6f79e4e8774be0e990dddf6f6631b83c30b7ab8",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+  "application_commit": "216281fe7f4e33141a64a5ea2fcf8743e2faa210",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-d21c1f8c/cucumber.json",
+    "sha256": "413ff6a49ec6e0ba8473236cd1d1c8de3c210f32aeffefa3712dcb8c2a3d647a"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-d21c1f8c/source-revision.json",
+    "sha256": "509629fd398de984a77e33b2011b33e83f1a66cdd591fabf2d88c7c0f1c0f9fd"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-extrusion-current-d21c1f8c/point-04-Undo-and-redo-the-recorded-placement.png",
+    "sha256": "5171905e9fd8565bbe7d76672b64922933eefa36344a9d86b3e5ee29d259db64"
+  }
+}

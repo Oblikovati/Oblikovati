@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: The MCAD Software sketch constraint settings: tmp/obk-constraint-native-4158/features/sketch/constraint-settings/scenario.feature" package="testsuite/Feature: The MCAD Software sketch constraint settings: tmp/obk-constraint-native-4158/features/sketch/constraint-settings/scenario.feature" tests="8" errors="0" failures="2" hostname="localhost" timestamp="2026-11-20T04:36:40.967565615Z" time="115.191394554"><testcase name="Scenario: constraint-settings-01 Commit the intended inference settings: tmp/obk-constraint-native-4158/features/sketch/constraint-settings/scenario.feature:5:3" time="16.521424218"><system-out><![CDATA[  Scenario: constraint-settings-01 Commit the intended inference settings
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited
+   ✔  And Infer constraints and Persist constraints are checked
+   ✔  When the user open Constraint Settings to Inference
+   ✔  And the user clear Infer constraints and accept
+   ✔  And the user reopen the Inference tab
+   ✔  Then Infer constraints is unchecked
+   ✔  And Persist constraints is unchecked and disabled
+   ✔  When the user enable Infer constraints
+   ✔  Then Persist constraints becomes available and remains unchecked
+   ✔  When the user check Persist constraints and accept
+   ✔  Then both settings are restored
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-02 Control constraint glyph visibility: tmp/obk-constraint-native-4158/features/sketch/constraint-settings/scenario.feature:19:3" time="8.091728367"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: constraint-settings-02 Control constraint glyph visibility
+   ✔  Given `fixtures/cad/constraint-settings/constraint-settings-line.opd` is open with Sketch1 being edited
+   ✘  And a horizontal relation glyph is displayed on its line
+      Step failed:
+      Defined: tmp/obk-constraint-native-4158/features/sketch/constraint-settings/scenario.feature:21:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-03 Cancel changes to inference configuration: tmp/obk-constraint-native-4158/features/sketch/constraint-settings/scenario.feature:31:3" time="17.699417121"><system-out><![CDATA[  Scenario: constraint-settings-03 Cancel changes to inference configuration
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited
+   ✔  And Infer constraints, Persist constraints and all nine inference types are checked
+   ✔  And Parallel and perpendicular priority is selected
+   ✔  When the user open Constraint Settings to Inference and click Clear All
+   ✔  Then all nine inference types are unchecked
+   ✔  When the user click Select All and clear Infer constraints
+   ✔  Then Persist constraints, the checked inference types and bulk-selection buttons are disabled
+   ✔  And the priority choices remain available
+   ✔  When the user click Cancel and reopen Constraint Settings to Inference
+   ✔  Then Infer constraints, Persist constraints and all nine inference types are checked
+   ✔  And Parallel and perpendicular priority remains selected
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-06 Cancel Relax Mode configuration changes: tmp/obk-constraint-native-4158/features/sketch/constraint-settings/scenario.feature:45:3" time="17.804160302"><system-out><![CDATA[  Scenario: constraint-settings-06 Cancel Relax Mode configuration changes
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited
+   ✔  And Relax Mode is disabled with twelve removal choices
+   ✔  And Preserve dimensions with equation is checked and disabled
+   ✔  When the user open Constraint Settings to Relax Mode and enable Relax Mode
+   ✔  Then the removal choices, bulk-selection buttons and equation-preservation option become available
+   ✔  When the user click Clear All and wait for settled painting
+   ✔  Then all twelve removal choices are unchecked
+   ✔  When the user click Select All
+   ✔  Then all twelve removal choices are checked
+   ✔  When the user clear Preserve dimensions with equation
+   ✔  Then the twelve removal choices remain checked
+   ✔  When the user click Cancel and reopen Constraint Settings to Relax Mode
+   ✔  Then Relax Mode is disabled and the original removal choices are restored
+   ✔  And Preserve dimensions with equation is checked and disabled
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-07 Inspect restored settings through Application Options: tmp/obk-constraint-native-4158/features/sketch/constraint-settings/scenario.feature:62:3" time="17.207435765"><system-out><![CDATA[  Scenario: constraint-settings-07 Inspect restored settings through Application Options
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited and the Tools ribbon visible
+   ✔  When the user open Application Options to Sketch and Constraint Settings
+   ✔  Then Edit dimension when created and Create dimensions from input values are checked
+   ✔  And Warn of overconstrained condition is selected
+   ✔  When the user choose Inference
+   ✔  Then Infer constraints and Persist constraints and all nine types are checked
+   ✔  And Parallel and perpendicular priority is selected
+   ✔  When the user choose Relax Mode
+   ✔  Then Enable Relax Mode is unchecked and its dependent controls are disabled
+   ✔  When the user click Cancel and close Application Options
+   ✔  Then the sketch returns to Ready
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-08 Compare glyphs with inference disabled and enabled: tmp/obk-constraint-native-4158/features/sketch/constraint-settings/scenario.feature:76:3" time="7.927349008"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: constraint-settings-08 Compare glyphs with inference disabled and enabled
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited
+   ✘  And Precise Input is active in Y-coordinate and X-axis-angle mode
+      Step failed:
+      Defined: tmp/obk-constraint-native-4158/features/sketch/constraint-settings/scenario.feature:78:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-09 Retain Relax Mode after accepting and restore it: tmp/obk-constraint-native-4158/features/sketch/constraint-settings/scenario.feature:92:3" time="16.358244911"><system-out><![CDATA[  Scenario: constraint-settings-09 Retain Relax Mode after accepting and restore it
+   ✔  Given `fixtures/cad/constraint-settings/constraint-settings-line.opd` is open with Sketch1 being edited
+   ✔  And Relax Mode is disabled with the recorded removal choices
+   ✔  And Preserve dimensions with equation is checked
+   ✔  When the user open Constraint Settings to Relax Mode, enable Relax Mode and accept
+   ✔  And the user reopen Constraint Settings to Relax Mode
+   ✔  Then Enable Relax Mode remains checked
+   ✔  When the user clear Enable Relax Mode and accept
+   ✔  Then the original disabled preference is restored
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-10 Inspect initial Relax Mode removal choices: tmp/obk-constraint-native-4158/features/sketch/constraint-settings/scenario.feature:102:3" time="13.581634862"><system-out><![CDATA[  Scenario: constraint-settings-10 Inspect initial Relax Mode removal choices
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited
+   ✔  And Relax Mode is initially disabled
+   ✔  When the user open Constraint Settings to Relax Mode and enable Relax Mode
+   ✔  Then Coincident, Tangent, Smooth(G2) and Symmetric are unchecked
+   ✔  And Collinear, Concentric, Horizontal, Vertical, Parallel, Perpendicular, Equal and Fix are checked
+   ✔  And Preserve dimensions with equation is checked
+]]></system-out></testcase></testsuite></testsuites>

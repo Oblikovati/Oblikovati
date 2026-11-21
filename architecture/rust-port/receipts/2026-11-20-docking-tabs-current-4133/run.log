@@ -1,0 +1,36 @@
+   Compiling oblikovati-gui v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/docking-current-4133/crates/gui)
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/docking-current-4133/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 56.91s
+     Running unittests src/lib.rs (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/deps/oblikovati_head-a63049949246ef13)
+
+running 1 test
+Feature: Dockable workspace panels
+  Scenario: Tab, switch, close, and restore docked browser panels
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And Appearance Browser is docked on the right
+   ✔  And Material Browser is floating over the workspace
+   ✔  When the user drags the Material Browser title bar onto the Appearance Browser tab strip
+   ✔  Then both browsers occupy one right-side dock region as tabs
+   ✔  And one browser is active while the other remains available
+   ✔  And a single tab bar contains both browser tabs
+   ✔  And the viewport remains visible to the left of the dock region
+   ✔  When the user selects the Appearance Browser tab
+   ✔  Then Appearance Browser contents become visible in the dock region
+   ✔  And the panel presents appearance choices without a second browser tab bar
+   ✔  When the user selects the Material Browser tab
+   ✔  Then Material Browser contents become visible in the dock region
+   ✔  And the panel presents material choices without a second browser tab bar
+   ✔  When the user selects Appearance Browser and closes it from its panel controls
+   ✔  Then Appearance Browser is removed from the tab group
+   ✔  And Material Browser remains visible in the right dock region
+   ✔  When the user opens View and then User Interface
+   ✔  And the user selects Appearance Browser
+   ✔  Then Appearance Browser returns as a tab in the right dock region
+   ✔  And its contents are visible
+[Summary]
+1 feature
+1 scenario (1 passed)
+21 steps (21 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1545 filtered out; finished in 27.77s

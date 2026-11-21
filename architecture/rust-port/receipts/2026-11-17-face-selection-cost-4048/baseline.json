@@ -1,0 +1,28 @@
+{
+  "kind": "diagnostic_microbenchmark",
+  "base_commit": "67cda98f9317476f7a9ee79dbdb4fd1f35da631f",
+  "lock_sha256": "b0695ff8c4df2279345908e21ebd90dbeadcaf4f2ab2dbda3d55c471daf245d9",
+  "toolchain": "rustc 1.99.0 (b940084d7 2026-09-28)",
+  "cpu": "AMD RYZEN AI MAX+ 395 w/ Radeon 8060S",
+  "command": "cargo test --locked --release -p oblikovati-head --lib measure_named_face_selection_scene_cost -- --ignored --nocapture --test-threads=1",
+  "fixture": "one certified prism, six planar faces, 20 warmups and 100 samples",
+  "measurements_ns": {
+    "body_mesh": {
+      "p50": 5621518,
+      "p95": 7247684,
+      "max": 10917633
+    },
+    "named_mesh": {
+      "p50": 2231206,
+      "p95": 3322134,
+      "max": 4268024
+    },
+    "cached_face_scene": {
+      "p50": 6812,
+      "p95": 11662,
+      "max": 24134
+    }
+  },
+  "limits": "Repeated CPU-side work on one fixture; concurrent system work was present. Does not measure cold startup, native input, GPU presentation, scanout, sketch editing, or end-to-end frame rate. The test file gained a separate equivalence test after this run; the hash identifies the measured benchmark function.",
+  "benchmark_function_sha256": "e33498e9d41591617981c5bc745a18cfc942b49aa647928d68c3a24fe7fd59f7"
+}

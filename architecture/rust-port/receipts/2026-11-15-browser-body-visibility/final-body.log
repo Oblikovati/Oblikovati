@@ -1,0 +1,27 @@
+    Finished `test` profile [unoptimized] target(s) in 0.09s
+     Running unittests src/lib.rs (/tmp/obk-body-visibility-Gi8hyJ/target/debug/deps/oblikovati_head-0c1a18eb5aa1b656)
+
+running 1 test
+Feature: Model browser
+  Scenario: Hide and show a solid body from the browser
+   ✔  Given an active part in the MCAD Software contains one visible solid block
+   ✔  And the solid body row is visible in the model browser
+   ✔  When the user right-clicks the solid body row
+   ✔  Then the block faces are highlighted in blue
+   ✔  And Visibility is checked in the context menu
+   ✔  When the user chooses Visibility
+   ✔  Then the block disappears from the viewport
+   ✔  And the body and its feature remain represented in the browser
+   ✔  When the user right-clicks the hidden body row
+   ✔  Then Visibility is not checked
+   ✔  And the hidden body is indicated by a blue wireframe while selected
+   ✔  When the user chooses Visibility again
+   ✔  Then the shaded block returns in the same apparent view
+[Summary]
+1 feature
+1 scenario (1 passed)
+13 steps (13 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1062 filtered out; finished in 16.51s
+

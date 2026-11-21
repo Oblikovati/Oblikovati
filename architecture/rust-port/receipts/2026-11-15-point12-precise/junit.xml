@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Point: tmp/obk-point-fixture-snapshot-3887/features/sketch/point/scenario.feature" package="testsuite/Feature: Point: tmp/obk-point-fixture-snapshot-3887/features/sketch/point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T11:31:25.128865763Z" time="9.259912201"><testcase name="Scenario: point-12 Inspect Precise Input while Point is active: tmp/obk-point-fixture-snapshot-3887/features/sketch/point/scenario.feature:103:3" time="9.259912201"><system-out><![CDATA[  Scenario: point-12 Inspect Precise Input while Point is active
+   ✔  Given Point is active in an editable sketch
+   ✔  When the user expand the Create panel
+   ✔  Then Precise Input is available
+]]></system-out></testcase></testsuite></testsuites>

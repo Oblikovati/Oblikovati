@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T04:07:50.989354287Z" time="29.800239324"><testcase name="Scenario: Inspect existing feature search criteria: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:557:3" time="29.800239324"><system-out><![CDATA[  Scenario: Inspect existing feature search criteria
+   ✔  Given the MCAD Software Find dialog contains these feature criteria in order:
+       | Property        | Condition | Value      | Join |
+       | Type            | equals    | Extrusion  | And  |
+       | Type            | equals    | Fillet     | Or   |
+       | Suppress status | equals    | Suppressed | And  |
+   ✔  When the user selects the Suppress status criterion
+   ✔  Then the criterion controls show Suppress status, equals and Suppressed
+   ✔  And And is selected
+   ✔  When the user selects the Fillet criterion
+   ✔  Then the criterion controls show Type, equals and Fillet
+   ✔  And Or is selected
+   ✔  When the user selects the Extrusion criterion
+   ✔  Then the criterion controls show Type, equals and Extrusion
+   ✔  And And is selected
+   ✔  And the three criteria remain listed
+   ✔  When the user closes the Find dialog
+   ✔  Then the part workspace is visible
+]]></system-out></testcase></testsuite></testsuites>

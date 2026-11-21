@@ -1,0 +1,10 @@
+{
+  "kind": "Go command baseline, not native acceptance",
+  "go_commit": "aa8297d1b0ac33c024f19e54821536d76e8a447a",
+  "command": "go test ./app -run '^(TestCreateSketchToolFlow|TestCreateSketchToolPicksViaBrowser|TestCreate2DSketchUsesPreselectedPlane|TestCreateSketchToolCancelRestoresFilter|TestCreateSketchEntersEnvironment|TestOriginPlanesDiffer)$' -count=1 -v",
+  "exit_code": 0,
+  "limits": "The selected Go tests use a fake picker or direct session calls; they do not establish rendered view, recorded fixture, or distinct empty Finish history.",
+  "artifacts": {
+    "go-test.log.gz": "75ae3e91b84ed5a2044d6f736ddebdd12ce4a0ea349c3fcaf3ea9c77f15c7d7d"
+  }
+}

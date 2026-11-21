@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:696c1c624ce655a92f7dbf059e4b9d1920fe82394e2258d4e3defca752948814",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+  "application_commit": "a7400bd4085964d2c0dc99c656280adaf8835a1a",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-orbit-696c1c624ce655a9-current/cucumber.json",
+    "sha256": "0ca74dd48f583a6dae300e13ee13c5b3f9183414711752f176dd6c1e5b7478bc"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-orbit-696c1c624ce655a9-current/source-revision.json",
+    "sha256": "50bff70dc85a8ca760954d7847bd97f18eac4783191c830f375bb1566060b871"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-orbit-696c1c624ce655a9-current/Open-and-exit-the-free-rotation-mode.png",
+    "sha256": "a4ca10c20d1958ae53a8c476e4f6b807eef33ead78080b41799f4214aecfdf0d"
+  }
+}

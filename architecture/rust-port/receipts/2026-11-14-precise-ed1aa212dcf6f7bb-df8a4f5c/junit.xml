@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Precise input: tmp/obk-precise-48987af/features/sketch/precise-input/scenario.feature" package="testsuite/Feature: Precise input: tmp/obk-precise-48987af/features/sketch/precise-input/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:24:57.331646745Z" time="11.48849395"><testcase name="Scenario: precise-input-05 Undo and redo a committed point: tmp/obk-precise-48987af/features/sketch/precise-input/scenario.feature:66:3" time="11.48849395"><system-out><![CDATA[  Scenario: precise-input-05 Undo and redo a committed point
+   ✔  Given a point committed through Precise Input
+   ✔  When the user exit Point and undo and redo
+   ✔  Then the point marker disappears and returns
+]]></system-out></testcase></testsuite></testsuites>

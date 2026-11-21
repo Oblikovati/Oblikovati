@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:414a8cdb8182b258369735ab0aaa1bebf2a7968f607002055b4282dcbf29716f",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "e9a93d4c096090667952b8080a0cad01c48f480022a4b8ac72ae210607ca138d",
+  "application_commit": "666125af565aa57a35d22b4bbe7acf6cd5e9ce3e",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-create-414a8cdb/cucumber.json",
+    "sha256": "31719c79f9e7acfb6e0173204bfe4757c3ddb22656e7827c1386acc996333f57"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-create-414a8cdb/source-revision.json",
+    "sha256": "d1d6b0dad72f0d8e078d14a8676ca43e84d9c2d295c4d59b3d47524646f860d6"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-create-414a8cdb/Create-a-standard-metric-part.png",
+    "sha256": "5094e20b2ceda62edc9f4ac3b475e560f271766cc438d3bb40d2ecc8f5f46b16"
+  }
+}

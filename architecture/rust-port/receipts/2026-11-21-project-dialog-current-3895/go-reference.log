@@ -1,0 +1,10 @@
+=== RUN   TestProjectFileRoundTrips
+--- PASS: TestProjectFileRoundTrips (0.00s)
+=== RUN   TestProjectFileIsReadableYAML
+--- PASS: TestProjectFileIsReadableYAML (0.00s)
+=== RUN   TestProjectFileRejectsWrongExtension
+--- PASS: TestProjectFileRejectsWrongExtension (0.00s)
+=== RUN   TestProjectFileRejectsUnknownSchemaVersion
+--- PASS: TestProjectFileRejectsUnknownSchemaVersion (0.00s)
+PASS
+ok  	oblikovati.org/persistence	0.006s

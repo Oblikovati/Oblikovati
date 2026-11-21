@@ -1,0 +1,9 @@
+{
+  "application_commit": "6478db744",
+  "feature": "features/application/ribbon-display/ribbon-display.feature",
+  "feature_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e",
+  "scenario": "Hide command labels and restore the normal ribbon appearance",
+  "result": "1 scenario, 10 steps passed",
+  "environment": "Linux X11, Xvfb, software Vulkan; scripted window input",
+  "scope": "Focused scenario only; not a full-feature run. Source was unversioned."
+}

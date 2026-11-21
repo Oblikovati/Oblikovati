@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/oblikovati-bdd-JCX1TT/checkout/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/oblikovati-bdd-JCX1TT/checkout/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T15:02:37.260089764Z" time="10.380550248"><testcase name="Scenario: Show the location of a saved document in its tab preview: tmp/oblikovati-bdd-JCX1TT/checkout/features/application/document-tabs/document-tabs.feature:341:3" time="10.380550248"><system-out><![CDATA[  Scenario: Show the location of a saved document in its tab preview
+   ✔  Given two parts are open in the MCAD Software
+   ✔  And the first part is active
+   ✔  And the second part has been saved to a file
+   ✔  When the user hovers over the second part's document tab
+   ✔  Then a thumbnail of the second part appears above the tab
+   ✔  And the preview label displays the saved file's full path and part name on separate lines
+   ✔  And the first part remains active
+]]></system-out></testcase></testsuite></testsuites>

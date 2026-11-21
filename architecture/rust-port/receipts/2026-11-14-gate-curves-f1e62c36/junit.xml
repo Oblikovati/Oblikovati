@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: tmp/obk-curves-refresh/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: tmp/obk-curves-refresh/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:37:49.826472393Z" time="10.553484341"><testcase name="Scenario: ellipse-03 Cancel at the defining stages: tmp/obk-curves-refresh/features/sketch/ellipse/scenario.feature:15:3" time="10.553484341"><system-out><![CDATA[  Scenario: ellipse-03 Cancel at the defining stages
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given Ellipse is active in an editable sketch
+   ✔  When the user select only a center and press Escape
+   ✔  Then Ready returns without an additional ellipse
+   ✔  When the user invoke Ellipse again, select a center and rotated first axis, and press Escape
+   ✔  Then Ready returns with no new ellipse
+]]></system-out></testcase></testsuite></testsuites>

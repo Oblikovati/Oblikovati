@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:a661d2ccfbdfc85a763de8dd2eb91fc325e1a004e58059346306d9e69700b3c5",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+  "application_commit": "3bea8bfad760d8cbcc6b3ffac3c728ac970c96e0",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-outline-a661d2ccfbdfc85a/cucumber.json",
+    "sha256": "a7721aeaf0334a22c0eae9cd9d7954e7432b5adabae7fab15886b5c706640cd8"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-outline-a661d2ccfbdfc85a/source-revision.json",
+    "sha256": "7aa36291ae75cb0f5d1db6d8956de4c7d24256ae449c2e8d32a9e2f3caaf43d7"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-outline-a661d2ccfbdfc85a/rectangle-two-point-06-Cancel-before-the-opposite-corner.png",
+    "sha256": "0c0f814f3659bb591f5491db162ff807ea73735f76d3d92cb700c0f365b2d0cb"
+  }
+}

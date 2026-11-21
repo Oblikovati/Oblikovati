@@ -1,0 +1,313 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Native title-menu interactions while editing a sketch.
+use super::{ApplicationWorld, diagnostics, sketch_constrain};
+use cucumber::{given, then, when};
+
+const CONSTRAIN: &str = "##ribbon-additional-Constrain";
+
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_edit_coordinate_system_during_sketch_shows_exit_instruction() {
+    let mut world = sketch_with_constrain_area();
+    let command = world.run_in_window(CONSTRAIN, "EditCoordinateSystem");
+    super::super::x11_input::click(diagnostics::pointer_pixels(command.center()));
+    world.pump(Vec::new());
+    world.expect_text("Finish the sketch");
+    world.expect_text("context menu");
+    let ok = world.run("OK").center();
+    super::super::x11_input::click(diagnostics::pointer_pixels(ok));
+    world.pump(Vec::new());
+    world.expect_no_text("Finish the sketch");
+    assert!(
+        world
+            .edited_geometry()
+            .same_recipe(&world.observed_sketch.as_ref().unwrap().geometry)
+    );
+    world.close();
+}
+
+#[given("the full Sketch ribbon is visible")]
+#[then("the full Sketch ribbon is visible")]
+fn full_sketch_ribbon(world: &mut ApplicationWorld) {
+    world.expect_text("Constrain");
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+}
+#[given("the Constrain additional command area is open")]
+#[given("the Constrain additional-command area is open")]
+fn constrain_area_open(world: &mut ApplicationWorld) {
+    sketch_constrain::open_constrain(world);
+    assert!(diagnostics::window_geometry(CONSTRAIN).is_some());
+}
+#[when("the user right-clicks the lower Constrain title")]
+fn right_click_constrain_title(world: &mut ApplicationWorld) {
+    let title = world.run_in_window(CONSTRAIN, "Constrain").center();
+    world.right_click(diagnostics::pointer_pixels(title));
+    world.pump(Vec::new());
+}
+#[then(
+    "the title context menu offers Ribbon Appearance, Show Panels, Customize User Commands, Undock Ribbon and Docking Positions"
+)]
+fn title_menu_choices(world: &mut ApplicationWorld) {
+    for label in [
+        "Ribbon Appearance",
+        "Show Panels",
+        "Customize User Commands",
+        "Undock Ribbon",
+        "Docking Positions",
+    ] {
+        world.expect_text(label);
+    }
+}
+#[then("the Constrain additional command area remains open")]
+#[then("the Constrain additional-command area remains open")]
+fn constrain_remains_open(_: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry(CONSTRAIN).is_some());
+}
+#[then("Top is checked and Left and Right are available")]
+fn docking_options(world: &mut ApplicationWorld) {
+    assert!(world.checked("Top"));
+    world.expect_text("Left");
+    world.expect_text("Right");
+}
+#[then("the title context menu and Constrain additional command area close")]
+#[then("the command context menu and Constrain additional command area close")]
+#[then("the context menu and Constrain additional-command area close")]
+fn menu_and_constrain_close(world: &mut ApplicationWorld) {
+    world.expect_no_text("Undock Ribbon");
+    assert!(diagnostics::window_geometry(CONSTRAIN).is_none());
+}
+#[when("the user right-clicks Constraint Inference Scope in the additional area")]
+fn right_click_inference_scope(world: &mut ApplicationWorld) {
+    let command = world.run_in_window(CONSTRAIN, "ConstraintInferenceScope");
+    world.right_click(diagnostics::pointer_pixels(command.center()));
+    world.pump(Vec::new());
+}
+#[then("the Constrain area context menu is visible")]
+fn constrain_context_visible(world: &mut ApplicationWorld) {
+    world.expect_text("Ribbon Appearance");
+    world.expect_text("Show Panels");
+}
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_switching_tabs_closes_constrain_command_menu() {
+    let mut world = sketch_with_constrain_area();
+    let scope = world.run_in_window(CONSTRAIN, "ConstraintInferenceScope");
+    super::super::x11_input::right_click(diagnostics::pointer_pixels(scope.center()));
+    world.pump(Vec::new());
+    constrain_context_visible(&mut world);
+    let tab = diagnostics::pointer_pixels(world.run("Tools").center());
+    super::super::x11_input::click(tab);
+    world.pump(Vec::new());
+    menu_and_constrain_close(&mut world);
+    world.expect_text("Application Options");
+    assert!(
+        world
+            .edited_geometry()
+            .same_recipe(&world.observed_sketch.as_ref().unwrap().geometry)
+    );
+    world.close();
+}
+
+fn sketch_with_constrain_area() -> ApplicationWorld {
+    let mut world = ApplicationWorld::new();
+    sketch_constrain::active_editable_sketch(&mut world);
+    constrain_area_open(&mut world);
+    world
+}
+
+#[test]
+fn escape_without_a_title_menu_keeps_the_constrain_area_open() {
+    let mut world = sketch_with_constrain_area();
+    world.escape();
+    world.pump(Vec::new());
+    constrain_remains_open(&mut world);
+    assert!(
+        world
+            .edited_geometry()
+            .same_recipe(&world.observed_sketch.as_ref().unwrap().geometry)
+    );
+    world.close();
+}
+
+#[test]
+fn dismissing_the_title_menu_keeps_a_pinned_constrain_area_open() {
+    let mut world = sketch_with_constrain_area();
+    super::toggle_pin(&mut world);
+    right_click_constrain_title(&mut world);
+    title_menu_choices(&mut world);
+    world.escape();
+    world.pump(Vec::new());
+    world.expect_no_text("Undock Ribbon");
+    constrain_remains_open(&mut world);
+    assert!(
+        world
+            .edited_geometry()
+            .same_recipe(&world.observed_sketch.as_ref().unwrap().geometry)
+    );
+    world.close();
+}
+
+#[when("the user right-clicks Edit Coordinate System")]
+fn right_click_coordinate_command(world: &mut ApplicationWorld) {
+    let command = world
+        .run_in_window(CONSTRAIN, "EditCoordinateSystem")
+        .center();
+    world.right_click(diagnostics::pointer_pixels(command));
+    world.pump(Vec::new());
+}
+#[then(
+    "the command context menu lists Ribbon Appearance, Add to Quick Access Toolbar, Move to Main Panel, Show Panels, Customize User Commands, Undock Ribbon and Docking Positions"
+)]
+fn coordinate_command_menu(world: &mut ApplicationWorld) {
+    title_menu_choices(world);
+    for label in ["Add to Quick Access Toolbar", "Move to Main Panel"] {
+        world.expect_text(label);
+        assert!(
+            !world.run_is_enabled(label),
+            "{label}: unavailable command must stay disabled"
+        );
+    }
+}
+#[then("the command context menu is visible")]
+fn command_menu_is_visible(world: &mut ApplicationWorld) {
+    title_menu_choices(world);
+    world.expect_text("Add to Quick Access Toolbar");
+    world.expect_text("Move to Main Panel");
+}
+#[then("Sketch, Create, Modify, Pattern, Constrain, Insert and Format are checked")]
+fn sketch_panels_checked(world: &mut ApplicationWorld) {
+    for label in [
+        "Sketch",
+        "Create",
+        "Modify",
+        "Pattern",
+        "Constrain",
+        "Insert",
+        "Format",
+    ] {
+        assert!(world.checked(label), "expected {label} to be checked");
+    }
+}
+#[then("Layout and Parameters are unchecked")]
+fn optional_sketch_panels_unchecked(world: &mut ApplicationWorld) {
+    for label in ["Layout", "Parameters"] {
+        assert!(!world.checked(label), "expected {label} to be unchecked");
+    }
+}
+#[then("the Show Panels submenu closes and the command context menu remains open")]
+fn sketch_panel_submenu_closed(world: &mut ApplicationWorld) {
+    world.expect_no_text("Layout");
+    coordinate_command_menu(world);
+}
+#[then("the command context menu closes")]
+fn command_menu_closes(world: &mut ApplicationWorld) {
+    world.expect_no_text("Add to Quick Access Toolbar");
+    world.expect_no_text("Undock Ribbon");
+}
+#[then(
+    "the Edit Coordinate System help tooltip appears while the pointer remains over that command"
+)]
+fn unavailable_command_tooltip(world: &mut ApplicationWorld) {
+    for _ in 0..32 {
+        if world.shows("Change the sketch origin and coordinate axes.") {
+            return;
+        }
+        world.pump(Vec::new());
+    }
+    panic!(
+        "expected the unavailable Edit Coordinate System tooltip: {:?}",
+        world.text()
+    );
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn x11_command_help_returns_after_context_escape() {
+    let mut world = sketch_with_constrain_area();
+    super::super::x11_input::focus_window();
+    world.pump(Vec::new());
+    let command = world.run_in_window(CONSTRAIN, "EditCoordinateSystem");
+    let position = diagnostics::pointer_pixels(command.center());
+    super::super::x11_input::move_pointer(position);
+    world.pump(Vec::new());
+    unavailable_command_tooltip(&mut world);
+    super::super::x11_input::right_click(position);
+    world.pump(Vec::new());
+    coordinate_command_menu(&mut world);
+    world.expect_no_text("Change the sketch origin and coordinate axes.");
+    super::super::x11_input::press_escape();
+    world.pump(Vec::new());
+    command_menu_closes(&mut world);
+    constrain_remains_open(&mut world);
+    unavailable_command_tooltip(&mut world);
+    assert!(
+        world
+            .edited_geometry()
+            .same_recipe(&world.observed_sketch.as_ref().unwrap().geometry)
+    );
+    world.close();
+}
+
+#[test]
+fn command_submenu_escape_closes_submenu_then_unpinned_area() {
+    let mut world = sketch_with_constrain_area();
+    right_click_coordinate_command(&mut world);
+    world.click_text("Show Panels");
+    world.pump(Vec::new());
+    world.expect_text("Layout");
+    world.escape();
+    world.pump(Vec::new());
+    world.expect_text("Add to Quick Access Toolbar");
+    constrain_remains_open(&mut world);
+    world.escape();
+    world.pump(Vec::new());
+    command_menu_closes(&mut world);
+    assert!(diagnostics::window_geometry(CONSTRAIN).is_none());
+    assert!(
+        world
+            .edited_geometry()
+            .same_recipe(&world.observed_sketch.as_ref().unwrap().geometry)
+    );
+    world.close();
+}
+
+#[test]
+fn inference_scope_context_menu_closes_on_tab_switch() {
+    let mut world = sketch_with_constrain_area();
+    let command = world
+        .run_in_window(CONSTRAIN, "ConstraintInferenceScope")
+        .center();
+    world.right_click(diagnostics::pointer_pixels(command));
+    world.pump(Vec::new());
+    coordinate_command_menu(&mut world);
+    world.click_text("Tools");
+    world.pump(Vec::new());
+    command_menu_closes(&mut world);
+    world.expect_text("Application Options");
+    assert!(diagnostics::window_geometry(CONSTRAIN).is_none());
+    world.click_text("Sketch");
+    world.pump(Vec::new());
+    world.expect_text("Constrain");
+    assert!(
+        world
+            .edited_geometry()
+            .same_recipe(&world.observed_sketch.as_ref().unwrap().geometry)
+    );
+    world.close();
+}
+
+#[then("sketch edit remains active")]
+fn sketch_edit_active(world: &mut ApplicationWorld) {
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+}
+#[then("the Constrain additional command area remains closed")]
+#[then("the Constrain additional-command area remains closed")]
+fn constrain_remains_closed(_: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry(CONSTRAIN).is_none());
+}

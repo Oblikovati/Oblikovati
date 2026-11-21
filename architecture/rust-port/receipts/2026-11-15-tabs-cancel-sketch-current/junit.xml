@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-quick-access-3955-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-quick-access-3955-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T03:22:39.655567319Z" time="9.509710979"><testcase name="Scenario: Cancel closing a part while editing its sketch: tmp/obk-quick-access-3955-source/features/application/document-tabs/document-tabs.feature:94:3" time="9.509710979"><system-out><![CDATA[  Scenario: Cancel closing a part while editing its sketch
+   ✔  Given a new part is open in the MCAD Software
+   ✔  And the user is editing a sketch in the part
+   ✔  And the environment-exit message is enabled
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  Then a dialog asks whether to exit the sketch environment and continue
+   ✔  And the dialog offers OK and cancels
+   ✔  When the user chooses Cancel
+   ✔  Then the part remains open
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase></testsuite></testsuites>

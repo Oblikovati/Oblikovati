@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-persistence"
+description = "Document storage for Oblikovati"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+oblikovati-model = { path = "../model" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "907cd4c28713b47501b077b8d902dbb6a008aada", version = "=0.165.0" }
+base64 = "=0.22.1"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_yaml_ng = "=0.10.0"
+tempfile = "=3.27.0"
+time = { version = "=0.3.55", default-features = false, features = ["std", "parsing", "formatting"] }
+corliss = { git = "https://github.com/Oblikovati/Corliss", rev = "872ff91ea0fd9ebb3ad34d0030c67bbc7b5989fb", version = "=0.1.0" }

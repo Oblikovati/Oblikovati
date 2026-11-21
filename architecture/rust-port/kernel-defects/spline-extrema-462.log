@@ -1,0 +1,22 @@
+    Finished `test` profile [unoptimized] target(s) in 0.10s
+     Running tests/planar_pick.rs (/tmp/obk-edge-ui-target/debug/deps/planar_pick-365b327afe2cca17)
+
+running 1 test
+done true count 1
+root 0.025 minimum false distance 0.0054
+
+thread 'investigation_native_parabolic_minima' (3183253) panicked at crates/martensite/tests/planar_pick.rs:307:5:
+assertion failed: (1..=result.nb_ext().unwrap()).any(|i|
+        (result.point(i).unwrap().parameter() - 0.023).abs() < 1e-6 ||
+            (result.point(i).unwrap().parameter() - 0.027).abs() < 1e-6)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test investigation_native_parabolic_minima ... FAILED
+
+failures:
+
+failures:
+    investigation_native_parabolic_minima
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p oblikovati-martensite --test planar_pick`

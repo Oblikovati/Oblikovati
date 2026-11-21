@@ -1,0 +1,10 @@
+{
+  "kind": "unsealed full-feature diagnostic",
+  "application_commit": "b7ac6f34a",
+  "feature_sha256": "8b6164be54d7a3bd307b4de24d7750079ce4d23b9ada2e6fec7a3b83149e2cfa",
+  "scenarios_total": 12,
+  "scenarios_passed": 12,
+  "steps_passed": 143,
+  "fixture": "fixtures/cad/main-window-frame-start.opd",
+  "limitations": "Source and build are unsealed, so this is not verified acceptance. Mouse actions and Escape use X11; fixture path typing is scripted. XMODIFIERS was unset for Xvfb."
+}

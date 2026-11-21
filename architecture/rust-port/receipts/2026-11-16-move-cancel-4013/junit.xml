@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: tmp/obk-move-cancel-source/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: tmp/obk-move-cancel-source/features/sketch/move/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T03:02:20.096624402Z" time="13.295207786"><testcase name="Scenario: move-11 Cancel after choosing a base point: tmp/obk-move-cancel-source/features/sketch/move/scenario.feature:61:3" time="13.295207786"><system-out><![CDATA[  Scenario: move-11 Cancel after choosing a base point
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given Move reopens with Optimize for Single Selection checked
+   ✔  And Copy and Precise Input are unchecked
+   ✔  When the user selects the ellipse and clicks its center as base point
+   ✔  Then the status requests an endpoint for Move
+   ✔  When the user presses Escape before accepting an endpoint
+   ✔  Then Move closes and the ellipse remains in its original position
+]]></system-out></testcase></testsuite></testsuites>

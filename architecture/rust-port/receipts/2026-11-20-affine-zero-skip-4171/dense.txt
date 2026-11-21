@@ -1,0 +1,27 @@
+variables=8 equations=7 median_ms=0.425 max_ms=0.597
+variables=16 equations=15 median_ms=2.351 max_ms=2.664
+variables=32 equations=31 median_ms=19.342 max_ms=20.771
+variables=64 equations=63 median_ms=133.786 max_ms=142.458
+	Command being timed: "/tmp/obk-affine-sparse-4171-target/release/obk-affine-sparse-4171 dense"
+	User time (seconds): 1.40
+	System time (seconds): 0.00
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:01.40
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 7460
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 1055
+	Voluntary context switches: 1
+	Involuntary context switches: 58
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 8
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

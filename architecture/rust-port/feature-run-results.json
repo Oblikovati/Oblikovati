@@ -1,0 +1,1038 @@
+{
+  "features/application/application-closing/application-closing.feature": {
+    "feature_sha256": "c300b47689c7ea2095436beaada53bd32a5672746d15501b98888cba5818ebe7",
+    "supporting_files": {
+      "features/application/application-closing/BLOCKERS.md": "c0a11a87238bba2fc58326dea180b0755f1346fd76d22d23680e9b7d9aad9645",
+      "features/application/application-closing/FIXTURES.md": "8708dd5f8f59daff39dcadf65abcfd7d2d5ef9e3b02f7c290a037e9d88ccd9bc",
+      "features/application/application-closing/FUNCTIONAL.md": "b68bfea97238398696df70276271090154d47227f8c02856257d60159e693335",
+      "features/application/application-closing/VISUAL.md": "ddf67c69e66cf6774c64ec79f501fa05b2044b7c69c3890287d6bd30caa5bbe7",
+      "features/application/application-closing/reference/01-dirty-close-prompt.jpg": "0610484771dbf48966ab80eb3d45a9dec5a583f25f7fdba82cd2472cb0bf4440",
+      "features/application/application-closing/reference/dirty-assembly-close-canceled-2026-11-19.jpg": "ba68034e3bd47b17581f0f4e9213aa76abae85724e4c4d26bca98bff2ae512d1",
+      "features/application/application-closing/reference/dirty-assembly-close-context-2026-11-19.jpg": "adf6779c74ee0fc90f3ef733ca2ed2c9c9ccd94c4f5f08a7b5a7b7230b3d736f",
+      "features/application/application-closing/reference/dirty-assembly-close-dialog-2026-11-19.jpg": "551dd092e4d9c4d8dff5399701cbc6c2c8f9024a858bdff4f15fa1d43efa2c49",
+      "features/application/application-closing/reference/no-document-home-2026-11-19.jpg": "0ae57ab8665c0ddb1c1769ba10149e17bad7809ff9927693f6e91d7f4cce79ff",
+      "fixtures/cad/blank-metric-assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
+      "fixtures/cad/extrusion/extrusion-rect-8mm.opd": "e25b898cb5edead91cac7da7d9c71f7905b13603957a51c7bab5350d50f7bb1f"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-application-closing-native-4030/cucumber.json",
+    "cucumber_sha256": "c32410dcdd9516f53414ba73c11b7822bd5ff55599abd5b96fba5e2ecee2b903",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-application-closing-native-4030/scenario-arguments.json",
+    "scenario_arguments_sha256": "901cbff3ec62e2abad722b006bbef6af89fccfc2399baefba5aed58c04fa191d",
+    "application_commit": "e12f967ff7d91d2cd96786f773f84f86c5db1753",
+    "command": "Full application-closing run; see receipt README.",
+    "environment": "Linux Xvfb 1600x1200, Openbox, Vulkan Lavapipe",
+    "notes": "All four scenarios and 25 steps passed. The feature, support files and fixtures matched before and after.",
+    "blocker": "Build and runtime provenance remain unsealed (#3978)."
+  },
+  "features/application/viewport-pan/viewport-pan.feature": {
+    "by_source_sha256": {
+      "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647": {
+        "feature_sha256": "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647",
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-viewport-pan-rerun-3881/pinned/cucumber.json",
+        "cucumber_sha256": "256dd344b9a0e5314a9a09ca8817a0e18860b2cf13aa17108f96575a67daa16c",
+        "application_commit": "f058f8b8c00d7da96efbd240dc11018083a3cefb",
+        "command": "OBK_BDD_FEATURE=viewport-pan tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11, Xvfb, Vulkan Lavapipe; scripted scenario input; separate X11 pan tests passed",
+        "supporting_files": {
+          "features/application/viewport-pan/FIXTURES.md": "ef0d34e0813405af8c4d7931f05ac032df24e586b37a496eff8a7e38e55ae1fb",
+          "features/application/viewport-pan/FUNCTIONAL.md": "e0eccfbc53e56b82499cb232ec94e8cdcf370524a67f9fab597a8b7ded96501c",
+          "features/application/viewport-pan/VISUAL.md": "51715451fa0eb41f2a495fba27fcc355388a2888632adb64e5b499577bdeba2d",
+          "features/application/viewport-pan/pan-icon.svg": "d0e3b3edf7b11c699ab1a27a8e035bb06666f8058c6e46e4d96272018194108a"
+        },
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-viewport-pan-rerun-3881/pinned/scenario-arguments.json",
+        "scenario_arguments_sha256": "2ec7fea2f9e9b547978a446bda4861c34f23a63750dfa40ebd3c6f22a592b0f7",
+        "notes": "All four pinned scenarios and 32 steps passed with cleanup. The published feature names an Inventor fixture. Build and runtime provenance remains open under #3978."
+      },
+      "13fda204fbe2b492298c5ea22c0b3e4016cedc97520d98cfa0d16505f845d981": {
+        "feature_sha256": "13fda204fbe2b492298c5ea22c0b3e4016cedc97520d98cfa0d16505f845d981",
+        "supporting_files": {
+          "features/application/viewport-pan/BLOCKERS.md": "bb8e477e2a5ea9a6a9767cf60dcd421b8a8853647a4801e842350186ef9f6b37",
+          "features/application/viewport-pan/FIXTURES.md": "460a3c40888d618cea31fe01979a71ff58bcbc1e1b0a013923c76217f0c46970",
+          "features/application/viewport-pan/FUNCTIONAL.md": "e0eccfbc53e56b82499cb232ec94e8cdcf370524a67f9fab597a8b7ded96501c",
+          "features/application/viewport-pan/VISUAL.md": "51715451fa0eb41f2a495fba27fcc355388a2888632adb64e5b499577bdeba2d",
+          "features/application/viewport-pan/pan-icon.svg": "d0e3b3edf7b11c699ab1a27a8e035bb06666f8058c6e46e4d96272018194108a",
+          "fixtures/cad/body-properties-start.opd": "50d6b58b9d2d48e778334b9bce4f1610c0401f88e3e37d304536120b6d099643"
+        },
+        "blocker": "All four published Given steps still name the Inventor fixture. The native body-properties-start.opd is available.",
+        "notes": "A separate draft changed only the four file references and passed all scenarios. See the native-draft report in the Pan rerun receipt."
+      }
+    }
+  },
+  "features/application/viewport-zoom/viewport-zoom.feature": {
+    "feature_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c",
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-viewport-zoom/cucumber.json",
+    "cucumber_sha256": "09a693645053f4fc37cbc19153dde4b5bfa4b734eabeffc7b3fa77351d825766",
+    "application_commit": "5781e24c03e9bc01c845a128e22b46e415d919b9",
+    "command": "OBK_BDD_FEATURE=viewport-zoom tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb, Vulkan Lavapipe; X11 wheel and scripted window input"
+  },
+  "features/application/viewport-entity-selection/viewport-entity-selection.feature": {
+    "by_source_sha256": {
+      "26a8c98bb1616ba17e962ebf16b88630c87bf1febb6d1181080db794d30cce59": {
+        "feature_sha256": "26a8c98bb1616ba17e962ebf16b88630c87bf1febb6d1181080db794d30cce59",
+        "application_commit": "53d2e30297b5ca58bae0211c302aa58eb6d79ef3",
+        "blocker": "The document host cannot open the required Inventor fixture; native 3D-sketch selection and context menus also require implementation (#4092).",
+        "command": "OBK_BDD_FEATURE=viewport-entity-selection tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11, Xvfb and Vulkan Lavapipe; actual supplied fixture",
+        "supporting_files": {
+          "features/application/viewport-entity-selection/FUNCTIONAL.md": "5be9140aeaec74436d0ac143326a06c0ad051c7c26dfa0d82e11dd0cee771a9e",
+          "features/application/viewport-entity-selection/VISUAL.md": "c633080a52ed39d9c0b46f08b8951d1a5d09b8e2cf2a77054eb0af8b1b774697",
+          "features/application/viewport-entity-selection/FIXTURES.md": "2d941d8a37b7b4bb1545f482ca8a3060b49171c628e29b3613fdf046e5c0359c",
+          "fixtures/cad/viewport-selection-solid.ipt": "ca89533b3cecbf0650c34b8aad8d2b32f595bc0dac6b363ca487e101f70500ac"
+        },
+        "failed_report": "architecture/rust-port/receipts/2026-11-18-viewport-selection-gap/cucumber.json"
+      },
+      "f20c54e0c21e3794de7b88b191ded6ce6482c1ebb227b9a7bc8259c6ff640c53": {
+        "feature_sha256": "f20c54e0c21e3794de7b88b191ded6ce6482c1ebb227b9a7bc8259c6ff640c53",
+        "supporting_files": {
+          "features/application/viewport-entity-selection/BLOCKERS.md": "f5b82a3598b7428dc40946e314a98523e76fb4caf6eca8d21f26e843b985534b",
+          "features/application/viewport-entity-selection/FIXTURES.md": "508ca5ff13dab9d51f740857c255005c9627f54ce726517a416c8bd4bf5db630",
+          "features/application/viewport-entity-selection/FUNCTIONAL.md": "5be9140aeaec74436d0ac143326a06c0ad051c7c26dfa0d82e11dd0cee771a9e",
+          "features/application/viewport-entity-selection/VISUAL.md": "c633080a52ed39d9c0b46f08b8951d1a5d09b8e2cf2a77054eb0af8b1b774697",
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-viewport-face-menu-4055/cucumber.json",
+        "cucumber_sha256": "5afc778c0998d6c8c237649efc02a716ce19bed25c15874ff9436b434a032561",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-viewport-face-menu-4055/scenario-arguments.json",
+        "scenario_arguments_sha256": "59608a440a0828f29ae68186eb496d5cba1b014cf0aced742c8706190cb92161",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-21-viewport-face-selection-4055/scenario-inventory.json",
+        "scenario_inventory_sha256": "7aefaa9201297b1c05c2f907bdf2c79f72b340d11f880570b2bc3df7744fc9c9",
+        "application_commit": "61967b9d8899e1e54cb5abd37cf9fc452b856693",
+        "command": "Full published Viewport Entity Selection run. See face-menu receipt README.",
+        "environment": "Linux, X11 Xvfb, Vulkan Lavapipe. Face selection, context click and clearing use XTest.",
+        "notes": "All three solid-face scenarios passed. Native input also confirmed the three deferred menu entries do not dispatch.",
+        "blocker": "Four 3D-sketch scenarios are deferred."
+      }
+    }
+  },
+  "features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature": {
+    "by_source_sha256": {
+      "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a": {
+        "feature_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+        "supporting_files": {
+          "features/application/viewport-navigation-wheel/FIXTURES.md": "c32c71a42b98aaf14ec36462330642ddb3c6dab825a58006b2188013422edb2a",
+          "features/application/viewport-navigation-wheel/FUNCTIONAL.md": "b7d51bf90bc99f9513b29d2bd83773e2eba8a98de4acb5b24897eed3e5e9fe57",
+          "features/application/viewport-navigation-wheel/VISUAL.md": "789a8a1cee984139e03833db50f0cd6d73b15d84d8bbbf0e4a16b3bf12f908dd",
+          "features/application/viewport-navigation-wheel/wheel-preferences-wireframe.svg": "4489e6624ae205f0d74a93290a2c25d96f3ad8343ea536ecd351ec9db12e1c6c",
+          "features/application/viewport-navigation-wheel/wheel-wireframe.svg": "815bfe6431fb7e677e44adf5d2bc24fee0e55d0ed6addd9efd4a662798d8c324"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-navigation-wheel-rerun-3881/pinned/cucumber.json",
+        "cucumber_sha256": "df93b888b95d50e49130fe1a8975263f04fee05f7b688eadeb5c7d3a0f099f76",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-navigation-wheel-rerun-3881/pinned/scenario-arguments.json",
+        "scenario_arguments_sha256": "47264cc38dd2337ab9ae5d195e784b00307238fe1709a0392e3f43fcb4c1ebb9",
+        "application_commit": "5e9cad7d0c01192457f348fda856b6f0fb0b7724",
+        "command": "Full viewport-navigation-wheel native run. See the receipt README.",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 12 pinned scenarios and 143 steps passed, including cleanup. Build and runtime provenance remains open under #3978."
+      },
+      "8b6164be54d7a3bd307b4de24d7750079ce4d23b9ada2e6fec7a3b83149e2cfa": {
+        "feature_sha256": "8b6164be54d7a3bd307b4de24d7750079ce4d23b9ada2e6fec7a3b83149e2cfa",
+        "supporting_files": {
+          "features/application/viewport-navigation-wheel/BLOCKERS.md": "152dc52515efe9f281296196c765ccaea2b7362398911c79d1e5b1c646b96fa0",
+          "features/application/viewport-navigation-wheel/FIXTURES.md": "300c9883ff90476331951639b50fbb48baeeea8f970c3fc6724e90a512f6e7eb",
+          "features/application/viewport-navigation-wheel/FUNCTIONAL.md": "b7d51bf90bc99f9513b29d2bd83773e2eba8a98de4acb5b24897eed3e5e9fe57",
+          "features/application/viewport-navigation-wheel/VISUAL.md": "789a8a1cee984139e03833db50f0cd6d73b15d84d8bbbf0e4a16b3bf12f908dd",
+          "features/application/viewport-navigation-wheel/wheel-preferences-wireframe.svg": "4489e6624ae205f0d74a93290a2c25d96f3ad8343ea536ecd351ec9db12e1c6c",
+          "features/application/viewport-navigation-wheel/wheel-wireframe.svg": "815bfe6431fb7e677e44adf5d2bc24fee0e55d0ed6addd9efd4a662798d8c324",
+          "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-navigation-wheel-rerun-3881/published/cucumber.json",
+        "cucumber_sha256": "a1006ad92a45cee2c858a6e1b56caa99069f212ba5e418dbe3a8f1bd5c685cfd",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-navigation-wheel-rerun-3881/published/scenario-arguments.json",
+        "scenario_arguments_sha256": "961cab1c88280222a388a80cf47a2b27d06934f05da9dd4bb4ee878b43049a22",
+        "application_commit": "5e9cad7d0c01192457f348fda856b6f0fb0b7724",
+        "command": "Full viewport-navigation-wheel native run. See the receipt README.",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 12 published scenarios and 143 steps passed, including cleanup. Build and runtime provenance remains open under #3978."
+      }
+    }
+  },
+  "features/application/viewport-orbit/viewport-orbit.feature": {
+    "feature_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-viewport-orbit/cucumber.json",
+    "cucumber_sha256": "4a4ddef11f28504696886e2b317bd1afc512dd04775cd8800bf150c93230e4e8",
+    "application_commit": "c69eb89dde71bd2bf49376774ef7a34b2cd919b1",
+    "command": "OBK_BDD_FEATURE=viewport-orbit tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb, Vulkan Lavapipe; scripted window input"
+  },
+  "features/application/main-window-frame/main-window-frame.feature": {
+    "feature_sha256": "382162b5c11e33a252989ae65fee05e83d2e53a9ec3cac2f8ccad9ee05d7fe55",
+    "supporting_files": {
+      "features/application/main-window-frame/BLOCKERS.md": "74497d26b6ca0dc34b56447a7a1ce81021d16bc00122103f5b286d22fcc3cff0",
+      "features/application/main-window-frame/FIXTURES.md": "89c46382a472f0db91ed43bbe1f3b45d5abb401349e50e32c232da0b3d721742",
+      "features/application/main-window-frame/FUNCTIONAL.md": "4d140cfb084123cf194059d5e29e043abfd9bca75d17d3d763e7764b7c1a07a3",
+      "features/application/main-window-frame/VISUAL.md": "9522fc3d5774efaa3e0ecd73dba0f295f523d1c1a97e7de71ca67bbd0bfa7f2c",
+      "features/application/main-window-frame/references/oblikovati-rust-work-de1cfac9-docking-visible-solid.png": "943622da5c4748205d7dd6c847dc57be9cc8f66fbffb5772e10ccb43c22cff3f",
+      "features/application/main-window-frame/references/oblikovati-rust-work-de1cfac9-no-document.png": "57ab786d7b3b0a7a77dfdb62b9ee603d56ea0e1b210239b967260a723285f4c3",
+      "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-21-main-window-frame-complete-4063/cucumber.json",
+    "cucumber_sha256": "74a1c5d7d704f373d0b959eed60ccf2dccc3d8093e4a587b52adca4b5f8dff87",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-18-main-window-frame/scenario-inventory.json",
+    "scenario_inventory_sha256": "2bea7f0088cecbf2d607b39c6811c70c1af7bd12c865aa1191d6c928c7a91747",
+    "application_commit": "0905065a6d9b0da023f00c8713efcd60cb30d4e1",
+    "command": "crates/head/tests/accessibility_atspi/frame_run.sh. See the receipt README.",
+    "environment": "Linux X11 with Xvfb, Openbox, tint2, AT-SPI and Vulkan Lavapipe",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-main-window-frame-complete-4063/scenario-arguments.json",
+    "scenario_arguments_sha256": "cc11e07e6d744e7053230372a5937e8840840b7a885bb3faa04d81fd7e81fddb",
+    "notes": "All 11 published declarations, 20 native cases and 149 steps passed. Minimum-size checks use an unchanged Part. Build and runtime provenance remains open under #3978."
+  },
+  "features/application/document-saving/document-saving.feature": {
+    "feature_sha256": "36a191c754b03fb3e90c113a2b7eeade2982c8bb3a099ba921999502aa53f54f",
+    "supporting_files": {
+      "features/application/document-saving/BLOCKERS.md": "006973f8a44666b747efa0e94292d2590e8b1cf78240b41c5c0e173ce33d4708",
+      "features/application/document-saving/FIXTURES.md": "de3d427b5f1851ce957cb61d01b9ac5271cbe4c1c76b032a98077dd73ea51e2f",
+      "features/application/document-saving/FUNCTIONAL.md": "14e8e7557bfa3fbc39dedfcf9e6b1af198edf0fd801511b28686b01751b13c79",
+      "features/application/document-saving/VISUAL.md": "e6f81d82ed882bb46b88c72ba63c714b4f33b338d76ddfb84c54cce97b06d21d",
+      "features/application/document-saving/capture-preview-icon.svg": "965592d52dcf3046d4ef3a52cc5d19eb418eb2d5cbb06d1a1f8ece683f305af2",
+      "features/application/document-saving/replacement-confirmation.svg": "429131c530ec9d6bad0ea21feef222b314e133a47567dc6ea756c94f59a3da32",
+      "features/application/document-saving/retained-filename-selection.svg": "17738b1e07c26c04c738118f3d9f7ad0589ed67e99ab9644cd8b32a1e14b0728",
+      "features/application/document-saving/save-as-menu.svg": "7f34b8e651537b06de37063b6a978a21061229c53a454f4d2bf8bbb86fc7e497",
+      "features/application/document-saving/save-dialog-wireframe.svg": "2a2c14a3ac568845aaa833d4f5fcace4d8ab4afddeafc77c096129caee1639db",
+      "features/application/document-saving/save-icon.svg": "bc2d7b3529c2b8126ee27febec8d62cb3752a25d891caee3f618e1af8d050441",
+      "features/application/document-saving/save-preview-states.svg": "7d05a2cfc216a17342731db27eb35e4d364e87f1f15bdac60548ecb58b94a925",
+      "features/application/document-saving/solid-save-preview.svg": "d0e7e3d5c11c76da240e2577900646b4807b23831106cf0d55be1f759e0c315a"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-document-saving-86dce8385/cucumber.json",
+    "cucumber_sha256": "55757dd6ce1daa4191eb48abef826c12e7549bb3e49a04947324f745810f8bb9",
+    "application_commit": "86dce8385",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=document-saving OBK_BDD_REPORTS=/tmp/obk-document-saving-86dce8385 cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe; scripted native window input",
+    "notes": "All 23 scenarios and 218 steps passed. The feature and supporting Markdown and SVG files had matching hashes before and after the run. The unversioned source and build provenance prevent strict verified acceptance (#3978)."
+  },
+  "features/application/document-opening/document-opening.feature": {
+    "feature_sha256": "ce0be44dd1e0ded53c12de6a96465ffafca2307db3029351147c6d9606bf4b8b",
+    "blocker": "The observed Finish and Simplify assembly commands need identification and behavior confirmation (#3963).",
+    "supporting_files": {
+      "features/application/document-opening/FUNCTIONAL.md": "05912fd64ef7fc579a11b2c0c14607f6728eed0f138d3d7a32d87c93b03b6bac",
+      "features/application/document-opening/VISUAL.md": "788c60876a734b13c25eaad5a1d34a043f95ec73bd847ae319140ce115088cc3",
+      "features/application/document-opening/FIXTURES.md": "0467dc99bc70783a1c875316baedeeb8cfa8ca2cb7cc9f90d45465929392fa9e",
+      "features/application/document-opening/BLOCKERS.md": "45017eef4ff192760837f93e73339eebdc4be0d70dd8fddbe30ead2a65dd5ba6"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-document-opening/cucumber.json",
+    "cucumber_sha256": "ecef00a45ea5505d23878aa2d144eb923d4f72d0c86cf40da765bd559f7c596a",
+    "application_commit": "bb4553dbc",
+    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=document-opening VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; reopening an already open part separately passed with X11 keyboard and pointer input",
+    "notes": "The run has one failed scenario, tracked in #3963. After the run BLOCKERS.md received a request for the observed assembly command outcomes. A separate X11 test opened a native drawing using a mixed-case folder path with an underscore and a space, and XMODIFIERS=@im=none. A separate X11 test opened an assembly in Express mode and chose Load Full; it does not cover the missing Finish and Simplify commands."
+  },
+  "features/application/home-recent-documents/home-recent-documents.feature": {
+    "by_source_sha256": {
+      "573d517b49ca58326f70a7c1ebd30509b6f43eb14040efa56e62de36db4028dc": {
+        "feature_sha256": "573d517b49ca58326f70a7c1ebd30509b6f43eb14040efa56e62de36db4028dc",
+        "supporting_files": {
+          "features/application/home-recent-documents/FIXTURES.md": "eaa93879fae0c3cba555021ac7c0cc563702aabee89b0b0bb5171b15db6f8978",
+          "features/application/home-recent-documents/FUNCTIONAL.md": "c0d024051cd728a22d4732d9160aa8c1b5ffb425b4619d674182220357474fb0",
+          "features/application/home-recent-documents/VISUAL.md": "029e157e7592692b0c2ac358cf1ce73c037a06d52573ca776294019a89e41ab9",
+          "features/application/home-recent-documents/home-recent-wireframe.svg": "4ed0788a73bd7d5abd832038a8a555a30324f65dfdc8adca15fb9431c6cfd6b6",
+          "features/application/home-recent-documents/recent-document-icons.svg": "e293a85c0e904bc008325cb5ca2cbcf900f5e33acb6d8c1e6ed736a056a2886e",
+          "features/application/home-recent-documents/recent-filter-selection.svg": "516a4be372ee38fd2fd305c2e5a61018230a12b9d2409f6a22e3e6b7bbb4f007",
+          "features/application/home-recent-documents/recent-no-results.svg": "8a13cb1b6fb743f770a7bd559bab8f0a604e7c1b91033f465c04118e4f1bf87f",
+          "features/application/home-recent-documents/recent-open-options.svg": "49dac3d091ebe314d30ae0f4b8afdc0764ed1343daaf9a2317232734ad6412f0"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-home-recent-3898/full-pinned-22051b3b5.json",
+        "cucumber_sha256": "2d55fdeac2618ffe64eb8edd885871ff5ee7fe6c86ab5038ccf925c0cc529c28",
+        "application_commit": "22051b3b59b401de194a103106f0f0cabed1bb08",
+        "command": "OBK_BDD_FEATURE=home-recent-documents cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 35 pinned scenarios and 357 steps passed. Strict build and runtime provenance remains open under #3978."
+      },
+      "55791e27b17f0e6ceec530fb6fe01b47b0f2bc4e3ef0b5242c61f3efdb264d7e": {
+        "feature_sha256": "55791e27b17f0e6ceec530fb6fe01b47b0f2bc4e3ef0b5242c61f3efdb264d7e",
+        "supporting_files": {
+          "features/application/home-recent-documents/BLOCKERS.md": "0f34148a7ee669b1c36e0cdd315a179c4e99f391a7f39017632cdadb05c38785",
+          "features/application/home-recent-documents/FIXTURES.md": "474cbad05a4edccfa1cf9a0c599b56a3b70cc2cb85706d1b08f8fbb2aa5839c4",
+          "features/application/home-recent-documents/FUNCTIONAL.md": "7c7628c7c6c67a0aeb8ae7ad4b965e59e16e7b43049b3db79b0992a2777fe448",
+          "features/application/home-recent-documents/VISUAL.md": "3db72521fa2fb3957f7903c6ae1370d0c266ea50ee07702d0d4c727cb1d44fd7",
+          "features/application/home-recent-documents/home-recent-wireframe.svg": "4ed0788a73bd7d5abd832038a8a555a30324f65dfdc8adca15fb9431c6cfd6b6",
+          "features/application/home-recent-documents/recent-document-icons.svg": "e293a85c0e904bc008325cb5ca2cbcf900f5e33acb6d8c1e6ed736a056a2886e",
+          "features/application/home-recent-documents/recent-filter-selection.svg": "516a4be372ee38fd2fd305c2e5a61018230a12b9d2409f6a22e3e6b7bbb4f007",
+          "features/application/home-recent-documents/recent-no-results.svg": "8a13cb1b6fb743f770a7bd559bab8f0a604e7c1b91033f465c04118e4f1bf87f",
+          "features/application/home-recent-documents/recent-open-options.svg": "49dac3d091ebe314d30ae0f4b8afdc0764ed1343daaf9a2317232734ad6412f0",
+          "features/application/main-window-frame/VISUAL.md": "9522fc3d5774efaa3e0ecd73dba0f295f523d1c1a97e7de71ca67bbd0bfa7f2c",
+          "features/application/main-window-frame/references/oblikovati-rust-work-de1cfac9-no-document.png": "57ab786d7b3b0a7a77dfdb62b9ee603d56ea0e1b210239b967260a723285f4c3"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-home-recent-3898/full-published-22051b3b5.json",
+        "cucumber_sha256": "bbcf717d58e2f58fcd2c64da5dce29326c67ed54c3ce2d577350fc21cb73905f",
+        "application_commit": "22051b3b59b401de194a103106f0f0cabed1bb08",
+        "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=home-recent-documents cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 35 published scenarios and 355 steps passed. Strict build and runtime provenance remains open under #3978."
+      }
+    }
+  },
+  "features/application/file-menu/file-menu.feature": {
+    "feature_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
+    "supporting_files": {
+      "features/application/file-menu/FUNCTIONAL.md": "76c106ccc2274f38d03b1a992a742a8e24f5fdb67f7a1989b9accd15d95e23dd",
+      "features/application/file-menu/VISUAL.md": "9977612cdcec5137ca8dd49f8116a75043fa4f4aaeb0830b1d18b43299870692",
+      "features/application/file-menu/FIXTURES.md": "9d7162a0a1bbcc979c1fcb974f4744333b20d55c31718a632e3e9f4f3c6c8ead",
+      "features/application/file-menu/BLOCKERS.md": "0c117202f775f28f1d3001f25e573994a26ea71f2032549c1962b1bd598b6bf4"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-file-menu/cucumber.json",
+    "cucumber_sha256": "188730e1491cb9f89b2b7daf41d77d511b68580450970da79a2bb86c99562d13",
+    "application_commit": "8ddc1d98aecd0d375a443139e7057383dd5add5f",
+    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=file-menu XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; no assembly document opened",
+    "notes": "A separate native X11 mouse and keyboard test opens the File menu, dismisses it with Escape and an outside click, and checks the active part."
+  },
+  "features/application/ribbon-command-availability/ribbon-command-availability.feature": {
+    "feature_sha256": "b3be8114d042b3b5d7c160569262657afed7c6e167711c2e6abc485bdc6ee9c9",
+    "supporting_files": {
+      "features/application/ribbon-command-availability/BLOCKERS.md": "f31184ef578a0eed0d476531fd27f7d8be00a3b4a73266a58c341c5fa9d0cc1d",
+      "features/application/ribbon-command-availability/FIXTURES.md": "7cb4a5be128f32c8af7d070aa7cffe0056b99508a80b464ff65633e646d0323b",
+      "features/application/ribbon-command-availability/FUNCTIONAL.md": "877449f60d78e323659011bd008fc63d1eb821aecd2d580967c07834a945f811",
+      "features/application/ribbon-command-availability/VISUAL.md": "343ed7f280cecad6372b24b4590b613c37d5664a66f1e6af8e6e0ce180939f66",
+      "features/application/ribbon-command-availability/sketch-availability.svg": "67762709be3def71e9e8c45d5646b52915ca2757ab313521ee86daaf8b7c7e9f",
+      "features/application/ribbon-command-availability/sketch-edit.svg": "272f5e636e7f6addb2706aa9eb95ada23960d9eafc69440c90f28ce6e547a37f",
+      "fixtures/cad/blank-metric-assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
+      "fixtures/cad/blank-drawing.odd": "74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-ribbon-command-availability-complete-3956/live/cucumber.json",
+    "cucumber_sha256": "1580cc22f2b7ad9d42b0ff2f3c3ff2dc28716043d8cea0da2db1546d5b2e57ef",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-ribbon-command-availability-complete-3956/live/scenario-arguments.json",
+    "scenario_arguments_sha256": "ac9ccb7060793d8b0710eed9c0d6b6359a0a58c48ee07e6ead84d3afb2ae3b35",
+    "application_commit": "200d549ef2c372db275009fb3bc21e54b51deada",
+    "command": "Full ribbon-command-availability live run; see receipt README.",
+    "environment": "Linux X11 under Xvfb at 1920x1080, Vulkan Lavapipe",
+    "notes": "All five live scenarios and 39 steps passed. The separate pinned run passed three scenarios and 29 steps."
+  },
+  "features/application/body-properties/body-properties.feature": {
+    "feature_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
+    "supporting_files": {
+      "features/application/body-properties/FUNCTIONAL.md": "b7d83161f4750bde4c521cef1c8e81dbf06c7e7dc8d402a9c574f930bc72f331",
+      "features/application/body-properties/VISUAL.md": "d7f5ef9d69c4f1ff7604282c9f979283e3a5112bd67362f0eca143fb0523474e",
+      "features/application/body-properties/FIXTURES.md": "498d90f776e605b71fa9c5c60e4bb19c7d536139f2d11dcd23b9b59a09ce433c"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-21-body-properties-pinned-3954/cucumber.json",
+    "cucumber_sha256": "20a4809c49bce8f3c558fe7e8f6d2bec953dcedb3fbdfb6b261f87029c27bd6b",
+    "application_commit": "4edca8774cb5af70954113ffb1ef9d1fafff4232",
+    "command": "OBK_BDD_FEATURE=body-properties cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe",
+    "notes": "All 6 pinned scenarios and 69 steps passed. The published scenarios require the replaced native fixture. Strict build and runtime provenance remains open under #3978."
+  },
+  "features/application/project-dialog/project-dialog.feature": {
+    "by_source_sha256": {
+      "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d": {
+        "feature_sha256": "c38e881942205983e27a3924f950a5732d2cae0e2cb09ae40a16b88e9f581f3d",
+        "supporting_files": {
+          "features/application/project-dialog/FIXTURES.md": "db5f22c3e158bc47b2317dd2e29b9e3b1eb3796fb129e64ed13511bd06331bc0",
+          "features/application/project-dialog/FUNCTIONAL.md": "10aa53fcfee1fad6a1fe0d4e0c7a93feddb36c1e73f837a799c92dcf8de7bf98",
+          "features/application/project-dialog/VISUAL.md": "5cc404e8e057f48092d0d1ee701b005361dc72ee63635b003285b75e33b2db2a",
+          "features/application/project-dialog/folder-browser-wireframe.svg": "ffa2069cac2d8754727ee67a3bfc47b0595b9163129098f4ece49659b23f623b",
+          "features/application/project-dialog/project-dialog-wireframe.svg": "513c7f59121c9359f654f9eed1b2770322469d649ed282d2c77d29bfc271a4aa",
+          "features/application/project-dialog/project-settings-icon.svg": "274b586092248b78e13e56f1861a45cd8d25c633ea5f80214d71ed0e105d3a03",
+          "features/application/project-dialog/project-wizard-wireframe.svg": "a3d3774569ef4435d209077726999eaa6136ce0a456eac81b4c942ed70ffa221"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-project-dialog-current-3895/pinned-cucumber.json",
+        "cucumber_sha256": "ecfb44576b44e0e532841cdf0e09c1a44baf464ff426d26414890c2b9bf5130e",
+        "application_commit": "750c2b67f084e1d8689ac29754fe0017b2c9b6e1",
+        "command": "OBK_BDD_FEATURE=project-dialog cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 8 pinned scenarios and 101 steps passed. Build and runtime provenance remains open under #3978."
+      },
+      "c1d2f5a8b0864de55e5f7f8edd7c6bc17e8363dc71ffe208ec1751ec7caddd26": {
+        "feature_sha256": "c1d2f5a8b0864de55e5f7f8edd7c6bc17e8363dc71ffe208ec1751ec7caddd26",
+        "supporting_files": {
+          "features/application/project-dialog/BLOCKERS.md": "1dae9e015e5869d6384b8b70a76c8906dde119aade81fe050be3612eece2632f",
+          "features/application/project-dialog/FIXTURES.md": "0e08f0d4a238b6407b86fa3c5da1f9b69a34d478919cdad4835cf56f207103a3",
+          "features/application/project-dialog/FUNCTIONAL.md": "10aa53fcfee1fad6a1fe0d4e0c7a93feddb36c1e73f837a799c92dcf8de7bf98",
+          "features/application/project-dialog/VISUAL.md": "5cc404e8e057f48092d0d1ee701b005361dc72ee63635b003285b75e33b2db2a",
+          "features/application/project-dialog/folder-browser-wireframe.svg": "ffa2069cac2d8754727ee67a3bfc47b0595b9163129098f4ece49659b23f623b",
+          "features/application/project-dialog/project-dialog-wireframe.svg": "513c7f59121c9359f654f9eed1b2770322469d649ed282d2c77d29bfc271a4aa",
+          "features/application/project-dialog/project-settings-icon.svg": "274b586092248b78e13e56f1861a45cd8d25c633ea5f80214d71ed0e105d3a03",
+          "features/application/project-dialog/project-wizard-wireframe.svg": "a3d3774569ef4435d209077726999eaa6136ce0a456eac81b4c942ed70ffa221",
+          "fixtures/cad/project-dialog-native/ActiveProject.opj": "7bea6f1c2f32e6ad4c1fa9f6ca63fb38bc83b55a0af1d378db213b052b9a908d",
+          "fixtures/cad/project-dialog-native/AlternateProject.opj": "98327ca2a00d32244033f65b95f2a9997a39deb8a7d5cd630b569b6a97950fa1",
+          "fixtures/cad/project-dialog-native/WizardProject.opj": "5b4f31be0a2ff003aa301792364676ea8dfb05069043320bc6b516319b12c39d",
+          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-project-dialog-current-3895/published-cucumber.json",
+        "cucumber_sha256": "fc1182c3e1a03077c289096b76428db7d244e49438d79af455bf0d447e8dd926",
+        "application_commit": "750c2b67f084e1d8689ac29754fe0017b2c9b6e1",
+        "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=project-dialog cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 8 published scenarios and 100 steps passed. Build and runtime provenance remains open under #3978."
+      }
+    }
+  },
+  "features/application/viewport-orientation/viewport-orientation.feature": {
+    "feature_sha256": "4368a0cdb1767d8a80ddad9966f82709f610fdbd6c48987cc4073273cc939f62",
+    "supporting_files": {
+      "features/application/viewport-orientation/BLOCKERS.md": "10a64066f582c916e4cca165e35ea1371e5c5a258c5e2aef49f41e932138a4ed",
+      "features/application/viewport-orientation/FIXTURES.md": "86615dd74f586912716f3b1ed2f087bb47ce48e763a8b65c0ea617c4c1b819d7",
+      "features/application/viewport-orientation/FUNCTIONAL.md": "d16bc245264456ecdecc0961ea65f5d6e89a300d12a0afd2b0603d312a3441a7",
+      "features/application/viewport-orientation/VISUAL.md": "f170821a79d31b3ba5b6a62987df492511a0e59a970f50e5ad5908fb5a81fdf1",
+      "features/application/viewport-orientation/orientation-control.svg": "17b7f50eea8d5272b5cd8e346485134f6854b8e7727d2e237ef8fe5eb110284c",
+      "features/application/viewport-orientation/orientation-states.svg": "7872830e2a252c7d5a7d08f1ac72cc45f2e1416412288cc7ba25d6b326e8c10b",
+      "features/application/viewport-orientation/preferences-concept.svg": "afff50856b21a56358b51b28179846879f6e62edc033d01128201de9514f4679",
+      "features/application/viewport-orientation/viewcube-axis-triad.svg": "d5c76c95dc1ac1a3554f8b0b3cfca47accbbd5c2509a9874b183ae790f837a3d",
+      "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-orientation-transition-3961/cucumber.json",
+    "cucumber_sha256": "97528aaa2bd184afa6f3f3a86a2fb8f1ab2e66db10fa462c133637a7f631c0d3",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-orientation-transition-3961/scenario-arguments.json",
+    "scenario_arguments_sha256": "b19cb2f29aea3a82aeb85b727b7b0bba7f38220591a35565ec87734ac67a7105",
+    "application_commit": "7550ae9f2561ef0c0c5e894a5fc49a3c36e0218b",
+    "command": "Full viewport-orientation desktop run. See the receipt README.",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe. Focused animation run under Openbox.",
+    "notes": "All 23 scenarios and 253 steps passed. Strict receipt provenance remains open under #3978."
+  },
+  "features/application/ribbon-appearance/ribbon-appearance.feature": {
+    "feature_sha256": "7ebd05f3a8b347bd7eee5a132e7782ba9731a16f1bb0e8ac26a756fe5da312fa",
+    "supporting_files": {
+      "features/application/ribbon-appearance/BLOCKERS.md": "0799609e1e07e696b7e7d9671a1ef6c558f386d80c434252a1d81a8a9635744e",
+      "features/application/ribbon-appearance/FIXTURES.md": "d8875f4951d338e80447b55ff38bf06fc38eb8ecbbfc9a077184eaba434ee2df",
+      "features/application/ribbon-appearance/FUNCTIONAL.md": "a87820c34c5544dfc5de6b71580971b615f4dba3be43c752780b818a8404ce5c",
+      "features/application/ribbon-appearance/VISUAL.md": "81ab2112301ee140c1784b57fc645aaa7100c581ed8978ea0756079ff93aa7a2",
+      "features/application/ribbon-appearance/appearance-layouts.svg": "a1b1ab60ddd8ce04ce267a892e138732d11b1c3b077ab0df51d003f1712b1cfe",
+      "features/application/ribbon-appearance/appearance-menu-tab-switch.svg": "87f1bac14cf68480636935d6e1fa7c29ed699c90768790ed288eaf227a95d72c",
+      "features/application/ribbon-appearance/appearance-modes-sketch.svg": "31fbb0d83ed14207d9d053832c3d9ab40c51a2f05ad78d9205dd41b624cd1bb8",
+      "features/application/ribbon-appearance/appearance-panel-submenu-switch.svg": "824d9237946f88271bdf4dd912e26ef0fcea9a2801466a214d2e0ed0061efee4",
+      "features/application/ribbon-appearance/inactive-tab-titles.svg": "a98723ff2ee0d5c36e0b6514bd396fe615261874eb317e39d8e037bb27944e4e",
+      "features/application/ribbon-appearance/panel-title-visibility.svg": "3787d4a16dbe3f5b3f1c963e0c86d68e060d1fad1de0d252af27eb7175a6aad6",
+      "features/application/ribbon-appearance/pinned-expansion-appearance.svg": "4fbfec49cd905874cfb66fb3caa3578600e218eaa5b6dd2dcacbe024f68af987",
+      "features/application/ribbon-appearance/reference/team-web-landing-2026-11-20.jpg": "b08464e6d4ee06a5eb8000deaf255b412f36d92b0cebb8d27d1979fa5bffa9cc",
+      "features/application/ribbon-appearance/reference/tools-show-panels-2026-11-20.jpg": "2d310f90eee920ebf4ddb2fed5550ef4f1ada7aaaaa1000e3f972245dc1f1462",
+      "features/application/ribbon-appearance/reference/tools-tutorials-panel-2026-11-20.jpg": "e61192f98aea586819e6f46c311f49c4238b5e1ace086993a290756a7363798f",
+      "features/application/ribbon-appearance/reset-cancel.svg": "ee5716cc03896af6cdc04d708d8537ef7ed6d5033df63efe82ca666118fc33c4",
+      "features/application/ribbon-appearance/reset-entry-hover.svg": "e46ea0391d8b37385d9fbf6b584e84ce4813223bb0e6fc3ffd211fce98eb49b1",
+      "features/application/ribbon-appearance/text-off-tab-switch.svg": "51d32e76cf907ebc51824930746035a8eac9b7b17f02d2fc5d69863f26ce0cc3"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-complete-3957/cucumber.json",
+    "cucumber_sha256": "debf942c5cdb8003bc2490902d1165561d39351ae01963b209f9b6762ea67434",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-complete-3957/scenario-arguments.json",
+    "scenario_arguments_sha256": "630583388ec93969c50ff0a8867d18b566fd4a8d88e111bd4344ee76ebba8b68",
+    "application_commit": "07a996c9a17f792bd54b814bbd229e86f28dabdf",
+    "command": "Full Ribbon Appearance run on the pinned feature. See the receipt README.",
+    "environment": "Linux X11, Xvfb 1600x1200 and Vulkan Lavapipe",
+    "notes": "All 18 cases and 201 steps passed. Pinned and live feature hashes matched. Strict verification still needs bounded build and runtime inputs under #3978.",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-complete-3957/scenario-inventory.json",
+    "scenario_inventory_sha256": "8a616afb8082eed961217b8642d5b966700c706af719392eac0af8434d152ebf"
+  },
+  "features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature": {
+    "feature_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+    "supporting_files": {
+      "features/application/ribbon-keyboard-navigation/FUNCTIONAL.md": "0071bbdd5b8bafcd6bb65bb749f7114a5fbd26de960d08a2accd699041d035c3",
+      "features/application/ribbon-keyboard-navigation/VISUAL.md": "4455872833e235fe242c49eeab738f44cb1828033cab1b1206d8e4a72c862826",
+      "features/application/ribbon-keyboard-navigation/FIXTURES.md": "53d28b3a02b8e56ba5a458529c93e469f15f82c537cce4f179190c78ab595e2c",
+      "features/application/ribbon-keyboard-navigation/BLOCKERS.md": "247a89fc61b82bd5a3604f1df222bbf57352cb536ec22767ea61cf15cbcd15b4"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-keyboard-hole/cucumber.json",
+    "cucumber_sha256": "81bbb8b1a66cf58e58d6ebb1877dcaa1242220bd36d2cf3fb2f73c275bbf168f",
+    "application_commit": "b9a07431c16f2c345fc83175a30b94ec45769b1a",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-keyboard-navigation OBK_BDD_REPORTS=/tmp/obk-hole-ribbon-final-4093 CARGO_BUILD_JOBS=2 cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb, Vulkan Lavapipe; scripted scenario input; separate X11 keyboard and mouse Hole test passed",
+    "notes": "18 of 18 scenarios and 219 steps passed; feature and supporting documentation hashes matched before and after the run."
+  },
+  "features/application/document-tabs/document-tabs.feature": {
+    "by_source_sha256": {
+      "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f": {
+        "feature_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
+        "supporting_files": {
+          "features/application/document-tabs/FIXTURES.md": "f28ca4a7ec49293a8e988adcca8cbfb30e8ef9d081004857ccb4fbc853a2035a",
+          "features/application/document-tabs/FUNCTIONAL.md": "6234a4f62f489a820f84bcd0f060dd9938d389213d85a19a71ee38af868d6892",
+          "features/application/document-tabs/VISUAL.md": "38d8c16255619e8b72d4835f1278fc40b62fc32997e3d1af8302ab75019b5d73",
+          "features/application/document-tabs/close-sketch-dialogs.svg": "31b60f05dd3aadd95b72dcc3fea4dea8185e14ec75d4aa45aca7d9c01eb35a77",
+          "features/application/document-tabs/detached-document.svg": "5e28c5b67aa60228b01ff999760a0d806e31889c6b5076dc74d15169ee0c4441",
+          "features/application/document-tabs/document-list.svg": "469e42b46530d20becc1609292e28e3c15f29f424d9075d2eb9ccd01744788fd",
+          "features/application/document-tabs/multiple-document-views.svg": "52da5ce55424fcc23318ae2e99bfc6494f56fd651dfa1e8827bb23a5168a4a12",
+          "features/application/document-tabs/new-view-icon.svg": "837930ae1c29d05a0cb1e2a5dfaf06124fe18e0ba8c42da97db18c00d52ace67",
+          "features/application/document-tabs/tab-overflow.svg": "548cf3d0eb8fc1a9a6dd0d7674686d282f31fcb4931d55bf060828f0e295707f",
+          "features/application/document-tabs/tab-preview.svg": "57a81535d6de8ae73815cd939a5680c8cd4ac8a146605c1694769989190890c5"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-document-tabs-rerun-3900/pinned/cucumber.json",
+        "cucumber_sha256": "16d27448c5a3b6d5d904c88eda98c282e1668672eaa4449a1c919d9b087cf04a",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-document-tabs-rerun-3900/pinned/scenario-arguments.json",
+        "scenario_arguments_sha256": "2572eff114d5242d1ba0cfcd8eea1d76c4d7b3c780f1bbb14c3de81e5d50dd9b",
+        "application_commit": "fc44e5d73ead0b7a6f8fccdd79ded35947152239",
+        "command": "Full document-tabs desktop run. See the receipt README.",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 38 scenarios and 334 steps passed, including native X11 reordering. Build and runtime provenance remains open under #3978."
+      },
+      "ee2022e13728cfe8fcda1ef61e60b25f01c308816e6860da91b6dceac3430de9": {
+        "feature_sha256": "ee2022e13728cfe8fcda1ef61e60b25f01c308816e6860da91b6dceac3430de9",
+        "supporting_files": {
+          "features/application/document-tabs/BLOCKERS.md": "ab9902488b25be44f30ee09c7392542e1d90d5fd7b143d99ccccbce00beb76df",
+          "features/application/document-tabs/FIXTURES.md": "a8461bb1e0b6dbc6ad15cbbb19e9eaf9a6e7b76e76397b284bea6014df3af153",
+          "features/application/document-tabs/FUNCTIONAL.md": "571664b71a0f06692bdb032b093a6a657998e89c6d1a1a82fc7d677c7f3a744c",
+          "features/application/document-tabs/VISUAL.md": "38d8c16255619e8b72d4835f1278fc40b62fc32997e3d1af8302ab75019b5d73",
+          "features/application/document-tabs/close-sketch-dialogs.svg": "31b60f05dd3aadd95b72dcc3fea4dea8185e14ec75d4aa45aca7d9c01eb35a77",
+          "features/application/document-tabs/detached-document.svg": "5e28c5b67aa60228b01ff999760a0d806e31889c6b5076dc74d15169ee0c4441",
+          "features/application/document-tabs/document-list.svg": "469e42b46530d20becc1609292e28e3c15f29f424d9075d2eb9ccd01744788fd",
+          "features/application/document-tabs/multiple-document-views.svg": "52da5ce55424fcc23318ae2e99bfc6494f56fd651dfa1e8827bb23a5168a4a12",
+          "features/application/document-tabs/new-view-icon.svg": "837930ae1c29d05a0cb1e2a5dfaf06124fe18e0ba8c42da97db18c00d52ace67",
+          "features/application/document-tabs/tab-overflow.svg": "548cf3d0eb8fc1a9a6dd0d7674686d282f31fcb4931d55bf060828f0e295707f",
+          "features/application/document-tabs/tab-preview.svg": "57a81535d6de8ae73815cd939a5680c8cd4ac8a146605c1694769989190890c5"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-document-tabs-rerun-3900/published/cucumber.json",
+        "cucumber_sha256": "3e0279bfd62524d42019b1f8c4d9e03a6b25e07c1300651cd50d87368993eba8",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-document-tabs-rerun-3900/published/scenario-arguments.json",
+        "scenario_arguments_sha256": "acb2a5e36dea48c6be2a253f63fb074527b3c6b821feaaf7ba82faf0182dca26",
+        "application_commit": "fc44e5d73ead0b7a6f8fccdd79ded35947152239",
+        "command": "Full document-tabs desktop run. See the receipt README.",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 39 scenarios and 343 steps passed, including native X11 reordering. Build and runtime provenance remains open under #3978."
+      }
+    }
+  },
+  "features/application/ribbon-display/ribbon-display.feature": {
+    "feature_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e",
+    "supporting_files": {
+      "features/application/ribbon-display/BLOCKERS.md": "612e9139015c0b83ae674a5ae8ca9194774467a9f6357742b8a43807703cf9d7",
+      "features/application/ribbon-display/FIXTURES.md": "691eb8ed8feac04f41e1f60584e6a51f7de962d85d2c0c73641245b68adaac57",
+      "features/application/ribbon-display/FUNCTIONAL.md": "3c33ded6cbdcc8bf41d5c700f3bacbe4d0038187f13f5a0e8d8ad27ba3d3e671",
+      "features/application/ribbon-display/VISUAL.md": "08318a315aecdb690e6909a826aa3a902b43b7f3ef54b624bc4ce269590233fe",
+      "features/application/ribbon-display/active-command-ribbon-changes.svg": "a322a9a64b505ba6d8d7ba4ad7926cbd6a2a04ecacd872fa6835215c9eff693f",
+      "features/application/ribbon-display/active-tab-display-toggle.svg": "cc4ba8905c25b74ea7ac119998d8547d8d8e15565ac55e45ff29add6128963e0",
+      "features/application/ribbon-display/command-panel-tab-switch.svg": "093617cb6fc024d21d8efef70d5cfca2935609deab5d1c18d4eb576b62ae4d73",
+      "features/application/ribbon-display/compact-group-panel.svg": "cd8ef0add678f25b368a4e93b7a76a899c59d989736d722ce53531e6456b30a0",
+      "features/application/ribbon-display/compact-options-extra-commands.svg": "b17c25af31e80cd4d4732b8ed055495a6980ed489669c7e9cc2c5c02ba8b2f35",
+      "features/application/ribbon-display/compact-panel-display-menu.svg": "04bdd33ed8acd1e726ce520a72c736a53aee4d443a2d348fe92dc36059fbe767",
+      "features/application/ribbon-display/compact-popup-window-edge.svg": "204f831a9f61fd0af0b8ad19ef1ed41de44a67e044e9394d4335a24f7eed320a",
+      "features/application/ribbon-display/context-menu-minimize.svg": "e80a4f61b1fe555143004d1916eabb82969f8cd7d98ce595ce35027575e72c84",
+      "features/application/ribbon-display/display-menu.svg": "dd81529399041a013dc3173017d50120b8e34f93ca2512104f36d3d1795ccc49",
+      "features/application/ribbon-display/document-settings-tabs.svg": "342e9f41a24e1d51b9f707725831c3b37d636c55f7354fbf8d0622498e2fdbad",
+      "features/application/ribbon-display/full-compact-view-groups.svg": "fd60a6c65120de1c0f0ee0cc2156d0a1aaa0b879ea0a320111055a9be005a626",
+      "features/application/ribbon-display/home-part-ribbon-states.svg": "854619769efd1bdcb38ef117b8d8858a9f1de7f0c7f3412dd7cd6c5002954089",
+      "features/application/ribbon-display/more-tabs-icon.svg": "03ce14654a984b900ce9ca239d1f5b80eae8c87c85717ddcf08913936097adab",
+      "features/application/ribbon-display/panel-button-mode.svg": "43f52570a07a6977042638b07f9ac21fd9975a70dad59c03cc20b240434c8f9f",
+      "features/application/ribbon-display/panel-title-mode.svg": "2e2282e0f813f03206010d3d9dcc37045f9c090fe1ff642fb01121beade466b0",
+      "features/application/ribbon-display/ribbon-appearance-context-menu.svg": "a158b1c1c6747cf6cc5e1dd03021e7efc6c64954a9f7d2c55188e98b10c2d126",
+      "features/application/ribbon-display/ribbon-appearance-escape-chain.svg": "c3f178010a4b494c12b5ac1e4dac5835f1a960975f68c6d029884410533d2b9c",
+      "features/application/ribbon-display/ribbon-density-icon.svg": "4c2292754b7f9c15f7cfac2abbb451b81866336e428546cdf45e59870fee167e",
+      "features/application/ribbon-display/ribbon-modes-wireframe.svg": "bebd5e5d90f0e433cabeeeb0d1514963ef5304301bf714426fcaed0968bc1626",
+      "features/application/ribbon-display/ribbon-text-off-transition.svg": "7518d2db204746e54ad80c48a62d1c039025feb14c2da20373c1e279bb65d265",
+      "features/application/ribbon-display/sketch-context-ribbon-sequence.svg": "db7c07195fa292989eca75b1ab9464cdcd48e645d47b1060e3a2c4c24a4a1c8b",
+      "features/application/ribbon-display/sketch-display-toggle.svg": "fd0da31a451472c68803c88133b3ac66a64ea9e879b7993e109b581319649bfa",
+      "features/application/ribbon-display/sketch-tabs-only-sequence.svg": "926bbef2135ff900b4991bbd725adaf93ac808c832454f892ee602cda8358f01",
+      "features/application/ribbon-display/tab-overflow.svg": "47404a25ca956f95f9dae4a37b437a3226834f52d1186e77eca82b0d9f499867",
+      "features/application/ribbon-display/tabs-only-temporary-groups.svg": "a88522d1145ea2426675cdb6c0b6d5caa19f3c01545e4dcc3d2fe4770d38b84b",
+      "features/application/ribbon-display/temporary-tab-switch.svg": "ca38e1ef888a86d16e4c6a0a8232e02e61c66890171c7c1ee1a0d64ceca0287f",
+      "features/application/ribbon-display/wheel-tab-boundaries.svg": "839b7e03596d42053546e2575f119ed56c3afb29951673745d2ae9e36e2281e2",
+      "features/application/ribbon-display/wheel-tab-navigation.svg": "a7768245a07ca78c28a2ccd4aca1a0533df328fb2d22abc4caf6027b3742e9da",
+      "features/application/ribbon-display/wheel-tabs-only.svg": "3647e88e7456c04629f2b42536e16cfa2d5f07860ff29826711a5c11879f2a34"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-ribbon-full-de0b6548b/cucumber.json",
+    "cucumber_sha256": "49acfb4db3a127ae18df6ecc6d5b949b5881d08c8fc947248de97112e9cf0f27",
+    "application_commit": "de0b6548b",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-display OBK_BDD_REPORTS=/tmp/obk-ribbon-full-de0b6548b sh architecture/rust-port/receipts/2026-11-18-ribbon-display-maximize/run.sh",
+    "environment": "Linux X11, Xvfb, Openbox and Vulkan lavapipe; mixed native and scripted input",
+    "notes": "Complete diagnostic: 41 of 50 scenarios passed; nine failed or had unbound steps. Remaining gaps are recorded in BLOCKERS.md and #4095, #4096, #4142, #4144 and #4145; Shell also depends on Martensite #554. Feature and supporting files matched before and after. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-docking-baseline-ffc5f785d/scenario-inventory.json",
+    "scenario_inventory_sha256": "c4fe86998c8b053dd4505cbcce28704cf8279d0c4be561b2f6ceb64187ebaac0",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-ribbon-full-de0b6548b/scenario-arguments.json",
+    "scenario_arguments_sha256": "ba416563dddc6188f17002fc14a8937e4906a7c9a6a36ec54da9ef8fca65cbde"
+  },
+  "features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature": {
+    "feature_sha256": "645576c3b62e89cdb6c668d5579123e6880a33f9e4a8020f922f1b08e0502ca2",
+    "supporting_files": {
+      "features/application/ribbon-panel-expansion/BLOCKERS.md": "49605b8217a06a8b2185fc7f53095b2e60427becbb0b08cb766fa9e2461de21c",
+      "features/application/ribbon-panel-expansion/FIXTURES.md": "38eec46e771394c170aefded5c1bb0714115da364c692a84fd83860158310d24",
+      "features/application/ribbon-panel-expansion/FUNCTIONAL.md": "6cfb93ea59eeb1a2cd6767d490cf939421d12bc2d255666d7a9d53b316889e36",
+      "features/application/ribbon-panel-expansion/VISUAL.md": "33e331d90ccd383b2d96e4a65435256747ed5b75004cf45622c460d01855b361",
+      "features/application/ribbon-panel-expansion/active-command-expansion.svg": "cf56e9dabbfdff1c177255870a732a79d34fe8bf9ccc2fe9e97f49605569343b",
+      "features/application/ribbon-panel-expansion/active-command-pin-comparison.svg": "16ae06ccbde5c7e8fccbe4bd643478344aa8a0c221bc4d0a01ced40bd3b39292",
+      "features/application/ribbon-panel-expansion/active-tab-expansion.svg": "914abdaaeb138cc7962732e6822f2019c072f8b3debe3ef3f73d0c44653cb78d",
+      "features/application/ribbon-panel-expansion/additional-command-context.svg": "00483d2ce4509877ccf877f960673609def8fc449d3d9bef216ccb66bf76377d",
+      "features/application/ribbon-panel-expansion/browser-selection-pin.svg": "d7b3a81b51c6380087e0a68ba42b42e55aa92cd718655b84d4407fa6a492dec9",
+      "features/application/ribbon-panel-expansion/command-context-notice.svg": "627ca6d813b19c305012652d1d5ac0aaa89bf58762ba1a5915b49744af12e098",
+      "features/application/ribbon-panel-expansion/command-context-tab-switch.svg": "0f2ef5df7319b9d4fcd9781debf0c7dc9c811e5aed72920b7d809bbb46405f57",
+      "features/application/ribbon-panel-expansion/constrain-docking-menu.svg": "643bc8e1d873500aae58d0c2d5f9d4a46416b50179e69585e46a3af2d8295d96",
+      "features/application/ribbon-panel-expansion/constrain-show-panels-submenu.svg": "46269c269e6dfdbb74308d4065048e3fdd66f4a02b8adfae6c3910f7be888728",
+      "features/application/ribbon-panel-expansion/constrain-tab-switch.svg": "51144eab6e7bb09ca1ee89009bb941711409b91e9dff5d35ce25b6085962efff",
+      "features/application/ribbon-panel-expansion/constraint-expansion-context.svg": "7d80685192987b50ed7cf42a7ac878e430cd767ae82e64c227ab276c93d0666c",
+      "features/application/ribbon-panel-expansion/create-block-dialog.svg": "378cb29a84dca21b811b0605a453ac814c6a8d6aba230b7cbfd1793e5f68502c",
+      "features/application/ribbon-panel-expansion/custom-command-expansion.svg": "4e1df9eb5d2703eab485337ddb093450b4c1180256936cf16168b296459b2dab",
+      "features/application/ribbon-panel-expansion/customization-pin-comparison.svg": "1e7f5b90b3ec996b3440d8a0a2e6789e2df82a9b755451be75e61d58c96db1ad",
+      "features/application/ribbon-panel-expansion/disabled-command-placement.svg": "2d52759b8e671a9d8c624d6a55f54f636e2660a5a00f2c213288df9d7509677c",
+      "features/application/ribbon-panel-expansion/expanded-title-context-paths.svg": "a1f501960235bf73f48b6b23482ad694f9628ddb36a5496add0d277a9b3b5916",
+      "features/application/ribbon-panel-expansion/expanded-title-explore-toggle.svg": "88d65b01cd8ab1dacdc961e2a21854c26b9069805a093c5170f6d7b005c915a7",
+      "features/application/ribbon-panel-expansion/expansion-footer-comparison.svg": "f4024d447632ed8f4ca3f621ccc04e5bc6606fe19afb6161dfc7c9d65ed7ed9c",
+      "features/application/ribbon-panel-expansion/expansion-symbols.svg": "34a7908232d82146a6042774a68ae545882e0454cfc50eae7f4574f7fc17c9a6",
+      "features/application/ribbon-panel-expansion/face-context-expanded-area.svg": "6886a9cf12dfb6832e6711b981accb4588fe0f14b2ff2535e9c0533478e99293",
+      "features/application/ribbon-panel-expansion/layout-reset-cancel.svg": "db758272176cb17cd51af00dc1819a9ed84cfd32bc117647600e1ac3e14b57be",
+      "features/application/ribbon-panel-expansion/main-panel-menu-over-options.svg": "7fb22f6e5155002ad6b5b169a194588b18e7ff90984e9f480d73df79ee478c4d",
+      "features/application/ribbon-panel-expansion/moved-shell-launch.svg": "c4b90897e67bf74f821a89ce65fd525f90de5971a37d486852d78440cf74537f",
+      "features/application/ribbon-panel-expansion/options-expansion.svg": "0c75e2b751fed9636a2a17e92a0943c03a468ad2fa81a71742fd0243a62e82b4",
+      "features/application/ribbon-panel-expansion/panel-expansion.svg": "959a21d9ef74cdaad32e3c2b5d3997996b2d98dea1811e30cb51deea695bc2e5",
+      "features/application/ribbon-panel-expansion/pinned-constrain-sketch-edit.svg": "5bd8de8d8c58312bcf9dbb7d379651dd18d9b4a2b51d1f0c8fcfb6bbb79c7f43",
+      "features/application/ribbon-panel-expansion/pinned-home-switch.svg": "14807cbc40ed1b0162d1e21f569443435fd5b001490230cf26d71791b1fd6e38",
+      "features/application/ribbon-panel-expansion/pinned-minimize-tabs.svg": "82479913ee868ec83d1577dc9d0086df09d5782e3715995a9a485274b7ec8085",
+      "features/application/ribbon-panel-expansion/property-focus-and-pin.svg": "902ef98e6116f493d0234ff08536848401a4f479bafe5ff43fe2dcb8364f72f9",
+      "features/application/ribbon-panel-expansion/selection-and-pin.svg": "a3b896b1a54a4a695ff2a18afed7924384f7063ca0eb8589d616291ddef9782c",
+      "features/application/ribbon-panel-expansion/shell-tab-switch.svg": "340c8307fc1bf8ccb64973a8682c2492b3b33070722d54c495d83d1ff025313f",
+      "features/application/ribbon-panel-expansion/show-panels-layout.svg": "a138ca4b15eb1f3d45a84e69c5149324a4a3b68262a5cc0b546bfdbae98c0ee1",
+      "features/application/ribbon-panel-expansion/simultaneous-expansions.svg": "14ec7099f382b4c03f00c8ba440907926ea05bb005bc49144ac5816d0e5e4567",
+      "features/application/ribbon-panel-expansion/sketch-constrain-expansion.svg": "8ed3fa714be4ac0dfd4713d2447b204a7dc82457c77df7da4b6be998afd8340f",
+      "features/application/ribbon-panel-expansion/sketch-constrain-tab-switch.svg": "2f5f0c9e43209a7038c09f523c3e6c2484745b8db9faaa3c4ca0934db416200c",
+      "features/application/ribbon-panel-expansion/sketch-constraint-context-menu.svg": "f6bd3a09c2cdb0c8a24a27171f75d5f3d215f9dcb1f926a3df8dce520847ff3e",
+      "features/application/ribbon-panel-expansion/sketch-constraint-tab-switch.svg": "c93b4f03b48dfccdea50c113ea08a2defed0ae06264ec50468370400c5ce2951",
+      "features/application/ribbon-panel-expansion/sketch-create-expansion-flow.svg": "81dac0706af8c1c280fdb23b1ff022482ba86dfcf2fc20e213914e51b1aff74b",
+      "features/application/ribbon-panel-expansion/sketch-create-expansion.svg": "3d81a76969a59936f2cad5dbddda43f8c5561e275e8afc2a374a9556813be945",
+      "features/application/ribbon-panel-expansion/sketch-create-outside-edit.svg": "e2891e51f5b075c191a5222b5da480c2d8080129c1b92eb5b14d5161f9e5e69c",
+      "features/application/ribbon-panel-expansion/switch-active-command.svg": "faaede7b02471f47bd1d3201f3d20029fcef3f2e7925d757f720b2c4b0630bd9",
+      "features/application/ribbon-panel-expansion/temporary-expansion-escape.svg": "ebb22ae70a8b6fcf774a02b2b68d86b7d12d0abdc9168ad7371ed5c6d3fecc97",
+      "features/application/ribbon-panel-expansion/temporary-expansion-restore.svg": "67fe41fca65716bd59aea258d483a2db5bb9f08633b89046818e02fda93f5bed",
+      "features/application/ribbon-panel-expansion/unavailable-command-context.svg": "39bbbe7931981f514ca97af2dc07b7b3d63bafbc0f4c0dbdbf7070cf4a6ff1bd",
+      "features/application/ribbon-panel-expansion/unpinned-expansion-face-selection.svg": "db3c031bc230282b079d15f6f85a40c054b25f32fe77893bf03e6358a9237eff",
+      "features/application/ribbon-panel-expansion/unpinned-tab-switch.svg": "ce5b07d3e0fee7c9de7f41b0210ce566b173add27dce5a2637acdbc0c93f4065"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-ribbon-expansion-c3a218f02/cucumber.json",
+    "cucumber_sha256": "b22be02bea96c6b8f40d26d116bceb034a1eb9406c2d18f95fb9fb08f19f7c68",
+    "application_commit": "c3a218f02",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-panel-expansion OBK_BDD_REPORTS=/tmp/obk-ribbon-full-c3a218f02 cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe; scripted native scenario input",
+    "notes": "Full diagnostic run: 53 of 67 scenarios passed; 14 stopped at undefined steps. The feature hash matched before and after; supporting files matched the prior recorded hashes after the run, but no separate before-run support snapshot was captured. The scenario source is unversioned, so strict verified acceptance remains unavailable. Options, pin-state and Explore scenario questions are in BLOCKERS.md. Shell preview is blocked by Martensite #554; Bend Part and further step bindings remain open."
+  },
+  "features/application/model-browser/model-browser.feature": {
+    "feature_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e",
+    "supporting_files": {
+      "features/application/model-browser/BLOCKERS.md": "c2fd9a5361306c9207131ed875ef55de705c92765ff5e0f202e1046bae2a9c8c",
+      "features/application/model-browser/FIXTURES.md": "8ce3fe1ca75f7c80e24ba258ca118c2255b62476b62c4f3133d7769eb2b93eb2",
+      "features/application/model-browser/FUNCTIONAL.md": "91b46e91ae272dc628f41622e64a418fd3a0d8946333d6796cd3ade3f84b5178",
+      "features/application/model-browser/VISUAL.md": "26acfaf9d685843fb5319c734baa82de69ccae874851a2265c97382555575c96",
+      "features/application/model-browser/annotation-scale-wireframe.svg": "442200a11d070ffca685c341e728b8c0d1f544ed58cb726a1603d01b5a327543",
+      "features/application/model-browser/browser-docking-wireframe.svg": "cb29742bec38d7133a77eb87929ef61aca08dc3dac538681f4672d1904635a32",
+      "features/application/model-browser/browser-resize-wireframe.svg": "a2ed8246203002f09618b7946fa72354db5ee0922ded4f1621ea616945c48fed",
+      "features/application/model-browser/context-toolbar-wireframe.svg": "650e05a06556e30c054091abfa1bf2ce9746bd144c105518609f2833932d1557",
+      "features/application/model-browser/custom-color-wireframe.svg": "c738c9f7c38e0c9ed46d4730e93ce05a07b2942abe86d904a85aaf7517a80ce9",
+      "features/application/model-browser/feature-properties-wireframe.svg": "4673b469ce2225f1e9646aa195c21f5c06023aac2481e7abf23ee2503e2a8659",
+      "features/application/model-browser/find-dialog-wireframe.svg": "992aebcd493bca729b27eeb0816ff061f7cdc8d5f15dcad4fce71c8b529f8047",
+      "features/application/model-browser/find-group-criteria-wireframe.svg": "46a831fea893328eba999ded2181583feb3900e19be0a30585805865ab913189",
+      "features/application/model-browser/find-no-match-wireframe.svg": "0f3d65a522c886fa75942aee1e04342e14868ebc0dc7a917e841c599e30e6eff",
+      "features/application/model-browser/geometry-properties-wireframe.svg": "3ed4705a3588a39297d6b08d2c23dae99257be3b89b3c7d327d21b169239940b",
+      "features/application/model-browser/member-name-validation.svg": "315cff71e406820a8bba794eb30f5026edfb32577b56f2f18037058aa67afee4",
+      "features/application/model-browser/model-browser-wireframe.svg": "7a667e237bca6ab1f80d6c2db16c2105b725bfb4d9c6b9381c39ea0159f9e374",
+      "features/application/model-browser/model-state-suppression.svg": "fc63741b1bc20d4a5186c39c469d643b5639fc51a41b5420ec0750b33dfc281e",
+      "features/application/model-browser/model-state-table-wireframe.svg": "eabfd1f4e09ad911d7d1426e3f282c3cbc2df33371309e96b65d4282925dccd1",
+      "features/application/model-browser/origin-plane-states.svg": "fe4280749584bc5801d24aec6a92e54dfbf01fde3cbfd497a3ae3eb668b73ed4",
+      "features/application/model-browser/parameter-context-menus.svg": "6515326a0e88bccea2a4fe6cc42711c550d1d424a8987df9738878002f1edd6a",
+      "features/application/model-browser/relationships-wireframe.svg": "d2c550f636d567ba5b3ecf2271d55b4b3ae54f60ddbd264baee9ecfd7052a004",
+      "features/application/model-browser/saved-search-wireframe.svg": "3cdf64adeeabd3e0fa1d35db52af8230fbc60d190213dd7ecc0e39fd64e211a9"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-model-browser-0890f84e0/cucumber.json",
+    "cucumber_sha256": "88154232f643acb0a051b72fd7adb23d1f08d33c636ceee6afd7cebd260f09b6",
+    "application_commit": "0890f84e081fbb7775f54072026ecccb5fe6265c",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=model-browser OBK_BDD_REPORTS=/tmp/obk-full-model-browser-0890f84e0 cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe; scripted native window input",
+    "notes": "Full native run: 97 of 100 scenarios passed. Two assertions failed (viewport overlay #4131; parameter selection under investigation); one scenario has an undefined extrusion-owned taper step blocked by #4127 and Martensite #463. Feature and supporting Markdown and SVG hashes matched before and after. The local scenario source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-model-browser-258654729/scenario-inventory.json",
+    "scenario_inventory_sha256": "ae56e1923bf07a5c57af2ed430bc1c0c3ddfa00debfc5d2fc8d7877f8128776c",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-model-browser-0890f84e0/scenario-arguments.json",
+    "scenario_arguments_sha256": "769b6b8afbe77d607d7c99fa0cf10fbc68635d4dd4e7c43a51dc1089dd4293ae"
+  },
+  "features/application/docking-system/docking-system.feature": {
+    "feature_sha256": "e2c0ece1141b9973d0b4909965eefe666f5c70ab7371a3cea41cbe16d89080a5",
+    "supporting_files": {
+      "features/application/docking-system/BLOCKERS.md": "4559ed8b2cdafe236c83893b4d9d2606ac3c93f94840a00d7cebf10c278158c2",
+      "features/application/docking-system/FIXTURES.md": "3da12afe826fca2927d6762c8a4ab086392a265a5f5319357ee9b8a04b319d56",
+      "features/application/docking-system/FUNCTIONAL.md": "f2636375408a6ba29bfac139d2687203f08044de3b7642ad0f41457107f7dbb0",
+      "features/application/docking-system/VISUAL.md": "ab88095125af0b4dd5b5859fc743f1606837210ea54a787e9a45b3dc7aae875c",
+      "features/application/docking-system/right-dock-tabs.svg": "f07847f1b581581045032a3cf5d17d8d67de6f3a3ac82c4f035b5b692982ca55",
+      "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-21-docking-current-4133/cucumber.json",
+    "cucumber_sha256": "89ebc53de0289325dc8a1c1b0ed68d9f2fd78c564f75c2ef2989ef51ce838c56",
+    "application_commit": "0107fd3e5414fabdc7a21743ec3acee48df794b1",
+    "command": "OBK_BDD_FEATURE=docking-system cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11 with Xvfb (1440x900), Openbox, and Vulkan Lavapipe",
+    "notes": "All 11 published scenarios and 108 steps passed. The desktop restarted in a new process and retained both dock tabs. Strict provenance remains open under #3978."
+  },
+  "features/application/workspace-layout/workspace-layout.feature": {
+    "feature_sha256": "be0be85ba65d57c0aa35258ec78f23fd62f2b0984337e2ed729170e19fc70e11",
+    "supporting_files": {
+      "features/application/workspace-layout/BLOCKERS.md": "623f89e2f8b943d40994d67a06c9cead47cd6c824aa068a9d7c556bad6f007b9",
+      "features/application/workspace-layout/FIXTURES.md": "79b957deccc48048288d4e75323585d947ef55bbdf95bb40bf9f23a7fb5f1093",
+      "features/application/workspace-layout/FUNCTIONAL.md": "2eb3e11cef2da0d78ff0ba5489ab78ef092fef73a2ecbabb9132a9f5baa5c034",
+      "features/application/workspace-layout/VISUAL.md": "095864bfc062a20d40696269cec79b5013afd53e5f4bffaee61ddbf04b5bd9f8",
+      "features/application/workspace-layout/WIRE-FRAME-GAP-NOTES.md": "f16336d8121f1e1e8901cf50a3bf962249829d7938de4a1300b8bcdec96ee682",
+      "features/application/workspace-layout/browser-branch-search.svg": "57d80e6d541569e65bafa10c445eb477641d12d50333daaabfbbe1263815625a",
+      "features/application/workspace-layout/browser-control-icons.svg": "c654bd30e34cf0a487608dfa2aa7482021aeb3c4df5c8c5906d180713ce4adf7",
+      "features/application/workspace-layout/browser-menu-options.svg": "f28f77b27b6a1c4030a9b988672ad3fcc9ed6709f438f776b93f3cdd6c90632a",
+      "features/application/workspace-layout/browser-preferences-menu.svg": "194b891f09d3d77bbd5a35a0dde63320acbc3fb81076fc3b137075dfbaef958e",
+      "features/application/workspace-layout/browser-search-states.svg": "effc9420747f86dcf92f3c02d3414a7550fde17d1374573c5a4a44e475c363da",
+      "features/application/workspace-layout/empty-browser-search.svg": "737913ee18dbcd48b6e705aaaf4755b5971a43a1dc8effb27d3c3163ce909644",
+      "features/application/workspace-layout/extended-feature-names.svg": "de5fa48d9daf7402b8af02622ca6e4ed74e41c1d750fa42545f0f21d754d8acf",
+      "features/application/workspace-layout/extrusion-branch-toggle.svg": "1e1f9e6fbc0176ec638c063bb12185b24f6ae93584c68f3cb145e3dc2ae2df88",
+      "features/application/workspace-layout/feature-context-menu.svg": "8c9cbc2298747402eba64c484a3cc7cdffe438c807704a1a7f569c1b665ef4c7",
+      "features/application/workspace-layout/filtered-axis-selection.svg": "42e8cc996cfb5bd916dcfe5c7bc04a5c92f47b774b2b8dbb8413f0d3b8bb491a",
+      "features/application/workspace-layout/hide-work-features-states.svg": "edbcbc7add2a8377d90776826dec9e666b7fdaf36a9f40d3aa3841c87bd5a266",
+      "features/application/workspace-layout/origin-axis-context-menu.svg": "8aa8c2fd56347ca3f2284d4cb1bf719d1b86d2e4b4283b153fcec3ce2617df16",
+      "features/application/workspace-layout/origin-plane-context-menu.svg": "c0d3b5dba42e3c8ecbcb4573902283a634d54e6de8ee1c544be79906d7945885",
+      "features/application/workspace-layout/origin-point-context-menu.svg": "56100202b61606e48da564ccddd62eac06d89d9698fc787c63f06fb61aca8e86",
+      "features/application/workspace-layout/panel-tabs.svg": "4e2a8781bb6a20d124f18970777165c413e0272fbb34367bb580a85346d6b1b5",
+      "features/application/workspace-layout/sketch-context-menu.svg": "8c5601aa9fc681c5440a61d838e110a2fba8bbadcea7c7f1f7f3d45781ec755f",
+      "features/application/workspace-layout/solid-body-tree-states.svg": "b232a7874513cab236d42cf9f5aaa84d03e8e0c36bfcac6e04d20503cac6c439",
+      "features/application/workspace-layout/view-ribbon-groups.svg": "81f74e1cd3d0818abf697d2c50b68a733685f17780ac2e643097c52e716f0666",
+      "features/application/workspace-layout/view-user-interface-menu.svg": "27cf5530201fec3789ce9d591ab8603ffa7a610feba1e64b90b94b02e71d6dd5",
+      "features/application/workspace-layout/workspace-states.svg": "0d3c78266d6b29de48ed39a8ef5100d0acf5266053a8eeeb6ede888562516e80",
+      "fixtures/cad/blank-drawing.odd": "74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e",
+      "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+      "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9",
+      "fixtures/cad/workspace-layout-points.opd": "69fafcac8264775600b11dbdd2793a563bdf2677be2d419940891e11e32d331a"
+    },
+    "application_commit": "7f735741ed6c768c89162752f2cd09e14912ba52",
+    "command": "Full Workspace Layout run. See the receipt README.",
+    "environment": "Linux X11, Xvfb and Vulkan Lavapipe. Separate foreground X11 check with Openbox and MCPBridge.",
+    "notes": "All 53 cases and 523 steps passed. The inventory counts 52 declarations, with two examples in one outline. Strict verification still needs pinned source and bounded build and runtime inputs under #3978.",
+    "cucumber": "architecture/rust-port/receipts/2026-11-20-workspace-layout-3897/cucumber.json",
+    "cucumber_sha256": "48861277451acb3f17019f500d2b10be9923ee4bf492155d6a9a47d2914ce32f",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-20-workspace-layout-3897/scenario-inventory.json",
+    "scenario_inventory_sha256": "04afd775d30b62ed47b6d1dfb4da09c2326b043689c51f40b8bde96aad8c10e5",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-workspace-layout-3897/scenario-arguments.json",
+    "scenario_arguments_sha256": "5ad378dc2af6c2572f712b6756848e447074a46ec3b34bc379c8e5259fda1911"
+  },
+  "features/sketch/degrees-of-freedom/scenario.feature": {
+    "feature_sha256": "637b9d731edef63577801a11efc8baefc9331cec4929bb57d4c3ba4c75f984ec",
+    "supporting_files": {
+      "features/sketch/degrees-of-freedom/BLOCKERS.md": "0b49b74efc73781acf410f73bc95ac99adb5185e4ce866485e5d9ba652a301b3",
+      "features/sketch/degrees-of-freedom/FUNCTIONAL.md": "25bf6dd47da03f3787f8bd37e1376d4fb78fd79cf1b2fcdf6166fcd556073ab9",
+      "features/sketch/degrees-of-freedom/VISUAL.md": "ea82137e9a74295a801f3069cec07c17472e11e7e247b58458c347bf3f9462d1",
+      "features/sketch/degrees-of-freedom/freedom-indicators-icon.svg": "9b8f30ac96215f41ba0546ba981c3bb47a621e2c183908cc67fdc93ad622f2a9"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-dof-baseline-bfe5edc49/cucumber.json",
+    "cucumber_sha256": "bb9459da0a07e8375c15a62864ce0489fd5b74a8264eb77f4213d5ac25122935",
+    "application_commit": "bfe5edc49",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=degrees-of-freedom OBK_BDD_REPORTS=/tmp/obk-dof-baseline-bfe5edc49 cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe",
+    "notes": "Full baseline: all four scenarios stopped at their first unbound fixture step. Source and supporting files matched during the run. BLOCKERS.md was updated afterward to request portable geometry and motion semantics. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-docking-baseline-ffc5f785d/scenario-inventory.json",
+    "scenario_inventory_sha256": "c4fe86998c8b053dd4505cbcce28704cf8279d0c4be561b2f6ceb64187ebaac0",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-dof-baseline-bfe5edc49/scenario-arguments.json",
+    "scenario_arguments_sha256": "d244bd6fa81bfbc0263127e52a4aff4268917ffe2e807b918946add06d17df2d"
+  },
+  "features/sketch/constraint-glyph-hover/constraint-glyph-hover.feature": {
+    "feature_sha256": "5d30dc6745bfc4bf6415c21558d7d6ff3cae1df3b50862583a87ebd4e38f2926",
+    "supporting_files": {
+      "features/sketch/constraint-glyph-hover/BLOCKERS.md": "9fa2c5c40fafc96ad9fffde407bf8d8568e28498d20d1d88c15acff03b5008a5",
+      "features/sketch/constraint-glyph-hover/FIXTURES.md": "a0549cafcc7eafce3df322d50c390ae3b61fb12fb07009802654d18bbdbdbf62",
+      "features/sketch/constraint-glyph-hover/FUNCTIONAL.md": "c25a246a8351d5232567628aeb8c1b3d060ef5754168146b783e4ed1a777debc",
+      "features/sketch/constraint-glyph-hover/VISUAL.md": "20e7dc430fe0e4df236b95923c95b49b811f0338c58866e0a59bdf5afd1d842b"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-constraint-glyph-e33bac9dd/cucumber.json",
+    "cucumber_sha256": "8bb359b509dccf6eecb4a224899f32cb083c8c328baa260494c7eed54cb2209c",
+    "application_commit": "e33bac9dd",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=constraint-glyph-hover OBK_BDD_REPORTS=/tmp/obk-glyph-e33bac9dd/run cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe",
+    "notes": "Full feature: 1 scenario and 6 steps passed using native pointer motion. Feature and supporting file hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-constraint-glyph-e33bac9dd/scenario-inventory.json",
+    "scenario_inventory_sha256": "13c70b5229ded138a118a8195f4207e4ae10a852b54bcfd3344bf14d3ec4f924",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-constraint-glyph-e33bac9dd/scenario-arguments.json",
+    "scenario_arguments_sha256": "10d95769d69dc18ce23bebcfc2f8019230594b87aba5787f9fb34f09459128e9"
+  },
+  "features/sketch/sketch-preferences/scenario.feature": {
+    "feature_sha256": "7a5a5e600f8213f97978d926448c9f7be5431f71e2155e6b2fbf5ed0fa9cd7c6",
+    "supporting_files": {
+      "features/sketch/sketch-preferences/BLOCKERS.md": "458175a3738144b727c1d520480f41bf602308e35f022c0242d82df35c795815",
+      "features/sketch/sketch-preferences/FUNCTIONAL.md": "bffa14ad68c4f24942ffd5bb0c3d8fdf0c1b5a082649c705a3605b04f8b4baee",
+      "features/sketch/sketch-preferences/VISUAL.md": "87f1eb87d333ec795ad59f9d4feb18338ad23c6e4b9f1455ebeb6f97a180f27c",
+      "features/sketch/sketch-preferences/feature-icon.svg": "9ec690bf4342b0fd854c93aad33595538c0d724ee406fcc98467d705fc260ae0"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-sketch-preferences-full-6fdb0dc6c/cucumber.json",
+    "cucumber_sha256": "d0a7db7306e82c1d7056de74cbca801864b4075390fbc08bc3d270301703b054",
+    "application_commit": "6fdb0dc6c",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=sketch-preferences OBK_BDD_REPORTS=/tmp/obk-sketch-prefs-full-6fdb0dc6c/run cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe",
+    "notes": "Full feature: all 3 scenarios and 26 steps passed. Feature and supporting file hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-sketch-preferences-full-6fdb0dc6c/scenario-inventory.json",
+    "scenario_inventory_sha256": "13c70b5229ded138a118a8195f4207e4ae10a852b54bcfd3344bf14d3ec4f924",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-sketch-preferences-full-6fdb0dc6c/scenario-arguments.json",
+    "scenario_arguments_sha256": "c72879c97463b12c7667d4984ad5c0fa7cae0ae98313687df3c34a5d5d6ede73"
+  },
+  "features/sketch/sketch-visibility/scenario.feature": {
+    "feature_sha256": "84ce1cf47dee8bbb27a8ee769a6a2599c2c6bf7262bacb7c313b86843645e65b",
+    "supporting_files": {
+      "features/sketch/sketch-visibility/BLOCKERS.md": "ec438c1ad2b87983adde97f2789cdf667b745df12a1aa60383692251d492a9fb",
+      "features/sketch/sketch-visibility/FUNCTIONAL.md": "c428519660bafdc7a37ab987fe9b83ec2ce5888f4fcbf9e01bdc94d83913fcbb",
+      "features/sketch/sketch-visibility/VISUAL.md": "a93af486c0c006ce978e59a3600e0e38f9eda0fba3e7e427f08cf3b7e62f6827",
+      "features/sketch/sketch-visibility/sketch-visibility-icon.svg": "e7e6a371764a17f789fd61a76f5bbb970b1d1e1eb6b8013330a8fad7f4fc99bd"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-sketch-visibility-full-e82b8006b/cucumber.json",
+    "cucumber_sha256": "7769e18098a5c27b66c50df7c315eed11f69e0a85549bb9e0d09cc2117526be5",
+    "application_commit": "e82b8006b",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=sketch-visibility OBK_BDD_REPORTS=/tmp/obk-sketch-visibility-full-e82b8006b/run cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe",
+    "notes": "Full feature: both scenarios and 17 steps passed against a native extruded-part fixture. Feature and supporting file hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-sketch-visibility-full-e82b8006b/scenario-inventory.json",
+    "scenario_inventory_sha256": "13c70b5229ded138a118a8195f4207e4ae10a852b54bcfd3344bf14d3ec4f924",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-sketch-visibility-full-e82b8006b/scenario-arguments.json",
+    "scenario_arguments_sha256": "57efc7c63c17673ba60aefa373a69a6d56ed6467b65e69c5ab8dad97ac080314"
+  },
+  "features/sketch/constraint-inference-scope/scenario.feature": {
+    "feature_sha256": "91a3fdd6d43589c27536aa8e605125541613a32e26aa42f758bfb062633a0857",
+    "supporting_files": {
+      "features/sketch/constraint-inference-scope/BLOCKERS.md": "838f6ac369f1a72fd12ca7fffb6d42364c8a982d4bbd5e01d519c178f4e0bbb8",
+      "features/sketch/constraint-inference-scope/FIXTURES.md": "2ac35fb0fecdd450da67199035577d71f3b350dc6a2a126079e0e01d61611400",
+      "features/sketch/constraint-inference-scope/FUNCTIONAL.md": "3c9462abb97362b150897429cc2e488874f2884ad1b154e41e5ed330f1e3af47",
+      "features/sketch/constraint-inference-scope/VISUAL.md": "978d7bd4b6cc11f3f457fe65bb8a93ba1410ddd0cdbbb8b03db39fd1b6679fe7",
+      "features/sketch/constraint-inference-scope/feature-icon.svg": "459b063c1d6e4e0815081a38631005c92f52d1651f552f799c14bf5f8cf1c3a3"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-inference-scope-full-f7186111b/cucumber.json",
+    "cucumber_sha256": "aa608747a16f83103bd868d302df9f956c5fe66df220097a74a28f05e151c9e2",
+    "application_commit": "f7186111b",
+    "command": "xvfb-run -a -s '-screen 0 2600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=constraint-inference-scope OBK_BDD_REPORTS=/tmp/obk-inference-scope-full-f7186111b/run cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe",
+    "notes": "Full feature: 2 of 4 scenarios passed; the other 2 stopped at unbound fixture setup. Feature and supporting hashes matched before and after the run. Portable geometry has been requested in BLOCKERS.md. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-inference-scope-full-f7186111b/scenario-inventory.json",
+    "scenario_inventory_sha256": "13c70b5229ded138a118a8195f4207e4ae10a852b54bcfd3344bf14d3ec4f924",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-inference-scope-full-f7186111b/scenario-arguments.json",
+    "scenario_arguments_sha256": "f8461b30b3c9e391ab82ef49f945d8716eeec6ecf51a222bcf0f2999bfb42b39"
+  },
+  "features/sketch/explode-block/scenario.feature": {
+    "feature_sha256": "0aa6d0c36bc26bfac8ea4d9963fd67ba7874fc2f90f34c4d2b73cc3b9220056a",
+    "supporting_files": {
+      "features/sketch/explode-block/BLOCKERS.md": "36d2314f1b23604b8d209a462d1b62274da7da97cc65a1bf92d6f3091de545e0",
+      "features/sketch/explode-block/FIXTURES.md": "84b4201a244040befc73b799b4d05cc83a40a0b69aa113b3de92f971f2fb1143",
+      "features/sketch/explode-block/FUNCTIONAL.md": "8dfd0913b77e70b67f5a718dd7c44c346e9afdd3d998d244c4a50ec36149017d",
+      "features/sketch/explode-block/VISUAL.md": "183a61abb468c7b82a18c61c729b8a0fde6031c107c4d21084318ebff6cfb45f",
+      "features/sketch/explode-block/feature-icon.svg": "7db943db05a4f72b8adb3dc26d7951bc896de7051287e937b800dff538cbc7cf"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-explode-block-full-91e69a377/cucumber.json",
+    "cucumber_sha256": "d23a408b605c8376fda9522f15c925b5bc6e5e70610977ed9696f180c49de2ab",
+    "application_commit": "91e69a377",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=explode-block OBK_BDD_REPORTS=/tmp/obk-explode-full-91e69a377 CARGO_BUILD_JOBS=4 cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe",
+    "notes": "Full feature: 2 of 5 scenarios passed; three stopped at unbound fixture setup. Passing scenarios use a representative rectangle and circle with the documented colors; original fixture coordinates remain unspecified. Feature and supporting hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-explode-block-baseline-c87a73c50/scenario-inventory.json",
+    "scenario_inventory_sha256": "70f8abe46124087cc04d5b0e998333cd715596b65fdb8fb0cd865f8e4a7fa07d",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-explode-block-full-91e69a377/scenario-arguments.json",
+    "scenario_arguments_sha256": "61f412e385b38a07794481a73e94ef0b09e7b13f4e7c6c51d873aa45476452e0"
+  },
+  "features/sketch/new-sketch/scenario.feature": {
+    "feature_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d",
+    "supporting_files": {
+      "features/sketch/new-sketch/BLOCKERS.md": "54e08335f27bf8b2a67a36ed6d57a3fa33dbbc937d538f122dbbf0a31620bda4",
+      "features/sketch/new-sketch/FUNCTIONAL.md": "ef4a73badad66ac8654f17c86223d82af59d7016525cf3da156bbfe4f775661d",
+      "features/sketch/new-sketch/VISUAL.md": "14ff1c77300c1d733c111a7f81bcb1d10be89ccec4d9f38d74790b94f0696269",
+      "features/sketch/new-sketch/feature-icon.svg": "ccc109fa1729de6754eb36b6b101de9c8761e893a1bd65f3e0b449d9faeafbb5"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-new-sketch-full-60c48f25f/cucumber.json",
+    "cucumber_sha256": "97c3a08685a2567cad3db6f37d9ad9c5acbca49403125de666a4523300edeefb",
+    "application_commit": "60c48f25f",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=new-sketch OBK_BDD_REPORTS=/tmp/obk-new-sketch-full-60c48f25f CARGO_BUILD_JOBS=4 cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe",
+    "notes": "Full feature run: 9 of 10 passed. The accumulated save/reopen scenario has an unbound starting fixture and needs portable source details (#4011); it also requires circular sketch patterns (#3905). Feature and supporting hashes matched before and after the run. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-explode-block-baseline-c87a73c50/scenario-inventory.json",
+    "scenario_inventory_sha256": "70f8abe46124087cc04d5b0e998333cd715596b65fdb8fb0cd865f8e4a7fa07d",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-new-sketch-full-60c48f25f/scenario-arguments.json",
+    "scenario_arguments_sha256": "f09d2136e6fe528318a9ba6c3b6e45615edec6f7e411c2ebf8b60ad74a7527bb"
+  },
+  "features/sketch/constraint-settings/scenario.feature": {
+    "feature_sha256": "b68e527f1199915eb593449dc8d971a526d7e56cbd2485511568b9e5fdd56862",
+    "supporting_files": {
+      "features/sketch/constraint-settings/BLOCKERS.md": "2d4ea2008cce17196ffdf3e3dd6eb8c5dfb9098ea82ba0f3f4cd5543c34ea84c",
+      "features/sketch/constraint-settings/FIXTURES.md": "6f848dd439efd1c4309f4cd2c2eb445758409abb1117c050d321b23ee0710994",
+      "features/sketch/constraint-settings/FUNCTIONAL.md": "08a096e83e79011bda0f1cce97390c77b01ee65bf665168bb0306d7d3da431c3",
+      "features/sketch/constraint-settings/VISUAL.md": "302d8aea9f7cc37c391bea3377ec4b13ced2526386da9f03b7736ca8eb7ab8eb",
+      "features/sketch/constraint-settings/feature-icon.svg": "6f0e47d5b2e6ed3bf1cb0e851c06eae62963c4264e0cf0f38fa1629a864ce848"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-19-constraint-settings-full-f59421482/cucumber.json",
+    "cucumber_sha256": "b770ccb6789e813c594a3ddd0f811e45028a991fdbc187b3188bf34cbcc617ed",
+    "application_commit": "f59421482",
+    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=constraint-settings OBK_BDD_REPORTS=/tmp/obk-constraint-f59421482 CARGO_BUILD_JOBS=4 cargo test --locked -p oblikovati-head --lib sketch_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+    "environment": "Linux X11, Xvfb and Vulkan lavapipe",
+    "notes": "Full native-window run: 0 of 8 scenarios passed; three generic running steps pass and every scenario stops at an undefined feature-specific step. Feature and supporting hashes matched before and after. Source is unversioned; strict verified acceptance remains unavailable (#3978).",
+    "scenario_inventory": "architecture/rust-port/receipts/2026-11-19-explode-block-baseline-c87a73c50/scenario-inventory.json",
+    "scenario_inventory_sha256": "70f8abe46124087cc04d5b0e998333cd715596b65fdb8fb0cd865f8e4a7fa07d",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-19-constraint-settings-full-f59421482/scenario-arguments.json",
+    "scenario_arguments_sha256": "6db3c60a46d10a54309a799a3a581a8a4025dd525a3aa26e56f31190fa541ac4"
+  },
+  "features/sketch/text/scenario.feature": {
+    "feature_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d",
+    "supporting_files": {
+      "features/sketch/text/FUNCTIONAL.md": "ddb0381bff97e2e83aaac8832fecabafb9f20d49668444754193ad4893185796",
+      "features/sketch/text/VISUAL.md": "fd0e1444c421ebad300c59bb1c07589adfc0b97bd46c4a6f64c50b1af2aa2398",
+      "features/sketch/text/feature-icon.svg": "42e957b40212d450898c00e75e693943d6556aca7e752e72c7859f854eab14d6"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-21-point-text-two-fonts-3907/cucumber.json",
+    "cucumber_sha256": "7d42da94ed3d90fb667371adbdef4f1740b467a0a34bb1de3f1fddae3137cd92",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-point-text-two-fonts-3907/scenario-arguments.json",
+    "scenario_arguments_sha256": "67e37e92792a291f865fd70c9e74e1ee1e6ff3b40ed16835494f6d41d5053033",
+    "application_commit": "1932b4b71a119a3efacadcb2ce7b7303fa53a7c6",
+    "command": "Unfiltered Text feature with native X11 input. See the receipt README.",
+    "environment": "Linux X11 under Xvfb, Vulkan Lavapipe, isolated Fontconfig with Arial and Tahoma",
+    "blocker": "Nine scenarios have unresolved source or font-decoration requirements. See the Point Text behavior ledger and Martensite #578.",
+    "notes": "Twenty-nine of 38 scenarios passed with cleanup. The other nine stop at undefined steps. The later focused text-25 case-conversion run is recorded separately."
+  },
+  "features/sketch/ellipse/scenario.feature": {
+    "feature_sha256": "93cca0edae47e061feda329c44e0187581e8a2c500e4f34153c58fef1b59873d",
+    "supporting_files": {
+      "features/sketch/ellipse/FIXTURES.md": "d53177281d2f843414309fe777f1e0bb130457dfb9b2d7ae60a5a455ac5374bc",
+      "features/sketch/ellipse/FUNCTIONAL.md": "fedac8909eabfbfd368fa39686d667d2237458c66d6f98cd29122a14d99203e6",
+      "features/sketch/ellipse/VISUAL.md": "6fbc475295f15abf73b4f1d7b7af24b26a650da897ef9a8850083baa37bc2062",
+      "features/sketch/ellipse/curvature-settings.svg": "2b41e8d79d4745bc88dd4b3cd76885143c719953e12fb2199e0363b290ff430d",
+      "features/sketch/ellipse/ellipse-icon.svg": "04fb21abb4e321a49bce198296d25e10b4a81563a4e2e4d9d7ffd28fd63e964c",
+      "features/sketch/ellipse/ellipse-placement.svg": "9c0cb31edb1c2f3f3f940a234f2708d166a718787ba2a9e1c0033d326a438302",
+      "fixtures/cad/ellipse/axis-both-8-4-measure.opd": "e502192dfa447dcff7b9244e140d6f82ff989025556ebf22f5528a614c0698fc",
+      "fixtures/cad/ellipse/axis-both-8-4.opd": "4ed86de19fbb699c18ed3b698807ff388870174dba9a7a1707143acafd9c6f09",
+      "fixtures/cad/ellipse/axis-initial.opd": "fd37bbcef4ee8d8ba531d40a2a22e932cd4503bb7c7058a815d5c17b8278f6ee",
+      "fixtures/cad/ellipse/axis-major-8.opd": "8532c75785354e5d31fc8d4da765b197c3199a680083f314d55ab2004d068ebb",
+      "fixtures/cad/ellipse/circle-midpoint-line.opd": "8be9477c2d131aa2e26a11b70e536c0478e7acc51df444776933cff864c01c62",
+      "fixtures/cad/ellipse/empty-yz.opd": "5c55485079cf285f693ca9edd0febdf26ed5d020d023d3ee51205175a2ca62db",
+      "fixtures/cad/ellipse/rotated-measured.opd": "1e56bfccbbe8155e103718c525408fb526eebbe76d9bea9237622c8ce9080a53"
+    },
+    "cucumber": "architecture/rust-port/receipts/2026-11-21-ellipse-full-04a58abd4/cucumber.json",
+    "cucumber_sha256": "f416353ee69bbec2503a557c6a0ff3a8a32cc1b5d97de23017b7c60981a3f4e9",
+    "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-ellipse-full-04a58abd4/scenario-arguments.json",
+    "scenario_arguments_sha256": "4b0bd393e99570c68d516fc40437951cfb4c18be5b031f8aba79eeb18c591b50",
+    "application_commit": "04a58abd44fd9ec30f86429d6175b788854a6314",
+    "command": "Unfiltered published Ellipse feature through the native sketch runner. See the receipt README.",
+    "environment": "Linux X11, Xvfb, Vulkan Lavapipe. Curvature controls use X11 mouse input.",
+    "blocker": "Rotated-curve selection in Measure requires the fix for Martensite #406.",
+    "notes": "Eighteen of 19 scenarios passed on the published feature and native Part fixtures. The input hashes matched before and after the run."
+  },
+  "features/sketch/geometry-text/scenario.feature": {
+    "by_source_sha256": {
+      "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b": {
+        "feature_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b",
+        "supporting_files": {
+          "features/sketch/geometry-text/FUNCTIONAL.md": "56953c3fac6d60383112a6c153f7bddd1ce10abb12423a9b7016fae3b0d54303",
+          "features/sketch/geometry-text/VISUAL.md": "800e87d45e97fa94a9ba34d719b2d0b8360ddf28f72fdbb1fb8a788d4dba4d98",
+          "features/sketch/geometry-text/geometry-text-icon.svg": "b080273d8b774130ecaa0696c63a834f63a0f8ec251ea6a71a86b2ade1963903",
+          "features/sketch/geometry-text/geometry-text-panel.svg": "1e1b1d27ec9fb71eb48f8b826f081e7c67c67f3caf53b15726ec305b1198201b"
+        },
+        "blocker": "Deferred from PR #4184. Geometry Text has no runnable scenario and stays unavailable. Follow-up issue #3907.",
+        "notes": "All 21 pinned declarations have unbound steps. See 2026-11-21-geometry-text-deferred-3907/pinned-cases.json. Point Text remains enabled."
+      },
+      "7a31bbb481a27ebfa66e05fff61143dfd3e56beba214c0495537606438727803": {
+        "feature_sha256": "7a31bbb481a27ebfa66e05fff61143dfd3e56beba214c0495537606438727803",
+        "supporting_files": {
+          "features/sketch/geometry-text/BLOCKERS.md": "5f4979dc81e5370968518e1aabe64569e77b3087ac4c4bdd0e528ec4fd082a97",
+          "features/sketch/geometry-text/FIXTURES.md": "ffa610ec86a9d51ce70517c68e8209a6bd165792bed07e2b6cd5e59ea25a896b",
+          "features/sketch/geometry-text/FUNCTIONAL.md": "56953c3fac6d60383112a6c153f7bddd1ce10abb12423a9b7016fae3b0d54303",
+          "features/sketch/geometry-text/VISUAL.md": "800e87d45e97fa94a9ba34d719b2d0b8360ddf28f72fdbb1fb8a788d4dba4d98",
+          "features/sketch/geometry-text/geometry-text-icon.svg": "b080273d8b774130ecaa0696c63a834f63a0f8ec251ea6a71a86b2ade1963903",
+          "features/sketch/geometry-text/geometry-text-panel.svg": "1e1b1d27ec9fb71eb48f8b826f081e7c67c67f3caf53b15726ec305b1198201b"
+        },
+        "blocker": "Deferred from PR #4184. Geometry Text has no runnable scenario and stays unavailable. Follow-up issue #3907.",
+        "notes": "All 21 published declarations have unbound steps. See 2026-11-21-geometry-text-deferred-3907/published-cases.json. Point Text remains enabled."
+      }
+    }
+  },
+  "features/application/ribbon-docking/ribbon-docking.feature": {
+    "by_source_sha256": {
+      "35ca58e5b39b0e08d7b10b0f9d82654e8373d34cb72e6db92ea6875525a61eaf": {
+        "feature_sha256": "35ca58e5b39b0e08d7b10b0f9d82654e8373d34cb72e6db92ea6875525a61eaf",
+        "supporting_files": {
+          "features/application/ribbon-docking/FIXTURES.md": "e1d20cbd95c2742ff16401143ad539727f7807bdce9c3cd3fd7df764414048bd",
+          "features/application/ribbon-docking/FUNCTIONAL.md": "9a34cdf670c554a855789556730a3a47d86eaae99d5f5798d267c0ba7d4f89a1",
+          "features/application/ribbon-docking/VISUAL.md": "ff43094ba09b1394ea04b835fc691e72323eaf25848368e1e82030ba0714e5a7",
+          "features/application/ribbon-docking/active-command-dock-cycle.svg": "5facc2b9aa77a4e327e3c8d7fc52ddd9a1dd451e99522b33699dc90df1af6b32",
+          "features/application/ribbon-docking/active-command-tools-tab.svg": "82c082d52ca6abcaefb8ce990c1b0c16baa9d8660bb322a0800596368c9a2601",
+          "features/application/ribbon-docking/active-tab-context-docking.svg": "a004d8030a75dcae2863b43261b314f926354df02798443d697d028c4cc28124",
+          "features/application/ribbon-docking/docking-menu-wireframe.svg": "24edc76bd55bd170a7c1210d46acaf99acca2f12ec1258083607f29ce9397000",
+          "features/application/ribbon-docking/docking-symbols.svg": "0f4eb68555cac6371407c7253565f8df3f0850b36754db1b64d10b1dac0f7f62",
+          "features/application/ribbon-docking/document-switch-left-dock.svg": "839f7bbc31a39561a58c5ca2170fa83bd190a957e24bd98a4e4e3f84bac9cb05",
+          "features/application/ribbon-docking/expanded-title-current-dock.svg": "5e972fecb521a31736f58d128a342f476c3418820a58b43b7c360c355c038813",
+          "features/application/ribbon-docking/expanded-title-to-left.svg": "c947e7afd00ae4be0bda2b0b2af582a7743854b9445cdd8d36f1b58c44c70ceb",
+          "features/application/ribbon-docking/finish-sketch-left-docked.svg": "4e33e8d7d2cfbbbcd8a2fdeaae3ad3f4428f8bf86b1b722fa1e94e9e6ffc5b5f",
+          "features/application/ribbon-docking/floating-group-hover.svg": "9904a57f3e6197ee2c415c3f2155ab2f6da18b25661d6a428fdbc38c7ff84930",
+          "features/application/ribbon-docking/floating-ribbon-dock-menu.svg": "3852d79270de6df96b474b0e3f965894b20c2369a1b85f285ea9ce27e7c8b846",
+          "features/application/ribbon-docking/floating-ribbon-group-scroll.svg": "07b94ad263a57924f3200697ab41efa26148167ea558bcf27dfa86ff9c74f58e",
+          "features/application/ribbon-docking/floating-ribbon-modify-list.svg": "261ef302565e51a6fb48e83f1ff4d75bfc17064822754c7a2a81e45fda8e3d6c",
+          "features/application/ribbon-docking/floating-ribbon-wireframe.svg": "a5f0f1208f42ba4241a62b1ed3cff3d4446866ca40c5542d7132371782649390",
+          "features/application/ribbon-docking/floating-tab-panel.svg": "94072a7fcc4abefc9a50d6f76bf17a33648f255bd82a3e05d28c89918b8dcaac",
+          "features/application/ribbon-docking/floating-to-left-sequence.svg": "444cce11bf175e8d699c000239462904a17d7a14658f87ced89a10cff84e5253",
+          "features/application/ribbon-docking/floating-to-right-sequence.svg": "b7043efe2e8e88d00cdc7cf4e7139720da4f8c76ed9d5381fa4e3cdbfac72bab",
+          "features/application/ribbon-docking/left-docked-group-switch.svg": "eeb4fc95cc624558dca76f46f8779720e16ee0781156c810faf7acf80ca3366b",
+          "features/application/ribbon-docking/ribbon-docking-wireframe.svg": "9561e62e03cb2d7932f1023878a7b40b0e1f4e8abbd3ebaad21bc949a77613ba",
+          "features/application/ribbon-docking/right-docked-group-switch.svg": "3b48797cbca09fcb961441a6eddc5e3e03b48705b5deafda8bd514a1d94a335e",
+          "features/application/ribbon-docking/side-docked-hover.svg": "e51f7436336655cafb8468c0c0305c84a37f92421b673c34cb68a77daf8a4745",
+          "features/application/ribbon-docking/top-left-right-docking-cycle.svg": "05b655816c604989717578fc581f1e0f0b6debfedee809ed209e29d7d8d12325"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-ribbon-docking-r0-3860/cucumber.json",
+        "cucumber_sha256": "cd8ea9245e5a285806c3f6fdce72cd15d93f907c1cefc34f3e82d8235295fe38",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-ribbon-docking-r0-3860/scenario-arguments.json",
+        "scenario_arguments_sha256": "4f01f6d2107d78370fddd2d9e1b177342be3ba17d57870f1eafcff2798e528f1",
+        "application_commit": "097ecf29674d923a70ddd4f2785c51c8178907f5",
+        "command": "Full pinned Ribbon Docking run. See receipt README.",
+        "environment": "Linux, X11 Xvfb, Vulkan Lavapipe. Scripted input on the native window.",
+        "notes": "Fourteen scenarios and 144 steps passed. The pinned source was unchanged.",
+        "blocker": "Eight scenarios still have undefined steps or failing assertions."
+      },
+      "e5e92bdc6194c5b972a0764a49defed5bcda03e259118507c2330c7e2a3272fa": {
+        "feature_sha256": "e5e92bdc6194c5b972a0764a49defed5bcda03e259118507c2330c7e2a3272fa",
+        "supporting_files": {
+          "features/application/ribbon-docking/BLOCKERS.md": "48996565bcddd228b0076885f63594ba13f180aea386adfce0c3cac748148462",
+          "features/application/ribbon-docking/FIXTURES.md": "3f7015797e2ac1285e4d8b61e9fcb32e50a243064f1ba14c83979658d21a071c",
+          "features/application/ribbon-docking/FUNCTIONAL.md": "9a34cdf670c554a855789556730a3a47d86eaae99d5f5798d267c0ba7d4f89a1",
+          "features/application/ribbon-docking/VISUAL.md": "ff43094ba09b1394ea04b835fc691e72323eaf25848368e1e82030ba0714e5a7",
+          "features/application/ribbon-docking/active-command-dock-cycle.svg": "5facc2b9aa77a4e327e3c8d7fc52ddd9a1dd451e99522b33699dc90df1af6b32",
+          "features/application/ribbon-docking/active-command-tools-tab.svg": "82c082d52ca6abcaefb8ce990c1b0c16baa9d8660bb322a0800596368c9a2601",
+          "features/application/ribbon-docking/active-tab-context-docking.svg": "a004d8030a75dcae2863b43261b314f926354df02798443d697d028c4cc28124",
+          "features/application/ribbon-docking/docking-menu-wireframe.svg": "24edc76bd55bd170a7c1210d46acaf99acca2f12ec1258083607f29ce9397000",
+          "features/application/ribbon-docking/docking-symbols.svg": "0f4eb68555cac6371407c7253565f8df3f0850b36754db1b64d10b1dac0f7f62",
+          "features/application/ribbon-docking/document-switch-left-dock.svg": "839f7bbc31a39561a58c5ca2170fa83bd190a957e24bd98a4e4e3f84bac9cb05",
+          "features/application/ribbon-docking/expanded-title-current-dock.svg": "5e972fecb521a31736f58d128a342f476c3418820a58b43b7c360c355c038813",
+          "features/application/ribbon-docking/expanded-title-to-left.svg": "c947e7afd00ae4be0bda2b0b2af582a7743854b9445cdd8d36f1b58c44c70ceb",
+          "features/application/ribbon-docking/finish-sketch-left-docked.svg": "4e33e8d7d2cfbbbcd8a2fdeaae3ad3f4428f8bf86b1b722fa1e94e9e6ffc5b5f",
+          "features/application/ribbon-docking/floating-group-hover.svg": "9904a57f3e6197ee2c415c3f2155ab2f6da18b25661d6a428fdbc38c7ff84930",
+          "features/application/ribbon-docking/floating-ribbon-dock-menu.svg": "3852d79270de6df96b474b0e3f965894b20c2369a1b85f285ea9ce27e7c8b846",
+          "features/application/ribbon-docking/floating-ribbon-group-scroll.svg": "07b94ad263a57924f3200697ab41efa26148167ea558bcf27dfa86ff9c74f58e",
+          "features/application/ribbon-docking/floating-ribbon-modify-list.svg": "261ef302565e51a6fb48e83f1ff4d75bfc17064822754c7a2a81e45fda8e3d6c",
+          "features/application/ribbon-docking/floating-ribbon-wireframe.svg": "a5f0f1208f42ba4241a62b1ed3cff3d4446866ca40c5542d7132371782649390",
+          "features/application/ribbon-docking/floating-tab-panel.svg": "94072a7fcc4abefc9a50d6f76bf17a33648f255bd82a3e05d28c89918b8dcaac",
+          "features/application/ribbon-docking/floating-to-left-sequence.svg": "444cce11bf175e8d699c000239462904a17d7a14658f87ced89a10cff84e5253",
+          "features/application/ribbon-docking/floating-to-right-sequence.svg": "b7043efe2e8e88d00cdc7cf4e7139720da4f8c76ed9d5381fa4e3cdbfac72bab",
+          "features/application/ribbon-docking/left-docked-group-switch.svg": "eeb4fc95cc624558dca76f46f8779720e16ee0781156c810faf7acf80ca3366b",
+          "features/application/ribbon-docking/ribbon-docking-wireframe.svg": "9561e62e03cb2d7932f1023878a7b40b0e1f4e8abbd3ebaad21bc949a77613ba",
+          "features/application/ribbon-docking/right-docked-group-switch.svg": "3b48797cbca09fcb961441a6eddc5e3e03b48705b5deafda8bd514a1d94a335e",
+          "features/application/ribbon-docking/side-docked-hover.svg": "e51f7436336655cafb8468c0c0305c84a37f92421b673c34cb68a77daf8a4745",
+          "features/application/ribbon-docking/top-left-right-docking-cycle.svg": "05b655816c604989717578fc581f1e0f0b6debfedee809ed209e29d7d8d12325"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-ribbon-docking-3856/cucumber.json",
+        "cucumber_sha256": "bada0ea06566abccf4bb95f7ffc375f71f9e56a7e4d5fbc7f70f281a4dac1d12",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-ribbon-docking-3856/scenario-arguments.json",
+        "scenario_arguments_sha256": "29a35e5a1887c030d1d60d7d8db1eeacc1d7d08185ac2903b62ee59c92d713dc",
+        "application_commit": "90c0a3d794cfbc81a8423f6b2ca8765842ae61e8",
+        "command": "Full published Ribbon Docking run. See receipt README.",
+        "environment": "Linux, X11 Xvfb, Vulkan Lavapipe. Scripted window input with separate X11 mouse round trip.",
+        "notes": "Fourteen scenarios and 141 steps passed. Feature and supporting file hashes matched before and after.",
+        "blocker": "Five portable scenarios still need bindings and behavior checks. Three scenarios name deferred Inventor or assembly files."
+      },
+      "3314b980c97be4aa018b9628898ad8758179b0737ed40d4f71f75a31395bf026": {
+        "feature_sha256": "3314b980c97be4aa018b9628898ad8758179b0737ed40d4f71f75a31395bf026",
+        "supporting_files": {
+          "features/application/ribbon-docking/FIXTURES.md": "0da259dcd02b194285da02dad6b312c979ab754fad25236457d96502df1ca896",
+          "features/application/ribbon-docking/FUNCTIONAL.md": "9a34cdf670c554a855789556730a3a47d86eaae99d5f5798d267c0ba7d4f89a1",
+          "features/application/ribbon-docking/VISUAL.md": "ff43094ba09b1394ea04b835fc691e72323eaf25848368e1e82030ba0714e5a7",
+          "features/application/ribbon-docking/active-command-dock-cycle.svg": "5facc2b9aa77a4e327e3c8d7fc52ddd9a1dd451e99522b33699dc90df1af6b32",
+          "features/application/ribbon-docking/active-command-tools-tab.svg": "82c082d52ca6abcaefb8ce990c1b0c16baa9d8660bb322a0800596368c9a2601",
+          "features/application/ribbon-docking/active-tab-context-docking.svg": "a004d8030a75dcae2863b43261b314f926354df02798443d697d028c4cc28124",
+          "features/application/ribbon-docking/docking-menu-wireframe.svg": "24edc76bd55bd170a7c1210d46acaf99acca2f12ec1258083607f29ce9397000",
+          "features/application/ribbon-docking/docking-symbols.svg": "0f4eb68555cac6371407c7253565f8df3f0850b36754db1b64d10b1dac0f7f62",
+          "features/application/ribbon-docking/document-switch-left-dock.svg": "839f7bbc31a39561a58c5ca2170fa83bd190a957e24bd98a4e4e3f84bac9cb05",
+          "features/application/ribbon-docking/expanded-title-current-dock.svg": "5e972fecb521a31736f58d128a342f476c3418820a58b43b7c360c355c038813",
+          "features/application/ribbon-docking/expanded-title-to-left.svg": "c947e7afd00ae4be0bda2b0b2af582a7743854b9445cdd8d36f1b58c44c70ceb",
+          "features/application/ribbon-docking/finish-sketch-left-docked.svg": "4e33e8d7d2cfbbbcd8a2fdeaae3ad3f4428f8bf86b1b722fa1e94e9e6ffc5b5f",
+          "features/application/ribbon-docking/floating-group-hover.svg": "9904a57f3e6197ee2c415c3f2155ab2f6da18b25661d6a428fdbc38c7ff84930",
+          "features/application/ribbon-docking/floating-ribbon-dock-menu.svg": "3852d79270de6df96b474b0e3f965894b20c2369a1b85f285ea9ce27e7c8b846",
+          "features/application/ribbon-docking/floating-ribbon-group-scroll.svg": "07b94ad263a57924f3200697ab41efa26148167ea558bcf27dfa86ff9c74f58e",
+          "features/application/ribbon-docking/floating-ribbon-modify-list.svg": "261ef302565e51a6fb48e83f1ff4d75bfc17064822754c7a2a81e45fda8e3d6c",
+          "features/application/ribbon-docking/floating-ribbon-wireframe.svg": "a5f0f1208f42ba4241a62b1ed3cff3d4446866ca40c5542d7132371782649390",
+          "features/application/ribbon-docking/floating-tab-panel.svg": "94072a7fcc4abefc9a50d6f76bf17a33648f255bd82a3e05d28c89918b8dcaac",
+          "features/application/ribbon-docking/floating-to-left-sequence.svg": "444cce11bf175e8d699c000239462904a17d7a14658f87ced89a10cff84e5253",
+          "features/application/ribbon-docking/floating-to-right-sequence.svg": "b7043efe2e8e88d00cdc7cf4e7139720da4f8c76ed9d5381fa4e3cdbfac72bab",
+          "features/application/ribbon-docking/left-docked-group-switch.svg": "eeb4fc95cc624558dca76f46f8779720e16ee0781156c810faf7acf80ca3366b",
+          "features/application/ribbon-docking/ribbon-docking-wireframe.svg": "9561e62e03cb2d7932f1023878a7b40b0e1f4e8abbd3ebaad21bc949a77613ba",
+          "features/application/ribbon-docking/right-docked-group-switch.svg": "3b48797cbca09fcb961441a6eddc5e3e03b48705b5deafda8bd514a1d94a335e",
+          "features/application/ribbon-docking/side-docked-hover.svg": "e51f7436336655cafb8468c0c0305c84a37f92421b673c34cb68a77daf8a4745",
+          "features/application/ribbon-docking/top-left-right-docking-cycle.svg": "05b655816c604989717578fc581f1e0f0b6debfedee809ed209e29d7d8d12325",
+          "fixtures/cad/blank-metric-part.opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+          "fixtures/cad/planar-sketch-empty-xy.opd": "d936ef6b165b4bcbe14e04ac1b08bb5b16c81fddb597e70acb781e753c07e9a8"
+        },
+        "application_commit": "dc6d945fdd80351e3f273fb9b80164386c3c3d25",
+        "command": "Full published Ribbon Docking run on a stable local snapshot. See receipt README.",
+        "environment": "Linux, X11 Xvfb, Vulkan Lavapipe. The floating cases use X11 wheel and pointer input.",
+        "notes": "Twenty scenarios and 193 steps passed. Local scenario snapshot dd23a2fc6a01a1afb058f5f902d833a7beb97e62.",
+        "blocker": "The Shell preview widens vertex tolerance on the published native Part. Mixed-document switching still needs a native Sheet Metal fixture.",
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-floating-ribbon-3856/cucumber.json",
+        "cucumber_sha256": "721f03b1d2db750c30357d5fceb14224c0b247f596c27fdde0b6de6ec00cddb9",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-floating-ribbon-3856/scenario-arguments.json",
+        "scenario_arguments_sha256": "53ab574cdf515f338d2bcfa5f7896a6d5a18e699e6cfc22fe1d1336a8bd6b8a4"
+      }
+    }
+  }
+}

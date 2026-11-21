@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Constraint settings: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature" package="testsuite/Feature: Constraint settings: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature" tests="8" errors="0" failures="8" hostname="localhost" timestamp="2026-11-19T20:19:34.519161832Z" time="25.229264181"><testcase name="Scenario: constraint-settings-01 Commit the intended result: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:5:3" time="3.296642839"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: constraint-settings-01 Commit the intended result
+   ✘  Given Constraint Settings > Inference shows Infer constraints and Persist constraints checked
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:6:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-02 Control constraint glyph visibility: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:16:3" time="3.108543134"><failure type="Step Panicked" message="Step panicked. Captured output: assertion failed: world.state().sketch_at_ready"/><system-out><![CDATA[  Scenario: constraint-settings-02 Control constraint glyph visibility
+   ✘  Given the MCAD Software is running
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:17:5
+      Matched: crates/head/src/../tests/application/../sketch/line/steps.rs:9:1
+      Step panicked. Captured output: assertion failed: world.state().sketch_at_ready
+      ApplicationWorld {
+          text: "Model\n+\nModel\n(nodocument)\nReady\nRibbonDisplay\nv\nv\n...\nOblikovati\nFile\nGetStarted\nTools\nNewPart\nLaunch",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-03 Cancel changes to inference configuration: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:28:3" time="3.127751293"><failure type="Step Panicked" message="Step panicked. Captured output: assertion failed: world.state().sketch_at_ready"/><system-out><![CDATA[  Scenario: constraint-settings-03 Cancel changes to inference configuration
+   ✘  Given the MCAD Software is running
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:29:5
+      Matched: crates/head/src/../tests/application/../sketch/line/steps.rs:9:1
+      Step panicked. Captured output: assertion failed: world.state().sketch_at_ready
+      ApplicationWorld {
+          text: "Model\n+\nModel\n(nodocument)\nReady\nRibbonDisplay\nv\nv\n...\nOblikovati\nFile\nGetStarted\nTools\nNewPart\nLaunch",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-06 Cancel Relax Mode configuration changes: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:43:3" time="3.13178142"><failure type="Step Panicked" message="Step panicked. Captured output: assertion failed: world.state().sketch_at_ready"/><system-out><![CDATA[  Scenario: constraint-settings-06 Cancel Relax Mode configuration changes
+   ✘  Given the MCAD Software is running
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:44:5
+      Matched: crates/head/src/../tests/application/../sketch/line/steps.rs:9:1
+      Step panicked. Captured output: assertion failed: world.state().sketch_at_ready
+      ApplicationWorld {
+          text: "Model\n+\nModel\n(nodocument)\nReady\nRibbonDisplay\nv\nv\n...\nOblikovati\nFile\nGetStarted\nTools\nNewPart\nLaunch",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-07 inspect restored configuration through Application Options: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:61:3" time="3.184330167"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: constraint-settings-07 inspect restored configuration through Application Options
+   ✘  Given an active sketch and Tools ribbon
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:62:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-08 Compare visible glyphs after disabling and restoring inference: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:75:3" time="3.180188674"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: constraint-settings-08 Compare visible glyphs after disabling and restoring inference
+   ✘  Given Precise Input is active in Y-coordinate and X-axis-angle mode
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:76:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-09 Retain Relax Mode after accepting and restore it: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:89:3" time="3.090079763"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: constraint-settings-09 Retain Relax Mode after accepting and restore it
+   ✘  Given Relax Mode is disabled with its original mixed removal choices
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:90:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: constraint-settings-10 Inspect initial Relax Mode removal choices: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:101:3" time="3.109946891"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: constraint-settings-10 Inspect initial Relax Mode removal choices
+   ✘  Given Relax Mode is initially disabled
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature:102:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

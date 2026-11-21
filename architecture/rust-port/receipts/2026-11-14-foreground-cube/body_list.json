@@ -1,0 +1,12 @@
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"bodies\":[{\"index\":0,\"name\":\"Solid1\",\"solid\":true,\"visible\":true,\"faces\":6,\"edges\":12,\"vertices\":8,\"shells\":1,\"wires\":6,\"key\":\"4f4b524b020100000000000000040000002e000000e25ae00d4f7d4c51b8504372abfbf5e10c00736b657463682d707269736d0400626f647901000100000000000000\"}]}"
+      }
+    ]
+  }
+}

@@ -1,0 +1,59 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling version_check v0.9.5
+   Compiling generic-array v0.14.7
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling serde_core v1.0.229
+   Compiling typenum v1.20.1
+   Compiling autocfg v1.5.1
+   Compiling num-traits v0.2.19
+   Compiling zmij v1.0.23
+   Compiling syn v3.0.7
+   Compiling libm v0.2.16
+   Compiling libc v0.2.190
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling serde_derive v1.0.229
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling memchr v2.8.3
+   Compiling cfg-if v1.0.5
+   Compiling time-core v0.1.9
+   Compiling getrandom v0.4.3
+   Compiling powerfmt v0.2.1
+   Compiling num-conv v0.2.2
+   Compiling deranged v0.5.8
+   Compiling itoa v1.0.18
+   Compiling time v0.3.55
+   Compiling digest v0.10.7
+   Compiling num-integer v0.1.47
+   Compiling cpufeatures v0.2.17
+   Compiling base64 v0.22.1
+   Compiling sha1_smol v1.0.1
+   Compiling oblikovati-api v0.159.0 (https://github.com/Oblikovati/Oblikovati.API.git?rev=57ae73ca46bfcadcc09e3ec1d0c424d803cadc44#57ae73ca)
+   Compiling uuid v1.27.0
+   Compiling sha2 v0.10.9
+   Compiling maryada v0.2.0
+   Compiling num-bigint v0.4.6
+   Compiling oblikovati-solve v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/solve)
+   Compiling xml v1.4.0
+   Compiling num-rational v0.4.2
+   Compiling oblikovati-model v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/line-persistence-4160/crates/model)
+    Finished `test` profile [unoptimized] target(s) in 40.94s
+     Running tests/inferred_line_chains.rs (/tmp/obk-line-4160-target/debug/deps/inferred_line_chains-39a5378f9232d3a1)
+
+running 1 test
+
+thread 'nonpersistent_direction_aligns_without_saving_a_relation' (1735761) panicked at crates/model/tests/inferred_line_chains.rs:126:5:
+temporary direction must not be saved
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test nonpersistent_direction_aligns_without_saving_a_relation ... FAILED
+
+failures:
+
+failures:
+    nonpersistent_direction_aligns_without_saving_a_relation
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p oblikovati-model --test inferred_line_chains`

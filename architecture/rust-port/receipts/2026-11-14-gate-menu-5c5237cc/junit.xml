@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: File menu: tmp/obk-menu-refresh/features/application/file-menu/file-menu.feature" package="testsuite/Feature: File menu: tmp/obk-menu-refresh/features/application/file-menu/file-menu.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:25:57.117449721Z" time="4.982213344"><testcase name="Scenario: Inspect the File menu from Home: tmp/obk-menu-refresh/features/application/file-menu/file-menu.feature:72:3" time="4.982213344"><system-out><![CDATA[  Scenario: Inspect the File menu from Home
+   ✔  Given Home is active in the MCAD Software
+   ✔  And recent documents are available
+   ✔  When the user selects File
+   ✔  Then a vertical list of file commands opens over Home
+   ✔  And a recent-documents region is shown beside the command list
+   ✔  And Save As, document properties and Print appear muted
+   ✔  And the Home recent-documents view remains visible around the menu
+]]></system-out></testcase></testsuite></testsuites>

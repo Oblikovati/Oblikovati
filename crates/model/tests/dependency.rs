@@ -140,3 +140,12 @@ fn errors_name_invalid_values_and_expected_shape() {
         assert!(std::error::Error::source(&error).is_none());
     }
 }
+
+#[test]
+fn all_documents_order_drivers_first_even_when_readers_opened_first() {
+    let mut graph = registered(&[3, 2, 1, 4]);
+    graph.replace_drivers(3, &[2]).unwrap();
+    graph.replace_drivers(2, &[1]).unwrap();
+    assert_eq!(graph.recompute_all(), [1, 2, 3, 4]);
+    assert!(DependencyGraph::<u32>::default().recompute_all().is_empty());
+}

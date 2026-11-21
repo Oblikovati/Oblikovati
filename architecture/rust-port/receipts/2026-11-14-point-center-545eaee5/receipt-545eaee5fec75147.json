@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:545eaee5fec751471341c0834211f05d9377ece3ddc1bbc54c6cbcead3a10f12",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+  "application_commit": "4cc5dd52f727b96c6e5c8cc1a78378de57cb45d2",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-center-545eaee5/cucumber.json",
+    "sha256": "0ad0d37c13f2959a99e10ec5cae2a584ad68f23b9ba2c73fa6f3c772be5d4cbc"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-center-545eaee5/source-revision.json",
+    "sha256": "f01846851dc3083dbb0639e7d45f2f5e095d154208613a565b9c03db9f4d8487"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-point-center-545eaee5/point-08-Create-a-center-point-using-the-Format-toggle.png",
+    "sha256": "af196b4f4c241ca57658c628a2cc495c8400ea779319fe572807d39724c7a32f"
+  }
+}

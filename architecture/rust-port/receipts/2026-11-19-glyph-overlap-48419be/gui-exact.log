@@ -1,0 +1,12 @@
+   Compiling oblikovati-gui v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/glyph-overlap-4169/crates/gui)
+    Finished `test` profile [unoptimized] target(s) in 4.13s
+     Running tests/constraint_hover.rs (/tmp/obk-glyph-overlap-4169/debug/deps/constraint_hover-6ccc9d25256d447c)
+
+running 4 tests
+test dense_overlap_frame_timing ... ignored, manual GUI frame timing; run on an idle machine
+test dense_overlapping_glyph_candidates_are_stable_and_complete ... ok
+test overlapping_glyphs_offer_each_relation_in_stable_order ... ok
+test hovering_the_rendered_glyph_reports_both_lines_and_clears_on_exit ... ok
+
+test result: ok. 3 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 8.46s
+

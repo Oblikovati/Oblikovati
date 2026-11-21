@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! AT-SPI adapter for application window semantics.
+use super::{
+    actions::{FrameActions, FrameRequest},
+    frame::FrameSemantics,
+};
+use accesskit::{ActivationHandler, DeactivationHandler, TreeUpdate};
+use std::sync::{
+    Arc, Mutex,
+    mpsc::{self, Receiver},
+};
+
+struct Activation(Arc<Mutex<Option<FrameSemantics>>>);
+impl ActivationHandler for Activation {
+    fn request_initial_tree(&mut self) -> Option<TreeUpdate> {
+        self.0.lock().ok()?.as_ref().map(FrameSemantics::tree)
+    }
+}
+struct Deactivation;
+impl DeactivationHandler for Deactivation {
+    fn deactivate_accessibility(&mut self) {}
+}
+
+pub(crate) struct UnixFrameAccessibility {
+    adapter: accesskit_unix::Adapter,
+    snapshot: Arc<Mutex<Option<FrameSemantics>>>,
+    requests: Receiver<FrameRequest>,
+    bounds: Option<accesskit::Rect>,
+    focused: Option<bool>,
+}
+impl UnixFrameAccessibility {
+    pub fn new(wake: impl Fn() + Send + 'static) -> Self {
+        let snapshot = Arc::new(Mutex::new(None));
+        let (sender, requests) = mpsc::channel();
+        let adapter = accesskit_unix::Adapter::new(
+            Activation(snapshot.clone()),
+            FrameActions { sender, wake },
+            Deactivation,
+        );
+        Self {
+            adapter,
+            snapshot,
+            requests,
+            bounds: None,
+            focused: None,
+        }
+    }
+    pub fn update(&mut self, semantics: FrameSemantics, bounds: accesskit::Rect, focused: bool) {
+        if self.bounds != Some(bounds) {
+            self.adapter.set_root_window_bounds(bounds, bounds);
+            self.bounds = Some(bounds);
+        }
+        if self.focused != Some(focused) {
+            self.adapter.update_window_focus_state(focused);
+            self.focused = Some(focused);
+        }
+        if let Ok(mut snapshot) = self.snapshot.lock() {
+            if snapshot.as_ref() == Some(&semantics) {
+                return;
+            }
+            *snapshot = Some(semantics.clone());
+        }
+        self.adapter.update_if_active(|| semantics.tree());
+    }
+    pub fn next_request(&self) -> Option<FrameRequest> {
+        self.requests.try_recv().ok()
+    }
+}

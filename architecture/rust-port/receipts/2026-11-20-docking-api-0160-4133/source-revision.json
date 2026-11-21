@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "fc845b2c9e4e69a13eb9895863e88d043b685310",
+    "dirty": false,
+    "root": "/tmp/oblikovati-docking-4133.3M2lik/snapshot/checkout"
+  },
+  "before": {
+    "commit": "fc845b2c9e4e69a13eb9895863e88d043b685310",
+    "dirty": false,
+    "root": "/tmp/oblikovati-docking-4133.3M2lik/snapshot/checkout"
+  },
+  "source_changed": false
+}

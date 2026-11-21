@@ -1,0 +1,41 @@
+{
+  "kind": "local candidate diagnostic; not accepted benchmark evidence",
+  "application_commit": "700db6032dcfae7211175b974c08024a52071459",
+  "application_candidate_stash": "3312db4726d16de7f129fa0df2d51b3702974add",
+  "api_candidate_commit": "a419c6e9a982814ee6298839e22afd5e24dda9f8",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "results": [
+    "Coincident-07 passed 12 steps under Xvfb and Lavapipe.",
+    "Four typed preference router tests passed."
+  ],
+  "limitations": [
+    "The native and router changes are stashed, and the API candidate is unpublished. This is not current acceptance for the released dependency.",
+    "The application full gate remains open."
+  ],
+  "artifacts": [
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-preference-recheck/native.log.gz",
+      "sha256": "d69c7e0477fe6ae80f8f879e8d4d1c6f27978c7b6219cc23f86ef6b383c83bc4"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-preference-recheck/router.log.gz",
+      "sha256": "a3e69565256ac4bac4e251bdfe39db2c5ec41aaaec98c2af1ad9a37b57ec01a3"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-preference-recheck/coincident-07-Constrain-two-standalone-points-and-inspect-history.png",
+      "sha256": "5732b33e5b4276985fd5fe661019f8fa76881496dba6f82611479ab9824021e0"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-preference-recheck/source-revision.json",
+      "sha256": "55f125d0618498359210dbbc88bd1dfc8bca60b388d9d6e4ff84df9e950dafbc"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-preference-recheck/junit.xml",
+      "sha256": "080bbe134d7629000263795d2f10e381ff1941875d4c40d22abf223e2f85a333"
+    },
+    {
+      "path": "architecture/rust-port/receipts/2026-11-14-preference-recheck/cucumber.json",
+      "sha256": "f6725faa5e2e9738ca571f669f4096cad1816e6ab8e934b9b0f90265b533b339"
+    }
+  ]
+}

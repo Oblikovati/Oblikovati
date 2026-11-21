@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eu
+printf '%s' "$DISPLAY" > /tmp/obk-tabs-os-x96t6u/display
+printf '%s' "$XAUTHORITY" > /tmp/obk-tabs-os-x96t6u/auth
+export OBK_ADDINS_DIR=/tmp/obk-tabs-os-x96t6u/addins OBK_MCP_ADDR=127.0.0.1:17994 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json XMODIFIERS=@im=none
+/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/target/debug/oblikovati > /tmp/obk-tabs-os-x96t6u/host.log 2>&1 &
+pid=$!
+trap 'kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true' EXIT
+wait "$pid"

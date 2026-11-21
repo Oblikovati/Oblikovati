@@ -1,0 +1,10 @@
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/move-ribbon-4014-bcBPz0Yk/tree/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 28.59s
+     Running unittests src/lib.rs (/tmp/obk-move-4014-target-DQSt4f4q/debug/deps/oblikovati_head-d4dcd7ed7aaa36ac)
+
+running 2 tests
+test native::gui_loop_tests::application_bdd::sketch::move_precise::move_opens_from_the_collapsed_modify_panel ... ok
+test native::gui_loop_tests::application_bdd::sketch::move_precise::move_opens_from_the_expanded_modify_panel ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1064 filtered out; finished in 47.22s
+

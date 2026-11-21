@@ -1,0 +1,11 @@
+{
+  "snapshot_commit": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "branch": "snapshot",
+  "bundle": "mcad-scenarios-2026-11-16-b576445.bundle",
+  "bundle_sha256": "d77689de7e09eaaa28dd49b8ad14aeb78119e8b6efbdd58df868f8014c3106be",
+  "manifest": "mcad-scenarios-2026-11-16-b576445.sha256.json",
+  "manifest_sha256": "840fbebaaa530fda1805b9b1a0c07c850539d364044727f9f7f834a15a82a181",
+  "file_count": 1338,
+  "captured_utc_date": "2026-11-16",
+  "provenance": "Local snapshot of unversioned MCAD-Scenarios. This is not an upstream commit. BLOCKERS.md and reference captures are excluded."
+}

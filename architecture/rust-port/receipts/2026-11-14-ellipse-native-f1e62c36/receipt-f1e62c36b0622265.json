@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:f1e62c36b06222650ff1474075b58aff9519310506d12cc3d3d748017a9fcf81",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f",
+  "application_commit": "de6af245e7e277334821481cda9dbede43538fe0",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-f1e62c36/cucumber.json",
+    "sha256": "c88f1cd6721727985d8556d7de70146308118a07014b8048f57503e207ac1fe5"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-f1e62c36/source-revision.json",
+    "sha256": "432189f9333dd201e617c755a6eb1146d79245f102fb3963b4186f76d00ab4b5"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ellipse-native-f1e62c36/ellipse-03-Cancel-at-the-defining-stages.png",
+    "sha256": "0c0f814f3659bb591f5491db162ff807ea73735f76d3d92cb700c0f365b2d0cb"
+  }
+}

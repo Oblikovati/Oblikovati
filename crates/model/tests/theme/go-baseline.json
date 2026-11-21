@@ -1,0 +1,1217 @@
+{
+  "applicationRevision": "aa8297d1b0ac33c024f19e54821536d76e8a447a",
+  "tokens": [
+    "chrome.window_bg",
+    "chrome.panel_bg",
+    "chrome.popup_bg",
+    "chrome.menu_bar_bg",
+    "chrome.header_bg",
+    "chrome.text",
+    "chrome.text_disabled",
+    "chrome.border",
+    "chrome.control_bg",
+    "chrome.control_hover",
+    "chrome.control_active",
+    "chrome.button",
+    "chrome.button_hover",
+    "chrome.button_active",
+    "chrome.accent",
+    "chrome.scrollbar",
+    "chrome.danger",
+    "viewport.bg",
+    "viewport.grid_minor",
+    "viewport.grid_major",
+    "viewport.grid_axis",
+    "viewport.sketch_geometry",
+    "viewport.sketch_selected",
+    "viewport.sketch_candidate",
+    "viewport.sketch_preview",
+    "viewport.dimension_driving",
+    "viewport.dimension_driven",
+    "viewport.dimension_sketch",
+    "viewport.snap_glyph",
+    "viewport.active_border",
+    "gizmo.plane_faint",
+    "gizmo.plane_hover",
+    "gizmo.plane_selected",
+    "gizmo.plane_fill",
+    "gizmo.selection_highlight",
+    "icon.primary",
+    "icon.secondary",
+    "icon.tertiary",
+    "icon.background"
+  ],
+  "builtins": [
+    {
+      "name": "Dark",
+      "kind": "dark",
+      "colors": {
+        "chrome.accent": "#8160e3ff",
+        "chrome.border": "#1d1d1dff",
+        "chrome.button": "#2a2a2aff",
+        "chrome.button_active": "#8160e3ff",
+        "chrome.button_hover": "#3a3a3aff",
+        "chrome.control_active": "#3d3d3dff",
+        "chrome.control_bg": "#1f1f1fff",
+        "chrome.control_hover": "#303030ff",
+        "chrome.danger": "#de6f6fff",
+        "chrome.header_bg": "#212121ff",
+        "chrome.menu_bar_bg": "#232323ff",
+        "chrome.panel_bg": "#1b1b1bff",
+        "chrome.popup_bg": "#1f1f1fef",
+        "chrome.scrollbar": "#523889ff",
+        "chrome.text": "#c5c5c5ff",
+        "chrome.text_disabled": "#c5c5c580",
+        "chrome.window_bg": "#161616ff",
+        "gizmo.plane_faint": "#edba18ff",
+        "gizmo.plane_fill": "#edba1840",
+        "gizmo.plane_hover": "#ffd75eff",
+        "gizmo.plane_selected": "#885ce3ff",
+        "gizmo.selection_highlight": "#50ffb8ff",
+        "icon.background": "#0000001f",
+        "icon.primary": "#e6e6e6ff",
+        "icon.secondary": "#51ddb4ff",
+        "icon.tertiary": "#78c8ffff",
+        "viewport.active_border": "#ffffff2a",
+        "viewport.bg": "#141414ff",
+        "viewport.dimension_driven": "#cd54ffff",
+        "viewport.dimension_driving": "#e7e7e7ff",
+        "viewport.dimension_sketch": "#3dd966ff",
+        "viewport.grid_axis": "#232323b7",
+        "viewport.grid_major": "#2323237a",
+        "viewport.grid_minor": "#2323233d",
+        "viewport.sketch_candidate": "#ffffff80",
+        "viewport.sketch_geometry": "#a0a0a0ff",
+        "viewport.sketch_preview": "#ffffffff",
+        "viewport.sketch_selected": "#8f68ffff",
+        "viewport.snap_glyph": "#59efd2ff"
+      },
+      "channels": {
+        "chrome.accent": {
+          "R": 0.5058824,
+          "G": 0.3764706,
+          "B": 0.8901961,
+          "A": 1
+        },
+        "chrome.border": {
+          "R": 0.11372549,
+          "G": 0.11372549,
+          "B": 0.11372549,
+          "A": 1
+        },
+        "chrome.button": {
+          "R": 0.16470589,
+          "G": 0.16470589,
+          "B": 0.16470589,
+          "A": 1
+        },
+        "chrome.button_active": {
+          "R": 0.5058824,
+          "G": 0.3764706,
+          "B": 0.8901961,
+          "A": 1
+        },
+        "chrome.button_hover": {
+          "R": 0.22549021,
+          "G": 0.22549021,
+          "B": 0.22549021,
+          "A": 1
+        },
+        "chrome.control_active": {
+          "R": 0.23874511,
+          "G": 0.23874511,
+          "B": 0.23874511,
+          "A": 1
+        },
+        "chrome.control_bg": {
+          "R": 0.12156863,
+          "G": 0.12156863,
+          "B": 0.12156863,
+          "A": 1
+        },
+        "chrome.control_hover": {
+          "R": 0.18666667,
+          "G": 0.18666667,
+          "B": 0.18666667,
+          "A": 1
+        },
+        "chrome.danger": {
+          "R": 0.87058824,
+          "G": 0.43529412,
+          "B": 0.43529412,
+          "A": 1
+        },
+        "chrome.header_bg": {
+          "R": 0.12941177,
+          "G": 0.12941177,
+          "B": 0.12941177,
+          "A": 1
+        },
+        "chrome.menu_bar_bg": {
+          "R": 0.13725491,
+          "G": 0.13725491,
+          "B": 0.13725491,
+          "A": 1
+        },
+        "chrome.panel_bg": {
+          "R": 0.105882354,
+          "G": 0.105882354,
+          "B": 0.105882354,
+          "A": 1
+        },
+        "chrome.popup_bg": {
+          "R": 0.12156863,
+          "G": 0.12156863,
+          "B": 0.12156863,
+          "A": 0.9372549
+        },
+        "chrome.scrollbar": {
+          "R": 0.32156864,
+          "G": 0.21960784,
+          "B": 0.5372549,
+          "A": 1
+        },
+        "chrome.text": {
+          "R": 0.77254903,
+          "G": 0.77254903,
+          "B": 0.77254903,
+          "A": 1
+        },
+        "chrome.text_disabled": {
+          "R": 0.77254903,
+          "G": 0.77254903,
+          "B": 0.77254903,
+          "A": 0.5
+        },
+        "chrome.window_bg": {
+          "R": 0.08627451,
+          "G": 0.08627451,
+          "B": 0.08627451,
+          "A": 1
+        },
+        "gizmo.plane_faint": {
+          "R": 0.92941177,
+          "G": 0.7294118,
+          "B": 0.09411765,
+          "A": 1
+        },
+        "gizmo.plane_fill": {
+          "R": 0.92941177,
+          "G": 0.7294118,
+          "B": 0.09411765,
+          "A": 0.2509804
+        },
+        "gizmo.plane_hover": {
+          "R": 1,
+          "G": 0.84313726,
+          "B": 0.36862746,
+          "A": 1
+        },
+        "gizmo.plane_selected": {
+          "R": 0.53333336,
+          "G": 0.36078432,
+          "B": 0.8901961,
+          "A": 1
+        },
+        "gizmo.selection_highlight": {
+          "R": 0.3137255,
+          "G": 1,
+          "B": 0.72156864,
+          "A": 1
+        },
+        "icon.background": {
+          "R": 0,
+          "G": 0,
+          "B": 0,
+          "A": 0.12156863
+        },
+        "icon.primary": {
+          "R": 0.9019608,
+          "G": 0.9019608,
+          "B": 0.9019608,
+          "A": 1
+        },
+        "icon.secondary": {
+          "R": 0.31764707,
+          "G": 0.8666667,
+          "B": 0.7058824,
+          "A": 1
+        },
+        "icon.tertiary": {
+          "R": 0.47058824,
+          "G": 0.78431374,
+          "B": 1,
+          "A": 1
+        },
+        "viewport.active_border": {
+          "R": 1,
+          "G": 1,
+          "B": 1,
+          "A": 0.16470589
+        },
+        "viewport.bg": {
+          "R": 0.078431375,
+          "G": 0.078431375,
+          "B": 0.078431375,
+          "A": 1
+        },
+        "viewport.dimension_driven": {
+          "R": 0.8039216,
+          "G": 0.32941177,
+          "B": 1,
+          "A": 1
+        },
+        "viewport.dimension_driving": {
+          "R": 0.90588236,
+          "G": 0.90588236,
+          "B": 0.90588236,
+          "A": 1
+        },
+        "viewport.dimension_sketch": {
+          "R": 0.24,
+          "G": 0.85,
+          "B": 0.4,
+          "A": 1
+        },
+        "viewport.grid_axis": {
+          "R": 0.13725491,
+          "G": 0.13725491,
+          "B": 0.13725491,
+          "A": 0.7176471
+        },
+        "viewport.grid_major": {
+          "R": 0.13725491,
+          "G": 0.13725491,
+          "B": 0.13725491,
+          "A": 0.47843137
+        },
+        "viewport.grid_minor": {
+          "R": 0.13725491,
+          "G": 0.13725491,
+          "B": 0.13725491,
+          "A": 0.23921569
+        },
+        "viewport.sketch_candidate": {
+          "R": 1,
+          "G": 1,
+          "B": 1,
+          "A": 0.5019608
+        },
+        "viewport.sketch_geometry": {
+          "R": 0.627451,
+          "G": 0.627451,
+          "B": 0.627451,
+          "A": 1
+        },
+        "viewport.sketch_preview": {
+          "R": 1,
+          "G": 1,
+          "B": 1,
+          "A": 1
+        },
+        "viewport.sketch_selected": {
+          "R": 0.56078434,
+          "G": 0.40784314,
+          "B": 1,
+          "A": 1
+        },
+        "viewport.snap_glyph": {
+          "R": 0.34901962,
+          "G": 0.9372549,
+          "B": 0.8235294,
+          "A": 1
+        }
+      }
+    },
+    {
+      "name": "Light",
+      "kind": "light",
+      "colors": {
+        "chrome.accent": "#bfdaffff",
+        "chrome.border": "#89898980",
+        "chrome.button": "#e9e9e9ff",
+        "chrome.button_active": "#bfdaffff",
+        "chrome.button_hover": "#d7d7d7ff",
+        "chrome.control_active": "#cfcfcfff",
+        "chrome.control_bg": "#f1f1f1ff",
+        "chrome.control_hover": "#dededeff",
+        "chrome.danger": "#f54145ff",
+        "chrome.header_bg": "#e6e6e6ff",
+        "chrome.menu_bar_bg": "#eeeeeeff",
+        "chrome.panel_bg": "#e6e6e6ff",
+        "chrome.popup_bg": "#e6e6e6ff",
+        "chrome.scrollbar": "#c3c3c3ff",
+        "chrome.text": "#333333ff",
+        "chrome.text_disabled": "#33333380",
+        "chrome.window_bg": "#eeeeeeff",
+        "gizmo.plane_faint": "#ff3ba5ff",
+        "gizmo.plane_fill": "#ffffff00",
+        "gizmo.plane_hover": "#000000ff",
+        "gizmo.plane_selected": "#ffb800ff",
+        "gizmo.selection_highlight": "#7bb2ffff",
+        "icon.background": "#e2e2e24d",
+        "icon.primary": "#2b2b2bff",
+        "icon.secondary": "#ff6600ff",
+        "icon.tertiary": "#0644ffff",
+        "viewport.active_border": "#898989ff",
+        "viewport.bg": "#c9c9c9ff",
+        "viewport.dimension_driven": "#6f00b1ff",
+        "viewport.dimension_driving": "#4d4d4dff",
+        "viewport.dimension_sketch": "#055c21ff",
+        "viewport.grid_axis": "#6666669f",
+        "viewport.grid_major": "#6666666a",
+        "viewport.grid_minor": "#66666635",
+        "viewport.sketch_candidate": "#6f5000e6",
+        "viewport.sketch_geometry": "#4d4d4dff",
+        "viewport.sketch_preview": "#474747ff",
+        "viewport.sketch_selected": "#005c79ff",
+        "viewport.snap_glyph": "#00598eff"
+      },
+      "channels": {
+        "chrome.accent": {
+          "R": 0.7490196,
+          "G": 0.85490197,
+          "B": 1,
+          "A": 1
+        },
+        "chrome.border": {
+          "R": 0.5372549,
+          "G": 0.5372549,
+          "B": 0.5372549,
+          "A": 0.5019608
+        },
+        "chrome.button": {
+          "R": 0.9137255,
+          "G": 0.9137255,
+          "B": 0.9137255,
+          "A": 1
+        },
+        "chrome.button_active": {
+          "R": 0.7490196,
+          "G": 0.85490197,
+          "B": 1,
+          "A": 1
+        },
+        "chrome.button_hover": {
+          "R": 0.8423529,
+          "G": 0.8423529,
+          "B": 0.8423529,
+          "A": 1
+        },
+        "chrome.control_active": {
+          "R": 0.8109804,
+          "G": 0.8109804,
+          "B": 0.8109804,
+          "A": 1
+        },
+        "chrome.control_bg": {
+          "R": 0.94509804,
+          "G": 0.94509804,
+          "B": 0.94509804,
+          "A": 1
+        },
+        "chrome.control_hover": {
+          "R": 0.87058824,
+          "G": 0.87058824,
+          "B": 0.87058824,
+          "A": 1
+        },
+        "chrome.danger": {
+          "R": 0.9607843,
+          "G": 0.25490198,
+          "B": 0.27058825,
+          "A": 1
+        },
+        "chrome.header_bg": {
+          "R": 0.9019608,
+          "G": 0.9019608,
+          "B": 0.9019608,
+          "A": 1
+        },
+        "chrome.menu_bar_bg": {
+          "R": 0.93333334,
+          "G": 0.93333334,
+          "B": 0.93333334,
+          "A": 1
+        },
+        "chrome.panel_bg": {
+          "R": 0.9019608,
+          "G": 0.9019608,
+          "B": 0.9019608,
+          "A": 1
+        },
+        "chrome.popup_bg": {
+          "R": 0.9019608,
+          "G": 0.9019608,
+          "B": 0.9019608,
+          "A": 1
+        },
+        "chrome.scrollbar": {
+          "R": 0.7647059,
+          "G": 0.7647059,
+          "B": 0.7647059,
+          "A": 1
+        },
+        "chrome.text": {
+          "R": 0.2,
+          "G": 0.2,
+          "B": 0.2,
+          "A": 1
+        },
+        "chrome.text_disabled": {
+          "R": 0.2,
+          "G": 0.2,
+          "B": 0.2,
+          "A": 0.5
+        },
+        "chrome.window_bg": {
+          "R": 0.93333334,
+          "G": 0.93333334,
+          "B": 0.93333334,
+          "A": 1
+        },
+        "gizmo.plane_faint": {
+          "R": 1,
+          "G": 0.23137255,
+          "B": 0.64705884,
+          "A": 1
+        },
+        "gizmo.plane_fill": {
+          "R": 1,
+          "G": 1,
+          "B": 1,
+          "A": 0
+        },
+        "gizmo.plane_hover": {
+          "R": 0,
+          "G": 0,
+          "B": 0,
+          "A": 1
+        },
+        "gizmo.plane_selected": {
+          "R": 1,
+          "G": 0.72156864,
+          "B": 0,
+          "A": 1
+        },
+        "gizmo.selection_highlight": {
+          "R": 0.48235294,
+          "G": 0.69803923,
+          "B": 1,
+          "A": 1
+        },
+        "icon.background": {
+          "R": 0.8862745,
+          "G": 0.8862745,
+          "B": 0.8862745,
+          "A": 0.3019608
+        },
+        "icon.primary": {
+          "R": 0.16862746,
+          "G": 0.16862746,
+          "B": 0.16862746,
+          "A": 1
+        },
+        "icon.secondary": {
+          "R": 1,
+          "G": 0.4,
+          "B": 0,
+          "A": 1
+        },
+        "icon.tertiary": {
+          "R": 0.023529412,
+          "G": 0.26666668,
+          "B": 1,
+          "A": 1
+        },
+        "viewport.active_border": {
+          "R": 0.5372549,
+          "G": 0.5372549,
+          "B": 0.5372549,
+          "A": 1
+        },
+        "viewport.bg": {
+          "R": 0.7882353,
+          "G": 0.7882353,
+          "B": 0.7882353,
+          "A": 1
+        },
+        "viewport.dimension_driven": {
+          "R": 0.43529412,
+          "G": 0,
+          "B": 0.69411767,
+          "A": 1
+        },
+        "viewport.dimension_driving": {
+          "R": 0.3019608,
+          "G": 0.3019608,
+          "B": 0.3019608,
+          "A": 1
+        },
+        "viewport.dimension_sketch": {
+          "R": 0.02,
+          "G": 0.36,
+          "B": 0.13,
+          "A": 1
+        },
+        "viewport.grid_axis": {
+          "R": 0.4,
+          "G": 0.4,
+          "B": 0.4,
+          "A": 0.62352943
+        },
+        "viewport.grid_major": {
+          "R": 0.4,
+          "G": 0.4,
+          "B": 0.4,
+          "A": 0.41568628
+        },
+        "viewport.grid_minor": {
+          "R": 0.4,
+          "G": 0.4,
+          "B": 0.4,
+          "A": 0.20784314
+        },
+        "viewport.sketch_candidate": {
+          "R": 0.43529412,
+          "G": 0.3137255,
+          "B": 0,
+          "A": 0.9019608
+        },
+        "viewport.sketch_geometry": {
+          "R": 0.3019608,
+          "G": 0.3019608,
+          "B": 0.3019608,
+          "A": 1
+        },
+        "viewport.sketch_preview": {
+          "R": 0.2784314,
+          "G": 0.2784314,
+          "B": 0.2784314,
+          "A": 1
+        },
+        "viewport.sketch_selected": {
+          "R": 0,
+          "G": 0.36078432,
+          "B": 0.4745098,
+          "A": 1
+        },
+        "viewport.snap_glyph": {
+          "R": 0,
+          "G": 0.34901962,
+          "B": 0.5568628,
+          "A": 1
+        }
+      }
+    }
+  ],
+  "library": [
+    {
+      "stage": "unknown preference falls back",
+      "active": "Dark",
+      "revision": 1,
+      "names": [
+        "Dark",
+        "Light"
+      ],
+      "colors": {
+        "chrome.accent": "#8160e3ff",
+        "chrome.border": "#1d1d1dff",
+        "chrome.button": "#2a2a2aff",
+        "chrome.button_active": "#8160e3ff",
+        "chrome.button_hover": "#3a3a3aff",
+        "chrome.control_active": "#3d3d3dff",
+        "chrome.control_bg": "#1f1f1fff",
+        "chrome.control_hover": "#303030ff",
+        "chrome.danger": "#de6f6fff",
+        "chrome.header_bg": "#212121ff",
+        "chrome.menu_bar_bg": "#232323ff",
+        "chrome.panel_bg": "#1b1b1bff",
+        "chrome.popup_bg": "#1f1f1fef",
+        "chrome.scrollbar": "#523889ff",
+        "chrome.text": "#c5c5c5ff",
+        "chrome.text_disabled": "#c5c5c580",
+        "chrome.window_bg": "#161616ff",
+        "gizmo.plane_faint": "#edba18ff",
+        "gizmo.plane_fill": "#edba1840",
+        "gizmo.plane_hover": "#ffd75eff",
+        "gizmo.plane_selected": "#885ce3ff",
+        "gizmo.selection_highlight": "#50ffb8ff",
+        "icon.background": "#0000001f",
+        "icon.primary": "#e6e6e6ff",
+        "icon.secondary": "#51ddb4ff",
+        "icon.tertiary": "#78c8ffff",
+        "viewport.active_border": "#ffffff2a",
+        "viewport.bg": "#141414ff",
+        "viewport.dimension_driven": "#cd54ffff",
+        "viewport.dimension_driving": "#e7e7e7ff",
+        "viewport.dimension_sketch": "#3dd966ff",
+        "viewport.grid_axis": "#232323b7",
+        "viewport.grid_major": "#2323237a",
+        "viewport.grid_minor": "#2323233d",
+        "viewport.sketch_candidate": "#ffffff80",
+        "viewport.sketch_geometry": "#a0a0a0ff",
+        "viewport.sketch_preview": "#ffffffff",
+        "viewport.sketch_selected": "#8f68ffff",
+        "viewport.snap_glyph": "#59efd2ff"
+      }
+    },
+    {
+      "stage": "select light",
+      "active": "Light",
+      "revision": 2,
+      "names": [
+        "Dark",
+        "Light"
+      ],
+      "colors": {
+        "chrome.accent": "#bfdaffff",
+        "chrome.border": "#89898980",
+        "chrome.button": "#e9e9e9ff",
+        "chrome.button_active": "#bfdaffff",
+        "chrome.button_hover": "#d7d7d7ff",
+        "chrome.control_active": "#cfcfcfff",
+        "chrome.control_bg": "#f1f1f1ff",
+        "chrome.control_hover": "#dededeff",
+        "chrome.danger": "#f54145ff",
+        "chrome.header_bg": "#e6e6e6ff",
+        "chrome.menu_bar_bg": "#eeeeeeff",
+        "chrome.panel_bg": "#e6e6e6ff",
+        "chrome.popup_bg": "#e6e6e6ff",
+        "chrome.scrollbar": "#c3c3c3ff",
+        "chrome.text": "#333333ff",
+        "chrome.text_disabled": "#33333380",
+        "chrome.window_bg": "#eeeeeeff",
+        "gizmo.plane_faint": "#ff3ba5ff",
+        "gizmo.plane_fill": "#ffffff00",
+        "gizmo.plane_hover": "#000000ff",
+        "gizmo.plane_selected": "#ffb800ff",
+        "gizmo.selection_highlight": "#7bb2ffff",
+        "icon.background": "#e2e2e24d",
+        "icon.primary": "#2b2b2bff",
+        "icon.secondary": "#ff6600ff",
+        "icon.tertiary": "#0644ffff",
+        "viewport.active_border": "#898989ff",
+        "viewport.bg": "#c9c9c9ff",
+        "viewport.dimension_driven": "#6f00b1ff",
+        "viewport.dimension_driving": "#4d4d4dff",
+        "viewport.dimension_sketch": "#055c21ff",
+        "viewport.grid_axis": "#6666669f",
+        "viewport.grid_major": "#6666666a",
+        "viewport.grid_minor": "#66666635",
+        "viewport.sketch_candidate": "#6f5000e6",
+        "viewport.sketch_geometry": "#4d4d4dff",
+        "viewport.sketch_preview": "#474747ff",
+        "viewport.sketch_selected": "#005c79ff",
+        "viewport.snap_glyph": "#00598eff"
+      }
+    },
+    {
+      "stage": "select same",
+      "active": "Light",
+      "revision": 2,
+      "names": [
+        "Dark",
+        "Light"
+      ],
+      "colors": {
+        "chrome.accent": "#bfdaffff",
+        "chrome.border": "#89898980",
+        "chrome.button": "#e9e9e9ff",
+        "chrome.button_active": "#bfdaffff",
+        "chrome.button_hover": "#d7d7d7ff",
+        "chrome.control_active": "#cfcfcfff",
+        "chrome.control_bg": "#f1f1f1ff",
+        "chrome.control_hover": "#dededeff",
+        "chrome.danger": "#f54145ff",
+        "chrome.header_bg": "#e6e6e6ff",
+        "chrome.menu_bar_bg": "#eeeeeeff",
+        "chrome.panel_bg": "#e6e6e6ff",
+        "chrome.popup_bg": "#e6e6e6ff",
+        "chrome.scrollbar": "#c3c3c3ff",
+        "chrome.text": "#333333ff",
+        "chrome.text_disabled": "#33333380",
+        "chrome.window_bg": "#eeeeeeff",
+        "gizmo.plane_faint": "#ff3ba5ff",
+        "gizmo.plane_fill": "#ffffff00",
+        "gizmo.plane_hover": "#000000ff",
+        "gizmo.plane_selected": "#ffb800ff",
+        "gizmo.selection_highlight": "#7bb2ffff",
+        "icon.background": "#e2e2e24d",
+        "icon.primary": "#2b2b2bff",
+        "icon.secondary": "#ff6600ff",
+        "icon.tertiary": "#0644ffff",
+        "viewport.active_border": "#898989ff",
+        "viewport.bg": "#c9c9c9ff",
+        "viewport.dimension_driven": "#6f00b1ff",
+        "viewport.dimension_driving": "#4d4d4dff",
+        "viewport.dimension_sketch": "#055c21ff",
+        "viewport.grid_axis": "#6666669f",
+        "viewport.grid_major": "#6666666a",
+        "viewport.grid_minor": "#66666635",
+        "viewport.sketch_candidate": "#6f5000e6",
+        "viewport.sketch_geometry": "#4d4d4dff",
+        "viewport.sketch_preview": "#474747ff",
+        "viewport.sketch_selected": "#005c79ff",
+        "viewport.snap_glyph": "#00598eff"
+      }
+    },
+    {
+      "stage": "select missing",
+      "active": "Light",
+      "revision": 2,
+      "names": [
+        "Dark",
+        "Light"
+      ],
+      "colors": {
+        "chrome.accent": "#bfdaffff",
+        "chrome.border": "#89898980",
+        "chrome.button": "#e9e9e9ff",
+        "chrome.button_active": "#bfdaffff",
+        "chrome.button_hover": "#d7d7d7ff",
+        "chrome.control_active": "#cfcfcfff",
+        "chrome.control_bg": "#f1f1f1ff",
+        "chrome.control_hover": "#dededeff",
+        "chrome.danger": "#f54145ff",
+        "chrome.header_bg": "#e6e6e6ff",
+        "chrome.menu_bar_bg": "#eeeeeeff",
+        "chrome.panel_bg": "#e6e6e6ff",
+        "chrome.popup_bg": "#e6e6e6ff",
+        "chrome.scrollbar": "#c3c3c3ff",
+        "chrome.text": "#333333ff",
+        "chrome.text_disabled": "#33333380",
+        "chrome.window_bg": "#eeeeeeff",
+        "gizmo.plane_faint": "#ff3ba5ff",
+        "gizmo.plane_fill": "#ffffff00",
+        "gizmo.plane_hover": "#000000ff",
+        "gizmo.plane_selected": "#ffb800ff",
+        "gizmo.selection_highlight": "#7bb2ffff",
+        "icon.background": "#e2e2e24d",
+        "icon.primary": "#2b2b2bff",
+        "icon.secondary": "#ff6600ff",
+        "icon.tertiary": "#0644ffff",
+        "viewport.active_border": "#898989ff",
+        "viewport.bg": "#c9c9c9ff",
+        "viewport.dimension_driven": "#6f00b1ff",
+        "viewport.dimension_driving": "#4d4d4dff",
+        "viewport.dimension_sketch": "#055c21ff",
+        "viewport.grid_axis": "#6666669f",
+        "viewport.grid_major": "#6666666a",
+        "viewport.grid_minor": "#66666635",
+        "viewport.sketch_candidate": "#6f5000e6",
+        "viewport.sketch_geometry": "#4d4d4dff",
+        "viewport.sketch_preview": "#474747ff",
+        "viewport.sketch_selected": "#005c79ff",
+        "viewport.snap_glyph": "#00598eff"
+      }
+    },
+    {
+      "stage": "edit built-in",
+      "active": "Light",
+      "revision": 2,
+      "names": [
+        "Dark",
+        "Light"
+      ],
+      "colors": {
+        "chrome.accent": "#bfdaffff",
+        "chrome.border": "#89898980",
+        "chrome.button": "#e9e9e9ff",
+        "chrome.button_active": "#bfdaffff",
+        "chrome.button_hover": "#d7d7d7ff",
+        "chrome.control_active": "#cfcfcfff",
+        "chrome.control_bg": "#f1f1f1ff",
+        "chrome.control_hover": "#dededeff",
+        "chrome.danger": "#f54145ff",
+        "chrome.header_bg": "#e6e6e6ff",
+        "chrome.menu_bar_bg": "#eeeeeeff",
+        "chrome.panel_bg": "#e6e6e6ff",
+        "chrome.popup_bg": "#e6e6e6ff",
+        "chrome.scrollbar": "#c3c3c3ff",
+        "chrome.text": "#333333ff",
+        "chrome.text_disabled": "#33333380",
+        "chrome.window_bg": "#eeeeeeff",
+        "gizmo.plane_faint": "#ff3ba5ff",
+        "gizmo.plane_fill": "#ffffff00",
+        "gizmo.plane_hover": "#000000ff",
+        "gizmo.plane_selected": "#ffb800ff",
+        "gizmo.selection_highlight": "#7bb2ffff",
+        "icon.background": "#e2e2e24d",
+        "icon.primary": "#2b2b2bff",
+        "icon.secondary": "#ff6600ff",
+        "icon.tertiary": "#0644ffff",
+        "viewport.active_border": "#898989ff",
+        "viewport.bg": "#c9c9c9ff",
+        "viewport.dimension_driven": "#6f00b1ff",
+        "viewport.dimension_driving": "#4d4d4dff",
+        "viewport.dimension_sketch": "#055c21ff",
+        "viewport.grid_axis": "#6666669f",
+        "viewport.grid_major": "#6666666a",
+        "viewport.grid_minor": "#66666635",
+        "viewport.sketch_candidate": "#6f5000e6",
+        "viewport.sketch_geometry": "#4d4d4dff",
+        "viewport.sketch_preview": "#474747ff",
+        "viewport.sketch_selected": "#005c79ff",
+        "viewport.snap_glyph": "#00598eff"
+      }
+    },
+    {
+      "stage": "duplicate light",
+      "active": "Workshop",
+      "revision": 3,
+      "names": [
+        "Dark",
+        "Light",
+        "Workshop"
+      ],
+      "colors": {
+        "chrome.accent": "#bfdaffff",
+        "chrome.border": "#89898980",
+        "chrome.button": "#e9e9e9ff",
+        "chrome.button_active": "#bfdaffff",
+        "chrome.button_hover": "#d7d7d7ff",
+        "chrome.control_active": "#cfcfcfff",
+        "chrome.control_bg": "#f1f1f1ff",
+        "chrome.control_hover": "#dededeff",
+        "chrome.danger": "#f54145ff",
+        "chrome.header_bg": "#e6e6e6ff",
+        "chrome.menu_bar_bg": "#eeeeeeff",
+        "chrome.panel_bg": "#e6e6e6ff",
+        "chrome.popup_bg": "#e6e6e6ff",
+        "chrome.scrollbar": "#c3c3c3ff",
+        "chrome.text": "#333333ff",
+        "chrome.text_disabled": "#33333380",
+        "chrome.window_bg": "#eeeeeeff",
+        "gizmo.plane_faint": "#ff3ba5ff",
+        "gizmo.plane_fill": "#ffffff00",
+        "gizmo.plane_hover": "#000000ff",
+        "gizmo.plane_selected": "#ffb800ff",
+        "gizmo.selection_highlight": "#7bb2ffff",
+        "icon.background": "#e2e2e24d",
+        "icon.primary": "#2b2b2bff",
+        "icon.secondary": "#ff6600ff",
+        "icon.tertiary": "#0644ffff",
+        "viewport.active_border": "#898989ff",
+        "viewport.bg": "#c9c9c9ff",
+        "viewport.dimension_driven": "#6f00b1ff",
+        "viewport.dimension_driving": "#4d4d4dff",
+        "viewport.dimension_sketch": "#055c21ff",
+        "viewport.grid_axis": "#6666669f",
+        "viewport.grid_major": "#6666666a",
+        "viewport.grid_minor": "#66666635",
+        "viewport.sketch_candidate": "#6f5000e6",
+        "viewport.sketch_geometry": "#4d4d4dff",
+        "viewport.sketch_preview": "#474747ff",
+        "viewport.sketch_selected": "#005c79ff",
+        "viewport.snap_glyph": "#00598eff"
+      }
+    },
+    {
+      "stage": "edit direct",
+      "active": "Workshop",
+      "revision": 4,
+      "names": [
+        "Dark",
+        "Light",
+        "Workshop"
+      ],
+      "colors": {
+        "chrome.accent": "#1a334d66",
+        "chrome.border": "#89898980",
+        "chrome.button": "#e9e9e9ff",
+        "chrome.button_active": "#bfdaffff",
+        "chrome.button_hover": "#d7d7d7ff",
+        "chrome.control_active": "#cfcfcfff",
+        "chrome.control_bg": "#f1f1f1ff",
+        "chrome.control_hover": "#dededeff",
+        "chrome.danger": "#f54145ff",
+        "chrome.header_bg": "#e6e6e6ff",
+        "chrome.menu_bar_bg": "#eeeeeeff",
+        "chrome.panel_bg": "#e6e6e6ff",
+        "chrome.popup_bg": "#e6e6e6ff",
+        "chrome.scrollbar": "#c3c3c3ff",
+        "chrome.text": "#333333ff",
+        "chrome.text_disabled": "#33333380",
+        "chrome.window_bg": "#eeeeeeff",
+        "gizmo.plane_faint": "#ff3ba5ff",
+        "gizmo.plane_fill": "#ffffff00",
+        "gizmo.plane_hover": "#000000ff",
+        "gizmo.plane_selected": "#ffb800ff",
+        "gizmo.selection_highlight": "#7bb2ffff",
+        "icon.background": "#e2e2e24d",
+        "icon.primary": "#2b2b2bff",
+        "icon.secondary": "#ff6600ff",
+        "icon.tertiary": "#0644ffff",
+        "viewport.active_border": "#898989ff",
+        "viewport.bg": "#c9c9c9ff",
+        "viewport.dimension_driven": "#6f00b1ff",
+        "viewport.dimension_driving": "#4d4d4dff",
+        "viewport.dimension_sketch": "#055c21ff",
+        "viewport.grid_axis": "#6666669f",
+        "viewport.grid_major": "#6666666a",
+        "viewport.grid_minor": "#66666635",
+        "viewport.sketch_candidate": "#6f5000e6",
+        "viewport.sketch_geometry": "#4d4d4dff",
+        "viewport.sketch_preview": "#474747ff",
+        "viewport.sketch_selected": "#005c79ff",
+        "viewport.snap_glyph": "#00598eff"
+      }
+    },
+    {
+      "stage": "edit derived",
+      "active": "Workshop",
+      "revision": 5,
+      "names": [
+        "Dark",
+        "Light",
+        "Workshop"
+      ],
+      "colors": {
+        "chrome.accent": "#1a334d66",
+        "chrome.border": "#89898980",
+        "chrome.button": "#e9e9e9ff",
+        "chrome.button_active": "#bfdaffff",
+        "chrome.button_hover": "#e6ccb399",
+        "chrome.control_active": "#cfcfcfff",
+        "chrome.control_bg": "#f1f1f1ff",
+        "chrome.control_hover": "#dededeff",
+        "chrome.danger": "#f54145ff",
+        "chrome.header_bg": "#e6e6e6ff",
+        "chrome.menu_bar_bg": "#eeeeeeff",
+        "chrome.panel_bg": "#e6e6e6ff",
+        "chrome.popup_bg": "#e6e6e6ff",
+        "chrome.scrollbar": "#c3c3c3ff",
+        "chrome.text": "#333333ff",
+        "chrome.text_disabled": "#33333380",
+        "chrome.window_bg": "#eeeeeeff",
+        "gizmo.plane_faint": "#ff3ba5ff",
+        "gizmo.plane_fill": "#ffffff00",
+        "gizmo.plane_hover": "#000000ff",
+        "gizmo.plane_selected": "#ffb800ff",
+        "gizmo.selection_highlight": "#7bb2ffff",
+        "icon.background": "#e2e2e24d",
+        "icon.primary": "#2b2b2bff",
+        "icon.secondary": "#ff6600ff",
+        "icon.tertiary": "#0644ffff",
+        "viewport.active_border": "#898989ff",
+        "viewport.bg": "#c9c9c9ff",
+        "viewport.dimension_driven": "#6f00b1ff",
+        "viewport.dimension_driving": "#4d4d4dff",
+        "viewport.dimension_sketch": "#055c21ff",
+        "viewport.grid_axis": "#6666669f",
+        "viewport.grid_major": "#6666666a",
+        "viewport.grid_minor": "#66666635",
+        "viewport.sketch_candidate": "#6f5000e6",
+        "viewport.sketch_geometry": "#4d4d4dff",
+        "viewport.sketch_preview": "#474747ff",
+        "viewport.sketch_selected": "#005c79ff",
+        "viewport.snap_glyph": "#00598eff"
+      }
+    },
+    {
+      "stage": "edit same",
+      "active": "Workshop",
+      "revision": 6,
+      "names": [
+        "Dark",
+        "Light",
+        "Workshop"
+      ],
+      "colors": {
+        "chrome.accent": "#1a334d66",
+        "chrome.border": "#89898980",
+        "chrome.button": "#e9e9e9ff",
+        "chrome.button_active": "#bfdaffff",
+        "chrome.button_hover": "#e6ccb399",
+        "chrome.control_active": "#cfcfcfff",
+        "chrome.control_bg": "#f1f1f1ff",
+        "chrome.control_hover": "#dededeff",
+        "chrome.danger": "#f54145ff",
+        "chrome.header_bg": "#e6e6e6ff",
+        "chrome.menu_bar_bg": "#eeeeeeff",
+        "chrome.panel_bg": "#e6e6e6ff",
+        "chrome.popup_bg": "#e6e6e6ff",
+        "chrome.scrollbar": "#c3c3c3ff",
+        "chrome.text": "#333333ff",
+        "chrome.text_disabled": "#33333380",
+        "chrome.window_bg": "#eeeeeeff",
+        "gizmo.plane_faint": "#ff3ba5ff",
+        "gizmo.plane_fill": "#ffffff00",
+        "gizmo.plane_hover": "#000000ff",
+        "gizmo.plane_selected": "#ffb800ff",
+        "gizmo.selection_highlight": "#7bb2ffff",
+        "icon.background": "#e2e2e24d",
+        "icon.primary": "#2b2b2bff",
+        "icon.secondary": "#ff6600ff",
+        "icon.tertiary": "#0644ffff",
+        "viewport.active_border": "#898989ff",
+        "viewport.bg": "#c9c9c9ff",
+        "viewport.dimension_driven": "#6f00b1ff",
+        "viewport.dimension_driving": "#4d4d4dff",
+        "viewport.dimension_sketch": "#055c21ff",
+        "viewport.grid_axis": "#6666669f",
+        "viewport.grid_major": "#6666666a",
+        "viewport.grid_minor": "#66666635",
+        "viewport.sketch_candidate": "#6f5000e6",
+        "viewport.sketch_geometry": "#4d4d4dff",
+        "viewport.sketch_preview": "#474747ff",
+        "viewport.sketch_selected": "#005c79ff",
+        "viewport.snap_glyph": "#00598eff"
+      }
+    },
+    {
+      "stage": "duplicate dark",
+      "active": "Second",
+      "revision": 7,
+      "names": [
+        "Dark",
+        "Light",
+        "Workshop",
+        "Second"
+      ],
+      "colors": {
+        "chrome.accent": "#8160e3ff",
+        "chrome.border": "#1d1d1dff",
+        "chrome.button": "#2a2a2aff",
+        "chrome.button_active": "#8160e3ff",
+        "chrome.button_hover": "#3a3a3aff",
+        "chrome.control_active": "#3d3d3dff",
+        "chrome.control_bg": "#1f1f1fff",
+        "chrome.control_hover": "#303030ff",
+        "chrome.danger": "#de6f6fff",
+        "chrome.header_bg": "#212121ff",
+        "chrome.menu_bar_bg": "#232323ff",
+        "chrome.panel_bg": "#1b1b1bff",
+        "chrome.popup_bg": "#1f1f1fef",
+        "chrome.scrollbar": "#523889ff",
+        "chrome.text": "#c5c5c5ff",
+        "chrome.text_disabled": "#c5c5c580",
+        "chrome.window_bg": "#161616ff",
+        "gizmo.plane_faint": "#edba18ff",
+        "gizmo.plane_fill": "#edba1840",
+        "gizmo.plane_hover": "#ffd75eff",
+        "gizmo.plane_selected": "#885ce3ff",
+        "gizmo.selection_highlight": "#50ffb8ff",
+        "icon.background": "#0000001f",
+        "icon.primary": "#e6e6e6ff",
+        "icon.secondary": "#51ddb4ff",
+        "icon.tertiary": "#78c8ffff",
+        "viewport.active_border": "#ffffff2a",
+        "viewport.bg": "#141414ff",
+        "viewport.dimension_driven": "#cd54ffff",
+        "viewport.dimension_driving": "#e7e7e7ff",
+        "viewport.dimension_sketch": "#3dd966ff",
+        "viewport.grid_axis": "#232323b7",
+        "viewport.grid_major": "#2323237a",
+        "viewport.grid_minor": "#2323233d",
+        "viewport.sketch_candidate": "#ffffff80",
+        "viewport.sketch_geometry": "#a0a0a0ff",
+        "viewport.sketch_preview": "#ffffffff",
+        "viewport.sketch_selected": "#8f68ffff",
+        "viewport.snap_glyph": "#59efd2ff"
+      }
+    },
+    {
+      "stage": "remove before active",
+      "active": "Second",
+      "revision": 8,
+      "names": [
+        "Dark",
+        "Light",
+        "Second"
+      ],
+      "colors": {
+        "chrome.accent": "#8160e3ff",
+        "chrome.border": "#1d1d1dff",
+        "chrome.button": "#2a2a2aff",
+        "chrome.button_active": "#8160e3ff",
+        "chrome.button_hover": "#3a3a3aff",
+        "chrome.control_active": "#3d3d3dff",
+        "chrome.control_bg": "#1f1f1fff",
+        "chrome.control_hover": "#303030ff",
+        "chrome.danger": "#de6f6fff",
+        "chrome.header_bg": "#212121ff",
+        "chrome.menu_bar_bg": "#232323ff",
+        "chrome.panel_bg": "#1b1b1bff",
+        "chrome.popup_bg": "#1f1f1fef",
+        "chrome.scrollbar": "#523889ff",
+        "chrome.text": "#c5c5c5ff",
+        "chrome.text_disabled": "#c5c5c580",
+        "chrome.window_bg": "#161616ff",
+        "gizmo.plane_faint": "#edba18ff",
+        "gizmo.plane_fill": "#edba1840",
+        "gizmo.plane_hover": "#ffd75eff",
+        "gizmo.plane_selected": "#885ce3ff",
+        "gizmo.selection_highlight": "#50ffb8ff",
+        "icon.background": "#0000001f",
+        "icon.primary": "#e6e6e6ff",
+        "icon.secondary": "#51ddb4ff",
+        "icon.tertiary": "#78c8ffff",
+        "viewport.active_border": "#ffffff2a",
+        "viewport.bg": "#141414ff",
+        "viewport.dimension_driven": "#cd54ffff",
+        "viewport.dimension_driving": "#e7e7e7ff",
+        "viewport.dimension_sketch": "#3dd966ff",
+        "viewport.grid_axis": "#232323b7",
+        "viewport.grid_major": "#2323237a",
+        "viewport.grid_minor": "#2323233d",
+        "viewport.sketch_candidate": "#ffffff80",
+        "viewport.sketch_geometry": "#a0a0a0ff",
+        "viewport.sketch_preview": "#ffffffff",
+        "viewport.sketch_selected": "#8f68ffff",
+        "viewport.snap_glyph": "#59efd2ff"
+      }
+    },
+    {
+      "stage": "remove active",
+      "active": "Dark",
+      "revision": 9,
+      "names": [
+        "Dark",
+        "Light"
+      ],
+      "colors": {
+        "chrome.accent": "#8160e3ff",
+        "chrome.border": "#1d1d1dff",
+        "chrome.button": "#2a2a2aff",
+        "chrome.button_active": "#8160e3ff",
+        "chrome.button_hover": "#3a3a3aff",
+        "chrome.control_active": "#3d3d3dff",
+        "chrome.control_bg": "#1f1f1fff",
+        "chrome.control_hover": "#303030ff",
+        "chrome.danger": "#de6f6fff",
+        "chrome.header_bg": "#212121ff",
+        "chrome.menu_bar_bg": "#232323ff",
+        "chrome.panel_bg": "#1b1b1bff",
+        "chrome.popup_bg": "#1f1f1fef",
+        "chrome.scrollbar": "#523889ff",
+        "chrome.text": "#c5c5c5ff",
+        "chrome.text_disabled": "#c5c5c580",
+        "chrome.window_bg": "#161616ff",
+        "gizmo.plane_faint": "#edba18ff",
+        "gizmo.plane_fill": "#edba1840",
+        "gizmo.plane_hover": "#ffd75eff",
+        "gizmo.plane_selected": "#885ce3ff",
+        "gizmo.selection_highlight": "#50ffb8ff",
+        "icon.background": "#0000001f",
+        "icon.primary": "#e6e6e6ff",
+        "icon.secondary": "#51ddb4ff",
+        "icon.tertiary": "#78c8ffff",
+        "viewport.active_border": "#ffffff2a",
+        "viewport.bg": "#141414ff",
+        "viewport.dimension_driven": "#cd54ffff",
+        "viewport.dimension_driving": "#e7e7e7ff",
+        "viewport.dimension_sketch": "#3dd966ff",
+        "viewport.grid_axis": "#232323b7",
+        "viewport.grid_major": "#2323237a",
+        "viewport.grid_minor": "#2323233d",
+        "viewport.sketch_candidate": "#ffffff80",
+        "viewport.sketch_geometry": "#a0a0a0ff",
+        "viewport.sketch_preview": "#ffffffff",
+        "viewport.sketch_selected": "#8f68ffff",
+        "viewport.snap_glyph": "#59efd2ff"
+      }
+    }
+  ]
+}

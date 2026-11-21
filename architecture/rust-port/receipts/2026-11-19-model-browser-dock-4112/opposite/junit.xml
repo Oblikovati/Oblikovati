@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T04:17:46.387639539Z" time="11.547330692"><testcase name="Scenario: Dock the model browser on the opposite side: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:741:3" time="11.547330692"><system-out><![CDATA[  Scenario: Dock the model browser on the opposite side
+   ✔  Given a part is open in the MCAD Software with the model browser docked on the left
+   ✔  When the user drags the Model tab to the right edge and release it
+   ✔  Then the browser docks on the right of the viewport
+   ✔  And its tree remains visible
+   ✔  And the shaded block remains visible with the same apparent orientation
+   ✔  When the user drags the Model tab to the left edge and release it
+   ✔  Then the browser docks on the left again
+   ✔  And the tree and shaded block remain visible
+]]></system-out></testcase></testsuite></testsuites>

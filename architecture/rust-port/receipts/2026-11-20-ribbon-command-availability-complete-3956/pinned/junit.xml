@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect ribbon command availability: tmp/oblikovati-bdd-R5ZJnE/checkout/features/application/ribbon-command-availability/ribbon-command-availability.feature" package="testsuite/Feature: Inspect ribbon command availability: tmp/oblikovati-bdd-R5ZJnE/checkout/features/application/ribbon-command-availability/ribbon-command-availability.feature" tests="3" errors="0" failures="0" hostname="localhost" timestamp="2026-11-20T18:25:29.484330569Z" time="38.12545045"><testcase name="Scenario: Inspect Sketch commands outside sketch edit: tmp/oblikovati-bdd-R5ZJnE/checkout/features/application/ribbon-command-availability/ribbon-command-availability.feature:5:3" time="12.927049317"><system-out><![CDATA[  Scenario: Inspect Sketch commands outside sketch edit
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✔  And sketch edit is inactive
+   ✔  When the user selects the Sketch ribbon tab
+   ✔  Then Line, Circle, Arc, Rectangle, Fillet, Text and Point are enabled in Create
+   ✔  And Project Geometry is disabled
+   ✔  And the commands in Modify, Pattern, Constrain, Insert and Format are disabled
+   ✔  And the active part and model browser remain visible
+]]></system-out></testcase><testcase name="Scenario: Revisit Sketch from another ribbon tab: tmp/oblikovati-bdd-R5ZJnE/checkout/features/application/ribbon-command-availability/ribbon-command-availability.feature:14:3" time="13.669632017"><system-out><![CDATA[  Scenario: Revisit Sketch from another ribbon tab
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✔  And sketch edit is inactive
+   ✔  And the Sketch ribbon tab is selected
+   ✔  When the user selects the 3D Model ribbon tab
+   ✔  And the user selects the Sketch ribbon tab again
+   ✔  Then Line, Circle, Arc, Rectangle, Fillet, Text and Point remain enabled in Create
+   ✔  And Project Geometry remains disabled
+   ✔  And the commands in Modify, Pattern, Constrain, Insert and Format remain disabled
+   ✔  And the active part and model browser remain visible
+]]></system-out></testcase><testcase name="Scenario: Inspect Sketch ribbon while editing an existing sketch: tmp/oblikovati-bdd-R5ZJnE/checkout/features/application/ribbon-command-availability/ribbon-command-availability.feature:25:3" time="11.528769116"><system-out><![CDATA[  Scenario: Inspect Sketch ribbon while editing an existing sketch
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✔  And sketch edit is inactive
+   ✔  When the user opens the existing sketch from the model browser
+   ✔  Then the Sketch ribbon tab is selected
+   ✔  And the 2D sketch workspace shows the existing profile
+   ✔  And Create, Modify, Pattern, Constrain, Insert and Format groups are displayed
+   ✔  And Finish is available to exit sketch editing
+   ✔  When the user selects Line
+   ✔  Then the Line command prompt requests a start point
+   ✔  And the Line tooltip indicates line and arc creation
+   ✔  When the user exits sketch editing with Finish
+   ✔  Then the previous part workspace and ribbon context return
+   ✔  And the existing sketch remains in the model browser
+]]></system-out></testcase></testsuite></testsuites>

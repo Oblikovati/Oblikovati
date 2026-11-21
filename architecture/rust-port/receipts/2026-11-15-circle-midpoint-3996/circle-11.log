@@ -1,0 +1,26 @@
+   Compiling oblikovati-head v0.1.0 (/tmp/rust-midpoint-3996-JM1wi6AQ/source/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.52s
+     Running unittests src/lib.rs (/tmp/rust-midpoint-3996-JM1wi6AQ/target/debug/deps/oblikovati_head-c865ed7d2d134d42)
+
+running 1 test
+Feature: Circle center point
+  Scenario: circle-center-point-11 Edit diameter while retaining the measured center
+   ✔  Given the recorded circle has a driving diameter dimension equal to 6 mm
+   ✔  And its displayed center is (0.000, 6.553, -12.440) mm
+   ✔  When the user open the diameter dimension and accept the value 8 mm
+   ✔  And the user exit General Dimension and measure the circle
+   ✔  Then diameter is 8.000 mm and radius is 4.000 mm
+   ✔  And its measured center remains (0.000, 6.553, -12.440) mm
+   ✔  When the user close Measure and undo the edit
+   ✔  Then the visible dimension and extent return to 6 mm
+   ✔  When the user redo the edit
+   ✔  Then the visible dimension and extent return to 8 mm
+   ✔  When the user undo once more
+   ✔  Then the 6 mm baseline is restored with the surrounding midpoint line retained
+[Summary]
+1 feature
+1 scenario (1 passed)
+12 steps (12 passed)
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1063 filtered out; finished in 33.79s

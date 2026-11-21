@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport navigation wheel: tmp/obk-wheel-size-3943-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" package="testsuite/Feature: Viewport navigation wheel: tmp/obk-wheel-size-3943-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T22:30:54.717839882Z" time="26.909287426"><testcase name="Scenario: Cancel a mini wheel size preference change: tmp/obk-wheel-size-3943-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature:59:3" time="26.909287426"><system-out><![CDATA[  Scenario: Cancel a mini wheel size preference change
+   ✔  Given the full navigation wheel is open over a model in the MCAD Software
+   ✔  And the saved mini wheel size is Normal
+   ✔  When the user opens Options from the wheel context menu
+   ✔  Then the dialog shows tool message and tool tip controls
+   ✔  And it shows mini wheel size, big wheel size and wheel opacity controls
+   ✔  And it shows navigation options and a walk speed factor slider
+   ✔  When the user opens the mini wheel size list
+   ✔  Then it offers Small, Normal, Large and Extra Large
+   ✔  When the user chooses Extra Large
+   ✔  Then the mini wheel size field displays Extra Large
+   ✔  And OK is enabled
+   ✔  When the user clicks Cancel
+   ✔  And the user reopens Options from the wheel context menu
+   ✔  Then the mini wheel size field displays Normal
+   ✔  When the user clicks Cancel and presses Escape
+   ✔  Then the options dialog and wheel are closed
+]]></system-out></testcase></testsuite></testsuites>

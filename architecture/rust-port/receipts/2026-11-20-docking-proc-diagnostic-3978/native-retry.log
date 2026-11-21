@@ -1,0 +1,32 @@
+/usr/bin/xvfb-run: 24: awk: not found
+
+running 1 test
+Feature: Dockable workspace panels
+  Scenario: Restore the saved panel arrangement after restarting the application
+   ✘  Given the user has changed the workspace panel arrangement
+      Step failed:
+      Defined: scenario/features/application/docking-system/docking-system.feature:126:5
+      Matched: crates/head/src/../tests/application/docking-system/restart_scenario.rs:7:1
+      Step panicked. Captured output: assertion `left != right` failed
+        left: Some(0)
+       right: Some(0)
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
+
+thread 'application-scenarios' (19) panicked at crates/head/src/../tests/application/benchmark.rs:374:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window' (18) panicked at crates/head/src/../tests/application/benchmark.rs:267:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1545 filtered out; finished in 12.70s
+

@@ -1,0 +1,24 @@
+{
+  "kind": "go-reference-fixture",
+  "checked_at": "2026-11-14T03:59:28.537592+01:00",
+  "go_application_commit": "aa8297d1b0ac33c024f19e54821536d76e8a447a",
+  "platform": "Linux-7.2.6-76070206-generic-x86_64-with-glibc2.39",
+  "go_version": "go version go1.27.0 linux/amd64",
+  "command": "From the Go application workspace: go run /path/to/generate.go /absolute/path/to/output.obk",
+  "exit_code": 0,
+  "artifacts": {
+    "generate.go": "4ccdffe283dceef74aa9cd195490632cf5161315faaf1263b90761c7e3ddc3ff",
+    "go-cube.obk": "a751a46448ed933e035289ff256979f6a8a37adb4b7fb1bf3f723b6fadfd5d4d",
+    "observations.json": "0b4147797f7a7bcbc72473c673b4c7a6deb1f26b27592ba65069b6a451a2ee76"
+  },
+  "scope": [
+    "The Go store saved and reopened a 10 mm cube with a zero-DOF sketch, width and height expressions referencing size, six distinct face keys, and six planar 1 cm\u00b2 faces. The face keys were checked after Go replay and recorded externally in observations.json.",
+    "After reopening, changing size to 20 mm through the parameter graph and recomputing produced a 20 \u00d7 20 \u00d7 10 mm block. The Go feature serializer stores an evaluated extrusion distance."
+  ],
+  "limitations": [
+    "The saved Go document does not contain a dependent face reference; the captured keys are an external fixture.",
+    "This does not prove that Rust can import the Go model or resolve any of its face keys.",
+    "The Go extent parameter relationship does not survive in this format. A Rust import must not invent that relationship.",
+    "The fixture contains generated document identity values, so a regenerated file need not be byte-identical."
+  ]
+}

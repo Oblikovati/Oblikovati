@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/obk-extrude-cancel/checkout/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/obk-extrude-cancel/checkout/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:14:20.480932976Z" time="7.469399477"><testcase name="Scenario: extrusion-04 Cancel preserves the source sketch: tmp/obk-extrude-cancel/checkout/features/solid-model/extrusion/extrusion.feature:50:3" time="7.469399477"><system-out><![CDATA[  Scenario: extrusion-04 Cancel preserves the source sketch
+   ✔  Given the uncommitted rectangle extrusion preview
+   ✔  When Cancel is clicked
+   ✔  Then the shaded preview disappears and Sketch1 remains
+   ✔  When the user presses E
+   ✔  Then the extrusion panel reopens for the source sketch
+]]></system-out></testcase></testsuite></testsuites>

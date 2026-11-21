@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:4e818f2994acb248e4b9581fff1b726df90bb658342df0b92244dd318f6e745c",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "130621bae0d8b2196d399a885f76d6f3bb4c5050a41257459a9f02cd0ec4de17",
+  "application_commit": "79c5066afe122d27d3b08d2f52e0eebf2016a013",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-4e818f2994acb248-79c5066a/cucumber.json",
+    "sha256": "2d625b7116a996d98b85aa8956a96ac117e64713445aedc798d03d1078a673ee"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-4e818f2994acb248-79c5066a/source-revision.json",
+    "sha256": "b136e306ef518a697e8a1467ab9dbc9479e27e9cae159ab7f9bfcb8cab98cf61"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-4e818f2994acb248-79c5066a/rectangle-two-point-12-Cancel-a-rectangle-height-proposal.png",
+    "sha256": "bfc61fcbfda75b2931d3e2a59d10816090094270a7ddf2648217eecd38f606c5"
+  }
+}

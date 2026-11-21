@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect ribbon command availability: tmp/obk-3956-scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature" package="testsuite/Feature: Inspect ribbon command availability: tmp/obk-3956-scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T00:59:17.394208012Z" time="7.285214078"><testcase name="Scenario: Inspect Sketch ribbon while editing an existing sketch: tmp/obk-3956-scenarios/features/application/ribbon-command-availability/ribbon-command-availability.feature:25:3" time="7.285214078"><system-out><![CDATA[  Scenario: Inspect Sketch ribbon while editing an existing sketch
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✔  And sketch edit is inactive
+   ✔  When the user opens the existing sketch from the model browser
+   ✔  Then the Sketch ribbon tab is selected
+   ✔  And the 2D sketch workspace shows the existing profile
+   ✔  And Create, Modify, Pattern, Constrain, Insert and Format groups are displayed
+   ✔  And Finish is available to exit sketch editing
+   ✔  When the user selects Line
+   ✔  Then the Line command prompt requests a start point
+   ✔  And the Line tooltip describes line and arc creation
+   ✔  When the user exits sketch editing with Finish
+   ✔  Then the previous part workspace and ribbon context return
+   ✔  And the existing sketch remains in the model browser
+]]></system-out></testcase></testsuite></testsuites>

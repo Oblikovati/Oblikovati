@@ -1,0 +1,75 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling version_check v0.9.5
+   Compiling quote v1.0.47
+   Compiling generic-array v0.14.7
+   Compiling cfg-if v1.0.5
+   Compiling serde_core v1.0.229
+   Compiling typenum v1.20.1
+   Compiling syn v3.0.7
+   Compiling zmij v1.0.23
+   Compiling libc v0.2.190
+   Compiling serde v1.0.229
+   Compiling sha1_smol v1.0.1
+   Compiling crc32fast v1.5.2
+   Compiling libm v0.2.16
+   Compiling itoa v1.0.18
+   Compiling getrandom v0.4.3
+   Compiling serde_json v1.0.151
+   Compiling uuid v1.27.0
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling memchr v2.8.3
+   Compiling serde_derive v1.0.229
+   Compiling time-core v0.1.9
+   Compiling powerfmt v0.2.1
+   Compiling simd-adler32 v0.3.10
+   Compiling adler2 v2.0.1
+   Compiling num-conv v0.2.2
+   Compiling deranged v0.5.8
+   Compiling rustix v1.1.6
+   Compiling miniz_oxide v0.9.1
+   Compiling time v0.3.55
+   Compiling digest v0.10.7
+   Compiling web-time v1.1.0
+   Compiling base64 v0.22.1
+   Compiling equivalent v1.0.2
+   Compiling cpufeatures v0.2.17
+   Compiling twox-hash v2.1.5
+   Compiling linux-raw-sys v0.12.1
+   Compiling bitflags v2.13.2
+   Compiling fnv v1.0.7
+   Compiling hashbrown v0.17.1
+   Compiling cfb v0.15.0
+   Compiling indexmap v2.14.2
+   Compiling oblikovati-api v0.159.0 (https://github.com/Oblikovati/Oblikovati.API.git?rev=57ae73ca46bfcadcc09e3ec1d0c424d803cadc44#57ae73ca)
+   Compiling maryada v0.2.0
+   Compiling ruzstd v0.9.1
+   Compiling sha2 v0.10.9
+   Compiling flate2 v1.1.10
+   Compiling ryu v1.0.23
+   Compiling xml v1.4.0
+   Compiling once_cell v1.21.4
+   Compiling fastrand v2.5.0
+   Compiling oblikovati-solve v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/solve)
+   Compiling unsafe-libyaml v0.2.11
+   Compiling serde_yaml_ng v0.10.0
+   Compiling tempfile v3.27.0
+   Compiling corliss v0.1.0 (https://github.com/Oblikovati/Corliss?rev=872ff91ea0fd9ebb3ad34d0030c67bbc7b5989fb#872ff91e)
+   Compiling oblikovati-model v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/model)
+   Compiling oblikovati-persistence v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/persistence)
+    Finished `test` profile [unoptimized] target(s) in 44.11s
+     Running tests/package_sketch_settings.rs (/tmp/obk-root-merged-visibility/debug/deps/package_sketch_settings-bc1dea71570eb6a2)
+
+running 8 tests
+test absent_and_null_records_remain_distinct_from_explicit_zero_records ... ok
+test changing_known_fields_preserves_extensions_and_other_sections ... ok
+test nonfinite_snapshot_spacing_is_refused_before_save ... ok
+test partial_go_records_use_zero_values_without_default_overlay ... ok
+test unknown_numeric_ids_are_preserved_as_contract_values ... ok
+test invalid_types_and_nonfinite_spacing_are_refused_before_capture ... ok
+test complete_canonical_values_round_trip_with_frozen_numeric_enums ... ok
+test resetting_optional_settings_clears_previous_values_and_preserves_extensions ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

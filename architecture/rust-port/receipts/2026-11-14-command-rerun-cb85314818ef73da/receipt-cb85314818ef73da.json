@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:cb85314818ef73daa1093f520bc4f5fa70977685fb7b8716070ffe6314ba9a58",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+  "application_commit": "c3f51aaf27f3ce791feff1b921e8b3c338bdbd21",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-cb85314818ef73da/cucumber.json",
+    "sha256": "5dc346ba10ecdecea51a39d2299aaf27328c00ee558f4013cab8ea5d6e8f8976"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-cb85314818ef73da/source-revision.json",
+    "sha256": "636f778d222fc926a1bab26b812ed1a3d23656fb4141070875fe4b9c885f2f1f"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-command-rerun-cb85314818ef73da/rectangle-two-point-01-Create-a-rectangle-from-opposite-corners.png",
+    "sha256": "028f5cb254c63bb68608b9208a81463a8b6c91ce789cbbb5c97f46435a7c71df"
+  }
+}

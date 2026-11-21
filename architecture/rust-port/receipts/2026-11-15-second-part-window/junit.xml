@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-second-window-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-second-window-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T16:10:42.733267342Z" time="11.063426562"><testcase name="Scenario: Open a second window for a part and returns to the first: tmp/obk-second-window-source/features/application/document-tabs/document-tabs.feature:387:3" time="11.063426562"><system-out><![CDATA[  Scenario: Open a second window for a part and returns to the first
+   ✔  Given a saved part is active in the MCAD Software
+   ✔  And a sketch is being edited in the part
+   ✔  When the user chooses New in the View tab's Windows group
+   ✔  Then a second window for the same part becomes active
+   ✔  And the new window has a numbered document tab
+   ✔  And the application title identifies the second window number
+   ✔  And the part's model browser is displayed
+   ✔  When the user opens the Switch menu on the View tab
+   ✔  Then the original part window is listed with a different window number
+   ✔  When the user selects the original part window
+   ✔  Then the original sketch viewport is displayed
+   ✔  And the original numbered document tab is active
+   ✔  And the second window remains open
+]]></system-out></testcase></testsuite></testsuites>

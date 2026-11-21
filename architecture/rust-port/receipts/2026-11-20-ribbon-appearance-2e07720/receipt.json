@@ -1,0 +1,19 @@
+{
+  "tested_commit": "2e077207783d6322cb986584014d2e6f1ba4fd60",
+  "merge_commit": "2d700453e",
+  "environment": "Linux Xvfb and Lavapipe",
+  "checks": [
+    {
+      "name": "native appearance menu",
+      "result": "passed for all five modes"
+    },
+    {
+      "name": "native appearance reflow",
+      "result": "passed"
+    },
+    {
+      "name": "scoped head Clippy",
+      "result": "passed"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "kind": "diagnostic",
+  "application_commit": "2dee60eef",
+  "scenario_source": "unversioned live source",
+  "feature_sha256": "d87eaf041fc93701e0de5c911dd3b4c0622386d184f05954a8409400e412c0d0",
+  "source_changed_during_run": false,
+  "scenarios_passed": 3,
+  "steps_passed": 14,
+  "input": "X11 WM_DELETE_WINDOW and XTEST Cancel click on Linux; fixture setup uses frame-loop inputs",
+  "display": "Xvfb 1920x1080; Vulkan Lavapipe",
+  "limitations": [
+    "Source is not the pinned snapshot.",
+    "Two scenarios have outstanding reference capture tags.",
+    "Build provenance and receipt reuse are not established (#3978)."
+  ],
+  "artifacts_sha256": {
+    "Cancel-closing-the-application-when-a-document-has-unsaved-changes.png": "f020f73d8015dc7c49cbe332768620af3976a1db400fe41f236eba72e3ebd4dd",
+    "application-closing-dirty-prompt.png": "1a353cc7d34770220a9ce97537fbacccc86ba5434d707c68f98b4476dedcdab3",
+    "application-closing.feature.gz": "84eb9a03acf0ef3305cd2a650a733f5b2826f7ab59bffcf2da099f51926d434c",
+    "cucumber.json": "e256eda1e99d21206044b4162457bd8f0b3eccfc48b52a644071a73add98a845",
+    "junit.xml": "b1888e14047b3e4c8c33ea4fe9549d54a58939a9fad5c18ee9be7f38978490c2",
+    "run.log": "bfa9293b0d3fe390d211e81f02f33f8899bf2c96fa1c088a4a9b59636b39fb45",
+    "source-revision.json": "c9b3cc3130492c229f768d155b6e2cc7e5304edd9a926b371e17fce522acd049"
+  }
+}

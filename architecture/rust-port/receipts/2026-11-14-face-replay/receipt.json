@@ -1,0 +1,35 @@
+{
+  "kind": "semantic face datum replay verification",
+  "application_commit": "97ef5b75a86c4ca0653dc976f4feddd897279297",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "results": {
+    "model": "1615 tests passed",
+    "automation": "741 query tests passed",
+    "session": "13 part-evaluation tests passed",
+    "martensite": "53 sketch-prism tests passed",
+    "clippy": "model, session, automation and Martensite adapter all targets passed",
+    "workspace_check": "all workspace targets passed",
+    "markdownlint": "passed"
+  },
+  "scope": [
+    "Rust semantic face names are validated and stored in versioned work-plane recipes, with the producer feature included in dependency tracking.",
+    "A real named Martensite prism supports a face-offset datum through 10/20 mm size edit, undo, redo and Rust recipe reopen. A separate session test uses a named fake to check result invalidation and replay.",
+    "Missing, failed, consumed, foreign and wrong-kind references are refused locally; independent feature evaluation continues."
+  ],
+  "limits": [
+    "The test uses a Rust semantic name derived from a Go witness; it does not migrate a Go face key or adopt the Go dependent-plane package.",
+    "The in-plane basis differs between Go and Martensite. A public creation path must verify name binding on write and preserve legacy sketch coordinates.",
+    "No native UI command or full gate was verified."
+  ],
+  "artifacts": {
+    "markdown.log.gz": "76bafd65020f3000f4c2bdec66fb0f7c71db99d637a75cd98111a431f289cf68",
+    "integration-final.log.gz": "301f3d32914b5201d40728074102c347d8b2ddf05f530de26f46f9b67afe9bfb",
+    "session-final.log.gz": "a9f64a829872e6fbda70d3257e2bff847bacce513f9c57313b8431ee7226fe66",
+    "kernel-final.log.gz": "6c5f3f2945347049c47a3b2ce42b35fb32f3a0e677b50239d35632b1c1ad88dd",
+    "check-final.log.gz": "88c57a18bf0363e3b849b2e794ef0fc542eb7442f4c130f4601962798f88b161",
+    "model-full.log.gz": "c3af14255f381319d66e50fe99ad4b1a0ecee31241a53317b558cdf2a61d63a4",
+    "clippy-final.log.gz": "853fc072c31e835aa76dd475005b4f0ab5f92d8b30b70f66066e1a535bf183ed",
+    "automation-full.log.gz": "82f6c6c628b280bb7628380147d4f27fc6448886f29a17415ae1f635993a60b5",
+    "red.log.gz": "63723cf1cc8e8b5070b59c9146b0733fb6cd2547b8e506d99360d0214a6388c4"
+  }
+}

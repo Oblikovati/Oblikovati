@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+    "dirty": false,
+    "root": "/dev/shm/oblikovati-text-presets.SbtKIR1d/tmp/oblikovati-bdd-TL3TAV/checkout"
+  },
+  "before": {
+    "commit": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+    "dirty": false,
+    "root": "/dev/shm/oblikovati-text-presets.SbtKIR1d/tmp/oblikovati-bdd-TL3TAV/checkout"
+  },
+  "source_changed": false
+}

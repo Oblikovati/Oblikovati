@@ -1,0 +1,6 @@
+
+running 1 test
+test native::gui_loop_tests::application_bdd::sketch::sketch_step_binding_diagnostic ... 60 unresolved step bindings in "/tmp/obk-text-case-replay.RJzaaT/bindings/step-bindings.json". Run the native benchmark for behavior.
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1611 filtered out; finished in 1.54s

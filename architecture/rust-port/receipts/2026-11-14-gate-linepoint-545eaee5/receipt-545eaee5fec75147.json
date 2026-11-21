@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:545eaee5fec751471341c0834211f05d9377ece3ddc1bbc54c6cbcead3a10f12",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "f88b2e19cf22dae22f91dbd57e319e819d47e9f1daf9edc00b3da4c122111bf5",
+  "application_commit": "23db4bf824399f3deef42ce7aa2f1dfac2902603",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-545eaee5/cucumber.json",
+    "sha256": "a99ede0fb1b4bdf5b776567e2b717efc47a9589cb8b7bdae18c3eb4474359d09"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-545eaee5/source-revision.json",
+    "sha256": "e8af9fa7fd87e541fddd5f891567ae316dbfe2b0dc38d7e0bbc046345215371d"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-gate-linepoint-545eaee5/point-08-Create-a-center-point-using-the-Format-toggle.png",
+    "sha256": "af196b4f4c241ca57658c628a2cc495c8400ea779319fe572807d39724c7a32f"
+  }
+}

@@ -19,16 +19,17 @@ fn walk_files(root: &Path, source_only: bool) -> BuildResult<Vec<PathBuf>> {
     let entries = WalkDir::new(root).into_iter().filter_entry(|entry| {
         !source_only
             || entry.depth() == 0
-            || ![
-                ".git",
-                "target",
-                "node_modules",
-                "dist",
-                "artifacts",
-                "stage",
-                ".tools",
-            ]
-            .contains(&entry.file_name().to_string_lossy().as_ref())
+            || (!(entry.file_type().is_dir() && is_worktree_storage(entry.path()))
+                && ![
+                    ".git",
+                    "target",
+                    "node_modules",
+                    "dist",
+                    "artifacts",
+                    "stage",
+                    ".tools",
+                ]
+                .contains(&entry.file_name().to_string_lossy().as_ref()))
     });
     let mut files = Vec::new();
     for entry in entries {
@@ -45,6 +46,14 @@ fn walk_files(root: &Path, source_only: bool) -> BuildResult<Vec<PathBuf>> {
     }
     files.sort();
     Ok(files)
+}
+
+fn is_worktree_storage(path: &Path) -> bool {
+    path.file_name().is_some_and(|name| name == "worktrees")
+        && path
+            .parent()
+            .and_then(Path::file_name)
+            .is_some_and(|name| name == ".slim")
 }
 
 pub(crate) fn read_text(path: &Path) -> BuildResult<String> {

@@ -1,0 +1,10 @@
+{
+  "application_commit": "7f6750635",
+  "tested_code_commit": "47dfb4ab8",
+  "feature": "features/application/ribbon-display/ribbon-display.feature",
+  "feature_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e",
+  "scenario": "Select an overflowed tab while the ribbon is minimized to tabs",
+  "result": "1 scenario passed",
+  "environment": "Linux X11, Xvfb, Openbox, software Vulkan; native and scripted input",
+  "scope": "Focused scenario only; not a full-feature run. Source was unversioned."
+}

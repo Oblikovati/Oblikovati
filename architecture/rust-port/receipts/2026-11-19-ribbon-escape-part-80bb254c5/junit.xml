@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T16:23:09.679837504Z" time="6.493295648"><testcase name="Scenario: Dismiss the ribbon appearance submenu with Escape: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-display/ribbon-display.feature:627:3" time="6.493295648"><system-out><![CDATA[  Scenario: Dismiss the ribbon appearance submenu with Escape
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon displayed
+   ✔  And the Modify panel context menu is open with Ribbon Appearance expanded
+   ✔  And Normal is the checked ribbon appearance
+   ✔  When the user presses Escape twice
+   ✔  Then the Ribbon Appearance submenu and panel context menu close
+   ✔  And the full ribbon remains displayed in Normal appearance
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

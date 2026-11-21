@@ -1,0 +1,18 @@
+{
+  "kind": "diagnostic-only",
+  "application_commit": "8888a450a46665ff4e5881b0f62509f29ffd5dc6",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "scenario_id": "scenario:59bbc7159c8ea4f06a7778692656e22f14242938f0a79f1cd0ce64c305d9dac4",
+  "results": "Two example cases and 18 steps passed.",
+  "limitations": [
+    "The final screenshot shows a large flat-colored shape with no visible edges, so visual acceptance is not established.",
+    "The screenshot is the final state of the last example; it does not record the intermediate rotation or the first example."
+  ],
+  "artifacts_sha256": {
+    "native-test.log": "e2b9cc52be95cc42717eded2358bc75b8b210370416ad65ac684a4cc7e88cb08",
+    "source-revision.json": "afdcde4b44bdbec6b08878f72ff7111f069221d84273b826035e73b15a5d3457",
+    "junit.xml": "45f1d97f944a44351062948839087fc0fb02fed219318d3fd7ddc8bc4b58b9fd",
+    "cucumber.json": "13c5f50444ceaf11e7ac54cff684ac936a86856b951e970a7ac8bc08ff5935b6",
+    "Reverse-a-rotation-using-the-remaining-adjacent-pairs.png": "24c72b4fc8c9593e75b2c0605bb263f7f472bb8f048d6be8d752482670f8d837"
+  }
+}

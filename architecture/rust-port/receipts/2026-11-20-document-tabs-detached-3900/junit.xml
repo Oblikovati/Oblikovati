@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature" tests="39" errors="0" failures="0" hostname="localhost" timestamp="2026-11-20T14:55:36.320316372Z" time="440.885895535"><testcase name="Scenario: Switch between open parts: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:4:3" time="15.170336731999999"><system-out><![CDATA[  Scenario: Switch between open parts
+   ✔  Given the MCAD Software has two open part documents
+   ✔  And the first part contains an empty sketch
+   ✔  And the second part contains a rectangular sketch profile
+   ✔  And the first part is active
+   ✔  When the user selects the second part's document tab
+   ✔  Then the second part becomes active
+   ✔  And its rectangular profile appears in the viewport
+   ✔  And the model browser shows the second part
+   ✔  And the application title identifies the second part
+   ✔  When the user selects the first part's document tab
+   ✔  Then the first part becomes active
+   ✔  And its model browser and viewport are displayed
+   ✔  And the second part remains available as an open tab
+]]></system-out></testcase><testcase name="Scenario: Switch between adjacent document tabs using the keyboard: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:20:3" time="6.895908994"><system-out><![CDATA[  Scenario: Switch between adjacent document tabs using the keyboard
+   ✔  Given two adjacent model document tabs are open in the MCAD Software
+   ✔  And the first document tab is active
+   ✔  When the user presses Control+Tab
+   ✔  Then the next document tab becomes active
+   ✔  And its model browser and viewport are displayed
+   ✔  And the first document remains open
+   ✔  When the user presses Control+Shift+Tab
+   ✔  Then the first document tab becomes active again
+   ✔  And the next document remains open
+]]></system-out></testcase><testcase name="Scenario: Inspect a document tab&apos;s context menu: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:31:3" time="6.7198633260000005"><system-out><![CDATA[  Scenario: Inspect a document tab's context menu
+   ✔  Given a part document is active in the MCAD Software
+   ✔  When the user opens the document tab's context menu
+   ✔  Then the menu offers Close, Close Tabs, Close All, Save and Properties
+   ✔  And it displays shortcuts for Close and Save
+   ✔  When the user dismisses the menu
+   ✔  Then the document remains active
+]]></system-out></testcase><testcase name="Scenario: Hide and restore the document tab strip: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:39:3" time="8.810432365"><system-out><![CDATA[  Scenario: Hide and restore the document tab strip
+   ✔  Given multiple documents are open in the MCAD Software
+   ✔  And document tabs are visible
+   ✔  When the user clears Document Tabs in the View tab's User Interface menu
+   ✔  Then the document tab strip disappears
+   ✔  And the active document remains displayed
+   ✔  And Document Tabs is unchecked in the User Interface menu
+   ✔  When the user selects Document Tabs in the same menu
+   ✔  Then the document tab strip reappears
+   ✔  And Document Tabs is checked in the User Interface menu
+   ✔  And the open documents are available as tabs
+]]></system-out></testcase><testcase name="Scenario: Open the extended window list when tabs are hidden: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:51:3" time="14.620388401"><system-out><![CDATA[  Scenario: Open the extended window list when tabs are hidden
+   ✔  Given multiple documents are open in the MCAD Software
+   ✔  And document tabs are hidden
+   ✔  When the user opens the Switch menu on the View tab
+   ✔  Then the menu lists open windows and offers More Windows
+   ✔  When the user chooses More Windows
+   ✔  Then a Select Window dialog displays a scrollable list of open documents
+   ✔  And the dialog offers OK and cancels
+]]></system-out></testcase><testcase name="Scenario: Switch to the neighboring part with the keyboard: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:59:3" time="5.9768257479999995"><system-out><![CDATA[  Scenario: Switch to the neighboring part with the keyboard
+   ✔  Given two neighboring part tabs are visible in the MCAD Software
+   ✔  And the left-hand part is active
+   ✔  When the user presses Control+Tab
+   ✔  Then the right-hand part becomes active
+   ✔  And its model browser and viewport are displayed
+   ✔  And the left-hand part remains open
+]]></system-out></testcase><testcase name="Scenario: Inspect properties of an inactive document from its tab: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:66:3" time="8.940316993"><system-out><![CDATA[  Scenario: Inspect properties of an inactive document from its tab
+   ✔  Given the MCAD Software has two open part documents
+   ✔  And the first part is active
+   ✔  And the second part has been saved
+   ✔  When the user opens the second part's document tab context menu
+   ✔  Then the first part remains active in the workspace
+   ✔  When the user chooses Properties from the context menu
+   ✔  Then the properties dialog identifies the second part
+   ✔  And its General page displays the file name, location, size and timestamps
+   ✔  When the user closes the properties dialog without making changes
+   ✔  Then the first part remains active in the workspace
+   ✔  And the second part remains open
+]]></system-out></testcase><testcase name="Scenario: Close a saved inactive document with its tab close button: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:78:3" time="7.765907267"><system-out><![CDATA[  Scenario: Close a saved inactive document with its tab close button
+   ✔  Given the MCAD Software has two open part documents
+   ✔  And the first part is active
+   ✔  And the second part is saved and has no unsaved changes
+   ✔  When the user clicks the close button on the second part's document tab
+   ✔  Then the second part's tab disappears
+   ✔  And the first part remains active in the workspace
+   ✔  And no save prompt is displayed
+]]></system-out></testcase><testcase name="Scenario: Close a newly created empty active part: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:86:3" time="8.625132096"><system-out><![CDATA[  Scenario: Close a newly created empty active part
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And other documents are also open
+   ✔  When the user creates a new empty part from a standard metric template
+   ✔  Then the new part becomes active and has its own document tab
+   ✔  When the user clicks the close button on the new part's tab without editing it
+   ✔  Then the new part's tab disappears without a save prompt
+   ✔  And the previously active part is displayed again
+   ✔  And its model browser and viewport are restored
+]]></system-out></testcase><testcase name="Scenario: Cancel closing a part while editing its sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:95:3" time="7.6496207819999995"><system-out><![CDATA[  Scenario: Cancel closing a part while editing its sketch
+   ✔  Given a new part is open in the MCAD Software
+   ✔  And the user is editing a sketch in the part
+   ✔  And the environment-exit message is enabled
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  Then a dialog asks whether to exit the sketch environment and continue
+   ✔  And the dialog offers OK and cancels
+   ✔  When the user chooses Cancel
+   ✔  Then the part remains open
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase><testcase name="Scenario: Cancel the save prompt after leaving sketch editing to close: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:105:3" time="8.569368488"><system-out><![CDATA[  Scenario: Cancel the save prompt after leaving sketch editing to close
+   ✔  Given a new part contains an unsaved sketch in the MCAD Software
+   ✔  And the user is editing that sketch
+   ✔  And the environment-exit message is enabled
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  And the user chooses OK to exit the sketch environment and continue
+   ✔  Then a save-changes prompt identifies the part
+   ✔  And the prompt offers Yes, No and cancels
+   ✔  When the user chooses Cancel at the save-changes prompt
+   ✔  Then the part remains open
+   ✔  And its sketch remains listed in the model browser
+   ✔  And the part modeling environment is active
+]]></system-out></testcase><testcase name="Scenario: Cancel the first save while closing an unsaved part: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:117:3" time="20.440865112"><system-out><![CDATA[  Scenario: Cancel the first save while closing an unsaved part
+   ✔  Given a new part with an unsaved sketch is active in the MCAD Software
+   ✔  And the part is in the modeling environment
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  Then a save-changes prompt identifies the part
+   ✔  When the user chooses Yes to save changes
+   ✔  Then a Save As dialog opens with a suggested file name
+   ✔  When the user cancels the Save As dialog
+   ✔  Then the part remains open and active
+   ✔  And its sketch remains listed in the model browser
+]]></system-out></testcase><testcase name="Scenario: Save a new part while closing its tab: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:128:3" time="18.449663898"><system-out><![CDATA[  Scenario: Save a new part while closing its tab
+   ✔  Given a new part with an unsaved sketch is active in the MCAD Software
+   ✔  And another part was active before the new part was created
+   ✔  And save-change prompts are configured to always show
+   ✔  And the suggested file name does not exist in the selected folder
+   ✔  When the user clicks the close button on the new part's document tab
+   ✔  And the user chooses Yes in the save-changes prompt
+   ✔  And the user accepts the suggested file name in the Save As dialog
+   ✔  Then the part file exists at the selected location
+   ✔  And the new part's tab disappears
+   ✔  And the previously active part is displayed
+   ✔  When the user reopens the saved part file
+   ✔  Then the reopened part is active
+   ✔  And its sketch is listed in the model browser
+]]></system-out></testcase><testcase name="Scenario: Close an inactive saved document from its tab menu: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:142:3" time="9.151162711"><system-out><![CDATA[  Scenario: Close an inactive saved document from its tab menu
+   ✔  Given multiple part documents are open in the MCAD Software
+   ✔  And the first part is active
+   ✔  And the second part is saved and has no unsaved changes
+   ✔  When the user opens the second part's document tab context menu
+   ✔  And the user chooses Close
+   ✔  Then the second part's tab disappears
+   ✔  And the first part remains active in the workspace
+   ✔  And no save prompt is displayed
+]]></system-out></testcase><testcase name="Scenario: Switch between a drawing and a part being edited: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:151:3" time="10.371462486"><system-out><![CDATA[  Scenario: Switch between a drawing and a part being edited
+   ✔  Given a drawing and a part are open in the MCAD Software
+   ✔  And the part has an active sketch editing environment
+   ✔  And the drawing is active with its drawing resources branch collapsed
+   ✔  When the user selects the part document tab
+   ✔  Then the part sketch viewport and model browser are displayed
+   ✔  And the sketch ribbon is active
+   ✔  When the user selects the drawing document tab
+   ✔  Then the drawing sheet and drawing browser are displayed
+   ✔  And the drawing ribbon is active
+   ✔  And the drawing resources branch is collapsed
+   ✔  And the part remains available as an open tab
+   ✔  When the user selects the part document tab again
+   ✔  Then the part sketch viewport and model browser are displayed
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase><testcase name="Scenario: Activate a document from the tab-strip window list: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:166:3" time="6.353523644"><system-out><![CDATA[  Scenario: Activate a document from the tab-strip window list
+   ✔  Given a drawing and a part are open in the MCAD Software
+   ✔  And the part is active
+   ✔  And document tabs are visible
+   ✔  When the user opens the document list at the end of the tab strip
+   ✔  Then the list contains the open part and drawing
+   ✔  And the active part is marked in the list
+   ✔  And the menu offers Arrange, Horizontal Tile, Vertical Tile and Restore All
+   ✔  And the menu offers separate Close Tabs and Close All items
+   ✔  When the user selects the drawing from the list
+   ✔  Then the drawing becomes active
+   ✔  And its sheet and drawing browser are displayed
+   ✔  And the part remains open
+]]></system-out></testcase><testcase name="Scenario: Reorder an active drawing tab: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:179:3" time="10.321726236"><system-out><![CDATA[  Scenario: Reorder an active drawing tab
+   ✔  Given a drawing and several other documents are open in the MCAD Software
+   ✔  And the drawing is active and its tab is visible
+   ✔  When the user drags the drawing tab left across several neighboring tabs
+   ✔  Then the drawing tab appears at its new position among the document tabs
+   ✔  And the drawing remains active
+   ✔  And its sheet and browser remain displayed
+   ✔  When the user drags the drawing tab back to its earlier position
+   ✔  Then the drawing tab returns to its earlier position
+   ✔  And the drawing remains active
+]]></system-out></testcase><testcase name="Scenario: Reorder an inactive part tab: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:189:3" time="10.714265158"><system-out><![CDATA[  Scenario: Reorder an inactive part tab
+   ✔  Given a drawing and several parts are open in the MCAD Software
+   ✔  And the drawing is active
+   ✔  And an inactive part tab is visible
+   ✔  When the user drags the inactive part tab left across several neighboring tabs
+   ✔  Then the part tab appears at its new position among the document tabs
+   ✔  And the part becomes active
+   ✔  And the part viewport and model browser are displayed
+   ✔  And the drawing remains open
+]]></system-out></testcase><testcase name="Scenario: Detach an active drawing from the tab strip: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:198:3" time="8.074857823"><system-out><![CDATA[  Scenario: Detach an active drawing from the tab strip
+   ✔  Given a drawing and a part are open in the MCAD Software
+   ✔  And the drawing is active in the main document tab strip
+   ✔  When the user drags the drawing tab from the strip into the workspace
+   ✔  Then the drawing is displayed in a separate window with its own document tab
+   ✔  And the drawing sheet remains visible in that window
+   ✔  And the part remains open in the main workspace
+   ✔  When the user selects another open part tab in the main workspace
+   ✔  Then that part becomes active in the main workspace
+   ✔  And the drawing remains open in its separate window
+]]></system-out></testcase><testcase name="Scenario: Inspect the detached drawing tab context menu: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:208:3" time="7.882989524"><system-out><![CDATA[  Scenario: Inspect the detached drawing tab context menu
+   ✔  Given a drawing is open in a separate window in the MCAD Software
+   ✔  And the drawing has a document tab in that window
+   ✔  When the user opens the detached drawing tab context menu
+   ✔  Then the menu offers Close, Close Tabs, Close All, Save and Properties
+   ✔  And it displays shortcuts for Close and Save
+   ✔  When the user dismisses the menu
+   ✔  Then the drawing remains open in its separate window
+]]></system-out></testcase><testcase name="Scenario: Switch shared controls between a detached drawing and a part: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:216:3" time="8.257075265"><system-out><![CDATA[  Scenario: Switch shared controls between a detached drawing and a part
+   ✔  Given a drawing is open in a separate window in the MCAD Software
+   ✔  And a part is open in the main workspace
+   ✔  And the part context is active in the main workspace
+   ✔  When the user clicks the detached drawing sheet
+   ✔  Then the main application browser displays the drawing tree
+   ✔  And the main application ribbon displays drawing-context tabs
+   ✔  When the user selects the part tab in the main workspace
+   ✔  Then the main application browser displays the part tree
+   ✔  And the main application ribbon displays part-context tabs
+   ✔  And the detached drawing remains open
+]]></system-out></testcase><testcase name="Scenario: Switch backward and forward between neighboring part tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:227:3" time="6.371905602"><system-out><![CDATA[  Scenario: Switch backward and forward between neighboring part tabs
+   ✔  Given two part tabs are adjacent in the MCAD Software
+   ✔  And the part on the right is active
+   ✔  When the user presses Control+Shift+Tab
+   ✔  Then the part on the left becomes active
+   ✔  And its viewport and model browser are displayed
+   ✔  When the user presses Control+Tab
+   ✔  Then the part on the right becomes active again
+   ✔  And its viewport and model browser are displayed
+]]></system-out></testcase><testcase name="Scenario: Cancel the extended window selection: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:236:3" time="8.216030024"><system-out><![CDATA[  Scenario: Cancel the extended window selection
+   ✔  Given several documents are open in the MCAD Software
+   ✔  And a part is displayed in the workspace
+   ✔  And the Select Window dialog is open with another part highlighted
+   ✔  When the user chooses Cancel
+   ✔  Then the Select Window dialog closes
+   ✔  And the original part remains displayed in the workspace
+]]></system-out></testcase><testcase name="Scenario: Activate an open sketch from the Switch menu: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:243:3" time="10.614989924"><system-out><![CDATA[  Scenario: Activate an open sketch from the Switch menu
+   ✔  Given two parts are open in the MCAD Software
+   ✔  And the first part is displayed in the workspace
+   ✔  And the second part has an active sketch editing environment
+   ✔  When the user opens the Switch menu on the View tab
+   ✔  And the user selects the second part from the menu
+   ✔  Then the second part becomes active
+   ✔  And its sketch viewport and model browser are displayed
+   ✔  And its sketch editing environment remains active
+   ✔  And the first part remains open
+]]></system-out></testcase><testcase name="Scenario: Visit Home without leaving an active sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:253:3" time="10.688344465"><system-out><![CDATA[  Scenario: Visit Home without leaving an active sketch
+   ✔  Given a part is open in the MCAD Software
+   ✔  And the part has an active sketch editing environment
+   ✔  When the user chooses Home from the View tab's Switch menu
+   ✔  Then the Home workspace displays its recent documents
+   ✔  And the part remains available in the document tab strip
+   ✔  When the user selects the part's document tab
+   ✔  Then the part's sketch viewport and model browser are displayed
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase><testcase name="Scenario: Preview an inactive document from its tab: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:262:3" time="12.242628587"><system-out><![CDATA[  Scenario: Preview an inactive document from its tab
+   ✔  Given two part documents are open in the MCAD Software
+   ✔  And the first part is active and the second has an empty sketch visible
+   ✔  When the user hovers over the second part's document tab
+   ✔  Then a thumbnail of the second part's sketch appears above the tab
+   ✔  And the second part's name appears above the thumbnail
+   ✔  And the first part remains active
+   ✔  When the user moves the pointer away from the tab
+   ✔  Then the thumbnail and its name disappear
+   ✔  And the first part remains active
+]]></system-out></testcase><testcase name="Scenario: Preview Home while a part is active: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:272:3" time="8.259050191"><system-out><![CDATA[  Scenario: Preview Home while a part is active
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Home workspace is available in the document tab strip
+   ✔  When the user hovers over the Home tab
+   ✔  Then a thumbnail of the Home workspace appears above the tab
+   ✔  And a Home label appears above the thumbnail
+   ✔  And the part remains active in the workspace
+]]></system-out></testcase><testcase name="Scenario: Reveal earlier tabs without changing the active document: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:279:3" time="20.856966491"><system-out><![CDATA[  Scenario: Reveal earlier tabs without changing the active document
+   ✔  Given many documents are open in the MCAD Software
+   ✔  And the tab strip overflows its available width
+   ✔  And a presentation is active while earlier tabs are out of view
+   ✔  When the user clicks the left navigation arrow at the end of the tab strip
+   ✔  Then earlier tabs, including Home, become visible
+   ✔  And the presentation remains active in the workspace
+]]></system-out></testcase><testcase name="Scenario: Reveal an off-screen tab when selecting its document: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:286:3" time="14.025120166"><system-out><![CDATA[  Scenario: Reveal an off-screen tab when selecting its document
+   ✔  Given many documents are open in the MCAD Software
+   ✔  And the tab strip overflows its available width
+   ✔  And an open part's tab is outside the visible portion of the strip
+   ✔  When the user selects that part from the View tab's Switch menu
+   ✔  Then the part becomes active
+   ✔  And the tab strip shifts to show its active tab
+   ✔  And the part's viewport and model browser are displayed
+]]></system-out></testcase><testcase name="Scenario: Show the location of a saved document in its tab preview: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:294:3" time="9.195384442"><system-out><![CDATA[  Scenario: Show the location of a saved document in its tab preview
+   ✔  Given two parts are open in the MCAD Software
+   ✔  And the first part is active
+   ✔  And the second part has been saved to a file
+   ✔  When the user hovers over the second part's document tab
+   ✔  Then a thumbnail of the second part appears above the tab
+   ✔  And the preview label displays the saved file's full path and part name on separate lines
+   ✔  And the first part remains active
+]]></system-out></testcase><testcase name="Scenario: Preview the active saved document from its tab: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:302:3" time="8.098191416"><system-out><![CDATA[  Scenario: Preview the active saved document from its tab
+   ✔  Given a saved part is active in the MCAD Software
+   ✔  And the part is being edited in a sketch
+   ✔  When the user hovers over the active part's document tab
+   ✔  Then a thumbnail of its sketch viewport appears above the tab
+   ✔  And the preview label displays the saved file's full path and part name
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase><testcase name="Scenario: Inspect the Home tab context menu: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:309:3" time="31.984449068"><system-out><![CDATA[  Scenario: Inspect the Home tab context menu
+   ✔  Given the Home workspace is active in the MCAD Software
+   ✔  And documents are open in the tab strip
+   ✔  When the user right-clicks the Home tab
+   ✔  Then the context menu offers separate Close Tabs and Close All items
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the Home workspace remains active
+   ✔  And the open documents remain available in the tab strip
+]]></system-out></testcase><testcase name="Scenario: Inspect the inactive Home tab without switching documents: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:318:3" time="9.446205451"><system-out><![CDATA[  Scenario: Inspect the inactive Home tab without switching documents
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the part is being edited in a sketch
+   ✔  And the Home tab is visible but inactive
+   ✔  When the user right-clicks the Home tab
+   ✔  Then its context menu offers separate Close Tabs and Close All items
+   ✔  And the part's sketch remains displayed and active
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the part's sketch remains active
+]]></system-out></testcase><testcase name="Scenario: Open a second window for a part and returns to the first: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:328:3" time="10.580209048"><system-out><![CDATA[  Scenario: Open a second window for a part and returns to the first
+   ✔  Given a saved part is active in the MCAD Software
+   ✔  And a sketch is being edited in the part
+   ✔  When the user chooses New in the View tab's Windows group
+   ✔  Then a second window for the same part becomes active
+   ✔  And the new window has a numbered document tab
+   ✔  And the application title identifies the second window number
+   ✔  And the part's model browser is displayed
+   ✔  When the user opens the Switch menu on the View tab
+   ✔  Then the original part window is listed with a different window number
+   ✔  When the user selects the original part window
+   ✔  Then the original sketch viewport is displayed
+   ✔  And the original numbered document tab is active
+   ✔  And the second window remains open
+]]></system-out></testcase><testcase name="Scenario: Switch between Home and a neighboring part with the keyboard: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:342:3" time="7.451504007"><system-out><![CDATA[  Scenario: Switch between Home and a neighboring part with the keyboard
+   ✔  Given Home and a part window are adjacent in the MCAD Software tab strip
+   ✔  And the part window is active with a sketch being edited
+   ✔  When the user presses Control+Shift+Tab
+   ✔  Then the Home workspace and its recent documents are displayed
+   ✔  And the part window remains open
+   ✔  When the user presses Control+Tab
+   ✔  Then the part window's sketch viewport and model browser are displayed
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase><testcase name="Scenario: Wrap keyboard navigation between Home and the last window: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:351:3" time="7.755146246"><system-out><![CDATA[  Scenario: Wrap keyboard navigation between Home and the last window
+   ✔  Given Home and several document windows are open in the MCAD Software
+   ✔  And Home is the first tab and a part's second window is the last tab
+   ✔  And Home is active
+   ✔  When the user presses Control+Shift+Tab
+   ✔  Then the part's second window becomes active
+   ✔  When the user presses Control+Tab
+   ✔  Then the Home workspace becomes active again
+]]></system-out></testcase><testcase name="Scenario: Restore distinct views of one part after switching windows: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:359:3" time="21.328372386"><system-out><![CDATA[  Scenario: Restore distinct views of one part after switching windows
+   ✔  Given two numbered windows of the same part are open in the MCAD Software
+   ✔  And the first window displays the sketch in an orthogonal view
+   ✔  And the second window displays the part in an isometric view
+   ✔  And the first window is active
+   ✔  When the user switches to the second window through Home
+   ✔  Then the second window displays its isometric view
+   ✔  And the part's model browser is displayed
+   ✔  When the user switches back to the first window through Home
+   ✔  Then the first window displays its orthogonal sketch view
+   ✔  And its sketch editing environment remains active
+]]></system-out></testcase><testcase name="Scenario: Close an additional window without closing the part: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:370:3" time="17.630262167"><system-out><![CDATA[  Scenario: Close an additional window without closing the part
+   ✔  Given a part has two numbered windows in the MCAD Software
+   ✔  And the first window has an active sketch editing environment
+   ✔  And the second window is active after switching from Home
+   ✔  When the user presses Control+F4
+   ✔  Then the second window closes without a save prompt
+   ✔  And the Home workspace becomes active
+   ✔  And the remaining part tab no longer has a window number
+   ✔  When the user selects the remaining part tab
+   ✔  Then the original sketch viewport and model browser are displayed
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase><testcase name="Scenario: Retain separate zoom levels in two windows of a part: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:381:3" time="16.379442805"><system-out><![CDATA[  Scenario: Retain separate zoom levels in two windows of a part
+   ✔  Given two numbered windows of one part are open in the MCAD Software
+   ✔  And the first window displays an active sketch
+   ✔  And the second window is active
+   ✔  When the user scrolls to zoom in within the second window
+   ✔  Then its displayed geometry appears enlarged
+   ✔  When the user selects the first window from the View tab's Switch menu
+   ✔  Then the first window retains its previous sketch view and scale
+   ✔  When the user returns to the second window
+   ✔  Then the second window retains its zoomed-in view
+]]></system-out></testcase></testsuite></testsuites>

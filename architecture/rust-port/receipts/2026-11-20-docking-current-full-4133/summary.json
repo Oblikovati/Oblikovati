@@ -1,0 +1,11 @@
+{
+  "kind": "unsealed full-feature diagnostic",
+  "application_commit": "6f4fa66a6",
+  "feature_sha256": "3a0703dc9df2a77830b6b90402210ba9dffd10a0e370763015a46904744fbfce",
+  "scenarios_total": 11,
+  "scenarios_passed": 8,
+  "scenarios_failed": 3,
+  "steps_passed": 85,
+  "steps_failed": 3,
+  "limitations": "Live scenario source is unversioned; full run overlapped another isolated Xvfb desktop test; a failed drag may have left a button pressed before the next scenario. This diagnostic is not a verified feature receipt."
+}

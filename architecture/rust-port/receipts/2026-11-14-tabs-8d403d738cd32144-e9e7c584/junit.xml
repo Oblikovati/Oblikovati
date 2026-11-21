@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-tabs-48987af/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-tabs-48987af/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:06:16.287598756Z" time="4.977745721"><testcase name="Scenario: Close a newly created empty active part: tmp/obk-tabs-48987af/features/application/document-tabs/document-tabs.feature:83:3" time="4.977745721"><system-out><![CDATA[  Scenario: Close a newly created empty active part
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And other documents are also open
+   ✔  When the user creates a new empty part from a standard metric template
+   ✔  Then the new part becomes active and has its own document tab
+   ✔  When the user clicks the close button on the new part's tab without editing it
+   ✔  Then the new part's tab disappears without a save prompt
+   ✔  And the previously active part is displayed again
+   ✔  And its model browser and viewport are restored
+]]></system-out></testcase></testsuite></testsuites>

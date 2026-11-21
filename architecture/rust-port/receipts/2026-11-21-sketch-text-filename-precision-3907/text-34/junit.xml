@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/obk-mixed-field-source-b93kjxi0/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/obk-mixed-field-source-b93kjxi0/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T04:03:46.669030422Z" time="90.859961091"><testcase name="Scenario: text-34 Insert a standard filename property and inspect unavailable parameter sources: tmp/obk-mixed-field-source-b93kjxi0/checkout/features/sketch/text/scenario.feature:341:3" time="90.859961091"><system-out><![CDATA[  Scenario: text-34 Insert a standard filename property and inspect unavailable parameter sources
+   ✔  Given a fresh empty Format Text editor in Part6
+   ✔  When the user opens Type and select Standard iProperties
+   ✔  Then Source shows the primary Part6 model and Precision is unavailable
+   ✔  When the user selects FILENAME, focus the editor, and click Insert
+   ✔  Then the editor shows a shaded FILENAME field and the canvas shows the current document filename
+   ✔  When the user selects Parameters - Finish
+   ✔  Then Source is empty and no parameter is available in this fixture
+   ✔  When the user selects Parameters - User
+   ✔  Then Source is Part6 and no parameter is available in this fixture
+   ✔  And the inserted filename field remains
+]]></system-out></testcase></testsuite></testsuites>

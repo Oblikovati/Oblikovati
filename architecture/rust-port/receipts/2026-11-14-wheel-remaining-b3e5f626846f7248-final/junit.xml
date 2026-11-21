@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport navigation wheel: tmp/obk-wheel-3945-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" package="testsuite/Feature: Viewport navigation wheel: tmp/obk-wheel-3945-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T22:48:27.26307194Z" time="13.620078041"><testcase name="Scenario: Fit a small model from the wheel menu: tmp/obk-wheel-3945-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature:103:3" time="13.620078041"><system-out><![CDATA[  Scenario: Fit a small model from the wheel menu
+   ✔  Given a single rectangular block appears small in an active part in the MCAD Software
+   ✔  And the full navigation wheel is open
+   ✔  When the user right-clicks the wheel and chooses Fit to Window
+   ✔  Then the block appears larger and its visible outline fits within the viewport
+   ✔  And the wheel remains open
+   ✔  And the same part and orientation remain active
+   ✔  When the user presses Escape
+   ✔  Then the wheel closes and the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>

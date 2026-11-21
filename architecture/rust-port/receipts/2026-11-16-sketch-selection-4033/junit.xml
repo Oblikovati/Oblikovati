@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Interact with sketch entities in the viewport: mnt/vininas-projects/MCAD-Scenarios/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature" package="testsuite/Feature: Interact with sketch entities in the viewport: mnt/vininas-projects/MCAD-Scenarios/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T14:11:01.772373439Z" time="22.045107271"><testcase name="Scenario: Select a sketch entity in the ready state: mnt/vininas-projects/MCAD-Scenarios/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature:29:3" time="22.045107271"><system-out><![CDATA[  Scenario: Select a sketch entity in the ready state
+   ✔> Given the MCAD Software is displaying an editable sketch
+   ✔> And the viewport pointer is idle
+   ✔  Given an editable sketch contains an unselected line and the sketch is ready for input
+   ✔  When the user clicks the line away from its endpoints and constraint glyphs
+   ✔  Then the line becomes the selected sketch entity
+   ✔  And the viewport displays a distinct selected state
+   ✔  When the user clicks empty sketch space
+   ✔  Then the line is no longer selected
+]]></system-out></testcase></testsuite></testsuites>

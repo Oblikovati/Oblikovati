@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Interact with sketch entities in the viewport: tmp/oblikovati-bdd-LwaAPe/checkout/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature" package="testsuite/Feature: Interact with sketch entities in the viewport: tmp/oblikovati-bdd-LwaAPe/checkout/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T16:21:25.06433486Z" time="23.064577913"><testcase name="Scenario: Modify geometry with a tool that previews before commitment: tmp/oblikovati-bdd-LwaAPe/checkout/features/sketch/viewport-entity-interaction/viewport-entity-interaction.feature:71:3" time="23.064577913"><system-out><![CDATA[  Scenario: Modify geometry with a tool that previews before commitment
+   ✔> Given the MCAD Software is displaying an editable sketch
+   ✔> And the viewport pointer is idle
+   ✔  Given a sketch modification tool is requesting existing geometry
+   ✔  And the tool has not committed its result
+   ✔  When the user picks the required sketch entities
+   ✔  Then the tool displays a pending preview of the modification
+   ✔  When the user cancels before committing the result
+   ✔  Then the pending preview is removed
+   ✔  And the original sketch geometry remains unchanged
+]]></system-out></testcase></testsuite></testsuites>

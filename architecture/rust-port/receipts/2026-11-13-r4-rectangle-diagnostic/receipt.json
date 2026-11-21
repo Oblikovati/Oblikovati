@@ -1,0 +1,14 @@
+{
+  "date": "2026-11-13",
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3857",
+  "application_commit": "b7ed019d453eb064b9946c6d77d8395153e6f6cf",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "scenario": "rectangle-two-point-01 Create a rectangle from opposite corners",
+  "classification": "unbound step",
+  "scope": "Diagnostic only: two wording bindings are absent; later failures are tainted and do not establish product behavior.",
+  "artifacts_sha256": {
+    "source-revision.json": "afdcde4b44bdbec6b08878f72ff7111f069221d84273b826035e73b15a5d3457",
+    "test.log.gz": "b45803efaa54c4ce6862e847120462056bfebda0f2cfa8b86599f8a4e6b0f5ab",
+    "gap-report.json": "7aa357ebf5552246203a53af69b48589f35d907e79b57936824aeca797bcaa6e"
+  }
+}

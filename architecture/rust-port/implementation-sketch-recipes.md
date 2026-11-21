@@ -1,0 +1,286 @@
+# Rust planar sketch recipes
+
+Tracking: [#3716](https://github.com/Oblikovati/Oblikovati/issues/3716).
+This prepares the application-owned sketch model for document persistence under
+ADR-0003, ADR-0005 and ADR-0006.
+
+## Authored state
+
+`Sketch2D::recipe()` copies points, lines, circles, arcs and authored constraints
+in their existing collection order. `SketchRecipe` schema version 1 stores stable
+entity/constraint IDs, coordinates, independent circle radii, shared references,
+arc direction, parameter IDs and retained dimension/contact branches. Arc radius
+is derived; there is no stored radius variable for an arc.
+
+The recipe excludes dual numbers, solver columns/results, projections and arc
+circularity rows. Structural equations are rebuilt by the existing compiler.
+No storage codec owns a second declaration of model entities or constraints.
+Enum names use snake case; an independent fixed JSON fixture gates the names,
+field order and scalar ID representation. The enclosing document supplies units,
+sketch identity and placement. This recipe is not a public API wire contract,
+a legacy Go recipe importer, or an entire document format.
+
+## Restore and numeric fidelity
+
+`Sketch2D::from_recipe()` requires the supported schema and restores into a fresh
+owner using the same validated add methods as an authored edit. Missing references,
+duplicate/zero identities, nonfinite coordinates, invalid circle radii and bad
+shared-contact shape are refused before a sketch can be returned. An error cannot
+partly replace an existing owner. Unknown record fields, missing required fields
+and unknown enum variants are refused during decoding.
+
+Draft lines and arcs keep the same validity boundary as authored edits: coincident
+endpoints and unfinished arc circularity can be saved. A restored draft is not
+an accepted profile or solved feature. Healthy parameter targets, equation rank,
+finite arc bounds and kernel acceptance remain later gates. Parameter references
+are retained without resolving them during standalone geometry restore.
+
+The JSON dependency enables correctly rounded float parsing. Tests require exact
+coordinate bits after encode/decode, including negative zero, the smallest
+positive subnormal, large finite values and ordinary decimals. Working-unit values
+are not converted by the sketch recipe. Schema changes must have an explicit
+version and migration; unrecognized versions cannot be guessed or repaired.
+
+## Evidence and remaining integration
+
+Tests round-trip every current authored relation with no derived solver records,
+retain shared endpoint IDs and direction, and compare deterministic output with a
+fixed schema fixture. Malformed recipe tests cover schema, references, identity,
+values and retained contact shape. A restored parameter-driven rectangle solves
+with zero DOF, changes width, solves again and round-trips the solved candidate.
+An empty sketch and editable degenerate draft also round-trip.
+
+Document snapshot/history ownership, document-level sketch identity/placement,
+package encoding, legacy import, save/reopen session tests and UI/API commands
+remain open. The new recipe alone does not add sketches to a document file.
+
+## Placement frames
+
+Tracking: [#3717](https://github.com/Oblikovati/Oblikovati/issues/3717).
+`SketchPlane` now supplies the static placement prerequisite for a document-owned
+sketch. It retains a finite origin and authored unit in-plane axes, checks their
+unit and angular deviations with explicit versioned metric options, and derives
+a right-handed unit normal. The default metric bounds come from Go's
+`math.DefaultTolerance` at the fixed migration baseline; they are not kernel
+modelling or approximation tolerances. Zero bounds permit strict checks.
+
+XY, XZ and YZ frames use their exact standard basis. `to_model` preserves Go's
+ordered origin/axis translations, and `to_sketch` projects the model displacement
+onto the saved axes. Input, displacement and result coordinates must be finite.
+No saved axis is normalized, rotated or repaired. The angular check measures the
+normalized axis dot so loose unit-deviation bounds cannot accept parallel axes
+as perpendicular. An undefined normal is always refused.
+
+`SketchPlaneRecipe` stores only origin and axes; restoration repeats validation
+under the supplied frame options. Four Go fixtures cover standard and rotated/
+translated placement, projection and normal. Independent model coordinates,
+out-of-plane projection, exact saved-axis bits, malformed recipes and invalid
+options/frames have tests. Coordinate scale checks cover `1e-200` through `1e200`;
+nonfinite queries and arithmetic overflow are named failures. This does not yet
+implement parameter-driven work planes, face hosting, document sketch collections,
+or a saved document placement section.
+
+## Document-owned placed collections
+
+Tracking: [#3718](https://github.com/Oblikovati/Oblikovati/issues/3718).
+`DocumentSketches` now owns ordered `PlacedSketch` records with a typed saved
+sketch ID, authored name, validated static placement and planar geometry. Add,
+remove, rename, geometry replacement and plane replacement are explicit edit
+boundaries. A failed edit does not partly change the collection. Duplicate
+explicit names remain allowed, matching Go's `AddNamed`; automatic names are
+not implemented by this collection.
+
+Entity IDs must have one owner across the document's sketches. The existing
+UUIDv5 `sketchEntity:<id>` name has no sketch ID, so accepting the same entity ID
+in another sketch would create an ambiguous persistent reference. Shared
+endpoints inside one sketch still reference one owned point. Sketch IDs retain
+their separate `sketch:<id>` namespace, and authored constraint IDs remain local
+to their sketch. The collection allocates no identity; a permanent external
+allocator supplies reservations. Live sketch/entity ID lists support those
+separate allocation owners. Neither removing a record nor a failed add changes
+an allocator supplied by the caller.
+
+Collection recipe version 1 stores placement options as well as axes, names,
+IDs and the geometry recipe. `SketchPlane` now retains its validated option
+values for that capture. Restore validates the complete collection into a fresh
+owner and refuses schema, geometry, frame and global entity-identity errors.
+No solver result, normal cache or shared parameter table is duplicated in these
+records; solves receive the document's parameter table explicitly.
+
+Tests cover deterministic recipe round trips, original order, names, shared and
+separate identity namespaces, custom frame options, whole-collection atomic
+failure, geometry and placement edits, removal, external reservation behavior,
+malformed restore and UUID continuity/separation. A restored placed sketch edits
+its dimension through zero and back, retains zero DOF, then maps the solved point
+into the saved XZ placement. The sections below add document snapshot/history,
+permanent reservation storage, package encoding and session save/reopen.
+Legacy import remains open. The collection itself has no filesystem I/O.
+
+## Package codec and reservation storage
+
+Tracking: [#3719](https://github.com/Oblikovati/Oblikovati/issues/3719).
+The persistence boundary now stores `model.planarSketches` in document schema 3.
+The section contains the versioned collection `recipe`, `sketchHighWater`, and
+`entityHighWater`. `restore_sketches()` restores the complete validated collection
+and two separate permanent `RecipeIdAllocator` owners. A saved mark must cover
+every live ID; a later capture cannot decrease either previously stored mark.
+Deleting every sketch still writes the reservation marks so a reopened allocator
+does not reuse deleted identities. Maximum `u64` marks restore and report
+exhaustion on the next allocation.
+
+`with_sketches()` produces a candidate package, preserving other model and root
+sections. The added sketch recipe participates in the existing model digest.
+Missing Rust sketch sections mean an empty collection with zero reservations;
+a new empty document does not gain an unnecessary section. An explicit Rust
+section must use schema 3 and its exact supported shape. Unknown fields, invalid
+recipe versions, bad references/identities and malformed marks are refused.
+
+Nonempty legacy Go `model.sketches` requires an explicit importer before this
+codec can restore or replace sketch state. The raw package envelope still retains
+that section, but it is not interpreted as an empty Rust collection. Empty/null
+legacy collections are accepted as empty. This prevents a future snapshot save
+from silently replacing unported legacy geometry.
+
+Eight codec tests cover native YAML round trips, an independent fixed schema
+fixture, circular dimensions and retained shared contacts, custom placement
+options, exact coordinate bits, unrelated section retention, digest changes,
+permanent deleted-ID reservations, mark underflow/decrease/exhaustion, malformed
+sections and legacy refusal. Capture and restore errors leave the original
+package unchanged. The codec has no filesystem I/O. The following integration attaches these recipes to document history and the file workspace.
+
+## Document history and file workspace
+
+Tracking: [#3720](https://github.com/Oblikovati/Oblikovati/issues/3720).
+`DocumentSnapshot` now owns the placed sketch collection. Commands, grouped
+rollback, undo, redo and refresh use the same collection. Recipe comparisons
+preserve authored floating-point bits, including signed zero in coordinates,
+fixed positions and plane axes. A sketch-only edit therefore changes history
+and the dirty state, even when ordinary numeric equality would hide the edit.
+
+The history owner keeps separate sketch and entity allocators outside undo
+snapshots. A command must reserve each new ID through `RecipeReservations`.
+Failed commands, aborted groups and deletion do not release IDs. Reservation
+changes alone require a save. Refresh cannot introduce unreserved IDs, and a
+saved high-water mark cannot decrease or fall below any live ID.
+
+Open, create and template creation restore the collection and both permanent
+marks before document registration. The snapshot package target captures them
+for normal saves and copies. Only successful atomic storage updates the saved
+baseline; failed storage preserves the file, dirty state and reservations.
+A copy retains the recipe and marks under its new document identity without
+clearing the source document's dirty state. Invalid Rust recipes and nonempty
+legacy Go sketches are refused before registration.
+
+Tests cover a parameter-driven sketch with zero degrees of freedom through
+save/reopen, parameter edits, undo/redo and copy. They also cover reservation-only
+saves, deleted and aborted IDs, refused storage, exact signed-zero edits,
+template restoration and legacy-load refusal. These are model and file workspace
+tests. Kernel features and the native viewport remain separate port work; automatic
+sketch recomputation is described below.
+
+## Explicit document recomputation
+
+Tracking: [#3721](https://github.com/Oblikovati/Oblikovati/issues/3721).
+`DocumentSketches::solve()` runs the existing planar solver in document order
+with caller-supplied numerical options and cancellation. The input collection
+is immutable. Only converged geometry enters the returned candidate. A failed
+sketch keeps its input geometry, while independent sketches continue. Each
+report names its sketch ID and retains the complete solve outcome or typed
+error: parameter failures, termination, degrees of freedom, conflicts and
+redundancy diagnostics remain available to the caller.
+
+A converged sketch with free degrees of freedom is reported with that count;
+convergence alone does not certify a fully constrained feature input. Redundant
+constraints likewise remain visible through the existing solve diagnostics.
+No failed numerical candidate is adopted as solved geometry. Cancellation is
+latched and discards every geometry change in the batch, including previously
+converged sketches. Reports cover only attempted sketches when cancelled.
+
+`DocumentSession::recompute_sketches()` and the workspace command capability
+adopt the collection through the normal transaction path. An open parameter
+edit group can include recomputation as one undo step. Unchanged or cancelled
+recomputation creates no extra history step. Save/reopen stores the solved
+geometry through the existing snapshot codec.
+
+Go reference: `model/sketch/solve_sketch.go` at the comparison baseline separates
+convergence, constraint structure and sketch health. Rust retains those source
+diagnostics rather than certifying every converged result as fully constrained.
+This operation remains an explicit full solve. The sections below add retained
+health and automatic parameter-reader scheduling. Dependent feature quarantine
+and API/UI health exposure remain open port work. Local failure reports must reach those consumers when they are added.
+
+## Derived sketch health and checked consumption
+
+Tracking: [#3722](https://github.com/Oblikovati/Oblikovati/issues/3722).
+Each live placed sketch now retains the last attempted solve diagnostics:
+termination, Jacobian structure, conflict relation IDs, relative residual or a
+typed failure. These are derived state. Recipe serialization and authored
+comparison exclude them, and restoration starts unverified. A fresh solve must
+verify loaded geometry before a fully constrained feature can consume it.
+
+`Sketch2D::parameter_dependencies()` lists every authored dimension ID in first
+use order, without duplicates. It includes missing targets and all eight current
+dimension forms. Solver preparation uses the same dependency definition.
+Evaluation stamps capture each parameter's actual selected model value, including
+its dimension and exact floating-point bits, or its read error. Health reads
+compare those inputs against the current parameter collection. A changed target,
+selected tolerance value, upstream formula result, failed parameter or recovered
+missing reference makes the old evaluation stale. Unrelated edits and expressions
+with the same model value do not invalidate the result. Returning to the exact
+previous targets permits reuse of their original verified geometry.
+
+`PlacedSketch::require_fully_constrained()` refuses unverified, stale, failed,
+unconverged or nonzero-DOF sketches with the sketch ID and a named decline.
+Converged redundant constraints retain their warning in the returned structure;
+they are not relabeled as a clean constraint system. Geometry replacement clears
+the stamp. Name and validated placement edits retain the planar solve evidence:
+placement does not change the 2D constraint equations.
+
+Batch cancellation keeps the original stamps as well as the original geometry.
+Snapshots retain stamps across command groups and undo/redo, and freshness is
+checked against each snapshot's parameters. Health-only recomputation creates no
+extra authored history step or dirty state. Session tests verify parameter edits,
+recompute navigation, cancellation, failed-parameter observations and file reopen.
+Model tests verify target equality, signed zero, tolerance selection, upstream
+changes, failure/recovery, missing targets, DOF declines and redundant warnings.
+
+Feature consumers must use the checked read before building from a sketch.
+Dependent feature quarantine, API health DTO projection and native UI
+presentation remain open integration work. Automatic scheduling is described
+below. This cache alone does
+not provide those consumers or certify a closed profile.
+
+## Automatic sketch readers in session edits
+
+Tracking: [#3723](https://github.com/Oblikovati/Oblikovati/issues/3723).
+Normal session edits now update pending sketch readers after the command and
+property projection succeed, before the history candidate is published.
+Unevaluated sketches and changed model-value readers use the same solver as a
+full recompute. Current evaluations, including known failures with unchanged
+inputs, are skipped. Recovery or changed dimension inputs make a failed reader
+pending again. Failure remains local in its retained diagnostics; independent
+changed sketches continue. Only converged geometry is adopted.
+
+Parameter edits and resulting coordinates belong to one transaction candidate
+and one undo step. Rejected commands, observer veto and grouped abort retain the
+original parameters, geometry and evaluation stamps. The typed parameter client
+uses this path through the existing session owner. A normal parameter edit now
+saves and reopens its solved geometry without an extra explicit solve command.
+
+The automatic numerical policy belongs to the session owner. `new()` uses the
+stable solver defaults; `new_with_sketch_options()` injects another bounded policy
+at construction. An explicit full recompute owns its supplied policy and
+cancellation. Its command bypasses automatic recomputation so cancellation does
+not trigger an implicit retry of the old geometry.
+
+Derived-source refresh also updates pending readers before publishing a source
+consequence. Geometry and retained verification are compared as evaluated state,
+so health-only consequences are adopted even when authored coordinates do not
+change. They do not create a target undo step or make derived health part of the
+saved recipe. Unchanged source values cause no repeated solve or notification.
+
+Tests cover initial verification, changed-reader selection, equal values,
+independent failure/recovery, cached failures, complete cancellation, injected
+limits, rollback/abort, typed API edits and veto, derived-source geometry, and
+normal save/reopen. Feature graph quarantine, asynchronous native workers and
+API/UI health projection remain open port work.

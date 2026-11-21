@@ -1,0 +1,22 @@
+{
+  "baseline_commit": "dc03d769c",
+  "optimized_solver_commit": "8a36e2d0455c6ac491c93808894aeb87faedb54f",
+  "benchmark_source_commit": "d17b25912d1e8b01965102d59095ec33500b123e",
+  "sparse_source": "crates/solve/tests/sparse_residual_benchmark.rs",
+  "dense_source": "crates/solve/tests/dense_residual_benchmark.rs",
+  "build": "CARGO_INCREMENTAL=0 CARGO_PROFILE_RELEASE_DEBUG=0 CARGO_BUILD_JOBS=2 cargo test --locked --release -p oblikovati-solve --test <benchmark> --no-run",
+  "run": "/usr/bin/time -v <emitted-binary> --ignored --nocapture --test-threads=1",
+  "baseline_setup": "The exact benchmark source from the benchmark commit was copied into a disposable dc03d769c checkout.",
+  "environment": "AMD Ryzen AI MAX+ 395; release model-only residual tests; background emulator active; dense results from three alternating runs.",
+  "result": "Sparse 1000-line median 16.908 ms baseline, 0.106 ms optimized; peak RSS 130536 KiB baseline, 5920 KiB optimized. Dense 1000-line medians 27.497\u201328.677 ms baseline, 27.777\u201329.167 ms optimized; peaks 254908\u2013256104 KiB baseline, 254704\u2013256256 KiB optimized. These tests do not measure GUI frame rate.",
+  "logs": {
+    "architecture/rust-port/receipts/2026-11-19-sparse-solver-8a36e2d/obk-4165-independent-baseline.log": "4d757b5d248e7bea471990fdde44b69a847b187fd9559d4da9b5c6c527251a02",
+    "architecture/rust-port/receipts/2026-11-19-sparse-solver-8a36e2d/obk-4165-independent-optimized.log": "0d51f6d8dce292adb2037d29f759b12b65220d2ac2df933c6a95a0c5c6f86ac7",
+    "architecture/rust-port/receipts/2026-11-19-sparse-solver-8a36e2d/obk-4165-dense-long-1-baseline.log": "e177dfdfda8c9944534dfa98322530cf6984be1fdf90f44f80989d625fb23862",
+    "architecture/rust-port/receipts/2026-11-19-sparse-solver-8a36e2d/obk-4165-dense-long-1-optimized.log": "2ac218cad0d42e567334ad81f54d8eabf811f82b10a6aeb5f08eba79fa2067b4",
+    "architecture/rust-port/receipts/2026-11-19-sparse-solver-8a36e2d/obk-4165-dense-long-2-baseline.log": "98cefa85fb2d8103dc69630ba4b7e74c840c21fa55d0684d155797313440525d",
+    "architecture/rust-port/receipts/2026-11-19-sparse-solver-8a36e2d/obk-4165-dense-long-2-optimized.log": "b9ac512adc5bca53a468eba2e9139666f8af2fd003667d66d50186f3d1bb1c0f",
+    "architecture/rust-port/receipts/2026-11-19-sparse-solver-8a36e2d/obk-4165-dense-long-3-baseline.log": "06d5d179e40893ef716cf7e15a94ba102075322f44651d64b764b6187bc26b11",
+    "architecture/rust-port/receipts/2026-11-19-sparse-solver-8a36e2d/obk-4165-dense-long-3-optimized.log": "adf24767b0e3d14e89c7108673f832296402634c285e4f4877ef928f28f4b902"
+  }
+}

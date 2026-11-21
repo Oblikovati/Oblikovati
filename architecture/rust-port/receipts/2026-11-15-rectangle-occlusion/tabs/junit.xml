@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/oblikovati-bdd-PmnG2m/checkout/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/oblikovati-bdd-PmnG2m/checkout/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T09:40:49.633788555Z" time="13.659499877"><testcase name="Scenario: Switch between open parts: tmp/oblikovati-bdd-PmnG2m/checkout/features/application/document-tabs/document-tabs.feature:5:3" time="13.659499877"><system-out><![CDATA[  Scenario: Switch between open parts
+   ✔  Given the MCAD Software has two open part documents
+   ✔  And the first part contains an empty sketch
+   ✔  And the second part contains a rectangular sketch profile
+   ✔  And the first part is active
+   ✔  When the user selects the second part's document tab
+   ✔  Then the second part becomes active
+   ✔  And its rectangular profile appears in the viewport
+   ✔  And the model browser shows the second part
+   ✔  And the application title identifies the second part
+   ✔  When the user selects the first part's document tab
+   ✔  Then the first part becomes active
+   ✔  And its model browser and viewport are displayed
+   ✔  And the second part remains available as an open tab
+]]></system-out></testcase></testsuite></testsuites>

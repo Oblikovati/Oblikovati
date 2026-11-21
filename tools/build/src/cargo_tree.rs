@@ -125,8 +125,13 @@ fn validate_package(root: &Path, package: &Package) -> BuildResult<()> {
 }
 
 fn validate_dependency(package: &Package, dependency: &Dependency) -> BuildResult<()> {
-    let kernel =
-        dependency.name.starts_with("rustycad-") || dependency.name.starts_with("martensite-");
+    if dependency.name.starts_with("rustycad-") {
+        return Err(format!(
+            "{} dependency {}: expected the released Martensite backend, not the retired RustyCAD namespace",
+            package.name, dependency.name
+        ));
+    }
+    let kernel = dependency.name.starts_with("martensite-");
     if kernel && !["oblikovati-martensite", "oblikovati-viewport"].contains(&package.name.as_str())
     {
         return Err(format!(

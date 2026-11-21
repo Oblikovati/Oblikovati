@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Circle center point: tmp/rust-midpoint-3996-JM1wi6AQ/scenarios/features/sketch/circle-center-point/scenario.feature" package="testsuite/Feature: Circle center point: tmp/rust-midpoint-3996-JM1wi6AQ/scenarios/features/sketch/circle-center-point/scenario.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-15T22:17:02.182751167Z" time="25.670999723"><testcase name="Scenario: circle-center-point-10 Enter a diameter through circle creation: tmp/rust-midpoint-3996-JM1wi6AQ/scenarios/features/sketch/circle-center-point/scenario.feature:5:3" time="25.670999723"><failure type="Step Panicked" message="Step panicked. Captured output: expected a zero size in &quot;0.491mm&quot;"/><system-out><![CDATA[  Scenario: circle-center-point-10 Enter a diameter through circle creation
+   ✔  Given an editable metric sketch with a midpoint line
+   ✔  When the user invoke Center Point Circle using Ctrl+Shift+C
+   ✔  And the user select the recorded free center at (0.000, 6.553, -12.440) mm
+   ✔  Then the prompt requests a point on the circle
+   ✘  And the status displays a radius of 0.000 mm
+      Step failed:
+      Defined: tmp/rust-midpoint-3996-JM1wi6AQ/scenarios/features/sketch/circle-center-point/scenario.feature:10:5
+      Matched: crates/head/src/../tests/application/../sketch/circle-center-point/steps.rs:98:1
+      Step panicked. Captured output: expected a zero size in "0.491mm"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nRight\nSelectpointoncircle\n[Diameter:0.04913136334560282]\n2dimensionsneeded\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nSketch1\n[DOF2]\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nProjectGeometry\nCreatev\nv\nConstrain\nv\nModify\nv\nPattern\nv\nInsert\nv\nFormat\nFinishSketch\nExit\nPreciseInput\nAbs\nMode\n6.667\nX\n-12.222\nY\nRepositionTriad\nResettoOrigin\n...\nmm/mm\n0.491mm",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

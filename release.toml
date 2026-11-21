@@ -1,22 +1,22 @@
 # SPDX-License-Identifier: GPL-2.0-only
-# Empty pins are deliberate blockers. Fill them after each owner publishes Rust packages.
+# Dependency pins identify owner-tested stable releases. Product readiness remains a separate gate.
 [product]
 major = 0
 resources = "packaging/resources"
 publication-ready = false
-document-schema = "2"
+document-schema = "3"
 reference-key = "pending"
 c-abi = "pending"
 
 [api]
 repository = "Oblikovati/Oblikovati.API"
-version = "0.154.0"
-revision = ""
+version = "0.165.0"
+revision = "907cd4c28713b47501b077b8d902dbb6a008aada"
 
 [kernel]
-repository = "Oblikovati/RustyCADKernel"
-version = ""
-revision = ""
+repository = "Oblikovati/Martensite"
+version = "0.13.1"
+revision = "bef25f47548431c8f128f08f66a1f719bcee4982"
 
 [linuxdeploy]
 url = ""

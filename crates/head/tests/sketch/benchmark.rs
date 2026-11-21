@@ -1,0 +1,155 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! `features/sketch` on the same native window and owner as the application scenarios.
+use super::*;
+#[path = "arc-center-point/steps.rs"]
+mod arc_center_point;
+#[path = "arc-three-point/steps.rs"]
+mod arc_three_point;
+#[path = "circle-center-point/steps.rs"]
+mod circle_center_point;
+#[path = "coincident/context.rs"]
+mod coincident_context;
+#[path = "coincident/move_relation.rs"]
+mod coincident_move_relation;
+#[path = "coincident/multi_move.rs"]
+mod coincident_multi_move;
+#[path = "coincident/points.rs"]
+mod coincident_points;
+#[path = "coincident/segments.rs"]
+mod coincident_segments;
+#[cfg(target_os = "linux")]
+#[path = "constraint_fixture.rs"]
+mod constraint_fixture;
+#[path = "constraint-glyph-hover/steps.rs"]
+mod constraint_glyph_hover;
+#[path = "constraint-inference-scope/steps.rs"]
+mod constraint_inference_scope;
+#[path = "constraint-settings/application_options.rs"]
+mod constraint_settings_application_options;
+#[cfg(target_os = "linux")]
+#[path = "constraint-settings/glyph_native.rs"]
+mod constraint_settings_glyph_native;
+#[path = "constraint-settings/inference.rs"]
+mod constraint_settings_inference;
+#[cfg(target_os = "linux")]
+#[path = "constraint-settings/inference_native.rs"]
+mod constraint_settings_inference_native;
+#[path = "constraint-settings/relax.rs"]
+mod constraint_settings_relax;
+#[path = "dimension-expression/steps.rs"]
+mod dimension_expression;
+#[cfg(target_os = "linux")]
+#[path = "dimension-label-overlap/native.rs"]
+pub(super) mod dimension_label_overlap;
+#[path = "ellipse/steps.rs"]
+mod ellipse;
+#[path = "explode-block/steps.rs"]
+mod explode_block;
+#[path = "explode-block/history.rs"]
+mod explode_block_history;
+#[path = "fixtures.rs"]
+pub(super) mod fixtures;
+#[path = "fixtures_midpoint.rs"]
+mod fixtures_midpoint;
+#[path = "line/steps.rs"]
+mod line;
+#[path = "line-midpoint/native.rs"]
+mod line_midpoint;
+#[path = "measure-entity-picking/steps.rs"]
+mod measure_entity_picking;
+#[path = "move/cancel.rs"]
+mod move_cancel;
+#[path = "move/close.rs"]
+mod move_close;
+#[path = "move/fade.rs"]
+mod move_fade;
+#[path = "move/mixed.rs"]
+mod move_mixed;
+#[path = "move/pin.rs"]
+mod move_pin;
+#[path = "move/polar.rs"]
+mod move_polar;
+#[path = "move/precise.rs"]
+mod move_precise;
+#[path = "move/reset.rs"]
+mod move_reset;
+#[path = "new-sketch/steps.rs"]
+mod new_sketch;
+#[path = "new-sketch/face.rs"]
+mod new_sketch_face;
+#[path = "new-sketch/startup_preference.rs"]
+mod new_sketch_startup_preference;
+#[path = "new-sketch/view_preference.rs"]
+mod new_sketch_view_preference;
+#[path = "new-sketch/work_plane.rs"]
+mod new_sketch_work_plane;
+#[path = "point/steps.rs"]
+mod point;
+#[path = "precise-input/steps.rs"]
+mod precise_input;
+#[path = "rectangle-center/steps.rs"]
+mod rectangle_center;
+#[path = "rectangle-three-point/steps.rs"]
+mod rectangle_three_point;
+#[path = "rectangle-three-point-center/steps.rs"]
+mod rectangle_three_point_center;
+#[path = "rectangle-two-point/steps.rs"]
+mod rectangle_two_point;
+#[path = "sketch-preferences/axes.rs"]
+mod sketch_preferences_axes;
+#[path = "sketch-preferences/hud.rs"]
+mod sketch_preferences_hud;
+#[path = "sketch-visibility/steps.rs"]
+mod sketch_visibility;
+
+#[path = "viewport-entity-interaction/steps.rs"]
+mod viewport_entity_interaction;
+
+/// Features the gate requires; each is one finished folder under `features/sketch`.
+const ACCEPTED_FEATURES: &[&str] = &[
+    "arc-three-point",
+    "circle-center-point",
+    "dimension-expression",
+    "line",
+    "point",
+    "precise-input",
+    "rectangle-center",
+    "rectangle-three-point",
+    "rectangle-three-point-center",
+    "rectangle-two-point",
+];
+#[test]
+fn sketch_step_binding_diagnostic() {
+    super::binding_inventory::report_step_bindings(
+        &feature_root("sketch"),
+        accepted_sketch_feature,
+        false,
+    );
+}
+
+#[test]
+fn sketch_scenarios_use_the_native_window() {
+    std::thread::Builder::new()
+        .name("sketch-scenarios".into())
+        .stack_size(SCENARIO_STACK_BYTES)
+        .spawn(|| {
+            let _reports = report_destination::reserve(&world::reports_folder())
+                .unwrap_or_else(|error| panic!("{error}"));
+            run_scenarios(feature_root("sketch"), accepted_sketch_feature)
+        })
+        .unwrap()
+        .join()
+        .unwrap();
+}
+/// A folder asked for by name runs alone; otherwise only finished features count against the gate.
+fn accepted_sketch_feature(feature: &cucumber::gherkin::Feature) -> bool {
+    if std::env::var_os("OBK_BDD_FEATURE").is_some() {
+        return true;
+    }
+    feature.path.as_ref().is_some_and(|path| {
+        path.parent()
+            .and_then(|folder| folder.file_name())
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| ACCEPTED_FEATURES.contains(&name))
+    })
+}

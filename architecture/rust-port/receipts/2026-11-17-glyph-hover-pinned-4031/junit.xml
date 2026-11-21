@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Hover over a sketch constraint glyph: tmp/oblikovati-bdd-aGYzV1/checkout/features/sketch/constraint-glyph-hover/constraint-glyph-hover.feature" package="testsuite/Feature: Hover over a sketch constraint glyph: tmp/oblikovati-bdd-aGYzV1/checkout/features/sketch/constraint-glyph-hover/constraint-glyph-hover.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-17T09:19:38.74923405Z" time="23.781776021"><testcase name="Scenario: Highlight geometry related to a parallel constraint glyph: tmp/oblikovati-bdd-aGYzV1/checkout/features/sketch/constraint-glyph-hover/constraint-glyph-hover.feature:9:3" time="23.781776021"><system-out><![CDATA[  Scenario: Highlight geometry related to a parallel constraint glyph
+   ✔> Given the MCAD Software is displaying an editable sketch
+   ✔> And the viewport pointer is idle
+   ✔  Given two lines have a visible parallel constraint glyph
+   ✔  When the user hovers over the parallel constraint glyph
+   ✔  Then both constrained lines highlight
+   ✔  And the constraint remains in place
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Projection Fixtures: tmp/obk-capsule-scenarios-current/features/solid-model/projection-fixtures/projection-fixtures.feature" package="testsuite/Feature: Projection Fixtures: tmp/obk-capsule-scenarios-current/features/solid-model/projection-fixtures/projection-fixtures.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T08:29:41.546649338Z" time="13.938908193"><testcase name="Scenario: solid-projection-fixture-01 Prepare a rectangular source: tmp/obk-capsule-scenarios-current/features/solid-model/projection-fixtures/projection-fixtures.feature:4:3" time="13.938908193"><system-out><![CDATA[  Scenario: solid-projection-fixture-01 Prepare a rectangular source
+   ✔  Given a standard millimetre part template is selected
+   ✔  When the recorded rectangular profile is created
+   ✔  And Extrude is accepted with Distance A 10 mm and zero taper
+   ✔  Then Solid1 is available as the source for sketch projection observations
+]]></system-out></testcase></testsuite></testsuites>

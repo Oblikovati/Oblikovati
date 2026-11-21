@@ -1,0 +1,481 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/tmp/oblikovati-bdd-nH24yZ/checkout/features/sketch/arc-three-point/scenario.feature": "@sketch\r\nFeature: Arc three point\r\n\r\n  @acceptance @documented_observation @needs_fixture\r\n  Scenario: arc-three-point-01 Commit the intended result\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch\r\n    When the user select Three Point Arc and select a start, end, and noncollinear point on the arc\r\n    Then one arc has the chosen endpoints and passes through the third point\r\n    And the command requests another arc start\r\n\r\n  @documented_observation @edge_case @needs_fixture\r\n  Scenario: arc-three-point-02 Exercise feature-specific boundary behavior\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch\r\n    When the user select endpoints and then click their screen row between them\r\n    Then Select point on arc remains active without a committed arc or error dialog\r\n\r\n  @cancel @documented_observation @needs_fixture\r\n  Scenario: arc-three-point-03 Cancel before committing a change\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch\r\n    Given Three Point Arc is requesting a point on the arc after both endpoints were selected\r\n    When the user press Escape\r\n    Then the sketch returns to Ready without a new arc\r\n\r\n  @documented_observation @needs_fixture @undo_redo\r\n  Scenario: arc-three-point-04 Undo and redo a committed change\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch\r\n    Given the user has committed one valid arc through this feature\r\n    And the user has exited the creation or edit command\r\n    When the user press Ctrl+Z once\r\n    Then the last feature transaction is undone\r\n    When the user press Ctrl+Y once\r\n    Then that transaction is restored\r\n    And the arc and surrounding geometry are visible again\r\n\r\n  @documented_observation @needs_fixture @repeatability @capture_only\r\n  Scenario: arc-three-point-05 Measure a major arc\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch\r\n    Given the three-point arc has been restored by Redo\r\n    When the user open Measure and select its curve\r\n    Then radius is 4.751 mm and sweep 188.83 degrees\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-three-point-06 Cancel after selecting only the start point\r\n    Given the sketch is Ready with 156 dimensions needed\r\n    When the user choose Arc Three Point and click start 350,250\r\n    Then the prompt requests the end of the arc\r\n    When the user press Escape\r\n    Then the MCAD Software returns to Ready without a new arc\r\n    And 156 dimensions are still needed\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-three-point-07 Cancel after selecting both endpoints\r\n    Given the sketch is Ready with 156 dimensions needed\r\n    When the user invoke Three Point Arc\r\n    And the user click start 350,250 and end 350,350\r\n    Then the prompt requests a point on the arc\r\n    When the user press Escape before selecting the third point\r\n    Then the MCAD Software returns to Ready without a new arc\r\n    And 156 dimensions are still needed\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-three-point-08 Commit and undo and redo an arc\r\n    Given the sketch is Ready with 156 dimensions needed\r\n    When the user invoke Three Point Arc\r\n    And the user click start 350,250, end 350,350, and point on arc 300,300\r\n    Then an arc opening to the right appears\r\n    And the command requests another start point\r\n    When the user press Escape\r\n    Then the arc remains and 161 dimensions are needed\r\n    When the user undo\r\n    Then the arc disappears and 156 dimensions are needed\r\n    When the user redo\r\n    Then the arc returns and 161 dimensions are needed\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-three-point-09 Measure the restored arc sweep\r\n    Given the three-point arc has been restored\r\n    When the user open Measure and select its upper curve\r\n    Then its displayed radius is 4.751 mm\r\n    And its angle is 188.83 degrees\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-three-point-10 Continue after a same-position end click\r\n    Given the sketch is Ready with 161 dimensions needed\r\n    When the user invoke Three Point Arc and click start 1530,600\r\n    And the user click 1530,600 again for the end\r\n    Then Select end of arc remains active without an error dialog\r\n    When the user click the distinct endpoint 1530,660\r\n    Then Select point on arc becomes active\r\n    When the user press Escape\r\n    Then the MCAD Software returns to Ready without adding an arc\r\n    And 161 dimensions are still needed\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-three-point-11 Create and measure a minor arc\r\n    Given an editable sketch containing the ellipse and tangent-circle fixture\r\n    When the user select Three Point Arc and supply the specified start, end and arc point\r\n    Then the arc commits and Select start of arc returns\r\n    When the user exit and select the arc curve in Measure\r\n    Then radius is 4.294 mm\r\n    And angle is 167.57 degrees\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-three-point-12 Cancel a proposed radius while retaining its dimension\r\n    Given the new arc radius dimension d3 shows 4.2941329 mm\r\n    When the user enter 6 and cancel with Escape\r\n    Then the placed radius dimension remains with annotation 4.294\r\n    When the user reopen d3\r\n    Then the stored expression is 4.2941329 mm\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-three-point-13 Accept a radius edit and observe its history\r\n    Given the recorded arc's radial dimension editor is open with its original 4.2941329 mm value selected\r\n    When the user enter 6 and accept with Return\r\n    And the user exit General Dimension and measure the arc\r\n    Then radius is 6.000 mm\r\n    And angle is 167.57 degrees\r\n    And the displayed center remains (0.000, -9.513, 36.783) mm\r\n    And the arc endpoints visibly move while the surrounding geometry remains unchanged\r\n    When the user close Measure and Undo\r\n    Then annotation 4.294 and the smaller arc return\r\n    When the user Redo\r\n    Then annotation 6 and the enlarged arc return\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-three-point-14 Observe the keyboard-only endpoint and radius attempt\r\n    Given an editable sketch with 9 dimensions needed\r\n    When the user start Three Point Arc and select its start point\r\n    And the user enter 6 in the endpoint distance field\r\n    And the user press Tab\r\n    And the user enter 0 in the angle field\r\n    And the user press Return\r\n    Then Select point on arc is shown with 3.000 mm in the selected field\r\n    When the user enter 4 and press Return\r\n    Then Select end of arc is shown with zero distance and angle fields\r\n    And no new arc is visible\r\n    When the user press Escape\r\n    Then Ready returns with 9 dimensions needed and earlier geometry retained\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-three-point-15 Create an arc using a locked numeric radius\r\n    Given distinct mouse-selected endpoints\r\n    When the user enter 6 in the radius field and press Tab\r\n    Then the field shows 6.000 mm with a lock icon\r\n    And Select point on arc remains active\r\n    When the user click the recorded canvas location\r\n    Then an upper-bowed arc with radial dimension 6 is displayed\r\n    And the command requests another start point\r\n    When the user press Escape\r\n    Then the arc and its radial dimension are retained\r\n    When the user measure its curve\r\n    Then radius is 6.000 mm\r\n    And sweep is 90.33 degrees\r\n\r\n  @needs_fixture @capture_only\r\n  Scenario: arc-three-point-16 Recover from a third point on the endpoints screen row\r\n    Given the user selected the start and end on the same screen row\r\n    When the user click between them on that row for the third point\r\n    Then Select point on arc remains active without an error dialog or new arc\r\n    And the floating field displays 0.745 mm while the status displays Radius 0.000 mm\r\n    When the user select a point below that row\r\n    Then a new arc commits and Select start of arc returns\r\n    When the user press Escape\r\n    Then Ready returns with the new arc retained\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/tmp/oblikovati-bdd-nH24yZ/checkout/features/sketch/arc-three-point/scenario.feature",
+      "scenario": "arc-three-point-01 Commit the intended result",
+      "line": 5,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is running",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "an editable planar sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 8,
+          "step": "the user select Three Point Arc and select a start, end, and noncollinear point on the arc",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 9,
+          "step": "one arc has the chosen endpoints and passes through the third point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 10,
+          "step": "the command requests another arc start",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-nH24yZ/checkout/features/sketch/arc-three-point/scenario.feature",
+      "scenario": "arc-three-point-02 Exercise feature-specific boundary behavior",
+      "line": 13,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 14,
+          "step": "the MCAD Software is running",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 15,
+          "step": "an editable planar sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 16,
+          "step": "the user select endpoints and then click their screen row between them",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 17,
+          "step": "Select point on arc remains active without a committed arc or error dialog",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-nH24yZ/checkout/features/sketch/arc-three-point/scenario.feature",
+      "scenario": "arc-three-point-03 Cancel before committing a change",
+      "line": 20,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 21,
+          "step": "the MCAD Software is running",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 22,
+          "step": "an editable planar sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 23,
+          "step": "Three Point Arc is requesting a point on the arc after both endpoints were selected",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 24,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 25,
+          "step": "the sketch returns to Ready without a new arc",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-nH24yZ/checkout/features/sketch/arc-three-point/scenario.feature",
+      "scenario": "arc-three-point-04 Undo and redo a committed change",
+      "line": 28,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 29,
+          "step": "the MCAD Software is running",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 30,
+          "step": "an editable planar sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 31,
+          "step": "the user has committed one valid arc through this feature",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 32,
+          "step": "the user has exited the creation or edit command",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 33,
+          "step": "the user press Ctrl+Z once",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 34,
+          "step": "the last feature transaction is undone",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 35,
+          "step": "the user press Ctrl+Y once",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 36,
+          "step": "that transaction is restored",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 37,
+          "step": "the arc and surrounding geometry are visible again",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-nH24yZ/checkout/features/sketch/arc-three-point/scenario.feature",
+      "scenario": "arc-three-point-05 Measure a major arc",
+      "line": 40,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 41,
+          "step": "the MCAD Software is running",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 42,
+          "step": "an editable planar sketch",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 43,
+          "step": "the three-point arc has been restored by Redo",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 44,
+          "step": "the user open Measure and select its curve",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 45,
+          "step": "radius is 4.751 mm and sweep 188.83 degrees",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-nH24yZ/checkout/features/sketch/arc-three-point/scenario.feature",
+      "scenario": "arc-three-point-06 Cancel after selecting only the start point",
+      "line": 48,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 49,
+          "step": "the sketch is Ready with 156 dimensions needed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 50,
+          "step": "the user choose Arc Three Point and click start 350,250",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 51,
+          "step": "the prompt requests the end of the arc",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 52,
+          "step": "the user press Escape",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 53,
+          "step": "the MCAD Software returns to Ready without a new arc",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 54,
+          "step": "156 dimensions are still needed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-nH24yZ/checkout/features/sketch/arc-three-point/scenario.feature",
+      "scenario": "arc-three-point-07 Cancel after selecting both endpoints",
+      "line": 57,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 58,
+          "step": "the sketch is Ready with 156 dimensions needed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 59,
+          "step": "the user invoke Three Point Arc",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 60,
+          "step": "the user click start 350,250 and end 350,350",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 61,
+          "step": "the prompt requests a point on the arc",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 62,
+          "step": "the user press Escape before selecting the third point",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 63,
+          "step": "the MCAD Software returns to Ready without a new arc",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 64,
+          "step": "156 dimensions are still needed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-nH24yZ/checkout/features/sketch/arc-three-point/scenario.feature",
+      "scenario": "arc-three-point-08 Commit and undo and redo an arc",
+      "line": 67,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 68,
+          "step": "the sketch is Ready with 156 dimensions needed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 69,
+          "step": "the user invoke Three Point Arc",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 70,
+          "step": "the user click start 350,250, end 350,350, and point on arc 300,300",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 71,
+          "step": "an arc opening to the right appears",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 72,
+          "step": "the command requests another start point",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 73,
+          "step": "the user press Escape",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 74,
+          "step": "the arc remains and 161 dimensions are needed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 75,
+          "step": "the user undo",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 76,
+          "step": "the arc disappears and 156 dimensions are needed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 77,
+          "step": "the user redo",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 78,
+          "step": "the arc returns and 161 dimensions are needed",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-nH24yZ/checkout/features/sketch/arc-three-point/scenario.feature",
+      "scenario": "arc-three-point-09 Measure the restored arc sweep",
+      "line": 81,
+      "classification": "excluded: capture only",
+      "setup_error": "capture only",
+      "steps": [
+        {
+          "line": 82,
+          "step": "the three-point arc has been restored",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 83,
+          "step": "the user open Measure and select its upper curve",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 84,
+          "step": "its displayed radius is 4.751 mm",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 85,
+          "step": "its angle is 188.83 degrees",
+          "result": "not executed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}

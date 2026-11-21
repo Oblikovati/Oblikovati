@@ -1,0 +1,13 @@
+{
+  "kind": "diagnostic",
+  "application_base": "1d7b064ed",
+  "scenario_snapshot": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "scenario": "extrusion-05 Zero distance validation and recovery",
+  "scenario_result": "1 passed, 7 steps",
+  "preview_regression": "invalid_distance_then_valid_distance_restores_the_preview passed with test changes in the commit containing this receipt",
+  "environment": "Linux Xvfb and Vulkan Lavapipe; frame-loop input",
+  "limitations": [
+    "Does not cover named parameter edits or delayed evaluation.",
+    "Filtered run and unsealed build inputs are not verified acceptance (#3978)."
+  ]
+}

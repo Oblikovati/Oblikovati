@@ -1,0 +1,2 @@
+DISPLAY=:1 python3 title-probe.py
+n= 10000 p50_us= 1.352 p95_us= 1.503 p99_us= 1.914 max_us= 24.695

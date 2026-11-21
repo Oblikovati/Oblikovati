@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/obk-pinned-text-05-source-rlmxzac0/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/obk-pinned-text-05-source-rlmxzac0/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T03:10:09.987175861Z" time="40.501554443"><testcase name="Scenario: text-05 Start another placement after content cancellation: tmp/obk-pinned-text-05-source-rlmxzac0/checkout/features/sketch/text/scenario.feature:34:3" time="40.501554443"><system-out><![CDATA[  Scenario: text-05 Start another placement after content cancellation
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  Given the earlier new text containing a was canceled
+   ✔  When the user starts Text and choose another insertion point
+   ✔  Then the new editor is empty
+   ✔  And the font is Tahoma, height is 3.05 mm and width is 100
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from a template: tmp/obk-create-refresh/features/application/document-creation/document-creation.feature" package="testsuite/Feature: Create a document from a template: tmp/obk-create-refresh/features/application/document-creation/document-creation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:19:15.204936129Z" time="3.226087304"><testcase name="Scenario: Create a part after navigating to an empty template root: tmp/obk-create-refresh/features/application/document-creation/document-creation.feature:288:3" time="3.226087304"><system-out><![CDATA[  Scenario: Create a part after navigating to an empty template root
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the standard metric part template is selected
+   ✔  And the template root contains no direct template entries
+   ✔  When the user chooses Home in the template chooser
+   ✔  Then the root is selected and its template groups are empty
+   ✔  And the standard metric part template details remain displayed
+   ✔  When the user chooses Create
+   ✔  Then the chooser closes
+   ✔  And a new empty part document becomes active
+   ✔  And its model browser displays an origin and an end-of-part marker
+   ✔  And a new document tab is visible
+]]></system-out></testcase></testsuite></testsuites>

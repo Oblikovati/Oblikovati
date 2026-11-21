@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:217228a1571bcb54c2a17f8a4be2435104c39ab7bc3f37048fdb18615f51a101",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "9793d6a9ad9655ef4412295075dfbf9f6f5a5f97566e5564f2ca9f5a9c68f62a",
+  "application_commit": "bbbf96e52fb2d514d458bb9bdae9c52799327482",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-wheel-remaining-217228a1571bcb54-final/cucumber.json",
+    "sha256": "b522a085e71708e9b066d450c000aeb5f839c8f1b88b302f456effa8cbe7f7f2"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-wheel-remaining-217228a1571bcb54-final/source-revision.json",
+    "sha256": "5e5eca6880a23cdf983caf9e52f741d1c7f106b8d95011e9f6c9f045b2c64243"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-wheel-remaining-217228a1571bcb54-final/Change-the-wheel-tool-tip-preference.png",
+    "sha256": "f30ad95312c5a90741a1017e4ba612be1b2c4ad079f81296da2c1ce8bfc835cb"
+  }
+}

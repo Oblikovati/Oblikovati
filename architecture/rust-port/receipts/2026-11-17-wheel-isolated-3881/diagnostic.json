@@ -1,0 +1,15 @@
+{
+  "kind": "diagnostic",
+  "application_commit": "2f692f10b",
+  "scenario_snapshot": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "platform": "Linux Xvfb and Vulkan Lavapipe",
+  "filter": "viewport-navigation-wheel; one scenario per isolated output directory",
+  "results": {
+    "Return to the home view from the wheel menu": "passed, 10 steps",
+    "Repeat the last navigation wheel command": "failed: context menu did not offer Repeat Navigation Wheel (#4058)"
+  },
+  "limitations": [
+    "Filtered run, not acceptance.",
+    "Fixtures and sealed build provenance remain open (#3978)."
+  ]
+}

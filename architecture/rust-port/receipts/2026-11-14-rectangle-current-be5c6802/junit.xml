@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Rectangle two point: tmp/obk-bdd-rectangle-JoORpkZG/checkout/features/sketch/rectangle-two-point/scenario.feature" package="testsuite/Feature: Rectangle two point: tmp/obk-bdd-rectangle-JoORpkZG/checkout/features/sketch/rectangle-two-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T14:50:46.473565565Z" time="12.357762448999999"><testcase name="Scenario: rectangle-two-point-11 Retain a numeric rectangle: tmp/obk-bdd-rectangle-JoORpkZG/checkout/features/sketch/rectangle-two-point/scenario.feature:73:3" time="12.357762448999999"><system-out><![CDATA[  Scenario: rectangle-two-point-11 Retain a numeric rectangle
+   ✔  Given a fresh Two Point Rectangle command in the recorded sketch view
+   ✔  And the existing ellipse from the recorded fixture is visible
+   ✔  When the user select the fixture first corner, enter 6, press Tab, enter 4 and press Return
+   ✔  Then the rectangle shows height 6 and width 4
+   ✔  And the rectangle extends upward and rightward in the recorded view
+   ✔  And it overlaps part of the existing ellipse
+   ✔  When the user press Escape
+   ✔  Then the rectangle remains and Ready returns
+]]></system-out></testcase></testsuite></testsuites>

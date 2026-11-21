@@ -1,0 +1,43 @@
+{
+  "application_commit": "f63007edfc97c527d1bb2812fa36ba127766463b",
+  "scenario_snapshot": "028492efd6fad2a4fb740048e4810c7c6e29234a",
+  "feature_sha256": "11567ca6f598b1b812d635e5bb7fed2eb75abd1e2b5a087c91ef962e78e679e7",
+  "scenario": "Restore the saved panel arrangement after restarting the application",
+  "scenarios_passed": 1,
+  "steps_passed": 4,
+  "runner_sha256": "832c82be103de0f6784b89277ed096a74410bae34acd33cad38271dc69b2dd05",
+  "desktop_sha256": "ad69639e91eaaf854dbc3466e8a39599cde5124b9bd15d2ebdc1e2bee9664b83",
+  "registry_packages_checked": 351,
+  "git_packages_unverified": [
+    "corliss 0.1.0",
+    "martensite-cmath 0.3.5",
+    "martensite-tkbo 0.8.2",
+    "martensite-tkbool 0.8.0",
+    "martensite-tkbrep 0.3.11",
+    "martensite-tkernel 0.4.5",
+    "martensite-tkfillet 0.8.1",
+    "martensite-tkg2d 0.3.7",
+    "martensite-tkg3d 0.3.9",
+    "martensite-tkgeomalgo 0.3.8",
+    "martensite-tkgeombase 0.3.6",
+    "martensite-tkhlr 0.3.6",
+    "martensite-tkmath 0.3.9",
+    "martensite-tkmesh 0.3.8",
+    "martensite-tkoffset 0.10.1",
+    "martensite-tkprim 0.3.10",
+    "martensite-tkservice 0.4.1",
+    "martensite-tkshhealing 0.3.9",
+    "martensite-tktopalgo 0.4.3",
+    "martensite-tkv3d 0.7.1",
+    "martensite-vulkan 0.7.2",
+    "oblikovati-api 0.159.0"
+  ],
+  "private_proc": true,
+  "report_check": {
+    "content_checked": true,
+    "reusable": false,
+    "scenario_id": "scenario:b09d05e10120988ad81e0b8841488666d9714995635d4cadcbfa8bfd23bfd23c"
+  },
+  "reusable": false,
+  "limitations": "System and toolchain origin, kernel, devices and concurrent host writes are not bounded."
+}

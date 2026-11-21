@@ -76,7 +76,7 @@ fn dependency_boundaries_and_head_display_are_required() {
     let mut member = package(&tree);
     assert!(requires_display(&member).unwrap());
     member.dependencies.push(Dependency {
-        name: "rustycad-tkbrep".into(),
+        name: "martensite-tkbrep".into(),
         source: Some("git+https://example.test/kernel".into()),
         path: None,
     });
@@ -101,4 +101,44 @@ fn dependency_boundaries_and_head_display_are_required() {
             .unwrap_err()
             .contains("license")
     );
+}
+
+#[test]
+fn retired_kernel_names_are_refused_at_the_adapter_boundary() {
+    let tree = FixtureTree::new();
+    let mut member = package(&tree);
+    member.name = "oblikovati-martensite".into();
+    member.dependencies.push(Dependency {
+        name: "rustycad-tkbrep".into(),
+        source: Some("git+https://github.com/Oblikovati/RustyCADKernel".into()),
+        path: None,
+    });
+    assert!(
+        validate_package(tree.root(), &member)
+            .unwrap_err()
+            .contains("retired RustyCAD namespace")
+    );
+}
+
+#[test]
+fn inventory_skips_foreign_worktrees_and_keeps_nested_fixture() {
+    let tree = FixtureTree::new();
+    for name in [
+        "Cargo.toml",
+        "Cargo.lock",
+        "fixtures/addin/Cargo.toml",
+        "fixtures/addin/Cargo.lock",
+        ".slim/worktrees/other/Cargo.toml",
+    ] {
+        tree.put(name, "");
+    }
+    let runner = FakeRunner::default();
+    for root in [tree.root().to_owned(), tree.root().join("fixtures/addin")] {
+        runner.replies.borrow_mut().push_back(Ok(
+            serde_json::json!({"workspace_root": root, "workspace_members": [], "packages": []})
+                .to_string(),
+        ));
+    }
+    assert_eq!(inventory(tree.root(), &runner).unwrap().len(), 2);
+    assert_eq!(runner.calls.borrow().len(), 2);
 }

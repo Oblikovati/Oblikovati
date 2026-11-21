@@ -1,0 +1,14 @@
+{
+  "kind": "diagnostic",
+  "application_commit": "b239882f4",
+  "scenario_snapshot": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "feature_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+  "feature": "viewport-orientation",
+  "scenarios_passed": 20,
+  "steps_passed": 231,
+  "environment": "Linux Xvfb and Vulkan Lavapipe; frame-loop scenario input",
+  "limitations": [
+    "Filtered feature run, not full-area acceptance.",
+    "Fixture references and sealed build provenance remain open (#3978)."
+  ]
+}

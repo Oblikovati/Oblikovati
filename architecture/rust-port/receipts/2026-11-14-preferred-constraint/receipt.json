@@ -1,0 +1,30 @@
+{
+  "kind": "focused-implementation-evidence",
+  "api_candidate_commit": "a419c6e9a982814ee6298839e22afd5e24dda9f8",
+  "application_commit": "6464e7b97",
+  "checks": [
+    {
+      "command": "make gate (Oblikovati.API)",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-preferred-constraint/api-gate.log.gz",
+      "sha256": "d81c517a339c8693492197c3cb30ee752e6a4242f090fa837dc4659ddf598bc1"
+    },
+    {
+      "command": "cargo test --locked -p oblikovati-model --test geometric_constraint_creation --test sketch_point_preference",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-preferred-constraint/model-test.log.gz",
+      "sha256": "52b95c620f1ede82b1e8adea8a1bf6535d7df19a7493d8eb2fbc61e309f13a50"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-model --all-targets -- -D warnings",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-preferred-constraint/model-clippy.log.gz",
+      "sha256": "504b1800cfcef84d2402a04de6879f20bf6bee3f3394737ed5bec52d4cfa13e7"
+    }
+  ],
+  "limitations": [
+    "The API candidate is a local branch, not a released dependency.",
+    "The model transaction is not connected to the session, API router, or native UI; the Coincident native regression remains failing.",
+    "The full Rust application gate remains open."
+  ]
+}

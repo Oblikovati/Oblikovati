@@ -1,0 +1,9 @@
+{
+  "application_commit": "9dcdcb7aa",
+  "feature": "features/application/model-browser/model-browser.feature",
+  "feature_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e",
+  "scenario": "Filter the model browser by a feature name",
+  "result": "1 scenario passed",
+  "environment": "Linux X11, Xvfb, software Vulkan; scripted window input",
+  "scope": "Focused scenario only; not a full-feature run. Source was unversioned."
+}

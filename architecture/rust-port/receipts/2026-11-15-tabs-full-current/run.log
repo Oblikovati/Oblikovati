@@ -1,0 +1,367 @@
+   Compiling oblikovati-model v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/model)
+   Compiling oblikovati-martensite v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/martensite)
+   Compiling oblikovati-persistence v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/persistence)
+   Compiling oblikovati-viewport v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/viewport)
+   Compiling oblikovati-session v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/session)
+   Compiling oblikovati-gui v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/gui)
+   Compiling oblikovati-automation v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/automation)
+   Compiling oblikovati-drawing v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/drawing)
+   Compiling oblikovati-addin-host v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/addin-host)
+   Compiling oblikovati-cli v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/cli)
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/head)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 00s
+     Running unittests src/lib.rs (target/debug/deps/oblikovati_head-c865ed7d2d134d42)
+
+running 1 test
+Feature: Open document tabs
+  Scenario: Switch between open parts
+   ✔  Given the MCAD Software has two open part documents
+   ✔  And the first part contains an empty sketch
+   ✔  And the second part contains a rectangular sketch profile
+   ✔  And the first part is active
+   ✔  When the user selects the second part's document tab
+   ✔  Then the second part becomes active
+   ✔  And its rectangular profile appears in the viewport
+   ✔  And the model browser shows the second part
+   ✔  And the application title identifies the second part
+   ✔  When the user selects the first part's document tab
+   ✔  Then the first part becomes active
+   ✔  And its model browser and viewport are displayed
+   ✔  And the second part remains available as an open tab
+  Scenario: Inspect a document tab's context menu
+   ✔  Given a part document is active in the MCAD Software
+   ✔  When the user opens the document tab's context menu
+   ✔  Then the menu offers Close, Close Tabs, Close All, Save and Properties
+   ✔  And it displays shortcuts for Close and Save
+   ✔  When the user dismisses the menu
+   ✔  Then the document remains active
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window has been running for over 60 seconds
+  Scenario: Hide and restore the document tab strip
+   ✔  Given multiple documents are open in the MCAD Software
+   ✔  And document tabs are visible
+   ✘  When the user clears Document Tabs in the View tab's User Interface menu
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:31:5
+      Step doesn't match any function
+  Scenario: Open the extended window list when tabs are hidden
+   ✔  Given multiple documents are open in the MCAD Software
+   ✔  And document tabs are hidden
+   ✘  When the user opens the Switch menu on the View tab
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:43:5
+      Step doesn't match any function
+  Scenario: Switch to the neighboring part with the keyboard
+   ✔  Given two neighboring part tabs are visible in the MCAD Software
+   ✔  And the left-hand part is active
+   ✔  When the user presses Control+Tab
+   ✔  Then the right-hand part becomes active
+   ✔  And its model browser and viewport are displayed
+   ✔  And the left-hand part remains open
+  Scenario: Inspect properties of an inactive document from its tab
+   ✔  Given the MCAD Software has two open part documents
+   ✔  And the first part is active
+   ✔  And the second part has been saved
+   ✔  When the user opens the second part's document tab context menu
+   ✔  Then the first part remains active in the workspace
+   ✔  When the user chooses Properties from the context menu
+   ✔  Then the properties dialog identifies the second part
+   ✔  And its General page displays the file name, location, size and timestamps
+   ✔  When the user closes the properties dialog without making changes
+   ✔  Then the first part remains active in the workspace
+   ✔  And the second part remains open
+  Scenario: Close a saved inactive document with its tab close button
+   ✔  Given the MCAD Software has two open part documents
+   ✔  And the first part is active
+   ✔  And the second part is saved and has no unsaved changes
+   ✔  When the user clicks the close button on the second part's document tab
+   ✔  Then the second part's tab disappears
+   ✔  And the first part remains active in the workspace
+   ✔  And no save prompt is displayed
+  Scenario: Close a newly created empty active part
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And other documents are also open
+   ✔  When the user creates a new empty part from a standard metric template
+   ✔  Then the new part becomes active and has its own document tab
+   ✔  When the user clicks the close button on the new part's tab without editing it
+   ✔  Then the new part's tab disappears without a save prompt
+   ✔  And the previously active part is displayed again
+   ✔  And its model browser and viewport are restored
+  Scenario: Cancel closing a part while editing its sketch
+   ✔  Given a new part is open in the MCAD Software
+   ✔  And the user is editing a sketch in the part
+   ✔  And the environment-exit message is enabled
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  Then a dialog asks whether to exit the sketch environment and continue
+   ✔  And the dialog offers OK and cancels
+   ✔  When the user chooses Cancel
+   ✔  Then the part remains open
+   ✔  And the sketch editing environment remains active
+  Scenario: Cancel the save prompt after leaving sketch editing to close
+   ✔  Given a new part contains an unsaved sketch in the MCAD Software
+   ✔  And the user is editing that sketch
+   ✔  And the environment-exit message is enabled
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  And the user chooses OK to exit the sketch environment and continue
+   ✔  Then a save-changes prompt identifies the part
+   ✔  And the prompt offers Yes, No and cancels
+   ✔  When the user chooses Cancel at the save-changes prompt
+   ✔  Then the part remains open
+   ✔  And its sketch remains listed in the model browser
+   ✔  And the part modeling environment is active
+  Scenario: Cancel the first save while closing an unsaved part
+   ✔  Given a new part with an unsaved sketch is active in the MCAD Software
+   ✔  And the part is in the modeling environment
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  Then a save-changes prompt identifies the part
+   ✔  When the user chooses Yes to save changes
+   ✔  Then a Save As dialog opens with a suggested file name
+   ✔  When the user cancels the Save As dialog
+   ✔  Then the part remains open and active
+   ✔  And its sketch remains listed in the model browser
+  Scenario: Save a new part while closing its tab
+   ✔  Given a new part with an unsaved sketch is active in the MCAD Software
+   ✔  And another part was active before the new part was created
+   ✔  And save-change prompts are configured to always show
+   ✔  And the suggested file name does not exist in the selected folder
+   ✔  When the user clicks the close button on the new part's document tab
+   ✔  And the user chooses Yes in the save-changes prompt
+   ✔  And the user accepts the suggested file name in the Save As dialog
+   ✔  Then the part file exists at the selected location
+   ✔  And the new part's tab disappears
+   ✔  And the previously active part is displayed
+   ✔  When the user reopens the saved part file
+   ✔  Then the reopened part is active
+   ✔  And its sketch is listed in the model browser
+  Scenario: Close an inactive saved document from its tab menu
+   ✔  Given multiple part documents are open in the MCAD Software
+   ✔  And the first part is active
+   ✔  And the second part is saved and has no unsaved changes
+   ✔  When the user opens the second part's document tab context menu
+   ✔  And the user chooses Close
+   ✔  Then the second part's tab disappears
+   ✔  And the first part remains active in the workspace
+   ✔  And no save prompt is displayed
+  Scenario: Switch between a drawing and a part being edited
+   ✔  Given a drawing and a part are open in the MCAD Software
+   ✔  And the part has an active sketch editing environment
+   ✔  And the drawing is active with its drawing resources branch collapsed
+   ✘  When the user selects the part document tab
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:164:5
+      Step doesn't match any function
+  Scenario: Activate a document from the tab-strip window list
+   ✔  Given a drawing and a part are open in the MCAD Software
+   ✔  And the part is active
+   ✔  And document tabs are visible
+   ✔  When the user opens the document list at the end of the tab strip
+   ✔  Then the list contains the open part and drawing
+   ✔  And the active part is marked in the list
+   ✔  And the menu offers Arrange, Horizontal Tile, Vertical Tile and Restore All
+   ✔  And the menu offers separate Close Tabs and Close All items
+   ✔  When the user selects the drawing from the list
+   ✔  Then the drawing becomes active
+   ✔  And its sheet and drawing browser are displayed
+   ✔  And the part remains open
+  Scenario: Reorder an active drawing tab
+   ✔  Given a drawing and several other documents are open in the MCAD Software
+   ✔  And the drawing is active and its tab is visible
+   ✘  When the user drags the drawing tab left across several neighboring tabs
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:195:5
+      Step doesn't match any function
+  Scenario: Reorder an inactive part tab
+   ✔  Given a drawing and several parts are open in the MCAD Software
+   ✔  And the drawing is active
+   ✔  And an inactive part tab is visible
+   ✘  When the user drags the inactive part tab left across several neighboring tabs
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:208:5
+      Step doesn't match any function
+  Scenario: Detach an active drawing from the tab strip
+   ✔  Given a drawing and a part are open in the MCAD Software
+   ✔  And the drawing is active in the main document tab strip
+   ✘  When the user drags the drawing tab from the strip into the workspace
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:218:5
+      Step doesn't match any function
+  Scenario: Inspect the detached drawing tab context menu
+   ✔  Given a drawing is open in a separate window in the MCAD Software
+   ✔  And the drawing has a document tab in that window
+   ✘  When the user opens the detached drawing tab context menu
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:230:5
+      Step doesn't match any function
+  Scenario: Switch shared controls between a detached drawing and a part
+   ✔  Given a drawing is open in a separate window in the MCAD Software
+   ✔  And a part is open in the main workspace
+   ✔  And the part context is active in the main workspace
+   ✘  When the user clicks the detached drawing sheet
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:241:5
+      Step doesn't match any function
+  Scenario: Switch backward and forward between neighboring part tabs
+   ✔  Given two part tabs are adjacent in the MCAD Software
+   ✔  And the part on the right is active
+   ✔  When the user presses Control+Shift+Tab
+   ✔  Then the part on the left becomes active
+   ✔  And its viewport and model browser are displayed
+   ✔  When the user presses Control+Tab
+   ✔  Then the part on the right becomes active again
+   ✔  And its viewport and model browser are displayed
+  Scenario: Cancel the extended window selection
+   ✔  Given several documents are open in the MCAD Software
+   ✔  And a part is displayed in the workspace
+   ✔  And the Select Window dialog is open with another part highlighted
+   ✔  When the user chooses Cancel
+   ✔  Then the Select Window dialog closes
+   ✔  And the original part remains displayed in the workspace
+  Scenario: Activate an open sketch from the Switch menu
+   ✔  Given two parts are open in the MCAD Software
+   ✔  And the first part is displayed in the workspace
+   ✔  And the second part has an active sketch editing environment
+   ✘  When the user opens the Switch menu on the View tab
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:276:5
+      Step doesn't match any function
+  Scenario: Visit Home without leaving an active sketch
+   ✔  Given a part is open in the MCAD Software
+   ✔  And the part has an active sketch editing environment
+   ✘  When the user chooses Home from the View tab's Switch menu
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:288:5
+      Step doesn't match any function
+  Scenario: Preview an inactive document from its tab
+   ✔  Given two part documents are open in the MCAD Software
+   ✔  And the first part is active and the second has an empty sketch visible
+   ✘  When the user hovers over the second part's document tab
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:300:5
+      Step doesn't match any function
+  Scenario: Preview Home while a part is active
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Home workspace is available in the document tab strip
+   ✘  When the user hovers over the Home tab
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:313:5
+      Step doesn't match any function
+  Scenario: Reveal earlier tabs without changing the active document
+   ✔  Given many documents are open in the MCAD Software
+   ✔  And the tab strip overflows its available width
+   ✔  And a presentation is active while earlier tabs are out of view
+   ✘  When the user clicks the left navigation arrow at the end of the tab strip
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:324:5
+      Step doesn't match any function
+  Scenario: Reveal an off-screen tab when selecting its document
+   ✔  Given many documents are open in the MCAD Software
+   ✔  And the tab strip overflows its available width
+   ✔  And an open part's tab is outside the visible portion of the strip
+   ✘  When the user selects that part from the View tab's Switch menu
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:334:5
+      Step doesn't match any function
+  Scenario: Show the location of a saved document in its tab preview
+   ✔  Given two parts are open in the MCAD Software
+   ✔  And the first part is active
+   ✔  And the second part has been saved to a file
+   ✘  When the user hovers over the second part's document tab
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:345:5
+      Step doesn't match any function
+  Scenario: Preview the active saved document from its tab
+   ✔  Given a saved part is active in the MCAD Software
+   ✔  And the part is being edited in a sketch
+   ✘  When the user hovers over the active part's document tab
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:355:5
+      Step doesn't match any function
+  Scenario: Inspect the Home tab context menu
+   ✔  Given the Home workspace is active in the MCAD Software
+   ✔  And documents are open in the tab strip
+   ✔  When the user right-clicks the Home tab
+   ✔  Then the context menu offers separate Close Tabs and Close All items
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the Home workspace remains active
+   ✔  And the open documents remain available in the tab strip
+  Scenario: Inspect the inactive Home tab without switching documents
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the part is being edited in a sketch
+   ✔  And the Home tab is visible but inactive
+   ✔  When the user right-clicks the Home tab
+   ✔  Then its context menu offers separate Close Tabs and Close All items
+   ✔  And the part's sketch remains displayed and active
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the part's sketch remains active
+  Scenario: Open a second window for a part and returns to the first
+   ✔  Given a saved part is active in the MCAD Software
+   ✔  And a sketch is being edited in the part
+   ✘  When the user chooses New in the View tab's Windows group
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:390:5
+      Step doesn't match any function
+  Scenario: Switch between Home and a neighboring part with the keyboard
+   ✔  Given Home and a part window are adjacent in the MCAD Software tab strip
+   ✔  And the part window is active with a sketch being edited
+   ✔  When the user presses Control+Shift+Tab
+   ✔  Then the Home workspace and its recent documents are displayed
+   ✔  And the part window remains open
+   ✔  When the user presses Control+Tab
+   ✔  Then the part window's sketch viewport and model browser are displayed
+   ✔  And the sketch editing environment remains active
+  Scenario: Wrap keyboard navigation between Home and the last window
+   ✔  Given Home and several document windows are open in the MCAD Software
+   ✔  And Home is the first tab and a part's second window is the last tab
+   ✔  And Home is active
+   ✔  When the user presses Control+Shift+Tab
+   ✔  Then the part's second window becomes active
+   ✔  When the user presses Control+Tab
+   ✔  Then the Home workspace becomes active again
+  Scenario: Restore distinct views of one part after switching windows
+   ✔  Given two numbered windows of the same part are open in the MCAD Software
+   ✔  And the first window displays the sketch in an orthogonal view
+   ✔  And the second window displays the part in an isometric view
+   ✔  And the first window is active
+   ✘  When the user switches to the second window through Home
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:431:5
+      Step doesn't match any function
+  Scenario: Close an additional window without closing the part
+   ✔  Given a part has two numbered windows in the MCAD Software
+   ✔  And the first window has an active sketch editing environment
+   ✔  And the second window is active after switching from Home
+   ✘  When the user presses Control+F4
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:444:5
+      Step doesn't match any function
+  Scenario: Retain separate zoom levels in two windows of a part
+   ✔  Given two numbered windows of one part are open in the MCAD Software
+   ✔  And the first window displays an active sketch
+   ✔  And the second window is active
+   ✘  When the user scrolls to zoom in within the second window
+      Step failed:
+      Defined: tmp/oblikovati-bdd-FXewlk/checkout/features/application/document-tabs/document-tabs.feature:458:5
+      Step doesn't match any function
+[Summary]
+1 feature
+38 scenarios (18 passed, 20 failed)
+231 steps (211 passed, 20 failed)
+
+thread 'application-scenarios' (765183) panicked at crates/head/src/../tests/application/benchmark.rs:294:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window' (765182) panicked at crates/head/src/../tests/application/benchmark.rs:184:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1047 filtered out; finished in 886.04s
+
+error: test failed, to rerun pass `-p oblikovati-head --lib`

@@ -1,0 +1,20 @@
+{
+  "kind": "refactor verification and lint diagnostics",
+  "application_commit": "9d921c563",
+  "results": {
+    "gui_library": "371 passed",
+    "ribbon_click": "43 passed",
+    "clippy": "passed, GUI all targets",
+    "native_docking": "18 steps passed; separate reviewed receipt is linked in the ledger",
+    "docs_lint": "markdownlint passed; second run fails on crates/head/src/owner_browser_selection.rs line limit"
+  },
+  "limits": "These checks do not constitute the full gate. The first native command used an invalid feature folder; the retained native log is the corrected run.",
+  "artifacts": {
+    "tests.log.gz": "6a8d415b40732f712e2b942845ebf0c2da968b9275646cadebbe623712275091",
+    "docs2.log.gz": "c9583cd9444690b7220249a0840779ac594e7c11807380f0ffc3d8247271467a",
+    "native.log.gz": "f61b4e7da2bd3c9c20756518d68107093aa27bfe06ece805329d956ee2668338",
+    "docs.log.gz": "13abc675c0a90f821182d182ed3befbc75c3402a583075d9ee1f4cfcd489d78b",
+    "click.log.gz": "c00306abeb987a393377ed8120531fe689ad17ecdf583bfbeecf2e5fce62152f",
+    "clippy.log.gz": "2d8bd92f6113062815ea168375af40d3f95a79b21fa2472819fe89d5ac3b343d"
+  }
+}

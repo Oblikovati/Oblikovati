@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:858dc2bc227f70bfe665f1da2b23c5d37c4fb30d00e40fecfbc6b1be8105cc93",
+  "scenario_revision": "05317bbb2d0809a532b29b7ff6f726a5722b865f",
+  "source_sha256": "c0b6827af861c35ed71f715077fe24911a883571d12a5a760f5738958de22d9b",
+  "application_commit": "50aa9f2a6b010b1ace6186af177f7acd23e5c619",
+  "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-15-point12-precise/cucumber.json",
+    "sha256": "31a76980b0f6df7f5e2b95cc88b10d4952888e521c2fa3722dc552c8ebe06347"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-15-point12-precise/source-revision.json",
+    "sha256": "478910ef35ed1976de432c7ff6904b2e7df3856aea1971098836813c6892ed5e"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-15-point12-precise/point-12-Inspect-Precise-Input-while-Point-is-active.png",
+    "sha256": "c88ebaf1af7dc43568a52db5c7a960b703676c40e2003a40d6a18f74fad44eee"
+  }
+}

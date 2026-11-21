@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/obk-body-visibility-Gi8hyJ/source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/obk-body-visibility-Gi8hyJ/source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T18:39:20.770512544Z" time="16.158762776"><testcase name="Scenario: Toggle visibility from the solid bodies folder: tmp/obk-body-visibility-Gi8hyJ/source/features/application/model-browser/model-browser.feature:407:3" time="16.158762776"><system-out><![CDATA[  Scenario: Toggle visibility from the solid bodies folder
+   ✔  Given an active part in the MCAD Software contains one visible solid block
+   ✔  And the Solid Bodies folder is visible in the model browser
+   ✔  When the user right-clicks the Solid Bodies folder
+   ✔  Then its context menu offers Visibility, Expand All Children and collapses All Children
+   ✔  And Visibility is checked
+   ✔  When the user chooses Visibility
+   ✔  Then the shaded block is hidden and its body remains listed in the browser
+   ✔  When the user right-clicks the Solid Bodies folder again
+   ✔  Then Visibility is unchecked
+   ✔  When the user chooses Visibility again
+   ✔  Then the shaded block returns in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>

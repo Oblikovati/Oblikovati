@@ -1,0 +1,19 @@
+{
+  "kind": "Go analytic prism-frame compatibility oracle",
+  "go_application_commit": "aa8297d1b0ac33c024f19e54821536d76e8a447a",
+  "rust_base_commit": "afe2a7f75",
+  "go_version": "go1.27.0 linux/amd64",
+  "generation": "Run go run <generate.go> in the Go application checkout.",
+  "results": [
+    "Eleven independent Go analytic plane frames match the Rust convention, including oblique inputs and both sides of the 0.9 axis-selection boundary.",
+    "Original and reordered Go cube sketches retain their distinct authored line order through Rust candidate preparation and recipe restoration."
+  ],
+  "limitations": [
+    "These examples do not certify Go profile traversal or side-key mapping for arbitrary sketches.",
+    "This does not establish complete Go document migration or the R3 exit."
+  ],
+  "artifacts": {
+    "generate.go": "ecd064887e94d15d264e9eaad4c15e1f16d2ee6c8c23ded510e0859df299ebe6",
+    "frames.json": "f3d3f389ec90809dc421626a73d551d549f493ccfadae8f1a5216fd8c1339bd2"
+  }
+}

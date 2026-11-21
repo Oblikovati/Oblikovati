@@ -1,0 +1,13 @@
+{
+  "kind": "unsealed temporary-fixture diagnostic",
+  "application_base_commit": "f8e2798c9",
+  "live_feature_sha256": "3a0703dc9df2a77830b6b90402210ba9dffd10a0e370763015a46904744fbfce",
+  "temporary_feature_sha256": "e2c0ece1141b9973d0b4909965eefe666f5c70ab7371a3cea41cbe16d89080a5",
+  "fixture_sha256": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+  "test_source_sha256": "79796ba30e8547200d60d5a45f4220c7f7591d94f7614504c73c1b1098cf8aa3",
+  "scenario": "Open a workspace panel from the dock tab bar",
+  "scenarios_passed": 1,
+  "steps_passed": 9,
+  "source_change": "Only the Given fixture path and extension were replaced, from the Inventor fixture to the documented native part.",
+  "limitations": "This run used a temporary scenario copy and unsealed build; it does not verify the live Inventor-fixture scenario or the full feature."
+}

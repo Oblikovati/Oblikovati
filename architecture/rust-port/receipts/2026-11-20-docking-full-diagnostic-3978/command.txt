@@ -1,0 +1,20 @@
+python3 -B tools/bdd/sealed_build_cli.py \
+  --source /tmp/obk-sealed-full-wdWuAQ/source \
+  --vendor /tmp/obk-sealed-full-wdWuAQ/vendor \
+  --toolchain /home/vmiguel/.rustup/toolchains/1.99.0-x86_64-unknown-linux-gnu \
+  --config /tmp/obk-sealed-full-wdWuAQ/config \
+  --target /tmp/obk-sealed-full-wdWuAQ/target \
+  --build-logs /tmp/obk-sealed-full-wdWuAQ/build-logs \
+  --bwrap /tmp/obk-sealed-full-wdWuAQ/bwrap \
+  --system /tmp/obk-sealed-full-wdWuAQ/system \
+  --repository /home/vmiguel/git/oblikovati-workspace/oblikovati-rust \
+  --revision f63007edfc97c527d1bb2812fa36ba127766463b \
+  --runtime /tmp/obk-sealed-full-wdWuAQ/runtime \
+  --checkout /tmp/obk-sealed-full-wdWuAQ/scenarios \
+  --reports /tmp/obk-sealed-full-wdWuAQ/reports \
+  --run-log /tmp/obk-sealed-full-wdWuAQ/native.log \
+  --area application --feature docking-system \
+  --scenario 'Restore the saved panel arrangement after restarting the application' \
+  --registry-archives /home/vmiguel/.cargo/registry/cache/index.crates.io-1949cf8c6b5b557f \
+  --local-snapshot architecture/rust-port/receipts/2026-11-20-docking-local-snapshot-3978 \
+  --diagnostic-proc

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T11:30:26.586855635Z" time="32.505882292"><testcase name="Scenario: ellipse-20 Observe a digit immediately after fresh center selection: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:234:3" time="32.505882292"><system-out><![CDATA[  Scenario: ellipse-20 Observe a digit immediately after fresh center selection
+   ✔  Given a copy of `fixtures/cad/ellipse/circle-midpoint-line.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the fixture center is the free sketch coordinate (30, 30) mm
+   ✔  Given an editable sketch with existing geometry is Ready
+   ✔  When the user open Circle dropdown and choose Ellipse
+   ✔  And the user select the fixture center
+   ✔  Then the prompt requests the first axis point
+   ✔  When the user press 6
+   ✔  Then Command alias input displays 6 instead of an axis-length editor
+   ✔  When the user press Escape
+   ✔  Then Ready returns with the previous geometry retained
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,16 @@
+#!/bin/bash
+set -u
+OBK_ADDINS_DIR=/tmp/obk-express-live/addins OBK_MCP_ADDR=127.0.0.1:17893 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json XMODIFIERS=@im=none /tmp/obk-express-cache-target/debug/oblikovati /tmp/obk-express-live/missing.oad > /tmp/obk-express-live/host.log 2>&1 &
+host_pid=$!
+cleanup() { kill "$host_pid" 2>/dev/null || true; wait "$host_pid" 2>/dev/null || true; }
+trap cleanup EXIT
+ready=0
+for attempt in $(seq 1 100); do
+  if ! kill -0 "$host_pid" 2>/dev/null; then cat /tmp/obk-express-live/host.log; exit 1; fi
+  if curl -s --max-time 1 -o /dev/null http://127.0.0.1:17893/mcp; then ready=1; break; fi
+  sleep 0.2
+done
+if [ "$ready" -ne 1 ]; then cat /tmp/obk-express-live/host.log; echo 'MCP listener did not start'; exit 1; fi
+xwininfo -root -tree > /tmp/obk-express-live/window-tree.txt
+cd /home/vmiguel/git/oblikovati-workspace/Oblikovati.AddIns.MCPBridge || exit 1
+go run /tmp/obk-express-live/driver.go

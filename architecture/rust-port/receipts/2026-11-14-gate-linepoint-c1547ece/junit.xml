@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Point: tmp/obk-linepoint-refresh/features/sketch/point/scenario.feature" package="testsuite/Feature: Point: tmp/obk-linepoint-refresh/features/sketch/point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:40:20.458866938Z" time="8.381482965"><testcase name="Scenario: point-03 Cancel before placing a point: tmp/obk-linepoint-refresh/features/sketch/point/scenario.feature:5:3" time="8.381482965"><system-out><![CDATA[  Scenario: point-03 Cancel before placing a point
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And Point is active with Select center point
+   ✔  When the user press Escape twice without clicking the canvas
+   ✔  And the user right-click empty canvas to inspect state
+   ✔  Then the status is Ready and the menu offers Repeat Point, Center Point
+   ✔  And no new point marker is retained
+   ✔  When the user press Escape
+   ✔  Then the Ready-state menu closes
+]]></system-out></testcase></testsuite></testsuites>

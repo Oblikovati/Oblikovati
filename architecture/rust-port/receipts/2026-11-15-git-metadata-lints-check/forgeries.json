@@ -1,0 +1,10 @@
+[
+  {
+    "forgery": "description",
+    "rejected": "manifest oblikovati-api-0.159.0 description 'forged description': expected locked source value 'The Apache-2.0 Oblikovati automation contract and C ABI client'"
+  },
+  {
+    "forgery": "lints",
+    "rejected": "manifest oblikovati-api-0.159.0 lints {'clippy': {'undocumented_unsafe_blocks': 'deny'}, 'rust': {'unsafe_op_in_unsafe_fn': 'allow'}}: expected locked source lints {'rust': {'unsafe_op_in_unsafe_fn': 'deny'}, 'clippy': {'undocumented_unsafe_blocks': 'deny'}}"
+  }
+]

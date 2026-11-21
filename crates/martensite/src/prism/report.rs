@@ -1,0 +1,215 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::*;
+use martensite_tkbrep::{topexp, topods::Shape, toptools::IndexedMapOfShape};
+use martensite_tkg3d::top_abs::ShapeEnum;
+use martensite_tkgeombase::gprop::GProps;
+use martensite_tkprim::brep_prim_api::BRepPrimAPIMakeSweep;
+use martensite_tktopalgo::brep_gprop::BRepGProp;
+use profile::BuiltProfile;
+pub(super) fn construction_lineage(
+    maker: &mut BRepPrimAPIMakePrism,
+    profile: &BuiltProfile,
+    shape: &Shape,
+) -> Result<Vec<(PrismFaceRole, Shape)>, EvaluationFailure> {
+    let mut lineage = cap_lineage(maker)?;
+    for (key, edge) in &profile.edges {
+        lineage.push((
+            PrismFaceRole::ProfileEdge(*key),
+            generated_face(maker, *key, edge)?,
+        ));
+    }
+    require_face_coverage(shape, &lineage)?;
+    Ok(lineage)
+}
+pub(super) fn checked_report(
+    shape: &Shape,
+    lineage: &[(PrismFaceRole, Shape)],
+) -> Result<PrismProbeReport, EvaluationFailure> {
+    require_face_coverage(shape, lineage)?;
+    let faces = lineage
+        .iter()
+        .map(|(role, shape)| face_report(*role, shape))
+        .collect::<Result<Vec<_>, _>>()?;
+    let properties = crate::checked_shape::analytic_properties(shape, "prism result")?;
+    Ok(PrismProbeReport {
+        properties,
+        faces,
+        topology: topology_summary(shape)?,
+    })
+}
+fn cap_lineage(
+    maker: &mut BRepPrimAPIMakePrism,
+) -> Result<Vec<(PrismFaceRole, Shape)>, EvaluationFailure> {
+    Ok(vec![
+        (
+            PrismFaceRole::Start,
+            maker.first_shape().map_err(|error| {
+                Phase::History.native(Entity::Face(PrismFaceRole::Start), String::new(), error)
+            })?,
+        ),
+        (
+            PrismFaceRole::End,
+            maker.last_shape().map_err(|error| {
+                Phase::History.native(Entity::Face(PrismFaceRole::End), String::new(), error)
+            })?,
+        ),
+    ])
+}
+fn generated_face(
+    maker: &mut BRepPrimAPIMakePrism,
+    key: u64,
+    edge: &Shape,
+) -> Result<Shape, EvaluationFailure> {
+    let generated = maker.generated(edge).map_err(|error| {
+        Phase::History.native(
+            Entity::Edge(key),
+            format!("prism edge {key}: expected generated face history"),
+            error,
+        )
+    })?;
+    require_generated_count(key, generated.len())?;
+    let shape = generated.first().expect("one generated shape").clone();
+    martensite_tkbrep::topods::face(&shape).map_err(|error| {
+        Phase::History.native(
+            Entity::Edge(key),
+            format!("prism edge {key}: expected generated face"),
+            error,
+        )
+    })?;
+    Ok(shape)
+}
+fn require_generated_count(key: u64, count: usize) -> Result<(), EvaluationFailure> {
+    if count == 1 {
+        return Ok(());
+    }
+    Err(Phase::History.refused(
+        Kind::IncompleteHistory,
+        Entity::Edge(key),
+        format!("prism edge {key} generated {count} shapes: expected exactly one side face"),
+    ))
+}
+fn require_face_coverage(
+    shape: &Shape,
+    lineage: &[(PrismFaceRole, Shape)],
+) -> Result<(), EvaluationFailure> {
+    let mut faces = IndexedMapOfShape::default();
+    topexp::map_shapes_of_type(shape, ShapeEnum::Face, &mut faces)
+        .map_err(|error| Phase::History.native(Entity::Body, String::new(), error))?;
+    require_lineage_count(faces.extent(), lineage.len())?;
+    for index in 1..=faces.extent() {
+        let face = faces
+            .find_key(index)
+            .map_err(|error| Phase::History.native(Entity::Body, String::new(), error))?;
+        require_single_role(face, index, lineage)?;
+    }
+    Ok(())
+}
+fn require_lineage_count(faces: usize, lineage: usize) -> Result<(), EvaluationFailure> {
+    if faces == lineage {
+        return Ok(());
+    }
+    Err(Phase::History.refused(
+        Kind::IncompleteHistory,
+        Entity::Body,
+        format!("prism faces={faces}, lineage={lineage}: expected complete face coverage"),
+    ))
+}
+fn require_single_role(
+    face: &Shape,
+    index: usize,
+    lineage: &[(PrismFaceRole, Shape)],
+) -> Result<(), EvaluationFailure> {
+    let parents = lineage
+        .iter()
+        .filter(|(_, generated)| generated.is_same(face))
+        .count();
+    if parents == 1 {
+        return Ok(());
+    }
+    Err(Phase::History.refused(
+        Kind::IncompleteHistory,
+        Entity::FaceIndex(index),
+        format!(
+            "prism face {index} history count={parents}: expected exactly one construction role"
+        ),
+    ))
+}
+pub(super) fn face_report(
+    role: PrismFaceRole,
+    shape: &Shape,
+) -> Result<PrismFaceProbe, EvaluationFailure> {
+    let (area, centroid, loops) =
+        face_measurement(shape, Entity::Face(role), &format!("prism face {role:?}"))?;
+    Ok(PrismFaceProbe {
+        role,
+        area,
+        centroid,
+        loops,
+    })
+}
+pub(crate) fn face_measurement(
+    shape: &Shape,
+    entity: Entity,
+    context: &str,
+) -> Result<(f64, [f64; 3], usize), EvaluationFailure> {
+    let mut properties = GProps::new();
+    BRepGProp::surface_properties(shape, &mut properties, false, false).map_err(|cause| {
+        Phase::Measurement.native(
+            entity.clone(),
+            format!("{context}: expected analytic area"),
+            cause,
+        )
+    })?;
+    let centroid = properties.centre_of_mass();
+    let centroid = [centroid.x(), centroid.y(), centroid.z()];
+    let area = properties.mass();
+    require_finite_measurement(entity.clone(), context, area, centroid)?;
+    let mut wires = IndexedMapOfShape::default();
+    topexp::map_shapes_of_type(shape, ShapeEnum::Wire, &mut wires).map_err(|cause| {
+        Phase::Measurement.native(entity, format!("{context}: expected face wires"), cause)
+    })?;
+    Ok((area, centroid, wires.extent()))
+}
+
+fn require_finite_measurement(
+    entity: Entity,
+    context: &str,
+    area: f64,
+    centroid: [f64; 3],
+) -> Result<(), EvaluationFailure> {
+    if area.is_finite() && area > 0. && centroid.iter().all(|value| value.is_finite()) {
+        return Ok(());
+    }
+    Err(Phase::Measurement.refused(Kind::InvalidResult, entity, format!(
+        "{context}, area={area}, centroid={centroid:?}: expected finite positive analytic area and centroid"
+    )))
+}
+
+#[cfg(test)]
+#[path = "../../tests/prism/report.rs"]
+mod tests;
+
+pub(crate) fn topology_summary(shape: &Shape) -> Result<PrismTopologySummary, EvaluationFailure> {
+    Ok(PrismTopologySummary {
+        solid: shape
+            .shape_type()
+            .map_err(|cause| Phase::Measurement.native(Entity::Body, String::new(), cause))?
+            == ShapeEnum::Solid,
+        faces: entity_count(shape, ShapeEnum::Face)?,
+        edges: entity_count(shape, ShapeEnum::Edge)?,
+        vertices: entity_count(shape, ShapeEnum::Vertex)?,
+        shells: entity_count(shape, ShapeEnum::Shell)?,
+        wires: entity_count(shape, ShapeEnum::Wire)?,
+    })
+}
+fn entity_count(shape: &Shape, kind: ShapeEnum) -> Result<usize, EvaluationFailure> {
+    let mut entities = IndexedMapOfShape::default();
+    topexp::map_shapes_of_type(shape, kind, &mut entities).map_err(|cause| {
+        Phase::Measurement.native(
+            Entity::Body,
+            format!("prism topology {kind:?}: expected unique native entities"),
+            cause,
+        )
+    })?;
+    Ok(entities.extent())
+}

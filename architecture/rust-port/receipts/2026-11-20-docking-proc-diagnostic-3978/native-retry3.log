@@ -1,0 +1,45 @@
+
+running 1 test
+Feature: Dockable workspace panels
+  Scenario: Restore the saved panel arrangement after restarting the application
+   ✔  Given the user has changed the workspace panel arrangement
+   ✔  And the MCAD Software has saved that arrangement
+   ✘  When the user closes and restarts the MCAD Software
+      Step failed:
+      Defined: scenario/features/application/docking-system/docking-system.feature:128:5
+      Matched: crates/head/src/../tests/application/docking-system/restart_scenario.rs:43:1
+      Step panicked. Captured output: desktop restart failed: Traceback (most recent call last):
+        File "/tmp/.tmpbilzCD", line 242, in <module>
+          main()
+        File "/tmp/.tmpbilzCD", line 236, in main
+          result = exercise(args.binary.resolve(), args.fixture.resolve(), args.output.resolve())
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/tmp/.tmpbilzCD", line 217, in exercise
+          saved = run_phase(binary, fixture, environment, pointer, output, True)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/tmp/.tmpbilzCD", line 196, in run_phase
+          wait_for_window(process)
+        File "/tmp/.tmpbilzCD", line 186, in wait_for_window
+          raise RuntimeError(f"desktop exit {process.returncode}: expected a running window; {error}")
+      RuntimeError: desktop exit 1: expected a running window; oblikovati: desktop script worker: expected current executable: no /proc/self/exe available. Is /proc mounted?
+      
+[Summary]
+1 feature
+1 scenario (1 failed)
+3 steps (2 passed, 1 failed)
+
+thread 'application-scenarios' (19) panicked at crates/head/src/../tests/application/benchmark.rs:374:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window' (18) panicked at crates/head/src/../tests/application/benchmark.rs:267:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1545 filtered out; finished in 34.67s
+

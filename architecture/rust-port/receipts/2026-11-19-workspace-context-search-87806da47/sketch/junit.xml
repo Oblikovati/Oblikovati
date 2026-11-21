@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:07:22.548248601Z" time="9.653572045"><testcase name="Scenario: Inspect the context menu for a sketch under an extrusion: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:495:3" time="9.653572045"><system-out><![CDATA[  Scenario: Inspect the context menu for a sketch under an extrusion
+   ✔  Given a part with an extrusion and its underlying dimensioned sketch is active in the MCAD Software
+   ✔  And the extrusion branch is expanded in the model browser
+   ✔  When the user right-clicks the sketch child in the browser
+   ✔  Then a context menu opens beside the sketch row
+   ✔  And the menu offers Edit Sketch, Redefine, Share Sketch and Properties
+   ✔  And it offers Measure, Visibility and Export Sketch As
+   ✔  And the sketch row is highlighted
+   ✔  And the sketch geometry and dimensions are highlighted over the solid
+   ✔  When the user clicks an empty area of the viewport outside the menu
+   ✔  Then the context menu closes
+   ✔  And the sketch row, geometry and dimensions remain highlighted
+   ✔  When the user clicks the empty viewport area again
+   ✔  Then the sketch row is no longer highlighted
+   ✔  And the highlighted sketch geometry and dimensions disappear from the viewport
+   ✔  And the solid remains visible
+]]></system-out></testcase></testsuite></testsuites>

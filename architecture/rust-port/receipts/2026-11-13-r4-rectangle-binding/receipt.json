@@ -1,0 +1,25 @@
+{
+  "date": "2026-11-13",
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3857",
+  "base_commit": "12eeb2613662b3fca5652ffec4dda18589de1f95",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "tested_file_sha256": {
+    "crates/head/tests/application/file-menu/steps.rs": "b1de23faa689af622fbc05412d37f3e3732c48f2ca5b11478e47b10826231acb",
+    "crates/head/tests/sketch/rectangle-two-point/steps.rs": "20445381ef56e6cef687dafa9d08959508dc8d40a7b9be29afe532f617b5045e",
+    "crates/head/tests/sketch/rectangle-two-point/dimension_tests.rs": "11f4465143c31fc6f62f194c20f99aa10229605eb4e7b4c3bfb1e9ebc86334ea",
+    "crates/head/tests/sketch/rectangle-two-point/topology.rs": "fc1ab863d521e8d25b537e54bf1ba2127d1ea0d4c138a020ce6d771b41325db1",
+    "crates/head/tests/sketch/rectangle-two-point/topology_tests.rs": "2c37a757a4d8f882bcf13b3f3bdbb76157e791dd8421680c821a9cd18ebb6bf8"
+  },
+  "checks": [
+    "rectangle topology unit test rejects duplicate, collinear, and diagonal edges",
+    "native rectangle scenario passed one scenario and six steps using the normal runner",
+    "head all-target Clippy passed"
+  ],
+  "scope": "Pre-commit verification of the updated test bindings and rectangle assertion; a clean-commit acceptance run is still required for ledger verification.",
+  "artifacts_sha256": {
+    "rectangle-two-point-01-Create-a-rectangle-from-opposite-corners.png": "fc30e4650f0c936f752d5a1aaf57d7136047ded69f34833fbdf80ba112691880",
+    "source-revision.json": "afdcde4b44bdbec6b08878f72ff7111f069221d84273b826035e73b15a5d3457",
+    "junit.xml": "a1151c9f1fe69e149e77ed7a1deb244525b92ff19d9edb3ce101112147e733c7",
+    "cucumber.json": "7f743a763ac9abd6a3479d0bfecf74450daf7fb2664b535c30ee039d2fe01b97"
+  }
+}

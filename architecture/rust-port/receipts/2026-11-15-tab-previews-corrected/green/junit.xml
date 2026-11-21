@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/oblikovati-bdd-GMzw02/checkout/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/oblikovati-bdd-GMzw02/checkout/features/application/document-tabs/document-tabs.feature" tests="3" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T15:01:51.998278296Z" time="31.593281452"><testcase name="Scenario: Preview an inactive document from its tab: tmp/oblikovati-bdd-GMzw02/checkout/features/application/document-tabs/document-tabs.feature:297:3" time="11.613950654"><system-out><![CDATA[  Scenario: Preview an inactive document from its tab
+   ✔  Given two part documents are open in the MCAD Software
+   ✔  And the first part is active and the second has an empty sketch visible
+   ✔  When the user hovers over the second part's document tab
+   ✔  Then a thumbnail of the second part's sketch appears above the tab
+   ✔  And the second part's name appears above the thumbnail
+   ✔  And the first part remains active
+   ✔  When the user moves the pointer away from the tab
+   ✔  Then the thumbnail and its name disappear
+   ✔  And the first part remains active
+]]></system-out></testcase><testcase name="Scenario: Preview Home while a part is active: tmp/oblikovati-bdd-GMzw02/checkout/features/application/document-tabs/document-tabs.feature:310:3" time="9.890242455"><system-out><![CDATA[  Scenario: Preview Home while a part is active
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Home workspace is available in the document tab strip
+   ✔  When the user hovers over the Home tab
+   ✔  Then a thumbnail of the Home workspace appears above the tab
+   ✔  And a Home label appears above the thumbnail
+   ✔  And the part remains active in the workspace
+]]></system-out></testcase><testcase name="Scenario: Preview the active saved document from its tab: tmp/oblikovati-bdd-GMzw02/checkout/features/application/document-tabs/document-tabs.feature:352:3" time="10.089088343"><system-out><![CDATA[  Scenario: Preview the active saved document from its tab
+   ✔  Given a saved part is active in the MCAD Software
+   ✔  And the part is being edited in a sketch
+   ✔  When the user hovers over the active part's document tab
+   ✔  Then a thumbnail of its sketch viewport appears above the tab
+   ✔  And the preview label displays the saved file's full path and part name
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase></testsuite></testsuites>

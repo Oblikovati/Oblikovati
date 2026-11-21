@@ -1,0 +1,6 @@
+93e4415d049067bcc5f28a6842f1d6d24e541a736181b999d42d04a2d2f3c8e8  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/BLOCKERS.md
+6f848dd439efd1c4309f4cd2c2eb445758409abb1117c050d321b23ee0710994  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/FIXTURES.md
+08a096e83e79011bda0f1cce97390c77b01ee65bf665168bb0306d7d3da431c3  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/FUNCTIONAL.md
+302d8aea9f7cc37c391bea3377ec4b13ced2526386da9f03b7736ca8eb7ab8eb  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/VISUAL.md
+6f0e47d5b2e6ed3bf1cb0e851c06eae62963c4264e0cf0f38fa1629a864ce848  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/feature-icon.svg
+b68e527f1199915eb593449dc8d971a526d7e56cbd2485511568b9e5fdd56862  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-settings/scenario.feature

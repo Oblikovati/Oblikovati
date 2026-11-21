@@ -1,0 +1,20 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.08s
+     Running unittests src/lib.rs (/tmp/rust-midpoint-3996-JM1wi6AQ/target/debug/deps/oblikovati_head-c865ed7d2d134d42)
+
+running 1 test
+Feature: Ellipse
+  Scenario: ellipse-12 Observe numeric key as alias input during first-axis selection
+   ✔  Given the fixture sketch is Ready with the retained circle and midpoint line
+   ✔  When Ellipse is selected and a free center is clicked
+   ✔  Then Select first axis point appears without a visible numeric field
+   ✔  When the 8 key is pressed
+   ✔  Then the status shows Command alias input: 8
+   ✔  When Escape is pressed
+   ✔  Then Ready appears with no added ellipse visible
+[Summary]
+1 feature
+1 scenario (1 passed)
+7 steps (7 passed)
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1063 filtered out; finished in 26.33s

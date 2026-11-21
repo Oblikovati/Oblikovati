@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="18" errors="0" failures="10" hostname="localhost" timestamp="2026-11-18T14:57:57.682207965Z" time="108.383448028"><testcase name="Scenario: Select the 3D Model tab with its key tip: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:5:3" time="6.276742612"><system-out><![CDATA[  Scenario: Select the 3D Model tab with its key tip
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon tab is selected
+   ✔  When the user presses Alt
+   ✔  Then key tips appear on the ribbon tabs and quick-access controls
+   ✔  And the 3D Model tab displays the key tip "M"
+   ✔  When the user presses "M"
+   ✔  Then the 3D Model ribbon tab is selected
+   ✔  And key tips appear on its commands
+   ✔  When the user presses Escape
+   ✔  Then the command key tips remain visible
+   ✔  When the user presses Alt
+   ✔  Then the key tips disappear
+   ✔  And the part remains active
+]]></system-out></testcase><testcase name="Scenario: Open a command using a two-letter key tip: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:20:3" time="3.9526244029999997"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open a command using a two-letter key tip
+   ✔  Given a part is active in the MCAD Software
+   ✘  And the 3D Model ribbon command key tips are displayed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:22:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Continue a two-letter key tip after an unmatched letter: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:32:3" time="3.915054011"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Continue a two-letter key tip after an unmatched letter
+   ✔  Given a part is active in the MCAD Software
+   ✘  And the 3D Model ribbon command key tips are displayed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:34:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Change ribbon display using key tips and menu navigation: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:44:3" time="5.394065245"><failure type="Step Panicked" message="Step panicked. Captured output: expected &quot;Options&quot; in rendered text &quot;W\nP\nZ\nv\nO\nv\nFRONT\nModel\n+\nModel\nMenu\nSearch\nPart1&lt;Primary&gt;\nRepresentations\nModelState\n&lt;Primary&gt;\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nReady\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\n...\nPart1\nFile\nHome\nPart1&lt;Primary&gt;*\nDocuments\nX\nY\nZ&quot;"/><system-out><![CDATA[  Scenario: Change ribbon display using key tips and menu navigation
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon is fully displayed with "Cycle Through All" selected
+   ✔  When the user presses Alt and enters the display control key tip "X2"
+   ✘  Then the ribbon displays compact panel buttons
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:48:5
+      Matched: crates/head/src/../tests/application/ribbon-keyboard-navigation/steps.rs:175:1
+      Step panicked. Captured output: expected "Options" in rendered text "W\nP\nZ\nv\nO\nv\nFRONT\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nReady\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\n...\nPart1\nFile\nHome\nPart1<Primary>*\nDocuments\nX\nY\nZ"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nReady\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\n...\nPart1\nFile\nHome\nPart1<Primary>*\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Continue after an unmatched top-level key tip: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:59:3" time="6.699143051"><system-out><![CDATA[  Scenario: Continue after an unmatched top-level key tip
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon tab is selected
+   ✔  When the user presses Alt
+   ✔  Then top-level key tips appear
+   ✔  And the 3D Model tab displays the key tip "M"
+   ✔  When the user presses "Z"
+   ✔  Then the top-level key tips remain visible
+   ✔  And the Tools ribbon remains selected
+   ✔  When the user presses "M"
+   ✔  Then the 3D Model ribbon is selected
+   ✔  And its command key tips are displayed
+   ✔  When the user presses Alt
+   ✔  Then the key tips disappear
+]]></system-out></testcase><testcase name="Scenario: Return to tab key tips after a partial command key tip: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:73:3" time="7.184381322"><system-out><![CDATA[  Scenario: Return to tab key tips after a partial command key tip
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  When the user presses Alt and then "M"
+   ✔  Then the 3D Model command key tips appear
+   ✔  When the user presses "H"
+   ✔  Then the visible command key tips narrow to H-prefixed entries
+   ✔  When the user presses Escape
+   ✔  Then the tab and quick-access key tips appear
+   ✔  And the command key tips are no longer displayed
+   ✔  When the user presses "M"
+   ✔  Then the 3D Model command key tips appear again
+   ✔  When the user presses Alt
+   ✔  Then the key tips disappear
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Switch ribbon tabs with the mouse while top-level key tips are visible: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:88:3" time="4.604946591"><system-out><![CDATA[  Scenario: Switch ribbon tabs with the mouse while top-level key tips are visible
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  When the user presses Alt
+   ✔  Then key tips appear on the ribbon tabs and quick-access controls
+   ✔  When the user clicks the Tools ribbon tab
+   ✔  Then the Tools ribbon is selected and its commands are visible
+   ✔  And the key tips disappear
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Dismiss top-level key tips after an unmatched letter on View: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:97:3" time="5.402378298"><system-out><![CDATA[  Scenario: Dismiss top-level key tips after an unmatched letter on View
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full View ribbon is selected
+   ✔  When the user presses Alt
+   ✔  Then key tips appear on the ribbon tabs and quick-access controls
+   ✔  When the user presses "I"
+   ✔  Then the top-level key tips remain visible
+   ✔  And the View ribbon remains selected
+   ✔  When the user presses Escape
+   ✔  Then the key tips disappear
+   ✔  And the View ribbon and part remain visible
+]]></system-out></testcase><testcase name="Scenario: Open the panel selector while top-level key tips are visible: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:109:3" time="4.5818315819999995"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open the panel selector while top-level key tips are visible
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✘  And top-level ribbon key tips are visible after pressing Alt
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:111:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Open temporary ribbon commands using a tab key tip: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:119:3" time="6.659647741"><system-out><![CDATA[  Scenario: Open temporary ribbon commands using a tab key tip
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  When the user presses Alt
+   ✔  Then key tips appear on the ribbon tabs and quick-access controls
+   ✔  And the 3D Model tab displays the key tip "M"
+   ✔  When the user presses "M"
+   ✔  Then the temporary 3D Model command area opens
+   ✔  And command key tips are visible
+   ✔  When the user presses Alt
+   ✔  Then the key tips disappear
+   ✔  And the temporary 3D Model command area remains visible
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary command area closes and the ribbon remains minimized to tabs
+   ✔  When the user double-clicks the 3D Model tab
+   ✔  Then the full 3D Model ribbon is visible
+]]></system-out></testcase><testcase name="Scenario: Launch a command by key tip from the minimized ribbon: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:136:3" time="5.347943969"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Launch a command by key tip from the minimized ribbon
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  When the user presses Alt
+   ✔  Then top-level key tips appear
+   ✔  When the user presses "M"
+   ✘  Then the temporary 3D Model command area opens with command key tips
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:142:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Launch a command through a left-docked compact group key tip: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:155:3" time="8.105431865"><failure type="Step Panicked" message="Step panicked. Captured output: missing display key tip: &quot;W\nP\nZ\nv\nO\nv\nFRONT\nModel\n+\nModel\nMenu\nSearch\nPart1&lt;Primary&gt;\nRepresentations\nModelState\n&lt;Primary&gt;\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nReady\n...\nPart1\nFile\nDocuments\nX\nY\nZ\nHome\nPart1&lt;Primary&gt;*\nv\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nSketch\nCreate\nModify\nWorkFeatures\nPattern\nSimplification\n1\n2\n3\n4\n5\n6\n7\n8\n9\nF\nM\nS\nT\nG\nV\nA&quot;"/><system-out><![CDATA[  Scenario: Launch a command through a left-docked compact group key tip
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left
+   ✔  And Modify is displayed as a compact group button
+   ✔  When the user presses Alt
+   ✘  Then key tips appear on the ribbon tabs and quick-access controls
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:160:5
+      Matched: crates/head/src/../tests/application/ribbon-keyboard-navigation/steps.rs:14:1
+      Step panicked. Captured output: missing display key tip: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nReady\n...\nPart1\nFile\nDocuments\nX\nY\nZ\nHome\nPart1<Primary>*\nv\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nSketch\nCreate\nModify\nWorkFeatures\nPattern\nSimplification\n1\n2\n3\n4\n5\n6\n7\n8\n9\nF\nM\nS\nT\nG\nV\nA"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nReady\n...\nPart1\nFile\nDocuments\nX\nY\nZ\nHome\nPart1<Primary>*\nv\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nSketch\nCreate\nModify\nWorkFeatures\nPattern\nSimplification\n1\n2\n3\n4\n5\n6\n7\n8\n9\nF\nM\nS\nT\nG\nV\nA",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Dismiss a left-docked group after its nested key tips: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:177:3" time="10.276762255"><failure type="Step Panicked" message="Step panicked. Captured output: expected &quot;Save&quot; in rendered text &quot;W\nP\nZ\nv\nO\nv\nFRONT\nModel\n+\nModel\nMenu\nSearch\nPart1&lt;Primary&gt;\nRepresentations\nModelState\n&lt;Primary&gt;\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nReady\n...\nPart1\nFile\nDocuments\nX\nY\nZ\nHome\nPart1&lt;Primary&gt;*\nv\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nSketch\nCreate\nModify\nWorkFeatures\nPattern\nSimplification&quot;"/><system-out><![CDATA[  Scenario: Dismiss a left-docked group after its nested key tips
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left with Modify as a compact group
+   ✔  And the user has pressed Alt, "M", and "Y" to open the Modify panel and its command key tips
+   ✔  When the user presses Escape
+   ✔  Then the Modify panel and its command key tips remain visible
+   ✔  When the user presses Alt
+   ✔  Then the command key tips disappear
+   ✔  And the Modify panel remains visible
+   ✔  When the user presses Escape
+   ✔  Then the Modify panel closes
+   ✘  And the ribbon remains docked on the left
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:188:5
+      Matched: crates/head/src/../tests/application/ribbon-docking/steps.rs:315:1
+      Step panicked. Captured output: expected "Save" in rendered text "W\nP\nZ\nv\nO\nv\nFRONT\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nReady\n...\nPart1\nFile\nDocuments\nX\nY\nZ\nHome\nPart1<Primary>*\nv\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nSketch\nCreate\nModify\nWorkFeatures\nPattern\nSimplification"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nReady\n...\nPart1\nFile\nDocuments\nX\nY\nZ\nHome\nPart1<Primary>*\nv\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nSketch\nCreate\nModify\nWorkFeatures\nPattern\nSimplification",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Keep ribbon key tips visible while arrow keys change the model view: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:192:3" time="7.460463567"><system-out><![CDATA[  Scenario: Keep ribbon key tips visible while arrow keys change the model view
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is selected
+   ✔  When the user presses Alt to show top-level ribbon key tips
+   ✔  And the user presses the Right Arrow key
+   ✔  Then the displayed solid changes orientation
+   ✔  And the top-level ribbon key tips remain visible
+   ✔  When the user presses the Left Arrow key
+   ✔  Then the solid returns to its prior visible orientation
+   ✔  And the top-level ribbon key tips remain visible
+   ✔  When the user presses the 3D Model tab key tip
+   ✔  Then the ribbon shows command-level key tips
+   ✔  When the user presses Alt
+   ✔  Then the key tips disappear
+]]></system-out></testcase><testcase name="Scenario: Select a solid face while command key tips are visible: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:208:3" time="6.737043183"><failure type="Step Panicked" message="Step panicked. Captured output: assertion failed: world.state().model_face_chosen"/><system-out><![CDATA[  Scenario: Select a solid face while command key tips are visible
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is selected
+   ✔  When the user presses Alt and then the 3D Model tab key tip
+   ✔  Then command-level ribbon key tips are visible
+   ✔  When the user clicks a visible solid face
+   ✔  Then the ribbon key tips disappear
+   ✘  And the clicked face is selected
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:215:5
+      Matched: crates/head/src/../tests/application/ribbon-keyboard-navigation/face_selection.rs:29:1
+      Step panicked. Captured output: assertion failed: world.state().model_face_chosen
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\n+\nModel\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nSelectionfailed:pickrank4(VisiblePlanesAndNearestFaces):expectedanunambiguousidentity\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\n...\nextruded\nFile\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nModifyv\nPlane\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\nextruded<Primary>\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Navigate an expanded model browser while ribbon key tips are visible: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:221:3" time="8.20459334"><system-out><![CDATA[  Scenario: Navigate an expanded model browser while ribbon key tips are visible
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And an extrusion is expanded in the model browser to show its child sketch
+   ✔  And the extrusion is selected in the browser
+   ✔  When the user presses Alt to show top-level ribbon key tips
+   ✔  And the user presses Down Arrow
+   ✔  Then the child sketch is selected in the browser
+   ✔  And the corresponding sketch geometry is highlighted in the viewport
+   ✔  And the top-level ribbon key tips remain visible
+   ✔  When the user presses Up Arrow
+   ✔  Then the extrusion is selected again
+   ✔  And the top-level ribbon key tips remain visible
+   ✔  When the user presses Alt
+   ✔  Then the ribbon key tips disappear
+]]></system-out></testcase><testcase name="Scenario: Keep Tools key tips visible after Escape with a face selected: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:236:3" time="3.398729682"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Keep Tools key tips visible after Escape with a face selected
+   ✘  Given a part is active in the MCAD Software with one face selected
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:237:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Dismiss top-level key tips after Escape on Tools without a selection: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:249:3" time="4.181665311"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Dismiss top-level key tips after Escape on Tools without a selection
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is selected
+   ✘  And no model face is selected
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:252:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

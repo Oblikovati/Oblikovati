@@ -1,0 +1,26 @@
+
+running 1 test
+Feature: Viewport navigation wheel
+  Scenario: Open the full navigation wheel and close it from its menu
+   ✔  Given a rectangular block is visible in an active part in the MCAD Software
+   ✔  And the viewport navigation bar is visible
+   ✔  And the full navigation wheel is the selected wheel layout
+   ✔  When the user opens the navigation wheel from the navigation bar
+   ✔  And the user clicks within the viewport
+   ✔  Then a circular navigation wheel is visible over the model
+   ✔  And the wheel offers Zoom, Orbit, Pan, Rewind, Center, Walk, Look and Up Down
+   ✔  When the user right-clicks the navigation wheel
+   ✔  Then its menu marks Full Navigation Wheel as selected
+   ✔  And the menu offers alternate mini and basic wheel layouts
+   ✔  And the menu offers Go Home, Fit to Window, Restore Original Center, Options and Close Wheel
+   ✔  When the user chooses Close Wheel
+   ✔  Then the wheel and its menu disappear
+   ✔  And the model remains visible in the same apparent view
+   ✔  And the status area displays Ready
+[Summary]
+1 feature
+1 scenario (1 passed)
+15 steps (15 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1546 filtered out; finished in 28.98s

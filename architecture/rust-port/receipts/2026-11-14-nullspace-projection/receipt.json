@@ -1,0 +1,21 @@
+{
+  "kind": "focused-implementation-evidence",
+  "application_commit": "9591a6ac3",
+  "checks": [
+    {
+      "command": "cargo test --locked -p oblikovati-solve",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-nullspace-projection/test.log.gz",
+      "sha256": "f802842708c8c3761c9f8eeec6adbfa296a02a07ea3f11bb1debf3600246505e"
+    },
+    {
+      "command": "cargo clippy --locked -p oblikovati-solve --all-targets -- -D warnings",
+      "exit_code": 0,
+      "path": "architecture/rust-port/receipts/2026-11-14-nullspace-projection/clippy.log.gz",
+      "sha256": "5b8dd306cf13ae98c9a9907411c2e50e7a720d728458f0c21b9d7ad1f5b513c4"
+    }
+  ],
+  "limitations": [
+    "The projection is local to a linearized constraint system. It does not establish nonlinear preference convergence or the native Coincident scenario."
+  ]
+}

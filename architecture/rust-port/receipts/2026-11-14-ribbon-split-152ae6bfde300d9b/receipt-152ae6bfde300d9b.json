@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:152ae6bfde300d9b28f59b8d0c51fa6077176ebf1a2c4b0e5bb1b850690a6e39",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "source_sha256": "fbdae71cbf4f67f7d8165002799ba77b0727fa89cb7b620f1298fdb27725916c",
+  "application_commit": "9d921c563431c71c08927c786cbd5fc84681869b",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ribbon-split-152ae6bfde300d9b/cucumber.json",
+    "sha256": "1cbb6c9680941b547d93a5f831f18a2e34bd8afc12e17702686ee3256a3732df"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ribbon-split-152ae6bfde300d9b/source-revision.json",
+    "sha256": "214fab4e5ff72e1717ded7b8ef342ac22eb2926282bf1ebbcff3be54836ef149"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ribbon-split-152ae6bfde300d9b/rectangle-two-point-09-Verify-the-numeric-rectangle-edge-lengths.png",
+    "sha256": "e8a78c649b279f7906da4c3e9fc04d9863c42d35157379161bede6fe34bc2826"
+  }
+}

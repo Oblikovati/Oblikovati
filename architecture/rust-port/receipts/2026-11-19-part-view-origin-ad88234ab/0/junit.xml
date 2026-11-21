@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T10:12:11.572678051Z" time="18.563592322"><testcase name="Scenario: Hide and show a solid using the active view commands: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1179:3" time="18.563592322"><system-out><![CDATA[  Scenario: Hide and show a solid using the active view commands
+   ✔  Given The MCAD Software has a part containing one solid body
+   ✔  And a copied view is active
+   ✔  And the solid body is visible
+   ✔  When the user chooses All Hidden from the active view context menu
+   ✔  Then the solid body is not displayed in the viewport
+   ✔  And the solid body and its extrusion remain in the model browser
+   ✔  When the user chooses All Visible from the active view context menu
+   ✔  Then the solid body is displayed in the viewport
+   ✔  And the solid body and its extrusion remain in the model browser
+]]></system-out></testcase></testsuite></testsuites>

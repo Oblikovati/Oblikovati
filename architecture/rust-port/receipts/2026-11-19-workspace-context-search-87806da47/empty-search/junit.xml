@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:10:43.652041258Z" time="6.311095"><testcase name="Scenario: Open and closes an empty browser search in a part: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:165:3" time="6.311095"><system-out><![CDATA[  Scenario: Open and closes an empty browser search in a part
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the model browser is visible with no search field open
+   ✔  When the user opens browser search
+   ✔  Then an empty search field appears beneath the browser header
+   ✔  And the field shows the placeholder "Type Keyword"
+   ✔  And the browser tree and solid remain visible
+   ✔  When the user closes the empty search field
+   ✔  Then the search field is hidden
+   ✔  And the browser tree and solid remain visible
+]]></system-out></testcase></testsuite></testsuites>

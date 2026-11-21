@@ -1,0 +1,25 @@
+    Finished `test` profile [unoptimized] target(s) in 0.11s
+     Running unittests src/lib.rs (/tmp/obk-body-visibility-Gi8hyJ/target/debug/deps/oblikovati_head-0c1a18eb5aa1b656)
+
+running 1 test
+Feature: Model browser
+  Scenario: Toggle visibility from the solid bodies folder
+   ✔  Given an active part in the MCAD Software contains one visible solid block
+   ✔  And the Solid Bodies folder is visible in the model browser
+   ✔  When the user right-clicks the Solid Bodies folder
+   ✔  Then its context menu offers Visibility, Expand All Children and collapses All Children
+   ✔  And Visibility is checked
+   ✔  When the user chooses Visibility
+   ✔  Then the shaded block is hidden and its body remains listed in the browser
+   ✔  When the user right-clicks the Solid Bodies folder again
+   ✔  Then Visibility is unchecked
+   ✔  When the user chooses Visibility again
+   ✔  Then the shaded block returns in the same apparent view
+[Summary]
+1 feature
+1 scenario (1 passed)
+11 steps (11 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1062 filtered out; finished in 16.74s
+

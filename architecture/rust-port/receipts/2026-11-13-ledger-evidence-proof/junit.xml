@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: native background evidence: tmp/obk-background-proof/source/features/application/smoke/smoke.feature" package="testsuite/Feature: native background evidence: tmp/obk-background-proof/source/features/application/smoke/smoke.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-13T22:24:13.497548638Z" time="2.723605935"><testcase name="Rule: menu behavior: Scenario: dismiss the menu: tmp/obk-background-proof/source/features/application/smoke/smoke.feature:7:5" time="2.723605935"><system-out><![CDATA[  Scenario: dismiss the menu
+   ✔> Given an empty part document is active in the MCAD Software
+   ✔> When I select File
+   ✔  When I click an empty area of the viewport outside the menu
+   ✔  Then the File menu closes
+]]></system-out></testcase></testsuite></testsuites>

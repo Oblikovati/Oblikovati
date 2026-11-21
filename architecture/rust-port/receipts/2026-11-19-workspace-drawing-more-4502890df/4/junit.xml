@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:32:55.895045283Z" time="11.497750639"><testcase name="Scenario: Move the drawing browser between side docks: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:341:3" time="11.497750639"><system-out><![CDATA[  Scenario: Move the drawing browser between side docks
+   ✔  Given a drawing is active in the MCAD Software
+   ✔  And the drawing browser is docked on the left
+   ✔  When the user drags the drawing browser header to the right edge of the workspace
+   ✔  Then the drawing browser docks on the right
+   ✔  And its drawing resources and sheet tree remain visible
+   ✔  And the drawing sheet remains visible to its left
+   ✔  When the user drags the drawing browser header to the left edge of the workspace
+   ✔  Then the drawing browser docks on the left
+   ✔  And the drawing sheet remains visible to its right
+]]></system-out></testcase></testsuite></testsuites>

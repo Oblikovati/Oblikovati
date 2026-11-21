@@ -1,0 +1,29 @@
+   Compiling oblikovati-head v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/.slim/worktrees/3975-rectangle-status/crates/head)
+    Finished `test` profile [unoptimized] target(s) in 23.41s
+     Running unittests src/lib.rs (/tmp/obk-3975-target/debug/deps/oblikovati_head-d4ccfccc04854620)
+
+running 1 test
+Not executed (capture only): rectangle-two-point-08 Commit typed sizes and restore through history
+Not executed (capture only): rectangle-two-point-09 Verify the numeric rectangle edge lengths
+Not executed (capture only): rectangle-two-point-11 Retain a numeric rectangle
+Not executed (capture only): rectangle-two-point-12 Cancel a rectangle height proposal
+Not executed (capture only): rectangle-two-point-13 Accept and undo a rectangle height edit
+Not executed (capture only): rectangle-two-point-14 Observe a zero second size
+Feature: Rectangle two point
+  Scenario: rectangle-two-point-10 Observe a zero first size
+   ✔  Given an empty editable metric sketch is Ready
+   ✔  When the user choose Two Point Rectangle and click a clear point in the sketch canvas
+   ✔  And the user enter 0 and press Tab
+   ✔  Then the first size is locked at 0.000 mm and the second field is focused
+   ✔  When the user enter 4 and press Return
+   ✔  Then the command returns to Select first corner without a warning dialog
+   ✔  When the user press Escape
+   ✔  Then Ready returns with no new rectangle visible
+[Summary]
+1 feature
+1 scenario (1 passed)
+8 steps (8 passed)
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1005 filtered out; finished in 11.73s
+

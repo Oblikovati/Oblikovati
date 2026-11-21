@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:0db449064178e8fff73cc27334492eb3ff1130e8b038897cab37e08f6a807ec4",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "af53af88f7a32b441d76154fd75aeb36e68d4e673c47d21ecefa5be14cef5a6f",
+  "application_commit": "3f333c2b0855828c7d19399c4354d743bae393b3",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "sketch_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ellipse-0db449064178e8ff-3f333c2b/cucumber.json",
+    "sha256": "486bcb7c16e5ba712e586ba52bd9b3fe067656bff481d4008b64986c88c4e588"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ellipse-0db449064178e8ff-3f333c2b/source-revision.json",
+    "sha256": "06ca5f1de00640c460dc62f390fc65962ed74ad6f110c725f09df8040b50e769"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-ellipse-0db449064178e8ff-3f333c2b/ellipse-07-Create-and-undo-a-rotated-ellipse.png",
+    "sha256": "b54c56c0c9c87b3e37b04499c346e62f88e3086889237176ddf60f0a195d4b81"
+  }
+}

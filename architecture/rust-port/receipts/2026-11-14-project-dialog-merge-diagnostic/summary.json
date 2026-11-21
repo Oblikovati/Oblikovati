@@ -1,0 +1,13 @@
+{
+  "kind": "normalized diagnostic; not acceptance evidence",
+  "scenario_revision": "c56a6f6678dbb9a7bdb96fe37561bb63d6413127",
+  "application_head": "71004d14dba84c9986b1b0c8724a6423c1435814",
+  "application_diff_sha256": "82ae9c122f3990fbe6b8986338ccdca0c3ed4a9a0c0a1fd766269a6d6bcfbff3",
+  "environment": "Linux, Xvfb 1920x1200, Vulkan lavapipe",
+  "scenario_counts": {
+    "diagnostic_passes": 1,
+    "unbound": 7
+  },
+  "normalization": "Absolute temporary source paths replaced with the pinned feature path.",
+  "report_sha256": "324381376f12cc6f0973b37cb26e4b50bf01e1726fec863d8451f4e53ab4f27e"
+}

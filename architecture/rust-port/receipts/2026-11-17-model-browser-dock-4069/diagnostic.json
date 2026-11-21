@@ -1,0 +1,17 @@
+{
+  "source_feature_sha256": "3910a3c0a4e77f5417ae7e6b08019330b2fdc621c6af1c4f7f42ff9acb329b1a",
+  "source_revision": null,
+  "application_base": "ac7c456a8",
+  "provenance": "Diagnostic: copied unversioned scenario source and local working-tree build. This is not pinned acceptance evidence.",
+  "results": {
+    "float_and_redock": "1 scenario, 8 steps passed",
+    "side_docks": "1 scenario, 7 steps passed",
+    "resize": "1 scenario, 8 steps passed",
+    "native_model_dock_tests": "5 passed: all four edges, floating, shared tabs, and restart",
+    "native_tool_dock_test": "1 passed: Material Browser dock, resize, close and restore",
+    "windows_check": "x86_64-pc-windows-gnu all targets compiled",
+    "clippy": "head all targets passed",
+    "native_tool_edges": "left, top and bottom outer workspace targets passed with a visible solid"
+  },
+  "environment": "Linux Xvfb with Mesa lavapipe; Windows GNU cross-build"
+}

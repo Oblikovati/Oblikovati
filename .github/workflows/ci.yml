@@ -1,7 +1,7 @@
 name: Rust CI
 on:
   push:
-    branches: [rust]
+    branches: [rust, rust-work]
   pull_request:
     branches: [rust]
   workflow_call:
@@ -11,12 +11,21 @@ on:
         default: ''
 permissions:
   contents: read
+env:
+  # Windows needs this before checkout to admit the benchmark evidence paths.
+  GIT_CONFIG_COUNT: '1'
+  GIT_CONFIG_KEY_0: core.longpaths
+  GIT_CONFIG_VALUE_0: 'true'
+  # Keep every check, but avoid retaining full type debug data on ephemeral runners.
+  CARGO_INCREMENTAL: '0'
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+  CARGO_PROFILE_TEST_DEBUG: line-tables-only
 defaults:
   run:
     shell: bash
 jobs:
   gate:
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -26,7 +35,7 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           quality: 'true'
-      - run: xvfb-run -a make gate
+      - run: make gate-xvfb
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
@@ -34,7 +43,7 @@ jobs:
           path: target/quality/
           retention-days: 14
   matrix:
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     outputs:
       platforms: ${{ steps.matrix.outputs.platforms }}
     steps:
@@ -60,7 +69,7 @@ jobs:
       - name: Build and test every discovered Cargo workspace
         run: |
           if [ "$RUNNER_OS" = Linux ]; then
-            xvfb-run -a cargo xtask native
+            ./tools/with-xvfb.sh cargo xtask native
           else
             cargo xtask native
           fi

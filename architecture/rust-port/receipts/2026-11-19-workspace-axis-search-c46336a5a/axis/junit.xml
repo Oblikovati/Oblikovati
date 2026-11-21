@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:19:17.377406287Z" time="16.550410946"><testcase name="Scenario: Find origin axes with different query capitalization: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:631:5" time="8.336363745"><system-out><![CDATA[  Scenario Outline: Find origin axes with different query capitalization
+   ✔  Given a part is active in the MCAD Software
+   ✔  And its model browser contains X Axis, Y Axis and Z Axis under Origin
+   ✔  When the user opens browser search and enters "axis"
+   ✔  Then the browser displays X Axis, Y Axis and Z Axis under Origin
+   ✔  And the matching text is highlighted
+   ✔  When the user clears the search and closes the empty search field
+   ✔  Then the unfiltered browser tree is displayed
+]]></system-out></testcase><testcase name="Scenario: Find origin axes with different query capitalization: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:632:5" time="8.214047201"><system-out><![CDATA[  Scenario Outline: Find origin axes with different query capitalization
+   ✔  Given a part is active in the MCAD Software
+   ✔  And its model browser contains X Axis, Y Axis and Z Axis under Origin
+   ✔  When the user opens browser search and enters "AXIS"
+   ✔  Then the browser displays X Axis, Y Axis and Z Axis under Origin
+   ✔  And the matching text is highlighted
+   ✔  When the user clears the search and closes the empty search field
+   ✔  Then the unfiltered browser tree is displayed
+]]></system-out></testcase></testsuite></testsuites>

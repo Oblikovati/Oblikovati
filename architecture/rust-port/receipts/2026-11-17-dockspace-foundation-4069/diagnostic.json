@@ -1,0 +1,13 @@
+{
+  "application_base": "8c7b4381c",
+  "application_changes_commit": "aa662c433",
+  "test": "material_browser_docks_at_workspace_right_and_reduces_viewport",
+  "result": "passed: native X11 drag, target preview, right dock, visible solid, tab alignment, divider resize, close and viewport restore",
+  "provenance": "Diagnostic working-tree build on Linux Xvfb with Mesa lavapipe. This is not a complete docking-system feature run.",
+  "additional_checks": [
+    "native viewport pan passed",
+    "workspace layout and scaled pointer tests passed",
+    "head all-targets Clippy passed",
+    "Windows GNU cross-check passed; Windows runtime not tested"
+  ]
+}

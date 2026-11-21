@@ -1,0 +1,32 @@
+
+running 1 test
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... Feature: Text
+  Scenario: text-25 Compare selected and unselected case conversion
+   ✔  Given existing lowercase ab is unselected
+   ✔  When the user chooses UPPERCASE
+   ✔  Then the lowercase content remains
+   ✔  When the user focuses and select the content and choose UPPERCASE
+   ✔  Then AB appears in the editor and preview
+   ✘  When the user enables strike-through
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/text/scenario.feature:248:5
+      Step doesn't match any function
+[Summary]
+1 feature
+1 scenario (1 failed)
+6 steps (5 passed, 1 failed)
+
+thread 'sketch-scenarios' (2450886) panicked at crates/head/src/../tests/application/benchmark.rs:383:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window' (2450884) panicked at crates/head/src/../tests/application/../sketch/benchmark.rs:142:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1611 filtered out; finished in 45.26s

@@ -1,0 +1,25 @@
+{
+  "kind": "partial-go-baseline",
+  "go_commit": "aa8297d1b0ac33c024f19e54821536d76e8a447a",
+  "command": "go test ./app -run '^TestPhysicalProperties(Notice|WithoutPart)$' -count=1 -v",
+  "exit_code": 0,
+  "log": {
+    "path": "architecture/rust-port/receipts/2026-11-14-go-physical-baseline/go-test.log",
+    "sha256": "d41a116e04b04ac669544253aa74ddacdd8093ab2955d345b8a2a4993324b8b9"
+  },
+  "scope": "Part-level command notice and no-active-part error only.",
+  "limitations": [
+    "The Go test does not exercise a body-properties dialog or check numeric accuracy.",
+    "Go part-level properties use a mesh; they are not an analytic per-body oracle.",
+    "Untracked Go architecture audit documents were present; tracked Go files were clean."
+  ],
+  "rust_check": {
+    "application_commit": "dcb62d372",
+    "command": "cargo test --locked -p oblikovati-head --lib body_properties_use_analytic_units_and_preserve_pending_presentation -- --nocapture",
+    "exit_code": 0,
+    "log": {
+      "path": "architecture/rust-port/receipts/2026-11-14-go-physical-baseline/rust-test.log",
+      "sha256": "706016bf5f5b83f345fdd3de5ab560ba2e41d1597b4a40654b30e4587be3819a"
+    }
+  }
+}

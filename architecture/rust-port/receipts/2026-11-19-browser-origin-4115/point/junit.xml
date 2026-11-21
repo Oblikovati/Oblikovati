@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T04:46:20.618572329Z" time="9.621083106"><testcase name="Scenario: Inspect the center point context menu: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:293:3" time="9.621083106"><system-out><![CDATA[  Scenario: Inspect the center point context menu
+   ✔  Given an active part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  When the user right-clicks the Center Point row
+   ✔  Then the Center Point row is highlighted
+   ✔  And its context menu offers Copy, Measure, Create Note and Visibility
+   ✔  And the menu offers Relationships
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>

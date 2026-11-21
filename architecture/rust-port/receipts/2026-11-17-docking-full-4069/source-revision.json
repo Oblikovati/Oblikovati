@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": null,
+    "dirty": null,
+    "root": "/tmp/obk-edges-scenario"
+  },
+  "before": {
+    "commit": null,
+    "dirty": null,
+    "root": "/tmp/obk-edges-scenario"
+  },
+  "source_changed": false
+}

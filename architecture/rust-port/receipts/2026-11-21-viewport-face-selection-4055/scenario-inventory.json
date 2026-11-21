@@ -1,0 +1,340 @@
+{
+  "source_revision": "unversioned",
+  "scenarios": [
+    {
+      "id": "scenario:f4f54e9b00801bdb8062b61cca9c618e07b6535dbdea5fc6b5a2f08596aef30e",
+      "path": "features/application/viewport-entity-selection/viewport-entity-selection.feature",
+      "area": "application",
+      "feature": "viewport-entity-selection",
+      "source_sha256": "f20c54e0c21e3794de7b88b191ded6ce6482c1ebb227b9a7bc8259c6ff640c53",
+      "line": 9,
+      "scenario": "Pick a 3D sketch endpoint",
+      "rule": null,
+      "background_steps": [
+        {
+          "line": 5,
+          "name": "the MCAD Software is in the part modeling workspace"
+        },
+        {
+          "line": 6,
+          "name": "no command or modal dialog is active"
+        }
+      ],
+      "scenario_steps": [
+        {
+          "line": 10,
+          "name": "a visible 3D sketch curve has an exposed endpoint"
+        },
+        {
+          "line": 11,
+          "name": "the user clicks the endpoint"
+        },
+        {
+          "line": 12,
+          "name": "the pick cue identifies \"1. Point (3D Sketch1)\""
+        },
+        {
+          "line": 13,
+          "name": "a compact contextual toolbar appears beside the pointer"
+        }
+      ],
+      "arguments_recorded": true,
+      "outline": false,
+      "milestone": null,
+      "owner": null,
+      "state": "inventoried",
+      "source_error": null,
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:74e1c50d2a88f543e10fee6b027258e0c9d210c3d74dedf3d609818be0a33502",
+      "path": "features/application/viewport-entity-selection/viewport-entity-selection.feature",
+      "area": "application",
+      "feature": "viewport-entity-selection",
+      "source_sha256": "f20c54e0c21e3794de7b88b191ded6ce6482c1ebb227b9a7bc8259c6ff640c53",
+      "line": 16,
+      "scenario": "Select a visible 3D sketch curve",
+      "rule": null,
+      "background_steps": [
+        {
+          "line": 5,
+          "name": "the MCAD Software is in the part modeling workspace"
+        },
+        {
+          "line": 6,
+          "name": "no command or modal dialog is active"
+        }
+      ],
+      "scenario_steps": [
+        {
+          "line": 17,
+          "name": "a visible 3D sketch curve is not selected"
+        },
+        {
+          "line": 18,
+          "name": "the user clicks a span of the curve"
+        },
+        {
+          "line": 19,
+          "name": "the curve appears bright green"
+        },
+        {
+          "line": 20,
+          "name": "a compact contextual toolbar appears beside the pointer"
+        }
+      ],
+      "arguments_recorded": true,
+      "outline": false,
+      "milestone": null,
+      "owner": null,
+      "state": "inventoried",
+      "source_error": null,
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:af6b1c3b227e5f6e2554d6f88d9cec4be8a1f67b876e07cce52a943d16dbdad9",
+      "path": "features/application/viewport-entity-selection/viewport-entity-selection.feature",
+      "area": "application",
+      "feature": "viewport-entity-selection",
+      "source_sha256": "f20c54e0c21e3794de7b88b191ded6ce6482c1ebb227b9a7bc8259c6ff640c53",
+      "line": 23,
+      "scenario": "Select a solid face",
+      "rule": null,
+      "background_steps": [
+        {
+          "line": 5,
+          "name": "the MCAD Software is in the part modeling workspace"
+        },
+        {
+          "line": 6,
+          "name": "no command or modal dialog is active"
+        }
+      ],
+      "scenario_steps": [
+        {
+          "line": 24,
+          "name": "`fixtures/cad/docking-visible-solid-current.opd` is open with an unselected front face"
+        },
+        {
+          "line": 25,
+          "name": "the user clicks an unoccupied region of the face"
+        },
+        {
+          "line": 26,
+          "name": "the face appears teal with a bright green boundary"
+        },
+        {
+          "line": 27,
+          "name": "the pick cue identifies \"1. Face\""
+        },
+        {
+          "line": 28,
+          "name": "a compact contextual toolbar appears beside the pointer"
+        }
+      ],
+      "arguments_recorded": true,
+      "outline": false,
+      "milestone": null,
+      "owner": null,
+      "state": "inventoried",
+      "source_error": null,
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:09e4a354ce14a0e871f6a9e7e9a09b76a3250f89bdd68fa029740fae0af71d6a",
+      "path": "features/application/viewport-entity-selection/viewport-entity-selection.feature",
+      "area": "application",
+      "feature": "viewport-entity-selection",
+      "source_sha256": "f20c54e0c21e3794de7b88b191ded6ce6482c1ebb227b9a7bc8259c6ff640c53",
+      "line": 31,
+      "scenario": "Open the context menus for a selected solid face",
+      "rule": null,
+      "background_steps": [
+        {
+          "line": 5,
+          "name": "the MCAD Software is in the part modeling workspace"
+        },
+        {
+          "line": 6,
+          "name": "no command or modal dialog is active"
+        }
+      ],
+      "scenario_steps": [
+        {
+          "line": 32,
+          "name": "`fixtures/cad/docking-visible-solid-current.opd` is open with a solid face selected"
+        },
+        {
+          "line": 33,
+          "name": "the user right-clicks the face"
+        },
+        {
+          "line": 34,
+          "name": "a standard context menu appears"
+        },
+        {
+          "line": 35,
+          "name": "a radial shortcut menu appears near the pointer"
+        },
+        {
+          "line": 36,
+          "name": "the radial menu includes \"Extrude\", \"Select Other...\", \"Select Tangencies\", and \"New Sketch\""
+        },
+        {
+          "line": 37,
+          "name": "the standard menu includes \"Properties\" and \"Export Face As...\""
+        }
+      ],
+      "arguments_recorded": true,
+      "outline": false,
+      "milestone": null,
+      "owner": null,
+      "state": "inventoried",
+      "source_error": null,
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:23c2b832ad678a4888651f88257de76ca8ccbfc3fce9843c82ddac1ae25609f7",
+      "path": "features/application/viewport-entity-selection/viewport-entity-selection.feature",
+      "area": "application",
+      "feature": "viewport-entity-selection",
+      "source_sha256": "f20c54e0c21e3794de7b88b191ded6ce6482c1ebb227b9a7bc8259c6ff640c53",
+      "line": 40,
+      "scenario": "Clear an entity selection from empty viewport space",
+      "rule": null,
+      "background_steps": [
+        {
+          "line": 5,
+          "name": "the MCAD Software is in the part modeling workspace"
+        },
+        {
+          "line": 6,
+          "name": "no command or modal dialog is active"
+        }
+      ],
+      "scenario_steps": [
+        {
+          "line": 41,
+          "name": "`fixtures/cad/docking-visible-solid-current.opd` is open with a solid face selected"
+        },
+        {
+          "line": 42,
+          "name": "the user left-clicks empty viewport space"
+        },
+        {
+          "line": 43,
+          "name": "the entity returns to its neutral appearance"
+        },
+        {
+          "line": 44,
+          "name": "the contextual selection cue closes"
+        }
+      ],
+      "arguments_recorded": true,
+      "outline": false,
+      "milestone": null,
+      "owner": null,
+      "state": "inventoried",
+      "source_error": null,
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:e5e0f5b9a85685e2295e28e48028b036ec7a59d4a4fad49e338f6c6e18dc6622",
+      "path": "features/application/viewport-entity-selection/viewport-entity-selection.feature",
+      "area": "application",
+      "feature": "viewport-entity-selection",
+      "source_sha256": "f20c54e0c21e3794de7b88b191ded6ce6482c1ebb227b9a7bc8259c6ff640c53",
+      "line": 51,
+      "scenario": "Pick a sketch point in the 3D viewport",
+      "rule": null,
+      "background_steps": [
+        {
+          "line": 5,
+          "name": "the MCAD Software is in the part modeling workspace"
+        },
+        {
+          "line": 6,
+          "name": "no command or modal dialog is active"
+        }
+      ],
+      "scenario_steps": [
+        {
+          "line": 52,
+          "name": "a visible 3D sketch point is exposed in the viewport"
+        },
+        {
+          "line": 53,
+          "name": "the user clicks near the point"
+        },
+        {
+          "line": 54,
+          "name": "the pick cue identifies \"1. Point (3D Sketch6)\""
+        }
+      ],
+      "arguments_recorded": true,
+      "outline": false,
+      "milestone": null,
+      "owner": null,
+      "state": "inventoried",
+      "source_error": null,
+      "last_receipt": null
+    },
+    {
+      "id": "scenario:e59fd96f52b59871ea51955801bd7dca06198ec12244b317bbfa8d081c53a8f2",
+      "path": "features/application/viewport-entity-selection/viewport-entity-selection.feature",
+      "area": "application",
+      "feature": "viewport-entity-selection",
+      "source_sha256": "f20c54e0c21e3794de7b88b191ded6ce6482c1ebb227b9a7bc8259c6ff640c53",
+      "line": 57,
+      "scenario": "Open sketch-curve context menus during a 3D sketch",
+      "rule": null,
+      "background_steps": [
+        {
+          "line": 5,
+          "name": "the MCAD Software is in the part modeling workspace"
+        },
+        {
+          "line": 6,
+          "name": "no command or modal dialog is active"
+        }
+      ],
+      "scenario_steps": [
+        {
+          "line": 58,
+          "name": "a 3D sketch is active and a visible sketch segment is exposed"
+        },
+        {
+          "line": 59,
+          "name": "the user right-clicks the segment"
+        },
+        {
+          "line": 60,
+          "name": "a radial shortcut menu appears near the pointer"
+        },
+        {
+          "line": 61,
+          "name": "the radial menu includes \"Create 3D Line\", \"Bend\", \"Three Point Arc\", \"Helical Curve\", \"General Dimension\", and \"Finish 3D Sketch\""
+        },
+        {
+          "line": 62,
+          "name": "a standard context menu includes \"Repeat Construction\", \"Edit 3D Sketch\", \"Properties...\", \"Measure\", and \"Export Object\""
+        },
+        {
+          "line": 63,
+          "name": "the user presses Escape"
+        },
+        {
+          "line": 64,
+          "name": "both context menus close"
+        }
+      ],
+      "arguments_recorded": true,
+      "outline": false,
+      "milestone": null,
+      "owner": null,
+      "state": "inventoried",
+      "source_error": null,
+      "last_receipt": null
+    }
+  ]
+}

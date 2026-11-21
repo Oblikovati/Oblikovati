@@ -1,0 +1,30 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running unittests src/lib.rs (/tmp/obk-application-closing-target/debug/deps/oblikovati_head-5868578dff693fc0)
+
+running 1 test
+Feature: Close the application
+  Scenario: Cancel closing the application when a document has unsaved changes
+   ✔  Given the MCAD Software has an open part document with unsaved changes
+   ✔  When the user selects the application window's Close control
+   ✔  Then a save-changes prompt identifies the part document
+   ✔  And the prompt offers Yes, No and Cancel
+   ✔  When the user chooses Cancel
+   ✔  Then the save-changes prompt closes
+   ✔  And the part document remains open
+   ✔  And the MCAD Software remains open
+  Scenario: Close the application when the open document has no unsaved changes
+   ✔  Given the MCAD Software has an open saved document with no unsaved changes
+   ✔  When the user selects the application window's Close control
+   ✔  Then the MCAD Software closes without a save-changes prompt
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window has been running for over 60 seconds
+  Scenario: Close the application when no document is open
+   ✔  Given the MCAD Software is open with no document open
+   ✔  When the user selects the application window's Close control
+   ✔  Then the MCAD Software closes without a save-changes prompt
+[Summary]
+1 feature
+3 scenarios (3 passed)
+14 steps (14 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1092 filtered out; finished in 61.11s

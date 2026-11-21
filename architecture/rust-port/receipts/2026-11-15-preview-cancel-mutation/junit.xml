@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: tmp/obk-3948-scenarios/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: tmp/obk-3948-scenarios/features/application/document-saving/document-saving.feature" tests="4" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T06:27:21.074330937Z" time="41.169438453"><testcase name="Scenario: Cancel closing a modified unsaved part: tmp/obk-3948-scenarios/features/application/document-saving/document-saving.feature:83:3" time="10.077418954"><system-out><![CDATA[  Scenario: Cancel closing a modified unsaved part
+   ✔  Given an unsaved part containing a finished empty sketch is active in the MCAD Software
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user closes the document tab
+   ✔  Then a save-changes prompt offers Yes, No and Cancel
+   ✔  When the user chooses Cancel
+   ✔  Then the part remains active
+   ✔  And its sketch remains in the model browser
+]]></system-out></testcase><testcase name="Scenario: Cancel the first save requested while closing a part: tmp/obk-3948-scenarios/features/application/document-saving/document-saving.feature:92:3" time="10.81970806"><system-out><![CDATA[  Scenario: Cancel the first save requested while closing a part
+   ✔  Given an unsaved part containing a finished empty sketch is active in the MCAD Software
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user closes the document tab
+   ✔  And the user chooses Yes in the save-changes prompt
+   ✔  Then the Save As dialog opens
+   ✔  When the user cancels Save As
+   ✔  Then the part remains active
+   ✔  And its sketch remains in the model browser
+]]></system-out></testcase><testcase name="Scenario: Cancel disabling the preview picture: tmp/obk-3948-scenarios/features/application/document-saving/document-saving.feature:170:3" time="10.026252707"><system-out><![CDATA[  Scenario: Cancel disabling the preview picture
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And Save Preview Picture is selected
+   ✔  When the user clears Save Preview Picture
+   ✔  And the user cancels the dialog
+   ✔  And the user presses Control+S again for the same part
+   ✔  Then Save Preview Picture is selected
+   ✔  And the preview source choices are displayed
+]]></system-out></testcase><testcase name="Scenario: Cancel a change to the preview source: tmp/obk-3948-scenarios/features/application/document-saving/document-saving.feature:179:3" time="10.246058732"><system-out><![CDATA[  Scenario: Cancel a change to the preview source
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  And Save Preview Picture is selected
+   ✔  And Active Component Iso View on Save is selected
+   ✔  When the user chooses Active Window on Save
+   ✔  And the user cancels the dialog
+   ✔  And the user presses Control+S again for the same part
+   ✔  Then Active Component Iso View on Save is selected
+   ✔  And Active Window on Save is not selected
+]]></system-out></testcase></testsuite></testsuites>

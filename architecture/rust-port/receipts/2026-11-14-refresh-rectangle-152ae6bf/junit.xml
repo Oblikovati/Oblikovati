@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Rectangle two point: tmp/obk-file-menu-receipt-b13d/features/sketch/rectangle-two-point/scenario.feature" package="testsuite/Feature: Rectangle two point: tmp/obk-file-menu-receipt-b13d/features/sketch/rectangle-two-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T13:14:49.827913341Z" time="12.667846123"><testcase name="Scenario: rectangle-two-point-09 Verify the numeric rectangle edge lengths: tmp/obk-file-menu-receipt-b13d/features/sketch/rectangle-two-point/scenario.feature:51:3" time="12.667846123"><system-out><![CDATA[  Scenario: rectangle-two-point-09 Verify the numeric rectangle edge lengths
+   ✔  Given the recorded numeric rectangle in RIGHT view has been restored
+   ✔  When the user open Measure and select its vertical edge away from endpoints
+   ✔  Then Selection 1 is a Curve with Length 10.000 mm
+   ✔  When the user click empty canvas and select its horizontal edge away from endpoints
+   ✔  Then Selection 1 is a Curve with Length 6.000 mm
+   ✔  When the user click Done
+   ✔  Then Measure closes and the rectangle remains
+]]></system-out></testcase></testsuite></testsuites>

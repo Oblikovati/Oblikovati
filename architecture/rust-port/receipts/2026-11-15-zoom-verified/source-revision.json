@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "48987af7b5cbb06515bc6f30385f508382f34064",
+    "dirty": false,
+    "root": "/tmp/obk-zoom-3881-snapshot"
+  },
+  "before": {
+    "commit": "48987af7b5cbb06515bc6f30385f508382f34064",
+    "dirty": false,
+    "root": "/tmp/obk-zoom-3881-snapshot"
+  },
+  "source_changed": false
+}

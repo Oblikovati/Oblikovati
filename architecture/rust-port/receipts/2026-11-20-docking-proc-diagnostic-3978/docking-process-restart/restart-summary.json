@@ -1,0 +1,16 @@
+{
+  "fixture_sha256": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+  "binary_sha256": "ad69639e91eaaf854dbc3466e8a39599cde5124b9bd15d2ebdc1e2bee9664b83",
+  "panels": [
+    {
+      "dock": "0x00000004",
+      "tab": 0,
+      "geometry": "Pos=1000,158\nSize=440,694\nCollapsed=0\nDockId=0x00000004,0"
+    },
+    {
+      "dock": "0x00000004",
+      "tab": 1,
+      "geometry": "Pos=1000,158\nSize=440,694\nCollapsed=0\nDockId=0x00000004,1"
+    }
+  ]
+}

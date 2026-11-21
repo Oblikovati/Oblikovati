@@ -1,0 +1,21 @@
+   Compiling oblikovati-model v0.1.0 (/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/crates/model)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.29s
+     Running tests/geometric_constraint_creation.rs (target/debug/deps/geometric_constraint_creation-f91ab612069fa414)
+
+running 14 tests
+test generated::owned_entity_classification_is_immutable_and_missing_entities_are_named ... ok
+test exhausted_constraint_namespace_does_not_publish_a_relation ... ok
+test generated::raw_seed_dependent_relations_are_refused_in_favour_of_current_seed_intents ... ok
+test fix_captures_current_driven_point_and_filters_the_existing_dimension_index ... ok
+test coincident_anchor::coincident_creation_without_an_edit_preference_splits_motion ... ok
+test source_compile_failure_keeps_the_attempted_identity_and_existing_dimension ... ok
+test invalid_dimensions_and_owned_operands_are_declined_before_identity_reservation ... ok
+test numerical_nonconvergence_refuses_adoption_but_retires_the_attempted_identity ... ok
+test readiness::parallel_seed_for_perpendicular_is_retained_as_a_named_refusal_corpus_case ... ok
+test readiness::exhausted_iterations_return_a_typed_readiness_cause_before_adoption ... ok
+test generated::zero_length_orientation_declines_locally_and_near_zero_lengths_remain_valid ... ok
+test contact_selection_failure_reserves_its_identity_without_publishing_geometry ... ok
+test generated::rotated_scaled_and_reversed_line_pairs_use_the_same_creation_and_solve_path ... ok
+test every_geometric_form_authors_a_real_relation_with_current_rank_and_health ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s

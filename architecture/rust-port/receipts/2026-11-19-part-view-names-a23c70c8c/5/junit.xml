@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T09:58:57.463827894Z" time="37.481677631"><testcase name="Scenario: Cancel an inline view rename with Escape: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1106:3" time="37.481677631"><system-out><![CDATA[  Scenario: Cancel an inline view rename with Escape
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And an active copied view is named "Capture View"
+   ✔  When the user selects the copied view and presses F2
+   ✔  And the user replaces its name with "Temporary View"
+   ✔  And the user presses Escape
+   ✔  Then inline editing closes
+   ✔  And the active view remains named "Capture View"
+   ✔  And the View branch identifies "Capture View" as active
+]]></system-out></testcase></testsuite></testsuites>

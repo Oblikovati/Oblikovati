@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Sketch visibility: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/scenario.feature" package="testsuite/Feature: Sketch visibility: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/scenario.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T18:04:09.604078421Z" time="29.800334499"><testcase name="Scenario: sketch-visibility-01 Hide surrounding model while retaining active sketch display: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/scenario.feature:5:3" time="13.343644917"><system-out><![CDATA[  Scenario: sketch-visibility-01 Hide surrounding model while retaining active sketch display
+   ✔  Given a sketch is active with surrounding model shading visible
+   ✔  And Hide Others is available in the empty-canvas context menu
+   ✔  When the user chooses Hide Others
+   ✔  Then the surrounding model shading disappears
+   ✔  And the active sketch outlines remain visible
+   ✔  And the surrounding model browser entries appear dim
+   ✔  When the user reopens the context menu
+   ✔  Then Show All is available and Hide Others is disabled
+]]></system-out></testcase><testcase name="Scenario: sketch-visibility-02 Restore surrounding model display: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/scenario.feature:16:3" time="16.456689582"><system-out><![CDATA[  Scenario: sketch-visibility-02 Restore surrounding model display
+   ✔  Given Hide Others has been applied in the fixture sketch
+   ✔  And the surrounding model browser entries appear dim
+   ✔  When the user opens the empty-canvas context menu and choose Show All
+   ✔  Then surrounding model shading is visible again
+   ✔  And the browser entries return to their earlier appearance
+   ✔  When the user reopens the context menu
+   ✔  Then Show All is disabled and Hide Others is available
+   ✔  When the user presses Escape
+   ✔  Then the menu closes and restored visibility remains
+]]></system-out></testcase></testsuite></testsuites>

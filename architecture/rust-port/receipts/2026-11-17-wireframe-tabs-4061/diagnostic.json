@@ -1,0 +1,33 @@
+{
+  "kind": "diagnostic",
+  "application_base": "5673868d36afe5e031368177e8b0e25d6638444b",
+  "application_changes": "bottom tabs and related tests in the commit containing this receipt",
+  "scenario_source": "unversioned live source; source-revision before and after is unchanged",
+  "feature_sha256": "888729cce3fa0ceacae952c7683bf27da804fcdf65ac83683b415cd8cb72f5fd",
+  "scenario": "Keep document tabs below the modeling workspace",
+  "result": {
+    "scenarios_passed": 1,
+    "steps_passed": 7
+  },
+  "environment": "Linux Xvfb 1920x1080, Vulkan Lavapipe; fixture created through host; geometry checked from actual GUI windows and document viewport",
+  "visual_review": "The strip spans below the viewport and browser; the status bar is below the strip.",
+  "other_tests": [
+    "X11 mouse switches two bottom tabs and restores visible solid",
+    "drawing detaches when dragged upward into workspace",
+    "tab preview is above the strip at default and doubled UI scale",
+    "hidden tabs retain document and preview",
+    "browser resize changes the viewport area"
+  ],
+  "limitations": [
+    "Live scenario source is unversioned and not the pinned snapshot.",
+    "The X11 input test uses owner-created fixture documents.",
+    "Build inputs are not sealed (#3978); this is not verified acceptance.",
+    "The independent application and ribbon row work is not in this branch."
+  ],
+  "artifacts_sha256": {
+    "Keep-document-tabs-below-the-modeling-workspace.png": "578ed703a552f999aba29ee3d3d044a96539f37bd898f07fe80df4e3af40e76f",
+    "cucumber.json": "42e6775b13cbf0c70a975b6f03fc994c21114565a0b87d95baf32323a889714a",
+    "junit.xml": "f93dfad7fb2025df4dd561d7dd855251eef36e0098ecba46fb0dcf23b6e44180",
+    "source-revision.json": "c9b3cc3130492c229f768d155b6e2cc7e5304edd9a926b371e17fce522acd049"
+  }
+}

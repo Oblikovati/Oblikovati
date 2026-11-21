@@ -1,0 +1,386 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from a template: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature" package="testsuite/Feature: Create a document from a template: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature" tests="39" errors="0" failures="10" hostname="localhost" timestamp="2026-11-14T23:56:26.015732665Z" time="167.858759826"><testcase name="Scenario: Inspect metric and inch part templates: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:5:3" time="4.332952519"><system-out><![CDATA[  Scenario: Inspect metric and inch part templates
+   ✔  Given a document is open in the MCAD Software
+   ✔  And template grouping by document type is enabled
+   ✔  When the user presses Control+N
+   ✔  Then the new-document template chooser opens
+   ✔  And templates are grouped by document type
+   ✔  When the user selects the metric template folder
+   ✔  And the user selects the standard metric part template
+   ✔  Then the template details identify a part with millimeter units
+   ✔  When the user selects the English template folder
+   ✔  And the user selects the standard inch part template
+   ✔  Then the template details identify a part with inch units
+]]></system-out></testcase><testcase name="Scenario: Cancel the template chooser: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:18:3" time="3.150832124"><system-out><![CDATA[  Scenario: Cancel the template chooser
+   ✔  Given a document is open in the MCAD Software
+   ✔  And the new-document template chooser is open
+   ✔  When the user cancels the chooser
+   ✔  Then the chooser closes
+   ✔  And the previously active document remains displayed
+]]></system-out></testcase><testcase name="Scenario: Inspect the current session&apos;s initial template selection: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:26:3" time="6.94583737"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect the current session's initial template selection
+   ✔  Given a part with an active sketch is displayed in the MCAD Software
+   ✔  When the user presses Control+N
+   ✘  Then the Create New File chooser opens over the part
+      Step failed:
+      Defined: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:29:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Create a standard metric part: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:41:3" time="3.276756106"><system-out><![CDATA[  Scenario: Create a standard metric part
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  When the user selects the metric template folder
+   ✔  And the user selects the standard metric part template
+   ✔  And the user chooses Create
+   ✔  Then a new part document becomes active
+   ✔  And its viewport contains no visible model geometry
+   ✔  And its model browser displays an origin and an end-of-part marker
+   ✔  And a new document tab is visible
+]]></system-out></testcase><testcase name="Scenario: Create a standard metric assembly: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:52:3" time="2.879692921"><system-out><![CDATA[  Scenario: Create a standard metric assembly
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  When the user selects the metric template folder
+   ✔  And the user selects the standard metric assembly template
+   ✔  Then the template details identify an assembly with millimeter units
+   ✔  When the user chooses Create
+   ✔  Then a new assembly document becomes active
+   ✔  And its viewport contains no visible components
+   ✔  And its model browser shows representations, relationships and origin entries
+   ✔  And the assembly ribbon offers commands to place and create components
+   ✔  And a new document tab is visible
+]]></system-out></testcase><testcase name="Scenario: Create a drawing from a sheet template: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:65:3" time="2.972187161"><system-out><![CDATA[  Scenario: Create a drawing from a sheet template
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And a drawing template with a border and title block is available
+   ✔  When the user selects the drawing template
+   ✔  And the user chooses its Use Template preview
+   ✔  And the user chooses Create
+   ✔  Then a new drawing document becomes active
+   ✔  And its viewport displays a sheet with a border and title block
+   ✔  And the drawing browser lists the sheet and its border
+   ✔  And the ribbon offers drawing view commands
+   ✔  And a new document tab is visible
+]]></system-out></testcase><testcase name="Scenario: Create a metric sheet-metal part: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:78:3" time="3.058021207"><system-out><![CDATA[  Scenario: Create a metric sheet-metal part
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  When the user selects the metric template folder
+   ✔  And the user selects the metric sheet-metal part template
+   ✔  Then the template details identify a part with millimeter units
+   ✔  When the user chooses Create
+   ✔  Then a new part document becomes active
+   ✔  And its viewport contains no visible model geometry
+   ✔  And the browser shows a folded model and its origin
+   ✔  And the sheet-metal ribbon is active
+   ✔  And a new document tab is visible
+]]></system-out></testcase><testcase name="Scenario: Collapse and expand a template group: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:91:3" time="2.991748019"><system-out><![CDATA[  Scenario: Collapse and expand a template group
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric part template group is expanded
+   ✔  And a sheet-metal part template is selected
+   ✔  When the user collapses the part template group
+   ✔  Then its template tiles are hidden
+   ✔  And the assembly and drawing groups remain visible
+   ✔  And the selected template's details remain displayed
+   ✔  When the user expands the part template group
+   ✔  Then its template tiles are visible again
+   ✔  And the sheet-metal template remains selected
+]]></system-out></testcase><testcase name="Scenario: Change template folders before selecting a new template: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:104:3" time="2.994207975"><system-out><![CDATA[  Scenario: Change template folders before selecting a new template
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric sheet-metal template is selected
+   ✔  And its details show millimeter units
+   ✔  When the user selects the English template folder
+   ✔  Then the gallery shows the English folder's templates
+   ✔  And the details still identify the previously selected metric sheet-metal template
+   ✔  When the user selects the inch sheet-metal template
+   ✔  Then the template details identify a part with inch units
+]]></system-out></testcase><testcase name="Scenario: Create a presentation and cancel initial model insertion: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:115:3" time="3.757207075"><system-out><![CDATA[  Scenario: Create a presentation and cancel initial model insertion
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  When the user selects the metric presentation template
+   ✔  And the user chooses Create
+   ✔  Then a new presentation document becomes active
+   ✔  And an Insert dialog opens for an assembly file
+   ✔  When the user cancels the Insert dialog
+   ✔  Then the presentation remains open with an empty viewport
+   ✔  And the browser shows a scene
+   ✔  And the workspace displays a storyboard timeline and snapshot views panel
+   ✔  And the presentation ribbon offers Insert Model
+]]></system-out></testcase><testcase name="Scenario: Display templates as details: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:128:3" time="3.034925353"><system-out><![CDATA[  Scenario: Display templates as details
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the selected template folder contains templates
+   ✔  When the user opens the template display menu
+   ✔  Then the menu offers icon sizes, List, Details, and Grouped by Type
+   ✔  When the user chooses Details
+   ✔  Then the template gallery displays rows with Name, Size, and Type columns
+   ✔  And the template details pane remains visible
+]]></system-out></testcase><testcase name="Scenario: Toggle template grouping by document type: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:138:3" time="4.221180556"><system-out><![CDATA[  Scenario: Toggle template grouping by document type
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric template folder is selected
+   ✔  And a standard metric part template's details are displayed
+   ✔  And templates are grouped by type
+   ✔  When the user clears Grouped by Type in the template display menu
+   ✔  Then the template gallery displays a flat collection without type group headings
+   ✔  And the details pane continues to display the metric part template information
+   ✔  When the user selects Grouped by Type in the template display menu
+   ✔  Then the gallery displays part, assembly and drawing group headings
+   ✔  And the details pane continues to display the metric part template information
+]]></system-out></testcase><testcase name="Scenario: Select an assembly template in list view: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:151:3" time="4.25024257"><system-out><![CDATA[  Scenario: Select an assembly template in list view
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric template folder is selected
+   ✔  And templates are grouped by type
+   ✔  When the user chooses List in the template display menu
+   ✔  Then the gallery displays compact template entries under type headings
+   ✔  And the template details pane remains visible
+   ✔  When the user selects the standard metric assembly template in the list
+   ✔  Then the details pane identifies an assembly with millimeter units
+   ✔  When the user chooses Medium icons in the template display menu
+   ✔  Then the gallery displays medium-sized template icons
+   ✔  And the details pane continues to identify the metric assembly template
+]]></system-out></testcase><testcase name="Scenario: Navigate backward and forward through template folders: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:165:3" time="3.500591781"><system-out><![CDATA[  Scenario: Navigate backward and forward through template folders
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the selected template folder is not the English folder
+   ✔  When the user selects the English template folder
+   ✔  And the user selects the metric template folder
+   ✔  And the user chooses Back in the chooser navigation bar
+   ✔  Then the English folder is selected
+   ✔  And the gallery displays its inch templates
+   ✔  When the user chooses Forward in the chooser navigation bar
+   ✔  Then the metric folder is selected
+   ✔  And the gallery displays its metric templates
+]]></system-out></testcase><testcase name="Scenario: Reopen the chooser after canceling a selected template: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:178:3" time="3.250586089"><system-out><![CDATA[  Scenario: Reopen the chooser after canceling a selected template
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric folder and standard metric assembly template are selected
+   ✔  When the user cancels the chooser
+   ✔  And the user reopens the new-document chooser during the same session
+   ✔  Then the metric folder is selected
+   ✔  And the standard metric assembly template is selected
+   ✔  And its details identify an assembly with millimeter units
+]]></system-out></testcase><testcase name="Scenario: Navigate home from a template folder: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:188:3" time="3.611468004"><system-out><![CDATA[  Scenario: Navigate home from a template folder
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric template folder is selected
+   ✔  And the standard metric assembly template details are displayed
+   ✔  And the template root has no templates directly in it
+   ✔  When the user selects Home in the chooser navigation bar
+   ✔  Then the template root is selected in the folder tree
+   ✔  And the gallery type sections contain no template entries
+   ✔  And the metric assembly template details remain displayed
+   ✔  When the user chooses Back in the chooser navigation bar
+   ✔  Then the metric template folder and its gallery are displayed again
+]]></system-out></testcase><testcase name="Scenario: Change template icon size: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:201:3" time="5.673657555"><system-out><![CDATA[  Scenario: Change template icon size
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric folder is selected and templates are grouped by type
+   ✔  And the standard metric assembly template details are displayed
+   ✔  When the user chooses Extra large icons in the template display menu
+   ✔  Then the template gallery displays extra-large tiles
+   ✔  And the metric assembly template details remain displayed
+   ✔  When the user chooses Small icons in the template display menu
+   ✔  Then the template gallery displays small icons
+   ✔  And the metric assembly template details remain displayed
+   ✔  When the user chooses Medium icons in the template display menu
+   ✔  Then the template gallery displays medium-sized icons
+   ✔  And the metric assembly template details remain displayed
+]]></system-out></testcase><testcase name="Scenario: Create a part by double-clicking its template: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:216:3" time="4.147105037"><system-out><![CDATA[  Scenario: Create a part by double-clicking its template
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the new-document template chooser is open
+   ✔  And the metric template folder is selected
+   ✔  When the user double-clicks the standard metric part template
+   ✔  Then the chooser closes
+   ✔  And a new part document becomes active
+   ✔  And its viewport contains no visible model geometry
+   ✔  And its model browser displays an origin and an end-of-part marker
+   ✔  And a new document tab is visible
+]]></system-out></testcase><testcase name="Scenario: Create a selected part template with Enter: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:228:3" time="3.5624330410000002"><system-out><![CDATA[  Scenario: Create a selected part template with Enter
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric template folder is selected
+   ✔  When the user selects the standard metric part template
+   ✔  And the user presses Enter
+   ✔  Then the chooser closes
+   ✔  And a new empty part document becomes active
+   ✔  And its model browser displays an origin and an end-of-part marker
+   ✔  And a new document tab is visible
+]]></system-out></testcase><testcase name="Scenario: Dismiss the template chooser with Escape: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:238:3" time="3.742099415"><system-out><![CDATA[  Scenario: Dismiss the template chooser with Escape
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the new-document template chooser is open
+   ✔  When the user presses Escape
+   ✔  Then the chooser closes
+   ✔  And the original part remains active
+   ✔  And its viewport and browser are displayed
+   ✔  And no new document tab is created
+]]></system-out></testcase><testcase name="Scenario: Inspect projects from the template chooser: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:248:3" time="4.016420299"><system-out><![CDATA[  Scenario: Inspect projects from the template chooser
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And a project is active
+   ✔  And a template is selected and its details are displayed
+   ✔  When the user chooses Projects in the chooser
+   ✔  Then a Projects dialog opens above the chooser
+   ✔  And it lists project names and locations
+   ✔  And the active project is marked
+   ✔  And the dialog displays a project settings tree
+   ✔  When the user chooses Done without changing the project
+   ✔  Then the Projects dialog closes
+   ✔  And the template chooser is displayed again
+   ✔  And the previously selected template details remain displayed
+]]></system-out></testcase><testcase name="Scenario: Reverse an ascending template size sort in Details view: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:263:3" time="4.809230729"><system-out><![CDATA[  Scenario: Reverse an ascending template size sort in Details view
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric template folder is selected
+   ✔  And the gallery is grouped by template type and displayed in Details view
+   ✔  And Size is the active sort with visible part templates ordered by increasing file size
+   ✔  And the standard metric part template details are displayed
+   ✔  When the user clicks the Size column header
+   ✔  Then the visible part templates are ordered by decreasing file size
+   ✔  And the standard metric part template details remain displayed
+   ✔  And the gallery remains grouped by template type
+]]></system-out></testcase><testcase name="Scenario: Retain template sort order when reopening the chooser: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:275:3" time="7.10844984"><system-out><![CDATA[  Scenario: Retain template sort order when reopening the chooser
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric gallery is grouped by template type in Details view
+   ✔  And the visible part templates are sorted by decreasing file size
+   ✔  When the user chooses Medium icons in the template display menu
+   ✔  And the user cancels the chooser
+   ✔  And the user reopens the chooser in the same session
+   ✔  Then the metric template folder and medium icon view are displayed
+   ✔  When the user chooses Details in the template display menu
+   ✔  Then the visible part templates are ordered by decreasing file size
+   ✔  And the Size column indicates descending order
+]]></system-out></testcase><testcase name="Scenario: Create a part after navigating to an empty template root: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:288:3" time="3.630551257"><system-out><![CDATA[  Scenario: Create a part after navigating to an empty template root
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the standard metric part template is selected
+   ✔  And the template root contains no direct template entries
+   ✔  When the user chooses Home in the template chooser
+   ✔  Then the root is selected and its template groups are empty
+   ✔  And the standard metric part template details remain displayed
+   ✔  When the user chooses Create
+   ✔  Then the chooser closes
+   ✔  And a new empty part document becomes active
+   ✔  And its model browser displays an origin and an end-of-part marker
+   ✔  And a new document tab is visible
+]]></system-out></testcase><testcase name="Scenario: Enable creation by selecting a template: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:302:3" time="2.957329124"><system-out><![CDATA[  Scenario: Enable creation by selecting a template
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And no template is selected
+   ✔  And the selected template root has no direct template entries
+   ✔  And the template details are blank
+   ✔  And Create is disabled
+   ✔  When the user selects the metric template folder
+   ✔  Then template tiles are displayed
+   ✔  And Create remains disabled
+   ✔  When the user selects the standard metric assembly template
+   ✔  Then its assembly details are displayed
+   ✔  And Create is enabled
+]]></system-out></testcase><testcase name="Scenario: Create the retained template after changing folders: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:316:3" time="3.954730108"><system-out><![CDATA[  Scenario: Create the retained template after changing folders
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the standard metric assembly template is selected
+   ✔  When the user selects the English template folder without selecting another template
+   ✔  Then the gallery displays the English folder templates
+   ✔  And the details still identify the metric assembly template
+   ✔  When the user chooses Create
+   ✔  Then the chooser closes
+   ✔  And a new empty assembly document becomes active
+   ✔  And its browser displays representations, relationships and origin entries
+   ✔  And a new document tab is visible
+]]></system-out></testcase><testcase name="Scenario: Cancel component selection for a drawing layout: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:329:3" time="8.643828001"><system-out><![CDATA[  Scenario: Cancel component selection for a drawing layout
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the new-document template chooser is open
+   ✔  And an inch drawing template with a populated assembly layout preview is available
+   ✔  When the user selects the inch drawing template
+   ✔  Then the chooser displays the template sheet and available layout previews
+   ✔  When the user selects the populated assembly layout preview
+   ✔  And the user chooses Create
+   ✔  Then the template chooser closes
+   ✔  And a component-selection dialog opens for a drawing view
+   ✔  And the dialog displays a document name field and a browse control
+   ✔  And it offers OK and Cancel
+   ✔  When the user cancels component selection
+   ✔  Then the component-selection dialog closes
+   ✔  And the original part document remains active
+   ✔  And no new drawing tab is displayed
+]]></system-out></testcase><testcase name="Scenario: Create a populated drawing layout with a component that needs updating: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:348:3" time="2.585547022"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Create a populated drawing layout with a component that needs updating
+   ✔  Given a part document is active in the MCAD Software
+   ✘  And a drawing template provides a populated layout with a parts list and a view
+      Step failed:
+      Defined: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:350:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel browsing for a drawing-layout component: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:366:3" time="7.16425452"><system-out><![CDATA[  Scenario: Cancel browsing for a drawing-layout component
+   ✔  Given a populated drawing layout is being created in the MCAD Software
+   ✔  And the component-selection dialog displays a document name
+   ✔  When the user chooses Browse beside the document name
+   ✔  Then a file-selection dialog opens above component selection
+   ✔  And it displays a folder and file list, a file name field and a file-type filter
+   ✔  And it displays a preview area and Open and Cancel controls
+   ✔  When the user cancels the file-selection dialog
+   ✔  Then the component-selection dialog is displayed again
+   ✔  And its previous document name remains displayed
+   ✔  When the user cancels component selection
+   ✔  Then the original document remains active
+   ✔  And no new drawing tab is displayed
+]]></system-out></testcase><testcase name="Scenario: Browse to a different component for a populated drawing layout: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:381:3" time="5.746148869"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Browse to a different component for a populated drawing layout
+   ✔  Given a populated drawing layout is being created in the MCAD Software
+   ✔  And the component-selection dialog displays an initial component
+   ✘  And the file-selection dialog can access the folder containing a different part file
+      Step failed:
+      Defined: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:384:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Display the observed drawing layout for the captured component: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:400:3" time="2.304347878"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Display the observed drawing layout for the captured component
+   ✔  Given a part document is active in the MCAD Software
+   ✘  And the captured populated drawing layout and its component requiring an update are available
+      Step failed:
+      Defined: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:402:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Reverse the template name order in grouped Details view: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:414:3" time="2.38142729"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Reverse the template name order in grouped Details view
+   ✔  Given a part is active in the MCAD Software
+   ✘  And the new-document template chooser shows the metric folder in grouped Details view
+      Step failed:
+      Defined: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:416:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Navigate adjacent part templates with arrow keys: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:430:3" time="4.700765561"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Navigate adjacent part templates with arrow keys
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the new-document chooser shows the metric folder grouped by type using Medium icons
+   ✘  And the part group displays Sheet Metal (mm) immediately before Standard (DIN)
+      Step failed:
+      Defined: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:433:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Navigate to template group endpoints with Home and End: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:449:3" time="4.748260262"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Navigate to template group endpoints with Home and End
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the template chooser shows the metric folder grouped by type using Medium icons
+   ✘  And the Part group begins with Sheet Metal (DIN) and ends with Standard (mm)
+      Step failed:
+      Defined: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:452:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Use horizontal arrows at Part template group boundaries: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:468:3" time="4.833571308"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Use horizontal arrows at Part template group boundaries
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the template chooser shows the metric folder grouped by type using Medium icons
+   ✘  And the gallery is at its leftmost horizontal position
+      Step failed:
+      Defined: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:471:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Create from a selected template in a collapsed group: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:485:3" time="3.118409186"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Create from a selected template in a collapsed group
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the template chooser shows the metric folder grouped by type
+   ✘  And Standard (mm) is selected in the expanded Part group
+      Step failed:
+      Defined: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:488:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Press Enter after moving the template folder highlight with Up: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:507:3" time="3.5577954529999998"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Press Enter after moving the template folder highlight with Up
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the template chooser shows the metric folder and its grouped templates
+   ✔  And the details pane identifies the selected Standard (mm) part template
+   ✘  When the user clicks the Metric folder in the folder tree
+      Step failed:
+      Defined: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:511:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Select templates with the secondary mouse button: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:523:3" time="10.849515299"><system-out><![CDATA[  Scenario: Select templates with the secondary mouse button
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the template chooser shows the English folder grouped by type using Medium icons
+   ✔  And the Part group contains Standard (in) and Sheet Metal (in)
+   ✔  When the user right-clicks the Standard (in) part template
+   ✔  Then Standard (in) is selected and its details show inch units
+   ✔  And no context menu is visible
+   ✔  When the user right-clicks the Sheet Metal (in) part template
+   ✔  Then Sheet Metal (in) is selected and its details show inch units
+   ✔  And no context menu is visible
+   ✔  When the user right-clicks empty space in the Part gallery
+   ✔  Then Sheet Metal (in) remains selected and its details remain displayed
+   ✔  And no context menu is visible
+   ✔  When the user presses Escape
+   ✔  Then the chooser closes and the original part remains active
+]]></system-out></testcase><testcase name="Scenario: Click a folder highlighted by keyboard navigation: tmp/obk-create-full-pinned-20261115/features/application/document-creation/document-creation.feature:540:3" time="5.394445942"><system-out><![CDATA[  Scenario: Click a folder highlighted by keyboard navigation
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the template chooser shows the metric folder and its grouped templates
+   ✔  And the details pane identifies the selected Standard (mm) part template
+   ✔  When the user clicks Metric in the folder tree and presses Up
+   ✔  Then English is highlighted in the tree
+   ✔  And the metric gallery and Standard (mm) details remain visible
+   ✔  When the user clicks the highlighted English folder
+   ✔  Then the gallery displays the English folder templates
+   ✔  And the details pane still identifies Standard (mm) with millimeter units
+   ✔  When the user cancels the chooser
+   ✔  Then the original part remains active
+]]></system-out></testcase></testsuite></testsuites>

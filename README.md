@@ -1,43 +1,60 @@
-# Oblikovati Rust application
+# Oblikovati
 
-This branch will contain the Rust port of the Oblikovati application. It will
-use the Rust contract in **Oblikovati.API** and the **Martensite** kernel in
-**RustyCADKernel**.
+Oblikovati is an open-source, parametric mechanical CAD application. It is
+designed to build 3D parts from sketches, dimensions, and features. Parameters
+and feature history let you change a design and recompute its geometry.
 
-Go-kernel capabilities that support application features and are outside OCCT
-must be ported and adapted into Martensite as required kernel extensions.
+The desktop application provides a model browser, a ribbon, and a 3D viewport.
+It uses the [Martensite](https://github.com/Oblikovati/Martensite) geometry
+kernel and Vulkan rendering. A command-line application is also available.
 
-The branch contains the port plan and 13 consolidated Rust ADRs. All 66 legacy
-Go ADRs have a recorded disposition. The Rust build and release tools are present;
-the first model dependency graph is ported. The application GUI and CLI are not
-yet ported. Publication remains blocked.
+**Status:** The Rust application is in development. Modeling tools and platform
+support are not yet complete. Follow the
+[project milestones](https://github.com/Oblikovati/Oblikovati/milestones) for
+planned work.
 
-- [Implementation evidence](architecture/rust-port/implementation.md): tested
-  behavior, source mapping, and remaining work.
+## Install and run
 
-- [Build and release commands](RELEASING.md): local gate, CI, native packaging,
-  released API/kernel dependencies, versioning, and publication requirements.
+The Rust application is not yet published as an installable release. To try the
+current development version, build it from source. The existing GitHub releases
+are for the earlier Go application.
 
-- [Port plan](architecture/rust-port/plan.md): scope, architecture, and decisions.
-- [Rust ADR policy and index](architecture/decisions/README.md): a fresh decision
-  set, with applicable legacy decisions adapted and consolidated by boundary.
-- [Legacy ADR map](architecture/decisions/legacy-map.md): fixed source links,
-  retained decisions, rejected implementation choices, and remaining evidence.
-- [Domain glossary](CONTEXT.md): shared document, feature, and identity terms.
-- [Source map](architecture/rust-port/source-map.md): inspected revisions and
-  the Go modules that must move or be replaced.
-- [Martensite integration](architecture/rust-port/martensite.md): required
-  kernel capabilities and their acceptance checks.
-- [Milestones](architecture/rust-port/milestones.md): work order, dependencies,
-  and completion criteria.
-- [Verification and release](architecture/rust-port/verification.md): parity,
-  live tests, platform checks, and cutover.
+Clone the repository:
 
-`rust` is the repository's default and integration branch. It has an independent
-root commit. Rust feature branches start from `rust` and target it for pull
-requests.
+```sh
+git clone --branch rust-work https://github.com/Oblikovati/Oblikovati.git
+cd Oblikovati
+```
 
-`go-legacy` preserves the Go application history. It was the `develop` default
-branch before the branch change on 2026-10-10; the repository had no `main`
-branch. Keep it as the port reference. Do not merge its unrelated history into
-`rust`.
+On Linux or macOS, build and start the desktop application:
+
+```sh
+./build.sh run
+```
+
+On Windows, use PowerShell:
+
+```powershell
+.\build.ps1 run
+```
+
+The scripts check for build dependencies and install missing dependencies when
+possible. Installation can require administrator permission. A Vulkan-capable
+GPU and driver are required to run the desktop application. On Linux, the GUI
+also needs an X11 or XWayland display.
+
+The desktop executable is `oblikovati` (`oblikovati.exe` on Windows). The
+command-line executable is `oblikovati-cli`. See [Build and run](BUILDING.md)
+for prerequisites, platform details, and other build commands.
+
+## Learn more
+
+- [Project website](https://oblikovati.org)
+- [Build and run](BUILDING.md)
+- [Application architecture](architecture/rust-port/plan.md)
+- [Public API](https://github.com/Oblikovati/Oblikovati.API)
+
+## License
+
+Oblikovati is licensed under [GPL-2.0-only](LICENSE). The separate public API
+is licensed under Apache-2.0.

@@ -1,0 +1,1 @@
+1 sketch(s): #0 "Sketch1" on XY (5 entities, DOF 0).

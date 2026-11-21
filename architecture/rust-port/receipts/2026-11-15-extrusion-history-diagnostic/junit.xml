@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/obk-quick-access-3955-source/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/obk-quick-access-3955-source/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-15T04:00:19.921804369Z" time="14.570363912"><testcase name="Scenario: extrusion-06 Accepted creation supports Undo and Redo: tmp/obk-quick-access-3955-source/features/solid-model/extrusion/extrusion.feature:66:3" time="14.570363912"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: extrusion-06 Accepted creation supports Undo and Redo
+   ✔  Given Distance A 8 mm and zero taper
+   ✔  When OK is clicked then Undo then Redo
+   ✔  Then Extrusion1 and Solid Bodies(1) return with the shaded solid
+   ✘  And the subsequent Measure result lists two extrusion edges of length 8.000 mm
+      Step failed:
+      Defined: tmp/obk-quick-access-3955-source/features/solid-model/extrusion/extrusion.feature:70:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

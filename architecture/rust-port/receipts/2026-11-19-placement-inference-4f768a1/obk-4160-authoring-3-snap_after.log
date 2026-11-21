@@ -1,0 +1,31 @@
+
+running 1 test
+test performance::measure_authoring_capture_cost ... transient lines=200 method=snap_after n=50 p50_ms=0.022 p95_ms=0.026 max_ms=0.070
+transient lines=1000 method=snap_after n=50 p50_ms=0.142 p95_ms=0.156 max_ms=0.192
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.01s
+
+	Command being timed: "/tmp/obk-4160-integration-target/release/deps/sketch_transient_inference-59517184b8906b37 --ignored --nocapture --test-threads=1 measure_authoring_capture_cost"
+	User time (seconds): 0.00
+	System time (seconds): 0.00
+	Percent of CPU this job got: 100%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:00.01
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 6300
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 4583
+	Voluntary context switches: 3
+	Involuntary context switches: 6
+	Swaps: 0
+	File system inputs: 0
+	File system outputs: 8
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

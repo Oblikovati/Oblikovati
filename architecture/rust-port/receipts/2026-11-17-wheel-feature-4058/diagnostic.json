@@ -1,0 +1,13 @@
+{
+  "kind": "diagnostic",
+  "application_commit": "7eb201ef5291005d6e35f97cfc000c7c70f23b98",
+  "snapshot": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "feature": "viewport-navigation-wheel",
+  "scenarios_passed": 12,
+  "steps_passed": 143,
+  "environment": "Linux Xvfb and Vulkan Lavapipe; frame-loop scenario input",
+  "limitations": [
+    "Filtered feature run, not full-area acceptance.",
+    "Fixture references and build provenance remain open (#3978)."
+  ]
+}

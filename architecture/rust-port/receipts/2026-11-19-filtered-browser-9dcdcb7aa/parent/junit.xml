@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:45:53.520284651Z" time="13.604958632"><testcase name="Scenario: Expand a parent folder that matches browser search: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:650:3" time="13.604958632"><system-out><![CDATA[  Scenario: Expand a parent folder that matches browser search
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  When the user opens browser search and enters "origin"
+   ✔  Then the browser shows Origin as a matching collapsed row
+   ✔  And the Origin text is highlighted
+   ✔  When the user expands the matching Origin row
+   ✔  Then its plane, axis and center-point children are displayed
+   ✔  And the child labels appear dimmed while the search remains active
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user clears the query and closes the empty search field
+   ✔  Then the unfiltered browser tree is displayed
+   ✔  And the Origin children are visible
+]]></system-out></testcase></testsuite></testsuites>

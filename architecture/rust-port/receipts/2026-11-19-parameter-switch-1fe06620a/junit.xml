@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T12:14:30.768807059Z" time="7.825650755"><testcase name="Scenario: Parameter interface follows the active model state: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1348:3" time="7.825650755"><system-out><![CDATA[  Scenario: Parameter interface follows the active model state
+   ✔  Given The MCAD Software has a Primary model state with d0 set to 1 in
+   ✔  And Copy State has d0 set to "1 in + 0.5 in"
+   ✔  And Copy State is active
+   ✔  When the user opens Parameters
+   ✔  Then d0 shows the arithmetic equation and nominal and model values of 1.5 in
+   ✔  When the user closes Parameters and activates Primary
+   ✔  And opens Parameters again
+   ✔  Then d0 shows equation 1 in and nominal and model values of 1 in
+]]></system-out></testcase></testsuite></testsuites>

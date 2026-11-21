@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:1fcd89bdfec26b4baf4a18f2ff9162498db98b0c8f12d1ee8500a7eca3458b8a",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+  "application_commit": "fdd4b555d00a8022f0fc167f32d322ec0910ea92",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan Lavapipe on Xvfb, Linux"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-14-orbit-exit-1fcd89bdfec26b4b-current/cucumber.json",
+    "sha256": "1974382755524125d6716d8bab6274a01653b7285a1512aa7afe7e0c607cb663"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-14-orbit-exit-1fcd89bdfec26b4b-current/source-revision.json",
+    "sha256": "457b477a7bd4981683ec600ef54c8d8e39a1bc1fa3bc82f4d26a13da4ba7bb0c"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-14-orbit-exit-1fcd89bdfec26b4b-current/Exit-free-orbit-with-Escape.png",
+    "sha256": "cf84e924ad55c59524c79410cd4399357eba2c322bbe0c27e78cd45ce8674628"
+  }
+}

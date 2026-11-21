@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Circle center point: tmp/obk-curves-refresh/features/sketch/circle-center-point/scenario.feature" package="testsuite/Feature: Circle center point: tmp/obk-curves-refresh/features/sketch/circle-center-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:37:21.170015055Z" time="8.796480039"><testcase name="Scenario: circle-center-point-07 Create a free circle and undo and redo it: tmp/obk-curves-refresh/features/sketch/circle-center-point/scenario.feature:51:3" time="8.796480039"><system-out><![CDATA[  Scenario: circle-center-point-07 Create a free circle and undo and redo it
+   ✔  Given an editable sketch is Ready
+   ✔  When the user invoke Center Point Circle
+   ✔  And the user select a center and a distinct circumference point
+   ✔  Then a circle appears and the command requests another center
+   ✔  When the user press Escape
+   ✔  Then the circle is retained
+   ✔  When the user undo
+   ✔  Then the circle is removed
+   ✔  When the user redo
+   ✔  Then the circle returns
+]]></system-out></testcase></testsuite></testsuites>

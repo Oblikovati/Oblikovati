@@ -1,0 +1,24 @@
+{
+  "artifacts_sha256": {
+    "cargo.jsonl": "ef5db42e4f12ee6a77cb31caa8ff1dc174319becd79c41f3651d6758325e0627",
+    "cargo.log": "9da333b730b1bff182d39f22d154385f6d9f9e08edc583c6d4c2595c3b2ac8d2",
+    "config.toml": "c05b5d2cad44311e9c38738a80e7d2f582b92072bf2b5444091a82325fef5a8b"
+  },
+  "code_state": "The probe ran with the same implementation before it was committed.",
+  "input_inventories_retained": false,
+  "input_inventory_sha256": {
+    "config": "b3513040f6b90fb5c44d33fa8006738e143d7d32213a6c7d981b7a0fcb947aa7",
+    "source": "eba9ed65d944ac2d8ab2dd819a7aad57d143a55da657b5334ad98c707cedf2fa",
+    "toolchain": "c58034b06325a420b6e9154fb32ce225f4159e991819fdebc5e104614c86866a",
+    "vendor": "2c57e17fad98aacb8fc91833a1b1d4aeda6ab6769e9abe47401dc3b2cc9167a2"
+  },
+  "limitations": "Host system libraries, kernel, devices and concurrent host writes are not bounded.",
+  "negative_check": "Adding an untracked file to the mounted source was rejected before Cargo started; target and log directories stayed empty.",
+  "probe_code_commit": "aad3d138e",
+  "reusable": false,
+  "runner_retained": false,
+  "runner_sha256": "c04e5e07a02172a53b161d35654b68bfeb4ce11ae4b257df3f5a657a928e56f0",
+  "sandbox_sha256": "a6203eb2d9ebc2e0e9549c55cda170df85a4e269d4369db3f58dc6c2413d1ba3",
+  "source_commit": "1d2abfd1bc129103935748bf86a38c60b15d9527",
+  "source_files": 9656
+}

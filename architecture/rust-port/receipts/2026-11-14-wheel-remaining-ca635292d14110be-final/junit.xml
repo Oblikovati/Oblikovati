@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport navigation wheel: tmp/obk-wheel-3945-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" package="testsuite/Feature: Viewport navigation wheel: tmp/obk-wheel-3945-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T22:48:08.875055412Z" time="16.681535227"><testcase name="Scenario: Inspect wheel display preference choices: tmp/obk-wheel-3945-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature:78:3" time="16.681535227"><system-out><![CDATA[  Scenario: Inspect wheel display preference choices
+   ✔  Given the navigation wheel options dialog is open in the MCAD Software
+   ✔  When the user opens the big wheel size list
+   ✔  Then it offers Small, Normal and Large
+   ✔  When the user dismisses that list and opens the wheel opacity list
+   ✔  Then it offers 25%, 50%, 75% and 90%
+   ✔  When the user dismisses the list and clicks Cancel
+   ✔  Then the options dialog closes and the navigation wheel remains visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,81 @@
+{
+  "source_revision": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+  "application_commit": "ca5908d6b89b0bac4f3cc023a1a3b4aff9b05125",
+  "areas": {
+    "application": {
+      "blocked": 34,
+      "excluded": 5,
+      "stale": 7,
+      "total": 749,
+      "unclassified": 0,
+      "verified": 0
+    },
+    "sketch": {
+      "blocked": 3,
+      "excluded": 39,
+      "stale": 14,
+      "total": 1384,
+      "unclassified": 0,
+      "verified": 0
+    },
+    "sketch3d": {
+      "blocked": 0,
+      "excluded": 10,
+      "stale": 0,
+      "total": 10,
+      "unclassified": 0,
+      "verified": 0
+    },
+    "solid-model": {
+      "blocked": 1,
+      "excluded": 6,
+      "stale": 0,
+      "total": 617,
+      "unclassified": 0,
+      "verified": 0
+    }
+  },
+  "milestones": {
+    "R4": {
+      "blocked": 6,
+      "excluded": 16,
+      "stale": 13,
+      "total": 76,
+      "unclassified": 0,
+      "verified": 0
+    },
+    "R5": {
+      "blocked": 3,
+      "excluded": 39,
+      "stale": 1,
+      "total": 1774,
+      "unclassified": 0,
+      "verified": 0
+    },
+    "R6": {
+      "blocked": 4,
+      "excluded": 5,
+      "stale": 0,
+      "total": 46,
+      "unclassified": 0,
+      "verified": 0
+    },
+    "R7": {
+      "blocked": 25,
+      "excluded": 0,
+      "stale": 7,
+      "total": 800,
+      "unclassified": 0,
+      "verified": 0
+    },
+    "R8": {
+      "blocked": 0,
+      "excluded": 0,
+      "stale": 0,
+      "total": 64,
+      "unclassified": 0,
+      "verified": 0
+    }
+  },
+  "orphaned_classifications": []
+}

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: tmp/obk-bdd-ellipse-mXzelVop/checkout/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: tmp/obk-bdd-ellipse-mXzelVop/checkout/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T16:19:24.797131343Z" time="9.534605877"><testcase name="Scenario: ellipse-01 Create an ellipse from three defining points: tmp/obk-bdd-ellipse-mXzelVop/checkout/features/sketch/ellipse/scenario.feature:5:3" time="9.534605877"><system-out><![CDATA[  Scenario: ellipse-01 Create an ellipse from three defining points
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch
+   ✔  When the user select Ellipse and specify a center, first-axis point, and point on the ellipse
+   ✔  Then a closed oval appears and the command requests another ellipse center
+   ✔  When the user press Escape
+   ✔  Then the oval remains and the sketch returns to Ready
+]]></system-out></testcase></testsuite></testsuites>

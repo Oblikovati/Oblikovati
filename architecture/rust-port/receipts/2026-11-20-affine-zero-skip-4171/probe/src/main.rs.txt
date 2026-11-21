@@ -1,0 +1,372 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Compare dense and zero-skipping exact affine KKT elimination.
+use num_rational::BigRational;
+use std::time::Instant;
+fn exact(v: f64) -> BigRational {
+    BigRational::from_float(v).unwrap()
+}
+mod dense {
+    use super::{BigRational, exact};
+    // Preserve the measured prototype elimination order.
+    #[allow(clippy::needless_range_loop)]
+    pub(super) fn solve_rational_rows(
+        mut matrix: Vec<Vec<BigRational>>,
+        seed: &[BigRational],
+    ) -> Option<Vec<BigRational>> {
+        let columns = seed.len();
+        let mut pivots = Vec::new();
+        let mut next = 0;
+        for column in 0..columns {
+            let Some(pivot) = (next..matrix.len()).find(|&row| matrix[row][column] != exact(0.0))
+            else {
+                continue;
+            };
+            matrix.swap(next, pivot);
+            let divisor = matrix[next][column].clone();
+            for value in &mut matrix[next][column..=columns] {
+                *value /= divisor.clone();
+            }
+            for row in 0..matrix.len() {
+                if row == next {
+                    continue;
+                }
+                let factor = matrix[row][column].clone();
+                for index in column..=columns {
+                    let change = factor.clone() * matrix[next][index].clone();
+                    matrix[row][index] -= change;
+                }
+            }
+            pivots.push((next, column));
+            next += 1;
+            if next == matrix.len() {
+                break;
+            }
+        }
+        if matrix.iter().any(|row| {
+            row[..columns].iter().all(|v| *v == exact(0.0)) && row[columns] != exact(0.0)
+        }) {
+            return None;
+        }
+        let mut result = seed.to_vec();
+        for (row, column) in pivots {
+            let remainder: BigRational = (0..columns)
+                .filter(|&i| i != column)
+                .map(|i| matrix[row][i].clone() * result[i].clone())
+                .sum();
+            result[column] = matrix[row][columns].clone() - remainder;
+        }
+        Some(result)
+    }
+
+    pub(super) fn exact_affine_best_fit(
+        rows: &[Vec<f64>],
+        rhs: &[f64],
+        targets: &[Option<f64>],
+        initial: &[f64],
+    ) -> Option<Vec<BigRational>> {
+        let coordinates = targets.len();
+        if initial.len() != coordinates || rows.len() != rhs.len() {
+            return None;
+        }
+        if rows.iter().any(|row| row.len() != coordinates) {
+            return None;
+        }
+        let system = kkt_equations(rows, rhs, targets);
+        let seed = initial
+            .iter()
+            .map(|value| exact(*value))
+            .chain(rows.iter().map(|_| exact(0.)))
+            .collect::<Vec<_>>();
+        let solution = solve_rational_rows(system, &seed)?;
+        Some(solution[..coordinates].to_vec())
+    }
+
+    fn kkt_equations(
+        rows: &[Vec<f64>],
+        rhs: &[f64],
+        targets: &[Option<f64>],
+    ) -> Vec<Vec<BigRational>> {
+        let count = targets.len();
+        let width = count + rows.len() + 1;
+        let mut system = vec![vec![exact(0.); width]; count + rows.len()];
+        for (index, target) in targets.iter().enumerate() {
+            if let Some(target) = target {
+                system[index][index] = exact(1.);
+                system[index][width - 1] = exact(*target);
+            }
+            for (row, coefficients) in rows.iter().enumerate() {
+                system[index][count + row] = exact(coefficients[index]);
+                system[count + row][index] = exact(coefficients[index]);
+            }
+        }
+        for (row, value) in rhs.iter().enumerate() {
+            system[count + row][width - 1] = exact(*value);
+        }
+        system
+    }
+}
+mod sparse {
+    use super::{BigRational, exact};
+    // Preserve the measured prototype elimination order.
+    #[allow(clippy::needless_range_loop)]
+    fn solve_rational_rows(
+        mut matrix: Vec<Vec<BigRational>>,
+        seed: &[BigRational],
+    ) -> Option<Vec<BigRational>> {
+        let columns = seed.len();
+        let zero = exact(0.0);
+        let mut pivots = Vec::new();
+        let mut next = 0;
+        for column in 0..columns {
+            let Some(pivot) = (next..matrix.len()).find(|&row| matrix[row][column] != zero) else {
+                continue;
+            };
+            matrix.swap(next, pivot);
+            let divisor = matrix[next][column].clone();
+            for value in &mut matrix[next][column..=columns] {
+                if *value == zero {
+                    continue;
+                }
+                *value /= divisor.clone();
+            }
+            for row in 0..matrix.len() {
+                if row == next {
+                    continue;
+                }
+                let factor = matrix[row][column].clone();
+                if factor == zero {
+                    continue;
+                }
+                for index in column..=columns {
+                    if matrix[next][index] == zero {
+                        continue;
+                    }
+                    let change = factor.clone() * matrix[next][index].clone();
+                    matrix[row][index] -= change;
+                }
+            }
+            pivots.push((next, column));
+            next += 1;
+            if next == matrix.len() {
+                break;
+            }
+        }
+        if matrix
+            .iter()
+            .any(|row| row[..columns].iter().all(|v| *v == zero) && row[columns] != zero)
+        {
+            return None;
+        }
+        let mut result = seed.to_vec();
+        for (row, column) in pivots {
+            let remainder: BigRational = (0..columns)
+                .filter(|&i| i != column)
+                .map(|i| matrix[row][i].clone() * result[i].clone())
+                .sum();
+            result[column] = matrix[row][columns].clone() - remainder;
+        }
+        Some(result)
+    }
+
+    pub(super) fn exact_affine_best_fit(
+        rows: &[Vec<f64>],
+        rhs: &[f64],
+        targets: &[Option<f64>],
+        initial: &[f64],
+    ) -> Option<Vec<BigRational>> {
+        let coordinates = targets.len();
+        if initial.len() != coordinates || rows.len() != rhs.len() {
+            return None;
+        }
+        if rows.iter().any(|row| row.len() != coordinates) {
+            return None;
+        }
+        let system = kkt_equations(rows, rhs, targets);
+        let seed = initial
+            .iter()
+            .map(|value| exact(*value))
+            .chain(rows.iter().map(|_| exact(0.)))
+            .collect::<Vec<_>>();
+        let solution = solve_rational_rows(system, &seed)?;
+        Some(solution[..coordinates].to_vec())
+    }
+
+    fn kkt_equations(
+        rows: &[Vec<f64>],
+        rhs: &[f64],
+        targets: &[Option<f64>],
+    ) -> Vec<Vec<BigRational>> {
+        let count = targets.len();
+        let width = count + rows.len() + 1;
+        let mut system = vec![vec![exact(0.); width]; count + rows.len()];
+        for (index, target) in targets.iter().enumerate() {
+            if let Some(target) = target {
+                system[index][index] = exact(1.);
+                system[index][width - 1] = exact(*target);
+            }
+            for (row, coefficients) in rows.iter().enumerate() {
+                system[index][count + row] = exact(coefficients[index]);
+                system[count + row][index] = exact(coefficients[index]);
+            }
+        }
+        for (row, value) in rhs.iter().enumerate() {
+            system[count + row][width - 1] = exact(*value);
+        }
+        system
+    }
+}
+fn feasible(rows: &[Vec<f64>], rhs: &[f64], values: &[BigRational]) -> bool {
+    rows.iter().zip(rhs).all(|(row, b)| {
+        row.iter()
+            .zip(values)
+            .map(|(a, x)| exact(*a) * x.clone())
+            .sum::<BigRational>()
+            == exact(*b)
+    })
+}
+fn kkt_stationary(rows: &[Vec<f64>], targets: &[Option<f64>], point: &[BigRational]) -> bool {
+    let mut equations = Vec::new();
+    for (column, target) in targets.iter().enumerate() {
+        let mut row: Vec<_> = rows
+            .iter()
+            .map(|coefficients| exact(coefficients[column]))
+            .collect();
+        let right = target.map_or_else(|| exact(0.), |value| exact(value) - point[column].clone());
+        row.push(right);
+        equations.push(row);
+    }
+    let Some(multipliers) = dense::solve_rational_rows(equations, &vec![exact(0.); rows.len()])
+    else {
+        return false;
+    };
+    targets.iter().enumerate().all(|(column, target)| {
+        let gradient =
+            target.map_or_else(|| exact(0.), |value| point[column].clone() - exact(value));
+        let normal: BigRational = rows
+            .iter()
+            .zip(&multipliers)
+            .map(|(row, multiplier)| exact(row[column]) * multiplier.clone())
+            .sum();
+        gradient + normal == exact(0.)
+    })
+}
+fn corpus() {
+    let mut state = 1_u64;
+    for case in 0..240 {
+        let n = 1 + case % 6;
+        let m = case % 9;
+        let mut rows = Vec::new();
+        for _ in 0..m {
+            let mut row = Vec::new();
+            for _ in 0..n {
+                state = state.wrapping_mul(6364136223846793005).wrapping_add(1);
+                row.push(((state >> 32) % 5) as f64 - 2.);
+            }
+            rows.push(row);
+        }
+        let solution: Vec<f64> = (0..n).map(|i| ((i * 3 + case) % 7) as f64 - 3.).collect();
+        let mut rhs: Vec<f64> = rows
+            .iter()
+            .map(|row| row.iter().zip(&solution).map(|(a, x)| a * x).sum())
+            .collect();
+        if case % 11 == 0 && m > 0 {
+            rows.push(rows[0].clone());
+            rhs.push(rhs[0] + 1.);
+        }
+        let targets: Vec<Option<f64>> = (0..n)
+            .map(|i| {
+                if (i + case) % 3 == 0 {
+                    None
+                } else {
+                    Some(((i + case) % 7) as f64 - 3.)
+                }
+            })
+            .collect();
+        let seed = vec![0.; n];
+        let old = dense::exact_affine_best_fit(&rows, &rhs, &targets, &seed);
+        let new = sparse::exact_affine_best_fit(&rows, &rhs, &targets, &seed);
+        assert_eq!(old, new, "case {case}");
+        if let Some(value) = &new {
+            assert!(feasible(&rows, &rhs, value), "case {case}");
+            assert!(
+                kkt_stationary(&rows, &targets, value),
+                "stationarity case {case}"
+            );
+        }
+    }
+    println!("corpus=240 exact result comparisons passed");
+}
+fn bench(sparse_mode: bool) {
+    for n in [8_usize, 16, 32, 64] {
+        let mut rows = Vec::new();
+        for i in 0..n - 1 {
+            let mut row = vec![0.; n];
+            row[i] = 1.;
+            row[i + 1] = -1.;
+            rows.push(row);
+        }
+        let mut targets = vec![None; n];
+        targets[0] = Some(1.);
+        let rhs = vec![0.; n - 1];
+        let seed = vec![0.; n];
+        let mut elapsed = Vec::new();
+        for _ in 0..9 {
+            let start = Instant::now();
+            let value = if sparse_mode {
+                sparse::exact_affine_best_fit(&rows, &rhs, &targets, &seed)
+            } else {
+                dense::exact_affine_best_fit(&rows, &rhs, &targets, &seed)
+            }
+            .unwrap();
+            elapsed.push(start.elapsed().as_secs_f64() * 1000.);
+            assert!(value.iter().all(|v| *v == exact(1.)));
+        }
+        elapsed.sort_by(f64::total_cmp);
+        println!(
+            "variables={n} equations={} median_ms={:.3} max_ms={:.3}",
+            n - 1,
+            elapsed[4],
+            elapsed[8]
+        );
+    }
+}
+fn dense_cases() {
+    let mut state = 7_u64;
+    for n in [8_usize, 16, 24, 32] {
+        let m = n / 2;
+        let mut rows = Vec::new();
+        for _ in 0..m {
+            let mut row = Vec::new();
+            for _ in 0..n {
+                state = state.wrapping_mul(6364136223846793005).wrapping_add(1);
+                row.push(((state >> 32) % 5) as f64 - 2.);
+            }
+            rows.push(row);
+        }
+        let seed = vec![0.; n];
+        let rhs = vec![0.; m];
+        let targets: Vec<_> = (0..n).map(|i| Some((i % 5) as f64 - 2.)).collect();
+        let started = Instant::now();
+        let old = dense::exact_affine_best_fit(&rows, &rhs, &targets, &seed).unwrap();
+        let dense_ms = started.elapsed().as_secs_f64() * 1000.;
+        let started = Instant::now();
+        let new = sparse::exact_affine_best_fit(&rows, &rhs, &targets, &seed).unwrap();
+        let sparse_ms = started.elapsed().as_secs_f64() * 1000.;
+        assert_eq!(old, new);
+        assert!(feasible(&rows, &rhs, &new));
+        assert!(kkt_stationary(&rows, &targets, &new));
+        println!("variables={n} equations={m} dense_ms={dense_ms:.3} zero_skip_ms={sparse_ms:.3}");
+    }
+}
+fn main() {
+    let mode = std::env::args()
+        .nth(1)
+        .expect("expected corpus, dense, or sparse");
+    match mode.as_str() {
+        "corpus" => corpus(),
+        "dense-cases" => dense_cases(),
+        "dense" => bench(false),
+        "sparse" => bench(true),
+        _ => panic!("unexpected mode {mode:?}"),
+    }
+}

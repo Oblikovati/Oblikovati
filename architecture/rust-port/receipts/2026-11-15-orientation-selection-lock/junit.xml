@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Orient a model using the viewport control: tmp/obk-save-navigation-pinned-20261115/features/application/viewport-orientation/viewport-orientation.feature" package="testsuite/Feature: Orient a model using the viewport control: tmp/obk-save-navigation-pinned-20261115/features/application/viewport-orientation/viewport-orientation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T23:36:09.654472453Z" time="17.224828839"><testcase name="Scenario: Toggle orientation lock for a selected face: tmp/obk-save-navigation-pinned-20261115/features/application/viewport-orientation/viewport-orientation.feature:255:3" time="17.224828839"><system-out><![CDATA[  Scenario: Toggle orientation lock for a selected face
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And no model geometry is selected
+   ✔  When the user opens the orientation control context menu
+   ✔  Then Lock to Current Selection is unavailable
+   ✔  When the user closes the menu and selects a visible face of the block
+   ✔  And the user opens the orientation control context menu
+   ✔  Then Lock to Current Selection is available
+   ✔  When the user chooses Lock to Current Selection
+   ✔  Then a lock indicator appears beside the orientation control
+   ✔  When the user reopens the orientation control context menu
+   ✔  Then Lock to Current Selection is checked
+   ✔  When the user chooses Lock to Current Selection again
+   ✔  Then the lock indicator disappears
+   ✔  When the user clears the face selection and reopens the orientation control context menu
+   ✔  Then Lock to Current Selection is unavailable
+]]></system-out></testcase></testsuite></testsuites>

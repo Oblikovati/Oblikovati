@@ -1,0 +1,17 @@
+{
+  "kind": "feature-diagnostic, not acceptance",
+  "application_commit": "d58c0eb820bed81a125ce0933812815dc4b69ce6",
+  "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "environment": "Linux, Vulkan Lavapipe under Xvfb",
+  "full_run": "5 scenarios passed; 5 failed at undefined steps; 43 of 48 steps passed. Run on matching uncommitted code before commit.",
+  "initial_diagnostic": "Run on earlier code before step bindings were added.",
+  "limits": "The full feature is incomplete. Separately reviewed native receipts establish individual scenario results. GUI input is injected into the native loop.",
+  "artifacts": {
+    "diagnostic.log.gz": "9d7d6cb87939ab40f8a52d7455116094de28ac916cd741eaa6f664393ce0c756",
+    "source-revision.json": "aca9a1a8312f7ef57ea157a01596b90c738cca4ea7625c58ceedca79d148fc08",
+    "junit.xml": "28b2e071a9553fbad0d50f166eed30fe8c88faed5b0f3c4fdcc80bc950e2f9f4",
+    "cucumber.json": "d3eca020a42662f997fbe5063781e3afe27fa8bead10fe63face0fb05d3e39fb",
+    "full-native-test.log.gz": "0299aa53cf85b348102d5bff83c5c317b4a8a70b754223ef39afe37087570772",
+    "clippy.log.gz": "241c8f174e0ee93a727d413921547ebb60179919cfe428769962dc6ba92e332d"
+  }
+}

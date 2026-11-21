@@ -1,0 +1,115 @@
+// SPDX-License-Identifier: GPL-2.0-only
+//! Project, document, and catalog assets for the part ribbon.
+use super::*;
+use oblikovati_api::{
+    client::Client,
+    contract::Material,
+    wire::{AssignAppearanceArgs, AssignMaterialArgs},
+};
+use oblikovati_gui::{GuiMaterialChoice, GuiPartAssetKind};
+use oblikovati_model::assets::MaterialAsset;
+
+impl<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+    G: GuidSource,
+    R: DocumentObserverFactory<Observer = O> + HeadInvalidation,
+    S: DispatchWakeup,
+> DesktopOwner<O, W, F, G, R, S>
+{
+    pub(super) fn gui_material_choices(
+        &self,
+        document: u64,
+    ) -> Result<Vec<GuiMaterialChoice>, String> {
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let project = self
+            .files
+            .active_project()
+            .into_iter()
+            .flat_map(|project| project.assets.materials().ordered());
+        let catalog = self.files.builtin_catalog()?.materials().ordered();
+        let document = session.snapshot().assets.materials().ordered();
+        Ok(collect_choices(
+            document.chain(project).chain(catalog),
+            |asset: &MaterialAsset| GuiMaterialChoice {
+                id: asset.id(),
+                name: asset.display_name(),
+            },
+        ))
+    }
+
+    pub(super) fn assign_part_asset(
+        &mut self,
+        document: u64,
+        kind: GuiPartAssetKind,
+        id: &str,
+    ) -> Result<bool, String> {
+        self.require_browser_document(document)?;
+        let document_kind = self
+            .files
+            .document_type(document)
+            .map_err(|cause| cause.to_string())?;
+        if document_kind != oblikovati_api::types::DOCUMENT_PART {
+            return Err(format!(
+                "document {document} type {document_kind:?}: expected a part for asset {id:?}"
+            ));
+        }
+        let client = Client::new(self.document_host());
+        match kind {
+            GuiPartAssetKind::Material => client.materials().assign(&AssignMaterialArgs {
+                body_key: String::new(),
+                material_id: id.into(),
+            }),
+            GuiPartAssetKind::Appearance => client.appearances().assign(&AssignAppearanceArgs {
+                scope: "part".into(),
+                key: String::new(),
+                appearance_id: id.into(),
+            }),
+        }
+        .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
+}
+
+/// Merge document, project and catalog choices without losing their priority order.
+pub(super) fn collect_choices<'a, T: 'a>(
+    assets: impl Iterator<Item = &'a T>,
+    choice: impl Fn(&T) -> oblikovati_gui::GuiAssetChoice,
+) -> Vec<oblikovati_gui::GuiAssetChoice> {
+    let mut seen = std::collections::BTreeSet::new();
+    assets
+        .map(choice)
+        .filter(|asset| seen.insert(asset.id.clone()))
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn asset_merge_keeps_the_first_identity_and_source_order() {
+        let sources = [
+            ("steel", "Document steel"),
+            ("wood", "Project wood"),
+            ("steel", "Catalog steel"),
+        ];
+        let result = collect_choices(sources.iter(), |(id, name)| {
+            oblikovati_gui::GuiAssetChoice {
+                id: (*id).into(),
+                name: (*name).into(),
+            }
+        });
+        assert_eq!(
+            result
+                .iter()
+                .map(|asset| asset.name.as_str())
+                .collect::<Vec<_>>(),
+            ["Document steel", "Project wood"]
+        );
+    }
+}

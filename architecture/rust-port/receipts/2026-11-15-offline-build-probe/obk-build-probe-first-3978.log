@@ -1,0 +1,51 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling libc v0.2.190
+   Compiling cfg-if v1.0.5
+   Compiling bitflags v2.13.2
+   Compiling smallvec v1.16.3
+   Compiling rustix v1.1.5
+   Compiling autocfg v1.5.1
+   Compiling linux-raw-sys v0.12.1
+   Compiling memchr v2.8.3
+   Compiling bytemuck v1.25.2
+   Compiling cfg_aliases v0.2.2
+   Compiling serde_core v1.0.229
+   Compiling metallic v0.3.0
+   Compiling rustc_apfloat v0.2.3+llvm-462a31f5a5ab
+   Compiling allocator-api2 v0.4.0
+   Compiling zmij v1.0.23
+   Compiling serde v1.0.229
+   Compiling itoa v1.0.18
+   Compiling version_check v0.9.5
+   Compiling find-msvc-tools v0.1.14
+   Compiling shlex v2.0.1
+   Compiling time-core v0.1.9
+   Compiling num-conv v0.2.2
+   Compiling deranged v0.5.8
+   Compiling serde_json v1.0.151
+   Compiling powerfmt v0.2.1
+   Compiling typenum v1.20.1
+   Compiling simd-adler32 v0.3.10
+   Compiling pkg-config v0.3.34
+error: linker `cc` not found
+  |
+  = note: No such file or directory (os error 2)
+
+   Compiling nix v0.31.3
+   Compiling getrandom v0.4.3
+   Compiling once_cell v1.21.4
+error: could not compile `quote` (build script) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `metallic` (build script) due to 1 previous error
+error: could not compile `rustc_apfloat` (build script) due to 1 previous error
+error: could not compile `serde_core` (build script) due to 1 previous error
+error: could not compile `proc-macro2` (build script) due to 1 previous error
+error: could not compile `rustix` (build script) due to 1 previous error
+error: could not compile `zmij` (build script) due to 1 previous error
+error: could not compile `serde` (build script) due to 1 previous error
+error: could not compile `libc` (build script) due to 1 previous error
+error: could not compile `getrandom` (build script) due to 1 previous error
+error: could not compile `serde_json` (build script) due to 1 previous error
+error: could not compile `nix` (build script) due to 1 previous error

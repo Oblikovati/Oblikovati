@@ -1,0 +1,390 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Built-in catalog: thermoplastics, thermoset resins and one elastomer — the polymers
+# most used in mechanical design, 3D printing and tooling.
+#
+# Property sources (room temperature, typical injection-moulded / cast grade):
+#   - Mechanical (modulus, yield/tensile): MatWeb generic-grade datasheets; manufacturer
+#     data (e.g. Victrex PEEK, SABIC Ultem); Granta CES EduPack polymer records; AZoM.
+#     Polymer strength is grade- and rate-dependent; values are representative, not a
+#     design minimum. For elastomers/soft grades yield ~ tensile (no sharp yield).
+#   - Thermal (conductivity, expansion, specific heat) & electrical (volume resistivity,
+#     dielectric constant at ~1 MHz): MatWeb; manufacturer data; engineeringtoolbox.com.
+#
+# Appearances are dielectric (metallic = 0.0). Roughness encodes finish (glossy cast vs
+# matte printed); opacity < 1.0 marks the optically clear/translucent grades (acrylic,
+# polycarbonate, PETG, PS) so they read as transparent in Realistic mode. Albedo is the
+# resin's representative sRGB body colour.
+#
+# Units: density g/cm3 | youngsModulus GPa | yield & UTS MPa | conductivity W/(m*K)
+#        expansionCoeff 1/K | specificHeat J/(kg*K) | resistivity ohm*m | relativePermittivity -
+
+materials:
+    - id: abs-plastic
+      name: ABS
+      density: 1.06
+      mechanical:
+        youngsModulus: 2.1
+        poissonsRatio: 0.35
+        yieldStrength: 40
+        ultimateTensileStrength: 44
+      thermal:
+        conductivity: 0.17
+        expansionCoeff: 9e-05
+        specificHeat: 1300
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 2.9
+      appearance: abs-black
+    - id: pla
+      name: PLA
+      density: 1.24
+      mechanical:
+        youngsModulus: 3.5
+        poissonsRatio: 0.36
+        yieldStrength: 50
+        ultimateTensileStrength: 50
+      thermal:
+        conductivity: 0.13
+        expansionCoeff: 6.8e-05
+        specificHeat: 1800
+      electrical:
+        resistivity: 1e+14
+        relativePermittivity: 3
+      appearance: pla
+    - id: petg
+      name: PETG
+      density: 1.27
+      mechanical:
+        youngsModulus: 2.1
+        poissonsRatio: 0.38
+        yieldStrength: 50
+        ultimateTensileStrength: 50
+      thermal:
+        conductivity: 0.2
+        expansionCoeff: 6.8e-05
+        specificHeat: 1200
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3
+      appearance: petg
+    - id: pet
+      name: PET
+      density: 1.38
+      mechanical:
+        youngsModulus: 2.8
+        poissonsRatio: 0.4
+        yieldStrength: 55
+        ultimateTensileStrength: 75
+      thermal:
+        conductivity: 0.24
+        expansionCoeff: 7e-05
+        specificHeat: 1200
+      electrical:
+        resistivity: 1e+16
+        relativePermittivity: 3.4
+      appearance: pet
+    - id: polycarbonate
+      name: Polycarbonate (PC)
+      density: 1.2
+      mechanical:
+        youngsModulus: 2.3
+        poissonsRatio: 0.37
+        yieldStrength: 62
+        ultimateTensileStrength: 66
+      thermal:
+        conductivity: 0.2
+        expansionCoeff: 6.5e-05
+        specificHeat: 1200
+      electrical:
+        resistivity: 1e+14
+        relativePermittivity: 3
+      appearance: polycarbonate
+    - id: acrylic-pmma
+      name: Acrylic (PMMA)
+      density: 1.18
+      mechanical:
+        youngsModulus: 3.2
+        poissonsRatio: 0.37
+        yieldStrength: 70
+        ultimateTensileStrength: 72
+      thermal:
+        conductivity: 0.19
+        expansionCoeff: 7e-05
+        specificHeat: 1450
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3.3
+      appearance: acrylic
+    - id: nylon-6
+      name: Nylon 6 (PA6)
+      density: 1.14
+      mechanical:
+        youngsModulus: 2.7
+        poissonsRatio: 0.39
+        yieldStrength: 45
+        ultimateTensileStrength: 70
+      thermal:
+        conductivity: 0.25
+        expansionCoeff: 8e-05
+        specificHeat: 1600
+      electrical:
+        resistivity: 1e+13
+        relativePermittivity: 3.8
+      appearance: nylon
+    - id: nylon-66
+      name: Nylon 66 (PA66)
+      density: 1.14
+      mechanical:
+        youngsModulus: 3
+        poissonsRatio: 0.39
+        yieldStrength: 55
+        ultimateTensileStrength: 82
+      thermal:
+        conductivity: 0.25
+        expansionCoeff: 8e-05
+        specificHeat: 1700
+      electrical:
+        resistivity: 1e+13
+        relativePermittivity: 4
+      appearance: nylon
+    - id: acetal-pom
+      name: Acetal (POM)
+      density: 1.41
+      mechanical:
+        youngsModulus: 3.1
+        poissonsRatio: 0.35
+        yieldStrength: 65
+        ultimateTensileStrength: 70
+      thermal:
+        conductivity: 0.31
+        expansionCoeff: 0.00011
+        specificHeat: 1500
+      electrical:
+        resistivity: 1e+13
+        relativePermittivity: 3.7
+      appearance: acetal
+    - id: polypropylene
+      name: Polypropylene (PP)
+      density: 0.905
+      mechanical:
+        youngsModulus: 1.5
+        poissonsRatio: 0.42
+        yieldStrength: 33
+        ultimateTensileStrength: 35
+      thermal:
+        conductivity: 0.17
+        expansionCoeff: 0.0001
+        specificHeat: 1920
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 2.2
+      appearance: polypropylene
+    - id: hdpe
+      name: HDPE
+      density: 0.95
+      mechanical:
+        youngsModulus: 1
+        poissonsRatio: 0.42
+        yieldStrength: 26
+        ultimateTensileStrength: 33
+      thermal:
+        conductivity: 0.48
+        expansionCoeff: 0.00012
+        specificHeat: 1900
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 2.3
+      appearance: hdpe
+    - id: ldpe
+      name: LDPE
+      density: 0.92
+      mechanical:
+        youngsModulus: 0.25
+        poissonsRatio: 0.45
+        yieldStrength: 11
+        ultimateTensileStrength: 12
+      thermal:
+        conductivity: 0.33
+        expansionCoeff: 0.0002
+        specificHeat: 2300
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 2.2
+      appearance: ldpe
+    - id: pvc-rigid
+      name: PVC (Rigid)
+      density: 1.4
+      mechanical:
+        youngsModulus: 3
+        poissonsRatio: 0.38
+        yieldStrength: 50
+        ultimateTensileStrength: 52
+      thermal:
+        conductivity: 0.16
+        expansionCoeff: 8e-05
+        specificHeat: 1000
+      electrical:
+        resistivity: 1e+14
+        relativePermittivity: 3.4
+      appearance: pvc
+    - id: ptfe
+      name: PTFE
+      density: 2.2
+      mechanical:
+        youngsModulus: 0.5
+        poissonsRatio: 0.46
+        yieldStrength: 14
+        ultimateTensileStrength: 25
+      thermal:
+        conductivity: 0.25
+        expansionCoeff: 0.00013
+        specificHeat: 1010
+      electrical:
+        resistivity: 1e+18
+        relativePermittivity: 2.1
+      appearance: ptfe
+    - id: peek
+      name: PEEK
+      density: 1.32
+      mechanical:
+        youngsModulus: 3.6
+        poissonsRatio: 0.4
+        yieldStrength: 97
+        ultimateTensileStrength: 100
+      thermal:
+        conductivity: 0.25
+        expansionCoeff: 4.7e-05
+        specificHeat: 1340
+      electrical:
+        resistivity: 1e+16
+        relativePermittivity: 3.2
+      appearance: peek
+    - id: pei-ultem
+      name: PEI (Ultem 1000)
+      density: 1.27
+      mechanical:
+        youngsModulus: 3
+        poissonsRatio: 0.36
+        yieldStrength: 105
+        ultimateTensileStrength: 105
+      thermal:
+        conductivity: 0.22
+        expansionCoeff: 5.6e-05
+        specificHeat: 1100
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3.15
+      appearance: ultem
+    - id: polystyrene
+      name: Polystyrene (GPPS)
+      density: 1.05
+      mechanical:
+        youngsModulus: 3.2
+        poissonsRatio: 0.34
+        yieldStrength: 45
+        ultimateTensileStrength: 50
+      thermal:
+        conductivity: 0.14
+        expansionCoeff: 7e-05
+        specificHeat: 1300
+      electrical:
+        resistivity: 1e+16
+        relativePermittivity: 2.5
+      appearance: polystyrene
+    - id: hips
+      name: HIPS
+      density: 1.05
+      mechanical:
+        youngsModulus: 2
+        poissonsRatio: 0.34
+        yieldStrength: 25
+        ultimateTensileStrength: 30
+      thermal:
+        conductivity: 0.14
+        expansionCoeff: 8e-05
+        specificHeat: 1300
+      electrical:
+        resistivity: 1e+16
+        relativePermittivity: 2.5
+      appearance: hips
+    - id: pvdf
+      name: PVDF
+      density: 1.78
+      mechanical:
+        youngsModulus: 2
+        poissonsRatio: 0.4
+        yieldStrength: 50
+        ultimateTensileStrength: 50
+      thermal:
+        conductivity: 0.19
+        expansionCoeff: 0.00012
+        specificHeat: 1300
+      electrical:
+        resistivity: 1e+14
+        relativePermittivity: 8
+      appearance: pvdf
+    - id: epoxy-resin
+      name: Epoxy Resin (Cast)
+      density: 1.15
+      mechanical:
+        youngsModulus: 3
+        poissonsRatio: 0.35
+        yieldStrength: 40
+        ultimateTensileStrength: 65
+      thermal:
+        conductivity: 0.19
+        expansionCoeff: 6e-05
+        specificHeat: 1000
+      electrical:
+        resistivity: 1e+15
+        relativePermittivity: 3.6
+      appearance: epoxy-resin
+    - id: polyester-resin
+      name: Polyester Resin (Cast)
+      density: 1.2
+      mechanical:
+        youngsModulus: 3.2
+        poissonsRatio: 0.37
+        yieldStrength: 45
+        ultimateTensileStrength: 55
+      thermal:
+        conductivity: 0.17
+        expansionCoeff: 0.0001
+        specificHeat: 1200
+      electrical:
+        resistivity: 1e+14
+        relativePermittivity: 3.3
+      appearance: polyester-resin
+    - id: polyurethane
+      name: Polyurethane (Rigid)
+      density: 1.2
+      mechanical:
+        youngsModulus: 1.5
+        poissonsRatio: 0.4
+        yieldStrength: 35
+        ultimateTensileStrength: 40
+      thermal:
+        conductivity: 0.21
+        expansionCoeff: 0.0001
+        specificHeat: 1800
+      electrical:
+        resistivity: 1e+12
+        relativePermittivity: 4
+      appearance: polyurethane
+    - id: silicone-rubber
+      name: Silicone Rubber
+      density: 1.1
+      mechanical:
+        youngsModulus: 0.01
+        poissonsRatio: 0.48
+        yieldStrength: 5
+        ultimateTensileStrength: 8
+      thermal:
+        conductivity: 0.2
+        expansionCoeff: 0.00025
+        specificHeat: 1300
+      electrical:
+        resistivity: 1e+13
+        relativePermittivity: 3
+      appearance: silicone

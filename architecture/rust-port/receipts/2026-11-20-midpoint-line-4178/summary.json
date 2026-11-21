@@ -1,0 +1,8 @@
+{
+  "native": "3 passed, real X11 mouse and keys; Xvfb and Vulkan Lavapipe",
+  "midpoint_filter": "11 passed, 1 ignored before final helper rename",
+  "model_placement": "31 passed",
+  "clippy": "model, gui, head; library and tests; warnings denied",
+  "scenario_feature": "not verified: active source requires deferred Inventor fixture",
+  "frame_rate": "not measured"
+}

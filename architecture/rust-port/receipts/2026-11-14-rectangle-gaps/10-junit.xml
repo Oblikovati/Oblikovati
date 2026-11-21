@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Rectangle two point: tmp/oblikovati-rect-next-source/features/sketch/rectangle-two-point/scenario.feature" package="testsuite/Feature: Rectangle two point: tmp/oblikovati-rect-next-source/features/sketch/rectangle-two-point/scenario.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-14T05:08:46.695372863Z" time="17.98829268"><testcase name="Scenario: rectangle-two-point-10 Observe a zero first size: tmp/oblikovati-rect-next-source/features/sketch/rectangle-two-point/scenario.feature:61:3" time="17.98829268"><failure type="Step Panicked" message="Step panicked. Captured output: expected &quot;24 dimensions needed&quot; in status &quot;Selectfirstcorner 22dimensionsneeded&quot;"/><system-out><![CDATA[  Scenario: rectangle-two-point-10 Observe a zero first size
+   ✔  Given the recorded fixture sketch is Ready with 22 dimensions needed
+   ✔  When the user choose Two Point Rectangle and the fixture first corner
+   ✔  And the user enter 0 and press Tab
+   ✔  Then the first size is locked at 0.000 mm and the second field is focused
+   ✔  When the user enter 4 and press Return
+   ✔  Then the command returns to Select first corner without a warning dialog
+   ✘  And the immediate status temporarily shows 24 dimensions needed
+      Step failed:
+      Defined: tmp/oblikovati-rect-next-source/features/sketch/rectangle-two-point/scenario.feature:68:5
+      Matched: crates/head/src/../tests/application/../sketch/rectangle-two-point/steps.rs:299:1
+      Step panicked. Captured output: expected "24 dimensions needed" in status "Selectfirstcorner 22dimensionsneeded"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nRight\nSelectfirstcorner\n22dimensionsneeded\nModel\n+\nModel\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nSketch1\n[DOF22]\nFeatures\nEndofPart\nHome\nPart1<Primary>*\nDocuments\nFile\nTools\nNew\nOpen\nSave\nUndo\nRedo\nHome\nProjects\nUpdate\nSelect\nMaterialBrowser\nMaterials\nAppearanceBrowser\nParameters\n...\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nRibbonDisplay\nv\nv\nRectangle\nCircle\nv\nPoint\nCenterArcv\nEllipse\nCenterRect.\n3-PtRect.\nv\nLine\nCreatev\nHorizontal\nVertical\nCoincident\nFix\nParallel\nPerpendicular\nCollinear\nEqual\nConcentric\nTangent\nDimension\nConstrainv\nMove\nDelete\nModify\nRectangular\nCircular\nPattern\nConstruction\nCenterline\nCenterPoint\nPreciseInput\nFormat\nFinishSketch\nExit",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

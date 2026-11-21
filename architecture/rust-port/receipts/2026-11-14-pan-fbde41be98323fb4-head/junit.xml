@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport pan: tmp/obk-pan-48987af/features/application/viewport-pan/viewport-pan.feature" package="testsuite/Feature: Viewport pan: tmp/obk-pan-48987af/features/application/viewport-pan/viewport-pan.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:40:41.847761277Z" time="6.204309727"><testcase name="Scenario: End Pan using its context menu: tmp/obk-pan-48987af/features/application/viewport-pan/viewport-pan.feature:26:3" time="6.204309727"><system-out><![CDATA[  Scenario: End Pan using its context menu
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And Pan is active from the viewport navigation bar
+   ✔  When the user right-clicks an empty area of the viewport
+   ✔  Then a contextual menu offers Done, OK, Home View, Orbit, Zoom and Previous View
+   ✔  And the status area still indicates Pan is active
+   ✔  When the user chooses Done
+   ✔  Then the contextual menu closes and the status area displays Ready
+   ✔  And the same part and solid remain visible
+]]></system-out></testcase></testsuite></testsuites>

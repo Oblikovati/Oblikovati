@@ -1,0 +1,19 @@
+{
+  "scenario_source": {
+    "kind": "local snapshot of unversioned source",
+    "snapshot": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+    "feature_sha256": "d87eaf041fc93701e0de5c911dd3b4c0622386d184f05954a8409400e412c0d0"
+  },
+  "go_reference": {
+    "commit": "aa8297d1b0ac33c024f19e54821536d76e8a447a",
+    "files_sha256": {
+      "head/ui/close_guard.go": "65ae8708546f3cc73db1db2307a16ea608e29d589bc0c2c0f97d63a4d65809e4",
+      "head/ui/close_guard_draw.go": "5bfed1864846fcadbace3f8bd623199e25130876d19eef83871575ef2df4adbe"
+    },
+    "command": "go test ./ui -run '^Test(DirtyDocuments|DocumentCloseGuardRequestsPromptOnlyForDirtyDocument)$' -count=1",
+    "result": "pass on Linux; tests cover dirty documents and tab close, not native application close",
+    "difference": "Go labels are Save, Don't Save, Cancel; scenarios specify Yes, No, Cancel."
+  },
+  "rust_diagnostic": "../2026-11-16-application-closing-4030/",
+  "acceptance": "Not verified: source captures and sealed receipt provenance remain open."
+}

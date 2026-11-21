@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "dd23a2fc6a01a1afb058f5f902d833a7beb97e62",
+    "dirty": false,
+    "root": "/tmp/obk-floating-ribbon.E8UO0g/scenarios/checkout"
+  },
+  "before": {
+    "commit": "dd23a2fc6a01a1afb058f5f902d833a7beb97e62",
+    "dirty": false,
+    "root": "/tmp/obk-floating-ribbon.E8UO0g/scenarios/checkout"
+  },
+  "source_changed": false
+}

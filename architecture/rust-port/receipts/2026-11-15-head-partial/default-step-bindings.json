@@ -1,0 +1,98 @@
+{
+  "features": 8,
+  "scenarios": 127,
+  "steps": 1194,
+  "unresolved": [
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/test-utilities/benchmarks/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a populated drawing layout with a component that needs updating",
+      "line": 333,
+      "step": "a drawing template provides a populated layout with a parts list and a view",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/test-utilities/benchmarks/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a populated drawing layout with a component that needs updating",
+      "line": 334,
+      "step": "an available part component requires an update",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/test-utilities/benchmarks/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a populated drawing layout with a component that needs updating",
+      "line": 335,
+      "step": "I select the drawing template and populated layout",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/test-utilities/benchmarks/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a populated drawing layout with a component that needs updating",
+      "line": 337,
+      "step": "I confirm that component in the component-selection dialog",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/test-utilities/benchmarks/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a populated drawing layout with a component that needs updating",
+      "line": 338,
+      "step": "a message identifies the component as needing an update",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/test-utilities/benchmarks/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a populated drawing layout with a component that needs updating",
+      "line": 339,
+      "step": "the message says the drawing reflects the model's non-updated state",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/test-utilities/benchmarks/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a populated drawing layout with a component that needs updating",
+      "line": 342,
+      "step": "its sheet displays a border, title block and parts list",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/test-utilities/benchmarks/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+      "scenario": "Create a populated drawing layout with a component that needs updating",
+      "line": 343,
+      "step": "the drawing browser lists a parts list and a view referencing the component",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/test-utilities/benchmarks/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+      "scenario": "Browse to a different component for a populated drawing layout",
+      "line": 368,
+      "step": "I confirm the selected component",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/test-utilities/benchmarks/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+      "scenario": "Browse to a different component for a populated drawing layout",
+      "line": 369,
+      "step": "a message identifies the selected component as needing an update",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/test-utilities/benchmarks/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+      "scenario": "Browse to a different component for a populated drawing layout",
+      "line": 371,
+      "step": "a new drawing becomes active",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/test-utilities/benchmarks/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+      "scenario": "Browse to a different component for a populated drawing layout",
+      "line": 372,
+      "step": "its parts list identifies the selected component",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/home/vmiguel/git/oblikovati-workspace/oblikovati-rust/test-utilities/benchmarks/MCAD-Scenarios/features/application/document-creation/document-creation.feature",
+      "scenario": "Browse to a different component for a populated drawing layout",
+      "line": 373,
+      "step": "its browser contains a view referencing the selected component",
+      "cause": "undefined step"
+    }
+  ]
+}

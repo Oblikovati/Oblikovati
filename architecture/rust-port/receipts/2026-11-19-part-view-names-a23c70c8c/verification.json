@@ -1,0 +1,17 @@
+{
+  "application_commit": "a23c70c8c",
+  "feature": "features/application/model-browser/model-browser.feature",
+  "feature_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e",
+  "environment": "Linux X11, Xvfb, software Vulkan, native mouse and keyboard input",
+  "scenarios": [
+    "Restore a locked view after temporarily hiding its solid",
+    "Restore an unlocked view after hiding its solid",
+    "Cancel a duplicate view representation name",
+    "Correct a duplicate view representation name",
+    "Submit an empty view representation name",
+    "Cancel an inline view rename with Escape",
+    "Use a view name differing only in letter case"
+  ],
+  "result": "7 of 7 scenarios passed",
+  "scope": "Focused scenarios only; this is not a full-feature run. The source was unversioned."
+}

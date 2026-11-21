@@ -1,0 +1,17 @@
+package main
+import (
+ "context"
+ "encoding/json"
+ "fmt"
+ "os"
+ "time"
+ "github.com/modelcontextprotocol/go-sdk/mcp"
+)
+func main() {
+ ctx,cancel:=context.WithTimeout(context.Background(),20*time.Second); defer cancel()
+ c:=mcp.NewClient(&mcp.Implementation{Name:"os-input-check",Version:"1"},nil)
+ s,e:=c.Connect(ctx,&mcp.StreamableClientTransport{Endpoint:"http://127.0.0.1:17953/mcp"},nil);if e!=nil{panic(e)};defer s.Close()
+ args:=map[string]any{};if len(os.Args)>2 && os.Args[1]!="capture_window" {if e:=json.Unmarshal([]byte(os.Args[2]), &args);e!=nil{panic(e)}};if os.Args[1]=="capture_window" {args["path"]="/tmp/obk-part-ui-live/"+os.Args[2]+".png"}
+ r,e:=s.CallTool(ctx,&mcp.CallToolParams{Name:os.Args[1],Arguments:args});if e!=nil{panic(e)};if r.IsError{panic(fmt.Sprint(r.Content))}
+ for _,v:=range r.Content {switch t:=v.(type){case *mcp.TextContent:fmt.Println(t.Text);case *mcp.ImageContent:fmt.Printf("image %s %d bytes\n",t.MIMEType,len(t.Data))}}
+}

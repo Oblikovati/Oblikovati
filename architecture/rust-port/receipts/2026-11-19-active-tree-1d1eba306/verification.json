@@ -1,0 +1,11 @@
+{
+  "application_commit": "1d1eba306",
+  "feature": "features/application/model-browser/model-browser.feature",
+  "feature_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e",
+  "environment": "Linux X11, Xvfb, software Vulkan, native mouse and keyboard input",
+  "scenarios": [
+    "Show active member parameter values in the table tree"
+  ],
+  "result": "1 of 1 scenarios passed",
+  "scope": "Focused scenario only; this is not a full-feature run. The source was unversioned. The code was tested on the merged ancestor e788ee34c."
+}

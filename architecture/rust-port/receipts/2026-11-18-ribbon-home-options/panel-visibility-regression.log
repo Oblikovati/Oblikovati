@@ -1,0 +1,27 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running unittests src/lib.rs (target/debug/deps/oblikovati_head-ce56125549edf4ba)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... Feature: Ribbon panel visibility
+  Scenario: Enable a panel while the ribbon is minimized
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  And the Parameters panel is hidden
+   ✔  When the user right-clicks the 3D Model tab
+   ✔  And the user opens Show Panels
+   ✔  And the user selects the unchecked Parameters entry
+   ✔  Then the menus close and the ribbon remains minimized to tabs
+   ✔  When the user clicks the 3D Model tab once
+   ✔  Then the temporary command area opens
+   ✔  And it contains the Parameters panel
+   ✔  When the user double-clicks the 3D Model tab
+   ✔  Then the full ribbon is restored
+   ✔  And the Parameters panel is visible
+[Summary]
+1 feature
+1 scenario (1 passed)
+13 steps (13 passed)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1355 filtered out; finished in 7.66s
+

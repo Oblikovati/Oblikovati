@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-mixed-switch-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-mixed-switch-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T16:06:43.794387135Z" time="15.063249504"><testcase name="Scenario: Switch between a drawing and a part being edited: tmp/obk-mixed-switch-source/features/application/document-tabs/document-tabs.feature:160:3" time="15.063249504"><system-out><![CDATA[  Scenario: Switch between a drawing and a part being edited
+   ✔  Given a drawing and a part are open in the MCAD Software
+   ✔  And the part has an active sketch editing environment
+   ✔  And the drawing is active with its drawing resources branch collapsed
+   ✔  When the user selects the part document tab
+   ✔  Then the part sketch viewport and model browser are displayed
+   ✔  And the sketch ribbon is active
+   ✔  When the user selects the drawing document tab
+   ✔  Then the drawing sheet and drawing browser are displayed
+   ✔  And the drawing ribbon is active
+   ✔  And the drawing resources branch is collapsed
+   ✔  And the part remains available as an open tab
+   ✔  When the user selects the part document tab again
+   ✔  Then the part sketch viewport and model browser are displayed
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase></testsuite></testsuites>

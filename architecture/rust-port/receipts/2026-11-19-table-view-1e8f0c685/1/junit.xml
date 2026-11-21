@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T10:55:46.499042875Z" time="10.474383743"><testcase name="Scenario: Report an unevaluable model-state parameter equation: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1318:3" time="10.474383743"><system-out><![CDATA[  Scenario: Report an unevaluable model-state parameter equation
+   ✔  Given The MCAD Software has a model-state table containing the length parameter d0
+   ✔  And no parameter named abc exists in the part
+   ✔  When the user replaces the active member d0 value with "abc" and presses Enter
+   ✔  Then the d0 cell displays "abc" with a yellow background
+   ✔  And OK remains enabled
+   ✔  When the user selects Verify
+   ✔  Then the yellow d0 cell remains visible
+   ✔  And no separate message is displayed
+   ✔  When the user selects OK
+   ✔  Then a message reports an error in the table and identifies the unevaluable d0 equation "abc"
+   ✔  When the user dismisses the message
+   ✔  Then the model-state table remains open with "abc" in the d0 cell
+   ✔  When the user cancels the table
+   ✔  Then the table closes without accepting the entry
+]]></system-out></testcase></testsuite></testsuites>

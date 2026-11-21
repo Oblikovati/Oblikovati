@@ -1,0 +1,11 @@
+{
+  "kind": "unsealed diagnostic",
+  "base_commit": "51b9fd942",
+  "test_source_sha256": "b61b61990f0edf2bc15fc5ee454fac84a433c44836e4a4c838713132d9ff2460",
+  "feature_sha256": "11567ca6f598b1b812d635e5bb7fed2eb75abd1e2b5a087c91ef962e78e679e7",
+  "scenario": "Restore the saved panel arrangement after restarting the application",
+  "scenarios_passed": 1,
+  "steps_passed": 4,
+  "environment": "Linux Xvfb 1440x900, Openbox, Vulkan Lavapipe; shared unsealed build target",
+  "limitations": "Live unversioned scenario source; no sealed build or execution."
+}

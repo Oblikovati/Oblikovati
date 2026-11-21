@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from a template: tmp/obk-gallery-new/features/application/document-creation/document-creation.feature" package="testsuite/Feature: Create a document from a template: tmp/obk-gallery-new/features/application/document-creation/document-creation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:46:41.8317679Z" time="2.491201235"><testcase name="Scenario: Display templates as details: tmp/obk-gallery-new/features/application/document-creation/document-creation.feature:128:3" time="2.491201235"><system-out><![CDATA[  Scenario: Display templates as details
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the selected template folder contains templates
+   ✔  When the user opens the template display menu
+   ✔  Then the menu offers icon sizes, List, Details, and Grouped by Type
+   ✔  When the user chooses Details
+   ✔  Then the template gallery displays rows with Name, Size, and Type columns
+   ✔  And the template details pane remains visible
+]]></system-out></testcase></testsuite></testsuites>

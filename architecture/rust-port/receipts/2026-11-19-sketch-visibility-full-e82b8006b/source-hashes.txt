@@ -1,0 +1,5 @@
+ec438c1ad2b87983adde97f2789cdf667b745df12a1aa60383692251d492a9fb  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/BLOCKERS.md
+c428519660bafdc7a37ab987fe9b83ec2ce5888f4fcbf9e01bdc94d83913fcbb  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/FUNCTIONAL.md
+a93af486c0c006ce978e59a3600e0e38f9eda0fba3e7e427f08cf3b7e62f6827  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/VISUAL.md
+84ce1cf47dee8bbb27a8ee769a6a2599c2c6bf7262bacb7c313b86843645e65b  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/scenario.feature
+e7e6a371764a17f789fd61a76f5bbb970b1d1e1eb6b8013330a8fad7f4fc99bd  /mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-visibility/sketch-visibility-icon.svg

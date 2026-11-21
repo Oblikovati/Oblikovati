@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eu
+printf '%s\n' "$DISPLAY" > /tmp/obk-move-mixed-live/display
+printf '%s\n' "$XAUTHORITY" > /tmp/obk-move-mixed-live/xauthority
+export OBK_CONFIG_DIR=/tmp/obk-move-mixed-live/config OBK_ADDINS_DIR=/tmp/obk-move-mixed-live/addins OBK_MCP_ADDR=127.0.0.1:17958 VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json XMODIFIERS=@im=none
+/tmp/obk-move-mixed-target/debug/oblikovati > /tmp/obk-move-mixed-live/host.log 2>&1 &
+host_pid=$!
+trap 'kill "$host_pid" 2>/dev/null || true; wait "$host_pid" 2>/dev/null || true' EXIT
+wait "$host_pid"

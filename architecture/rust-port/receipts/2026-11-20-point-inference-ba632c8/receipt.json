@@ -1,0 +1,19 @@
+{
+  "tested_commit": "ba632c8f8b0a7fdae6371341a48c12c26d0155c5",
+  "merge_commit": "f261f79a6",
+  "checks": [
+    {
+      "name": "native X11 preview, placement, undo and redo",
+      "result": "passed"
+    },
+    {
+      "name": "Point session preview tests",
+      "result": "3 passed"
+    },
+    {
+      "name": "scoped head Clippy",
+      "result": "passed"
+    }
+  ],
+  "limitation": "Persistence-only behavior remains unchanged pending scenario clarification; native verification used Linux Xvfb and Lavapipe."
+}

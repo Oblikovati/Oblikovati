@@ -1,0 +1,28 @@
+import ctypes
+import sys
+import time
+x = ctypes.CDLL('libX11.so.6')
+t = ctypes.CDLL('libXtst.so.6')
+x.XOpenDisplay.argtypes = [ctypes.c_char_p]
+x.XOpenDisplay.restype = ctypes.c_void_p
+x.XSetInputFocus.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_int, ctypes.c_ulong]
+x.XKeysymToKeycode.argtypes = [ctypes.c_void_p, ctypes.c_ulong]
+x.XKeysymToKeycode.restype = ctypes.c_ubyte
+x.XFlush.argtypes = [ctypes.c_void_p]
+x.XCloseDisplay.argtypes = [ctypes.c_void_p]
+t.XTestFakeKeyEvent.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_int, ctypes.c_ulong]
+display = x.XOpenDisplay(None)
+if not display:
+    raise RuntimeError('expected X display')
+x.XSetInputFocus(display, 0x200001, 1, 0)
+modifiers = [0xffe3] + ([0xffe1] if sys.argv[1] == 'previous' else [])
+sequence = [(sym, 1) for sym in modifiers] + [(0xff09, 1), (0xff09, 0)] + [(sym, 0) for sym in reversed(modifiers)]
+for symbol, pressed in sequence:
+    code = x.XKeysymToKeycode(display, symbol)
+    if not code:
+        raise RuntimeError(f'no X keycode for {symbol}')
+    t.XTestFakeKeyEvent(display, code, pressed, 0)
+    x.XFlush(display)
+    time.sleep(0.08)
+time.sleep(0.5)
+x.XCloseDisplay(display)

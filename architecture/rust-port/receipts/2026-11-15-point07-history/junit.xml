@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Point: tmp/obk-point-convert-snapshot-3887/features/sketch/point/scenario.feature" package="testsuite/Feature: Point: tmp/obk-point-convert-snapshot-3887/features/sketch/point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T11:24:50.285473953Z" time="15.487845812"><testcase name="Scenario: point-07 Undo and redo point-type conversion: tmp/obk-point-convert-snapshot-3887/features/sketch/point/scenario.feature:52:3" time="15.487845812"><system-out><![CDATA[  Scenario: point-07 Undo and redo point-type conversion
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And the user have converted a regular sketch point to Center Point
+   ✔  When the user press Ctrl+Z
+   ✔  Then the point returns to its dot marker
+   ✔  When the user press Ctrl+Y
+   ✔  Then the point is a Center Point again
+   ✔  When the user reopen the point context menu
+   ✔  Then Center Point is checked
+]]></system-out></testcase></testsuite></testsuites>

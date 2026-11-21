@@ -40,6 +40,15 @@ fn check_source(path: &Path) -> BuildResult<()> {
     Ok(())
 }
 
+pub(crate) fn check_rust_sources(root: &Path) -> BuildResult<()> {
+    for path in source_files(root)? {
+        if path.extension().is_some_and(|ext| ext == "rs") {
+            check_source(&path)?;
+        }
+    }
+    Ok(())
+}
+
 fn anchors(text: &str) -> Vec<String> {
     let mut counts = BTreeMap::<String, usize>::new();
     text.lines()

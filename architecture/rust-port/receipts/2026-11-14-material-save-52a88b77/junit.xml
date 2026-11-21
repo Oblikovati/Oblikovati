@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: tmp/obk-save2/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: tmp/obk-save2/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T19:21:58.639842205Z" time="5.313909547"><testcase name="Scenario: Cancel closing a modified unsaved part: tmp/obk-save2/features/application/document-saving/document-saving.feature:83:3" time="5.313909547"><system-out><![CDATA[  Scenario: Cancel closing a modified unsaved part
+   ✔  Given an unsaved part containing a finished empty sketch is active in the MCAD Software
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user closes the document tab
+   ✔  Then a save-changes prompt offers Yes, No and Cancel
+   ✔  When the user chooses Cancel
+   ✔  Then the part remains active
+   ✔  And its sketch remains in the model browser
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport pan: tmp/obk-pan-48987af/features/application/viewport-pan/viewport-pan.feature" package="testsuite/Feature: Viewport pan: tmp/obk-pan-48987af/features/application/viewport-pan/viewport-pan.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:40:35.861078676Z" time="4.457030657"><testcase name="Scenario: Cancel Pan by clicking the viewport: tmp/obk-pan-48987af/features/application/viewport-pan/viewport-pan.feature:18:3" time="4.457030657"><system-out><![CDATA[  Scenario: Cancel Pan by clicking the viewport
+   ✔  Given a part containing a visible solid is active in the MCAD Software
+   ✔  And Pan is active from the viewport navigation bar
+   ✔  When the user clicks an empty area of the viewport without dragging
+   ✔  Then Pan ends and the status area displays Ready
+   ✔  And the same part and solid remain visible in their previous view
+]]></system-out></testcase></testsuite></testsuites>

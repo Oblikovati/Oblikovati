@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Point: tmp/obk-point-convert-snapshot-3887/features/sketch/point/scenario.feature" package="testsuite/Feature: Point: tmp/obk-point-convert-snapshot-3887/features/sketch/point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T11:24:33.30967856Z" time="15.40762847"><testcase name="Scenario: point-06 Convert a regular sketch point to a center point and back: tmp/obk-point-convert-snapshot-3887/features/sketch/point/scenario.feature:40:3" time="15.40762847"><system-out><![CDATA[  Scenario: point-06 Convert a regular sketch point to a center point and back
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  And a regular dot-style sketch point and a separate unchanged point
+   ✔  When the user right-click the first point and choose Center Point
+   ✔  Then its selected marker is a cross
+   ✔  And reopening its context menu shows Center Point checked
+   ✔  When the user choose Center Point again
+   ✔  Then the first point returns to a dot marker
+   ✔  And the separate point retains its dot marker at its displayed location
+]]></system-out></testcase></testsuite></testsuites>

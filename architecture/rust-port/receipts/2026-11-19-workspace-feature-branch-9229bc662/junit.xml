@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:02:10.08133736Z" time="6.468052402"><testcase name="Scenario: Collapse and expands a feature branch: mnt/vininas-projects/MCAD-Scenarios/features/application/workspace-layout/workspace-layout.feature:189:3" time="6.468052402"><system-out><![CDATA[  Scenario: Collapse and expands a feature branch
+   ✔  Given a part document with an expanded Extrusion1 branch is open in the MCAD Software
+   ✔  And the model browser shows its Sketch1 child
+   ✔  When the user collapses the Extrusion1 branch
+   ✔  Then the Sketch1 child is hidden from the browser
+   ✔  And the solid remains displayed in the viewport
+   ✔  When the user expands the Extrusion1 branch
+   ✔  Then the Sketch1 child is shown beneath Extrusion1
+   ✔  And the solid remains displayed in the viewport
+]]></system-out></testcase></testsuite></testsuites>

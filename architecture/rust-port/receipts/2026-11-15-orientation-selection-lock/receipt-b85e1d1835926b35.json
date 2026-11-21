@@ -1,0 +1,27 @@
+{
+  "kind": "native-acceptance",
+  "scenario_id": "scenario:b85e1d1835926b35730c4ba10e32f74d328ba8b2abef3bda6c902d453fba0d9d",
+  "scenario_revision": "48987af7b5cbb06515bc6f30385f508382f34064",
+  "source_sha256": "5fbf06d51afb265f1c022d8d5f93aa0107f8c79f31445beccd986aa373b64f62",
+  "application_commit": "190e360edce00557ad4bb159177f8f012ccb1359",
+  "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
+  "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+  "runner": "application_scenarios_use_the_native_window",
+  "exit_code": 0,
+  "environment": {
+    "os": "Linux",
+    "renderer": "Vulkan with Lavapipe under Xvfb"
+  },
+  "cucumber": {
+    "path": "architecture/rust-port/receipts/2026-11-15-orientation-selection-lock/cucumber.json",
+    "sha256": "75fe9737b4e833e296f7378a5aec9c7d585592e7eac836f50ea258d83cd61542"
+  },
+  "source_report": {
+    "path": "architecture/rust-port/receipts/2026-11-15-orientation-selection-lock/source-revision.json",
+    "sha256": "5890053536b86a901c04651f9805e74d9894c05650c9700675afc2f737997d31"
+  },
+  "capture": {
+    "path": "architecture/rust-port/receipts/2026-11-15-orientation-selection-lock/Toggle-orientation-lock-for-a-selected-face.png",
+    "sha256": "08da62e2da3fbf0f3145c19eb48cbe42d3064b9e904618c136553d5a4366c924"
+  }
+}

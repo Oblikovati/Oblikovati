@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "dd8add84015816b84f0c9b6aac0b88592d7009cd",
+    "dirty": false,
+    "root": "/tmp/obk-docking-compact.Th6BA5/stable/checkout"
+  },
+  "before": {
+    "commit": "dd8add84015816b84f0c9b6aac0b88592d7009cd",
+    "dirty": false,
+    "root": "/tmp/obk-docking-compact.Th6BA5/stable/checkout"
+  },
+  "source_changed": false
+}

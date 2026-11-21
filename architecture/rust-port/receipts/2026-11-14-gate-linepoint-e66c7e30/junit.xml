@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Line: tmp/obk-linepoint-refresh/features/sketch/line/scenario.feature" package="testsuite/Feature: Line: tmp/obk-linepoint-refresh/features/sketch/line/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:40:00.498525725Z" time="10.034816375"><testcase name="Scenario: line-04 Undo and redo the recorded numeric creation: tmp/obk-linepoint-refresh/features/sketch/line/scenario.feature:31:3" time="10.034816375"><system-out><![CDATA[  Scenario: line-04 Undo and redo the recorded numeric creation
+   ✔  Given the recorded length-10 and angle-30 segment has been accepted and Line exited
+   ✔  When the user undo its creation
+   ✔  Then its numeric annotations disappear
+   ✔  When the user redo creation
+   ✔  Then the numeric annotations return
+   ✔  When the user open Measure and select the segment
+   ✔  Then Measure reports its length as 10.000 mm
+]]></system-out></testcase></testsuite></testsuites>

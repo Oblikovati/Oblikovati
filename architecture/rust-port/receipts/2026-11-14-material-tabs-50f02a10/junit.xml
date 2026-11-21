@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-tabs2/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-tabs2/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T19:23:46.931742929Z" time="4.164593054"><testcase name="Scenario: Close a saved inactive document with its tab close button: tmp/obk-tabs2/features/application/document-tabs/document-tabs.feature:73:3" time="4.164593054"><system-out><![CDATA[  Scenario: Close a saved inactive document with its tab close button
+   ✔  Given the MCAD Software has two open part documents
+   ✔  And the first part is active
+   ✔  And the second part is saved and has no unsaved changes
+   ✔  When the user clicks the close button on the second part's document tab
+   ✔  Then the second part's tab disappears
+   ✔  And the first part remains active in the workspace
+   ✔  And no save prompt is displayed
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/oblikovati-bdd-KoaPiH/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/oblikovati-bdd-KoaPiH/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-20T21:50:38.132804204Z" time="25.971675754"><testcase name="Scenario: text-11 Cancel bold formatting applied to selected existing content: tmp/oblikovati-bdd-KoaPiH/checkout/features/sketch/text/scenario.feature:101:3" time="25.971675754"><system-out><![CDATA[  Scenario: text-11 Cancel bold formatting applied to selected existing content
+   ✔  Given unbolded c text and Ready sketch state
+   ✔  When the user chooses Edit text, focus the editor, and press Ctrl+A
+   ✔  And the user clicks the Bold control
+   ✔  Then Bold is highlighted and c thickens in the editor and live preview
+   ✔  And the character content remains c
+   ✔  When the user clicks Cancel
+   ✔  Then the original thinner c returns and the sketch is Ready
+   ✔  And the baseline solver count is retained
+]]></system-out></testcase></testsuite></testsuites>

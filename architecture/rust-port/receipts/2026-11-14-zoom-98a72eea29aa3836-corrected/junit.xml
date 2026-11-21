@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport zoom: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature" package="testsuite/Feature: Viewport zoom: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:53:06.47757451Z" time="11.667801278"><testcase name="Scenario: Fit a selected planar face: tmp/obk-zoom-48987af/features/application/viewport-zoom/viewport-zoom.feature:60:3" time="11.667801278"><system-out><![CDATA[  Scenario: Fit a selected planar face
+   ✔  Given a rectangular block is active in the MCAD Software
+   ✔  And its visible planar face appears small within the viewport
+   ✔  And the face is selected
+   ✔  When the user chooses Zoom Selected from the navigation bar Zoom menu
+   ✔  Then the selected face appears larger and fills most of the viewport
+   ✔  And the face remains selected
+   ✔  And the same part and orientation remain active
+   ✔  And the status area displays Ready
+   ✔  When the user reopens the Zoom menu
+   ✔  Then Zoom Selected is marked as the selected action
+   ✔  When the user selects Zoom and presses Escape
+   ✔  Then the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>

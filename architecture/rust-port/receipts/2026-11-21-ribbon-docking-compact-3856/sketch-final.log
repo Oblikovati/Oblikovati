@@ -1,0 +1,21 @@
+
+running 1 test
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... Feature: Ribbon docking
+  Scenario: Finish a sketch while the ribbon is docked left
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with `Sketch1` being edited and the ribbon docked at the top
+   ✔  When the user docks the Sketch ribbon on the left
+   ✔  Then the sketch tools appear in a vertical group column
+   ✔  And Finish remains visible in the Exit group at the bottom
+   ✔  When the user selects Finish
+   ✔  Then sketch editing ends and the part model view returns
+   ✔  And the ribbon remains docked on the left
+   ✔  And the 3D Model tab and groups are active
+   ✔  And no sketch geometry has changed
+[Summary]
+1 feature
+1 scenario (1 passed)
+9 steps (9 passed)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1615 filtered out; finished in 32.10s
+

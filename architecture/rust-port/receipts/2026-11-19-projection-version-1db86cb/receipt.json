@@ -1,0 +1,18 @@
+{
+  "tested_commit": "1db86cb68",
+  "merge_commit": "648d8bbc9",
+  "checks": [
+    {
+      "name": "clean-base regression",
+      "result": "failed as expected for supported version 17"
+    },
+    {
+      "name": "projection, orientation and document-sketch tests",
+      "result": "134 passed"
+    },
+    {
+      "name": "scoped Clippy",
+      "result": "passed"
+    }
+  ]
+}

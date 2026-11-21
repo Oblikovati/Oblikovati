@@ -1,0 +1,29 @@
+
+running 1 test
+Feature: Arc three point
+  Scenario: arc-three-point-06 Cancel after selecting only the start point
+   ✘  Given the sketch is Ready with 156 dimensions needed
+      Step failed:
+      Defined: tmp/obk-arc-fixture-3934/features/sketch/arc-three-point/scenario.feature:49:5
+      Matched: crates/head/src/../tests/application/../sketch/arc-three-point/steps.rs:263:1
+      Step panicked. Captured output: BDD fixture blocked: recorded sketch with 156 dimensions needed: recorded sketch, view, and pointer inputs are unavailable; see arc-three-point/BLOCKERS.md
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
+
+thread 'sketch-scenarios' (1321507) panicked at crates/head/src/../tests/application/benchmark.rs:257:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window' (1321506) panicked at crates/head/src/../tests/application/../sketch/benchmark.rs:70:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 905 filtered out; finished in 2.29s
+

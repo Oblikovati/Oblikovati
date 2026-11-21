@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Line: tmp/obk-bdd-line-2cdD0zy0/checkout/features/sketch/line/scenario.feature" package="testsuite/Feature: Line: tmp/obk-bdd-line-2cdD0zy0/checkout/features/sketch/line/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T16:13:57.353589276Z" time="6.235262609"><testcase name="Scenario: line-03 Cancel after only a start point: tmp/obk-bdd-line-2cdD0zy0/checkout/features/sketch/line/scenario.feature:23:3" time="6.235262609"><system-out><![CDATA[  Scenario: line-03 Cancel after only a start point
+   ✔  Given an editable sketch is Ready
+   ✔  When the user select Line and choose a start point
+   ✔  And press Escape before an endpoint
+   ✔  Then the dynamic input closes and Ready returns
+   ✔  And no new segment is visible at the canceled location
+]]></system-out></testcase></testsuite></testsuites>

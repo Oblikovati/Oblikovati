@@ -1,0 +1,14 @@
+{
+  "kind": "diagnostic",
+  "base_commit": "e9c57772c7c81f58c3083aa6dbc3be36e81677fa",
+  "gui_source_sha256": "794c72922a7a29d3e22365acb98355382e0033e1e9582ff134d55e395f9db06b",
+  "screenshot": "shared-close-No.png",
+  "screenshot_sha256": "84e251ed8de06498a26245bdde8b131dfc41f3530c39307292726531648aa3f4",
+  "extent_pixels": [
+    1440,
+    900
+  ],
+  "environment": "Linux X11, Xvfb and Vulkan Lavapipe",
+  "observation": "The shared-answer prompt identifies Part2 and lists Part1 before either answer. The screenshot was inspected.",
+  "limits": "A working-tree build; scenario reference capture and sealed build provenance are not established."
+}

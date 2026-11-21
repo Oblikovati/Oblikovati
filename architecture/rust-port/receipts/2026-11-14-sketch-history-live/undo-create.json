@@ -1,0 +1,13 @@
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "sketch index 0: expected an ordered index in 0..0 (request: {\"sketchIndex\":0})"
+      }
+    ],
+    "isError": true
+  }
+}

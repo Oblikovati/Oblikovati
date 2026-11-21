@@ -1,0 +1,84 @@
+# SPDX-License-Identifier: GPL-2.0-only
+[package]
+name = "oblikovati-head"
+description = "Oblikovati desktop composition root"
+autotests = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+[package.metadata.oblikovati]
+requires-display = true
+[lints.rust]
+unsafe_code = "deny"
+[lints.clippy]
+all = "warn"
+[dependencies]
+png = "=0.17.16"
+tempfile = "=3.27.0"
+oblikovati-addin-host = { path = "../addin-host" }
+oblikovati-gui = { path = "../gui" }
+oblikovati-martensite = { path = "../martensite" }
+oblikovati-drawing = { path = "../drawing" }
+oblikovati-cli = { path = "../cli" }
+oblikovati-script = { path = "../script" }
+oblikovati-viewport = { path = "../viewport" }
+oblikovati-automation = { path = "../automation" }
+oblikovati-model = { path = "../model" }
+oblikovati-session = { path = "../session" }
+oblikovati-persistence = { path = "../persistence" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "907cd4c28713b47501b077b8d902dbb6a008aada", version = "=0.165.0" }
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
+sha2 = "=0.10.9"
+accesskit = "=0.25.1"
+
+[[bin]]
+name = "oblikovati"
+path = "src/main.rs"
+
+[[test]]
+name = "arguments"
+path = "tests/arguments.rs"
+[[test]]
+name = "native"
+path = "tests/native.rs"
+
+[dev-dependencies]
+cucumber = { version = "=0.23.0", features = ["output-json", "output-junit"] }
+xml = "=1.4.0"
+futures = "=0.3.32"
+imgui = { version = "=0.12.0", features = ["docking"] }
+oblikovati-solve = { path = "../solve" }
+tempfile = "=3.27.0"
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+x11-dl = "=2.21.0"
+x11rb = { version = "=0.14.0", features = ["xtest", "xfixes"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+accesskit_unix = "=0.24.0"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+accesskit_windows = "=0.35.1"
+
+[[test]]
+name = "scripts"
+path = "tests/scripts.rs"
+
+[[test]]
+name = "scripts_native"
+path = "tests/scripts_native.rs"
+
+[[test]]
+name = "addin_startup"
+path = "tests/addin_startup.rs"
+
+[[test]]
+name = "selection_filter"
+path = "tests/selection_filter.rs"
+
+[[test]]
+name = "history_browser"
+path = "tests/history_browser.rs"

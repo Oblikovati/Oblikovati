@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Sketch preferences: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature" package="testsuite/Feature: Sketch preferences: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature" tests="3" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T17:33:28.789157331Z" time="29.177707735"><testcase name="Scenario: sketch-preferences-06 Escape discards an uncommitted Axes change: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature:5:3" time="9.236116216"><system-out><![CDATA[  Scenario: sketch-preferences-06 Escape discards an uncommitted Axes change
+   ✔  Given Axes is checked in Sketch preferences
+   ✔  When the user unchecks Axes
+   ✔  Then OK and enabled Cancel and Apply controls appear
+   ✔  When the user presses Escape without applying and reopens the Sketch page
+   ✔  Then Axes is checked again
+]]></system-out></testcase><testcase name="Scenario: sketch-preferences-07 HUD input controls disable their coordinate modes: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature:13:3" time="9.721935241"><system-out><![CDATA[  Scenario: sketch-preferences-07 HUD input controls disable their coordinate modes
+   ✔  Given Pointer Input is enabled with Cartesian Coordinates
+   ✔  And Dimension Input is enabled with Polar Coordinates
+   ✔  When the user unchecks Enable Pointer Input
+   ✔  Then its coordinate radio controls are disabled
+   ✔  And the dimension coordinate controls remain active
+   ✔  When the user unchecks Enable Dimension Input
+   ✔  Then its coordinate radio controls are disabled too
+   ✔  When the user clicks Cancel and reopens HUD Settings
+   ✔  Then both input checkboxes are checked again
+   ✔  And Pointer Cartesian and Dimension Polar selections are restored
+   ✔  When the user presses Escape twice
+   ✔  Then HUD Settings and Application Options close in sequence
+]]></system-out></testcase><testcase name="Scenario: sketch-preferences-08 Apply Axes off reopen and restore: mnt/vininas-projects/MCAD-Scenarios/features/sketch/sketch-preferences/scenario.feature:28:3" time="10.219656278"><system-out><![CDATA[  Scenario: sketch-preferences-08 Apply Axes off reopen and restore
+   ✔  Given Axes is checked on Sketch preferences page
+   ✔  When the user unchecks Axes and clicks Apply
+   ✔  Then Apply becomes disabled and Close is displayed
+   ✔  When the user closes Application Options
+   ✔  Then the long sketch-axis line is absent while the global view triad remains
+   ✔  When the user reopens Application Options
+   ✔  Then Axes remains unchecked
+   ✔  When the user checks Axes and applies and closes
+   ✔  Then the long sketch-axis line returns
+]]></system-out></testcase></testsuite></testsuites>

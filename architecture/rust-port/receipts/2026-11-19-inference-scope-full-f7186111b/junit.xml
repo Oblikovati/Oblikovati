@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Constraint inference scope: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/scenario.feature" package="testsuite/Feature: Constraint inference scope: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/scenario.feature" tests="4" errors="0" failures="2" hostname="localhost" timestamp="2026-11-19T18:13:18.448695698Z" time="31.914420304"><testcase name="Scenario: constraint-inference-scope-06 Accept and reopen selected inference geometry: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/scenario.feature:5:3" time="3.267033327"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: constraint-inference-scope-06 Accept and reopen selected inference geometry
+   ✘  Given Geometry in current command is selected in an editable sketch
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/scenario.feature:6:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: constraint-inference-scope-01 entry: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/scenario.feature:23:3" time="8.670554933"><system-out><![CDATA[  Scenario: constraint-inference-scope-01 entry
+   ✔  Given an active planar sketch
+   ✔  When the user open Constrain and choose Constraint Inference Scope
+   ✔  Then Geometry in current command, All Geometry and Select are available
+   ✔  And Geometry in current command is selected and the geometry selector is disabled
+]]></system-out></testcase><testcase name="Scenario: constraint-inference-scope-03 cancel: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/scenario.feature:31:3" time="3.175621285"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: constraint-inference-scope-03 cancel
+   ✘  Given Geometry in current command is the initial scope
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/scenario.feature:32:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: constraint-inference-scope-07 Accept All Geometry and restore the initial scope: mnt/vininas-projects/MCAD-Scenarios/features/sketch/constraint-inference-scope/scenario.feature:41:3" time="16.801210759"><system-out><![CDATA[  Scenario: constraint-inference-scope-07 Accept All Geometry and restore the initial scope
+   ✔  Given Geometry in current command is selected in the active sketch
+   ✔  When the user choose All Geometry
+   ✔  Then the geometry selector is disabled
+   ✔  When the user accept and reopen Constraint Inference Scope
+   ✔  Then All Geometry remains selected
+   ✔  When the user choose Geometry in current command and accept
+   ✔  Then the original scope is restored in this session
+]]></system-out></testcase></testsuite></testsuites>

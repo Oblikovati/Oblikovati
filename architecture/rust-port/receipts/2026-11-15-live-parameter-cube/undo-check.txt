@@ -1,0 +1,9 @@
+faces 6 unchanged
+edges 12 unchanged
+vertices 8 unchanged
+face 0 99.99999999894179 mm²
+face 1 99.99999999894179 mm²
+face 2 100.00000000005384 mm²
+face 3 99.99999999945481 mm²
+face 4 100.00000000008113 mm²
+face 5 99.99999999847236 mm²

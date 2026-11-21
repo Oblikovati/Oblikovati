@@ -1,0 +1,17 @@
+{
+  "application_commit": "b99a575c9edbb764b7911c9d7825171aebe73ea4",
+  "scenario_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
+  "scope": "Ordered model part and sketch replay and generation-checked session adoption.",
+  "verification": {
+    "model": 1621,
+    "session": 482,
+    "martensite": 54,
+    "check": "workspace all targets passed"
+  },
+  "clippy": "model, session and Martensite all targets passed",
+  "limits": [
+    "Normal desktop commands do not yet invoke ordered sketch recompute.",
+    "Refresh adoption refuses open transactions; integration must handle edits within them.",
+    "Native face selection, Go migration and the full gate remain open."
+  ]
+}

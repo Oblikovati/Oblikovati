@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: tmp/obk-window-views-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: tmp/obk-window-views-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-15T16:21:45.647049827Z" time="14.349335149"><testcase name="Scenario: Restore distinct views of one part after switching windows: tmp/obk-window-views-source/features/application/document-tabs/document-tabs.feature:426:3" time="14.349335149"><system-out><![CDATA[  Scenario: Restore distinct views of one part after switching windows
+   ✔  Given two numbered windows of the same part are open in the MCAD Software
+   ✔  And the first window displays the sketch in an orthogonal view
+   ✔  And the second window displays the part in an isometric view
+   ✔  And the first window is active
+   ✔  When the user switches to the second window through Home
+   ✔  Then the second window displays its isometric view
+   ✔  And the part's model browser is displayed
+   ✔  When the user switches back to the first window through Home
+   ✔  Then the first window displays its orthogonal sketch view
+   ✔  And its sketch editing environment remains active
+]]></system-out></testcase></testsuite></testsuites>

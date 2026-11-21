@@ -1,0 +1,13 @@
+panel_items = T
+panel_size = 100% 32
+panel_position = bottom center horizontal
+panel_margin = 0 0
+panel_padding = 0 0 0
+panel_dock = 0
+panel_layer = top
+taskbar_mode = single_desktop
+taskbar_padding = 0 0 0
+task_text = 1
+task_icon = 0
+task_centered = 0
+task_maximum_size = 300 32

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: New sketch: tmp/oblikovati-batch-source/features/sketch/new-sketch/scenario.feature" package="testsuite/Feature: New sketch: tmp/oblikovati-batch-source/features/sketch/new-sketch/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T05:26:35.42692588Z" time="8.918373608"><testcase name="Scenario: new-sketch-05 Start with a preselected support plane: tmp/oblikovati-batch-source/features/sketch/new-sketch/scenario.feature:37:3" time="8.918373608"><system-out><![CDATA[  Scenario: new-sketch-05 Start with a preselected support plane
+   ✔  Given the model browser exposes YZ Plane
+   ✔  When the user select YZ Plane before invoking Start 2D Sketch
+   ✔  Then Sketch3 is created without another support-selection click
+   ✔  And the ViewCube reads RIGHT
+   ✔  And the empty sketch status reads Fully Constrained
+]]></system-out></testcase></testsuite></testsuites>

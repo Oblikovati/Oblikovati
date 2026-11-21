@@ -1,0 +1,484 @@
+{
+  "kind": "diagnostic only; not acceptance",
+  "source_files": {
+    "/tmp/oblikovati-bdd-LwDnmG/checkout/features/sketch/ellipse/scenario.feature": "@sketch\r\nFeature: Ellipse\r\n\r\n  @acceptance @documented_observation @needs_fixture\r\n  Scenario: ellipse-01 Create an ellipse from three defining points\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch\r\n    When the user select Ellipse and specify a center, first-axis point, and point on the ellipse\r\n    Then a closed oval appears and the command requests another ellipse center\r\n    When the user press Escape\r\n    Then the oval remains and the sketch returns to Ready\r\n\r\n\r\n  @cancel @documented_observation @needs_fixture\r\n  Scenario: ellipse-03 Cancel at the defining stages\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch\r\n    Given Ellipse is active in an editable sketch\r\n    When the user select only a center and press Escape\r\n    Then Ready returns without an additional ellipse\r\n    When the user invoke Ellipse again, select a center and rotated first axis, and press Escape\r\n    Then Ready returns with no new ellipse\r\n\r\n\r\n  @documented_observation @needs_fixture @repeatability\r\n  Scenario: ellipse-05 Measure the restored rotated ellipse\r\n    Given the MCAD Software is running\r\n    And an editable planar sketch\r\n    Given the rotated ellipse is restored by Redo\r\n    When the user open Measure, move its panel aside and select the curve\r\n    Then Selection 1 is identified as Ellipse\r\n    And major and minor radii are 7.579 and 3.806 millimeters\r\n    And major and minor diameters are 15.159 and 7.613 millimeters\r\n    And length is 36.758 millimeters\r\n    And global center is X 0.000, Y 27.574, Z -69.211 millimeters\r\n    When the user click Done\r\n    Then Measure closes\r\n\r\n  @documented_observation @needs_fixture\r\n  Scenario: ellipse-06 Cancel after defining a rotated first axis\r\n    Given an editable sketch is Ready\r\n    When the user choose Ellipse from the Circle dropdown\r\n    And the user select the fixture center\r\n    Then the prompt requests the first axis point\r\n    When the user select the fixture first-axis point\r\n    Then the prompt requests a point on the ellipse\r\n    When the user press Escape\r\n    Then the MCAD Software returns to Ready with no new ellipse visible\r\n\r\n  @documented_observation @needs_fixture\r\n  Scenario: ellipse-07 Create and undo a rotated ellipse\r\n    Given the editable recorded fixture has clear canvas for a rotated ellipse\r\n    When the user invoke Ellipse\r\n    And the user select the fixture center\r\n    And the user select the fixture first-axis point\r\n    And the user select the fixture point on the ellipse\r\n    Then a tilted closed oval appears and the command requests another center\r\n    When the user press Escape\r\n    Then the MCAD Software is Ready\r\n    When the user press Ctrl+Z\r\n    Then the oval disappears\r\n    When the user press Ctrl+Y\r\n    Then the rotated oval returns\r\n\r\n  @documented_observation @needs_fixture\r\n  Scenario: ellipse-08 Remain at first-axis selection after a coincident click\r\n    Given an editable sketch is Ready\r\n    When the user invoke Ellipse and select the fixture center\r\n    And the user select the same location again as its first-axis point\r\n    Then the prompt remains Select first axis point without an error dialog\r\n    When the user select a distinct first-axis point\r\n    Then the prompt advances to Select point on ellipse\r\n    When the user press Escape\r\n    Then the MCAD Software is Ready with no additional ellipse visible\r\n\r\n  @documented_observation @needs_fixture\r\n  Scenario: ellipse-09 Toggle the curvature comb on an existing ellipse\r\n    Given the rotated ellipse has no curvature comb visible\r\n    When the user right-click its curve and choose Display Curvature\r\n    Then a green comb appears around the ellipse\r\n    When the user right-click its curve again\r\n    Then Display Curvature is checked and Setup Curvature Display is offered\r\n    When the user click the checked Display Curvature option\r\n    Then the comb disappears and the ellipse remains visible\r\n\r\n  @documented_observation @needs_fixture\r\n  Scenario: ellipse-10 Cancel a curvature-density preview\r\n    Given the ellipse has Display Curvature enabled\r\n    When the user choose Setup Curvature Display from its context menu\r\n    Then Curvature Settings shows two Minimum-to-Maximum sliders without numeric values\r\n    And OK and Apply are initially disabled\r\n    When the user advance the upper slider\r\n    Then the thumb advances and the comb becomes denser\r\n    And OK and Apply become enabled\r\n    When the user click Cancel\r\n    Then the dialog closes and the earlier sparse comb returns\r\n    And curvature display stays enabled\r\n\r\n  @documented_observation @needs_fixture\r\n  Scenario: ellipse-11 Retain an applied curvature setting when closing with Cancel\r\n    Given the ellipse has a sparse curvature comb enabled\r\n    And the upper and lower slider positions are recorded\r\n    When the user open Setup Curvature Display\r\n    And the user advance the upper slider\r\n    And the user click Apply\r\n    Then the dialog remains open with the denser comb visible\r\n    When the user click Cancel\r\n    Then the dialog closes and the denser comb remains\r\n    When the user reopen Setup Curvature Display\r\n    Then the upper slider remains at its applied position\r\n    And the lower slider remains at its original position\r\n    When the user move the upper slider back to its recorded original position\r\n    And the user choose OK\r\n    Then the dialog closes and the earlier sparse comb is displayed\r\n    When the user reopen Setup Curvature Display\r\n    Then both slider thumbs are at their original positions\r\n    And OK and Apply are disabled\r\n    When the user click Cancel without making changes\r\n    Then the dialog closes and curvature display remains enabled\r\n    When the user right-click the ellipse and select the checked Display Curvature option\r\n    Then the comb disappears and the ellipse remains visible\r\n\r\n  @needs_fixture\r\n  Scenario: ellipse-12 Observe numeric key as alias input during first-axis selection\r\n    Given the fixture sketch is Ready with the retained circle and midpoint line\r\n    When Ellipse is selected and a free center is clicked\r\n    Then Select first axis point appears without a visible numeric field\r\n    When the 8 key is pressed\r\n    Then the status shows Command alias input: 8\r\n    When Escape is pressed\r\n    Then Ready appears with no added ellipse visible\r\n\r\n  @needs_fixture\r\n  Scenario: ellipse-13 Dimension an existing ellipse major radius and measure its result\r\n    Given the recorded ellipse fixture has been created in an editable sketch\r\n    When General Dimension selects its curve and places the horizontal axis extent\r\n    Then Edit Dimension displays 6.3832549 mm selected\r\n    When the 8 key and Return accept the new value and Escape exits the command\r\n    Then annotation 8 and a wider ellipse remain\r\n    When Measure selects the ellipse\r\n    Then major radius is 8.000 mm and major diameter is 16.000 mm\r\n    And minor radius is 2.979 mm and minor diameter is 5.958 mm\r\n    And length is 36.320 mm and global center is 0.000, -6.213, 15.221 mm\r\n\r\n  @needs_fixture\r\n  Scenario: ellipse-14 Undo and redo the ellipse major-radius value edit\r\n    Given Measure has closed after the accepted major-radius value of 8\r\n    When Ctrl+Z is pressed\r\n    Then the ellipse narrows and the retained dimension annotation becomes 6.383\r\n    When Ctrl+Y is pressed\r\n    Then the wider ellipse and annotation 8 return\r\n    And the major-radius dimension remains\r\n\r\n  @needs_fixture\r\n  Scenario: ellipse-15 Cancel a proposed minor-radius edit while retaining the placed dimension\r\n    Given the recorded ellipse has major-radius annotation 8 and minor radius approximately 2.979 mm\r\n    When General Dimension selects its curve and places the vertical center-to-axis dimension\r\n    Then the minor-radius editor opens with 2.9788523 mm selected\r\n    When 4 is entered and Escape cancels the editor\r\n    Then the placed dimension remains annotated 2.979\r\n    When its annotation is reopened\r\n    Then the editor retains expression 2.9788523 mm\r\n\r\n  @needs_fixture\r\n  Scenario: ellipse-16 Accept the minor-radius dimension value\r\n    Given the reopened minor-radius expression is selected\r\n    When 4 is entered and Return accepts it\r\n    Then the ellipse grows vertically and its vertical annotation becomes 4\r\n    And its horizontal annotation remains 8\r\n    When Escape exits General Dimension\r\n    Then the edited ellipse remains visible\r\n\r\n  @needs_fixture\r\n  Scenario: ellipse-17 Measure both accepted axis radii in the fresh fixture\r\n    Given the recorded fixture ellipse has driving radii of 8 and 4 mm\r\n    When General Dimension is exited and Measure selects the ellipse curve\r\n    Then major and minor radii are 8.000 and 4.000 mm\r\n    And major and minor diameters are 16.000 and 8.000 mm\r\n    And length is 38.754 mm\r\n    And global center is 0.000, -7.787, 19.076 mm\r\n    When Done closes Measure\r\n    Then the retained ellipse remains visible\r\n\r\n  @needs_fixture\r\n  Scenario: ellipse-18 Reject a zero minor radius and retain the prior value\r\n    Given the recorded ellipse has a driving minor-radius dimension storing 4 mm\r\n    When General Dimension opens the minor-radius dimension and 0 followed by Return attempts an edit\r\n    Then Edit Dimension Value reports Failed to edit dimension value\r\n    When Cancel dismisses the failure window\r\n    Then General Dimension remains active with annotations 8 and 4 visible\r\n    When the minor-radius dimension is reopened\r\n    Then its stored expression is 4 mm\r\n    When Escape closes the editor and another Escape exits the command\r\n    Then Ready appears and the ellipse remains visible\r\n\r\n  @needs_fixture\r\n  Scenario: ellipse-19 Retain the dimensioned ellipse through Finish and Edit Sketch\r\n    Given the fixture sketch contains the ellipse with annotations 8 and 4\r\n    When Finish Sketch returns to 3D Model\r\n    Then the ellipse and its dimension annotations remain visible in the oblique view\r\n    When the sketch is right-clicked in the browser\r\n    Then Edit Sketch is available and Visibility and Dimension Visibility are checked\r\n    When Edit Sketch is selected\r\n    Then the editable sketch returns in Right view with the ellipse and annotations 8 and 4\r\n\r\n  @needs_fixture\r\n  Scenario: ellipse-20 Observe a digit immediately after fresh center selection\r\n    Given an editable sketch with existing geometry is Ready\r\n    When the user open Circle dropdown and choose Ellipse\r\n    And the user select the fixture center\r\n    Then the prompt requests the first axis point\r\n    When the user press 6\r\n    Then Command alias input displays 6 instead of an axis-length editor\r\n    When the user press Escape\r\n    Then Ready returns with the previous geometry retained\r\n\r\n  @needs_fixture\r\n  Scenario: ellipse-21 Cancel the lower-slider preview\r\n    Given the ellipse has curvature display enabled\r\n    And the prior upper-slider preview was cancelled\r\n    And its original upper and lower thumb positions were recorded\r\n    When the user reopen Curvature Settings\r\n    Then the upper and lower thumbs have their earlier restored positions\r\n    When the user advance only the lower slider\r\n    Then the comb envelope expands without a visible ellipse shape change\r\n    And the upper slider stays at its earlier position\r\n    And OK and Apply are enabled\r\n    When the user click Cancel\r\n    Then the earlier comb envelope returns with curvature still enabled\r\n\r\n\r\n\r\n"
+  },
+  "scenarios": [
+    {
+      "source": "/tmp/oblikovati-bdd-LwDnmG/checkout/features/sketch/ellipse/scenario.feature",
+      "scenario": "ellipse-01 Create an ellipse from three defining points",
+      "line": 5,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 6,
+          "step": "the MCAD Software is running",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 7,
+          "step": "an editable planar sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 8,
+          "step": "the user select Ellipse and specify a center, first-axis point, and point on the ellipse",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 9,
+          "step": "a closed oval appears and the command requests another ellipse center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 10,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 11,
+          "step": "the oval remains and the sketch returns to Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-LwDnmG/checkout/features/sketch/ellipse/scenario.feature",
+      "scenario": "ellipse-03 Cancel at the defining stages",
+      "line": 15,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 16,
+          "step": "the MCAD Software is running",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 17,
+          "step": "an editable planar sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 18,
+          "step": "Ellipse is active in an editable sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 19,
+          "step": "the user select only a center and press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 20,
+          "step": "Ready returns without an additional ellipse",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 21,
+          "step": "the user invoke Ellipse again, select a center and rotated first axis, and press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 22,
+          "step": "Ready returns with no new ellipse",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-LwDnmG/checkout/features/sketch/ellipse/scenario.feature",
+      "scenario": "ellipse-05 Measure the restored rotated ellipse",
+      "line": 26,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 27,
+          "step": "the MCAD Software is running",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 28,
+          "step": "an editable planar sketch",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 29,
+          "step": "the rotated ellipse is restored by Redo",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 30,
+          "step": "the user open Measure, move its panel aside and select the curve",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 31,
+          "step": "Selection 1 is identified as Ellipse",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Selection 1: Ellipse\" in Measure \"\""
+        },
+        {
+          "line": 32,
+          "step": "major and minor radii are 7.579 and 3.806 millimeters",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Major radius 7.579 mm\" in Measure \"\""
+        },
+        {
+          "line": 33,
+          "step": "major and minor diameters are 15.159 and 7.613 millimeters",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Major diameter 15.159 mm\" in Measure \"\""
+        },
+        {
+          "line": 34,
+          "step": "length is 36.758 millimeters",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Length 36.758 mm\" in Measure \"\""
+        },
+        {
+          "line": 35,
+          "step": "global center is X 0.000, Y 27.574, Z -69.211 millimeters",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Center X 0.000 Y 27.574 Z -69.211 mm\" in Measure \"\""
+        },
+        {
+          "line": 36,
+          "step": "the user click Done",
+          "result": "failed",
+          "tainted": true,
+          "detail": "expected \"Done\" in rendered text \"W\\nP\\nZ\\nv\\nO\\nv\\nRight\\nRedodocument2:complete\\n5dimensionsneeded\\nModel\\n+\\nModel\\nMenu\\nSearch\\nPart2<Primary>\\nRepresentations\\nModelState\\n<Primary>\\n1\\nOrigin\\nYZPlane\\nXZPlane\\nXYPlane\\nXAxis\\nYAxis\\nZAxis\\nCenterPoint\\nParameters\\nSketches\\nSketch1\\n[DOF5]\\nFeatures\\nEndofPart\\nHome\\nPart1<Primary>*\\nPart2<Primary>*\\nDocuments\\nFile\\nTools\\nNew\\nOpen\\nSave\\nUndo\\nRedo\\nHome\\nProjects\\nUpdate\\nSelect\\nMaterialBrowser\\nMaterials\\nAppearanceBrowser\\nParameters\\n...\\n3DModel\\nSketch\\nTools\\nManage\\nView\\nAnnotate\\nRibbonDisplay\\nv\\nv\\nRectangle\\nCircle\\nv\\nPoint\\nCenterArcv\\nEllipse\\nCenterRect.\\n3-PtRect.\\nv\\nLine\\nProjectGeometry\\nCreatev\\nv\\nConstrain\\nv\\nModify\\nv\\nPattern\\nv\\nInsert\\nv\\nFormat\\nFinishSketch\\nExit\""
+        },
+        {
+          "line": 37,
+          "step": "Measure closes",
+          "result": "passed",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-LwDnmG/checkout/features/sketch/ellipse/scenario.feature",
+      "scenario": "ellipse-06 Cancel after defining a rotated first axis",
+      "line": 40,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 41,
+          "step": "an editable sketch is Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 42,
+          "step": "the user choose Ellipse from the Circle dropdown",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 43,
+          "step": "the user select the fixture center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 44,
+          "step": "the prompt requests the first axis point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 45,
+          "step": "the user select the fixture first-axis point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 46,
+          "step": "the prompt requests a point on the ellipse",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 47,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 48,
+          "step": "the MCAD Software returns to Ready with no new ellipse visible",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-LwDnmG/checkout/features/sketch/ellipse/scenario.feature",
+      "scenario": "ellipse-07 Create and undo a rotated ellipse",
+      "line": 51,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 52,
+          "step": "the editable recorded fixture has clear canvas for a rotated ellipse",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 53,
+          "step": "the user invoke Ellipse",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 54,
+          "step": "the user select the fixture center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 55,
+          "step": "the user select the fixture first-axis point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 56,
+          "step": "the user select the fixture point on the ellipse",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 57,
+          "step": "a tilted closed oval appears and the command requests another center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 58,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 59,
+          "step": "the MCAD Software is Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 60,
+          "step": "the user press Ctrl+Z",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 61,
+          "step": "the oval disappears",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 62,
+          "step": "the user press Ctrl+Y",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 63,
+          "step": "the rotated oval returns",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-LwDnmG/checkout/features/sketch/ellipse/scenario.feature",
+      "scenario": "ellipse-08 Remain at first-axis selection after a coincident click",
+      "line": 66,
+      "classification": "passes",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 67,
+          "step": "an editable sketch is Ready",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 68,
+          "step": "the user invoke Ellipse and select the fixture center",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 69,
+          "step": "the user select the same location again as its first-axis point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 70,
+          "step": "the prompt remains Select first axis point without an error dialog",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 71,
+          "step": "the user select a distinct first-axis point",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 72,
+          "step": "the prompt advances to Select point on ellipse",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 73,
+          "step": "the user press Escape",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 74,
+          "step": "the MCAD Software is Ready with no additional ellipse visible",
+          "result": "passed",
+          "tainted": false,
+          "detail": null
+        }
+      ]
+    },
+    {
+      "source": "/tmp/oblikovati-bdd-LwDnmG/checkout/features/sketch/ellipse/scenario.feature",
+      "scenario": "ellipse-09 Toggle the curvature comb on an existing ellipse",
+      "line": 77,
+      "classification": "unbound step",
+      "setup_error": null,
+      "steps": [
+        {
+          "line": 78,
+          "step": "the rotated ellipse has no curvature comb visible",
+          "result": "unbound",
+          "tainted": false,
+          "detail": null
+        },
+        {
+          "line": 79,
+          "step": "the user right-click its curve and choose Display Curvature",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 80,
+          "step": "a green comb appears around the ellipse",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 81,
+          "step": "the user right-click its curve again",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 82,
+          "step": "Display Curvature is checked and Setup Curvature Display is offered",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 83,
+          "step": "the user click the checked Display Curvature option",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        },
+        {
+          "line": 84,
+          "step": "the comb disappears and the ellipse remains visible",
+          "result": "unbound",
+          "tainted": true,
+          "detail": null
+        }
+      ]
+    }
+  ]
+}

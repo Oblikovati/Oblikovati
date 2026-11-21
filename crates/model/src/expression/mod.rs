@@ -2,17 +2,29 @@
 
 //! Compile authored formulas and bind references to caller-owned stable identities.
 mod binding;
+mod conditional;
+mod display;
 mod error;
 mod evaluate;
 mod functions;
 mod node;
 mod parser;
+mod rename;
 mod token;
 
 use crate::{quantity::Quantity, units::UnitsOfMeasure};
 pub use binding::BoundExpression;
+pub(crate) use conditional::{ConditionalValue, conditional_expression};
 pub use error::ExpressionError;
 use node::Node;
+pub(crate) use token::reference_name;
+
+#[derive(Clone, Debug)]
+struct ReferenceSpan {
+    start: usize,
+    end: usize,
+    reference: usize,
+}
 
 /// An owned expression snapshot. Syntax nodes are flat to keep evaluation and drop stack-safe.
 #[derive(Clone, Debug)]
@@ -20,14 +32,64 @@ pub struct Expression {
     source: String,
     nodes: Vec<Node>,
     references: Vec<String>,
+    spans: Vec<ReferenceSpan>,
     root: usize,
 }
 
 impl Expression {
+    /// Format explicit scalar units for an editor; example: `formula.scalar_display(&units, "mm", false)`.
+    pub fn scalar_display(
+        &self,
+        units: &UnitsOfMeasure,
+        bare_unit: &str,
+        promote_first: bool,
+    ) -> String {
+        display::scalar_display(&self.source, units, bare_unit, promote_first)
+    }
+    /// Store an already measured quantity without parsing it; for example `Expression::constant(area)`.
+    pub fn constant(quantity: Quantity) -> Self {
+        Self {
+            source: format!(
+                "{} {}",
+                quantity.value,
+                crate::units::category_name(quantity.dimension)
+            ),
+            nodes: vec![Node::Literal(quantity)],
+            references: Vec::new(),
+            spans: Vec::new(),
+            root: 0,
+        }
+    }
+
     /// Compile in document working units; for example `Expression::parse("2 * width", &units)`.
     /// Bare expression numbers are unitless, independent of display preferences.
     pub fn parse(source: &str, units: &UnitsOfMeasure) -> Result<Self, ExpressionError> {
         parser::compile(source, units)
+    }
+
+    /// Compile a reference-free unitless result in its captured unit; formula operands stay unitless.
+    /// Example: `Expression::parse_with_bare_unit("10", &units, "mm")?` retains source `10`.
+    pub fn parse_with_bare_unit(
+        source: &str,
+        units: &UnitsOfMeasure,
+        unit: &str,
+    ) -> Result<Self, ExpressionError> {
+        let expression = Self::parse(source, units)?;
+        if unit.is_empty() || !expression.references.is_empty() {
+            return Ok(expression);
+        }
+        let Ok(value) = expression.evaluate() else {
+            return Ok(expression);
+        };
+        if value.dimension != crate::quantity::Dimension::Unitless {
+            return Ok(expression);
+        }
+        let Some(value) = value.value.is_finite().then_some(value.value) else {
+            return Ok(expression);
+        };
+        let mut converted = Self::parse(&format!("{value} {unit}"), units)?;
+        converted.source = source.into();
+        Ok(converted)
     }
 
     /// Return the authored source unchanged; for example `assert_eq!(formula.source(), "width");`.

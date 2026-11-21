@@ -1,0 +1,12 @@
+{
+  "base": "b139e6c8d",
+  "issue": 4073,
+  "scope": "Customize content-driven close in shared dock",
+  "native_x11": "customize_close_selects_next_tab_and_reopens_in_same_dock passed",
+  "checks": [
+    "cargo fmt --all -- --check",
+    "cargo clippy --locked --offline -p oblikovati-head --all-targets -- -D warnings",
+    "cargo check --locked --offline -p oblikovati-head --target x86_64-pc-windows-gnu"
+  ],
+  "remaining": "Asynchronous completion and other close paths remain under investigation."
+}

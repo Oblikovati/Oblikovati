@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Quick access toolbar customization: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature" package="testsuite/Feature: Quick access toolbar customization: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature" tests="12" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T10:11:47.890469054Z" time="286.007080171"><testcase name="Scenario: Add and remove a quick access command: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature:5:3" time="22.573078135"><system-out><![CDATA[  Scenario: Add and remove a quick access command
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And Print is not present on the toolbar
+   ✔  And New, Open, Save, Undo, Redo and Home are present on the toolbar
+   ✔  When the user opens the quick access customization menu
+   ✔  Then Print is unchecked
+   ✔  And New, Open, Save, Undo, Redo and Home are checked
+   ✔  When the user selects Print
+   ✔  Then a Print icon appears on the quick access toolbar
+   ✔  When the user reopens the customization menu
+   ✔  Then Print is checked
+   ✔  When the user selects Print again
+   ✔  Then the Print icon is removed from the toolbar
+   ✔  And the same part remains active
+]]></system-out></testcase><testcase name="Scenario: Move the quick access toolbar below and above the ribbon: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature:21:3" time="25.52945864"><system-out><![CDATA[  Scenario: Move the quick access toolbar below and above the ribbon
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  And Print is visible on the toolbar
+   ✔  When the user opens the quick access customization menu
+   ✔  And the user chooses Show Below the Ribbon
+   ✔  Then the quick access toolbar appears in a row below the ribbon
+   ✔  And Print remains visible on the toolbar
+   ✔  When the user reopens the customization menu
+   ✔  Then Print is checked
+   ✔  And Show Above the Ribbon is offered
+   ✔  When the user chooses Show Above the Ribbon
+   ✔  Then the quick access toolbar returns above the ribbon
+   ✔  And the same part remains active
+]]></system-out></testcase><testcase name="Scenario: Add and remove a ribbon command through its context menu: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature:36:3" time="23.817836144"><system-out><![CDATA[  Scenario: Add and remove a ribbon command through its context menu
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And Extrude is available on the 3D Model ribbon
+   ✔  And Extrude is not on the quick access toolbar
+   ✔  When the user right-clicks Extrude on the ribbon
+   ✔  Then its context menu offers Add to Quick Access Toolbar
+   ✔  When the user chooses Add to Quick Access Toolbar
+   ✔  Then an Extrude icon appears on the quick access toolbar
+   ✔  And Extrude remains available on the ribbon
+   ✔  When the user right-clicks the added quick access icon
+   ✔  Then its context menu offers Remove from Quick Access Toolbar
+   ✔  When the user chooses Remove from Quick Access Toolbar
+   ✔  Then the added icon disappears from the quick access toolbar
+   ✔  And Extrude remains available on the ribbon
+   ✔  And the same part remains active
+]]></system-out></testcase><testcase name="Scenario: Add a separator from a toolbar command context menu: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature:52:3" time="24.260916928"><system-out><![CDATA[  Scenario: Add a separator from a toolbar command context menu
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And Extrude has been added to the quick access toolbar
+   ✔  When the user right-clicks its quick access icon
+   ✔  Then the context menu offers Add Separator
+   ✔  When the user chooses Add Separator
+   ✔  Then the quick access row gains a narrow divider beside the added command
+   ✔  And the same part remains active
+]]></system-out></testcase><testcase name="Scenario: Invoke an added command from quick access in an empty part: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature:61:3" time="23.362454137"><system-out><![CDATA[  Scenario: Invoke an added command from quick access in an empty part
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And Extrude has been added to the quick access toolbar
+   ✔  And the 3D Model ribbon is active
+   ✔  When the user selects the Extrude quick access icon
+   ✔  Then the workspace displays the origin planes for selection
+   ✔  And Start 2D Sketch is highlighted on the ribbon
+   ✔  When the user presses Escape
+   ✔  Then the origin plane selection display closes
+   ✔  And the empty part remains active
+]]></system-out></testcase><testcase name="Scenario: Invoke an added shortcut while another ribbon tab is active: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature:72:3" time="22.757261192"><system-out><![CDATA[  Scenario: Invoke an added shortcut while another ribbon tab is active
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And Extrude has been added to the quick access toolbar from 3D Model
+   ✔  When the user selects the View ribbon tab
+   ✔  Then the Extrude quick access icon remains visible
+   ✔  When the user selects the Extrude quick access icon
+   ✔  Then the origin planes are displayed for selection
+   ✔  And the View ribbon remains displayed
+   ✔  When the user presses Escape
+   ✔  Then the origin plane selection display closes
+   ✔  And the empty part remains active
+]]></system-out></testcase><testcase name="Scenario: Show a part shortcut in part documents but not an assembly: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature:85:3" time="27.263669186"><system-out><![CDATA[  Scenario: Show a part shortcut in part documents but not an assembly
+   ✔  Given two parts and an assembly are open in the MCAD Software
+   ✔  And the first part is active
+   ✔  And Extrude has been added to the quick access toolbar from its ribbon
+   ✔  When the user activates the assembly document
+   ✔  Then the Extrude shortcut is not shown on its quick access toolbar
+   ✔  When the user reactivates the first part
+   ✔  Then the Extrude shortcut is visible again
+   ✔  When the user activates the second part
+   ✔  Then the Extrude shortcut is visible there as well
+   ✔  And the second part remains active
+]]></system-out></testcase><testcase name="Scenario: Disable the add option for an existing shortcut: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature:97:3" time="29.125560788"><system-out><![CDATA[  Scenario: Disable the add option for an existing shortcut
+   ✔  Given a part is active in the MCAD Software
+   ✔  And Extrude is not on the quick access toolbar
+   ✔  When the user right-clicks Extrude on the ribbon
+   ✔  Then Add to Quick Access Toolbar is enabled
+   ✔  When the user chooses Add to Quick Access Toolbar
+   ✔  And the user right-clicks Extrude on the ribbon again
+   ✔  Then Add to Quick Access Toolbar is disabled
+   ✔  When the user dismisses the menu and remove the Extrude quick access icon
+   ✔  And the user right-clicks Extrude on the ribbon again
+   ✔  Then Add to Quick Access Toolbar is enabled
+]]></system-out></testcase><testcase name="Scenario: Keep a standard shortcut selection when switching document contexts: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature:111:3" time="26.080725537"><system-out><![CDATA[  Scenario: Keep a standard shortcut selection when switching document contexts
+   ✔  Given a part and an assembly are open in the MCAD Software
+   ✔  And Print is not selected in either document's quick access customization menu
+   ✔  When the user activates the part and selects Print in its quick access customization menu
+   ✔  Then Print appears on the part's quick access toolbar
+   ✔  When the user activates the assembly
+   ✔  Then Print is absent from the assembly's quick access toolbar
+   ✔  When the user opens its quick access customization menu
+   ✔  Then Print is unchecked
+   ✔  When the user returns to the part
+   ✔  Then Print is visible on the part's quick access toolbar
+   ✔  When the user opens its quick access customization menu
+   ✔  Then Print is checked
+   ✔  When the user selects Print again
+   ✔  Then Print is removed from the part's quick access toolbar
+]]></system-out></testcase><testcase name="Scenario: Show Redo disabled when no redo action is available: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature:127:3" time="19.823350066"><system-out><![CDATA[  Scenario: Show Redo disabled when no redo action is available
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And Redo is present on the quick access toolbar
+   ✔  And no redo action is available in the active document
+   ✔  When the user inspects the quick access toolbar
+   ✔  Then Redo remains visible but disabled
+   ✔  And the active part remains open
+]]></system-out></testcase><testcase name="Scenario: Inspect and dismisses quick access command choices: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature:135:3" time="21.186724627"><system-out><![CDATA[  Scenario: Inspect and dismisses quick access command choices
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the full Tools ribbon is selected
+   ✔  And the quick access toolbar is above the ribbon
+   ✔  When the user opens the quick access toolbar customization menu
+   ✔  Then the menu lists New, Open, Save, Undo, Redo, Home, Projects, Update, Select, Refine Appearance, Material Browser, Materials, Appearance Browser, Appearance Override, Adjust, Clear, Parameters, Design Doctor, Print, iProperties, Return, and Measure
+   ✔  And each listed command displays its current checked or unchecked state
+   ✔  And the menu offers Show Below the Ribbon
+   ✔  When the user presses Escape
+   ✔  Then the customization menu closes
+   ✔  And the command check states remain unchanged
+   ✔  And the Tools ribbon and active part remain visible
+]]></system-out></testcase><testcase name="Scenario: Open and close the Material Browser from quick access: tmp/obk-qat-full-3955/features/application/quick-access-toolbar/quick-access-toolbar.feature:148:3" time="20.226044791"><system-out><![CDATA[  Scenario: Open and close the Material Browser from quick access
+   ✔  Given a part document is active in the MCAD Software
+   ✔  And the Tools ribbon is selected
+   ✔  And the Material Browser quick access command is visible
+   ✔  And the Material Browser window is closed
+   ✔  When the user selects the Material Browser quick access command
+   ✔  Then the Material Browser window opens over the part workspace
+   ✔  And the part remains active
+   ✔  When the user closes the Material Browser window
+   ✔  Then the browser window closes
+   ✔  And the Tools ribbon and active part remain visible
+]]></system-out></testcase></testsuite></testsuites>

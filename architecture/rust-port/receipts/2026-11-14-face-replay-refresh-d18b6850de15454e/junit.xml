@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport navigation wheel: tmp/oblikovati-face-replay-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" package="testsuite/Feature: Viewport navigation wheel: tmp/oblikovati-face-replay-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T06:07:08.564610679Z" time="23.485184799"><testcase name="Scenario: Apply and restore wheel opacity: tmp/oblikovati-face-replay-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature:127:3" time="23.485184799"><system-out><![CDATA[  Scenario: Apply and restore wheel opacity
+   ✔  Given the full navigation wheel is open in the MCAD Software
+   ✔  And its wheel opacity preference is 50%
+   ✔  When the user opens the wheel options and chooses 90% wheel opacity
+   ✔  And the user clicks OK
+   ✔  Then the options dialog closes and the wheel remains visible
+   ✔  When the user reopens the wheel options
+   ✔  Then the wheel opacity field displays 90%
+   ✔  When the user chooses 50% wheel opacity and clicks OK
+   ✔  Then the options dialog closes and the wheel remains visible
+   ✔  When the user presses Escape
+   ✔  Then the wheel closes and the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>

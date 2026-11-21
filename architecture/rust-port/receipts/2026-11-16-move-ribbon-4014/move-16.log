@@ -1,0 +1,33 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.12s
+     Running unittests src/lib.rs (/tmp/obk-move-4014-target-DQSt4f4q/debug/deps/oblikovati_head-d4dcd7ed7aaa36ac)
+
+running 1 test
+test native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window ... Feature: Move
+  Scenario: move-16 Inspect Relative and Absolute coordinate modes
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given the selected ellipse is in precise Base Point mode
+   ✘  When the user opens the left toolbar dropdown
+      Step failed:
+      Defined: tmp/oblikovati-bdd-oXcdMg/checkout/features/sketch/move/scenario.feature:126:5
+      Step doesn't match any function
+[Summary]
+1 feature
+1 scenario (1 failed)
+3 steps (2 passed, 1 failed)
+
+thread 'sketch-scenarios' (3468448) panicked at crates/head/src/../tests/application/benchmark.rs:294:5:
+scenario benchmark: expected no failed, undefined, or skipped steps
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window' (3468447) panicked at crates/head/src/../tests/application/../sketch/benchmark.rs:76:10:
+called `Result::unwrap()` on an `Err` value: Any { .. }
+FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::sketch::sketch_scenarios_use_the_native_window
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1065 filtered out; finished in 27.21s
+
+error: test failed, to rerun pass `-p oblikovati-head --lib`

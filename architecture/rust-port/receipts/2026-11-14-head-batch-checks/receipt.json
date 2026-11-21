@@ -1,0 +1,24 @@
+{
+  "kind": "head module refactor verification",
+  "application_commit": "2628ab064",
+  "results": {
+    "relation_marks": "2 passed",
+    "browser_owner": "16 passed",
+    "frame_owner": "24 passed",
+    "wheel_options": "1 passed under Xvfb",
+    "wheel_opacity_scenario": "11 steps passed after binding current wording",
+    "clippy": "head all targets passed",
+    "docs_lint": "markdownlint passed; line limit check reports owner_work.rs"
+  },
+  "limits": "The first wheel BDD run stopped at an unbound step; the corrected run used injected native GUI input under Xvfb. Full gate not run.",
+  "artifacts": {
+    "wheel-bdd2.log.gz": "34da05065a139f1d633553da99a9160ab6731befc3947e84a4cf60549f5aba19",
+    "wheel-bdd.log.gz": "06c1064da2a3e393cdcd847530b35e1027dad33f9bcf93644b1a77af625a7978",
+    "docs.log.gz": "0a6e05c74558735fa3d489c7188504016feb74d4c15dc5a014795a6b45c43a82",
+    "relation.log.gz": "fbf41801e7d17e031c3c96e1b1d88ab105c6ad572ffb16f73e196dcd32c209e4",
+    "browser.log.gz": "c5ff0aa5fe73d880c3d6a1d7f0d8d777eeb89300c40a9158b6c718a556d634dc",
+    "clippy-final.log.gz": "5762470bff605a49eb582786760692cd3edaac276e6cbf5bc0598a25f242c54c",
+    "wheel.log.gz": "ee9bdefe9dbeccd12f00d92764ae41724c6184bc93d63499148d7dee23378068",
+    "frames.log.gz": "04937df5b2a78a038acac2c75a2fae9b3d5119fd27c1e99ec13d67364446b83d"
+  }
+}

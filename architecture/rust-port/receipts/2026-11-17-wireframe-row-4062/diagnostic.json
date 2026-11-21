@@ -1,0 +1,15 @@
+{
+  "kind": "diagnostic",
+  "application_commit": "5a8effd3d",
+  "scenario_source": "unversioned live source",
+  "feature_sha256": "888729cce3fa0ceacae952c7683bf27da804fcdf65ac83683b415cd8cb72f5fd",
+  "scenario": "Give quick access and ribbon tabs separate rows",
+  "scenarios_passed": 1,
+  "steps_passed": 10,
+  "environment": "Linux Xvfb and Vulkan Lavapipe",
+  "limitations": [
+    "Filtered scenario from unversioned source, not verified acceptance.",
+    "Sealed build provenance remains open (#3978).",
+    "Native window controls are tracked separately (#4063)."
+  ]
+}

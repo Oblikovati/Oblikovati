@@ -43,12 +43,13 @@ fn stage_contains_real_binaries_and_required_metadata() {
         "LICENSE",
         "target/release-build.json",
         "target/x86_64-unknown-linux-gnu/release/oblikovati-cli",
-        "target/x86_64-unknown-linux-gnu/release/oblikovati-head",
+        "target/x86_64-unknown-linux-gnu/release/oblikovati",
     ] {
         tree.put(file, "fixture bytes");
     }
     let stage = stage_product(tree.root(), &config(), platform).unwrap();
     assert!(stage.join("bin/oblikovati-cli").is_file());
+    assert!(stage.join("bin/oblikovati").is_file());
     assert!(stage.join("release-manifest.json").is_file());
     stage_product(tree.root(), &config(), platform).unwrap();
     let runner = FakeRunner::default();

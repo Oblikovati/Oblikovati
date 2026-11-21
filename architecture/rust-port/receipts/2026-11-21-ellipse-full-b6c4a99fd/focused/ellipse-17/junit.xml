@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T12:01:26.475038355Z" time="23.83183642"><testcase name="Scenario: ellipse-17 Measure both accepted axis radii in the fresh fixture: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:198:3" time="23.83183642"><system-out><![CDATA[  Scenario: ellipse-17 Measure both accepted axis radii in the fresh fixture
+   ✔  Given a copy of `fixtures/cad/ellipse/axis-both-8-4-measure.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  Given the recorded fixture ellipse has driving radii of 8 and 4 mm
+   ✔  When General Dimension is exited and Measure selects the ellipse curve
+   ✔  Then major and minor radii are 8.000 and 4.000 mm
+   ✔  And major and minor diameters are 16.000 and 8.000 mm
+   ✔  And length is 38.754 mm
+   ✔  And global center is 0.000, -7.787, 19.076 mm
+   ✔  When Done closes Measure
+   ✔  Then the retained ellipse remains visible
+]]></system-out></testcase></testsuite></testsuites>

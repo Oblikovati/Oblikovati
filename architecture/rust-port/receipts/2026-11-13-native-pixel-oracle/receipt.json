@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-13",
+  "issue": "https://github.com/Oblikovati/Oblikovati/issues/3867",
+  "base_commit": "06d440b38ec8311dba26968bc2ada3ca13d2d2f9",
+  "tested_file_sha256": {
+    "crates/head/src/lib.rs": "534a46ebefa0db018bb9751c317beee9d6953622c63ed501cba4cd39edf92c9f",
+    "crates/head/tests/fixture_color.rs": "3635a2cfe58e6beaadfb7a9eea49ecd11263086c541f72ade65c39dbd0376fd9",
+    "crates/head/tests/application/solid_visibility.rs": "8b7a581d7042827371451f6a159c282c1ce6568dc8c84eaecd6457bbd245b776",
+    "crates/head/tests/native_scene.rs": "9c55de132b709d3f5f39623eace7c5895cc146b9cb311b1aac58f3aea253f89f",
+    "crates/head/tests/native_scene/certified.rs": "95729d7a482dee105a4f5e031f493dcf759ba9d58655448ba2cb5fa5a6962886",
+    "crates/head/tests/navigation/native.rs": "9935ad33f4e39e4b59896390a0188914381e64346984d0d9229ba26e60dd6cc3"
+  },
+  "color_source": "shipped default appearance converted from linear RGB to framebuffer sRGB; certified evaluator fixture explicitly uses green",
+  "checks": [
+    "two fixture-color unit tests passed",
+    "native visibility, deletion and undo, GUI composition, certified green fixture, Home navigation, copy, and edit/undo tests passed",
+    "head all-target Clippy passed"
+  ],
+  "separate_failure": "Native rotation of a fully constrained rectangle reached the solver and was rejected; issue #3868 tracks the contract question.",
+  "log": "tests.log.gz",
+  "log_sha256": "4a84ac5338382d55f43f25f77fc02637e9dc7999869f99cf3939a511e84ca21e",
+  "scope": "Targeted native tests; the full gate has not passed."
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Text: tmp/obk-text-32-source-be_napkb/checkout/features/sketch/text/scenario.feature" package="testsuite/Feature: Text: tmp/obk-text-32-source-be_napkb/checkout/features/sketch/text/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T04:23:43.309984196Z" time="87.377735442"><testcase name="Scenario: text-32 Observe and restore new Text preset defaults: tmp/obk-text-32-source-be_napkb/checkout/features/sketch/text/scenario.feature:317:3" time="87.377735442"><system-out><![CDATA[  Scenario: text-32 Observe and restore new Text preset defaults
+   ✔  Given the saved preset g
+   ✔  When the user selects Use Current Preset as the new Text default and cancel the existing-text editor
+   ✔  And the user starts another placement
+   ✔  Then g and its fraction content appear automatically
+   ✔  When the user selects Last Used, cancel, and place again
+   ✔  Then the fraction preview returns with the clock-marked *g selector
+   ✔  And Last Used is checked in settings
+   ✔  When the user restores No Preset, cancel, and place again
+   ✔  Then the editor is empty with Tahoma 3.05 mm, purple and width 100
+   ✔  And the saved preset g remains listed
+]]></system-out></testcase></testsuite></testsuites>

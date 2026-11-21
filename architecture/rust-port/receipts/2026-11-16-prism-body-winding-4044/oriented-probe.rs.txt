@@ -1,0 +1,28 @@
+// Temporary native diagnostic for #4044. Include under viewport/tests/native.rs.
+use super::*;
+use oblikovati_martensite::{PrismMeshOptions, PrismProbeDefinition, PrismProbeLoop, retain_planar_prism};
+
+#[test]
+fn native_signed_prism_presentation_diagnostic() {
+    let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
+    let mut view = runtime.open_window("Oblikovati orientation diagnostic", [640, 480]).unwrap();
+    for sign in [1., -1.] {
+        let prism = retain_planar_prism(&PrismProbeDefinition {
+            outer: PrismProbeLoop::polygon(vec![1, 2, 3, 4], vec![[-2., -2.], [2., -2.], [2., 2.], [-2., 2.]]),
+            holes: Vec::new(), displacement: [0., 0., sign * 4.],
+        }).unwrap();
+        let mesh = prism.presentation(PrismMeshOptions { chord_error: 0.05, angular_error: 0.5 }).unwrap();
+        let scene = ViewportScene::from_prism(&mesh, [0., 0., 1.], [0., 1., 0., 1.]).unwrap();
+        view.set_camera(ViewportCamera { eye: [10., 10., sign * 12.], target: [0., 0., sign * 2.], up: [0., 1., 0.], scale: 8., ..ViewportCamera::default() }).unwrap();
+        view.submit(&scene).unwrap();
+        let capture = complete_surface_frame(&mut view);
+        await_presented_pixels(&view, &capture);
+        let mut ppm = format!("P6\n{} {}\n255\n", capture.extent[0], capture.extent[1]).into_bytes();
+        for pixel in capture.rgba.as_chunks::<4>().0 { ppm.extend_from_slice(&pixel[..3]); }
+        let path = if sign > 0. { "/tmp/obk-shading-4044-positive.ppm" } else { "/tmp/obk-shading-4044-negative.ppm" };
+        std::fs::write(path, ppm).unwrap();
+        assert!(capture.rgba.as_chunks::<4>().0.iter().any(|p| p[1] > p[0] && p[1] > p[2]));
+    }
+    view.close();
+    assert!(runtime.validation_errors().unwrap().is_empty());
+}

@@ -1,0 +1,11 @@
+{
+  "kind": "unsealed full-feature diagnostic",
+  "application_commit": "771c175da94d46c026ce5c50ecc917dfcc3077eb",
+  "build_note": "The test was built and run with the committed change present but before it was committed.",
+  "feature_sha256": "8b6164be54d7a3bd307b4de24d7750079ce4d23b9ada2e6fec7a3b83149e2cfa",
+  "scenarios_total": 12,
+  "scenarios_passed": 12,
+  "steps_passed": 143,
+  "fixture": "fixtures/cad/main-window-frame-start.opd",
+  "limitations": "Source and build are unsealed, so this is not verified acceptance. Wheel mouse actions, Escape, fixture path entry and Enter use X11. XMODIFIERS was unset for Xvfb."
+}

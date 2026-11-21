@@ -1,0 +1,273 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::slot_input::{PlanarInputWindow, deliver};
+use super::*;
+use crate::{SketchPlacementTool, placement_test_inputs::*};
+use oblikovati_viewport::{ViewportButton, ViewportEvent, ViewportInput, ViewportKey};
+fn rectangle_owner() -> TestOwner {
+    let (mut owner, _, _) = super::rectangle_input::placement_owner(SketchPlacementTool::Rectangle);
+    deliver(
+        &mut owner,
+        &[
+            button([0, 0], true),
+            button([0, 0], false),
+            motion([100, 100]),
+            button([100, 100], true),
+            key(ViewportKey::Cancel, true),
+        ],
+    );
+    owner
+}
+fn modified_click(pixel: [i32; 2]) -> ViewportEvent {
+    ViewportEvent::Input(ViewportInput::Button {
+        button: ViewportButton::Left,
+        pressed: true,
+        position: pixel,
+        modifiers: oblikovati_viewport::ViewportModifiers {
+            control: true,
+            ..Default::default()
+        },
+    })
+}
+fn selection(owner: &mut TestOwner) -> SelectionResult {
+    Client::new(owner.document_host())
+        .model()
+        .selection()
+        .unwrap()
+}
+#[test]
+fn viewport_clicks_share_checked_entities_with_the_api_and_scene_without_history() {
+    let mut owner = rectangle_owner();
+    let history = owner.gui_command_state().unwrap().undo_label;
+    deliver(&mut owner, &[button([50, 0], true)]);
+    assert_eq!(selection(&mut owner).kinds, Some(vec![6]));
+    let first = owner.gui_command_state().unwrap().sketch_selection;
+    assert_eq!(first.entities.len(), 1);
+    assert!(first.sketches.is_empty());
+    deliver(&mut owner, &[modified_click([100, 50])]);
+    assert_eq!(selection(&mut owner).count, 2);
+    assert_eq!(
+        owner
+            .gui_command_state()
+            .unwrap()
+            .sketch_selection
+            .entities
+            .len(),
+        2
+    );
+    deliver(&mut owner, &[modified_click([100, 50])]);
+    assert_eq!(owner.gui_command_state().unwrap().sketch_selection, first);
+    deliver(&mut owner, &[modified_click([200, 200])]);
+    assert_eq!(selection(&mut owner).count, 1);
+    deliver(&mut owner, &[button([200, 200], true)]);
+    assert_eq!(selection(&mut owner).count, 0);
+    assert_eq!(owner.gui_command_state().unwrap().undo_label, history);
+}
+#[test]
+fn endpoint_point_priority_projection_failures_and_generation_guards_are_visible() {
+    let mut owner = rectangle_owner();
+    deliver(&mut owner, &[button([0, 0], true)]);
+    let chosen = owner.gui_command_state().unwrap().sketch_selection.entities[0];
+    let document = owner.documents().workspace().active_document().unwrap();
+    owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot()
+        .sketches
+        .get(chosen.0)
+        .unwrap()
+        .geometry()
+        .point(chosen.1)
+        .unwrap();
+    assert!(
+        owner
+            .process_window_inputs(
+                &[button([50, 0], true)],
+                &PlanarInputWindow {
+                    navigating: false,
+                    fail: true,
+                    edge_on: false
+                }
+            )
+            .unwrap()
+    );
+    assert!(
+        matches!(owner.take_command_notice(), Some(DesktopCommandNotice::SelectionFailed { cause }) if cause.contains("named projection failure"))
+    );
+    assert_eq!(selection(&mut owner).count, 1);
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
+    assert_eq!(selection(&mut owner).count, 0);
+}
+#[test]
+fn active_placement_and_releases_do_not_select_geometry() {
+    let mut owner = rectangle_owner();
+    deliver(&mut owner, &[button([50, 0], false)]);
+    assert_eq!(selection(&mut owner).count, 0);
+    owner
+        .place_sketch_tool_from_gui(oblikovati_gui::GuiSketchTool::Rectangle)
+        .unwrap();
+    deliver(&mut owner, &[button([50, 0], true)]);
+    assert_eq!(selection(&mut owner).count, 0);
+}
+
+#[test]
+fn camera_gestures_do_not_consume_or_clear_editor_selection() {
+    let mut owner = rectangle_owner();
+    deliver(&mut owner, &[button([50, 0], true)]);
+    let selected = owner.gui_command_state().unwrap().sketch_selection;
+    owner
+        .process_window_inputs(
+            &[button([200, 200], true)],
+            &PlanarInputWindow {
+                navigating: true,
+                fail: true,
+                edge_on: false,
+            },
+        )
+        .unwrap();
+    assert_eq!(
+        owner.gui_command_state().unwrap().sketch_selection,
+        selected
+    );
+    assert_eq!(selection(&mut owner).count, 1);
+}
+
+#[test]
+fn successful_pick_replaces_a_failure_after_the_window_consumes_it() {
+    let mut owner = rectangle_owner();
+    owner
+        .process_window_inputs(
+            &[button([50, 0], true)],
+            &PlanarInputWindow {
+                fail: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+    assert!(matches!(
+        owner.take_command_notice(),
+        Some(DesktopCommandNotice::SelectionFailed { .. })
+    ));
+    deliver(&mut owner, &[motion([50, 0])]);
+    assert!(owner.take_command_notice().is_none());
+    deliver(&mut owner, &[button([50, 0], true)]);
+    assert_eq!(
+        owner.take_command_notice(),
+        Some(DesktopCommandNotice::SelectionChanged { count: 1 })
+    );
+    deliver(&mut owner, &[button([200, 200], true)]);
+    assert_eq!(owner.take_command_notice().unwrap().message(), "Ready");
+    assert_eq!(selection(&mut owner).count, 0);
+}
+
+#[test]
+fn geometric_candidate_obeys_tool_filter_and_never_selects_on_hover() {
+    use crate::HeadSketchWork;
+    use oblikovati_gui::GuiSketchConstraint::{Concentric, Parallel};
+    let mut owner = candidate_owner();
+    let window = PlanarInputWindow {
+        navigating: false,
+        fail: false,
+        edge_on: false,
+    };
+    assert!(
+        owner
+            .sketch_tool_candidate([50, 0], &window)
+            .unwrap()
+            .is_none()
+    );
+    owner.constrain_sketch_from_gui(Concentric).unwrap();
+    assert!(
+        owner
+            .sketch_tool_candidate([50, 0], &window)
+            .unwrap()
+            .is_none()
+    );
+    owner.constrain_sketch_from_gui(Parallel).unwrap();
+    let candidate = owner
+        .sketch_tool_candidate([50, 0], &window)
+        .unwrap()
+        .unwrap();
+    assert!(candidate.entities.len() == 1);
+    assert_eq!(selection(&mut owner).count, 0);
+    assert!(
+        owner
+            .sketch_tool_candidate([200, 200], &window)
+            .unwrap()
+            .is_none()
+    );
+    deliver(&mut owner, &[button([50, 0], true)]);
+    assert!(
+        owner
+            .sketch_tool_candidate([50, 0], &window)
+            .unwrap()
+            .is_none()
+    );
+    deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
+    assert!(
+        owner
+            .sketch_tool_candidate([50, 0], &window)
+            .unwrap()
+            .is_none()
+    );
+}
+
+fn candidate_owner() -> TestOwner {
+    use oblikovati_model::sketch::{SketchPlacementRecipe, SketchPlane};
+    let (mut owner, _) = owner();
+    let document = Client::new(owner.document_host())
+        .documents()
+        .create(&CreateDocumentArgs {
+            type_: "part".into(),
+            name: "Candidate part".into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .id;
+    let mut request = super::sketch_edit::request(SketchPlane::xy());
+    request.project_origin = false;
+    let sketch = owner.create_sketch_for_edit(document, &request).unwrap();
+    let recipe = SketchPlacementRecipe::line_chain(&[[0., 0.], [100., 0.]], false).unwrap();
+    owner
+        .commit_sketch_placement(document, sketch, &recipe, &[])
+        .unwrap();
+    owner
+}
+
+#[test]
+fn move_candidate_follows_geometry_selection_stage_without_selecting() {
+    use crate::HeadSketchWork;
+    use oblikovati_gui::GuiSketchMoveAction;
+    let mut owner = candidate_owner();
+    let window = PlanarInputWindow::default();
+    owner
+        .sketch_move_from_gui(GuiSketchMoveAction::Start)
+        .unwrap();
+    owner
+        .sketch_move_from_gui(GuiSketchMoveAction::SetOptimizeSingle(true))
+        .unwrap();
+    let candidate = owner.sketch_tool_candidate([50, 0], &window).unwrap();
+    assert!(matches!(
+        candidate,
+        Some(oblikovati_viewport::ViewportSketchHover { .. })
+    ));
+    assert_eq!(selection(&mut owner).count, 0);
+    deliver(&mut owner, &[button([50, 0], true)]);
+    assert!(
+        owner
+            .sketch_tool_candidate([50, 0], &window)
+            .unwrap()
+            .is_none()
+    );
+    deliver(&mut owner, &[key(ViewportKey::Cancel, true)]);
+    assert!(
+        owner
+            .sketch_tool_candidate([50, 0], &window)
+            .unwrap()
+            .is_none()
+    );
+}

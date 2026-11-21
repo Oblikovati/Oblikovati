@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T08:57:16.745418963Z" time="30.054914403"><testcase name="Scenario: Restore a saved camera for an active view representation: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:1037:3" time="30.054914403"><system-out><![CDATA[  Scenario: Restore a saved camera for an active view representation
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And a copied view representation is active
+   ✔  And the orientation indicator shows Front
+   ✔  And Autosave Camera is off for the active view
+   ✔  When the user chooses Save Current Camera from the active view's Camera View submenu
+   ✔  And the user changes the orientation to Top using the orientation control
+   ✔  Then the orientation indicator shows Top
+   ✔  And the copied view remains active
+   ✔  When the user chooses Restore Saved Camera from the active view's Camera View submenu
+   ✔  Then the orientation indicator shows Front
+   ✔  And the copied view remains active
+   ✔  And the viewport remains empty
+]]></system-out></testcase></testsuite></testsuites>

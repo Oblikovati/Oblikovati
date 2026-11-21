@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Arc center point: tmp/obk-arcs-48987af/features/sketch/arc-center-point/scenario.feature" package="testsuite/Feature: Arc center point: tmp/obk-arcs-48987af/features/sketch/arc-center-point/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T21:20:53.679587069Z" time="6.745955153"><testcase name="Scenario: arc-center-point-01 Commit the intended result: tmp/obk-arcs-48987af/features/sketch/arc-center-point/scenario.feature:5:3" time="6.745955153"><system-out><![CDATA[  Scenario: arc-center-point-01 Commit the intended result
+   ✔  Given the MCAD Software is running
+   ✔  And an editable planar sketch is active
+   ✔  When the user select Center Point Arc, choose its center, start point, and end direction
+   ✔  Then an arc is created from the selected center, start and end direction
+   ✔  And the command requests another center
+   ✔  When the user press Escape
+   ✔  Then the arc remains and the sketch returns to Ready
+]]></system-out></testcase></testsuite></testsuites>

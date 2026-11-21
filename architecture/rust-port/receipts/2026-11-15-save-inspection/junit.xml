@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: tmp/obk-save-inspect-pinned-20261115/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: tmp/obk-save-inspect-pinned-20261115/features/application/document-saving/document-saving.feature" tests="4" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T23:25:12.320903836Z" time="35.674250286"><testcase name="Scenario: Inspect file type choices when saving a part: tmp/obk-save-inspect-pinned-20261115/features/application/document-saving/document-saving.feature:78:3" time="3.299883685"><system-out><![CDATA[  Scenario: Inspect file type choices when saving a part
+   ✔  Given the Save As dialog is open for a new part in the MCAD Software
+   ✔  When the user opens the file type list
+   ✔  Then the list offers the native part file type and an All Files filter
+]]></system-out></testcase><testcase name="Scenario: Inspect save-change prompt frequency choices: tmp/obk-save-inspect-pinned-20261115/features/application/document-saving/document-saving.feature:102:3" time="6.100205634"><system-out><![CDATA[  Scenario: Inspect save-change prompt frequency choices
+   ✔  Given an unsaved modified part is active in the MCAD Software
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user closes the document tab
+   ✔  And the user opens the prompt-frequency list
+   ✔  Then the list offers always show, once per operation, suppress for this session and suppress permanently
+   ✔  When the user dismisses the list without changing its selection
+   ✔  And the user cancels the save-changes prompt
+   ✔  Then the part remains active
+]]></system-out></testcase><testcase name="Scenario: Inspect Save As commands for a saved part: tmp/obk-save-inspect-pinned-20261115/features/application/document-saving/document-saving.feature:246:3" time="5.06850932"><system-out><![CDATA[  Scenario: Inspect Save As commands for a saved part
+   ✔  Given a saved part is active in the MCAD Software
+   ✔  When the user opens the application menu
+   ✔  And the user expands Save As
+   ✔  Then the menu offers Save As and Save Copy As
+   ✔  And it offers Save Copy As Template and Pack and Go
+   ✔  And the Save Copy As description says the original file remains open
+]]></system-out></testcase><testcase name="Scenario: Inspect the first-save preview of a solid part: tmp/obk-save-inspect-pinned-20261115/features/application/document-saving/document-saving.feature:258:3" time="21.205651647"><system-out><![CDATA[  Scenario: Inspect the first-save preview of a solid part
+   ✔  Given an unsaved part containing a visible rectangular solid is active in the MCAD Software
+   ✔  And the first-save preview settings are configured to save an isometric component view
+   ✔  When the user presses Control+S
+   ✔  Then the Save As dialog opens with a proposed part filename selected
+   ✔  And Save Preview Picture is checked
+   ✔  And Active Component Iso View on Save is selected
+   ✔  And the preview area displays a shaded isometric block
+]]></system-out></testcase></testsuite></testsuites>

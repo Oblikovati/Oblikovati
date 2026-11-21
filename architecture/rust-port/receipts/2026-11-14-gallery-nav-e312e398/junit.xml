@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from a template: tmp/obk-gallery2/features/application/document-creation/document-creation.feature" package="testsuite/Feature: Create a document from a template: tmp/obk-gallery2/features/application/document-creation/document-creation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-14T18:48:08.813177385Z" time="4.091549321"><testcase name="Scenario: Select an assembly template in list view: tmp/obk-gallery2/features/application/document-creation/document-creation.feature:151:3" time="4.091549321"><system-out><![CDATA[  Scenario: Select an assembly template in list view
+   ✔  Given the new-document template chooser is open in the MCAD Software
+   ✔  And the metric template folder is selected
+   ✔  And templates are grouped by type
+   ✔  When the user chooses List in the template display menu
+   ✔  Then the gallery displays compact template entries under type headings
+   ✔  And the template details pane remains visible
+   ✔  When the user selects the standard metric assembly template in the list
+   ✔  Then the details pane identifies an assembly with millimeter units
+   ✔  When the user chooses Medium icons in the template display menu
+   ✔  Then the gallery displays medium-sized template icons
+   ✔  And the details pane continues to identify the metric assembly template
+]]></system-out></testcase></testsuite></testsuites>

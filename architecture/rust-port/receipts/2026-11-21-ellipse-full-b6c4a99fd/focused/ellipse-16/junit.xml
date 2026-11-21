@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" package="testsuite/Feature: Ellipse: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-21T11:47:58.358474889Z" time="93.373303208"><testcase name="Scenario: ellipse-16 Accept the minor-radius dimension value: mnt/vininas-projects/MCAD-Scenarios/features/sketch/ellipse/scenario.feature:187:3" time="93.373303208"><system-out><![CDATA[  Scenario: ellipse-16 Accept the minor-radius dimension value
+   ✔  Given a copy of `fixtures/cad/ellipse/axis-major-8.opd` is open with Sketch1 being edited in RIGHT view
+   ✔  And the user places the minor-radius dimension at 2.9788523 mm and opens its editor
+   ✔  Given the reopened minor-radius expression is selected
+   ✔  When 4 is entered and Return accepts it
+   ✔  Then the ellipse grows vertically and its vertical annotation becomes 4
+   ✔  And its horizontal annotation remains 8
+   ✔  When Escape exits General Dimension
+   ✔  Then the edited ellipse remains visible
+]]></system-out></testcase></testsuite></testsuites>

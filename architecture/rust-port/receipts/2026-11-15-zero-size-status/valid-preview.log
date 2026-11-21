@@ -1,0 +1,8 @@
+    Finished `test` profile [unoptimized] target(s) in 0.10s
+     Running unittests src/lib.rs (/tmp/obk-3975-target/debug/deps/oblikovati_head-d4ccfccc04854620)
+
+running 1 test
+test owner::tests::placement_fields::solved_preview_has_commit_geometry_and_does_not_reserve_live_identities ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1005 filtered out; finished in 4.08s
+

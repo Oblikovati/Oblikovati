@@ -28,3 +28,53 @@ fn legacy_matrix_is_complete_and_rust_artifacts_are_isolated() {
         assert!(artifact_names(version).is_err());
     }
 }
+
+#[test]
+fn macos_platforms_decline_the_retired_sonoma_runner() {
+    for entry in PLATFORMS
+        .iter()
+        .filter(|entry| entry.target.ends_with("apple-darwin"))
+    {
+        assert_ne!(
+            entry.runner, "macos-14",
+            "macOS platform {:?}: expected a supported GitHub runner after 2026-11-02",
+            entry
+        );
+    }
+}
+#[test]
+fn universal_package_declines_the_retired_sonoma_runner() {
+    let workflow = include_str!("../../../.github/workflows/build.yml");
+    assert!(
+        !workflow.contains("runs-on: macos-14"),
+        "universal package workflow: expected a supported GitHub runner after 2026-11-02"
+    );
+}
+
+#[test]
+fn rust_ci_runs_for_the_working_branch() {
+    let workflow = include_str!("../../../.github/workflows/ci.yml");
+    assert!(workflow.contains("branches: [rust, rust-work]"));
+    assert!(workflow.contains("cargo xtask native"));
+    assert!(workflow.contains("make gate-xvfb"));
+}
+
+#[test]
+fn linux_validation_uses_the_compatible_ubuntu_release() {
+    for entry in PLATFORMS
+        .iter()
+        .filter(|entry| entry.target.contains("linux"))
+    {
+        assert!(entry.runner.starts_with("ubuntu-24.04"));
+    }
+    let workflow = include_str!("../../../.github/workflows/ci.yml");
+    assert!(workflow.contains("runs-on: ubuntu-24.04"));
+}
+
+#[test]
+fn development_package_accepts_the_working_branch() {
+    let workflow = include_str!("../../../.github/workflows/build.yml");
+    assert!(workflow.contains("git merge-base --is-ancestor HEAD origin/rust-work"));
+    assert!(workflow.contains("cargo xtask preflight \"$mode\""));
+    assert!(workflow.contains("cargo xtask \"${args[@]}\""));
+}

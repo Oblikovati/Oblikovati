@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use crate::executable_names::{GUI_BINARY, binary_filename};
 use crate::{
     bootstrap::download,
     distribution::sha256,
@@ -71,11 +72,7 @@ fn cli_archive(
     copy_tree(stage, &cli_stage)?;
     let head = cli_stage
         .join("bin")
-        .join(if platform.target.contains("windows") {
-            "oblikovati-head.exe"
-        } else {
-            "oblikovati-head"
-        });
+        .join(binary_filename(GUI_BINARY, platform.target));
     if head.exists() {
         fs::remove_file(head).map_err(|error| error.to_string())?;
     }
@@ -144,7 +141,9 @@ fn linux_image(
     let desktop = root.join("target/oblikovati-rust.desktop");
     write_text(
         &desktop,
-        "[Desktop Entry]\nType=Application\nName=Oblikovati Rust\nExec=oblikovati-head\nIcon=oblikovati\nCategories=Graphics;Engineering;\nTerminal=false\n",
+        &format!(
+            "[Desktop Entry]\nType=Application\nName=Oblikovati Rust\nExec={GUI_BINARY}\nIcon=oblikovati\nCategories=Graphics;Engineering;\nTerminal=false\n"
+        ),
     )?;
     let output = root
         .join("dist")
@@ -173,7 +172,7 @@ fn linuxdeploy_arguments(appdir: &Path, desktop: &Path) -> Vec<String> {
         appdir.to_string_lossy().into_owned(),
         "--executable".into(),
         appdir
-            .join("usr/bin/oblikovati-head")
+            .join(format!("usr/bin/{GUI_BINARY}"))
             .to_string_lossy()
             .into_owned(),
         "--executable".into(),

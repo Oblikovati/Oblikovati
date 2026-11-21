@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Move: tmp/obk-move-history-source/features/sketch/move/scenario.feature" package="testsuite/Feature: Move: tmp/obk-move-history-source/features/sketch/move/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-16T03:30:54.276194509Z" time="30.358614493"><testcase name="Scenario: move-09 undo and redoes a copied ellipse: tmp/obk-move-history-source/features/sketch/move/scenario.feature:40:3" time="30.358614493"><system-out><![CDATA[  Scenario: move-09 undo and redoes a copied ellipse
+   ✔  Given an editable sketch with eligible geometry
+   ✔  Given Move Copy has created the displaced ellipse and Move is closed
+   ✔  When the user undoes
+   ✔  Then only the original ellipse remains in the pair
+   ✔  When the user redoes
+   ✔  Then the displaced ellipse returns
+   ✔  When the user undoes
+   ✔  Then the trial copy is removed again
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,16 @@
+    Finished `test` profile [unoptimized] target(s) in 0.09s
+     Running unittests src/lib.rs (/tmp/obk-extrusion-history-target/debug/deps/oblikovati_head-d4ccfccc04854620)
+
+running 1 test
+test owner::tests::part_scene::measure::named_edge_lengths_survive_edit_history_and_reopen ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 976 filtered out; finished in 4.88s
+
+    Finished `test` profile [unoptimized] target(s) in 0.08s
+     Running unittests src/lib.rs (/tmp/obk-extrusion-history-target/debug/deps/oblikovati_head-d4ccfccc04854620)
+
+running 1 test
+test owner::tests::part_scene::measure::edge_length_rejects_wrong_or_deleted_reference_and_undo_restores_it ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 976 filtered out; finished in 4.50s
+

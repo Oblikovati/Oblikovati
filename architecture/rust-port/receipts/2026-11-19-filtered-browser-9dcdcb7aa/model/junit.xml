@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-19T14:46:27.337537757Z" time="9.953131186"><testcase name="Scenario: Filter the model browser by a feature name: mnt/vininas-projects/MCAD-Scenarios/features/application/model-browser/model-browser.feature:54:3" time="9.953131186"><system-out><![CDATA[  Scenario: Filter the model browser by a feature name
+   ✔  Given an active part in the MCAD Software contains a visible block made by an extrusion named Extrusion1
+   ✔  And the model browser shows its normal hierarchy
+   ✔  When the user opens browser search and enters "Extrusion"
+   ✔  Then the browser shows matching extrusion rows and their ancestor hierarchy
+   ✔  And unrelated origin rows are absent from the filtered tree
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user clears the search text
+   ✔  Then the normal model hierarchy returns
+   ✔  When the user closes browser search
+   ✔  Then the search field disappears
+   ✔  And the normal hierarchy remains visible
+]]></system-out></testcase></testsuite></testsuites>

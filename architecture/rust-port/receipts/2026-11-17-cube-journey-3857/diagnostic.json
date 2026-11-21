@@ -1,0 +1,12 @@
+{
+  "kind": "diagnostic",
+  "application_commit": "fe02ecca8",
+  "command": "XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib native_new_part_button_creates_and_selects_an_unsaved_document -- --nocapture --test-threads=1",
+  "result": "1 passed",
+  "scope": "Native window cube journey with frame-loop scripted input: parameter edit, undo/redo, save/reopen, face and topology key resolution.",
+  "limitations": [
+    "Input is not OS mouse and keyboard; this does not complete live acceptance.",
+    "Solver precision qualification remains open (#3928).",
+    "The API pin and build provenance remain draft (#3965, #3978)."
+  ]
+}

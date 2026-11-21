@@ -1,0 +1,16 @@
+{
+  "source_feature_sha256": "84d50154f9fc52d40006b9e54ef8f8467a37cfd638fdba97269f633a907fb053",
+  "source_revision": null,
+  "source_copy": "quick-access-toolbar.feature.gz",
+  "application_base": "0e2efa2d7",
+  "application_changes_commit": "e74116da7",
+  "provenance": "Diagnostic: unversioned source and working-tree build; popup padding and test-only changes followed the outline run.",
+  "results": {
+    "outline": "13 scenarios, 117 steps passed",
+    "placement": "1 scenario, 13 steps passed",
+    "material": "1 scenario, 10 steps passed",
+    "redo": "1 scenario, 6 steps passed",
+    "other_native_tests": "Select, Undo history, material assignment and undo, Projects, Parameters passed"
+  },
+  "environment": "Linux Xvfb with Mesa lavapipe"
+}
