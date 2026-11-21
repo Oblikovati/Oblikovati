@@ -4,7 +4,39 @@ use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 use oblikovati_api::wire::MarkingMenuView;
 
-pub(crate) type ResolveCommand = fn(&str) -> Option<(&'static str, GuiShellAction)>;
+pub(crate) type ResolveCommand = fn(&str) -> Option<MarkingEntry>;
+
+/// A rendered entry with an action only when its capability is available.
+/// For example, `MarkingEntry::disabled("Select Tangencies")` shows an inactive slot.
+#[derive(Debug, PartialEq)]
+pub(crate) struct MarkingEntry {
+    label: &'static str,
+    action: Option<GuiShellAction>,
+}
+
+impl MarkingEntry {
+    /// Bind a caption to its host action. For example, `MarkingEntry::command(("Save", GuiShellAction::Save))`.
+    pub(crate) fn command((label, action): (&'static str, GuiShellAction)) -> Self {
+        Self {
+            label,
+            action: Some(action),
+        }
+    }
+
+    /// Show a caption with no host action. For example, `MarkingEntry::disabled("Select Other...")`.
+    pub(crate) fn disabled(label: &'static str) -> Self {
+        Self {
+            label,
+            action: None,
+        }
+    }
+
+    fn dispatchable(&self, state: &GuiCommandState) -> bool {
+        self.action
+            .as_ref()
+            .is_some_and(|action| action.enabled(state))
+    }
+}
 
 /// Use the linear context menu when marking is disabled or the user chose classic.
 /// Example: `use_classic(false, false)` returns `true`.
@@ -61,14 +93,7 @@ pub(crate) fn draw_classic(
     resolve: ResolveCommand,
 ) {
     for item in menu.quadrants.iter().flatten() {
-        if let Some((label, command)) = resolve(&item.command_id)
-            && ui
-                .menu_item_config(label)
-                .enabled(command.enabled(state))
-                .build()
-        {
-            actions.push(command);
-        }
+        draw_row(ui, state, actions, resolve(&item.command_id));
     }
     draw_overflow(ui, menu, state, actions, resolve);
     ui.separator();
@@ -88,22 +113,28 @@ fn draw_overflow(
     resolve: ResolveCommand,
 ) {
     for id in menu.overflow.iter().flatten() {
-        let Some((label, command)) = resolve(id) else {
-            continue;
-        };
-        if ui
-            .menu_item_config(label)
-            .enabled(command.enabled(state))
-            .build()
-        {
-            actions.push(command);
-        }
+        draw_row(ui, state, actions, resolve(id));
+    }
+}
+fn draw_row(
+    ui: &Ui,
+    state: &GuiCommandState,
+    actions: &mut Vec<GuiShellAction>,
+    entry: Option<MarkingEntry>,
+) {
+    let Some(entry) = entry else { return };
+    if ui
+        .menu_item_config(entry.label)
+        .enabled(entry.dispatchable(state))
+        .build()
+        && let Some(action) = entry.action
+    {
+        actions.push(action);
     }
 }
 struct Slot {
     quadrant: u8,
-    label: &'static str,
-    action: GuiShellAction,
+    entry: MarkingEntry,
     size: [f32; 2],
 }
 fn resolved_slots(ui: &Ui, menu: &MarkingMenuView, resolve: ResolveCommand) -> Vec<Slot> {
@@ -112,12 +143,11 @@ fn resolved_slots(ui: &Ui, menu: &MarkingMenuView, resolve: ResolveCommand) -> V
         .iter()
         .flatten()
         .filter_map(|item| {
-            let (label, action) = resolve(&item.command_id)?;
-            let text = ui.calc_text_size(label);
+            let entry = resolve(&item.command_id)?;
+            let text = ui.calc_text_size(entry.label);
             Some(Slot {
                 quadrant: item.quadrant.0,
-                label,
-                action,
+                entry,
                 size: [text[0] + 2. * padding[0], ui.frame_height()],
             })
         })
@@ -135,14 +165,14 @@ fn draw_slot(
         return;
     };
     ui.set_cursor_pos([origin[0] + position[0], origin[1] + position[1]]);
-    let disabled = ui.begin_disabled(!slot.action.enabled(state));
+    let disabled = ui.begin_disabled(!slot.entry.dispatchable(state));
     let pressed = ui.button_with_size(
-        format!("{}##marking-{}", slot.label, slot.quadrant),
+        format!("{}##marking-{}", slot.entry.label, slot.quadrant),
         slot.size,
     );
     drop(disabled);
-    if pressed {
-        actions.push(slot.action);
+    if pressed && let Some(action) = slot.entry.action {
+        actions.push(action);
         ui.close_current_popup();
     }
 }

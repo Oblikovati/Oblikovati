@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Part canvas menu uses the user's configured base marking menu (#4045).
+use crate::marking_menu::{MarkingEntry, ResolveCommand};
 use crate::{GuiAuthoringContext, GuiCommandState, GuiShellAction};
 use imgui::Ui;
+use oblikovati_api::{types, wire::MarkingMenuView};
+use oblikovati_model::marking_menu::MarkingMenus;
 
 const POPUP: &str = "##part-canvas-menu";
+const FACE_EXPORT: &str = "Export Face As...";
+const FACE_OTHER: &str = "Face.SelectOther";
+const FACE_TANGENCIES: &str = "Face.SelectTangencies";
 pub(crate) fn canvas_menu(
     ui: &Ui,
     state: &GuiCommandState,
@@ -38,7 +44,7 @@ pub(crate) fn canvas_menu(
     draw_configured_menu(ui, state, actions, classic);
     draw_face_measure(ui, state, actions, face.as_ref());
     if !separate {
-        draw_face_properties(ui, state, actions, face.as_ref());
+        draw_face_details(ui, state, actions, face.as_ref());
     }
     let look_at = GuiShellAction::LookAtSelection;
     if ui
@@ -76,8 +82,7 @@ fn face_popup_origin(
 ) -> [f32; 2] {
     let style = ui.clone_style();
     let above = face_standard_size(ui)[1] + style.item_spacing[1];
-    let overflow = state.marking_menus.as_ref().map_or(0, |menus| {
-        let menu = menus.get(oblikovati_api::types::BASE_ENVIRONMENT);
+    let overflow = part_menu(state, true).map_or(0, |menu| {
         crate::marking_menu::overflow_count(&menu, selected_face_command)
     });
     let below = (overflow + 2) as f32 * ui.frame_height_with_spacing() + style.item_spacing[1];
@@ -91,18 +96,20 @@ fn face_popup_origin(
     )
 }
 fn face_ring_size(ui: &Ui, state: &GuiCommandState) -> Option<f32> {
-    let menus = state.marking_menus.as_ref()?;
-    let menu = menus.get(oblikovati_api::types::BASE_ENVIRONMENT);
+    let menu = part_menu(state, true)?;
     crate::marking_menu::ring_size(ui, &menu, selected_face_command)
 }
 fn face_standard_size(ui: &Ui) -> [f32; 2] {
     let style = ui.clone_style();
-    let width = ui.calc_text_size("Properties")[0].max(ui.calc_text_size("Home View")[0])
+    let width = ["Properties", "Home View", FACE_EXPORT]
+        .into_iter()
+        .map(|label| ui.calc_text_size(label)[0])
+        .fold(0., f32::max)
         + 4. * style.frame_padding[0]
         + 2. * style.item_spacing[0];
     [
         width,
-        2. * ui.frame_height_with_spacing() + 2. * style.window_padding[1],
+        3. * ui.frame_height_with_spacing() + 2. * style.window_padding[1],
     ]
 }
 fn draw_face_standard(
@@ -130,7 +137,7 @@ fn draw_face_standard_rows(
     actions: &mut Vec<GuiShellAction>,
     face: Option<&GuiShellAction>,
 ) {
-    draw_face_properties(ui, state, actions, face);
+    draw_face_details(ui, state, actions, face);
     if ui.menu_item("Home View") {
         actions.push(GuiShellAction::Home);
     }
@@ -156,7 +163,7 @@ fn draw_face_measure(
         actions.push(action);
     }
 }
-fn draw_face_properties(
+fn draw_face_details(
     ui: &Ui,
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
@@ -165,6 +172,7 @@ fn draw_face_properties(
     let Some(GuiShellAction::StartSketchOnSelectedFace { document, key }) = face else {
         return;
     };
+    ui.menu_item_config(FACE_EXPORT).enabled(false).build();
     let action = GuiShellAction::OpenFaceProperties {
         document: *document,
         key: key.clone(),
@@ -183,15 +191,14 @@ fn draw_configured_menu(
     actions: &mut Vec<GuiShellAction>,
     classic: bool,
 ) {
-    let Some(menus) = &state.marking_menus else {
+    let selected = selected_face_action(state);
+    let Some(menu) = part_menu(state, selected.is_some()) else {
         return;
     };
-    let menu = menus.get(oblikovati_api::types::BASE_ENVIRONMENT);
-    let selected = selected_face_action(state);
-    let resolve = if selected.is_some() {
+    let resolve: ResolveCommand = if selected.is_some() {
         selected_face_command
     } else {
-        command
+        part_entry
     };
     let start = actions.len();
     if classic {
@@ -207,6 +214,25 @@ fn draw_configured_menu(
         }
     }
 }
+fn part_menu(state: &GuiCommandState, face: bool) -> Option<MarkingMenuView> {
+    let mut menu = state.marking_menus.as_ref()?.get(types::BASE_ENVIRONMENT);
+    if !face || menu != MarkingMenus::default().get(types::BASE_ENVIRONMENT) {
+        return Some(menu);
+    }
+    // These default positions have no drawable Part command. Keep the saved
+    // profile intact and leave custom profiles in full control of their slots (#4055).
+    for slot in menu.quadrants.iter_mut().flatten() {
+        if part_entry(&slot.command_id).is_some() {
+            continue;
+        }
+        if slot.quadrant == types::QUADRANT_SOUTH {
+            slot.command_id = FACE_TANGENCIES.into();
+        } else if slot.quadrant == types::QUADRANT_WEST {
+            slot.command_id = FACE_OTHER.into();
+        }
+    }
+    Some(menu)
+}
 fn selected_face_action(state: &GuiCommandState) -> Option<GuiShellAction> {
     let document = state.document?;
     let [(key, _)] = state.selected_face_appearances.as_slice() else {
@@ -218,11 +244,19 @@ fn selected_face_action(state: &GuiCommandState) -> Option<GuiShellAction> {
     };
     action.enabled(state).then_some(action)
 }
-fn selected_face_command(id: &str) -> Option<(&'static str, GuiShellAction)> {
-    if id == "Sketch.Create2D" {
-        return Some(("New Sketch", GuiShellAction::ChooseSketchPlane));
+fn selected_face_command(id: &str) -> Option<MarkingEntry> {
+    match id {
+        "Sketch.Create2D" => Some(MarkingEntry::command((
+            "New Sketch",
+            GuiShellAction::ChooseSketchPlane,
+        ))),
+        FACE_OTHER => Some(MarkingEntry::disabled("Select Other...")),
+        FACE_TANGENCIES => Some(MarkingEntry::disabled("Select Tangencies")),
+        _ => part_entry(id),
     }
-    command(id)
+}
+fn part_entry(id: &str) -> Option<MarkingEntry> {
+    command(id).map(MarkingEntry::command)
 }
 fn command(id: &str) -> Option<(&'static str, GuiShellAction)> {
     match id {
@@ -237,6 +271,38 @@ fn command(id: &str) -> Option<(&'static str, GuiShellAction)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn face_only_entries_leave_the_base_profile_and_custom_slots_intact() {
+        let mut menus = MarkingMenus::default();
+        let mut state = GuiCommandState {
+            marking_menus: Some(menus.clone()),
+            ..Default::default()
+        };
+        let ordinary = part_menu(&state, false).unwrap();
+        let face = part_menu(&state, true).unwrap();
+        let ids = face
+            .quadrants
+            .unwrap()
+            .into_iter()
+            .map(|item| item.command_id)
+            .collect::<Vec<_>>();
+        assert!(ids.iter().any(|id| id == FACE_OTHER));
+        assert!(ids.iter().any(|id| id == FACE_TANGENCIES));
+        assert_eq!(part_menu(&state, false), Some(ordinary.clone()));
+        let mut custom = ordinary;
+        custom
+            .quadrants
+            .as_mut()
+            .unwrap()
+            .iter_mut()
+            .find(|item| item.quadrant == types::QUADRANT_WEST)
+            .unwrap()
+            .command_id = "Modify.Fillet".into();
+        menus.set(custom.clone()).unwrap();
+        state.marking_menus = Some(menus);
+        assert_eq!(part_menu(&state, true), Some(custom));
+    }
     #[test]
     fn one_current_face_produces_a_named_sketch_action() {
         let mut state = GuiCommandState {
@@ -280,7 +346,10 @@ mod tests {
         state.document = Some(12);
         assert_eq!(
             selected_face_command("Sketch.Create2D"),
-            Some(("New Sketch", GuiShellAction::ChooseSketchPlane))
+            Some(MarkingEntry::command((
+                "New Sketch",
+                GuiShellAction::ChooseSketchPlane
+            )))
         );
         state
             .selected_face_appearances

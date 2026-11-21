@@ -12,7 +12,7 @@ pub(super) fn draw(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    crate::marking_menu::draw(ui, menu, state, actions, action);
+    crate::marking_menu::draw(ui, menu, state, actions, entry);
 }
 pub(super) fn draw_classic(
     ui: &Ui,
@@ -20,7 +20,10 @@ pub(super) fn draw_classic(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    crate::marking_menu::draw_classic(ui, menu, state, actions, action);
+    crate::marking_menu::draw_classic(ui, menu, state, actions, entry);
+}
+fn entry(id: &str) -> Option<crate::marking_menu::MarkingEntry> {
+    action(id).map(crate::marking_menu::MarkingEntry::command)
 }
 pub(crate) const COMMANDS: [(&str, &str); 22] = [
     ("Sketch.Line", "Line"),

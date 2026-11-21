@@ -92,13 +92,16 @@ fn right_click_selected_face(world: &mut ApplicationWorld) {
 
 #[then("a standard context menu appears")]
 fn standard_face_context_menu(world: &mut ApplicationWorld) {
-    expect_context_menu_row(world, "Properties");
+    let properties = expect_context_menu_row(world, "Properties");
+    let radial = expect_context_menu_row(world, "New Sketch");
+    assert_ne!(properties.list, radial.list);
+    assert!(properties.maximum[1] < radial.minimum[1]);
 }
 
 #[then("a radial shortcut menu appears near the pointer")]
 fn radial_face_context_menu(world: &mut ApplicationWorld) {
-    let top = expect_context_menu_row(world, "New Sketch");
-    let side = expect_context_menu_row(world, "Extrude");
+    let top = expect_context_menu_row(world, "New Sketch").center();
+    let side = expect_context_menu_row(world, "Extrude").center();
     assert!(
         top[0] < side[0] && top[1] < side[1],
         "radial centers: {top:?}, {side:?}"
@@ -109,23 +112,32 @@ fn radial_face_context_menu(world: &mut ApplicationWorld) {
     "the radial menu includes \"Extrude\", \"Select Other...\", \"Select Tangencies\", and \"New Sketch\""
 )]
 fn radial_face_commands(world: &mut ApplicationWorld) {
+    let list = expect_context_menu_row(world, "New Sketch").list;
     for label in [
         "Extrude",
         "Select Other...",
         "Select Tangencies",
         "New Sketch",
     ] {
-        expect_context_menu_row(world, label);
+        assert_eq!(
+            expect_context_menu_row(world, label).list,
+            list,
+            "{label:?}: expected a radial entry"
+        );
     }
 }
 
 #[then("the standard menu includes \"Properties\" and \"Export Face As...\"")]
 fn standard_face_commands(world: &mut ApplicationWorld) {
-    expect_context_menu_row(world, "Properties");
-    expect_context_menu_row(world, "Export Face As...");
+    let properties = expect_context_menu_row(world, "Properties");
+    let export = expect_context_menu_row(world, "Export Face As...");
+    assert_eq!(properties.list, export.list);
 }
 
-fn expect_context_menu_row(world: &ApplicationWorld, name: &str) -> [f32; 2] {
+fn expect_context_menu_row<'a>(
+    world: &'a ApplicationWorld,
+    name: &str,
+) -> &'a diagnostics::RenderedRun {
     let wanted = name.split_whitespace().collect::<String>();
     world
         .frame
@@ -138,7 +150,26 @@ fn expect_context_menu_row(world: &ApplicationWorld, name: &str) -> [f32; 2] {
                 world.text()
             )
         })
-        .center()
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+fn face_menu_disables_deferred_rows_and_opens_properties() {
+    let mut world = ApplicationWorld::new();
+    super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    click_visible_face(&mut world);
+    let selected = world.state().selected_face_appearances;
+    right_click_selected_face(&mut world);
+    for label in ["Select Other...", "Select Tangencies", "Export Face As..."] {
+        let at = diagnostics::pointer_pixels(expect_context_menu_row(&world, label).center());
+        left_click(&mut world, at);
+        expect_context_menu_row(&world, label);
+        assert_eq!(world.state().selected_face_appearances, selected);
+    }
+    let at = diagnostics::pointer_pixels(expect_context_menu_row(&world, "Properties").center());
+    left_click(&mut world, at);
+    assert!(diagnostics::window_geometry("Face Properties").is_some());
+    world.close();
 }
 
 #[when("the user left-clicks empty viewport space")]
