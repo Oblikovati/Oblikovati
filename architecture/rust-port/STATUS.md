@@ -159,6 +159,11 @@ using this status; the live scenario directory can change.
   configured default. After Cancel, the next placement was empty and showed
   Tahoma, 3.05 mm height, and 100 percent width.
   See `receipts/2026-11-21-sketch-text-cancel-defaults-3907/`.
+  Pinned `text-29` passed all six steps. Undo restored the blue diameter
+  label. Redo restored the fraction and 35 dimensions needed. The linked
+  `10.000` field retained its source. The native keyboard test also checked
+  that the redone fraction matched its original glyph pixels.
+  See `receipts/2026-11-21-sketch-text-fraction-history-3907/`.
   Native input left unselected `ab` unchanged and converted selected
   characters to `AB` in the editor and preview. The accepted edit kept
   the text ID and anchor. Pinned `text-25` also requires strike-through.

@@ -27958,10 +27958,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "The Go tests check glyph outlines, text identity and typed operations. The Rust native case checks fraction edits and a separate linked dimension across document history.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite provides glyph outlines for the blue label, stacked fraction and resolved dimension field.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe and DejaVu Sans.",
+      "kernel_integration": "The host preserves text identity and anchor in the edit transaction and resolves the separate field from the sketch dimension during display.",
+      "rust_tests": "Pinned native text-29 and native_fraction_history_restores_diameter_without_changing_linked_text. See architecture/rust-port/receipts/2026-11-21-sketch-text-fraction-history-3907/README.md.",
+      "oracle": "Visible scene text and solver count, stable text and anchor identities, equal fraction pixels before Undo and after Redo, and a retained parameter binding.",
+      "expected_result": "Undo restores the AB diameter label. Redo restores the blue stacked fraction and 35 dimensions needed. The separate linked Text still displays 10.000.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:a2895dfaddcd18f0fed92599bb6ac71ebc21a6ee0941bff61791d14d60c5737b",
