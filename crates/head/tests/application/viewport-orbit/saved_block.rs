@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Open the saved block before setting the requested starting view.
 
+use super::super::viewport_orientation::open_saved_navigation_block;
 use super::*;
 use std::path::Path;
 
@@ -10,21 +11,8 @@ const ORBIT_BLOCK: &str = "fixtures/cad/body-properties-start.opd";
     "`fixtures/cad/body-properties-start.opd` is open with its rectangular solid visible in the active part in the MCAD Software"
 )]
 fn saved_block_visible(world: &mut ApplicationWorld) {
-    open_saved_orbit_block(world, &super::super::scenario_root().join(ORBIT_BLOCK));
+    open_saved_navigation_block(world, &super::super::scenario_root().join(ORBIT_BLOCK));
     world.observed_view_camera = Some(camera(world));
-}
-
-fn open_saved_orbit_block(world: &mut ApplicationWorld, path: &Path) {
-    world.open_fixture(path);
-    let document = world.active_id();
-    let state = world.state();
-    let storage = &state.document_storage[&document];
-    assert_eq!(storage.path.as_deref().map(Path::new), Some(path));
-    let browser = state.browser.expect("expected the saved Part browser");
-    assert_eq!(browser.bodies.len(), 1);
-    assert!(browser.bodies[0].visible, "expected the visible solid");
-    solid_extent(world);
-    world.parts.push(document);
 }
 
 #[given(
@@ -55,7 +43,7 @@ fn saved_block_inclined(world: &mut ApplicationWorld) {
 #[test]
 fn x11_orbit_drag_and_escape_keep_the_saved_block_active() {
     let mut world = ApplicationWorld::new();
-    open_saved_orbit_block(&mut world, &bundled_orbit_block());
+    open_saved_navigation_block(&mut world, &bundled_orbit_block());
     let before = camera(&mut world);
     start_orbit_with_x11(&mut world);
     drag_orbit_with_x11(&mut world);
@@ -73,7 +61,7 @@ fn x11_orbit_drag_and_escape_keep_the_saved_block_active() {
 fn rotate_dialog_dismissal_replaces_the_saved_part_open_notice() {
     for button in ["OK", "Cancel"] {
         let mut world = ApplicationWorld::new();
-        open_saved_orbit_block(&mut world, &bundled_orbit_block());
+        open_saved_navigation_block(&mut world, &bundled_orbit_block());
         world.expect_status("Opened document");
         choose_rotate(&mut world);
         first_direction(&mut world);

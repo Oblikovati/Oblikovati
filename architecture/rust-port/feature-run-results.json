@@ -25,12 +25,38 @@
     "blocker": "Build and runtime provenance remain unsealed (#3978)."
   },
   "features/application/viewport-pan/viewport-pan.feature": {
-    "feature_sha256": "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647",
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-viewport-pan/cucumber.json",
-    "cucumber_sha256": "cd527d3fc074ba7fe5470539c17bc6ade9ddf33ff6d78c4c8662f3974ea24e27",
-    "application_commit": "4831f0df806ea081dab95f4eb3f455e60ed6d6b3",
-    "command": "OBK_BDD_FEATURE=viewport-pan tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb, Vulkan Lavapipe; scripted scenario input; separate X11 pan tests passed"
+    "by_source_sha256": {
+      "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647": {
+        "feature_sha256": "4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647",
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-viewport-pan-rerun-3881/pinned/cucumber.json",
+        "cucumber_sha256": "256dd344b9a0e5314a9a09ca8817a0e18860b2cf13aa17108f96575a67daa16c",
+        "application_commit": "f058f8b8c00d7da96efbd240dc11018083a3cefb",
+        "command": "OBK_BDD_FEATURE=viewport-pan tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11, Xvfb, Vulkan Lavapipe; scripted scenario input; separate X11 pan tests passed",
+        "supporting_files": {
+          "features/application/viewport-pan/FIXTURES.md": "ef0d34e0813405af8c4d7931f05ac032df24e586b37a496eff8a7e38e55ae1fb",
+          "features/application/viewport-pan/FUNCTIONAL.md": "e0eccfbc53e56b82499cb232ec94e8cdcf370524a67f9fab597a8b7ded96501c",
+          "features/application/viewport-pan/VISUAL.md": "51715451fa0eb41f2a495fba27fcc355388a2888632adb64e5b499577bdeba2d",
+          "features/application/viewport-pan/pan-icon.svg": "d0e3b3edf7b11c699ab1a27a8e035bb06666f8058c6e46e4d96272018194108a"
+        },
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-viewport-pan-rerun-3881/pinned/scenario-arguments.json",
+        "scenario_arguments_sha256": "2ec7fea2f9e9b547978a446bda4861c34f23a63750dfa40ebd3c6f22a592b0f7",
+        "notes": "All four pinned scenarios and 32 steps passed with cleanup. The published feature names an Inventor fixture. Build and runtime provenance remains open under #3978."
+      },
+      "13fda204fbe2b492298c5ea22c0b3e4016cedc97520d98cfa0d16505f845d981": {
+        "feature_sha256": "13fda204fbe2b492298c5ea22c0b3e4016cedc97520d98cfa0d16505f845d981",
+        "supporting_files": {
+          "features/application/viewport-pan/BLOCKERS.md": "bb8e477e2a5ea9a6a9767cf60dcd421b8a8853647a4801e842350186ef9f6b37",
+          "features/application/viewport-pan/FIXTURES.md": "460a3c40888d618cea31fe01979a71ff58bcbc1e1b0a013923c76217f0c46970",
+          "features/application/viewport-pan/FUNCTIONAL.md": "e0eccfbc53e56b82499cb232ec94e8cdcf370524a67f9fab597a8b7ded96501c",
+          "features/application/viewport-pan/VISUAL.md": "51715451fa0eb41f2a495fba27fcc355388a2888632adb64e5b499577bdeba2d",
+          "features/application/viewport-pan/pan-icon.svg": "d0e3b3edf7b11c699ab1a27a8e035bb06666f8058c6e46e4d96272018194108a",
+          "fixtures/cad/body-properties-start.opd": "50d6b58b9d2d48e778334b9bce4f1610c0401f88e3e37d304536120b6d099643"
+        },
+        "blocker": "All four published Given steps still name the Inventor fixture. The native body-properties-start.opd is available.",
+        "notes": "A separate draft changed only the four file references and passed all scenarios. See the native-draft report in the Pan rerun receipt."
+      }
+    }
   },
   "features/application/viewport-zoom/viewport-zoom.feature": {
     "feature_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c",

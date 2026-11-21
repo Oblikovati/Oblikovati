@@ -2,13 +2,16 @@
 //! `features/application/viewport-pan`: Pan as a running command of the navigation bar.
 use super::ApplicationWorld;
 use super::diagnostics;
-use super::viewport_orientation::{expect_same_part, open_block, solid_extent};
+use super::viewport_orientation::{
+    expect_same_part, open_block, open_saved_navigation_block, solid_extent,
+};
 use cucumber::{given, then, when};
 use oblikovati_viewport::ViewportCamera;
 
 const NAVIGATION: &str = "##navigation-bar";
 pub(super) const EMPTY_VIEW: [i32; 2] = [420, 300];
 const ON_THE_STATUS: &str = "Escape cancels";
+const PAN_FIXTURE: &str = "fixtures/cad/body-properties-start.opd";
 
 /// Press one of the bar's buttons by the letter it carries.
 pub(super) fn press_bar(world: &mut ApplicationWorld, letter: &str) {
@@ -31,6 +34,13 @@ fn start_pan(world: &mut ApplicationWorld) {
 fn visible_solid(world: &mut ApplicationWorld) {
     open_block(world);
     solid_extent(world);
+}
+#[given(
+    "`fixtures/cad/body-properties-start.opd` is open with its solid visible in the MCAD Software"
+)]
+fn saved_pan_block_visible(world: &mut ApplicationWorld) {
+    let path = super::scenario_root().join(PAN_FIXTURE);
+    open_saved_navigation_block(world, &path);
 }
 #[given("the viewport navigation bar is visible")]
 fn bar_visible(_: &mut ApplicationWorld) {
@@ -219,31 +229,46 @@ fn drag_pan_with_x11(world: &mut ApplicationWorld) {
 #[test]
 fn x11_pan_context_menu_owns_right_click_and_restores_part_menu() {
     let mut world = ApplicationWorld::new();
-    open_block(&mut world);
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../test-utilities/fixtures/main-window-frame-start.opd")
+        .canonicalize()
+        .unwrap();
+    open_saved_navigation_block(&mut world, &path);
     let before = camera(&mut world);
     let document = world.state().document;
-    start_pan_with_x11(&mut world);
-    open_pan_menu_with_x11(&mut world);
-    pan_menu(&mut world);
-    world.save_capture("pan-context-4059");
-    choose_pan_menu_with_x11(&mut world, "Done");
-    world.expect_ready();
+    exercise_pan_menu_with_x11(&mut world, before);
     assert_eq!(camera(&mut world), before);
-    start_pan_with_x11(&mut world);
-    open_pan_menu_with_x11(&mut world);
-    choose_pan_menu_with_x11(&mut world, "Zoom");
+    assert_eq!(world.state().document, document);
+    assert!(!world.state().document_storage[&world.active_id()].unsaved_edits);
+    expect_part_menu_after_pan(&mut world);
+    world.close();
+}
+
+#[cfg(target_os = "linux")]
+fn exercise_pan_menu_with_x11(world: &mut ApplicationWorld, before: ViewportCamera) {
+    start_pan_with_x11(world);
+    open_pan_menu_with_x11(world);
+    pan_menu(world);
+    world.save_capture("pan-context-4059");
+    choose_pan_menu_with_x11(world, "Done");
+    world.expect_ready();
+    assert_eq!(camera(world), before);
+    start_pan_with_x11(world);
+    open_pan_menu_with_x11(world);
+    choose_pan_menu_with_x11(world, "Zoom");
     world.expect_status("Zoom:");
     super::x11_input::press_escape();
     world.pump(Vec::new());
     world.expect_ready();
-    assert_eq!(camera(&mut world), before);
-    assert_eq!(world.state().document, document);
+}
+
+#[cfg(target_os = "linux")]
+fn expect_part_menu_after_pan(world: &mut ApplicationWorld) {
     super::x11_input::right_click(EMPTY_VIEW);
     world.pump(Vec::new());
     world.expect_text("Look At");
     super::x11_input::press_escape();
     world.pump(Vec::new());
-    world.close();
 }
 
 #[cfg(target_os = "linux")]

@@ -1,8 +1,24 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Open the same saved part for every current orientation scenario.
 use super::*;
+use std::path::Path;
 
 const ORIENTATION_PART: &str = "fixtures/cad/docking-visible-solid-current.opd";
+
+/// Open and remember a saved one-body Part, for example `open_saved_navigation_block(world, &path)`.
+pub(in super::super) fn open_saved_navigation_block(world: &mut ApplicationWorld, path: &Path) {
+    world.open_fixture(path);
+    let document = world.active_id();
+    let state = world.state();
+    let storage = &state.document_storage[&document];
+    assert_eq!(storage.path.as_deref().map(Path::new), Some(path));
+    assert!(!storage.unsaved_edits, "expected the saved Part unchanged");
+    let browser = state.browser.expect("expected the saved Part browser");
+    assert_eq!(browser.bodies.len(), 1);
+    assert!(browser.bodies[0].visible, "expected the visible solid");
+    solid_extent(world);
+    world.parts.push(document);
+}
 
 #[given("`fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software")]
 #[given(
