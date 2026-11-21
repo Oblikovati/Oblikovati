@@ -355,29 +355,55 @@
     "notes": "18 of 18 scenarios and 219 steps passed; feature and supporting documentation hashes matched before and after the run."
   },
   "features/application/document-tabs/document-tabs.feature": {
-    "feature_sha256": "ee2022e13728cfe8fcda1ef61e60b25f01c308816e6860da91b6dceac3430de9",
-    "supporting_files": {
-      "features/application/document-tabs/BLOCKERS.md": "ab9902488b25be44f30ee09c7392542e1d90d5fd7b143d99ccccbce00beb76df",
-      "features/application/document-tabs/FIXTURES.md": "a8461bb1e0b6dbc6ad15cbbb19e9eaf9a6e7b76e76397b284bea6014df3af153",
-      "features/application/document-tabs/FUNCTIONAL.md": "571664b71a0f06692bdb032b093a6a657998e89c6d1a1a82fc7d677c7f3a744c",
-      "features/application/document-tabs/VISUAL.md": "38d8c16255619e8b72d4835f1278fc40b62fc32997e3d1af8302ab75019b5d73",
-      "features/application/document-tabs/close-sketch-dialogs.svg": "31b60f05dd3aadd95b72dcc3fea4dea8185e14ec75d4aa45aca7d9c01eb35a77",
-      "features/application/document-tabs/detached-document.svg": "5e28c5b67aa60228b01ff999760a0d806e31889c6b5076dc74d15169ee0c4441",
-      "features/application/document-tabs/document-list.svg": "469e42b46530d20becc1609292e28e3c15f29f424d9075d2eb9ccd01744788fd",
-      "features/application/document-tabs/multiple-document-views.svg": "52da5ce55424fcc23318ae2e99bfc6494f56fd651dfa1e8827bb23a5168a4a12",
-      "features/application/document-tabs/new-view-icon.svg": "837930ae1c29d05a0cb1e2a5dfaf06124fe18e0ba8c42da97db18c00d52ace67",
-      "features/application/document-tabs/tab-overflow.svg": "548cf3d0eb8fc1a9a6dd0d7674686d282f31fcb4931d55bf060828f0e295707f",
-      "features/application/document-tabs/tab-preview.svg": "57a81535d6de8ae73815cd939a5680c8cd4ac8a146605c1694769989190890c5"
-    },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-native-drawing-window-3900/cucumber.json",
-    "cucumber_sha256": "481f271767861343a447749f7578bc4e684c66b262ef2e29670ddb0b18296d9d",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-native-drawing-window-3900/scenario-arguments.json",
-    "scenario_arguments_sha256": "8e9fb85cd308f154dd35bc1be205effe9935be1a5030c555d4086c7d6d6d9135",
-    "application_commit": "ea2a6f9bbab37a8396ad7e9038295df12add44b9",
-    "command": "Full document-tabs desktop run. See the receipt README.",
-    "environment": "Linux Xvfb and Vulkan Lavapipe. Native drawing gestures and tab shortcuts used X11. Focused checks used Openbox.",
-    "notes": "All 39 scenarios and 343 steps passed. The Openbox and X11 checks verified separate native windows, shared focus, and the drawing tab context menu.",
-    "blocker": "Strict verification requires pinned scenario source and bounded build and runtime inputs (#3978)."
+    "by_source_sha256": {
+      "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f": {
+        "feature_sha256": "2738bff62d9968e32a59d426e9a3e762938981a2bdb7e074f77bdf59c5d4928f",
+        "supporting_files": {
+          "features/application/document-tabs/FIXTURES.md": "f28ca4a7ec49293a8e988adcca8cbfb30e8ef9d081004857ccb4fbc853a2035a",
+          "features/application/document-tabs/FUNCTIONAL.md": "6234a4f62f489a820f84bcd0f060dd9938d389213d85a19a71ee38af868d6892",
+          "features/application/document-tabs/VISUAL.md": "38d8c16255619e8b72d4835f1278fc40b62fc32997e3d1af8302ab75019b5d73",
+          "features/application/document-tabs/close-sketch-dialogs.svg": "31b60f05dd3aadd95b72dcc3fea4dea8185e14ec75d4aa45aca7d9c01eb35a77",
+          "features/application/document-tabs/detached-document.svg": "5e28c5b67aa60228b01ff999760a0d806e31889c6b5076dc74d15169ee0c4441",
+          "features/application/document-tabs/document-list.svg": "469e42b46530d20becc1609292e28e3c15f29f424d9075d2eb9ccd01744788fd",
+          "features/application/document-tabs/multiple-document-views.svg": "52da5ce55424fcc23318ae2e99bfc6494f56fd651dfa1e8827bb23a5168a4a12",
+          "features/application/document-tabs/new-view-icon.svg": "837930ae1c29d05a0cb1e2a5dfaf06124fe18e0ba8c42da97db18c00d52ace67",
+          "features/application/document-tabs/tab-overflow.svg": "548cf3d0eb8fc1a9a6dd0d7674686d282f31fcb4931d55bf060828f0e295707f",
+          "features/application/document-tabs/tab-preview.svg": "57a81535d6de8ae73815cd939a5680c8cd4ac8a146605c1694769989190890c5"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/cucumber.json",
+        "cucumber_sha256": "b1b69d258115e7cdcf876affdbd31fb6ef3e75941600e1a51afd10bc9e13d043",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/pinned/scenario-arguments.json",
+        "scenario_arguments_sha256": "a5d12a61541ba81c3afa2b37db8e2414a503c2728db75fe6796c7773eb3ac14b",
+        "application_commit": "d2755f6d5673f02d4389f847fc3845777f9cd58d",
+        "command": "Full document-tabs desktop run. See the receipt README.",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 38 scenarios and 334 steps passed. Build and runtime provenance remains open under #3978."
+      },
+      "ee2022e13728cfe8fcda1ef61e60b25f01c308816e6860da91b6dceac3430de9": {
+        "feature_sha256": "ee2022e13728cfe8fcda1ef61e60b25f01c308816e6860da91b6dceac3430de9",
+        "supporting_files": {
+          "features/application/document-tabs/BLOCKERS.md": "ab9902488b25be44f30ee09c7392542e1d90d5fd7b143d99ccccbce00beb76df",
+          "features/application/document-tabs/FIXTURES.md": "a8461bb1e0b6dbc6ad15cbbb19e9eaf9a6e7b76e76397b284bea6014df3af153",
+          "features/application/document-tabs/FUNCTIONAL.md": "571664b71a0f06692bdb032b093a6a657998e89c6d1a1a82fc7d677c7f3a744c",
+          "features/application/document-tabs/VISUAL.md": "38d8c16255619e8b72d4835f1278fc40b62fc32997e3d1af8302ab75019b5d73",
+          "features/application/document-tabs/close-sketch-dialogs.svg": "31b60f05dd3aadd95b72dcc3fea4dea8185e14ec75d4aa45aca7d9c01eb35a77",
+          "features/application/document-tabs/detached-document.svg": "5e28c5b67aa60228b01ff999760a0d806e31889c6b5076dc74d15169ee0c4441",
+          "features/application/document-tabs/document-list.svg": "469e42b46530d20becc1609292e28e3c15f29f424d9075d2eb9ccd01744788fd",
+          "features/application/document-tabs/multiple-document-views.svg": "52da5ce55424fcc23318ae2e99bfc6494f56fd651dfa1e8827bb23a5168a4a12",
+          "features/application/document-tabs/new-view-icon.svg": "837930ae1c29d05a0cb1e2a5dfaf06124fe18e0ba8c42da97db18c00d52ace67",
+          "features/application/document-tabs/tab-overflow.svg": "548cf3d0eb8fc1a9a6dd0d7674686d282f31fcb4931d55bf060828f0e295707f",
+          "features/application/document-tabs/tab-preview.svg": "57a81535d6de8ae73815cd939a5680c8cd4ac8a146605c1694769989190890c5"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/live/cucumber.json",
+        "cucumber_sha256": "3a0d75002bbb4f9654dfe7ef6ac99f9013ad9069ebd5d4561c2510fd4ffe9c84",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-document-tabs-r0-3900/live/scenario-arguments.json",
+        "scenario_arguments_sha256": "aeb38648b004639b888839c87423a9d34cb8c958364cc2960a8b177854ce9c30",
+        "application_commit": "d2755f6d5673f02d4389f847fc3845777f9cd58d",
+        "command": "Full document-tabs desktop run. See the receipt README.",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 39 scenarios and 343 steps passed. Build and runtime provenance remains open under #3978."
+      }
+    }
   },
   "features/application/ribbon-display/ribbon-display.feature": {
     "feature_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e",
