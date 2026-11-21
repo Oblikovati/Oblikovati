@@ -2,7 +2,7 @@
 //! Verify that cancelling a placement retains the configured formatting default.
 use super::*;
 
-const TAHOMA: &str = "Tahoma";
+pub(super) const TAHOMA: &str = "Tahoma";
 
 #[test]
 fn native_cancelled_text_uses_the_blank_formatting_default_on_restart() {
@@ -35,14 +35,7 @@ fn expect_tahoma_formatting_default(world: &mut ApplicationWorld) {
 }
 
 fn cancel_draft_with_font_default(world: &mut ApplicationWorld, family: &str) {
-    activate_text(world);
-    open_editor(world, [850, 550]);
-    text_format_choices::choose_font(world, family);
-    // A content-free preset supplies the fixture's font without adding sketch geometry.
-    text_presets::click_in_text_editor(world, "+");
-    text_presets::confirm_preset_name(world);
-    world.run_in_window("Format Text", "Preset");
-    text_preset_defaults::set_new_text_default(world, "Use Current Preset");
+    configure_blank_font_default(world, family);
     open_editor(world, [850, 550]);
     expect_blank_formatting_default(world, family);
     type_content(world, b'a');
@@ -51,7 +44,20 @@ fn cancel_draft_with_font_default(world: &mut ApplicationWorld, family: &str) {
     assert!(world.app().owner.sketch_preview().is_none());
 }
 
-fn expect_blank_formatting_default(world: &mut ApplicationWorld, family: &str) {
+/// Configure a content-free default through Format Text, for example with Tahoma.
+pub(super) fn configure_blank_font_default(world: &mut ApplicationWorld, family: &str) {
+    activate_text(world);
+    open_editor(world, [850, 550]);
+    text_format_choices::choose_font(world, family);
+    // A content-free preset supplies the fixture's font without adding sketch geometry.
+    text_presets::click_in_text_editor(world, "+");
+    text_presets::confirm_preset_name(world);
+    world.run_in_window("Format Text", "Preset");
+    text_preset_defaults::set_new_text_default(world, "Use Current Preset");
+}
+
+/// Check the empty draft and its configured format, for example Tahoma at 3.05 mm.
+pub(super) fn expect_blank_formatting_default(world: &mut ApplicationWorld, family: &str) {
     let draft = world.state().sketch_text.unwrap();
     assert!(draft.content.is_empty());
     assert_eq!(draft.family, family);
