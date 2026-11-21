@@ -124,7 +124,8 @@ fn location_gone(world: &mut ApplicationWorld) {
     assert!(!home_shows(world, "/tmp"), "expected no location values");
     assert!(list_row.center()[0] > 0., "expected the row to remain");
 }
-fn rows_by_size(world: &mut ApplicationWorld) -> Vec<(f32, u64)> {
+/// Read known file sizes in screen order, for example before asserting a Size sort.
+pub(super) fn rows_by_size(world: &mut ApplicationWorld) -> Vec<(f32, u64)> {
     let mut rows: Vec<(f32, u64)> = world
         .state()
         .recent_documents

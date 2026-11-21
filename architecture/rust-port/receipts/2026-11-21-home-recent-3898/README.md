@@ -74,6 +74,13 @@ heading and the smallest file at the top. The
 [pinned blank-size sort](pinned-compact-blank-size.json) and the
 [published column reorder](published-compact-columns.json) also passed.
 
+A [native X11 run](x11-home-recent-input.log.gz) checked that two mouse
+clicks on Size reverse the order of all four Recent rows while the asset
+browsers are docked on the right. The [capture](x11-home-size-ascending.png)
+shows the ascending mark on the heading. The same run passed grid search
+and clear with real keyboard and mouse input. The Xvfb session used
+`XMODIFIERS=@im=none`, as in Linux CI.
+
 ## Dates in compact columns
 
 The [earlier metadata run](compact-metadata-before.log.gz) showed clipped
@@ -129,3 +136,19 @@ recording recent-file opens.
 All 35 pinned declarations now have R0 evidence. Strict verification still
 requires bounded build and runtime inputs under
 [#3978](https://github.com/Oblikovati/Oblikovati/issues/3978).
+
+## Full runs with the compact date fix
+
+The application at `22051b3b5` passed all 35 scenarios on each source
+version under Xvfb, Openbox, and Vulkan Lavapipe. The pinned run passed
+357 steps. The published run passed 355 steps. Every scenario passed
+its cleanup hook and produced a final capture.
+
+- Pinned source. [Cucumber](full-pinned-22051b3b5.json),
+  [JUnit](full-pinned-22051b3b5-junit.xml.gz), and
+  [source report](full-pinned-22051b3b5-source.json).
+- Published source. [Cucumber](full-published-22051b3b5.json),
+  [JUnit](full-published-22051b3b5-junit.xml.gz), and
+  [source report](full-published-22051b3b5-source.json). The
+  [input manifest](full-published-22051b3b5-inputs.sha256) records the
+  feature and supporting files that stayed identical through the run.

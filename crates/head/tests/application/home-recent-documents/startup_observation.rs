@@ -27,7 +27,7 @@ fn model_reports_no_document(world: &mut ApplicationWorld) {
 }
 
 #[then("Material Browser and Appearance Browser are available in the right dock")]
-fn startup_asset_browsers_are_docked(world: &mut ApplicationWorld) {
+pub(super) fn startup_asset_browsers_are_docked(world: &mut ApplicationWorld) {
     let material = window_dock_id("Material Browser").expect("expected Material Browser docked");
     let appearance =
         window_dock_id("Appearance Browser").expect("expected Appearance Browser docked");
