@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::super::{diagnostics::pointer_pixels, x11_input};
 use super::mixed_documents::expect_drawing_shown;
 use super::*;
 const NEIGHBOR_PARTS: usize = 3;
@@ -15,9 +16,23 @@ pub(super) fn tab_x(world: &mut ApplicationWorld, id: u64) -> f32 {
 fn drag_tab_to_first_place(world: &mut ApplicationWorld, id: u64) {
     world.dragged_tab_x = Some(tab_x(world, id));
     let name = world.document_name(id);
-    let from = world.expect_tab(&name).center().map(|value| value as i32);
-    let first = tab_x(world, world.parts[0]) as i32;
-    world.drag(from, [first - 30, from[1]]);
+    let from = world.expect_tab(&name).center();
+    let first = tab_x(world, world.parts[0]);
+    drag_reorder_in_strip(world, from, first - 30.);
+}
+
+fn drag_reorder_in_strip(world: &mut ApplicationWorld, from: [f32; 2], target_x: f32) {
+    let start = pointer_pixels(from);
+    x11_input::move_pointer(start);
+    world.pump(Vec::new());
+    x11_input::left_button(start, true);
+    world.pump(Vec::new());
+    for step in 1..=4 {
+        let x = from[0] + (target_x - from[0]) * (step as f32 / 4.);
+        x11_input::move_pointer(pointer_pixels([x, from[1]]));
+        world.pump(Vec::new());
+    }
+    x11_input::left_button(pointer_pixels([target_x, from[1]]), false);
     world.pump(Vec::new());
 }
 fn expect_tab_moved_left(world: &mut ApplicationWorld, id: u64) {
@@ -36,7 +51,13 @@ fn expect_tab_moved_left(world: &mut ApplicationWorld, id: u64) {
 #[given("a drawing and several other documents are open in the MCAD Software")]
 #[given("a drawing and several parts are open in the MCAD Software")]
 fn parts_and_drawing(world: &mut ApplicationWorld) {
+    // Reordering across visible neighbors needs a saved workspace with room
+    // for all four tabs. The fresh profile also docks two asset tools (#3900).
+    world.restore_layout_without_asset_tools();
     open_parts_then_drawing(world);
+    for id in world.parts.clone() {
+        tab_x(world, id);
+    }
 }
 #[given("the drawing is active and its tab is visible")]
 #[given("the drawing is active")]
@@ -62,10 +83,9 @@ fn sheet_and_browser(world: &mut ApplicationWorld) {
 #[when("the user drags the drawing tab back to its earlier position")]
 fn drag_drawing_tab_back(world: &mut ApplicationWorld) {
     let name = world.document_name(drawing_of(world));
-    let from = world.expect_tab(&name).center().map(|value| value as i32);
-    let target = world.dragged_tab_x.expect("expected a starting position") as i32;
-    world.drag(from, [target + 30, from[1]]);
-    world.pump(Vec::new());
+    let from = world.expect_tab(&name).center();
+    let target = world.dragged_tab_x.expect("expected a starting position");
+    drag_reorder_in_strip(world, from, target + 30.);
 }
 #[then("the drawing tab returns to its earlier position")]
 fn drawing_tab_back(world: &mut ApplicationWorld) {

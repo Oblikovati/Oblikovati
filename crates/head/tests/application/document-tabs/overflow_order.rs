@@ -65,7 +65,7 @@ fn scroll_to_start(world: &mut ApplicationWorld) {
 }
 #[test]
 fn deliberate_document_order_survives_scrolling_and_close_open() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     for _ in 0..4 {
         world.add_part();
     }
@@ -111,7 +111,7 @@ fn deliberate_document_order_survives_scrolling_and_close_open() {
 }
 #[test]
 fn home_drag_order_survives_scrolling() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     for _ in 0..4 {
         world.add_part();
     }
@@ -133,7 +133,7 @@ fn home_drag_order_survives_scrolling() {
 
 #[test]
 fn surviving_extra_window_keeps_its_dragged_position() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     for _ in 0..3 {
         world.add_part();
     }
