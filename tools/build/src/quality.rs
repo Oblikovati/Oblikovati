@@ -124,14 +124,13 @@ fn execute_tests(runner: &dyn Runner, workspace: &Path, command: &[&str]) -> Bui
 fn execute_gate_tests(runner: &dyn Runner, workspace: &Path, command: &[&str]) -> BuildResult<()> {
     let args = serial_test_arguments(command);
     println!("+ {}", args.join(" "));
-    let output = runner.output_env(
+    // Keep test progress visible during long coverage runs (#3860).
+    runner.stream_env(
         workspace,
         args[0],
         &args[1..],
         &[("OBK_BDD_REQUIRE_PINNED", "1")],
-    )?;
-    print!("{output}");
-    Ok(())
+    )
 }
 
 fn doctests(runner: &dyn Runner, workspace: &Path) -> BuildResult<()> {

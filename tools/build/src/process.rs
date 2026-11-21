@@ -13,6 +13,18 @@ pub(crate) trait Runner {
         arguments: &[&str],
         environment: &[(&str, &str)],
     ) -> BuildResult<String>;
+
+    fn stream_env(
+        &self,
+        root: &Path,
+        program: &str,
+        arguments: &[&str],
+        environment: &[(&str, &str)],
+    ) -> BuildResult<()> {
+        let output = self.output_env(root, program, arguments, environment)?;
+        print!("{output}");
+        Ok(())
+    }
 }
 
 pub(crate) struct SystemRunner;
@@ -45,6 +57,25 @@ impl Runner for SystemRunner {
         }
         String::from_utf8(output.stdout)
             .map_err(|error| format!("{program}: expected UTF-8 output: {error}"))
+    }
+
+    fn stream_env(
+        &self,
+        root: &Path,
+        program: &str,
+        arguments: &[&str],
+        environment: &[(&str, &str)],
+    ) -> BuildResult<()> {
+        let status = Command::new(program)
+            .args(arguments)
+            .envs(environment.iter().copied())
+            .current_dir(root)
+            .status()
+            .map_err(|error| format!("required command {program:?}: {error}"))?;
+        if !status.success() {
+            return Err(format!("{program} {arguments:?} failed ({status})"));
+        }
+        Ok(())
     }
 }
 
