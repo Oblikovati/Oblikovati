@@ -5,163 +5,9 @@ use std::path::{Path, PathBuf};
 use syn::visit::{self, Visit};
 use syn::{Expr, ExprCall, ExprMethodCall, ItemFn, ItemImpl, ItemMod, Lit, Meta};
 
-// Fixed chrome and transient modal file pickers, wizards, and confirmations
-// have a separate owner. Every entry is exact, so another window fails the guard.
-const INFRASTRUCTURE: &[(&str, &str)] = &[
-    (
-        "application/document-creation/assembly_place_dialog.rs",
-        "modal:FILE_CHOOSER",
-    ),
-    ("application/document-creation/workspaces.rs", "title"),
-    (
-        "application/document-tabs/mod.rs",
-        "##document-list-control",
-    ),
-    ("application/document-tabs/previews.rs", "##tab-preview"),
-    (
-        "application/home-recent-documents/mod.rs",
-        "##home-workspace",
-    ),
-    (
-        "application/home-recent-documents/mod.rs",
-        "##home-side-panel",
-    ),
-    (
-        "application/quick-access-toolbar/mod.rs",
-        "##quick-access-below",
-    ),
-    (
-        "application/quick-access-toolbar/plane_selection.rs",
-        "##plane-selection",
-    ),
-    (
-        "application/viewport-orientation/axis_triad.rs",
-        "##viewport-axis-triad",
-    ),
-    ("application/viewport-orientation/mod.rs", "CONTROL_WINDOW"),
-    (
-        "application/viewport-orientation/mod.rs",
-        "NAVIGATION_WINDOW",
-    ),
-    (
-        "application/viewport-orientation/navigation_wheel.rs",
-        "WINDOW",
-    ),
-    (
-        "application/workspace-docking/mod.rs",
-        "##workspace-outer-host",
-    ),
-    (
-        "application/workspace-layout/browser_feature.rs",
-        "SELECTION_TOOLBAR",
-    ),
-    ("application/workspace-layout/mod.rs", "##panel-plus"),
-    ("application/workspace-layout/status_bar.rs", "##status-bar"),
-    ("chrome/side.rs", "title"),
-    ("chrome.rs", "##application-ribbon"),
-    ("window_frame.rs", "##application-window-controls"),
-    ("detached_drawing.rs", "##detached-drawing"),
-    ("document_tabs/strip_render.rs", "##open-document-tabs"),
-    ("ribbon_panel_additional.rs", "<dynamic>"),
-    ("ribbon_panel_additional/bend_notice.rs", "modal:TITLE"),
-    (
-        "ribbon_panel_additional/coordinate_restriction.rs",
-        "modal:MESSAGE",
-    ),
-    ("ribbon_panels.rs", "##ribbon-temporary-panel"),
-    ("sketch/command_alias.rs", "##command-alias"),
-    ("sketch/line/mod.rs", "##sketch-hud"),
-    ("dockable_window.rs", "title"),
-    ("dockable_window.rs", "title"),
-    ("ribbon_reset.rs", "modal:RESET_TITLE"),
-    ("application/document-creation/mod.rs", "modal:New document"),
-    (
-        "application/document-creation/component_dialog.rs",
-        "modal:TITLE",
-    ),
-    (
-        "application/document-creation/component_dialog.rs",
-        "modal:FILE_CHOOSER",
-    ),
-    (
-        "application/document-creation/workspaces.rs",
-        "modal:INSERT",
-    ),
-    (
-        "application/document-saving/close_prompt.rs",
-        "modal:EXIT_ENVIRONMENT",
-    ),
-    (
-        "application/document-saving/close_prompt.rs",
-        "modal:SAVE_CHANGES",
-    ),
-    ("application/document-saving/save_as.rs", "modal:TITLE"),
-    (
-        "application/document-saving/save_as.rs",
-        "modal:IMAGE_CHOOSER",
-    ),
-    (
-        "application/document-saving/save_as.rs",
-        "modal:CONFIRM_REPLACE",
-    ),
-    ("application/document-tabs/mod.rs", "modal:SELECT_WINDOW"),
-    ("application/document-opening/mod.rs", "modal:TITLE"),
-    ("application/document-opening/mod.rs", "modal:DEFER_TITLE"),
-    (
-        "application/home-recent-documents/mod.rs",
-        "modal:NOTICE_TITLE",
-    ),
-    ("application/model-browser/color_dialog.rs", "modal:TITLE"),
-    (
-        "application/model-browser/find_prompts.rs",
-        "modal:GROUP_TITLE",
-    ),
-    (
-        "application/model-browser/find_prompts.rs",
-        "modal:NO_MATCH_TITLE",
-    ),
-    (
-        "application/model-browser/find_prompts.rs",
-        "modal:SAVE_TITLE",
-    ),
-    (
-        "application/model-browser/find_prompts.rs",
-        "modal:OPEN_TITLE",
-    ),
-    (
-        "application/project-dialog/new_project_wizard.rs",
-        "modal:TITLE",
-    ),
-    (
-        "application/project-dialog/new_project_wizard.rs",
-        "modal:BROWSER_TITLE",
-    ),
-    (
-        "application/ribbon-customization/mod.rs",
-        "modal:Ribbon Settings Error",
-    ),
-    (
-        "application/ribbon-customization/settings_dialog.rs",
-        "modal:<unknown>",
-    ),
-    (
-        "application/ribbon-customization/settings_dialog.rs",
-        "modal:MISSING_FILE",
-    ),
-    ("sketch/dimension-edit/mod.rs", "modal:WARNING"),
-    // The same dimension choice modal is also opened to close it when its draft ends.
-    ("sketch/dimension-edit/mod.rs", "modal:TITLE"),
-    ("sketch/dimension-edit/mod.rs", "modal:TITLE"),
-    // Validation prompts are transient modals; their owning tools remain dockable.
-    ("browser_part_view_edit.rs", "modal:View Name Already Used"),
-    ("model_state_table_names.rs", "modal:Model state names"),
-    (
-        "model_state_table_verification.rs",
-        "modal:Table contains an error",
-    ),
-    // One transient confirmation; the Move tool itself remains dockable (#4054).
-    ("sketch/move_tool.rs", "modal:REJECTION_POPUP"),
-];
+#[path = "dockable_window_guard/infrastructure.rs"]
+mod infrastructure;
+use infrastructure::INFRASTRUCTURE;
 
 #[derive(Default)]
 struct WindowCalls {
@@ -279,6 +125,12 @@ fn window_label(label: Option<&Expr>) -> String {
             _ => "<non-string>".into(),
         },
         Some(Expr::Path(path)) => path.path.segments.last().unwrap().ident.to_string(),
+        Some(Expr::Field(field)) => {
+            let syn::Member::Named(member) = &field.member else {
+                return "<unknown>".into();
+            };
+            format!("{}.{member}", window_label(Some(&field.base)))
+        }
         Some(Expr::Macro(_)) => "<dynamic>".into(),
         _ => "<unknown>".into(),
     }
@@ -294,10 +146,15 @@ fn source_files(directory: &Path, files: &mut Vec<PathBuf>) {
     }
 }
 fn calls_in(source: &str) -> WindowCalls {
-    let syntax = syn::parse_file(source).expect("expected valid Rust source");
     let mut calls = WindowCalls::default();
-    calls.visit_file(&syntax);
+    if let Some(syntax) = production_syntax(source) {
+        calls.visit_file(&syntax);
+    }
     calls
+}
+fn production_syntax(source: &str) -> Option<syn::File> {
+    let syntax = syn::parse_file(source).expect("expected valid Rust source");
+    (!test_only(&syntax.attrs)).then_some(syntax)
 }
 fn inventory(root: &Path) -> BTreeMap<(String, String), usize> {
     let mut files = Vec::new();
@@ -374,6 +231,15 @@ fn guard_counts_each_modal_call_for_the_same_title() {
         calls.names,
         ["modal:REJECTION_POPUP", "modal:REJECTION_POPUP"]
     );
+}
+
+#[test]
+fn guard_handles_file_level_test_fixtures_and_names_modal_fields() {
+    let fixture = r#"#![cfg(test)] fn render(ui: &Ui) { ui.window("test frame"); }"#;
+    assert!(calls_in(fixture).names.is_empty());
+    let production =
+        r#"#![cfg(not(test))] fn render(ui: &Ui) { ui.modal_popup_config(spec.title); }"#;
+    assert_eq!(calls_in(production).names, ["modal:spec.title"]);
 }
 
 fn is_dockable_constructor(ident: &syn::Ident) -> bool {
@@ -473,7 +339,9 @@ fn dockable_inventory(root: &Path) -> DockableInventory {
     let mut inventory = DockableInventory::default();
     for path in files {
         let source = std::fs::read_to_string(path).unwrap();
-        inventory.visit_file(&syn::parse_file(&source).unwrap());
+        if let Some(syntax) = production_syntax(&source) {
+            inventory.visit_file(&syntax);
+        }
     }
     inventory
 }

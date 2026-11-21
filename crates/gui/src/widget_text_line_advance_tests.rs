@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
+#![cfg(test)]
+
 use super::text_line_advance;
 use imgui::{Condition, MouseButton, Ui};
 
