@@ -1,6 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use cucumber::feature::Ext as _;
+
+#[test]
+fn binding_inventory_reports_only_selected_features() {
+    let root = tempfile::tempdir().unwrap();
+    for (file, feature) in [
+        ("included.feature", "Included"),
+        ("deferred.feature", "Deferred"),
+    ] {
+        let source = format!("Feature: {feature}\n  Scenario: check\n    When I select File\n");
+        std::fs::write(root.path().join(file), source).unwrap();
+    }
+    let report = collect_bindings(root.path(), |feature| feature.name == "Included");
+    assert_eq!((report.features, report.scenarios, report.steps), (1, 1, 1));
+    assert!(report.unresolved.is_empty());
+}
+
 #[test]
 fn capture_only_is_counted_but_not_checked_as_an_executable_binding() {
     let feature = Feature::parse("Feature: source\n @capture_only\n Scenario: historical\n  Given a missing binding\n Scenario: live\n  Given another missing binding\n", Default::default()).unwrap();

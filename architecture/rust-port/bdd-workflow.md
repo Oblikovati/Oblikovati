@@ -179,6 +179,13 @@ cargo test --locked -p oblikovati-head --lib \
   sketch_scenarios_use_the_native_window -- --nocapture
 ```
 
+Use `sketch_step_binding_diagnostic` in place of the native test name to
+find undefined or ambiguous steps without opening a window. It writes
+`step-bindings.json` for the selected sketch feature. With no feature
+filter, it reports the same feature set as the native sketch runner.
+A successful diagnostic only confirms that it wrote a valid report.
+Use the native benchmark to verify behavior.
+
 On Linux, use the private desktop runner for Main Window Frame. It starts
 Xvfb, Openbox, tint2 and AT-SPI and enables accessibility in the test session.
 Install those tools and the Python GI bindings for AT-SPI first.

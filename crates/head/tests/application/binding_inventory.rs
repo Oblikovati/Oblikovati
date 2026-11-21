@@ -10,7 +10,7 @@ use cucumber::{
 };
 use futures::StreamExt as _;
 use serde::Serialize;
-use std::{fs, path::PathBuf};
+use std::path::{Path, PathBuf};
 
 #[derive(Default, Serialize)]
 struct BindingInventory {
@@ -32,51 +32,77 @@ struct UnresolvedBinding {
 }
 #[test]
 fn application_step_bindings_cover_selected_source() {
+    report_step_bindings(&feature_root("application"), |_| true, true);
+}
+
+/// Report selected bindings, for example `report_step_bindings(root, |_| true, false)`.
+pub(super) fn report_step_bindings(
+    root: &Path,
+    accepted: fn(&Feature) -> bool,
+    require_complete: bool,
+) {
     let folder = world::reports_folder();
     let output = folder.join("step-bindings.json");
     let _reports = report_destination::reserve(&folder).unwrap_or_else(|error| panic!("{error}"));
-    let root = feature_root("application");
-    let before = scenario_revision::inspect(&root);
-    let sources = gap_runner::read_sources(&root);
-    let parser = cucumber::parser::Basic::default();
-    let features = futures::executor::block_on(
-        parser
-            .parse(root.clone(), Default::default())
-            .collect::<Vec<_>>(),
-    );
-    let mut report = BindingInventory::default();
-    let bindings = ApplicationWorld::collection();
-    for feature in features {
-        report.inspect_feature(
-            &feature.expect("expected valid benchmark Gherkin"),
-            &bindings,
-        );
-    }
-    assert!(
-        report.features > 0 && report.scenarios > 0,
-        "expected nonempty application source coverage"
-    );
-    let after = scenario_revision::inspect(&root);
+    let before = scenario_revision::inspect(root);
+    let sources = gap_runner::read_sources(root);
+    let mut report = collect_bindings(root, accepted);
+    let after = scenario_revision::inspect(root);
     scenario_revision::require_pinned(&scenario_root(), &[&output]);
     scenario_revision::require_unchanged(
         &before,
         &after,
-        sources != gap_runner::read_sources(&root),
+        sources != gap_runner::read_sources(root),
         &[&output],
     );
     report.source_revision = Some(before);
-    fs::create_dir_all(&folder).unwrap();
     report_destination::write_file(&output, &serde_json::to_vec_pretty(&report).unwrap()).unwrap();
+    check_binding_report(root, &output, &report, require_complete);
+}
+
+fn collect_bindings(root: &Path, accepted: fn(&Feature) -> bool) -> BindingInventory {
+    let parser = cucumber::parser::Basic::default();
+    let features = futures::executor::block_on(
+        parser
+            .parse(root.to_owned(), Default::default())
+            .collect::<Vec<_>>(),
+    );
+    let mut report = BindingInventory::default();
+    let bindings = ApplicationWorld::collection();
+    let selected = features
+        .into_iter()
+        .map(|feature| feature.expect("expected valid benchmark Gherkin"))
+        .filter(accepted);
+    for feature in selected {
+        report.inspect_feature(&feature, &bindings);
+    }
+    report
+}
+
+fn check_binding_report(
+    root: &Path,
+    output: &Path,
+    report: &BindingInventory,
+    require_complete: bool,
+) {
+    assert!(
+        report.features > 0 && report.scenarios > 0,
+        "binding source {root:?}: expected selected features with scenarios"
+    );
     assert!(
         report.steps > 0,
-        "expected at least one runnable step; capture-only and capture-host-only cases did not execute"
+        "binding source {root:?}: expected at least one non-capture step"
     );
-    assert!(
-        report.unresolved.is_empty(),
-        "{} unresolved step bindings; see {:?}. This check does not run native behavior.",
-        report.unresolved.len(),
-        folder.join("step-bindings.json")
+    let unresolved = report.unresolved.len();
+    println!(
+        "{unresolved} unresolved step bindings in {output:?}. Run the native benchmark for behavior."
     );
+    if require_complete {
+        assert_eq!(
+            unresolved, 0,
+            "binding report {output:?}: expected no unresolved steps"
+        );
+    }
 }
 impl BindingInventory {
     fn inspect_feature(

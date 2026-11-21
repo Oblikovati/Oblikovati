@@ -119,6 +119,15 @@ const ACCEPTED_FEATURES: &[&str] = &[
     "rectangle-two-point",
 ];
 #[test]
+fn sketch_step_binding_diagnostic() {
+    super::binding_inventory::report_step_bindings(
+        &feature_root("sketch"),
+        accepted_sketch_feature,
+        false,
+    );
+}
+
+#[test]
 fn sketch_scenarios_use_the_native_window() {
     std::thread::Builder::new()
         .name("sketch-scenarios".into())
