@@ -47,6 +47,14 @@ pub(in super::super) fn create_midpoint_dimensions(
     scale: f32,
 ) {
     world.start_sketch_on("YZ Plane");
+    place_midpoint_dimensions(world, length);
+    let options = oblikovati_model::ui_scale::UiScaleOptions::new(scale, 1.).unwrap();
+    world.app().owner.set_ui_scale_from_gui(options).unwrap();
+    world.pump(Vec::new());
+}
+
+/// Place the dimensions in the active sketch, for example a 10 mm `d0`.
+pub(in super::super) fn place_midpoint_dimensions(world: &mut ApplicationWorld, length: &str) {
     x11_input::focus_window();
     world.pump(Vec::new());
     world.choose_from_flyout("Line", "Midpoint Line");
@@ -57,9 +65,6 @@ pub(in super::super) fn create_midpoint_dimensions(
     world.expect_status("Select end of line");
     type_length_and_angle(world, length);
     x11_input::press_escape();
-    world.pump(Vec::new());
-    let options = oblikovati_model::ui_scale::UiScaleOptions::new(scale, 1.).unwrap();
-    world.app().owner.set_ui_scale_from_gui(options).unwrap();
     world.pump(Vec::new());
 }
 

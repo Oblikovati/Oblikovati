@@ -21,6 +21,8 @@ mod text_double_click;
 mod text_drag_placement;
 #[path = "text_edit.rs"]
 mod text_edit;
+#[path = "text_expanded_reopen.rs"]
+mod text_expanded_reopen;
 #[path = "text_font_height.rs"]
 mod text_font_height;
 #[path = "text_format_choices.rs"]
