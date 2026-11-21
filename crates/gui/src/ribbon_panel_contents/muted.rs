@@ -178,3 +178,25 @@ pub(super) fn muted_command(
         ui.tooltip_text(reason);
     }
 }
+
+pub(crate) const FLOATING_NOTES_WIDTH: f32 = 156.;
+pub(crate) const FLOATING_NOTES_HEIGHT: f32 = 64.;
+
+/// List the unavailable note commands in the floating pane.
+pub(crate) fn floating_notes(ui: &Ui, icons: &crate::icons::GuiRibbonIcons) {
+    for (index, label) in ["Leader Text", "General Note", "General Profile Note"]
+        .into_iter()
+        .enumerate()
+    {
+        icons.cursor(ui, [0.; 2], [0., index as f32 * 22.]);
+        muted_command(
+            ui,
+            label,
+            NOT_PORTED,
+            icons,
+            None,
+            false,
+            [FLOATING_NOTES_WIDTH, 20.],
+        );
+    }
+}

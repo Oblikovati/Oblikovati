@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Ribbon panel identities and the panels available in each document context.
+use crate::application::ribbon_display::RibbonPlacement;
 use crate::ribbon::RibbonTab;
 use crate::{GuiCommandState, GuiShellAction};
 
@@ -44,6 +45,12 @@ pub(crate) enum RibbonPanel {
     PartPattern,
     PartSimplification,
     PartNotes,
+    PartShapeGenerator,
+    PartFreeform,
+    PartGeometricAnnotation,
+    PartGeneralAnnotation,
+    PartAnnotationManage,
+    PartToleranceAnalysis,
     PresentationModel,
 }
 impl RibbonPanel {
@@ -78,6 +85,12 @@ impl RibbonPanel {
             Self::DrawingModify | Self::PartModify => "Modify",
             Self::PartWorkFeatures => "Work Features",
             Self::PartNotes => "Notes",
+            Self::PartShapeGenerator => "Shape Generator",
+            Self::PartFreeform => "Create Freeform",
+            Self::PartGeometricAnnotation => "Geometric Annotation",
+            Self::PartGeneralAnnotation => "General Annotation",
+            Self::PartAnnotationManage => "Manage",
+            Self::PartToleranceAnalysis => "Tolerance Analysis",
             Self::PartPattern => "Pattern",
             Self::PartSimplification => "Simplification",
             Self::DrawingSketch => "Sketch",
@@ -132,6 +145,12 @@ impl RibbonPanel {
             | Self::PartPattern
             | Self::PartSimplification
             | Self::PartNotes
+            | Self::PartShapeGenerator
+            | Self::PartFreeform
+            | Self::PartGeometricAnnotation
+            | Self::PartGeneralAnnotation
+            | Self::PartAnnotationManage
+            | Self::PartToleranceAnalysis
             | Self::PresentationModel => {
                 return None;
             }
@@ -156,6 +175,36 @@ pub(crate) fn available_panels(
     }
     panels
 }
+/// Add the documented floating Part groups to the standard context catalog.
+pub(crate) fn panels_for_placement(
+    tab: RibbonTab,
+    state: &GuiCommandState,
+    customization: &crate::application::ribbon_customization::RibbonCustomization,
+    placement: RibbonPlacement,
+) -> Vec<RibbonPanel> {
+    let panels = available_panels(tab, state, customization);
+    if placement != RibbonPlacement::Floating {
+        return panels;
+    }
+    panels.into_iter().flat_map(floating_groups).collect()
+}
+fn floating_groups(panel: RibbonPanel) -> impl Iterator<Item = RibbonPanel> {
+    use RibbonPanel::*;
+    let entries = match panel {
+        PartModify => [Some(panel), Some(PartShapeGenerator), None, None, None],
+        PartPattern => [Some(panel), Some(PartFreeform), None, None, None],
+        PartNotes => [
+            Some(PartGeometricAnnotation),
+            Some(PartGeneralAnnotation),
+            Some(panel),
+            Some(PartAnnotationManage),
+            Some(PartToleranceAnalysis),
+        ],
+        _ => [Some(panel), None, None, None, None],
+    };
+    entries.into_iter().flatten()
+}
+
 /// Every panel a tab offers, hidden ones included.
 pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonPanel> {
     use RibbonPanel::*;

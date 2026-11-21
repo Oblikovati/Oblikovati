@@ -9,6 +9,8 @@ const SIDE_WIDTH: f32 = 212.;
 mod compact_modify;
 #[path = "finish_sketch.rs"]
 mod finish_sketch;
+#[path = "floating_groups.rs"]
+mod floating_groups;
 
 /// A point on the ribbon with no control under it, wherever the ribbon sits now.
 fn ribbon_blank_point() -> [i32; 2] {
@@ -416,19 +418,21 @@ fn select_notes(world: &mut ApplicationWorld) {
 #[then("a temporary panel displays note commands")]
 fn note_commands(world: &mut ApplicationWorld) {
     expect_beside_ribbon(world, "General Note");
-    world.expect_text("Leader Note");
+    world.expect_text("Leader Text");
 }
 #[then("the Notes panel closes")]
 fn notes_closed(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
+    assert!(window_geometry("##ribbon-temporary-panel").is_none());
     world.expect_no_text("General Note");
 }
 #[then("the floating ribbon displays its 3D Model groups again")]
 fn model_groups_again(world: &mut ApplicationWorld) {
     expect_floating(world);
-    for group in ["Sketch", "Create", "Modify"] {
+    for group in ["Start 2D Sketch", "Create", "Modify"] {
         world.expect_text(group);
     }
+    same_part(world);
 }
 #[given("a part, an assembly and a sheet-metal part are open in the MCAD Software")]
 fn three_documents(world: &mut ApplicationWorld) {

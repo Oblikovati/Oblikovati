@@ -95,6 +95,12 @@ impl DocumentRibbon {
         self.settling_frames > 0
     }
     pub(crate) fn select_tab(&mut self, tab: RibbonTab) {
+        if self.active != tab
+            && self.display.placement != crate::application::ribbon_display::RibbonPlacement::Top
+        {
+            self.display.temporary = None;
+            self.display.side_anchor = None;
+        }
         self.active = tab;
         self.pending_tab = Some(tab);
     }
@@ -182,8 +188,7 @@ impl DocumentRibbon {
         if next == index {
             return;
         }
-        self.active = tabs[next];
-        self.pending_tab = Some(self.active);
+        self.select_tab(tabs[next]);
     }
 }
 fn document_ribbon_key(state: &GuiCommandState) -> RibbonKey {

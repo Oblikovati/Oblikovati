@@ -59,7 +59,11 @@ pub(super) fn temporary_geometry(
     top: f32,
     factor: f32,
 ) -> ([f32; 2], [f32; 2]) {
-    let panel_height = 24. + (20. + display.appearance.command_height()) * factor;
+    let floating_notes = display.placement
+        == crate::application::ribbon_display::RibbonPlacement::Floating
+        && shown == TemporaryPanel::Group(RibbonPanel::PartNotes);
+    let content_height = temporary_content_height(display.appearance, floating_notes);
+    let panel_height = 24. + content_height * factor;
     let viewport = ui.io().display_size[0];
     let TemporaryPanel::Group(panel) = shown else {
         return ([8., top], [viewport - 16., panel_height]);
@@ -67,6 +71,8 @@ pub(super) fn temporary_geometry(
     let measured = layout.widths.get(&(tab, panel)).copied().unwrap_or(108.);
     let compact_width = if display.side_anchor.is_some() && panel == RibbonPanel::PartModify {
         crate::ribbon_panel_contents::compact_modify_width(display.appearance) * factor
+    } else if floating_notes {
+        crate::ribbon_panel_contents::FLOATING_NOTES_WIDTH * factor
     } else {
         0.
     };
@@ -83,4 +89,15 @@ pub(super) fn temporary_geometry(
     }
     let x = display.temporary_anchor.min(viewport - width - 8.).max(8.);
     ([x, top], [width, panel_height])
+}
+
+pub(super) fn temporary_content_height(
+    appearance: crate::ribbon_command_layout::RibbonAppearance,
+    floating_notes: bool,
+) -> f32 {
+    if floating_notes {
+        crate::ribbon_panel_contents::FLOATING_NOTES_HEIGHT
+    } else {
+        20. + appearance.command_height()
+    }
 }

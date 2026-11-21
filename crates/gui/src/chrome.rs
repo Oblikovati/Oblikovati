@@ -94,10 +94,11 @@ pub(crate) fn ribbon_band(
             request_context_menu_when_clicked(ui, owners.ribbon);
         }
         let tab = owners.ribbon.active;
-        let panels = crate::ribbon_panels::available_panels(
+        let panels = crate::ribbon_panels::panels_for_placement(
             tab,
             &request.commands,
             &owners.ribbon.customization,
+            owners.ribbon.display.placement,
         );
         owners.ribbon.display.context_menu(
             ui,

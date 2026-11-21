@@ -12,7 +12,10 @@ pub(crate) mod builtin;
 
 #[path = "ribbon_panel_catalog.rs"]
 mod catalog;
-pub(crate) use catalog::{RibbonPanel, available_panels, panels_for};
+pub(crate) use catalog::{RibbonPanel, available_panels, panels_for, panels_for_placement};
+#[path = "ribbon_side_groups.rs"]
+mod side_groups;
+pub(crate) use side_groups::draw_side_groups;
 
 #[derive(Default)]
 pub(crate) struct RibbonPanelLayout {
@@ -30,7 +33,7 @@ pub(crate) struct RibbonPanelLayout {
 mod keyboard;
 #[path = "ribbon_panel_measurements.rs"]
 mod measurements;
-use measurements::temporary_geometry;
+use measurements::{temporary_content_height, temporary_geometry};
 /// Editors and layout a ribbon panel's controls can change.
 pub(crate) struct RibbonPanelOwners<'a> {
     pub home_active: bool,
@@ -149,74 +152,6 @@ fn full_row(context: &mut PanelDrawContext<'_>, tab: RibbonTab, layout: &mut Rib
         layout.observe_scrollbar(ui.scroll_max_x() > 0.);
     }
 }
-/// A side or floating ribbon's groups: one stacked button each, opening beside the ribbon.
-/// Example: `draw_side_groups(ui, tab, state, owners, layout, display, panel_x, actions)`.
-// Each is a distinct owner of what a side ribbon draws or changes.
-#[allow(clippy::too_many_arguments)]
-pub(crate) fn draw_side_groups(
-    ui: &Ui,
-    tab: RibbonTab,
-    state: &GuiCommandState,
-    owners: RibbonPanelOwners<'_>,
-    layout: &mut RibbonPanelLayout,
-    display: &mut RibbonDisplayState,
-    panel_x: (f32, bool),
-    actions: &mut Vec<GuiShellAction>,
-) {
-    layout.pending_layout = false;
-    layout.use_appearance(display.appearance);
-    layout.additional.use_document(state.document);
-    layout.additional.use_mode(display.mode);
-    layout
-        .additional
-        .use_title_visibility(display.show_panel_titles);
-    if display.take_docking_selection() || owners.home_active {
-        layout.additional.clear();
-    }
-    let mut context = PanelDrawContext {
-        ui,
-        state,
-        hidden: display.hidden_panels.clone(),
-        show_panel_titles: display.show_panel_titles,
-        additional_allowed: !owners.home_active,
-        side_groups: true,
-        ribbon_bottom: ui.window_pos()[1] + ui.window_size()[1],
-        owners,
-        actions,
-    };
-    for panel in shown_panels(
-        tab,
-        state,
-        &display.hidden_panels,
-        context.owners.customization,
-    ) {
-        if panel == RibbonPanel::Exit {
-            // Sketch editing needs a direct way out in the vertical ribbon too (#3856).
-            draw_expanded(&mut context, tab, panel, ui.cursor_pos(), layout);
-            continue;
-        }
-        let open = display.temporary == Some(TemporaryPanel::Group(panel));
-        let lit = ui.style_color(imgui::StyleColor::NavHighlight);
-        let _lit = open.then(|| ui.push_style_color(imgui::StyleColor::Button, lit));
-        let _hovered = open.then(|| ui.push_style_color(imgui::StyleColor::ButtonHovered, lit));
-        let clicked = crate::widget_abi::button(ui, panel.label(), SIDE_GROUP_BUTTON);
-        group_key_tip(ui, panel, &context.owners);
-        if clicked || display.take_keyboard_group(panel) {
-            display.open_temporary(TemporaryPanel::Group(panel));
-            display.side_anchor = Some(crate::application::ribbon_display::SideAnchor {
-                x: panel_x.0,
-                y: ui.item_rect_min()[1],
-                ends_at_x: panel_x.1,
-            });
-        }
-    }
-    let temporary_open = display.temporary.is_some();
-    temporary_panel(&mut context, tab, layout, display);
-    if !temporary_open && layout.additional.has_open() {
-        context.ribbon_bottom = layout.additional.last_ribbon_bottom();
-        additional::draw(&mut context, tab, layout, display);
-    }
-}
 fn group_key_tip(ui: &Ui, panel: RibbonPanel, owners: &RibbonPanelOwners<'_>) {
     let tip = match panel {
         RibbonPanel::PartModify if owners.modify_group_tip => "Y",
@@ -227,7 +162,6 @@ fn group_key_tip(ui: &Ui, panel: RibbonPanel, owners: &RibbonPanelOwners<'_>) {
     };
     crate::ribbon_key_tips::badge(ui, tip);
 }
-const SIDE_GROUP_BUTTON: [f32; 2] = [112., 48.];
 /// One button per group; a group's commands open in the temporary panel.
 fn compact_row(
     context: &mut PanelDrawContext<'_>,
@@ -294,7 +228,7 @@ fn temporary_panel(
         .collapsible(false)
         .focused(focus)
         .build(|| {
-            let local = temporary_contents(context, tab, layout, shown);
+            let local = temporary_contents(context, tab, layout, shown, display.placement);
             keep = !local
                 && (ui.is_window_hovered_with_flags(
                     imgui::WindowHoveredFlags::CHILD_WINDOWS
@@ -326,19 +260,20 @@ fn temporary_contents(
     tab: RibbonTab,
     layout: &mut RibbonPanelLayout,
     shown: TemporaryPanel,
+    placement: crate::application::ribbon_display::RibbonPlacement,
 ) -> bool {
     let ui = context.ui;
     let available = ui.content_region_avail()[0].max(1.);
-    let region = crate::widget_abi::scroll_region(
-        ui,
-        "##temporary-contents",
-        [
-            available,
-            6. + (20. + context.owners.icons.appearance.command_height())
-                * context.owners.icons.layout_factor(),
-        ],
-    );
+    let floating_notes = placement == crate::application::ribbon_display::RibbonPlacement::Floating
+        && shown == TemporaryPanel::Group(RibbonPanel::PartNotes);
+    let content_height = temporary_content_height(context.owners.icons.appearance, floating_notes);
+    let height = 6. + content_height * context.owners.icons.layout_factor();
+    let region = crate::widget_abi::scroll_region(ui, "##temporary-contents", [available, height]);
     if !region.visible {
+        return false;
+    }
+    if floating_notes {
+        crate::ribbon_panel_contents::floating_notes(ui, context.owners.icons);
         return false;
     }
     match shown {

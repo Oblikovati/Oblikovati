@@ -17,8 +17,8 @@ pub(super) fn reserve_ribbon_margins(owners: &mut RibbonDrawOwners<'_>, _width: 
 const SIDE_RIBBON_WIDTH: f32 = 212.;
 const SIDE_TABS_WIDTH: f32 = 84.;
 const FLOATING_RIBBON_POSITION: [f32; 2] = [420., 240.];
-/// Taller than wide, yet short enough that the fourth group shows only partly: it scrolls to it.
-const FLOATING_RIBBON_HEIGHT: f32 = 230.;
+// Fit five annotation rows while the longer model list still scrolls.
+const FLOATING_RIBBON_SIZE: [f32; 2] = [250., 302.];
 /// The ribbon's tabs and group buttons as a column at a side, or in a floating panel.
 pub(super) fn side_ribbon(
     ui: &Ui,
@@ -46,8 +46,11 @@ pub(super) fn side_ribbon(
         RibbonPlacement::Floating => (
             "Ribbon",
             FLOATING_RIBBON_POSITION,
-            [SIDE_RIBBON_WIDTH, FLOATING_RIBBON_HEIGHT],
-            (FLOATING_RIBBON_POSITION[0] + SIDE_RIBBON_WIDTH + 2., false),
+            FLOATING_RIBBON_SIZE,
+            (
+                FLOATING_RIBBON_POSITION[0] + FLOATING_RIBBON_SIZE[0] + 2.,
+                false,
+            ),
         ),
     };
     crate::widget_abi::window_geometry(ui, position, size, Condition::Always);
@@ -72,10 +75,11 @@ pub(super) fn side_ribbon(
     }
     let cursor = ui.cursor_pos();
     let selector_was_open = owners.ribbon.display.selector_open;
-    let panels = crate::ribbon_panels::available_panels(
+    let panels = crate::ribbon_panels::panels_for_placement(
         owners.ribbon.active,
         &request.commands,
         &owners.ribbon.customization,
+        owners.ribbon.display.placement,
     );
     owners
         .ribbon
@@ -103,9 +107,7 @@ fn side_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame, selector
                 crate::ribbon_key_tips::badge(ui, &tip);
             }
             hovered |= ui.is_item_hovered();
-            if chosen {
-                ribbon.active = *tab;
-            } else if context_press || selector_press {
+            if chosen || context_press || selector_press {
                 ribbon.select_tab(*tab);
             }
         }
@@ -124,6 +126,7 @@ fn side_groups(
     let ribbon = &mut *owners.ribbon;
     let mut icons = owners.icons.clone();
     icons.appearance = ribbon.display.appearance;
+    let _tab = ui.push_id(ribbon.active.label());
     ui.child_window("##ribbon-groups")
         .size([0., -32.])
         .build(|| {

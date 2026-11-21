@@ -8,7 +8,10 @@ mod appearance_sketch;
 mod appearance_tools;
 mod appearance_view;
 mod muted;
-pub(crate) use muted::{compact_modify_commands, compact_modify_width};
+pub(crate) use muted::{
+    FLOATING_NOTES_HEIGHT, FLOATING_NOTES_WIDTH, compact_modify_commands, compact_modify_width,
+    floating_notes,
+};
 mod sketch;
 use muted::{muted_commands, muted_icon_commands, part_modify_controls};
 
