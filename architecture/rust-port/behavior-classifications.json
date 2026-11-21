@@ -28158,10 +28158,20 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/sketch/text_geometry_test.go and addin/router/sketch_text_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "go_test_premise": "The Go tests cover glyph outlines, anchor translation, and typed text style. The pinned native test exercises deleting a session preset after reopening a Part.",
+      "api_revision": "c051de97568c0345921f0f900982da31eb9ddca4",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Martensite builds the glyph outlines used to pick the reopened fraction.",
+      "platforms": "Linux X11 under Xvfb with Vulkan Lavapipe and DejaVu Sans.",
+      "kernel_integration": "The reopened Part preserves each text entity, anchor, and fraction range. The desktop session removes the named preset without editing the Part.",
+      "rust_tests": "Pinned native text-39. See architecture/rust-port/receipts/2026-11-21-sketch-text-delete-preset-3907/README.md.",
+      "oracle": "Rendered preset list, reopened fraction data, exact equality of the saved sketch and the sketch after cancellation, and visible Ready and count on the status bar.",
+      "expected_result": "Deleting g immediately leaves No Preset and Last Used. Cancel preserves both fractions and the unrelated label. Ready shows 47 dimensions needed.",
+      "baseline_source_sha256": "0e8f627cd0eb991bc18c2615f759ca92be1e1c121eb0c7a819b68f2b08706a3d"
     },
     {
       "id": "scenario:62cbfd73281b4a1b1171165ff66304a5b8b80300b78fcdbcfcea004134ff05c9",

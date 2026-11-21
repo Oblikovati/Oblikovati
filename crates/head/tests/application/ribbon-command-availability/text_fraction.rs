@@ -9,8 +9,14 @@ const FRACTION: SketchTextFraction = SketchTextFraction { start: 0, end: 3 };
 
 #[given("the existing blue Text is open in Format Text")]
 pub(super) fn existing_blue_text(world: &mut ApplicationWorld) {
+    open_blue_text_with_freedoms(world, EXISTING_DOF);
+}
+
+/// Open an accepted blue Text in a sketch with the requested final freedom count.
+/// For example, passing 43 leaves room for two more Text anchors before 47.
+pub(super) fn open_blue_text_with_freedoms(world: &mut ApplicationWorld, freedoms: usize) {
     world.start_empty_sketch();
-    world.seed_dimensions_needed(EXISTING_DOF - 2);
+    world.seed_dimensions_needed(freedoms - 2);
     activate_text(world);
     open_editor(world, [900, 580]);
     text_format_choices::choose_font(world, "DejaVu Sans");
@@ -20,7 +26,7 @@ pub(super) fn existing_blue_text(world: &mut ApplicationWorld) {
     x11_input::press_keysym(0xff1b);
     world.pump(Vec::new());
     world.expect_ready();
-    world.expect_dimensions_needed(EXISTING_DOF);
+    world.expect_dimensions_needed(freedoms);
     world.text_creation_baseline = Some(world.edited_geometry());
     text_edit::open_existing(world);
 }

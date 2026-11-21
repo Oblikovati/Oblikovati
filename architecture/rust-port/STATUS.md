@@ -128,6 +128,10 @@ using this status; the live scenario directory can change.
   fraction with the same blue color, height, and width. The width warning
   selected zero for replacement and preserved the preview. See
   `receipts/2026-11-21-sketch-text-fractions-0163/`.
+  Pinned `text-39` reopened a native Part in the same session and deleted
+  preset `g` from the second fraction's editor. Cancel preserved both
+  fractions and the unrelated label with 47 dimensions needed.
+  See `receipts/2026-11-21-sketch-text-delete-preset-3907/`.
   Native input left unselected `ab` unchanged and converted selected
   characters to `AB` in the editor and preview. The accepted edit kept
   the text ID and anchor. Pinned `text-25` also requires strike-through.

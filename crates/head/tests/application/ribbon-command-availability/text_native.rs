@@ -29,6 +29,8 @@ mod text_italic;
 mod text_line_spacing;
 #[path = "text_numbering.rs"]
 mod text_numbering;
+#[path = "text_preset_delete.rs"]
+mod text_preset_delete;
 #[path = "text_presets.rs"]
 mod text_presets;
 use oblikovati_viewport::ViewportSketchPreview;

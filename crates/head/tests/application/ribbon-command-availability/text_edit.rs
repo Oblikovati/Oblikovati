@@ -53,7 +53,13 @@ fn cancel_replacement(world: &mut ApplicationWorld) {
 #[when("the user right-clicks the glyph and choose Edit text")]
 #[when("the user chooses Edit text again")]
 pub(super) fn open_existing(world: &mut ApplicationWorld) {
-    let at = glyph_pixel(world);
+    open_accepted_text(world, 0);
+}
+
+/// Open a specific accepted Text through its native context menu.
+/// For example, index 1 edits the second Text after a saved sketch reopens.
+pub(super) fn open_accepted_text(world: &mut ApplicationWorld, index: usize) {
+    let at = accepted_text_pixel(world, index);
     x11_input::right_click(at);
     world.pump(Vec::new());
     assert_eq!(
@@ -62,7 +68,7 @@ pub(super) fn open_existing(world: &mut ApplicationWorld) {
             .sketch_context
             .as_ref()
             .and_then(|context| context.text),
-        Some(committed_text(world).id)
+        Some(world.edited_geometry().texts()[index].id)
     );
     x11_input::click(diagnostics::pointer_pixels(world.run("Edit Text").center()));
     world.pump(Vec::new());
@@ -70,8 +76,12 @@ pub(super) fn open_existing(world: &mut ApplicationWorld) {
 }
 
 pub(super) fn glyph_pixel(world: &mut ApplicationWorld) -> [i32; 2] {
+    accepted_text_pixel(world, 0)
+}
+
+fn accepted_text_pixel(world: &mut ApplicationWorld, index: usize) -> [i32; 2] {
     let geometry = world.edited_geometry();
-    let text = &geometry.texts()[0];
+    let text = &geometry.texts()[index];
     let anchor = geometry.point(text.anchor).unwrap().position;
     let paths = sample_sketch_text(
         &text.style,
