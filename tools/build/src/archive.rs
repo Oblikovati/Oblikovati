@@ -10,7 +10,7 @@ use std::{
     io::Write,
     path::Path,
 };
-use zip::{ZipWriter, write::SimpleFileOptions};
+use zip::{System, ZipWriter, write::SimpleFileOptions};
 
 pub(crate) fn create(stage: &Path, output: &Path) -> BuildResult<()> {
     let files = all_files(stage)?;
@@ -67,6 +67,8 @@ fn zip(stage: &Path, output: &Path, files: &[std::path::PathBuf]) -> Result<(), 
     for file in files {
         let relative = relative_name(stage, file).map_err(std::io::Error::other)?;
         let options = SimpleFileOptions::default()
+            // DOS metadata drops executable permissions when the archive is read.
+            .system(System::Unix)
             .unix_permissions(mode(&relative))
             .compression_method(zip::CompressionMethod::Deflated)
             .last_modified_time(zip::DateTime::default());

@@ -56,5 +56,11 @@ fn docs_validate_nested_sources_but_not_other_worktrees() {
     check(tree.root()).unwrap();
     tree.put("fixtures/nested/src/lib.rs", "missing header");
     let error = check(tree.root()).unwrap_err();
-    assert!(error.contains("fixtures/nested") && error.contains("SPDX"));
+    let source = ["fixtures", "nested", "src", "lib.rs"]
+        .iter()
+        .collect::<std::path::PathBuf>();
+    assert!(
+        error.contains(&*tree.root().join(source).to_string_lossy()) && error.contains("SPDX"),
+        "{error}"
+    );
 }

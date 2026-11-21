@@ -16,13 +16,9 @@ fn archives_are_repeatable_and_keep_binary_permissions() {
         assert_eq!(sha256(&first).unwrap(), sha256(&second).unwrap());
     }
     let mut zip = zip::ZipArchive::new(File::open(tree.root().join("first.zip")).unwrap()).unwrap();
-    assert_eq!(
-        zip.by_name("bin/oblikovati-cli")
-            .unwrap()
-            .unix_mode()
-            .unwrap()
-            & 0o777,
-        0o755
-    );
+    for (file, permissions) in [("bin/oblikovati-cli", 0o755), ("LICENSE", 0o644)] {
+        let entry = zip.by_name(file).unwrap();
+        assert_eq!(entry.unix_mode().unwrap() & 0o777, permissions, "{file}");
+    }
     assert_eq!(zip.len(), 2);
 }
