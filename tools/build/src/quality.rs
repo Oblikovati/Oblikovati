@@ -186,16 +186,46 @@ pub(crate) fn gate(root: &Path, runner: &dyn Runner) -> BuildResult<()> {
         std::env::var_os("DISPLAY").is_some() || std::env::var_os("WAYLAND_DISPLAY").is_some(),
     )?;
     gate_tool_versions(root, runner)?;
-    gate_behavior_ledger(root, runner)?;
-    for (index, workspace) in workspaces.iter().enumerate() {
-        gate_workspace(root, runner, workspace, index)?;
-    }
-    gate_repository_checks(root, runner)?;
+    run_gate_checks(root, runner, &workspaces)?;
     println!(
         "Gate passed for {} discovered Cargo workspace(s). Runtime evidence covers only the crates present in this tree.",
         workspaces.len()
     );
     Ok(())
+}
+
+fn run_gate_checks(root: &Path, runner: &dyn Runner, workspaces: &[Metadata]) -> BuildResult<()> {
+    let mut failures = Vec::new();
+    // An incomplete baseline must not hide failures in independent checks (#3860).
+    record_gate_failure(
+        &mut failures,
+        "BDD ledger",
+        gate_behavior_ledger(root, runner),
+    );
+    for (index, workspace) in workspaces.iter().enumerate() {
+        let stage = format!("Cargo workspace {}", workspace.workspace_root.display());
+        record_gate_failure(
+            &mut failures,
+            &stage,
+            gate_workspace(root, runner, workspace, index),
+        );
+    }
+    record_gate_failure(
+        &mut failures,
+        "Repository checks",
+        gate_repository_checks(root, runner),
+    );
+    if failures.is_empty() {
+        return Ok(());
+    }
+    Err(format!("Gate failed in: {}", failures.join(", ")))
+}
+
+fn record_gate_failure(failures: &mut Vec<String>, stage: &str, result: BuildResult<()>) {
+    if let Err(error) = result {
+        eprintln!("Gate stage {stage} failed:\n{error}");
+        failures.push(stage.to_owned());
+    }
 }
 
 fn gate_behavior_ledger(root: &Path, runner: &dyn Runner) -> BuildResult<()> {

@@ -269,6 +269,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Kept the Cargo workspace and repository checks running when the BDD ledger failed, and reported all failed stages. (#3860)
+
 - Kept long names and paths inside their columns and reserved space for row actions in Home Recent Documents. (#3898)
 
 - Opened Home with a New Part action on no-document startup and docked the asset browsers for new profiles. (#3898)

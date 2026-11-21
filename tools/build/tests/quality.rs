@@ -89,13 +89,20 @@ struct GateRunner {
     help: crate::script_docs::tests::HelpSourceFixture,
     calls: std::cell::RefCell<Vec<String>>,
     environments: std::cell::RefCell<Vec<Vec<(String, String)>>>,
+    failing_commands: Vec<(&'static str, &'static str)>,
 }
 
 impl Runner for GateRunner {
     fn output(&self, root: &Path, program: &str, arguments: &[&str]) -> BuildResult<String> {
-        self.calls
-            .borrow_mut()
-            .push(format!("{program} {}", arguments.join(" ")));
+        let command = format!("{program} {}", arguments.join(" "));
+        self.calls.borrow_mut().push(command.clone());
+        if let Some((_, error)) = self
+            .failing_commands
+            .iter()
+            .find(|(key, _)| command.contains(key))
+        {
+            return Err((*error).into());
+        }
         match (program, arguments) {
             ("cargo", ["metadata", "--locked", "--format-version", "1"]) => Ok(self.help.metadata()),
             ("cargo", ["metadata", ..]) => Ok(serde_json::json!({"workspace_root": self.tree.root(), "workspace_members":["fixture"], "packages":[{"id":"fixture","name":"fixture","manifest_path":self.tree.root().join("Cargo.toml"),"license":"GPL-2.0-only","targets":[],"dependencies":[]}]}).to_string()),
@@ -179,6 +186,23 @@ fn gate_test_command_requires_pinned_scenarios() {
 }
 
 #[test]
+fn gate_reports_ledger_and_workspace_failures_and_still_checks_repository() {
+    let mut runner = gate_fixture();
+    runner.failing_commands = vec![
+        ("behavior_cli.py check", "2457 scenarios incomplete"),
+        ("cargo llvm-cov --locked", "native test failed"),
+        ("jscpd", "duplication exceeds limit"),
+    ];
+    let error = gate(runner.tree.root(), &runner).unwrap_err();
+    for expected in ["BDD ledger", "Cargo workspace", "Repository checks"] {
+        assert!(error.contains(expected), "{error}");
+    }
+    let calls = runner.calls.borrow();
+    assert!(calls.iter().any(|call| call.contains("markdownlint-cli2")));
+    assert!(calls.iter().any(|call| call.contains("jscpd")));
+}
+
+#[test]
 fn local_gate_refuses_stale_api_and_kernel_pins_before_external_checks() {
     let tree = FixtureTree::new();
     tree.put("Cargo.lock", include_str!("../../../Cargo.lock"));
@@ -202,6 +226,7 @@ fn gate_fixture() -> GateRunner {
         help,
         calls: std::cell::RefCell::new(Vec::new()),
         environments: std::cell::RefCell::new(Vec::new()),
+        failing_commands: Vec::new(),
     };
     for name in ["Cargo.toml", "LICENSE"] {
         runner.tree.put(name, "fixture");

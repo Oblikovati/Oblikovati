@@ -86,6 +86,9 @@ field, including inherited capture tags, with the checked-in inventory. A
 successful discovery inventory alone does not check those fields. Regenerate
 the behavior ledger from the same inputs before committing.
 
+The full gate reports a ledger failure and continues with the independent Cargo
+workspace and repository checks. A failed stage still fails the gate.
+
 ## Select and implement work
 
 Choose the next ready item in milestone order. Record its scope, problem, and
