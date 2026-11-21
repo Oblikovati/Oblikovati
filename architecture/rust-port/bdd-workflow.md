@@ -290,7 +290,10 @@ retain their separate, stricter review rule.
 
 After running a whole feature, retain its Cucumber report and other artifacts
 under `receipts/`, then add the source hash, report path and hash, tested commit,
-command, and environment to `feature-run-results.json`. Check the feature hash
+command, and environment to `feature-run-results.json`. To retain runs for
+several versions of one feature, put the records in that feature's
+`by_source_sha256` object and use each feature hash as its key. The report
+selects the record that matches the source it reads. Check the feature hash
 before and after the run. A green entry means that the complete recorded run
 passed at the listed application commit; it does not prove later application
 commits. It is distinct from the stricter verified acceptance ledger and its

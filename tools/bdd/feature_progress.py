@@ -287,13 +287,28 @@ def matches_source(element: dict[str, object], scenario: dict[str, object]) -> b
     return element.get("line") == scenario["line"] and actual == scenario["steps"]
 
 
+def feature_result_for_hash(record: object, feature_hash: str) -> object:
+    """Select the result for one source version, for example feature_result_for_hash(record, sha)."""
+    if not isinstance(record, dict) or "by_source_sha256" not in record:
+        return record
+    versions = record["by_source_sha256"]
+    if not isinstance(versions, dict) or not versions:
+        raise ValueError(f"feature result versions {versions!r}: expected a nonempty hash map")
+    if feature_hash not in versions:
+        return {}  # Results exist for this path, so report a source change.
+    selected = versions[feature_hash]
+    if not isinstance(selected, dict) or selected.get("feature_sha256") != feature_hash:
+        raise ValueError(f"feature result {selected!r}: expected a record for hash {feature_hash!r}")
+    return selected
+
+
 def report_progress(source: Path, records: dict[str, object]) -> dict[str, object]:
     """Summarize source-matched runs; for example, report_progress(Path('/scenarios'), {})."""
     features = collect_features(source)
     rows = {}
     for path, info in features.items():
-        status, count = result_status(source, path, info, records.get(path))
-        record = records.get(path)
+        record = feature_result_for_hash(records.get(path), str(info["sha256"]))
+        status, count = result_status(source, path, info, record)
         commit = record.get("application_commit") if isinstance(record, dict) else None
         rows[path] = {
             **info,

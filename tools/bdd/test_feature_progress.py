@@ -184,6 +184,32 @@ class FeatureProgressTests(unittest.TestCase):
         )
         self.assertEqual(summary["removed_features"], ["removed.feature"])
 
+    def test_inventory_selects_a_run_for_each_exact_feature_hash(self) -> None:
+        first = self.feature.read_text()
+        self.feature.write_text(first + "# published correction\n")
+        published_hash = progress.digest(self.feature)
+        versions = {
+            self.record["feature_sha256"]: dict(self.record, application_commit="pinned"),
+            published_hash: dict(self.record, feature_sha256=published_hash, application_commit="published"),
+        }
+        records = {self.path: {"by_source_sha256": versions}}
+        with patch.object(progress, "ROOT", self.root):
+            for text, label in ((first, "pinned"), (self.feature.read_text(), "published")):
+                self.feature.write_text(text)
+                row = progress.report_progress(self.root, records)["features"][self.path]
+                self.assertEqual((row["status"], row["passed_scenarios"]), ("green", 2))
+                self.assertEqual(row["tested_application_commit"], label)
+            self.feature.write_text(first + "# a different correction\n")
+            row = progress.report_progress(self.root, records)["features"][self.path]
+            self.assertEqual((row["status"], row["passed_scenarios"]), ("source_changed", 0))
+            self.assertIsNone(row["tested_application_commit"])
+
+    def test_feature_version_cannot_reuse_a_report_record_from_another_hash(self) -> None:
+        digest = self.record["feature_sha256"]
+        wrong_record = dict(self.record, feature_sha256="f" * 64)
+        with self.assertRaisesRegex(ValueError, "expected a record for hash"):
+            progress.feature_result_for_hash({"by_source_sha256": {digest: wrong_record}}, digest)
+
     def argument_fixture(self) -> tuple[dict[str, object], dict[str, object], list[dict[str, object]]]:
         self.feature.write_text(
             "Feature: example\n Background: shared\n  Given setup\n"

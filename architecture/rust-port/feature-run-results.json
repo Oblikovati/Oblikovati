@@ -146,23 +146,27 @@
     "notes": "The run has one failed scenario, tracked in #3963. After the run BLOCKERS.md received a request for the observed assembly command outcomes. A separate X11 test opened a native drawing using a mixed-case folder path with an underscore and a space, and XMODIFIERS=@im=none. A separate X11 test opened an assembly in Express mode and chose Load Full; it does not cover the missing Finish and Simplify commands."
   },
   "features/application/home-recent-documents/home-recent-documents.feature": {
-    "feature_sha256": "573d517b49ca58326f70a7c1ebd30509b6f43eb14040efa56e62de36db4028dc",
-    "supporting_files": {
-      "features/application/home-recent-documents/FIXTURES.md": "eaa93879fae0c3cba555021ac7c0cc563702aabee89b0b0bb5171b15db6f8978",
-      "features/application/home-recent-documents/FUNCTIONAL.md": "c0d024051cd728a22d4732d9160aa8c1b5ffb425b4619d674182220357474fb0",
-      "features/application/home-recent-documents/VISUAL.md": "029e157e7592692b0c2ac358cf1ce73c037a06d52573ca776294019a89e41ab9",
-      "features/application/home-recent-documents/home-recent-wireframe.svg": "4ed0788a73bd7d5abd832038a8a555a30324f65dfdc8adca15fb9431c6cfd6b6",
-      "features/application/home-recent-documents/recent-document-icons.svg": "e293a85c0e904bc008325cb5ca2cbcf900f5e33acb6d8c1e6ed736a056a2886e",
-      "features/application/home-recent-documents/recent-filter-selection.svg": "516a4be372ee38fd2fd305c2e5a61018230a12b9d2409f6a22e3e6b7bbb4f007",
-      "features/application/home-recent-documents/recent-no-results.svg": "8a13cb1b6fb743f770a7bd559bab8f0a604e7c1b91033f465c04118e4f1bf87f",
-      "features/application/home-recent-documents/recent-open-options.svg": "49dac3d091ebe314d30ae0f4b8afdc0764ed1343daaf9a2317232734ad6412f0"
-    },
-    "cucumber": "architecture/rust-port/receipts/2026-11-21-home-recent-3898/full-pinned-home.json",
-    "cucumber_sha256": "ae11e0b12332d405badae9458d26e27484a2567270291ddfb18794458f6f526b",
-    "application_commit": "ca8602139def46b0c575d3ed104cd67523f19620",
-    "command": "Full pinned Home Recent Documents run. See the receipt README.",
-    "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
-    "notes": "All 35 pinned scenarios and 357 steps passed. The published source has a different feature hash. Strict build and runtime provenance remains open under #3978."
+    "by_source_sha256": {
+      "573d517b49ca58326f70a7c1ebd30509b6f43eb14040efa56e62de36db4028dc": {
+        "feature_sha256": "573d517b49ca58326f70a7c1ebd30509b6f43eb14040efa56e62de36db4028dc",
+        "supporting_files": {
+          "features/application/home-recent-documents/FIXTURES.md": "eaa93879fae0c3cba555021ac7c0cc563702aabee89b0b0bb5171b15db6f8978",
+          "features/application/home-recent-documents/FUNCTIONAL.md": "c0d024051cd728a22d4732d9160aa8c1b5ffb425b4619d674182220357474fb0",
+          "features/application/home-recent-documents/VISUAL.md": "029e157e7592692b0c2ac358cf1ce73c037a06d52573ca776294019a89e41ab9",
+          "features/application/home-recent-documents/home-recent-wireframe.svg": "4ed0788a73bd7d5abd832038a8a555a30324f65dfdc8adca15fb9431c6cfd6b6",
+          "features/application/home-recent-documents/recent-document-icons.svg": "e293a85c0e904bc008325cb5ca2cbcf900f5e33acb6d8c1e6ed736a056a2886e",
+          "features/application/home-recent-documents/recent-filter-selection.svg": "516a4be372ee38fd2fd305c2e5a61018230a12b9d2409f6a22e3e6b7bbb4f007",
+          "features/application/home-recent-documents/recent-no-results.svg": "8a13cb1b6fb743f770a7bd559bab8f0a604e7c1b91033f465c04118e4f1bf87f",
+          "features/application/home-recent-documents/recent-open-options.svg": "49dac3d091ebe314d30ae0f4b8afdc0764ed1343daaf9a2317232734ad6412f0"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-home-recent-3898/full-pinned-home.json",
+        "cucumber_sha256": "ae11e0b12332d405badae9458d26e27484a2567270291ddfb18794458f6f526b",
+        "application_commit": "ca8602139def46b0c575d3ed104cd67523f19620",
+        "command": "Full pinned Home Recent Documents run. See the receipt README.",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 35 pinned scenarios and 357 steps passed. The published source has a different feature hash. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   },
   "features/application/file-menu/file-menu.feature": {
     "feature_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
