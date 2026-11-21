@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Select entities in the 3D model viewport: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature" package="testsuite/Feature: Select entities in the 3D model viewport: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature" tests="7" errors="0" failures="5" hostname="localhost" timestamp="2026-11-21T13:27:14.376154855Z" time="140.237135977"><testcase name="Scenario: Pick a 3D sketch endpoint: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:9:3" time="7.736941434"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Pick a 3D sketch endpoint
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✘  Given a visible 3D sketch curve has an exposed endpoint
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:10:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Select a visible 3D sketch curve: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:16:3" time="7.02200658"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Select a visible 3D sketch curve
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✘  Given a visible 3D sketch curve is not selected
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:17:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Select a solid face: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:23:3" time="38.418141904"><system-out><![CDATA[  Scenario: Select a solid face
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with an unselected front face
+   ✔  When the user clicks an unoccupied region of the face
+   ✔  Then the face appears teal with a bright green boundary
+   ✔  And the pick cue identifies "1. Face"
+   ✔  And a compact contextual toolbar appears beside the pointer
+]]></system-out></testcase><testcase name="Scenario: Open the context menus for a selected solid face: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:31:3" time="35.997632407"><failure type="Step Panicked" message="Step panicked. Captured output: face context menu &quot;Select Other...&quot;: expected a visible entry in &quot;W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\ndocking-visible-solid-current&lt;Primary&gt;\nRepresentations\nModelState\n&lt;Primary&gt;\n1\nView\n&lt;Primary&gt;\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument2:/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/docking-visible-solid-current.opd\n1Face\nRibbonDisplay\nv\nv\n...\ndocking-visible-solid-current\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\nPart1&lt;Primary&gt;*\ndocking-visible-solid-current&lt;Primary&gt;*\nDocuments\nX\nY\nZ\nNewSketch\nFillet\nExtrude\nChamfer\nOffsetPlane\nMeasure\nLookAt\nProperties\nHomeView&quot;"/><system-out><![CDATA[  Scenario: Open the context menus for a selected solid face
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with a solid face selected
+   ✔  When the user right-clicks the face
+   ✔  Then a standard context menu appears
+   ✔  And a radial shortcut menu appears near the pointer
+   ✘  And the radial menu includes "Extrude", "Select Other...", "Select Tangencies", and "New Sketch"
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:36:5
+      Matched: crates/head/src/../tests/application/viewport-entity-selection/steps.rs:108:1
+      Step panicked. Captured output: face context menu "Select Other...": expected a visible entry in "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\ndocking-visible-solid-current<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument2:/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/docking-visible-solid-current.opd\n1Face\nRibbonDisplay\nv\nv\n...\ndocking-visible-solid-current\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\nPart1<Primary>*\ndocking-visible-solid-current<Primary>*\nDocuments\nX\nY\nZ\nNewSketch\nFillet\nExtrude\nChamfer\nOffsetPlane\nMeasure\nLookAt\nProperties\nHomeView"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\ndocking-visible-solid-current<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument2:/mnt/vininas-projects/MCAD-Scenarios/fixtures/cad/docking-visible-solid-current.opd\n1Face\nRibbonDisplay\nv\nv\n...\ndocking-visible-solid-current\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\nPart1<Primary>*\ndocking-visible-solid-current<Primary>*\nDocuments\nX\nY\nZ\nNewSketch\nFillet\nExtrude\nChamfer\nOffsetPlane\nMeasure\nLookAt\nProperties\nHomeView",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Clear an entity selection from empty viewport space: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:40:3" time="39.380530949"><system-out><![CDATA[  Scenario: Clear an entity selection from empty viewport space
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with a solid face selected
+   ✔  When the user left-clicks empty viewport space
+   ✔  Then the entity returns to its neutral appearance
+   ✔  And the contextual selection cue closes
+]]></system-out></testcase><testcase name="Scenario: Pick a sketch point in the 3D viewport: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:51:3" time="6.002796769"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Pick a sketch point in the 3D viewport
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✘  Given a visible 3D sketch point is exposed in the viewport
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:52:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Open sketch-curve context menus during a 3D sketch: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:57:3" time="5.679085934"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open sketch-curve context menus during a 3D sketch
+   ✔> Given the MCAD Software is in the part modeling workspace
+   ✔> And no command or modal dialog is active
+   ✘  Given a 3D sketch is active and a visible sketch segment is exposed
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-entity-selection/viewport-entity-selection.feature:58:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

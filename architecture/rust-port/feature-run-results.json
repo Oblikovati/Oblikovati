@@ -67,18 +67,43 @@
     "environment": "Linux X11, Xvfb, Vulkan Lavapipe; X11 wheel and scripted window input"
   },
   "features/application/viewport-entity-selection/viewport-entity-selection.feature": {
-    "feature_sha256": "26a8c98bb1616ba17e962ebf16b88630c87bf1febb6d1181080db794d30cce59",
-    "application_commit": "53d2e30297b5ca58bae0211c302aa58eb6d79ef3",
-    "blocker": "The document host cannot open the required Inventor fixture; native 3D-sketch selection and context menus also require implementation (#4092).",
-    "command": "OBK_BDD_FEATURE=viewport-entity-selection tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; actual supplied fixture",
-    "supporting_files": {
-      "features/application/viewport-entity-selection/FUNCTIONAL.md": "5be9140aeaec74436d0ac143326a06c0ad051c7c26dfa0d82e11dd0cee771a9e",
-      "features/application/viewport-entity-selection/VISUAL.md": "c633080a52ed39d9c0b46f08b8951d1a5d09b8e2cf2a77054eb0af8b1b774697",
-      "features/application/viewport-entity-selection/FIXTURES.md": "2d941d8a37b7b4bb1545f482ca8a3060b49171c628e29b3613fdf046e5c0359c",
-      "fixtures/cad/viewport-selection-solid.ipt": "ca89533b3cecbf0650c34b8aad8d2b32f595bc0dac6b363ca487e101f70500ac"
-    },
-    "failed_report": "architecture/rust-port/receipts/2026-11-18-viewport-selection-gap/cucumber.json"
+    "by_source_sha256": {
+      "26a8c98bb1616ba17e962ebf16b88630c87bf1febb6d1181080db794d30cce59": {
+        "feature_sha256": "26a8c98bb1616ba17e962ebf16b88630c87bf1febb6d1181080db794d30cce59",
+        "application_commit": "53d2e30297b5ca58bae0211c302aa58eb6d79ef3",
+        "blocker": "The document host cannot open the required Inventor fixture; native 3D-sketch selection and context menus also require implementation (#4092).",
+        "command": "OBK_BDD_FEATURE=viewport-entity-selection tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11, Xvfb and Vulkan Lavapipe; actual supplied fixture",
+        "supporting_files": {
+          "features/application/viewport-entity-selection/FUNCTIONAL.md": "5be9140aeaec74436d0ac143326a06c0ad051c7c26dfa0d82e11dd0cee771a9e",
+          "features/application/viewport-entity-selection/VISUAL.md": "c633080a52ed39d9c0b46f08b8951d1a5d09b8e2cf2a77054eb0af8b1b774697",
+          "features/application/viewport-entity-selection/FIXTURES.md": "2d941d8a37b7b4bb1545f482ca8a3060b49171c628e29b3613fdf046e5c0359c",
+          "fixtures/cad/viewport-selection-solid.ipt": "ca89533b3cecbf0650c34b8aad8d2b32f595bc0dac6b363ca487e101f70500ac"
+        },
+        "failed_report": "architecture/rust-port/receipts/2026-11-18-viewport-selection-gap/cucumber.json"
+      },
+      "f20c54e0c21e3794de7b88b191ded6ce6482c1ebb227b9a7bc8259c6ff640c53": {
+        "feature_sha256": "f20c54e0c21e3794de7b88b191ded6ce6482c1ebb227b9a7bc8259c6ff640c53",
+        "supporting_files": {
+          "features/application/viewport-entity-selection/BLOCKERS.md": "f5b82a3598b7428dc40946e314a98523e76fb4caf6eca8d21f26e843b985534b",
+          "features/application/viewport-entity-selection/FIXTURES.md": "508ca5ff13dab9d51f740857c255005c9627f54ce726517a416c8bd4bf5db630",
+          "features/application/viewport-entity-selection/FUNCTIONAL.md": "5be9140aeaec74436d0ac143326a06c0ad051c7c26dfa0d82e11dd0cee771a9e",
+          "features/application/viewport-entity-selection/VISUAL.md": "c633080a52ed39d9c0b46f08b8951d1a5d09b8e2cf2a77054eb0af8b1b774697",
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-viewport-face-selection-4055/cucumber.json",
+        "cucumber_sha256": "04f0e2af372a4c777168755932ce33788953de703cf1c255f9713fc165a7e6ca",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-viewport-face-selection-4055/scenario-arguments.json",
+        "scenario_arguments_sha256": "b0a97d75f4abad6a3d72d5320a6a3609c78b91e8a1ae996c70da29c0af1ac2cd",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-21-viewport-face-selection-4055/scenario-inventory.json",
+        "scenario_inventory_sha256": "7aefaa9201297b1c05c2f907bdf2c79f72b340d11f880570b2bc3df7744fc9c9",
+        "application_commit": "5128782e7a8ce4c9a170b1f7739e2a759a48d8dd",
+        "command": "Full published Viewport Entity Selection run. See receipt README.",
+        "environment": "Linux, X11 Xvfb, Vulkan Lavapipe. Face selection, context click and clearing use XTest.",
+        "notes": "Face picking and clearing passed. The feature, supporting notes and native Part hashes matched before and after.",
+        "blocker": "The face-menu scenario stops at the missing Select Other entry (#4055). Four 3D-sketch scenarios are deferred."
+      }
+    }
   },
   "features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature": {
     "by_source_sha256": {
