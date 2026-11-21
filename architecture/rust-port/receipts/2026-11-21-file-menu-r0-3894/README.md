@@ -27,3 +27,25 @@ The [Go baseline](../2026-11-14-go-file-menu-baseline/README.md) records
 the related state and dispatch tests. The native results are historical
 evidence while [#3978](https://github.com/Oblikovati/Oblikovati/issues/3978)
 remains open.
+
+## Native fixture follow-up
+
+All eight scenarios and 59 steps passed again on the
+[pinned source](native-fixture/pinned/cucumber.json) and on a
+[copy of the current source](native-fixture/candidate/cucumber.json).
+In the copy, only the two fixture paths changed. Its feature SHA-256
+was `b79ef6850ca8160a350d14b5597741e44306fcafc47fe91c9ed34ba849c5373a`.
+The native fixture SHA-256 was
+`d936ef6b165b4bcbe14e04ac1b08bb5b16c81fddb597e70acb781e753c07e9a8`.
+The published feature still names the Inventor fixture.
+
+The two [X11 regressions](native-fixture/x11.log.gz) passed with the
+bindings at `9bbf0d15d2d658a18033c9d8d67f4dbe67580226`. The
+[Save As submenu](native-fixture/saved-native-part-save-as.png) shows
+the three disabled copy and packaging actions. The
+[Home capture](native-fixture/saved-native-part-recent-home.png) shows
+the same Part in recent documents and the muted document commands.
+The fixture bytes and document count stayed the same. The Home capture
+also shows that a long location can overlap the Recent date columns.
+[#3898](https://github.com/Oblikovati/Oblikovati/issues/3898) tracks the
+Home recent-document view.
