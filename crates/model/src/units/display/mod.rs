@@ -72,6 +72,12 @@ impl UnitsOfMeasure {
         Ok(number::shortest(self.display_value(quantity)?))
     }
 
+    /// Format a preferred-unit value with an explicit decimal precision.
+    /// For example, `units.format_fixed_value(length, 3)?` can return `"10.000"`.
+    pub fn format_fixed_value(&self, quantity: Quantity, digits: u8) -> Result<String, UnitError> {
+        number::fixed(self.display_value(quantity)?, i64::from(digits))
+    }
+
     /// Append the preferred unit to full-precision output; for example `units.format_precise(length)`.
     pub fn format_precise(&self, quantity: Quantity) -> Result<String, UnitError> {
         Ok(number::with_unit(

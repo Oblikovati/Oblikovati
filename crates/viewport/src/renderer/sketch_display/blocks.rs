@@ -13,6 +13,14 @@ impl SketchDisplayOverlay {
         block: &ViewportSketchBlock,
         deflection: f64,
     ) {
+        self.declines
+            .extend(block.text_declines.iter().map(|decline| {
+                display_decline(
+                    sketch,
+                    block.instance.id(),
+                    format!("block child {:?}: {}", decline.entity, decline.cause),
+                )
+            }));
         let report = match sample_block(block, deflection, sketch.working_scale) {
             Ok(report) => report,
             Err(cause) => {
@@ -96,6 +104,7 @@ pub(in crate::renderer) fn block_display(
         sketch: sketch.sketch,
         plane: sketch.plane,
         geometry: block.geometry.clone(),
+        text_declines: Vec::new(),
         blocks: Vec::new(),
         line_color: block
             .definition_color

@@ -71,8 +71,7 @@ fn style_result(
         .geometry()
         .text(entity)
         .map_err(api_error)?
-        .style
-        .clone();
+        .current_text_style(&snapshot.parameters);
     Ok(SketchTextResult {
         entity_id: entity.0,
         style,
@@ -96,6 +95,7 @@ fn new_text(
         formatting_runs: request.formatting_runs,
         line_spacing: request.line_spacing,
         stacked_fractions: request.stacked_fractions,
+        linked_fields: request.linked_fields,
         ..Default::default()
     };
     style.height = centimetres(snapshot, &request.height)?;
@@ -118,12 +118,16 @@ fn apply_fields(
         style.content = *text;
         style.formatting_runs = None;
         style.stacked_fractions = None;
+        style.linked_fields = None;
     }
     if let Some(runs) = request.formatting_runs {
         style.formatting_runs = *runs;
     }
     if let Some(fractions) = request.stacked_fractions {
         style.stacked_fractions = *fractions;
+    }
+    if let Some(fields) = request.linked_fields {
+        style.linked_fields = *fields;
     }
     if let Some(spacing) = request.line_spacing {
         style.line_spacing = Some(spacing);

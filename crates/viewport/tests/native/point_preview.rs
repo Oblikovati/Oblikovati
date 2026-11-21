@@ -74,6 +74,7 @@ fn committed_point(
         .set_center_point(SketchEntityId(1), center)
         .unwrap();
     ViewportSketchDisplay {
+        text_declines: Vec::new(),
         working_scale: 1.,
         sketch: DocumentSketchId(1),
         plane: preview.plane(),

@@ -29,6 +29,12 @@ mod text_fraction_preset;
 mod text_italic;
 #[path = "text_line_spacing.rs"]
 mod text_line_spacing;
+#[path = "text_linked_insertion.rs"]
+mod text_linked_insertion;
+#[path = "text_linked_journey.rs"]
+mod text_linked_journey;
+#[path = "text_linked_viewport.rs"]
+mod text_linked_viewport;
 #[path = "text_numbering.rs"]
 mod text_numbering;
 #[path = "text_preset_defaults.rs"]

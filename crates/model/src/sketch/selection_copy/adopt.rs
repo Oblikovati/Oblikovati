@@ -59,6 +59,7 @@ fn append_curve(
             id,
             anchor: ids.get(text.anchor)?,
             style: text.style.clone(),
+            parameter_bindings: text.parameter_bindings.clone(),
         }),
         _ => Err(copy_selection_error(shape.id())),
     }

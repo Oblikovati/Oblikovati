@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_model::{
     document_sketch::{DocumentSketchId, SketchBlockInstance},
-    sketch::{Sketch2D, SketchPlane},
+    sketch::{Sketch2D, SketchPlane, SketchTextDisplayDecline},
 };
 /// Owned committed geometry. The document keeps identity; native samples remain disposable.
 #[derive(Clone, Debug, PartialEq)]
@@ -10,6 +10,7 @@ pub struct ViewportSketchDisplay {
     pub sketch: DocumentSketchId,
     pub plane: SketchPlane,
     pub geometry: Sketch2D,
+    pub text_declines: Vec<SketchTextDisplayDecline>,
     /// Definition geometry and placement for each visible block instance.
     pub blocks: Vec<ViewportSketchBlock>,
     /// What its lines draw in, in place of the palette's geometry colour.
@@ -20,6 +21,7 @@ pub struct ViewportSketchDisplay {
 pub struct ViewportSketchBlock {
     pub instance: SketchBlockInstance,
     pub geometry: Sketch2D,
+    pub text_declines: Vec<SketchTextDisplayDecline>,
     /// Definition color used when a member has no own override.
     pub definition_color: Option<oblikovati_api::types::Color>,
 }

@@ -40,7 +40,7 @@ mod constraint_settings_relax;
 mod dimension_expression;
 #[cfg(target_os = "linux")]
 #[path = "dimension-label-overlap/native.rs"]
-mod dimension_label_overlap;
+pub(super) mod dimension_label_overlap;
 #[path = "ellipse/steps.rs"]
 mod ellipse;
 #[path = "explode-block/steps.rs"]

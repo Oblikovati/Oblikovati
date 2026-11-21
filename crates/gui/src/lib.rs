@@ -93,7 +93,8 @@ pub use sketch::precise_input::{
 };
 pub use sketch::region_properties::GuiRegionPanel;
 pub use sketch::text::{
-    GuiSketchTextAction, GuiSketchTextDraft, GuiSketchTextFormatting, GuiSketchTextPresetId,
+    GuiSketchTextAction, GuiSketchTextDraft, GuiSketchTextEditorFields, GuiSketchTextFieldSources,
+    GuiSketchTextFormatting, GuiSketchTextPresetId,
 };
 mod sketch_flyouts;
 mod sketch_formats;

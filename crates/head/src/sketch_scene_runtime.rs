@@ -5,9 +5,11 @@ use oblikovati_model::history::DocumentSnapshot;
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 use oblikovati_viewport::{ViewportSketchBlock, ViewportSketchDisplay};
+use std::borrow::Cow;
 #[derive(Default)]
 pub(crate) struct DesktopSketchScenes {
     source: Option<(u64, u64)>,
+    file_name: String,
     /// The sketches shown although hidden; a new choice redraws without any model change.
     called_up: Vec<DocumentSketchId>,
 }
@@ -20,7 +22,12 @@ impl DesktopSketchScenes {
     ) -> Result<Option<HeadSketchSceneUpdate>, String> {
         let source = active_sketch_source(files)?;
         let called_up = called_up_sketches(files, source, opened_hidden);
-        if source == self.source && called_up == self.called_up {
+        if source == self.source
+            && called_up == self.called_up
+            && source.map_or(Cow::Borrowed(""), |(id, _)| {
+                sketch_document_file_name(files, id)
+            }) == self.file_name
+        {
             return Ok(None);
         }
         let datums = scene_datums(files, parts, source)?;
@@ -29,11 +36,34 @@ impl DesktopSketchScenes {
         let update = prepare_sketch_scene(files, source, &called_up, datums.as_ref())?;
         self.source = source;
         self.called_up = called_up;
+        self.file_name = source.map_or_else(String::new, |(id, _)| {
+            sketch_document_file_name(files, id).into_owned()
+        });
         Ok(Some(update))
     }
     pub(crate) fn clear(&mut self) {
         self.source = None;
+        self.file_name.clear();
     }
+}
+
+/// Read the file-name field source. For example, a saved `/tmp/Part.opd` uses `Part.opd`.
+pub(crate) fn sketch_document_file_name<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+>(
+    files: &FileWorkspace<O, W, F>,
+    document: u64,
+) -> Cow<'_, str> {
+    if let Some(name) = files
+        .path(document)
+        .ok()
+        .and_then(std::path::Path::file_name)
+    {
+        return name.to_string_lossy();
+    }
+    Cow::Borrowed(files.workspace().display_name(document).unwrap_or_default())
 }
 fn scene_datums<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
@@ -110,7 +140,14 @@ fn prepare_sketch_scene<O: TransactionObserver, W: WorkspaceObserver, F: Documen
             .workspace()
             .session(id)
             .map_err(|cause| cause.to_string())?;
-        collect_sketches(session.snapshot(), called_up, datums, &mut update);
+        let file_name = sketch_document_file_name(files, id);
+        collect_sketches(
+            session.snapshot(),
+            &file_name,
+            called_up,
+            datums,
+            &mut update,
+        );
     }
     Ok(update)
 }
@@ -120,6 +157,7 @@ fn line_color([red, green, blue]: [u8; 3]) -> oblikovati_model::theme::Rgba {
 }
 fn collect_sketches(
     snapshot: &DocumentSnapshot,
+    file_name: &str,
     called_up: &[DocumentSketchId],
     datums: Option<&oblikovati_model::feature::work_geometry::WorkGeometryEvaluation>,
     update: &mut HeadSketchSceneUpdate,
@@ -138,12 +176,16 @@ fn collect_sketches(
         };
         match plane {
             Ok(plane) => {
-                let blocks = scene_blocks(snapshot, sketch, update);
+                let blocks = scene_blocks(snapshot, file_name, sketch, update);
+                let (geometry, text_declines) = sketch
+                    .geometry()
+                    .text_display_geometry(&snapshot.parameters, file_name);
                 update.sketches.push(ViewportSketchDisplay {
                     working_scale: snapshot.parameters.units().working_scale(),
                     sketch: sketch.id(),
                     plane,
-                    geometry: sketch.geometry().clone(),
+                    geometry,
+                    text_declines,
                     blocks,
                     line_color: sketch.line_style().color.map(line_color),
                 })
@@ -154,6 +196,7 @@ fn collect_sketches(
 }
 fn scene_blocks(
     snapshot: &DocumentSnapshot,
+    file_name: &str,
     sketch: &oblikovati_model::document_sketch::PlacedSketch,
     update: &mut HeadSketchSceneUpdate,
 ) -> Vec<ViewportSketchBlock> {
@@ -175,9 +218,13 @@ fn scene_blocks(
             ));
             continue;
         };
+        let (geometry, text_declines) = definition
+            .geometry()
+            .text_display_geometry(&snapshot.parameters, file_name);
         blocks.push(ViewportSketchBlock {
             instance: instance.clone(),
-            geometry: definition.geometry().clone(),
+            geometry,
+            text_declines,
             definition_color: definition.color().cloned(),
         });
     }

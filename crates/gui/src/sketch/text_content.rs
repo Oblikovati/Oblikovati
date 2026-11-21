@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Keep the content selection when the user works with the adjacent editor controls.
-use super::GuiSketchTextDraft;
+use super::{GuiSketchTextDraft, GuiSketchTextFieldSources};
 use imgui::{InputTextCallbackHandler, InputTextMultilineCallback, TextCallbackData, Ui};
+use oblikovati_model::sketch::SketchTextFieldProjection;
 use std::ops::Range;
 
 #[path = "text_character_ranges.rs"]
@@ -13,9 +14,14 @@ mod numbering;
 mod text_case;
 #[path = "text_color.rs"]
 mod text_color;
+#[path = "text_field_projection.rs"]
+mod text_field_projection;
 #[path = "text_fraction.rs"]
 mod text_fraction;
+#[path = "text_linked_fields.rs"]
+mod text_linked_fields;
 use numbering::NumberingStyle;
+use text_field_projection::{authored_selection, project_position, projected_field_edit};
 
 const CONTENT_PICKER_WIDTH: f32 = 130.;
 
@@ -35,6 +41,7 @@ pub(super) struct TextContentEditor {
     cursor: usize,
     restore: Option<Range<usize>>,
     color_dialog: crate::application::model_browser::color_dialog::ColorDialog,
+    linked_fields: text_linked_fields::LinkedFieldControls,
 }
 
 impl TextContentEditor {
@@ -43,6 +50,8 @@ impl TextContentEditor {
         ui: &Ui,
         draft: &mut GuiSketchTextDraft,
         row_factor: f64,
+        sources: Option<&GuiSketchTextFieldSources>,
+        projection: Option<&SketchTextFieldProjection>,
     ) -> bool {
         self.keep_valid_selection(&draft.content);
         if self.restore.is_some() {
@@ -55,21 +64,49 @@ impl TextContentEditor {
                 .clone()
                 .is_some_and(|range| selection_has(runs, range, flag))
         });
-        let before = (!runs.is_empty() || draft.formatting.stacked_fractions.is_some())
-            .then(|| draft.content.clone());
-        let changed = self.input(ui, &mut draft.content, row_factor, face)
-            | self.controls(ui, &mut draft.content);
+        let before = (!runs.is_empty()
+            || draft.formatting.stacked_fractions.is_some()
+            || draft.formatting.linked_fields.is_some())
+        .then(|| draft.content.clone());
+        let previous_selection = self.selection_or_cursor();
+        let typed = self.input(ui, &mut draft.content, row_factor, face, projection);
+        let control_changed = self.controls(ui, &mut draft.content);
         if let Some(before) = before.filter(|text| text != &draft.content) {
             let retained = character_ranges::retain_unchanged_runs(runs, &before, &draft.content);
             draft.formatting.runs = (!retained.is_empty()).then_some(retained);
             text_fraction::retain_unchanged(draft, &before);
+            if typed && !control_changed {
+                text_linked_fields::retain_after_input(
+                    draft,
+                    &before,
+                    previous_selection,
+                    self.cursor,
+                );
+            } else {
+                text_linked_fields::retain_unchanged(draft, &before);
+            }
         }
-        changed
+        typed
+            | control_changed
             | self.face_control(ui, draft, TextFaceFlag::Bold)
             | self.face_control(ui, draft, TextFaceFlag::Italic)
             | self.case_control(ui, draft)
             | text_color::draw(ui, draft, &self.selection, &mut self.color_dialog)
             | self.fraction_control(ui, draft)
+            | self.field_control(ui, draft, sources)
+    }
+
+    fn field_control(
+        &mut self,
+        ui: &Ui,
+        draft: &mut GuiSketchTextDraft,
+        sources: Option<&GuiSketchTextFieldSources>,
+    ) -> bool {
+        let Some(field) = sources.and_then(|sources| self.linked_fields.draw(ui, sources)) else {
+            return false;
+        };
+        self.restore = text_linked_fields::insert_field(draft, self.selection_or_cursor(), field);
+        self.restore.is_some()
     }
 
     fn fraction_control(&mut self, ui: &Ui, draft: &mut GuiSketchTextDraft) -> bool {
@@ -88,8 +125,23 @@ impl TextContentEditor {
         self.restore.is_some()
     }
 
-    fn input(&mut self, ui: &Ui, content: &mut String, row_factor: f64, face: [bool; 2]) -> bool {
-        let typed = self.content_field(ui, content, row_factor, face);
+    fn input(
+        &mut self,
+        ui: &Ui,
+        content: &mut String,
+        row_factor: f64,
+        [bold, italic]: [bool; 2],
+        projection: Option<&SketchTextFieldProjection>,
+    ) -> bool {
+        let typed = {
+            let _font = crate::ui_scale::sketch_content_font(ui, bold, italic)
+                .map(|font| ui.push_font(font));
+            let normal = ui.current_font_size();
+            // Keep the native editor within its pixel range. The canvas retains model units.
+            let height = (row_factor * f64::from(normal)).clamp(1., f64::from(CONTENT_SIZE[1]));
+            let _advance = crate::widget_abi::text_line_advance(ui, height as f32 / normal);
+            self.content_field(ui, content, projection)
+        };
         ui.same_line();
         ui.text("Content");
         typed
@@ -99,19 +151,24 @@ impl TextContentEditor {
         &mut self,
         ui: &Ui,
         content: &mut String,
-        row_factor: f64,
-        [bold, italic]: [bool; 2],
+        projection: Option<&SketchTextFieldProjection>,
     ) -> bool {
-        const SIZE: [f32; 2] = [295., 100.];
-        let _font =
-            crate::ui_scale::sketch_content_font(ui, bold, italic).map(|font| ui.push_font(font));
-        let normal = ui.current_font_size();
-        // Keep the native editor inside its measurable pixel range. The canvas retains model units.
-        let height = (row_factor * f64::from(normal)).clamp(1., f64::from(SIZE[1]));
-        let _line_advance = crate::widget_abi::text_line_advance(ui, height as f32 / normal);
-        ui.input_text_multiline("##Content", content, SIZE)
-            .callback(InputTextMultilineCallback::ALWAYS, SelectionCallback(self))
-            .build()
+        let Some(projection) = projection else {
+            return native_content(ui, content, SelectionCallback(self));
+        };
+        let mut displayed = projection.content.clone();
+        let mut changed = false;
+        let callback = ProjectedContentCallback {
+            editor: self,
+            projection,
+            authored: content,
+            changed: &mut changed,
+        };
+        native_content(ui, &mut displayed, callback);
+        if !changed {
+            crate::widget_abi::shade_linked_text(ui, c"##Content", projection);
+        }
+        changed
     }
 
     fn face_control(
@@ -196,6 +253,101 @@ fn all_scalars(text: &str) -> Option<Range<u32>> {
     Some(0..end)
 }
 
+const CONTENT_LABEL: &str = "##Content";
+const CONTENT_SIZE: [f32; 2] = [295., 100.];
+
+fn native_content(ui: &Ui, content: &mut String, callback: impl InputTextCallbackHandler) -> bool {
+    ui.input_text_multiline(CONTENT_LABEL, content, CONTENT_SIZE)
+        .callback(InputTextMultilineCallback::ALWAYS, callback)
+        .build()
+}
+
+struct ProjectedContentCallback<'a> {
+    editor: &'a mut TextContentEditor,
+    projection: &'a SketchTextFieldProjection,
+    authored: &'a mut String,
+    changed: &'a mut bool,
+}
+
+impl InputTextCallbackHandler for ProjectedContentCallback<'_> {
+    fn on_always(&mut self, mut input: TextCallbackData) {
+        let shown = |source| project_position(self.projection, source);
+        let previous = self.editor.selection_or_cursor();
+        let previous = shown(previous.start)..shown(previous.end);
+        let edit = projected_field_edit(self.projection, input.str(), previous, input.cursor_pos())
+            .map(|edit| (edit.authored, edit.input, edit.replacement.to_owned()));
+        if let Some((authored, displayed, replacement)) = edit {
+            self.apply_edit(&mut input, authored, displayed, replacement);
+            return;
+        }
+        self.update_selection(&mut input);
+    }
+}
+
+impl ProjectedContentCallback<'_> {
+    fn update_selection(&mut self, input: &mut TextCallbackData) {
+        let shown = |source| project_position(self.projection, source);
+        let native_caret = input.cursor_pos();
+        let display = native_selection(input);
+        let logical = self.editor.restore.take().unwrap_or_else(|| {
+            let toward_end = native_caret >= shown(self.editor.cursor);
+            authored_selection(self.projection, display.clone(), toward_end)
+        });
+        let caret = if native_caret == display.start && !display.is_empty() {
+            logical.start
+        } else {
+            logical.end
+        };
+        set_native_selection(
+            input,
+            shown(logical.start)..shown(logical.end),
+            shown(caret),
+        );
+        self.editor.selection = logical;
+        self.editor.cursor = caret;
+    }
+
+    fn apply_edit(
+        &mut self,
+        input: &mut TextCallbackData,
+        authored: Range<usize>,
+        displayed: Range<usize>,
+        replacement: String,
+    ) {
+        let caret = authored.start + replacement.len();
+        self.authored.replace_range(authored, &replacement);
+        self.editor.restore = None;
+        self.editor.cursor = caret;
+        self.editor.selection = caret..caret;
+        *self.changed = true;
+        if input.str()[displayed.clone()] != replacement {
+            let count = input.str()[displayed.clone()].chars().count();
+            input.remove_chars(displayed.start, count);
+            input.insert_chars(displayed.start, &replacement);
+        }
+        let caret = displayed.start + replacement.len();
+        set_native_selection(input, caret..caret, caret);
+    }
+}
+
+fn native_selection(input: &TextCallbackData) -> Range<usize> {
+    let selection = input.selection();
+    if !selection.is_empty() {
+        return selection;
+    }
+    // ImGui can retain an empty selection at the old offset after moving its caret.
+    let caret = input.cursor_pos();
+    caret..caret
+}
+
+fn set_native_selection(input: &mut TextCallbackData, selection: Range<usize>, caret: usize) {
+    if let (Ok(start), Ok(end)) = (i32::try_from(selection.start), i32::try_from(selection.end)) {
+        input.set_cursor_pos(caret);
+        *input.selection_start_mut() = start;
+        *input.selection_end_mut() = end;
+    }
+}
+
 struct SelectionCallback<'a>(&'a mut TextContentEditor);
 impl InputTextCallbackHandler for SelectionCallback<'_> {
     fn on_always(&mut self, mut input: TextCallbackData) {
@@ -204,11 +356,9 @@ impl InputTextCallbackHandler for SelectionCallback<'_> {
             .restore
             .take()
             .filter(|range| input.str().get(range.clone()).is_some())
-            && let (Ok(start), Ok(end)) = (i32::try_from(range.start), i32::try_from(range.end))
         {
-            input.set_cursor_pos(range.end);
-            *input.selection_start_mut() = start;
-            *input.selection_end_mut() = end;
+            let caret = range.end;
+            set_native_selection(&mut input, range, caret);
         }
         self.0.selection = input.selection();
         self.0.cursor = input.cursor_pos();

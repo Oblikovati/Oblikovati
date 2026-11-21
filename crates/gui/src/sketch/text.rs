@@ -6,8 +6,8 @@ use crate::{
 };
 use imgui::{Key, Ui};
 use oblikovati_api::types::{
-    SketchTextFraction, SketchTextLineSpacing, SketchTextRun, TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT,
-    TextHorizontalAlign, TextVerticalAlign,
+    SketchTextField, SketchTextFraction, SketchTextLineSpacing, SketchTextRun, TEXT_ALIGN_BASELINE,
+    TEXT_ALIGN_LEFT, TextHorizontalAlign, TextVerticalAlign,
 };
 use std::cell::{Cell, RefCell};
 #[path = "text_format.rs"]
@@ -43,6 +43,34 @@ pub struct GuiSketchTextFormatting {
     pub line_spacing: Option<Box<SketchTextLineSpacing>>,
     pub runs: Option<Vec<SketchTextRun>>,
     pub stacked_fractions: Option<Vec<SketchTextFraction>>,
+    pub linked_fields: Option<Vec<SketchTextField>>,
+}
+
+/// Choices available in the current document for inserting a linked Text field.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct GuiSketchTextFieldSources {
+    pub document: String,
+    pub model_parameters: Vec<String>,
+    pub user_parameters: Vec<String>,
+}
+
+/// Document-resolved editor content, tied to the source fields that produced it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GuiSketchTextEditorFields {
+    pub authored: String,
+    pub fields: Vec<SketchTextField>,
+    pub projection: oblikovati_model::sketch::SketchTextFieldProjection,
+}
+
+impl GuiSketchTextEditorFields {
+    fn for_draft(
+        &self,
+        draft: &GuiSketchTextDraft,
+    ) -> Option<&oblikovati_model::sketch::SketchTextFieldProjection> {
+        (self.authored == draft.content
+            && draft.formatting.linked_fields.as_ref() == Some(&self.fields))
+        .then_some(&self.projection)
+    }
 }
 
 impl Default for GuiSketchTextDraft {
@@ -120,18 +148,10 @@ impl SketchTextDialog {
         let Some(draft) = state.sketch_text.clone() else {
             return;
         };
-        Self::fit_dockable(ui, TITLE, [560., 175.], [460., 385.]);
+        Self::fit_dockable(ui, TITLE, [560., 135.], [460., 430.]);
         let mut open = true;
         let action = Self::dockable_window(ui, TITLE, &mut open)
-            .build(|| {
-                self.text_editor(
-                    ui,
-                    draft,
-                    state.sketch_text_font_families.as_deref().unwrap_or(&[]),
-                    state.sketch_text_existing,
-                    state.sketch_text_preset,
-                )
-            })
+            .build(|| self.text_editor(ui, draft, state))
             .flatten();
         if !open {
             self.dock_state.set_open(false);
@@ -150,15 +170,16 @@ impl SketchTextDialog {
         &self,
         ui: &Ui,
         mut draft: GuiSketchTextDraft,
-        families: &[String],
-        existing: bool,
-        preset: Option<GuiSketchTextPresetId>,
+        state: &GuiCommandState,
     ) -> Option<GuiSketchTextAction> {
         let mut presets = self.presets.borrow_mut();
         let mut height = self.height_input.borrow_mut();
         let mut width = self.width_input.borrow_mut();
-        let changed_preset =
-            presets.begin(existing, preset, &mut draft) | presets.draw(ui, &mut draft);
+        let changed_preset = presets.begin(
+            state.sketch_text_existing,
+            state.sketch_text_preset,
+            &mut draft,
+        ) | presets.draw(ui, &mut draft);
         if changed_preset {
             *height = Default::default();
             *width = Default::default();
@@ -166,12 +187,22 @@ impl SketchTextDialog {
         }
         let escape_used = presets.draw_name(ui, &draft);
         let row_factor = text_spacing::editor_row_factor(&draft);
+        let editor_fields = state
+            .sketch_text_editor_fields
+            .as_deref()
+            .and_then(|fields| fields.for_draft(&draft));
         let changed = changed_preset
-            | self.content.borrow_mut().draw(ui, &mut draft, row_factor)
+            | self.content.borrow_mut().draw(
+                ui,
+                &mut draft,
+                row_factor,
+                state.sketch_text_field_sources.as_deref(),
+                editor_fields,
+            )
             | format_controls::draw(
                 ui,
                 &mut draft,
-                families,
+                state.sketch_text_font_families.as_deref().unwrap_or(&[]),
                 &mut self.font_filter.borrow_mut(),
                 &mut height,
             )

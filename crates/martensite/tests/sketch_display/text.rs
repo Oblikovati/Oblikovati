@@ -178,6 +178,7 @@ fn authored_text(style: SketchTextStyle, anchor: [f64; 2]) -> Sketch2D {
             id: Id(2),
             anchor: Id(1),
             style,
+            parameter_bindings: Vec::new(),
         })
         .unwrap();
     sketch

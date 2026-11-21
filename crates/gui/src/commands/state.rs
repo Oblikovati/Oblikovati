@@ -145,6 +145,8 @@ pub struct GuiCommandState {
     pub sketch_text_existing: bool,
     pub sketch_text_preset: Option<crate::GuiSketchTextPresetId>,
     pub sketch_text_font_families: Option<std::sync::Arc<[String]>>,
+    pub sketch_text_field_sources: Option<std::sync::Arc<crate::GuiSketchTextFieldSources>>,
+    pub sketch_text_editor_fields: Option<std::sync::Arc<crate::GuiSketchTextEditorFields>>,
     pub origin_planes: Vec<crate::GuiOriginPlane>,
     /// The chosen browser row's outline in the view, in pixels: a solid's edges or a sketch.
     pub feature_edges: Vec<[[i32; 2]; 2]>,

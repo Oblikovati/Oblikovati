@@ -49,7 +49,8 @@ impl<
             .map_err(|e| e.to_string())?
             .internal_name;
         let style = placement.style()?;
-        verify_text_outline(&style, placement.anchor, working_scale)?;
+        let display = self.display_text_candidate(&style, placement, edit.document)?;
+        verify_text_outline(&display, placement.anchor, working_scale)?;
         let entity = self.write_sketch_text(placement, edit, style)?;
         self.link_text_preset((document, edit.sketch.0, entity), preset);
         Ok(true)

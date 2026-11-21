@@ -6,6 +6,13 @@ mod text_line_advance_tests;
 unsafe extern "C" {
     fn oblikovati_gui_push_text_line_advance(factor: f32) -> f32;
     fn oblikovati_gui_pop_text_line_advance(original: f32);
+    fn oblikovati_gui_shade_linked_field(
+        label: *const std::ffi::c_char,
+        line: *const u8,
+        prefix: usize,
+        end: usize,
+        row: usize,
+    );
     fn oblikovati_gui_window_is_moving() -> bool;
     fn oblikovati_gui_workspace_dockspace(width: f32, height: f32) -> u32;
     fn oblikovati_gui_outer_dockspace(width: f32, height: f32) -> u32;
@@ -47,6 +54,34 @@ unsafe extern "C" {
         color: u32,
         background: bool,
     );
+}
+
+/// Tint display spans in a native multiline widget just drawn in this frame.
+/// For example, shade a projected numeric field in the Format Text Content input.
+pub(crate) fn shade_linked_text(
+    _: &Ui,
+    label: &std::ffi::CStr,
+    projection: &oblikovati_model::sketch::SketchTextFieldProjection,
+) {
+    let (mut scanned, mut line_start, mut row) = (0, 0, 0);
+    for field in &projection.fields {
+        for newline in projection.content[scanned..field.display.start].match_indices('\n') {
+            line_start = scanned + newline.0 + 1;
+            row += 1;
+        }
+        scanned = field.display.end;
+        let line = &projection.content[line_start..scanned];
+        // The UI frame and the string slices outlive the synchronous draw-list update.
+        unsafe {
+            oblikovati_gui_shade_linked_field(
+                label.as_ptr(),
+                line.as_ptr(),
+                field.display.start - line_start,
+                line.len(),
+                row,
+            );
+        }
+    }
 }
 
 /// Set the row height for one native multiline input, for example `text_line_advance(ui, 2.)`.

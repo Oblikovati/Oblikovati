@@ -48,7 +48,7 @@ fn sketch_text_drag_placement_waits_for_release_and_keeps_insertion_point() {
     world.close();
 }
 
-fn drag_text_to(world: &mut ApplicationWorld, from: [i32; 2], to: [i32; 2]) {
+pub(super) fn drag_text_to(world: &mut ApplicationWorld, from: [i32; 2], to: [i32; 2]) {
     x11_input::move_pointer(from);
     x11_input::left_button(from, true);
     world.pump(Vec::new());

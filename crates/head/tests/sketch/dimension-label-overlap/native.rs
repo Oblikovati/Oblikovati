@@ -39,7 +39,13 @@ fn check_dimension_edits(length: &str, updated: &str, scale: f32) {
     world.close();
 }
 
-fn create_midpoint_dimensions(world: &mut ApplicationWorld, length: &str, scale: f32) {
+/// Create real `d0` and `d1` sketch dimensions through the command's native input.
+/// For example, `create_midpoint_dimensions(world, "10", 1.)` sets `d0` to 10 mm.
+pub(in super::super) fn create_midpoint_dimensions(
+    world: &mut ApplicationWorld,
+    length: &str,
+    scale: f32,
+) {
     world.start_sketch_on("YZ Plane");
     x11_input::focus_window();
     world.pump(Vec::new());
@@ -68,7 +74,9 @@ fn type_length_and_angle(world: &mut ApplicationWorld, length: &str) {
     world.pump(Vec::new());
 }
 
-fn edit_dimension_with_mouse(
+/// Open a visible dimension annotation and edit it with the native keyboard.
+/// For example, edit annotation `"10"` after confirming it belongs to `"d0"`.
+pub(in super::super) fn edit_dimension_with_mouse(
     world: &mut ApplicationWorld,
     label: &str,
     expected_name: &str,

@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Retain authored sketch text independently of its derived glyph outlines.
-use super::{Sketch2D, SketchEntityId, SketchError, SketchRecipe};
+use super::{Sketch2D, SketchEntityId, SketchError, SketchRecipe, SketchTextParameterBinding};
 use oblikovati_api::types::{
-    Color, SketchTextFraction, SketchTextLineSpacing, SketchTextRun, SketchTextStyle,
-    TEXT_ALIGN_BASELINE, TEXT_ALIGN_CENTER, TEXT_ALIGN_LEFT, TEXT_ALIGN_LOWER, TEXT_ALIGN_MIDDLE,
-    TEXT_ALIGN_RIGHT, TEXT_ALIGN_UPPER,
+    Color, SKETCH_TEXT_FIELD_MODEL_PARAMETER, SketchTextField, SketchTextFraction,
+    SketchTextLineSpacing, SketchTextRun, SketchTextStyle, TEXT_ALIGN_BASELINE, TEXT_ALIGN_CENTER,
+    TEXT_ALIGN_LEFT, TEXT_ALIGN_LOWER, TEXT_ALIGN_MIDDLE, TEXT_ALIGN_RIGHT, TEXT_ALIGN_UPPER,
 };
 
 const TEXT_RECIPE_VERSION: u32 = 22;
+const LINKED_TEXT_RECIPE_VERSION: u32 = 23;
 
 /// Read a uniform width in percent, for example a label with no runs returns `Some(100.)`.
 pub fn uniform_sketch_text_width(content: &str, runs: &[SketchTextRun]) -> Option<f64> {
@@ -104,6 +105,8 @@ pub struct SketchText2D {
     pub id: SketchEntityId,
     pub anchor: SketchEntityId,
     pub style: SketchTextStyle,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub parameter_bindings: Vec<SketchTextParameterBinding>,
 }
 
 impl Sketch2D {
@@ -125,7 +128,7 @@ impl Sketch2D {
     pub fn add_text(&mut self, mut text: SketchText2D) -> Result<(), SketchError> {
         self.require_new_entity(text.id)?;
         self.point(text.anchor)?;
-        normalize_text_style(&mut text.style)?;
+        normalize_bound_text_style(&mut text.style, &text.parameter_bindings)?;
         self.entity_order.push(text.id);
         self.texts.push(text);
         Ok(())
@@ -135,7 +138,24 @@ impl Sketch2D {
     pub fn set_text_style(
         &mut self,
         id: SketchEntityId,
+        style: SketchTextStyle,
+    ) -> Result<(), SketchError> {
+        let prior = self.text(id)?;
+        if prior.style.linked_fields != style.linked_fields {
+            return Err(SketchError::Definition(format!(
+                "text {id:?} linked fields {:?}: expected a document edit to change field bindings",
+                style.linked_fields
+            )));
+        }
+        let parameter_bindings = prior.parameter_bindings.clone();
+        self.set_bound_text_style(id, style, parameter_bindings)
+    }
+
+    pub(crate) fn set_bound_text_style(
+        &mut self,
+        id: SketchEntityId,
         mut style: SketchTextStyle,
+        parameter_bindings: Vec<SketchTextParameterBinding>,
     ) -> Result<(), SketchError> {
         let text = self
             .texts
@@ -146,8 +166,9 @@ impl Sketch2D {
                     "sketch text {id:?}: expected an existing text entity"
                 ))
             })?;
-        normalize_text_style(&mut style)?;
+        normalize_bound_text_style(&mut style, &parameter_bindings)?;
         text.style = style;
+        text.parameter_bindings = parameter_bindings;
         Ok(())
     }
 
@@ -155,21 +176,56 @@ impl Sketch2D {
         if !self.texts.is_empty() {
             self.capture_point_ownership_metadata(recipe);
             recipe.texts = Some(self.texts.clone());
-            recipe.version = TEXT_RECIPE_VERSION;
+            recipe.version = if self.texts.iter().any(has_text_fields) {
+                LINKED_TEXT_RECIPE_VERSION
+            } else {
+                TEXT_RECIPE_VERSION
+            };
         }
     }
 
     pub(super) fn restore_text_recipe(&mut self, recipe: &SketchRecipe) -> Result<(), SketchError> {
         match (recipe.version, recipe.texts.as_deref()) {
             (1..TEXT_RECIPE_VERSION, None) => Ok(()),
-            (TEXT_RECIPE_VERSION, Some(texts)) if !texts.is_empty() => texts
-                .iter()
-                .try_for_each(|text| self.add_text(text.clone())),
+            (TEXT_RECIPE_VERSION | LINKED_TEXT_RECIPE_VERSION, Some(texts))
+                if !texts.is_empty()
+                    && texts.iter().any(has_text_fields)
+                        == (recipe.version == LINKED_TEXT_RECIPE_VERSION) =>
+            {
+                texts
+                    .iter()
+                    .try_for_each(|text| self.add_text(text.clone()))
+            }
             (version, texts) => Err(SketchError::Definition(format!(
-                "text recipe {texts:?} in version {version}: expected a nonempty text list in version {TEXT_RECIPE_VERSION} and no list in earlier versions"
+                "text recipe {texts:?} in version {version}: expected literal text in version {TEXT_RECIPE_VERSION}, linked text in version {LINKED_TEXT_RECIPE_VERSION}, or no text list in earlier versions"
             ))),
         }
     }
+}
+
+fn has_text_fields(text: &SketchText2D) -> bool {
+    text.style
+        .linked_fields
+        .as_ref()
+        .is_some_and(|fields| !fields.is_empty())
+}
+
+fn normalize_bound_text_style(
+    style: &mut SketchTextStyle,
+    bindings: &[SketchTextParameterBinding],
+) -> Result<(), SketchError> {
+    normalize_text_style(style)?;
+    let fields = style.linked_fields.as_deref().unwrap_or_default();
+    let authored_positions = fields
+        .iter()
+        .filter(|field| field.kind == SKETCH_TEXT_FIELD_MODEL_PARAMETER)
+        .map(|field| field.at);
+    if authored_positions.eq(bindings.iter().map(|binding| binding.at)) {
+        return Ok(());
+    }
+    Err(SketchError::Definition(format!(
+        "text fields {fields:?} with bindings {bindings:?}: expected one parameter identity at each model field position"
+    )))
 }
 
 fn normalize_text_style(style: &mut SketchTextStyle) -> Result<(), SketchError> {
@@ -196,6 +252,15 @@ fn normalize_text_style(style: &mut SketchTextStyle) -> Result<(), SketchError> 
     .map_err(|error| SketchError::Definition(error.to_string()))?;
     if style.stacked_fractions.as_ref().is_some_and(Vec::is_empty) {
         style.stacked_fractions = None;
+    }
+    SketchTextField::validate(
+        Some(&style.content),
+        style.linked_fields.as_deref().unwrap_or_default(),
+        style.stacked_fractions.as_deref().unwrap_or_default(),
+    )
+    .map_err(|error| SketchError::Definition(error.to_string()))?;
+    if style.linked_fields.as_ref().is_some_and(Vec::is_empty) {
+        style.linked_fields = None;
     }
     SketchTextRun::validate(
         Some(&style.content),

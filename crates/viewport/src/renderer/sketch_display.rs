@@ -98,6 +98,12 @@ impl SketchDisplayOverlay {
         sketch: &ViewportSketchDisplay,
         deflection: f64,
     ) -> Result<(), String> {
+        self.declines.extend(
+            sketch
+                .text_declines
+                .iter()
+                .map(|decline| display_decline(sketch, decline.entity, decline.cause.clone())),
+        );
         let report = sample_sketch_display(
             &sketch.geometry,
             SketchSamplingOptionsV1 {
@@ -431,6 +437,7 @@ mod role_style_tests {
             a: 1.0,
         };
         let sketch = ViewportSketchDisplay {
+            text_declines: Vec::new(),
             working_scale: 1.,
             sketch: DocumentSketchId(1),
             plane: SketchPlane::xy(),

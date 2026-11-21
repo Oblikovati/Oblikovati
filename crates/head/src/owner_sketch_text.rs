@@ -4,7 +4,8 @@ use super::*;
 use crate::{HeadSketchEdit, HeadWindow, sketch_tool::SketchToolState};
 use oblikovati_api::types::{SketchTextStyle, TEXT_ALIGN_BASELINE, TEXT_ALIGN_LEFT};
 use oblikovati_gui::{
-    GuiSketchTextAction, GuiSketchTextDraft, GuiSketchTextFormatting, GuiSketchTextPresetId,
+    GuiSketchTextAction, GuiSketchTextDraft, GuiSketchTextEditorFields, GuiSketchTextFieldSources,
+    GuiSketchTextFormatting, GuiSketchTextPresetId,
 };
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
@@ -20,6 +21,8 @@ mod activation;
 mod commit;
 #[path = "owner_sketch_text_placement.rs"]
 mod placement;
+#[path = "owner_sketch_text_presentation.rs"]
+mod presentation;
 
 /// Session links use the document recipe identity so reopening a file keeps the same link.
 pub(super) type TextPresetLinks = std::collections::BTreeMap<TextPresetKey, GuiSketchTextPresetId>;
@@ -32,12 +35,14 @@ pub(crate) struct SketchTextTool {
     pressed_anchor: Option<[f64; 2]>,
     placement: Option<TextPlacementDraft>,
     font_families: OnceLock<Arc<[String]>>,
+    field_sources: OnceLock<Arc<GuiSketchTextFieldSources>>,
 }
 
 struct TextPlacementDraft {
     anchor: [f64; 2],
     fields: GuiSketchTextDraft,
     existing: Option<SketchText2D>,
+    editor_fields: OnceLock<Option<Arc<GuiSketchTextEditorFields>>>,
 }
 
 impl<
@@ -74,6 +79,7 @@ impl<
             pressed_anchor: None,
             placement: None,
             font_families: OnceLock::new(),
+            field_sources: OnceLock::new(),
         })));
         self.sketch_text_prompt();
         Ok(())
@@ -152,27 +158,6 @@ impl<
         )
     }
 
-    pub(super) fn sketch_text_preview(
-        &self,
-        tool: &SketchTextTool,
-    ) -> Option<ViewportSketchPreview> {
-        let placement = tool.placement.as_ref()?;
-        if !self.sketch_context_valid(tool.edit.document, tool.edit.sketch, tool.generation) {
-            return None;
-        }
-        let style = placement.style().ok()?;
-        Some(ViewportSketchPreview::Text {
-            plane: tool.edit.plane,
-            anchor: placement.anchor,
-            style: Box::new(style),
-            working_scale: tool.working_scale,
-            replaces: placement
-                .existing
-                .as_ref()
-                .map(|text| (tool.edit.sketch, text.id)),
-        })
-    }
-
     pub(super) fn sketch_text_command(
         &mut self,
         action: GuiSketchTextAction,
@@ -188,7 +173,7 @@ impl<
             return Ok(false);
         };
         match action {
-            GuiSketchTextAction::Preview(fields) => placement.fields = fields,
+            GuiSketchTextAction::Preview(fields) => placement.update_fields(fields),
             GuiSketchTextAction::Cancel => return self.cancel_text_editor(),
             GuiSketchTextAction::Accept { draft, preset } => {
                 return self.accept_sketch_text(draft, preset);
@@ -267,17 +252,19 @@ impl<
             .point(text.anchor)
             .map_err(|e| e.to_string())?
             .position;
-        let fields = fields_from_style(&text.style);
+        let fields = fields_from_style(&text.current_text_style(&snapshot.parameters));
         Ok(SketchTextTool {
             edit,
             generation,
             working_scale: snapshot.parameters.units().working_scale(),
             pressed_anchor: None,
             font_families: OnceLock::new(),
+            field_sources: OnceLock::new(),
             placement: Some(TextPlacementDraft {
                 anchor,
                 fields,
                 existing: Some(text),
+                editor_fields: OnceLock::new(),
             }),
         })
     }
@@ -330,6 +317,7 @@ fn text_style(fields: &GuiSketchTextDraft) -> Result<SketchTextStyle, String> {
         line_spacing: fields.formatting.line_spacing.clone(),
         formatting_runs: fields.formatting.runs.clone(),
         stacked_fractions: fields.formatting.stacked_fractions.clone(),
+        linked_fields: fields.formatting.linked_fields.clone(),
         ..Default::default()
     })
 }
@@ -361,6 +349,15 @@ fn verify_text_outline(
 }
 
 impl TextPlacementDraft {
+    fn update_fields(&mut self, fields: GuiSketchTextDraft) {
+        if self.fields.content != fields.content
+            || self.fields.formatting.linked_fields != fields.formatting.linked_fields
+        {
+            self.editor_fields.take();
+        }
+        self.fields = fields;
+    }
+
     fn style(&self) -> Result<SketchTextStyle, String> {
         let draft = text_style(&self.fields)?;
         let Some(text) = &self.existing else {
@@ -375,6 +372,7 @@ impl TextPlacementDraft {
         style.line_spacing = draft.line_spacing;
         style.formatting_runs = draft.formatting_runs;
         style.stacked_fractions = draft.stacked_fractions;
+        style.linked_fields = draft.linked_fields;
         if self.fields.height_mm != initial.height_mm {
             style.height = draft.height;
         }
@@ -415,6 +413,7 @@ fn fields_from_style(style: &SketchTextStyle) -> GuiSketchTextDraft {
             line_spacing: style.line_spacing.clone(),
             runs: style.formatting_runs.clone(),
             stacked_fractions: style.stacked_fractions.clone(),
+            linked_fields: style.linked_fields.clone(),
         }),
     }
 }
@@ -423,7 +422,8 @@ pub(super) fn pick_existing_text(
     geometry: &Sketch2D,
     plane: SketchPlane,
     pixel: [i32; 2],
-    scale: f64,
+    parameters: &oblikovati_model::parameter::ParameterCollection<u64>,
+    file_name: &str,
     window: &dyn HeadWindow,
 ) -> Result<Option<SketchEntityId>, String> {
     if geometry.texts().is_empty() {
@@ -434,8 +434,16 @@ pub(super) fn pick_existing_text(
     };
     let mut candidates = Vec::new();
     for text in geometry.texts() {
+        let Ok(display) = text.display_text_style(parameters, file_name) else {
+            continue;
+        };
+        let anchor = geometry
+            .point(text.anchor)
+            .map_err(|cause| cause.to_string())?
+            .position;
+        let scale = parameters.units().working_scale();
         if let Some(distance) =
-            text_hit_distance(geometry, text, cursor, scale, plane, pixel, window)?
+            text_hit_distance(&display, anchor, cursor, scale, plane, pixel, window)?
         {
             candidates.push((distance, text.id));
         }
@@ -445,8 +453,8 @@ pub(super) fn pick_existing_text(
 }
 
 fn text_hit_distance(
-    geometry: &Sketch2D,
-    text: &SketchText2D,
+    display: &SketchTextStyle,
+    anchor: [f64; 2],
     cursor: [f64; 2],
     scale: f64,
     plane: SketchPlane,
@@ -454,12 +462,8 @@ fn text_hit_distance(
     window: &dyn HeadWindow,
 ) -> Result<Option<f64>, String> {
     use oblikovati_martensite::planar_curve::sketch::pick_sketch_text;
-    let anchor = geometry
-        .point(text.anchor)
-        .map_err(|cause| cause.to_string())?
-        .position;
     // Unavailable fonts already have an entity-specific display decline.
-    let Ok(Some(point)) = pick_sketch_text(&text.style, anchor, scale, cursor) else {
+    let Ok(Some(point)) = pick_sketch_text(display, anchor, scale, cursor) else {
         return Ok(None);
     };
     let projected = window.sketch_pixel(plane, point)?;

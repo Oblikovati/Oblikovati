@@ -53,6 +53,7 @@ impl SketchTextTool {
             anchor,
             fields: GuiSketchTextDraft::default(),
             existing: None,
+            editor_fields: Default::default(),
         });
         true
     }

@@ -72,6 +72,31 @@ void oblikovati_gui_pop_text_line_advance(float original) {
     ImGui::PopFont();
 }
 
+// InputTextMultiline draws into a child window. Keep the tint in that draw list
+// so the widget's scroll clipping and the dialog's popup order still apply.
+void oblikovati_gui_shade_linked_field(const char* label, const char* line,
+                                      std::size_t prefix, std::size_t end, std::size_t row) {
+    ImGuiContext& context = *ImGui::GetCurrentContext();
+    ImGuiWindow* parent = context.CurrentWindow;
+    if (parent->DC.ChildWindows.empty()) return;
+    ImGuiWindow* child = parent->DC.ChildWindows.back();
+    const ImGuiID input = parent->GetID(label);
+    if (child->ChildId != input || child->SkipItems) return;
+    const ImFont* font = context.Font;
+    const float size = context.FontSize;
+    const ImGuiInputTextState* state = ImGui::GetInputTextState(input);
+    const float scroll_x = state && context.ActiveId == input ? state->ScrollX : 0.0f;
+    const ImVec2 origin(child->InnerRect.Min.x + context.Style.FramePadding.x - scroll_x,
+                        child->InnerRect.Min.y + context.Style.FramePadding.y - child->Scroll.y);
+    const float left = origin.x + font->CalcTextSizeA(size, FLT_MAX, 0.0f, line, line + prefix).x;
+    const float right = origin.x + font->CalcTextSizeA(size, FLT_MAX, 0.0f, line, line + end).x;
+    const float top = origin.y + size * static_cast<float>(row);
+    child->DrawList->PushClipRect(child->InnerClipRect.Min, child->InnerClipRect.Max, true);
+    child->DrawList->AddRectFilled(ImVec2(left, top), ImVec2(right, top + size),
+                                  ImGui::GetColorU32(ImGuiCol_Text, 0.22f));
+    child->DrawList->PopClipRect();
+}
+
 bool oblikovati_gui_window_is_moving() {
     return ImGui::GetCurrentContext()->MovingWindow != nullptr;
 }

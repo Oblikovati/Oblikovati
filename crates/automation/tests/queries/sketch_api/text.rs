@@ -3,6 +3,9 @@ use super::*;
 use oblikovati_model::sketch::SketchText2D;
 use std::boxed::Box;
 
+#[path = "text_linked.rs"]
+mod linked;
+
 #[test]
 fn typed_text_preserves_spacing_and_identity_through_history_and_reopen() {
     let (mut files, document, mut source) = entities::configured_scaled(0.125);

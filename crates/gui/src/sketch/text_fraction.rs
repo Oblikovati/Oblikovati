@@ -12,7 +12,18 @@ pub(super) fn draw(ui: &Ui, draft: &mut GuiSketchTextDraft, selection: &Range<us
         .stacked_fractions
         .as_deref()
         .unwrap_or_default();
-    let change = selected_fraction(&draft.content, selection, ranges);
+    let fields = draft
+        .formatting
+        .linked_fields
+        .as_deref()
+        .unwrap_or_default();
+    let change =
+        selected_fraction(&draft.content, selection, ranges).filter(|change| match change {
+            FractionEdit::Add(range) => !fields
+                .iter()
+                .any(|field| (range.start..range.end).contains(&field.at)),
+            FractionEdit::Remove(_) => true,
+        });
     let _disabled = ui.begin_disabled(change.is_none());
     let active = matches!(change, Some(FractionEdit::Remove(_)));
     if !crate::widget_abi::toggle_button(ui, "Stack", [0.; 2], active) {

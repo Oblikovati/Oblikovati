@@ -236,6 +236,8 @@ impl<
             sketch_text_existing: self.gui_sketch_text_existing(),
             sketch_text_preset: self.gui_sketch_text_preset(),
             sketch_text_font_families: self.gui_sketch_text_font_families(),
+            sketch_text_field_sources: self.gui_sketch_text_field_sources(),
+            sketch_text_editor_fields: self.gui_sketch_text_editor_fields(),
             sketch_at_ready: self.sketch_tool.is_none() && self.active_sketch_edit().is_some(),
             // Projected by the frame, which owns the camera.
             origin_planes: Vec::new(),

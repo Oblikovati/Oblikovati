@@ -74,6 +74,16 @@ fn working_em(style: &SketchTextStyle, anchor: [f64; 2], scale: f64) -> Result<f
 }
 
 fn glyph_shape(style: &SketchTextStyle, size: f64, scale: f64) -> Result<topods::Shape, String> {
+    if style
+        .linked_fields
+        .as_ref()
+        .is_some_and(|fields| !fields.is_empty())
+    {
+        return Err(format!(
+            "sketch text {:?}: expected linked fields to be resolved before shaping",
+            style.content
+        ));
+    }
     let width = glyph_width_factor(style)?;
     let font = sketch_font(style, size, width)?;
     let options = StdPrsBRepFontTextOptions {

@@ -51,8 +51,15 @@ impl<
         {
             return Ok(None);
         }
-        let scale = snapshot.parameters.units().working_scale();
-        pick_existing_text(sketch.geometry(), edit.plane, pixel, scale, window)
+        let file_name = crate::sketch_scene::sketch_document_file_name(&self.files, edit.document);
+        pick_existing_text(
+            sketch.geometry(),
+            edit.plane,
+            pixel,
+            &snapshot.parameters,
+            &file_name,
+            window,
+        )
     }
 
     fn text_activation_blocked(

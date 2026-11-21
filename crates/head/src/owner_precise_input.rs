@@ -337,11 +337,14 @@ impl<
             target.candidates.clear();
         }
         if target.block.is_none() {
+            let file_name =
+                crate::sketch_scene::sketch_document_file_name(&self.files, edit.document);
             target.text = super::sketch_text::pick_existing_text(
                 geometry,
                 edit.plane,
                 position,
-                snapshot.parameters.units().working_scale(),
+                &snapshot.parameters,
+                &file_name,
                 window,
             )?;
         }

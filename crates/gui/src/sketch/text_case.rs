@@ -25,6 +25,11 @@ pub(super) fn uppercase_selection(
             fraction.end = expanded_position(fraction.end, scalar_start, &boundaries)?;
         }
     }
+    if let Some(fields) = &mut draft.formatting.linked_fields {
+        for field in fields {
+            field.at = expanded_position(field.at, scalar_start, &boundaries)?;
+        }
+    }
     draft.content.replace_range(selection, &replacement);
     Some(start..start + replacement.len())
 }

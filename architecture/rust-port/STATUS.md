@@ -142,6 +142,14 @@ using this status; the live scenario directory can change.
   dragging cancels placement. Pinned `text-16` still needs the portable
   part and its linked model parameter.
   See `receipts/2026-11-21-sketch-text-drag-3907/`.
+  [API v0.165.0](https://github.com/Oblikovati/Oblikovati.API/releases/tag/v0.165.0)
+  carries model-parameter and file-name fields. The native linked Text
+  test creates a real sketch dimension, inserts fields at three and two
+  decimals, edits the dimension with the mouse and keyboard, and checks
+  Undo and Redo. Saving and reopening the part retains the field sources,
+  resolves the saved file name, and permits another dimension edit.
+  The test creates its own part. The pinned `text-16`, `text-17`, `text-34`,
+  `text-35`, and `text-38` cases still need their Part6 fixtures.
   Native input left unselected `ab` unchanged and converted selected
   characters to `AB` in the editor and preview. The accepted edit kept
   the text ID and anchor. Pinned `text-25` also requires strike-through.

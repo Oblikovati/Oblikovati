@@ -21,6 +21,7 @@ pub(super) fn packet() -> ViewportSketchDisplay {
     geometry.add_circle(Id(2), Id(102), 3.).unwrap();
     geometry.add_point(Id(3), [0., 5.]).unwrap();
     ViewportSketchDisplay {
+        text_declines: Vec::new(),
         working_scale: 1.,
         sketch: DocumentSketchId(1),
         plane: SketchPlane::xy(),
@@ -252,6 +253,7 @@ fn spline_packet() -> ViewportSketchDisplay {
         )
         .unwrap();
     ViewportSketchDisplay {
+        text_declines: Vec::new(),
         working_scale: 1.,
         sketch: DocumentSketchId(1),
         plane: SketchPlane::xy(),

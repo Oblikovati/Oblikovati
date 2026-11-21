@@ -100,6 +100,9 @@ mod tangent_distance_compile;
 mod tangent_distance_residual;
 mod tangent_residual;
 mod text;
+mod text_field_values;
+mod text_fields;
+mod text_presentation;
 mod variables;
 pub use angle::AngleTurn;
 pub use arc::SketchArc2D;
@@ -122,6 +125,17 @@ pub use tangent_distance::{TangentDistanceContact, TangentDistanceOptions, Tange
 pub use text::{
     SketchText2D, sketch_text_width_factor, uniform_sketch_text_color, uniform_sketch_text_width,
 };
+pub use text_field_values::{
+    SKETCH_TEXT_FILE_NAME_LABEL, SketchTextParameterBinding, bind_sketch_text_parameters,
+    resolve_document_sketch_text,
+};
+pub(crate) use text_field_values::{
+    bind_text_parameter_changes, resolve_document_sketch_text_editor,
+};
+pub use text_fields::{
+    SketchTextFieldProjection, SketchTextFieldSpan, resolve_sketch_text_display,
+};
+pub use text_presentation::SketchTextDisplayDecline;
 
 /// Ordered sketch ownership; shared endpoints use the same local point identity.
 #[derive(Clone, Debug, Default, PartialEq)]

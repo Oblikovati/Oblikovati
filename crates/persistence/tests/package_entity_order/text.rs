@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_api::types::{
-    Color, OVERRIDE_COLOR_SOURCE, SketchTextFraction, SketchTextLineSpacing, SketchTextRun,
-    SketchTextStyle, TEXT_ALIGN_CENTER, TEXT_ALIGN_UPPER, TEXT_LINE_SPACING_DOUBLE,
-    TEXT_LINE_SPACING_EXACTLY,
+    Color, OVERRIDE_COLOR_SOURCE, SKETCH_TEXT_FIELD_MODEL_PARAMETER, SKETCH_TEXT_FIELD_PLACEHOLDER,
+    SketchTextField, SketchTextFraction, SketchTextLineSpacing, SketchTextRun, SketchTextStyle,
+    TEXT_ALIGN_CENTER, TEXT_ALIGN_UPPER, TEXT_LINE_SPACING_DOUBLE, TEXT_LINE_SPACING_EXACTLY,
 };
-use oblikovati_model::sketch::{SKETCH_RECIPE_VERSION, SketchText2D};
+use oblikovati_model::sketch::{SKETCH_RECIPE_VERSION, SketchText2D, SketchTextParameterBinding};
 
 const TEXT: SketchEntityId = SketchEntityId(10);
 const ANCHOR: SketchEntityId = SketchEntityId(11);
@@ -69,6 +69,67 @@ fn native_yaml_preserves_fraction_source_ranges_and_anchor() {
     });
 }
 
+#[test]
+fn native_yaml_retains_linked_text_parameter_identity() {
+    let mut owner = sketches();
+    let mut geometry = geometry();
+    geometry.add_defining_point(ANCHOR, [2., 3.]).unwrap();
+    geometry.add_text(linked_text()).unwrap();
+    let text = geometry.text(TEXT).unwrap().clone();
+    owner.replace_geometry(PLACED, geometry).unwrap();
+    let bytes = DocumentPackage::empty(DOCUMENT_PART, "Fields")
+        .with_sketches(&owner, PLACED.0, 11)
+        .unwrap()
+        .encode()
+        .unwrap();
+    let decoded = DocumentPackage::decode(&bytes).unwrap();
+    let restored = decoded.restore_sketches().unwrap();
+    let geometry = restored.sketches.get(PLACED).unwrap().geometry();
+    assert_eq!(geometry.recipe().version, SKETCH_RECIPE_VERSION);
+    assert_eq!(geometry.text(TEXT).unwrap(), &text);
+    assert_eq!(decoded.encode().unwrap(), bytes);
+}
+
+#[test]
+fn linked_text_recipe_rejects_a_missing_binding_and_the_literal_text_version() {
+    let mut geometry = geometry();
+    geometry.add_defining_point(ANCHOR, [2., 3.]).unwrap();
+    geometry.add_text(linked_text()).unwrap();
+    let mut recipe = geometry.recipe();
+    recipe.version = 22;
+    assert!(Sketch2D::from_recipe(&recipe).is_err());
+    recipe.version = SKETCH_RECIPE_VERSION;
+    recipe.texts.as_mut().unwrap()[0].parameter_bindings.clear();
+    assert!(
+        Sketch2D::from_recipe(&recipe)
+            .unwrap_err()
+            .to_string()
+            .contains("parameter identity")
+    );
+}
+
+fn linked_text() -> SketchText2D {
+    SketchText2D {
+        id: TEXT,
+        anchor: ANCHOR,
+        style: SketchTextStyle {
+            content: format!("Ø{SKETCH_TEXT_FIELD_PLACEHOLDER}"),
+            height: 0.305,
+            linked_fields: Some(vec![SketchTextField {
+                at: 1,
+                kind: SKETCH_TEXT_FIELD_MODEL_PARAMETER,
+                parameter: "d0".into(),
+                ..Default::default()
+            }]),
+            ..Default::default()
+        },
+        parameter_bindings: vec![SketchTextParameterBinding {
+            at: 1,
+            parameter_id: 42,
+        }],
+    }
+}
+
 fn check_style_round_trip(change: impl FnOnce(&mut SketchTextStyle)) {
     let mut owner = sketches();
     let mut geometry = geometry();
@@ -106,14 +167,16 @@ fn add_text(geometry: &mut Sketch2D) -> SketchText2D {
             formatting_runs: None,
             line_spacing: None,
             stacked_fractions: None,
+            linked_fields: None,
         },
+        parameter_bindings: Vec::new(),
     };
     geometry.add_text(text.clone()).unwrap();
     text
 }
 
 fn assert_saved_text(geometry: &Sketch2D, text: &SketchText2D) {
-    assert_eq!(geometry.recipe().version, SKETCH_RECIPE_VERSION);
+    assert_eq!(geometry.recipe().version, 22);
     assert_eq!(geometry.text(TEXT).unwrap(), text);
     assert_eq!(geometry.point(ANCHOR).unwrap().position, [2., 3.]);
     assert!(!geometry.entity_ids().contains(&ANCHOR));

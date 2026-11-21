@@ -12,11 +12,13 @@ fn block_packet() -> ViewportSketchDisplay {
         SketchBlockInstance::new(Id(42), "Rib", [-3., -2.], std::f64::consts::FRAC_PI_2, 2.)
             .unwrap();
     ViewportSketchDisplay {
+        text_declines: Vec::new(),
         working_scale: 1.,
         sketch: DocumentSketchId(1),
         plane: SketchPlane::xy(),
         geometry: Sketch2D::default(),
         blocks: vec![ViewportSketchBlock {
+            text_declines: Vec::new(),
             instance,
             geometry,
             definition_color: None,
