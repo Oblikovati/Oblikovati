@@ -1,6 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0-only
-"""Regression tests for validating the saved dock group."""
+"""Regression tests for validating the saved dock group and viewport."""
+from pathlib import Path
+from subprocess import CompletedProcess
 import unittest
+from unittest.mock import call, patch
 
 import docking_process_restart as restart
 
@@ -36,6 +39,39 @@ class DockGroupTests(unittest.TestCase):
         missing["imgui_ini"] = ""
         with self.assertRaises(ValueError):
             restart.check_group(missing)
+
+
+class ViewportVisibilityTests(unittest.TestCase):
+    def test_reads_an_image_fraction_and_rejects_invalid_output(self) -> None:
+        for output, expected in (("0.5", 0.5), ("nan", None), ("2", None), ("unknown", None)):
+            with self.subTest(output=output), patch.object(
+                restart.subprocess, "run", return_value=CompletedProcess(["convert"], 0, output)
+            ):
+                if expected is None:
+                    with self.assertRaisesRegex(ValueError, "expected a pixel fraction"):
+                        restart.bright_pixel_fraction(Path("after.png"), restart.FIXTURE_FACE_CROP)
+                else:
+                    self.assertEqual(
+                        restart.bright_pixel_fraction(Path("after.png"), restart.FIXTURE_FACE_CROP),
+                        expected,
+                    )
+
+    def test_checks_face_contrast_against_the_viewport_background(self) -> None:
+        image = Path("after.png")
+        with patch.object(restart, "bright_pixel_fraction", side_effect=[1.0, 0.0]) as sample:
+            result = restart.check_visible_part(image)
+        self.assertEqual(result, {"face_bright_fraction": 1.0, "background_bright_fraction": 0.0})
+        self.assertEqual(sample.call_args_list, [
+            call(image, restart.FIXTURE_FACE_CROP),
+            call(image, restart.VIEW_BACKGROUND_CROP),
+        ])
+
+    def test_rejects_blank_frames_and_bright_overlays(self) -> None:
+        for samples in ([0.0, 0.0], [1.0, 1.0]):
+            with self.subTest(samples=samples):
+                with patch.object(restart, "bright_pixel_fraction", side_effect=samples):
+                    with self.assertRaisesRegex(AssertionError, "bright face"):
+                        restart.check_visible_part(Path("after.png"))
 
 
 if __name__ == "__main__":

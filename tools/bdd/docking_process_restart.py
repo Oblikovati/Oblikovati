@@ -13,6 +13,11 @@ import tempfile
 import time
 from typing import TypedDict
 
+# These crops sample the front face and adjacent background of the native Part
+# fixture after the two browsers occupy the right dock on the 1440 × 900 display.
+FIXTURE_FACE_CROP = "120x80+747+343"
+VIEW_BACKGROUND_CROP = "120x80+550+343"
+
 
 class WorkspaceSettings(TypedDict):
     imgui_ini: str
@@ -26,10 +31,17 @@ class PanelRecord(TypedDict):
     geometry: str
 
 
+class ViewportSamples(TypedDict):
+    face_bright_fraction: float
+    background_bright_fraction: float
+
+
 class RestartResult(TypedDict):
     fixture_sha256: str
     binary_sha256: str
     panels: list[PanelRecord]
+    viewport_before: ViewportSamples
+    viewport_after: ViewportSamples
 
 
 class NativePointer:
@@ -141,6 +153,37 @@ def compare_panel(before: Path, after: Path) -> None:
         raise AssertionError(f"restored dock pixel difference {result.stderr.strip()!r}: expected 0")
 
 
+def bright_pixel_fraction(image: Path, crop: str) -> float:
+    """Measure the bright area in a crop, for example bright_pixel_fraction(image, FIXTURE_FACE_CROP)."""
+    result = subprocess.run(
+        ["convert", str(image), "-crop", crop, "+repage", "-colorspace", "gray",
+         "-threshold", "48%", "-format", "%[fx:mean]", "info:"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    output = result.stdout.strip()
+    try:
+        fraction = float(output)
+    except ValueError as cause:
+        raise ValueError(f"viewport crop {crop!r}: expected a pixel fraction, got {output!r}") from cause
+    if not 0.0 <= fraction <= 1.0:
+        raise ValueError(f"viewport crop {crop!r}: expected a pixel fraction from 0 to 1, got {fraction}")
+    return fraction
+
+
+def check_visible_part(image: Path) -> ViewportSamples:
+    """Require face and background contrast, for example check_visible_part(Path('after.png'))."""
+    face = bright_pixel_fraction(image, FIXTURE_FACE_CROP)
+    background = bright_pixel_fraction(image, VIEW_BACKGROUND_CROP)
+    if face < 0.95 or background > 0.05:
+        raise AssertionError(
+            f"viewport capture {image}: face fraction {face}, background fraction {background}; "
+            "expected at least 0.95 bright face and at most 0.05 bright background"
+        )
+    return {"face_bright_fraction": face, "background_bright_fraction": background}
+
+
 def launch(binary: Path, fixture: Path, environment: dict[str, str]) -> subprocess.Popen[bytes]:
     """Start the desktop; for example, `launch(binary, fixture, environment)`."""
     return subprocess.Popen(
@@ -207,10 +250,8 @@ def run_phase(
             process.wait()
 
 
-def exercise(binary: Path, fixture: Path, output: Path) -> RestartResult:
-    """Test a full restart; for example, `exercise(binary, fixture, receipt_dir)`."""
-    output.mkdir(parents=True, exist_ok=True)
-    fixture_hash = file_hash(fixture)
+def restart_in_same_profile(binary: Path, fixture: Path, output: Path) -> list[PanelRecord]:
+    """Check the two runs sharing one profile, for example restart_in_same_profile(binary, fixture, output)."""
     pointer = NativePointer()
     with tempfile.TemporaryDirectory(prefix="obk-dock-process-") as config:
         environment = dict(os.environ, OBK_CONFIG_DIR=config, OBK_ADDINS_DIR=config)
@@ -221,9 +262,23 @@ def exercise(binary: Path, fixture: Path, output: Path) -> RestartResult:
         compare_panel(output / "before.png", output / "after.png")
         if check_group(restored) != panels:
             raise AssertionError("restored panel records: expected saved positions, sizes, and tabs")
+    return panels
+
+
+def exercise(binary: Path, fixture: Path, output: Path) -> RestartResult:
+    """Test a full restart; for example, `exercise(binary, fixture, receipt_dir)`."""
+    output.mkdir(parents=True, exist_ok=True)
+    fixture_hash = file_hash(fixture)
+    panels = restart_in_same_profile(binary, fixture, output)
     if file_hash(fixture) != fixture_hash:
         raise AssertionError("fixture hash changed during the restart test")
-    return {"fixture_sha256": fixture_hash, "binary_sha256": file_hash(binary), "panels": panels}
+    return {
+        "fixture_sha256": fixture_hash,
+        "binary_sha256": file_hash(binary),
+        "panels": panels,
+        "viewport_before": check_visible_part(output / "before.png"),
+        "viewport_after": check_visible_part(output / "after.png"),
+    }
 
 
 def main() -> None:

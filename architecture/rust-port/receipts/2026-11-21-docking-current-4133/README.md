@@ -15,9 +15,15 @@ title-bar X. The [second process](after.png) opened with the same sizes,
 positions, and tabs. The dock region had zero changed pixels. The
 [restart report](restart-summary.json) records the dock ID, tab order, and
 fixture and executable hashes. Both screenshots show the open Part in the
-Model browser and an empty viewport. The restart comparison covers the dock
-region. The other scenario captures check that the solid remains visible
-during dock moves.
+Model browser and its solid in the viewport. A pixel check confirmed that
+the face and background regions match before and after restart.
+
+The [focused restart scenario](viewport-restart-cucumber.json) also passed
+with the new visibility check in the restart driver. In each capture, every
+pixel in the sampled face exceeded the brightness threshold, and every pixel
+in the sampled background stayed below it. The
+[viewport measurements](viewport-restart-summary.json) bind both samples to
+the same native fixture and desktop executable.
 
 The Go reference passed its [panel registry and shared close tests](go-reference.log)
 and its [native docked viewport interaction test](go-viewport.log). The
