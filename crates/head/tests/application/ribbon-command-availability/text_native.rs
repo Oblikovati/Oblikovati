@@ -5,6 +5,8 @@ use crate::HeadSketchWork;
 use cucumber::{given, then, when};
 #[path = "text_bold.rs"]
 mod text_bold;
+#[path = "text_cancel_defaults.rs"]
+mod text_cancel_defaults;
 #[path = "text_case.rs"]
 mod text_case;
 #[path = "text_color.rs"]

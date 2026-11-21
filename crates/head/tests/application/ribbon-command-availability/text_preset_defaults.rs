@@ -35,7 +35,8 @@ fn save_g_with_a_different_last_accepted_width(world: &mut ApplicationWorld) {
     world.expect_ready();
 }
 
-fn set_new_text_default(world: &mut ApplicationWorld, label: &str) {
+/// Set the default and close the draft, for example with `"Use Current Preset"`.
+pub(super) fn set_new_text_default(world: &mut ApplicationWorld, label: &str) {
     open_preset_settings(world);
     choose_preset_action(world, label);
     world.expect_no_text("New Text Default");
