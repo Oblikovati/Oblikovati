@@ -83,3 +83,22 @@ The pinned [assembly](pinned-assembly-open-options.json) and
 [drawing](pinned-drawing-open-options.json) cases also passed. They cover
 opening-mode selection, control availability, and cancellation without
 opening either file.
+
+## Full pinned baseline
+
+All 35 pinned scenarios and 357 steps passed on Linux X11 with Xvfb,
+Openbox, and Vulkan Lavapipe. The tested files match `ca8602139`, with API
+v0.165.0 and Martensite v0.13.1. The pinned source revision was
+`b576445b98cffd686dcc05aa8c017de2a591c8c8` and its feature SHA-256 was
+`573d517b49ca58326f70a7c1ebd30509b6f43eb14040efa56e62de36db4028dc`.
+
+The [Cucumber report](full-pinned-home.json) and [JUnit report](full-pinned-junit.xml.gz)
+were checked against every declaration. The run produced a final capture and
+passed the cleanup hook for each scenario. The
+[source report](full-pinned-source.json) confirms that the pinned checkout
+stayed clean. The [Go baseline](go-home-reference.log) covers routing and
+recording recent-file opens.
+
+All 35 pinned declarations now have R0 evidence. Strict verification still
+requires bounded build and runtime inputs under
+[#3978](https://github.com/Oblikovati/Oblikovati/issues/3978).
