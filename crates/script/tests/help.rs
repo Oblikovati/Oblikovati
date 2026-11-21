@@ -131,10 +131,10 @@ fn hover_help_requires_full_method_and_rejects_invalid_positions() {
 fn complete_embedded_catalog_round_trips_with_unique_named_fields() {
     let snapshot: MethodHelpSnapshot =
         serde_json::from_str(include_str!("../resources/method-help.json")).unwrap();
-    assert_eq!(snapshot.api_version, "0.163.0");
+    assert_eq!(snapshot.api_version, "0.165.0");
     assert_eq!(
         snapshot.api_revision,
-        "c051de97568c0345921f0f900982da31eb9ddca4"
+        "907cd4c28713b47501b077b8d902dbb6a008aada"
     );
     assert_eq!(snapshot.methods.len(), 654);
     for wire in [METHOD_SKETCH_ADD_TEXT, METHOD_SKETCH_EDIT_TEXT] {
@@ -143,7 +143,12 @@ fn complete_embedded_catalog_round_trips_with_unique_named_fields() {
             .iter()
             .find(|help| help.wire == wire)
             .unwrap();
-        for name in ["formattingRuns", "lineSpacing", "stackedFractions"] {
+        for name in [
+            "formattingRuns",
+            "lineSpacing",
+            "stackedFractions",
+            "linkedFields",
+        ] {
             assert!(
                 schema.parameters.iter().any(|field| field.name == name),
                 "{wire} must expose {name}"

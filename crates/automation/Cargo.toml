@@ -17,7 +17,7 @@ oblikovati-persistence = { path = "../persistence" }
 oblikovati-model = { path = "../model" }
 oblikovati-martensite = { path = "../martensite" }
 oblikovati-session = { path = "../session" }
-oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "c051de97568c0345921f0f900982da31eb9ddca4", version = "=0.163.0" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "907cd4c28713b47501b077b8d902dbb6a008aada", version = "=0.165.0" }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1"
 quick-xml = { version = "=0.39.4", features = ["serialize"] }
