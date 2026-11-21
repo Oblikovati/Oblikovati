@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::ApplicationWorld;
 use super::diagnostics::{RenderedRun, window_geometry};
+use crate::HeadWork;
 use cucumber::{given, then, when};
 
 const HOME: &str = "##home-workspace";
@@ -18,14 +19,16 @@ mod lists;
 mod startup_observation;
 
 /// Real files through a real save: each lands on the recent list as a person's would.
-fn save_recent_files(world: &mut ApplicationWorld) {
+fn save_recent_files(world: &mut ApplicationWorld) -> [u64; 4] {
     world.app().owner.forget_recent_documents();
-    for name in [SEARCHED, OTHERS[0], OTHERS[1]] {
+    let [searched, bracket, housing] = [SEARCHED, OTHERS[0], OTHERS[1]].map(|name| {
         let part = world.add_part();
         world.save_part_to_file(part, &format!("{name}.opd"));
-    }
+        part
+    });
     let assembly = world.add_template(oblikovati_gui::GuiTemplateKind::Assembly);
     world.save_part_to_file(assembly, &format!("{ASSEMBLY}.oad"));
+    [searched, bracket, housing, assembly]
 }
 fn in_home(run: &RenderedRun) -> bool {
     let Some((position, size)) = window_geometry(HOME) else {
@@ -123,9 +126,13 @@ fn list_contains(world: &mut ApplicationWorld) {
 }
 #[given("the recent list contains documents")]
 fn recent_list_filled(world: &mut ApplicationWorld) {
-    // Saving lands other parts on the list; the one under edit is what the scenario is about.
+    // Keep the seed files in Recent without adding their tabs to the Part under edit.
     let part = world.active_id();
-    save_recent_files(world);
+    for id in save_recent_files(world) {
+        let request = oblikovati_api::wire::CloseDocumentArgs { id, force: false };
+        assert!(world.app().owner.close_document_from_gui(&request).unwrap());
+    }
+    world.pump(Vec::new());
     world.activate_through_tab(part);
     world.previous_document = Some(part);
 }

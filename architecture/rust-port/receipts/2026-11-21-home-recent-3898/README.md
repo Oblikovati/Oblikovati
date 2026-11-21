@@ -23,6 +23,10 @@ shows Home beside the Model browser and both asset tabs in the right dock.
 A [native X11 click on New Part](home-first-launch-new-part.log.gz) opened
 the Part workspace. A saved profile still controls which panels appear.
 
+The [Home navigation scenario](published-home-navigation.json) passed all
+eight steps with the asset dock open. Its setup closes the files used to
+seed Recent, leaving the Part with the active sketch as an open tab.
+
 The [floating Appearance Browser](published-appearance-docking.json)
 and [Material Browser from Quick Access](published-quick-access-material-browser.json)
 scenarios exercised docking, resizing, and reopening with explicit starting
