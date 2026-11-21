@@ -17,12 +17,16 @@ fn circular_ribbon_fixture(scale: f32) -> (GuiFrameEngine, GuiFrameRequest) {
 fn circular_flyouts_dispatch_both_choices_at_both_scales() {
     for scale in [1., 2.] {
         let (mut engine, mut request) = circular_ribbon_fixture(scale);
-        for (y, tool) in [(68., Tool::ThreePointCircle), (88., Tool::ThreePointArc)] {
-            assert!(click_ribbon(&mut engine, &mut request, [240. * scale, y * scale]).is_empty());
-            expect_ribbon(
+        for (primary, tool) in [
+            (Tool::Circle, Tool::ThreePointCircle),
+            (Tool::CenterPointArc, Tool::ThreePointArc),
+        ] {
+            open_tool_choices(&mut engine, &mut request, primary.label());
+            expect_caption(
                 &mut engine,
                 &mut request,
-                [300. * scale, (y + 30.) * scale],
+                tool.menu_label(),
+                true,
                 Place(tool),
             );
         }
@@ -47,9 +51,15 @@ fn circular_flyouts_refuse_transactions_and_stale_open_choices() {
 #[test]
 fn circular_primary_menu_choices_preserve_the_original_commands() {
     let (mut engine, mut request) = circular_ribbon_fixture(1.);
-    for (y, tool) in [(68., Tool::Circle), (88., Tool::CenterPointArc)] {
-        assert!(click_ribbon(&mut engine, &mut request, [240., y]).is_empty());
-        expect_ribbon(&mut engine, &mut request, [300., y + 13.], Place(tool));
+    for tool in [Tool::Circle, Tool::CenterPointArc] {
+        open_tool_choices(&mut engine, &mut request, tool.label());
+        expect_caption(
+            &mut engine,
+            &mut request,
+            tool.menu_label(),
+            true,
+            Place(tool),
+        );
     }
 }
 #[test]
@@ -67,11 +77,12 @@ fn a_context_change_retires_the_circular_menu_without_dispatch() {
 fn circle_flyout_dispatches_ellipse_at_both_scales() {
     for scale in [1., 2.] {
         let (mut engine, mut request) = circular_ribbon_fixture(scale);
-        assert!(click_ribbon(&mut engine, &mut request, [240. * scale, 68. * scale]).is_empty());
-        expect_ribbon(
+        open_tool_choices(&mut engine, &mut request, Tool::Circle.label());
+        expect_caption(
             &mut engine,
             &mut request,
-            [300. * scale, 115. * scale],
+            Tool::Ellipse.menu_label(),
+            true,
             Place(Tool::Ellipse),
         );
     }

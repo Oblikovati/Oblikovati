@@ -28,51 +28,49 @@ fn open_panel(
 fn a_collapsed_format_and_constrain_panel_dispatch_the_same_actions_at_both_scales() {
     for scale in [1., 2.] {
         let (mut engine, mut request) = narrow_fixture(1024, scale);
-        open_panel(&mut engine, &mut request, [674., 88.], scale);
-        expect_ribbon(
+        open_collapsed_panel(&mut engine, &mut request, "Format");
+        expect_caption(
             &mut engine,
             &mut request,
-            [682. * scale, 175. * scale],
+            "Construction",
+            true,
             Format(Construction),
         );
-        open_panel(&mut engine, &mut request, [434., 88.], scale);
-        expect_ribbon(
+        open_collapsed_panel(&mut engine, &mut request, "Constrain");
+        expect_caption(
             &mut engine,
             &mut request,
-            [450. * scale, 175. * scale],
+            "Horizontal",
+            true,
             Constrain(GuiSketchConstraint::Horizontal),
         );
     }
 }
 use GuiSketchTool::*;
-const PRIMARY_TOOL_POINTS: [(GuiSketchTool, [f32; 2]); 8] = [
-    (Line, [202., 235.]),
-    (Rectangle, [78., 195.]),
-    (Circle, [193., 175.]),
-    (Point, [318., 175.]),
-    (CenterPointArc, [193., 195.]),
-    (Ellipse, [318., 195.]),
-    (CenterRectangle, [202., 215.]),
-    (ThreePointRectangle, [318., 215.]),
+const PRIMARY_TOOLS: [GuiSketchTool; 8] = [
+    Line,
+    Rectangle,
+    Circle,
+    Point,
+    CenterPointArc,
+    Ellipse,
+    CenterRectangle,
+    ThreePointRectangle,
 ];
 #[test]
 fn collapsed_create_keeps_all_primary_tools_reachable_at_both_scales() {
     for scale in [1., 2.] {
         let (mut engine, mut request) = narrow_fixture(640, scale);
-        for (tool, point) in PRIMARY_TOOL_POINTS {
-            open_panel(&mut engine, &mut request, [70., 88.], scale);
-            expect_ribbon(
-                &mut engine,
-                &mut request,
-                point.map(|value| value * scale),
-                Place(tool),
-            );
+        for tool in PRIMARY_TOOLS {
+            open_collapsed_panel(&mut engine, &mut request, "Create");
+            expect_caption(&mut engine, &mut request, tool.label(), true, Place(tool));
         }
-        open_panel(&mut engine, &mut request, [530., 88.], scale);
-        expect_ribbon(
+        scroll_right(&mut engine, &mut request, [200., 88.], scale);
+        expect_caption(
             &mut engine,
             &mut request,
-            [542. * scale, 195. * scale],
+            "Finish Sketch",
+            false,
             FinishSketch,
         );
     }
@@ -80,9 +78,10 @@ fn collapsed_create_keeps_all_primary_tools_reachable_at_both_scales() {
 #[test]
 fn a_flyout_rechecks_owner_transaction_state_and_escape_restores_the_band() {
     let (mut engine, mut request) = narrow_fixture(1024, 1.);
-    open_panel(&mut engine, &mut request, [434., 88.], 1.);
+    open_collapsed_panel(&mut engine, &mut request, "Constrain");
     request.commands.transaction_open = true;
-    assert!(click_ribbon(&mut engine, &mut request, [450., 175.]).is_empty());
+    let horizontal = ribbon_caption(&mut engine, &mut request, "Horizontal", true);
+    assert!(click_ribbon(&mut engine, &mut request, horizontal).is_empty());
     for pressed in [true, false] {
         request.events = vec![GuiInputEvent::Key {
             key: GuiKey::Escape,
@@ -92,32 +91,34 @@ fn a_flyout_rechecks_owner_transaction_state_and_escape_restores_the_band() {
     }
     request.commands.transaction_open = false;
     settle_ribbon(&mut engine, &mut request);
-    open_panel(&mut engine, &mut request, [434., 88.], 1.);
-    expect_ribbon(
+    open_collapsed_panel(&mut engine, &mut request, "Constrain");
+    expect_caption(
         &mut engine,
         &mut request,
-        [450., 175.],
+        "Horizontal",
+        true,
         Constrain(GuiSketchConstraint::Horizontal),
     );
 }
 #[test]
 fn widening_restores_expanded_controls_and_narrowing_collapses_them_again() {
     let (mut engine, mut request) = narrow_fixture(1024, 1.);
-    request.extent[0] = 1440;
-    settle_ribbon(&mut engine, &mut request);
-    expect_ribbon(
+    request.extent[0] = 1920;
+    expect_caption(
         &mut engine,
         &mut request,
-        [1014., 68.],
+        "Construction",
+        false,
         Format(Construction),
     );
     request.extent[0] = 1024;
     settle_ribbon(&mut engine, &mut request);
-    open_panel(&mut engine, &mut request, [674., 88.], 1.);
-    expect_ribbon(
+    open_collapsed_panel(&mut engine, &mut request, "Format");
+    expect_caption(
         &mut engine,
         &mut request,
-        [682., 175.],
+        "Construction",
+        true,
         Format(Construction),
     );
 }
@@ -141,12 +142,11 @@ fn the_scroll_tier_keeps_the_last_panel_reachable_below_its_minimum_row_width() 
     for scale in [1., 2.] {
         let (mut engine, mut request) = narrow_fixture(320, scale);
         scroll_right(&mut engine, &mut request, [200., 88.], scale);
-        open_panel(&mut engine, &mut request, [250., 88.], scale);
-        expect_ribbon(
+        expect_caption(
             &mut engine,
             &mut request,
-            // The Exit group is the last panel and its popup remains reachable after scrolling.
-            [258. * scale, 205. * scale],
+            "Finish Sketch",
+            false,
             FinishSketch,
         );
     }
@@ -168,21 +168,27 @@ fn a_panel_wider_than_the_window_keeps_its_last_command_reachable() {
 #[test]
 fn changing_context_cancels_a_panel_popup_before_the_next_command() {
     let (mut engine, mut request) = narrow_fixture(1024, 1.);
-    open_panel(&mut engine, &mut request, [674., 88.], 1.);
+    open_collapsed_panel(&mut engine, &mut request, "Format");
     request.commands.authoring = GuiAuthoringContext::Part;
     settle_ribbon(&mut engine, &mut request);
-    expect_ribbon(&mut engine, &mut request, [50., 90.], ChooseSketchPlane);
+    expect_caption(
+        &mut engine,
+        &mut request,
+        "Start 2D Sketch",
+        false,
+        ChooseSketchPlane,
+    );
 }
 #[test]
 fn widening_with_a_popup_open_restores_its_inline_command_immediately() {
     let (mut engine, mut request) = narrow_fixture(1024, 1.);
-    open_panel(&mut engine, &mut request, [674., 88.], 1.);
-    request.extent[0] = 1440;
-    settle_ribbon(&mut engine, &mut request);
-    expect_ribbon(
+    open_collapsed_panel(&mut engine, &mut request, "Format");
+    request.extent[0] = 1920;
+    expect_caption(
         &mut engine,
         &mut request,
-        [1014., 68.],
+        "Construction",
+        false,
         Format(Construction),
     );
 }

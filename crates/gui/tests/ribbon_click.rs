@@ -2,6 +2,12 @@
 use GuiShellAction::{ChooseSketchPlane, FinishSketch, Home, NewPart};
 use oblikovati_api::types::DOCUMENT_PART;
 use oblikovati_gui::*;
+#[allow(dead_code, unsafe_code)]
+#[path = "../../../test-utilities/rust/drawn_text.rs"]
+mod drawn_text;
+#[path = "support/rendered_ribbon.rs"]
+mod rendered_ribbon;
+use rendered_ribbon::{expect_caption, open_collapsed_panel, open_tool_choices, ribbon_caption};
 #[path = "support/view_tab.rs"]
 mod view_tab;
 
@@ -67,21 +73,31 @@ fn expect_ribbon(
 fn context_changes_select_the_supported_ribbon_commands() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = ribbon_request();
-    settle_ribbon(&mut engine, &mut request);
-    expect_ribbon(&mut engine, &mut request, [50., 90.], NewPart);
+    request.extent[0] = 1920;
+    expect_caption(&mut engine, &mut request, "New Part", false, NewPart);
     enter_part(&mut request);
-    settle_ribbon(&mut engine, &mut request);
-    expect_ribbon(&mut engine, &mut request, [50., 90.], ChooseSketchPlane);
-    request.commands.authoring = GuiAuthoringContext::Sketch;
-    settle_ribbon(&mut engine, &mut request);
-    expect_ribbon(
+    expect_caption(
         &mut engine,
         &mut request,
-        [50., 90.],
+        "Start 2D Sketch",
+        false,
+        ChooseSketchPlane,
+    );
+    request.commands.authoring = GuiAuthoringContext::Sketch;
+    expect_caption(
+        &mut engine,
+        &mut request,
+        "Rectangle",
+        false,
         GuiShellAction::PlaceSketchTool(GuiSketchTool::Rectangle),
     );
-    assert!(click_ribbon(&mut engine, &mut request, [790., 88.]).is_empty());
-    expect_ribbon(&mut engine, &mut request, [798., 195.], FinishSketch);
+    expect_caption(
+        &mut engine,
+        &mut request,
+        "Finish Sketch",
+        false,
+        FinishSketch,
+    );
 }
 #[test]
 fn manual_view_selection_survives_sketch_exit() {
@@ -104,12 +120,18 @@ fn manual_view_selection_survives_sketch_exit() {
 fn the_ribbon_captures_the_full_logical_window_width_at_high_dpi() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = ribbon_request();
+    enter_part(&mut request);
     request.extent = [2000, 1400];
     request.framebuffer_scale = [2.; 2];
     settle_ribbon(&mut engine, &mut request);
     request.events = vec![GuiInputEvent::PointerMoved([1800., 80.])];
-    assert!(engine.frame(&request).unwrap().capture.pointer);
-    request.events = vec![GuiInputEvent::PointerMoved([1800., 1000.])];
+    let ribbon = engine.frame(&request).unwrap();
+    assert!(ribbon.capture.pointer);
+    let [left, top, right, bottom] = ribbon
+        .document_area
+        .expect("expected the unobstructed document canvas");
+    let canvas = [(left + right) as f32 / 2., (top + bottom) as f32 / 2.];
+    request.events = vec![GuiInputEvent::PointerMoved(canvas)];
     assert!(!engine.frame(&request).unwrap().capture.pointer);
 }
 
@@ -135,34 +157,30 @@ fn pointer_wheel_does_not_scroll_the_fixed_ribbon_band() {
 fn expanded_sketch_panels_dispatch_every_supported_tool_at_both_scales() {
     use GuiSketchTool::*;
     for scale in [1., 2.] {
-        let mut engine = GuiFrameEngine::new().unwrap();
-        let mut request = ribbon_request();
-        request.extent = [1440 * scale as u32, 900 * scale as u32];
-        request.framebuffer_scale = [scale; 2];
-        enter_part(&mut request);
-        request.commands.authoring = GuiAuthoringContext::Sketch;
-        settle_ribbon(&mut engine, &mut request);
-        for (tool, point) in [
-            (Line, [180., 128.]),
-            (Rectangle, [50., 90.]),
-            (Circle, [180., 68.]),
-            (Point, [300., 68.]),
-            (CenterPointArc, [180., 88.]),
-            (Ellipse, [300., 88.]),
-            (CenterRectangle, [180., 108.]),
-            (ThreePointRectangle, [300., 108.]),
+        let (mut engine, mut request) = expanded_sketch_ribbon(scale);
+        for tool in [
+            Line,
+            Rectangle,
+            Circle,
+            Point,
+            CenterPointArc,
+            Ellipse,
+            CenterRectangle,
+            ThreePointRectangle,
         ] {
-            expect_ribbon(
+            expect_caption(
                 &mut engine,
                 &mut request,
-                point.map(|value| value * scale),
+                tool.label(),
+                false,
                 GuiShellAction::PlaceSketchTool(tool),
             );
         }
-        expect_ribbon(
+        expect_caption(
             &mut engine,
             &mut request,
-            [1250. * scale, 90. * scale],
+            "Finish Sketch",
+            false,
             FinishSketch,
         );
     }
@@ -188,75 +206,64 @@ fn sketch_tool_captions_identify_the_existing_construction_choices() {
 
 #[test]
 fn geometric_tools_dispatch_at_both_scales_and_refuse_open_transactions() {
-    use GuiSketchConstraint::{
-        Coincident, Collinear, Concentric, Equal, Fix, Horizontal, Parallel, Perpendicular,
-        Tangent, Vertical,
-    };
+    use GuiSketchConstraint::*;
     for scale in [1., 2.] {
-        let mut engine = GuiFrameEngine::new().unwrap();
-        let mut request = ribbon_request();
-        request.extent = [1440 * scale as u32, 900 * scale as u32];
-        request.framebuffer_scale = [scale; 2];
-        enter_part(&mut request);
-        request.commands.authoring = GuiAuthoringContext::Sketch;
-        settle_ribbon(&mut engine, &mut request);
-        for (choice, y) in [(Horizontal, 68.), (Vertical, 88.), (Coincident, 108.)] {
-            expect_ribbon(
+        let (mut engine, mut request) = expanded_sketch_ribbon(scale);
+        for choice in [
+            Horizontal,
+            Vertical,
+            Coincident,
+            Fix,
+            Parallel,
+            Perpendicular,
+            Collinear,
+            Equal,
+            Concentric,
+            Tangent,
+        ] {
+            expect_caption(
                 &mut engine,
                 &mut request,
-                [434. * scale, y * scale],
-                GuiShellAction::ConstrainSketch(choice),
-            );
-        }
-        expect_ribbon(
-            &mut engine,
-            &mut request,
-            [554. * scale, 128. * scale],
-            GuiShellAction::ConstrainSketch(Fix),
-        );
-        for (choice, y) in [(Parallel, 68.), (Perpendicular, 88.), (Collinear, 108.)] {
-            expect_ribbon(
-                &mut engine,
-                &mut request,
-                [674. * scale, y * scale],
-                GuiShellAction::ConstrainSketch(choice),
-            );
-        }
-        for (choice, y) in [(Equal, 68.), (Concentric, 88.), (Tangent, 108.)] {
-            expect_ribbon(
-                &mut engine,
-                &mut request,
-                [784. * scale, y * scale],
+                choice.label(),
+                false,
                 GuiShellAction::ConstrainSketch(choice),
             );
         }
         request.commands.transaction_open = true;
-        settle_ribbon(&mut engine, &mut request);
-        assert!(click_ribbon(&mut engine, &mut request, [434. * scale, 68. * scale]).is_empty());
-        assert!(click_ribbon(&mut engine, &mut request, [554. * scale, 128. * scale]).is_empty());
+        for choice in [Horizontal, Fix] {
+            let position = ribbon_caption(&mut engine, &mut request, choice.label(), false);
+            assert!(click_ribbon(&mut engine, &mut request, position).is_empty());
+        }
     }
 }
 
 #[test]
 fn general_dimension_dispatches_at_both_scales_with_transaction_guards() {
     for scale in [1., 2.] {
-        let mut engine = GuiFrameEngine::new().unwrap();
-        let mut request = ribbon_request();
-        request.extent = [1200 * scale as u32, 800 * scale as u32];
-        request.framebuffer_scale = [scale; 2];
-        enter_part(&mut request);
-        request.commands.authoring = GuiAuthoringContext::Sketch;
-        settle_ribbon(&mut engine, &mut request);
-        expect_ribbon(
+        let (mut engine, mut request) = expanded_sketch_ribbon(scale);
+        expect_caption(
             &mut engine,
             &mut request,
-            [554. * scale, 85. * scale],
+            "Dimension",
+            false,
             GuiShellAction::Dimension(GuiDimensionAction::Start),
         );
         request.commands.transaction_open = true;
-        settle_ribbon(&mut engine, &mut request);
-        assert!(click_ribbon(&mut engine, &mut request, [554. * scale, 85. * scale]).is_empty());
+        let position = ribbon_caption(&mut engine, &mut request, "Dimension", false);
+        assert!(click_ribbon(&mut engine, &mut request, position).is_empty());
     }
+}
+
+fn expanded_sketch_ribbon(scale: f32) -> (GuiFrameEngine, GuiFrameRequest) {
+    let mut engine = GuiFrameEngine::new().unwrap();
+    let mut request = ribbon_request();
+    // Give every inline command room. Compact and scroll tiers have separate tests.
+    request.extent = [1920 * scale as u32, 900 * scale as u32];
+    request.framebuffer_scale = [scale; 2];
+    enter_part(&mut request);
+    request.commands.authoring = GuiAuthoringContext::Sketch;
+    settle_ribbon(&mut engine, &mut request);
+    (engine, request)
 }
 fn dimension_editor_key(
     engine: &mut GuiFrameEngine,
@@ -433,16 +440,13 @@ fn malformed_dimension_drafts_are_refused_before_gui_input() {
 
 #[test]
 fn line_commands_pass_ribbon_keyboard_focus_without_reactivating_buttons() {
-    let mut engine = GuiFrameEngine::new().unwrap();
-    let mut request = ribbon_request();
-    enter_part(&mut request);
-    request.commands.authoring = GuiAuthoringContext::Sketch;
+    let (mut engine, mut request) = expanded_sketch_ribbon(1.);
     request.commands.undo_label = Some("Create sketch".into());
-    settle_ribbon(&mut engine, &mut request);
-    expect_ribbon(
+    expect_caption(
         &mut engine,
         &mut request,
-        [180., 128.],
+        "Line",
+        false,
         GuiShellAction::PlaceSketchTool(GuiSketchTool::Line),
     );
     request.commands.sketch_tool_keyboard = true;

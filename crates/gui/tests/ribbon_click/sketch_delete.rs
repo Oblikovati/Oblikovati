@@ -14,18 +14,20 @@ fn sketch_delete_ribbon_uses_owner_capability_and_transaction_guards_at_both_sca
     for scale in [1., 2.] {
         let mut engine = GuiFrameEngine::new().unwrap();
         let mut request = deletion_request(scale);
-        settle_ribbon(&mut engine, &mut request);
-        expect_ribbon(
+        request.extent[0] = 1920 * scale as u32;
+        expect_caption(
             &mut engine,
             &mut request,
-            [904. * scale, 100. * scale],
+            "Delete",
+            false,
             GuiShellAction::DeleteSketchSelection,
         );
+        let delete = ribbon_caption(&mut engine, &mut request, "Delete", false);
         request.commands.sketch_delete_available = false;
-        assert!(click_ribbon(&mut engine, &mut request, [904. * scale, 100. * scale]).is_empty());
+        assert!(click_ribbon(&mut engine, &mut request, delete).is_empty());
         request.commands.sketch_delete_available = true;
         request.commands.transaction_open = true;
-        assert!(click_ribbon(&mut engine, &mut request, [904. * scale, 100. * scale]).is_empty());
+        assert!(click_ribbon(&mut engine, &mut request, delete).is_empty());
     }
 }
 #[test]
