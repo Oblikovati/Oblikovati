@@ -62,6 +62,18 @@ mod text_rotation;
 use oblikovati_viewport::ViewportSketchPreview;
 
 #[test]
+fn sketch_ribbon_leaves_geometry_text_unavailable() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.start_sketch();
+    select_sketch_tab(&mut world);
+    // Path-bound text is deferred under #3907. Point Text must remain usable.
+    world.expect_no_text("Geometry Text");
+    assert!(world.run_is_enabled("Text"));
+    world.close();
+}
+
+#[test]
 fn sketch_text_ribbon_accepts_cancels_and_round_trips_in_history() {
     let mut world = ApplicationWorld::new();
     start_text_from_part(&mut world);

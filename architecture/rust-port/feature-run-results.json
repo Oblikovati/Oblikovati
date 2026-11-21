@@ -828,5 +828,33 @@
     "command": "Unfiltered Text feature with native X11 input. See the receipt README.",
     "environment": "Linux X11 under Xvfb, 1440 × 900 native window, Vulkan Lavapipe",
     "notes": "Eleven scenarios passed. Twenty-seven have undefined steps. The preset rename case saves and reopens the part within the same application session."
+  },
+  "features/sketch/geometry-text/scenario.feature": {
+    "by_source_sha256": {
+      "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b": {
+        "feature_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b",
+        "supporting_files": {
+          "features/sketch/geometry-text/FUNCTIONAL.md": "56953c3fac6d60383112a6c153f7bddd1ce10abb12423a9b7016fae3b0d54303",
+          "features/sketch/geometry-text/VISUAL.md": "800e87d45e97fa94a9ba34d719b2d0b8360ddf28f72fdbb1fb8a788d4dba4d98",
+          "features/sketch/geometry-text/geometry-text-icon.svg": "b080273d8b774130ecaa0696c63a834f63a0f8ec251ea6a71a86b2ade1963903",
+          "features/sketch/geometry-text/geometry-text-panel.svg": "1e1b1d27ec9fb71eb48f8b826f081e7c67c67f3caf53b15726ec305b1198201b"
+        },
+        "blocker": "Deferred from PR #4184. Geometry Text has no runnable scenario and stays unavailable. Follow-up issue #3907.",
+        "notes": "All 21 pinned declarations have unbound steps. See 2026-11-21-geometry-text-deferred-3907/pinned-cases.json. Point Text remains enabled."
+      },
+      "7a31bbb481a27ebfa66e05fff61143dfd3e56beba214c0495537606438727803": {
+        "feature_sha256": "7a31bbb481a27ebfa66e05fff61143dfd3e56beba214c0495537606438727803",
+        "supporting_files": {
+          "features/sketch/geometry-text/BLOCKERS.md": "5f4979dc81e5370968518e1aabe64569e77b3087ac4c4bdd0e528ec4fd082a97",
+          "features/sketch/geometry-text/FIXTURES.md": "ffa610ec86a9d51ce70517c68e8209a6bd165792bed07e2b6cd5e59ea25a896b",
+          "features/sketch/geometry-text/FUNCTIONAL.md": "56953c3fac6d60383112a6c153f7bddd1ce10abb12423a9b7016fae3b0d54303",
+          "features/sketch/geometry-text/VISUAL.md": "800e87d45e97fa94a9ba34d719b2d0b8360ddf28f72fdbb1fb8a788d4dba4d98",
+          "features/sketch/geometry-text/geometry-text-icon.svg": "b080273d8b774130ecaa0696c63a834f63a0f8ec251ea6a71a86b2ade1963903",
+          "features/sketch/geometry-text/geometry-text-panel.svg": "1e1b1d27ec9fb71eb48f8b826f081e7c67c67f3caf53b15726ec305b1198201b"
+        },
+        "blocker": "Deferred from PR #4184. Geometry Text has no runnable scenario and stays unavailable. Follow-up issue #3907.",
+        "notes": "All 21 published declarations have unbound steps. See 2026-11-21-geometry-text-deferred-3907/published-cases.json. Point Text remains enabled."
+      }
+    }
   }
 }

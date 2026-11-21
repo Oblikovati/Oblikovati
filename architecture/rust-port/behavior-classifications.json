@@ -27747,10 +27747,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 11. The first Direction is applied and the dialog closes to Ready. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:9c233ce7d02d58dddccf549fcc24f59e58feeac409fa3b72e7edc965d8f5b212",
@@ -27764,10 +27775,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 21. An empty Geometry Text dialog opens for that arc. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:6e986cc9c652a3e0a33235ac8fa0b3af3309c7a93acff31baf31afa2a48aae49",
@@ -27781,10 +27803,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 29. The dialog closes without retaining the new y. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:958db182c35964f9e253f96f16e17866107ab6e329cccd08693a5f0239a4121a",
@@ -27798,10 +27831,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 39. Those applied states are restored in order. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:6fdafd680544c5792ba0298c5b94563f61f1e525408fb7ad7e818a49498fdf6a",
@@ -27815,10 +27859,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 50. Start Angle zero is enabled. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:fc9ffb61a36567819ba924c57f26cccfd7c25f62c98c80f0501176f0795b5980",
@@ -27832,10 +27887,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 67. X returns to the same visible line-path position. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:7bb2856452574b5f94753a5e214bb1077bd2dd1c13c55c6309a04af64bf3bdb0",
@@ -27849,10 +27915,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 79. The previously applied x remains. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:2e63d156946b16eb4e06a05560c6e893b4d769c87ebd634d1229fe853dda781a",
@@ -27866,10 +27943,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 94. The editor content remains ab. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:c5f279ba2573b8a07e02a68e2cd65f85e744a8237217935e2f13c4b735b890e2",
@@ -27883,10 +27971,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 103. The editor still contains ab. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:fd96c22d291c034ef71808d890d619287156c4f3e468c692f0668bd231501315",
@@ -27900,10 +27999,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 112. Stretch displays 50 and the glyph pair narrows. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:42b119682e32c868962fb3a8965beaaad9de050a4a3259188a6959386fa5eacd",
@@ -27917,10 +28027,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 124. Manual stretch and alignment remain unavailable. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:141e532240caf0f27170e0992a6c97db67b10c49f5e829761eef9ceaba7c77cc",
@@ -27934,10 +28055,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 136. The canvas displays the combined larger red emphasized and underlined glyphs. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:5dbc5cbad17b8f8803f7629d549ab82949f022bc168f33f55dce640a9f2fda39",
@@ -27951,10 +28083,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 147. The solver count remains 47 dimensions needed. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:9216dce018dd6b1f420be23e8f8ce8cce0bd2532abc25da13da51385ab4ec14c",
@@ -27968,10 +28111,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 157. The degree is included in the on-path rendering. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:a71522cb8c15992b9920f1c854eeb48a72c4532009b1a386310de184f68a2119",
@@ -27985,10 +28139,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 165. The existing text relocates to the oblique line. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:490d2e56ed8ec239f403f9bb624d6c4b0b735b93d70baf890638f7e54c10783c",
@@ -28002,10 +28167,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 174. The current font field displays Tahoma. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:a11b98b28f1dd0383aa26cd6eca0714dc862789b34f9d71e28ed99d0852276da",
@@ -28019,10 +28195,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 184. The previously applied text remains on the oblique line. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:d2d901fff82480a7fd83d04eb19524cfc0c01f6e794c8e775b41649fc0a2b134",
@@ -28036,10 +28223,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 194. The Size field initially displays 6.10 mm. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:10b4fd51a8450bfb37d5cf2339defbff8b7e6668fcdbe2c18bb26b19d9073f8a",
@@ -28053,10 +28251,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 204. The changed on-path glyphs remain and the dialog closes. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:878b342943fc75bbbd2a209508bdefb7f10c6bb36391832f8c4e2e9d8605f02e",
@@ -28070,10 +28279,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 214. The glyph appears inside the arc with changed orientation. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:80a63f8430ab036b84755d49199712a17d077047d3cf85675d851ed0313349a3",
@@ -28087,10 +28307,21 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3907",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "excluded",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/app/sketch_create_tools.go; ../Oblikovati/head/ui/sketch_placement_boxes.go",
-      "mapping_reason": "Sketch text creation, formatting, and path references."
+      "go_reference": "Go legacy aa8297d1b0ac33c024f19e54821536d76e8a447a, app/sketch_create_tools.go and model/sketch/text_geometry_test.go.",
+      "mapping_reason": "Sketch text creation, formatting, and path references.",
+      "reason": "Deferred from PR #4184. Geometry Text has no runnable scenario and is unavailable in the Sketch ribbon. Track the follow-up in #3907.",
+      "go_test_premise": "TestSketchTextTool and TestTextBoxDerivesGlyphProfiles passed for point-anchored glyphs. The Go tests do not exercise line or arc placement.",
+      "api_revision": "Oblikovati.API v0.165.0 (907cd4c28713b47501b077b8d902dbb6a008aada). SketchTextStyle and the current AddText contract describe point-anchored Text.",
+      "kernel_revision": "Martensite v0.13.1 (bef25f47548431c8f128f08f66a1f719bcee4982).",
+      "kernel_capabilities": "The integrated outline builder derives glyphs for point Text. Line and arc layout are unassessed for this deferred feature.",
+      "platforms": "The shared desktop Sketch ribbon has no Geometry Text command. The rendered control check ran on Linux X11 under Xvfb.",
+      "kernel_integration": "The current model stores Text by sketch-point identity. Geometry Text has no host dispatch or native path reference.",
+      "rust_tests": "sketch_ribbon_leaves_geometry_text_unavailable and the exact pinned unbound-step diagnostic in receipts/2026-11-21-geometry-text-deferred-3907/pinned-cases.json.",
+      "oracle": "The published observations and pinned source define the path behavior for the follow-up. The Linux ribbon guard checks that Geometry Text stays unavailable and that point Text is enabled.",
+      "expected_result": "Follow-up acceptance at source line 225. The second Position remains selected. Geometry Text stays unavailable in PR #4184.",
+      "baseline_source_sha256": "12d091195f3105e430e7a622fea4b59a80e95edbbe27a469a2ebda39a65d225b"
     },
     {
       "id": "scenario:fe75453e5f49cc070ab2b1429b9b362ffe18782371b1eafd2119f15604a10155",
