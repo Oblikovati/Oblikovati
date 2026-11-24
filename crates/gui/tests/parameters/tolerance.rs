@@ -5,6 +5,8 @@ fn tolerance_row() -> GuiParameterRow {
         tolerance_text: String::new(),
         model_value_text: String::new(),
         has_groups: false,
+        is_length: true,
+        feature_consumers: Vec::new(),
         parameter: 0,
         detail: oblikovati_api::wire::ParameterDetail {
             units: "mm".into(),

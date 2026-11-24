@@ -10,11 +10,17 @@ pub struct GuiParameterRow {
     /// Model-selected numeric value formatted with the document units.
     pub model_value_text: String,
     pub has_groups: bool,
+    /// Whether this parameter can supply a length expression.
+    pub is_length: bool,
+    /// Current model features that read this parameter.
+    pub feature_consumers: Vec<(oblikovati_model::feature::FeatureId, String)>,
 }
 impl PartialEq for GuiParameterRow {
     fn eq(&self, other: &Self) -> bool {
         // #3614: a stored sign change must request a new frame even when numeric values compare equal.
         self.has_groups == other.has_groups
+            && self.is_length == other.is_length
+            && self.feature_consumers == other.feature_consumers
             && self.tolerance_text == other.tolerance_text
             && self.model_value_text == other.model_value_text
             && self.parameter == other.parameter
@@ -163,7 +169,21 @@ fn validate_link_sources(sources: &[GuiParameterLinkSource], target: u64) -> Res
 }
 fn validate_parameter_row(row: &GuiParameterRow) -> Result<(), String> {
     let detail = &row.detail;
-    for (field, text) in display_fields(row) {
+    let consumers = row
+        .feature_consumers
+        .iter()
+        .map(|(_, name)| ("consuming feature", name.as_str()));
+    let dependents = detail
+        .dependents
+        .as_deref()
+        .into_iter()
+        .flatten()
+        .map(|name| ("dependent parameter", name.as_str()));
+    for (field, text) in display_fields(row)
+        .into_iter()
+        .chain(consumers)
+        .chain(dependents)
+    {
         if let Some(offset) = text.as_bytes().iter().position(|byte| *byte == 0) {
             return Err(format!(
                 "GUI parameter {}, field {field}, NUL at byte {offset}: expected display-safe text",

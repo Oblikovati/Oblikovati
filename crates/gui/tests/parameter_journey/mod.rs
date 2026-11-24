@@ -2,11 +2,14 @@
 use super::*;
 use oblikovati_api::wire::{ParameterDetail, ParameterInfo};
 
+#[allow(dead_code, unsafe_code)]
+#[path = "../../../../test-utilities/rust/drawn_text.rs"]
+mod drawn_text;
+
 // This test uses a fixed 1024×768, unit-scale frame on both widget platforms.
 const NAME_FIELD: [f32; 2] = [295., 200.];
 const EQUATION_FIELD: [f32; 2] = [440., 200.];
 const ADD_BUTTON: [f32; 2] = [535., 200.];
-const ROW_EQUATION: [f32; 2] = [350., 198.];
 
 fn parameter_request() -> GuiFrameRequest {
     GuiFrameRequest {
@@ -82,7 +85,15 @@ fn type_at(
     assert!(output.capture.text && output.actions.is_empty());
 }
 fn replace_equation(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest, mac_osx: bool) {
-    click(engine, request, ROW_EQUATION);
+    let frame = drawn_text::rendered_frame();
+    let equation = frame
+        .runs
+        .iter()
+        .filter(|run| run.text.split_whitespace().collect::<String>() == "10mm")
+        .min_by(|a, b| a.center()[0].total_cmp(&b.center()[0]))
+        .expect("expected an authored equation before the nominal and model values")
+        .center();
+    click(engine, request, equation);
     deliver(
         engine,
         request,
@@ -158,6 +169,8 @@ fn authored_size() -> GuiParameterRow {
         tolerance_text: String::new(),
         model_value_text: String::new(),
         has_groups: false,
+        is_length: true,
+        feature_consumers: Vec::new(),
         detail: ParameterDetail {
             parameter_info: ParameterInfo {
                 name: "size".into(),

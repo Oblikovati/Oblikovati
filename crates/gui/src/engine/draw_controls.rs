@@ -97,6 +97,7 @@ impl GuiFrameEngine {
                 ui,
                 request,
                 self.command_alias.text(),
+                self.extrude_dialog.distance_prompt(),
             );
         }
         self.workspace.sync_before_docking(&request.commands);
@@ -326,14 +327,15 @@ impl GuiFrameEngine {
             commands,
             self.plane_selection.active,
             &mut selected,
-            icons,
-            self.popup_was_open,
+            crate::extrude_dialog::ExtrudePanelControls {
+                icons,
+                parameters: &mut self.parameter_editor,
+                popup_was_open: self.popup_was_open,
+            },
         );
-        self.blend_dialog
-            .panel(ui, &request.commands, &mut selected);
+        self.blend_dialog.panel(ui, commands, &mut selected);
         self.hole_dialog.panel(ui, &request.commands, &mut selected);
-        self.shell_feature_dialog
-            .panel(ui, &request.commands, &mut selected);
+        self.shell_feature_dialog.panel(ui, commands, &mut selected);
         self.move_body_dialog
             .panel(ui, &request.commands, &mut selected);
         self.offset_plane

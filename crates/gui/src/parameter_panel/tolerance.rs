@@ -56,6 +56,9 @@ pub(super) struct ParameterToleranceEditor {
 }
 impl DockableWindow for ParameterToleranceEditor {}
 impl ParameterToleranceEditor {
+    pub(super) fn is_open(&self) -> bool {
+        self.target.is_some()
+    }
     pub(super) fn register_dockable(
         &self,
         registry: &mut crate::dockable_lifecycle::DockRegistry,

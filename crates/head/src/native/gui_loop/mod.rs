@@ -151,7 +151,7 @@ impl NativeGui {
         self.deadline = Some(Duration::ZERO);
     }
     pub(super) fn parameters_open(&self) -> bool {
-        self.engine.parameters_open()
+        self.engine.parameter_metadata_requested()
     }
     pub(super) fn set_parameters(
         &mut self,

@@ -45,6 +45,18 @@ impl GuiParameterEditor {
     pub(crate) fn panel(&mut self, ui: &Ui) -> Vec<GuiParameterAction> {
         self.panel.draw(ui)
     }
+    pub(crate) fn snapshot(&self, document: u64) -> Option<&GuiParameterSnapshot> {
+        self.panel
+            .snapshot()
+            .filter(|view| view.document == document)
+    }
+    pub(crate) fn open_tolerance(&mut self, document: u64, parameter: u64) -> Result<(), String> {
+        self.panel.open_row_editor(
+            document,
+            parameter,
+            crate::GuiParameterRowOperation::EditTolerance,
+        )
+    }
     pub(crate) fn synchronize_document(&mut self, document: Option<u64>) -> Result<(), String> {
         if self.document == document {
             return Ok(());
@@ -61,6 +73,9 @@ impl GuiParameterEditor {
     }
     pub(crate) fn is_open(&self) -> bool {
         self.panel.is_open()
+    }
+    pub(crate) fn needs_snapshot(&self) -> bool {
+        self.panel.needs_snapshot()
     }
     pub(crate) fn set_snapshot(
         &mut self,

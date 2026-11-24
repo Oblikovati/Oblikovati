@@ -20,6 +20,7 @@ pub(super) fn cancel_customization(world: &mut ApplicationWorld) {
         "Navigation Wheel Options",
         "Save Search",
         "Open Search",
+        "Extrude",
     ] {
         if let Some((position, size)) = diagnostics::window_geometry(title) {
             let center = world

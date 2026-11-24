@@ -250,6 +250,10 @@ impl GuiFrameEngine {
     pub fn parameters_open(&self) -> bool {
         self.parameter_editor.is_open()
     }
+    /// Request current rows while a tool consumes them. Example: `engine.parameter_metadata_requested()`.
+    pub fn parameter_metadata_requested(&self) -> bool {
+        self.parameter_editor.needs_snapshot() || self.extrude_dialog.uses_parameter_metadata()
+    }
     /// Return the outcome of a parameter edit to its control.
     /// Example: `engine.acknowledge_parameter_action(&action, result)`.
     pub fn acknowledge_parameter_action(

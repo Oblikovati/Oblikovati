@@ -100,3 +100,19 @@ See the [Desktop reference controls receipt](receipts/2026-11-24-extrusion-refer
 
 Geometric face selectors in the typed API, desktop work-plane picking,
 taper, Through All, and To Next remain open.
+
+## Distance A editor menu (#3893)
+
+The Distance A editor menu opens Measure, the active part's Parameters table,
+or a list of its parameters. Choosing a length parameter adds its name to
+the draft; the document owner evaluates that expression through the same
+preview and confirmation path as typed input. Select Feature Dimension
+prompts for a feature and offers length parameters read by that feature.
+The Parameters table displays consuming features from the model read graph.
+Done closes the table while the Extrude draft stays open.
+
+For an editable parameter in Distance A, Tolerance opens the existing
+parameter tolerance editor. The full format and controls from pinned
+`extrusion-12` remain open.
+
+See the [Distance A editor receipt](receipts/2026-11-24-extrusion-distance-editor-3893/README.md).

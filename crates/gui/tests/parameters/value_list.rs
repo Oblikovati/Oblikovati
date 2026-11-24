@@ -5,6 +5,8 @@ fn value_list_row() -> GuiParameterRow {
         tolerance_text: String::new(),
         model_value_text: String::new(),
         has_groups: false,
+        is_length: true,
+        feature_consumers: Vec::new(),
         parameter: 0,
         detail: oblikovati_api::wire::ParameterDetail {
             expression_list: Some(Box::new(ExpressionListInfo {

@@ -17,6 +17,8 @@ impl ParameterDraftFixture {
                 tolerance_text: String::new(),
                 model_value_text: String::new(),
                 has_groups: false,
+                is_length: true,
+                feature_consumers: Vec::new(),
                 parameter: 11,
                 detail: Default::default(),
             }],

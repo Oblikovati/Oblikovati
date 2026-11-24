@@ -1,0 +1,202 @@
+// SPDX-License-Identifier: GPL-2.0-only
+use super::super::{diagnostics, x11_input};
+use super::acceptance::{feature_count, feature_distance, open_extrusion_editor};
+use super::viewport_interaction::{click_text_native, replace_distance_native};
+use super::*;
+
+#[given("Edit Feature is open for an existing extrusion")]
+fn existing_extrusion_editor(world: &mut ApplicationWorld) {
+    create_first_extrusion(world);
+    open_extrusion_editor(world);
+}
+
+fn create_first_extrusion(world: &mut ApplicationWorld) {
+    selected_rectangle_preview(world);
+    replace_distance_native(world, "8");
+    click_text_native(world, "OK");
+    assert_eq!(feature_count(world), 1);
+    assert_eq!(feature_distance(world), 8.);
+}
+
+#[when("the user opens the Distance A editor menu")]
+fn open_distance_menu(world: &mut ApplicationWorld) {
+    click_window_label(world, "Extrude", "EditDistanceA");
+}
+
+#[then("it offers Measure, Select Feature Dimension, Parameters, Tolerance and List Parameters")]
+fn menu_offers_distance_tools(world: &mut ApplicationWorld) {
+    for label in [
+        "Measure",
+        "SelectFeatureDimension",
+        "Parameters",
+        "Tolerance",
+        "ListParameters",
+    ] {
+        popup_label(world, label);
+    }
+    world.save_capture("distance-editor-menu");
+}
+
+#[when("the user chooses List Parameters")]
+fn open_parameter_list(world: &mut ApplicationWorld) {
+    click_popup(world, "ListParameters");
+}
+
+#[then("a list of parameters available in the active part appears")]
+fn parameters_are_listed(world: &mut ApplicationWorld) {
+    let name = current_feature_parameter(world);
+    popup_label(world, "AvailableParameters");
+    assert!(
+        world
+            .frame
+            .runs
+            .iter()
+            .any(|row| world.frame.is_popup_row(row) && row.text.starts_with(&name))
+    );
+    world.save_capture("distance-parameter-list");
+}
+
+#[then("the extrusion edit closes without changing the feature")]
+#[then("the accepted feature remains unchanged")]
+fn accepted_extrusion_stays_unchanged(world: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("Extrude").is_none());
+    assert_eq!(feature_count(world), 1);
+    assert_eq!(feature_distance(world), 8.);
+    assert!(!world.state().extrude_preview_active);
+}
+
+#[when("the user opens the Distance A editor menu and chooses Select Feature Dimension")]
+fn start_dimension_selection(world: &mut ApplicationWorld) {
+    open_distance_menu(world);
+    click_popup(world, "SelectFeatureDimension");
+}
+
+#[then("the status area asks the user to select a feature and then one of its dimensions")]
+fn status_prompts_for_dimension(world: &mut ApplicationWorld) {
+    let status: String = world
+        .window_text("##status-bar")
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect();
+    assert!(
+        status.contains("Selectafeatureandthenoneofitsdimensions."),
+        "{status}"
+    );
+    world.save_capture("choose-feature-dimension");
+}
+
+#[when("the user cancels the extrusion edit")]
+fn cancel_edit(world: &mut ApplicationWorld) {
+    click_window_label(world, "Extrude", "Cancel");
+}
+
+#[when("the user opens the Distance A editor menu and chooses Parameters")]
+fn open_parameter_panel(world: &mut ApplicationWorld) {
+    open_distance_menu(world);
+    click_popup(world, "Parameters");
+}
+
+#[then("a Parameters dialog opens for the active part")]
+fn part_parameter_panel_opens(world: &mut ApplicationWorld) {
+    world.run_in_window("Parameters", "ModelParameters");
+    let name = current_feature_parameter(world);
+    world.run_in_window("Parameters", &name);
+}
+
+#[then(
+    "the table includes parameter name, consumed-by, unit or type, equation, nominal value, tolerance and model value columns"
+)]
+fn table_headers(world: &mut ApplicationWorld) {
+    for caption in [
+        "Name",
+        "ConsumedBy",
+        "Unit",
+        "Equation",
+        "NominalValue",
+        "Tolerance",
+        "ModelValue",
+    ] {
+        world.run_in_window("Parameters", caption);
+    }
+    world.run_in_window("Parameters", "Extrusion1");
+    world.save_capture("distance-parameter-table");
+}
+
+#[then("the extrusion panel remains open")]
+fn distance_draft_remains_open(world: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("Parameters").is_none());
+    world.run_in_window("Extrude", "DistanceA");
+}
+
+fn current_feature_parameter(world: &mut ApplicationWorld) -> String {
+    feature_parameter(world, 0)
+}
+
+fn feature_parameter(world: &mut ApplicationWorld, index: usize) -> String {
+    let document = world.active_id();
+    let session = world
+        .app()
+        .owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap();
+    let snapshot = session.snapshot();
+    let parameter = snapshot.work_geometry.features()[index].owned_scalars()[0].parameter;
+    snapshot.parameters.get(parameter).unwrap().name.clone()
+}
+
+#[test]
+fn native_dimension_picker_inserts_a_feature_parameter_into_the_draft() {
+    let mut world = ApplicationWorld::new();
+    create_first_extrusion(&mut world);
+    click_text_native(&mut world, "Extrude");
+    replace_distance_native(&mut world, "12");
+    click_text_native(&mut world, "OK");
+    let driver = feature_parameter(&mut world, 1);
+    open_extrusion_editor(&mut world);
+    start_dimension_selection(&mut world);
+    click_text_native(&mut world, "Extrusion2");
+    click_window_label(&mut world, "Extrude", "Selectadimension");
+    let target = world
+        .frame
+        .runs
+        .iter()
+        .find(|row| world.frame.is_popup_row(row) && row.text.starts_with(&driver))
+        .expect("expected the second feature's dimension")
+        .center();
+    click_position(&mut world, target);
+    world.run_in_window("Extrude", &driver);
+    assert_eq!(feature_distance(&mut world), 8.);
+    cancel_edit(&mut world);
+    assert_eq!(feature_count(&mut world), 2);
+    assert_eq!(feature_distance(&mut world), 8.);
+    world.close();
+}
+
+fn popup_label<'w>(world: &'w ApplicationWorld, label: &str) -> &'w diagnostics::RenderedRun {
+    world
+        .frame
+        .runs
+        .iter()
+        .find(|row| world.frame.is_popup_row(row) && row.text == label)
+        .unwrap_or_else(|| {
+            panic!(
+                "expected {label} in the distance popup, saw {}",
+                world.text()
+            )
+        })
+}
+
+fn click_popup(world: &mut ApplicationWorld, label: &str) {
+    click_position(world, popup_label(world, label).center());
+}
+
+fn click_window_label(world: &mut ApplicationWorld, window: &str, label: &str) {
+    click_position(world, world.run_in_window(window, label).center());
+}
+
+fn click_position(world: &mut ApplicationWorld, point: [f32; 2]) {
+    x11_input::click(diagnostics::pointer_pixels(point));
+    world.pump(Vec::new());
+}

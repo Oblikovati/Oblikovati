@@ -408,6 +408,13 @@ fn opacity_rows(world: &mut ApplicationWorld) {
 #[when("I dismiss the list and click Cancel")]
 #[when("the user dismisses the list and clicks Cancel")]
 fn dismiss_cancel(world: &mut ApplicationWorld) {
+    if diagnostics::window_geometry("Extrude").is_some() {
+        world.escape();
+        let cancel = world.run_in_window("Extrude", "Cancel").center();
+        world.click(diagnostics::pointer_pixels(cancel));
+        world.pump(Vec::new());
+        return;
+    }
     world.click_text("Wheel Opacity");
     settle(world);
     world.expect_text(OPTIONS_TITLE);

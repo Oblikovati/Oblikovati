@@ -6,6 +6,9 @@ use imgui::{Key, Ui};
 use oblikovati_model::document_sketch::DocumentSketchId;
 #[path = "extrude_direction.rs"]
 mod direction;
+#[path = "extrude_distance_editor.rs"]
+mod distance_editor;
+pub(crate) use distance_editor::ExtrudePanelControls;
 #[path = "extrude_pending.rs"]
 mod pending;
 #[path = "extrude_reference.rs"]
@@ -19,6 +22,7 @@ pub(crate) struct ExtrudeDialog {
     sketch: Option<DocumentSketchId>,
     profile: i32,
     distance: String,
+    distance_editor: distance_editor::DistanceEditor,
     second_distance: String,
     direction: GuiExtrudeDirection,
     direction_style: direction::SelectorStyle,
@@ -51,6 +55,9 @@ impl ExtrudeDialog {
         registry.register::<Self>("Extrude", &self.dock_state)
     }
     fn set_document(&mut self, document: Option<u64>) {
+        if document.is_none() || self.document != document {
+            self.distance_editor = Default::default();
+        }
         self.document = document;
         self.dock_state.set_open(document.is_some());
     }
@@ -70,6 +77,7 @@ impl ExtrudeDialog {
         self.sketch = Some(seed.sketch);
         self.profile = 0;
         self.distance = seed.distance.clone();
+        self.distance_editor = Default::default();
         self.second_distance = seed.second_distance.clone().unwrap_or_default();
         self.direction = seed.direction;
         self.reference = Default::default();
@@ -96,6 +104,7 @@ impl ExtrudeDialog {
             });
             self.profile = 0;
             self.distance.clear();
+            self.distance_editor = Default::default();
             self.second_distance = "5 mm".into();
             self.direction = GuiExtrudeDirection::Positive;
             self.reference = Default::default();
@@ -120,8 +129,7 @@ impl ExtrudeDialog {
         state: &GuiCommandState,
         plane_active: bool,
         actions: &mut Vec<GuiShellAction>,
-        icons: &crate::icons::GuiRibbonIcons,
-        popup_was_open: bool,
+        controls: ExtrudePanelControls<'_>,
     ) {
         if let Some(sketch) = self.pending.observe(state, plane_active, actions) {
             self.set_document(state.document);
@@ -157,7 +165,7 @@ impl ExtrudeDialog {
             }
             edited |= ui.input_int("Profile", &mut self.profile).build();
             drop(disabled_sketch);
-            edited |= self.draw_extent(ui, icons);
+            edited |= self.draw_extent(ui, state, controls.icons, controls.parameters, actions);
             if edited {
                 self.commit_error = None;
             }
@@ -182,8 +190,9 @@ impl ExtrudeDialog {
                 ui.text_colored([1.0, 0.25, 0.25, 1.0], format!("Extrusion failed: {error}"));
             }
             // ImGui can dismiss a popup and restore dialog focus before drawing these buttons.
-            let shortcuts =
-                !popup_was_open && !crate::widget_abi::any_popup_open(ui) && ui.is_window_focused();
+            let shortcuts = !controls.popup_was_open
+                && !crate::widget_abi::any_popup_open(ui)
+                && ui.is_window_focused();
             self.controls(ui, state, document, edited, shortcuts, actions);
         });
         if !open {
@@ -194,29 +203,6 @@ impl ExtrudeDialog {
             self.set_document(None);
             self.edit_feature = None;
         }
-    }
-    fn draw_extent(&mut self, ui: &Ui, icons: &crate::icons::GuiRibbonIcons) -> bool {
-        let mut edited = false;
-        if self.reference.numeric() {
-            edited |= ui.input_text("Distance A", &mut self.distance).build();
-            edited |= self.direction_style.draw(
-                ui,
-                &mut self.direction,
-                self.edit_feature.is_some(),
-                icons,
-            );
-            if self.direction == GuiExtrudeDirection::Asymmetric {
-                edited |= direction::draw_second_distance(
-                    ui,
-                    &mut self.distance,
-                    &mut self.second_distance,
-                );
-            }
-        }
-        if self.edit_feature.is_none() {
-            edited |= self.reference.draw(ui);
-        }
-        edited
     }
     pub(super) fn awaits_reference_pick(&self) -> bool {
         self.document.is_some() && self.reference.awaits_pick()

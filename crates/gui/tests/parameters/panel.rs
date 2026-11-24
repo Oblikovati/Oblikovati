@@ -37,6 +37,8 @@ fn parameter_row(
         tolerance_text: String::new(),
         model_value_text: String::new(),
         has_groups: false,
+        is_length: true,
+        feature_consumers: Vec::new(),
         parameter,
         detail: ParameterDetail {
             parameter_info: ParameterInfo {

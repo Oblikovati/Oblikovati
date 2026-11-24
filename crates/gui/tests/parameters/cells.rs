@@ -22,6 +22,8 @@ impl ParameterCellWidgetFixture {
                 tolerance_text: String::new(),
                 model_value_text: String::new(),
                 has_groups: false,
+                is_length: true,
+                feature_consumers: Vec::new(),
                 parameter: 11,
                 detail: Default::default(),
             }],
@@ -118,6 +120,8 @@ fn panel_response_forwarding_retires_only_the_matching_text_request() {
             tolerance_text: String::new(),
             model_value_text: String::new(),
             has_groups: false,
+            is_length: true,
+            feature_consumers: Vec::new(),
             parameter: 11,
             detail: Default::default(),
         }],
@@ -140,6 +144,8 @@ fn choice_labels_retain_the_current_custom_expression_after_a_list_changes() {
         tolerance_text: String::new(),
         model_value_text: String::new(),
         has_groups: false,
+        is_length: true,
+        feature_consumers: Vec::new(),
         detail: Default::default(),
     };
     row.detail.parameter_info.expression = "custom".into();
@@ -307,6 +313,8 @@ fn value_list_menu_opens_or_clears_lists_and_hides_commands_on_boolean_and_read_
             tolerance_text: String::new(),
             model_value_text: String::new(),
             has_groups: false,
+            is_length: true,
+            feature_consumers: Vec::new(),
             parameter: 11,
             detail,
         });
@@ -379,6 +387,8 @@ fn tolerance_menu_is_available_only_for_editable_numeric_rows() {
             tolerance_text: String::new(),
             model_value_text: String::new(),
             has_groups: false,
+            is_length: true,
+            feature_consumers: Vec::new(),
             parameter: 11,
             detail: oblikovati_api::wire::ParameterDetail {
                 units: units.into(),
@@ -419,6 +429,8 @@ fn group_menu_offers_add_on_read_only_rows_and_remove_only_when_memberships_exis
             tolerance_text: String::new(),
             model_value_text: String::new(),
             has_groups: grouped,
+            is_length: true,
+            feature_consumers: Vec::new(),
         });
         fixture.frame(false, false, &[GuiInputEvent::PointerMoved([120., 120.])]);
         fixture.frame(true, false, &[]);
@@ -448,6 +460,8 @@ fn failed_parameter_values_keep_last_good_text_and_show_an_explicit_warning() {
         tolerance_text: String::new(),
         model_value_text: String::new(),
         has_groups: false,
+        is_length: true,
+        feature_consumers: Vec::new(),
     };
     row.detail.parameter_info.value = "80 mm".into();
     assert_eq!(parameter_value_label(&row), "80 mm");

@@ -147,10 +147,18 @@ pub(super) fn owner_parameter_snapshot<
         .session(document)
         .map_err(|cause| cause.to_string())?;
     let parameters = &session.snapshot().parameters;
+    let feature_consumers = feature_parameter_consumers(session.snapshot());
     let rows = parameters
         .ids()
         .iter()
-        .map(|id| projected_parameter_row(parameters, document, *id))
+        .map(|id| {
+            projected_parameter_row(
+                parameters,
+                document,
+                *id,
+                feature_consumers.get(id).map(Vec::as_slice),
+            )
+        })
         .collect::<Result<Vec<_>, String>>()?;
     let linked_tables = Client::new(FileQueryHost::new(files))
         .parameters()
@@ -252,12 +260,18 @@ fn projected_parameter_row(
     parameters: &ParameterCollection<u64>,
     document: u64,
     id: u64,
+    feature_consumers: Option<&[(oblikovati_model::feature::FeatureId, String)]>,
 ) -> Result<GuiParameterRow, String> {
     let detail = parameter_detail(parameters, id)
         .map_err(|cause| format!("GUI parameter ID {id} in document {document}: {cause}"))?;
     Ok(GuiParameterRow {
         parameter: id,
         detail,
+        is_length: parameters
+            .inspection_value(id)
+            .map_err(|cause| cause.to_string())?
+            .is_some_and(|value| value.dimension == oblikovati_model::quantity::Dimension::Length),
+        feature_consumers: feature_consumers.unwrap_or_default().to_vec(),
         tolerance_text: owner_tolerance_text(parameters, id)?,
         model_value_text: owner_model_value_text(parameters, id)?,
         has_groups: !parameters
@@ -265,6 +279,24 @@ fn projected_parameter_row(
             .map_err(|cause| cause.to_string())?
             .is_empty(),
     })
+}
+
+fn feature_parameter_consumers(
+    snapshot: &oblikovati_model::history::DocumentSnapshot,
+) -> std::collections::BTreeMap<u64, Vec<(oblikovati_model::feature::FeatureId, String)>> {
+    use oblikovati_model::feature::FeatureReadKey;
+    let mut consumers = std::collections::BTreeMap::<_, Vec<_>>::new();
+    for feature in snapshot.work_geometry.features() {
+        for key in feature.reads().keys() {
+            if let FeatureReadKey::Parameter(parameter) = key {
+                consumers
+                    .entry(*parameter)
+                    .or_default()
+                    .push((feature.id(), feature.name().to_owned()));
+            }
+        }
+    }
+    consumers
 }
 
 fn owner_model_value_text(

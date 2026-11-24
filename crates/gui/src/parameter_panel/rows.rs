@@ -20,6 +20,16 @@ pub(super) fn draw_parameter_row(
         actions,
     );
     ui.table_next_column();
+    let consumers = row.feature_consumers.iter().map(|(_, name)| name.as_str());
+    let dependents = row
+        .detail
+        .dependents
+        .as_deref()
+        .into_iter()
+        .flatten()
+        .map(String::as_str);
+    ui.text(consumers.chain(dependents).collect::<Vec<_>>().join(", "));
+    ui.table_next_column();
     ui.text(&row.detail.units);
     equation_cell(ui, document, row, editable, drafts, actions);
     ui.table_next_column();
