@@ -7,6 +7,9 @@ use oblikovati_gui::GuiAuthoringContext;
 #[given(
     "`fixtures/cad/planar-sketch-empty-xy.opd` is open with `Sketch1` being edited and the ribbon docked at the top"
 )]
+#[given(
+    "`fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited in the MCAD Software"
+)]
 fn open_top_docked_sketch(world: &mut ApplicationWorld) {
     let path = super::super::scenario_root().join("fixtures/cad/planar-sketch-empty-xy.opd");
     world.open_fixture(&path);

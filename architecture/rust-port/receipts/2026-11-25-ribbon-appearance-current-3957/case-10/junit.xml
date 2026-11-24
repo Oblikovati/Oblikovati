@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:31:21.657239421Z" time="32.964998258"><testcase name="Scenario: Share the panel-title setting between two ribbon tabs: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature:115:3" time="32.964998258"><system-out><![CDATA[  Scenario: Share the panel-title setting between two ribbon tabs
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon shows panel titles
+   ✔  When the user clears Show Panel Titles from the 3D Model tab context menu
+   ✔  And the user selects the Tools tab
+   ✔  Then the Tools panel titles are hidden
+   ✔  When the user opens the Tools tab context menu
+   ✔  Then Show Panel Titles is unchecked
+   ✔  When the user selects Show Panel Titles from that menu
+   ✔  Then the Tools panel titles appear
+   ✔  When the user returns to 3D Model
+   ✔  Then the 3D Model panel titles are visible
+]]></system-out></testcase></testsuite></testsuites>

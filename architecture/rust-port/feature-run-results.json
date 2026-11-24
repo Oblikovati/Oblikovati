@@ -582,36 +582,57 @@
     "notes": "All 23 scenarios and 253 steps passed. Strict receipt provenance remains open under #3978."
   },
   "features/application/ribbon-appearance/ribbon-appearance.feature": {
-    "feature_sha256": "7ebd05f3a8b347bd7eee5a132e7782ba9731a16f1bb0e8ac26a756fe5da312fa",
-    "supporting_files": {
-      "features/application/ribbon-appearance/BLOCKERS.md": "0799609e1e07e696b7e7d9671a1ef6c558f386d80c434252a1d81a8a9635744e",
-      "features/application/ribbon-appearance/FIXTURES.md": "d8875f4951d338e80447b55ff38bf06fc38eb8ecbbfc9a077184eaba434ee2df",
-      "features/application/ribbon-appearance/FUNCTIONAL.md": "a87820c34c5544dfc5de6b71580971b615f4dba3be43c752780b818a8404ce5c",
-      "features/application/ribbon-appearance/VISUAL.md": "81ab2112301ee140c1784b57fc645aaa7100c581ed8978ea0756079ff93aa7a2",
-      "features/application/ribbon-appearance/appearance-layouts.svg": "a1b1ab60ddd8ce04ce267a892e138732d11b1c3b077ab0df51d003f1712b1cfe",
-      "features/application/ribbon-appearance/appearance-menu-tab-switch.svg": "87f1bac14cf68480636935d6e1fa7c29ed699c90768790ed288eaf227a95d72c",
-      "features/application/ribbon-appearance/appearance-modes-sketch.svg": "31fbb0d83ed14207d9d053832c3d9ab40c51a2f05ad78d9205dd41b624cd1bb8",
-      "features/application/ribbon-appearance/appearance-panel-submenu-switch.svg": "824d9237946f88271bdf4dd912e26ef0fcea9a2801466a214d2e0ed0061efee4",
-      "features/application/ribbon-appearance/inactive-tab-titles.svg": "a98723ff2ee0d5c36e0b6514bd396fe615261874eb317e39d8e037bb27944e4e",
-      "features/application/ribbon-appearance/panel-title-visibility.svg": "3787d4a16dbe3f5b3f1c963e0c86d68e060d1fad1de0d252af27eb7175a6aad6",
-      "features/application/ribbon-appearance/pinned-expansion-appearance.svg": "4fbfec49cd905874cfb66fb3caa3578600e218eaa5b6dd2dcacbe024f68af987",
-      "features/application/ribbon-appearance/reference/team-web-landing-2026-11-20.jpg": "b08464e6d4ee06a5eb8000deaf255b412f36d92b0cebb8d27d1979fa5bffa9cc",
-      "features/application/ribbon-appearance/reference/tools-show-panels-2026-11-20.jpg": "2d310f90eee920ebf4ddb2fed5550ef4f1ada7aaaaa1000e3f972245dc1f1462",
-      "features/application/ribbon-appearance/reference/tools-tutorials-panel-2026-11-20.jpg": "e61192f98aea586819e6f46c311f49c4238b5e1ace086993a290756a7363798f",
-      "features/application/ribbon-appearance/reset-cancel.svg": "ee5716cc03896af6cdc04d708d8537ef7ed6d5033df63efe82ca666118fc33c4",
-      "features/application/ribbon-appearance/reset-entry-hover.svg": "e46ea0391d8b37385d9fbf6b584e84ce4813223bb0e6fc3ffd211fce98eb49b1",
-      "features/application/ribbon-appearance/text-off-tab-switch.svg": "51d32e76cf907ebc51824930746035a8eac9b7b17f02d2fc5d69863f26ce0cc3"
-    },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-complete-3957/cucumber.json",
-    "cucumber_sha256": "debf942c5cdb8003bc2490902d1165561d39351ae01963b209f9b6762ea67434",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-complete-3957/scenario-arguments.json",
-    "scenario_arguments_sha256": "630583388ec93969c50ff0a8867d18b566fd4a8d88e111bd4344ee76ebba8b68",
-    "application_commit": "07a996c9a17f792bd54b814bbd229e86f28dabdf",
-    "command": "Full Ribbon Appearance run on the pinned feature. See the receipt README.",
-    "environment": "Linux X11, Xvfb 1600x1200 and Vulkan Lavapipe",
-    "notes": "All 18 cases and 201 steps passed. Pinned and live feature hashes matched. Strict verification still needs bounded build and runtime inputs under #3978.",
-    "scenario_inventory": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-complete-3957/scenario-inventory.json",
-    "scenario_inventory_sha256": "8a616afb8082eed961217b8642d5b966700c706af719392eac0af8434d152ebf"
+    "by_source_sha256": {
+      "7ebd05f3a8b347bd7eee5a132e7782ba9731a16f1bb0e8ac26a756fe5da312fa": {
+        "feature_sha256": "7ebd05f3a8b347bd7eee5a132e7782ba9731a16f1bb0e8ac26a756fe5da312fa",
+        "supporting_files": {
+          "features/application/ribbon-appearance/BLOCKERS.md": "0799609e1e07e696b7e7d9671a1ef6c558f386d80c434252a1d81a8a9635744e",
+          "features/application/ribbon-appearance/FIXTURES.md": "d8875f4951d338e80447b55ff38bf06fc38eb8ecbbfc9a077184eaba434ee2df",
+          "features/application/ribbon-appearance/FUNCTIONAL.md": "a87820c34c5544dfc5de6b71580971b615f4dba3be43c752780b818a8404ce5c",
+          "features/application/ribbon-appearance/VISUAL.md": "81ab2112301ee140c1784b57fc645aaa7100c581ed8978ea0756079ff93aa7a2",
+          "features/application/ribbon-appearance/appearance-layouts.svg": "a1b1ab60ddd8ce04ce267a892e138732d11b1c3b077ab0df51d003f1712b1cfe",
+          "features/application/ribbon-appearance/appearance-menu-tab-switch.svg": "87f1bac14cf68480636935d6e1fa7c29ed699c90768790ed288eaf227a95d72c",
+          "features/application/ribbon-appearance/appearance-modes-sketch.svg": "31fbb0d83ed14207d9d053832c3d9ab40c51a2f05ad78d9205dd41b624cd1bb8",
+          "features/application/ribbon-appearance/appearance-panel-submenu-switch.svg": "824d9237946f88271bdf4dd912e26ef0fcea9a2801466a214d2e0ed0061efee4",
+          "features/application/ribbon-appearance/inactive-tab-titles.svg": "a98723ff2ee0d5c36e0b6514bd396fe615261874eb317e39d8e037bb27944e4e",
+          "features/application/ribbon-appearance/panel-title-visibility.svg": "3787d4a16dbe3f5b3f1c963e0c86d68e060d1fad1de0d252af27eb7175a6aad6",
+          "features/application/ribbon-appearance/pinned-expansion-appearance.svg": "4fbfec49cd905874cfb66fb3caa3578600e218eaa5b6dd2dcacbe024f68af987",
+          "features/application/ribbon-appearance/reference/team-web-landing-2026-11-20.jpg": "b08464e6d4ee06a5eb8000deaf255b412f36d92b0cebb8d27d1979fa5bffa9cc",
+          "features/application/ribbon-appearance/reference/tools-show-panels-2026-11-20.jpg": "2d310f90eee920ebf4ddb2fed5550ef4f1ada7aaaaa1000e3f972245dc1f1462",
+          "features/application/ribbon-appearance/reference/tools-tutorials-panel-2026-11-20.jpg": "e61192f98aea586819e6f46c311f49c4238b5e1ace086993a290756a7363798f",
+          "features/application/ribbon-appearance/reset-cancel.svg": "ee5716cc03896af6cdc04d708d8537ef7ed6d5033df63efe82ca666118fc33c4",
+          "features/application/ribbon-appearance/reset-entry-hover.svg": "e46ea0391d8b37385d9fbf6b584e84ce4813223bb0e6fc3ffd211fce98eb49b1",
+          "features/application/ribbon-appearance/text-off-tab-switch.svg": "51d32e76cf907ebc51824930746035a8eac9b7b17f02d2fc5d69863f26ce0cc3"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-complete-3957/cucumber.json",
+        "cucumber_sha256": "debf942c5cdb8003bc2490902d1165561d39351ae01963b209f9b6762ea67434",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-complete-3957/scenario-arguments.json",
+        "scenario_arguments_sha256": "630583388ec93969c50ff0a8867d18b566fd4a8d88e111bd4344ee76ebba8b68",
+        "application_commit": "07a996c9a17f792bd54b814bbd229e86f28dabdf",
+        "command": "Full Ribbon Appearance run on the pinned feature. See the receipt README.",
+        "environment": "Linux X11, Xvfb 1600x1200 and Vulkan Lavapipe",
+        "notes": "All 18 cases and 201 steps passed. Pinned and live feature hashes matched. Strict verification still needs bounded build and runtime inputs under #3978.",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-20-ribbon-appearance-complete-3957/scenario-inventory.json",
+        "scenario_inventory_sha256": "8a616afb8082eed961217b8642d5b966700c706af719392eac0af8434d152ebf"
+      },
+      "8f7a78d393c0fd4acf70c20b2aadb3a2cb7d6b2372fc0d8c0c34e6b3dfdb774b": {
+        "feature_sha256": "8f7a78d393c0fd4acf70c20b2aadb3a2cb7d6b2372fc0d8c0c34e6b3dfdb774b",
+        "supporting_files": {
+          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9",
+          "fixtures/cad/planar-sketch-empty-xy.opd": "d936ef6b165b4bcbe14e04ac1b08bb5b16c81fddb597e70acb781e753c07e9a8"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-25-ribbon-appearance-current-3957/cucumber.json",
+        "cucumber_sha256": "8d32117a686cfa62b69a20e203b982a05305a971e7bfd3df971eb4bf6cac7cb7",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-ribbon-appearance-current-3957/scenario-inventory.json",
+        "scenario_inventory_sha256": "6e6b4175c5b14d2170a0ffe1b56838c2e66b866549e5532c71cda7f57b7efc78",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-ribbon-appearance-current-3957/scenario-arguments.json",
+        "scenario_arguments_sha256": "84979bc9667047620536b958abe1c611c19490880cebaed29b69267e78001bf4",
+        "application_commit": "0479c942e1f15b808a6cee9902e07f7aaaebf2aa",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-appearance OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All eighteen current scenarios passed with the published native Parts. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   },
   "features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature": {
     "by_source_sha256": {

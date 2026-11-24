@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:27:56.0174194Z" time="34.657134114"><testcase name="Scenario: Use large ribbon commands and restore normal appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature:46:3" time="34.657134114"><system-out><![CDATA[  Scenario: Use large ribbon commands and restore normal appearance
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Compact appearance
+   ✔  When the user selects "Large" from the Ribbon Appearance submenu
+   ✔  Then larger command icons appear in two rows without visible command labels
+   ✔  And panel titles remain visible
+   ✔  When the user reopens the Ribbon Appearance submenu
+   ✔  Then "Large" is marked as selected
+   ✔  When the user selects "Normal"
+   ✔  Then the ribbon shows its mixed-size icons and command labels again
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

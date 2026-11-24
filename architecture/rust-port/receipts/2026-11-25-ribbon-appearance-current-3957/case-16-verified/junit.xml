@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:37:17.771245979Z" time="71.33228761"><testcase name="Scenario: Apply Reset Ribbon after confirming: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature:211:3" time="71.33228761"><system-out><![CDATA[  Scenario: Apply Reset Ribbon after confirming
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active with the full Tools ribbon selected in the MCAD Software
+   ✔  And Team Web is disabled while Tutorials and User Commands are enabled in Show Panels
+   ✔  When the user right-clicks the Options panel title
+   ✔  And the user opens Ribbon Appearance
+   ✔  And the user selects Reset Ribbon
+   ✔  Then a confirmation says ribbon customizations will be removed
+   ✔  And the confirmation offers Yes and No
+   ✔  When the user selects Yes
+   ✔  Then the confirmation closes
+   ✔  And the 3D Model tab becomes active with its full command groups
+   ✔  When the user selects Tools
+   ✔  Then the Tools ribbon displays its standard groups with Team Web visible and Tutorials and User Commands hidden
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

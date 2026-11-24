@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:31:55.541442558Z" time="31.597349697"><testcase name="Scenario: Switch tabs while the appearance submenu is open: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature:129:3" time="31.597349697"><system-out><![CDATA[  Scenario: Switch tabs while the appearance submenu is open
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon uses the Normal appearance
+   ✔  And the Ribbon Appearance submenu is open from a panel context menu
+   ✔  When the user clicks the Tools tab
+   ✔  Then the appearance submenu and panel context menu close
+   ✔  And the Tools ribbon is displayed
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -79,13 +79,12 @@ using this status; the live scenario directory can change.
   selected-point preview median was 14.182 ms before rendering; GUI frame rate
   remains unverified. See `receipts/2026-11-20-picked-point-4179/` and
   `receipts/2026-11-20-midpoint-line-4178/`.
-- Ribbon Appearance (#3957) passed all 18 pinned desktop scenarios and 201
-  steps. The pinned and live feature hashes match. Team Web opens a dockable
-  window and hands the documentation URL to the system browser. The foreground
-  X11 check used MCPBridge and captured the same Part before and after.
-  See `receipts/2026-11-20-ribbon-appearance-complete-3957/`. All 18 scenarios
-  have R0 baseline records. Strict acceptance still requires bounded build
-  and runtime inputs under #3978.
+- Ribbon Appearance (#3957) passed all 18 current scenarios and 201 steps.
+  See the [current run](receipts/2026-11-25-ribbon-appearance-current-3957/README.md).
+  The [earlier run](receipts/2026-11-20-ribbon-appearance-complete-3957/README.md)
+  includes the pinned scenarios and the X11 Team Web launch check.
+  All 18 pinned scenarios have R0 baseline records. Strict acceptance
+  requires bounded build and runtime inputs under #3978.
 - Ribbon Command Availability (#3956) passed all five current scenarios and
   39 steps with the published Part, Assembly, and Drawing. See the
   [current run](receipts/2026-11-24-ribbon-command-availability-current-3956/README.md).

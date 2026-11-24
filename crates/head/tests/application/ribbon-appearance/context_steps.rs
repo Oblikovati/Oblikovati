@@ -4,6 +4,15 @@ use super::*;
 use cucumber::{given, then, when};
 
 const MODIFY_AREA: &str = "##ribbon-additional-PartModify";
+
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` is open and active with the full 3D Model ribbon selected in the MCAD Software"
+)]
+fn saved_part_with_model_ribbon(world: &mut ApplicationWorld) {
+    super::super::workspace_layout::native_part::open_named_extrusion(world);
+    world.expect_text("Extrude");
+}
+
 fn area_geometry() -> ([f32; 2], [f32; 2]) {
     diagnostics::window_geometry(MODIFY_AREA).expect("expected the open Modify area")
 }

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:29:01.057618154Z" time="71.052275694"><testcase name="Scenario: Dismiss the appearance submenu without changing the ribbon: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature:70:3" time="71.052275694"><system-out><![CDATA[  Scenario: Dismiss the appearance submenu without changing the ribbon
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full Tools ribbon uses the Normal appearance
+   ✔  And Team Web, Tutorials, and User Commands are enabled in Show Panels
+   ✔  When the user right-clicks the Options panel title and opens "Ribbon Appearance"
+   ✔  And the user presses Escape
+   ✔  Then the appearance submenu closes and the panel context menu remains open
+   ✔  When the user presses Escape again
+   ✔  Then the panel context menu closes
+   ✔  And the Tools ribbon remains in the Normal appearance
+]]></system-out></testcase></testsuite></testsuites>

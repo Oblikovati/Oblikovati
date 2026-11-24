@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:32:27.906908212Z" time="109.511141097"><testcase name="Scenario: Switch between appearance and panel visibility submenus: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature:139:3" time="109.511141097"><system-out><![CDATA[  Scenario: Switch between appearance and panel visibility submenus
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full Tools ribbon uses the Normal appearance
+   ✔  And Team Web, Tutorials, and User Commands are enabled in Show Panels
+   ✔  And Team Web, Tutorials, and User Commands are enabled in Show Panels
+   ✔  When the user right-clicks the Options panel title
+   ✔  And the user opens the Ribbon Appearance submenu
+   ✔  Then Normal is marked as selected
+   ✔  When the user opens Show Panels from the same context menu
+   ✔  Then the appearance submenu closes
+   ✔  And the Show Panels submenu lists Measure, Material and Appearance, Options, Clipboard, Find, Team Web, Tutorials, and User Commands with visibility checks
+   ✔  And Team Web, Tutorials, and User Commands are checked in the captured panel state
+   ✔  And the panel context menu remains open
+   ✔  When the user opens Ribbon Appearance again
+   ✔  Then the Show Panels submenu closes
+   ✔  And Normal is still marked as selected
+   ✔  When the user clicks empty viewport space
+   ✔  Then both menus close
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

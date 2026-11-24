@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" package="testsuite/Feature: Ribbon appearance: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:30:51.712300798Z" time="29.179012901"><testcase name="Scenario: Hide panel titles while retaining access to additional commands: target/native-scratch.HSqCy5/current-ribbon-appearance-source/features/application/ribbon-appearance/ribbon-appearance.feature:97:3" time="29.179012901"><system-out><![CDATA[  Scenario: Hide panel titles while retaining access to additional commands
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the full 3D Model ribbon shows panel titles
+   ✔  When the user opens the 3D Model tab context menu
+   ✔  And the user clears Show Panel Titles
+   ✔  Then the ribbon panel titles are hidden
+   ✔  And the main panel commands remain visible
+   ✔  And the Modify panel expansion arrow remains visible
+   ✔  When the user clicks the Modify panel expansion arrow
+   ✔  Then the Modify additional-command area opens
+   ✔  And the area shows Move Bodies, Bend Part, and Copy Object
+   ✔  When the user opens the 3D Model tab context menu
+   ✔  Then Show Panel Titles is unchecked
+   ✔  When the user selects Show Panel Titles
+   ✔  Then the panel titles return
+   ✔  And the additional-command area closes
+]]></system-out></testcase></testsuite></testsuites>

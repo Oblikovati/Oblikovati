@@ -5,6 +5,21 @@ use super::*;
 #[given("a part is active in the MCAD Software with the full Tools ribbon selected")]
 fn part_with_tools(world: &mut ApplicationWorld) {
     world.previous_document = Some(open_appearance_part(world));
+    select_full_tools(world);
+}
+
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` is open and active with the full Tools ribbon visible in the MCAD Software"
+)]
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` is open and active with the full Tools ribbon selected in the MCAD Software"
+)]
+fn saved_part_with_tools(world: &mut ApplicationWorld) {
+    super::super::workspace_layout::native_part::open_named_extrusion(world);
+    select_full_tools(world);
+}
+
+fn select_full_tools(world: &mut ApplicationWorld) {
     select_tab(world, "Tools");
     world.expect_text("Application Options");
 }
