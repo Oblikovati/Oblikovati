@@ -221,7 +221,7 @@ fn tools_document_settings_edit_the_active_part_units() {
         "in"
     };
     world.click_text("Document Settings");
-    world.expect_text("Length precision");
+    select_document_units(&mut world);
     world.click_text(&units.length_unit);
     world.click_text(selected);
     assert_eq!(
@@ -298,6 +298,7 @@ fn document_settings_cancel_discards_staged_unit_edits() {
         "in"
     };
     world.click_text("Document Settings");
+    select_document_units(&mut world);
     world.click_text(&before.length_unit);
     world.click_text(selected);
     world.click_text("Cancel");
@@ -310,9 +311,21 @@ fn document_settings_cancel_discards_staged_unit_edits() {
         .unwrap();
     assert_eq!(after, before, "Cancel must discard the full staged edit");
     world.click_text("Document Settings");
+    assert!(
+        world
+            .window_text("Document Settings")
+            .contains("PartMaterial:")
+    );
+    select_document_units(&mut world);
     world.expect_text(&before.length_unit);
     world.click_text("Close");
     world.close();
+}
+
+fn select_document_units(world: &mut ApplicationWorld) {
+    let tab = world.run_in_window("Document Settings", "Units").center();
+    world.click(super::super::diagnostics::pointer_pixels(tab));
+    world.expect_text("Length precision");
 }
 
 #[test]
@@ -338,7 +351,7 @@ fn compact_tools_closes_its_panel_when_document_settings_opens() {
     world.pump(vec![button(true)]);
     world.expect_text("Document Settings");
     world.pump(vec![button(false)]);
-    world.expect_text("Length precision");
+    world.run_in_window("Document Settings", "Standard");
     world.click_text("Close");
     world.expect_no_text("Length precision");
     world.expect_no_text("Document Settings");
@@ -354,7 +367,7 @@ fn tabs_only_tools_closes_temporary_commands_after_opening_settings() {
     world.click_text("Tools");
     world.expect_text("Document Settings");
     world.click_text("Document Settings");
-    world.expect_text("Length precision");
+    world.run_in_window("Document Settings", "Standard");
     world.expect_no_text("Application Options");
     world.click_text("Close");
     world.expect_no_text("Length precision");
@@ -420,6 +433,6 @@ fn document_settings_is_unavailable_while_home_is_in_front() {
     world.expect_no_text("Length precision");
     world.click_tab(world.previous_document.unwrap());
     world.click_text("Document Settings");
-    world.expect_text("Length precision");
+    world.run_in_window("Document Settings", "Standard");
     world.close();
 }

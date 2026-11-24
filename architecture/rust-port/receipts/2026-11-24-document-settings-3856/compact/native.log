@@ -1,0 +1,19 @@
+
+running 1 test
+Feature: Ribbon display modes
+  Scenario: Launch document settings from a width-compacted ribbon panel
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon displayed
+   ✔  And the narrow window shows Options as a compact panel button
+   ✔  When the user opens the Options panel
+   ✔  And the user selects Document Settings
+   ✔  Then the Document Settings dialog opens for the active part
+   ✔  When the user closes the dialog without changing settings
+   ✔  Then the dialog and temporary Options panel are closed
+   ✔  And the Tools ribbon and part remain visible
+[Summary]
+1 feature
+1 scenario (1 passed)
+8 steps (8 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 15.71s

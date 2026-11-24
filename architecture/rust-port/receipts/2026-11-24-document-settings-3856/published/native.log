@@ -1,0 +1,20 @@
+
+running 1 test
+Feature: Ribbon display modes
+  Scenario: Open Document Settings from the full Tools ribbon
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open with the full Tools ribbon displayed in the MCAD Software
+   ✔  When the user selects Document Settings
+   ✔  Then the active part's Document Settings dialog opens
+   ✔  And the dialog shows Standard, Units, Sketch, Modeling, Bill of Materials and Default Tolerance tabs
+   ✔  And Standard is the selected tab
+   ✔  And Close is available while Cancel and Apply are unavailable
+   ✔  When the user closes the dialog without changing settings
+   ✔  Then the dialog closes
+   ✔  And the Tools ribbon and active part remain visible
+[Summary]
+1 feature
+1 scenario (1 passed)
+9 steps (9 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 15.94s

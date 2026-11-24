@@ -10410,8 +10410,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow."
+      "go_reference": "Go aa8297d1b: head/ui/units_settings_window.go and head/ui/units_settings_window_test.go.",
+      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow.",
+      "go_test_premise": "The Go units window and its test cover document unit controls. The benchmark specifies the Standard page and initial button states.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The case opens and closes settings without invoking a modeling operation.",
+      "platforms": "Linux X11, Xvfb, Openbox and Vulkan Lavapipe. Other platforms were not checked.",
+      "kernel_integration": "The GUI reads the active document through the owner and leaves its native viewport open.",
+      "rust_tests": "application_scenarios_use_the_native_window: Open Document Settings from the full Tools ribbon",
+      "oracle": "The pinned native case checks the rendered dialog, selected page content, action availability and active Part. See receipts/2026-11-24-document-settings-3856/pinned/cucumber.json.",
+      "expected_result": "Document Settings opens for the active Part with Standard selected, all six section names visible and only Close enabled. Closing keeps the full Tools ribbon and Part visible.",
+      "baseline_source_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e"
     },
     {
       "id": "scenario:276250805980c5bb54d0da6c7fd0d84815e4f7750e0837f25b0f97d73d7a37d4",

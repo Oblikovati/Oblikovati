@@ -1,0 +1,12 @@
+
+running 8 tests
+test frames::gui::tests::document_settings::changed_parent_draft_is_rejected_before_document_owner_is_called ... ok
+test frames::gui::tests::document_settings::document_settings_acknowledges_noop_and_owner_failure ... ok
+test frames::gui::tests::document_settings::unavailable_gui_state_is_reported_before_document_owner_is_called ... ok
+test native::gui_loop_tests::application_bdd::ribbon_display::wheel_tools::compact_tools_closes_its_panel_when_document_settings_opens ... ok
+test native::gui_loop_tests::application_bdd::ribbon_display::wheel_tools::document_settings_cancel_discards_staged_unit_edits ... ok
+test native::gui_loop_tests::application_bdd::ribbon_display::wheel_tools::document_settings_is_unavailable_while_home_is_in_front ... ok
+test native::gui_loop_tests::application_bdd::ribbon_display::wheel_tools::tools_document_settings_edit_the_active_part_units ... ok
+test native::gui_loop_tests::application_bdd::sketch::constraint_settings_application_options::changed_document_settings_cannot_be_overwritten_by_a_stale_dialog ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 1610 filtered out; finished in 82.09s

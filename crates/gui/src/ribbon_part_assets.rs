@@ -37,6 +37,26 @@ fn asset_row(
         queue_asset(state, kind, &id, actions);
     }
 }
+
+/// Show the active Part's current assignments in Document Settings.
+pub(crate) fn document_asset_summary(ui: &Ui, state: &GuiCommandState) {
+    let Some(browser) = state.browser.as_ref().filter(|browser| {
+        matches!(
+            browser.kind,
+            crate::GuiBrowserKind::Part | crate::GuiBrowserKind::SheetMetal
+        )
+    }) else {
+        ui.text_disabled("Part assignments unavailable");
+        return;
+    };
+    for kind in [GuiPartAssetKind::Material, GuiPartAssetKind::Appearance] {
+        let (label, selected, choices) = row_choices(browser, kind);
+        ui.text(format!(
+            "Part {label}: {}",
+            asset_preview(choices, selected)
+        ));
+    }
+}
 /// Choose one named asset; example: `asset_combo(ui, "Material", current, choices)`.
 pub(crate) fn asset_combo(
     ui: &Ui,

@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added the Standard overview and Units tab to Document Settings. (#3856)
+
 - Added a Tools Options expansion with a ribbon layout reset confirmation. (#3856)
 
 - Added a curvature comb and live density and scale settings for sketch ellipses. (#3995)
