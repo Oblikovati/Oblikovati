@@ -60,6 +60,11 @@ sketch Get starts zero named replays even when another sketch in the same Part
 uses a face. A Get for the face sketch still fetches current owner datums.
 List requests check the dependencies of every sketch they return.
 See the [sketch inspection replay receipt](receipts/2026-11-24-sketch-inspection-replay-4079/README.md).
+The desktop's dimension count uses that same dependency check and reuses
+current datums under the document's policy. Cold read-only inspection uses the
+session's generation-sealed replay request and leaves the transaction and
+published results intact. See the
+[native sketch support cases](receipts/2026-11-24-owned-sketch-datums-4079/README.md).
 
 Run `CARGO_NET_OFFLINE=true make gate` for the complete local Linux checks.
 

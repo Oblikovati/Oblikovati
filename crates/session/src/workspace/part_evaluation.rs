@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::SessionCommands;
+use super::{SessionCommands, WorkspaceObserver, WorkspaceSession};
 use crate::{
     TransactionObserver,
     part_evaluation::{
@@ -8,6 +8,25 @@ use crate::{
         PartEvaluationRequest, PartEvaluationSlot, PartSketchAdoptionError,
     },
 };
+
+impl<O: TransactionObserver, W: WorkspaceObserver> WorkspaceSession<O, W> {
+    /// Inspect sketch datums from the live generation without publishing a part result.
+    /// Example: `workspace.inspect_part_sketch_datums(document, policy)?`.
+    pub fn inspect_part_sketch_datums(
+        &self,
+        document: u64,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+    ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String> {
+        let guid = self
+            .identity(document)
+            .map_err(|error| error.to_string())?
+            .internal_name;
+        self.session(document)
+            .map_err(|error| error.to_string())?
+            .inspect_owned_sketch_datums(guid, policy)
+    }
+}
+
 impl<O: TransactionObserver> SessionCommands<'_, O> {
     pub(crate) fn ensure_owned_checkpoints(
         &mut self,

@@ -8,19 +8,18 @@ pub(crate) fn query_reads_work_geometry(
     method: &str,
     request: &[u8],
 ) -> Result<bool, Error> {
-    let reads_work_geometry = |sketch: &PlacedSketch| {
-        Ok(!sketch.point_projections().is_empty()
-            || snapshot
-                .sketch_plane_needs_work_geometry(sketch.id())
-                .map_err(api_error)?)
+    let reads_work_geometry = |id| {
+        snapshot
+            .sketch_inspection_needs_work_geometry(id)
+            .map_err(api_error)
     };
     if method == METHOD_SKETCH_GET {
         let args: SketchArgs = crate::decode(method, request)?;
         let id = sketch_at(snapshot, args.sketch_index)?;
-        return reads_work_geometry(snapshot.sketches.get(id).map_err(api_error)?);
+        return reads_work_geometry(id);
     }
     for sketch in snapshot.sketches.sketches() {
-        if reads_work_geometry(sketch)? {
+        if reads_work_geometry(sketch.id())? {
             return Ok(true);
         }
     }

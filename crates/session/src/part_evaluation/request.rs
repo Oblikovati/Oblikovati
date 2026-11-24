@@ -60,6 +60,16 @@ pub struct CompletedPartSketchRecompute<Body, Failure> {
     pub(super) part: CompletedPartEvaluation<Body, Failure>,
     pub(super) sketches: oblikovati_model::document_sketch::DocumentSketches,
 }
+impl<Body, Failure> CompletedPartSketchRecompute<Body, Failure> {
+    pub(crate) fn inspection_datums<O: TransactionObserver>(
+        &self,
+        session: &DocumentSession<O>,
+    ) -> Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, PartEvaluationError>
+    {
+        self.part.validate(session)?;
+        Ok(self.part.evaluation.datum_evaluation())
+    }
+}
 /// A sealed completed receipt. Only its session can publish it into result storage.
 pub struct CompletedPartEvaluation<Body, Failure> {
     pub(super) document: u64,

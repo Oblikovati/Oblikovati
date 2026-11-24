@@ -181,6 +181,8 @@
 
 - Avoided replaying a part when inspecting an independent sketch. (#4079)
 
+- Reused current part results for the sketch dimension count. (#4079)
+
 - Listed Rule Log and Rule Automation as disabled in the View menu. (#4185)
 
 - Enabled existing sketch placement tools from the Part ribbon when the part has one planar sketch. (#3956)

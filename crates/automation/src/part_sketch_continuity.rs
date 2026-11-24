@@ -97,16 +97,9 @@ impl PartSketchContinuity {
         if let Some(datums) = self.cached_datums(workspace, document)? {
             return Ok(datums);
         }
-        let session = workspace
-            .session(document)
-            .map_err(|error| oblikovati_api::Error(error.to_string()))?;
-        Self::new(
-            self.document,
-            self.resolution,
-            session.sketch_solve_options(),
-        )
-        .datums(session.history())
-        .map_err(oblikovati_api::Error)
+        workspace
+            .inspect_part_sketch_datums(document, self.resolution)
+            .map_err(oblikovati_api::Error)
     }
     /// Replay the current history for read-only sketch inspection.
     /// Example: `resolver.datums(history)?` before reading sketch health.

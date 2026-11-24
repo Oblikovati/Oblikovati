@@ -4,6 +4,7 @@ use crate::{DocumentSession, TransactionObserver};
 use oblikovati_martensite::{
     CertifiedNamedSolidEvaluator, EvaluationFailure, NamedSolid, PrismResolutionPolicy,
 };
+use oblikovati_model::feature::work_geometry::WorkGeometryEvaluation;
 use oblikovati_model::identity::DocumentGuid;
 
 type SketchRecompute =
@@ -17,7 +18,8 @@ impl<O: TransactionObserver> DocumentSession<O> {
         attempts: &mut u64,
     ) -> Result<(), String> {
         if self.snapshot().requires_named_part_replay() {
-            let completed = self.recompute_owned_sketches(document, policy, attempts)?;
+            *attempts = attempts.saturating_add(1);
+            let completed = self.recompute_owned_sketches(document, policy)?;
             if self.adopt_owned_sketches(policy, completed)? {
                 return Ok(());
             }
@@ -25,15 +27,23 @@ impl<O: TransactionObserver> DocumentSession<O> {
         self.recompute_owned_full_part(document, policy, attempts)
     }
 
+    pub(crate) fn inspect_owned_sketch_datums(
+        &self,
+        document: DocumentGuid,
+        policy: Option<PrismResolutionPolicy>,
+    ) -> Result<WorkGeometryEvaluation, String> {
+        self.recompute_owned_sketches(document, policy)?
+            .inspection_datums(self)
+            .map_err(|error| error.to_string())
+    }
+
     fn recompute_owned_sketches(
         &self,
         document: DocumentGuid,
         policy: Option<PrismResolutionPolicy>,
-        attempts: &mut u64,
     ) -> Result<SketchRecompute, String> {
         let mut evaluator =
             CertifiedNamedSolidEvaluator::with_optional_policy(self.history(), document, policy);
-        *attempts = attempts.saturating_add(1);
         self.prepare_part_evaluation()
             .recompute_sketches(&mut evaluator, self.sketch_solve_options())
             .map_err(|error| error.to_string())

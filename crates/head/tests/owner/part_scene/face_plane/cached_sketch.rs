@@ -184,7 +184,8 @@ fn sketch_inspection_reuses_only_current_matching_datums() {
         .unwrap();
     let workspace = owner.files.workspace();
     let session = workspace.session(document).unwrap();
-    assert!(session.generation() > original_generation);
+    let draft_generation = session.generation();
+    assert!(draft_generation > original_generation);
     assert!(
         resolver
             .cached_datums(workspace, document)
@@ -197,7 +198,18 @@ fn sketch_inspection_reuses_only_current_matching_datums() {
         .resolve_sketch_plane_with_datums(sketch, &draft)
         .unwrap();
     assert!((plane.recipe().origin[2] - 4.).abs() < 1e-9);
+    assert_eq!(session.generation(), draft_generation);
+    assert!(session.in_transaction());
+    assert!(resolver.cached_datums(workspace, document).unwrap().is_none());
     owner.files.commands(document).unwrap().abort().unwrap();
+    let workspace = owner.files.workspace();
+    let session = workspace.session(document).unwrap();
+    let datums = resolver.datums_for_document(workspace, document).unwrap();
+    let restored = session
+        .snapshot()
+        .resolve_sketch_plane_with_datums(sketch, &datums)
+        .unwrap();
+    assert!((restored.recipe().origin[2] - 2.).abs() < 1e-9);
     owner
         .files
         .commands(document)

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: New sketch: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/sketch/new-sketch/scenario.feature" package="testsuite/Feature: New sketch: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/sketch/new-sketch/scenario.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T14:00:03.310449674Z" time="22.980022216"><testcase name="Scenario: new-sketch-07 Create an empty sketch on a planar solid face: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/sketch/new-sketch/scenario.feature:45:3" time="22.980022216"><system-out><![CDATA[  Scenario: new-sketch-07 Create an empty sketch on a planar solid face
+   ✔  Given isolated Part3 contains a 10 mm rectangular extrusion
+   ✔  When the user invoke Start 2D Sketch and select its broad planar face
+   ✔  Then Sketch2 is added in the Sketch editing environment
+   ✔  And FRONT view and empty Fully Constrained status are displayed
+   ✔  When the user choose Finish Sketch
+   ✔  Then Sketch2 is retained beside Extrusion1
+]]></system-out></testcase></testsuite></testsuites>

@@ -236,15 +236,15 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "api_revision": "a8e651bc537e516953c7d9313792719e5b474a25",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_reference": "Go aa8297d1b: app/commands_standard.go modelTabCommands, app/create_sketch_tool.go, app/sketch_env.go; face labels follow camera orientation in head/ui/viewcube_text.go.",
       "go_test_premise": "Go TestCreateSketchToolFlow uses a fake viewport picker and checks XZ normal and editing; TestCreateSketchToolPicksViaBrowser checks a YZ browser pick. Neither checks this exact XZ browser flow, cube label, or empty-sketch status.",
       "kernel_capabilities": "No solid-kernel operation is required for origin-plane selection or an empty sketch; this does not verify face-hosted sketches.",
       "kernel_integration": "No Martensite solid call is needed by this scenario. Fixed XY, XZ and YZ sketch frames are created in crates/head/src/owner_work.rs.",
-      "platforms": "Native receipt: Linux with Vulkan Lavapipe under Xvfb; Windows and macOS are not established.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
       "rust_tests": "Native scenario: crates/head/tests/sketch/new-sketch/steps.rs. Origin-plane creation: crates/session/tests/lifecycle/sketch_create.rs; finish history: crates/head/tests/owner/sketch_history.rs.",
-      "oracle": "Pinned scenario expectations plus queried browser, editor and plane state and rendered status/cube text; Go tests provide a partial command reference. TOP label follows the cube face and may rotate with view roll.",
+      "oracle": "The pinned native test checks the current editing environment and Fully Constrained status. See receipts/2026-11-24-owned-sketch-datums-4079/pinned/origin/cucumber.json.",
       "expected_result": "A second empty XZ sketch opens, the cube identifies TOP, and zero free dimensions show Fully Constrained.",
       "historical_receipts": [
         {
@@ -257,7 +257,9 @@
           "path": "architecture/rust-port/receipts/2026-11-15-sketch-plane-current/receipt-63f029b9f7034030.json",
           "sha256": "1f4e064dcd960fa42ec892d4b9e1a075192f820dcf8f2e922d5eb88788494dd1"
         }
-      ]
+      ],
+      "mapping_reason": "Named origin-plane sketch creation and native empty-sketch status.",
+      "baseline_source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d"
     },
     {
       "id": "scenario:4e511ca586195d67ed53eaedd9378d8bc9bab420ea3c606eda97feb3b4fb0b55",
@@ -778,15 +780,15 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Attach a sketch to a modeled planar face and preserve the extrusion.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "go_reference": "Go aa8297d1b: app/create_sketch_tool.go and app/create_sketch_face_host_test.go describe planar-face picks ahead of origin planes.",
       "go_test_premise": "The Go test source uses a ray picker and box; it was inspected but not executed in this run.",
       "kernel_capabilities": "Martensite resolves a named planar prism face to an analytic frame and returns a durable face name.",
-      "platforms": "Native receipt: Linux, Vulkan Lavapipe under Xvfb; Windows and macOS are not established.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
       "kernel_integration": "crates/martensite/src/prism/named.rs and crates/model/src/feature/part/evaluate.rs resolve and replay the semantic face.",
       "rust_tests": "Native new-sketch-07 plus model face support, ordered dependent-prism replay and desktop save/reopen tests.",
-      "oracle": "Native UI observations and independent exact support-plane and named-reference assertions; Go test source is a behavioral reference.",
+      "oracle": "The pinned native test checks the current editing environment and Fully Constrained status. See receipts/2026-11-24-owned-sketch-datums-4079/pinned/face/cucumber.json.",
       "expected_result": "A click on the broad planar face opens empty Sketch2 in Front view with zero DOF; Finish retains it and Extrusion1.",
       "historical_receipts": [
         {
@@ -799,7 +801,8 @@
           "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-d46c554381029cf4-79c5066a/receipt-d46c554381029cf4.json",
           "sha256": "fc7d3df9d1e79c6a85546e3eacb7faa8e9548a53f7eb5157cb1301a6e5800ae9"
         }
-      ]
+      ],
+      "baseline_source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d"
     },
     {
       "id": "scenario:44dfe89fda9e10be24739ae86dcce9b9e2df26b6fc34aeb0fa17ec252d15cb9f",
@@ -816,8 +819,8 @@
       "state": "inventoried",
       "last_receipt": null,
       "mapping_reason": "Create and retain an offset work plane and its dependent sketch.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
@@ -829,7 +832,16 @@
           "path": "architecture/rust-port/receipts/2026-11-14-sketch-r5-44dfe89fda9e10be-79c5066a/receipt-44dfe89fda9e10be.json",
           "sha256": "f62cfdd81aa327015f6287c222668b183c0f3a3a1abc5620de5a08cc82b5628b"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b: app/create_sketch_tool_test.go and app/work_plane_ops_test.go.",
+      "go_test_premise": "The Go source checks preselected sketch support and work-plane offsets. The pinned native test checks their combination with a face-derived plane.",
+      "kernel_capabilities": "Martensite resolves the named prism face to an analytic frame.",
+      "kernel_integration": "Ordered part replay resolves the face and offset work plane before sketch placement and inspection.",
+      "rust_tests": "sketch_scenarios_use_the_native_window: new-sketch-08 Create a sketch on a non-origin work plane",
+      "expected_result": "Preselecting the offset Work Plane1 starts empty Sketch3 without another click. Finish preserves the sketch and its supporting plane.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "oracle": "The pinned native test checks the current editing environment and Fully Constrained status. See receipts/2026-11-24-owned-sketch-datums-4079/pinned/plane/cucumber.json.",
+      "baseline_source_sha256": "e4011485e2cfe78197b73450bea0d26ba2b0dbc54f2307d3b27364ffe9d9a20d"
     },
     {
       "id": "scenario:069877f38da85a95ada5c757ed2d348c06d5adb0b5d9f22480bf73a19cc17449",

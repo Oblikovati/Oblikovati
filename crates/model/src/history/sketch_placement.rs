@@ -113,6 +113,15 @@ impl DocumentSnapshot {
     ) -> Result<bool, SketchError> {
         Ok(placement_needs_datums(self.sketches.get(id)?, true))
     }
+    /// Check the placement and point reads of a sketch summary.
+    /// Example: `snapshot.sketch_inspection_needs_work_geometry(id)?` before fetching datums.
+    pub fn sketch_inspection_needs_work_geometry(
+        &self,
+        id: DocumentSketchId,
+    ) -> Result<bool, SketchError> {
+        let sketch = self.sketches.get(id)?;
+        Ok(placement_needs_datums(sketch, true) || !sketch.point_projections().is_empty())
+    }
     /// Resolve placement with the current injected axis catalogue; example: `snapshot.resolve_sketch_plane_with_axes(id, &axes)?`.
     pub fn resolve_sketch_plane_with_axes(
         &self,

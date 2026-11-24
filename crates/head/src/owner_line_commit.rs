@@ -246,12 +246,15 @@ impl<
             .filter(|edit| edit.document == document)?;
         let session = self.files.workspace().session(document).ok()?;
         let snapshot = session.snapshot();
-        let structure = if oblikovati_automation::requires_part_replay(snapshot) {
+        let reads_work_geometry = snapshot
+            .sketch_inspection_needs_work_geometry(edit.sketch)
+            .ok()?;
+        let structure = if reads_work_geometry && snapshot.requires_named_part_replay() {
             let datums = self
                 .part_scenes
                 .sketch_continuity_resolver(&self.files, document)
                 .ok()?
-                .datums(session.history())
+                .datums_for_document(self.files.workspace(), document)
                 .ok()?;
             snapshot.analyze_document_sketch_with_datums(
                 edit.sketch,
