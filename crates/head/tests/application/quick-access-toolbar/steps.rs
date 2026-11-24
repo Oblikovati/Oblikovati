@@ -363,6 +363,7 @@ fn extrude_from_ribbon(world: &mut ApplicationWorld) {
 #[when("I activate the assembly")]
 #[when("the user activates the assembly")]
 #[when("the user activates the assembly document")]
+#[when("the user activates Assembly.oad")]
 fn activate_assembly(world: &mut ApplicationWorld) {
     let assembly = world.other_document.expect("expected an assembly");
     world.click_tab(assembly);
@@ -377,6 +378,7 @@ fn not_on_assembly(world: &mut ApplicationWorld) {
 }
 #[when("I reactivate the first part")]
 #[when("the user reactivates the first part")]
+#[when("the user reactivates PartOne.opd")]
 fn reactivate_first(world: &mut ApplicationWorld) {
     let first = world.parts[0];
     world.click_tab(first);
@@ -389,12 +391,14 @@ fn on_part(world: &mut ApplicationWorld) {
 }
 #[when("I activate the second part")]
 #[when("the user activates the second part")]
+#[when("the user activates PartTwo.opd")]
 fn activate_second(world: &mut ApplicationWorld) {
     let second = world.parts[1];
     world.click_tab(second);
     world.pump(Vec::new());
 }
 #[then("the second part remains active")]
+#[then("PartTwo.opd remains active")]
 fn second_active(world: &mut ApplicationWorld) {
     let second = world.parts[1];
     world.expect_active(second);
