@@ -28,6 +28,9 @@ staged ribbon edit while viewing Keyboard customization.
 The [native entry-point runs](receipts/2026-11-24-ribbon-customization-entry-points-3856/README.md)
 cover Tools Options and the View and Sketch title menus. They also check
 that opening and closing Customize preserves a selected solid face.
+The [native file chooser runs](receipts/2026-11-24-ribbon-customization-draft-files-3856/README.md)
+check that canceling Import or Export preserves pending edits. Export
+writes the applied ribbon settings and leaves the draft open in Customize.
 
 The Rust shell uses a fixed ribbon band across the window instead of the temporary
 floating command palette. The File menu and quick-access controls remain available.

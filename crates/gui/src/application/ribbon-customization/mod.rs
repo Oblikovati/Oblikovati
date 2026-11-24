@@ -197,7 +197,7 @@ impl RibbonCustomization {
         if !window_open {
             self.open.set_open(false);
         }
-        let document = self.staged_document();
+        let document = self.applied_document();
         match self.settings.panel(ui, &document) {
             Some(Ok(settings)) => {
                 self.draft.import(settings.commands);

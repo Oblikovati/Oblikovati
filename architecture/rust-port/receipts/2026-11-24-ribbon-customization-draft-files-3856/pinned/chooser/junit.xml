@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:44:46.250969454Z" time="45.37900071"><testcase name="Scenario: Cancel a file chooser while a ribbon edit is pending: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1324:5" time="22.484708602"><system-out><![CDATA[  Scenario Outline: Cancel a file chooser while a ribbon edit is pending
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an initially empty Part Tools target
+   ✔  And 2D Sketches has been staged in the target list
+   ✔  When the user clicks Import
+   ✔  Then the Import Customization Settings file chooser opens
+   ✔  When the user clicks Cancel in the file chooser
+   ✔  Then the file chooser closes
+   ✔  And 2D Sketches remains in the Part Tools target list
+   ✔  And the target shows a pending-change marker
+   ✔  And Apply and cancels are available in the customization dialog
+   ✔  When the user clicks Cancel in the customization dialog
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Cancel a file chooser while a ribbon edit is pending: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1325:5" time="22.894292108"><system-out><![CDATA[  Scenario Outline: Cancel a file chooser while a ribbon edit is pending
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an initially empty Part Tools target
+   ✔  And 2D Sketches has been staged in the target list
+   ✔  When the user clicks Export
+   ✔  Then the Export Customization Settings file chooser opens
+   ✔  When the user clicks Cancel in the file chooser
+   ✔  Then the file chooser closes
+   ✔  And 2D Sketches remains in the Part Tools target list
+   ✔  And the target shows a pending-change marker
+   ✔  And Apply and cancels are available in the customization dialog
+   ✔  When the user clicks Cancel in the customization dialog
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

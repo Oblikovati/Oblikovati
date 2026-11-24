@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="2" errors="0" failures="2" hostname="localhost" timestamp="2026-11-24T13:40:19.087491634Z" time="30.25639591"><testcase name="Scenario: Cancel a file chooser while a ribbon edit is pending: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1324:5" time="14.98809902"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario Outline: Cancel a file chooser while a ribbon edit is pending
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an initially empty Part Tools target
+   ✔  And 2D Sketches has been staged in the target list
+   ✘  When the user clicks Import
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1311:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel a file chooser while a ribbon edit is pending: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1325:5" time="15.26829689"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario Outline: Cancel a file chooser while a ribbon edit is pending
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an initially empty Part Tools target
+   ✔  And 2D Sketches has been staged in the target list
+   ✘  When the user clicks Export
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1311:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

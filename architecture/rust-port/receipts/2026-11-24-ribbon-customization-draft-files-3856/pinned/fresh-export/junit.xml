@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:44:46.250872895Z" time="29.300657986"><testcase name="Scenario: Export customization settings to a new XML file: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:125:3" time="29.300657986"><system-out><![CDATA[  Scenario: Export customization settings to a new XML file
+   ✔  Given the ribbon customization dialog is open in the MCAD Software
+   ✔  And a new XML file path is available in a writable directory
+   ✔  When the user clicks "Export"
+   ✔  And the user enters the new file path
+   ✔  And the user clicks "Save"
+   ✔  Then the export dialog closes
+   ✔  And the ribbon customization dialog remains open
+   ✔  And a non-empty valid XML file exists at the chosen path
+]]></system-out></testcase></testsuite></testsuites>

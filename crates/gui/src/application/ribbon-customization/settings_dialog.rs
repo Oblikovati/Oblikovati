@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Import and export a draft through the shared file browser.
+//! Exchange applied ribbon settings and stage imports through the shared file browser.
 use super::settings_xml::{self, SettingsDocument};
 use crate::application::document_saving::folder_browser::{
     DialogEnd, DialogEscape, FileFilter, FolderBrowser, center_dialog, dialog_buttons,
@@ -262,7 +262,7 @@ mod tests {
         }
     }
     #[test]
-    fn export_and_import_use_the_same_staged_settings() {
+    fn exported_settings_can_be_imported() {
         let files = MemorySettingsFiles::default();
         let mut settings = SettingsDocument::default();
         settings

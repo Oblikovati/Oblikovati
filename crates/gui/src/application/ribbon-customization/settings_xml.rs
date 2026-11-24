@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! A versioned exchange format for the customization draft.
+//! A versioned format for ribbon customization settings.
 use super::state::{COMMANDS, Command, Entry};
 use crate::ribbon::RibbonTab;
 use crate::ribbon_command_layout::RibbonAppearance;

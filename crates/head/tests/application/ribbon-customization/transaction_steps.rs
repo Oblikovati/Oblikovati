@@ -65,6 +65,7 @@ pub(super) fn expect_target_pending(world: &ApplicationWorld, pending: bool) {
 
 #[then("Apply and cancels are enabled")]
 #[then("Apply and cancels remain enabled")]
+#[then("Apply and cancels are available in the customization dialog")]
 fn edits_enabled(world: &mut ApplicationWorld) {
     assert_edit_controls(world, true);
 }
@@ -245,6 +246,7 @@ fn sketches_in_selected_target(world: &mut ApplicationWorld) {
 }
 
 #[then("the Part Tools target still has a pending-change marker")]
+#[then("the target still shows a pending-change marker")]
 fn tools_stays_pending(world: &mut ApplicationWorld) {
     assert_eq!(target_label(world), "Part|Tools*");
 }

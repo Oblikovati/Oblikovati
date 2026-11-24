@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:44:46.248222761Z" time="41.85369012"><testcase name="Scenario: Stage an import of freshly exported customization settings: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:265:3" time="41.85369012"><system-out><![CDATA[  Scenario: Stage an import of freshly exported customization settings
+   ✔  Given the ribbon customization dialog is open in the MCAD Software
+   ✔  And the Part 3D Model custom panel list is empty with no pending changes
+   ✔  And the user has exported the current customization settings to a new XML file
+   ✔  When the user clicks "Import"
+   ✔  And the user selects that exported XML file and clicks "Open"
+   ✔  Then the import dialog closes
+   ✔  And the ribbon customization dialog remains open
+   ✔  And the Part 3D Model target indicates a pending change
+   ✔  And "OK", "Cancel", and "Apply" are available
+   ✔  And the Part 3D Model custom panel list remains empty
+   ✔  When the user clicks "Cancel"
+   ✔  Then the customization dialog closes
+   ✔  And no custom panel appears on the active ribbon
+]]></system-out></testcase></testsuite></testsuites>
