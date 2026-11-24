@@ -82,13 +82,8 @@ impl RibbonCustomization {
                     }
                 }
                 Command::Annotations => {
-                    let disabled = ui.begin_disabled(true);
-                    if normal {
-                        ui.button(label);
-                    } else {
-                        icons.button(ui, label, crate::icons::IconGlyph::Annotation, size);
-                    }
-                    drop(disabled);
+                    let _disabled = ui.begin_disabled(true);
+                    icons.button(ui, label, IconGlyph::Annotation, size);
                 }
                 Command::Separator => separator(ui, if normal { [8., 58.] } else { size }),
             }

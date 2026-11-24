@@ -279,6 +279,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Drew the 3D Annotations icon at its configured size in custom ribbon panels. (#3856)
+
 - Preserved available ribbon command selections when switching targets and selected the separator when a source filter hid the selected command. (#3856)
 
 - Returned to Ribbon Customization with an error when importing invalid XML, preserving staged edits. (#3856)

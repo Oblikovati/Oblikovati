@@ -136,7 +136,9 @@ fn model_panel_empty(world: &mut ApplicationWorld) {
 #[given("the Part Tools and Part Manage custom panel lists are initially empty")]
 #[given("the Part | Tools and Part | Manage custom targets are empty")]
 fn empty_tools_and_manage(world: &mut ApplicationWorld) {
-    open_tools_customization(world);
+    if diagnostics::window_geometry("Customize").is_none() {
+        open_tools_customization(world);
+    }
     target_is_empty(world);
     choose_target(world, "Manage");
     target_is_empty(world);
@@ -152,12 +154,14 @@ fn tools_all_commands(world: &mut ApplicationWorld) {
 
 #[when("the user selects the Part Manage target")]
 #[when("the user selects \"Part | Manage\" as the target")]
+#[when("the user selects the Part | Manage target")]
 fn select_manage(world: &mut ApplicationWorld) {
     choose_target(world, "Manage");
 }
 
 #[then("the target command list is empty")]
 #[then("the Part Tools target is empty")]
+#[then("the Part | Manage target list is empty")]
 #[then("the Part | Tools custom target remains empty")]
 fn empty_target_list(world: &mut ApplicationWorld) {
     target_is_empty(world);
@@ -171,6 +175,7 @@ fn empty_tools_panel(world: &mut ApplicationWorld) {
 
 #[when("the user selects the Part Tools target")]
 #[when("the user returns to the Part Tools target")]
+#[when("the user returns to the Part | Tools target")]
 fn select_tools(world: &mut ApplicationWorld) {
     choose_target(world, "Tools");
 }
@@ -208,6 +213,7 @@ fn expect_target_command(world: &ApplicationWorld, name: &str) {
 }
 
 #[when("the user adds \"2D Sketches\" to the Part Tools custom panel")]
+#[when("the user adds \"2D Sketches\" to the Part | Tools target without applying")]
 fn add_sketches_to_tools(world: &mut ApplicationWorld) {
     assert_eq!(target_label(world), "Part|Tools");
     add_command(world, "2DSketches");

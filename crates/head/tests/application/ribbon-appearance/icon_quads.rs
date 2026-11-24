@@ -8,7 +8,7 @@ pub(in super::super) fn ribbon_icon_quads(band_bottom: f32) -> Vec<Rectangle> {
     icon_quads_inside(([0., 58.], [f32::MAX, band_bottom]))
 }
 
-pub(super) fn icon_quads_inside(bounds: Rectangle) -> Vec<Rectangle> {
+pub(in super::super) fn icon_quads_inside(bounds: Rectangle) -> Vec<Rectangle> {
     // ImGui owns the completed draw packet until the next frame begins.
     let raw = unsafe { sys::igGetDrawData().as_ref() }.expect("expected a completed GUI frame");
     let draws = unsafe { DrawData::from_raw(raw) };

@@ -64,6 +64,7 @@ fn tools_before_open(world: &mut ApplicationWorld) {
 
 #[given("its Large and Text options are checked")]
 #[when("the user checks its Large and Text options")]
+#[when("the user checks Large and Text for that command")]
 fn check_sketches_display_options(world: &mut ApplicationWorld) {
     for option in ["Large", "Text"] {
         assert!(!row_option_checked(world, "2DSketches", option));
@@ -87,6 +88,7 @@ fn remove_staged_sketches(world: &mut ApplicationWorld) {
 
 #[then("2D Sketches appears in the target list")]
 #[then("2D Sketches remains staged on Part Tools")]
+#[then("\"2D Sketches\" remains in the target list")]
 fn target_has_sketches(world: &mut ApplicationWorld) {
     sketches_in_target(world);
 }

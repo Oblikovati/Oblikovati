@@ -8182,8 +8182,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go; ../Oblikovati/head/ui/qat.go; ../Oblikovati/head/ui/keymap_window.go",
-      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/chrome_ribbon.go (drawLabeledIconButton and drawLargeIconButton), app/ribbon.go, and app/ribbon_registry_test.go.",
+      "mapping_reason": "Native custom ribbon command presentation and draft display options.",
+      "go_test_premise": "The Go renderer draws small icons beside the caption and large icons above it. Its registry tests check document-scoped ribbons. The pinned scenario defines the native dialog sequence.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native desktop presentation of the active Part workspace.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop presents and commits customization independently of the Part geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Change the display of an applied custom command",
+      "oracle": "The pinned native run checks the rendered controls and dialog state at each interaction. See receipts/2026-11-24-ribbon-customization-presentation-3856/pinned/labeled/cucumber.json.",
+      "expected_result": "Applying the small setting puts its caption to the right of the icon. Applying Large renders a larger icon above the caption.",
+      "baseline_source_sha256": "c338bc2ca7723cbc58a28c13b97869e61ad0697ed3290c67843149e1e608a73e"
     },
     {
       "id": "scenario:358a528810f390b13e0279bc78c05629653311e1b04e596feabbcdf13f887cb2",
@@ -8216,8 +8226,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go; ../Oblikovati/head/ui/qat.go; ../Oblikovati/head/ui/keymap_window.go",
-      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/chrome_ribbon.go (drawLabeledIconButton and drawLargeIconButton), app/ribbon.go, and app/ribbon_registry_test.go.",
+      "mapping_reason": "Native custom ribbon command presentation and draft display options.",
+      "go_test_premise": "The Go renderer draws small icons beside the caption and large icons above it. Its registry tests check document-scoped ribbons. The pinned scenario defines the native dialog sequence.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native desktop presentation of the active Part workspace.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop presents and commits customization independently of the Part geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Display a large custom command without text",
+      "oracle": "The pinned native run checks the rendered controls and dialog state at each interaction. See receipts/2026-11-24-ribbon-customization-presentation-3856/pinned/icon-only/cucumber.json.",
+      "expected_result": "Applying Large with Text clear draws the large command icon without a caption.",
+      "baseline_source_sha256": "c338bc2ca7723cbc58a28c13b97869e61ad0697ed3290c67843149e1e608a73e"
     },
     {
       "id": "scenario:131d7703a154f33df56ee311966bccb965299a13c10ccccac4642c9b3147d814",
@@ -8260,8 +8280,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go; ../Oblikovati/head/ui/qat.go; ../Oblikovati/head/ui/keymap_window.go",
-      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/chrome_ribbon.go (drawLabeledIconButton and drawLargeIconButton), app/ribbon.go, and app/ribbon_registry_test.go.",
+      "mapping_reason": "Native custom ribbon command presentation and draft display options.",
+      "go_test_premise": "The Go renderer draws small icons beside the caption and large icons above it. Its registry tests check document-scoped ribbons. The pinned scenario defines the native dialog sequence.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native desktop presentation of the active Part workspace.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop presents and commits customization independently of the Part geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Separate two custom ribbon commands",
+      "oracle": "The pinned native run checks the rendered controls and dialog state at each interaction. See receipts/2026-11-24-ribbon-customization-presentation-3856/pinned/divider/cucumber.json.",
+      "expected_result": "Applying the staged commands draws two small icons with a visible vertical rule between them.",
+      "baseline_source_sha256": "c338bc2ca7723cbc58a28c13b97869e61ad0697ed3290c67843149e1e608a73e"
     },
     {
       "id": "scenario:dadafe3af3c04e44898d024c1cd5c0778afbd23aea6f19f27a42c7ee394ab5d0",
@@ -9487,8 +9517,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go; ../Oblikovati/head/ui/qat.go; ../Oblikovati/head/ui/keymap_window.go",
-      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/chrome_ribbon.go (drawLabeledIconButton and drawLargeIconButton), app/ribbon.go, and app/ribbon_registry_test.go.",
+      "mapping_reason": "Native custom ribbon command presentation and draft display options.",
+      "go_test_premise": "The Go renderer draws small icons beside the caption and large icons above it. Its registry tests check document-scoped ribbons. The pinned scenario defines the native dialog sequence.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native desktop presentation of the active Part workspace.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop presents and commits customization independently of the Part geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Retain staged command display options when switching targets",
+      "oracle": "The pinned native run checks the rendered controls and dialog state at each interaction. See receipts/2026-11-24-ribbon-customization-presentation-3856/pinned/draft/cucumber.json.",
+      "expected_result": "Changing to the empty Manage target and back to Tools preserves the staged command, both checked options, and its pending marker.",
+      "baseline_source_sha256": "c338bc2ca7723cbc58a28c13b97869e61ad0697ed3290c67843149e1e608a73e"
     },
     {
       "id": "scenario:16d1acc90d8908fe2bb38c3f3a01f9b9c3cb4c7a45a101738db4130f723ba08d",

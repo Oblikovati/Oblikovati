@@ -17,6 +17,9 @@ shows the error in Customize, and preserves the draft.
 The [native selection scenarios](receipts/2026-11-24-ribbon-customization-selection-3856/README.md)
 cover source selection across target and category changes, separator-only
 drafts, and per-target display options.
+The [native command presentation scenarios](receipts/2026-11-24-ribbon-customization-presentation-3856/README.md)
+check small and large captions, large icon-only buttons, and a divider
+between two small command icons.
 
 The Rust shell uses a fixed ribbon band across the window instead of the temporary
 floating command palette. The File menu and quick-access controls remain available.
