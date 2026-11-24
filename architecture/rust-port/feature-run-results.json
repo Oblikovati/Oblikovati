@@ -641,6 +641,22 @@
         "command": "tools/with-xvfb.sh sh -c 'openbox & exec env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json LP_NUM_THREADS=4 OBK_BDD_ROOT=/tmp/oblikovati-ribbon-relocated.RcZVDl/keyboard-navigation-published-snapshot/checkout OBK_BDD_FEATURE=ribbon-keyboard-navigation OBK_BDD_REPORTS=/tmp/oblikovati-ribbon-relocated.RcZVDl/keyboard-navigation-published-final /tmp/oblikovati-ribbon-relocated.RcZVDl/head-keyboard-visible-profile application_scenarios_use_the_native_window --nocapture'",
         "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe.",
         "notes": "18 of 18 scenarios and 219 steps passed on the published snapshot with the named Part. The build included existing local file-browser edits."
+      },
+      "fd44aa235ec7af710f1ab4f2255e9cf48cb849e7643a094c9dd7c622393cb3cf": {
+        "feature_sha256": "fd44aa235ec7af710f1ab4f2255e9cf48cb849e7643a094c9dd7c622393cb3cf",
+        "supporting_files": {
+          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-25-ribbon-keyboard-current-3856/cucumber.json",
+        "cucumber_sha256": "3836e5bf446b2b31eda8987d42e8538423c100b42ab1773b54d7cb586bff8022",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-ribbon-keyboard-current-3856/scenario-inventory.json",
+        "scenario_inventory_sha256": "e71b56d8934f36b366f35e7b6d6f118bbc5391370d6934a801b1c65867e4fc62",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-ribbon-keyboard-current-3856/scenario-arguments.json",
+        "scenario_arguments_sha256": "233ada7528a2b6ae80816791353e46ed1c9050ec8270e76e127a3455beafa2a7",
+        "application_commit": "5d8d516b5f37aff62f8a79140a2fe7505f4baee3",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-keyboard-navigation OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All eighteen current scenarios passed with the published native Part. Strict build and runtime provenance remains open under #3978."
       }
     }
   },

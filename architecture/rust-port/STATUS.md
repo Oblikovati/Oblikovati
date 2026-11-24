@@ -91,6 +91,8 @@ using this status; the live scenario directory can change.
   [current run](receipts/2026-11-24-ribbon-command-availability-current-3956/README.md).
   The [earlier run](receipts/2026-11-20-ribbon-command-availability-complete-3956/README.md)
   includes the pinned scenarios and X11 Text and Fillet checks.
+- Ribbon Keyboard Navigation (#3856) passed all 18 current scenarios and 220 steps.
+  See the [current run](receipts/2026-11-25-ribbon-keyboard-current-3856/README.md).
 - Sketch Text (#3907) opens the dockable Format Text editor from the Sketch
   ribbon. Point placement, preview, Cancel, OK, and creation undo and redo
   passed native input checks. Existing text now opens for editing from its

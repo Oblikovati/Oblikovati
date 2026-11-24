@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:08:24.745878469Z" time="30.164721706"><testcase name="Scenario: Launch a command through a left-docked compact group key tip: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:167:3" time="30.164721706"><system-out><![CDATA[  Scenario: Launch a command through a left-docked compact group key tip
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left
+   ✔  And Modify is displayed as a compact group button
+   ✔  When the user presses Alt
+   ✔  Then key tips appear on the ribbon tabs and quick-access controls
+   ✔  And the 3D Model tab displays the key tip "M"
+   ✔  When the user presses "M"
+   ✔  Then key tips appear on the visible 3D Model commands and compact groups
+   ✔  And the Modify group displays the key tip "Y"
+   ✔  When the user presses "Y"
+   ✔  Then the adjacent Modify command panel opens
+   ✔  And its commands display key tips including "HO" for Hole
+   ✔  When the user presses "H"
+   ✔  Then the displayed command key tips narrow to matching H-prefixed entries
+   ✔  When the user presses "O"
+   ✔  Then the Hole properties panel opens
+   ✔  And the ribbon key tips and adjacent Modify panel disappear
+   ✔  When the user clicks Cancel in the Hole properties panel
+   ✔  Then the properties panel closes without creating a hole
+   ✔  And the ribbon remains docked on the left
+]]></system-out></testcase></testsuite></testsuites>

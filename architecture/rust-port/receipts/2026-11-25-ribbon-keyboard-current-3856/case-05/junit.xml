@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:04:58.219766808Z" time="15.539215994"><testcase name="Scenario: Continue after an unmatched top-level key tip: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:64:3" time="15.539215994"><system-out><![CDATA[  Scenario: Continue after an unmatched top-level key tip
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the Tools ribbon tab is selected
+   ✔  When the user presses Alt
+   ✔  Then top-level key tips appear
+   ✔  And the 3D Model tab displays the key tip "M"
+   ✔  When the user presses "Z"
+   ✔  Then the top-level key tips remain visible
+   ✔  And the Tools ribbon remains selected
+   ✔  When the user presses "M"
+   ✔  Then the 3D Model ribbon is selected
+   ✔  And its command key tips are displayed
+   ✔  When the user presses Alt
+   ✔  Then the key tips disappear
+]]></system-out></testcase></testsuite></testsuites>

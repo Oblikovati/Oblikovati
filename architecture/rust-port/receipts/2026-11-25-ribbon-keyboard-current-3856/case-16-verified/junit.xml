@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:10:12.814544684Z" time="24.698686106"><testcase name="Scenario: Navigate an expanded model browser while ribbon key tips are visible: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:234:3" time="24.698686106"><system-out><![CDATA[  Scenario: Navigate an expanded model browser while ribbon key tips are visible
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with the full 3D Model ribbon visible in the MCAD Software
+   ✔  And an extrusion is expanded in the model browser to show its child sketch
+   ✔  And the extrusion is selected in the browser
+   ✔  When the user presses Alt to show top-level ribbon key tips
+   ✔  And the user presses Down Arrow
+   ✔  Then the child sketch is selected in the browser
+   ✔  And the corresponding sketch geometry is highlighted in the viewport
+   ✔  And the top-level ribbon key tips remain visible
+   ✔  When the user presses Up Arrow
+   ✔  Then the extrusion is selected again
+   ✔  And the top-level ribbon key tips remain visible
+   ✔  When the user presses Alt
+   ✔  Then the ribbon key tips disappear
+]]></system-out></testcase></testsuite></testsuites>

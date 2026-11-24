@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:09:27.977005737Z" time="20.273322899"><testcase name="Scenario: Keep ribbon key tips visible while arrow keys change the model view: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:205:3" time="20.273322899"><system-out><![CDATA[  Scenario: Keep ribbon key tips visible while arrow keys change the model view
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with its asymmetric solid visible in the MCAD Software
+   ✔  And the full 3D Model ribbon is selected
+   ✔  When the user presses Alt to show top-level ribbon key tips
+   ✔  And the user presses the Right Arrow key
+   ✔  Then the displayed solid changes orientation
+   ✔  And the top-level ribbon key tips remain visible
+   ✔  When the user presses the Left Arrow key
+   ✔  Then the solid returns to its prior visible orientation
+   ✔  And the top-level ribbon key tips remain visible
+   ✔  When the user presses the 3D Model tab key tip
+   ✔  Then the ribbon shows command-level key tips
+   ✔  When the user presses Alt
+   ✔  Then the key tips disappear
+]]></system-out></testcase></testsuite></testsuites>

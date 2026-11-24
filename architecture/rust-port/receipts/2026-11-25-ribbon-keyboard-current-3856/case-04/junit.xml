@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:04:23.402805372Z" time="34.044769008"><testcase name="Scenario: Change ribbon display using key tips and menu navigation: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:48:3" time="34.044769008"><system-out><![CDATA[  Scenario: Change ribbon display using key tips and menu navigation
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the Tools ribbon is fully displayed with "Cycle Through All" selected
+   ✔  When the user presses Alt and enters the display control key tip "X2"
+   ✔  Then the ribbon displays compact panel buttons
+   ✔  When the user presses Alt and enters the display menu key tip "X3"
+   ✔  Then the ribbon display policy menu opens
+   ✔  When the user presses Down and Enter
+   ✔  Then the ribbon displays tabs only
+   ✔  When the user reopens the display policy menu with Alt and "X3"
+   ✔  Then "Minimize to Tabs" is marked as selected
+   ✔  When the user presses Down four times and Enter
+   ✔  And the user presses Alt and enters "X2"
+   ✔  Then the full Tools ribbon is visible
+]]></system-out></testcase></testsuite></testsuites>

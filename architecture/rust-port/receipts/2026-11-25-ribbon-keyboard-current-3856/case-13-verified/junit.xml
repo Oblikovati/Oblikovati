@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:08:55.78637455Z" time="31.36074822"><testcase name="Scenario: Dismiss a left-docked group after its nested key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:190:3" time="31.36074822"><system-out><![CDATA[  Scenario: Dismiss a left-docked group after its nested key tips
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left with Modify as a compact group
+   ✔  And the user has pressed Alt, "M", and "Y" to open the Modify panel and its command key tips
+   ✔  When the user presses Escape
+   ✔  Then the Modify panel and its command key tips remain visible
+   ✔  When the user presses Alt
+   ✔  Then the command key tips disappear
+   ✔  And the Modify panel remains visible
+   ✔  When the user presses Escape
+   ✔  Then the Modify panel closes
+   ✔  And the ribbon remains docked on the left
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

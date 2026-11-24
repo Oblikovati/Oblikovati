@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:12:06.697245014Z" time="23.855600384"><testcase name="Scenario: Keep Tools key tips visible after Escape with a face selected: target/native-scratch.HSqCy5/current-ribbon-keyboard-navigation-source/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:250:3" time="23.855600384"><system-out><![CDATA[  Scenario: Keep Tools key tips visible after Escape with a face selected
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And one visible solid face is selected
+   ✔  And the full Tools ribbon is selected
+   ✔  When the user presses Alt
+   ✔  Then top-level key tips appear on the ribbon tabs and quick-access controls
+   ✔  And key tips appear on the Tools ribbon commands
+   ✔  When the user presses Escape
+   ✔  Then the top-level and Tools command key tips remain visible
+   ✔  And the Tools ribbon and part remain visible
+   ✔  When the user presses Alt
+   ✔  Then the ribbon key tips disappear
+   ✔  And the selection indicator still reports one face
+]]></system-out></testcase></testsuite></testsuites>

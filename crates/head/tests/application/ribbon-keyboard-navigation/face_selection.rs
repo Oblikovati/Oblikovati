@@ -172,6 +172,13 @@ fn part_with_selected_face(world: &mut ApplicationWorld) {
     click_face(world);
     face_selected(world);
 }
+
+#[given("one visible solid face is selected")]
+fn select_visible_face(world: &mut ApplicationWorld) {
+    click_face(world);
+    one_face_still_selected(world);
+}
+
 #[then("key tips appear on the Tools ribbon commands")]
 fn tools_command_tips(world: &mut ApplicationWorld) {
     assert!(super::exact_tip(world, "OA"));

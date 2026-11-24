@@ -9,6 +9,9 @@ use crate::HeadWindow;
 #[given(
     "`fixtures/cad/workspace-layout-native.opd` is open with the full 3D Model ribbon visible in the MCAD Software"
 )]
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` is open and active with the full 3D Model ribbon visible in the MCAD Software"
+)]
 fn open_named_solid(world: &mut ApplicationWorld) {
     use super::super::workspace_layout::{browser_feature, native_part};
     native_part::open_named_extrusion(world);
