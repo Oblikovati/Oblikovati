@@ -437,19 +437,9 @@ fn part_and_assembly(world: &mut ApplicationWorld) {
     world.parts = vec![part];
     world.other_document = Some(assembly);
 }
-#[given("Print is not selected in either document's quick access customization menu")]
-fn print_unselected(world: &mut ApplicationWorld) {
-    assert!(!on_row(world, "Print"), "expected no Print on the assembly");
-    let part = world.parts[0];
-    world.click_tab(part);
-    world.pump(Vec::new());
-    assert!(!on_row(world, "Print"), "expected no Print on the part");
-    let assembly = world.other_document.expect("expected an assembly");
-    world.click_tab(assembly);
-    world.pump(Vec::new());
-}
 #[when("I activate the part and select Print in its quick access customization menu")]
 #[when("the user activates the part and selects Print in its quick access customization menu")]
+#[when("the user activates PartOne.opd and selects Print in its quick access customization menu")]
 fn select_print_on_part(world: &mut ApplicationWorld) {
     let part = world.parts[0];
     world.click_tab(part);
@@ -468,6 +458,7 @@ fn print_off_assembly(world: &mut ApplicationWorld) {
 }
 #[when("I return to the part")]
 #[when("the user returns to the part")]
+#[when("the user returns to PartOne.opd")]
 fn return_to_part(world: &mut ApplicationWorld) {
     // The customization menu is still up from the step before; it takes the next click.
     world.escape();

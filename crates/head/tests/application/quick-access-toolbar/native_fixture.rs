@@ -16,8 +16,19 @@ fn open_blank_metric_part(world: &mut ApplicationWorld) {
     "\"fixtures/cad/quick-access-toolbar/PartOne.opd\", \"fixtures/cad/quick-access-toolbar/PartTwo.opd\" and \"fixtures/cad/quick-access-toolbar/Assembly.oad\" are open in the MCAD Software"
 )]
 fn open_native_part_pair_and_assembly(world: &mut ApplicationWorld) {
+    open_native_contexts(world, &["PartOne.opd", "PartTwo.opd"]);
+}
+
+#[given(
+    "\"fixtures/cad/quick-access-toolbar/PartOne.opd\" and \"fixtures/cad/quick-access-toolbar/Assembly.oad\" are open in the MCAD Software"
+)]
+fn open_native_part_and_assembly(world: &mut ApplicationWorld) {
+    open_native_contexts(world, &["PartOne.opd"]);
+}
+
+fn open_native_contexts(world: &mut ApplicationWorld, parts: &[&str]) {
     let folder = super::super::scenario_root().join("fixtures/cad/quick-access-toolbar");
-    for name in ["PartOne.opd", "PartTwo.opd"] {
+    for name in parts {
         world.open_fixture(&folder.join(name));
         assert_eq!(
             world.state().document_type,
@@ -38,4 +49,18 @@ fn open_native_part_pair_and_assembly(world: &mut ApplicationWorld) {
 fn first_part_is_active(world: &mut ApplicationWorld) {
     reactivate_first(world);
     assert_eq!(world.active_id(), world.parts[0]);
+}
+
+#[given("Print is not selected in either document's quick access customization menu")]
+fn print_unselected(world: &mut ApplicationWorld) {
+    let assembly = world.other_document.expect("expected an assembly");
+    for document in [assembly, world.parts[0]] {
+        world.click_tab(document);
+        assert!(!on_row(world, "Print"), "expected no Print on the row");
+        open_customization(world);
+        print_unchecked(world);
+        world.escape();
+    }
+    world.click_tab(assembly);
+    world.pump(Vec::new());
 }
