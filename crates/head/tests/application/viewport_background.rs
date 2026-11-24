@@ -11,6 +11,10 @@ pub(super) fn expect_empty_part(world: &mut super::ApplicationWorld) {
         browser.bodies.is_empty() && browser.features.is_empty() && browser.sketches.is_empty(),
         "expected no bodies, features or sketches in the Part"
     );
+    expect_empty_viewport(world);
+}
+
+pub(super) fn expect_empty_viewport(world: &mut super::ApplicationWorld) {
     let [left, top, right, bottom] = world.viewport_bounds().map(|edge| edge as usize);
     // Dock separators can bleed a few pixels into the viewport.
     let x_inset = (right - left) / 16;

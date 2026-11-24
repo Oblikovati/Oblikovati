@@ -4,6 +4,8 @@ use super::documents::{VIEWPORT_X, VIEWPORT_Y};
 use crate::HeadWork;
 use cucumber::{given, then, when};
 use oblikovati_viewport::ViewportPhysicalKey;
+#[path = "basic_catalog.rs"]
+mod basic_catalog;
 #[path = "gallery_views.rs"]
 mod gallery_views;
 const METRIC_PART: &str = "Standard metric part";
@@ -53,10 +55,17 @@ fn open_part_with_visible_sketch(world: &mut ApplicationWorld) {
 }
 #[when("I press Control+N")]
 #[when("the user presses Control+N")]
-#[given("the new-document template chooser is open")]
-#[given("the new-document template chooser is open in the MCAD Software")]
+#[given("the user presses Control+N to open the new-document template chooser")]
 fn open_chooser(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::N, true);
+}
+#[given("the new-document template chooser is open")]
+#[given("the new-document template chooser is open in the MCAD Software")]
+fn ensure_chooser_open(world: &mut ApplicationWorld) {
+    if !world.shows("Template folders") {
+        open_chooser(world);
+    }
+    chooser_open(world);
 }
 #[then("the new-document template chooser opens")]
 fn chooser_open(world: &mut ApplicationWorld) {
@@ -79,7 +88,7 @@ fn english_folder(world: &mut ApplicationWorld) {
 #[when("I select the standard metric part template")]
 #[when("the user selects the standard metric part template")]
 fn select_metric(world: &mut ApplicationWorld) {
-    world.click_text("Standard metric part");
+    basic_catalog::select_metric_template(world, METRIC_PART, "Standard (mm)");
 }
 #[when("I select the standard inch part template")]
 #[when("the user selects the standard inch part template")]
@@ -156,13 +165,13 @@ fn new_tab(world: &mut ApplicationWorld) {
 #[when("I select the standard metric assembly template")]
 #[when("the user selects the standard metric assembly template")]
 fn select_assembly(world: &mut ApplicationWorld) {
-    world.click_text(METRIC_ASSEMBLY);
+    basic_catalog::select_metric_template(world, METRIC_ASSEMBLY, "Standard Assembly");
 }
 #[when("I select the metric sheet-metal part template")]
 #[when("the user selects the metric sheet-metal part template")]
 #[given("a sheet-metal part template is selected")]
 fn select_sheet_metal(world: &mut ApplicationWorld) {
-    world.click_text(METRIC_SHEET_METAL);
+    basic_catalog::select_metric_template(world, METRIC_SHEET_METAL, "Sheet Metal (mm)");
 }
 #[given("the metric sheet-metal template is selected")]
 fn sheet_metal_selected(world: &mut ApplicationWorld) {
@@ -192,7 +201,12 @@ fn new_presentation(world: &mut ApplicationWorld) {
 }
 #[then("its viewport contains no visible components")]
 fn no_components(world: &mut ApplicationWorld) {
-    world.expect_blank_region(VIEWPORT_X, VIEWPORT_Y);
+    let browser = world.state().browser.expect("expected an Assembly browser");
+    assert!(
+        browser.occurrences.is_empty(),
+        "expected no Assembly components"
+    );
+    super::viewport_background::expect_empty_viewport(world);
 }
 #[then("its model browser shows representations, relationships and origin entries")]
 fn assembly_browser(world: &mut ApplicationWorld) {
@@ -208,12 +222,13 @@ fn assembly_ribbon(world: &mut ApplicationWorld) {
 }
 #[given("a drawing template with a border and title block is available")]
 fn drawing_available(world: &mut ApplicationWorld) {
-    world.expect_text(METRIC_DRAWING);
+    let title = basic_catalog::metric_title(world, METRIC_DRAWING, "Standard Drawing");
+    world.expect_text(title);
 }
 #[when("I select the drawing template")]
 #[when("the user selects the drawing template")]
 fn select_drawing(world: &mut ApplicationWorld) {
-    world.click_text(METRIC_DRAWING);
+    basic_catalog::select_metric_template(world, METRIC_DRAWING, "Standard Drawing");
 }
 #[when("I choose its Use Template preview")]
 #[when("the user chooses its Use Template preview")]
@@ -343,7 +358,11 @@ fn select_inch_sheet_metal(world: &mut ApplicationWorld) {
 #[when("I select the metric presentation template")]
 #[when("the user selects the metric presentation template")]
 fn select_presentation(world: &mut ApplicationWorld) {
-    world.click_text("Standard metric presentation");
+    basic_catalog::select_metric_template(
+        world,
+        "Standard metric presentation",
+        "Standard Presentation",
+    );
 }
 #[then("an Insert dialog opens for an assembly file")]
 fn insert_opens(world: &mut ApplicationWorld) {

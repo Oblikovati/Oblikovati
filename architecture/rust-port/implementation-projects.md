@@ -66,3 +66,8 @@ when Home or Left scrolls to the gallery's left edge. [Navigation reports](recei
 The selected-template scenario opened an unsaved Part with the template's
 solid, extrusion, and consumed sketch. The original file's bytes matched after
 creation. [Native report](receipts/2026-11-24-document-creation-template-content-3899/README.md)
+
+The basic Metric catalog scenarios opened a Part, assembly, drawing,
+sheet-metal Part, and presentation in their respective workspaces. The
+presentation's initial model-insertion dialog could be dismissed while the
+new document stayed open. [Basic creation reports](receipts/2026-11-24-document-creation-basic-native-3899/README.md)

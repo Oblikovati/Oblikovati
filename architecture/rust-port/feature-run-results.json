@@ -1376,5 +1376,53 @@
         "notes": "All 1 current scenarios and 10 steps passed in separate native runs. The build includes the updated scenario bindings and existing local GUI edits. Strict build and runtime provenance remains open under #3978."
       }
     }
+  },
+  "features/application/document-creation/document-creation-basic-native.feature": {
+    "by_source_sha256": {
+      "6d0348226793e8a95006de16b608e84eec3ff1d5f7d002cdea5392eb07a2ba71": {
+        "feature_sha256": "6d0348226793e8a95006de16b608e84eec3ff1d5f7d002cdea5392eb07a2ba71",
+        "supporting_files": {
+          "features/application/document-creation/BLOCKERS.md": "d60377bac648dea0dda1d094a4f8778064e13b44db2ceed35cea209b4fb568f0",
+          "features/application/document-creation/FIXTURES.md": "b5b8fa749dadaec50f88b1e198b26d27737406a301a12702c03f77d53afd633c",
+          "features/application/document-creation/FUNCTIONAL.md": "8b170196d8c08f34167d3666d1a743c779aaec9024e4facb4c768ac70b121704",
+          "features/application/document-creation/VISUAL.md": "6ac16fb8cf8de95da29f24924ef4e5d1e7c084cd8daa4d91a34352bf9ffe93fc",
+          "fixtures/cad/document-creation-native-candidate.opj": "a62d0b0dbc3006af42686d6d0069ef350ea36c9b91037d28bf1fbca2c772c527",
+          "fixtures/cad/document-creation-native-candidate/English/Sheet Metal (in).opd": "3994ec0e4c1c7302920e56aecb1f66bbdedc4ace40a0c03775e9f8b275668bbf",
+          "fixtures/cad/document-creation-native-candidate/English/Sheet Metal.opd": "3994ec0e4c1c7302920e56aecb1f66bbdedc4ace40a0c03775e9f8b275668bbf",
+          "fixtures/cad/document-creation-native-candidate/English/Standard (in).opd": "d58faf2d76fbfc49a831609b1e9eb752ac6675b614debfccaf153a61cd1f00f5",
+          "fixtures/cad/document-creation-native-candidate/English/Standard Assembly.oad": "f8197c6b228676cb1bf8015681a3ed64dabd1ec5bff8c22bce1037a5a25ee80e",
+          "fixtures/cad/document-creation-native-candidate/English/Standard Drawing.odd": "fb550abddaf122a634f083ea9a383ff3f49764a350c96b0024a6a80a3b7c744f",
+          "fixtures/cad/document-creation-native-candidate/English/Standard Part.opd": "d58faf2d76fbfc49a831609b1e9eb752ac6675b614debfccaf153a61cd1f00f5",
+          "fixtures/cad/document-creation-native-candidate/English/Standard Presentation.ord": "271ff6b6f4ffd3a185c51592ff53682cf19a96318e44ce9465ed35b049051331",
+          "fixtures/cad/document-creation-native-candidate/English/sheet-metal.lua": "6a44d37aea3942493414513eb9d5ce9d63bc48fcedaa2f6b78a58a44c8462331",
+          "fixtures/cad/document-creation-native-candidate/English/standard-assembly.lua": "2befcf7a09a175b6524808f58c247f2310d09692e92014c3629cbf82d648975b",
+          "fixtures/cad/document-creation-native-candidate/English/standard-drawing.lua": "c9421c7568fc349ba616be07e5fc22a5e239a45c03a465ace7e7f2ebd0668e3d",
+          "fixtures/cad/document-creation-native-candidate/English/standard-part.lua": "74b3a3df37d8318e9335b17da7ba0032545487603612891cfa9ef6d6db0b8dad",
+          "fixtures/cad/document-creation-native-candidate/English/standard-presentation.lua": "ec063fecf28575fc1e630e0a93cff2f0aec3619d78ae1a01b93c63cb7c57eb89",
+          "fixtures/cad/document-creation-native-candidate/Metric/Sheet Metal (DIN).opd": "6c66a37d638eecec635e003e45ee5062da4e7fd68a24f780408a77b03e59376d",
+          "fixtures/cad/document-creation-native-candidate/Metric/Sheet Metal (mm).opd": "6c66a37d638eecec635e003e45ee5062da4e7fd68a24f780408a77b03e59376d",
+          "fixtures/cad/document-creation-native-candidate/Metric/Sheet Metal.opd": "6c66a37d638eecec635e003e45ee5062da4e7fd68a24f780408a77b03e59376d",
+          "fixtures/cad/document-creation-native-candidate/Metric/Standard (DIN).opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
+          "fixtures/cad/document-creation-native-candidate/Metric/Standard (mm).opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
+          "fixtures/cad/document-creation-native-candidate/Metric/Standard Assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
+          "fixtures/cad/document-creation-native-candidate/Metric/Standard Drawing.odd": "74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e",
+          "fixtures/cad/document-creation-native-candidate/Metric/Standard Part.opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
+          "fixtures/cad/document-creation-native-candidate/Metric/Standard Presentation.ord": "f1395a6948d4c77f11a6bbaa441de3e4223fa0161244d9c882b8f84e54604a31",
+          "fixtures/cad/document-creation-native-candidate/Metric/standard-presentation.lua": "50e7f754e0d3a8128a7543da10713a80578477bcef2f9e147d2a77c110448e0c",
+          "fixtures/cad/document-creation-native-candidate/manifest.json": "00253bc58cfa8fc6c99597d77c61e53a5d1b00763ef00bc4db2603a1068f5676",
+          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-document-creation-basic-native-3899/cucumber.json",
+        "cucumber_sha256": "7260b2e3a7d46114a1351bd4caffe7a58b6b8b08e00e6324454dbdb2337e76ad",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-document-creation-basic-native-3899/scenario-arguments.json",
+        "scenario_arguments_sha256": "edcc2ebfd24df3e412b39bd4b6b6c918283f0299d039dc400be00731e1725cfa",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-24-document-creation-basic-native-3899/scenario-inventory.json",
+        "scenario_inventory_sha256": "703883751f5d54a1b7f1ad1cfb6d25c014cf6b695fa5f044d03c55193a4fdad3",
+        "application_commit": "6140a45953711cfecae9d4ddd2db629aebe53cce",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=document-creation OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All five current cases and 68 steps passed in separate native runs. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   }
 }

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create basic documents from native templates: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-basic-source/features/application/document-creation/document-creation-basic-native.feature" package="testsuite/Feature: Create basic documents from native templates: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-basic-source/features/application/document-creation/document-creation-basic-native.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:31:57.131507258Z" time="18.228553429"><testcase name="Scenario: Create a metric sheet-metal part: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-basic-source/features/application/document-creation/document-creation-basic-native.feature:51:3" time="18.228553429"><system-out><![CDATA[  Scenario: Create a metric sheet-metal part
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And its Metric catalog contains the native standard part, assembly, drawing, sheet-metal and presentation templates
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the user presses Control+N to open the new-document template chooser
+   ✔  And the new-document template chooser is open in the MCAD Software
+   ✔  When the user selects the metric template folder
+   ✔  And the user selects the metric sheet-metal part template
+   ✔  Then the template details identify a part with millimeter units
+   ✔  When the user chooses Create
+   ✔  Then a new part document becomes active
+   ✔  And its viewport contains no visible model geometry
+   ✔  And the browser shows a folded model and its origin
+   ✔  And the sheet-metal ribbon is active
+   ✔  And a new document tab is visible
+]]></system-out></testcase></testsuite></testsuites>
