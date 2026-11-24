@@ -9,8 +9,43 @@ fn no_pending_changes(world: &mut ApplicationWorld) {
 }
 
 #[when("the user opens the command category list")]
+#[when("the user opens the command-source list")]
+#[when("the user clicks the command-source selector")]
+#[when("the user clicks the command-source selector again")]
 fn open_category(world: &mut ApplicationWorld) {
     click_in_customize(world, "AllCommands");
+}
+
+#[given("the Ribbon customization dialog has no pending edits")]
+fn open_clean_customization(world: &mut ApplicationWorld) {
+    open_tools_customization(world);
+    no_pending_changes(world);
+    for control in ["Apply", "Cancel"] {
+        assert_ne!(world.run_in_window("Customize", control).alpha, u8::MAX);
+    }
+}
+
+#[then("the command-source list closes")]
+#[then("the command-source list is not open")]
+fn source_list_closed(world: &mut ApplicationWorld) {
+    world.expect_no_text("Macros");
+}
+
+#[then("the customization dialog remains open with All Commands selected")]
+fn all_commands_open(world: &mut ApplicationWorld) {
+    customization_remains_open(world);
+    transaction_steps::all_commands(world);
+}
+
+#[when("the user clicks Close again")]
+fn close_again(world: &mut ApplicationWorld) {
+    close_customization_button(world);
+}
+
+#[then("the command-source list opens with All Commands selected")]
+fn source_list_selected(world: &mut ApplicationWorld) {
+    categories_visible(world);
+    transaction_steps::all_commands(world);
 }
 
 #[then("All Commands and other categories are visible in the list")]

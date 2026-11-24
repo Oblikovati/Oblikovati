@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:31:01.015647587Z" time="26.943253517"><testcase name="Scenario: Keep staged command order when clicking the target Name header: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:630:3" time="26.943253517"><system-out><![CDATA[  Scenario: Keep staged command order when clicking the target Name header
+   ✔  Given a part is active in the MCAD Software with the Tools ribbon visible
+   ✔  And the Ribbon customization dialog has an initially empty Part Tools custom panel
+   ✔  And the user has staged "3D Annotations" followed by "2D Sketches"
+   ✔  When the user clicks the custom panel list Name header twice
+   ✔  Then the custom panel list remains in this order:
+       | 3D Annotations |
+       | 2D Sketches    |
+   ✔  And the target indicates a pending change
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+   ✔  And no User Commands panel is displayed on the Tools ribbon
+]]></system-out></testcase></testsuite></testsuites>

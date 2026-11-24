@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:31:13.659165362Z" time="30.333521222"><testcase name="Scenario: Retain the Marking Menu tab when customization is reopened from Tools: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:212:3" time="30.333521222"><system-out><![CDATA[  Scenario: Retain the Marking Menu tab when customization is reopened from Tools
+   ✔  Given the customization dialog is open on the Marking Menu tab with no pending edits
+   ✔  And a part with an active sketch is open in the MCAD Software
+   ✔  When the user closes the customization dialog
+   ✔  And the user opens Customize again from the Tools Options panel
+   ✔  Then the customization dialog opens on the Marking Menu tab
+   ✔  And Environment remains "2D Sketch"
+   ✔  And Sub-Environment remains "None Selected"
+   ✔  And no customization change is pending
+   ✔  When the user closes the customization dialog
+   ✔  Then the active sketch remains unchanged
+]]></system-out></testcase></testsuite></testsuites>

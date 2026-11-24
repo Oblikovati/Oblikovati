@@ -4,6 +4,10 @@ Ribbon Customization selects the clicked command in either list on a
 secondary click. The selected row can then be transferred with the
 list's transfer control. The [native customization runs](receipts/2026-11-24-native-customization-transactions-3856/README.md)
 also verify applying and cancelling drafts across ribbon targets.
+The [native list and selector runs](receipts/2026-11-24-ribbon-customization-lists-3856/README.md)
+cover target order, selection, selector dismissal, and tab retention.
+The ascending and descending source-list scenarios still require missing
+entries in the command catalogue.
 
 The Rust shell uses a fixed ribbon band across the window instead of the temporary
 floating command palette. The File menu and quick-access controls remain available.

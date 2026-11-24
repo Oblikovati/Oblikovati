@@ -11,6 +11,7 @@ fn marking_menu_open(world: &mut ApplicationWorld) {
     no_pending(world);
 }
 #[given("a part with an active sketch is open in The MCAD Software")]
+#[given("a part with an active sketch is open in the MCAD Software")]
 #[given("a part with an active sketch is displayed in the MCAD Software")]
 fn sketch_is_active(world: &mut ApplicationWorld) {
     if world.state().authoring != oblikovati_gui::GuiAuthoringContext::Sketch {

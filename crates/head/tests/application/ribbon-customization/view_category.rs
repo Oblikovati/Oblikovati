@@ -9,6 +9,7 @@ fn empty_target(world: &mut ApplicationWorld) {
 }
 
 #[given("the command source is All Commands")]
+#[then("the command source is \"All Commands\"")]
 fn all_commands(world: &mut ApplicationWorld) {
     assert!(world.window_text("Customize").contains("AllCommands"));
 }
@@ -30,10 +31,23 @@ fn command_only_in_target(world: &mut ApplicationWorld) {
 }
 
 #[when("the user selects View Tab as the command source")]
+#[when("the user selects \"View Tab\" as the command source")]
 fn select_view_source(world: &mut ApplicationWorld) {
     click_in_customize(world, "AllCommands");
     world.click_text("View Tab");
     world.pump(Vec::new());
+}
+
+#[then("the available command list shows View Tab commands")]
+fn view_source_commands(world: &mut ApplicationWorld) {
+    world.run_in_window("Customize", "ViewTab");
+    sketches_in_available_commands(world);
+    assert!(
+        !list_steps::source_rows(world)
+            .iter()
+            .any(|row| row.text == "3-PointArc"),
+        "the View Tab source should filter out sketch tools"
+    );
 }
 
 #[then("the target is empty")]

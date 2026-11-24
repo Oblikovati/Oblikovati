@@ -13,6 +13,8 @@ fn manage_is_empty(world: &mut ApplicationWorld) {
 }
 
 #[when("the user opens the custom panel target selector")]
+#[when("the user clicks the target selector")]
+#[when("the user clicks the target selector again")]
 fn open_target_selector(world: &mut ApplicationWorld) {
     let text = world.window_text("Customize");
     let target = if text.contains("Part|Tools*") {
@@ -23,6 +25,23 @@ fn open_target_selector(world: &mut ApplicationWorld) {
         "Part|Tools"
     };
     click_in_customize(world, target);
+}
+
+#[then("the target list is not open")]
+#[then("the target list closes")]
+fn target_menu_closed(world: &mut ApplicationWorld) {
+    world.expect_no_text("Part | 3D Model");
+}
+
+#[then("the target list opens with Part Tools selected")]
+fn menu_shows_tools(world: &mut ApplicationWorld) {
+    world.expect_text("Part | 3D Model");
+    world.run_in_window("Customize", "Part|Tools");
+}
+
+#[then("the ribbon customization target is \"Part | Tools\"")]
+fn target_is_tools(world: &mut ApplicationWorld) {
+    world.run_in_window("Customize", "Part|Tools");
 }
 
 #[when("the user presses Down and Enter to select Part Manage")]

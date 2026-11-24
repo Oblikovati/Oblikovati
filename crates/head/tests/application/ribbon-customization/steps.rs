@@ -14,6 +14,8 @@ mod category_steps;
 mod custom_panel_title;
 #[path = "file_exchange.rs"]
 mod file_exchange;
+#[path = "list_steps.rs"]
+mod list_steps;
 #[path = "location_steps.rs"]
 mod location_steps;
 #[path = "macros.rs"]
@@ -144,7 +146,8 @@ fn part_with_tools(world: &mut ApplicationWorld) {
 #[given("ribbon customization shows All Commands and an initially empty Part Tools target")]
 #[given("ribbon customization shows All Commands and an empty Part Tools target")]
 #[given("the Ribbon customization dialog shows an initially empty Part Tools target")]
-fn empty_tools_customization(world: &mut ApplicationWorld) {
+#[given("the Ribbon customization dialog shows All Commands for an empty Part Tools custom panel")]
+pub(super) fn empty_tools_customization(world: &mut ApplicationWorld) {
     open_tools_customization(world);
     transaction_steps::all_commands(world);
     transaction_steps::target_is_empty(world);
@@ -355,14 +358,6 @@ fn both_options_clear(world: &mut ApplicationWorld) {
         }
     }
 }
-#[when("I click the 2D Sketches name in the staged target list")]
-fn click_first_staged(world: &mut ApplicationWorld) {
-    click_in_customize(world, "2DSketches");
-}
-#[when("I press Ctrl+A while the target list has focus")]
-fn select_all_staged(world: &mut ApplicationWorld) {
-    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
-}
 #[then("both staged command rows are highlighted")]
 fn staged_rows_selected(world: &mut ApplicationWorld) {
     both_target_rows_selected(world);
@@ -370,10 +365,6 @@ fn staged_rows_selected(world: &mut ApplicationWorld) {
 #[then("Part Tools remains marked as having pending changes")]
 fn tools_remains_pending(world: &mut ApplicationWorld) {
     tools_pending(world);
-}
-#[when("I cancel ribbon customization")]
-fn cancel_from_keyboard_scenario(world: &mut ApplicationWorld) {
-    click_in_customize(world, "Cancel");
 }
 #[when("the user selects \"2D Sketches\" and presses Shift+Down")]
 fn select_two_rows(world: &mut ApplicationWorld) {

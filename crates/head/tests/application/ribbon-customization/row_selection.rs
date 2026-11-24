@@ -9,9 +9,25 @@ fn available_rows_in_order(world: &mut ApplicationWorld) {
     assert!(first.center()[1] < second.center()[1]);
 }
 #[when("the user selects \"2D Sketches\" in the available commands list")]
+#[when("the user selects \"2D Sketches\" in the available command list")]
 #[when("the user selects \"2D Sketches\" in the custom panel list")]
+#[when("the user selects \"2D Sketches\" in the target list")]
+#[when("I click the 2D Sketches name in the staged target list")]
+#[when("the user clicks the 2D Sketches name in the staged target list")]
 fn select_sketches_row(world: &mut ApplicationWorld) {
     click_in_customize(world, "2DSketches");
+}
+
+#[when("I press Ctrl+A while the target list has focus")]
+#[when("the user presses Ctrl+A while the target list has focus")]
+fn select_all_staged(world: &mut ApplicationWorld) {
+    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
+}
+
+#[when("I cancel ribbon customization")]
+#[when("the user cancels ribbon customization")]
+fn cancel_from_keyboard_scenario(world: &mut ApplicationWorld) {
+    cancel_customization(world);
 }
 #[when("the user presses Shift+Down")]
 pub(super) fn shift_down(world: &mut ApplicationWorld) {

@@ -8,11 +8,19 @@ pub(super) fn all_commands(world: &mut ApplicationWorld) {
 }
 
 pub(super) fn target_is_empty(world: &ApplicationWorld) {
+    let rows = target_rows(world);
+    assert!(
+        rows.is_empty(),
+        "expected an empty custom panel list, found {rows:?}"
+    );
+}
+
+pub(super) fn target_rows(world: &ApplicationWorld) -> Vec<&str> {
     let panel = world.run_in_window("Customize", "Custompanel");
     let large = world.run_in_window("Customize", "Large");
     let x = panel.minimum[0]..large.minimum[0];
     let top = large.maximum[1];
-    let rows: Vec<_> = world
+    let mut rows: Vec<_> = world
         .frame
         .runs
         .iter()
@@ -20,12 +28,9 @@ pub(super) fn target_is_empty(world: &ApplicationWorld) {
             let [left, y] = [run.minimum[0], run.center()[1]];
             x.contains(&left) && y > top && y < top + 200.
         })
-        .map(|run| run.text.as_str())
         .collect();
-    assert!(
-        rows.is_empty(),
-        "expected an empty custom panel list, found {rows:?}"
-    );
+    rows.sort_by(|a, b| a.center()[1].total_cmp(&b.center()[1]));
+    rows.into_iter().map(|row| row.text.as_str()).collect()
 }
 
 fn target_label(world: &ApplicationWorld) -> &str {
@@ -138,8 +143,22 @@ fn tools_all_commands(world: &mut ApplicationWorld) {
 }
 
 #[when("the user selects the Part Manage target")]
+#[when("the user selects \"Part | Manage\" as the target")]
 fn select_manage(world: &mut ApplicationWorld) {
     choose_target(world, "Manage");
+}
+
+#[then("the target command list is empty")]
+#[then("the Part Tools target is empty")]
+#[then("the Part | Tools custom target remains empty")]
+fn empty_target_list(world: &mut ApplicationWorld) {
+    target_is_empty(world);
+}
+
+#[given("the Part | Tools custom target is empty")]
+fn empty_tools_panel(world: &mut ApplicationWorld) {
+    world.click_text("Tools");
+    no_user_commands(world);
 }
 
 #[when("the user selects the Part Tools target")]
@@ -159,7 +178,7 @@ fn choose_target(world: &mut ApplicationWorld, tab: &str) {
     );
 }
 
-fn add_command(world: &mut ApplicationWorld, name: &str) {
+pub(super) fn add_command(world: &mut ApplicationWorld, name: &str) {
     let run = world.run_in_window("Customize", name);
     let source = world.run_in_window("Customize", "Availablecommands");
     let target = world.run_in_window("Customize", "Custompanel");
@@ -302,6 +321,8 @@ fn only_annotations_selected(world: &mut ApplicationWorld) {
 
 #[given("\"2D Sketches\" has been staged in the target list")]
 #[given("2D Sketches has been staged in the target list")]
+#[given("\"2D Sketches\" is staged in the target list")]
+#[given("the user has staged \"2D Sketches\" as the only command")]
 fn sketches_staged(world: &mut ApplicationWorld) {
     stage_sketch_visibility(world);
 }

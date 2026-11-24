@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:31:13.680201826Z" time="33.473794658"><testcase name="Scenario: Retain the selected customization tab after reopening: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:200:3" time="33.473794658"><system-out><![CDATA[  Scenario: Retain the selected customization tab after reopening
+   ✔  Given the customization dialog is open on the Marking Menu tab with no pending edits
+   ✔  And a part with an active sketch is open in the MCAD Software
+   ✔  And this is the same application session in which Marking Menu was previously selected
+   ✔  When the user selects the "Keyboard" tab
+   ✔  And the user closes the customization dialog
+   ✔  And the user opens Customize again from the Tools Options panel
+   ✔  Then the customization dialog opens on the "Keyboard" tab
+   ✔  And no keyboard or ribbon changes are pending
+   ✔  When the user closes the customization dialog
+   ✔  Then the active sketch remains unchanged
+]]></system-out></testcase></testsuite></testsuites>

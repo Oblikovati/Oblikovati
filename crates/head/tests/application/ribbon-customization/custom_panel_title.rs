@@ -7,6 +7,7 @@ fn empty_tools_panel(world: &mut ApplicationWorld) {
     world.expect_no_text("User Commands");
 }
 #[when("the user opens Customize from Tools")]
+#[when("the user opens Customize from Tools again")]
 #[when("the user reopens Customize from Tools")]
 fn open_customize_from_tools(world: &mut ApplicationWorld) {
     open_tools_customization(world);
