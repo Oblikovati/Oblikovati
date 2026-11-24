@@ -17,30 +17,35 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         ))
     })?;
     let target = resolve_target(files, owner, document, request.body_index)?;
-    append_delete(files, document, target)?;
+    append_delete(files, owner, document, target)?;
     encode(&BodyListResult {
         bodies: Some(owner.list_bodies(files, document).map_err(Error)?),
     })
 }
 fn append_delete<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
+    owner: &mut dyn PartTopologyAccess<O, W, F>,
     document: u64,
     target: DeleteBodyDefinition,
 ) -> Result<(), Error> {
-    files
-        .commands(document)
-        .map_err(|cause| Error(cause.to_string()))?
-        .run("Delete Body", |snapshot, ids| {
-            let id = ids.allocate_feature().map_err(|cause| cause.to_string())?;
+    crate::checkpoint_replay::edit_with_owner(
+        files,
+        owner,
+        document,
+        "Delete Body",
+        |snapshot, ids| {
+            let id = ids
+                .allocate_feature()
+                .map_err(|cause| Error(cause.to_string()))?;
             let definition = PartFeatureDefinition::DeleteBody(target);
             let reads = definition.reads();
             snapshot
                 .work_geometry
                 .append(AuthoredFeature::new(id, "delete-body", definition, reads))
-                .map_err(|cause| cause.to_string())?;
-            Ok::<(), String>(())
-        })
-        .map_err(|cause| Error(cause.to_string()))
+                .map_err(|cause| Error(cause.to_string()))
+        },
+    )
+    .map(|_| ())
 }
 
 fn resolve_target<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(

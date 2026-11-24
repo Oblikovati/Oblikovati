@@ -179,6 +179,8 @@
 
 ### Changed
 
+- Reused part checkpoints when deleting bodies through the typed API. (#4079)
+
 - Reused part checkpoints when renaming features through the typed API. (#4079)
 
 - Reused part checkpoints when the typed suppression command reports feature health. (#4079)

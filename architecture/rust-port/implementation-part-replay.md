@@ -82,6 +82,11 @@ Renaming the later Fillet in a Part can preserve the certified Extrude prefix
 and its face references. See the
 [typed rename receipt](receipts/2026-11-24-typed-rename-checkpoint-4079/README.md).
 
+Typed Delete Body replays the appended deletion against the retained source
+bodies. It publishes the updated checkpoints before listing the surviving
+bodies, including when the result is empty. See the
+[body deletion receipt](receipts/2026-11-24-body-delete-checkpoint-4079/README.md).
+
 Run `CARGO_NET_OFFLINE=true make gate` for the complete local Linux checks.
 
 A regression first proved that a raw snapshot with a prism construction-datum

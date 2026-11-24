@@ -25,6 +25,39 @@ fn delete_id(owner: &TestOwner, document: u64) -> FeatureId {
         .unwrap()
         .id()
 }
+
+#[test]
+fn body_delete_reuses_checkpoints_through_an_empty_result() {
+    use oblikovati_automation::PartUpdateAccess;
+    let policy = crate::part_scene::resolution_policy::desktop_policy();
+    let (owner, _) = owner();
+    let mut owner = owner.with_extrusion_policy(policy).unwrap();
+    let document = open_prism(&mut owner, true);
+    let remaining_key = listed(&mut owner)[1].key.clone();
+    let mut replay = oblikovati_automation::PartReplayService::with_policy(policy).unwrap();
+    replay
+        .ensure_checkpoints(&mut owner.files, document)
+        .unwrap();
+    let (full_replays, _) = owner.part_scenes.checkpoint_preview_metrics();
+
+    assert_eq!(deleted(&mut owner, 0)[0].key, remaining_key);
+    assert!(deleted(&mut owner, 0).is_empty());
+
+    assert_eq!(
+        owner.part_scenes.checkpoint_preview_metrics().0,
+        full_replays
+    );
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, document)
+            .unwrap()
+            .is_some()
+    );
+    let result = replay.current_part(&owner.files, document).unwrap();
+    assert_eq!(result.ordered_bodies().count(), 0);
+    assert!(result.deleted_body(delete_id(&owner, document)).is_some());
+}
+
 #[test]
 fn body_delete_changes_native_results_and_mass_with_one_undo_step() {
     let (mut owner, _) = owner();
