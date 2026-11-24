@@ -114,6 +114,10 @@ clears the parameter and its model-state entries through the same
 transaction. The [native distance cases](receipts/2026-11-24-native-extrusion-distance-4119/README.md)
 check per-member values and the resulting solid centroid.
 
+The [model-state table fixture runs](receipts/2026-11-24-model-state-table-native-fixtures-4119/README.md)
+check removal and cancellation, invalid and arithmetic expressions, copied
+rows, and member names on the same saved Part.
+
 The [suppression cases](receipts/2026-11-24-browser-suppression-fixture-3896/README.md)
 keep the saved solid Part through table edits, model-state switches and
 row insertion. The published fixture sets the extrusion's suppression

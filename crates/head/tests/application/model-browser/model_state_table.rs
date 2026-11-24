@@ -342,6 +342,7 @@ pub(super) fn category_fixture(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("the user opens the model-state table")]
+#[given("the user opens the model-state table")]
 #[when("the user reopens the model-state table")]
 #[when("the user reopens the model-state table in the same session")]
 pub(super) fn open_property_table(world: &mut ApplicationWorld) {

@@ -226,7 +226,7 @@ fn no_parameter_grid(world: &mut ApplicationWorld) {
 }
 
 #[when("adds d0 from the extrusion to the chosen parameters")]
-fn add_parameter_from_feature(world: &mut ApplicationWorld) {
+pub(super) fn add_parameter_from_feature(world: &mut ApplicationWorld) {
     choose_parameter(world);
     transfer_parameter(world);
 }
@@ -351,6 +351,10 @@ pub(super) fn persist_parameter_column(world: &mut ApplicationWorld) {
 }
 #[given("The MCAD Software has a model-state table containing parameter d0")]
 pub(super) fn given_existing_parameter_table(world: &mut ApplicationWorld) {
+    if super::model_state_fixture::has_named_states(world) {
+        super::model_state_parameter_fixture::expect_prepared_distance_table(world);
+        return;
+    }
     three_state_prism(world);
     persist_parameter_column(world);
     open(world);

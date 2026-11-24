@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:11:13.063218168Z" time="26.583044534"><testcase name="Scenario: Retain an arithmetic expression in a model-state parameter: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1335:3" time="26.583044534"><system-out><![CDATA[  Scenario: Retain an arithmetic expression in a model-state parameter
+   ✔  Given The MCAD Software has a model-state table containing length parameter d0
+   ✔  And Copy State is active
+   ✔  And the Primary and Capture State d0 values are 1 in
+   ✔  When the user enters "1 in + 0.5 in" in the Copy State d0 cell
+   ✔  And accepts and reopens the model-state table
+   ✔  Then the Copy State d0 cell displays the entered arithmetic expression
+   ✔  And the parameter tree displays the active member expression
+   ✔  And the Primary and Capture State d0 cells still display 1 in
+   ✔  When the user closes the table and opens Parameters
+   ✔  Then d0 has nominal and model values of 1.5 in
+]]></system-out></testcase></testsuite></testsuites>

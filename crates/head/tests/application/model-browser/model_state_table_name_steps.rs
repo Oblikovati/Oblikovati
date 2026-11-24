@@ -1,11 +1,26 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native member-name checks for the model-state table (#4119).
+use super::model_state_fixture::{
+    COPY_STATE, create_named_state_in_browser, expand_state_branch, has_named_states,
+};
+use super::model_state_suppression::activate_state_row;
+use super::model_state_table::open_property_table;
 use super::model_state_table_extra::{click, open, row_run};
 use super::model_state_table_parameter_steps::three_state_prism;
 use super::*;
 use oblikovati_api::{client::Client, wire::CreateModelStateArgs};
 
 fn setup(world: &mut ApplicationWorld, name: &str, open_table: bool) {
+    if has_named_states(world) {
+        let states = world.state().browser.unwrap().model_states.unwrap();
+        assert_eq!(states.active().unwrap().name, COPY_STATE);
+        assert_eq!(states.list().len(), 4);
+        assert!(states.list().iter().any(|member| member.name == name));
+        if open_table {
+            row_run(world, name);
+        }
+        return;
+    }
     three_state_prism(world);
     Client::new(world.app().owner.document_host())
         .model_states()
@@ -20,6 +35,21 @@ fn setup(world: &mut ApplicationWorld, name: &str, open_table: bool) {
         world.expect_text(name);
         open(world);
     }
+}
+
+#[given("the user creates a fourth model state named Model State1 and reactivates Copy State")]
+fn create_and_leave_fourth_member(world: &mut ApplicationWorld) {
+    assert!(has_named_states(world));
+    expand_state_branch(world);
+    create_named_state_in_browser(world, "Model State1");
+    activate_state_row(world, COPY_STATE);
+}
+
+#[given("the user renames Model State1 to Table Variant")]
+fn rename_fourth_member_fixture(world: &mut ApplicationWorld) {
+    open_property_table(world);
+    rename(world);
+    accept(world);
 }
 #[given("The MCAD Software has a model-state table with members Capture State and Model State1")]
 fn duplicate_fixture(world: &mut ApplicationWorld) {

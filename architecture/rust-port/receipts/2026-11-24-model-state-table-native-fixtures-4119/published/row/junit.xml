@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:08:35.574433922Z" time="148.60993835"><testcase name="Scenario: Cancel inserting a model-state table row: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1505:3" time="148.60993835"><system-out><![CDATA[  Scenario: Cancel inserting a model-state table row
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✔  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+   ✔  And the user creates model states Capture State and Copy State and activates Copy State
+   ✔  And the user sets extrusion suppression in Primary and Capture State and leaves it computed in Copy State
+   ✔  And the user opens the model-state table with d0 included
+   ✔  And The MCAD Software has a model-state table with Primary, Capture State, and Copy State in that order
+   ✔  And Capture State has extrusion status Suppress and d0 value 1 in
+   ✔  When the user opens the context menu on the Capture State row number
+   ✔  Then Insert Row and Delete Row are available
+   ✔  And the default-row, parameter-range and column commands appear disabled
+   ✔  When the user chooses Insert Row
+   ✔  Then a generated member row appears immediately after Capture State
+   ✔  And the new row shows extrusion status Suppress and d0 value 1 in
+   ✔  And OK is enabled
+   ✔  When the user cancels and reopens the table
+   ✔  Then only the original three member rows are shown in their original order
+]]></system-out></testcase></testsuite></testsuites>

@@ -75,7 +75,7 @@ fn activate_copy(world: &mut ApplicationWorld) {
     activate_state_row(world, COPY_STATE);
 }
 
-fn activate_state_row(world: &mut ApplicationWorld, name: &str) {
+pub(super) fn activate_state_row(world: &mut ApplicationWorld, name: &str) {
     expand_state_branch(world);
     let checked = format!("{name} (Active)");
     if !world.shows(&checked) {

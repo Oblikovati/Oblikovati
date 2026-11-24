@@ -11,6 +11,9 @@ use cucumber::given;
 #[given(
     "the user sets the extrusion to Suppress in Primary and Capture State and Compute in Copy State through the model-state table"
 )]
+#[given(
+    "the user sets extrusion suppression in Primary and Capture State and leaves it computed in Copy State"
+)]
 fn set_saved_extrusion_suppression(world: &mut ApplicationWorld) {
     let name = current_state_extrusion(world).name;
     open_property_table(world);

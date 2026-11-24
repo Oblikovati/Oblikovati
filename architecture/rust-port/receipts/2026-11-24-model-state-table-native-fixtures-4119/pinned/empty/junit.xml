@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:11:09.018040295Z" time="28.911716527"><testcase name="Scenario: Reject an empty model-state member name: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1411:3" time="28.911716527"><system-out><![CDATA[  Scenario: Reject an empty model-state member name
+   ✔  Given The MCAD Software has an active Copy State and an inactive Table Variant
+   ✔  When the user opens the model-state table
+   ✔  And clears the Table Variant member name and presses Enter
+   ✔  Then the empty member cell is highlighted yellow
+   ✔  And OK is enabled
+   ✔  When the user selects OK
+   ✔  Then a message says "Could not create"
+   ✔  When the user cancels the message
+   ✔  Then the model-state table closes
+   ✔  And the browser still shows Table Variant
+   ✔  And Copy State remains active
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native scenario for copying and activating a model state.
+use super::model_state_fixture::{create_named_state_in_browser, expand_state_branch};
 use super::*;
 use cucumber::{given, then, when};
 use oblikovati_api::{
@@ -23,6 +24,12 @@ fn active_named_state(world: &mut ApplicationWorld) {
         .activate(&RepRef { id: member.id })
         .unwrap();
     world.pump(Vec::new());
+}
+
+#[given("the user creates and activates a named non-primary model state in this session")]
+fn prepare_named_source(world: &mut ApplicationWorld) {
+    expand_state_branch(world);
+    create_named_state_in_browser(world, "Large");
 }
 
 #[given("the Model State branch is expanded")]
@@ -81,14 +88,5 @@ fn copy_active(world: &mut ApplicationWorld) {
 #[then("the Model State branch, browser root and document tab identify the duplicate")]
 fn copy_identified(world: &mut ApplicationWorld) {
     assert!((world.run("<Small>").center()[1] - world.run("Model State").center()[1]).abs() < 3.);
-    let count = world
-        .frame
-        .runs
-        .iter()
-        .filter(|row| row.text.contains("Part1") && row.text.contains("Small"))
-        .count();
-    assert_eq!(
-        count, 2,
-        "expected root and document tab to show the duplicate"
-    );
+    super::model_states::expect_state_caption(world, "Small");
 }

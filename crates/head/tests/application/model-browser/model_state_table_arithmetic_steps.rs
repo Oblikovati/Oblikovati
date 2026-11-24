@@ -11,6 +11,10 @@ use oblikovati_api::{client::Client, wire::SetDocumentUnitsArgs};
 
 #[given("The MCAD Software has a model-state table containing length parameter d0")]
 fn table_with_inch_parameter(world: &mut ApplicationWorld) {
+    if super::model_state_fixture::has_named_states(world) {
+        super::model_state_parameter_fixture::expect_prepared_distance_table(world);
+        return;
+    }
     three_state_prism(world);
     let client = Client::new(world.app().owner.document_host());
     client
@@ -77,15 +81,11 @@ fn nominal_and_model_values(world: &mut ApplicationWorld) {
         .unwrap();
     assert_eq!(row.detail.parameter_info.expression, "1 in + 0.5 in");
     assert!((row.detail.model_value - 3.81).abs() < 1e-8);
+    let nominal = &row.detail.parameter_info.value;
+    let model = &row.model_value_text;
     assert!(
-        world
-            .frame
-            .runs
-            .iter()
-            .filter(|run| run.text.contains("1.5"))
-            .count()
-            >= 2,
-        "expected both nominal and model values in the panel"
+        world.shows(nominal) && world.shows(model),
+        "expected nominal {nominal:?} and model {model:?} in the panel"
     );
 }
 

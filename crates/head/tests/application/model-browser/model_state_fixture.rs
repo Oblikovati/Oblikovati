@@ -15,15 +15,23 @@ fn create_named_states(world: &mut ApplicationWorld) {
     world.expect_active(part);
     expand_state_branch(world);
     for name in [CAPTURE_STATE, COPY_STATE] {
-        open_state_menu(world);
-        open_state_submenu(world);
-        create_state(world);
-        world.type_text(name);
-        world.key(ViewportPhysicalKey::Enter, false);
-        world.pump(Vec::new());
-        expect_state_active(world, name);
+        create_named_state_in_browser(world, name);
     }
     assert!(has_named_states(world));
+}
+
+pub(super) fn create_named_state_in_browser(world: &mut ApplicationWorld, name: &str) {
+    open_state_menu(world);
+    open_state_submenu(world);
+    create_state(world);
+    let browser = world.state().browser.unwrap();
+    let states = browser.model_states.unwrap();
+    if states.active().unwrap().name != name {
+        world.type_text(name);
+    }
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.pump(Vec::new());
+    expect_state_active(world, name);
 }
 
 pub(super) fn expand_state_branch(world: &mut ApplicationWorld) {
@@ -43,6 +51,9 @@ fn expect_state_active(world: &mut ApplicationWorld, name: &str) {
 }
 
 pub(super) fn has_named_states(world: &mut ApplicationWorld) -> bool {
+    let Some(part) = world.previous_document else {
+        return false;
+    };
     let state = world.state();
     let Some(states) = state.browser.and_then(|browser| browser.model_states) else {
         return false;
@@ -54,7 +65,6 @@ pub(super) fn has_named_states(world: &mut ApplicationWorld) -> bool {
     {
         return false;
     }
-    let part = world.previous_document.expect("expected the saved Part");
     assert_eq!(state.document, Some(part));
     assert!(states.list().iter().any(|member| member.name == COPY_STATE));
     true

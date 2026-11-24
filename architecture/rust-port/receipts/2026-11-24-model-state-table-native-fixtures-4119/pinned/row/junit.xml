@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:11:04.970484162Z" time="30.040044814"><testcase name="Scenario: Cancel inserting a model-state table row: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1359:3" time="30.040044814"><system-out><![CDATA[  Scenario: Cancel inserting a model-state table row
+   ✔  Given The MCAD Software has a model-state table with Primary, Capture State, and Copy State in that order
+   ✔  And Capture State has extrusion status Suppress and d0 value 1 in
+   ✔  When the user opens the context menu on the Capture State row number
+   ✔  Then Insert Row and Delete Row are available
+   ✔  And the default-row, parameter-range and column commands appear disabled
+   ✔  When the user chooses Insert Row
+   ✔  Then a generated member row appears immediately after Capture State
+   ✔  And the new row shows extrusion status Suppress and d0 value 1 in
+   ✔  And OK is enabled
+   ✔  When the user cancels and reopens the table
+   ✔  Then only the original three member rows are shown in their original order
+]]></system-out></testcase></testsuite></testsuites>

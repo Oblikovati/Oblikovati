@@ -119,18 +119,21 @@ fn entry_was_discarded(world: &mut ApplicationWorld) {
         .find(|row| row.name == "Copy State")
         .unwrap()
         .ref_;
-    let cell = table
+    let column = table
         .parameters
         .unwrap()
         .into_iter()
         .find(|column| column.parameter_id != 0)
-        .unwrap()
+        .unwrap();
+    let cell = column
         .cells
         .unwrap()
         .into_iter()
         .find(|cell| cell.row == row)
         .unwrap();
-    assert_eq!(cell.expression.as_deref().map(String::as_str), Some("2 in"));
+    let saved = cell.expression.as_deref().unwrap_or(&column.base);
+    let published = super::model_state_fixture::has_named_states(world);
+    assert_eq!(saved, if published { "1 in" } else { "2 in" });
 }
 
 #[test]

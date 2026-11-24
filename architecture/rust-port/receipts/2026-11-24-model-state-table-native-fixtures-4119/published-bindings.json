@@ -1,0 +1,119 @@
+{
+  "features": 1,
+  "scenarios": 100,
+  "excluded_capture_only": 0,
+  "blocked_capture_host_only": 0,
+  "steps": 1363,
+  "unresolved": [
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Parameter interface follows the active model state",
+      "line": 1493,
+      "step": "the user adds d0 and d1 to the model-state table and sets Copy State d0 to 1 in + 0.5 in and d1 to 5 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Parameter interface follows the active model state",
+      "line": 1494,
+      "step": "the user accepts and closes the model-state table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1601,
+      "step": "the extrusion has angular parameter d1 at 0 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1602,
+      "step": "Copy State is active among four model states",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1603,
+      "step": "the user adds d1 to the chosen parameters",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1604,
+      "step": "the table shows both d0 and d1 columns",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1605,
+      "step": "each d1 member cell shows 0 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1606,
+      "step": "the user changes the Copy State d1 cell to \"5 deg\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1607,
+      "step": "accepts and reopens the table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1608,
+      "step": "the chosen parameters include d0 and d1",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1609,
+      "step": "Copy State shows d1 as 5 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1610,
+      "step": "the other three members show d1 as 0 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1611,
+      "step": "the parameter tree shows d1 at 5 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Show active member parameter values in the table tree",
+      "line": 1618,
+      "step": "the user adds d0 and d1 to the model-state table and sets Copy State d0 to 1 in + 0.5 in and d1 to 5 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Inspect parameter column and cell context menus",
+      "line": 1635,
+      "step": "the user adds angular parameter d1 to the table",
+      "cause": "undefined step"
+    }
+  ],
+  "source_revision": {
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout",
+    "commit": "f590a2cc540119948799f5733a5fc2276e6758cc",
+    "dirty": false
+  }
+}

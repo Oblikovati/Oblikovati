@@ -88,17 +88,17 @@ fn given_suppressed_rows(world: &mut ApplicationWorld) {
     if has_named_states(world) {
         expect_saved_suppression(world);
         assert!(world.checked("Copy State (Active)"));
-        open_property_table(world);
+        if !world.shows("Model State Table") {
+            open_property_table(world);
+        }
         return;
     }
     setup_suppressed_rows(world);
 }
 #[given("Capture State has extrusion status Suppress and d0 value 1 in")]
 fn capture_values(world: &mut ApplicationWorld) {
-    assert_eq!(
-        grid_cell_text(world, "Extrusion", "Capture State"),
-        "Suppress"
-    );
+    let name = current_state_extrusion(world).name;
+    assert_eq!(grid_cell_text(world, &name, "Capture State"), "Suppress");
     assert_eq!(grid_cell_text(world, "d0", "Capture State"), "1in");
 }
 #[given("the extrusion is suppressed in Capture State and computed in Copy State")]
@@ -150,11 +150,9 @@ fn generated_row_position(world: &mut ApplicationWorld) {
 }
 #[then("the new row shows extrusion status Suppress and d0 value 1 in")]
 fn generated_row_values(world: &mut ApplicationWorld) {
-    grid_run(world, "Extrusion");
-    assert_eq!(
-        grid_cell_text(world, "Extrusion", "Model State1"),
-        "Suppress"
-    );
+    let name = current_state_extrusion(world).name;
+    grid_run(world, &name);
+    assert_eq!(grid_cell_text(world, &name, "Model State1"), "Suppress");
     assert_eq!(grid_cell_text(world, "d0", "Model State1"), "1in");
 }
 #[then("only the original three member rows are shown in their original order")]

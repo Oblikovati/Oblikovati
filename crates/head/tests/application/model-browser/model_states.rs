@@ -117,7 +117,7 @@ fn primary_caption(world: &mut ApplicationWorld) {
     expect_state_caption(world, "Primary");
 }
 
-fn expect_state_caption(world: &mut ApplicationWorld, name: &str) {
+pub(super) fn expect_state_caption(world: &mut ApplicationWorld, name: &str) {
     let expected = format!("<{name}>");
     let root = super::feature_rows::root_caption(world);
     assert!(
