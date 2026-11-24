@@ -248,14 +248,16 @@ impl RibbonCustomization {
                 self.visible_source.clear();
                 let mut transfer = None;
                 for command in self.draft.available_commands() {
-                    if ui
+                    let clicked = ui
                         .selectable_config(command.label())
                         .selected(
                             self.draft.source == Some(command)
                                 || self.draft.source_extra.contains(&command),
                         )
-                        .build()
-                    {
+                        .build();
+                    let secondary_clicked =
+                        ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Right);
+                    if clicked || secondary_clicked {
                         self.draft.reset_source_selection(command);
                         self.list_focus = Some(ListFocus::Source);
                     }
@@ -323,14 +325,16 @@ impl RibbonCustomization {
                 let mut clear_extra = false;
                 let mut options = Vec::new();
                 for (index, entry) in self.draft.rows().iter().enumerate() {
-                    if ui
+                    let clicked = ui
                         .selectable_config(format!("{}##target-{index}", entry.command.label()))
                         .size([126., 0.])
                         .selected(
                             selected == Some(index) || self.draft.target_extra.contains(&index),
                         )
-                        .build()
-                    {
+                        .build();
+                    let secondary_clicked =
+                        ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Right);
+                    if clicked || secondary_clicked {
                         selected = Some(index);
                         clear_extra = true;
                         self.list_focus = Some(ListFocus::Target);

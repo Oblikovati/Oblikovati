@@ -42,6 +42,7 @@ fn only_separator_in_source(world: &mut ApplicationWorld) {
 #[then("the custom panel list remains empty")]
 fn target_is_empty(world: &mut ApplicationWorld) {
     assert_eq!(separator_count(world), 1);
+    super::transaction_steps::target_is_empty(world);
 }
 
 #[when("the user double-clicks \"<Separator>\" in the available list")]

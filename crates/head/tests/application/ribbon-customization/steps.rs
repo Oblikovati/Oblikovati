@@ -24,6 +24,8 @@ mod missing_file;
 mod sketch_target_steps;
 #[path = "target_steps.rs"]
 mod target_steps;
+#[path = "transaction_steps.rs"]
+mod transaction_steps;
 #[path = "view_category.rs"]
 mod view_category;
 #[given("a part document is active in The MCAD Software")]
@@ -65,22 +67,27 @@ fn model_target(world: &mut ApplicationWorld) {
 #[given(
     "the ribbon customization dialog is open with an empty custom panel for \"Part | 3D Model\""
 )]
+#[given("the ribbon customization dialog has an empty custom panel for \"Part | 3D Model\"")]
 fn empty_model_customization(world: &mut ApplicationWorld) {
     world.add_part();
     open_panel_menu(world);
     choose_customize(world);
     model_target(world);
+    transaction_steps::target_is_empty(world);
 }
 #[when("the user selects \"2D Sketches\" in the available commands")]
+#[when("the user selects \"2D Sketches\" in the available list")]
 fn select_available_sketches(world: &mut ApplicationWorld) {
     click_in_customize(world, "2DSketches");
 }
 #[when("the user clicks the right transfer button")]
+#[when("the user clicks the add command button")]
 fn transfer_to_target(world: &mut ApplicationWorld) {
     click_in_customize(world, ">");
 }
 #[then("\"2D Sketches\" appears in the custom panel list")]
 #[then("\"2D Sketches\" remains in the Part Tools custom panel list")]
+#[then("\"2D Sketches\" appears in the target list")]
 fn sketches_in_target(world: &mut ApplicationWorld) {
     let command = world.run_in_window("Customize", "2DSketches");
     let target = world.run_in_window("Customize", "Custompanel");
@@ -134,8 +141,13 @@ fn part_with_tools(world: &mut ApplicationWorld) {
 #[given("the Ribbon customization dialog shows an empty Part Tools custom panel")]
 #[given("ribbon customization shows an initially empty Part Tools target")]
 #[given("the ribbon customization dialog shows an empty Part Tools custom panel")]
+#[given("ribbon customization shows All Commands and an initially empty Part Tools target")]
+#[given("ribbon customization shows All Commands and an empty Part Tools target")]
+#[given("the Ribbon customization dialog shows an initially empty Part Tools target")]
 fn empty_tools_customization(world: &mut ApplicationWorld) {
     open_tools_customization(world);
+    transaction_steps::all_commands(world);
+    transaction_steps::target_is_empty(world);
 }
 #[when("the user stages \"2D Sketches\" in the custom panel")]
 #[when("the user adds \"2D Sketches\" to the custom panel without applying")]
@@ -166,8 +178,10 @@ fn return_to_ribbon_customization(world: &mut ApplicationWorld) {
 #[then("the target indicates a pending change")]
 #[then("the target still indicates a pending change")]
 #[then("the target is marked as changed")]
+#[then("the target shows a pending-change marker")]
+#[then("the target retains its pending-change marker")]
 fn tools_pending(world: &mut ApplicationWorld) {
-    assert!(world.window_text("Customize").contains("Part|Tools*"));
+    transaction_steps::expect_target_pending(world, true);
 }
 #[then("the customization dialog closes")]
 fn customization_closed(_world: &mut ApplicationWorld) {
@@ -188,17 +202,23 @@ fn reopen_tools_customization(world: &mut ApplicationWorld) {
 #[then("the Part Tools custom panel list is empty")]
 #[then("the Part Tools target list is empty")]
 #[then("the custom panel list is empty")]
+#[then("the Part Tools target remains empty")]
+#[then("the target list is empty")]
+#[then("its custom panel list is empty")]
 fn empty_tools_target(world: &mut ApplicationWorld) {
-    let command = world.run_in_window("Customize", "2DSketches");
-    let target = world.run_in_window("Customize", "Custompanel");
-    assert!(command.center()[0] < target.minimum[0]);
+    transaction_steps::target_is_empty(world);
 }
 #[then("\"2D Sketches\" is available in the All Commands list")]
+fn sketches_in_all_commands(world: &mut ApplicationWorld) {
+    transaction_steps::all_commands(world);
+    sketches_in_available_commands(world);
+}
 #[given("\"2D Sketches\" is available in the source list")]
 #[then("\"2D Sketches\" is available in the source list again")]
 fn sketches_in_available_commands(world: &mut ApplicationWorld) {
-    empty_tools_target(world);
-    assert!(world.window_text("Customize").contains("AllCommands"));
+    let source = world.run_in_window("Customize", "2DSketches");
+    let target = world.run_in_window("Customize", "Custompanel");
+    assert!(source.center()[0] < target.minimum[0]);
 }
 #[when("the user double-clicks \"2D Sketches\" in the source list")]
 #[when("the user double-clicks \"2D Sketches\" in the available list")]
@@ -248,6 +268,7 @@ fn settings_dialog_closed(_world: &mut ApplicationWorld) {
     }
 }
 #[then("the ribbon customization dialog remains open")]
+#[then("the customization dialog remains open")]
 fn customization_remains_open(_world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Customize").is_some());
 }
@@ -255,9 +276,9 @@ fn customization_remains_open(_world: &mut ApplicationWorld) {
 #[then("the target is not marked as changed")]
 #[then("the target has no pending-change marker")]
 #[then("the Part Tools target has no pending-change marker")]
+#[then("no pending-change marker is shown")]
 fn tools_not_pending(world: &mut ApplicationWorld) {
-    assert!(world.window_text("Customize").contains("Part|Tools"));
-    assert!(!world.window_text("Customize").contains("Part|Tools*"));
+    transaction_steps::expect_target_pending(world, false);
 }
 #[then("the dialog offers OK, Cancel, and Apply")]
 fn pending_dialog_actions(world: &mut ApplicationWorld) {
@@ -302,6 +323,7 @@ fn both_rows_in_target(world: &mut ApplicationWorld) {
     }
 }
 #[when("the user clicks the left transfer button")]
+#[when("the user clicks the remove command button")]
 fn transfer_to_source(world: &mut ApplicationWorld) {
     click_in_customize(world, "<");
 }

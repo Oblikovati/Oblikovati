@@ -114,7 +114,12 @@ fn standard_inch_details(world: &mut ApplicationWorld) {
 }
 #[then("no context menu is visible")]
 fn no_secondary_menu(_world: &mut ApplicationWorld) {
-    assert_eq!(popup_depth(), 1, "expected only the chooser popup");
+    let chooser_open = super::super::super::window_geometry("Customize").is_none();
+    assert_eq!(
+        popup_depth(),
+        i32::from(chooser_open),
+        "expected no extra context menu over the dialog"
+    );
 }
 #[when("the user right-clicks the Sheet Metal (in) part template")]
 fn secondary_sheet_metal(world: &mut ApplicationWorld) {

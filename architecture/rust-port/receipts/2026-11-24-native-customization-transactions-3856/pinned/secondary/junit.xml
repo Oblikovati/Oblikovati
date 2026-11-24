@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:22:20.189307329Z" time="26.308137598"><testcase name="Scenario: Select an available command with the secondary mouse button: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1199:3" time="26.308137598"><system-out><![CDATA[  Scenario: Select an available command with the secondary mouse button
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an empty Part Tools target
+   ✔  When the user right-clicks "2D Sketches" in the available commands list
+   ✔  Then the "2D Sketches" row is highlighted
+   ✔  And no context menu is visible
+   ✔  And the target list is empty
+   ✔  When the user clicks the add command button
+   ✔  Then "2D Sketches" appears in the target list
+   ✔  And the target shows a pending-change marker
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

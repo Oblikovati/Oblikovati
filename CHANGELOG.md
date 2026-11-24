@@ -277,6 +277,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Selected command rows on secondary click in both Ribbon Customization lists. (#3856)
+
 - Stored literal Extrude distances as built-in feature parameters so the model-state table could edit them per member. (#4119)
 
 - Selected the clicked face when a viewport right-click dismisses the ribbon panel selector, and showed its mini toolbar. (#3856)
