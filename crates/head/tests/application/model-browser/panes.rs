@@ -29,8 +29,7 @@ fn click_tab(world: &mut ApplicationWorld, tab: &str) {
     settle(world);
 }
 fn open_favorites(world: &mut ApplicationWorld) {
-    world.click_text("+");
-    settle(world);
+    open_add_menu(world);
     choose_menu_row(world, FAVORITES);
     settle(world);
 }
@@ -50,7 +49,15 @@ fn model_active(world: &mut ApplicationWorld) {
 #[when("I open the add-pane menu in the browser header")]
 #[when("the user opens the add-pane menu in the browser header")]
 fn open_add_menu(world: &mut ApplicationWorld) {
-    world.click_text("+");
+    let dock = diagnostics::window_dock_id("Model")
+        .filter(|dock| *dock != 0)
+        .expect("expected a docked Model tab");
+    super::super::workspace_layout::dock_search::click_dock_tab_action(
+        world,
+        dock,
+        c"Model",
+        c"   ##dock-panel-menu",
+    );
     settle(world);
 }
 #[when("I choose Favorites")]

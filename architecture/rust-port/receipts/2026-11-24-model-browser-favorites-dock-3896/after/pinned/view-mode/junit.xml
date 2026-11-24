@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:03:40.60184108Z" time="50.670190574"><testcase name="Scenario: Change the Favorites pane view mode: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:305:3" time="50.670190574"><system-out><![CDATA[  Scenario: Change the Favorites pane view mode
+   ✔  Given a part with a visible block is open in the MCAD Software
+   ✔  And the Favorites pane is open with Tree View selected
+   ✔  When the user opens the Favorites view-mode menu
+   ✔  Then Tree View is checked and Thumbnail View is available
+   ✔  When the user chooses Thumbnail View
+   ✔  Then the view-mode control displays Thumbnail View
+   ✔  And the pane shows its content-location control
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user reopens the view-mode menu
+   ✔  Then Thumbnail View is checked
+   ✔  When the user chooses Tree View
+   ✔  Then the view-mode control displays Tree View
+   ✔  When the user closes the Favorites tab
+   ✔  Then the Model browser is displayed again
+]]></system-out></testcase></testsuite></testsuites>

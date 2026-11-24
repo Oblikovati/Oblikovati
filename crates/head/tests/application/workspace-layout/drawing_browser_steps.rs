@@ -84,15 +84,14 @@ fn plus_remains(world: &mut ApplicationWorld) {
 #[when("I open the panel-add control")]
 #[when("the user opens the panel-add control")]
 fn open_plus(world: &mut ApplicationWorld) {
-    let center = if world.shows("+") {
-        world.run("+").center()
-    } else {
-        let (minimum, maximum) = super::super::diagnostics::window_dock_tab_bounds("Model")
-            .expect("panel-add button: expected a visible Model dock tab");
-        let height = maximum[1] - minimum[1];
-        [maximum[0] + height, (minimum[1] + maximum[1]) * 0.5]
-    };
-    click_panel_action(world, center);
+    if world.shows("+") {
+        click_panel_action(world, world.run("+").center());
+        return;
+    }
+    let dock = super::super::diagnostics::window_dock_id("Model")
+        .filter(|id| *id != 0)
+        .expect("expected the Model dock or the workspace launcher");
+    super::dock_search::click_dock_tab_action(world, dock, c"Model", c"   ##dock-panel-menu");
 }
 
 pub(super) fn click_panel_action(world: &mut ApplicationWorld, center: [f32; 2]) {

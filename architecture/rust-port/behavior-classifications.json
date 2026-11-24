@@ -15636,8 +15636,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_panes_test.go.",
+      "mapping_reason": "Native Model Browser pane activation, options, and restoration.",
+      "go_test_premise": "The Go browser pane tests cover pane state. The pinned benchmark supplies the dock controls and viewport checks.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native rendering of the solid Part while its browser panes change.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop browser manages pane and dock state. The viewport continues presenting the active Part.",
+      "rust_tests": "application_scenarios_use_the_native_window: Open and closes an additional browser pane",
+      "oracle": "The pinned case checks the native dock controls and viewport presentation. See receipts/2026-11-24-model-browser-favorites-dock-3896/after/pinned/open-close/cucumber.json.",
+      "expected_result": "The add control opens a pane menu. Favorites becomes active with its content controls, switching back to Model restores the tree, and closing Favorites leaves the Part in the same view.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:704d45de932401f7fd10ed12d2b85228375700eeb9cf3de988fd73d20efca421",
@@ -15894,8 +15904,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_panes_test.go.",
+      "mapping_reason": "Native Model Browser pane activation, options, and restoration.",
+      "go_test_premise": "The Go browser pane tests cover pane state. The pinned benchmark supplies the dock controls and viewport checks.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native rendering of the solid Part while its browser panes change.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop browser manages pane and dock state. The viewport continues presenting the active Part.",
+      "rust_tests": "application_scenarios_use_the_native_window: Change the Favorites pane view mode",
+      "oracle": "The pinned case checks the native dock controls and viewport presentation. See receipts/2026-11-24-model-browser-favorites-dock-3896/after/pinned/view-mode/cucumber.json.",
+      "expected_result": "The Favorites pane switches between Tree View and Thumbnail View and shows the selected mode in its controls. The solid remains visible in the same view.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:733a5519351d277eaa581c260f0655d82f727fa76b6bf02d5ff50710ccd23310",

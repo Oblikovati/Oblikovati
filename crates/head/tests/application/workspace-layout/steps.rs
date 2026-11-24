@@ -22,7 +22,7 @@ mod browser_sketch_native;
 #[path = "browser_tree.rs"]
 pub(super) mod browser_tree;
 #[path = "dock_search.rs"]
-mod dock_search;
+pub(super) mod dock_search;
 #[path = "dock_splitter.rs"]
 mod dock_splitter;
 #[cfg(target_os = "linux")]

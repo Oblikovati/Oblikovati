@@ -4,6 +4,7 @@ use super::super::diagnostics;
 use super::{ApplicationWorld, drawing_browser_steps, native_part};
 use cucumber::{given, then, when};
 use imgui::sys;
+use std::ffi::CStr;
 
 #[given("Model and Log occupy one dock tab bar with Log active")]
 fn log_is_active(world: &mut ApplicationWorld) {
@@ -24,18 +25,36 @@ fn tree_search_closed(world: &mut ApplicationWorld) {
 #[when("the user clicks the search icon in that dock tab bar")]
 fn open_dock_search(world: &mut ApplicationWorld) {
     let dock = world.docking_node.expect("expected the saved dock node");
-    let [x, y, width] = dock_search_item(dock).expect("expected a laid-out dock search button");
+    click_dock_tab_action(world, dock, c"Log", c"   ##dock-search");
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+}
+
+/// Click a trailing dock item relative to a live window tab in the same bar.
+/// Example: `click_dock_tab_action(world, dock, c"Log", c"   ##dock-search")`.
+pub(in super::super) fn click_dock_tab_action(
+    world: &mut ApplicationWorld,
+    dock: u32,
+    anchor: &CStr,
+    label: &CStr,
+) {
+    // SAFETY: the live label and dock ID use the tab-bar scope's hash.
+    let id = unsafe { sys::igImHashStr(label.as_ptr(), 0, dock) };
+    let [x, y, width] = dock_action_item(dock, id, anchor)
+        .unwrap_or_else(|| panic!("expected dock item {label:?}"));
     // The native title bar can offset its buttons after tab measurement. Confirm
     // the real pointer target before clicking so a nearby button cannot pass.
     let center = [x, x + width * 0.5, x - width * 0.5]
         .into_iter()
         .map(|x| [x, y])
-        .find(|point| hover_search(world, *point, dock))
-        .unwrap_or_else(|| panic!("dock search near {x}, {y}: expected its pointer target"));
+        .find(|point| hover_dock_action(world, *point, id))
+        .unwrap_or_else(|| {
+            panic!("dock item {label:?} near {x}, {y}: expected its pointer target")
+        });
     drawing_browser_steps::click_panel_action(world, center);
 }
 
-fn hover_search(world: &mut ApplicationWorld, center: [f32; 2], dock: u32) -> bool {
+fn hover_dock_action(world: &mut ApplicationWorld, center: [f32; 2], id: u32) -> bool {
     let point = diagnostics::pointer_pixels(center);
     #[cfg(target_os = "linux")]
     {
@@ -45,27 +64,20 @@ fn hover_search(world: &mut ApplicationWorld, center: [f32; 2], dock: u32) -> bo
     #[cfg(not(target_os = "linux"))]
     world.hover(point);
     // SAFETY: the focused test owns this frame's live ImGui context.
-    unsafe { (*sys::igGetCurrentContext()).HoveredId == search_button_id(dock) }
+    unsafe { (*sys::igGetCurrentContext()).HoveredId == id }
 }
 
-fn search_button_id(dock: u32) -> u32 {
-    // SAFETY: the C string is static. The dock ID seeds the same tab-bar scope.
-    unsafe { sys::igImHashStr(c"   ##dock-search".as_ptr(), 0, dock) }
-}
-
-fn dock_search_item(dock: u32) -> Option<[f32; 3]> {
+fn dock_action_item(dock: u32, id: u32, anchor: &CStr) -> Option<[f32; 3]> {
     // SAFETY: test diagnostics only borrow this frame's live ImGui context and tab bar.
     unsafe {
         let node = sys::igDockBuilderGetNode(dock).as_ref()?;
         let bar = node.TabBar.as_ref()?;
-        // DockNodeBeginAmendTabBar pushes the dock node ID for trailing buttons.
-        let id = search_button_id(dock);
         let tab = sys::igTabBarFindTabByID(node.TabBar, id).as_ref()?;
-        let log = sys::igFindWindowByName(c"Log".as_ptr()).as_ref()?;
-        let anchor = sys::igTabBarFindTabByID(node.TabBar, log.TabId).as_ref()?;
+        let window = sys::igFindWindowByName(anchor.as_ptr()).as_ref()?;
+        let anchor = sys::igTabBarFindTabByID(node.TabBar, window.TabId).as_ref()?;
         // The dock node can amend the bar after laying out window tabs. Anchor
         // the trailing button to the actual bounds of a normal dock tab.
-        let origin = log.DockTabItemRect.Min.x - (anchor.Offset - bar.ScrollingAnim).floor();
+        let origin = window.DockTabItemRect.Min.x - (anchor.Offset - bar.ScrollingAnim).floor();
         (tab.Width > 0.).then_some([
             origin + tab.Offset + tab.Width * 0.5,
             (bar.BarRect.Min.y + bar.BarRect.Max.y) * 0.5,

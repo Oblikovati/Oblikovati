@@ -67,3 +67,7 @@ The origin and extrusion hierarchy cases use the saved Part on the
 published source. They read the feature and sketch labels from the
 loaded document. The [native receipt](receipts/2026-11-24-model-browser-hierarchy-fixture-3896/README.md)
 also covers X11 deselection with the Appearance browser docked.
+
+The [Favorites and search runs](receipts/2026-11-24-model-browser-favorites-dock-3896/README.md)
+exercise the dock icons through native pointer input. The Favorites case
+also checks that switching panes leaves the solid in the same view.
