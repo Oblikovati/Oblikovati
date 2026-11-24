@@ -1308,9 +1308,9 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
-      "mapping_reason": "Ribbon key tips and view navigation belong to the full desktop shell.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
       "historical_receipts": [
         {
           "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
@@ -1322,7 +1322,16 @@
           "path": "architecture/rust-port/receipts/2026-11-14-gate-ui-3e4b9e33/receipt-3e4b9e33e44dffb2.json",
           "sha256": "dd2c8bb7a262539c96d70a48b8baff12f1ce1d1afac2e3d786803366187279d7"
         }
-      ]
+      ],
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "kernel_capabilities": "Native Part replay and rendering for a visible extruded solid.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The owner supplies the solid used by the viewport, selection, and model browser.",
+      "rust_tests": "application_scenarios_use_the_native_window: Keep ribbon key tips visible while arrow keys change the model view",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "Right and Left rotate and restore the model view while top-level tips stay visible.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:30ebb762acf2f937d24549abe810d47281a058ddf23c2497658d616fc063a8c1",
@@ -1337,7 +1346,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Select the 3D Model tab with its key tip",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "Alt and M select 3D Model. Escape leaves command tips visible, and Alt dismisses them.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:25f10c45474f441d81afe6fb183510363ae8356ba46af2d42e0e8eddc8d800e3",
@@ -1352,7 +1372,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). The Hole command and its model behavior are separate dependencies."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Open a command using a two-letter key tip",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "H narrows the tips and O opens Hole. Cancel closes the panel without creating a hole.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:db266950dc95a2e427e4d3490f522ba58d8ad1c689ce5517f8aec14489af10a5",
@@ -1367,7 +1398,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). The Hole command and its model behavior are separate dependencies."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Continue a two-letter key tip after an unmatched letter",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "An unmatched letter preserves the H prefix. O opens Hole and Cancel leaves the part unchanged.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:b16e16445705d7ee6f02567ee1bdaa465cf4a61736791ceff95748dead182278",
@@ -1382,7 +1424,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Change ribbon display using key tips and menu navigation",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "Key tips change the display, select Minimize to Tabs from the policy menu, and restore full Tools.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:e0575ca52d9924e7ff217e888d1736f09695bc3e8f9c3b2b9588c856b71e0629",
@@ -1397,7 +1450,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Continue after an unmatched top-level key tip",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "An unmatched letter leaves Tools and top-level tips active so M still selects 3D Model.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:7837112e202ccca93204c1229e7aa44184464fbe1c24c52d933f7af9cda1631f",
@@ -1412,7 +1476,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Return to tab key tips after a partial command key tip",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "Escape returns from H-prefixed command tips to tab tips. M reopens 3D Model tips.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:553fe226c91a2861caf1f0bccdd599c08b3ac28a406e9f7c940b903cdd7af43d",
@@ -1427,7 +1502,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Switch ribbon tabs with the mouse while top-level key tips are visible",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "A mouse click selects Tools and clears the key tips while the Part stays visible.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:3d5efac75f370bb350af287d25311f1ff61741515db54bd862f45b1eca94a3bc",
@@ -1442,7 +1528,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Dismiss top-level key tips after an unmatched letter on View",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "An unmatched letter preserves the tips. Escape clears them and leaves View selected.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:e80fbb796cacf9866652814fb53a5f00fb76c0ce38aa7af97ab1ca23a801d9bf",
@@ -1457,7 +1554,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Open the panel selector while top-level key tips are visible",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "Opening the selector clears top-level tips. Escape closes the list and leaves the ribbon expanded.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:08f33e2ff6769ecc44a3d8111aa19c396d18d6c174cc22cb11171f931b043ae1",
@@ -1472,7 +1580,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Open temporary ribbon commands using a tab key tip",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "M expands the temporary command area. Alt removes the tips, and a later dismissal leaves tabs-only until the ribbon is expanded.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:570f04b3b1ee4643cf1c2fa32aea28861026373cb09eee3b4bf8eb4e2e954214",
@@ -1487,7 +1606,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). The Hole command and its model behavior are separate dependencies."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Launch a command by key tip from the minimized ribbon",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "M opens temporary commands. H and O start Hole, and Cancel closes it before the full ribbon is restored.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:fcac3715b8c6025a8ebe65ba5a94743958bf0fe40cef052877de68fd4b7bc200",
@@ -1502,7 +1632,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). The Hole command and its model behavior are separate dependencies."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Launch a command through a left-docked compact group key tip",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "The Modify group tip opens its commands. H and O start Hole, and Cancel returns to the left-docked ribbon.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:e2b09b6179579bedae0f9cf73f808b0cf700619b0384c503abca92f5cd845437",
@@ -1517,7 +1658,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Dismiss a left-docked group after its nested key tips",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "Escape preserves the nested tips. Alt clears them and the next Escape closes the group.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:25f7abeb5b9553ec69e287b20a80fed2b892003c850fbd5b09a69ad37e0dac47",
@@ -1532,7 +1684,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). Face picking and the contextual toolbar are dependent behaviors."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native Part replay and rendering for a visible extruded solid.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The owner supplies the solid used by the viewport, selection, and model browser.",
+      "rust_tests": "application_scenarios_use_the_native_window: Select a solid face while command key tips are visible",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "Picking a face clears command tips and opens the mini toolbar. An empty viewport click clears both selection and toolbar.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:c308da166dae298486f02d94923a4036719785dbf22ccb84837a600fc00fdbdd",
@@ -1547,7 +1710,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). Browser selection and sketch highlighting are dependent behaviors."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native Part replay and rendering for a visible extruded solid.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The owner supplies the solid used by the viewport, selection, and model browser.",
+      "rust_tests": "application_scenarios_use_the_native_window: Navigate an expanded model browser while ribbon key tips are visible",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "Down selects and highlights the child sketch, and Up returns selection to its extrusion while top-level tips stay visible.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:7a7ce5ab3b61770a31e9ed97f63db640670117ac2e8d2263b495cf3d319d2980",
@@ -1562,7 +1736,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7). Face picking and the contextual toolbar are dependent behaviors."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native Part replay and rendering for a visible extruded solid.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The owner supplies the solid used by the viewport, selection, and model browser.",
+      "rust_tests": "application_scenarios_use_the_native_window: Keep Tools key tips visible after Escape with a face selected",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "Escape preserves top-level and Tools tips. Alt dismisses them and keeps the selected face.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:7652a644e3e4abd430fe6c4cda133ea4d88518175d447f6835cf337d2b903fa1",
@@ -1577,7 +1762,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Ribbon key-tip interaction belongs to the full desktop shell (R7)."
+      "mapping_reason": "Native ribbon keyboard navigation with active Part and command state.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/keyboard_test.go and head/ui/chrome_ribbon.go.",
+      "go_test_premise": "The Go tests exercise keyboard dispatch and modifiers. The pinned benchmark supplies the ribbon key-tip sequences and visual assertions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its native ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop handles key-tip and display state. Hole cases cancel before a feature is created.",
+      "rust_tests": "application_scenarios_use_the_native_window: Dismiss top-level key tips after Escape on Tools without a selection",
+      "oracle": "The pinned native case checks the keyboard sequence and resulting ribbon, command, or viewport state. See receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json.",
+      "expected_result": "Escape dismisses top-level tips while Tools and the Part remain active.",
+      "baseline_source_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4"
     },
     {
       "id": "scenario:696c1c624ce655a92f7dbf059e4b9d1920fe82394e2258d4e3defca752948814",
