@@ -26,3 +26,7 @@ the clicked control. The display menu can also hand the click back to the
 selector. Returning from Home restores the active Part's Tools ribbon and
 its panel visibility. The [native handoff receipt](receipts/2026-11-24-tools-selector-handoff-3856/README.md)
 covers these transitions.
+
+A right-click on an inactive ribbon tab opens the active ribbon's context
+menu. Show Panels uses the active tab's panel inventory, and the inactive
+tab remains unselected through the mouse release.

@@ -275,6 +275,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Kept the active ribbon tab selected when opening the context menu on an inactive tab. (#3856)
+
 - Kept clicks on Home, Customize, Options, and the ribbon display menu working while the panel selector is open. (#3856)
 
 - Kept the Sketch Create title's Ribbon Appearance submenu open when Escape is pressed. (#3856)

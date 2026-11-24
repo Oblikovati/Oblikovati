@@ -48,17 +48,20 @@ fn toggle_side_modify(world: &mut ApplicationWorld) {
 }
 
 #[when("I hide Modify through the direct panel selector")]
+#[when("the user hides Modify through the direct panel selector")]
 fn hide_modify_with_selector(world: &mut ApplicationWorld) {
     open_side_selector(world);
     toggle_side_modify(world);
 }
 
 #[when("I switch to the View ribbon")]
+#[when("the user switches to the View ribbon")]
 fn switch_to_view(world: &mut ApplicationWorld) {
     world.click_text("View");
 }
 
 #[when("I return to the 3D Model ribbon")]
+#[when("the user returns to the 3D Model ribbon")]
 fn return_to_model(world: &mut ApplicationWorld) {
     world.click_text("3D Model");
 }

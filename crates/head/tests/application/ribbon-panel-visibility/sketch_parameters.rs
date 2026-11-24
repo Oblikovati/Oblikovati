@@ -3,6 +3,8 @@
 use super::super::diagnostics;
 use super::*;
 use cucumber::{given, then, when};
+#[path = "sketch_pattern.rs"]
+mod sketch_pattern;
 
 #[given("a part document is in sketch edit in the MCAD Software")]
 fn start_sketch_edit(world: &mut ApplicationWorld) {

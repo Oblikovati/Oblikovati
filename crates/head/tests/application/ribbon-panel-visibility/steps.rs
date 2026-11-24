@@ -25,7 +25,7 @@ fn open_show_panels_at(world: &mut ApplicationWorld, anchor: &str) {
     world.pump(Vec::new());
 }
 
-fn ribbon_runs<'a>(
+pub(super) fn ribbon_runs<'a>(
     world: &'a ApplicationWorld,
     label: &str,
 ) -> impl Iterator<Item = &'a super::diagnostics::RenderedRun> + use<'a> {

@@ -167,3 +167,63 @@ fn confirm_both_panels_are_checked(world: &mut ApplicationWorld) {
     world.escape();
     world.escape();
 }
+
+#[given("the full Tools ribbon is active")]
+fn full_tools_with_tutorials(world: &mut ApplicationWorld) {
+    world.click_text("Tools");
+    tools_remains_active(world);
+    enable_tutorials(world);
+}
+
+#[when("the user right-clicks the inactive 3D Model tab")]
+fn right_click_model_tab(world: &mut ApplicationWorld) {
+    let tab = ribbon_runs(world, "3D Model")
+        .next()
+        .expect("expected 3D Model tab");
+    world.right_click(super::super::diagnostics::pointer_pixels(tab.center()));
+}
+
+#[then("the Tools ribbon remains active")]
+#[then("the 3D Model tab remains inactive")]
+fn tools_remains_active(world: &mut ApplicationWorld) {
+    world.expect_text("Application Options");
+    world.expect_no_text("Start 2D Sketch");
+}
+
+#[then("the ribbon context menu is visible")]
+fn context_menu_visible(world: &mut ApplicationWorld) {
+    world.expect_text("Show Panel Titles");
+}
+
+#[when("the user opens Show Panels from that menu")]
+fn open_current_panel_menu(world: &mut ApplicationWorld) {
+    world.click_text("Show Panels");
+}
+
+const TOOLS_PANELS: [&str; 7] = [
+    "Measure",
+    "Material and Appearance",
+    "Options",
+    "Clipboard",
+    "Find",
+    "Team Web",
+    "Tutorials",
+];
+
+#[then(
+    "the submenu lists Measure, Material and Appearance, Options, Clipboard, Find, Team Web and Tutorials"
+)]
+fn active_tools_entries(world: &mut ApplicationWorld) {
+    assert!(side_selector::popup_depth() >= 2, "expected Show Panels");
+    for label in TOOLS_PANELS {
+        world.expect_text(label);
+    }
+    world.expect_no_text("Modify");
+}
+
+#[then("each listed Tools panel is checked")]
+fn active_tools_checked(world: &mut ApplicationWorld) {
+    for label in TOOLS_PANELS {
+        assert!(world.checked(label), "expected {label} checked");
+    }
+}

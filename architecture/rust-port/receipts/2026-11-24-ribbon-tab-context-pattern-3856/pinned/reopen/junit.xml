@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:31:44.271176589Z" time="70.623723036"><testcase name="Scenario: Retain a hidden sketch panel after reopening the sketch: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:334:3" time="70.623723036"><system-out><![CDATA[  Scenario: Retain a hidden sketch panel after reopening the sketch
+   ✔  Given an existing sketch is being edited in the MCAD Software
+   ✔  And the full Sketch ribbon displays the Pattern panel
+   ✔  When the user hides Pattern using Show Panels in the Sketch tab context menu
+   ✔  And the user finishes the sketch without changing geometry
+   ✔  And the user reopens the same sketch from the model browser
+   ✔  Then the Sketch ribbon is visible without the Pattern panel
+   ✔  When the user opens Show Panels from the Sketch tab context menu
+   ✔  Then Pattern is unchecked
+   ✔  When the user selects Pattern
+   ✔  Then the Pattern panel returns to the Sketch ribbon
+]]></system-out></testcase></testsuite></testsuites>

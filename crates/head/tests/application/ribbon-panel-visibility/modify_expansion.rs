@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+#[path = "expansion_reflow.rs"]
+mod expansion_reflow;
 
 const EXPANSION: &str = "##ribbon-additional-PartModify";
 

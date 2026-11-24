@@ -405,9 +405,11 @@ fn ribbon_tabs(
     let mut hovered = false;
     let mut selector_tab = None;
     let hidden_active = !visible.contains(&ribbon.active);
-    let selected_target = frame.select.or_else(|| changed.then_some(ribbon.active));
+    let context_click = tab_click::context_button_event(ui);
+    let restore = (changed || context_click).then_some(ribbon.active);
+    let requested = frame.select.or(restore);
     for tab in visible {
-        let selected = selected_target == Some(*tab);
+        let selected = requested == Some(*tab);
         let flags = if selected {
             TabItemFlags::SET_SELECTED
         } else {
@@ -443,7 +445,7 @@ fn ribbon_tabs(
         }
         if item.is_some()
             && (!hidden_active || clicked || selected)
-            && (selected_target.is_none() || clicked || selected)
+            && (requested.is_none() || clicked || selected)
         {
             ribbon.active = *tab;
         }
@@ -456,7 +458,7 @@ fn ribbon_tabs(
         }
     }
     ribbon.tab_popup_press.finish_frame(ui);
-    if let Some(tab) = selector_tab {
+    if let Some(tab) = selector_tab.or(context_click.then_some(ribbon.active)) {
         ribbon.select_tab(tab);
     }
     if hovered {

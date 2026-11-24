@@ -3,6 +3,16 @@
 use super::*;
 use crate::ribbon::RibbonTab;
 
+/// Dear ImGui selects tabs on either edge of a right click. Keep the active ribbon
+/// selected while its context menu opens, including the release over that menu.
+pub(super) fn context_button_event(ui: &Ui) -> bool {
+    use imgui::{MouseButton, WindowHoveredFlags};
+    (ui.is_mouse_clicked(MouseButton::Right) || ui.is_mouse_released(MouseButton::Right))
+        && ui.is_window_hovered_with_flags(
+            WindowHoveredFlags::CHILD_WINDOWS | WindowHoveredFlags::ALLOW_WHEN_BLOCKED_BY_POPUP,
+        )
+}
+
 pub(super) fn temporary_expansion_press(
     ribbon: &mut DocumentRibbon,
     tab: RibbonTab,

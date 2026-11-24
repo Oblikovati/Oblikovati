@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native ribbon appearance scenarios from the live application benchmark.
+use super::ribbon_panel_visibility::ribbon_runs;
 use super::{ApplicationWorld, diagnostics};
 use crate::work::HeadWork;
 use cucumber::{given, then, when};
@@ -276,7 +277,7 @@ fn tools_tab(world: &mut ApplicationWorld) {
 fn tools_titles_hidden(world: &mut ApplicationWorld) {
     world.expect_text("Application Options");
     assert!(
-        world.frame.runs.iter().all(|run| run.text != "Options"),
+        ribbon_runs(world, "Options").next().is_none(),
         "expected the Options panel title to be hidden"
     );
 }
@@ -309,7 +310,7 @@ fn show_titles(world: &mut ApplicationWorld) {
 #[then("the Tools panel titles appear")]
 fn tools_titles_visible(world: &mut ApplicationWorld) {
     assert!(
-        world.frame.runs.iter().any(|run| run.text == "Options"),
+        ribbon_runs(world, "Options").next().is_some(),
         "expected the Options panel title to be visible"
     );
     world.expect_text("Application Options");
