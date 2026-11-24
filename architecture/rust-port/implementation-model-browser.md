@@ -41,3 +41,9 @@ selection, viewport selection synchronization, context menus, feature health
 badges, visibility controls, timeline interleaving, and complete Go browser
 behavior remain to be ported. The general Extrude command and cube UI journey
 also remain incomplete. Issue #3314 tracks feature diagnostics in the browser.
+
+The pinned browser selection tests derive their deselection click from the
+current viewport bounds and verify that its view ray misses the solid. The
+[native receipt](receipts/2026-11-24-browser-viewport-deselection-3896/README.md)
+covers clearing a nested sketch, clearing a Find result, and toggling an
+origin plane with another browser docked on the right.

@@ -18,7 +18,6 @@ mod color;
 pub(in super::super) const FEATURE: &str = "Extrude1";
 /// 20 mm in working units.
 const DEPTH: f64 = 2.;
-const EMPTY_VIEWPORT: [i32; 2] = [1300, 800];
 /// The outline's accent, as drawn.
 const EDGE_COLOR: [u8; 3] = [64, 153, 255];
 const DIMENSION_LABEL_STEP: f64 = 1.5;
@@ -182,7 +181,8 @@ pub(in super::super) fn expect_outline(world: &mut ApplicationWorld, shown: bool
     assert_eq!(outlined > 0, shown, "outline pixels {outlined}");
 }
 pub(in super::super) fn click_empty_viewport(world: &mut ApplicationWorld) {
-    world.click(EMPTY_VIEWPORT);
+    let at = super::super::viewport_entity_selection::empty_viewport_point(world);
+    world.click(at);
     world.pump(Vec::new());
     world.pump(Vec::new());
 }

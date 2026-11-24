@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T10:23:47.308711554Z" time="86.489418647"><testcase name="Scenario: Group search criteria for the same feature property: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:357:3" time="86.489418647"><failure type="Step Panicked" message="Step panicked. Captured output: assertion `left == right` failed: outline pixels 1881
+  left: true
+ right: false"/><system-out><![CDATA[  Scenario: Group search criteria for the same feature property
+   ✔  Given a part with one extrusion and no fillet is open in the MCAD Software
+   ✔  And the Find dialog contains the criterion Type equals Extrusion
+   ✔  And Features is the selected object type and And is selected for additional criteria
+   ✔  When the user chooses Type equals Fillet and clicks Add to list
+   ✔  Then a prompt says criteria using the same property must be grouped
+   ✔  And the prompt offers to add the criterion using the OR operator
+   ✔  When the user chooses Yes
+   ✔  Then the criteria list shows Type equals Extrusion
+   ✔  And the next line shows OR Type equals Fillet
+   ✔  When the user closes and reopens the Find dialog
+   ✔  Then both criteria remain in the list
+   ✔  When the user clicks Find Now
+   ✔  Then the extrusion row is selected and the block edges are highlighted
+   ✔  And the Find dialog remains open
+   ✔  When the user closes the Find dialog and clicks empty viewport space
+   ✘  Then the highlight disappears and the part remains visible
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:373:5
+      Matched: crates/head/src/../tests/application/model-browser/find.rs:351:1
+      Step panicked. Captured output: assertion `left == right` failed: outline pixels 1881
+        left: true
+       right: false
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nReady\nRibbonDisplay\nv\nv\n...\nextruded\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nX\nY\nZ\nEditSketch\nEditFeature",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

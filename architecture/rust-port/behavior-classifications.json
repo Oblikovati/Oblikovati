@@ -15098,8 +15098,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Browser context menus, selection and viewport presentation.",
+      "go_test_premise": "The Go browser shares selection with the viewport and tests browser menu commands. The pinned scenarios supply the exact highlight, visibility and Find sequences.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native extrusion replay and viewport rendering of the origin plane.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop owner replays the solid. The test checks that viewport input reaches an unobstructed point without picking a face.",
+      "rust_tests": "application_scenarios_use_the_native_window: Show and hide an origin plane from its browser menu",
+      "oracle": "The pinned case checks the browser and rendered viewport before and after the action. See receipts/2026-11-24-browser-viewport-deselection-3896/after/plane/cucumber.json.",
+      "expected_result": "The YZ origin plane remains visible after clearing selection and disappears when its visibility is toggled off. The solid remains visible.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:1c4ef3a97229d99cc8b7a8661392b68cd697891714bf11be26420ce9d7706226",
@@ -15115,8 +15125,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Browser context menus, selection and viewport presentation.",
+      "go_test_premise": "The Go browser shares selection with the viewport and tests browser menu commands. The pinned scenarios supply the exact highlight, visibility and Find sequences.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native replay of an extrusion and display of its consumed sketch and dimensions.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop owner replays the solid. The test checks that viewport input reaches an unobstructed point without picking a face.",
+      "rust_tests": "application_scenarios_use_the_native_window: Inspect a nested sketch from the model browser",
+      "oracle": "The pinned case checks the browser and rendered viewport before and after the action. See receipts/2026-11-24-browser-viewport-deselection-3896/after/sketch/cucumber.json.",
+      "expected_result": "A nested dimensioned sketch can be inspected from its browser row, with geometry and dimensions highlighted. An empty viewport click clears the highlight and leaves the solid visible.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:94d7baf30d4614185ea3da2eb3d6a3367612eba856298a289de0fef87be17970",
@@ -15353,8 +15373,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Browser context menus, selection and viewport presentation.",
+      "go_test_premise": "The Go browser shares selection with the viewport and tests browser menu commands. The pinned scenarios supply the exact highlight, visibility and Find sequences.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native extrusion replay and display of selected solid edges.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop owner replays the solid. The test checks that viewport input reaches an unobstructed point without picking a face.",
+      "rust_tests": "application_scenarios_use_the_native_window: Group search criteria for the same feature property",
+      "oracle": "The pinned case checks the browser and rendered viewport before and after the action. See receipts/2026-11-24-browser-viewport-deselection-3896/after/find/cucumber.json.",
+      "expected_result": "Find offers to OR two criteria for the same property and retains the grouped list. The resulting extrusion outline clears after closing Find and clicking empty viewport space.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:c5507a14ea2f40954728a1dda7f813b6100908662a1c494be9469af2f2fb89d7",

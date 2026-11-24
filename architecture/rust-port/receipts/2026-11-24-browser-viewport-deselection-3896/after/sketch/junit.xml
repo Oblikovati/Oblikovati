@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T10:26:08.001910495Z" time="26.957462629"><testcase name="Scenario: Inspect a nested sketch from the model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:147:3" time="26.957462629"><system-out><![CDATA[  Scenario: Inspect a nested sketch from the model browser
+   ✔  Given an active part in the MCAD Software contains a dimensioned rectangular sketch used by an extrusion
+   ✔  And the extrusion branch is expanded in the model browser
+   ✔  When the user right-clicks the nested sketch row
+   ✔  Then the sketch row is highlighted
+   ✔  And its rectangular geometry and dimensions appear highlighted in the viewport
+   ✔  And the sketch context menu offers Edit Sketch, Redefine, Share Sketch and Properties
+   ✔  And the menu offers Visibility and Export Sketch As
+   ✔  When the user dismisses the menu and clears the selection
+   ✔  Then the highlighted sketch geometry and dimensions disappear from the viewport
+   ✔  And the solid remains visible
+]]></system-out></testcase></testsuite></testsuites>
