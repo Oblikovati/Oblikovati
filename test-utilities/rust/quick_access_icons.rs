@@ -6,6 +6,7 @@ use imgui::{DrawCmd, internal::RawCast, sys};
 pub(super) struct ToolbarImage {
     pub texture: usize,
     pub center: [f32; 2],
+    pub maximum: [f32; 2],
     pub alpha: u8,
 }
 
@@ -39,6 +40,7 @@ pub(super) fn toolbar_images() -> Vec<ToolbarImage> {
                 images.push(ToolbarImage {
                     texture: cmd_params.texture_id.id(),
                     center,
+                    maximum: b,
                     alpha: vertices[indices[0] as usize].col[3],
                 });
             }
@@ -78,6 +80,7 @@ pub(super) fn standard_icon(label: &str) -> Option<ToolbarImage> {
         "Materials" => "qat-materials",
         "AppearanceBrowser" => "qat-appearance-browser",
         "Parameters" => "parameters",
+        "Extrude" => "extrude",
         _ => return None,
     };
     let catalog = include_str!("../../crates/gui/src/icons/catalog.rs");

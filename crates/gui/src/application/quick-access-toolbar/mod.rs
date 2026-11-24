@@ -120,7 +120,7 @@ impl QuickAccessToolbar {
             .filter(|command| selection.shows(*command))
             .count();
         for entry in &selection.added {
-            self.added_entry(ui, entry, state, actions);
+            self.added_entry(ui, icons, entry, state, actions);
             if matches!(entry, AddedEntry::Command(_)) {
                 added_index += 1;
                 let tip = added_index.to_string();
@@ -262,6 +262,7 @@ impl QuickAccessToolbar {
     fn added_entry(
         &mut self,
         ui: &Ui,
+        icons: &crate::icons::GuiRibbonIcons,
         entry: &AddedEntry,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
@@ -277,8 +278,9 @@ impl QuickAccessToolbar {
                 actions.push(action);
             }
             drop(disabled);
-        } else if label == EXTRUDE && extrude_can_start(state) {
-            if ui.button(label) {
+        } else if label == EXTRUDE {
+            let _disabled = ui.begin_disabled(!extrude_can_start(state));
+            if icons.compact_button(ui, label, crate::icons::IconGlyph::Extrude) {
                 match crate::extrude_dialog::start_action(state) {
                     GuiShellAction::ChooseSketchPlaneForExtrude => {
                         self.requests.choose_plane_for_extrude = true

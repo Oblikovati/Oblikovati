@@ -211,8 +211,8 @@ fn choose_add(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[then("an Extrude icon appears on the quick access toolbar")]
-fn extrude_appears(world: &mut ApplicationWorld) {
-    assert!(on_row(world, "Extrude"), "expected Extrude on the row");
+fn extrude_appears(_: &mut ApplicationWorld) {
+    extrude_icon();
 }
 #[then("Extrude remains available on the ribbon")]
 fn extrude_remains(world: &mut ApplicationWorld) {
@@ -267,9 +267,12 @@ fn choose_separator(world: &mut ApplicationWorld) {
 }
 /// How far the row's control sits from Extrude: a divider takes room and draws in it.
 fn row_gap_after_extrude(world: &ApplicationWorld) -> f32 {
-    let extrude = row_run(world, "Extrude").maximum[0];
+    let extrude = extrude_icon().maximum[0];
     let control = row_run(world, CONTROL).minimum[0];
     control - extrude
+}
+fn extrude_icon() -> super::quick_access_icons::ToolbarImage {
+    super::quick_access_icons::standard_icon("Extrude").expect("expected Extrude toolbar icon")
 }
 #[then("the quick access row gains a narrow divider beside the added command")]
 fn divider_drawn(world: &mut ApplicationWorld) {
@@ -277,8 +280,7 @@ fn divider_drawn(world: &mut ApplicationWorld) {
     let after = row_gap_after_extrude(world);
     assert!(after > before, "gap {after}: expected more than {before}");
     let extrude = row_center(world, "Extrude");
-    let run = row_run(world, "Extrude").clone();
-    let x = run.maximum[0] as usize + 10;
+    let x = extrude_icon().maximum[0] as usize + 10;
     let lit = (0..14).any(|offset| {
         let at = [x + offset, extrude[1] as usize];
         let color = world.pixel_at(at);
