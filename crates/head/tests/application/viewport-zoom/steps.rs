@@ -2,7 +2,8 @@
 //! `features/application/viewport-zoom`: the wheel, and Zoom as a running command with its menu.
 use super::ApplicationWorld;
 use super::viewport_orientation::{
-    expect_same_part, open_block, solid_bounds, solid_extent, whole_block_visible,
+    expect_same_part, open_block, open_saved_navigation_block, solid_bounds, solid_extent,
+    whole_block_visible,
 };
 use super::viewport_pan::{camera, expect_part_and_solid, press_bar};
 use crate::{HeadWindow, HeadWork};
@@ -145,12 +146,36 @@ fn visible_block(world: &mut ApplicationWorld) {
     } else {
         open_block(world);
     }
+    capture_wheel_start(world);
+}
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid visible in the active part in the MCAD Software"
+)]
+fn saved_wheel_block(world: &mut ApplicationWorld) {
+    saved_zoom_block(world);
+    capture_wheel_start(world);
+}
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is open with its solid visible in the active part in the MCAD Software"
+)]
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid active in the MCAD Software"
+)]
+fn saved_zoom_block(world: &mut ApplicationWorld) {
+    let path = super::scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
+    open_saved_navigation_block(world, &path);
+}
+fn capture_wheel_start(world: &mut ApplicationWorld) {
     remember_view(world);
     world.save_capture("native-wheel-before-3881");
 }
 #[given("no navigation command is active")]
 fn no_command(world: &mut ApplicationWorld) {
-    world.expect_ready();
+    assert!(
+        world.status_shows("Ready") || world.status_shows("Opened document"),
+        "expected an idle status after opening the Part, got {:?}",
+        world.status_text()
+    );
 }
 #[when("I scroll the mouse wheel over the block in the direction that zooms out")]
 #[when("the user scrolls the mouse wheel over the block in the direction that zooms out")]

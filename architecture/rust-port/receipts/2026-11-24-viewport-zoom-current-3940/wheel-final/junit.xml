@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport zoom: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-zoom-source/features/application/viewport-zoom/viewport-zoom.feature" package="testsuite/Feature: Viewport zoom: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-zoom-source/features/application/viewport-zoom/viewport-zoom.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:00:58.116200099Z" time="19.732781797"><testcase name="Scenario: Change magnification with the mouse wheel: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-zoom-source/features/application/viewport-zoom/viewport-zoom.feature:5:3" time="19.732781797"><system-out><![CDATA[  Scenario: Change magnification with the mouse wheel
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid visible in the active part in the MCAD Software
+   ✔  And no navigation command is active
+   ✔  When the user scrolls the mouse wheel over the block in the direction that zooms out
+   ✔  Then the block appears smaller in the viewport
+   ✔  And the same part and orientation remain active
+   ✔  When the user scrolls the mouse wheel over the block in the opposite direction
+   ✔  Then the block appears larger than after zooming out
+   ✔  And the same part and orientation remain active
+]]></system-out></testcase></testsuite></testsuites>

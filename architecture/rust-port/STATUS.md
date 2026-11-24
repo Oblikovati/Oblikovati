@@ -300,11 +300,11 @@ using this status; the live scenario directory can change.
 - Viewport Pan (#3881) passed all four current scenarios and 32 steps with the native Part.
   See the [current run](receipts/2026-11-24-viewport-pan-current-3881/README.md).
   Separate X11 mouse tests previously passed for Pan dragging and context-menu actions.
-- Viewport zoom has a full-feature diagnostic: all seven scenarios and 74
-  steps passed at SHA-256 `cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c`.
-  The wheel steps used X11 input; other actions used scripted window input.
-  All seven pinned scenarios have R0 baseline records. The live feature hash
-  has changed. See `receipts/2026-11-20-viewport-zoom-r0-3940/`.
+- Viewport Zoom (#3940) passed all seven current scenarios and 74 steps with the native Part.
+  The wheel used X11 input. Other actions used scripted window input.
+  See the [current run](receipts/2026-11-24-viewport-zoom-current-3940/README.md).
+  All seven pinned scenarios also have R0 baseline records.
+  See the [pinned run](receipts/2026-11-20-viewport-zoom-r0-3940/README.md).
 - Viewport navigation wheel (#3881): all 12 scenarios and 143 steps passed
   with X11 mouse, Escape, fixture path entry and Enter, a native part, and
   unchanged source/support hashes. Compact wheel segment checks use rendered

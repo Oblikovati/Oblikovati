@@ -96,12 +96,32 @@
     }
   },
   "features/application/viewport-zoom/viewport-zoom.feature": {
-    "feature_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c",
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-viewport-zoom/cucumber.json",
-    "cucumber_sha256": "09a693645053f4fc37cbc19153dde4b5bfa4b734eabeffc7b3fa77351d825766",
-    "application_commit": "5781e24c03e9bc01c845a128e22b46e415d919b9",
-    "command": "OBK_BDD_FEATURE=viewport-zoom tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb, Vulkan Lavapipe; X11 wheel and scripted window input"
+    "by_source_sha256": {
+      "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c": {
+        "feature_sha256": "cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c",
+        "cucumber": "architecture/rust-port/receipts/2026-11-18-viewport-zoom/cucumber.json",
+        "cucumber_sha256": "09a693645053f4fc37cbc19153dde4b5bfa4b734eabeffc7b3fa77351d825766",
+        "application_commit": "5781e24c03e9bc01c845a128e22b46e415d919b9",
+        "command": "OBK_BDD_FEATURE=viewport-zoom tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11, Xvfb, Vulkan Lavapipe; X11 wheel and scripted window input"
+      },
+      "89899bca3d06c042c7e2090f3ce2b18d332fe3ba67c22b8382fb7b80dbde58f2": {
+        "feature_sha256": "89899bca3d06c042c7e2090f3ce2b18d332fe3ba67c22b8382fb7b80dbde58f2",
+        "supporting_files": {
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-viewport-zoom-current-3940/cucumber.json",
+        "cucumber_sha256": "47588e3f3bb4f10486bf0cda3c78fa556642c882c73e772e09156ec6d6ed8ca5",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-24-viewport-zoom-current-3940/scenario-inventory.json",
+        "scenario_inventory_sha256": "d914f236e5a2e88558917e209c14ea117da6affba795257b887e1d9a0123583a",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-viewport-zoom-current-3940/scenario-arguments.json",
+        "scenario_arguments_sha256": "934bc8c2495c6f292f2476399770fa43b175ecf94e33b62fc7349c63b72253f9",
+        "application_commit": "216b13e044035d606567b5e2a0081a919216cac1",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=viewport-zoom OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All seven current scenarios passed with the published native Part. The wheel used actual X11 scroll events. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   },
   "features/application/viewport-entity-selection/viewport-entity-selection.feature": {
     "by_source_sha256": {
