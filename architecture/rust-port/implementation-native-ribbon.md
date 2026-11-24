@@ -31,6 +31,9 @@ that opening and closing Customize preserves a selected solid face.
 The [native file chooser runs](receipts/2026-11-24-ribbon-customization-draft-files-3856/README.md)
 check that canceling Import or Export preserves pending edits. Export
 writes the applied ribbon settings and leaves the draft open in Customize.
+The [native import runs](receipts/2026-11-24-ribbon-customization-import-drafts-3856/README.md)
+check that a file replaces pending edits on Tools and Manage while
+preserving the selected target. Cancel restores the applied settings.
 
 The Rust shell uses a fixed ribbon band across the window instead of the temporary
 floating command palette. The File menu and quick-access controls remain available.

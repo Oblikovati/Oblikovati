@@ -3,6 +3,9 @@
 use super::*;
 use xml::reader::XmlEvent;
 
+#[path = "import_drafts.rs"]
+mod import_drafts;
+
 const EXPORT: &str = "Export Customization Settings";
 const IMPORT: &str = "Import Customization Settings";
 
@@ -183,6 +186,7 @@ fn import_exported_settings(world: &mut ApplicationWorld) {
     settings_file_choice(world, IMPORT, &path, "Open");
 }
 #[then("the import dialog closes")]
+#[then("the import chooser closes")]
 #[then("the file picker closes")]
 fn import_closed(_world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry(IMPORT).is_none());

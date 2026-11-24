@@ -65,6 +65,7 @@ pub(super) fn expect_target_pending(world: &ApplicationWorld, pending: bool) {
 
 #[then("Apply and cancels are enabled")]
 #[then("Apply and cancels remain enabled")]
+#[then("Apply and cancels are available")]
 #[then("Apply and cancels are available in the customization dialog")]
 fn edits_enabled(world: &mut ApplicationWorld) {
     assert_edit_controls(world, true);
@@ -309,6 +310,7 @@ fn tools_has_sketches(world: &mut ApplicationWorld) {
 }
 
 #[then("\"3D Annotations\" is available in the source list")]
+#[then("3D Annotations is available in the source list")]
 fn annotations_available(world: &mut ApplicationWorld) {
     let command = world.run_in_window("Customize", "3DAnnotations");
     let target = world.run_in_window("Customize", "Custompanel");
