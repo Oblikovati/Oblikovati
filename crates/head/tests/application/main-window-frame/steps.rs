@@ -4,6 +4,8 @@ use super::ApplicationWorld;
 use cucumber::{given, then, when};
 #[path = "fixture.rs"]
 mod fixture;
+#[cfg(target_os = "linux")]
+pub(super) use fixture::{bundled_frame_fixture, open_dirty_frame_part_from};
 pub(super) use fixture::{open_dirty_frame_part, open_frame_part};
 
 #[when("the user invokes the desktop window Close shortcut")]

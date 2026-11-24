@@ -364,15 +364,6 @@ fn resize_handles_show_direction_specific_cursors() {
     world.close();
 }
 
-fn open_projection_fixture(world: &mut ApplicationWorld) {
-    let source = super::scenario_root().join("fixtures/cad/main-window-frame-start.opd");
-    let copy = world.scratch_folder().join("projection-fixture.opd");
-    std::fs::copy(source, &copy).unwrap();
-    world.open_fixture(&copy);
-    world.start_sketch();
-    world.finish_sketch();
-}
-
 fn expect_no_projection_error(world: &ApplicationWorld, stage: &str) {
     assert!(
         !world.shows("Command failed"),
@@ -393,7 +384,8 @@ fn restore_from_taskbar(world: &mut ApplicationWorld) {
 #[ignore = "requires an X11 window manager and taskbar"]
 fn native_frame_minimize_restores_without_dimension_projection_error() {
     let mut world = ApplicationWorld::new();
-    open_projection_fixture(&mut world);
+    let source = super::main_window_frame::bundled_frame_fixture();
+    super::main_window_frame::open_dirty_frame_part_from(&mut world, &source);
     x11_input::focus_window();
     let bounds = x11_input::application_bounds();
     drag_resize_handle(&mut world, [bounds[2] - 2, bounds[3] - 2], [100, 100]);
