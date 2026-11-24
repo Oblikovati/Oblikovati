@@ -7,6 +7,8 @@ mod acceptance;
 #[cfg(target_os = "linux")]
 mod direction;
 #[cfg(target_os = "linux")]
+mod direction_selector;
+#[cfg(target_os = "linux")]
 mod viewport_chamfer;
 #[cfg(target_os = "linux")]
 pub(super) mod viewport_fillet;

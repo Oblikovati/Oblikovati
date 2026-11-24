@@ -311,14 +311,10 @@ impl GuiFrameEngine {
         if let Some(path) = home_requests.file_properties {
             self.document_tabs.menu.properties.request_file(&path);
         }
-        self.document_files.panel(
-            ui,
-            &request.commands,
-            &mut selected,
-            &self.icons.presentation,
-        );
         let icons = &self.icons.presentation;
         let commands = &request.commands;
+        self.document_files
+            .panel(ui, commands, &mut selected, icons);
         self.preferences
             .panel(ui, commands, &mut selected, self.home.active, icons);
         self.material_browser
@@ -327,9 +323,11 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands, &mut selected);
         self.extrude_dialog.panel(
             ui,
-            &request.commands,
+            commands,
             self.plane_selection.active,
             &mut selected,
+            icons,
+            self.popup_was_open,
         );
         self.blend_dialog
             .panel(ui, &request.commands, &mut selected);

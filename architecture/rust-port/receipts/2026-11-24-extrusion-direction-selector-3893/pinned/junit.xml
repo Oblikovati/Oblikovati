@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T17:03:31.078297153Z" time="39.643086126"><testcase name="Scenario: extrusion-03c Choose named directions with the dropdown selector: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature:42:3" time="39.643086126"><system-out><![CDATA[  Scenario: extrusion-03c Choose named directions with the dropdown selector
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given the rectangle extrusion preview is open with icon direction controls
+   ✔  When the user opens the Direction menu
+   ✔  Then Selector Style offers Icons and Dropdown
+   ✔  And Icons is selected
+   ✔  When the user chooses Dropdown
+   ✔  Then the Direction field displays Default
+   ✔  When the user opens the Direction list
+   ✔  Then it offers Default, Flipped, Symmetric and Asymmetric
+   ✔  When the user opens the Direction menu and chooses Icons
+   ✔  Then the four direction icons are visible again
+]]></system-out></testcase></testsuite></testsuites>

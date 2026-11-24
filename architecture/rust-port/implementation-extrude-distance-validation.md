@@ -65,3 +65,13 @@ The desktop exposes Taper B as a disabled zero-angle field pending a
 validated tapered sweep. See the
 [Asymmetric direction receipt](receipts/2026-11-24-extrusion-asymmetric-3893/README.md)
 and [Martensite #463](https://github.com/Oblikovati/Martensite/issues/463).
+
+## Direction selector style (#3893)
+
+The Direction menu switches between four labeled icons and a list of the
+same four directions. The dialog starts in Icons style and remembers the
+style for the desktop session, including after Cancel. Changing
+presentation preserves the current direction and preview. Selecting a
+direction from either style sends the same draft through validation.
+
+See the [Direction selector receipt](receipts/2026-11-24-extrusion-direction-selector-3893/README.md).

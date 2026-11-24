@@ -61,7 +61,7 @@ fn symmetric_preview_spans_the_sketch_plane(world: &mut ApplicationWorld) {
     ));
 }
 
-fn preview_depth(world: &mut ApplicationWorld) -> [f32; 2] {
+pub(super) fn preview_depth(world: &mut ApplicationWorld) -> [f32; 2] {
     world
         .app()
         .window

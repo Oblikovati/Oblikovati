@@ -19,6 +19,7 @@ pub(crate) struct ExtrudeDialog {
     distance: String,
     second_distance: String,
     direction: GuiExtrudeDirection,
+    direction_style: direction::SelectorStyle,
     previewed: bool,
     attempted: Option<crate::GuiExtrudePreview>,
     pending: pending::PendingExtrude,
@@ -114,6 +115,8 @@ impl ExtrudeDialog {
         state: &GuiCommandState,
         plane_active: bool,
         actions: &mut Vec<GuiShellAction>,
+        icons: &crate::icons::GuiRibbonIcons,
+        popup_was_open: bool,
     ) {
         if let Some(sketch) = self.pending.observe(state, plane_active, actions) {
             self.set_document(state.document);
@@ -149,7 +152,12 @@ impl ExtrudeDialog {
             edited |= ui.input_int("Profile", &mut self.profile).build();
             drop(disabled_sketch);
             edited |= ui.input_text("Distance A", &mut self.distance).build();
-            edited |= direction::draw(ui, &mut self.direction, self.edit_feature.is_some());
+            edited |= self.direction_style.draw(
+                ui,
+                &mut self.direction,
+                self.edit_feature.is_some(),
+                icons,
+            );
             if self.direction == GuiExtrudeDirection::Asymmetric {
                 edited |= direction::draw_second_distance(
                     ui,
@@ -179,7 +187,10 @@ impl ExtrudeDialog {
             if let Some(error) = &self.commit_error {
                 ui.text_colored([1.0, 0.25, 0.25, 1.0], format!("Extrusion failed: {error}"));
             }
-            self.controls(ui, state, document, edited, actions);
+            // ImGui can dismiss a popup and restore dialog focus before drawing these buttons.
+            let shortcuts =
+                !popup_was_open && !crate::widget_abi::any_popup_open(ui) && ui.is_window_focused();
+            self.controls(ui, state, document, edited, shortcuts, actions);
         });
         if !open {
             if self.previewed {
@@ -273,6 +284,7 @@ impl ExtrudeDialog {
         state: &GuiCommandState,
         document: u64,
         edited: bool,
+        shortcuts: bool,
         actions: &mut Vec<GuiShellAction>,
     ) {
         let preview = self.valid_preview_request(state, document, edited);
@@ -283,13 +295,13 @@ impl ExtrudeDialog {
         let request = preview.as_ref().filter(|_| enabled);
         self.preview_control(ui, request, actions);
         ui.same_line();
-        let committed = self.commit_control(ui, request, actions);
+        let committed = self.commit_control(ui, request, shortcuts, actions);
         drop(disabled);
         if committed {
             return;
         }
         ui.same_line();
-        self.cancel_control(ui, actions);
+        self.cancel_control(ui, shortcuts, actions);
     }
     fn creation_action(&self, request: &crate::GuiExtrudePreview) -> GuiShellAction {
         GuiShellAction::Extrude {
@@ -336,10 +348,11 @@ impl ExtrudeDialog {
         &mut self,
         ui: &Ui,
         request: Option<&crate::GuiExtrudePreview>,
+        shortcuts: bool,
         actions: &mut Vec<GuiShellAction>,
     ) -> bool {
         let pressed = crate::widget_abi::button(ui, "OK", [0.; 2]);
-        if !pressed && !(ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Enter)) {
+        if !pressed && !(shortcuts && ui.is_key_pressed_no_repeat(Key::Enter)) {
             return false;
         }
         let Some(request) = request else {
@@ -359,9 +372,9 @@ impl ExtrudeDialog {
         self.previewed = false;
         true
     }
-    fn cancel_control(&mut self, ui: &Ui, actions: &mut Vec<GuiShellAction>) {
+    fn cancel_control(&mut self, ui: &Ui, shortcuts: bool, actions: &mut Vec<GuiShellAction>) {
         if !crate::widget_abi::button(ui, "Cancel", [0.; 2])
-            && !(ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape))
+            && !(shortcuts && ui.is_key_pressed_no_repeat(Key::Escape))
         {
             return;
         }

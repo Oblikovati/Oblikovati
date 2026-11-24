@@ -105,4 +105,8 @@ glyph_catalog! {
     MaterialBrowser => "qat-material-browser",
     Materials => "qat-materials",
     AppearanceBrowser => "qat-appearance-browser",
+    DirectionDefault => "direction-default",
+    DirectionFlipped => "direction-flipped",
+    DirectionSymmetric => "direction-symmetric",
+    DirectionAsymmetric => "direction-asymmetric",
 }
