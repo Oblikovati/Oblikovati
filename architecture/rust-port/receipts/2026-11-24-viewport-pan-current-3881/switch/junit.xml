@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport pan: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-pan-source/features/application/viewport-pan/viewport-pan.feature" package="testsuite/Feature: Viewport pan: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-pan-source/features/application/viewport-pan/viewport-pan.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T21:51:03.694752401Z" time="30.370171763"><testcase name="Scenario: Switch from Pan to Zoom using the contextual menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-pan-source/features/application/viewport-pan/viewport-pan.feature:34:3" time="30.370171763"><system-out><![CDATA[  Scenario: Switch from Pan to Zoom using the contextual menu
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its solid visible in the MCAD Software
+   ✔  And Pan is active from the viewport navigation bar
+   ✔  When the user right-clicks an empty area of the viewport
+   ✔  And the user chooses Zoom from the contextual menu
+   ✔  Then the contextual menu closes
+   ✔  And the status area prompts for zooming and indicates cancellation is available
+   ✔  And the same part and solid remain visible
+   ✔  When the user presses Escape
+   ✔  Then the status area returns to Ready
+]]></system-out></testcase></testsuite></testsuites>

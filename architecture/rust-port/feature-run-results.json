@@ -76,6 +76,22 @@
         },
         "blocker": "All four published Given steps still name the Inventor fixture. The native body-properties-start.opd is available.",
         "notes": "A separate draft changed only the four file references and passed all scenarios. See the native-draft report in the Pan rerun receipt."
+      },
+      "f19459644da0c9bd4d1c9b2d02d1111a5777ea0fbc6f19bee160d11298056739": {
+        "feature_sha256": "f19459644da0c9bd4d1c9b2d02d1111a5777ea0fbc6f19bee160d11298056739",
+        "supporting_files": {
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-viewport-pan-current-3881/cucumber.json",
+        "cucumber_sha256": "558b3aa8feefd3479c8439636d7319bf7854c31b6dbb58146e9bd4743639e456",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-24-viewport-pan-current-3881/scenario-inventory.json",
+        "scenario_inventory_sha256": "29beadbdc87ab17f0564bc31d7a5b0771a5c3115965162cea8e0c4f6587ca28e",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-viewport-pan-current-3881/scenario-arguments.json",
+        "scenario_arguments_sha256": "750362b759f82c29b3b489ed91057eed0edc78206132327dd32f50bf56cac537",
+        "application_commit": "f6546c00f619273c4784d0a25d6ee1d74909b4b5",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=viewport-pan OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All four current scenarios passed with the published native Part. Strict build and runtime provenance remains open under #3978."
       }
     }
   },

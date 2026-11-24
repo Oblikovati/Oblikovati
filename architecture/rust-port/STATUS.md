@@ -297,9 +297,9 @@ using this status; the live scenario directory can change.
   Save and Discard were checked on reopen. Cancelling the first Save As kept the sketch open.
   See the [current run](receipts/2026-11-24-application-closing-current-complete-4030/README.md).
   Strict build and runtime provenance remains open under #3978.
-- Viewport pan has a full-feature diagnostic: all four scenarios and 32 steps
-  passed at SHA-256 `4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647`.
-  Two separate X11 mouse tests passed for pan dragging and context-menu actions.
+- Viewport Pan (#3881) passed all four current scenarios and 32 steps with the native Part.
+  See the [current run](receipts/2026-11-24-viewport-pan-current-3881/README.md).
+  Separate X11 mouse tests previously passed for Pan dragging and context-menu actions.
 - Viewport zoom has a full-feature diagnostic: all seven scenarios and 74
   steps passed at SHA-256 `cb07444a13797a6d98fac5b8f26463343a1cbff5ed4781c359290bd6e4856e9c`.
   The wheel steps used X11 input; other actions used scripted window input.

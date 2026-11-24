@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport pan: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-pan-source/features/application/viewport-pan/viewport-pan.feature" package="testsuite/Feature: Viewport pan: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-pan-source/features/application/viewport-pan/viewport-pan.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T21:50:15.261366988Z" time="19.836416693"><testcase name="Scenario: Cancel Pan by clicking the viewport: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-pan-source/features/application/viewport-pan/viewport-pan.feature:17:3" time="19.836416693"><system-out><![CDATA[  Scenario: Cancel Pan by clicking the viewport
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its solid visible in the MCAD Software
+   ✔  And Pan is active from the viewport navigation bar
+   ✔  When the user clicks an empty area of the viewport without dragging
+   ✔  Then Pan ends and the status area displays Ready
+   ✔  And the same part and solid remain visible in their previous view
+]]></system-out></testcase></testsuite></testsuites>

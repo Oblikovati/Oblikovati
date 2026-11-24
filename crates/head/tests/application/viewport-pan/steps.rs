@@ -42,6 +42,13 @@ fn saved_pan_block_visible(world: &mut ApplicationWorld) {
     let path = super::scenario_root().join(PAN_FIXTURE);
     open_saved_navigation_block(world, &path);
 }
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is open with its solid visible in the MCAD Software"
+)]
+fn current_pan_block_visible(world: &mut ApplicationWorld) {
+    let path = super::scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
+    open_saved_navigation_block(world, &path);
+}
 #[given("the viewport navigation bar is visible")]
 fn bar_visible(_: &mut ApplicationWorld) {
     diagnostics::window_geometry(NAVIGATION).expect("expected the navigation bar");
