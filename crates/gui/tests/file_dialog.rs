@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_gui::*;
 
+// The integration test binary shares Dear ImGui's active context across tests.
+static GUI_CONTEXT: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 #[allow(dead_code, unsafe_code)]
 #[path = "../../../test-utilities/rust/drawn_text.rs"]
 mod drawn_text;
@@ -108,6 +111,9 @@ fn choose_save_as(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
 }
 #[test]
 fn file_menu_opens_a_visible_document_without_an_existing_document() {
+    let _guard = GUI_CONTEXT
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = file_request();
     request.commands = GuiCommandState::default();
@@ -130,6 +136,9 @@ fn file_menu_opens_a_visible_document_without_an_existing_document() {
 }
 #[test]
 fn file_menu_new_and_save_reuse_owner_commands() {
+    let _guard = GUI_CONTEXT
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = file_request();
     engine.frame(&request).unwrap();
@@ -152,6 +161,9 @@ fn file_menu_new_and_save_reuse_owner_commands() {
 }
 #[test]
 fn file_menu_save_as_discards_a_cancelled_draft_and_accepts_a_fresh_path() {
+    let _guard = GUI_CONTEXT
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = file_request();
     engine.frame(&request).unwrap();
@@ -175,6 +187,9 @@ fn file_menu_save_as_discards_a_cancelled_draft_and_accepts_a_fresh_path() {
 }
 #[test]
 fn native_text_widget_submits_the_typed_path_and_escape_discards_the_next_draft() {
+    let _guard = GUI_CONTEXT
+        .lock()
+        .unwrap_or_else(|error| error.into_inner());
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = file_request();
     assert!(engine.request_save_path(0).unwrap_err().contains("nonzero"));

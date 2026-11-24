@@ -1,0 +1,37 @@
+   Compiling oblikovati-gui v0.1.0 (/git/oblikovati-workspace/oblikovati-rust/crates/gui)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.80s
+     Running tests/file_dialog.rs (target/debug/deps/file_dialog-fa8d5bcfb61abd66)
+
+running 4 tests
+test file_menu_save_as_discards_a_cancelled_draft_and_accepts_a_fresh_path ... FAILED
+test native_text_widget_submits_the_typed_path_and_escape_discards_the_next_draft ... FAILED
+test file_menu_opens_a_visible_document_without_an_existing_document ... FAILED
+test file_menu_new_and_save_reuse_owner_commands ... ok
+
+failures:
+
+---- file_menu_save_as_discards_a_cancelled_draft_and_accepts_a_fresh_path stdout ----
+
+thread 'file_menu_save_as_discards_a_cancelled_draft_and_accepts_a_fresh_path' (1215084) panicked at /home/vmiguel/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/imgui-0.12.0/src/context.rs:228:9:
+A new active context cannot be created, because another one already exists
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- native_text_widget_submits_the_typed_path_and_escape_discards_the_next_draft stdout ----
+
+thread 'native_text_widget_submits_the_typed_path_and_escape_discards_the_next_draft' (1215085) panicked at crates/gui/tests/file_dialog.rs:178:44:
+called `Result::unwrap()` on an `Err` value: "GUI context occupied: expected exclusive owner activation before creation"
+
+---- file_menu_opens_a_visible_document_without_an_existing_document stdout ----
+
+thread 'file_menu_opens_a_visible_document_without_an_existing_document' (1215083) panicked at /home/vmiguel/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/imgui-0.12.0/src/context.rs:228:9:
+A new active context cannot be created, because another one already exists
+
+
+failures:
+    file_menu_opens_a_visible_document_without_an_existing_document
+    file_menu_save_as_discards_a_cancelled_draft_and_accepts_a_fresh_path
+    native_text_widget_submits_the_typed_path_and_escape_discards_the_next_draft
+
+test result: FAILED. 1 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.08s
+
+error: test failed, to rerun pass `-p oblikovati-gui --test file_dialog`
