@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" package="testsuite/Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:15:21.44706372Z" time="43.598542901"><testcase name="Scenario: Display the application bar as the top of the main window: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:18:5" time="17.471614635999998"><system-out><![CDATA[  Scenario Outline: Display the application bar as the top of the main window
+   ✔  Given Home is active with no model, drawing or presentation document open
+   ✔  And the MCAD Software is open in a restored window showing Home
+   ✔  And the quick access toolbar is configured to appear above the ribbon
+   ✔  Then the application bar forms the top of the window with no separate system title bar
+   ✔  And quick access command icons sit at the leading side of the application bar
+   ✔  And the application or active document title occupies the same bar
+   ✔  And Minimize, Maximize and Close sit at the trailing edge in that order
+   ✔  And the controls are distinguishable by their icons and accessible names
+]]></system-out></testcase><testcase name="Scenario: Display the application bar as the top of the main window: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:19:5" time="26.126928265"><system-out><![CDATA[  Scenario Outline: Display the application bar as the top of the main window
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And the MCAD Software is open in a restored window showing an active part
+   ✔  And the quick access toolbar is configured to appear above the ribbon
+   ✔  Then the application bar forms the top of the window with no separate system title bar
+   ✔  And quick access command icons sit at the leading side of the application bar
+   ✔  And the application or active document title occupies the same bar
+   ✔  And Minimize, Maximize and Close sit at the trailing edge in that order
+   ✔  And the controls are distinguishable by their icons and accessible names
+]]></system-out></testcase></testsuite></testsuites>

@@ -13,7 +13,9 @@ pub(super) use fixtures::save_staged_part_on_exit;
 fn dirty_part(world: &mut ApplicationWorld) {
     let document =
         if super::scenario_capture::is_main_window_frame(world.scenario_feature_path.as_deref()) {
-            super::main_window_frame::open_dirty_frame_part(world)
+            world
+                .closed_document
+                .unwrap_or_else(|| super::main_window_frame::open_dirty_frame_part(world))
         } else {
             let document = world.add_part();
             world.start_sketch();

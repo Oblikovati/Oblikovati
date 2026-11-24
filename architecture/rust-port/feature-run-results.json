@@ -251,26 +251,47 @@
     }
   },
   "features/application/main-window-frame/main-window-frame.feature": {
-    "feature_sha256": "382162b5c11e33a252989ae65fee05e83d2e53a9ec3cac2f8ccad9ee05d7fe55",
-    "supporting_files": {
-      "features/application/main-window-frame/BLOCKERS.md": "74497d26b6ca0dc34b56447a7a1ce81021d16bc00122103f5b286d22fcc3cff0",
-      "features/application/main-window-frame/FIXTURES.md": "89c46382a472f0db91ed43bbe1f3b45d5abb401349e50e32c232da0b3d721742",
-      "features/application/main-window-frame/FUNCTIONAL.md": "4d140cfb084123cf194059d5e29e043abfd9bca75d17d3d763e7764b7c1a07a3",
-      "features/application/main-window-frame/VISUAL.md": "9522fc3d5774efaa3e0ecd73dba0f295f523d1c1a97e7de71ca67bbd0bfa7f2c",
-      "features/application/main-window-frame/references/oblikovati-rust-work-de1cfac9-docking-visible-solid.png": "943622da5c4748205d7dd6c847dc57be9cc8f66fbffb5772e10ccb43c22cff3f",
-      "features/application/main-window-frame/references/oblikovati-rust-work-de1cfac9-no-document.png": "57ab786d7b3b0a7a77dfdb62b9ee603d56ea0e1b210239b967260a723285f4c3",
-      "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664"
-    },
-    "cucumber": "architecture/rust-port/receipts/2026-11-21-main-window-frame-complete-4063/cucumber.json",
-    "cucumber_sha256": "74a1c5d7d704f373d0b959eed60ccf2dccc3d8093e4a587b52adca4b5f8dff87",
-    "scenario_inventory": "architecture/rust-port/receipts/2026-11-18-main-window-frame/scenario-inventory.json",
-    "scenario_inventory_sha256": "2bea7f0088cecbf2d607b39c6811c70c1af7bd12c865aa1191d6c928c7a91747",
-    "application_commit": "0905065a6d9b0da023f00c8713efcd60cb30d4e1",
-    "command": "crates/head/tests/accessibility_atspi/frame_run.sh. See the receipt README.",
-    "environment": "Linux X11 with Xvfb, Openbox, tint2, AT-SPI and Vulkan Lavapipe",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-main-window-frame-complete-4063/scenario-arguments.json",
-    "scenario_arguments_sha256": "cc11e07e6d744e7053230372a5937e8840840b7a885bb3faa04d81fd7e81fddb",
-    "notes": "All 11 published declarations, 20 native cases and 149 steps passed. Minimum-size checks use an unchanged Part. Build and runtime provenance remains open under #3978."
+    "by_source_sha256": {
+      "382162b5c11e33a252989ae65fee05e83d2e53a9ec3cac2f8ccad9ee05d7fe55": {
+        "feature_sha256": "382162b5c11e33a252989ae65fee05e83d2e53a9ec3cac2f8ccad9ee05d7fe55",
+        "supporting_files": {
+          "features/application/main-window-frame/BLOCKERS.md": "74497d26b6ca0dc34b56447a7a1ce81021d16bc00122103f5b286d22fcc3cff0",
+          "features/application/main-window-frame/FIXTURES.md": "89c46382a472f0db91ed43bbe1f3b45d5abb401349e50e32c232da0b3d721742",
+          "features/application/main-window-frame/FUNCTIONAL.md": "4d140cfb084123cf194059d5e29e043abfd9bca75d17d3d763e7764b7c1a07a3",
+          "features/application/main-window-frame/VISUAL.md": "9522fc3d5774efaa3e0ecd73dba0f295f523d1c1a97e7de71ca67bbd0bfa7f2c",
+          "features/application/main-window-frame/references/oblikovati-rust-work-de1cfac9-docking-visible-solid.png": "943622da5c4748205d7dd6c847dc57be9cc8f66fbffb5772e10ccb43c22cff3f",
+          "features/application/main-window-frame/references/oblikovati-rust-work-de1cfac9-no-document.png": "57ab786d7b3b0a7a77dfdb62b9ee603d56ea0e1b210239b967260a723285f4c3",
+          "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-main-window-frame-complete-4063/cucumber.json",
+        "cucumber_sha256": "74a1c5d7d704f373d0b959eed60ccf2dccc3d8093e4a587b52adca4b5f8dff87",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-18-main-window-frame/scenario-inventory.json",
+        "scenario_inventory_sha256": "2bea7f0088cecbf2d607b39c6811c70c1af7bd12c865aa1191d6c928c7a91747",
+        "application_commit": "0905065a6d9b0da023f00c8713efcd60cb30d4e1",
+        "command": "crates/head/tests/accessibility_atspi/frame_run.sh. See the receipt README.",
+        "environment": "Linux X11 with Xvfb, Openbox, tint2, AT-SPI and Vulkan Lavapipe",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-main-window-frame-complete-4063/scenario-arguments.json",
+        "scenario_arguments_sha256": "cc11e07e6d744e7053230372a5937e8840840b7a885bb3faa04d81fd7e81fddb",
+        "notes": "All 11 published declarations, 20 native cases and 149 steps passed. Minimum-size checks use an unchanged Part. Build and runtime provenance remains open under #3978."
+      },
+      "544cd7935dcb01c154c88d5e2f5cd52f51d9d158c92c3ca59c7e290aa1e90347": {
+        "feature_sha256": "544cd7935dcb01c154c88d5e2f5cd52f51d9d158c92c3ca59c7e290aa1e90347",
+        "supporting_files": {
+          "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664",
+          "fixtures/cad/extrusion/extrusion-rect-8mm.opd": "e25b898cb5edead91cac7da7d9c71f7905b13603957a51c7bab5350d50f7bb1f"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-25-main-window-frame-current-4063/cucumber.json",
+        "cucumber_sha256": "df53318670281c7abb77a5ce0b3e52a20678a2f29556a335627df472594d5de5",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-main-window-frame-current-4063/scenario-inventory.json",
+        "scenario_inventory_sha256": "06198b5a85859bff8f021335126c6b8734967ee60a75c4a6ec1cdd9c7700f1d8",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-main-window-frame-current-4063/scenario-arguments.json",
+        "scenario_arguments_sha256": "179970b85a7812118440c9cf37647d91dda89e221486c5bf1d080947361d4f8f",
+        "application_commit": "a30d24618c89387a08b0fb9a5981263e52b80f58",
+        "command": "OBK_BDD_AREA=application OBK_BDD_ROOT=<source> OBK_BDD_SCENARIO=<case> bash crates/head/tests/accessibility_atspi/frame_run.sh",
+        "environment": "Linux X11 with Xvfb, Openbox, tint2, AT-SPI, and Vulkan Lavapipe",
+        "notes": "All eleven current declarations passed, including twenty executions with the published Parts and Home. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   },
   "features/application/document-saving/document-saving.feature": {
     "feature_sha256": "36a191c754b03fb3e90c113a2b7eeade2982c8bb3a099ba921999502aa53f54f",

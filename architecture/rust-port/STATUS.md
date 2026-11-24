@@ -320,12 +320,11 @@ using this status; the live scenario directory can change.
   and native fixture; the earlier run did not use that snapshot. See
   `receipts/2026-11-20-wheel-local-snapshot-3881/`.
 
-- Main-window-frame (#4063): 20 executed cases and 149 steps passed with X11,
-  Openbox, tint2, AT-SPI, and the current native solid fixture. A resize race
-  that showed a command error was fixed in #4181. The minimum-size Close check
-  used a disposable dirty copy, which conflicts with the current fixture notes;
-  clarification is in the scenario folder. The run is diagnostic, not verified;
-  see `receipts/2026-11-20-main-frame-native-4063/`.
+- Main Window Frame (#4063) passed all 20 current cases and 169 steps
+  with X11, Openbox, tint2, and AT-SPI. The minimum-size check kept the
+  saved Part active. Both Close paths prompted before exiting, and Cancel
+  kept the unsaved edit and preserved the working file. See the
+  [current run](receipts/2026-11-25-main-window-frame-current-4063/README.md).
 - Viewport entity selection now has executable scenarios and an Inventor part
   fixture. The fixture step reaches the document host, which rejects the binary
   file as invalid YAML; native Inventor and 3D-sketch support remain open

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" package="testsuite/Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:18:28.119353258Z" time="20.370934489"><testcase name="Scenario: Move the main window using the application bar: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:63:3" time="20.370934489"><system-out><![CDATA[  Scenario: Move the main window using the application bar
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the main window is restored within the desktop work area
+   ✔  When the user drags an empty region of the application bar within the work area
+   ✔  Then the entire window follows the drag without changing size
+   ✔  And the same part remains active in the viewport
+]]></system-out></testcase></testsuite></testsuites>

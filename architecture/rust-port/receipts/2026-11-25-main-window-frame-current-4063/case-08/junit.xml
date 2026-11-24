@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" package="testsuite/Feature: Main application window frame: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:21:47.447947721Z" time="23.093366951"><testcase name="Scenario: Keep the application controls reachable at the minimum window size: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-main-window-frame-source/features/application/main-window-frame/main-window-frame.feature:105:3" time="23.093366951"><system-out><![CDATA[  Scenario: Keep the application controls reachable at the minimum window size
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And the MCAD Software is open in a restored window with an active part
+   ✔  When the user drags the bottom right corner inward past the supported minimum size
+   ✔  Then the window stops shrinking at its minimum size
+   ✔  And Minimize, Maximize and Close remain fully visible and usable
+   ✔  And the active part remains displayed in the resized viewport
+]]></system-out></testcase></testsuite></testsuites>

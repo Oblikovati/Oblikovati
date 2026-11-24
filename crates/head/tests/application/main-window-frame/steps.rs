@@ -18,11 +18,28 @@ fn invoke_desktop_close(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 
+#[given("the user creates a sketch on the XY datum plane without saving the part")]
+fn edit_open_part(world: &mut ApplicationWorld) {
+    let document = world.closed_document.expect("expected the writable Part");
+    assert_eq!(world.active_id(), document);
+    let storage = &world.state().document_storage[&document];
+    assert!(!storage.unsaved_edits);
+    let path = std::path::PathBuf::from(storage.path.as_ref().unwrap());
+    world.bytes_before_save = Some(std::fs::read(&path).unwrap());
+    world.saved_path = Some(path);
+    world.add_finished_sketch();
+    assert!(world.state().document_storage[&document].unsaved_edits);
+}
+
 #[then("the main window remains open and the part retains its unsaved changes")]
 fn unsaved_part_remains_open(world: &mut ApplicationWorld) {
     let document = world.closed_document.expect("expected the edited part");
+    assert_eq!(world.active_id(), document);
     assert!(world.document_is_open(document));
     assert!(world.state().document_storage[&document].unsaved_edits);
+    if let (Some(path), Some(original)) = (&world.saved_path, &world.bytes_before_save) {
+        assert_eq!(&std::fs::read(path).unwrap(), original);
+    }
 }
 
 #[given("the MCAD Software is open in a restored window")]
@@ -31,6 +48,22 @@ fn restored_window(world: &mut ApplicationWorld) {
     world.window_frame_before = Some(super::x11_input::application_bounds());
     super::x11_input::focus_window();
 }
+
+#[given("Home is active with no model, drawing or presentation document open")]
+fn home_without_documents(world: &mut ApplicationWorld) {
+    super::home_recent_documents::open_home(world);
+    assert!(world.state().documents.is_empty());
+}
+
+fn saved_frame_part(world: &mut ApplicationWorld) -> u64 {
+    let Some(&part) = world.parts.last() else {
+        return open_frame_part(world);
+    };
+    assert_eq!(world.active_id(), part);
+    assert!(!world.state().document_storage[&part].unsaved_edits);
+    part
+}
+
 #[when("the user double-clicks an empty region of the application bar")]
 #[when("the user double-clicks an empty region of the application bar again")]
 fn double_click_bar(world: &mut ApplicationWorld) {
@@ -156,7 +189,9 @@ fn remember_part_view(world: &mut ApplicationWorld) {
 }
 fn save_active_part_fixture(world: &mut ApplicationWorld) {
     let document = world.active_id();
-    world.save_part_to_file(document, "main-window-frame.opd");
+    if world.state().document_storage[&document].path.is_none() {
+        world.save_part_to_file(document, "main-window-frame.opd");
+    }
     assert!(!world.state().document_storage[&document].unsaved_edits);
 }
 
@@ -244,7 +279,7 @@ fn same_part_in_viewport(world: &mut ApplicationWorld) {
 
 #[given("the MCAD Software is open in a restored window with an active part")]
 fn restored_window_with_saved_part(world: &mut ApplicationWorld) {
-    let part = open_frame_part(world);
+    let part = saved_frame_part(world);
     world.previous_document = Some(part);
     restored_window(world);
 }
@@ -334,7 +369,7 @@ fn controls_remain_in_bar(world: &mut ApplicationWorld) {
 #[given(regex = r"^the MCAD Software is open in a restored window showing (Home|an active part)$")]
 fn restored_window_in_context(world: &mut ApplicationWorld, context: String) {
     if context == "an active part" {
-        open_frame_part(world);
+        saved_frame_part(world);
     }
     restored_window(world);
 }
