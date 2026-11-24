@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Session-local applied commands and a separate editable draft per ribbon tab.
-use crate::ribbon::RibbonTab;
 use crate::{GuiSketchConstraint, GuiSketchTool};
+use crate::{application::viewport_orientation::ZoomAction, ribbon::RibbonTab};
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -13,6 +13,7 @@ pub(super) enum Command {
     Constraint(GuiSketchConstraint),
     Dimension,
     Measure,
+    Zoom(ZoomAction),
 }
 impl Command {
     pub(super) fn id(self) -> &'static str {
@@ -22,6 +23,10 @@ impl Command {
             Self::Annotations => "annotations-visibility",
             Self::Measure => "measure",
             Self::Dimension => "dimension",
+            Self::Zoom(ZoomAction::Zoom) => "view-zoom",
+            Self::Zoom(ZoomAction::All) => "view-zoom-all",
+            Self::Zoom(ZoomAction::Window) => "view-zoom-window",
+            Self::Zoom(ZoomAction::Selected) => "view-zoom-selected",
             Self::Tool(tool) => match tool {
                 GuiSketchTool::Line => "sketch-line",
                 GuiSketchTool::MidpointLine => "sketch-midpoint-line",
@@ -62,10 +67,11 @@ impl Command {
             Self::Constraint(constraint) => constraint.label(),
             Self::Dimension => "Dimension",
             Self::Measure => "Measure",
+            Self::Zoom(zoom) => zoom.label(),
         }
     }
 }
-pub(super) const COMMANDS: [Command; 29] = [
+pub(super) const COMMANDS: [Command; 33] = [
     Command::Separator,
     Command::Tool(GuiSketchTool::Line),
     Command::Tool(GuiSketchTool::MidpointLine),
@@ -95,6 +101,10 @@ pub(super) const COMMANDS: [Command; 29] = [
     Command::Constraint(GuiSketchConstraint::Concentric),
     Command::Constraint(GuiSketchConstraint::Tangent),
     Command::Dimension,
+    Command::Zoom(ZoomAction::Zoom),
+    Command::Zoom(ZoomAction::All),
+    Command::Zoom(ZoomAction::Window),
+    Command::Zoom(ZoomAction::Selected),
 ];
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(super) enum Category {
@@ -121,7 +131,10 @@ impl Category {
                 command,
                 Command::Separator | Command::Tool(_) | Command::Constraint(_) | Command::Dimension
             ),
-            Self::View => matches!(command, Command::Separator | Command::Sketches),
+            Self::View => matches!(
+                command,
+                Command::Separator | Command::Sketches | Command::Zoom(_)
+            ),
         }
     }
 }

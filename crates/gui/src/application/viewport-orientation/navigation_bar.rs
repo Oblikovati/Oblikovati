@@ -80,12 +80,35 @@ pub enum GuiViewCommand {
     },
 }
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-enum ZoomAction {
+pub(crate) enum ZoomAction {
     #[default]
     Zoom,
     All,
     Window,
     Selected,
+}
+impl ZoomAction {
+    pub(crate) const ALL: [Self; 4] = [Self::Zoom, Self::All, Self::Window, Self::Selected];
+
+    pub(crate) const fn label(self) -> &'static str {
+        match self {
+            Self::Zoom => "Zoom",
+            Self::All => "Zoom All",
+            Self::Window => "Zoom Window",
+            Self::Selected => "Zoom Selected",
+        }
+    }
+}
+impl super::OrientationControl {
+    pub(crate) fn run_zoom(
+        &mut self,
+        zoom: ZoomAction,
+        request: &GuiFrameRequest,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        self.navigation
+            .run_zoom_action(zoom, &request.commands, request.extent, actions);
+    }
 }
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 enum OrbitAction {
@@ -174,7 +197,7 @@ impl NavigationBar {
             }
         }
         if self.mode_button(ui, "Z", GuiNavigationMode::Zoom) {
-            self.run_zoom_action(state, extent, actions);
+            self.run_zoom_action(self.zoom_action, state, extent, actions);
         }
         if crate::widget_abi::button(ui, "v##zoom-actions", BUTTON) {
             ui.open_popup(ZOOM_MENU);
@@ -238,29 +261,25 @@ impl NavigationBar {
         let Some(_menu) = ui.begin_popup(ZOOM_MENU) else {
             return;
         };
-        for (label, action) in [
-            ("Zoom", ZoomAction::Zoom),
-            ("Zoom All", ZoomAction::All),
-            ("Zoom Window", ZoomAction::Window),
-            ("Zoom Selected", ZoomAction::Selected),
-        ] {
+        for action in ZoomAction::ALL {
             let row = ui
-                .menu_item_config(label)
+                .menu_item_config(action.label())
                 .selected(self.zoom_action == action)
                 .build();
             if row {
                 self.zoom_action = action;
-                self.run_zoom_action(state, extent, actions);
+                self.run_zoom_action(action, state, extent, actions);
             }
         }
     }
     fn run_zoom_action(
         &mut self,
+        action: ZoomAction,
         state: &GuiCommandState,
         extent: [u32; 2],
         actions: &mut Vec<GuiShellAction>,
     ) {
-        match self.zoom_action {
+        match action {
             ZoomAction::Zoom => self.start(GuiNavigationMode::Zoom, actions),
             ZoomAction::Window => self.start(GuiNavigationMode::ZoomWindow, actions),
             ZoomAction::All => {

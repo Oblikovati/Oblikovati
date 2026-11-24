@@ -2,6 +2,37 @@
 use super::*;
 
 #[test]
+fn zoom_commands_are_sorted_in_view_with_stable_ids() {
+    let mut draft = Draft::default();
+    draft.open(RibbonTab::Tools);
+    draft.set_category(Category::View);
+    draft.reverse_source_order();
+    let commands = draft.available_commands();
+    let labels: Vec<_> = commands.iter().map(|command| command.label()).collect();
+    assert_eq!(
+        labels,
+        [
+            "<Separator>",
+            "Zoom Window",
+            "Zoom Selected",
+            "Zoom All",
+            "Zoom",
+            "2D Sketches"
+        ]
+    );
+    let ids: Vec<_> = commands[1..5].iter().map(|command| command.id()).collect();
+    assert_eq!(
+        ids,
+        [
+            "view-zoom-window",
+            "view-zoom-selected",
+            "view-zoom-all",
+            "view-zoom"
+        ]
+    );
+}
+
+#[test]
 fn returned_command_reappears_in_its_selected_category() {
     let mut draft = Draft::default();
     draft.open(RibbonTab::Tools);
@@ -12,7 +43,14 @@ fn returned_command_reappears_in_its_selected_category() {
     draft.remove();
     assert_eq!(
         draft.available_commands(),
-        vec![Command::Separator, Command::Sketches]
+        vec![
+            Command::Separator,
+            Command::Sketches,
+            Command::Zoom(ZoomAction::Zoom),
+            Command::Zoom(ZoomAction::All),
+            Command::Zoom(ZoomAction::Selected),
+            Command::Zoom(ZoomAction::Window),
+        ]
     );
     assert!(draft.target_changed());
     draft.open(RibbonTab::Tools);

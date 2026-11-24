@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Render applied commands through the same actions as the built-in ribbon.
 use super::{Command, RibbonCustomization};
+use crate::application::viewport_orientation::ZoomAction;
+use crate::icons::{GuiRibbonIcons, IconGlyph};
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 
@@ -74,6 +76,11 @@ impl RibbonCustomization {
                     size,
                     actions,
                 ),
+                Command::Zoom(zoom) => {
+                    if zoom_button(ui, label, size, state, icons, zoom) {
+                        self.pending_zoom = Some(zoom);
+                    }
+                }
                 Command::Annotations => {
                     let disabled = ui.begin_disabled(true);
                     if normal {
@@ -118,6 +125,31 @@ impl RibbonCustomization {
         }
         right
     }
+}
+fn zoom_button(
+    ui: &Ui,
+    label: &str,
+    size: [f32; 2],
+    state: &GuiCommandState,
+    icons: &GuiRibbonIcons,
+    zoom: ZoomAction,
+) -> bool {
+    let supported = state.view_axes.is_some()
+        && matches!(
+            state.authoring,
+            crate::GuiAuthoringContext::Part | crate::GuiAuthoringContext::Sketch
+        );
+    let _disabled = ui.begin_disabled(!supported);
+    let glyph = match zoom {
+        ZoomAction::All => IconGlyph::ZoomAll,
+        ZoomAction::Window => IconGlyph::ZoomWindow,
+        ZoomAction::Zoom | ZoomAction::Selected => IconGlyph::Find,
+    };
+    let pressed = icons.button(ui, label, glyph, size);
+    if label == "##icon-only" && ui.is_item_hovered() {
+        ui.tooltip_text(zoom.label());
+    }
+    pressed
 }
 fn separator(ui: &Ui, size: [f32; 2]) {
     let [x, y] = ui.cursor_screen_pos();

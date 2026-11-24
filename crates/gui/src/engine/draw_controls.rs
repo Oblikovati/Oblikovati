@@ -220,6 +220,9 @@ impl GuiFrameEngine {
         selected.retain(|action| !matches!(action, GuiShellAction::OpenExtrudeEdit(_)));
         // Over Home there is no view for it to turn.
         if !self.home.active {
+            if let Some(zoom) = self.ribbon.customization.pending_zoom.take() {
+                self.orientation.run_zoom(zoom, request, &mut selected);
+            }
             self.orientation.panel(
                 ui,
                 request,

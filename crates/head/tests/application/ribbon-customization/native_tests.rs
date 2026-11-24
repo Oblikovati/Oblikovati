@@ -8,6 +8,9 @@ mod marking_menu_native;
 #[path = "keyboard_native.rs"]
 mod keyboard_native;
 
+#[path = "zoom_native.rs"]
+mod zoom_native;
+
 #[test]
 fn available_commands_support_keyboard_navigation_and_scrolling() {
     use oblikovati_viewport::ViewportPhysicalKey;
@@ -16,11 +19,11 @@ fn available_commands_support_keyboard_navigation_and_scrolling() {
     open_tools_customization(&mut world);
     click_in_customize(&mut world, "2DSketches");
     world.key(ViewportPhysicalKey::End, false);
-    assert!(world.window_text("Customize").contains("Vertical"));
+    world.run_in_window("Customize", "ZoomWindow");
     world.key(ViewportPhysicalKey::Home, false);
     assert!(world.window_text("Customize").contains("<Separator>"));
     world.key(ViewportPhysicalKey::V, false);
-    assert!(world.window_text("Customize").contains("Vertical"));
+    world.run_in_window("Customize", "Vertical");
     assert_ne!(world.run_in_window("Customize", "Apply").alpha, u8::MAX);
     click_in_customize(&mut world, ">");
     assert!(
@@ -38,7 +41,7 @@ fn source_header_reverses_order_without_losing_selected_command() {
     open_tools_customization(&mut world);
     click_in_customize(&mut world, "2DSketches");
     click_in_customize(&mut world, "Name");
-    assert!(world.window_text("Customize").contains("Vertical"));
+    world.run_in_window("Customize", "ZoomWindow");
     assert!(!world.window_text("Customize").contains("Part|Tools*"));
     click_in_customize(&mut world, ">");
     sketches_in_target(&mut world);

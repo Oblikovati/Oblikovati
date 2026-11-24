@@ -8902,8 +8902,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go; ../Oblikovati/head/ui/qat.go; ../Oblikovati/head/ui/keymap_window.go",
-      "mapping_reason": "Desktop ribbon, shortcut, or marking-menu customization and settings."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: app/commands_standard.go (viewNavigateCommands) and app/zoom_window_test.go.",
+      "mapping_reason": "Custom access to the existing viewport Zoom commands.",
+      "go_test_premise": "The Go viewport tests distinguish arming Zoom Window from changing the camera. The pinned native scenario defines how the commands appear in Ribbon Customization.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native desktop presentation of an active Part.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "List sorting and transfer are desktop interactions independent of geometry evaluation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Transfer a selected command after reversing the source list",
+      "oracle": "The native scenario reads the rendered source order and target row after clicking the header and transfer control. See receipts/2026-11-24-ribbon-customization-zoom-3856/pinned/cucumber.json.",
+      "expected_result": "The separator stays first, the four Zoom commands appear in descending order, and the selected 2D Sketches command can still be staged. Cancel leaves the Tools ribbon clear.",
+      "baseline_source_sha256": "c338bc2ca7723cbc58a28c13b97869e61ad0697ed3290c67843149e1e608a73e"
     },
     {
       "id": "scenario:b5a49380574acc177fe35ec89af4e0d13715e3c3c6b867e302b4b468ff552e97",

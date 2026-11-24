@@ -64,6 +64,7 @@ pub(crate) struct RibbonCustomization {
     marking_base: Option<oblikovati_api::wire::MarkingMenuView>,
     marking_conflict: bool,
     ribbon_tab_active: bool,
+    pub(crate) pending_zoom: Option<crate::application::viewport_orientation::ZoomAction>,
 }
 impl DockableWindow for RibbonCustomization {}
 impl RibbonCustomization {

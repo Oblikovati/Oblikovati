@@ -323,6 +323,14 @@ mod tests {
                     text: false,
                     expanded: false,
                 },
+                Entry {
+                    command: Command::Zoom(
+                        crate::application::viewport_orientation::ZoomAction::Window,
+                    ),
+                    large: false,
+                    text: true,
+                    expanded: false,
+                },
             ],
         )]);
         let settings = SettingsDocument {

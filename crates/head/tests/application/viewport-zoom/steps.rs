@@ -52,7 +52,7 @@ fn fit_the_block(world: &mut ApplicationWorld) {
     .unwrap();
     world.pump(Vec::new());
 }
-fn shrink_the_block(world: &mut ApplicationWorld) {
+pub(super) fn shrink_the_block(world: &mut ApplicationWorld) {
     fit_the_block(world);
     let view = camera(world);
     set_camera(

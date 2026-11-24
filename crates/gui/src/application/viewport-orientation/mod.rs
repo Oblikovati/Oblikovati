@@ -17,6 +17,7 @@ use cube::{ShownFace, inside, shown_faces};
 mod navigation_bar;
 #[path = "navigation_wheel.rs"]
 mod navigation_wheel;
+pub(crate) use navigation_bar::ZoomAction;
 pub use navigation_bar::{GuiNavigationMode, GuiViewCommand};
 use navigation_bar::{NAVIGATION_SIZE, NAVIGATION_WINDOW, NavigationBar};
 #[path = "options.rs"]

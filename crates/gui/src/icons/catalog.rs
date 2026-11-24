@@ -47,6 +47,8 @@ glyph_catalog! {
     Centerline => "centerline",
     Parameters => "parameters",
     Home => "home",
+    ZoomAll => "zoom-all",
+    ZoomWindow => "zoom-window",
     Save => "save",
     Undo => "undo",
     Redo => "redo",

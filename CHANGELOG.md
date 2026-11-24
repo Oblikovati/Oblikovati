@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added Zoom, Zoom All, Zoom Selected, and Zoom Window to ribbon customization. (#3856)
+
 - Added Show Panels instructions and F1 help to the ribbon panel selector. (#3856)
 
 - Added the Standard overview and Units tab to Document Settings. (#3856)
