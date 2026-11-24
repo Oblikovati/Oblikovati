@@ -44,6 +44,7 @@ fn user_panel_menu_entries(world: &mut ApplicationWorld) {
     }
 }
 #[when("the user selects Customize User Commands")]
+#[when("the user chooses Customize User Commands")]
 fn choose_customize_from_title(world: &mut ApplicationWorld) {
     choose_customize(world);
 }

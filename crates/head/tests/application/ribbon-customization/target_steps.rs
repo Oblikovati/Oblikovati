@@ -3,6 +3,9 @@
 use super::*;
 use oblikovati_viewport::ViewportPhysicalKey;
 
+#[path = "entry_steps.rs"]
+mod entry_steps;
+
 #[given("the Part Manage target is empty")]
 fn manage_is_empty(world: &mut ApplicationWorld) {
     click_in_customize(world, "Part|Tools");

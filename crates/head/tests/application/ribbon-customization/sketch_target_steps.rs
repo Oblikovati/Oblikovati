@@ -16,15 +16,17 @@ fn sketch_ribbon(world: &mut ApplicationWorld) {
     world.expect_text("Sketch");
 }
 #[when("the user opens the Create panel title context menu")]
-fn open_create_menu(world: &mut ApplicationWorld) {
+pub(super) fn open_create_menu(world: &mut ApplicationWorld) {
     let center = world.run("Create").center();
     world.right_click(diagnostics::pointer_pixels(center));
 }
 #[then("the selected target is \"Part | Sketch\"")]
+#[then("the target is Part | Sketch")]
 fn selected_sketch_target(world: &mut ApplicationWorld) {
     assert!(world.window_text("Customize").contains("Part|Sketch"));
 }
 #[then("the source category is \"All Commands\"")]
+#[then("the command source is All Commands")]
 fn all_commands_source(world: &mut ApplicationWorld) {
     assert!(world.window_text("Customize").contains("AllCommands"));
 }

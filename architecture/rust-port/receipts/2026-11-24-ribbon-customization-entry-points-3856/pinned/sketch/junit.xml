@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:36:01.447403253Z" time="33.944851528"><testcase name="Scenario: Open Ribbon customization from the Sketch panel title: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1678:3" time="33.944851528"><system-out><![CDATA[  Scenario: Open Ribbon customization from the Sketch panel title
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✔  When the user opens Customize User Commands from the Create panel title context menu
+   ✔  Then the Customize dialog opens on the Ribbon tab
+   ✔  And Ribbon, Keyboard and Marking Menu tabs are available
+   ✔  And the command source is All Commands
+   ✔  And the target is Part | Sketch
+   ✔  And the target command list is empty
+   ✔  When the user closes the dialog without making changes
+   ✔  Then the editable sketch remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>

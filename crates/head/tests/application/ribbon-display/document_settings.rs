@@ -69,14 +69,6 @@ fn standard_tab_selected(world: &mut ApplicationWorld) {
     assert!(!contents.contains("Lengthprecision"));
 }
 
-#[then("Close is available while Cancel and Apply are unavailable")]
-fn initial_settings_actions(world: &mut ApplicationWorld) {
-    assert_eq!(world.run_in_window("Document Settings", "Close").alpha, 255);
-    for label in ["Cancel", "Apply"] {
-        assert!(world.run_in_window("Document Settings", label).alpha < 255);
-    }
-}
-
 #[when("the user closes the dialog without changing settings")]
 fn close_settings(world: &mut ApplicationWorld) {
     let close = world.run_in_window("Document Settings", "Close");

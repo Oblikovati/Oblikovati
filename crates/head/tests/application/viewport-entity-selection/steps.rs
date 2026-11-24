@@ -36,7 +36,7 @@ fn open_selected_face(world: &mut ApplicationWorld) {
 }
 
 #[when("the user clicks an unoccupied region of the face")]
-fn click_visible_face(world: &mut ApplicationWorld) {
+pub(super) fn click_visible_face(world: &mut ApplicationWorld) {
     let point = super::ribbon_keyboard_navigation::visible_face_point(world);
     let line = world.app().window.view_line(point).unwrap();
     let expected = world.app().owner.face_edges_on_line(line).unwrap();

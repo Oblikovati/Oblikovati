@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T13:31:40.383784616Z" time="10.592824432"><testcase name="Scenario: Open and close customization while one face is selected: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1654:3" time="10.592824432"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open and close customization while one face is selected
+   ✔  Given a part with a solid body is active in the MCAD Software
+   ✘  And one face is selected
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1656:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>
