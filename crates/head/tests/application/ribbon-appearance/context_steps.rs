@@ -153,8 +153,8 @@ fn tools_labels_visible(world: &mut ApplicationWorld) {
 fn sketch_normal(world: &mut ApplicationWorld) {
     modes_native::open_appearance_from(world, "Create");
     assert!(world.checked("Normal"));
-    world.escape();
-    world.escape();
+    click_outside_appearance_menu(world);
+    appearance_menus_closed(world);
 }
 fn choose_sketch(world: &mut ApplicationWorld, mode: &str) {
     let icons = icon_quads::ribbon_icon_quads(modes_native::ribbon_bottom());

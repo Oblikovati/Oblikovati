@@ -10783,8 +10783,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow."
+      "go_reference": "Go aa8297d1b: head/ui/chrome_ribbon.go and head/ui/ribbon_icons_test.go.",
+      "mapping_reason": "Desktop ribbon appearance while editing a sketch.",
+      "go_test_premise": "The Go ribbon icon tests cover styles and glyphs. The benchmark checks the rendered labels and sketch continuity across the appearance changes.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The native fixture uses an editable planar sketch. The appearance changes do not edit it.",
+      "platforms": "Linux X11, Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The application keeps the active native sketch while it changes the ribbon presentation.",
+      "rust_tests": "application_scenarios_use_the_native_window: Hide command labels and restore the normal ribbon appearance",
+      "oracle": "The pinned scenario checks rendered command labels, icons and panel titles, then checks the active sketch after each change. See receipts/2026-11-24-sketch-ribbon-labels-3856/pinned/cucumber.json.",
+      "expected_result": "Text Off hides command labels while preserving icons and panel titles. Normal restores command labels. The active sketch remains unchanged across both appearances.",
+      "baseline_source_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e"
     },
     {
       "id": "scenario:710cfeb2506068136ac5cf2928f5e7e13c8e46c8841e3389c586e45e12271898",
