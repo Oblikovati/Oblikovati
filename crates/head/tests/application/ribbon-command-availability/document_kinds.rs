@@ -3,11 +3,21 @@
 use super::super::scenario_root;
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
-use oblikovati_api::types::{DOCUMENT_ASSEMBLY, DOCUMENT_DRAWING, DocumentType};
+use oblikovati_api::types::{DOCUMENT_ASSEMBLY, DOCUMENT_DRAWING, DOCUMENT_PART, DocumentType};
 
 const RIBBON: &str = "##application-ribbon";
 const ASSEMBLY: &str = "fixtures/cad/blank-metric-assembly.oad";
 const DRAWING: &str = "fixtures/cad/blank-drawing.odd";
+pub(super) const SKETCH_PART: &str = "fixtures/cad/revolve/revolve-profile.opd";
+
+#[given("`fixtures/cad/revolve/revolve-profile.opd` is open and active in the MCAD Software")]
+fn open_sketch_part(world: &mut ApplicationWorld) {
+    open_document_kind(world, SKETCH_PART, DOCUMENT_PART);
+    let browser = world.state().browser.expect("expected the Part browser");
+    assert_eq!(browser.sketches.len(), 1);
+    assert_eq!(browser.sketches[0].name, "Sketch1");
+    assert!(browser.bodies.is_empty());
+}
 
 #[given(
     "the saved empty assembly fixture \"fixtures/cad/blank-metric-assembly.oad\" is active in the MCAD Software"

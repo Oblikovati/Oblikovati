@@ -96,8 +96,25 @@ fn other_groups_unavailable(world: &mut ApplicationWorld) {
     ] {
         inspect_unavailable_group(world, group, commands);
     }
-    world.expect_text(SKETCH);
-    super::workspace_layout::browser_feature::expect_solid_visible(world);
+    let sketch = sketch_row_label(world);
+    world.expect_text(sketch);
+    if sketch == SKETCH {
+        super::workspace_layout::browser_feature::expect_solid_visible(world);
+    }
+}
+
+fn sketch_row_label(world: &mut ApplicationWorld) -> &'static str {
+    let document = world.active_id();
+    let storage = &world.state().document_storage[&document];
+    if storage
+        .path
+        .as_deref()
+        .is_some_and(|path| std::path::Path::new(path).ends_with(document_kinds::SKETCH_PART))
+    {
+        "Sketch1"
+    } else {
+        SKETCH
+    }
 }
 fn inspect_unavailable_group(world: &mut ApplicationWorld, group: &str, commands: &[&str]) {
     world.expect_text(group);
@@ -149,8 +166,10 @@ fn part_and_browser_visible(world: &mut ApplicationWorld) {
     world.expect_active(part);
 }
 #[when("the user opens the existing sketch from the model browser")]
+#[when("the user opens Sketch1 from the model browser")]
 fn open_sketch(world: &mut ApplicationWorld) {
-    right_click_row(world, SKETCH);
+    let sketch = sketch_row_label(world);
+    right_click_row(world, sketch);
     world.click_text("Edit Sketch");
     world.pump(Vec::new());
 }
@@ -239,9 +258,19 @@ fn part_context_restored(world: &mut ApplicationWorld) {
     world.expect_text("Start 2D Sketch");
 }
 #[then("the existing sketch remains in the model browser")]
+#[then("Sketch1 remains in the model browser")]
 fn sketch_remains(world: &mut ApplicationWorld) {
-    world.expect_text(SKETCH);
-    assert!(!world.state().browser.unwrap().sketches.is_empty());
+    let sketch = sketch_row_label(world);
+    world.expect_text(sketch);
+    assert!(
+        world
+            .state()
+            .browser
+            .unwrap()
+            .sketches
+            .iter()
+            .any(|row| row.name == sketch)
+    );
 }
 
 #[test]
