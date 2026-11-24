@@ -46,7 +46,7 @@ pub(crate) struct RibbonCustomization {
     scroll_source_to_selection: bool,
     settings: settings_dialog::SettingsDialog,
     store: Option<Box<dyn GuiRibbonSettingsStore>>,
-    save_error: Option<String>,
+    settings_error: Option<String>,
     command_error: Option<String>,
     command_error_opening: bool,
     keyboard_search: String,
@@ -99,7 +99,7 @@ impl RibbonCustomization {
         self.category_open = false;
         self.target_selector_open = false;
         self.scroll_source_to_selection = false;
-        self.save_error = None;
+        self.settings_error = None;
         self.open.set_open(true);
     }
     pub(crate) fn has_panel(&self, tab: RibbonTab) -> bool {
@@ -169,7 +169,7 @@ impl RibbonCustomization {
         Self::dockable_window(ui, "Customize", &mut window_open)
             .build(|| {
                 self.tabs(ui);
-                if let Some(error) = &self.save_error {
+                if let Some(error) = &self.settings_error {
                     ui.text_wrapped(error);
                 }
                 if self.keyboard_conflict {
@@ -195,11 +195,16 @@ impl RibbonCustomization {
             self.open.set_open(false);
         }
         let document = self.staged_document();
-        if let Some(settings) = self.settings.panel(ui, &document) {
-            self.draft.import(settings.commands);
-            self.builtins
-                .import(settings.expanded_builtins, settings.ungrouped_builtins);
-            self.staged_appearance = settings.appearance;
+        match self.settings.panel(ui, &document) {
+            Some(Ok(settings)) => {
+                self.draft.import(settings.commands);
+                self.builtins
+                    .import(settings.expanded_builtins, settings.ungrouped_builtins);
+                self.staged_appearance = settings.appearance;
+                self.settings_error = None;
+            }
+            Some(Err(error)) => self.settings_error = Some(error),
+            None => {}
         }
     }
     fn tabs(&mut self, ui: &Ui) {
@@ -428,7 +433,7 @@ impl RibbonCustomization {
         if ui.button("OK") {
             match self.apply() {
                 Ok(()) => {
-                    self.save_error = None;
+                    self.settings_error = None;
                     let keyboard = self.submit_keyboard(actions);
                     let marking = self.submit_marking(actions);
                     if keyboard || marking {
@@ -437,7 +442,7 @@ impl RibbonCustomization {
                         self.open.set_open(false);
                     }
                 }
-                Err(error) => self.save_error = Some(error),
+                Err(error) => self.settings_error = Some(error),
             }
         }
         drop(disabled);
@@ -450,8 +455,8 @@ impl RibbonCustomization {
         ui.same_line();
         let disabled = ui.begin_disabled(!changed || conflict);
         if ui.button("Apply") {
-            self.save_error = self.apply().err();
-            if self.save_error.is_none() {
+            self.settings_error = self.apply().err();
+            if self.settings_error.is_none() {
                 self.submit_keyboard(actions);
                 self.submit_marking(actions);
             }

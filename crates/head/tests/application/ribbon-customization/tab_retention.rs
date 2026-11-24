@@ -2,6 +2,37 @@
 //! Session tab retention through the Tools customization entry point.
 use super::*;
 
+#[given("the customization dialog is open on Ribbon for an empty Part Tools custom panel")]
+fn empty_ribbon(world: &mut ApplicationWorld) {
+    empty_tools_customization(world);
+    ribbon_tab_open(world);
+}
+
+#[when("the user selects the Marking Menu customization tab")]
+fn select_marking_menu(world: &mut ApplicationWorld) {
+    click_in_customize(world, "MarkingMenu");
+}
+
+#[then("the marking menu customization controls are displayed")]
+fn marking_controls(world: &mut ApplicationWorld) {
+    world.run_in_window("Customize", "RestoreDefault");
+}
+
+#[then("Apply and cancels remain available")]
+fn pending_edit_controls(world: &mut ApplicationWorld) {
+    customization_edits_remain_available(world);
+}
+
+#[when("the user returns to the Ribbon customization tab")]
+fn select_ribbon(world: &mut ApplicationWorld) {
+    return_to_ribbon_customization(world);
+}
+
+#[when("the user cancels the customization dialog")]
+fn cancel_staged_dialog(world: &mut ApplicationWorld) {
+    cancel_customization(world);
+}
+
 #[given("the customization dialog is open on the Marking Menu tab with no pending edits")]
 fn marking_menu_open(world: &mut ApplicationWorld) {
     world.start_empty_sketch();

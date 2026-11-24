@@ -10,6 +10,10 @@ The [customizable Zoom commands](receipts/2026-11-24-ribbon-customization-zoom-3
 use the same viewport navigation handler as the navigation bar.
 The ascending source-list scenario still expects 2-D Drawing and an unlabeled
 entry, which have no mapped command in the Rust catalogue.
+The [native edit and import scenarios](receipts/2026-11-24-ribbon-customization-edits-3856/README.md)
+cover reordering, repeated separators, committing with OK, and keeping a
+draft across target and dialog tab switches. Invalid XML closes the picker,
+shows the error in Customize, and preserves the draft.
 
 The Rust shell uses a fixed ribbon band across the window instead of the temporary
 floating command palette. The File menu and quick-access controls remain available.

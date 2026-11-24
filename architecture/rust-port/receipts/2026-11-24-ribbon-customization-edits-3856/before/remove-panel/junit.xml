@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T12:46:35.26793076Z" time="15.985628976"><testcase name="Scenario: Apply and remove a custom ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:45:3" time="15.985628976"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Apply and remove a custom ribbon panel
+   ✔  Given the ribbon customization dialog has an empty custom panel for "Part | 3D Model"
+   ✘  And the command category is "Sketch Tab"
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:47:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

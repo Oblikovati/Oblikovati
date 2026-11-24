@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:52:38.520107387Z" time="51.599894522"><testcase name="Scenario: Apply and remove a custom ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:45:3" time="51.599894522"><system-out><![CDATA[  Scenario: Apply and remove a custom ribbon panel
+   ✔  Given the ribbon customization dialog has an empty custom panel for "Part | 3D Model"
+   ✔  And the command category is "Sketch Tab"
+   ✔  When the user adds "Circle (Center Point)" and a separator to the custom panel list
+   ✔  Then the custom panel list contains the circle command followed by a separator
+   ✔  And the separator remains available in the source list
+   ✔  When the user clicks "Apply"
+   ✔  Then the customization dialog remains open
+   ✔  And the target selector no longer indicates a pending change
+   ✔  And the "User Commands" panel appears on the active ribbon
+   ✔  When the user removes the separator and the circle command from the custom panel list
+   ✔  And the user clicks "Apply"
+   ✔  Then the custom panel list is empty
+   ✔  And the "User Commands" panel is no longer visible on the active ribbon
+]]></system-out></testcase></testsuite></testsuites>

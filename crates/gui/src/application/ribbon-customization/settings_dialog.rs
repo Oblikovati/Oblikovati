@@ -41,6 +41,7 @@ trait SettingsFiles {
 #[derive(Debug)]
 enum SettingsError {
     Missing(String),
+    InvalidImport(String),
     Other(String),
 }
 struct NativeSettingsFiles;
@@ -122,7 +123,11 @@ impl SettingsDialog {
             escape: DialogEscape::default(),
         });
     }
-    pub fn panel(&mut self, ui: &Ui, snapshot: &SettingsDocument) -> Option<SettingsDocument> {
+    pub fn panel(
+        &mut self,
+        ui: &Ui,
+        snapshot: &SettingsDocument,
+    ) -> Option<Result<SettingsDocument, String>> {
         let draft = self.draft.as_mut()?;
         if std::mem::take(&mut draft.opening) {
             ui.open_popup(draft.mode.title());
@@ -162,7 +167,12 @@ impl SettingsDialog {
                 Ok(imported) => {
                     self.draft = None;
                     ui.close_current_popup();
-                    return imported;
+                    return imported.map(Ok);
+                }
+                Err(SettingsError::InvalidImport(error)) => {
+                    self.draft = None;
+                    ui.close_current_popup();
+                    return Some(Err(error));
                 }
                 Err(SettingsError::Missing(path)) => {
                     draft.missing = Some(path);
@@ -208,9 +218,11 @@ fn perform(
     snapshot: &SettingsDocument,
 ) -> Result<Option<SettingsDocument>, SettingsError> {
     match mode {
-        Mode::Import => Ok(Some(
-            settings_xml::decode(&files.read(path)?).map_err(SettingsError::Other)?,
-        )),
+        Mode::Import => settings_xml::decode(&files.read(path)?)
+            .map(Some)
+            .map_err(|error| {
+                SettingsError::InvalidImport(format!("Cannot import ribbon customization: {error}"))
+            }),
         Mode::Export => {
             let contents = settings_xml::encode(snapshot).map_err(SettingsError::Other)?;
             if contents.len() as u64 > MAX_SETTINGS_BYTES {
@@ -316,7 +328,7 @@ mod tests {
         files.create("invalid.xml", b"<invalid").unwrap();
         assert!(matches!(
             perform(&files, Mode::Import, "invalid.xml", &empty),
-            Err(SettingsError::Other(_))
+            Err(SettingsError::InvalidImport(_))
         ));
     }
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T12:46:35.266607599Z" time="5.540924798"><testcase name="Scenario: Reorder and remove staged commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:20:3" time="5.540924798"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Reorder and remove staged commands
+   ✘  Given the ribbon customization dialog has staged "2D Sketches" followed by "3D Annotations"
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:21:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

@@ -64,8 +64,38 @@ fn import_exported_settings(world: &mut ApplicationWorld) {
     settings_file_choice(world, IMPORT, &path, "Open");
 }
 #[then("the import dialog closes")]
+#[then("the file picker closes")]
 fn import_closed(_world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry(IMPORT).is_none());
+}
+#[given("an XML file contains the incomplete text \"<invalid\"")]
+fn malformed_settings_file(world: &mut ApplicationWorld) {
+    let path = world.scratch_folder().join("malformed-customization.xml");
+    std::fs::write(&path, b"<invalid").unwrap();
+    world.saved_path = Some(path);
+}
+#[when("the user selects the file through the customization Import dialog")]
+fn import_malformed_settings(world: &mut ApplicationWorld) {
+    import_customization(world);
+    let path = world.saved_path.clone().unwrap();
+    enter_settings_file(world, IMPORT, &path, "Open");
+}
+
+#[test]
+fn malformed_import_reports_the_error_without_discarding_a_staged_command() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    empty_tools_customization(&mut world);
+    stage_sketch_visibility(&mut world);
+    malformed_settings_file(&mut world);
+    import_malformed_settings(&mut world);
+    import_closed(&mut world);
+    world.expect_text("Cannot import ribbon customization");
+    sketches_in_target(&mut world);
+    transaction_steps::expect_target_pending(&world, true);
+    cancel_customization(&mut world);
+    no_user_commands(&mut world);
+    world.close();
 }
 #[then("the Part 3D Model target indicates a pending change")]
 fn imported_target_pending(world: &mut ApplicationWorld) {

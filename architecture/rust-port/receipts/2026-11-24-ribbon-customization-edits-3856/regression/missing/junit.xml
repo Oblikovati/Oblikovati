@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T12:53:37.891684735Z" time="131.57527294"><testcase name="Scenario: Handle a missing customization import file: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:280:3" time="131.57527294"><system-out><![CDATA[  Scenario: Handle a missing customization import file
+   ✔  Given the ribbon customization dialog is open with no pending changes
+   ✔  And the customization import file picker is open
+   ✔  When the user enters a path to a nonexistent XML file and clicks "Open"
+   ✔  Then a warning says the file was not found and asks the user to check its name
+   ✔  When the user acknowledges the warning
+   ✔  Then the import file picker remains open with the filename selected
+   ✔  When the user cancels the file picker
+   ✔  Then the customization dialog remains open without a pending-change marker
+   ✔  And "Apply" is unavailable
+]]></system-out></testcase></testsuite></testsuites>

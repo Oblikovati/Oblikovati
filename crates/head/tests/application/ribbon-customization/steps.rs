@@ -24,6 +24,8 @@ mod macros;
 mod missing_file;
 #[path = "sketch_target_steps.rs"]
 mod sketch_target_steps;
+#[path = "target_edits.rs"]
+mod target_edits;
 #[path = "target_steps.rs"]
 mod target_steps;
 #[path = "transaction_steps.rs"]
@@ -111,6 +113,7 @@ fn customization_all_commands(world: &mut ApplicationWorld) {
     assert!(world.window_text("Customize").contains("AllCommands"));
 }
 #[when("the user chooses \"Sketch Tab\" as the command category")]
+#[given("the command category is \"Sketch Tab\"")]
 fn select_sketch_category(world: &mut ApplicationWorld) {
     click_in_customize(world, "AllCommands");
     world.click_text("Sketch Tab");
@@ -193,6 +196,7 @@ fn customization_closed(_world: &mut ApplicationWorld) {
 #[then("no User Commands panel is displayed on the Tools ribbon")]
 #[then("no User Commands panel appears on the Tools ribbon")]
 #[then("no User Commands panel is visible on the Tools ribbon")]
+#[then("the \"User Commands\" panel is no longer visible on the active ribbon")]
 fn no_user_commands(world: &mut ApplicationWorld) {
     world.expect_no_text("User Commands");
 }
@@ -203,6 +207,7 @@ fn reopen_tools_customization(world: &mut ApplicationWorld) {
     open_tools_customization(world);
 }
 #[then("the Part Tools custom panel list is empty")]
+#[then("the Part Tools custom panel list remains empty")]
 #[then("the Part Tools target list is empty")]
 #[then("the custom panel list is empty")]
 #[then("the Part Tools target remains empty")]

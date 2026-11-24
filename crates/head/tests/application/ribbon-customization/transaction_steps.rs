@@ -16,6 +16,13 @@ pub(super) fn target_is_empty(world: &ApplicationWorld) {
 }
 
 pub(super) fn target_rows(world: &ApplicationWorld) -> Vec<&str> {
+    target_row_runs(world)
+        .into_iter()
+        .map(|row| row.text.as_str())
+        .collect()
+}
+
+pub(super) fn target_row_runs(world: &ApplicationWorld) -> Vec<&diagnostics::RenderedRun> {
     let panel = world.run_in_window("Customize", "Custompanel");
     let large = world.run_in_window("Customize", "Large");
     let x = panel.minimum[0]..large.minimum[0];
@@ -30,7 +37,7 @@ pub(super) fn target_rows(world: &ApplicationWorld) -> Vec<&str> {
         })
         .collect();
     rows.sort_by(|a, b| a.center()[1].total_cmp(&b.center()[1]));
-    rows.into_iter().map(|row| row.text.as_str()).collect()
+    rows
 }
 
 fn target_label(world: &ApplicationWorld) -> &str {
@@ -167,7 +174,7 @@ fn select_tools(world: &mut ApplicationWorld) {
     choose_target(world, "Tools");
 }
 
-fn choose_target(world: &mut ApplicationWorld, tab: &str) {
+pub(super) fn choose_target(world: &mut ApplicationWorld, tab: &str) {
     let current = target_label(world).to_owned();
     click_in_customize(world, &current);
     world.click_text(&format!("Part | {tab}"));
