@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Open the real populated drawing template through its project catalog.
 use super::*;
+use oblikovati_api::{
+    client::Client,
+    wire::{ParameterSetArgs, UpdateDocumentArgs},
+};
 use oblikovati_gui::{GuiTemplateFolder, GuiTemplateKind, GuiTemplateUnits};
 use oblikovati_model::drawing::DrawingAnnotationDefinition;
 use oblikovati_persistence::package::DocumentPackage;
@@ -8,6 +12,7 @@ use oblikovati_persistence::package::DocumentPackage;
 const PROJECT: &str = "fixtures/cad/document-creation-layout-candidate.opj";
 const PART: &str = "fixtures/cad/document-opening/OpenPart.opd";
 const LAYOUT: &str = "fixtures/cad/document-creation-layout-candidate/English/Populated Layout.odd";
+const UPDATED_PART: &str = "fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd";
 pub(super) const TITLE: &str = "Populated Layout";
 
 #[given(
@@ -20,7 +25,11 @@ fn load_layout_project(world: &mut ApplicationWorld) {
 #[given("the active document is `fixtures/cad/document-opening/OpenPart.opd` in the MCAD Software")]
 fn open_part_for_layout(world: &mut ApplicationWorld) {
     let path = super::super::super::scenario_root().join(PART);
-    world.open_fixture(&path);
+    open_layout_part(world, &path);
+}
+
+fn open_layout_part(world: &mut ApplicationWorld, path: &std::path::Path) {
+    world.open_fixture(path);
     let active = world.active_id();
     assert_eq!(
         world.state().document_type,
@@ -31,9 +40,55 @@ fn open_part_for_layout(world: &mut ApplicationWorld) {
 }
 
 #[given(
+    "a disposable copy of `fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd` is active"
+)]
+fn open_disposable_layout_part(world: &mut ApplicationWorld) {
+    let source = super::super::super::scenario_root().join(UPDATED_PART);
+    let copy = world.scratch_folder().join(source.file_name().unwrap());
+    std::fs::copy(source, &copy).unwrap();
+    open_layout_part(world, &copy);
+}
+
+#[given("the active part has been updated and then edited so that it needs updating again")]
+fn mark_part_update_needed(world: &mut ApplicationWorld) {
+    let client = Client::new(world.app().owner.document_host());
+    let update = client
+        .documents()
+        .update(&UpdateDocumentArgs::default())
+        .unwrap();
+    assert!(!update.requires_update && update.errors.is_none());
+    client
+        .parameters()
+        .add(&ParameterSetArgs {
+            name: "layout_probe".into(),
+            expression: "10 mm".into(),
+            value_type: "numeric".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    // The next native frame can evaluate the edit, so check the update status here.
+    assert!(
+        client
+            .documents()
+            .requires_update()
+            .unwrap()
+            .requires_update
+    );
+}
+
+#[given(
     "`fixtures/cad/document-creation-layout-candidate/English/Populated Layout.odd` is available as the populated inch assembly layout"
 )]
 fn populated_layout_is_available(world: &mut ApplicationWorld) {
+    saved_layout_is_available(world);
+    world.click_text("English");
+    assert!(gallery_has_template(world, TITLE));
+}
+
+#[given(
+    "`fixtures/cad/document-creation-layout-candidate/English/Populated Layout.odd` is available as a drawing layout with a view and parts list"
+)]
+fn saved_layout_is_available(world: &mut ApplicationWorld) {
     let path = super::super::super::scenario_root()
         .join(LAYOUT)
         .canonicalize()
@@ -55,8 +110,34 @@ fn populated_layout_is_available(world: &mut ApplicationWorld) {
             .iter()
             .any(|annotation| matches!(annotation, DrawingAnnotationDefinition::PartsList { .. }))
     );
+}
+
+#[given("the user selects the assembly layout and opens its component-selection dialog")]
+fn open_layout_component_dialog(world: &mut ApplicationWorld) {
+    open_chooser(world);
     world.click_text("English");
-    assert!(gallery_has_template(world, TITLE));
+    world.click_text(TITLE);
+    world.click_text("Assembly Layout");
+    create_part(world);
+    world.pump(Vec::new());
+    world.expect_text("Select Component");
+}
+
+#[given("the dialog displays the active part")]
+pub(super) fn expect_active_component_name(world: &mut ApplicationWorld) {
+    let id = world.active_id();
+    let expected = world.document_name(id).replace(' ', "");
+    let label = world.run("Document name");
+    assert!(
+        world.frame.runs.iter().any(|run| {
+            run.list == label.list
+                && run.minimum[0] > label.maximum[0]
+                && (run.center()[1] - label.center()[1]).abs() < 4.
+                && run.text == expected
+        }),
+        "expected the component field to display {expected:?}: {}",
+        world.text()
+    );
 }
 
 pub(super) fn expect_sheet_previews(world: &mut ApplicationWorld) {

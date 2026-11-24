@@ -368,7 +368,7 @@ fn component_again(world: &mut ApplicationWorld) {
 }
 #[then("its previous document name remains displayed")]
 fn component_name_remains(world: &mut ApplicationWorld) {
-    component_name_shown(world);
+    populated_layout::expect_active_component_name(world);
 }
 #[then("the original document remains active")]
 fn original_document_active(world: &mut ApplicationWorld) {

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a populated drawing layout: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-layout-source/features/application/document-creation/document-creation-populated-layout.feature" package="testsuite/Feature: Create a populated drawing layout: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-layout-source/features/application/document-creation/document-creation-populated-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T20:51:40.137301109Z" time="28.048990357"><testcase name="Scenario: Cancel browsing for a drawing-layout component: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-layout-source/features/application/document-creation/document-creation-populated-layout.feature:43:3" time="28.048990357"><system-out><![CDATA[  Scenario: Cancel browsing for a drawing-layout component
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-layout-candidate.opj` as its active project
+   ✔  Given a disposable copy of `fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd` is active
+   ✔  And the active part has been updated and then edited so that it needs updating again
+   ✔  And `fixtures/cad/document-creation-layout-candidate/English/Populated Layout.odd` is available as a drawing layout with a view and parts list
+   ✔  And the user selects the assembly layout and opens its component-selection dialog
+   ✔  And the dialog displays the active part
+   ✔  When the user chooses Browse beside the document name
+   ✔  Then a file-selection dialog opens above component selection
+   ✔  And it displays a folder and file list, a file name field and a file-type filter
+   ✔  And it displays a preview area and Open and Cancel controls
+   ✔  When the user cancels the file-selection dialog
+   ✔  Then the component-selection dialog is displayed again
+   ✔  And its previous document name remains displayed
+   ✔  When the user cancels component selection
+   ✔  Then the original document remains active
+   ✔  And no new drawing tab is displayed
+]]></system-out></testcase></testsuite></testsuites>

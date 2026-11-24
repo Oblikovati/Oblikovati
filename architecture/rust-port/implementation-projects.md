@@ -106,3 +106,8 @@ The drawing chooser shows thumbnails of the template sheet and the
 populated layout. The component-cancel scenario passed all 16 steps and
 returned to the original Part.
 [Layout cancellation report](receipts/2026-11-24-document-creation-layout-cancel-3899/README.md)
+
+Cancelling the nested component file browser preserved the proposed
+document name. Cancelling component selection then returned to the original
+Part. The scenario passed all 16 steps.
+[Browse cancellation report](receipts/2026-11-24-document-creation-layout-browse-cancel-3899/README.md)
