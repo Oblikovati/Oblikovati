@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::HeadWork;
-use oblikovati_gui::{GuiFrameEngine, GuiFrameRequest};
+use oblikovati_gui::{GuiCommandState, GuiFrameEngine, GuiFrameRequest};
 use oblikovati_viewport::{GuiFrame, GuiFrameCompiler};
 use scene_tests::{capture_native_scene, open_native_part, publish_native_scene, solid_pixels};
 #[test]
@@ -12,7 +12,10 @@ fn native_owned_imgui_packet_composes_with_the_document_after_context_destructio
     open_native_part(&mut owner, &directory.path().join("gui-part.opd"));
     let baseline = publish_native_scene(&mut owner, &mut window);
     assert!(solid_pixels(&baseline) > 0);
-    let (compiler, packet) = owned_shell_packet(window.drawable_extent().unwrap());
+    let commands = owner.gui_command_state().unwrap();
+    assert!(commands.document.is_some());
+    let (compiler, packet) =
+        owned_shell_packet(window.drawable_extent().unwrap(), commands.clone());
     let bounds = shell_vertex_bounds(&packet);
     window.submit_gui_frame(&compiler, &packet).unwrap();
     drop(compiler);
@@ -23,16 +26,16 @@ fn native_owned_imgui_packet_composes_with_the_document_after_context_destructio
     window.clear_gui_frame().unwrap();
     assert!(window.view.capture().is_err());
     assert_eq!(capture_native_scene(&mut window).rgba, baseline.rgba);
-    verify_gui_retirement(&mut window);
+    verify_gui_retirement(&mut window, commands);
     owner.finish().unwrap();
 }
-fn owned_shell_packet(extent: [u32; 2]) -> (GuiFrameCompiler, GuiFrame) {
+fn owned_shell_packet(extent: [u32; 2], commands: GuiCommandState) -> (GuiFrameCompiler, GuiFrame) {
     let mut engine = GuiFrameEngine::new().unwrap();
     let request = GuiFrameRequest {
         extent,
         status: None,
         events: vec![],
-        commands: Default::default(),
+        commands,
         delta_seconds: 1. / 60.,
         framebuffer_scale: [1.; 2],
     };
@@ -127,8 +130,8 @@ fn assert_shell_chrome_regions(changed: &[[usize; 2]]) {
         "expected the fixed status bar"
     );
 }
-fn verify_gui_retirement(window: &mut NativeHeadWindow) {
-    let (compiler, packet) = owned_shell_packet(window.drawable_extent().unwrap());
+fn verify_gui_retirement(window: &mut NativeHeadWindow, commands: GuiCommandState) {
+    let (compiler, packet) = owned_shell_packet(window.drawable_extent().unwrap(), commands);
     window.submit_gui_frame(&compiler, &packet).unwrap();
     capture_native_scene(window);
     window.finish().unwrap();
