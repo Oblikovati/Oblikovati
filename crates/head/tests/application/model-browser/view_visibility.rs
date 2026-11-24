@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Switch locked and unlocked views over a rendered solid (#4118).
-use super::part_views::{
-    activate_copied_view as activate_copy_row, copied_view_active, copy_primary_view,
-    expanded_primary_view, rename_copied_view,
-};
+use super::part_views::activate_copy_for_camera;
+use super::view_fixture::{activate_view, copy_name, expect_copy_active, right_click_copy};
 use super::*;
 use cucumber::{given, then, when};
 use oblikovati_api::contract::PartDesignView as _;
@@ -17,10 +15,7 @@ fn visible_prism(world: &mut ApplicationWorld) {
 #[given("an unlocked copied view is active")]
 #[given("a copied view is active")]
 fn unlocked_copy_active(world: &mut ApplicationWorld) {
-    expanded_primary_view(world);
-    copy_primary_view(world);
-    rename_copied_view(world);
-    activate_copy_row(world);
+    activate_copy_for_camera(world);
     assert!(!active_view_locked(world));
 }
 #[given("the solid body is visible in the Primary view")]
@@ -40,7 +35,7 @@ fn hide_copy_bodies(world: &mut ApplicationWorld) {
     choose_copy_action(world, "All Hidden");
 }
 fn choose_copy_action(world: &mut ApplicationWorld, label: &str) {
-    right_click_row(world, "Capture View");
+    right_click_copy(world);
     choose_menu_row(world, label);
     world.pump(Vec::new());
 }
@@ -78,7 +73,8 @@ pub(super) fn active_view_locked(world: &mut ApplicationWorld) -> bool {
         .locked()
 }
 pub(super) fn lock_icon_visible(world: &mut ApplicationWorld) -> bool {
-    let row = world.run("Capture View").clone();
+    let name = copy_name(world);
+    let row = world.run(name).clone();
     let left = row.maximum[0] as usize + 5;
     let top = row.minimum[1] as usize;
     (top..top + 15).any(|y| {
@@ -96,16 +92,17 @@ fn activate_primary_view(world: &mut ApplicationWorld) {
 #[when("the user activates the locked copied view")]
 #[when("the user activates the copied view again")]
 fn activate_copied_view(world: &mut ApplicationWorld) {
-    activate_copy_row(world);
+    let name = copy_name(world);
+    activate_view(world, name);
 }
 #[then("the copied view displays its active and locked indicators")]
 fn active_copy_is_locked(world: &mut ApplicationWorld) {
-    copied_view_active(world);
+    expect_copy_active(world);
     copied_view_is_locked(world);
 }
 #[then("the copied view is active")]
 fn copy_is_active(world: &mut ApplicationWorld) {
-    copied_view_active(world);
+    expect_copy_active(world);
 }
 
 #[then("the solid body is visible")]

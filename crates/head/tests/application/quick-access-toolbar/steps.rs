@@ -286,10 +286,6 @@ fn divider_drawn(world: &mut ApplicationWorld) {
     assert!(lit, "expected a drawn divider after Extrude");
 }
 // Invoking the shortcut
-#[given("an empty part is active in the MCAD Software")]
-fn empty_part(world: &mut ApplicationWorld) {
-    part_active(world);
-}
 #[when("I select the Extrude quick access icon")]
 #[when("the user selects the Extrude quick access icon")]
 fn select_shortcut(world: &mut ApplicationWorld) {

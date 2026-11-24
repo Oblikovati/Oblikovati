@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/quick-access-toolbar/quick-access-toolbar.feature" package="testsuite/Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/quick-access-toolbar/quick-access-toolbar.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:23:51.408241387Z" time="22.782903902"><testcase name="Scenario: Invoke an added command from quick access in an empty part: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/quick-access-toolbar/quick-access-toolbar.feature:61:3" time="22.782903902"><system-out><![CDATA[  Scenario: Invoke an added command from quick access in an empty part
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And Extrude has been added to the quick access toolbar
+   ✔  And the 3D Model ribbon is active
+   ✔  When the user selects the Extrude quick access icon
+   ✔  Then the workspace displays the origin planes for selection
+   ✔  And Start 2D Sketch is highlighted on the ribbon
+   ✔  When the user presses Escape
+   ✔  Then the origin plane selection display closes
+   ✔  And the empty part remains active
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:23:51.451530375Z" time="75.007998123"><testcase name="Scenario: Choose and restore annotation scale for an active view: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1038:3" time="75.007998123"><system-out><![CDATA[  Scenario: Choose and restore annotation scale for an active view
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And the user copies the Primary view representation as BrowserView and activates BrowserView
+   ✔  And an empty part is active in the MCAD Software
+   ✔  And a copied view representation is active
+   ✔  And its annotation scale is Auto
+   ✔  When the user opens the active view's context menu and expands Annotation Scale
+   ✔  Then Auto is checked
+   ✔  And fixed ratios and Custom are available
+   ✔  When the user chooses 1:1
+   ✔  And the user reopens the Annotation Scale submenu
+   ✔  Then 1:1 is checked
+   ✔  And Auto is not checked
+   ✔  When the user chooses Auto
+   ✔  And the user reopens the Annotation Scale submenu
+   ✔  Then Auto is checked
+   ✔  And 1:1 is not checked
+   ✔  When the user dismisses the menus
+   ✔  Then the copied view remains active
+   ✔  And the viewport remains empty
+]]></system-out></testcase></testsuite></testsuites>

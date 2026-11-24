@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Drive the part-view copy and activation journey through the native window (#4118).
+use super::view_fixture::{
+    CAPTURE_VIEW, activate_view, expect_copy_active, expect_prepared_copy, expect_view_active,
+    rename_view, right_click_copy,
+};
 use super::*;
 use cucumber::{given, then, when};
 use oblikovati_api::contract::PartDesignView as _;
@@ -54,9 +58,7 @@ fn primary_view_active(world: &mut ApplicationWorld) {
 
 #[when("the user enters \"Capture View\" and presses Enter")]
 pub(super) fn rename_copied_view(world: &mut ApplicationWorld) {
-    world.type_text("Capture View");
-    world.key(oblikovati_viewport::ViewportPhysicalKey::Enter, false);
-    world.pump(Vec::new());
+    rename_view(world, CAPTURE_VIEW);
 }
 
 #[then("the new view representation has the name \"Capture View\"")]
@@ -66,25 +68,12 @@ fn copied_view_renamed(world: &mut ApplicationWorld) {
 
 #[when("the user double-clicks \"Capture View\"")]
 pub(super) fn activate_copied_view(world: &mut ApplicationWorld) {
-    world.double_click(world.run("Capture View").center().map(|value| value as i32));
-    world.pump(Vec::new());
+    activate_view(world, CAPTURE_VIEW);
 }
 
 #[then("\"Capture View\" is marked active")]
 pub(super) fn copied_view_active(world: &mut ApplicationWorld) {
-    assert_eq!(
-        world
-            .state()
-            .browser
-            .unwrap()
-            .part_design_views
-            .unwrap()
-            .active()
-            .unwrap()
-            .name(),
-        "Capture View"
-    );
-    assert!(world.checked("Capture View"));
+    expect_view_active(world, CAPTURE_VIEW);
 }
 
 #[then("the View branch identifies \"Capture View\"")]
@@ -126,16 +115,16 @@ pub(super) fn view_branch(world: &ApplicationWorld) -> &super::super::diagnostic
 
 #[given("The MCAD Software has an empty part with a copied view active")]
 fn empty_part_with_active_copy(world: &mut ApplicationWorld) {
+    if expect_prepared_copy(world) {
+        return;
+    }
     world.add_part();
-    expanded_primary_view(world);
-    copy_primary_view(world);
-    rename_copied_view(world);
-    activate_copied_view(world);
+    activate_copy_for_camera(world);
 }
 
 #[given("Publish is checked in the copied view context menu")]
 fn published_view_menu_open(world: &mut ApplicationWorld) {
-    right_click_row(world, "Capture View");
+    right_click_copy(world);
     assert!(world.checked("Publish"));
 }
 
@@ -147,19 +136,19 @@ fn toggle_view_publication(world: &mut ApplicationWorld) {
 
 #[then("Publish is unchecked when the context menu is reopened")]
 fn view_publication_unchecked(world: &mut ApplicationWorld) {
-    right_click_row(world, "Capture View");
+    right_click_copy(world);
     assert!(!world.checked("Publish"));
 }
 
 #[then("Publish is checked when the context menu is reopened")]
 fn view_publication_checked(world: &mut ApplicationWorld) {
-    right_click_row(world, "Capture View");
+    right_click_copy(world);
     assert!(world.checked("Publish"));
 }
 
 #[then("the copied view remains active")]
 fn published_copy_remains_active(world: &mut ApplicationWorld) {
-    copied_view_active(world);
+    expect_copy_active(world);
 }
 
 #[given("Primary is the active view representation")]
@@ -203,7 +192,7 @@ fn copied_view_autosave_enabled(world: &mut ApplicationWorld) {
 #[when("the user opens the copied view's context menu and expands Camera View")]
 #[when("the user reopens the Camera View submenu")]
 fn open_camera_submenu(world: &mut ApplicationWorld) {
-    right_click_row(world, "Capture View");
+    right_click_copy(world);
     let at = super::super::diagnostics::pointer_pixels(world.run("Camera View").center());
     world.hover(at);
     world.pump(Vec::new());
@@ -255,6 +244,9 @@ fn primary_stays_active(world: &mut ApplicationWorld) {
 
 #[given("a copied view representation is active")]
 pub(super) fn activate_copy_for_camera(world: &mut ApplicationWorld) {
+    if expect_prepared_copy(world) {
+        return;
+    }
     expanded_primary_view(world);
     copy_primary_view(world);
     rename_copied_view(world);
@@ -318,7 +310,7 @@ fn active_view_scale_is_auto(world: &mut ApplicationWorld) {
 #[when("the user reopens the active view's Annotation Scale submenu")]
 #[when("the user reopens the Annotation Scale submenu")]
 fn open_annotation_scale_menu(world: &mut ApplicationWorld) {
-    right_click_row(world, "Capture View");
+    right_click_copy(world);
     let at = super::super::diagnostics::pointer_pixels(world.run("Annotation Scale").center());
     world.hover(at);
     world.pump(Vec::new());

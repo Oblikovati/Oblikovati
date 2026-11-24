@@ -79,3 +79,8 @@ highlighting and the Part view.
 The viewport click helper works in empty Parts as well as solid Parts.
 The [pinned origin visibility runs](receipts/2026-11-24-browser-origin-visibility-3896/README.md)
 check plane toggles and view switches while a view is locked.
+
+Nine [published view cases](receipts/2026-11-24-browser-view-fixture-3896/README.md)
+open the saved blank metric Part and exercise its `BrowserView` copy through
+the Model Browser. The cases cover annotation scale, camera restoration,
+publication, and origin visibility with locked or bulk visibility commands.

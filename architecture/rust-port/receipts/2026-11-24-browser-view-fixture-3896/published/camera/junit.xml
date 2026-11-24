@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:21:27.359952659Z" time="91.552070749"><testcase name="Scenario: Restore a saved camera for an active view representation: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1118:3" time="91.552070749"><system-out><![CDATA[  Scenario: Restore a saved camera for an active view representation
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And the user copies the Primary view representation as BrowserView and activates BrowserView
+   ✔  And an empty part is active in the MCAD Software
+   ✔  And a copied view representation is active
+   ✔  And the orientation indicator shows Front
+   ✔  And Autosave Camera is off for the active view
+   ✔  When the user chooses Save Current Camera from the active view's Camera View submenu
+   ✔  And the user changes the orientation to Top using the orientation control
+   ✔  Then the orientation indicator shows Top
+   ✔  And the copied view remains active
+   ✔  When the user chooses Restore Saved Camera from the active view's Camera View submenu
+   ✔  Then the orientation indicator shows Front
+   ✔  And the copied view remains active
+   ✔  And the viewport remains empty
+]]></system-out></testcase></testsuite></testsuites>

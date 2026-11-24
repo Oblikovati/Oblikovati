@@ -5,6 +5,25 @@ use super::diagnostics::window_geometry;
 use cucumber::{given, then, when};
 
 // Document creation
+#[given("an empty part is active in the MCAD Software")]
+fn empty_part(world: &mut ApplicationWorld) {
+    let state = world.state();
+    if state.document.is_none() {
+        world.previous_document = Some(world.add_part());
+        return;
+    }
+    let browser = state.browser.expect("expected an active Part");
+    assert!(browser.part_design_views.is_some(), "expected a Part");
+    assert!(
+        browser.features.is_empty(),
+        "expected a Part with no features"
+    );
+    assert!(
+        browser.bodies.is_empty(),
+        "expected a Part with no solid bodies"
+    );
+}
+
 #[given("a template is selected and its details are displayed")]
 #[given("a template is selected with its details displayed")]
 fn template_selected(world: &mut ApplicationWorld) {

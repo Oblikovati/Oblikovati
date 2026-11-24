@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Origin plane visibility remains independent of part views (#4118).
-use super::part_views::{
-    activate_copied_view, copy_primary_view, expanded_primary_view, rename_copied_view,
-};
+use super::part_views::activate_copy_for_camera;
+use super::view_fixture::{expect_prepared_copy, right_click_copy};
 use super::view_visibility::{active_view_locked, copied_view_is_locked, lock_icon_visible};
 use super::*;
 use cucumber::{given, then, when};
@@ -10,15 +9,20 @@ use oblikovati_api::{client::Client, wire::SetPartDesignViewOptionsArgs};
 
 #[given("The MCAD Software has an empty part with an unlocked copied view active")]
 fn unlocked_copy_with_oblique_camera(world: &mut ApplicationWorld) {
+    if expect_prepared_copy(world) {
+        assert!(!active_view_locked(world));
+        return;
+    }
     world.add_part();
     orient_oblique(world);
-    expanded_primary_view(world);
-    copy_primary_view(world);
-    rename_copied_view(world);
-    activate_copied_view(world);
+    activate_copy_for_camera(world);
 }
 #[given("The MCAD Software has an empty part with a locked copied view active")]
 fn locked_copy_with_oblique_camera(world: &mut ApplicationWorld) {
+    if expect_prepared_copy(world) {
+        assert!(active_view_locked(world));
+        return;
+    }
     unlocked_copy_with_oblique_camera(world);
     choose_view_lock(world);
 }
@@ -50,8 +54,8 @@ fn orient_oblique(world: &mut ApplicationWorld) {
 }
 #[when("the user chooses Lock from the active view context menu")]
 #[when("the user chooses Lock from the active view context menu again")]
-fn choose_view_lock(world: &mut ApplicationWorld) {
-    right_click_row(world, "Capture View");
+pub(super) fn choose_view_lock(world: &mut ApplicationWorld) {
+    right_click_copy(world);
     choose_menu_row(world, "Lock");
     world.pump(Vec::new());
 }
