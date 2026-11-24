@@ -9,8 +9,8 @@ mod application;
 #[cfg(test)]
 mod test_context;
 pub use application::document_creation::templates::{
-    GuiDocumentTemplate, GuiProjectTemplate, GuiTemplateKind, GuiTemplateMaterial,
-    GuiTemplateMaterialEntry, GuiTemplateUnits,
+    GuiDocumentTemplate, GuiProjectTemplate, GuiTemplateFolder, GuiTemplateKind,
+    GuiTemplateMaterial, GuiTemplateMaterialEntry, GuiTemplateUnits,
 };
 mod appearance_choice;
 mod asset_choice;

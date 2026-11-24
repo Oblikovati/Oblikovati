@@ -1424,5 +1424,27 @@
         "notes": "All five current cases and 68 steps passed in separate native runs. Strict build and runtime provenance remains open under #3978."
       }
     }
+  },
+  "features/application/document-creation/document-creation-project-dialog.feature": {
+    "by_source_sha256": {
+      "125282520c9cdaf1cbfe308f01a5d1bc649dafdc3bbdb67b985500136d94609d": {
+        "feature_sha256": "125282520c9cdaf1cbfe308f01a5d1bc649dafdc3bbdb67b985500136d94609d",
+        "supporting_files": {
+          "features/application/document-creation/BLOCKERS.md": "d60377bac648dea0dda1d094a4f8778064e13b44db2ceed35cea209b4fb568f0",
+          "features/application/document-creation/FIXTURES.md": "b5b8fa749dadaec50f88b1e198b26d27737406a301a12702c03f77d53afd633c",
+          "features/application/document-creation/FUNCTIONAL.md": "8b170196d8c08f34167d3666d1a743c779aaec9024e4facb4c768ac70b121704",
+          "features/application/document-creation/VISUAL.md": "6ac16fb8cf8de95da29f24924ef4e5d1e7c084cd8daa4d91a34352bf9ffe93fc",
+          "fixtures/cad/assembly-template-fixture.opj": "c8fc17d0b5dd1224123dad8f7dafd88b5d77acbbace108f27acb9c6d377e06a4",
+          "fixtures/cad/assembly-template-native/Standard (mm).oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
+          "fixtures/cad/assembly-template-native/assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-document-creation-project-dialog-3899/current-cucumber.json",
+        "cucumber_sha256": "d0354c46a8ffcb88a46062a56300b04061cff75c4624af2257aad6bf04c2ac1b",
+        "application_commit": "40b36e2f817658aec23d060a4ed439f374ba666e",
+        "command": "OBK_BDD_ROOT=<snapshot> OBK_BDD_AREA=application OBK_BDD_FEATURE=document-creation OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 1 current scenarios and 12 steps passed in separate native runs. The build includes the updated scenario bindings and existing local GUI edits. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   }
 }

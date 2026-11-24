@@ -183,14 +183,29 @@ fn project_row(ui: &Ui, project: &GuiProject, inspected: Option<&str>) -> bool {
     ui.table_next_row();
     ui.table_next_column();
     let _identity = ui.push_id(&project.location);
+    let chose = choose_project_name(
+        ui,
+        &project_row_name(project),
+        inspected == Some(project.location.as_str()),
+    );
+    ui.table_next_column();
+    ui.text_wrapped(&project.location);
+    chose
+}
+
+fn choose_project_name(ui: &Ui, label: &str, selected: bool) -> bool {
+    let cursor = ui.cursor_pos();
+    let width = ui.content_region_avail()[0].max(1.);
+    let height = ui.calc_text_size_with_opts(label, false, width)[1];
     let chose = ui
-        .selectable_config(project_row_name(project))
-        .selected(inspected == Some(project.location.as_str()))
+        .selectable_config("##project-name")
+        .selected(selected)
+        .size([0., height])
         // Inside a dialog a plain selectable would close it.
         .flags(SelectableFlags::DONT_CLOSE_POPUPS | SelectableFlags::SPAN_ALL_COLUMNS)
         .build();
-    ui.table_next_column();
-    ui.text_wrapped(&project.location);
+    ui.set_cursor_pos(cursor);
+    ui.text_wrapped(label);
     chose
 }
 fn project_row_name(project: &GuiProject) -> String {

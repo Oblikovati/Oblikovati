@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exercise the active project catalog with the current named native fixtures.
 use super::*;
-use oblikovati_gui::{GuiProjectTemplate, GuiTemplateKind, GuiTemplateUnits};
+use oblikovati_gui::{GuiProjectTemplate, GuiTemplateFolder, GuiTemplateKind, GuiTemplateUnits};
 
 const METRIC_TITLES: [&str; 4] = [
     "Sheet Metal (DIN)",
@@ -34,7 +34,9 @@ fn metric_catalog(world: &mut ApplicationWorld) {
     let mut titles: Vec<_> = state
         .project_templates
         .iter()
-        .filter(|entry| entry.folder == GuiTemplateUnits::Metric && is_part(entry))
+        .filter(|entry| {
+            entry.folder == GuiTemplateFolder::Units(GuiTemplateUnits::Metric) && is_part(entry)
+        })
         .map(|entry| entry.title.as_str())
         .collect();
     titles.sort_unstable();
@@ -49,13 +51,11 @@ fn metric_catalog(world: &mut ApplicationWorld) {
 fn english_catalog(world: &mut ApplicationWorld) {
     let state = world.state();
     assert!(
-        state
-            .project_templates
-            .iter()
-            .any(|entry| entry.folder == GuiTemplateUnits::Inch
-                && entry.kind == GuiTemplateKind::Part
-                && entry.title == INCH_TITLE
-                && entry.length_unit == "in"),
+        state.project_templates.iter().any(|entry| entry.folder
+            == GuiTemplateFolder::Units(GuiTemplateUnits::Inch)
+            && entry.kind == GuiTemplateKind::Part
+            && entry.title == INCH_TITLE
+            && entry.length_unit == "in"),
         "catalog: {:?}",
         state.project_templates
     );

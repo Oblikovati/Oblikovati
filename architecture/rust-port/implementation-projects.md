@@ -52,8 +52,8 @@ Project wire methods remain pending.
 
 ## Native project templates in the desktop chooser
 
-The desktop reads native packages in the active project's Metric and English
-template folders when it loads the project. Each chooser entry shows its file
+The desktop reads native packages in the active project's root, Metric, and
+English template folders when it loads the project. Each chooser entry shows its file
 name, document kind, stored length unit, and file size. Name and size sorting
 keep the selected file's identity when several files share a kind and units.
 Create starts an independent unsaved document from the selected package.
@@ -71,3 +71,7 @@ The basic Metric catalog scenarios opened a Part, assembly, drawing,
 sheet-metal Part, and presentation in their respective workspaces. The
 presentation's initial model-insertion dialog could be dismissed while the
 new document stayed open. [Basic creation reports](receipts/2026-11-24-document-creation-basic-native-3899/README.md)
+
+Projects wraps long names within its Name column. The root-template scenario
+confirmed that inspecting the active project and choosing Done preserves the
+selected assembly template and its details. [Project inspection report](receipts/2026-11-24-document-creation-project-dialog-3899/README.md)

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exercise Create from the named, geometry-bearing native template.
 use super::*;
-use oblikovati_gui::{GuiTemplateKind, GuiTemplateUnits};
+use oblikovati_gui::{GuiTemplateFolder, GuiTemplateKind, GuiTemplateUnits};
 
 const TEMPLATE_TITLE: &str = "Geometry Template";
 const TEMPLATE: &str =
@@ -35,7 +35,7 @@ fn contains_geometry_template(world: &mut ApplicationWorld) {
             entry.path == path
                 && entry.title == TEMPLATE_TITLE
                 && entry.kind == GuiTemplateKind::Part
-                && entry.folder == GuiTemplateUnits::Metric
+                && entry.folder == GuiTemplateFolder::Units(GuiTemplateUnits::Metric)
         }),
         "catalog issues: {:?}",
         state.project_template_issue
@@ -44,7 +44,8 @@ fn contains_geometry_template(world: &mut ApplicationWorld) {
 }
 
 #[when("the user opens the new-document template chooser")]
-fn open_geometry_chooser(world: &mut ApplicationWorld) {
+#[given("the user opens the new-document template chooser")]
+fn open_named_template_chooser(world: &mut ApplicationWorld) {
     open_chooser(world);
     chooser_open(world);
 }

@@ -59,24 +59,37 @@ fn project_rows_listed(world: &mut ApplicationWorld) {
     expect_list_location(world, role_fixtures::active_file(project));
 }
 
-fn expect_list_location(world: &ApplicationWorld, file: &str) {
-    let heading = world.run("Location");
+pub(super) fn expect_list_location(world: &ApplicationWorld, file: &str) {
+    let column = project_column_text(world, "Location", f32::INFINITY);
+    assert!(
+        column.contains(file),
+        "location column {column:?}: expected {file}"
+    );
+}
+
+pub(super) fn expect_list_name(world: &ApplicationWorld, label: &str) {
+    let column = project_column_text(world, "Name", world.run("Location").minimum[0]);
+    assert!(
+        column.contains(&label.replace(' ', "")),
+        "name column {column:?}: expected {label}"
+    );
+}
+
+fn project_column_text(world: &ApplicationWorld, header: &str, right: f32) -> String {
+    let heading = world.run(header);
     let settings_y = world.run("Project Settings").minimum[1];
-    let column: String = world
+    world
         .frame
         .runs
         .iter()
         .filter(|run| {
             run.minimum[0] >= heading.minimum[0]
+                && run.minimum[0] < right
                 && run.minimum[1] > heading.maximum[1]
                 && run.maximum[1] < settings_y
         })
         .map(|run| run.text.as_str())
-        .collect();
-    assert!(
-        column.contains(file),
-        "location column {column:?}: expected {file}"
-    );
+        .collect()
 }
 #[then("the active project is marked")]
 fn project_marked(world: &mut ApplicationWorld) {
@@ -84,12 +97,19 @@ fn project_marked(world: &mut ApplicationWorld) {
 }
 #[then("the dialog displays a project settings tree")]
 fn project_tree(world: &mut ApplicationWorld) {
-    let workspace = if world.shows("ActiveProject.opj") {
-        "workspace-active"
-    } else {
-        "work"
-    };
+    let state = world.state();
+    let project = state
+        .projects
+        .iter()
+        .find(|project| project.active)
+        .expect("expected the active project");
+    let (_, workspace) = project
+        .settings
+        .iter()
+        .find(|(name, _)| name == "Workspace")
+        .expect("expected the project's workspace setting");
     world.expect_text(&format!("Workspace: {workspace}"));
+    world.expect_text("Folder Options");
 }
 #[when("I choose Done without changing the project")]
 #[when("the user chooses Done without changing the project")]

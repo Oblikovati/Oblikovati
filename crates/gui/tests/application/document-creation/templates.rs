@@ -1,6 +1,34 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 #[test]
+fn a_root_only_catalog_opens_at_its_named_templates() {
+    let mut chooser = TemplateChooser::default();
+    let root_template = crate::GuiProjectTemplate {
+        path: "templates/Standard (mm).oad".into(),
+        title: "Standard (mm)".into(),
+        folder: TemplateFolder::Root,
+        kind: GuiTemplateKind::Assembly,
+        length_unit: "mm",
+        size: 42,
+    };
+    let state = GuiCommandState {
+        project_templates: vec![root_template.clone()].into(),
+        ..Default::default()
+    };
+
+    chooser.reveal_project_root(&state);
+    assert_eq!(chooser.folder, TemplateFolder::Root);
+    assert_eq!(
+        chooser.catalog(&state, &[GuiTemplateKind::Assembly]),
+        vec![TemplateChoice::Project(root_template)]
+    );
+    assert!(
+        chooser
+            .catalog(&GuiCommandState::default(), &[GuiTemplateKind::Assembly])
+            .is_empty()
+    );
+}
+#[test]
 fn details_columns_reserve_measured_text_and_group_indent() {
     let layout = DetailsLayout::new([200., 60., 90.], 20., 8.);
     assert_eq!(layout.size, 228.);

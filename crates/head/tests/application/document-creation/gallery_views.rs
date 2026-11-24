@@ -16,6 +16,8 @@ mod gallery_secondary;
 mod named_catalog;
 #[path = "named_navigation.rs"]
 mod named_navigation;
+#[path = "project_inspection.rs"]
+mod project_inspection;
 #[path = "template_content.rs"]
 mod template_content;
 #[given("the new-document chooser shows the metric folder grouped by type using Medium icons")]

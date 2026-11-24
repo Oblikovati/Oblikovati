@@ -144,7 +144,7 @@ mod tests {
         let make_entry = |title: &str| GuiProjectTemplate {
             path: format!("{title}.opd").into(),
             title: title.into(),
-            folder: GuiTemplateUnits::Metric,
+            folder: super::super::TemplateFolder::Units(GuiTemplateUnits::Metric),
             kind: GuiTemplateKind::Part,
             length_unit: "mm",
             size: 42,

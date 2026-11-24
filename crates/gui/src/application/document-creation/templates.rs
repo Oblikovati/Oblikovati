@@ -31,6 +31,30 @@ impl GuiTemplateUnits {
         }
     }
 }
+/// A folder of the project template catalog, independent of a file's stored units.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuiTemplateFolder {
+    Root,
+    Units(GuiTemplateUnits),
+}
+impl Default for GuiTemplateFolder {
+    fn default() -> Self {
+        Self::Units(GuiTemplateUnits::default())
+    }
+}
+impl GuiTemplateFolder {
+    pub(super) const ALL: [Self; 3] = [
+        Self::Root,
+        Self::Units(GuiTemplateUnits::Metric),
+        Self::Units(GuiTemplateUnits::Inch),
+    ];
+    pub(super) fn label(self) -> &'static str {
+        match self {
+            Self::Root => "Templates",
+            Self::Units(units) => units.folder(),
+        }
+    }
+}
 /// One chooser tile; example: `GuiDocumentTemplate { kind: GuiTemplateKind::Part, units: GuiTemplateUnits::Metric }`.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct GuiDocumentTemplate {
@@ -43,7 +67,7 @@ pub struct GuiDocumentTemplate {
 pub struct GuiProjectTemplate {
     pub path: std::path::PathBuf,
     pub title: String,
-    pub folder: GuiTemplateUnits,
+    pub folder: GuiTemplateFolder,
     pub kind: GuiTemplateKind,
     pub length_unit: &'static str,
     pub size: u64,

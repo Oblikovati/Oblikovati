@@ -15,32 +15,11 @@ use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, Ui};
 use template_catalog::TemplateChoice;
 use template_sort::{TemplateSort, size_heading};
-use templates::{GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits, TEMPLATE_GROUPS};
+use templates::{
+    GuiDocumentTemplate, GuiTemplateFolder as TemplateFolder, GuiTemplateKind, GuiTemplateUnits,
+    TEMPLATE_GROUPS,
+};
 
-/// A row of the folder tree; the root holds folders and no templates of its own.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum TemplateFolder {
-    Root,
-    Units(GuiTemplateUnits),
-}
-impl Default for TemplateFolder {
-    fn default() -> Self {
-        Self::Units(GuiTemplateUnits::default())
-    }
-}
-impl TemplateFolder {
-    const ALL: [Self; 3] = [
-        Self::Root,
-        Self::Units(GuiTemplateUnits::Metric),
-        Self::Units(GuiTemplateUnits::Inch),
-    ];
-    fn label(self) -> &'static str {
-        match self {
-            Self::Root => "Templates",
-            Self::Units(units) => units.folder(),
-        }
-    }
-}
 #[derive(Default)]
 pub(crate) struct TemplateChooser {
     requested: bool,
@@ -144,6 +123,7 @@ impl TemplateChooser {
             self.request();
         }
         if std::mem::take(&mut self.requested) {
+            self.reveal_project_root(state);
             ui.open_popup("New document");
             dialog_geometry(ui);
         }

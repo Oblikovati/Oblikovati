@@ -34,13 +34,13 @@ fn template_selected(world: &mut ApplicationWorld) {
 
 pub(super) fn selected_template_details(world: &ApplicationWorld) -> String {
     let title = world.run("Template details");
-    let kind = world.run("Document type:");
+    let units = world.run("Length:");
     world
         .frame
         .runs
         .iter()
         .filter(|run| run.list == title.list && (run.minimum[0] - title.minimum[0]).abs() < 2.)
-        .filter(|run| run.minimum[1] > title.minimum[1] && run.minimum[1] <= kind.minimum[1])
+        .filter(|run| run.minimum[1] > title.minimum[1] && run.minimum[1] <= units.minimum[1])
         .map(|run| run.text.as_str())
         .collect::<Vec<_>>()
         .join("\n")

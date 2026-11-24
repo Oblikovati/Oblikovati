@@ -4,7 +4,7 @@
 
 ### Added
 
-- Added named native templates from the active project's Metric and English folders to the desktop chooser. (#3899)
+- Added named native templates from the active project's root, Metric, and English folders to the desktop chooser. (#3899)
 - Added Flipped, Symmetric, and Asymmetric directions and To Face and From–To extents for new solid extrusions in the desktop and typed API. Added desktop Icons and Dropdown direction selectors and a Distance A editor menu. (#3893)
 - Expanded the desktop parameter tolerance editor with tolerance formats, precision, evaluated size, and ISO fit classes. (#3893)
 - Added analytic solid-edge lengths to the Part Measure panel. (#3967)
@@ -298,10 +298,10 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Wrapped long project names in the Projects dialog. (#3899)
 - Restored the template gallery's left edge when keyboard navigation reaches the first tile. (#3899)
 - Enabled Page Up and Page Down in the staged ribbon command list. (#3856)
 - Moved keyboard focus to Add when pressing Tab from a selected available ribbon command. (#3856)
-
 - Drew the 3D Annotations icon at its configured size in custom ribbon panels. (#3856)
 
 - Preserved available ribbon command selections when switching targets and selected the separator when a source filter hid the selected command. (#3856)

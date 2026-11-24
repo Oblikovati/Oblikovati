@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect projects from the document chooser: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-project-dialog-source/features/application/document-creation/document-creation-project-dialog.feature" package="testsuite/Feature: Inspect projects from the document chooser: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-project-dialog-source/features/application/document-creation/document-creation-project-dialog.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:40:33.806574679Z" time="17.56173949"><testcase name="Scenario: Inspect projects from the template chooser: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-project-dialog-source/features/application/document-creation/document-creation-project-dialog.feature:5:3" time="17.56173949"><system-out><![CDATA[  Scenario: Inspect projects from the template chooser
+   ✔  Given a fresh MCAD Software session loads `fixtures/cad/assembly-template-fixture.opj` as its active project
+   ✔  And the user opens the new-document template chooser
+   ✔  And the user selects the `Standard (mm)` assembly template and displays its details
+   ✔  When the user chooses Projects in the chooser
+   ✔  Then a Projects dialog opens above the chooser
+   ✔  And the fixture project name and location are listed
+   ✔  And the fixture project is marked as active
+   ✔  And the dialog displays a project settings tree
+   ✔  When the user chooses Done without changing the project
+   ✔  Then the Projects dialog closes
+   ✔  And the template chooser is displayed again
+   ✔  And the previously selected template details remain displayed
+]]></system-out></testcase></testsuite></testsuites>

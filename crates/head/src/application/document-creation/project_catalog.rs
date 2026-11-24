@@ -2,7 +2,7 @@
 //! Read native template metadata at project load, outside the frame loop.
 use super::*;
 use oblikovati_api::types::*;
-use oblikovati_gui::GuiProjectTemplate;
+use oblikovati_gui::{GuiProjectTemplate, GuiTemplateFolder};
 use oblikovati_model::quantity::Dimension;
 use oblikovati_persistence::{
     load::{NativePackageReader, PackageFileReader},
@@ -26,11 +26,18 @@ impl ProjectTemplateCatalog {
         };
         let mut templates = Vec::new();
         let mut issues = Vec::new();
-        for (name, folder) in [
-            ("Metric", GuiTemplateUnits::Metric),
-            ("English", GuiTemplateUnits::Inch),
+        for (directory, folder) in [
+            (root.to_path_buf(), GuiTemplateFolder::Root),
+            (
+                root.join("Metric"),
+                GuiTemplateFolder::Units(GuiTemplateUnits::Metric),
+            ),
+            (
+                root.join("English"),
+                GuiTemplateFolder::Units(GuiTemplateUnits::Inch),
+            ),
         ] {
-            match native_files(&root.join(name)) {
+            match native_files(&directory) {
                 Ok(files) => collect_templates(files, folder, &mut templates, &mut issues),
                 Err(cause) => issues.push(cause),
             }
@@ -79,7 +86,7 @@ fn file_kind(path: &Path) -> Option<DocumentType> {
 
 fn collect_templates(
     files: Vec<PathBuf>,
-    folder: GuiTemplateUnits,
+    folder: GuiTemplateFolder,
     templates: &mut Vec<GuiProjectTemplate>,
     issues: &mut Vec<String>,
 ) {
@@ -93,7 +100,7 @@ fn collect_templates(
 
 fn read_template(
     path: &Path,
-    folder: GuiTemplateUnits,
+    folder: GuiTemplateFolder,
 ) -> Result<(GuiProjectTemplate, DocumentPackage), String> {
     let bytes = NativePackageReader
         .read(path)

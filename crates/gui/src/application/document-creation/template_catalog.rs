@@ -68,21 +68,34 @@ impl TemplateChoice {
 }
 
 impl TemplateChooser {
+    pub(super) fn reveal_project_root(&mut self, state: &GuiCommandState) {
+        let has_entries = |folder| {
+            state
+                .project_templates
+                .iter()
+                .any(|entry| entry.folder == folder)
+        };
+        if self.selected.is_none() && !has_entries(self.folder) && has_entries(TemplateFolder::Root)
+        {
+            self.folder = TemplateFolder::Root;
+        }
+    }
+
     pub(super) fn catalog(
         &self,
         state: &GuiCommandState,
         kinds: &[GuiTemplateKind],
     ) -> Vec<TemplateChoice> {
-        let TemplateFolder::Units(folder) = self.folder else {
-            return Vec::new();
-        };
         if state.project_templates.is_empty() {
-            return built_in_catalog(state, kinds, self.sort, folder);
+            return match self.folder {
+                TemplateFolder::Units(units) => built_in_catalog(state, kinds, self.sort, units),
+                TemplateFolder::Root => Vec::new(),
+            };
         }
         let mut entries: Vec<_> = state
             .project_templates
             .iter()
-            .filter(|entry| entry.folder == folder && kinds.contains(&entry.kind))
+            .filter(|entry| entry.folder == self.folder && kinds.contains(&entry.kind))
             .cloned()
             .map(TemplateChoice::Project)
             .collect();

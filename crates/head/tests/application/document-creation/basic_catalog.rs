@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Bind the basic creation cases to the native project and its supplied templates.
 use super::*;
-use oblikovati_gui::{GuiTemplateKind, GuiTemplateUnits};
+use oblikovati_gui::{GuiTemplateFolder, GuiTemplateKind, GuiTemplateUnits};
 
 #[given(
     "a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project"
@@ -27,7 +27,7 @@ fn verify_basic_catalog(world: &mut ApplicationWorld) {
                 .project_templates
                 .iter()
                 .any(|entry| entry.title == title
-                    && entry.folder == GuiTemplateUnits::Metric
+                    && entry.folder == GuiTemplateFolder::Units(GuiTemplateUnits::Metric)
                     && entry.kind == kind
                     && entry.length_unit == "mm"),
             "expected {title} in the Metric catalog: {:?}",
