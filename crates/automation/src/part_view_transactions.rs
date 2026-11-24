@@ -34,7 +34,13 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         return Ok(None);
     }
     if !is_tagged(files, document, direction)? {
-        if !crate::part_view_replay::navigate_unchanged(files, topology, document, direction)? {
+        if !crate::part_view_replay::navigate_with_replay(
+            files,
+            topology,
+            document,
+            direction,
+            pending_sync,
+        )? {
             return Ok(None);
         }
         crate::command_owner::CommandOwner::refresh_after_command(files, document)?;
@@ -135,7 +141,15 @@ fn jump<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         } else {
             PartViewNavigationDirection::Redo
         };
-        let changed = step(files, topology, display, document, direction, prepared)?;
+        let changed = step(
+            files,
+            topology,
+            display,
+            document,
+            direction,
+            prepared,
+            pending_sync,
+        )?;
         needs_reference_sync |= changed;
         *pending_sync |= changed;
         if direction == PartViewNavigationDirection::Undo {
@@ -159,6 +173,7 @@ fn step<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     document: u64,
     direction: PartViewNavigationDirection,
     prepared: bool,
+    pending_sync: &mut bool,
 ) -> Result<bool, Error> {
     if is_tagged(files, document, direction)? {
         crate::part_view_display::navigate(files, topology, display, document, direction)?;
@@ -168,7 +183,13 @@ fn step<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         navigate_prepared(files, document, direction)?;
         return Ok(true);
     }
-    if crate::part_view_replay::navigate_unchanged(files, topology, document, direction)? {
+    if crate::part_view_replay::navigate_with_replay(
+        files,
+        topology,
+        document,
+        direction,
+        pending_sync,
+    )? {
         crate::command_owner::CommandOwner::refresh_after_command(files, document)?;
         return Ok(true);
     }

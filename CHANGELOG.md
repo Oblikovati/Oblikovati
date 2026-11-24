@@ -179,6 +179,8 @@
 
 ### Changed
 
+- Reused part checkpoints during Undo and Redo when a clean feature prefix remains. (#4079)
+
 - Reused part checkpoints when deleting bodies through the typed API. (#4079)
 
 - Reused part checkpoints when renaming features through the typed API. (#4079)

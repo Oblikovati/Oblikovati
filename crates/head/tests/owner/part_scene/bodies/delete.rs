@@ -59,6 +59,55 @@ fn body_delete_reuses_checkpoints_through_an_empty_result() {
 }
 
 #[test]
+fn body_delete_undo_and_redo_reuse_the_current_part_prefix() {
+    use oblikovati_automation::PartUpdateAccess;
+    let policy = crate::part_scene::resolution_policy::desktop_policy();
+    let (owner, _) = owner();
+    let mut owner = owner.with_extrusion_policy(policy).unwrap();
+    let document = open_prism(&mut owner, false);
+    let original = listed(&mut owner);
+    let mut replay = oblikovati_automation::PartReplayService::with_policy(policy).unwrap();
+    replay
+        .ensure_checkpoints(&mut owner.files, document)
+        .unwrap();
+    assert!(deleted(&mut owner, 0).is_empty());
+    let deletion = delete_id(&owner, document);
+    let full_replays = owner.part_scenes.checkpoint_preview_metrics().0;
+
+    let undo = Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
+    assert_eq!(undo.next_redo, "Delete Body");
+    assert_eq!(listed(&mut owner), original);
+    assert!(
+        replay
+            .current_part(&owner.files, document)
+            .unwrap()
+            .deleted_body(deletion)
+            .is_none()
+    );
+
+    let redo = Client::new(owner.document_host())
+        .transactions()
+        .redo()
+        .unwrap();
+    assert_eq!(redo.next_undo, "Delete Body");
+    assert!(listed(&mut owner).is_empty());
+    assert!(
+        replay
+            .current_part(&owner.files, document)
+            .unwrap()
+            .deleted_body(deletion)
+            .is_some()
+    );
+    assert_eq!(
+        owner.part_scenes.checkpoint_preview_metrics().0,
+        full_replays
+    );
+}
+
+#[test]
 fn body_delete_changes_native_results_and_mass_with_one_undo_step() {
     let (mut owner, _) = owner();
     let document = open_prism(&mut owner, true);

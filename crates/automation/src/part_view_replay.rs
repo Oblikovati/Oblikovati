@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Preserve certified named bodies across a proven view-only edit.
+//! Preserve certified replay results across view edits and history navigation.
 use oblikovati_api::Error;
-use oblikovati_model::history::{DocumentSnapshot, RecipeReservations};
+use oblikovati_model::history::{DocumentSnapshot, EvaluationTransition, RecipeReservations};
 use oblikovati_persistence::file_access::DocumentFiles;
-use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
+use oblikovati_session::{
+    PartViewNavigationDirection, TransactionObserver, files::FileWorkspace,
+    workspace::WorkspaceObserver,
+};
 type ReplayPolicy = Option<oblikovati_martensite::PrismResolutionPolicy>;
 
 pub(crate) fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -76,11 +79,16 @@ pub(crate) fn adopt<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     }
 }
 
-pub(crate) fn navigate_unchanged<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+pub(crate) fn navigate_with_replay<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+>(
     files: &mut FileWorkspace<O, W, F>,
     topology: &mut Option<&mut dyn crate::PartTopologyAccess<O, W, F>>,
     document: u64,
-    direction: oblikovati_session::PartViewNavigationDirection,
+    direction: PartViewNavigationDirection,
+    pending_sync: &mut bool,
 ) -> Result<bool, Error> {
     let Some(owner) = topology.as_deref_mut() else {
         return Ok(false);
@@ -95,22 +103,54 @@ pub(crate) fn navigate_unchanged<O: TransactionObserver, W: WorkspaceObserver, F
         .map_err(|cause| Error(cause.to_string()))?;
     let history = session.history();
     let target = match direction {
-        oblikovati_session::PartViewNavigationDirection::Undo => history.undo_candidate(),
-        oblikovati_session::PartViewNavigationDirection::Redo => history.redo_candidate(),
+        PartViewNavigationDirection::Undo => history.undo_candidate(),
+        PartViewNavigationDirection::Redo => history.redo_candidate(),
     }
     .map_err(|cause| Error(cause.to_string()))?;
-    if session.snapshot().part_replay_change(target).is_some() {
-        return Ok(false);
+    if session.snapshot().part_replay_change(target).is_none() {
+        let candidate = replay.capture_unchanged(history, target)?;
+        let transition = accept_navigation(files, document, direction, pending_sync)?;
+        adopt(files, document, policy, candidate, &transition);
+        return Ok(true);
     }
-    let candidate = replay.capture_unchanged(history, target)?;
+    let Some((policy, prefix)) = crate::checkpoint_replay::owner_prefix(files, owner, document)?
+    else {
+        return Ok(false);
+    };
+    let Some(candidate) = prefix.prepare(target, history).map_err(Error)? else {
+        return Ok(false);
+    };
+    let transition = accept_navigation(files, document, direction, pending_sync)?;
+    let label = match direction {
+        PartViewNavigationDirection::Undo => "Undo",
+        PartViewNavigationDirection::Redo => "Redo",
+    };
+    crate::checkpoint_replay::publish_checkpoint(
+        files,
+        owner,
+        document,
+        label,
+        policy,
+        candidate,
+        &transition,
+    )?;
+    Ok(true)
+}
+
+fn accept_navigation<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+    files: &mut FileWorkspace<O, W, F>,
+    document: u64,
+    direction: PartViewNavigationDirection,
+    pending_sync: &mut bool,
+) -> Result<EvaluationTransition, Error> {
     let mut commands = files
         .commands(document)
         .map_err(|cause| Error(cause.to_string()))?;
     let transition = match direction {
-        oblikovati_session::PartViewNavigationDirection::Undo => commands.undo_with_transition(),
-        oblikovati_session::PartViewNavigationDirection::Redo => commands.redo_with_transition(),
+        PartViewNavigationDirection::Undo => commands.undo_with_transition(),
+        PartViewNavigationDirection::Redo => commands.redo_with_transition(),
     }
     .map_err(|cause| Error(cause.to_string()))?;
-    adopt(files, document, policy, candidate, &transition);
-    Ok(true)
+    *pending_sync = true;
+    Ok(transition)
 }

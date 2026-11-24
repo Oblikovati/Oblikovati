@@ -87,6 +87,11 @@ bodies. It publishes the updated checkpoints before listing the surviving
 bodies, including when the result is empty. See the
 [body deletion receipt](receipts/2026-11-24-body-delete-checkpoint-4079/README.md).
 
+Undo and Redo can replay a changed tail from a current certified checkpoint.
+The session adopts the candidate only after the history move succeeds and
+its target generation matches. See the
+[history replay receipt](receipts/2026-11-24-history-checkpoint-4079/README.md).
+
 Run `CARGO_NET_OFFLINE=true make gate` for the complete local Linux checks.
 
 A regression first proved that a raw snapshot with a prism construction-datum

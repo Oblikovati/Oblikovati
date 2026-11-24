@@ -54,15 +54,7 @@ pub fn edit_with_owner<
         &mut oblikovati_model::history::RecipeReservations<'_>,
     ) -> Result<R, Error>,
 ) -> Result<(R, bool), Error> {
-    let policy = owner.resolution_policy();
-    let prefix = owner
-        .cached_checkpoint_prefix(files, document)
-        .map_err(Error)?;
-    let replay = match prefix.filter(|prefix| prefix.policy == policy) {
-        Some(prefix) => certified_prefix(files, document, prefix)?,
-        None => None,
-    };
-    let Some((policy, replay)) = policy.zip(replay) else {
+    let Some((policy, replay)) = owner_prefix(files, owner, document)? else {
         return files
             .commands(document)
             .map_err(|error| Error(error.to_string()))?
@@ -71,6 +63,26 @@ pub fn edit_with_owner<
             .map_err(|error| Error(error.to_string()));
     };
     apply_checkpointed_edit(files, owner, document, label, edit, policy, replay)
+}
+
+pub(crate) fn owner_prefix<
+    O: oblikovati_session::TransactionObserver,
+    W: oblikovati_session::workspace::WorkspaceObserver,
+    F: oblikovati_persistence::file_access::DocumentFiles,
+>(
+    files: &oblikovati_session::files::FileWorkspace<O, W, F>,
+    owner: &dyn crate::PartTopologyAccess<O, W, F>,
+    document: u64,
+) -> Result<Option<(PrismResolutionPolicy, CheckpointReplay)>, Error> {
+    let policy = owner.resolution_policy();
+    let prefix = owner
+        .cached_checkpoint_prefix(files, document)
+        .map_err(Error)?;
+    let replay = match prefix.filter(|prefix| prefix.policy == policy) {
+        Some(prefix) => certified_prefix(files, document, prefix)?,
+        None => None,
+    };
+    Ok(policy.zip(replay))
 }
 
 fn apply_checkpointed_edit<
@@ -112,7 +124,7 @@ fn apply_checkpointed_edit<
     Ok((reply, true))
 }
 
-fn publish_checkpoint<
+pub(crate) fn publish_checkpoint<
     O: oblikovati_session::TransactionObserver,
     W: oblikovati_session::workspace::WorkspaceObserver,
     F: oblikovati_persistence::file_access::DocumentFiles,
