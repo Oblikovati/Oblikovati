@@ -344,14 +344,15 @@ fn root_listed(world: &mut ApplicationWorld) {
 fn root_name(world: &mut ApplicationWorld) -> String {
     world.state().browser.expect("expected a browser").name
 }
-fn root_caption(world: &mut ApplicationWorld) -> diagnostics::RenderedRun {
+pub(super) fn root_caption(world: &mut ApplicationWorld) -> diagnostics::RenderedRun {
     let name = root_name(world);
+    let visible_name = super::super::world::squeezed(&name);
     let (position, size) = diagnostics::window_geometry("Model").expect("expected Model browser");
     let matches: Vec<_> = world
         .frame
         .runs
         .iter()
-        .filter(|run| run.text.starts_with(&name) && run_in_bounds(run, position, size))
+        .filter(|run| run.text.starts_with(&visible_name) && run_in_bounds(run, position, size))
         .cloned()
         .collect();
     assert_eq!(

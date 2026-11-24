@@ -87,6 +87,5 @@ fn model_state_primary_still_visible(world: &mut ApplicationWorld) {
 }
 #[then("the part viewport remains empty")]
 fn empty_part_viewport(world: &mut ApplicationWorld) {
-    assert!(world.state().browser.unwrap().bodies.is_empty());
-    world.expect_blank_region([400, 1200], [300, 700]);
+    super::super::viewport_background::expect_empty_part(world);
 }

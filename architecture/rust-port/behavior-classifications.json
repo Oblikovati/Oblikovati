@@ -16392,8 +16392,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Native browser representation and model-state controls for an empty Part.",
+      "go_test_premise": "The Go browser tests cover menu commands. The pinned scenarios supply the representation tree, model-state steps, and empty viewport checks.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native desktop rendering of an empty Part viewport.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop exposes the Part state and presents a viewport with no authored geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Inspect representation branches in an empty part",
+      "oracle": "The pinned case checks browser and viewport presentation. See receipts/2026-11-24-model-browser-empty-viewport-3896/after/pinned/representations/cucumber.json.",
+      "expected_result": "The browser exposes Primary and the saved views. The view menu can be dismissed and the View branch collapsed while the checked Primary model state and empty viewport remain visible.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:e61239ec518e706334c8cb2f32d33ff59edbd750ce034b4f78afbc284b6b0d96",
@@ -16409,8 +16419,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Native browser representation and model-state controls for an empty Part.",
+      "go_test_premise": "The Go browser tests cover menu commands. The pinned scenarios supply the representation tree, model-state steps, and empty viewport checks.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native desktop rendering of an empty Part viewport.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop exposes the Part state and presents a viewport with no authored geometry.",
+      "rust_tests": "application_scenarios_use_the_native_window: Create and switch model states in an empty part",
+      "oracle": "The pinned case checks browser and viewport presentation. See receipts/2026-11-24-model-browser-empty-viewport-3896/after/pinned/states/cucumber.json.",
+      "expected_result": "Creating and renaming a model state updates the row, browser root, and document tab. Double-clicking Primary and the new member switches their active captions and the viewport stays empty.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:3a133b273e3a02ebdd635afacdefb45b556940bdc1356833d9f49a66374875d1",

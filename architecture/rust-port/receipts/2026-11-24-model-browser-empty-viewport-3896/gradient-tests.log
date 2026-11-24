@@ -1,0 +1,7 @@
+running 4 tests
+test native::gui_loop_tests::application_bdd::viewport_background::tests::navigation_rectangle_uses_exclusive_bottom_and_right_bounds ... ok
+test native::gui_loop_tests::application_bdd::viewport_background::tests::a_uniform_panel_or_fully_occluded_region_cannot_prove_viewport_space ... ok
+test native::gui_loop_tests::application_bdd::viewport_background::tests::an_open_menu_is_excluded_without_hiding_uncovered_geometry ... ok
+test native::gui_loop_tests::application_bdd::viewport_background::tests::navigation_overlay_is_excluded_but_browser_panel_is_detected ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 1616 filtered out; finished in 0.00s

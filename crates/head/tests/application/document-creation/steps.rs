@@ -104,17 +104,7 @@ fn new_part(world: &mut ApplicationWorld) {
 }
 #[then("its viewport contains no visible model geometry")]
 fn empty_part(world: &mut ApplicationWorld) {
-    let state = world.app().owner.gui_command_state().unwrap();
-    let browser = state.browser.unwrap();
-    assert!(browser.features.is_empty() && browser.sketches.is_empty());
-    let [left, top, right, bottom] = world.viewport_bounds().map(|edge| edge as usize);
-    // Dock separators can bleed a few pixels into the viewport.
-    let x_inset = (right - left) / 16;
-    let y_inset = (bottom - top) / 16;
-    world.expect_blank_region(
-        [left + x_inset, right - x_inset],
-        [top + y_inset, bottom - y_inset],
-    );
+    super::viewport_background::expect_empty_part(world);
 }
 #[then("its model browser displays an origin and an end-of-part marker")]
 fn browser_origin(world: &mut ApplicationWorld) {

@@ -52,3 +52,8 @@ The published nested-sketch and grouped Find cases use the saved
 `workspace-layout-native.opd` Part and read its actual browser rows.
 Both cases also pass on the pinned fixture. See the
 [native fixture receipt](receipts/2026-11-24-model-browser-named-part-3896/README.md).
+
+The representation and model-state tests retain the named blank metric
+Part on the published source. They locate the actual document captions
+and check the empty workspace within the current viewport bounds. See
+the [empty Part receipt](receipts/2026-11-24-model-browser-empty-viewport-3896/README.md).

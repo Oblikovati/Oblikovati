@@ -7,7 +7,12 @@ use oblikovati_api::{client::Client, wire::CreateModelStateArgs};
 
 #[given("a new empty part is active in the MCAD Software")]
 fn new_empty_part(world: &mut ApplicationWorld) {
-    world.add_part();
+    if world.state().document.is_none() {
+        world.add_part();
+    }
+    if let Some(document) = world.previous_document {
+        assert_eq!(world.active_id(), document, "expected the named Part");
+    }
 }
 
 #[given("the model browser shows the expanded Model State branch with Primary active")]
@@ -112,14 +117,17 @@ fn primary_caption(world: &mut ApplicationWorld) {
     expect_state_caption(world, "Primary");
 }
 
-fn expect_state_caption(world: &ApplicationWorld, name: &str) {
-    let count = world
-        .frame
-        .runs
-        .iter()
-        .filter(|row| row.text.contains("Part1") && row.text.contains(name))
-        .count();
-    assert_eq!(count, 2, "expected root and document tab to show {name:?}");
+fn expect_state_caption(world: &mut ApplicationWorld, name: &str) {
+    let expected = format!("<{name}>");
+    let root = super::feature_rows::root_caption(world);
+    assert!(
+        root.text.contains(&expected),
+        "root {:?}: expected {expected}",
+        root.text
+    );
+    let id = world.active_id();
+    let document = world.document_name(id);
+    world.expect_tab(&format!("{document} {expected}"));
 }
 
 #[when("I double-click the Primary model-state entry")]
@@ -148,8 +156,7 @@ fn large_active(world: &mut ApplicationWorld) {
 
 #[then("the viewport remains empty")]
 fn viewport_empty(world: &mut ApplicationWorld) {
-    assert!(world.state().browser.unwrap().bodies.is_empty());
-    world.expect_blank_region([400, 1200], [300, 700]);
+    super::super::viewport_background::expect_empty_part(world);
 }
 
 #[test]

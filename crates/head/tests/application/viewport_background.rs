@@ -2,6 +2,25 @@
 //! Verify empty viewport space without treating GUI window overlays as scene pixels.
 use oblikovati_viewport::ViewportCapture;
 
+pub(super) fn expect_empty_part(world: &mut super::ApplicationWorld) {
+    let browser = world
+        .state()
+        .browser
+        .expect("expected an empty Part browser");
+    assert!(
+        browser.bodies.is_empty() && browser.features.is_empty() && browser.sketches.is_empty(),
+        "expected no bodies, features or sketches in the Part"
+    );
+    let [left, top, right, bottom] = world.viewport_bounds().map(|edge| edge as usize);
+    // Dock separators can bleed a few pixels into the viewport.
+    let x_inset = (right - left) / 16;
+    let y_inset = (bottom - top) / 16;
+    world.expect_blank_region(
+        [left + x_inset, right - x_inset],
+        [top + y_inset, bottom - y_inset],
+    );
+}
+
 pub(super) fn gradient_region_visible(
     capture: &ViewportCapture,
     x: [usize; 2],
