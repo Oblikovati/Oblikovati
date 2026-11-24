@@ -64,11 +64,11 @@ using this status; the live scenario directory can change.
   have R0 baseline records. See `receipts/2026-11-21-project-dialog-r0-3895/`.
   Strict verification still requires bounded build and runtime inputs under
   #3978.
-- Docking System (#4133): all 11 scenarios and 108 steps passed in one
-  local run, including the corrected native fixture and a desktop restart.
-  Feature, support, and fixture hashes matched the live source. See
-  `receipts/2026-11-20-docking-api-0160-4133/`. The build and runtime
-  were unsealed, so strict verification remains blocked by #3978.
+- Docking System (#4133): the [local run](receipts/2026-11-20-docking-api-0160-4133/)
+  passed 11 scenarios and 108 steps, including a desktop restart. Feature,
+  support, and fixture hashes matched the live source. Strict verification needs #3978.
+  The standalone [dock-menu test](receipts/2026-11-24-dock-menu-repository-fixture-4133/README.md)
+  opens the bundled Part without requiring the separate docking scenario fixture.
 - Selected sketch point identity (#4179): the shared placement recipe now
   retains explicitly picked point IDs and preserves existing geometry. Session
   tests cover preview, commit, dimension edit, and undo/redo. Midpoint Line

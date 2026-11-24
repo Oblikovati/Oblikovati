@@ -15,14 +15,19 @@ fn docking_solid_and_visible_sketch_survive_save_and_reopen() {
     assert_fixture_visible(&mut world);
     world.save_capture("docking-visible-solid-reopened");
     world.close_active_tab();
-    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../test-utilities/fixtures/docking-visible-solid.opd");
-    world.reopen_through_dialog(&fixture);
+    reopen_bundled_docking_part(&mut world);
     assert_fixture_visible(&mut world);
     if let Some(output) = std::env::var_os("OBK_EXPORT_DOCKING_FIXTURE") {
         export_fixture(&path, &std::path::PathBuf::from(output));
     }
     world.close();
+}
+
+pub(super) fn reopen_bundled_docking_part(world: &mut ApplicationWorld) {
+    let fixture = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../test-utilities/fixtures/docking-visible-solid.opd");
+    assert!(fixture.is_file(), "expected bundled Part at {fixture:?}");
+    world.reopen_through_dialog(&fixture);
 }
 
 fn show_profile(world: &mut ApplicationWorld) {

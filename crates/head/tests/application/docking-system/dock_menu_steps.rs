@@ -96,7 +96,8 @@ fn wait_for_log_tab(world: &mut ApplicationWorld) {
 #[test]
 fn native_dock_menu_opens_and_closes_log_beside_model() {
     let mut world = ApplicationWorld::new();
-    open_native_part(&mut world);
+    world.restore_layout_without_asset_tools();
+    super::fixture_native::reopen_bundled_docking_part(&mut world);
     model_docked_log_closed(&mut world);
     open_model_menu(&mut world);
     panel_menu_offers_windows(&mut world);
