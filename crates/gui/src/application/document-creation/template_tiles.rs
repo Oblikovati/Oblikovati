@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Measured icon tiles share the chooser's owned texture resources.
 use super::{
-    DetailsLayout, GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits, TEMPLATE_GROUPS,
+    DetailsLayout, GuiCommandState, GuiTemplateKind, TEMPLATE_GROUPS, TemplateChoice,
     TemplateChooser, TemplateView,
 };
 use crate::icons::{GuiRibbonIcons, IconGlyph, IconSize};
@@ -29,8 +29,7 @@ impl TemplateChooser {
         &self,
         ui: &Ui,
         icons: &GuiRibbonIcons,
-        kinds: &[GuiTemplateKind],
-        units: GuiTemplateUnits,
+        entries: &[TemplateChoice],
     ) -> f32 {
         let base = self.view.tile_size(icons.layout_factor())[0];
         let padding = if self.view == TemplateView::SmallIcons {
@@ -38,16 +37,15 @@ impl TemplateChooser {
         } else {
             12.
         };
-        kinds
+        entries
             .iter()
-            .map(|kind| {
-                ui.calc_text_size(GuiDocumentTemplate { kind: *kind, units }.title())[0] + padding
-            })
+            .map(|entry| ui.calc_text_size(entry.title())[0] + padding)
             .fold(base, f32::max)
     }
     pub(super) fn gallery_width(
         &self,
         ui: &Ui,
+        state: &GuiCommandState,
         icons: &GuiRibbonIcons,
         details: DetailsLayout,
     ) -> f32 {
@@ -57,15 +55,11 @@ impl TemplateChooser {
         if !self.view.is_icon_view() {
             return 0.;
         }
-        let units = match self.folder {
-            super::TemplateFolder::Units(units) => units,
-            super::TemplateFolder::Root => GuiTemplateUnits::default(),
-        };
         let gap = ui.clone_style().item_spacing[0];
         let groups = self.tile_groups();
         let widest = groups
             .iter()
-            .map(|kinds| self.group_width(ui, icons, kinds, units, gap))
+            .map(|kinds| self.group_width(ui, icons, &self.catalog(state, kinds), gap))
             .fold(0., f32::max);
         widest + ui.clone_style().indent_spacing + gap
     }
@@ -87,18 +81,17 @@ impl TemplateChooser {
         &self,
         ui: &Ui,
         icons: &GuiRibbonIcons,
-        kinds: &[GuiTemplateKind],
-        units: GuiTemplateUnits,
+        entries: &[TemplateChoice],
         gap: f32,
     ) -> f32 {
-        self.tile_width(ui, icons, kinds, units) * kinds.len() as f32
-            + gap * kinds.len().saturating_sub(1) as f32
+        self.tile_width(ui, icons, entries) * entries.len() as f32
+            + gap * entries.len().saturating_sub(1) as f32
     }
     pub(super) fn icon_tile(
         &self,
         ui: &Ui,
         icons: &GuiRibbonIcons,
-        template: GuiDocumentTemplate,
+        template: &TemplateChoice,
         width: f32,
         selected: bool,
     ) -> bool {
@@ -106,7 +99,7 @@ impl TemplateChooser {
         let _selected = selected.then(|| ui.push_style_color(StyleColor::Button, color));
         let _selected_hover =
             selected.then(|| ui.push_style_color(StyleColor::ButtonHovered, color));
-        let presentation = self.icon_presentation(icons, template.kind, width);
+        let presentation = self.icon_presentation(icons, template.kind(), width);
         crate::widget_abi::icon_button(ui, &template.title(), presentation)
     }
     fn icon_presentation(

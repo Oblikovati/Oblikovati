@@ -279,6 +279,7 @@ pub enum GuiShellAction {
     },
     NewPart,
     CreateDocument(crate::GuiDocumentTemplate),
+    CreateProjectTemplate(crate::GuiProjectTemplate),
     /// Picture the active window for the Save As preview; the file is not changed.
     CaptureWindowPreview,
     /// Render the active part from an isometric view for Save As.

@@ -344,6 +344,12 @@ impl<
     ) -> Result<bool, String> {
         self.create_template_document(template)
     }
+    fn create_project_template_document(
+        &mut self,
+        template: &oblikovati_gui::GuiProjectTemplate,
+    ) -> Result<bool, String> {
+        self.create_project_template(template)
+    }
     fn create_part_document(&mut self) -> Result<bool, String> {
         let previous = self.files.workspace().active_document();
         let name = self.next_new_document_name("Part");

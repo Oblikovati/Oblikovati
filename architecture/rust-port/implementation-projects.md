@@ -49,3 +49,16 @@ files, chooser state, wizard navigation, and keyboard expansion. All eight
 scenarios passed individually. [Native reports and captures](receipts/2026-11-24-project-dialog-serial-3895/README.md)
 
 Project wire methods remain pending.
+
+## Native project templates in the desktop chooser
+
+The desktop reads native packages in the active project's Metric and English
+template folders when it loads the project. Each chooser entry shows its file
+name, document kind, stored length unit, and file size. Name and size sorting
+keep the selected file's identity when several files share a kind and units.
+Create starts an independent unsaved document from the selected package.
+Projects without a named catalog use the built-in chooser entries.
+
+The grouped Details scenario passed all 16 steps. A separate native check
+confirmed that the new Part retained a saved extrusion from the selected file.
+[Native reports](receipts/2026-11-24-document-creation-name-sort-3899/README.md)

@@ -116,6 +116,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::ToggleSketchFormat(_)
         | GuiShellAction::DeleteSketchSelection
         | GuiShellAction::CreateDocument(_)
+        | GuiShellAction::CreateProjectTemplate(_)
         | GuiShellAction::NewPart
         | GuiShellAction::ChooseSketchPlane
         | GuiShellAction::ChooseSketchPlaneForExtrude

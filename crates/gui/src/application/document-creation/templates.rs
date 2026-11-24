@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Built-in document templates: display units and a document kind, never file content.
+//! Document template descriptors shared by the chooser and desktop owner.
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum GuiTemplateKind {
@@ -36,6 +36,17 @@ impl GuiTemplateUnits {
 pub struct GuiDocumentTemplate {
     pub kind: GuiTemplateKind,
     pub units: GuiTemplateUnits,
+}
+
+/// Metadata for one file offered by the active project's chooser catalog.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiProjectTemplate {
+    pub path: std::path::PathBuf,
+    pub title: String,
+    pub folder: GuiTemplateUnits,
+    pub kind: GuiTemplateKind,
+    pub length_unit: &'static str,
+    pub size: u64,
 }
 /// Physical material described by a template recipe.
 #[derive(Clone, Debug, PartialEq, Eq)]

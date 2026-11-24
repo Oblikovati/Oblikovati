@@ -477,6 +477,7 @@ fn home_follows_actions(
             | GuiShellAction::OpenDocument(_)
             | GuiShellAction::OpenDeferredDrawing(_)
             | GuiShellAction::CreateDocument(_)
+            | GuiShellAction::CreateProjectTemplate(_)
             | GuiShellAction::NewPart => home.active = false,
             _ => {}
         }

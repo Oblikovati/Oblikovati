@@ -11,7 +11,7 @@ impl TemplateChooser {
             TemplateFolder::Root => GuiTemplateUnits::default(),
         };
         self.go_to(TemplateFolder::Units(units));
-        self.selected = Some(GuiDocumentTemplate { kind, units });
+        self.selected = Some(GuiDocumentTemplate { kind, units }.into());
         self.drawing_layout = None;
         self.request();
     }

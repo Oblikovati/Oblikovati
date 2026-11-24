@@ -2,6 +2,7 @@
 #[path = "component_dialog.rs"]
 pub(crate) mod component_dialog;
 mod kind_selection;
+mod template_catalog;
 mod template_material;
 mod template_navigation;
 mod template_sort;
@@ -12,7 +13,8 @@ pub(crate) mod templates;
 pub(crate) mod workspaces;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Condition, Ui};
-use template_sort::{TemplateSort, ordered_kinds, size_heading, template_size};
+use template_catalog::TemplateChoice;
+use template_sort::{TemplateSort, size_heading};
 use templates::{GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits, TEMPLATE_GROUPS};
 
 /// A row of the folder tree; the root holds folders and no templates of its own.
@@ -47,7 +49,7 @@ pub(crate) struct TemplateChooser {
     folders_behind: Vec<TemplateFolder>,
     folders_ahead: Vec<TemplateFolder>,
     /// Kept between openings: reopening after Cancel shows the same choice.
-    selected: Option<GuiDocumentTemplate>,
+    selected: Option<TemplateChoice>,
     /// A drawing template offers previews, and one must be accepted before it can be created.
     drawing_layout: Option<DrawingLayout>,
     component: component_dialog::ComponentDialog,
@@ -110,23 +112,19 @@ impl TemplateChooser {
             .register_dockable(registry, "template-projects")
     }
     fn details_layout(&self, ui: &Ui, state: &GuiCommandState) -> DetailsLayout {
-        let units = match self.folder {
-            TemplateFolder::Units(units) => units,
-            TemplateFolder::Root => GuiTemplateUnits::Metric,
-        };
         let mut widths = [
             ui.calc_text_size("Name v")[0],
             ui.calc_text_size("Size v")[0],
             ui.calc_text_size("Type")[0],
         ];
-        for kind in TEMPLATE_GROUPS
+        let kinds = TEMPLATE_GROUPS
             .iter()
             .flat_map(|(_, kinds)| kinds.iter().copied())
-        {
-            let template = GuiDocumentTemplate { kind, units };
-            widths[0] = widths[0].max(ui.calc_text_size(template.title())[0]);
-            widths[1] = widths[1].max(ui.calc_text_size(size_text(template_size(state, kind)))[0]);
-            widths[2] = widths[2].max(ui.calc_text_size(template.type_label())[0]);
+            .collect::<Vec<_>>();
+        for entry in self.catalog(state, &kinds) {
+            widths[0] = widths[0].max(ui.calc_text_size(entry.title())[0]);
+            widths[1] = widths[1].max(ui.calc_text_size(size_text(entry.bytes(state)))[0]);
+            widths[2] = widths[2].max(ui.calc_text_size(entry.type_label())[0]);
         }
         let style = ui.clone_style();
         DetailsLayout::new(widths, style.indent_spacing, style.item_spacing[0])
@@ -178,7 +176,7 @@ impl TemplateChooser {
         ui.child_window("##template-gallery")
             .size([0., GALLERY_HEIGHT])
             .horizontal_scrollbar(self.view != TemplateView::List)
-            .content_size([self.gallery_width(ui, icons, layout), 0.])
+            .content_size([self.gallery_width(ui, state, icons, layout), 0.])
             .build(|| self.gallery(ui, state, layout, icons));
         ui.next_column();
         self.details(ui, state);
@@ -307,38 +305,29 @@ impl TemplateChooser {
         layout: DetailsLayout,
         icons: &crate::icons::GuiRibbonIcons,
     ) {
-        let units = match self.folder {
-            TemplateFolder::Units(units) => units,
-            TemplateFolder::Root => GuiTemplateUnits::default(),
-        };
-        let kinds = ordered_kinds(kinds, self.sort, state, units);
-        let width = self.tile_width(ui, icons, &kinds, units);
-        for (index, kind) in kinds.into_iter().enumerate() {
+        let entries = self.catalog(state, kinds);
+        let width = self.tile_width(ui, icons, &entries);
+        for (index, entry) in entries.into_iter().enumerate() {
             if index > 0 && self.view.is_icon_view() {
                 ui.same_line();
             }
-            self.tile(ui, state, kind, layout, icons, width);
+            self.tile(ui, state, entry, layout, icons, width);
         }
     }
     fn tile(
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
-        kind: GuiTemplateKind,
+        template: TemplateChoice,
         layout: DetailsLayout,
         icons: &crate::icons::GuiRibbonIcons,
         width: f32,
     ) {
-        // The root holds folders only: its gallery shows the headings above nothing.
-        let TemplateFolder::Units(units) = self.folder else {
-            return;
-        };
-        let template = GuiDocumentTemplate { kind, units };
-        if self.selected == Some(template) && self.gallery_scroll_target.is_some() {
+        if self.selected.as_ref() == Some(&template) && self.gallery_scroll_target.is_some() {
             ui.set_keyboard_focus_here();
         }
-        if self.tile_row(ui, state, template, layout, icons, width) {
-            if self.selected != Some(template) {
+        if self.tile_row(ui, state, &template, layout, icons, width) {
+            if self.selected.as_ref() != Some(&template) {
                 self.selected = Some(template);
                 self.drawing_layout = None;
             }
@@ -349,12 +338,16 @@ impl TemplateChooser {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
-        template: GuiDocumentTemplate,
+        template: &TemplateChoice,
         layout: DetailsLayout,
         icons: &crate::icons::GuiRibbonIcons,
         width: f32,
     ) -> bool {
-        let selected = self.selected == Some(template);
+        let _file = match template {
+            TemplateChoice::Project(entry) => Some(ui.push_id(entry.path.to_string_lossy())),
+            TemplateChoice::BuiltIn(_) => None,
+        };
+        let selected = self.selected.as_ref() == Some(template);
         let chosen = if self.view.is_icon_view() {
             self.icon_tile(ui, icons, template, width, selected)
         } else {
@@ -374,7 +367,7 @@ impl TemplateChooser {
             ui.is_item_hovered() && ui.is_mouse_double_clicked(imgui::MouseButton::Left);
         if self.view == TemplateView::Details {
             ui.same_line_with_pos(layout.size);
-            ui.text_disabled(size_text(template_size(state, template.kind)));
+            ui.text_disabled(size_text(template.bytes(state)));
             ui.same_line_with_pos(layout.type_column);
             ui.text_disabled(template.type_label());
         }
@@ -385,15 +378,20 @@ impl TemplateChooser {
         if let Some(cause) = &state.template_size_issue {
             ui.text_wrapped(format!("Template sizes unavailable: {cause}"));
         }
-        let Some(selected) = self.selected else {
+        if let Some(cause) = &state.project_template_issue {
+            ui.text_wrapped(cause);
+        }
+        let Some(selected) = self.selected.as_ref() else {
             ui.text_wrapped("Select a template.");
             return;
         };
         ui.text_wrapped(selected.title());
         ui.text(format!("Document type: {}", selected.type_label()));
         ui.text(selected.unit_label());
-        template_material::material_detail(ui, state, selected);
-        if selected.kind == GuiTemplateKind::Drawing {
+        if let TemplateChoice::BuiltIn(template) = selected {
+            template_material::material_detail(ui, state, *template);
+        }
+        if selected.kind() == GuiTemplateKind::Drawing {
             self.drawing_previews(ui);
         }
     }
@@ -409,8 +407,8 @@ impl TemplateChooser {
         }
     }
     fn can_create(&self, state: &GuiCommandState) -> bool {
-        let accepted = self.selected.is_some_and(|template| {
-            template.kind != GuiTemplateKind::Drawing || self.drawing_layout.is_some()
+        let accepted = self.selected.as_ref().is_some_and(|template| {
+            template.kind() != GuiTemplateKind::Drawing || self.drawing_layout.is_some()
         });
         accepted && !state.transaction_open
     }
@@ -426,14 +424,14 @@ impl TemplateChooser {
         let doubled = std::mem::take(&mut self.create_requested);
         if can_create
             && (pressed || entered || doubled)
-            && let Some(template) = self.selected
+            && let Some(template) = self.selected.as_ref()
         {
             if self.drawing_layout == Some(DrawingLayout::Assembly)
-                && template.kind == GuiTemplateKind::Drawing
+                && template.kind() == GuiTemplateKind::Drawing
             {
                 self.component.request(active_document_name(state));
             } else {
-                actions.push(GuiShellAction::CreateDocument(template));
+                actions.push(template.create_action());
             }
             ui.close_current_popup();
         }

@@ -16,8 +16,8 @@ pub(super) fn require_named_catalog(case: &str) {
     ));
 }
 #[given("the previously selected standard inch part is displayed in the details pane")]
-fn selected_captured_inch(_: &mut ApplicationWorld) {
-    require_named_catalog("retained inch part template");
+fn selected_captured_inch(world: &mut ApplicationWorld) {
+    super::named_catalog::inch_details(world);
 }
 #[given("the part group displays Sheet Metal (mm) immediately before Standard (DIN)")]
 fn adjacent_captured_part_templates(_: &mut ApplicationWorld) {

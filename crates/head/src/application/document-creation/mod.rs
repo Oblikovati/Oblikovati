@@ -5,7 +5,10 @@ use oblikovati_api::{
     wire::{ActivateDocumentArgs, CloseDocumentArgs, CreateDocumentArgs, SetDocumentUnitsArgs},
 };
 use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind};
+mod project_catalog;
+pub(super) use project_catalog::ProjectTemplateCatalog;
 mod template_material;
+use oblikovati_gui::GuiTemplateUnits;
 pub(crate) use template_material::gui_template_materials;
 impl<
     O: TransactionObserver,

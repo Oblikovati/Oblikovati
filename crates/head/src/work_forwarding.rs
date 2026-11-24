@@ -412,6 +412,12 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.create_document_template(template)
         }
+        fn create_project_template_document(
+            &mut self,
+            template: &oblikovati_gui::GuiProjectTemplate,
+        ) -> Result<bool, String> {
+            self.$owner.create_project_template_document(template)
+        }
         fn select_inference_geometry_from_gui(
             &mut self,
             entities: Option<&[u64]>,

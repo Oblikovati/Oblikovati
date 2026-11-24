@@ -20,10 +20,13 @@ fn gallery_keeps_space_for_details_in_a_narrow_dialog() {
 fn a_drawing_cannot_be_created_until_its_template_preview_is_accepted() {
     let state = GuiCommandState::default();
     let mut chooser = TemplateChooser {
-        selected: Some(GuiDocumentTemplate {
-            kind: GuiTemplateKind::Drawing,
-            units: GuiTemplateUnits::Metric,
-        }),
+        selected: Some(
+            GuiDocumentTemplate {
+                kind: GuiTemplateKind::Drawing,
+                units: GuiTemplateUnits::Metric,
+            }
+            .into(),
+        ),
         ..Default::default()
     };
     assert!(!chooser.can_create(&state));
@@ -36,7 +39,7 @@ fn a_drawing_cannot_be_created_until_its_template_preview_is_accepted() {
 fn an_open_transaction_or_no_selection_blocks_creation() {
     let mut chooser = TemplateChooser::default();
     assert!(!chooser.can_create(&GuiCommandState::default()));
-    chooser.selected = Some(GuiDocumentTemplate::default());
+    chooser.selected = Some(GuiDocumentTemplate::default().into());
     assert!(chooser.can_create(&GuiCommandState::default()));
     let busy = GuiCommandState {
         transaction_open: true,
@@ -184,10 +187,13 @@ fn selecting_a_file_menu_kind_preserves_units_and_clears_drawing_preview() {
     chooser.request_kind(GuiTemplateKind::Drawing);
     assert_eq!(
         chooser.selected,
-        Some(GuiDocumentTemplate {
-            kind: GuiTemplateKind::Drawing,
-            units: GuiTemplateUnits::Inch,
-        })
+        Some(
+            GuiDocumentTemplate {
+                kind: GuiTemplateKind::Drawing,
+                units: GuiTemplateUnits::Inch,
+            }
+            .into()
+        )
     );
     assert!(chooser.requested);
     assert_eq!(chooser.drawing_layout, None);

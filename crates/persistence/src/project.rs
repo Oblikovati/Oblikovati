@@ -42,6 +42,12 @@ impl ProjectFileLookup {
             .map(PathBuf::as_path)
     }
 
+    /// Return the configured template directory without probing it.
+    /// Example: `lookup.templates_root().map(Path::to_path_buf)`.
+    pub fn templates_root(&self) -> Option<&Path> {
+        self.templates.as_deref()
+    }
+
     /// Resolve an absolute name or search workspace then libraries; missing files return `None`.
     /// Example: `let file = lookup.resolve(Path::new("pin.opd"), probe)?;`.
     pub fn resolve(

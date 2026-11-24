@@ -33,6 +33,8 @@ impl<
                 theme,
                 color_scheme,
                 projects: self.gui_projects(),
+                project_templates: self.project_template_catalog.templates.clone(),
+                project_template_issue: self.project_template_catalog.issue.clone(),
                 template_sizes,
                 template_size_issue,
                 template_materials,
@@ -143,6 +145,8 @@ impl<
                 .map_err(|cause| cause.to_string())?
                 .is_some(),
             projects: self.gui_projects(),
+            project_templates: self.project_template_catalog.templates.clone(),
+            project_template_issue: self.project_template_catalog.issue.clone(),
             template_sizes,
             template_size_issue,
             template_materials,

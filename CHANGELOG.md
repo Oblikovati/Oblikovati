@@ -4,9 +4,9 @@
 
 ### Added
 
+- Added named native templates from the active project's Metric and English folders to the desktop chooser. (#3899)
 - Added Flipped, Symmetric, and Asymmetric directions and To Face and From–To extents for new solid extrusions in the desktop and typed API. Added desktop Icons and Dropdown direction selectors and a Distance A editor menu. (#3893)
 - Expanded the desktop parameter tolerance editor with tolerance formats, precision, evaluated size, and ISO fit classes. (#3893)
-
 - Added analytic solid-edge lengths to the Part Measure panel. (#3967)
 
 - Added Zoom, Zoom All, Zoom Selected, and Zoom Window to ribbon customization. (#3856)

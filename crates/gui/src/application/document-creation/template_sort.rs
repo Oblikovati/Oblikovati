@@ -59,26 +59,31 @@ pub(super) fn ordered_kinds(
     units: GuiTemplateUnits,
 ) -> Vec<GuiTemplateKind> {
     let mut ordered = kinds.to_vec();
-    ordered.sort_by(|a, b| compare_kinds(*a, *b, sort, state, units));
+    sort_templates(&mut ordered, sort, |kind| {
+        (
+            GuiDocumentTemplate { kind: *kind, units }.title(),
+            template_size(state, *kind),
+        )
+    });
     ordered
 }
 
-fn compare_kinds(
-    a: GuiTemplateKind,
-    b: GuiTemplateKind,
+pub(super) fn sort_templates<T>(
+    entries: &mut [T],
     sort: TemplateSort,
-    state: &GuiCommandState,
-    units: GuiTemplateUnits,
-) -> std::cmp::Ordering {
-    let (comparison, order) = match sort {
-        TemplateSort::Name(order) => {
-            let title = |kind| GuiDocumentTemplate { kind, units }.title().to_lowercase();
-            (title(a).cmp(&title(b)), order)
+    values: impl Fn(&T) -> (String, Option<u64>),
+) {
+    use std::cmp::Reverse;
+    match sort {
+        TemplateSort::Name(SortOrder::Increasing) => {
+            entries.sort_by_cached_key(|entry| values(entry).0.to_lowercase());
         }
-        TemplateSort::Size(order) => (template_size(state, a).cmp(&template_size(state, b)), order),
-    };
-    match order {
-        SortOrder::Increasing => comparison,
-        SortOrder::Decreasing => comparison.reverse(),
+        TemplateSort::Name(SortOrder::Decreasing) => {
+            entries.sort_by_cached_key(|entry| Reverse(values(entry).0.to_lowercase()));
+        }
+        TemplateSort::Size(SortOrder::Increasing) => entries.sort_by_key(|entry| values(entry).1),
+        TemplateSort::Size(SortOrder::Decreasing) => {
+            entries.sort_by_key(|entry| Reverse(values(entry).1));
+        }
     }
 }

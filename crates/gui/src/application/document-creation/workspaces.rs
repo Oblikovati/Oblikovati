@@ -96,11 +96,12 @@ impl DocumentWorkspaces {
     /// A new presentation asks for its model at once, so the chooser's Create is remembered.
     pub(crate) fn note_created(&mut self, actions: &[GuiShellAction]) {
         self.expecting_presentation |= actions.iter().any(|action| {
-            matches!(
-                action,
-                GuiShellAction::CreateDocument(template)
-                    if template.kind == super::templates::GuiTemplateKind::Presentation
-            )
+            let kind = match action {
+                GuiShellAction::CreateDocument(template) => template.kind,
+                GuiShellAction::CreateProjectTemplate(template) => template.kind,
+                _ => return false,
+            };
+            kind == super::templates::GuiTemplateKind::Presentation
         });
     }
     pub(crate) fn needs_frame(&self) -> bool {

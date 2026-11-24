@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Keyboard movement follows the current gallery order and stays within its group.
-use super::{
-    GuiCommandState, GuiTemplateKind, TEMPLATE_GROUPS, TemplateChooser, TemplateFolder,
-    ordered_kinds,
-};
+use super::{GuiCommandState, GuiTemplateKind, TEMPLATE_GROUPS, TemplateChoice, TemplateChooser};
 use imgui::{Key, MouseButton, Ui};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -51,17 +48,16 @@ impl TemplateChooser {
             });
         }
     }
-    pub(super) fn remember_selected_tile_y(
-        &mut self,
-        ui: &Ui,
-        template: super::GuiDocumentTemplate,
-    ) {
-        if self.view.is_icon_view() && self.selected == Some(template) && ui.is_item_visible() {
+    pub(super) fn remember_selected_tile_y(&mut self, ui: &Ui, template: &TemplateChoice) {
+        if self.view.is_icon_view()
+            && self.selected.as_ref() == Some(template)
+            && ui.is_item_visible()
+        {
             self.gallery_scroll_y = Some(ui.scroll_y());
         }
     }
-    pub(super) fn scroll_selected_tile(&mut self, ui: &Ui, template: super::GuiDocumentTemplate) {
-        if self.selected != Some(template) {
+    pub(super) fn scroll_selected_tile(&mut self, ui: &Ui, template: &TemplateChoice) {
+        if self.selected.as_ref() != Some(template) {
             return;
         }
         if let Some(ratio) = self.gallery_scroll_target.take() {
@@ -70,23 +66,17 @@ impl TemplateChooser {
         }
     }
     fn move_selection(&mut self, state: &GuiCommandState, movement: GalleryMove) {
-        let (Some(selected), TemplateFolder::Units(units)) = (self.selected, self.folder) else {
+        let Some(selected) = &self.selected else {
             return;
         };
-        if selected.units != units {
-            return;
-        }
-        let kinds = self.navigation_group(selected.kind);
-        let ordered = ordered_kinds(&kinds, self.sort, state, units);
-        let Some(index) = ordered.iter().position(|kind| *kind == selected.kind) else {
+        let kinds = self.navigation_group(selected.kind());
+        let entries = self.catalog(state, &kinds);
+        let Some(index) = entries.iter().position(|entry| entry == selected) else {
             return;
         };
-        let next = move_index(index, ordered.len(), movement);
+        let next = move_index(index, entries.len(), movement);
         if next != index {
-            self.selected = Some(super::GuiDocumentTemplate {
-                kind: ordered[next],
-                units,
-            });
+            self.selected = Some(entries[next].clone());
             self.drawing_layout = None;
         }
     }
@@ -133,40 +123,89 @@ fn move_index(index: usize, count: usize, movement: GalleryMove) -> usize {
 mod tests {
     use super::*;
     #[test]
-    fn movement_uses_the_visible_sort_and_does_not_cross_groups() {
-        use super::super::{GuiDocumentTemplate, GuiTemplateUnits};
+    fn distinct_project_files_with_the_same_kind_are_individually_selectable() {
+        use crate::{GuiProjectTemplate, GuiTemplateUnits};
+
+        let make_entry = |title: &str| GuiProjectTemplate {
+            path: format!("{title}.opd").into(),
+            title: title.into(),
+            folder: GuiTemplateUnits::Metric,
+            kind: GuiTemplateKind::Part,
+            length_unit: "mm",
+            size: 42,
+        };
+        let din = make_entry("Standard (DIN)");
+        let mm = make_entry("Standard (mm)");
+        let state = GuiCommandState {
+            project_templates: vec![mm.clone(), din.clone()].into(),
+            ..Default::default()
+        };
         let mut chooser = TemplateChooser {
-            selected: Some(GuiDocumentTemplate {
-                kind: GuiTemplateKind::SheetMetal,
-                units: GuiTemplateUnits::Metric,
-            }),
+            selected: Some(TemplateChoice::Project(din.clone())),
+            ..Default::default()
+        };
+        chooser.move_selection(&state, GalleryMove::Next);
+        assert_eq!(chooser.selected, Some(TemplateChoice::Project(mm)));
+        chooser.move_selection(&state, GalleryMove::Previous);
+        assert_eq!(chooser.selected, Some(TemplateChoice::Project(din)));
+    }
+
+    #[test]
+    fn movement_uses_the_visible_sort_and_does_not_cross_groups() {
+        use super::super::{GuiDocumentTemplate, GuiTemplateUnits, TemplateFolder};
+        let mut chooser = TemplateChooser {
+            selected: Some(
+                GuiDocumentTemplate {
+                    kind: GuiTemplateKind::SheetMetal,
+                    units: GuiTemplateUnits::Metric,
+                }
+                .into(),
+            ),
             ..Default::default()
         };
         let state = GuiCommandState::default();
         chooser.move_selection(&state, GalleryMove::Next);
-        assert_eq!(chooser.selected.unwrap().kind, GuiTemplateKind::Part);
+        assert_eq!(
+            chooser.selected.as_ref().unwrap().kind(),
+            GuiTemplateKind::Part
+        );
         chooser.move_selection(&state, GalleryMove::Next);
-        assert_eq!(chooser.selected.unwrap().kind, GuiTemplateKind::Part);
+        assert_eq!(
+            chooser.selected.as_ref().unwrap().kind(),
+            GuiTemplateKind::Part
+        );
         chooser.sort = chooser.sort.toggle_name();
         chooser.move_selection(&state, GalleryMove::Next);
-        assert_eq!(chooser.selected.unwrap().kind, GuiTemplateKind::SheetMetal);
+        assert_eq!(
+            chooser.selected.as_ref().unwrap().kind(),
+            GuiTemplateKind::SheetMetal
+        );
         chooser.folder = TemplateFolder::Units(GuiTemplateUnits::Inch);
         chooser.move_selection(&state, GalleryMove::First);
-        assert_eq!(chooser.selected.unwrap().kind, GuiTemplateKind::SheetMetal);
+        assert_eq!(
+            chooser.selected.as_ref().unwrap().kind(),
+            GuiTemplateKind::SheetMetal
+        );
     }
     #[test]
     fn ungrouped_endpoints_follow_the_full_sorted_catalog() {
         use super::super::{GuiDocumentTemplate, GuiTemplateUnits};
         let mut chooser = TemplateChooser {
             ungrouped: true,
-            selected: Some(GuiDocumentTemplate {
-                kind: GuiTemplateKind::Presentation,
-                units: GuiTemplateUnits::Metric,
-            }),
+            selected: Some(
+                GuiDocumentTemplate {
+                    kind: GuiTemplateKind::Presentation,
+                    units: GuiTemplateUnits::Metric,
+                }
+                .into(),
+            ),
             ..Default::default()
         };
         chooser.move_selection(&GuiCommandState::default(), GalleryMove::First);
-        assert_eq!(chooser.selected.unwrap().kind, GuiTemplateKind::Drawing);
+        assert_eq!(
+            chooser.selected.as_ref().unwrap().kind(),
+            GuiTemplateKind::Drawing
+        );
     }
     #[test]
     fn closing_the_gallery_clears_pending_navigation_and_redraw() {

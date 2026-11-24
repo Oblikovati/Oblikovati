@@ -246,9 +246,10 @@ impl GuiShellAction {
                 .theme
                 .as_ref()
                 .is_some_and(|theme| theme.contains(name)),
-            Self::OpenDocument(_) | Self::OpenDeferredDrawing(_) | Self::CreateDocument(_) => {
-                !state.transaction_open
-            }
+            Self::OpenDocument(_)
+            | Self::OpenDeferredDrawing(_)
+            | Self::CreateDocument(_)
+            | Self::CreateProjectTemplate(_) => !state.transaction_open,
             Self::LoadFullDocument(id) => {
                 state.document == Some(*id) && state.active_express() && !state.transaction_open
             }

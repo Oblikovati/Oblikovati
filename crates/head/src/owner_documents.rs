@@ -57,9 +57,16 @@ impl<
     }
     /// Register a validated project. Example: `owner.load_desktop_project(path)?`.
     pub(crate) fn load_desktop_project(&mut self, path: &std::path::Path) -> Result<(), String> {
-        self.files.load_project(path).map(|_| ()).map_err(|cause| {
+        let first = self.files.active_project().is_none();
+        let project = self.files.load_project(path).map_err(|cause| {
             format!("startup project {path:?}: expected a readable native project: {cause}")
-        })
+        })?;
+        if first {
+            self.project_template_catalog = document_creation::ProjectTemplateCatalog::load(
+                project.bound.lookup.templates_root(),
+            );
+        }
+        Ok(())
     }
     /// Report each document's file and whether closing it would lose work.
     /// Example: `owner.gui_document_storage()?` for one GUI snapshot.

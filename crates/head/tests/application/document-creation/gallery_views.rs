@@ -12,6 +12,8 @@ mod gallery_folder_keyboard;
 mod gallery_icons;
 #[path = "gallery_secondary.rs"]
 mod gallery_secondary;
+#[path = "named_catalog.rs"]
+mod named_catalog;
 #[given("the new-document chooser shows the metric folder grouped by type using Medium icons")]
 #[given("the template chooser shows the metric folder grouped by type using Medium icons")]
 fn metric_medium_chooser(world: &mut ApplicationWorld) {
