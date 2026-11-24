@@ -24,6 +24,10 @@ using this status; the live scenario directory can change.
   row, Save As, New, and Home. See the
   [current run](receipts/2026-11-24-file-menu-current-3894/README.md)
   and the [pinned run](receipts/2026-11-21-file-menu-r0-3894/README.md).
+- Body Properties (#3954) passed all six current scenarios and 69 steps.
+  The published Part verified calculated values, appearance changes, and
+  dismissal without applying pending changes. See the
+  [current run](receipts/2026-11-24-body-properties-current-3954/README.md).
 - Viewport Pan (#3881): all four pinned scenarios and 32 steps passed
   under Xvfb. Two X11 input tests also passed. The four declarations now
   have R0 records. The live feature requires a native Part fixture, and strict

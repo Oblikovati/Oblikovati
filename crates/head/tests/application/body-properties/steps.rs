@@ -28,6 +28,7 @@ const MASS: &str = "Mass: 24.000 g";
 const CENTER: [&str; 3] = ["X: 20.000 mm", "Y: 15.000 mm", "Z: 10.000 mm"];
 const GENERATED_PHYSICAL: [&str; 6] = [MASS, AREA, VOLUME, CENTER[0], CENTER[1], CENTER[2]];
 const SAVED_PART: &str = "body-properties-start.opd";
+const CURRENT_SAVED_PART: &str = "docking-visible-solid-current.opd";
 // The saved 40 × 25 × 20 mm prism extends from the origin toward negative X and Y.
 const SAVED_PHYSICAL: [&str; 6] = [
     "Mass: 20.000 g",
@@ -181,8 +182,19 @@ fn given_part(world: &mut ApplicationWorld) {
     "`fixtures/cad/body-properties-start.opd` is open in the MCAD Software with `Solid1` visible"
 )]
 fn given_saved_part(world: &mut ApplicationWorld) {
-    let source = scenario_root().join("fixtures/cad").join(SAVED_PART);
-    let copy = world.scratch_folder().join(SAVED_PART);
+    open_saved_body_part(world, SAVED_PART);
+}
+
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software with its solid body visible"
+)]
+fn given_current_saved_part(world: &mut ApplicationWorld) {
+    open_saved_body_part(world, CURRENT_SAVED_PART);
+}
+
+fn open_saved_body_part(world: &mut ApplicationWorld, filename: &str) {
+    let source = scenario_root().join("fixtures/cad").join(filename);
+    let copy = world.scratch_folder().join(filename);
     std::fs::copy(&source, &copy).unwrap_or_else(|error| {
         panic!("body fixture {source:?}: expected a readable native Part: {error}")
     });
@@ -195,6 +207,9 @@ fn given_saved_part(world: &mut ApplicationWorld) {
 #[given("the body's physical properties are unavailable in the current session")]
 #[given(
     "no physical-property update has been requested for `Solid1` since this document instance was opened"
+)]
+#[given(
+    "no physical-property update has been requested for the body since this document instance was opened"
 )]
 fn unavailable(world: &mut ApplicationWorld) {
     let state = world.state();

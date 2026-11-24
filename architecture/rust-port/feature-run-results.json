@@ -415,18 +415,38 @@
     "notes": "All five live scenarios and 39 steps passed. The separate pinned run passed three scenarios and 29 steps."
   },
   "features/application/body-properties/body-properties.feature": {
-    "feature_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
-    "supporting_files": {
-      "features/application/body-properties/FUNCTIONAL.md": "b7d83161f4750bde4c521cef1c8e81dbf06c7e7dc8d402a9c574f930bc72f331",
-      "features/application/body-properties/VISUAL.md": "d7f5ef9d69c4f1ff7604282c9f979283e3a5112bd67362f0eca143fb0523474e",
-      "features/application/body-properties/FIXTURES.md": "498d90f776e605b71fa9c5c60e4bb19c7d536139f2d11dcd23b9b59a09ce433c"
-    },
-    "cucumber": "architecture/rust-port/receipts/2026-11-21-body-properties-pinned-3954/cucumber.json",
-    "cucumber_sha256": "20a4809c49bce8f3c558fe7e8f6d2bec953dcedb3fbdfb6b261f87029c27bd6b",
-    "application_commit": "4edca8774cb5af70954113ffb1ef9d1fafff4232",
-    "command": "OBK_BDD_FEATURE=body-properties cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe",
-    "notes": "All 6 pinned scenarios and 69 steps passed. The published scenarios require the replaced native fixture. Strict build and runtime provenance remains open under #3978."
+    "by_source_sha256": {
+      "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50": {
+        "feature_sha256": "0b20ae95482d755cafe546d0bae98db647acdaa2ebfb5353e3fcb3bc6af0cf50",
+        "supporting_files": {
+          "features/application/body-properties/FUNCTIONAL.md": "b7d83161f4750bde4c521cef1c8e81dbf06c7e7dc8d402a9c574f930bc72f331",
+          "features/application/body-properties/VISUAL.md": "d7f5ef9d69c4f1ff7604282c9f979283e3a5112bd67362f0eca143fb0523474e",
+          "features/application/body-properties/FIXTURES.md": "498d90f776e605b71fa9c5c60e4bb19c7d536139f2d11dcd23b9b59a09ce433c"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-21-body-properties-pinned-3954/cucumber.json",
+        "cucumber_sha256": "20a4809c49bce8f3c558fe7e8f6d2bec953dcedb3fbdfb6b261f87029c27bd6b",
+        "application_commit": "4edca8774cb5af70954113ffb1ef9d1fafff4232",
+        "command": "OBK_BDD_FEATURE=body-properties cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe",
+        "notes": "All 6 pinned scenarios and 69 steps passed. The published scenarios require the replaced native fixture. Strict build and runtime provenance remains open under #3978."
+      },
+      "c5c03d177d60e4b4e140a82603daa2ba705b71850645e0a966ec74205c0c5441": {
+        "feature_sha256": "c5c03d177d60e4b4e140a82603daa2ba705b71850645e0a966ec74205c0c5441",
+        "supporting_files": {
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-body-properties-current-3954/cucumber.json",
+        "cucumber_sha256": "561ef70b5b36d67c7b3a187e541ebd6856124cdf7fc446ed07be9f6e71d2acb3",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-24-body-properties-current-3954/scenario-inventory.json",
+        "scenario_inventory_sha256": "3d277292d83cb6ded09ecb7e265d3930de02b29044f80207ec7ae47ccfb800ea",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-body-properties-current-3954/scenario-arguments.json",
+        "scenario_arguments_sha256": "90f01df28e0c6494d37e8c42df356711ad227755d121dd00f3808d65c8d732b9",
+        "application_commit": "e18df6cb6802a4eec8b2bf3fe73500fd830ce54d",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=body-properties OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All six current scenarios passed with disposable copies of the published native Part. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   },
   "features/application/project-dialog/project-dialog.feature": {
     "by_source_sha256": {
