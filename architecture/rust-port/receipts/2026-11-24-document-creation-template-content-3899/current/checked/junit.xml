@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Create a document from the selected native template&apos;s contents: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-template-content-source/features/application/document-creation/document-creation-template-content.feature" package="testsuite/Feature: Create a document from the selected native template&apos;s contents: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-template-content-source/features/application/document-creation/document-creation-template-content.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:24:12.426279587Z" time="9.484873363"><testcase name="Scenario: Preserve the selected part template&apos;s geometry in the new document: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-template-content-source/features/application/document-creation/document-creation-template-content.feature:6:3" time="9.484873363"><system-out><![CDATA[  Scenario: Preserve the selected part template's geometry in the new document
+   ✔  Given a fresh MCAD Software session loads `fixtures/cad/document-creation-template-content.opj` as its active project
+   ✔  And no model document is open
+   ✔  And the Metric catalog contains `fixtures/cad/document-creation-template-content/Metric/Geometry Template.opd`
+   ✔  When the user opens the new-document template chooser
+   ✔  And the user selects the Metric folder and the Geometry Template part
+   ✔  And the user chooses Create
+   ✔  Then a new unsaved part document is active
+   ✔  And its viewport displays the template's rectangular solid
+   ✔  And its model browser contains the template's extrusion and source sketch
+   ✔  And the original template file remains unchanged
+]]></system-out></testcase></testsuite></testsuites>

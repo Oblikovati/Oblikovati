@@ -63,5 +63,6 @@ The three current named-template navigation scenarios cover sorting, adjacent
 tile selection, and horizontal group boundaries. The first tile retains focus
 when Home or Left scrolls to the gallery's left edge. [Navigation reports](receipts/2026-11-24-document-creation-navigation-current-3899/README.md)
 
-A separate native check confirmed that the new Part retained a saved
-extrusion from the selected file. [Creation check](receipts/2026-11-24-document-creation-name-sort-3899/create-template-test.log)
+The selected-template scenario opened an unsaved Part with the template's
+solid, extrusion, and consumed sketch. The original file's bytes matched after
+creation. [Native report](receipts/2026-11-24-document-creation-template-content-3899/README.md)

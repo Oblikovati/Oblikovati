@@ -11,6 +11,19 @@ const METRIC_SHEET_METAL: &str = "Metric sheet-metal part";
 const INCH_SHEET_METAL: &str = "Inch sheet-metal part";
 const METRIC_ASSEMBLY: &str = "Standard metric assembly";
 const METRIC_DRAWING: &str = "Metric drawing with title block";
+
+fn open_fixture_project(world: &mut ApplicationWorld, path: &str) {
+    let path = super::scenario_root().join(path).canonicalize().unwrap();
+    world.app().owner.load_desktop_project(&path).unwrap();
+    let state = world.state();
+    assert!(
+        state
+            .projects
+            .iter()
+            .any(|project| { project.active && std::path::Path::new(&project.location) == path }),
+        "expected the fixture project {path:?} active"
+    );
+}
 #[given("a document is open in the MCAD Software")]
 #[given("a part document is active in the MCAD Software")]
 fn open_document(world: &mut ApplicationWorld) {

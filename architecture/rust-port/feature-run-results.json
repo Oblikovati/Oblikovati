@@ -1355,5 +1355,26 @@
         "notes": "All three current cases and 52 steps passed in separate native runs. Strict build and runtime provenance remains open under #3978."
       }
     }
+  },
+  "features/application/document-creation/document-creation-template-content.feature": {
+    "by_source_sha256": {
+      "c21198a073773c344ee131b6aea3f5e4b33db761382831ed339e8569bfacead9": {
+        "feature_sha256": "c21198a073773c344ee131b6aea3f5e4b33db761382831ed339e8569bfacead9",
+        "supporting_files": {
+          "features/application/document-creation/BLOCKERS.md": "d60377bac648dea0dda1d094a4f8778064e13b44db2ceed35cea209b4fb568f0",
+          "features/application/document-creation/FIXTURES.md": "b5b8fa749dadaec50f88b1e198b26d27737406a301a12702c03f77d53afd633c",
+          "features/application/document-creation/FUNCTIONAL.md": "8b170196d8c08f34167d3666d1a743c779aaec9024e4facb4c768ac70b121704",
+          "features/application/document-creation/VISUAL.md": "6ac16fb8cf8de95da29f24924ef4e5d1e7c084cd8daa4d91a34352bf9ffe93fc",
+          "fixtures/cad/document-creation-template-content.opj": "314888ad11a52c7a9a8cb52691259a2369a9e486afe32bef249447460eba2e2d",
+          "fixtures/cad/document-creation-template-content/Metric/Geometry Template.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-document-creation-template-content-3899/current-cucumber.json",
+        "cucumber_sha256": "c95bc6c191444780f881d9cb9ee2f2287e171c6ed5b2f10dc14f55d3445592ef",
+        "application_commit": "4e956594fb910cb2c8c25e117d36ddfcdca080cc",
+        "command": "OBK_BDD_ROOT=<snapshot> OBK_BDD_AREA=application OBK_BDD_FEATURE=document-creation OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 1 current scenarios and 10 steps passed in separate native runs. The build includes the updated scenario bindings and existing local GUI edits. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   }
 }

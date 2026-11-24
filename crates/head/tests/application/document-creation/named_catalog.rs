@@ -15,15 +15,9 @@ const INCH_TITLE: &str = "Standard (in)";
     "a fresh MCAD Software session loads `fixtures/cad/document-creation-navigation-candidate.opj` as its active project"
 )]
 fn load_navigation_project(world: &mut ApplicationWorld) {
-    let path = super::super::super::scenario_root()
-        .join("fixtures/cad/document-creation-navigation-candidate.opj");
-    world.app().owner.load_desktop_project(&path).unwrap();
-    assert!(
-        world
-            .state()
-            .projects
-            .iter()
-            .any(|entry| entry.active && entry.name == "DocumentCreationNavigationCandidate")
+    open_fixture_project(
+        world,
+        "fixtures/cad/document-creation-navigation-candidate.opj",
     );
 }
 
