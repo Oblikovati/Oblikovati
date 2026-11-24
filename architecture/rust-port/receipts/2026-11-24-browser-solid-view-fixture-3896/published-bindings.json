@@ -1,0 +1,623 @@
+{
+  "features": 1,
+  "scenarios": 100,
+  "excluded_capture_only": 0,
+  "blocked_capture_host_only": 0,
+  "steps": 1363,
+  "unresolved": [
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Toggle the model-state edit scope",
+      "line": 850,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Duplicate the active model state in an empty part",
+      "line": 867,
+      "step": "the user creates and activates a named non-primary model state in this session",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel adding a property to the model-state table",
+      "line": 886,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Accept a property column in the model-state table",
+      "line": 908,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Accept and cancels edits to a model-state property cell",
+      "line": 928,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Accept and cancels edits to a model-state property cell",
+      "line": 929,
+      "step": "the user adds and accepts the Category property column in the model-state table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel removal of a model-state property column",
+      "line": 953,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel removal of a model-state property column",
+      "line": 954,
+      "step": "the user adds and accepts the Category property column in the model-state table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel removal of a model-state property column",
+      "line": 955,
+      "step": "the user sets the active state Category to Prototype and accepts the table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Toggle the lock marker on a copied view representation",
+      "line": 994,
+      "step": "the user copies the Primary view representation as BrowserView and leaves Primary active",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Toggle camera autosave for an inactive copied view",
+      "line": 1018,
+      "step": "the user copies the Primary view representation as BrowserView and leaves Primary active",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Retain a staged property column while switching table categories",
+      "line": 1137,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Retain a staged property column while switching table categories",
+      "line": 1138,
+      "step": "the user adds and accepts the Category property column in the model-state table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Retain a staged property column while switching table categories",
+      "line": 1139,
+      "step": "the user reopens the model-state table and selects the Properties category",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel a duplicate view representation name",
+      "line": 1158,
+      "step": "the user copies Primary as Capture View and activates the copied view",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Correct a duplicate view representation name",
+      "line": 1173,
+      "step": "the user copies Primary as Capture View and activates the copied view",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Submit an empty view representation name",
+      "line": 1188,
+      "step": "the user copies Primary as Capture View and activates the copied view",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel an inline view rename with Escape",
+      "line": 1201,
+      "step": "the user copies Primary as Capture View and activates the copied view",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Use a view name differing only in letter case",
+      "line": 1214,
+      "step": "the user copies Primary as Capture View and activates the copied view",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Switch between states with different feature suppression",
+      "line": 1331,
+      "step": "the user creates model states Capture State and Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Switch between states with different feature suppression",
+      "line": 1332,
+      "step": "the user sets the extrusion to Suppress in Primary and Capture State and Compute in Copy State through the model-state table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Switch between states with different feature suppression",
+      "line": 1333,
+      "step": "the user activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel a staged model-state suppression change",
+      "line": 1349,
+      "step": "the user creates model states Capture State and Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel a staged model-state suppression change",
+      "line": 1350,
+      "step": "the user sets the extrusion to Suppress in Primary and Capture State and Compute in Copy State through the model-state table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel a staged model-state suppression change",
+      "line": 1351,
+      "step": "the user activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Apply a feature suppression change through the model-state table",
+      "line": 1369,
+      "step": "the user creates model states Capture State and Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Apply a feature suppression change through the model-state table",
+      "line": 1370,
+      "step": "the user sets the extrusion to Suppress in Primary and Capture State and Compute in Copy State through the model-state table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Apply a feature suppression change through the model-state table",
+      "line": 1371,
+      "step": "the user activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel a staged model-state parameter column and value",
+      "line": 1392,
+      "step": "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel a staged model-state parameter column and value",
+      "line": 1393,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Accept distinct parameter values for model-state members",
+      "line": 1413,
+      "step": "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Accept distinct parameter values for model-state members",
+      "line": 1414,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel removal of a model-state parameter column",
+      "line": 1437,
+      "step": "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel removal of a model-state parameter column",
+      "line": 1438,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel removal of a model-state parameter column",
+      "line": 1439,
+      "step": "the user adds d0 to the model-state table and sets Copy State d0 to 2 in while leaving the other members at 1 in",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Report an unevaluable model-state parameter equation",
+      "line": 1453,
+      "step": "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Report an unevaluable model-state parameter equation",
+      "line": 1454,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Report an unevaluable model-state parameter equation",
+      "line": 1455,
+      "step": "the user opens the model-state table and adds length parameter d0 to the table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Retain an arithmetic expression in a model-state parameter",
+      "line": 1474,
+      "step": "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Retain an arithmetic expression in a model-state parameter",
+      "line": 1475,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Retain an arithmetic expression in a model-state parameter",
+      "line": 1476,
+      "step": "the user opens the model-state table and adds length parameter d0 to the table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Parameter interface follows the active model state",
+      "line": 1491,
+      "step": "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Parameter interface follows the active model state",
+      "line": 1492,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Parameter interface follows the active model state",
+      "line": 1493,
+      "step": "the user adds d0 and d1 to the model-state table and sets Copy State d0 to 1 in + 0.5 in and d1 to 5 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Parameter interface follows the active model state",
+      "line": 1494,
+      "step": "the user accepts and closes the model-state table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel inserting a model-state table row",
+      "line": 1507,
+      "step": "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel inserting a model-state table row",
+      "line": 1508,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel inserting a model-state table row",
+      "line": 1509,
+      "step": "the user sets extrusion suppression in Primary and Capture State and leaves it computed in Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Cancel inserting a model-state table row",
+      "line": 1510,
+      "step": "the user opens the model-state table with d0 included",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Apply an inserted model-state table row",
+      "line": 1526,
+      "step": "the user creates model states Capture State and Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Apply an inserted model-state table row",
+      "line": 1527,
+      "step": "the user sets the extrusion to Suppress in Primary and Capture State and Compute in Copy State through the model-state table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Apply an inserted model-state table row",
+      "line": 1528,
+      "step": "the user activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Decline removal of duplicate model-state member names",
+      "line": 1543,
+      "step": "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Decline removal of duplicate model-state member names",
+      "line": 1544,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Decline removal of duplicate model-state member names",
+      "line": 1545,
+      "step": "the user creates a fourth model state named Model State1 and reactivates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Decline removal of duplicate model-state member names",
+      "line": 1546,
+      "step": "the user opens the model-state table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Rename an inactive model state through the table",
+      "line": 1562,
+      "step": "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Rename an inactive model state through the table",
+      "line": 1563,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Rename an inactive model state through the table",
+      "line": 1564,
+      "step": "the user creates a fourth model state named Model State1 and reactivates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Reject an empty model-state member name",
+      "line": 1577,
+      "step": "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Reject an empty model-state member name",
+      "line": 1578,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Reject an empty model-state member name",
+      "line": 1579,
+      "step": "the user creates a fourth model state named Model State1 and reactivates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Reject an empty model-state member name",
+      "line": 1580,
+      "step": "the user renames Model State1 to Table Variant",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1596,
+      "step": "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1597,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1598,
+      "step": "the user creates a fourth model state named Model State1 and reactivates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1599,
+      "step": "the user opens the model-state table and adds parameter d0",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1601,
+      "step": "the extrusion has angular parameter d1 at 0 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1602,
+      "step": "Copy State is active among four model states",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1603,
+      "step": "the user adds d1 to the chosen parameters",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1604,
+      "step": "the table shows both d0 and d1 columns",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1605,
+      "step": "each d1 member cell shows 0 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1606,
+      "step": "the user changes the Copy State d1 cell to \"5 deg\"",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1607,
+      "step": "accepts and reopens the table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1608,
+      "step": "the chosen parameters include d0 and d1",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1609,
+      "step": "Copy State shows d1 as 5 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1610,
+      "step": "the other three members show d1 as 0 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Add and apply a second model-state parameter",
+      "line": 1611,
+      "step": "the parameter tree shows d1 at 5 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Show active member parameter values in the table tree",
+      "line": 1616,
+      "step": "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Show active member parameter values in the table tree",
+      "line": 1617,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Show active member parameter values in the table tree",
+      "line": 1618,
+      "step": "the user adds d0 and d1 to the model-state table and sets Copy State d0 to 1 in + 0.5 in and d1 to 5 degrees",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Inspect parameter column and cell context menus",
+      "line": 1631,
+      "step": "the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Inspect parameter column and cell context menus",
+      "line": 1632,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Inspect parameter column and cell context menus",
+      "line": 1633,
+      "step": "the user creates a fourth model state named Model State1 and reactivates Copy State",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Inspect parameter column and cell context menus",
+      "line": 1634,
+      "step": "the user opens the model-state table and adds parameter d0",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Inspect parameter column and cell context menus",
+      "line": 1635,
+      "step": "the user adds angular parameter d1 to the table",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature",
+      "scenario": "Create a feature while editing a single model-state member",
+      "line": 1660,
+      "step": "the user creates model states Capture State and Copy State and activates Copy State",
+      "cause": "undefined step"
+    }
+  ],
+  "source_revision": {
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout",
+    "commit": "f590a2cc540119948799f5733a5fc2276e6758cc",
+    "dirty": false
+  }
+}

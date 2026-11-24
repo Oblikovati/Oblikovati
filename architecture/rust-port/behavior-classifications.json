@@ -17016,8 +17016,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Native Model Browser copied-view visibility for a Part containing one solid.",
+      "go_test_premise": "The Go Browser tests exercise visibility on a body row. The pinned scenario adds the copied-view controls and the visibility outcome.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Real extrusion and a scene whose visible body count follows the current view.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop owns the active Part view and publishes its visibility into the viewport.",
+      "rust_tests": "application_scenarios_use_the_native_window: Hide and show a solid using the active view commands",
+      "oracle": "The pinned native run verifies the browser controls, visible-body count and viewport rendering. See receipts/2026-11-24-browser-solid-view-fixture-3896/pinned/hide-show/cucumber.json.",
+      "expected_result": "All Hidden and All Visible change the solid in the viewport, and the browser retains its body and extrusion.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:530c63485f601a6843ef0e8922d515fe4d955681729ae4724dedb79d2741bd30",
@@ -17033,8 +17043,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Native Model Browser copied-view visibility for a Part containing one solid.",
+      "go_test_premise": "The Go Browser tests exercise visibility on a body row. The pinned scenario adds the copied-view controls and the visibility outcome.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Real extrusion and a scene whose visible body count follows the current view.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop owns the active Part view and publishes its visibility into the viewport.",
+      "rust_tests": "application_scenarios_use_the_native_window: Restore a locked view after temporarily hiding its solid",
+      "oracle": "The pinned native run verifies the browser controls, visible-body count and viewport rendering. See receipts/2026-11-24-browser-solid-view-fixture-3896/pinned/locked/cucumber.json.",
+      "expected_result": "The locked view temporarily hides the solid. The solid returns in Primary and is visible after returning to the locked copied view.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:da656561b9a73506a0af9994c6a59fbd75e16e80896af128f4219bfd396b2e35",
@@ -17050,8 +17070,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Native Model Browser copied-view visibility for a Part containing one solid.",
+      "go_test_premise": "The Go Browser tests exercise visibility on a body row. The pinned scenario adds the copied-view controls and the visibility outcome.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Real extrusion and a scene whose visible body count follows the current view.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop owns the active Part view and publishes its visibility into the viewport.",
+      "rust_tests": "application_scenarios_use_the_native_window: Restore an unlocked view after hiding its solid",
+      "oracle": "The pinned native run verifies the browser controls, visible-body count and viewport rendering. See receipts/2026-11-24-browser-solid-view-fixture-3896/pinned/unlocked/cucumber.json.",
+      "expected_result": "Primary shows the solid. The unlocked copied view restores its saved hidden solid when reactivated.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:4b07a8c267ff311faa231cbc755a52266053f4d7cada20954d32934a69bb2c6e",

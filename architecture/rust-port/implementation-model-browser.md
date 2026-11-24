@@ -84,3 +84,8 @@ Nine [published view cases](receipts/2026-11-24-browser-view-fixture-3896/README
 open the saved blank metric Part and exercise its `BrowserView` copy through
 the Model Browser. The cases cover annotation scale, camera restoration,
 publication, and origin visibility with locked or bulk visibility commands.
+
+Three [solid visibility cases](receipts/2026-11-24-browser-solid-view-fixture-3896/README.md)
+exercise the copied view on the saved native block in the published source.
+They check viewport visibility and whether a locked or unlocked copy
+restores the solid after switching views. The matching pinned cases passed.

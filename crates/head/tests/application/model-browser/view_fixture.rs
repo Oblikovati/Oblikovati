@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Use the copied view prepared on the published blank Part fixture.
+//! Use the copied view prepared on the published saved Part fixture.
 use super::part_views::{copy_primary_view, expanded_primary_view};
 use super::*;
 use cucumber::given;
@@ -10,10 +10,9 @@ pub(super) const CAPTURE_VIEW: &str = "Capture View";
 const BROWSER_VIEW: &str = "BrowserView";
 
 #[given("the user copies the Primary view representation as BrowserView and activates BrowserView")]
+#[given("the user copies Primary as BrowserView and activates the copied view")]
 fn copy_browser_view(world: &mut ApplicationWorld) {
-    let part = world
-        .previous_document
-        .expect("expected the saved blank Part");
+    let part = world.previous_document.expect("expected the saved Part");
     world.expect_active(part);
     expanded_primary_view(world);
     copy_primary_view(world);
@@ -53,9 +52,7 @@ pub(super) fn copy_name(world: &mut ApplicationWorld) -> &'static str {
         .and_then(|browser| browser.part_design_views)
         .is_some_and(|views| views.list().iter().any(|view| view.name() == BROWSER_VIEW));
     if has_named_copy {
-        let part = world
-            .previous_document
-            .expect("expected the saved blank Part");
+        let part = world.previous_document.expect("expected the saved Part");
         assert_eq!(state.document, Some(part));
         BROWSER_VIEW
     } else {

@@ -9,8 +9,14 @@ use oblikovati_api::contract::PartDesignView as _;
 #[given("The MCAD Software has a part containing one visible solid body")]
 #[given("The MCAD Software has a part containing one solid body")]
 fn visible_prism(world: &mut ApplicationWorld) {
-    open_extruded_part(world);
-    expect_solid_visible(world);
+    if world.state().document.is_none() {
+        open_extruded_part(world);
+    }
+    if let Some(document) = world.previous_document {
+        world.expect_active(document);
+    }
+    solid_and_feature_still_exist(world);
+    visible_prism_after_switch(world);
 }
 #[given("an unlocked copied view is active")]
 #[given("a copied view is active")]
@@ -135,6 +141,7 @@ fn solid_and_feature_still_exist(world: &mut ApplicationWorld) {
     let browser = state.browser.unwrap();
     assert_eq!(browser.bodies.len(), 1);
     assert_eq!(browser.features.len(), 1);
+    assert_eq!(browser.features[0].kind, "Extrusion");
     world.expect_text("Solid Bodies");
     world.expect_text("Features");
 }
