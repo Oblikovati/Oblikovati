@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "d53b12c1115aa35f38876e51976f7a28b3d43a43",
+    "dirty": false,
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout"
+  },
+  "before": {
+    "commit": "d53b12c1115aa35f38876e51976f7a28b3d43a43",
+    "dirty": false,
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout"
+  },
+  "source_changed": false
+}
