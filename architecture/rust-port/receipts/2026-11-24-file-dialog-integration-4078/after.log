@@ -1,0 +1,11 @@
+   Compiling oblikovati-gui v0.1.0 (/git/oblikovati-workspace/oblikovati-rust/crates/gui)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.65s
+     Running tests/file_dialog.rs (target/debug/deps/file_dialog-fa8d5bcfb61abd66)
+
+running 4 tests
+test file_menu_new_and_save_reuse_owner_commands ... ok
+test file_menu_opens_a_visible_document_without_an_existing_document ... ok
+test file_menu_save_as_discards_a_cancelled_draft_and_accepts_a_fresh_path ... ok
+test native_text_widget_submits_the_typed_path_and_escape_discards_the_next_draft ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.47s

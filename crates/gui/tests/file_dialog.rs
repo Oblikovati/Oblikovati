@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_gui::*;
 
+#[allow(dead_code, unsafe_code)]
+#[path = "../../../test-utilities/rust/drawn_text.rs"]
+mod drawn_text;
+
 fn file_request() -> GuiFrameRequest {
     GuiFrameRequest {
         extent: [1000, 700],
@@ -43,8 +47,10 @@ fn show_save_dialog(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) 
 fn click_file_control(
     engine: &mut GuiFrameEngine,
     request: &mut GuiFrameRequest,
-    position: [f32; 2],
+    caption: &str,
+    popup: bool,
 ) -> Vec<GuiShellAction> {
+    let position = file_control_point(request, caption, popup);
     request.events = vec![GuiInputEvent::PointerMoved(position)];
     engine.frame(request).unwrap();
     let mut actions = Vec::new();
@@ -57,13 +63,27 @@ fn click_file_control(
     }
     actions
 }
+fn file_control_point(request: &GuiFrameRequest, caption: &str, popup: bool) -> [f32; 2] {
+    let frame = drawn_text::rendered_frame();
+    let run = frame
+        .runs
+        .iter()
+        .rev()
+        .find(|run| frame.is_popup_row(run) == popup && run.text == caption)
+        .unwrap_or_else(|| panic!("{caption:?}: expected a File control in {:?}", frame.runs));
+    let [x, y] = run.center();
+    [
+        x * request.framebuffer_scale[0],
+        y * request.framebuffer_scale[1],
+    ]
+}
 fn choose_file_item(
     engine: &mut GuiFrameEngine,
     request: &mut GuiFrameRequest,
-    item_y: f32,
+    caption: &str,
 ) -> Vec<GuiShellAction> {
-    assert!(click_file_control(engine, request, [20., 10.]).is_empty());
-    let mut actions = click_file_control(engine, request, [50., item_y - 74.]);
+    assert!(click_file_control(engine, request, "File", false).is_empty());
+    let mut actions = click_file_control(engine, request, caption, true);
     request.events.clear();
     for _ in 0..32 {
         let output = engine.frame(request).unwrap();
@@ -79,8 +99,8 @@ fn choose_file_item(
 }
 /// Save As opens beside the File menu; its own command is the first row there.
 fn choose_save_as(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
-    assert!(choose_file_item(engine, request, 156.).is_empty());
-    assert!(click_file_control(engine, request, [500., 90.]).is_empty());
+    assert!(choose_file_item(engine, request, "SaveAs").is_empty());
+    assert!(click_file_control(engine, request, "SaveAs...", true).is_empty());
     request.events.clear();
     for _ in 0..4 {
         engine.frame(request).unwrap();
@@ -93,7 +113,7 @@ fn file_menu_opens_a_visible_document_without_an_existing_document() {
     request.commands = GuiCommandState::default();
     engine.frame(&request).unwrap();
     engine.frame(&request).unwrap();
-    assert!(choose_file_item(&mut engine, &mut request, 122.).is_empty());
+    assert!(choose_file_item(&mut engine, &mut request, "Open...").is_empty());
     request.events = vec![GuiInputEvent::Text("/tmp/input.opd".into())];
     engine.frame(&request).unwrap();
     assert_eq!(
@@ -114,14 +134,14 @@ fn file_menu_new_and_save_reuse_owner_commands() {
     let mut request = file_request();
     engine.frame(&request).unwrap();
     engine.frame(&request).unwrap();
-    assert!(choose_file_item(&mut engine, &mut request, 105.).is_empty());
+    assert!(choose_file_item(&mut engine, &mut request, "New").is_empty());
     assert!(key_frames(&mut engine, &mut request, GuiKey::Escape).is_empty());
     assert_eq!(
-        choose_file_item(&mut engine, &mut request, 139.),
+        choose_file_item(&mut engine, &mut request, "Save"),
         [GuiShellAction::Save]
     );
     assert_eq!(
-        choose_file_item(&mut engine, &mut request, 173.),
+        choose_file_item(&mut engine, &mut request, "Close"),
         [GuiShellAction::CloseDocument(
             oblikovati_api::wire::CloseDocumentArgs {
                 id: 7,

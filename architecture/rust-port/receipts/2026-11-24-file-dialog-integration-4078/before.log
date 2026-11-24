@@ -1,0 +1,16 @@
+
+running 1 test
+
+thread 'file_menu_new_and_save_reuse_owner_commands' (1067754) panicked at crates/gui/tests/file_dialog.rs:119:5:
+assertion `left == right` failed
+  left: []
+ right: [Save]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test file_menu_new_and_save_reuse_owner_commands ... FAILED
+
+failures:
+
+failures:
+    file_menu_new_and_save_reuse_owner_commands
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 3 filtered out; finished in 3.30s
