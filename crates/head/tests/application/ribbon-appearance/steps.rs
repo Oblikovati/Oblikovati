@@ -115,6 +115,28 @@ fn expect_normal_appearance(world: &mut ApplicationWorld, tab: &str, command: &s
 fn sketch_normal_appearance(world: &mut ApplicationWorld) {
     expect_normal_appearance(world, "Sketch", "Finish Sketch");
 }
+#[given("ribbon appearance is set to Normal")]
+fn record_normal_sketch_ribbon(world: &mut ApplicationWorld) {
+    world.expect_text("Finish Sketch");
+    world.ribbon_height = modes_native::ribbon_bottom();
+}
+
+#[then("the Ribbon Appearance submenu remains open")]
+fn appearance_submenu_stays_open(world: &mut ApplicationWorld) {
+    assert!(world.checked("Normal"));
+    world.expect_text("Reset Ribbon");
+}
+
+#[when("the user clicks in the viewport outside the menu")]
+fn click_outside_appearance_menu(world: &mut ApplicationWorld) {
+    world.click([1000, 600]);
+}
+
+#[then("the ribbon remains in Normal appearance")]
+fn normal_sketch_ribbon_remains(world: &mut ApplicationWorld) {
+    assert_eq!(modes_native::ribbon_bottom(), world.ribbon_height);
+    world.expect_text("Finish Sketch");
+}
 #[when("the user opens Ribbon Appearance from the Create panel title context menu")]
 fn sketch_appearance_submenu(world: &mut ApplicationWorld) {
     open_panel_appearance(world, "Create");

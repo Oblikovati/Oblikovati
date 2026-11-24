@@ -14,3 +14,8 @@ Configuration appears disabled while its host integration is pending.
 The [native receipt](receipts/2026-11-24-ribbon-panel-expansion-3856/README.md)
 records nine focused published cases and the remaining binding gaps.
 See [#3856](https://github.com/Oblikovati/Oblikovati/issues/3856).
+
+In sketch edit, the Create title's Ribbon Appearance submenu retains Escape.
+Clicking outside it dismisses the menu and preserves the sketch. The
+[Ribbon Display receipt](receipts/2026-11-24-ribbon-display-full-3856/README.md)
+also covers the separate Escape dismissal from the Part Modify title.

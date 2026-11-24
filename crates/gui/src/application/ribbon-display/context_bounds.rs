@@ -12,8 +12,17 @@ pub(super) fn submenu_row_pressed(ui: &Ui, label: &str, submenu_open: bool) -> b
 }
 
 impl RibbonDisplayState {
+    /// Open the ribbon menu at a title or elsewhere, for example `request_context_menu(None)`.
+    pub(crate) fn request_context_menu(&mut self, title: Option<RibbonPanel>) {
+        self.context_title = title;
+        self.context_expansion = None;
+        self.context_command = None;
+        self.context_had_submenu = false;
+        self.context_requested = true;
+    }
     pub(crate) fn request_expansion_context(&mut self, tab: RibbonTab, panel: RibbonPanel) {
         self.context_expansion = Some((tab, panel));
+        self.context_title = None;
         self.context_command = None;
         self.context_had_submenu = false;
         self.context_requested = true;

@@ -12,14 +12,7 @@ impl GuiFrameEngine {
         self.parameter_editor
             .synchronize_document(request.commands.document)?;
         let seed_asset_dock = self.prepare_workspace_frame(&request.commands);
-        let keys = prepare_frame_inputs(
-            &mut self.context,
-            request,
-            &mut self.modifiers_held,
-            self.popup_was_open,
-            self.ribbon.tips.active(),
-            &mut self.widget_keys,
-        );
+        let keys = self.prepare_control_inputs(request);
         self.sync_tool_visibility();
         let mut selected = Vec::new();
         self.prepare_dock_owners(&request.commands, &mut selected);

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T08:34:02.032163739Z" time="21.851570287"><testcase name="Scenario: Dismiss the ribbon appearance submenu with Escape: tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout/features/application/ribbon-display/ribbon-display.feature:629:3" time="21.851570287"><system-out><![CDATA[  Scenario: Dismiss the ribbon appearance submenu with Escape
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open with the full 3D Model ribbon displayed in the MCAD Software
+   ✔  And the Modify panel context menu is open with Ribbon Appearance expanded
+   ✔  And Normal is the checked ribbon appearance
+   ✔  When the user presses Escape twice
+   ✔  Then the Ribbon Appearance submenu and panel context menu close
+   ✔  And the full ribbon remains displayed in Normal appearance
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

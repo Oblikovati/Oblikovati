@@ -1,6 +1,24 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Inspect frame navigation input without changing keyboard capture.
 use super::*;
+
+impl GuiFrameEngine {
+    pub(super) fn prepare_control_inputs(
+        &mut self,
+        request: &GuiFrameRequest,
+    ) -> crate::frame_keys::FrameKeys {
+        prepare_frame_inputs(
+            &mut self.context,
+            request,
+            &mut self.modifiers_held,
+            self.popup_was_open,
+            self.ribbon.tips.active(),
+            self.ribbon.display.retain_appearance_on_escape
+                && request.commands.authoring == crate::GuiAuthoringContext::Sketch,
+            &mut self.widget_keys,
+        )
+    }
+}
 pub(super) fn sketch_activation(
     ui: &imgui::Ui,
     request: &GuiFrameRequest,

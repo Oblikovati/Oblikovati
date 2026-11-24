@@ -10281,8 +10281,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow."
+      "go_reference": "Go aa8297d1b: head/ui/chrome_ribbon.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow.",
+      "go_test_premise": "The Go panel-fit and width tests passed for its top ribbon. The Rust display and menu transitions follow the benchmark. See receipts/2026-11-14-go-ribbon-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The case changes ribbon presentation and invokes no modeling operation.",
+      "platforms": "Linux X11, Xvfb, Openbox and Vulkan Lavapipe. Other platforms were not checked.",
+      "kernel_integration": "The native viewport keeps the same Part while the UI interacts with ribbon controls.",
+      "rust_tests": "application_scenarios_use_the_native_window: Open a panel compacted by a narrow application window",
+      "oracle": "The pinned Cucumber steps read rendered commands, menu selection, panel geometry and document or sketch state. See receipts/2026-11-24-ribbon-display-full-3856/pinned-manage/cucumber.json.",
+      "expected_result": "At the fixture icon scale, narrowing the Part window compacts Insert while Manage stays active. The flyout opens below the ribbon, an outside click closes it, and maximizing restores the inline commands.",
+      "baseline_source_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e"
     },
     {
       "id": "scenario:62cac03562db47e250e4e23edfdd334445d5ddcd3c26c7387a56a563a9c84f35",
@@ -10709,8 +10719,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow."
+      "go_reference": "Go aa8297d1b: head/ui/chrome_ribbon.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow.",
+      "go_test_premise": "The Go panel-fit and width tests passed for its top ribbon. The Rust display and menu transitions follow the benchmark. See receipts/2026-11-14-go-ribbon-baseline/README.md.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The case changes ribbon presentation and invokes no modeling operation.",
+      "platforms": "Linux X11, Xvfb, Openbox and Vulkan Lavapipe. Other platforms were not checked.",
+      "kernel_integration": "The native viewport keeps the same Part while the UI interacts with ribbon controls.",
+      "rust_tests": "application_scenarios_use_the_native_window: Inspect ribbon appearance choices without changing the display mode",
+      "oracle": "The pinned Cucumber steps read rendered commands, menu selection, panel geometry and document or sketch state. See receipts/2026-11-24-ribbon-display-full-3856/pinned-appearance/cucumber.json.",
+      "expected_result": "Normal is checked and all appearance options are visible. Two Escape presses leave the Create title submenu open. An outside click dismisses the menu with the same appearance and sketch.",
+      "baseline_source_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e"
     },
     {
       "id": "scenario:c4a516323ccefb4cf2d4957e42e27ed38c2abec3ff9ff520c1ff8f57de6fb0cc",

@@ -21,6 +21,7 @@ fn appearance_choices_are_available(world: &mut ApplicationWorld) {
 }
 
 #[then("\"Normal\" is marked as selected")]
+#[then("Normal is checked")]
 fn normal_appearance_is_selected(world: &mut ApplicationWorld) {
     assert!(world.checked("Normal"));
 }
@@ -28,6 +29,12 @@ fn normal_appearance_is_selected(world: &mut ApplicationWorld) {
 #[then("the submenu offers \"Reset Ribbon\"")]
 fn reset_ribbon_is_available(world: &mut ApplicationWorld) {
     assert!(world.run_is_enabled("Reset Ribbon"));
+}
+
+#[then("Text Off, Small, Compact, Large and Reset Ribbon are listed")]
+fn display_mode_choices(world: &mut ApplicationWorld) {
+    appearance_choices_are_available(world);
+    reset_ribbon_is_available(world);
 }
 
 #[cucumber::given("the full 3D Model ribbon uses the Text Off appearance")]

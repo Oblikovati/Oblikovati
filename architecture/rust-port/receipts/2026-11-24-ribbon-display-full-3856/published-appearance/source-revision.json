@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "9241d437e7cad18412942240d25f9e58c0fde911",
+    "dirty": false,
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout"
+  },
+  "before": {
+    "commit": "9241d437e7cad18412942240d25f9e58c0fde911",
+    "dirty": false,
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/display-snapshot/checkout"
+  },
+  "source_changed": false
+}

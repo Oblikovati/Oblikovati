@@ -24,6 +24,7 @@ pub(crate) struct RibbonPanelLayout {
     measured_appearance: Option<crate::ribbon_command_layout::RibbonAppearance>,
     popup_press: crate::popup_press::PopupPress<(RibbonTab, RibbonPanel)>,
     pub pending_layout: bool,
+    pub context_title: Option<RibbonPanel>,
     pending_additional: Option<(RibbonTab, RibbonPanel)>,
     pending_model_pick: bool,
     retained_model_face: bool,
@@ -104,6 +105,7 @@ pub(crate) fn draw_panels(
     actions: &mut Vec<GuiShellAction>,
 ) {
     layout.pending_layout = false;
+    layout.context_title = None;
     layout.use_appearance(display.appearance);
     layout.additional.use_document(state.document);
     layout.additional.use_mode(display.mode);
@@ -369,6 +371,9 @@ fn draw_expanded(
                     && context.owners.customization.has_expanded(tab)));
         if context.show_panel_titles {
             ui.text(panel.label());
+            if ui.is_item_clicked_with_button(imgui::MouseButton::Right) {
+                layout.context_title = Some(panel);
+            }
             let title_clicked = ui.is_item_clicked();
             local_action |= title_clicked && !expandable;
             if expandable {

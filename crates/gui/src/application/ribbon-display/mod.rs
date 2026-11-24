@@ -98,6 +98,8 @@ pub(crate) struct RibbonDisplayState {
     pub placement: RibbonPlacement,
     pub side_anchor: Option<SideAnchor>,
     context_requested: bool,
+    context_title: Option<RibbonPanel>,
+    pub(crate) retain_appearance_on_escape: bool,
     context_relocated: Option<(RibbonTab, RibbonPanel)>,
     context_expansion: Option<(RibbonTab, RibbonPanel)>,
     context_command: Option<&'static str>,
@@ -140,6 +142,8 @@ impl Default for RibbonDisplayState {
             placement: RibbonPlacement::default(),
             side_anchor: None,
             context_requested: false,
+            context_title: None,
+            retain_appearance_on_escape: false,
             context_relocated: None,
             context_expansion: None,
             context_command: None,
@@ -207,13 +211,6 @@ impl RibbonDisplayState {
         next.advance();
         next.mode.menu_label().unwrap_or("Show Full Ribbon")
     }
-    /// Ask for the context menu from any of the ribbon's windows.
-    pub(crate) fn request_context_menu(&mut self) {
-        self.context_expansion = None;
-        self.context_command = None;
-        self.context_had_submenu = false;
-        self.context_requested = true;
-    }
     /// Move the ribbon; a temporary panel opened for the old place closes.
     pub(crate) fn place(&mut self, placement: RibbonPlacement) {
         self.placement = placement;
@@ -269,11 +266,13 @@ impl RibbonDisplayState {
             &mut crate::application::quick_access_toolbar::QuickAccessToolbar,
         ),
     ) {
+        self.retain_appearance_on_escape = false;
         let context_opened = std::mem::take(&mut self.context_requested);
         if context_opened {
             ui.open_popup(CONTEXT_MENU);
         }
         let Some(_menu) = ui.begin_popup(CONTEXT_MENU) else {
+            self.context_title = None;
             self.context_expansion = None;
             self.context_command = None;
             self.context_had_submenu = false;

@@ -20,6 +20,7 @@ pub(crate) fn prepare_frame_inputs(
     held: &mut crate::GuiModifiers,
     popup_was_open: bool,
     key_tips_active: bool,
+    retain_ribbon_appearance: bool,
     widget_keys: &mut Vec<crate::GuiKey>,
 ) -> FrameKeys {
     let io = context.io_mut();
@@ -51,6 +52,18 @@ pub(crate) fn prepare_frame_inputs(
             if matches!(event, crate::GuiInputEvent::Key { pressed: true, .. }) {
                 keys.switch_document = Some(document_step(*held));
             }
+            continue;
+        }
+        // The sketch Create title's appearance menu stays open until pointer dismissal.
+        if retain_ribbon_appearance
+            && matches!(
+                event,
+                crate::GuiInputEvent::Key {
+                    key: crate::GuiKey::Escape,
+                    pressed: true
+                }
+            )
+        {
             continue;
         }
         apply_input(io, event, request.layout_scale());

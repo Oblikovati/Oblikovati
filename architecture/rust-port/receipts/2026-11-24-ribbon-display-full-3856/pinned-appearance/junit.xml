@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T08:34:06.03123357Z" time="32.149648817"><testcase name="Scenario: Inspect ribbon appearance choices without changing the display mode: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature:613:3" time="32.149648817"><system-out><![CDATA[  Scenario: Inspect ribbon appearance choices without changing the display mode
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✔  And ribbon appearance is set to Normal
+   ✔  When the user opens Ribbon Appearance from the Create panel title context menu
+   ✔  Then Normal is checked
+   ✔  And Text Off, Small, Compact, Large and Reset Ribbon are listed
+   ✔  When the user presses Escape twice
+   ✔  Then the Ribbon Appearance submenu remains open
+   ✔  When the user clicks in the viewport outside the menu
+   ✔  Then the panel context menu closes
+   ✔  And the ribbon remains in Normal appearance
+   ✔  And the sketch remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>

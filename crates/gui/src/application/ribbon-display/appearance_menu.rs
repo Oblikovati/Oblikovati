@@ -20,6 +20,7 @@ impl RibbonDisplayState {
         let Some(_list) = ui.begin_popup(APPEARANCE_MENU) else {
             return;
         };
+        self.retain_appearance_on_escape = self.context_title == Some(super::RibbonPanel::Create);
         self.capture_submenu_bounds(ui);
         for appearance in RibbonAppearance::ALL {
             if ui

@@ -223,7 +223,9 @@ fn apply_key_tip(
 fn request_context_menu_when_clicked(ui: &Ui, ribbon: &mut DocumentRibbon) {
     let hovered = ui.is_window_hovered_with_flags(imgui::WindowHoveredFlags::CHILD_WINDOWS);
     if hovered && ui.is_mouse_clicked(imgui::MouseButton::Right) {
-        ribbon.display.request_context_menu();
+        ribbon
+            .display
+            .request_context_menu(ribbon.panels.context_title.take());
     }
 }
 fn begin_ribbon_band(ui: &Ui, width: f32, height: f32) -> Option<imgui::WindowToken<'_>> {

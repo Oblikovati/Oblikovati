@@ -34,7 +34,13 @@ fn temporary_tools(world: &mut ApplicationWorld) {
 #[when("the user clicks empty viewport space outside the panel")]
 #[when("the user clicks an empty area of the viewport")]
 fn click_empty_viewport(world: &mut ApplicationWorld) {
-    world.click([1000, 600]);
+    let [left, top, right, bottom] = world.viewport_bounds().map(|axis| axis as i32);
+    let x = (right - left) / 8;
+    let y = (bottom - top) / 8;
+    world.click([
+        1000.clamp(left + x, right - x),
+        600.clamp(top + y, bottom - y),
+    ]);
 }
 
 #[then("the Tools tab remains visible")]

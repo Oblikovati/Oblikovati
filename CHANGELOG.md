@@ -273,6 +273,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Kept the Sketch Create title's Ribbon Appearance submenu open when Escape is pressed. (#3856)
+
 - Completed the floating Part ribbon group list and closed the Notes pane when switching tabs. (#3856)
 
 - Kept Finish Sketch directly visible in the Exit group when the ribbon is docked at a side. (#3856)
