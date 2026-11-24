@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: File menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-file-menu-source/features/application/file-menu/file-menu.feature" package="testsuite/Feature: File menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-file-menu-source/features/application/file-menu/file-menu.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:25:13.114583751Z" time="16.769335712"><testcase name="Scenario: Open the New submenu from the File menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-file-menu-source/features/application/file-menu/file-menu.feature:73:3" time="16.769335712"><system-out><![CDATA[  Scenario: Open the New submenu from the File menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the pointer is positioned over the New command location
+   ✔  When the user presses Alt+F to open the File menu
+   ✔  Then the New submenu is displayed
+   ✔  And the submenu describes creating a file from the available templates
+   ✔  And it lists Assembly, Weldment, Drawing, Part, Sheet Metal and Presentation
+   ✔  And Drawing displays a disclosure indicator
+   ✔  And the active part remains visible behind the menu
+   ✔  And no document type has been activated
+]]></system-out></testcase></testsuite></testsuites>

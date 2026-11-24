@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: File menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-file-menu-source/features/application/file-menu/file-menu.feature" package="testsuite/Feature: File menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-file-menu-source/features/application/file-menu/file-menu.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:19:10.290417832Z" time="14.952140654"><testcase name="Scenario: Open and dismiss the file menu in a drawing: tmp/oblikovati-ribbon-relocated.RcZVDl/current-file-menu-source/features/application/file-menu/file-menu.feature:38:3" time="14.952140654"><system-out><![CDATA[  Scenario: Open and dismiss the file menu in a drawing
+   ✔  Given `fixtures/cad/blank-drawing.odd` is active in the MCAD Software
+   ✔  When the user selects File
+   ✔  Then the menu shows New, Open, Save, Save As, Export, Share, Manage, document properties, Print and Close entries
+   ✔  And a recent-documents region is visible
+   ✔  And the drawing sheet remains visible around the menu
+   ✔  When the user presses Escape
+   ✔  Then the File menu closes
+   ✔  And the same drawing document remains active
+]]></system-out></testcase></testsuite></testsuites>

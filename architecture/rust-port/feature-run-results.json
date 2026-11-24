@@ -357,19 +357,41 @@
     }
   },
   "features/application/file-menu/file-menu.feature": {
-    "feature_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
-    "supporting_files": {
-      "features/application/file-menu/FUNCTIONAL.md": "76c106ccc2274f38d03b1a992a742a8e24f5fdb67f7a1989b9accd15d95e23dd",
-      "features/application/file-menu/VISUAL.md": "9977612cdcec5137ca8dd49f8116a75043fa4f4aaeb0830b1d18b43299870692",
-      "features/application/file-menu/FIXTURES.md": "9d7162a0a1bbcc979c1fcb974f4744333b20d55c31718a632e3e9f4f3c6c8ead",
-      "features/application/file-menu/BLOCKERS.md": "0c117202f775f28f1d3001f25e573994a26ea71f2032549c1962b1bd598b6bf4"
-    },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-file-menu/cucumber.json",
-    "cucumber_sha256": "188730e1491cb9f89b2b7daf41d77d511b68580450970da79a2bb86c99562d13",
-    "application_commit": "8ddc1d98aecd0d375a443139e7057383dd5add5f",
-    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=file-menu XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; no assembly document opened",
-    "notes": "A separate native X11 mouse and keyboard test opens the File menu, dismisses it with Escape and an outside click, and checks the active part."
+    "by_source_sha256": {
+      "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91": {
+        "feature_sha256": "fd33924caea15cf97ba75ad3600c7244cf17592b6bdf26bdc9882f7cae71fb91",
+        "supporting_files": {
+          "features/application/file-menu/FUNCTIONAL.md": "76c106ccc2274f38d03b1a992a742a8e24f5fdb67f7a1989b9accd15d95e23dd",
+          "features/application/file-menu/VISUAL.md": "9977612cdcec5137ca8dd49f8116a75043fa4f4aaeb0830b1d18b43299870692",
+          "features/application/file-menu/FIXTURES.md": "9d7162a0a1bbcc979c1fcb974f4744333b20d55c31718a632e3e9f4f3c6c8ead",
+          "features/application/file-menu/BLOCKERS.md": "0c117202f775f28f1d3001f25e573994a26ea71f2032549c1962b1bd598b6bf4"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-18-file-menu/cucumber.json",
+        "cucumber_sha256": "188730e1491cb9f89b2b7daf41d77d511b68580450970da79a2bb86c99562d13",
+        "application_commit": "8ddc1d98aecd0d375a443139e7057383dd5add5f",
+        "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=file-menu XMODIFIERS=@im=none VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; no assembly document opened",
+        "notes": "A separate native X11 mouse and keyboard test opens the File menu, dismisses it with Escape and an outside click, and checks the active part."
+      },
+      "2c5cd3650dc5a2e2aa77e5378dae69a4ab29c2786c1fb3f261934f67bb6e212d": {
+        "feature_sha256": "2c5cd3650dc5a2e2aa77e5378dae69a4ab29c2786c1fb3f261934f67bb6e212d",
+        "supporting_files": {
+          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9",
+          "fixtures/cad/blank-metric-part.opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
+          "fixtures/cad/blank-drawing.odd": "74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-file-menu-current-3894/cucumber.json",
+        "cucumber_sha256": "e885d5227e152ccf0121dabef3d2bf433949a24e8165666cdfdc1ff662ce51f5",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-24-file-menu-current-3894/scenario-inventory.json",
+        "scenario_inventory_sha256": "6729b958d0df5186bcebe7da3e9f6722ba5d8c80798699546a8cbb4a942d3faa",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-file-menu-current-3894/scenario-arguments.json",
+        "scenario_arguments_sha256": "f7f8edefb22fe31d198cf43c87f46d07382b2fcbce19af17b88a00fd7a38d7d9",
+        "application_commit": "81e1e4a614ae99f24f5d1e18677b92dfae030606",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=file-menu OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All eight current scenarios passed with the published native Parts and Drawing. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   },
   "features/application/ribbon-command-availability/ribbon-command-availability.feature": {
     "feature_sha256": "b3be8114d042b3b5d7c160569262657afed7c6e167711c2e6abc485bdc6ee9c9",

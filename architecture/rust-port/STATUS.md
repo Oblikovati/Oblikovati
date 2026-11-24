@@ -19,11 +19,11 @@ using this status; the live scenario directory can change.
   the published native Part, including both opposite-direction examples.
   See the [current run](receipts/2026-11-24-viewport-orbit-current-3872/README.md)
   and the [pinned run](receipts/2026-11-21-viewport-orbit-r0-3872/README.md).
-- File Menu (#3894): all eight pinned scenarios and all eight in a copy of
-  the current feature passed with native fixtures. The published source
-  still names the Inventor Part in the Save As and Home cases. X11 tests
-  checked dismissal, disabled commands, and the same recent Part.
-  See `receipts/2026-11-21-file-menu-r0-3894/`.
+- File Menu (#3894) passed all eight current scenarios and 67 steps.
+  The published Part and Drawing fixtures cover menu dismissal, the recent
+  row, Save As, New, and Home. See the
+  [current run](receipts/2026-11-24-file-menu-current-3894/README.md)
+  and the [pinned run](receipts/2026-11-21-file-menu-r0-3894/README.md).
 - Viewport Pan (#3881): all four pinned scenarios and 32 steps passed
   under Xvfb. Two X11 input tests also passed. The four declarations now
   have R0 records. The live feature requires a native Part fixture, and strict

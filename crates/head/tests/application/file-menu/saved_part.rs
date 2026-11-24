@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Prepare the saved Part and its Home recent entry for File menu inspection.
 
-use super::super::home_recent_documents::{home_shows, open_home};
+use super::super::home_recent_documents::{home_ellipsized_run, home_shows, open_home};
 use super::*;
 use std::path::Path;
 
@@ -11,6 +11,15 @@ use std::path::Path;
 )]
 fn named_saved_part(world: &mut ApplicationWorld) {
     let path = super::super::scenario_root().join("fixtures/cad/planar-sketch-empty-xy.opd");
+    open_saved_menu_part(world, &path);
+}
+
+#[given("`fixtures/cad/workspace-layout-native.opd` is open and saved in the MCAD Software")]
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` has been opened in the MCAD Software and is listed in recent documents"
+)]
+fn current_named_saved_part(world: &mut ApplicationWorld) {
+    let path = super::super::scenario_root().join("fixtures/cad/workspace-layout-native.opd");
     open_saved_menu_part(world, &path);
 }
 
@@ -62,7 +71,7 @@ pub(super) fn expect_saved_menu_part_on_home(world: &mut ApplicationWorld) {
         .find(|entry| Path::new(&entry.path) == path)
         .expect("expected the opened Part in recent documents");
     assert!(
-        home_shows(world, &recent.name),
+        home_shows(world, &recent.name) || home_ellipsized_run(world, &recent.name).is_some(),
         "expected {:?} in Home, rendered runs: {:?}",
         recent.name,
         world.text()

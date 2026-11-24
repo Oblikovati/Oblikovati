@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: File menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-file-menu-source/features/application/file-menu/file-menu.feature" package="testsuite/Feature: File menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-file-menu-source/features/application/file-menu/file-menu.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:24:38.760979916Z" time="15.102284179"><testcase name="Scenario: Inspect controls in the recent-documents region: tmp/oblikovati-ribbon-relocated.RcZVDl/current-file-menu-source/features/application/file-menu/file-menu.feature:49:3" time="15.102284179"><system-out><![CDATA[  Scenario: Inspect controls in the recent-documents region
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And that opened part is listed in recent documents
+   ✔  And recent documents are available
+   ✔  When the user selects File
+   ✔  Then the recent-documents region shows an ordering control labeled By Ordered List
+   ✔  And a separate display control is visible beside it
+   ✔  And each visible recent-document row shows a document-type symbol and name on the left
+   ✔  And each visible row shows a pin control on the right
+   ✔  And the active part remains visible around the menu
+   ✔  When the user presses Escape
+   ✔  Then the menu closes and the same part remains active
+]]></system-out></testcase></testsuite></testsuites>

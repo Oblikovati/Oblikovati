@@ -69,6 +69,19 @@ fn click_home(world: &mut ApplicationWorld, text: &str) {
 pub(super) fn home_shows(world: &ApplicationWorld, name: &str) -> bool {
     home_run(world, name).is_some()
 }
+/// Find a clipped Home label, for example the visible prefix of a recent file name.
+pub(super) fn home_ellipsized_run<'a>(
+    world: &'a ApplicationWorld,
+    full: &str,
+) -> Option<&'a RenderedRun> {
+    world.frame.runs.iter().find(|run| {
+        in_home(run)
+            && run
+                .text
+                .strip_suffix("...")
+                .is_some_and(|prefix| !prefix.is_empty() && full.starts_with(prefix))
+    })
+}
 /// Open the Home workspace using its visible control, for example before checking recent files.
 pub(super) fn open_home(world: &mut ApplicationWorld) {
     world.click_text("Home");

@@ -7,6 +7,7 @@ use cucumber::{given, then, when};
 mod native_input;
 #[path = "saved_part.rs"]
 mod saved_part;
+#[given("the user selects File")]
 #[when("I select File")]
 #[when("the user selects File")]
 fn select_file(world: &mut ApplicationWorld) {
@@ -55,12 +56,25 @@ fn bottom_controls(world: &mut ApplicationWorld) {
 }
 #[given("an empty part document is active in the MCAD Software")]
 fn empty_part(world: &mut ApplicationWorld) {
-    world.previous_document = Some(world.add_part());
+    if let Some(document) = world.previous_document {
+        let state = world.state();
+        assert_eq!(state.document, Some(document));
+        assert_eq!(
+            state.document_type,
+            Some(oblikovati_api::types::DOCUMENT_PART)
+        );
+        let browser = state.browser.expect("expected the active Part browser");
+        assert!(browser.sketches.is_empty() && browser.bodies.is_empty());
+    } else {
+        world.previous_document = Some(world.add_part());
+    }
 }
 #[given("the File menu is open")]
 fn file_menu_open(world: &mut ApplicationWorld) {
     world.previous_document = Some(active_document(world));
-    world.click_text("File");
+    if !world.shows("Save As") {
+        select_file(world);
+    }
     world.expect_text("Recent documents");
 }
 #[when("I press Escape")]
@@ -118,8 +132,30 @@ fn sheet_around_menu(world: &mut ApplicationWorld) {
         "sheet {sheet:?}: expected the light sheet beside the menu"
     );
 }
+#[given("that opened part is listed in recent documents")]
+fn opened_part_is_recent(world: &mut ApplicationWorld) {
+    let document = active_document(world);
+    let state = world.state();
+    let path = state.document_storage[&document]
+        .path
+        .as_ref()
+        .expect("expected the opened Part path");
+    assert!(
+        state
+            .recent_documents
+            .iter()
+            .any(|entry| entry.path == *path),
+        "expected the opened Part in recent documents"
+    );
+    world.saved_path = Some(std::path::PathBuf::from(path));
+}
+
 #[given("recent documents are available")]
 fn recent_available(world: &mut ApplicationWorld) {
+    if world.saved_path.is_some() {
+        assert!(!world.state().recent_documents.is_empty());
+        return;
+    }
     let part = world.active_id();
     world.app().owner.forget_recent_documents();
     world.save_part_to_file(part, "Recent.opd");
@@ -138,27 +174,50 @@ fn display_control(world: &mut ApplicationWorld) {
         display.minimum
     );
 }
-fn recent_row(world: &ApplicationWorld) -> super::diagnostics::RenderedRun {
-    world.run("Recent").clone()
+fn recent_name(world: &ApplicationWorld) -> &str {
+    world
+        .saved_path
+        .as_ref()
+        .and_then(|path| path.file_stem())
+        .and_then(|stem| stem.to_str())
+        .unwrap_or("Recent")
+}
+fn recent_row(world: &ApplicationWorld) -> &super::diagnostics::RenderedRun {
+    let name = recent_name(world);
+    let ordering = world.run("By Ordered List");
+    let rows = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.list == ordering.list);
+    rows.clone()
+        .find(|run| run.text.contains(name) && run.center()[1] > ordering.center()[1])
+        .unwrap_or_else(|| panic!("expected {name:?} in the File menu rows {rows:?}"))
 }
 #[then("each visible recent-document row shows a document-type symbol and name on the left")]
 fn row_left(world: &mut ApplicationWorld) {
-    let name = recent_row(world);
-    let symbol = world.frame.runs.iter().any(|run| {
-        run.text == "P"
-            && run.maximum[0] < name.minimum[0]
-            && (run.center()[1] - name.center()[1]).abs() < 8.
-    });
+    let row = recent_row(world);
+    let (left, _) = row.text.split_once(recent_name(world)).unwrap();
+    let symbol = left == "P"
+        || world.frame.runs.iter().any(|run| {
+            run.list == row.list
+                && run.text == "P"
+                && run.maximum[0] < row.minimum[0]
+                && (run.center()[1] - row.center()[1]).abs() < 8.
+        });
     assert!(symbol, "expected a type symbol before the name");
 }
 #[then("each visible row shows a pin control on the right")]
 fn row_pin(world: &mut ApplicationWorld) {
-    let name = recent_row(world);
-    let pin = world.frame.runs.iter().any(|run| {
-        run.text == "Pin"
-            && run.minimum[0] > name.maximum[0]
-            && (run.center()[1] - name.center()[1]).abs() < 8.
-    });
+    let row = recent_row(world);
+    let (_, right) = row.text.split_once(recent_name(world)).unwrap();
+    let pin = right == "Pin"
+        || world.frame.runs.iter().any(|run| {
+            run.list == row.list
+                && run.text == "Pin"
+                && run.minimum[0] > row.maximum[0]
+                && (run.center()[1] - row.center()[1]).abs() < 8.
+        });
     assert!(pin, "expected a pin control after the name");
 }
 #[then("the active part remains visible around the menu")]
