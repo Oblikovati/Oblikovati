@@ -86,6 +86,8 @@ fn expect_vertical(world: &mut ApplicationWorld, labels: &[&str]) {
 fn part_active(world: &mut ApplicationWorld) {
     let id = if super::ribbon_appearance::uses_appearance_fixture(world) {
         super::ribbon_appearance::open_appearance_part(world)
+    } else if world.state().document_type == Some(oblikovati_api::types::DOCUMENT_PART) {
+        world.active_id()
     } else {
         world.add_part()
     };
