@@ -20,6 +20,8 @@ drafts, and per-target display options.
 The [native command presentation scenarios](receipts/2026-11-24-ribbon-customization-presentation-3856/README.md)
 check small and large captions, large icon-only buttons, and a divider
 between two small command icons.
+The [native keyboard transfer scenario](receipts/2026-11-24-ribbon-customization-keyboard-transfer-3856/README.md)
+checks Enter in the source list and Tab followed by Space on Add.
 
 The Rust shell uses a fixed ribbon band across the window instead of the temporary
 floating command palette. The File menu and quick-access controls remain available.

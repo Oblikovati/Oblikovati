@@ -163,12 +163,18 @@ fn select_manage(world: &mut ApplicationWorld) {
 #[then("the Part Tools target is empty")]
 #[then("the Part | Manage target list is empty")]
 #[then("the Part | Tools custom target remains empty")]
+#[then("the Part | Tools target remains empty")]
 fn empty_target_list(world: &mut ApplicationWorld) {
     target_is_empty(world);
 }
 
 #[given("the Part | Tools custom target is empty")]
 fn empty_tools_panel(world: &mut ApplicationWorld) {
+    if diagnostics::window_geometry("Customize").is_some() {
+        assert_eq!(target_label(world), "Part|Tools");
+        target_is_empty(world);
+        return;
+    }
     world.click_text("Tools");
     no_user_commands(world);
 }

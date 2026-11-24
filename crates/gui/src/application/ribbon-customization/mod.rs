@@ -289,6 +289,7 @@ impl RibbonCustomization {
     fn transfer(&mut self, ui: &Ui) {
         ui.dummy([1., 55.]);
         let disabled = ui.begin_disabled(self.draft.source.is_none());
+        self.focus_add_from_source(ui);
         if ui.button(">##custom-add") {
             self.draft.add();
         }

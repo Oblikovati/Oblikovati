@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T13:12:53.318205195Z" time="16.189673778"><testcase name="Scenario: Add a selected command using the keyboard transfer button: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:993:3" time="16.189673778"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Add a selected command using the keyboard transfer button
+   ✔  Given a part is active in the MCAD Software
+   ✔  And ribbon customization is open with "All Commands" selected
+   ✔  And the Part | Tools custom target is empty
+   ✔  When the user selects "2D Sketches" in the available commands list
+   ✘  And the user presses Enter while the list has focus
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:998:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

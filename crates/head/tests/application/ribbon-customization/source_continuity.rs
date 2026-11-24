@@ -21,6 +21,7 @@ fn tools_target_is_initially_empty(world: &mut ApplicationWorld) {
 }
 
 #[then("\"2D Sketches\" remains selected in the available command list")]
+#[then("\"2D Sketches\" remains selected in the available commands list")]
 #[then("2D Sketches is highlighted in the available commands list")]
 fn sketches_remain_selected(world: &mut ApplicationWorld) {
     world.hover([800, 900]);
@@ -87,6 +88,7 @@ fn remove_staged_sketches(world: &mut ApplicationWorld) {
 }
 
 #[then("2D Sketches appears in the target list")]
+#[then("\"2D Sketches\" appears in the Part | Tools target")]
 #[then("2D Sketches remains staged on Part Tools")]
 #[then("\"2D Sketches\" remains in the target list")]
 fn target_has_sketches(world: &mut ApplicationWorld) {

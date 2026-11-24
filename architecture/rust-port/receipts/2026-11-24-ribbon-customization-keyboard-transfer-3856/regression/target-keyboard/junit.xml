@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:18:08.43870759Z" time="29.917234875"><testcase name="Scenario: Switch customization targets by keyboard with an edit pending: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:857:3" time="29.917234875"><system-out><![CDATA[  Scenario: Switch customization targets by keyboard with an edit pending
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Ribbon customization dialog shows All Commands and an empty Part Tools target
+   ✔  And the Part Manage target is empty
+   ✔  When the user double-clicks "2D Sketches" in the available list
+   ✔  And the user opens the custom panel target selector
+   ✔  And the user presses Down and Enter to select Part Manage
+   ✔  Then the Part Manage custom panel list is empty
+   ✔  And "2D Sketches" is available in the source list
+   ✔  And Apply and cancels are enabled
+   ✔  When the user opens the custom panel target selector
+   ✔  And the user presses Up and Enter to select Part Tools
+   ✔  Then the Part Tools target has a pending-change marker
+   ✔  And "2D Sketches" appears in the custom panel list
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+   ✔  And no User Commands panel is visible on the Tools ribbon
+]]></system-out></testcase></testsuite></testsuites>

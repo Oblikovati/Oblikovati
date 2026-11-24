@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Keyboard navigation of the available ribbon commands.
-use super::{Command, RibbonCustomization};
+use super::{Command, ListFocus, RibbonCustomization};
 use imgui::{Key, Ui};
 
 #[derive(Clone, Copy)]
@@ -13,6 +13,20 @@ enum Navigation {
 }
 
 impl RibbonCustomization {
+    pub(super) fn focus_add_from_source(&mut self, ui: &Ui) {
+        let in_source = matches!(self.list_focus, Some(ListFocus::Source)) && self.source_focused;
+        let io = ui.io();
+        let plain_tab = !io.key_shift
+            && !io.key_ctrl
+            && !io.key_alt
+            && !io.key_super
+            && ui.is_key_pressed_no_repeat(Key::Tab);
+        if in_source && plain_tab && self.draft.source.is_some() {
+            ui.set_keyboard_focus_here();
+            self.navigation_consumed = true;
+        }
+    }
+
     pub(super) fn navigate_source(&mut self, ui: &Ui) -> bool {
         if ui.io().key_ctrl || ui.io().key_alt || ui.io().key_super {
             return false;

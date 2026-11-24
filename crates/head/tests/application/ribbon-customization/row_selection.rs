@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Selection gestures for the ribbon customization lists.
 use super::*;
+use oblikovati_viewport::ViewportPhysicalKey;
+
+#[when("the user presses Enter while the list has focus")]
+fn press_enter_in_source_list(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::Enter, false);
+}
+
+#[when("the user presses Tab and then Space")]
+fn tab_to_transfer_and_press_space(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::Tab, false);
+    world.key(ViewportPhysicalKey::Space, false);
+}
 
 #[given("All Commands lists \"2D Sketches\" immediately before \"3D Annotations\"")]
 fn available_rows_in_order(world: &mut ApplicationWorld) {
