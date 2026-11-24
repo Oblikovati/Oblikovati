@@ -134,26 +134,14 @@ fn opening_an_assembly_displays_its_referenced_part() {
     )
     .expect("expected the unselected neutral occurrence");
     let point = std::array::from_fn(|axis| ((minimum[axis] + maximum[axis]) / 2) as i32);
-    let select_button = world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| run.text == "Select")
-        .min_by(|a, b| a.center()[1].total_cmp(&b.center()[1]))
-        .unwrap()
-        .center();
-    world.click(super::super::super::diagnostics::pointer_pixels(
-        select_button,
-    ));
+    world.click(super::super::super::toolbar_icon_center("Select"));
     world.click_text("Faces");
     world.click(point);
     assert_eq!(
         world.state().browser.as_ref().unwrap().selected_occurrence,
         Some(other)
     );
-    world.click(super::super::super::diagnostics::pointer_pixels(
-        select_button,
-    ));
+    world.click(super::super::super::toolbar_icon_center("Select"));
     world.click_text("Components");
     world.click(point);
     assert_eq!(

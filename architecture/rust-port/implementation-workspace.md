@@ -126,6 +126,11 @@ identity collision/release, and saved-document reopen pass at the fixed baseline
 This is file lifecycle evidence for the ported recipe domains, not a GUI or
 feature-evaluation claim.
 
+The native assembly-opening regression drives the rendered Select toolbar
+icon. It checks how Faces and Components affect occurrence picking in the
+reopened assembly. See the
+[native document checks](receipts/2026-11-24-native-document-oracles-4078/README.md).
+
 ## Save As and save-before-close — partial R2
 
 Tracking: [#3618](https://github.com/Oblikovati/Oblikovati/issues/3618).

@@ -44,6 +44,11 @@ editing, first Save As, close, and reopen. The Go
 `TestDocumentsCreateListActivate` reference test also passes locally. These checks
 cover recipe lifecycle behavior, not component-definition or geometry parity.
 
+The reopened drawing regression checks the authored active sheet in the
+native window. It measures the paper inside the visible document viewport
+and compares its width and height with portrait A3.
+See the [native document checks](receipts/2026-11-24-native-document-oracles-4078/README.md).
+
 ## Remaining creation work
 
 Port subtype registration and flavor setup;

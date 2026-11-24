@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T14:48:55.578497065Z" time="74.0305296"><testcase name="Scenario: Open an assembly in express mode and load it fully: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-opening/document-opening.feature:178:3" time="74.0305296"><failure type="Step Panicked" message="Step panicked. Captured output: expected &quot;Finish&quot; in rendered text &quot;Model\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\ngearbox\nRepresentations\nRelationships\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nVisible:1\nEndofAssembly\nSelectaparttobrowseitsassets.\nClose\nOpeneddocument4:/tmp/.tmp9KJwbm/models/gearbox.oad\nRibbonDisplay\nv\nv\n...\ngearbox\nFile\nAssemble\nTools\nManage\nView\nPlace\nCreate\nComponent\nDocuments\nHome\nDrawing1*\ngearbox&quot;"/><system-out><![CDATA[  Scenario: Open an assembly in express mode and load it fully
+   ✔  Given a drawing document is active in the MCAD Software
+   ✔  And a saved assembly with visible components is available and not already open
+   ✔  When the user opens the file selection dialog
+   ✔  And the user selects the assembly and enable Load in Express Mode
+   ✔  And the user chooses Open
+   ✔  Then the assembly opens in a new active document tab
+   ✔  And its component geometry is visible in the viewport
+   ✔  And the assembly browser lists its components
+   ✔  And the assembly ribbon offers Load Full
+   ✔  And the drawing tab remains available
+   ✔  When the user chooses Load Full
+   ✔  Then the assembly remains active with its component geometry displayed
+   ✔  And Load Full is no longer displayed in the ribbon
+   ✘  And Finish and Simplify are visible and enabled as ribbon commands; neither is invoked
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/document-opening/document-opening.feature:192:5
+      Matched: crates/head/src/../tests/application/document-opening/express_fixture.rs:141:1
+      Step panicked. Captured output: expected "Finish" in rendered text "Model\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\ngearbox\nRepresentations\nRelationships\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nVisible:1\nEndofAssembly\nSelectaparttobrowseitsassets.\nClose\nOpeneddocument4:/tmp/.tmp9KJwbm/models/gearbox.oad\nRibbonDisplay\nv\nv\n...\ngearbox\nFile\nAssemble\nTools\nManage\nView\nPlace\nCreate\nComponent\nDocuments\nHome\nDrawing1*\ngearbox"
+      ApplicationWorld {
+          text: "Model\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\ngearbox\nRepresentations\nRelationships\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nVisible:1\nEndofAssembly\nSelectaparttobrowseitsassets.\nClose\nOpeneddocument4:/tmp/.tmp9KJwbm/models/gearbox.oad\nRibbonDisplay\nv\nv\n...\ngearbox\nFile\nAssemble\nTools\nManage\nView\nPlace\nCreate\nComponent\nDocuments\nHome\nDrawing1*\ngearbox",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

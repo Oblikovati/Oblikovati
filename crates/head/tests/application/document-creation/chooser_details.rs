@@ -392,26 +392,34 @@ fn reopened_drawing_displays_its_authored_active_sheet() {
         .unwrap();
     world.pump(Vec::new());
     world.expect_text("Sheet 2 of 2");
-    let capture = super::super::super::super::capture_framebuffer(&mut world.app().window.native);
-    let pixel = |x: usize, y: usize| {
-        let at = (y * capture.extent[0] as usize + x) * 4;
-        &capture.rgba[at..at + 3]
-    };
-    let width = capture.extent[0] as usize;
-    let height = capture.extent[1] as usize;
-    assert!(
-        pixel(width * 59 / 100, height * 45 / 100)
-            .iter()
-            .all(|channel| *channel > 200),
-        "expected portrait paper at its center"
-    );
-    assert!(
-        pixel(width * 35 / 100, height * 45 / 100)
-            .iter()
-            .all(|channel| *channel < 200),
-        "expected workspace beside portrait paper"
-    );
+    expect_portrait_paper(&mut world);
     world.close();
+}
+
+fn expect_portrait_paper(world: &mut ApplicationWorld) {
+    let [left, top, right, bottom] = world.viewport_bounds().map(|value| value as usize);
+    let capture = super::super::super::super::capture_framebuffer(&mut world.app().window.native);
+    let stride = capture.extent[0] as usize * 4;
+    let pixel = |x, y| &capture.rgba[y * stride + x * 4..y * stride + x * 4 + 3];
+    let [center_x, center_y] = [(left + right) / 2, (top + bottom) / 2];
+    let paper = pixel(center_x, center_y);
+    assert!(
+        paper.iter().all(|channel| *channel > 200),
+        "paper color {paper:?}"
+    );
+    let [x0, x1] = paper_span((left..right).filter(|&x| pixel(x, center_y) == paper));
+    let [y0, y1] = paper_span((top..bottom).filter(|&y| pixel(center_x, y) == paper));
+    assert!(left < x0 && x1 + 1 < right && top < y0 && y1 + 1 < bottom);
+    let [width, height] = [x1 - x0 + 1, y1 - y0 + 1];
+    assert!(
+        width.abs_diff(height * 297 / 420) <= 2,
+        "paper {width} × {height}: expected portrait A3 (297 × 420 mm)"
+    );
+}
+
+fn paper_span(mut pixels: impl DoubleEndedIterator<Item = usize>) -> [usize; 2] {
+    let first = pixels.next().expect("expected rendered paper");
+    [first, pixels.next_back().unwrap_or(first)]
 }
 
 #[path = "chooser_details/drawing_projection.rs"]
