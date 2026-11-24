@@ -1,0 +1,5 @@
+
+running 1 test
+test native::gui_loop_tests::application_bdd::document_opening::native_existing::native_input_activates_existing_part_without_an_extra_tab ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1616 filtered out; finished in 25.62s
