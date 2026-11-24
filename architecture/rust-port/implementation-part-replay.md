@@ -54,6 +54,13 @@ sketches, and open transactions retain the full-replay path. General dirty-prefi
 validity levels, achieved tolerance budgets, and operation-result requirements
 remain open.
 
+Sketch inspection now checks the requested sketch's placement and point
+projections before asking the document owner for named datums. An independent
+sketch Get starts zero named replays even when another sketch in the same Part
+uses a face. A Get for the face sketch still fetches current owner datums.
+List requests check the dependencies of every sketch they return.
+See the [sketch inspection replay receipt](receipts/2026-11-24-sketch-inspection-replay-4079/README.md).
+
 Run `CARGO_NET_OFFLINE=true make gate` for the complete local Linux checks.
 
 A regression first proved that a raw snapshot with a prism construction-datum

@@ -20,6 +20,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         if self.part_update.is_none() && self.part_topology.is_none() {
             return Ok(None);
         }
+        if !crate::sketches::inspection::query_reads_work_geometry(snapshot, method, request)? {
+            return Ok(None);
+        }
         let owner: &mut dyn crate::PartUpdateAccess<O, W, F> = match self.part_update.as_deref_mut()
         {
             Some(owner) => owner,

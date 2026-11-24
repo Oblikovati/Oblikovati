@@ -3,6 +3,30 @@ use super::*;
 use oblikovati_model::document_sketch::{PlacedSketch, PlacedSketchHealth, SketchEvaluation};
 use oblikovati_model::feature::work_geometry::WorkGeometryEvaluation;
 
+pub(crate) fn query_reads_work_geometry(
+    snapshot: &DocumentSnapshot,
+    method: &str,
+    request: &[u8],
+) -> Result<bool, Error> {
+    let reads_work_geometry = |sketch: &PlacedSketch| {
+        Ok(!sketch.point_projections().is_empty()
+            || snapshot
+                .sketch_plane_needs_work_geometry(sketch.id())
+                .map_err(api_error)?)
+    };
+    if method == METHOD_SKETCH_GET {
+        let args: SketchArgs = crate::decode(method, request)?;
+        let id = sketch_at(snapshot, args.sketch_index)?;
+        return reads_work_geometry(snapshot.sketches.get(id).map_err(api_error)?);
+    }
+    for sketch in snapshot.sketches.sketches() {
+        if reads_work_geometry(sketch)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
+}
+
 pub(crate) fn query<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     method: &str,

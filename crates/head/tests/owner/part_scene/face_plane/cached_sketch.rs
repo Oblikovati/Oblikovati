@@ -1,8 +1,74 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Inspect face sketches against current, policy-matched part results.
 use super::*;
-use oblikovati_automation::PartSketchContinuity;
+use oblikovati_api::wire::SketchArgs;
+use oblikovati_automation::{FileHost, PartReplayService, PartSketchContinuity};
 use oblikovati_model::identity::DocumentGuid;
+
+#[test]
+fn inspecting_one_independent_sketch_does_not_replay_an_unrelated_face_sketch() {
+    let policy = crate::part_scene::resolution_policy::desktop_policy();
+    let (owner, _) = owner();
+    let mut owner = owner.with_extrusion_policy(policy).unwrap();
+    let document = open_prism(&mut owner, false);
+    assert!(
+        owner
+            .start_sketch_on_face_line(document, [[1., 1., 10.], [0., 0., -1.]])
+            .unwrap()
+    );
+    owner.finish_sketch_edit().unwrap();
+    owner
+        .files
+        .commands(document)
+        .unwrap()
+        .run("Change depth", |snapshot, _| {
+            let id = snapshot.parameters.find("depth").unwrap();
+            snapshot.parameters.set_expression(id, "3 cm")
+        })
+        .unwrap();
+    let workspace = owner.files.workspace();
+    let session = workspace.session(document).unwrap();
+    let foreign = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let foreign_resolver =
+        PartSketchContinuity::new(foreign, Some(policy), session.sketch_solve_options());
+    let sketch = SketchArgs { sketch_index: 0 };
+    let readonly = Client::new(
+        oblikovati_automation::FileQueryHost::new(&owner.files)
+            .with_part_sketch_continuity(foreign_resolver),
+    );
+    assert!(readonly.sketch().get(&sketch).unwrap().healthy);
+    assert!(
+        readonly
+            .sketch()
+            .list()
+            .unwrap_err()
+            .to_string()
+            .contains("expected sketch continuity owner")
+    );
+
+    let mut replay = PartReplayService::with_policy(policy).unwrap();
+    let directed = SketchArgs { sketch_index: 1 };
+    assert!(inspect_with_replay(&mut owner, &mut replay, &sketch).healthy);
+    assert_eq!(replay.replay_count(), 0);
+    assert!(inspect_with_replay(&mut owner, &mut replay, &directed).healthy);
+    // Moving the face updates the sketch solve before publishing the new generation.
+    assert_eq!(replay.replay_count(), 2);
+    assert!(inspect_with_replay(&mut owner, &mut replay, &directed).healthy);
+    assert_eq!(replay.replay_count(), 2);
+}
+
+fn inspect_with_replay(
+    owner: &mut TestOwner,
+    replay: &mut PartReplayService,
+    sketch: &SketchArgs,
+) -> oblikovati_api::wire::SketchInfo {
+    Client::new(
+        FileHost::new(&mut owner.files, &mut owner.guids, &owner.version).with_part_update(replay),
+    )
+    .sketch()
+    .get(sketch)
+    .unwrap()
+}
 
 #[test]
 fn sketch_inspection_reuses_only_current_matching_datums() {

@@ -95,22 +95,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
             if [METHOD_SKETCH_LIST, METHOD_SKETCH_GET].contains(&method)
                 && let Some(resolver) = &self.part_sketch_continuity
             {
-                let document = crate::sketches::owner::active_sketch_host(self.files)?;
-                let datums = self
-                    .sketch_datums
-                    .get_or_init(|| {
-                        resolver
-                            .datums_for_document(self.files.workspace(), document)
-                            .map_err(|error| error.to_string())
-                    })
-                    .as_ref()
-                    .map_err(|error| Error(error.clone()))?;
+                let datums = self.sketch_datums_for_query(resolver, method, request)?;
                 return crate::sketches::inspection::query_with_datums(
-                    self.files,
-                    method,
-                    request,
-                    editing,
-                    Some(datums),
+                    self.files, method, request, editing, datums,
                 );
             }
             return crate::sketches::query(self.files, method, request, editing);
@@ -171,6 +158,36 @@ pub(crate) fn pending_sketch_edit<O: TransactionObserver, W: WorkspaceObserver>(
         .map_or(editing, |target| target.map(|sketch| (document, sketch)))
 }
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileQueryHost<'_, O, W, F> {
+    fn sketch_datums_for_query(
+        &self,
+        resolver: &crate::PartSketchContinuity,
+        method: &str,
+        request: &[u8],
+    ) -> Result<Option<&oblikovati_model::feature::work_geometry::WorkGeometryEvaluation>, Error>
+    {
+        let document = crate::sketches::owner::active_sketch_host(self.files)?;
+        let workspace = self.files.workspace();
+        let session = workspace
+            .session(document)
+            .map_err(|error| Error(error.to_string()))?;
+        if !crate::sketches::inspection::query_reads_work_geometry(
+            session.snapshot(),
+            method,
+            request,
+        )? {
+            return Ok(None);
+        }
+        self.sketch_datums
+            .get_or_init(|| {
+                resolver
+                    .datums_for_document(workspace, document)
+                    .map_err(|error| error.0)
+            })
+            .as_ref()
+            .map(Some)
+            .map_err(|error| Error(error.clone()))
+    }
+
     fn documents(&self) -> Result<Vec<DocumentInfo>, Error> {
         self.files
             .workspace()
