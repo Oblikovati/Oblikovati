@@ -24,3 +24,16 @@ file-browser edits. The source commit was
 `b576445b98cffd686dcc05aa8c017de2a591c8c8`.
 The three pinned scenarios gained R0 baseline records.
 See [#3896](https://github.com/Oblikovati/Oblikovati/issues/3896).
+
+## X11 origin visibility round trips
+
+The standalone X11 tests at `f1d5ac110` still used the fixed click. The
+plane remained highlighted after hiding it, and the shown axis did not
+return to its muted color. Both tests now use the unobstructed viewport
+point and check that the row highlight clears after each toggle.
+
+All six standalone origin-menu tests and strict desktop Clippy passed.
+The pinned [plane visibility](x11-origin-plane/cucumber.json) and
+[axis visibility](x11-origin-axis/cucumber.json) scenarios each passed
+11 steps. The feature SHA-256 stayed at
+`603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e`.

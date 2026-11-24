@@ -15,9 +15,11 @@ fn native_menu(world: &mut ApplicationWorld, label: &str) {
     settle(world);
 }
 
-fn clear_selection(world: &mut ApplicationWorld) {
-    x11_input::click([1300, 800]);
+fn clear_selection(world: &mut ApplicationWorld, label: &str) {
+    let empty = super::super::super::viewport_entity_selection::empty_viewport_point(world);
+    x11_input::click(empty);
     settle(world);
+    assert!(!row_accent(world, label), "expected {label} deselected");
 }
 
 #[test]
@@ -29,13 +31,13 @@ fn origin_plane_visibility_round_trips_through_native_menu() {
     plane_menu(&mut world);
     assert!(!world.checked("Visibility"));
     native_click(&mut world, "Visibility");
-    clear_selection(&mut world);
+    clear_selection(&mut world, YZ);
     plane_stays(&mut world);
     world.save_capture("origin-plane-visible");
     native_menu(&mut world, YZ);
     assert!(world.checked("Visibility"));
     native_click(&mut world, "Visibility");
-    clear_selection(&mut world);
+    clear_selection(&mut world, YZ);
     assert!(!plane_shows_at(&mut world, YZ));
     expect_solid_visible(&mut world);
     world.close();
@@ -50,12 +52,12 @@ fn origin_axis_visibility_round_trips_through_native_menu() {
     axis_lit(&mut world);
     axis_menu_marks(&mut world);
     native_click(&mut world, "Visibility");
-    clear_selection(&mut world);
+    clear_selection(&mut world, "X Axis");
     axis_stays(&mut world);
     native_menu(&mut world, "X Axis");
     assert!(world.checked("Visibility"));
     native_click(&mut world, "Visibility");
-    clear_selection(&mut world);
+    clear_selection(&mut world, "X Axis");
     axis_hidden(&mut world);
     world.close();
 }

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T15:45:40.019435417Z" time="51.130354927"><testcase name="Scenario: Show and hide an origin axis from its browser menu: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:243:3" time="51.130354927"><system-out><![CDATA[  Scenario: Show and hide an origin axis from its browser menu
+   ✔  Given an active part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded and the X Axis is hidden
+   ✔  When the user right-clicks the X Axis row
+   ✔  Then the row is highlighted and the axis is highlighted in blue in the viewport
+   ✔  And Visibility is unchecked and Auto Resize is checked in the context menu
+   ✔  When the user chooses Visibility and clicks empty viewport space
+   ✔  Then the axis remains visible as a line beside the block
+   ✔  When the user right-clicks the X Axis row again
+   ✔  Then Visibility is checked in the context menu
+   ✔  When the user chooses Visibility again
+   ✔  Then the axis is hidden and the block remains visible
+]]></system-out></testcase></testsuite></testsuites>
