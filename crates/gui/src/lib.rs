@@ -121,6 +121,7 @@ pub use commands::{
 pub use engine::{
     GuiFrameEngine, GuiFrameOutput, GuiFrameRequest, GuiWindowAction, GuiWindowControls,
 };
+pub use oblikovati_model::feature::sketch_prism::SketchPrismDirection as GuiExtrudeDirection;
 pub use sketch_pick_cue::{GuiModelPickCue, GuiSketchPickCue};
 mod sketch_pick_cue;
 pub use input::{GuiInputCapture, GuiInputEvent, GuiKey, GuiModifiers, GuiPointerButton};

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T16:37:42.165365833Z" time="33.389755989"><testcase name="Scenario: extrusion-03a Select Symmetric direction: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature:29:3" time="33.389755989"><system-out><![CDATA[  Scenario: extrusion-03a Select Symmetric direction
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given the rectangle extrusion preview is open at Default direction
+   ✔  When Symmetric is selected in Direction
+   ✔  Then the preview extends on both sides of the source plane
+]]></system-out></testcase></testsuite></testsuites>

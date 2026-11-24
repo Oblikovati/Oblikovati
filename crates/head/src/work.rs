@@ -119,14 +119,14 @@ pub trait HeadWork: HeadSketchWork {
         ))
     }
     /// Apply an Extrude dialog request through the document command owner.
-    /// Example: `work.extrude_from_gui(document, sketch, 0, "10 mm", false)?`.
+    /// Example: `work.extrude_from_gui(document, sketch, 0, "10 mm", Default::default())?`.
     fn extrude_from_gui(
         &mut self,
         document: u64,
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
         profile: i64,
         distance: &str,
-        _flipped: bool,
+        _direction: oblikovati_gui::GuiExtrudeDirection,
     ) -> Result<bool, String> {
         Err(format!(
             "extrude document {document}, sketch {sketch:?}, profile {profile}, distance {distance:?}: expected a certified extrusion owner"

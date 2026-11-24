@@ -61,9 +61,15 @@ fn validate_scalar_source(source: DatumLength, axis: usize) -> Result<(), Sketch
 }
 impl SketchPrismDefinition {
     pub(super) fn validate_normal_source(&self, normal: f64) -> Result<(), SketchPrismCause> {
-        if self.reversed_normal && normal <= 0. {
+        if self.direction != SketchPrismDirection::Positive && normal <= 0. {
             return Err(SketchPrismCause::Definition(format!(
-                "flipped prism depth {normal:?}: expected a positive authored distance"
+                "prism {:?} depth {normal:?}: expected a positive authored distance",
+                self.direction
+            )));
+        }
+        if self.direction == SketchPrismDirection::Symmetric && normal / 2. == 0. {
+            return Err(SketchPrismCause::Definition(format!(
+                "symmetric prism depth {normal:?}: expected a representable half-distance"
             )));
         }
         if normal == 0. {

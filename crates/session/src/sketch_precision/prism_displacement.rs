@@ -4,7 +4,9 @@ use super::SessionConditionalSketch;
 use crate::TransactionObserver;
 use oblikovati_model::{
     feature::{
-        FeatureId, part::PartFeatureDefinition, sketch_prism::SketchPrismDefinition,
+        FeatureId,
+        part::PartFeatureDefinition,
+        sketch_prism::{SketchPrismDefinition, SketchPrismDirection},
         work_geometry::DatumLength,
     },
     history::ConditionalProjectedSketchRoot,
@@ -120,6 +122,11 @@ impl<'s, O: TransactionObserver> SessionConditionalSketch<'s, O> {
         constants: [Option<[f64; 2]>; 3],
     ) -> Result<ConditionalPrismDisplacement<'e, 's, O>, String> {
         let definition = self.prism_definition(feature)?;
+        if definition.direction() == SketchPrismDirection::Symmetric {
+            return Err(format!(
+                "feature {feature:?}: conditional displacement expects a sweep from the sketch plane"
+            ));
+        }
         let axes = self.displacement_axes(definition, constants)?;
         require_nonzero_normal(axes[2].bounds)?;
         Ok(ConditionalPrismDisplacement {
@@ -163,7 +170,7 @@ impl<'s, O: TransactionObserver> SessionConditionalSketch<'s, O> {
             .map_err(|error| error.to_string())?;
         let mut axes = Vec::with_capacity(3);
         for (index, source) in definition.displacement().into_iter().enumerate() {
-            let flipped = index == 2 && definition.normal_is_reversed();
+            let flipped = index == 2 && definition.direction() == SketchPrismDirection::Negative;
             let value = resolved.displacement[index];
             let mut axis = axis_bound(
                 source,

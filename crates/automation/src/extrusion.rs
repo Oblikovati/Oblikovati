@@ -9,7 +9,7 @@ use oblikovati_model::{
     expression::Expression,
     feature::{
         FeatureId,
-        sketch_prism::{SketchPrismDefinition, SketchPrismSelection},
+        sketch_prism::{SketchPrismDefinition, SketchPrismDirection, SketchPrismSelection},
         work_geometry::DatumLength,
     },
     history::{DocumentSnapshot, RecipeReservations},
@@ -177,11 +177,12 @@ pub fn prepare_extrusion(
         [DatumLength::Constant(0.), DatumLength::Constant(0.), depth],
     )
     .map_err(api_error)?;
-    let definition = if input.direction.trim().eq_ignore_ascii_case("negative") {
-        definition.reverse_normal().map_err(api_error)?
-    } else {
-        definition
+    let direction = match input.direction.trim().to_ascii_lowercase().as_str() {
+        "negative" => SketchPrismDirection::Negative,
+        "symmetric" => SketchPrismDirection::Symmetric,
+        _ => SketchPrismDirection::Positive,
     };
+    let definition = definition.with_direction(direction).map_err(api_error)?;
     let name = next_name(snapshot)?;
     Ok(PreparedExtrusion {
         name,
@@ -250,7 +251,7 @@ fn require_supported(input: &Extrude) -> Result<(), Error> {
         (
             "direction",
             input.direction.as_str(),
-            &["positive", "negative"][..],
+            &["positive", "negative", "symmetric"][..],
         ),
     ] {
         let normalized = value.trim();

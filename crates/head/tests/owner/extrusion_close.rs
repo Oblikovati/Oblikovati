@@ -12,7 +12,7 @@ fn closing_the_document_clears_its_preview_from_the_scene() {
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,
         distance: "width".into(),
-        flipped: false,
+        direction: Default::default(),
     };
     owner.extrusion_preview_from_gui(Some(&preview)).unwrap();
     assert!(

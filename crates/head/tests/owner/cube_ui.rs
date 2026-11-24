@@ -2,6 +2,7 @@
 use super::slot_input::deliver;
 use super::*;
 use crate::{HeadWork, placement_test_inputs::*};
+use oblikovati_gui::GuiExtrudeDirection::Positive;
 use oblikovati_gui::GuiSketchTool;
 
 #[test]
@@ -44,7 +45,7 @@ fn mouse_drawn_parameter_circle_extrudes_through_the_desktop_owner() {
     );
     owner.edit_sketch_from_gui(false).unwrap();
     owner
-        .extrude_from_gui(edit.document, edit.sketch, 0, "size", false)
+        .extrude_from_gui(edit.document, edit.sketch, 0, "size", Positive)
         .unwrap();
     let scene = owner.take_scene().unwrap().unwrap();
     assert_eq!(scene.status.visible_bodies, 1);

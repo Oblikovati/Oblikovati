@@ -10,6 +10,8 @@ pub struct SketchPrismRecipe {
     pub displacement: [DatumLength; 3],
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub reversed_normal: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub centered_normal: bool,
 }
 impl SketchPrismDefinition {
     /// Capture only authored inputs; example: `serde_json::to_string(&definition.recipe())?`.
@@ -19,7 +21,8 @@ impl SketchPrismDefinition {
             sketch: self.sketch,
             selection: self.selection.clone(),
             displacement: self.displacement,
-            reversed_normal: self.reversed_normal,
+            reversed_normal: self.direction == SketchPrismDirection::Negative,
+            centered_normal: self.direction == SketchPrismDirection::Symmetric,
         }
     }
     /// Validate the saved version and sources before adoption; example: `SketchPrismDefinition::from_recipe(&recipe)?`.
@@ -33,10 +36,20 @@ impl SketchPrismDefinition {
                 ))),
             });
         }
-        let definition = Self::new(recipe.sketch, recipe.selection.clone(), recipe.displacement)?;
-        if recipe.reversed_normal {
-            return definition.reverse_normal();
-        }
-        Ok(definition)
+        let direction = match (recipe.reversed_normal, recipe.centered_normal) {
+            (false, false) => SketchPrismDirection::Positive,
+            (true, false) => SketchPrismDirection::Negative,
+            (false, true) => SketchPrismDirection::Symmetric,
+            (true, true) => {
+                return Err(SketchPrismError {
+                    sketch: recipe.sketch,
+                    cause: Box::new(SketchPrismCause::Definition(
+                        "prism recipe: expected only one normal direction".into(),
+                    )),
+                });
+            }
+        };
+        Self::new(recipe.sketch, recipe.selection.clone(), recipe.displacement)?
+            .with_direction(direction)
     }
 }

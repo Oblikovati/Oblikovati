@@ -45,10 +45,10 @@ impl<
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
         profile: i64,
         distance: &str,
-        flipped: bool,
+        direction: oblikovati_gui::GuiExtrudeDirection,
     ) -> Result<bool, String> {
         self.clear_extrusion_preview();
-        let request = self.extrusion_request(document, sketch, profile, distance, flipped)?;
+        let request = self.extrusion_request(document, sketch, profile, distance, direction)?;
         oblikovati_api::client::Client::new(self.document_host())
             .features()
             .add_feature(&request)
@@ -61,17 +61,18 @@ impl<
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
         profile: i64,
         distance: &str,
-        flipped: bool,
+        direction: oblikovati_gui::GuiExtrudeDirection,
     ) -> Result<oblikovati_api::wire::featureargs::Extrude, String> {
         Ok(oblikovati_api::wire::featureargs::Extrude {
             sketch_index: self.extrusion_sketch_index(document, sketch)?,
             profile_index: profile,
             distance: distance.into(),
-            direction: if flipped {
-                "negative".into()
-            } else {
-                String::new()
-            },
+            direction: match direction {
+                oblikovati_gui::GuiExtrudeDirection::Positive => "",
+                oblikovati_gui::GuiExtrudeDirection::Negative => "negative",
+                oblikovati_gui::GuiExtrudeDirection::Symmetric => "symmetric",
+            }
+            .into(),
             ..Default::default()
         })
     }

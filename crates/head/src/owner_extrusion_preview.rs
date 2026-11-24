@@ -142,7 +142,7 @@ impl<
             preview.sketch,
             preview.profile,
             &preview.distance,
-            preview.flipped,
+            preview.direction,
         )?;
         let presentation = self.preview_extrusion_from_gui(document, &request)?;
         let scene = oblikovati_viewport::ViewportScene::from_prism(

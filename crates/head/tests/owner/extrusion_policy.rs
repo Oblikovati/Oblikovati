@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use oblikovati_gui::GuiExtrudeDirection::Positive;
 #[test]
 fn desktop_resolution_supports_preview_commit_and_parameter_replay() {
     let (owner, _) = owner();
@@ -13,7 +14,7 @@ fn desktop_resolution_supports_preview_commit_and_parameter_replay() {
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,
         distance: "width".into(),
-        flipped: false,
+        direction: Default::default(),
     };
     owner.extrusion_preview_from_gui(Some(&preview)).unwrap();
     assert!(
@@ -26,7 +27,7 @@ fn desktop_resolution_supports_preview_commit_and_parameter_replay() {
             .is_empty()
     );
     owner
-        .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", false)
+        .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", Positive)
         .unwrap();
     owner.take_scene().unwrap().unwrap();
     assert_cube(&owner, document, 1.);
@@ -91,7 +92,7 @@ fn stale_extrusion_request_does_not_replace_the_current_preview() {
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,
         distance: "width".into(),
-        flipped: false,
+        direction: Default::default(),
     };
     set_size(&mut owner, "20 mm");
     preview.generation = Some(

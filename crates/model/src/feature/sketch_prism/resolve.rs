@@ -3,11 +3,13 @@ use super::*;
 use crate::{
     feature::{FeatureReadFootprint, FeatureReadKey},
     history::{DocumentSnapshot, ResolvedDocumentSketch},
+    sketch::SketchPlane,
 };
 /// Current immutable inputs borrowed from their owners; never a saved frame or a stored kernel result.
 #[derive(Debug)]
 pub struct ResolvedSketchPrism<'a> {
     pub sketch: ResolvedDocumentSketch<'a>,
+    pub sweep_start: SketchPlane,
     pub selection: &'a SketchPrismSelection,
     pub displacement: [f64; 3],
 }
@@ -41,14 +43,27 @@ impl SketchPrismDefinition {
         let mut displacement = self.resolve_displacement(snapshot)?;
         self.validate_normal_source(displacement[2])
             .map_err(|cause| self.decline(cause))?;
-        if self.reversed_normal {
+        if self.direction == SketchPrismDirection::Negative {
             displacement[2] = -displacement[2];
         }
+        let sweep_start = self.sweep_start(sketch.plane, displacement[2])?;
         Ok(ResolvedSketchPrism {
             sketch,
+            sweep_start,
             selection: &self.selection,
             displacement,
         })
+    }
+    fn sweep_start(&self, plane: SketchPlane, depth: f64) -> Result<SketchPlane, SketchPrismError> {
+        if self.direction != SketchPrismDirection::Symmetric {
+            return Ok(plane);
+        }
+        let mut start = plane.recipe();
+        let normal = plane.normal();
+        start.origin =
+            std::array::from_fn(|axis| normal[axis].mul_add(-depth / 2., start.origin[axis]));
+        SketchPlane::from_recipe(start, plane.options())
+            .map_err(|cause| self.decline(SketchPrismCause::Sketch(cause)))
     }
     fn resolve_displacement(
         &self,

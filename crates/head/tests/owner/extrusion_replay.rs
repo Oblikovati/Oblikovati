@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use oblikovati_gui::GuiExtrudeDirection::Positive;
 
 #[test]
 fn append_candidate_adoption_checks_document_policy_and_transition() {
@@ -8,7 +9,7 @@ fn append_candidate_adoption_checks_document_policy_and_transition() {
     let document = open_sketch(&mut owner);
     assert!(
         owner
-            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", false)
+            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", Positive)
             .unwrap()
     );
     let policy = oblikovati_martensite::PrismResolutionPolicy::Fixed(resolution());
@@ -104,7 +105,7 @@ fn certified_extrusion_rejects_foreign_identity_and_policy() {
     let document = open_sketch(&mut owner);
     assert!(
         owner
-            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", false)
+            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", Positive)
             .unwrap()
     );
     let policy = oblikovati_martensite::PrismResolutionPolicy::Fixed(resolution());
@@ -165,7 +166,7 @@ fn appended_preview_matches_full_replay_faces() {
     let document = open_sketch(&mut owner);
     assert!(
         owner
-            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", false)
+            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", Positive)
             .unwrap()
     );
     let workspace = owner.files.workspace();
@@ -222,7 +223,7 @@ fn extrusion_commit_publishes_the_certified_document_result_before_display() {
     let document = open_sketch(&mut owner);
     assert!(
         owner
-            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", false)
+            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", Positive)
             .unwrap()
     );
     let session = owner.files.workspace().session(document).unwrap();
@@ -242,7 +243,7 @@ fn second_extrusion_reuses_the_current_document_prefix() {
     let document = open_sketch(&mut owner);
     assert!(
         owner
-            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", false)
+            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", Positive)
             .unwrap()
     );
     let policy = oblikovati_martensite::PrismResolutionPolicy::Fixed(resolution());
@@ -265,7 +266,7 @@ fn second_extrusion_reuses_the_current_document_prefix() {
         .unwrap();
     assert!(
         owner
-            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", false)
+            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", Positive)
             .unwrap()
     );
     let session = owner.files.workspace().session(document).unwrap();
@@ -292,7 +293,7 @@ fn repeated_extrusion_previews_reuse_the_current_part_and_cancel_cleanly() {
     let document = open_sketch(&mut owner);
     assert!(
         owner
-            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", false)
+            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", Positive)
             .unwrap()
     );
     let generation = owner
@@ -308,7 +309,7 @@ fn repeated_extrusion_previews_reuse_the_current_part_and_cancel_cleanly() {
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,
         distance: "1 cm".into(),
-        flipped: false,
+        direction: Default::default(),
     };
     assert!(owner.extrusion_preview_from_gui(Some(&preview)).unwrap());
     preview.distance = "2 cm".into();
@@ -347,7 +348,7 @@ fn extrusion_preview_does_not_reuse_a_different_policy() {
     let document = open_sketch(&mut owner);
     assert!(
         owner
-            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", false)
+            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", Positive)
             .unwrap()
     );
     let mut alternate = resolution();
@@ -391,7 +392,7 @@ fn extrusion_preview_does_not_reuse_a_different_policy() {
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,
         distance: "1 cm".into(),
-        flipped: false,
+        direction: Default::default(),
     };
     assert!(owner.extrusion_preview_from_gui(Some(&preview)).unwrap());
     assert_eq!(owner.part_scenes.extrusion_prefix_previews(), before);

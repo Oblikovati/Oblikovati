@@ -54,7 +54,7 @@ fn extrusion_dialog_accepts_keyboard_distance_and_emits_owner_action() {
             sketch: DocumentSketchId(4),
             profile: 0,
             distance: "size".into(),
-            flipped: false,
+            direction: Default::default(),
         }]
     );
 }
@@ -87,7 +87,7 @@ fn extrusion_preview_button_and_escape_send_transient_actions() {
             sketch: DocumentSketchId(4),
             profile: 0,
             distance: "size".into(),
-            flipped: false,
+            direction: Default::default(),
         }))]
     );
     assert_eq!(

@@ -26,6 +26,34 @@ fn choose_flipped(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 
+#[when("Symmetric is selected in Direction")]
+fn choose_symmetric(world: &mut ApplicationWorld) {
+    click_text_native(world, "Symmetric");
+    world.pump(Vec::new());
+}
+
+#[then("the preview extends on both sides of the source plane")]
+fn symmetric_preview_spans_the_sketch_plane(world: &mut ApplicationWorld) {
+    assert!(world.state().extrude_preview_active);
+    assert_eq!(feature_count(world), 0);
+    let depth = world
+        .app()
+        .window
+        .scene_triangles
+        .iter()
+        .flat_map(|triangle| triangle.positions)
+        .map(|point| point[2])
+        .fold([f32::INFINITY, f32::NEG_INFINITY], |[lo, hi], z| {
+            [lo.min(z), hi.max(z)]
+        });
+    assert_eq!(depth, [-0.5, 0.5], "10 mm total depth about the XY plane");
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::super::diagnostics::window_occlusions();
+    assert!(super::super::solid_visibility::visible_preview_fill(
+        &capture, &windows
+    ));
+}
+
 #[then("the preview changes its side or extent relative to Default direction")]
 fn preview_is_flipped(world: &mut ApplicationWorld) {
     assert!(world.state().extrude_preview_active);

@@ -43,7 +43,7 @@ pub(crate) fn evaluate(
     input: ResolvedSketchPrism<'_>,
     resolution: Resolution,
 ) -> Result<crate::CertifiedPrismSnapshot, EvaluationFailure> {
-    let plane = input.sketch.plane;
+    let plane = input.sweep_start;
     let (profile, sources) = super::regions::input::profile(input.sketch.sketch.geometry(), plane)?;
     let vector = crate::prism::placement::model_displacement(plane, input.displacement)?;
     let mut result = crate::retain_certified_profile_prism(

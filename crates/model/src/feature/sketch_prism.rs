@@ -30,7 +30,15 @@ pub struct SketchPrismDefinition {
     sketch: DocumentSketchId,
     selection: SketchPrismSelection,
     displacement: [DatumLength; 3],
-    reversed_normal: bool,
+    direction: SketchPrismDirection,
+}
+/// Placement of the extrusion span relative to the source sketch plane.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum SketchPrismDirection {
+    #[default]
+    Positive,
+    Negative,
+    Symmetric,
 }
 impl SketchPrismDefinition {
     /// Validate authored identities and scalar sources before adoption.
@@ -44,7 +52,7 @@ impl SketchPrismDefinition {
             sketch,
             selection,
             displacement,
-            reversed_normal: false,
+            direction: SketchPrismDirection::Positive,
         };
         validation::validate_sources(&definition).map_err(|cause| definition.decline(cause))?;
         Ok(definition)
@@ -61,16 +69,18 @@ impl SketchPrismDefinition {
     pub fn displacement(&self) -> [DatumLength; 3] {
         self.displacement
     }
-    /// Reverse a positive authored normal displacement; example: `definition.reverse_normal()?`.
-    pub fn reverse_normal(mut self) -> Result<Self, SketchPrismError> {
-        self.reversed_normal = true;
+    /// Set how a positive authored depth is placed; example: `definition.with_direction(SketchPrismDirection::Symmetric)?`.
+    pub fn with_direction(
+        mut self,
+        direction: SketchPrismDirection,
+    ) -> Result<Self, SketchPrismError> {
+        self.direction = direction;
         validation::validate_sources(&self).map_err(|cause| self.decline(cause))?;
         Ok(self)
     }
-    /// Check whether replay reverses the authored normal displacement.
-    /// Example: `definition.normal_is_reversed()` when showing Extrude direction.
-    pub fn normal_is_reversed(&self) -> bool {
-        self.reversed_normal
+    /// Read the span placement; example: `definition.direction()` when opening Edit Feature.
+    pub fn direction(&self) -> SketchPrismDirection {
+        self.direction
     }
     /// Replace the authored depth without changing its direction.
     /// Example: `definition.with_normal_source(DatumLength::Parameter(3))?`.
@@ -84,7 +94,7 @@ impl SketchPrismDefinition {
     pub fn same_recipe(&self, other: &Self) -> bool {
         self.sketch == other.sketch
             && self.selection == other.selection
-            && self.reversed_normal == other.reversed_normal
+            && self.direction == other.direction
             && self
                 .displacement
                 .into_iter()

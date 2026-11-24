@@ -39,3 +39,15 @@ the distance. Existing recipes default to their original signed displacement.
 An accepted extrusion keeps its direction during a distance edit.
 
 See the [Flipped direction receipt](receipts/2026-11-24-extrusion-flipped-3893/README.md).
+
+## Symmetric direction (#3893)
+
+The symmetric direction keeps Distance A as the total depth. Replay places
+the sweep start half that distance behind the resolved sketch plane and
+uses the full positive displacement. The sketch's own placement stays
+available to the document owner. The certified adapter builds one prism
+from the translated profile and uses the same source curve and vertex
+identities. The conditional sweep report requires a sketch-plane start and
+declines centered spans until it can bound the shifted start.
+
+See the [Symmetric direction receipt](receipts/2026-11-24-extrusion-symmetric-3893/README.md).

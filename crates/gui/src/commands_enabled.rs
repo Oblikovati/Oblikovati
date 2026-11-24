@@ -418,7 +418,7 @@ impl GuiShellAction {
                 sketch: preview.sketch,
                 profile: preview.profile,
                 distance: preview.distance.clone(),
-                flipped: preview.flipped,
+                direction: preview.direction,
             }
             .enabled(state),
             Self::Parameter { .. } | Self::OpenIProperties => state.document.is_some(),

@@ -389,7 +389,7 @@ pub enum GuiShellAction {
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
         profile: i64,
         distance: String,
-        flipped: bool,
+        direction: crate::GuiExtrudeDirection,
     },
     /// Show or clear a transient extrusion preview.
     PreviewExtrude(Option<GuiExtrudePreview>),
