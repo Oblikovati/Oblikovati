@@ -15774,8 +15774,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Independent sketch and dimension visibility from the browser.",
+      "go_test_premise": "The Go browser shares selection with the viewport and tests browser menu commands. The pinned scenario supplies the sketch and dimension visibility sequence.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native replay of a solid extrusion with a consumed dimensioned sketch.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop owner replays the extrusion and supplies the sketch and dimension presentation to the viewport.",
+      "rust_tests": "application_scenarios_use_the_native_window: Toggle a nested sketch and its dimension visibility",
+      "oracle": "The pinned case checks menu marks, sketch visibility, dimension annotations and the shaded solid. See receipts/2026-11-24-browser-dimension-visibility-3896/cucumber.json.",
+      "expected_result": "Sketch and Dimension Visibility can be changed independently. An empty viewport click leaves enabled annotations on a visible sketch. Hiding the sketch clears its annotations and retains the shaded solid.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:c0f19a0c35c893ec6a79db8ac87a62b85158c7b41a6ea591a81672b205606e30",

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T10:34:41.208555868Z" time="80.711228772"><testcase name="Scenario: Toggle a nested sketch and its dimension visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:697:3" time="80.711228772"><system-out><![CDATA[  Scenario: Toggle a nested sketch and its dimension visibility
+   ✔  Given the MCAD Software has a rectangular dimensioned sketch consumed by an extrusion
+   ✔  And the sketch is hidden and its Dimension Visibility setting is enabled
+   ✔  When the user chooses Visibility from the sketch row context menu
+   ✔  Then the sketch is visible and its dimension annotations appear
+   ✔  When the user clicks empty viewport space
+   ✔  Then the dimension annotations remain visible
+   ✔  When the user reopens the sketch context menu
+   ✔  Then Visibility and Dimension Visibility are checked
+   ✔  When the user chooses Dimension Visibility
+   ✔  Then the dimension annotations disappear while the sketch remains visible
+   ✔  When the user reopens the sketch context menu
+   ✔  Then Visibility is checked and Dimension Visibility is unchecked
+   ✔  When the user chooses Dimension Visibility again
+   ✔  Then the dimension annotations reappear
+   ✔  When the user chooses Visibility from the sketch context menu
+   ✔  Then the sketch and its annotations are hidden again
+   ✔  And the shaded solid remains visible
+]]></system-out></testcase></testsuite></testsuites>
