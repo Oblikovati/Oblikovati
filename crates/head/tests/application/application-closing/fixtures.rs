@@ -44,6 +44,7 @@ fn open_clean_copy(world: &mut ApplicationWorld, relative: &str, kind: DocumentT
 }
 
 #[given("the user creates a sketch on a datum plane without saving the document")]
+#[given("the user creates a sketch on the XY datum plane without saving the document")]
 fn create_unsaved_sketch(world: &mut ApplicationWorld) {
     world.start_sketch();
     assert_dirty(world);
