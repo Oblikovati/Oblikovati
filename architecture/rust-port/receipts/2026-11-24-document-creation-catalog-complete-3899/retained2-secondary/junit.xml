@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" package="testsuite/Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T20:06:29.55946665Z" time="66.201355314"><testcase name="Scenario: Select templates with the secondary mouse button: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature:198:3" time="66.201355314"><system-out><![CDATA[  Scenario: Select templates with the secondary mouse button
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And the native catalog contains metric and inch templates in their respective folders
+   ✔> And the catalog root has no direct template files
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active with `Sketch1` visible in the MCAD Software
+   ✔  And the template chooser shows the English folder grouped by type using Medium icons
+   ✔  And the Part group contains Standard (in) and Sheet Metal (in)
+   ✔  When the user right-clicks the Standard (in) part template
+   ✔  Then Standard (in) is selected and its details show inch units
+   ✔  And no context menu is visible
+   ✔  When the user right-clicks the Sheet Metal (in) part template
+   ✔  Then Sheet Metal (in) is selected and its details show inch units
+   ✔  And no context menu is visible
+   ✔  When the user right-clicks empty space in the Part gallery
+   ✔  Then Sheet Metal (in) remains selected and its details remain displayed
+   ✔  And no context menu is visible
+   ✔  When the user presses Escape
+   ✔  Then the chooser closes and the original part remains active
+]]></system-out></testcase></testsuite></testsuites>

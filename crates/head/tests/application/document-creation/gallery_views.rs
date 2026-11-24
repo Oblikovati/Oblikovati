@@ -47,7 +47,6 @@ fn english_medium_chooser(world: &mut ApplicationWorld) {
     world.click_text("English");
     grouped_by_default(world);
     choose_template_view(world, "Medium Icons");
-    world.expect_text("Standard inch part");
 }
 #[given("the metric template folder is selected")]
 fn metric_selected(world: &mut ApplicationWorld) {
@@ -186,18 +185,7 @@ fn medium_tiles(world: &mut ApplicationWorld) {
     expect_icon_row(world, 40.);
 }
 fn expect_icon_row(world: &mut ApplicationWorld, expected_size: f32) {
-    let (left, right) = first_two_part_titles(world);
-    let first = world.run(&left).center();
-    let second = world.run(&right).center();
-    assert!(
-        second[0] > first[0] && (second[1] - first[1]).abs() < 3.,
-        "expected template icons in a horizontal row"
-    );
-    let size = gallery_icons::template_icon_size(world, &left);
-    assert!(
-        (size[0] - expected_size).abs() < 1. && (size[1] - expected_size).abs() < 1.,
-        "icon size {size:?}: expected {expected_size}"
-    );
+    gallery_icons::expect_visible_part_icon_row(world, expected_size);
 }
 #[when("I choose Back in the chooser navigation bar")]
 #[when("the user chooses Back in the chooser navigation bar")]

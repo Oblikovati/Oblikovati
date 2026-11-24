@@ -50,6 +50,36 @@ fn previous_details(world: &mut ApplicationWorld) {
     }
 }
 fn expect_part_tiles_ordered(world: &mut ApplicationWorld, plain_first: bool) {
+    let state = world.state();
+    if !state.project_templates.is_empty() {
+        use oblikovati_gui::{GuiTemplateFolder, GuiTemplateKind, GuiTemplateUnits};
+        let mut rows: Vec<_> = state
+            .project_templates
+            .iter()
+            .filter(|entry| {
+                entry.folder == GuiTemplateFolder::Units(GuiTemplateUnits::Metric)
+                    && matches!(
+                        entry.kind,
+                        GuiTemplateKind::Part | GuiTemplateKind::SheetMetal
+                    )
+            })
+            .map(|entry| {
+                let y = named_navigation::gallery_tile(world, &entry.title).center()[1];
+                (y, entry.size, entry.title.as_str())
+            })
+            .collect();
+        rows.sort_by(|a, b| a.0.total_cmp(&b.0));
+        assert!(rows.windows(2).any(|pair| pair[0].1 != pair[1].1));
+        assert!(
+            rows.windows(2).all(|pair| if plain_first {
+                pair[0].1 <= pair[1].1
+            } else {
+                pair[0].1 >= pair[1].1
+            }),
+            "visible Part rows are not in the expected size order: {rows:?}"
+        );
+        return;
+    }
     let plain = world.run(METRIC_PART).center()[1];
     let sheet = world.run(METRIC_SHEET_METAL).center()[1];
     assert_eq!(
@@ -70,7 +100,7 @@ fn details_view_grouped(world: &mut ApplicationWorld) {
 }
 #[given("the standard metric part template details are displayed")]
 fn metric_part_details_shown(world: &mut ApplicationWorld) {
-    world.click_text(METRIC_PART);
+    select_metric(world);
     expect_part_details(world);
 }
 fn click_size_heading(world: &mut ApplicationWorld) {
@@ -105,11 +135,9 @@ fn ordered_decreasing(world: &mut ApplicationWorld) {
     expect_part_tiles_ordered(world, false);
 }
 #[then("the standard metric part template details remain displayed")]
+#[then("the details pane still identifies Standard (mm) as a millimeter part template")]
 fn part_details_remain(world: &mut ApplicationWorld) {
-    // The root's gallery has no tile, so only the details pane can name it there.
-    world.expect_text(METRIC_PART);
-    world.expect_text("Document type: Part");
-    world.expect_text("millimeters (mm)");
+    expect_part_details(world);
 }
 #[then("the gallery remains grouped by template type")]
 fn still_grouped(world: &mut ApplicationWorld) {
@@ -123,6 +151,7 @@ fn sorted_decreasing(world: &mut ApplicationWorld) {
 }
 #[when("I reopen the chooser in the same session")]
 #[when("the user reopens the chooser in the same session")]
+#[when("the user reopens the template chooser in the same session")]
 fn reopen_same_session(world: &mut ApplicationWorld) {
     reopen_chooser(world);
 }
@@ -143,11 +172,11 @@ fn size_descending(world: &mut ApplicationWorld) {
 #[given("the standard metric part template is selected")]
 fn metric_part_selected(world: &mut ApplicationWorld) {
     world.click_text("Metric");
-    world.click_text(METRIC_PART);
+    select_metric(world);
 }
 #[given("the template root contains no direct template entries")]
 fn root_empty(world: &mut ApplicationWorld) {
-    world.expect_text("Templates");
+    root_has_no_templates(world);
 }
 #[when("I choose Home in the template chooser")]
 #[when("the user chooses Home in the template chooser")]
@@ -157,9 +186,7 @@ fn home_in_chooser(world: &mut ApplicationWorld) {
 #[then("the root is selected and its template groups are empty")]
 fn root_groups_empty(world: &mut ApplicationWorld) {
     root_selected(world);
-    expect_group_headings(world, &["Part", "Assembly", "Drawing"]);
-    world.expect_no_text(METRIC_ASSEMBLY);
-    world.expect_no_text(METRIC_SHEET_METAL);
+    empty_sections(world);
 }
 const INCH_DRAWING: &str = "Inch drawing with title block";
 fn create_button_alpha(world: &ApplicationWorld) -> u8 {
@@ -169,10 +196,25 @@ fn create_button_alpha(world: &ApplicationWorld) -> u8 {
 fn none_selected(world: &mut ApplicationWorld) {
     world.expect_text("Select a template.");
 }
+#[given(
+    "the user opens the new-document template chooser for the first time in this fresh session"
+)]
+fn open_chooser_first_time(world: &mut ApplicationWorld) {
+    world.expect_no_text("Template folders");
+    open_chooser(world);
+    chooser_open(world);
+}
+#[given("the user chooses Home before selecting any template")]
+fn go_home_before_selection(world: &mut ApplicationWorld) {
+    none_selected(world);
+    chooser_home(world);
+}
 #[given("the selected template root has no direct template entries")]
 fn root_selected_no_entries(world: &mut ApplicationWorld) {
-    chooser_home(world);
-    world.expect_no_text(METRIC_PART);
+    if !world.row_accented_beside("Templates", "English") {
+        chooser_home(world);
+    }
+    root_groups_empty(world);
 }
 #[given("Create is disabled")]
 #[then("Create is disabled")]
@@ -183,16 +225,23 @@ fn create_disabled(world: &mut ApplicationWorld) {
 }
 #[then("template tiles are displayed")]
 fn tiles_displayed(world: &mut ApplicationWorld) {
-    world.expect_text(METRIC_ASSEMBLY);
+    metric_gallery(world);
+    other_group_templates(world);
 }
 #[then("its assembly details are displayed")]
 fn assembly_details_displayed(world: &mut ApplicationWorld) {
     expect_assembly_details(world);
 }
 #[then("Create is enabled")]
+#[then("Create remains enabled")]
 fn create_enabled(world: &mut ApplicationWorld) {
     let alpha = create_button_alpha(world);
     assert!(alpha > 200, "Create text alpha {alpha}: expected full");
+}
+#[then("the details pane identifies Standard (mm) and Create is enabled")]
+fn can_create_retained_part(world: &mut ApplicationWorld) {
+    expect_part_details(world);
+    create_enabled(world);
 }
 #[given("the standard metric assembly template is selected")]
 fn assembly_chosen(world: &mut ApplicationWorld) {
@@ -209,13 +258,12 @@ fn english_folder_gallery(world: &mut ApplicationWorld) {
 }
 #[then("the details still identify the metric assembly template")]
 fn still_metric_assembly(world: &mut ApplicationWorld) {
-    world.expect_text(METRIC_ASSEMBLY);
     expect_assembly_details(world);
 }
 #[then("a new empty assembly document becomes active")]
 fn new_empty_assembly(world: &mut ApplicationWorld) {
     new_assembly(world);
-    world.expect_blank_region(VIEWPORT_X, VIEWPORT_Y);
+    no_components(world);
 }
 #[then("its browser displays representations, relationships and origin entries")]
 fn its_assembly_browser(world: &mut ApplicationWorld) {

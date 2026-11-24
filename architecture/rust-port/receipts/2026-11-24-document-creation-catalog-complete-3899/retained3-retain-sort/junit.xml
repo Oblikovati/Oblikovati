@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" package="testsuite/Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T20:11:38.48419144Z" time="52.484678061"><testcase name="Scenario: Retain template sort order when reopening the chooser: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature:241:3" time="52.484678061"><system-out><![CDATA[  Scenario: Retain template sort order when reopening the chooser
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And the native catalog contains metric and inch templates in their respective folders
+   ✔> And the catalog root has no direct template files
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the user presses Control+N to open the new-document template chooser
+   ✔  And the new-document template chooser is open in the MCAD Software
+   ✔  And the metric gallery is grouped by template type in Details view
+   ✔  And the visible part templates are sorted by decreasing file size
+   ✔  When the user chooses Medium icons in the template display menu
+   ✔  And the user cancels the chooser
+   ✔  And the user reopens the chooser in the same session
+   ✔  Then the metric template folder and medium icon view are displayed
+   ✔  When the user chooses Details in the template display menu
+   ✔  Then the visible part templates are ordered by decreasing file size
+   ✔  And the Size column indicates descending order
+]]></system-out></testcase></testsuite></testsuites>

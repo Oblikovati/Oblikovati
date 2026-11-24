@@ -23,7 +23,7 @@ pub(super) fn metric_icons(world: &mut ApplicationWorld) {
     );
 }
 
-fn gallery_tile<'a>(
+pub(super) fn gallery_tile<'a>(
     world: &'a ApplicationWorld,
     title: &str,
 ) -> &'a super::super::super::diagnostics::RenderedRun {
@@ -191,7 +191,7 @@ fn narrow_chooser(world: &mut ApplicationWorld) {
     at_leftmost_position(world);
 }
 
-fn move_to_track_edge(world: &mut ApplicationWorld, end: bool) {
+pub(super) fn move_to_track_edge(world: &mut ApplicationWorld, end: bool) {
     let [left, right, y] = gallery_scroll(world).horizontal_track;
     let x = if end { right - 6. } else { left + 6. };
     world.click(super::super::super::diagnostics::pointer_pixels([x, y]));

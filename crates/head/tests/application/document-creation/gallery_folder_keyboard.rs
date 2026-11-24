@@ -3,8 +3,9 @@
 use super::*;
 
 #[given("the details pane identifies the selected Standard (mm) part template")]
-fn metric_part_selected(_: &mut ApplicationWorld) {
-    super::captured_catalog::require_named_catalog("selected Standard (mm) part template");
+fn metric_part_selected(world: &mut ApplicationWorld) {
+    select_metric(world);
+    expect_part_details(world);
 }
 
 #[when("the user clicks the Metric folder in the folder tree")]
@@ -27,18 +28,16 @@ fn english_highlighted(world: &mut ApplicationWorld) {
 }
 #[then("the metric gallery and Standard (mm) details remain visible")]
 fn metric_gallery_retained(world: &mut ApplicationWorld) {
-    world.expect_text(METRIC_SHEET_METAL);
-    expect_selected_template(world, METRIC_PART);
-    world.expect_text("Length: millimeters (mm)");
+    metric_gallery(world);
+    expect_part_details(world);
 }
 #[then("the metric template gallery remains visible")]
 fn metric_gallery_visible(world: &mut ApplicationWorld) {
-    world.expect_text(METRIC_SHEET_METAL);
-    world.expect_text(METRIC_PART);
+    metric_gallery(world);
 }
 #[then("the details pane still identifies Standard (mm)")]
-fn captured_standard_details(_: &mut ApplicationWorld) {
-    super::captured_catalog::require_named_catalog("selected Standard (mm) part template");
+fn captured_standard_details(world: &mut ApplicationWorld) {
+    expect_part_details(world);
 }
 #[when("the user clicks the highlighted English folder")]
 fn activate_english(world: &mut ApplicationWorld) {
@@ -46,6 +45,5 @@ fn activate_english(world: &mut ApplicationWorld) {
 }
 #[then("the details pane still identifies Standard (mm) with millimeter units")]
 fn metric_details_retained(world: &mut ApplicationWorld) {
-    expect_selected_template(world, METRIC_PART);
-    world.expect_text("Length: millimeters (mm)");
+    expect_part_details(world);
 }

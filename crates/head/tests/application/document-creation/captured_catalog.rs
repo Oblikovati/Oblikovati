@@ -24,8 +24,11 @@ fn captured_gallery_view(_: &mut ApplicationWorld) {
     require_named_catalog("captured narrow gallery and template order");
 }
 #[given("Standard (mm) is selected in the expanded Part group")]
-fn captured_collapsed_selection(_: &mut ApplicationWorld) {
-    require_named_catalog("selected Standard (mm) part template");
+fn captured_collapsed_selection(world: &mut ApplicationWorld) {
+    select_metric(world);
+    expect_part_details(world);
+    let title = basic_catalog::catalog_title(world, METRIC_PART, "Standard (mm)");
+    assert_part_template_tile(world, title, true);
 }
 #[test]
 fn missing_named_catalog_is_a_fixture_block() {

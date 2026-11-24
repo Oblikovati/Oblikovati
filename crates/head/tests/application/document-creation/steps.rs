@@ -287,6 +287,8 @@ fn part_group_expanded(world: &mut ApplicationWorld) {
 #[when("I expand the part template group")]
 #[when("the user collapses the part template group")]
 #[when("the user expands the part template group")]
+#[when("the user collapses the Part group")]
+#[when("the user expands the Part group")]
 fn toggle_part_group(world: &mut ApplicationWorld) {
     world.click_text("Part");
 }

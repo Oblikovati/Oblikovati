@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" package="testsuite/Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T20:13:04.020791777Z" time="28.716475656"><testcase name="Scenario: Press Enter after moving the template folder highlight with Up: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature:278:3" time="28.716475656"><system-out><![CDATA[  Scenario: Press Enter after moving the template folder highlight with Up
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And the native catalog contains metric and inch templates in their respective folders
+   ✔> And the catalog root has no direct template files
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active with `Sketch1` visible in the MCAD Software
+   ✔  And the template chooser shows the metric folder and its grouped templates
+   ✔  And the details pane identifies the selected Standard (mm) part template
+   ✔  When the user clicks the Metric folder in the folder tree
+   ✔  And the user presses Up
+   ✔  Then the English folder is highlighted in the tree
+   ✔  And the metric template gallery remains visible
+   ✔  And the details pane still identifies Standard (mm)
+   ✔  When the user presses Enter
+   ✔  Then the chooser closes and a new empty part becomes active
+   ✔  And a new document tab appears alongside the original part
+   ✔  When the user closes the new unedited part
+   ✔  Then the original part becomes active
+]]></system-out></testcase></testsuite></testsuites>

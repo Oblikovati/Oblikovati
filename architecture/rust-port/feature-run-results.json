@@ -1446,5 +1446,66 @@
         "notes": "All 1 current scenarios and 12 steps passed in separate native runs. The build includes the updated scenario bindings and existing local GUI edits. Strict build and runtime provenance remains open under #3978."
       }
     }
+  },
+  "features/application/document-creation/document-creation-catalog-basics.feature": {
+    "by_source_sha256": {
+      "c68710719d1c2609d17291b3a2ccbae88fc15f0ae3bee5102326bfdcf81fdbb9": {
+        "feature_sha256": "c68710719d1c2609d17291b3a2ccbae88fc15f0ae3bee5102326bfdcf81fdbb9",
+        "supporting_files": {
+          "features/application/document-creation/BLOCKERS.md": "d60377bac648dea0dda1d094a4f8778064e13b44db2ceed35cea209b4fb568f0",
+          "features/application/document-creation/FIXTURES.md": "b5b8fa749dadaec50f88b1e198b26d27737406a301a12702c03f77d53afd633c",
+          "features/application/document-creation/FUNCTIONAL.md": "8b170196d8c08f34167d3666d1a743c779aaec9024e4facb4c768ac70b121704",
+          "features/application/document-creation/VISUAL.md": "6ac16fb8cf8de95da29f24924ef4e5d1e7c084cd8daa4d91a34352bf9ffe93fc",
+          "features/application/document-creation/collapsed-group-create.svg": "a4ee7d57839d135a8e760c1ae20f93257febb51e93914b0b42d0f78f8dba139e",
+          "features/application/document-creation/collapsed-group-reopen.svg": "88a977019acb69cda90e84d6755a05a3fa016edd829ab3a7cf740336be05031f",
+          "features/application/document-creation/document-creation-wireframes.svg": "9eba0bed601c0e12dfc5118883e04d016cea43f3fc8fd9d19d114b378a7b6fcc",
+          "features/application/document-creation/drawing-layout-dialogs.svg": "decbdc40b626175429a2ede6b7a3d7b6a6fe140e4209f96e01a86292120d20a2",
+          "features/application/document-creation/drawing-update-result.svg": "e7741f9d2182cbf2862ea0811232b0f478859fe3f295eed824832a089712667e",
+          "features/application/document-creation/folder-highlight-click.svg": "73e4f6357c4bc09eb10769cf03140d5811e78feed84926e7adccf95bf0572036",
+          "features/application/document-creation/folder-highlight-enter.svg": "3e07bcc0647d3b62b919477ee8850665e0ba4f7c7ddf5e83fd522f23bb6a1095",
+          "features/application/document-creation/initial-template-selection.svg": "b905fd7754289e994b67b75530216cf414040fbff56678cbca50a4fb48cb9319",
+          "features/application/document-creation/template-arrow-navigation.svg": "99ec190fae458a854ca3294a0f90bfef618991c134417a8876f4634a88948740",
+          "features/application/document-creation/template-boundary-scroll.svg": "9c7dbace5157a09aea6990f6940f2fd219983efd1989f26189778f006e524d35",
+          "features/application/document-creation/template-group-endpoints.svg": "59b50baad929e62cc8efb044a20fba299ce4f1f84ef04fd09b0ed9df3fde5f0c",
+          "features/application/document-creation/template-secondary-click.svg": "0f48b81a9a8251fd4efcecf4e0f977055e7d6b8e93ca2307da739cb7ca68fb06",
+          "features/application/document-creation/template-selection-states.svg": "077033a94f35d0f06dacb588db5e2febd588eb1c00635a19d6997ae604745092",
+          "fixtures/cad/document-creation-native-candidate.opj": "a62d0b0dbc3006af42686d6d0069ef350ea36c9b91037d28bf1fbca2c772c527",
+          "fixtures/cad/document-creation-native-candidate/English/Sheet Metal (in).opd": "3994ec0e4c1c7302920e56aecb1f66bbdedc4ace40a0c03775e9f8b275668bbf",
+          "fixtures/cad/document-creation-native-candidate/English/Sheet Metal.opd": "3994ec0e4c1c7302920e56aecb1f66bbdedc4ace40a0c03775e9f8b275668bbf",
+          "fixtures/cad/document-creation-native-candidate/English/Standard (in).opd": "d58faf2d76fbfc49a831609b1e9eb752ac6675b614debfccaf153a61cd1f00f5",
+          "fixtures/cad/document-creation-native-candidate/English/Standard Assembly.oad": "f8197c6b228676cb1bf8015681a3ed64dabd1ec5bff8c22bce1037a5a25ee80e",
+          "fixtures/cad/document-creation-native-candidate/English/Standard Drawing.odd": "fb550abddaf122a634f083ea9a383ff3f49764a350c96b0024a6a80a3b7c744f",
+          "fixtures/cad/document-creation-native-candidate/English/Standard Part.opd": "d58faf2d76fbfc49a831609b1e9eb752ac6675b614debfccaf153a61cd1f00f5",
+          "fixtures/cad/document-creation-native-candidate/English/Standard Presentation.ord": "271ff6b6f4ffd3a185c51592ff53682cf19a96318e44ce9465ed35b049051331",
+          "fixtures/cad/document-creation-native-candidate/English/sheet-metal.lua": "6a44d37aea3942493414513eb9d5ce9d63bc48fcedaa2f6b78a58a44c8462331",
+          "fixtures/cad/document-creation-native-candidate/English/standard-assembly.lua": "2befcf7a09a175b6524808f58c247f2310d09692e92014c3629cbf82d648975b",
+          "fixtures/cad/document-creation-native-candidate/English/standard-drawing.lua": "c9421c7568fc349ba616be07e5fc22a5e239a45c03a465ace7e7f2ebd0668e3d",
+          "fixtures/cad/document-creation-native-candidate/English/standard-part.lua": "74b3a3df37d8318e9335b17da7ba0032545487603612891cfa9ef6d6db0b8dad",
+          "fixtures/cad/document-creation-native-candidate/English/standard-presentation.lua": "ec063fecf28575fc1e630e0a93cff2f0aec3619d78ae1a01b93c63cb7c57eb89",
+          "fixtures/cad/document-creation-native-candidate/Metric/Sheet Metal (DIN).opd": "6c66a37d638eecec635e003e45ee5062da4e7fd68a24f780408a77b03e59376d",
+          "fixtures/cad/document-creation-native-candidate/Metric/Sheet Metal (mm).opd": "6c66a37d638eecec635e003e45ee5062da4e7fd68a24f780408a77b03e59376d",
+          "fixtures/cad/document-creation-native-candidate/Metric/Sheet Metal.opd": "6c66a37d638eecec635e003e45ee5062da4e7fd68a24f780408a77b03e59376d",
+          "fixtures/cad/document-creation-native-candidate/Metric/Standard (DIN).opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
+          "fixtures/cad/document-creation-native-candidate/Metric/Standard (mm).opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
+          "fixtures/cad/document-creation-native-candidate/Metric/Standard Assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
+          "fixtures/cad/document-creation-native-candidate/Metric/Standard Drawing.odd": "74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e",
+          "fixtures/cad/document-creation-native-candidate/Metric/Standard Part.opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
+          "fixtures/cad/document-creation-native-candidate/Metric/Standard Presentation.ord": "f1395a6948d4c77f11a6bbaa441de3e4223fa0161244d9c882b8f84e54604a31",
+          "fixtures/cad/document-creation-native-candidate/Metric/standard-presentation.lua": "50e7f754e0d3a8128a7543da10713a80578477bcef2f9e147d2a77c110448e0c",
+          "fixtures/cad/document-creation-native-candidate/manifest.json": "00253bc58cfa8fc6c99597d77c61e53a5d1b00763ef00bc4db2603a1068f5676",
+          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-document-creation-catalog-complete-3899/cucumber.json",
+        "cucumber_sha256": "6ae8ae5d11cd182f10c73434296453d20b24f1245b5f83122da637d842c815f3",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-document-creation-catalog-complete-3899/scenario-arguments.json",
+        "scenario_arguments_sha256": "ac0efe3c05dba649e15eb3f8fce06d78993b305c172225343c83d3d9721bd943",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-24-document-creation-catalog-complete-3899/scenario-inventory.json",
+        "scenario_inventory_sha256": "9eef2c540608a19ce5bf5367d036d0dd192172123e1e7556a78123db20077c8b",
+        "application_commit": "e79d96e2f0769a6db1fb012d867050247dd89106",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=document-creation OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 21 current cases passed in separate native runs. Catalog test bindings changed between groups and the scenario and fixture hashes matched. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   }
 }

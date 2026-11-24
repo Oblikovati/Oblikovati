@@ -99,18 +99,35 @@ fn secondary_click_on_selected_drawing_retains_its_preview() {
 #[given("the Part group contains Standard (in) and Sheet Metal (in)")]
 fn inch_part_tiles(world: &mut ApplicationWorld) {
     world.previous_document = Some(world.active_id());
-    world.expect_text("Standard inch part");
-    world.expect_text(INCH_SHEET_METAL);
+    let sheet = basic_catalog::catalog_title(world, INCH_SHEET_METAL, "Sheet Metal (in)");
+    let standard = basic_catalog::catalog_title(world, "Standard inch part", "Standard (in)");
+    template_point(world, sheet);
+    show_inch_part_tile(world, standard, true);
+    if !gallery_has_template(world, sheet) {
+        named_navigation::move_to_track_edge(world, false);
+    }
     assert_eq!(popup_depth(), 1, "expected only the chooser popup");
 }
+
+fn show_inch_part_tile(world: &mut ApplicationWorld, title: &str, end: bool) {
+    if !gallery_has_template(world, title) {
+        named_navigation::move_to_track_edge(world, end);
+        world.pump(Vec::new());
+    }
+    template_point(world, title);
+}
+
 #[when("the user right-clicks the Standard (in) part template")]
 fn secondary_standard(world: &mut ApplicationWorld) {
-    right_click_template(world, "Standard inch part");
+    let title = basic_catalog::catalog_title(world, "Standard inch part", "Standard (in)");
+    show_inch_part_tile(world, title, true);
+    right_click_template(world, title);
 }
 #[then("Standard (in) is selected and its details show inch units")]
 fn standard_inch_details(world: &mut ApplicationWorld) {
-    expect_selected_template(world, "Standard inch part");
-    world.expect_text("Length: inches (in)");
+    let title = basic_catalog::catalog_title(world, "Standard inch part", "Standard (in)");
+    expect_selected_template(world, title);
+    inch_details(world);
 }
 #[then("no context menu is visible")]
 fn no_secondary_menu(_world: &mut ApplicationWorld) {
@@ -123,13 +140,16 @@ fn no_secondary_menu(_world: &mut ApplicationWorld) {
 }
 #[when("the user right-clicks the Sheet Metal (in) part template")]
 fn secondary_sheet_metal(world: &mut ApplicationWorld) {
-    right_click_template(world, INCH_SHEET_METAL);
+    let title = basic_catalog::catalog_title(world, INCH_SHEET_METAL, "Sheet Metal (in)");
+    show_inch_part_tile(world, title, false);
+    right_click_template(world, title);
 }
 #[then("Sheet Metal (in) is selected and its details show inch units")]
 #[then("Sheet Metal (in) remains selected and its details remain displayed")]
 fn sheet_metal_inch_details(world: &mut ApplicationWorld) {
-    expect_selected_template(world, INCH_SHEET_METAL);
-    world.expect_text("Length: inches (in)");
+    let title = basic_catalog::catalog_title(world, INCH_SHEET_METAL, "Sheet Metal (in)");
+    expect_selected_template(world, title);
+    inch_details(world);
 }
 #[when("the user right-clicks empty space in the Part gallery")]
 fn secondary_empty_gallery(world: &mut ApplicationWorld) {

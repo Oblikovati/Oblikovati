@@ -3,6 +3,28 @@
 use super::*;
 use imgui::{DrawCmd, internal::RawCast, sys};
 
+pub(super) fn expect_visible_part_icon_row(world: &mut ApplicationWorld, expected_size: f32) {
+    let titles = basic_catalog::metric_part_titles(world);
+    let mut visible: Vec<_> = titles
+        .iter()
+        .filter(|title| gallery_has_template(world, title))
+        .map(|title| (title, named_navigation::gallery_tile(world, title).center()))
+        .collect();
+    visible.sort_by(|a, b| a.1[0].total_cmp(&b.1[0]));
+    let [(title, first), (_, second), ..] = visible.as_slice() else {
+        panic!("expected two visible Part icons in {}", world.text());
+    };
+    assert!(
+        second[0] > first[0] && (second[1] - first[1]).abs() < 3.,
+        "expected template icons in a horizontal row: {visible:?}"
+    );
+    let size = template_icon_size(world, title);
+    assert!(
+        size.iter().all(|edge| (*edge - expected_size).abs() < 1.),
+        "icon size {size:?}: expected {expected_size}"
+    );
+}
+
 pub(super) fn template_icon_size(world: &ApplicationWorld, label: &str) -> [f32; 2] {
     let title = world.run(label).center();
     let raw = unsafe { sys::igGetDrawData().as_ref() }.expect("expected completed GUI draws");

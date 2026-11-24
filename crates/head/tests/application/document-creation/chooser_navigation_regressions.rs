@@ -2,6 +2,56 @@
 //! Native navigation checks using the templates the chooser actually supplies.
 use super::*;
 
+#[then("the chooser closes and a new empty part becomes active")]
+fn new_empty_part_after_chooser(world: &mut ApplicationWorld) {
+    chooser_closed(world);
+    new_empty_part(world);
+}
+
+#[then("a new document tab is visible alongside the original part")]
+#[then("a new document tab appears alongside the original part")]
+fn both_part_tabs_visible(world: &mut ApplicationWorld) {
+    new_tab(world);
+    let original = world.previous_document.expect("expected the original Part");
+    assert_ne!(world.active_id(), original);
+    let original_name = world.document_name(original);
+    world.expect_tab(&original_name);
+}
+
+#[when("the user closes the new unedited part")]
+fn close_new_part(world: &mut ApplicationWorld) {
+    assert_ne!(Some(world.active_id()), world.previous_document);
+    world.close_active_tab();
+}
+
+#[then("the original part becomes active")]
+fn original_part_reactivated(world: &mut ApplicationWorld) {
+    previous_document(world);
+}
+
+#[then("the Part group remains collapsed")]
+fn part_group_stays_collapsed(world: &mut ApplicationWorld) {
+    expect_group_headings(world, &["Part"]);
+    tiles_hidden(world);
+}
+
+#[then("Standard (mm) is shown as the selected template")]
+fn part_selection_is_visible(world: &mut ApplicationWorld) {
+    expect_part_details(world);
+    let title = basic_catalog::catalog_title(world, METRIC_PART, "Standard (mm)");
+    let other = basic_catalog::catalog_title(world, METRIC_SHEET_METAL, "Sheet Metal (mm)");
+    let selected = named_navigation::gallery_tile(world, title);
+    let plain = named_navigation::gallery_tile(world, other);
+    let x = selected.maximum[0].max(plain.maximum[0]) as usize + 6;
+    let selected_y = selected.center()[1] as usize;
+    let plain_y = plain.center()[1] as usize;
+    assert_ne!(
+        world.pixel_at([x, selected_y]),
+        world.pixel_at([x, plain_y]),
+        "expected Standard (mm) to have the selection highlight"
+    );
+}
+
 #[test]
 fn collapsed_group_can_create_and_remains_collapsed_on_reopen() {
     let mut world = ApplicationWorld::new();

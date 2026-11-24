@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" package="testsuite/Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T20:13:33.650228679Z" time="10.322263248"><testcase name="Scenario: Enable creation by selecting a template: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature:293:3" time="10.322263248"><system-out><![CDATA[  Scenario: Enable creation by selecting a template
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And the native catalog contains metric and inch templates in their respective folders
+   ✔> And the catalog root has no direct template files
+   ✔  Given the user opens the new-document template chooser for the first time in this fresh session
+   ✔  And the user chooses Home before selecting any template
+   ✔  And no template is selected
+   ✔  And the selected template root has no direct template entries
+   ✔  And the template details are blank
+   ✔  And Create is disabled
+   ✔  When the user selects the metric template folder
+   ✔  Then template tiles are displayed
+   ✔  And Create remains disabled
+   ✔  When the user selects the standard metric assembly template
+   ✔  Then its assembly details are displayed
+   ✔  And Create is enabled
+]]></system-out></testcase></testsuite></testsuites>
