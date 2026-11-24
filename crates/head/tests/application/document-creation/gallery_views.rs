@@ -77,7 +77,7 @@ fn part_details_shown(world: &mut ApplicationWorld) {
 fn grouped_by_default(world: &mut ApplicationWorld) {
     expect_group_headings(world, &["Part", "Assembly", "Drawing"]);
 }
-fn expect_group_headings(world: &mut ApplicationWorld, headings: &[&str]) {
+pub(super) fn expect_group_headings(world: &mut ApplicationWorld, headings: &[&str]) {
     for heading in headings {
         let shown = world.frame.runs.iter().any(|run| run.text == *heading);
         assert!(
@@ -394,7 +394,7 @@ fn selected_folder_contains_templates(world: &mut ApplicationWorld) {
     world.expect_text(METRIC_ASSEMBLY);
 }
 
-fn expect_selected_template(world: &ApplicationWorld, title: &str) {
+pub(super) fn expect_selected_template(world: &ApplicationWorld, title: &str) {
     let details_x = world.run("Template details").minimum[0];
     let expected = title.replace(' ', "");
     let shown: String = world

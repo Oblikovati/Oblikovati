@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" package="testsuite/Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:47:01.78414895Z" time="18.170336768"><testcase name="Scenario: Change template folders before selecting a new template: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature:37:3" time="18.170336768"><system-out><![CDATA[  Scenario: Change template folders before selecting a new template
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And the native catalog contains metric and inch templates in their respective folders
+   ✔> And the catalog root has no direct template files
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the user presses Control+N to open the new-document template chooser
+   ✔  And the new-document template chooser is open in the MCAD Software
+   ✔  And the metric sheet-metal template is selected
+   ✔  And its details show millimeter units
+   ✔  When the user selects the English template folder
+   ✔  Then the gallery shows the English folder's templates
+   ✔  And the details still identify the previously selected metric sheet-metal template
+   ✔  When the user selects the inch sheet-metal template
+   ✔  Then the template details identify a part with inch units
+]]></system-out></testcase></testsuite></testsuites>

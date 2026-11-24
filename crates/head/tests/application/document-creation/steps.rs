@@ -73,7 +73,7 @@ fn chooser_open(world: &mut ApplicationWorld) {
 }
 #[then("templates are grouped by document type")]
 fn grouped_by_type(world: &mut ApplicationWorld) {
-    world.expect_text("Part");
+    gallery_views::expect_group_headings(world, &["Part", "Assembly", "Drawing"]);
 }
 #[when("I select the metric template folder")]
 #[when("the user selects the metric template folder")]
@@ -88,17 +88,17 @@ fn english_folder(world: &mut ApplicationWorld) {
 #[when("I select the standard metric part template")]
 #[when("the user selects the standard metric part template")]
 fn select_metric(world: &mut ApplicationWorld) {
-    basic_catalog::select_metric_template(world, METRIC_PART, "Standard (mm)");
+    basic_catalog::select_catalog_template(world, METRIC_PART, "Standard (mm)");
 }
 #[when("I select the standard inch part template")]
 #[when("the user selects the standard inch part template")]
 fn select_inch(world: &mut ApplicationWorld) {
-    world.click_text("Standard inch part");
+    basic_catalog::select_catalog_template(world, "Standard inch part", "Standard (in)");
 }
 #[then("the template details identify a part with millimeter units")]
 fn metric_details(world: &mut ApplicationWorld) {
-    world.expect_text("Document type: Part");
-    world.expect_text("millimeters (mm)");
+    gallery_views::expect_selected_template(world, "Document type: Part");
+    gallery_views::expect_selected_template(world, "Length: millimeters (mm)");
 }
 #[then("the template details identify an assembly with millimeter units")]
 fn assembly_details(world: &mut ApplicationWorld) {
@@ -107,8 +107,8 @@ fn assembly_details(world: &mut ApplicationWorld) {
 }
 #[then("the template details identify a part with inch units")]
 fn inch_details(world: &mut ApplicationWorld) {
-    world.expect_text("Document type: Part");
-    world.expect_text("inches (in)");
+    gallery_views::expect_selected_template(world, "Document type: Part");
+    gallery_views::expect_selected_template(world, "Length: inches (in)");
 }
 #[when("I cancel the chooser")]
 #[when("the user cancels the chooser")]
@@ -165,18 +165,18 @@ fn new_tab(world: &mut ApplicationWorld) {
 #[when("I select the standard metric assembly template")]
 #[when("the user selects the standard metric assembly template")]
 fn select_assembly(world: &mut ApplicationWorld) {
-    basic_catalog::select_metric_template(world, METRIC_ASSEMBLY, "Standard Assembly");
+    basic_catalog::select_catalog_template(world, METRIC_ASSEMBLY, "Standard Assembly");
 }
 #[when("I select the metric sheet-metal part template")]
 #[when("the user selects the metric sheet-metal part template")]
 #[given("a sheet-metal part template is selected")]
 fn select_sheet_metal(world: &mut ApplicationWorld) {
-    basic_catalog::select_metric_template(world, METRIC_SHEET_METAL, "Sheet Metal (mm)");
+    basic_catalog::select_catalog_template(world, METRIC_SHEET_METAL, "Sheet Metal (mm)");
 }
 #[given("the metric sheet-metal template is selected")]
 fn sheet_metal_selected(world: &mut ApplicationWorld) {
     world.click_text("Metric");
-    world.click_text(METRIC_SHEET_METAL);
+    select_sheet_metal(world);
 }
 #[given("its details show millimeter units")]
 fn details_in_millimeters(world: &mut ApplicationWorld) {
@@ -222,13 +222,13 @@ fn assembly_ribbon(world: &mut ApplicationWorld) {
 }
 #[given("a drawing template with a border and title block is available")]
 fn drawing_available(world: &mut ApplicationWorld) {
-    let title = basic_catalog::metric_title(world, METRIC_DRAWING, "Standard Drawing");
+    let title = basic_catalog::catalog_title(world, METRIC_DRAWING, "Standard Drawing");
     world.expect_text(title);
 }
 #[when("I select the drawing template")]
 #[when("the user selects the drawing template")]
 fn select_drawing(world: &mut ApplicationWorld) {
-    basic_catalog::select_metric_template(world, METRIC_DRAWING, "Standard Drawing");
+    basic_catalog::select_catalog_template(world, METRIC_DRAWING, "Standard Drawing");
 }
 #[when("I choose its Use Template preview")]
 #[when("the user chooses its Use Template preview")]
@@ -281,7 +281,7 @@ fn sheet_metal_ribbon(world: &mut ApplicationWorld) {
 #[given("the metric part template group is expanded")]
 fn part_group_expanded(world: &mut ApplicationWorld) {
     world.click_text("Metric");
-    world.expect_text(METRIC_PART);
+    assert_metric_part_tiles(world, true);
 }
 #[when("I collapse the part template group")]
 #[when("I expand the part template group")]
@@ -308,57 +308,65 @@ fn assert_part_template_tile(world: &ApplicationWorld, title: &str, visible: boo
 
 #[then("its template tiles are hidden")]
 fn tiles_hidden(world: &mut ApplicationWorld) {
-    for title in [METRIC_PART, METRIC_SHEET_METAL] {
-        assert_part_template_tile(world, title, false);
+    assert_metric_part_tiles(world, false);
+}
+
+fn assert_metric_part_tiles(world: &mut ApplicationWorld, visible: bool) {
+    let titles = basic_catalog::metric_part_titles(world);
+    assert!(
+        !titles.is_empty(),
+        "expected the Metric Part group to contain templates"
+    );
+    for title in titles {
+        assert_part_template_tile(world, &title, visible);
     }
 }
 #[then("the assembly and drawing groups remain visible")]
 fn other_groups(world: &mut ApplicationWorld) {
-    world.expect_text(METRIC_ASSEMBLY);
-    world.expect_text(METRIC_DRAWING);
+    gallery_views::expect_group_headings(world, &["Assembly", "Drawing"]);
+    let assembly = basic_catalog::catalog_title(world, METRIC_ASSEMBLY, "Standard Assembly");
+    let drawing = basic_catalog::catalog_title(world, METRIC_DRAWING, "Standard Drawing");
+    assert_part_template_tile(world, assembly, true);
+    assert_part_template_tile(world, drawing, true);
 }
 #[then("the selected template's details remain displayed")]
 fn details_remain(world: &mut ApplicationWorld) {
-    // Only the details pane can still name a tile whose group is hidden.
-    world.expect_text(METRIC_SHEET_METAL);
-    world.expect_text("Document type: Part");
+    let name = basic_catalog::catalog_title(world, METRIC_SHEET_METAL, "Sheet Metal (mm)");
+    gallery_views::expect_selected_template(world, name);
+    metric_details(world);
 }
 #[then("its template tiles are visible again")]
 fn tiles_back(world: &mut ApplicationWorld) {
-    world.expect_text(METRIC_PART);
+    assert_metric_part_tiles(world, true);
 }
 #[then("the sheet-metal template remains selected")]
 fn sheet_metal_remains(world: &mut ApplicationWorld) {
-    world.expect_text("Document type: Part");
-    world.expect_text("millimeters (mm)");
-    let runs = world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| run.text.replace(' ', "") == METRIC_SHEET_METAL.replace(' ', ""))
-        .count();
-    assert_eq!(runs, 2, "expected the tile and the details pane");
+    let name = basic_catalog::catalog_title(world, METRIC_SHEET_METAL, "Sheet Metal (mm)");
+    assert_part_template_tile(world, name, true);
+    details_remain(world);
 }
 #[then("the gallery shows the English folder's templates")]
 fn english_gallery(world: &mut ApplicationWorld) {
-    world.expect_text("Standard inch part");
-    world.expect_text(INCH_SHEET_METAL);
-    world.expect_no_text(METRIC_PART);
+    let part = basic_catalog::catalog_title(world, "Standard inch part", "Standard (in)");
+    let sheet = basic_catalog::catalog_title(world, INCH_SHEET_METAL, "Sheet Metal (in)");
+    let metric = basic_catalog::catalog_title(world, METRIC_PART, "Standard (mm)");
+    assert_part_template_tile(world, part, true);
+    assert_part_template_tile(world, sheet, true);
+    assert_part_template_tile(world, metric, false);
 }
 #[then("the details still identify the previously selected metric sheet-metal template")]
 fn details_still_metric(world: &mut ApplicationWorld) {
-    world.expect_text(METRIC_SHEET_METAL);
-    world.expect_text("millimeters (mm)");
+    details_remain(world);
 }
 #[when("I select the inch sheet-metal template")]
 #[when("the user selects the inch sheet-metal template")]
 fn select_inch_sheet_metal(world: &mut ApplicationWorld) {
-    world.click_text(INCH_SHEET_METAL);
+    basic_catalog::select_catalog_template(world, INCH_SHEET_METAL, "Sheet Metal (in)");
 }
 #[when("I select the metric presentation template")]
 #[when("the user selects the metric presentation template")]
 fn select_presentation(world: &mut ApplicationWorld) {
-    basic_catalog::select_metric_template(
+    basic_catalog::select_catalog_template(
         world,
         "Standard metric presentation",
         "Standard Presentation",

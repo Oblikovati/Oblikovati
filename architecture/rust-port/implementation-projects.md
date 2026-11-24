@@ -75,3 +75,7 @@ new document stayed open. [Basic creation reports](receipts/2026-11-24-document-
 Projects wraps long names within its Name column. The root-template scenario
 confirmed that inspecting the active project and choosing Done preserves the
 selected assembly template and its details. [Project inspection report](receipts/2026-11-24-document-creation-project-dialog-3899/README.md)
+
+The first three native catalog cases checked stored Metric and English units,
+group collapse and expansion, and selection across folder changes.
+[Catalog reports](receipts/2026-11-24-document-creation-catalog-first-cases-3899/README.md)
