@@ -30,6 +30,7 @@ pub struct SketchPrismDefinition {
     sketch: DocumentSketchId,
     selection: SketchPrismSelection,
     displacement: [DatumLength; 3],
+    reversed_normal: bool,
 }
 impl SketchPrismDefinition {
     /// Validate authored identities and scalar sources before adoption.
@@ -43,6 +44,7 @@ impl SketchPrismDefinition {
             sketch,
             selection,
             displacement,
+            reversed_normal: false,
         };
         validation::validate_sources(&definition).map_err(|cause| definition.decline(cause))?;
         Ok(definition)
@@ -59,10 +61,30 @@ impl SketchPrismDefinition {
     pub fn displacement(&self) -> [DatumLength; 3] {
         self.displacement
     }
+    /// Reverse a positive authored normal displacement; example: `definition.reverse_normal()?`.
+    pub fn reverse_normal(mut self) -> Result<Self, SketchPrismError> {
+        self.reversed_normal = true;
+        validation::validate_sources(&self).map_err(|cause| self.decline(cause))?;
+        Ok(self)
+    }
+    /// Check whether replay reverses the authored normal displacement.
+    /// Example: `definition.normal_is_reversed()` when showing Extrude direction.
+    pub fn normal_is_reversed(&self) -> bool {
+        self.reversed_normal
+    }
+    /// Replace the authored depth without changing its direction.
+    /// Example: `definition.with_normal_source(DatumLength::Parameter(3))?`.
+    pub fn with_normal_source(&self, depth: DatumLength) -> Result<Self, SketchPrismError> {
+        let mut next = self.clone();
+        next.displacement[2] = depth;
+        validation::validate_sources(&next).map_err(|cause| next.decline(cause))?;
+        Ok(next)
+    }
     /// Compare exact authored values, including signed zero; example: `before.same_recipe(&after)`.
     pub fn same_recipe(&self, other: &Self) -> bool {
         self.sketch == other.sketch
             && self.selection == other.selection
+            && self.reversed_normal == other.reversed_normal
             && self
                 .displacement
                 .into_iter()

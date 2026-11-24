@@ -13,7 +13,7 @@ pub(super) fn validate_sources(definition: &SketchPrismDefinition) -> Result<(),
         validate_scalar_source(source, axis)?;
     }
     if let DatumLength::Constant(normal) = definition.displacement[2] {
-        require_normal_displacement(normal)?;
+        definition.validate_normal_source(normal)?;
     }
     Ok(())
 }
@@ -59,11 +59,18 @@ fn validate_scalar_source(source: DatumLength, axis: usize) -> Result<(), Sketch
             cause,
         })
 }
-pub(super) fn require_normal_displacement(normal: f64) -> Result<(), SketchPrismCause> {
-    if normal == 0. {
-        return Err(SketchPrismCause::Definition(format!(
-            "prism normal displacement {normal:?}: expected nonzero profile-normal displacement"
-        )));
+impl SketchPrismDefinition {
+    pub(super) fn validate_normal_source(&self, normal: f64) -> Result<(), SketchPrismCause> {
+        if self.reversed_normal && normal <= 0. {
+            return Err(SketchPrismCause::Definition(format!(
+                "flipped prism depth {normal:?}: expected a positive authored distance"
+            )));
+        }
+        if normal == 0. {
+            return Err(SketchPrismCause::Definition(format!(
+                "prism normal displacement {normal:?}: expected nonzero profile-normal displacement"
+            )));
+        }
+        Ok(())
     }
-    Ok(())
 }

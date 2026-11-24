@@ -163,12 +163,18 @@ impl<'s, O: TransactionObserver> SessionConditionalSketch<'s, O> {
             .map_err(|error| error.to_string())?;
         let mut axes = Vec::with_capacity(3);
         for (index, source) in definition.displacement().into_iter().enumerate() {
-            axes.push(axis_bound(
+            let flipped = index == 2 && definition.normal_is_reversed();
+            let value = resolved.displacement[index];
+            let mut axis = axis_bound(
                 source,
                 constants[index],
-                resolved.displacement[index],
+                if flipped { -value } else { value },
                 &snapshot.parameters,
-            )?);
+            )?;
+            if flipped {
+                axis.bounds = [-axis.bounds[1], -axis.bounds[0]];
+            }
+            axes.push(axis);
         }
         axes.try_into()
             .map_err(|_| "displacement axes: expected three bounds".to_owned())

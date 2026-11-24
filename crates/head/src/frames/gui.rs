@@ -387,6 +387,7 @@ pub(super) fn dispatch_gui_action(
             sketch,
             profile,
             distance,
+            flipped,
         } = action
     {
         window.reject_extrusion(
@@ -396,6 +397,7 @@ pub(super) fn dispatch_gui_action(
                 sketch: *sketch,
                 profile: *profile,
                 distance: distance.clone(),
+                flipped: *flipped,
             },
             cause,
         );

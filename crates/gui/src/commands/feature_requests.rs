@@ -16,6 +16,7 @@ pub struct GuiExtrudePreview {
     pub sketch: oblikovati_model::document_sketch::DocumentSketchId,
     pub profile: i64,
     pub distance: String,
+    pub flipped: bool,
 }
 /// One generation-scoped face and size for a straight-hole draft.
 #[derive(Clone, Debug, PartialEq, Eq)]

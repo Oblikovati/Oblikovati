@@ -201,9 +201,10 @@ macro_rules! forward_owner_view_work {
             sketch: oblikovati_model::document_sketch::DocumentSketchId,
             profile: i64,
             distance: &str,
+            flipped: bool,
         ) -> Result<bool, String> {
             self.$owner
-                .extrude_from_gui(document, sketch, profile, distance)
+                .extrude_from_gui(document, sketch, profile, distance, flipped)
         }
         fn extrusion_preview_from_gui(
             &mut self,

@@ -376,6 +376,7 @@ impl GuiShellAction {
                 sketch,
                 profile,
                 distance,
+                ..
             } => {
                 state.extrude_available
                     && state.document == Some(*document)
@@ -417,10 +418,10 @@ impl GuiShellAction {
                 sketch: preview.sketch,
                 profile: preview.profile,
                 distance: preview.distance.clone(),
+                flipped: preview.flipped,
             }
             .enabled(state),
-            Self::Parameter { .. } => state.document.is_some(),
-            Self::OpenIProperties => state.document.is_some(),
+            Self::Parameter { .. } | Self::OpenIProperties => state.document.is_some(),
             Self::OpenModelStateTable => state.model_state_table.is_some(),
             Self::SetModelStateTable { document, .. }
             | Self::VerifyModelStateTable { document, .. } => {

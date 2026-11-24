@@ -61,6 +61,7 @@ pub struct GuiModelBrowser {
 pub struct GuiExtrudeEditSeed {
     pub sketch: DocumentSketchId,
     pub distance: String,
+    pub flipped: bool,
 }
 /// Authored radius and document generation for a Fillet edit.
 #[derive(Clone, Debug, PartialEq, Eq)]

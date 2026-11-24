@@ -28,3 +28,14 @@ Parameter edits invalidate the previous validation and cause a new preview.
 The desktop frame dispatches GUI actions in order and computes previews inline.
 There is no background preview completion that can arrive after an edit or Cancel.
 Cancel clears the transient scene without creating a feature or changing history.
+
+## Flipped direction (#3893)
+
+Desktop creation and preview pass the same direction through the typed Extrude
+request. Flipped uses the existing negative direction value and keeps the
+Distance A expression positive. The prism recipe records the reversal
+separately and applies it to the sketch-normal displacement after resolving
+the distance. Existing recipes default to their original signed displacement.
+An accepted extrusion keeps its direction during a distance edit.
+
+See the [Flipped direction receipt](receipts/2026-11-24-extrusion-flipped-3893/README.md).

@@ -126,8 +126,9 @@ macro_rules! desktop_extrusion_work {
             sketch: oblikovati_model::document_sketch::DocumentSketchId,
             profile: i64,
             distance: &str,
+            flipped: bool,
         ) -> Result<bool, String> {
-            self.create_extrusion_from_gui(document, sketch, profile, distance)
+            self.create_extrusion_from_gui(document, sketch, profile, distance, flipped)
         }
         fn extrusion_preview_from_gui(
             &mut self,
@@ -147,12 +148,7 @@ macro_rules! desktop_extrusion_work {
                     return Ok(false);
                 }
             }
-            self.set_extrusion_preview(
-                preview.document,
-                preview.sketch,
-                preview.profile,
-                &preview.distance,
-            )
+            self.set_extrusion_preview(preview)
         }
         fn validate_extrusion_distance(
             &mut self,

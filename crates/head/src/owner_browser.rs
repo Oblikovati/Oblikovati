@@ -203,6 +203,7 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
                 oblikovati_gui::GuiExtrudeEditSeed {
                     sketch: definition.sketch(),
                     distance,
+                    flipped: definition.normal_is_reversed(),
                 },
             ))
         })

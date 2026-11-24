@@ -38,9 +38,12 @@ impl SketchPrismDefinition {
         snapshot: &'a DocumentSnapshot,
         sketch: ResolvedDocumentSketch<'a>,
     ) -> Result<ResolvedSketchPrism<'a>, SketchPrismError> {
-        let displacement = self.resolve_displacement(snapshot)?;
-        validation::require_normal_displacement(displacement[2])
+        let mut displacement = self.resolve_displacement(snapshot)?;
+        self.validate_normal_source(displacement[2])
             .map_err(|cause| self.decline(cause))?;
+        if self.reversed_normal {
+            displacement[2] = -displacement[2];
+        }
         Ok(ResolvedSketchPrism {
             sketch,
             selection: &self.selection,

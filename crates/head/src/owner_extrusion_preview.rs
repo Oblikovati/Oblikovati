@@ -133,19 +133,17 @@ impl<
     }
     pub(super) fn set_extrusion_preview(
         &mut self,
-        document: u64,
-        sketch: oblikovati_model::document_sketch::DocumentSketchId,
-        profile: i64,
-        distance: &str,
+        preview: &oblikovati_gui::GuiExtrudePreview,
     ) -> Result<bool, String> {
         self.clear_extrusion_preview();
-        let sketch_index = self.extrusion_sketch_index(document, sketch)?;
-        let request = oblikovati_api::wire::featureargs::Extrude {
-            sketch_index,
-            profile_index: profile,
-            distance: distance.into(),
-            ..Default::default()
-        };
+        let document = preview.document;
+        let request = self.extrusion_request(
+            document,
+            preview.sketch,
+            preview.profile,
+            &preview.distance,
+            preview.flipped,
+        )?;
         let presentation = self.preview_extrusion_from_gui(document, &request)?;
         let scene = oblikovati_viewport::ViewportScene::from_prism(
             &presentation,

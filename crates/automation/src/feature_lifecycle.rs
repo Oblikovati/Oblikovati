@@ -194,14 +194,7 @@ fn revised_prism(
             "features.edit id {id}: expected a sketch prism feature"
         )));
     };
-    let mut displacement = previous.displacement();
-    displacement[2] = distance;
-    oblikovati_model::feature::sketch_prism::SketchPrismDefinition::new(
-        previous.sketch(),
-        previous.selection().clone(),
-        displacement,
-    )
-    .map_err(api_error)
+    previous.with_normal_source(distance).map_err(api_error)
 }
 
 fn require_empty_repicks(request: &EditFeatureArgs) -> Result<(), Error> {

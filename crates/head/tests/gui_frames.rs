@@ -212,12 +212,14 @@ impl HeadWork for FakeGuiOwner {
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
         profile: i64,
         distance: &str,
+        flipped: bool,
     ) -> Result<bool, String> {
         self.shell_actions.push(GuiShellAction::Extrude {
             document,
             sketch,
             profile,
             distance: distance.into(),
+            flipped,
         });
         Ok(true)
     }
@@ -339,6 +341,7 @@ fn cube_actions_reach_the_owner_without_viewport_commands() {
             sketch: oblikovati_model::document_sketch::DocumentSketchId(1),
             profile: 0,
             distance: "10 mm".into(),
+            flipped: false,
         },
     ];
     let mut window = FakeGuiWindow {

@@ -141,14 +141,9 @@ fn create_with_owned_distance(
         .parameters
         .insert_auto_model_scalar(parameter, source, Dimension::Length)
         .map_err(api_error)?;
-    let mut displacement = definition.displacement();
-    displacement[2] = DatumLength::Parameter(parameter);
-    let definition = SketchPrismDefinition::new(
-        definition.sketch(),
-        definition.selection().clone(),
-        displacement,
-    )
-    .map_err(api_error)?;
+    let definition = definition
+        .with_normal_source(DatumLength::Parameter(parameter))
+        .map_err(api_error)?;
     let feature = candidate
         .create_sketch_prism(name, definition, ids)
         .map_err(api_error)?;
@@ -182,6 +177,11 @@ pub fn prepare_extrusion(
         [DatumLength::Constant(0.), DatumLength::Constant(0.), depth],
     )
     .map_err(api_error)?;
+    let definition = if input.direction.trim().eq_ignore_ascii_case("negative") {
+        definition.reverse_normal().map_err(api_error)?
+    } else {
+        definition
+    };
     let name = next_name(snapshot)?;
     Ok(PreparedExtrusion {
         name,
@@ -247,7 +247,11 @@ fn require_supported(input: &Extrude) -> Result<(), Error> {
             &["new", "newbody", "new-body"][..],
         ),
         ("extent", input.extent.as_str(), &["distance"][..]),
-        ("direction", input.direction.as_str(), &["positive"][..]),
+        (
+            "direction",
+            input.direction.as_str(),
+            &["positive", "negative"][..],
+        ),
     ] {
         let normalized = value.trim();
         if !normalized.is_empty()

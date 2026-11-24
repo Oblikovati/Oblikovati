@@ -8,6 +8,8 @@ pub struct SketchPrismRecipe {
     pub sketch: DocumentSketchId,
     pub selection: SketchPrismSelection,
     pub displacement: [DatumLength; 3],
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub reversed_normal: bool,
 }
 impl SketchPrismDefinition {
     /// Capture only authored inputs; example: `serde_json::to_string(&definition.recipe())?`.
@@ -17,6 +19,7 @@ impl SketchPrismDefinition {
             sketch: self.sketch,
             selection: self.selection.clone(),
             displacement: self.displacement,
+            reversed_normal: self.reversed_normal,
         }
     }
     /// Validate the saved version and sources before adoption; example: `SketchPrismDefinition::from_recipe(&recipe)?`.
@@ -30,6 +33,10 @@ impl SketchPrismDefinition {
                 ))),
             });
         }
-        Self::new(recipe.sketch, recipe.selection.clone(), recipe.displacement)
+        let definition = Self::new(recipe.sketch, recipe.selection.clone(), recipe.displacement)?;
+        if recipe.reversed_normal {
+            return definition.reverse_normal();
+        }
+        Ok(definition)
     }
 }

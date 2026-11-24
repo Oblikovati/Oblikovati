@@ -15,6 +15,7 @@ pub(crate) struct ExtrudeDialog {
     sketch: Option<DocumentSketchId>,
     profile: i32,
     distance: String,
+    flipped: bool,
     previewed: bool,
     attempted: Option<crate::GuiExtrudePreview>,
     pending: pending::PendingExtrude,
@@ -62,6 +63,7 @@ impl ExtrudeDialog {
         self.sketch = Some(seed.sketch);
         self.profile = 0;
         self.distance = seed.distance.clone();
+        self.flipped = seed.flipped;
         self.edit_feature = Some(feature);
         self.attempted = None;
         self.commit_error = None;
@@ -85,6 +87,7 @@ impl ExtrudeDialog {
             });
             self.profile = 0;
             self.distance.clear();
+            self.flipped = false;
             self.edit_feature = None;
         }
         if self.document != state.document
@@ -112,6 +115,7 @@ impl ExtrudeDialog {
             self.sketch = Some(sketch);
             self.profile = 0;
             self.distance = "10 mm".into();
+            self.flipped = false;
             self.attempted = None;
             self.edit_feature = None;
         }
@@ -139,6 +143,7 @@ impl ExtrudeDialog {
             edited |= ui.input_int("Profile", &mut self.profile).build();
             drop(disabled_sketch);
             edited |= ui.input_text("Distance A", &mut self.distance).build();
+            edited |= self.direction(ui);
             if edited {
                 self.commit_error = None;
             }
@@ -219,7 +224,22 @@ impl ExtrudeDialog {
             sketch: self.sketch?,
             profile: i64::from(self.profile),
             distance: self.distance.clone(),
+            flipped: self.flipped,
         })
+    }
+    fn direction(&mut self, ui: &Ui) -> bool {
+        ui.text("Direction");
+        ui.same_line();
+        let previous = self.flipped;
+        let _disabled = ui.begin_disabled(self.edit_feature.is_some());
+        if ui.radio_button_bool("Default", !self.flipped) {
+            self.flipped = false;
+        }
+        ui.same_line();
+        if ui.radio_button_bool("Flipped", self.flipped) {
+            self.flipped = true;
+        }
+        self.flipped != previous
     }
     fn sketch_choice(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
         let Some(browser) = state.browser.as_ref() else {
@@ -275,6 +295,7 @@ impl ExtrudeDialog {
             sketch: request.sketch,
             profile: request.profile,
             distance: request.distance.clone(),
+            flipped: request.flipped,
         }
     }
     fn edit_request(
@@ -439,6 +460,7 @@ mod tests {
             sketch: DocumentSketchId(4),
             profile: 0,
             distance: "size".into(),
+            flipped: false,
         };
         assert!(action.dispatchable(&state));
         state.extrude_available = false;
@@ -459,15 +481,18 @@ mod tests {
             crate::GuiExtrudeEditSeed {
                 sketch: DocumentSketchId(4),
                 distance: "size".into(),
+                flipped: true,
             },
         );
         let mut dialog = ExtrudeDialog::default();
         dialog.open_edit(&state, feature);
         assert_eq!(dialog.edit_feature, Some(feature));
         assert_eq!(dialog.distance, "size");
+        assert!(dialog.flipped);
         dialog.requested = true;
         dialog.synchronize(&state);
         assert_eq!(dialog.edit_feature, None);
         assert!(dialog.distance.is_empty());
+        assert!(!dialog.flipped);
     }
 }

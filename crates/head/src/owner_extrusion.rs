@@ -45,22 +45,37 @@ impl<
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
         profile: i64,
         distance: &str,
+        flipped: bool,
     ) -> Result<bool, String> {
         self.clear_extrusion_preview();
-        let sketch_index = self.extrusion_sketch_index(document, sketch)?;
-        let request = oblikovati_api::wire::featureargs::Extrude {
-            sketch_index,
-            profile_index: profile,
-            distance: distance.into(),
-            ..Default::default()
-        };
+        let request = self.extrusion_request(document, sketch, profile, distance, flipped)?;
         oblikovati_api::client::Client::new(self.document_host())
             .features()
             .add_feature(&request)
             .map_err(|cause| cause.to_string())?;
         Ok(true)
     }
-    pub(super) fn extrusion_sketch_index(
+    pub(super) fn extrusion_request(
+        &self,
+        document: u64,
+        sketch: oblikovati_model::document_sketch::DocumentSketchId,
+        profile: i64,
+        distance: &str,
+        flipped: bool,
+    ) -> Result<oblikovati_api::wire::featureargs::Extrude, String> {
+        Ok(oblikovati_api::wire::featureargs::Extrude {
+            sketch_index: self.extrusion_sketch_index(document, sketch)?,
+            profile_index: profile,
+            distance: distance.into(),
+            direction: if flipped {
+                "negative".into()
+            } else {
+                String::new()
+            },
+            ..Default::default()
+        })
+    }
+    fn extrusion_sketch_index(
         &self,
         document: u64,
         sketch: oblikovati_model::document_sketch::DocumentSketchId,

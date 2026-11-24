@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added Flipped direction for new solid extrusions in the desktop and typed API. (#3893)
+
 - Added analytic solid-edge lengths to the Part Measure panel. (#3967)
 
 - Added Zoom, Zoom All, Zoom Selected, and Zoom Window to ribbon customization. (#3856)

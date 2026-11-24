@@ -13,6 +13,7 @@ fn desktop_resolution_supports_preview_commit_and_parameter_replay() {
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,
         distance: "width".into(),
+        flipped: false,
     };
     owner.extrusion_preview_from_gui(Some(&preview)).unwrap();
     assert!(
@@ -25,7 +26,7 @@ fn desktop_resolution_supports_preview_commit_and_parameter_replay() {
             .is_empty()
     );
     owner
-        .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width")
+        .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", false)
         .unwrap();
     owner.take_scene().unwrap().unwrap();
     assert_cube(&owner, document, 1.);
@@ -90,6 +91,7 @@ fn stale_extrusion_request_does_not_replace_the_current_preview() {
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,
         distance: "width".into(),
+        flipped: false,
     };
     set_size(&mut owner, "20 mm");
     preview.generation = Some(

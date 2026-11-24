@@ -54,6 +54,7 @@ fn extrusion_dialog_accepts_keyboard_distance_and_emits_owner_action() {
             sketch: DocumentSketchId(4),
             profile: 0,
             distance: "size".into(),
+            flipped: false,
         }]
     );
 }
@@ -76,7 +77,8 @@ fn extrusion_preview_button_and_escape_send_transient_actions() {
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
     validate_size(&mut engine, &mut request);
-    let actions = click_ribbon(&mut engine, &mut request, [600., 405.]);
+    let preview = ribbon_caption(&mut engine, &mut request, "Preview", false);
+    let actions = click_ribbon(&mut engine, &mut request, preview);
     assert_eq!(
         actions,
         [GuiShellAction::PreviewExtrude(Some(GuiExtrudePreview {
@@ -85,6 +87,7 @@ fn extrusion_preview_button_and_escape_send_transient_actions() {
             sketch: DocumentSketchId(4),
             profile: 0,
             distance: "size".into(),
+            flipped: false,
         }))]
     );
     assert_eq!(
@@ -102,7 +105,8 @@ fn changing_distance_clears_the_existing_preview() {
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
     validate_size(&mut engine, &mut request);
-    click_ribbon(&mut engine, &mut request, [600., 405.]);
+    let preview = ribbon_caption(&mut engine, &mut request, "Preview", false);
+    click_ribbon(&mut engine, &mut request, preview);
     click_ribbon(&mut engine, &mut request, [650., 379.]);
     request.events = vec![GuiInputEvent::Text("2".into())];
     let actions = engine.frame(&request).unwrap().actions;
@@ -118,7 +122,8 @@ fn reopening_extrusion_clears_the_previous_preview() {
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
     validate_size(&mut engine, &mut request);
-    click_ribbon(&mut engine, &mut request, [600., 405.]);
+    let preview = ribbon_caption(&mut engine, &mut request, "Preview", false);
+    click_ribbon(&mut engine, &mut request, preview);
     assert_eq!(
         click_ribbon(&mut engine, &mut request, [160., 70.]),
         [
