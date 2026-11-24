@@ -14,7 +14,7 @@ using this status; the live scenario directory can change.
 
 ## Current evidence
 
-- All 12 [Viewport Navigation Wheel scenarios](receipts/2026-11-21-viewport-navigation-wheel-r0-3881/README.md) passed on the pinned and published sources.
+- All 12 current [Viewport Navigation Wheel scenarios](receipts/2026-11-24-navigation-wheel-current-3881/README.md) passed individually with the named native Part.
 - Viewport Orbit (#3872): all ten pinned cases and 94 steps passed, including
   both examples of the opposite-button outline. A saved native block
   reproduced a stale status message after Rotate at Angle. All ten cases

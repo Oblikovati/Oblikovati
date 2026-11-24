@@ -2,11 +2,13 @@
 //! Keep the wheel fixture available to the pinned and published benchmarks.
 
 use super::ApplicationWorld;
+use cucumber::given;
 use std::path::{Path, PathBuf};
 
 const WHEEL_FIXTURE: &str = "main-window-frame-start.opd";
 
 /// Open a disposable copy of the documented fixture, as in `open_block(world)`.
+#[given("`fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software")]
 pub(in super::super) fn open_block(world: &mut ApplicationWorld) {
     let pinned = std::env::var_os("OBK_BDD_ROOT").is_none()
         || std::env::var_os("OBK_BDD_REQUIRE_PINNED").is_some();
@@ -20,6 +22,19 @@ pub(in super::super) fn open_block(world: &mut ApplicationWorld) {
     assert!(!world.state().document_storage[&document].unsaved_edits);
     world.parts.push(document);
     super::super::workspace_layout::browser_feature::expect_solid_visible(world);
+}
+
+/// Use the named Part when the scenario opened it before establishing the view.
+pub(in super::super) fn ensure_block(world: &mut ApplicationWorld) {
+    if let Some(&document) = world.parts.last() {
+        assert_eq!(
+            world.active_id(),
+            document,
+            "expected the wheel fixture active"
+        );
+        return;
+    }
+    open_block(world);
 }
 
 fn wheel_fixture_path(source_root: &Path, pinned: bool) -> PathBuf {

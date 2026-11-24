@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport navigation wheel: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-wheel-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" package="testsuite/Feature: Viewport navigation wheel: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-wheel-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T18:29:39.58723276Z" time="94.61983969"><testcase name="Scenario: Return to the home view from the wheel menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-wheel-source/features/application/viewport-navigation-wheel/viewport-navigation-wheel.feature:113:3" time="94.61983969"><system-out><![CDATA[  Scenario: Return to the home view from the wheel menu
+   ✔  Given `fixtures/cad/main-window-frame-start.opd` is open and active in the MCAD Software
+   ✔  And a rectangular block is visible in an active part in the MCAD Software
+   ✔  And the home view has a known three-face orientation
+   ✔  And the current view differs from the home view
+   ✔  And the full navigation wheel is open
+   ✔  When the user right-clicks the wheel and chooses Go Home
+   ✔  Then the block returns to the known home orientation
+   ✔  And the navigation wheel remains open
+   ✔  And the same part remains active
+   ✔  When the user presses Escape
+   ✔  Then the wheel closes and the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>

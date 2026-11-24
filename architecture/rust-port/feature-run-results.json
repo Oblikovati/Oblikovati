@@ -144,6 +144,24 @@
         "command": "Full viewport-navigation-wheel native run. See the receipt README.",
         "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
         "notes": "All 12 published scenarios and 143 steps passed, including cleanup. Build and runtime provenance remains open under #3978."
+      },
+      "c78db32a41361d3726a07d403c81efe70c7a9b15ac23f20a4b7a251dc1e0bc55": {
+        "feature_sha256": "c78db32a41361d3726a07d403c81efe70c7a9b15ac23f20a4b7a251dc1e0bc55",
+        "supporting_files": {
+          "features/application/viewport-navigation-wheel/BLOCKERS.md": "152dc52515efe9f281296196c765ccaea2b7362398911c79d1e5b1c646b96fa0",
+          "features/application/viewport-navigation-wheel/FIXTURES.md": "06eb8c19d6300b48cc22cfa98e849495ce5ca26c1c9c3ebafc6cf59ecbe223ee",
+          "features/application/viewport-navigation-wheel/FUNCTIONAL.md": "b7d51bf90bc99f9513b29d2bd83773e2eba8a98de4acb5b24897eed3e5e9fe57",
+          "features/application/viewport-navigation-wheel/VISUAL.md": "789a8a1cee984139e03833db50f0cd6d73b15d84d8bbbf0e4a16b3bf12f908dd",
+          "features/application/viewport-navigation-wheel/wheel-preferences-wireframe.svg": "4489e6624ae205f0d74a93290a2c25d96f3ad8343ea536ecd351ec9db12e1c6c",
+          "features/application/viewport-navigation-wheel/wheel-wireframe.svg": "815bfe6431fb7e677e44adf5d2bc24fee0e55d0ed6addd9efd4a662798d8c324",
+          "fixtures/cad/main-window-frame-start.opd": "cac3df2175ff0f191abda7152700a4542903f2281d4a1668f09315d48dc66664"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-navigation-wheel-current-3881/current-cucumber.json",
+        "cucumber_sha256": "427daef7a9357c45ccfaada36e05646d0a29f6aa160a1612a6463503ac7a8653",
+        "application_commit": "ade2ea431c81c1e8f2750ee8fbd4f9daf7bdc603",
+        "command": "OBK_BDD_ROOT=<snapshot> OBK_BDD_AREA=application OBK_BDD_FEATURE=viewport-navigation-wheel OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 12 current scenarios and 155 steps passed in separate native runs. The build includes the updated scenario bindings and existing local GUI edits. Strict build and runtime provenance remains open under #3978."
       }
     }
   },

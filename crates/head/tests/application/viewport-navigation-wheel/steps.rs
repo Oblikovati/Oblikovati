@@ -14,7 +14,9 @@ const FULL_WHEEL_SIDE: f32 = 160.;
 mod big_size;
 #[path = "fixture.rs"]
 mod fixture;
-pub(super) use fixture::open_block;
+pub(super) use fixture::ensure_block;
+#[cfg(test)]
+use fixture::open_block;
 #[path = "preferences.rs"]
 mod preferences;
 #[path = "segment_pixels.rs"]
@@ -45,7 +47,7 @@ fn open_wheel(world: &mut ApplicationWorld) {
     settle(world);
 }
 fn open_wheel_on_block(world: &mut ApplicationWorld) {
-    open_block(world);
+    ensure_block(world);
     world.observed_view_camera = Some(camera(world));
     open_full_wheel(world);
 }
@@ -432,7 +434,7 @@ fn remember_side(world: &mut ApplicationWorld) {
 // Fit and Home from the wheel's menu
 #[given("a single rectangular block appears small in an active part in the MCAD Software")]
 fn small_block(world: &mut ApplicationWorld) {
-    open_block(world);
+    ensure_block(world);
     let view = camera(world);
     crate::HeadWindow::set_view_camera(
         &mut world.app().window,

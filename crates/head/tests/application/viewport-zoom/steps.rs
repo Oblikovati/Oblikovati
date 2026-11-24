@@ -141,7 +141,7 @@ fn expect_same_orientation(world: &mut ApplicationWorld) {
 #[given("a rectangular block is visible in an active part in the MCAD Software")]
 fn visible_block(world: &mut ApplicationWorld) {
     if world.navigation_wheel_scenario() {
-        super::viewport_navigation_wheel::open_block(world);
+        super::viewport_navigation_wheel::ensure_block(world);
     } else {
         open_block(world);
     }
