@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature" package="testsuite/Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T20:55:20.406370729Z" time="27.309887286"><testcase name="Scenario: Add and remove a ribbon command through its context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:71:3" time="27.309887286"><system-out><![CDATA[  Scenario: Add and remove a ribbon command through its context menu
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And Extrude is available on the 3D Model ribbon
+   ✔  And Extrude is not on the quick access toolbar
+   ✔  When the user right-clicks Extrude on the ribbon
+   ✔  Then its context menu offers Add to Quick Access Toolbar
+   ✔  When the user chooses Add to Quick Access Toolbar
+   ✔  Then an Extrude icon appears on the quick access toolbar
+   ✔  And Extrude remains available on the ribbon
+   ✔  When the user right-clicks the added quick access icon
+   ✔  Then its context menu offers Remove from Quick Access Toolbar
+   ✔  When the user chooses Remove from Quick Access Toolbar
+   ✔  Then the added icon disappears from the quick access toolbar
+   ✔  And Extrude remains available on the ribbon
+   ✔  And the same part remains active
+]]></system-out></testcase></testsuite></testsuites>

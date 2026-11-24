@@ -27,7 +27,6 @@ fn open_fixture_project(world: &mut ApplicationWorld, path: &str) {
     );
 }
 #[given("a document is open in the MCAD Software")]
-#[given("a part document is active in the MCAD Software")]
 fn open_document(world: &mut ApplicationWorld) {
     let id =
         if super::scenario_capture::is_main_window_frame(world.scenario_feature_path.as_deref()) {
@@ -36,6 +35,15 @@ fn open_document(world: &mut ApplicationWorld) {
             world.add_part()
         };
     world.previous_document = Some(id);
+}
+
+#[given("a part document is active in the MCAD Software")]
+fn part_is_active(world: &mut ApplicationWorld) {
+    if world.state().document_type == Some(oblikovati_api::types::DOCUMENT_PART) {
+        world.previous_document = Some(world.active_id());
+    } else {
+        open_document(world);
+    }
 }
 #[given(
     "`fixtures/cad/workspace-layout-native.opd` is open with `Sketch1` visible in the MCAD Software"

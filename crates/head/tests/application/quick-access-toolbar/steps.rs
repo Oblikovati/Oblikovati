@@ -6,6 +6,7 @@ mod clear_face;
 mod dockable_windows;
 mod material_browser;
 mod menu_choices;
+mod native_fixture;
 mod projects;
 mod redo;
 mod return_command;
