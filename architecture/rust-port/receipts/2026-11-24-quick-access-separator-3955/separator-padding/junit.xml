@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature" package="testsuite/Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T20:59:53.683159296Z" time="29.876512428"><testcase name="Scenario: Add a separator from a toolbar command context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:89:3" time="29.876512428"><system-out><![CDATA[  Scenario: Add a separator from a toolbar command context menu
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And Extrude has been added to the quick access toolbar
+   ✔  When the user right-clicks its quick access icon
+   ✔  Then the context menu offers Add Separator
+   ✔  When the user chooses Add Separator
+   ✔  Then the quick access row gains a narrow divider beside the added command
+   ✔  And the same part remains active
+]]></system-out></testcase></testsuite></testsuites>

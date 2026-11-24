@@ -303,7 +303,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Enabled Page Up and Page Down in the staged ribbon command list. (#3856)
 - Moved keyboard focus to Add when pressing Tab from a selected available ribbon command. (#3856)
 - Drew the 3D Annotations icon at its configured size in custom ribbon panels. (#3856)
-
+- Kept the entire Add Separator label visible in the Quick Access context menu. (#3955)
 - Preserved available ribbon command selections when switching targets and selected the separator when a source filter hid the selected command. (#3856)
 
 - Returned to Ribbon Customization with an error when importing invalid XML, preserving staged edits. (#3856)

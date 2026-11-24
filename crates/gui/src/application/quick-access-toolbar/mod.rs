@@ -312,6 +312,8 @@ impl QuickAccessToolbar {
         if ui.menu_item("Add Separator") {
             add_separator_after(self.selection(state), &label);
         }
+        // Leave room for the last menu row's descenders.
+        ui.dummy([0., 2.]);
     }
     fn customize_control(&mut self, ui: &Ui, state: &GuiCommandState) {
         if ui.button("...") {
