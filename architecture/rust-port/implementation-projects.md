@@ -95,3 +95,9 @@ Home and End selected the first and last named tiles within the active Part
 or Assembly group. Escape returned to the original Part. The current
 scenario passed all 18 steps.
 [Group endpoints report](receipts/2026-11-24-document-creation-group-endpoints-3899/README.md)
+
+The desktop profile restores the last named template when it is present in
+the active project catalog. Named Part templates show their resolved material
+assignments. The restart scenario passed all 22 steps, including restoring
+the Metric selection and its Generic material.
+[Template restart report](receipts/2026-11-24-document-creation-template-restart-3899/README.md)

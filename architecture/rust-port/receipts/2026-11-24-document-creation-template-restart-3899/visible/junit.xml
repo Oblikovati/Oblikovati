@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Retain the selected template across application restart: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-restart-source/features/application/document-creation/document-creation-template-restart.feature" package="testsuite/Feature: Retain the selected template across application restart: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-restart-source/features/application/document-creation/document-creation-template-restart.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T20:30:05.012918757Z" time="71.517789851"><testcase name="Scenario: Retain the last selected template after an application restart: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-restart-source/features/application/document-creation/document-creation-template-restart.feature:10:3" time="71.517789851"><system-out><![CDATA[  Scenario: Retain the last selected template after an application restart
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-generic-candidate.opj` as its active project
+   ✔> And its Metric folder contains a standard part template with the material label Generic
+   ✔  Given fixture `fixtures/cad/workspace-layout-native.opd` is open with Sketch1 visible in the MCAD Software
+   ✔  When the user presses Control+N
+   ✔  Then the Create New File chooser opens over the part
+   ✔  When the user selects the metric template folder
+   ✔  And the user selects the standard metric part template in the Part group
+   ✔  And the user cancels the chooser
+   ✔  And the user closes the MCAD Software while the part remains unchanged
+   ✔  And the user restarts the MCAD Software
+   ✔  And the user opens fixture `fixtures/cad/workspace-layout-native.opd`
+   ✔  And the user presses Control+N
+   ✔  Then the Create New File chooser opens over the part
+   ✔  And the template gallery is grouped by document type
+   ✔  And Metric is selected in the template folder tree
+   ✔  And the standard metric part template is selected in the Part group
+   ✔  And the details identify a Part with millimeter units and Generic material
+   ✔  And Create and Cancel are available
+   ✔  And the existing part and sketch remain visible behind the chooser
+   ✔  When the user presses Escape
+   ✔  Then the chooser closes without creating a document
+   ✔  And the same part and sketch remain active
+]]></system-out></testcase></testsuite></testsuites>
