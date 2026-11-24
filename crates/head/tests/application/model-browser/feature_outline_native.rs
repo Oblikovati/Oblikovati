@@ -13,7 +13,8 @@ fn x11_feature_outline_follows_browser_selection() {
     expect_outline(&mut world, true);
     assert!(diagnostics::window_geometry("##selection-toolbar").is_some());
     world.save_capture("feature-outline-selected");
-    super::super::x11_input::click([1300, 800]);
+    let empty = super::super::viewport_entity_selection::empty_viewport_point(&mut world);
+    super::super::x11_input::click(empty);
     settle(&mut world);
     assert!(world.state().browser.unwrap().selected_feature.is_none());
     expect_outline(&mut world, false);

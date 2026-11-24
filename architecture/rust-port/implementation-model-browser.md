@@ -62,3 +62,8 @@ Six additional pinned cases passed with the same viewport check, covering
 edit scope, model-state duplication, view copying, camera autosave,
 annotation scale, and saved camera restoration. See the
 [native runs](receipts/2026-11-24-empty-browser-state-view-3896/README.md).
+
+The origin and extrusion hierarchy cases use the saved Part on the
+published source. They read the feature and sketch labels from the
+loaded document. The [native receipt](receipts/2026-11-24-model-browser-hierarchy-fixture-3896/README.md)
+also covers X11 deselection with the Appearance browser docked.

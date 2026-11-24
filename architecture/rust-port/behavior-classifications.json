@@ -4942,9 +4942,9 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "mapping_reason": "Select a feature row and present its model outline and contextual controls.",
-      "api_revision": "f0943c724a6e07ec49533769c9e680137bb3d55c",
-      "kernel_revision": "d051ff699982faba4ec2df3ee9a47e14f38dedbd",
+      "mapping_reason": "Native browser hierarchy, feature selection, and its viewport presentation.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
       "historical_receipts": [
         {
           "source_revision": "35f4a77b1519e2f29005be009c35fb7c5bdf4e89",
@@ -4957,14 +4957,15 @@
           "sha256": "ce0a490ede57e2b20356f98af3bd7cefaccde8804f027adcc2d652feeffa8604"
         }
       ],
-      "go_reference": "../Oblikovati/app/browser.go; ../Oblikovati/head/ui/browser_view.go; ../Oblikovati/app/browser_timeline_test.go",
-      "go_test_premise": "Go aa8297d1b browser tests check tree ordering, nested sketches and selectable nodes; they do not check rendered highlight, toolbar or clearing by a viewport click. See receipts/2026-11-14-go-browser-baseline/README.md.",
-      "kernel_capabilities": "The fixture contains a previously extruded block; this selection interaction performs no new geometry operation.",
-      "platforms": "Linux Xvfb with Vulkan Lavapipe; other platforms were not checked.",
-      "kernel_integration": "The desktop displays the owner-provided solid and selects its feature through the browser.",
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "go_test_premise": "The Go browser shares selection with the viewport and tests browser menu commands. The pinned feature supplies the row, branch and viewport sequences.",
+      "kernel_capabilities": "Native extrusion replay, rendered body, and feature outline.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop owner supplies the extrusion and selection state to the browser and viewport.",
       "rust_tests": "application_scenarios_use_the_native_window: Select a solid feature in the browser",
-      "oracle": "Pinned native scenario checks the selected row, blue block edges, contextual toolbar, and clearing; final capture shows the cleared state.",
-      "expected_result": "Selecting the extrusion highlights its row and block edges and shows a toolbar; clicking empty viewport clears both while keeping the block visible."
+      "oracle": "The pinned case checks rendered browser rows and viewport state after pointer actions. See receipts/2026-11-24-model-browser-hierarchy-fixture-3896/pinned/select/cucumber.json.",
+      "expected_result": "Selecting the extrusion highlights its row and solid edges and opens the mini toolbar. Clicking empty viewport space clears them and leaves the solid visible.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:c1547ececd82265193e7e655fe1153003d790dd6dabaeb60577d3b1c62dbb047",
@@ -15486,8 +15487,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Native browser hierarchy, feature selection, and its viewport presentation.",
+      "go_test_premise": "The Go browser shares selection with the viewport and tests browser menu commands. The pinned feature supplies the row, branch and viewport sequences.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native extrusion replay, rendered body, and feature outline.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop owner supplies the extrusion and selection state to the browser and viewport.",
+      "rust_tests": "application_scenarios_use_the_native_window: Collapse and expands the origin branch",
+      "oracle": "The pinned case checks rendered browser rows and viewport state after pointer actions. See receipts/2026-11-24-model-browser-hierarchy-fixture-3896/pinned/origin/cucumber.json.",
+      "expected_result": "The origin folder stays visible when collapsed, all reference rows return when expanded, and the shaded solid remains in the same apparent view.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:7849d59e3f67f7665d3eb2a3f2ca26b7d0d1bf4b58c5f092b245cb415a0a5f81",
@@ -15503,8 +15514,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Native browser hierarchy, feature selection, and its viewport presentation.",
+      "go_test_premise": "The Go browser shares selection with the viewport and tests browser menu commands. The pinned feature supplies the row, branch and viewport sequences.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native extrusion replay, rendered body, and feature outline.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop owner supplies the extrusion and selection state to the browser and viewport.",
+      "rust_tests": "application_scenarios_use_the_native_window: Collapse and expands a feature branch",
+      "oracle": "The pinned case checks rendered browser rows and viewport state after pointer actions. See receipts/2026-11-24-model-browser-hierarchy-fixture-3896/pinned/branch/cucumber.json.",
+      "expected_result": "Collapsing the extrusion hides its child sketch row and keeps the feature row. Reopening restores the child beneath it with the solid in the same view.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:7d7ab9f6a746c65211b7499f6044e1b7c86692bf4caf26f4308403187a71f4c0",
@@ -15520,8 +15541,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Native browser hierarchy, feature selection, and its viewport presentation.",
+      "go_test_premise": "The Go browser shares selection with the viewport and tests browser menu commands. The pinned feature supplies the row, branch and viewport sequences.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native extrusion replay, rendered body, and feature outline.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop owner supplies the extrusion and selection state to the browser and viewport.",
+      "rust_tests": "application_scenarios_use_the_native_window: Inspect the extrusion row context menu",
+      "oracle": "The pinned case checks rendered browser rows and viewport state after pointer actions. See receipts/2026-11-24-model-browser-hierarchy-fixture-3896/pinned/menu/cucumber.json.",
+      "expected_result": "Right-clicking the extrusion highlights the block edges and shows the feature’s context menu. Dismissing the menu and clicking the viewport clears the highlight and leaves the block visible.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:a3fa10ec725dc9d56dab5ed8b34ced0efed9269238a8f8682d32ec5b1d55829e",

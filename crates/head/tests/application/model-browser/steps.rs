@@ -121,6 +121,24 @@ fn inspect_single_extrusion(world: &mut ApplicationWorld) -> oblikovati_gui::Gui
     browser
 }
 
+#[given(
+    "an active part in the MCAD Software contains a visible solid and has a visible model browser"
+)]
+#[given(
+    "an active part in the MCAD Software contains a visible block made by an extrusion with a nested sketch"
+)]
+#[given("an active part in the MCAD Software contains a single block created by an extrusion")]
+#[given("an active part in the MCAD Software contains a block created by an extrusion")]
+fn inspect_visible_block(world: &mut ApplicationWorld) {
+    let browser = inspect_single_extrusion(world);
+    let [body] = browser.bodies.as_slice() else {
+        panic!("expected one extruded body, got {:?}", browser.bodies);
+    };
+    assert!(body.visible);
+    expect_solid_visible(world);
+    world.observed_view_camera = Some(camera(world));
+}
+
 #[given("a part with one extrusion and no fillet is open in the MCAD Software")]
 fn extrusion_without_fillet(world: &mut ApplicationWorld) {
     inspect_single_extrusion(world);
@@ -162,18 +180,10 @@ fn expect_no_origin_rows(world: &ApplicationWorld) {
     }
 }
 #[given("an active part in the MCAD Software has a visible model browser")]
-#[given(
-    "an active part in the MCAD Software contains a visible solid and has a visible model browser"
-)]
-#[given(
-    "an active part in the MCAD Software contains a visible block made by an extrusion with a nested sketch"
-)]
 #[given("an active part in the MCAD Software contains a visible block made by an extrusion")]
 #[given("an active saved part in the MCAD Software contains one visible solid block")]
 #[given("The MCAD Software shows a visible block made by an extrusion")]
-#[given("an active part in the MCAD Software contains a single block created by an extrusion")]
 #[given("an active part in the MCAD Software contains an extrusion with a nested sketch")]
-#[given("an active part in the MCAD Software contains a block created by an extrusion")]
 #[given(
     "an active part in the MCAD Software has expanded representation, origin and extrusion branches"
 )]

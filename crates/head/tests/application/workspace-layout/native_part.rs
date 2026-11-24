@@ -51,7 +51,7 @@ pub(in super::super) fn fixture_sketch(
     browser.sketches.into_iter().next().unwrap()
 }
 
-pub(super) fn prepare_sketch_menu_fixture(world: &mut ApplicationWorld) -> String {
+pub(in super::super) fn prepare_sketch_menu_fixture(world: &mut ApplicationWorld) -> String {
     let sketch = fixture_sketch(world);
     if sketch.visible {
         browser_feature::right_click_row(world, &sketch.name);

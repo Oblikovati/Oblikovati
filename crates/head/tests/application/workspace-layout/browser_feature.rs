@@ -304,14 +304,18 @@ fn collapse_extrusion(world: &mut ApplicationWorld) {
 // Inspect the context menu for a sketch under an extrusion
 #[given("the extrusion branch is expanded in the model browser")]
 fn extrusion_expanded(world: &mut ApplicationWorld) {
-    let name = super::native_part::prepare_sketch_menu_fixture(world);
-    world.expect_text(&name);
+    let sketch = super::native_part::fixture_sketch(world);
+    if !world.shows(&sketch.name) {
+        let extrusion = super::native_part::single_extrusion_name(world);
+        click_branch_arrow(world, &extrusion);
+    }
+    world.expect_text(&sketch.name);
 }
 #[when("I right-click the sketch child in the browser")]
 #[when("the user right-clicks the sketch child in the browser")]
 fn right_click_sketch(world: &mut ApplicationWorld) {
-    let sketch = super::native_part::fixture_sketch(world);
-    right_click_row(world, &sketch.name);
+    let name = super::native_part::prepare_sketch_menu_fixture(world);
+    right_click_row(world, &name);
 }
 #[then("a context menu opens beside the sketch row")]
 fn sketch_menu_beside(world: &mut ApplicationWorld) {

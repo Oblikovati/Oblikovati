@@ -1,0 +1,13 @@
+running 1 test
+
+thread 'native::gui_loop_tests::application_bdd::model_browser::feature_outline_native::x11_feature_outline_follows_browser_selection' (1241020) panicked at crates/head/src/../tests/application/model-browser/feature_outline_native.rs:18:5:
+assertion failed: world.state().browser.unwrap().selected_feature.is_none()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test native::gui_loop_tests::application_bdd::model_browser::feature_outline_native::x11_feature_outline_follows_browser_selection ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop_tests::application_bdd::model_browser::feature_outline_native::x11_feature_outline_follows_browser_selection
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1619 filtered out; finished in 12.94s

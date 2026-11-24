@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T10:56:02.433455087Z" time="17.021087722"><testcase name="Scenario: Collapse and expands the origin branch: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:5:3" time="17.021087722"><system-out><![CDATA[  Scenario: Collapse and expands the origin branch
+   ✔  Given an active part in the MCAD Software contains a visible solid and has a visible model browser
+   ✔  And the Origin branch is expanded
+   ✔  Then the branch shows three origin planes, three origin axes and a center point
+   ✔  When the user clicks the Origin branch expansion control
+   ✔  Then the origin children are hidden
+   ✔  And the Origin branch remains visible
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user clicks the Origin branch expansion control again
+   ✔  Then the origin planes, axes and center point are visible again
+   ✔  And the solid remains in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>

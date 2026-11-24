@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Choosing feature, body and root rows, and what they show on the block.
+use super::super::workspace_layout::native_part::{
+    fixture_sketch, prepare_sketch_menu_fixture, single_extrusion_name,
+};
 use super::*;
 #[cfg(target_os = "linux")]
 #[path = "root_context_native.rs"]
@@ -30,17 +33,21 @@ fn expect_nothing_chosen(world: &mut ApplicationWorld) {
 #[given("the extrusion branch is expanded and shows its direct sketch child")]
 #[given("the extrusion row is visible in the model browser")]
 fn nested_rows(world: &mut ApplicationWorld) {
-    expect_rows(world, &[FEATURE, SKETCH]);
+    let extrusion = single_extrusion_name(world);
+    let sketch = fixture_sketch(world);
+    expect_rows(world, &[&extrusion, &sketch.name]);
 }
 #[when("I select the extrusion row in the model browser")]
 #[when("the user selects the extrusion row in the model browser")]
 fn select_extrusion(world: &mut ApplicationWorld) {
-    world.click_text(FEATURE);
+    let extrusion = single_extrusion_name(world);
+    world.click_text(&extrusion);
     settle(world);
 }
 #[then("the extrusion row is highlighted")]
 fn extrusion_lit(world: &mut ApplicationWorld) {
-    assert!(row_accent(world, FEATURE), "expected the row's accent");
+    let extrusion = single_extrusion_name(world);
+    assert!(row_accent(world, &extrusion), "expected the row's accent");
 }
 #[then("the visible block edges are highlighted in blue")]
 #[then("the visible edges of the block are highlighted in blue")]
@@ -66,18 +73,23 @@ fn block_stays(world: &mut ApplicationWorld) {
 #[when("I click the extrusion branch expansion control again")]
 #[when("the user clicks the extrusion branch expansion control again")]
 fn fold_extrusion(world: &mut ApplicationWorld) {
-    click_branch_arrow(world, FEATURE);
+    let extrusion = single_extrusion_name(world);
+    click_branch_arrow(world, &extrusion);
     settle(world);
 }
 #[then("the sketch row is hidden and the extrusion row remains visible")]
 fn sketch_folded(world: &mut ApplicationWorld) {
-    world.expect_text(FEATURE);
-    world.expect_no_text(SKETCH);
+    let extrusion = single_extrusion_name(world);
+    let sketch = fixture_sketch(world);
+    world.expect_text(&extrusion);
+    world.expect_no_text(&sketch.name);
 }
 #[then("the sketch row appears beneath the extrusion")]
 fn sketch_back(world: &mut ApplicationWorld) {
-    let feature = world.run(FEATURE).center()[1];
-    let sketch = world.run(SKETCH).center()[1];
+    let extrusion = single_extrusion_name(world);
+    let sketch = fixture_sketch(world);
+    let feature = world.run(&extrusion).center()[1];
+    let sketch = world.run(&sketch.name).center()[1];
     assert!(
         sketch > feature,
         "sketch {sketch} beneath feature {feature}"
@@ -88,7 +100,8 @@ fn sketch_back(world: &mut ApplicationWorld) {
 #[when("I right-click the extrusion row in the model browser")]
 #[when("the user right-clicks the extrusion row in the model browser")]
 fn right_click_extrusion(world: &mut ApplicationWorld) {
-    right_click_row(world, FEATURE);
+    let extrusion = single_extrusion_name(world);
+    right_click_row(world, &extrusion);
 }
 
 #[when("chooses Collapse All Children")]
@@ -100,11 +113,11 @@ fn collapse_extrusion_children(world: &mut ApplicationWorld) {
 #[then("the direct sketch row remains visible under the extrusion")]
 fn direct_sketch_remains(world: &mut ApplicationWorld) {
     sketch_back(world);
-    expect_rows(world, &[FEATURE, SKETCH]);
 }
 #[then("the row is highlighted and the block edges are highlighted in blue")]
 fn row_and_edges(world: &mut ApplicationWorld) {
-    expect_row_and_edges(world, FEATURE);
+    let extrusion = single_extrusion_name(world);
+    expect_row_and_edges(world, &extrusion);
 }
 #[then("the context menu offers Edit Sketch and Edit Feature")]
 fn edit_rows(world: &mut ApplicationWorld) {
@@ -432,8 +445,8 @@ fn edges_gone_block_stays(world: &mut ApplicationWorld) {
 #[when("I right-click the nested sketch row")]
 #[when("the user right-clicks the nested sketch row")]
 fn right_click_sketch(world: &mut ApplicationWorld) {
-    let sketch = super::super::workspace_layout::native_part::fixture_sketch(world);
-    right_click_row(world, &sketch.name);
+    let name = prepare_sketch_menu_fixture(world);
+    right_click_row(world, &name);
 }
 #[then("its rectangular geometry and dimensions appear highlighted in the viewport")]
 fn sketch_shown(world: &mut ApplicationWorld) {
