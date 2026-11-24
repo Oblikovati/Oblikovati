@@ -57,7 +57,7 @@ pub(crate) struct TemplateChooser {
     ungrouped: bool,
     sort: TemplateSort,
     gallery_keyboard: bool,
-    gallery_scroll_target: Option<f32>,
+    gallery_scroll_target: Option<template_navigation::GalleryScrollTarget>,
     gallery_scroll_frames: u8,
     gallery_scroll_y: Option<f32>,
     /// A double click on a tile asks for what Create does.

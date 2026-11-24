@@ -1314,5 +1314,46 @@
         "notes": "All 2 current scenarios and 12 steps passed in separate native runs. The build includes the updated scenario bindings and existing local GUI edits. Strict build and runtime provenance remains open under #3978."
       }
     }
+  },
+  "features/application/document-creation/document-creation-navigation-native.feature": {
+    "by_source_sha256": {
+      "5f82c082e930e17c6dd189ae62e130269bbb505afe1b9e385f961faf361d6cb4": {
+        "feature_sha256": "5f82c082e930e17c6dd189ae62e130269bbb505afe1b9e385f961faf361d6cb4",
+        "supporting_files": {
+          "features/application/document-creation/BLOCKERS.md": "d60377bac648dea0dda1d094a4f8778064e13b44db2ceed35cea209b4fb568f0",
+          "features/application/document-creation/FIXTURES.md": "b5b8fa749dadaec50f88b1e198b26d27737406a301a12702c03f77d53afd633c",
+          "features/application/document-creation/FUNCTIONAL.md": "8b170196d8c08f34167d3666d1a743c779aaec9024e4facb4c768ac70b121704",
+          "features/application/document-creation/VISUAL.md": "6ac16fb8cf8de95da29f24924ef4e5d1e7c084cd8daa4d91a34352bf9ffe93fc",
+          "features/application/document-creation/template-arrow-navigation.svg": "99ec190fae458a854ca3294a0f90bfef618991c134417a8876f4634a88948740",
+          "features/application/document-creation/template-boundary-scroll.svg": "9c7dbace5157a09aea6990f6940f2fd219983efd1989f26189778f006e524d35",
+          "features/application/document-creation/template-group-endpoints.svg": "59b50baad929e62cc8efb044a20fba299ce4f1f84ef04fd09b0ed9df3fde5f0c",
+          "fixtures/cad/document-creation-navigation-candidate.opj": "551f9f415b9284a347fb78cb221192ad981bb987f4ad685834b58b9990fce787",
+          "fixtures/cad/document-creation-navigation-candidate/English/Sheet Metal (in).opd": "3994ec0e4c1c7302920e56aecb1f66bbdedc4ace40a0c03775e9f8b275668bbf",
+          "fixtures/cad/document-creation-navigation-candidate/English/Standard (in).opd": "d58faf2d76fbfc49a831609b1e9eb752ac6675b614debfccaf153a61cd1f00f5",
+          "fixtures/cad/document-creation-navigation-candidate/English/Standard Assembly.oad": "f8197c6b228676cb1bf8015681a3ed64dabd1ec5bff8c22bce1037a5a25ee80e",
+          "fixtures/cad/document-creation-navigation-candidate/English/Standard Drawing.odd": "fb550abddaf122a634f083ea9a383ff3f49764a350c96b0024a6a80a3b7c744f",
+          "fixtures/cad/document-creation-navigation-candidate/English/Standard Presentation.ord": "271ff6b6f4ffd3a185c51592ff53682cf19a96318e44ce9465ed35b049051331",
+          "fixtures/cad/document-creation-navigation-candidate/Metric/Sheet Metal (DIN).opd": "6c66a37d638eecec635e003e45ee5062da4e7fd68a24f780408a77b03e59376d",
+          "fixtures/cad/document-creation-navigation-candidate/Metric/Sheet Metal (mm).opd": "6c66a37d638eecec635e003e45ee5062da4e7fd68a24f780408a77b03e59376d",
+          "fixtures/cad/document-creation-navigation-candidate/Metric/Standard (DIN).opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
+          "fixtures/cad/document-creation-navigation-candidate/Metric/Standard (mm).opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
+          "fixtures/cad/document-creation-navigation-candidate/Metric/Standard Assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
+          "fixtures/cad/document-creation-navigation-candidate/Metric/Standard Drawing.odd": "74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e",
+          "fixtures/cad/document-creation-navigation-candidate/Metric/Standard Presentation.ord": "f1395a6948d4c77f11a6bbaa441de3e4223fa0161244d9c882b8f84e54604a31",
+          "fixtures/cad/document-creation-navigation-candidate/manifest.json": "493ce5bbca1482621bcba00ceb77806cb3aa77abb4e603f362bcd4606b757154",
+          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-document-creation-navigation-current-3899/cucumber.json",
+        "cucumber_sha256": "164509164f1c7ee12c88d0858148f34197e5f6f6e4bea3b73404e19ceda3a6f8",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-document-creation-navigation-current-3899/scenario-arguments.json",
+        "scenario_arguments_sha256": "3634ee345b2ecfd61a75d0b213a85776bdabd674754805e8cad0d97ec8751a02",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-24-document-creation-navigation-current-3899/scenario-inventory.json",
+        "scenario_inventory_sha256": "4072fb5e4478619e8ed8a0967237cd7a795239c51d821a8a00feba66ede8ae58",
+        "application_commit": "0c757180315f2f67112885fd476ebd4f7249c9b9",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=document-creation OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All three current cases and 52 steps passed in separate native runs. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   }
 }

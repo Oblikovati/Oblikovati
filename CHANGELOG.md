@@ -298,8 +298,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Restored the template gallery's left edge when keyboard navigation reaches the first tile. (#3899)
 - Enabled Page Up and Page Down in the staged ribbon command list. (#3856)
-
 - Moved keyboard focus to Add when pressing Tab from a selected available ribbon command. (#3856)
 
 - Drew the 3D Annotations icon at its configured size in custom ribbon panels. (#3856)

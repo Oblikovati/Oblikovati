@@ -10,6 +10,11 @@ enum GalleryMove {
     First,
     Last,
 }
+pub(super) enum GalleryScrollTarget {
+    LeftEdge,
+    TileStart,
+    TileEnd,
+}
 impl TemplateChooser {
     pub(super) fn clear_gallery_navigation(&mut self) {
         self.gallery_keyboard = false;
@@ -36,17 +41,25 @@ impl TemplateChooser {
         let Some(movement) = pressed_move(ui) else {
             return;
         };
-        self.move_selection(state, movement);
-        if self.view.is_icon_view() && self.selected.is_some() {
-            if let Some(y) = self.gallery_scroll_y {
-                ui.set_scroll_y(y);
-                self.gallery_scroll_frames = 2;
-            }
-            self.gallery_scroll_target = Some(match movement {
-                GalleryMove::Previous | GalleryMove::First => 0.,
-                GalleryMove::Next | GalleryMove::Last => 1.,
-            });
+        let Some(index) = self.move_selection(state, movement) else {
+            return;
+        };
+        if self.view.is_icon_view() {
+            self.scroll_to_navigation(ui, movement, index);
         }
+    }
+    fn scroll_to_navigation(&mut self, ui: &Ui, movement: GalleryMove, index: usize) {
+        if let Some(y) = self.gallery_scroll_y {
+            ui.set_scroll_y(y);
+            self.gallery_scroll_frames = 2;
+        }
+        self.gallery_scroll_target = Some(match movement {
+            GalleryMove::Previous | GalleryMove::First if index == 0 => {
+                GalleryScrollTarget::LeftEdge
+            }
+            GalleryMove::Previous | GalleryMove::First => GalleryScrollTarget::TileStart,
+            GalleryMove::Next | GalleryMove::Last => GalleryScrollTarget::TileEnd,
+        });
     }
     pub(super) fn remember_selected_tile_y(&mut self, ui: &Ui, template: &TemplateChoice) {
         if self.view.is_icon_view()
@@ -60,25 +73,27 @@ impl TemplateChooser {
         if self.selected.as_ref() != Some(template) {
             return;
         }
-        if let Some(ratio) = self.gallery_scroll_target.take() {
-            ui.set_scroll_here_x_with_ratio(ratio);
+        if let Some(target) = self.gallery_scroll_target.take() {
+            match target {
+                // The first tile is indented under its group, so align with the gallery itself.
+                GalleryScrollTarget::LeftEdge => ui.set_scroll_x(0.),
+                GalleryScrollTarget::TileStart => ui.set_scroll_here_x_with_ratio(0.),
+                GalleryScrollTarget::TileEnd => ui.set_scroll_here_x_with_ratio(1.),
+            }
             self.gallery_scroll_frames = 1;
         }
     }
-    fn move_selection(&mut self, state: &GuiCommandState, movement: GalleryMove) {
-        let Some(selected) = &self.selected else {
-            return;
-        };
+    fn move_selection(&mut self, state: &GuiCommandState, movement: GalleryMove) -> Option<usize> {
+        let selected = self.selected.as_ref()?;
         let kinds = self.navigation_group(selected.kind());
         let entries = self.catalog(state, &kinds);
-        let Some(index) = entries.iter().position(|entry| entry == selected) else {
-            return;
-        };
+        let index = entries.iter().position(|entry| entry == selected)?;
         let next = move_index(index, entries.len(), movement);
         if next != index {
             self.selected = Some(entries[next].clone());
             self.drawing_layout = None;
         }
+        Some(next)
     }
     fn navigation_group(&self, selected: GuiTemplateKind) -> Vec<GuiTemplateKind> {
         TEMPLATE_GROUPS
@@ -144,9 +159,9 @@ mod tests {
             selected: Some(TemplateChoice::Project(din.clone())),
             ..Default::default()
         };
-        chooser.move_selection(&state, GalleryMove::Next);
+        let _ = chooser.move_selection(&state, GalleryMove::Next);
         assert_eq!(chooser.selected, Some(TemplateChoice::Project(mm)));
-        chooser.move_selection(&state, GalleryMove::Previous);
+        let _ = chooser.move_selection(&state, GalleryMove::Previous);
         assert_eq!(chooser.selected, Some(TemplateChoice::Project(din)));
     }
 
@@ -164,24 +179,24 @@ mod tests {
             ..Default::default()
         };
         let state = GuiCommandState::default();
-        chooser.move_selection(&state, GalleryMove::Next);
+        let _ = chooser.move_selection(&state, GalleryMove::Next);
         assert_eq!(
             chooser.selected.as_ref().unwrap().kind(),
             GuiTemplateKind::Part
         );
-        chooser.move_selection(&state, GalleryMove::Next);
+        let _ = chooser.move_selection(&state, GalleryMove::Next);
         assert_eq!(
             chooser.selected.as_ref().unwrap().kind(),
             GuiTemplateKind::Part
         );
         chooser.sort = chooser.sort.toggle_name();
-        chooser.move_selection(&state, GalleryMove::Next);
+        let _ = chooser.move_selection(&state, GalleryMove::Next);
         assert_eq!(
             chooser.selected.as_ref().unwrap().kind(),
             GuiTemplateKind::SheetMetal
         );
         chooser.folder = TemplateFolder::Units(GuiTemplateUnits::Inch);
-        chooser.move_selection(&state, GalleryMove::First);
+        let _ = chooser.move_selection(&state, GalleryMove::First);
         assert_eq!(
             chooser.selected.as_ref().unwrap().kind(),
             GuiTemplateKind::SheetMetal
@@ -201,7 +216,7 @@ mod tests {
             ),
             ..Default::default()
         };
-        chooser.move_selection(&GuiCommandState::default(), GalleryMove::First);
+        let _ = chooser.move_selection(&GuiCommandState::default(), GalleryMove::First);
         assert_eq!(
             chooser.selected.as_ref().unwrap().kind(),
             GuiTemplateKind::Drawing
@@ -211,14 +226,14 @@ mod tests {
     fn closing_the_gallery_clears_pending_navigation_and_redraw() {
         let mut chooser = TemplateChooser {
             gallery_keyboard: true,
-            gallery_scroll_target: Some(1.),
+            gallery_scroll_target: Some(GalleryScrollTarget::TileEnd),
             gallery_scroll_frames: 2,
             gallery_scroll_y: Some(42.),
             ..Default::default()
         };
         chooser.clear_gallery_navigation();
         assert!(!chooser.gallery_keyboard);
-        assert_eq!(chooser.gallery_scroll_target, None);
+        assert!(chooser.gallery_scroll_target.is_none());
         assert_eq!(chooser.gallery_scroll_frames, 0);
         assert_eq!(chooser.gallery_scroll_y, None);
     }

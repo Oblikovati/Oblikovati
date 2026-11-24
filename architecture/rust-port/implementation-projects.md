@@ -59,6 +59,9 @@ keep the selected file's identity when several files share a kind and units.
 Create starts an independent unsaved document from the selected package.
 Projects without a named catalog use the built-in chooser entries.
 
-The grouped Details scenario passed all 16 steps. A separate native check
-confirmed that the new Part retained a saved extrusion from the selected file.
-[Native reports](receipts/2026-11-24-document-creation-name-sort-3899/README.md)
+The three current named-template navigation scenarios cover sorting, adjacent
+tile selection, and horizontal group boundaries. The first tile retains focus
+when Home or Left scrolls to the gallery's left edge. [Navigation reports](receipts/2026-11-24-document-creation-navigation-current-3899/README.md)
+
+A separate native check confirmed that the new Part retained a saved
+extrusion from the selected file. [Creation check](receipts/2026-11-24-document-creation-name-sort-3899/create-template-test.log)

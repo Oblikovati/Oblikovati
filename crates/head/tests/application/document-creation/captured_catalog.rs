@@ -19,14 +19,6 @@ pub(super) fn require_named_catalog(case: &str) {
 fn selected_captured_inch(world: &mut ApplicationWorld) {
     super::named_catalog::inch_details(world);
 }
-#[given("the part group displays Sheet Metal (mm) immediately before Standard (DIN)")]
-fn adjacent_captured_part_templates(_: &mut ApplicationWorld) {
-    require_named_catalog("adjacent metric part templates");
-}
-#[given("the Part group begins with Sheet Metal (DIN) and ends with Standard (mm)")]
-fn captured_part_endpoints(_: &mut ApplicationWorld) {
-    require_named_catalog("metric part group endpoints");
-}
 #[given("the gallery is at its leftmost horizontal position")]
 fn captured_gallery_view(_: &mut ApplicationWorld) {
     require_named_catalog("captured narrow gallery and template order");

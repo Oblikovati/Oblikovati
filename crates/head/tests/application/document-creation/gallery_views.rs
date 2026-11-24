@@ -14,10 +14,16 @@ mod gallery_icons;
 mod gallery_secondary;
 #[path = "named_catalog.rs"]
 mod named_catalog;
+#[path = "named_navigation.rs"]
+mod named_navigation;
 #[given("the new-document chooser shows the metric folder grouped by type using Medium icons")]
 #[given("the template chooser shows the metric folder grouped by type using Medium icons")]
 fn metric_medium_chooser(world: &mut ApplicationWorld) {
     open_chooser(world);
+    if !world.state().project_templates.is_empty() {
+        named_navigation::metric_icons(world);
+        return;
+    }
     metric_selected(world);
     grouped_by_default(world);
     choose_template_view(world, "Medium Icons");

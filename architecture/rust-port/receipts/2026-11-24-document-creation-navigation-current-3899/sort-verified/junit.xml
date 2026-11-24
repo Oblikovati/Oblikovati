@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate named native part templates: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-navigation-source/features/application/document-creation/document-creation-navigation-native.feature" package="testsuite/Feature: Navigate named native part templates: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-navigation-source/features/application/document-creation/document-creation-navigation-native.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:18:25.853464377Z" time="52.985504027"><testcase name="Scenario: Reverse the template name order in grouped Details view: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-navigation-source/features/application/document-creation/document-creation-navigation-native.feature:10:3" time="52.985504027"><system-out><![CDATA[  Scenario: Reverse the template name order in grouped Details view
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-navigation-candidate.opj` as its active project
+   ✔> And its Metric folder contains exactly the four named native part templates used below
+   ✔> And its English folder contains the standard inch part template
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active with `Sketch1` visible in the MCAD Software
+   ✔  And the user selects the standard inch part in the English folder
+   ✔  And the user switches to the metric folder and displays grouped Details view
+   ✔  And the previously selected standard inch part is displayed in the details pane
+   ✔  And the visible part section lists two Sheet Metal entries before two Standard entries
+   ✔  When the user clicks the Name column header
+   ✔  Then the visible part section lists the Standard entries before the Sheet Metal entries
+   ✔  And the details pane still identifies the standard inch part and inch units
+   ✔  When the user clicks the Name column header again
+   ✔  Then the visible part section lists the Sheet Metal entries before the Standard entries
+   ✔  And the details pane still identifies the standard inch part and inch units
+   ✔  When the user restores Medium icons and cancels the chooser
+   ✔  Then the chooser closes and the original part remains active
+]]></system-out></testcase></testsuite></testsuites>
