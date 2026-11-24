@@ -16,6 +16,8 @@ mod gallery_secondary;
 mod named_catalog;
 #[path = "named_navigation.rs"]
 mod named_navigation;
+#[path = "populated_layout.rs"]
+mod populated_layout;
 #[path = "project_inspection.rs"]
 mod project_inspection;
 #[path = "template_content.rs"]

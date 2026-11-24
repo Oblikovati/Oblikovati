@@ -11,6 +11,7 @@ fn restored_selection_matches_the_file_in_the_active_catalog() {
         length_unit: "in",
         size: 42,
         material: None,
+        sheet_preview: None,
     };
     let unrelated = crate::GuiProjectTemplate {
         path: "/other/English/Standard (in).opd".into(),
@@ -44,6 +45,7 @@ fn a_root_only_catalog_opens_at_its_named_templates() {
         length_unit: "mm",
         size: 42,
         material: None,
+        sheet_preview: None,
     };
     let state = GuiCommandState {
         project_templates: vec![root_template.clone()].into(),

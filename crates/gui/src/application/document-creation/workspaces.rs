@@ -21,8 +21,8 @@ const INSERT: &str = "Insert";
 const SHEET_RATIO: f32 = 420. / 297.;
 const SHEET_MARGIN: f32 = 12.;
 const TITLE_BLOCK_SIZE: [f32; 2] = [280., 70.];
-const SHEET_COLOR: [f32; 4] = [0.93, 0.93, 0.91, 1.];
-const LINE_COLOR: [f32; 4] = [0.1, 0.1, 0.12, 1.];
+pub(super) const SHEET_COLOR: [f32; 4] = [0.93, 0.93, 0.91, 1.];
+pub(super) const LINE_COLOR: [f32; 4] = [0.1, 0.1, 0.12, 1.];
 const SNAPSHOT_WIDTH: f32 = 220.;
 const STORYBOARD_HEIGHT: f32 = 128.;
 

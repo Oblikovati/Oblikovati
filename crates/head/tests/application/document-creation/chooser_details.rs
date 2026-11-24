@@ -277,12 +277,11 @@ fn inch_drawing_available(world: &mut ApplicationWorld) {
 #[when("I select the inch drawing template")]
 #[when("the user selects the inch drawing template")]
 fn select_inch_drawing(world: &mut ApplicationWorld) {
-    world.click_text(INCH_DRAWING);
+    basic_catalog::select_catalog_template(world, INCH_DRAWING, populated_layout::TITLE);
 }
 #[then("the chooser displays the template sheet and available layout previews")]
 fn layout_previews(world: &mut ApplicationWorld) {
-    world.expect_text("Use Template");
-    world.expect_text("Assembly Layout");
+    populated_layout::expect_sheet_previews(world);
 }
 #[when("I select the populated assembly layout preview")]
 #[when("the user selects the populated assembly layout preview")]

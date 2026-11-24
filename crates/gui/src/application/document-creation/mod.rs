@@ -5,6 +5,7 @@ mod kind_selection;
 mod template_catalog;
 mod template_material;
 mod template_navigation;
+pub(crate) mod template_previews;
 mod template_sort;
 mod template_tiles;
 #[path = "templates.rs"]
@@ -378,18 +379,7 @@ impl TemplateChooser {
         ui.text(selected.unit_label());
         template_material::material_detail(ui, state, selected);
         if selected.kind() == GuiTemplateKind::Drawing {
-            self.drawing_previews(ui);
-        }
-    }
-    fn drawing_previews(&mut self, ui: &Ui) {
-        for (label, layout) in [
-            ("Use Template", DrawingLayout::Template),
-            ("Assembly Layout", DrawingLayout::Assembly),
-        ] {
-            let chosen = self.drawing_layout == Some(layout);
-            if crate::widget_abi::dialog_selectable(ui, label, chosen) {
-                self.drawing_layout = Some(layout);
-            }
+            template_previews::show(ui, selected, &mut self.drawing_layout);
         }
     }
     fn can_create(&self, state: &GuiCommandState) -> bool {

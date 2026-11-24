@@ -8,6 +8,7 @@ mod activity;
 mod application;
 #[cfg(test)]
 mod test_context;
+pub use application::document_creation::template_previews::GuiTemplateSheet;
 pub use application::document_creation::templates::{
     GuiDocumentTemplate, GuiProjectTemplate, GuiTemplateFolder, GuiTemplateKind,
     GuiTemplateMaterial, GuiTemplateMaterialEntry, GuiTemplateUnits,

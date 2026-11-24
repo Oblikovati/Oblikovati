@@ -149,6 +149,7 @@ mod tests {
             length_unit: "mm",
             size: 42,
             material: None,
+            sheet_preview: None,
         };
         let din = make_entry("Standard (DIN)");
         let mm = make_entry("Standard (mm)");

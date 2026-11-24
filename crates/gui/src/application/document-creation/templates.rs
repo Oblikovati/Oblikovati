@@ -72,6 +72,7 @@ pub struct GuiProjectTemplate {
     pub length_unit: &'static str,
     pub size: u64,
     pub material: Option<GuiTemplateMaterial>,
+    pub sheet_preview: Option<std::sync::Arc<crate::GuiTemplateSheet>>,
 }
 /// Physical material described by a template recipe.
 #[derive(Clone, Debug, PartialEq, Eq)]

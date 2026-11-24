@@ -101,3 +101,8 @@ the active project catalog. Named Part templates show their resolved material
 assignments. The restart scenario passed all 22 steps, including restoring
 the Metric selection and its Generic material.
 [Template restart report](receipts/2026-11-24-document-creation-template-restart-3899/README.md)
+
+The drawing chooser shows thumbnails of the template sheet and the
+populated layout. The component-cancel scenario passed all 16 steps and
+returned to the original Part.
+[Layout cancellation report](receipts/2026-11-24-document-creation-layout-cancel-3899/README.md)

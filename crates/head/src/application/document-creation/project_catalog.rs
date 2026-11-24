@@ -2,7 +2,9 @@
 //! Read native template metadata at project load, outside the frame loop.
 use super::*;
 use oblikovati_api::types::*;
-use oblikovati_gui::{GuiProjectTemplate, GuiTemplateFolder, GuiTemplateMaterial};
+use oblikovati_gui::{
+    GuiProjectTemplate, GuiTemplateFolder, GuiTemplateMaterial, GuiTemplateSheet,
+};
 use oblikovati_model::quantity::Dimension;
 use oblikovati_persistence::{
     load::{NativePackageReader, PackageFileReader},
@@ -131,6 +133,17 @@ fn read_template(
     let units = package
         .document_units()
         .map_err(|cause| cause.to_string())?;
+    let sheet_preview = if kind == GuiTemplateKind::Drawing {
+        package
+            .restore_drawing()
+            .map_err(|cause| cause.to_string())?
+            .and_then(|drawing| {
+                GuiTemplateSheet::from_recipe(&drawing.sheets()[drawing.active_sheet()])
+            })
+            .map(Arc::new)
+    } else {
+        None
+    };
     Ok((
         GuiProjectTemplate {
             title,
@@ -141,6 +154,7 @@ fn read_template(
             size: bytes.len() as u64,
             material: matches!(kind, GuiTemplateKind::Part | GuiTemplateKind::SheetMetal)
                 .then(|| part_material(&package)),
+            sheet_preview,
         },
         package,
     ))

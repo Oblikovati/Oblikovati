@@ -4,7 +4,7 @@
 
 ### Added
 
-- Added named native templates from the active project's root, Metric, and English folders to the desktop chooser. The chooser shows Part template materials and restores the selected project template after a desktop restart. (#3899)
+- Added named native templates from the active project's root, Metric, and English folders to the desktop chooser. The chooser shows Part template materials, previews drawing sheets, and restores the selected project template after a desktop restart. (#3899)
 - Added Flipped, Symmetric, and Asymmetric directions and To Face and From–To extents for new solid extrusions in the desktop and typed API. Added desktop Icons and Dropdown direction selectors and a Distance A editor menu. (#3893)
 - Expanded the desktop parameter tolerance editor with tolerance formats, precision, evaluated size, and ISO fit classes. (#3893)
 - Added analytic solid-edge lengths to the Part Measure panel. (#3967)
