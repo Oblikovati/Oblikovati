@@ -1293,5 +1293,26 @@
     "notes": "41 of 55 scenarios and 501 of 515 executed steps passed. Fourteen scenarios stopped at an undefined step. The build included existing local file-browser edits.",
     "scenario_inventory": "architecture/rust-port/receipts/2026-11-24-panel-visibility-selector-full-3856/scenario-inventory.json",
     "scenario_inventory_sha256": "bb923ef0d35aa4a1e082a4f1bc1c1defd513964652aef8fd9e004976b17b5da2"
+  },
+  "features/application/document-creation/document-creation-cancel.feature": {
+    "by_source_sha256": {
+      "10dc71b1a1a269a815f423a00aa7f6d3a7c24b813c981a1ba1fa1935dd7e59e4": {
+        "feature_sha256": "10dc71b1a1a269a815f423a00aa7f6d3a7c24b813c981a1ba1fa1935dd7e59e4",
+        "supporting_files": {
+          "features/application/document-creation/BLOCKERS.md": "d60377bac648dea0dda1d094a4f8778064e13b44db2ceed35cea209b4fb568f0",
+          "features/application/document-creation/FIXTURES.md": "b5b8fa749dadaec50f88b1e198b26d27737406a301a12702c03f77d53afd633c",
+          "features/application/document-creation/FUNCTIONAL.md": "8b170196d8c08f34167d3666d1a743c779aaec9024e4facb4c768ac70b121704",
+          "features/application/document-creation/VISUAL.md": "6ac16fb8cf8de95da29f24924ef4e5d1e7c084cd8daa4d91a34352bf9ffe93fc",
+          "features/application/document-creation/document-creation-wireframes.svg": "9eba0bed601c0e12dfc5118883e04d016cea43f3fc8fd9d19d114b378a7b6fcc",
+          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-document-creation-cancel-current-3899/current-cucumber.json",
+        "cucumber_sha256": "5adbab3da30d9c8fc68791d313e9f3d7a5c91b25aa5da892e58a724fcdc5af17",
+        "application_commit": "2f03519af76f42d538f898e7c611a2294535f312",
+        "command": "OBK_BDD_ROOT=<snapshot> OBK_BDD_AREA=application OBK_BDD_FEATURE=document-creation OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All 2 current scenarios and 12 steps passed in separate native runs. The build includes the updated scenario bindings and existing local GUI edits. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   }
 }

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Cancel document creation: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-cancel-source/features/application/document-creation/document-creation-cancel.feature" package="testsuite/Feature: Cancel document creation: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-cancel-source/features/application/document-creation/document-creation-cancel.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T18:44:09.876738026Z" time="13.082765258"><testcase name="Scenario: Cancel the template chooser: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-cancel-source/features/application/document-creation/document-creation-cancel.feature:4:3" time="13.082765258"><system-out><![CDATA[  Scenario: Cancel the template chooser
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with `Sketch1` visible in the MCAD Software
+   ✔  And the new-document template chooser is open
+   ✔  When the user cancels the chooser
+   ✔  Then the chooser closes
+   ✔  And the previously active document remains displayed
+]]></system-out></testcase></testsuite></testsuites>

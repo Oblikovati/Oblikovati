@@ -22,6 +22,22 @@ fn open_document(world: &mut ApplicationWorld) {
         };
     world.previous_document = Some(id);
 }
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` is open with `Sketch1` visible in the MCAD Software"
+)]
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` is active with `Sketch1` visible in the MCAD Software"
+)]
+fn open_part_with_visible_sketch(world: &mut ApplicationWorld) {
+    use super::workspace_layout::native_part::{fixture_sketch, open_named_extrusion};
+
+    open_named_extrusion(world);
+    let sketch = fixture_sketch(world);
+    assert_eq!(sketch.name, "Sketch1");
+    assert!(sketch.visible, "expected Sketch1 visible in the saved Part");
+    let document = world.active_id();
+    world.parts.push(document);
+}
 #[when("I press Control+N")]
 #[when("the user presses Control+N")]
 #[given("the new-document template chooser is open")]
@@ -75,7 +91,7 @@ fn inch_details(world: &mut ApplicationWorld) {
 #[when("I cancel the chooser")]
 #[when("the user cancels the chooser")]
 fn cancel_chooser(world: &mut ApplicationWorld) {
-    world.key(ViewportPhysicalKey::Escape, false);
+    world.click_text("Cancel");
 }
 #[then("the chooser closes")]
 fn chooser_closed(world: &mut ApplicationWorld) {

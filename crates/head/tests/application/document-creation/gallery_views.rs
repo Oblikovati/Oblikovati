@@ -338,7 +338,13 @@ fn original_active(world: &mut ApplicationWorld) {
 #[then("its viewport and browser are displayed")]
 fn viewport_and_browser_shown(world: &mut ApplicationWorld) {
     world.expect_text("Origin");
-    world.expect_blank_region(VIEWPORT_X, VIEWPORT_Y);
+    let state = world.state();
+    let document = state.document.expect("expected the original Part");
+    if state.document_storage[&document].path.is_some() {
+        super::super::workspace_layout::browser_feature::expect_solid_visible(world);
+    } else {
+        world.expect_blank_region(VIEWPORT_X, VIEWPORT_Y);
+    }
 }
 #[then("no new document tab is created")]
 fn no_new_tab(world: &mut ApplicationWorld) {
