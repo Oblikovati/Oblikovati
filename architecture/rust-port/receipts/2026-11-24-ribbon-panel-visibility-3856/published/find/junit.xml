@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:02:12.3376666Z" time="41.766163474"><testcase name="Scenario: Retain a hidden Tools panel after switching ribbon tabs: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:695:3" time="41.766163474"><system-out><![CDATA[  Scenario: Retain a hidden Tools panel after switching ribbon tabs
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the Find panel is visible
+   ✔  When the user hides Find from Show Panels on the Tools tab
+   ✔  Then the Find panel disappears from the Tools ribbon
+   ✔  When the user switches to 3D Model and returns to Tools
+   ✔  Then the Find panel remains hidden
+   ✔  When the user opens Show Panels on the Tools tab
+   ✔  Then Find is unchecked and Tutorials remains checked
+   ✔  When the user selects Find
+   ✔  Then the Find panel reappears before Team Web
+   ✔  And Find and Tutorials are both visible
+]]></system-out></testcase></testsuite></testsuites>

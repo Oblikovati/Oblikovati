@@ -14,6 +14,7 @@ fn click_side_selector(world: &mut ApplicationWorld) {
 #[when("I open the direct panel selector")]
 #[when("the user clicks the direct panel selector at the bottom of the ribbon")]
 #[when("the user clicks the direct panel selector arrow")]
+#[when("the user clicks the direct panel selector")]
 #[when("the user opens the direct panel selector")]
 fn open_side_selector(world: &mut ApplicationWorld) {
     if window_geometry("##ribbon-column").is_some() {
@@ -29,6 +30,7 @@ fn open_side_selector(world: &mut ApplicationWorld) {
 }
 
 #[when("I select Modify in the panel selector")]
+#[when("the user selects Modify in the panel selector")]
 #[when("the user clicks Modify in the checklist")]
 #[when("the user clicks Modify in the checklist again")]
 fn toggle_side_modify(world: &mut ApplicationWorld) {

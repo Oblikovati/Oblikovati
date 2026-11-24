@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:02:10.358447413Z" time="45.916505738"><testcase name="Scenario: Hide and restore Tutorials from Show Panels: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:681:3" time="45.916505738"><system-out><![CDATA[  Scenario: Hide and restore Tutorials from Show Panels
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the Tutorials panel is visible after Team Web
+   ✔  When the user opens Show Panels from the Tools tab context menu
+   ✔  Then Tutorials is checked
+   ✔  When the user selects Tutorials
+   ✔  Then the Tutorials panel disappears from the Tools ribbon
+   ✔  And the other visible Tools panels remain available
+   ✔  When the user reopens Show Panels
+   ✔  Then Tutorials is unchecked
+   ✔  When the user selects Tutorials
+   ✔  Then the Tutorials panel reappears after Team Web
+   ✔  And Show Panels marks Tutorials as visible
+]]></system-out></testcase></testsuite></testsuites>

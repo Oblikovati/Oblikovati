@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:02:12.330869374Z" time="36.824212612"><testcase name="Scenario: Hide and restore Team Web from Show Panels: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:667:3" time="36.824212612"><system-out><![CDATA[  Scenario: Hide and restore Team Web from Show Panels
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the Team Web panel is visible
+   ✔  When the user opens Show Panels from the Options panel title menu
+   ✔  Then Team Web is checked
+   ✔  When the user selects Team Web
+   ✔  Then the Team Web panel disappears from the Tools ribbon
+   ✔  And the other visible Tools panels remain available
+   ✔  When the user reopens Show Panels from the Options panel title menu
+   ✔  Then Team Web is unchecked
+   ✔  When the user selects Team Web
+   ✔  Then the Team Web panel appears on the Tools ribbon
+   ✔  And Show Panels marks Team Web as visible
+]]></system-out></testcase></testsuite></testsuites>

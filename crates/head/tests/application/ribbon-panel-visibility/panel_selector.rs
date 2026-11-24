@@ -74,6 +74,7 @@ fn list_unchecked(world: &mut ApplicationWorld) {
 #[when("the user selects Parameters in the list")]
 #[when("the user selects Parameters again")]
 #[when("I select Parameters in the panel list")]
+#[when("the user selects Parameters in the panel list")]
 fn toggle_selector_parameter(world: &mut ApplicationWorld) {
     world.click_text(PARAMETERS);
     world.pump(Vec::new());

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:02:10.294866516Z" time="28.733083313"><testcase name="Scenario: Hide and restore a panel on the side-docked ribbon: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:58:3" time="28.733083313"><system-out><![CDATA[  Scenario: Hide and restore a panel on the side-docked ribbon
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is docked on the left
+   ✔  And the Modify group is visible
+   ✔  When the user opens the direct panel selector
+   ✔  Then Modify is checked
+   ✔  When the user selects Modify in the panel selector
+   ✔  Then the Modify group disappears from the side-docked ribbon
+   ✔  And the remaining ribbon groups reflow vertically
+   ✔  And the panel selector remains open with Modify unchecked
+   ✔  When the user selects Modify in the panel selector
+   ✔  Then the Modify group returns to the side-docked ribbon
+   ✔  And the panel selector remains open with Modify checked
+]]></system-out></testcase></testsuite></testsuites>

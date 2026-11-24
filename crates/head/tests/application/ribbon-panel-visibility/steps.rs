@@ -7,8 +7,36 @@ use cucumber::{given, then, when};
 const PARAMETERS: &str = "Parameters";
 #[path = "minimized_context.rs"]
 mod minimized_context;
+#[path = "modify_expansion.rs"]
+mod modify_expansion;
 #[path = "sketch_parameters.rs"]
 mod sketch_parameters;
+#[path = "tools_panels.rs"]
+mod tools_panels;
+
+fn open_show_panels_at(world: &mut ApplicationWorld, anchor: &str) {
+    let run = ribbon_runs(world, anchor)
+        .next()
+        .unwrap_or_else(|| panic!("expected ribbon title {anchor:?}: {:?}", world.text()));
+    world.right_click(super::diagnostics::pointer_pixels(run.center()));
+    world.click_text("Show Panels");
+    world.pump(Vec::new());
+}
+
+fn ribbon_runs<'a>(
+    world: &'a ApplicationWorld,
+    label: &str,
+) -> impl Iterator<Item = &'a super::diagnostics::RenderedRun> + use<'a> {
+    let (position, size) = super::diagnostics::window_geometry("##application-ribbon").unwrap();
+    let label = super::world::squeezed(label);
+    world.frame.runs.iter().filter(move |run| {
+        let center = run.center();
+        (run.text == label || run.text.strip_suffix('v') == Some(&label))
+            && (0..2).all(|axis| {
+                center[axis] >= position[axis] && center[axis] < position[axis] + size[axis]
+            })
+    })
+}
 
 fn expand_show_panels(world: &mut ApplicationWorld) {
     world.hover([700, 500]);
@@ -47,10 +75,13 @@ fn parameters_hidden(world: &mut ApplicationWorld) {
 #[when("I open Show Panels on the floating ribbon")]
 #[when("I open Show Panels on the top ribbon")]
 #[when("I open the compact ribbon context menu and expand Show Panels")]
+#[when("the user opens the compact ribbon context menu and expand Show Panels")]
 #[when("I reopen Show Panels")]
 #[when("I reopen Show Panels from the ribbon context menu")]
 #[when("I open the View ribbon context menu and expand Show Panels")]
+#[when("the user opens the View ribbon context menu and expand Show Panels")]
 #[when("I reopen Show Panels on the View ribbon")]
+#[when("the user reopens Show Panels on the View ribbon")]
 fn show_panels(world: &mut ApplicationWorld) {
     expand_show_panels(world);
 }
@@ -65,6 +96,7 @@ fn visible_checked(world: &mut ApplicationWorld) {
     }
 }
 #[when("I select Parameters in Show Panels")]
+#[when("the user selects Parameters in Show Panels")]
 #[when("I select Parameters again")]
 fn toggle_parameters(world: &mut ApplicationWorld) {
     toggle_panel(world, PARAMETERS);
@@ -104,15 +136,17 @@ fn return_to_model(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("I activate the second part document")]
+#[when("the user activates the second part document")]
 fn activate_second(world: &mut ApplicationWorld) {
     let second = world.parts[1];
-    world.click_tab(second);
+    world.activate_through_tab(second);
     world.pump(Vec::new());
 }
 #[when("I return to the first part document")]
+#[when("the user returns to the first part document")]
 fn activate_first(world: &mut ApplicationWorld) {
     let first = world.parts[0];
-    world.click_tab(first);
+    world.activate_through_tab(first);
     world.pump(Vec::new());
 }
 #[then("Visibility, Appearance, Windows and Navigate are checked")]
@@ -122,6 +156,7 @@ fn view_panels_checked(world: &mut ApplicationWorld) {
     }
 }
 #[when("I select Navigate in Show Panels")]
+#[when("the user selects Navigate in Show Panels")]
 fn toggle_navigate(world: &mut ApplicationWorld) {
     toggle_panel(world, "Navigate");
 }
@@ -131,6 +166,7 @@ fn navigate_hidden(world: &mut ApplicationWorld) {
     world.expect_no_text("Navigate");
 }
 #[when("I switch to 3D Model and return to View")]
+#[when("the user switches to 3D Model and returns to View")]
 fn switch_and_return(world: &mut ApplicationWorld) {
     world.click_text("3D Model");
     world.pump(Vec::new());
@@ -153,11 +189,16 @@ fn model_compact(world: &mut ApplicationWorld) {
     world.expect_no_text("Start 2D Sketch");
 }
 #[when("I return the ribbon to its expanded display")]
+#[when("the user returns the ribbon to its expanded display")]
 fn return_expanded(world: &mut ApplicationWorld) {
-    while !world.shows("Start 2D Sketch") {
+    for _ in 0..3 {
+        if world.shows("Start 2D Sketch") {
+            break;
+        }
         world.click_text("Ribbon Display");
         world.pump(Vec::new());
     }
+    world.expect_text("Start 2D Sketch");
 }
 fn model_docked_left(world: &mut ApplicationWorld) {
     open_context_menu(world);

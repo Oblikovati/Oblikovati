@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:04:04.38035292Z" time="35.675432488"><testcase name="Scenario: Retain panel visibility while switching tabs and parts: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:20:3" time="35.675432488"><system-out><![CDATA[  Scenario: Retain panel visibility while switching tabs and parts
+   ✔  Given two part documents are open in the MCAD Software
+   ✔  And the first part is active with the 3D Model ribbon expanded
+   ✔  And the Parameters panel is visible
+   ✔  When the user selects the View ribbon tab
+   ✔  And the user returns to the 3D Model ribbon tab
+   ✔  Then the Parameters panel is still visible
+   ✔  When the user activates the second part document
+   ✔  Then its 3D Model ribbon also shows the Parameters panel
+   ✔  When the user returns to the first part document
+   ✔  Then its Parameters panel remains visible
+]]></system-out></testcase></testsuite></testsuites>

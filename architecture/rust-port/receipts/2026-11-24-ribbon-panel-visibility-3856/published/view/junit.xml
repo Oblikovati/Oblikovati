@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:02:14.443561912Z" time="38.553888146"><testcase name="Scenario: Hide and restore a View ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:32:3" time="38.553888146"><system-out><![CDATA[  Scenario: Hide and restore a View ribbon panel
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the View ribbon is expanded with Visibility, Appearance, Windows and Navigate visible
+   ✔  When the user opens the View ribbon context menu and expand Show Panels
+   ✔  Then Visibility, Appearance, Windows and Navigate are checked
+   ✔  When the user selects Navigate in Show Panels
+   ✔  Then the Navigate panel disappears from the View ribbon
+   ✔  When the user switches to 3D Model and returns to View
+   ✔  Then the Navigate panel remains hidden
+   ✔  When the user reopens Show Panels on the View ribbon
+   ✔  Then Navigate is unchecked
+   ✔  When the user selects Navigate in Show Panels
+   ✔  Then the Navigate panel reappears on the View ribbon
+]]></system-out></testcase></testsuite></testsuites>
