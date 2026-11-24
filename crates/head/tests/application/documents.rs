@@ -188,12 +188,13 @@ impl ApplicationWorld {
     /// The tab's own label: the same name also appears in the browser and in dialogs.
     pub fn tab_run(&self, name: &str) -> Option<diagnostics::RenderedRun> {
         let (position, size) = diagnostics::window_geometry(TAB_STRIP)?;
+        let name = super::world::squeezed(name);
         self.frame
             .runs
             .iter()
             .find(|run| {
                 let center = run.center();
-                run.text.starts_with(name)
+                run.text.starts_with(&name)
                     && center[1] >= position[1]
                     && center[1] <= position[1] + size[1]
                     && center[0] >= position[0]

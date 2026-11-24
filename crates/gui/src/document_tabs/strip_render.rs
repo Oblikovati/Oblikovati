@@ -42,7 +42,8 @@ pub(super) fn home_tab(
         ui.item_rect_min()[0],
         ui.is_item_active() && ui.is_mouse_clicked(imgui::MouseButton::Left),
     );
-    let clicked = ui.is_item_clicked();
+    let through_popup = owner.home_press.released(ui, ());
+    let clicked = ui.is_item_clicked() || through_popup;
     if ui.is_item_hovered() {
         owner.hovered = Some(HoveredTab {
             key: PreviewKey::Home,

@@ -19,3 +19,10 @@ In sketch edit, the Create title's Ribbon Appearance submenu retains Escape.
 Clicking outside it dismisses the menu and preserves the sketch. The
 [Ribbon Display receipt](receipts/2026-11-24-ribbon-display-full-3856/README.md)
 also covers the separate Escape dismissal from the Part Modify title.
+
+Clicking Home, Customize, the Options title, or the ribbon display menu
+while the direct panel selector is open dismisses the selector and activates
+the clicked control. The display menu can also hand the click back to the
+selector. Returning from Home restores the active Part's Tools ribbon and
+its panel visibility. The [native handoff receipt](receipts/2026-11-24-tools-selector-handoff-3856/README.md)
+covers these transitions.

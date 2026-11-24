@@ -54,6 +54,7 @@ mod title_appearance;
 mod title_customization;
 #[path = "tool_options.rs"]
 mod tool_options;
+pub(super) use tool_options::open_blank_metric_part;
 const WINDOW: &str = "##ribbon-additional-PartModify";
 const SIMPLIFICATION: &str = "##ribbon-additional-PartSimplification";
 

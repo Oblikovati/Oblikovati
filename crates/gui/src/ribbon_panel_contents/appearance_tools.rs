@@ -39,9 +39,10 @@ pub(super) fn options(
     let disabled = ui.begin_disabled(
         state.document_type != Some(oblikovati_api::types::DOCUMENT_PART) || owners.home_active,
     );
-    if icons.button(ui, "Customize", IconGlyph::Customize, size) {
-        owners.customization.open(owners.active_tab);
-    }
+    let customize = icons.button(ui, "Customize", IconGlyph::Customize, size);
+    owners
+        .customization
+        .ribbon_button(ui, owners.active_tab, customize);
     drop(disabled);
     application || document
 }

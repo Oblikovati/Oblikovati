@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:21:31.506949648Z" time="13.144320053"><testcase name="Scenario: Open customization while the panel selector is open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:405:3" time="13.144320053"><system-out><![CDATA[  Scenario: Open customization while the panel selector is open
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the Tools panel selector is open
+   ✔  When the user clicks Customize in the Tools ribbon
+   ✔  Then the panel selector closes
+   ✔  And the customization dialog opens on the Ribbon tab
+   ✔  And the selected target is Part Tools
+   ✔  When the user closes customization without making changes
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

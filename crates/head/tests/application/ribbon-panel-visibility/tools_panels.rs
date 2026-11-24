@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::super::diagnostics::RenderedRun;
 use super::*;
+#[path = "tools_selector.rs"]
+mod tools_selector;
 
 fn caption<'a>(world: &'a ApplicationWorld, name: &str) -> Option<&'a RenderedRun> {
     let options = ribbon_runs(world, "Options")
@@ -20,6 +22,7 @@ fn initial_team_web(world: &mut ApplicationWorld) {
 }
 
 #[given("the Find panel is visible")]
+#[given("the Find and Tutorials panels are both visible")]
 fn initial_find(world: &mut ApplicationWorld) {
     enable_tutorials(world);
     shown(world, "Find");
@@ -36,7 +39,9 @@ fn enable_tutorials(world: &mut ApplicationWorld) {
 }
 
 #[when("the user opens Show Panels from the Options panel title menu")]
+#[when("the user opens Show Panels from the Options panel title context menu")]
 #[when("the user reopens Show Panels from the Options panel title menu")]
+#[when("the user opens Show Panels again")]
 fn options_show_panels(world: &mut ApplicationWorld) {
     open_show_panels_at(world, "Options");
 }
@@ -138,4 +143,27 @@ fn find_before_team_web(world: &mut ApplicationWorld) {
 fn find_and_tutorials_visible(world: &mut ApplicationWorld) {
     shown(world, "Find");
     shown(world, "Tutorials");
+}
+
+#[then("Tutorials remains visible")]
+fn tutorials_remains_visible(world: &mut ApplicationWorld) {
+    shown(world, "Tutorials");
+}
+
+#[then("Find is unchecked while Tutorials remains checked")]
+fn confirm_find_is_hidden(world: &mut ApplicationWorld) {
+    options_show_panels(world);
+    independent_tools_choices(world);
+    world.escape();
+    world.escape();
+}
+
+#[then("Find and Tutorials are both checked")]
+fn confirm_both_panels_are_checked(world: &mut ApplicationWorld) {
+    options_show_panels(world);
+    for panel in ["Find", "Tutorials"] {
+        assert!(world.checked(panel), "{panel} is unchecked");
+    }
+    world.escape();
+    world.escape();
 }

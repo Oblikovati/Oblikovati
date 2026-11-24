@@ -161,9 +161,9 @@ pub(crate) fn draw_panel_content(
                 state.document_type != Some(oblikovati_api::types::DOCUMENT_PART)
                     || owners.home_active,
             );
-            if crate::widget_abi::button(ui, "Customize", [108., 26.]) {
-                owners.customization.open(owners.active_tab);
-            }
+            let customize = crate::widget_abi::button(ui, "Customize", [108., 26.]);
+            let customization = &mut owners.customization;
+            customization.ribbon_button(ui, owners.active_tab, customize);
             drop(disabled);
             crate::widget_abi::cursor_position(ui, origin);
             let disabled = ui.begin_disabled(state.ui_scale.is_none());

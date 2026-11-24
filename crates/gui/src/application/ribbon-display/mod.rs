@@ -6,6 +6,7 @@ use imgui::Ui;
 use std::collections::BTreeSet;
 mod appearance_menu;
 mod context_bounds;
+mod display_control;
 use context_bounds::submenu_row_pressed;
 mod docking_menu;
 mod panel_selector;
@@ -90,6 +91,8 @@ pub(crate) struct RibbonDisplayState {
     pub temporary: Option<TemporaryPanel>,
     pub temporary_focus: bool,
     control_press: crate::popup_press::PopupPress<()>,
+    menu_press: crate::popup_press::PopupPress<()>,
+    selector_press: crate::popup_press::PopupPress<RibbonPlacement>,
     pending_keyboard_group: Option<RibbonPanel>,
     pub temporary_escape_consumed: bool,
     pub keep_temporary_on_click: bool,
@@ -134,6 +137,8 @@ impl Default for RibbonDisplayState {
             temporary: None,
             temporary_focus: false,
             control_press: Default::default(),
+            menu_press: Default::default(),
+            selector_press: Default::default(),
             pending_keyboard_group: None,
             temporary_escape_consumed: false,
             keep_temporary_on_click: false,
@@ -400,43 +405,6 @@ impl RibbonDisplayState {
         let [right, bottom] = ui.item_rect_max();
         let [x, y] = ui.io().mouse_pos;
         (left..=right).contains(&x) && (top..=bottom).contains(&y)
-    }
-    /// Draw the display control and its menu at `position`; example: `state.control(ui, [900., 35.])`.
-    pub(crate) fn control(
-        &mut self,
-        ui: &Ui,
-        position: [f32; 2],
-        tips: &crate::ribbon_key_tips::RibbonKeyTips,
-        open_menu: bool,
-    ) {
-        crate::widget_abi::cursor_position(ui, position);
-        let clicked = crate::widget_abi::button(ui, "Ribbon Display", [0.; 2]);
-        let through_popup = self.control_press.released(ui, ());
-        self.control_press.finish_frame(ui);
-        if tips.tabs() && tips.matching("X2") {
-            crate::ribbon_key_tips::badge(ui, "X2");
-        }
-        if clicked || through_popup || self.selector_pointer_press(ui) {
-            self.advance();
-        }
-        if ui.is_item_hovered() {
-            ui.tooltip_text(self.control_tooltip());
-        }
-        ui.same_line();
-        let menu_clicked = crate::widget_abi::button(ui, "v##ribbon-display-menu", [0.; 2]);
-        if tips.tabs() && tips.matching("X3") {
-            crate::ribbon_key_tips::badge(ui, "X3");
-        }
-        if menu_clicked || open_menu {
-            ui.open_popup("##ribbon-display-menu");
-        }
-        self.keep_temporary_on_click =
-            ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
-        if let Some(_menu) = ui.begin_popup("##ribbon-display-menu") {
-            self.menu(ui);
-        } else {
-            self.display_menu_cursor = None;
-        }
     }
     fn menu(&mut self, ui: &Ui) {
         let selected = self.display_menu_keyboard(ui);

@@ -14,6 +14,13 @@ impl<T> Default for PopupPress<T> {
 }
 
 impl<T: Copy + Eq> PopupPress<T> {
+    /// Complete one control, for example `press.button(ui, (), clicked)` after drawing it.
+    pub(crate) fn button(&mut self, ui: &Ui, target: T, clicked: bool) -> bool {
+        let through_popup = self.released(ui, target);
+        self.finish_frame(ui);
+        clicked || through_popup
+    }
+
     /// Return true on release over the pressed control; for example, a ribbon group (#3849).
     pub(crate) fn released(&mut self, ui: &Ui, target: T) -> bool {
         if !ui.is_item_hovered()

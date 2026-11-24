@@ -29,6 +29,7 @@ pub(crate) struct DocumentTabs {
     /// The first tab shown; earlier ones wait behind the left arrow.
     first_tab: usize,
     order: TabOrder,
+    home_press: crate::popup_press::PopupPress<()>,
     pub previews: crate::application::document_tabs::previews::TabPreviews,
     pub menu: crate::application::document_tabs::TabMenu,
     /// The labels of the last frame; a change needs the frames below to finish its layout.
@@ -59,6 +60,7 @@ impl DocumentTabs {
         if !layout.tabs_visible || !(any_document || home.active) {
             self.order.cancel_input();
             self.pressed_tab = None;
+            self.home_press.finish_frame(ui);
             return;
         }
         let height = request.extent[1] as f32 / request.layout_scale()[1];
@@ -78,11 +80,13 @@ impl DocumentTabs {
             reveal_active,
             hovered: None,
             home,
+            home_press: &mut self.home_press,
         };
         document_strip_window(ui, strip, strip_top, || {
             document_strip(ui, request, &mut strip_owner, actions)
         });
         let hovered = strip_owner.hovered.take();
+        strip_owner.home_press.finish_frame(ui);
         if strip_owner.layout_changed {
             self.settling_frames = SETTLING_FRAMES;
         }
@@ -144,6 +148,7 @@ struct StripOwner<'a> {
     reveal_active: bool,
     hovered: Option<crate::application::document_tabs::previews::HoveredTab>,
     home: &'a mut crate::application::home_recent_documents::HomeWorkspace,
+    home_press: &'a mut crate::popup_press::PopupPress<()>,
 }
 
 enum StripTab<'a> {

@@ -27,6 +27,7 @@ enum ListFocus {
 #[derive(Default)]
 pub(crate) struct RibbonCustomization {
     open: crate::dockable_lifecycle::DockableState,
+    ribbon_press: crate::popup_press::PopupPress<RibbonTab>,
     draft: Draft,
     builtins: builtin::BuiltinLayout,
     appearance: crate::ribbon_command_layout::RibbonAppearance,
@@ -66,6 +67,13 @@ pub(crate) struct RibbonCustomization {
 }
 impl DockableWindow for RibbonCustomization {}
 impl RibbonCustomization {
+    /// Open from the ribbon button, including a click that dismisses a popup.
+    pub(crate) fn ribbon_button(&mut self, ui: &Ui, tab: RibbonTab, clicked: bool) {
+        if self.ribbon_press.button(ui, tab, clicked) {
+            self.open(tab);
+        }
+    }
+
     pub(crate) fn register_dockable(
         &self,
         registry: &mut crate::dockable_lifecycle::DockRegistry,

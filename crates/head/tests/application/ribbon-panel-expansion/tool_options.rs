@@ -8,7 +8,7 @@ const OPTIONS: &str = "##ribbon-additional-ToolOptions";
 const RESET: &str = "Reset Ribbon";
 
 #[given("`fixtures/cad/blank-metric-part.opd` is open in the MCAD Software")]
-fn open_blank_metric_part(world: &mut ApplicationWorld) {
+pub(in super::super) fn open_blank_metric_part(world: &mut ApplicationWorld) {
     let path = super::super::scenario_root().join("fixtures/cad/blank-metric-part.opd");
     world.open_fixture(&path);
     let id = world.active_id();

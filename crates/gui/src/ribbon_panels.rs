@@ -23,6 +23,7 @@ pub(crate) struct RibbonPanelLayout {
     scrollbar_shown: bool,
     measured_appearance: Option<crate::ribbon_command_layout::RibbonAppearance>,
     popup_press: crate::popup_press::PopupPress<(RibbonTab, RibbonPanel)>,
+    title_press: crate::popup_press::PopupPress<(RibbonTab, RibbonPanel)>,
     pub pending_layout: bool,
     pub context_title: Option<RibbonPanel>,
     pending_additional: Option<(RibbonTab, RibbonPanel)>,
@@ -340,6 +341,7 @@ fn draw_row(
         x += width + 8.;
     }
     layout.popup_press.finish_frame(context.ui);
+    layout.title_press.finish_frame(context.ui);
     activated
 }
 fn draw_expanded(
@@ -374,7 +376,8 @@ fn draw_expanded(
             if ui.is_item_clicked_with_button(imgui::MouseButton::Right) {
                 layout.context_title = Some(panel);
             }
-            let title_clicked = ui.is_item_clicked();
+            let title_released = expandable && layout.title_press.released(ui, (tab, panel));
+            let title_clicked = ui.is_item_clicked() || title_released;
             local_action |= title_clicked && !expandable;
             if expandable {
                 let requested = layout.take_additional(tab, panel);

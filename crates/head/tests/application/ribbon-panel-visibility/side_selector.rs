@@ -17,7 +17,7 @@ fn click_side_selector(world: &mut ApplicationWorld) {
 #[when("the user clicks the direct panel selector")]
 #[when("the user opens the direct panel selector")]
 #[given("the direct panel selector is open")]
-fn open_side_selector(world: &mut ApplicationWorld) {
+pub(super) fn open_side_selector(world: &mut ApplicationWorld) {
     if window_geometry("##ribbon-column").is_some() {
         click_side_selector(world);
     } else {
