@@ -46,7 +46,7 @@ fn appearance_on_right(world: &mut ApplicationWorld) {
 }
 
 #[then("the Model Browser remains visible on the left")]
-fn model_browser_left(_: &mut ApplicationWorld) {
+pub(super) fn model_browser_left(_: &mut ApplicationWorld) {
     let (position, _) = diagnostics::window_geometry("Model").expect("model browser");
     assert!(position[0].abs() <= 1., "model browser at {position:?}");
 }

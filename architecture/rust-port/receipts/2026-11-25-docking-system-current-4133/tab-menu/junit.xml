@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Dockable workspace panels: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature" package="testsuite/Feature: Dockable workspace panels: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:52:23.158217229Z" time="22.666599666"><testcase name="Scenario: Open a workspace panel from the dock tab bar: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature:82:3" time="22.666599666"><system-out><![CDATA[  Scenario: Open a workspace panel from the dock tab bar
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And Model is docked and Log is closed
+   ✔  When the user clicks the plus button in the Model dock tab bar
+   ✔  Then the panel menu offers Log Panel, Favorites, Material Browser and Appearance Browser
+   ✔  When the user chooses Log Panel from that menu
+   ✔  Then Log is available beside Model in the same dock tab bar
+   ✔  When the user selects Log and closes its dock tab
+   ✔  Then Log is removed from the tab bar
+   ✔  And Model is still available in the same dock region
+]]></system-out></testcase></testsuite></testsuites>

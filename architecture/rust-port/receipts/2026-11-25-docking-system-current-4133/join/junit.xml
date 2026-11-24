@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Dockable workspace panels: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature" package="testsuite/Feature: Dockable workspace panels: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:52:46.617410077Z" time="74.968398072"><testcase name="Scenario: Join panels in one dock region as selectable tabs: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature:94:3" time="74.968398072"><system-out><![CDATA[  Scenario: Join panels in one dock region as selectable tabs
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And two dockable panels are open in separate workspace regions
+   ✔  When the user drags one panel onto the center of the other panel's dock region
+   ✔  Then the destination region indicates a tab insertion target
+   ✔  When the user releases the panel over that target
+   ✔  Then both panels occupy the same dock region as tabs
+   ✔  And one panel is active while the other remains available
+   ✔  When the user selects the other panel tab
+   ✔  Then its contents replace the active panel contents in that region
+   ✔  And the viewport and active document remain available
+]]></system-out></testcase></testsuite></testsuites>

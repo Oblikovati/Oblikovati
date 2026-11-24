@@ -25,14 +25,31 @@ mod retention_scenario;
 mod tabs_scenario;
 
 const PANEL: &str = "Material Browser";
+const DOCKING_PART: &str = "fixtures/cad/docking-visible-solid-current.opd";
+
+#[given("`fixtures/cad/docking-visible-solid-current.opd` is open and active")]
+fn named_docking_fixture(world: &mut ApplicationWorld) {
+    let document = open_docking_fixture(world);
+    assert_eq!(world.active_id(), document);
+    workspace_layout::browser_feature::expect_solid_visible(world);
+}
 
 fn open_docking_fixture(world: &mut ApplicationWorld) -> u64 {
+    if let Some(document) = world.previous_document {
+        let path = super::scenario_root().join(DOCKING_PART);
+        let state = world.state();
+        if state.document == Some(document)
+            && state.document_storage[&document].path.as_deref() == path.to_str()
+        {
+            return document;
+        }
+    }
     world.restore_layout_without_asset_tools();
     open_docking_part(world)
 }
 
 fn open_docking_part(world: &mut ApplicationWorld) -> u64 {
-    let path = super::scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
+    let path = super::scenario_root().join(DOCKING_PART);
     world.open_fixture(&path);
     let document = world.active_id();
     world.previous_document = Some(document);

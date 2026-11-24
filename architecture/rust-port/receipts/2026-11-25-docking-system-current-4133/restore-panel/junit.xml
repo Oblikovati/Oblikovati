@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Dockable workspace panels: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature" package="testsuite/Feature: Dockable workspace panels: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:55:10.733357515Z" time="40.346306931"><testcase name="Scenario: Close a docked panel and restore it from the interface menu: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature:118:3" time="40.346306931"><system-out><![CDATA[  Scenario: Close a docked panel and restore it from the interface menu
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And a dockable panel is the active tab in a dock region
+   ✔  When the user closes the panel
+   ✔  Then the panel is removed from the visible workspace
+   ✔  And the remaining dock regions and viewport use the freed space
+   ✔  When the user opens the interface visibility menu
+   ✔  And the user selects the closed panel
+   ✔  Then the panel is restored to the workspace
+   ✔  And its contents are visible
+]]></system-out></testcase></testsuite></testsuites>

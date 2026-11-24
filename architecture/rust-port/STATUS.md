@@ -66,9 +66,9 @@ using this status; the live scenario directory can change.
   have R0 baseline records. See `receipts/2026-11-21-project-dialog-r0-3895/`.
   Strict verification still requires bounded build and runtime inputs under
   #3978.
-- Docking System (#4133): the [local run](receipts/2026-11-20-docking-api-0160-4133/)
-  passed 11 scenarios and 108 steps, including a desktop restart. Feature,
-  support, and fixture hashes matched the live source. Strict verification needs #3978.
+- Docking System (#4133) passed all 11 current scenarios and 111 steps,
+  including layout retention and a two-process desktop restart.
+  See the [current run](receipts/2026-11-25-docking-system-current-4133/README.md).
   The standalone [dock-menu test](receipts/2026-11-24-dock-menu-repository-fixture-4133/README.md)
   opens the bundled Part without requiring the separate docking scenario fixture.
 - Selected sketch point identity (#4179): the shared placement recipe now

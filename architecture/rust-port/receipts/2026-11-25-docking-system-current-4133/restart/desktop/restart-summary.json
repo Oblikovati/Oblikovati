@@ -1,0 +1,24 @@
+{
+  "fixture_sha256": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+  "binary_sha256": "5d83a42b61356e4023057a10678bc5655b5e05c18d6a144515624b3efbd9aa42",
+  "panels": [
+    {
+      "dock": "0x00000004",
+      "tab": 0,
+      "geometry": "Pos=1000,158\nSize=440,694\nCollapsed=0\nDockId=0x00000004,0"
+    },
+    {
+      "dock": "0x00000004",
+      "tab": 1,
+      "geometry": "Pos=1000,158\nSize=440,694\nCollapsed=0\nDockId=0x00000004,1"
+    }
+  ],
+  "viewport_before": {
+    "face_bright_fraction": 1.0,
+    "background_bright_fraction": 0.0
+  },
+  "viewport_after": {
+    "face_bright_fraction": 1.0,
+    "background_bright_fraction": 0.0
+  }
+}

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Dockable workspace panels: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature" package="testsuite/Feature: Dockable workspace panels: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:47:48.712780694Z" time="68.570214538"><testcase name="Scenario: Dock a panel to each supported workspace edge: target/native-scratch.HSqCy5/current-docking-system-source/features/application/docking-system/docking-system.feature:17:3" time="68.570214538"><system-out><![CDATA[  Scenario: Dock a panel to each supported workspace edge
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And a dockable panel is floating over the workspace
+   ✔  When the user docks the panel to the right workspace edge
+   ✔  Then the panel is attached along the right edge
+   ✔  And the viewport occupies the workspace to its left
+   ✔  When the user docks the panel to the top workspace edge
+   ✔  Then the panel is attached below the ribbon
+   ✔  And the viewport occupies the workspace below the panel
+   ✔  When the user docks the panel to the bottom workspace edge
+   ✔  Then the panel is attached above the document tabs and status area
+   ✔  And the viewport occupies the workspace above the panel
+]]></system-out></testcase></testsuite></testsuites>

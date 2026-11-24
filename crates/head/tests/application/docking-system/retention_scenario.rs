@@ -13,6 +13,25 @@ fn two_open_documents(world: &mut ApplicationWorld) {
     select_document(world, first);
 }
 
+#[given(
+    "`fixtures/cad/quick-access-toolbar/PartOne.opd` and `fixtures/cad/docking-visible-solid-current.opd` are open in that order"
+)]
+fn two_saved_documents(world: &mut ApplicationWorld) {
+    world.restore_layout_without_asset_tools();
+    let other = super::super::scenario_root().join("fixtures/cad/quick-access-toolbar/PartOne.opd");
+    world.open_fixture(&other);
+    let first = world.active_id();
+    let second = super::open_docking_part(world);
+    let state = world.state();
+    assert!(state.documents.iter().map(|row| row.id).eq([first, second]));
+    world.other_document = Some(first);
+}
+
+#[given("`docking-visible-solid-current.opd` is active")]
+fn docking_part_is_active(world: &mut ApplicationWorld) {
+    assert_eq!(Some(world.active_id()), world.previous_document);
+}
+
 #[given("a dockable panel has been moved, resized, or tabbed in the workspace")]
 fn arranged_panel(world: &mut ApplicationWorld) {
     panel_docked(world);
@@ -22,6 +41,7 @@ fn arranged_panel(world: &mut ApplicationWorld) {
 }
 
 #[when("the user switches to the other document")]
+#[when("the user switches to PartOne")]
 fn switch_to_other(world: &mut ApplicationWorld) {
     select_document(world, world.other_document.unwrap());
 }
@@ -37,12 +57,20 @@ fn arrangement_remains(world: &mut ApplicationWorld) {
     world.run_in_window(PANEL, "Assigntopart");
 }
 
+#[then("the left Model Browser and right tabbed browsers remain in place")]
+#[then("the left Model Browser and right tabbed browsers remain available")]
+fn tabbed_arrangement_remains(world: &mut ApplicationWorld) {
+    assert_eq!(diagnostics::window_dock_id(PANEL), world.docking_node);
+    super::restart_scenario::restored_group(world);
+}
+
 #[then("the active document changes in the viewport")]
 fn other_document_active(world: &mut ApplicationWorld) {
     assert_eq!(world.state().document, world.other_document);
 }
 
 #[when("the user returns to the first document")]
+#[when("the user returns to `docking-visible-solid-current.opd`")]
 fn return_to_first(world: &mut ApplicationWorld) {
     select_document(world, world.previous_document.unwrap());
     assert_eq!(world.state().document, world.previous_document);

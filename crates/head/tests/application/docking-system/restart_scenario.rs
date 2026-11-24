@@ -4,7 +4,16 @@ use super::{ApplicationWorld, PANEL, diagnostics, native_drag, panel_docked, vie
 use cucumber::{given, then, when};
 const APPEARANCE: &str = "Appearance Browser";
 
+#[given("`fixtures/cad/docking-visible-solid-current.opd` is open")]
+fn restart_fixture(world: &mut ApplicationWorld) {
+    super::named_docking_fixture(world);
+    world.saved_path = Some(super::super::scenario_root().join(super::DOCKING_PART));
+}
+
 #[given("the user has changed the workspace panel arrangement")]
+#[given(
+    "Model Browser is docked on the left and Appearance Browser and Material Browser share a right dock as tabs"
+)]
 fn arrange_tabbed_panels(world: &mut ApplicationWorld) {
     super::open_docking_fixture(world);
     panel_docked(world);
@@ -20,6 +29,11 @@ fn arrange_tabbed_panels(world: &mut ApplicationWorld) {
     let node = diagnostics::window_dock_id(PANEL).unwrap();
     assert_ne!(node, 0);
     assert_eq!(diagnostics::window_dock_id(APPEARANCE), Some(node));
+    super::browser_scenarios::model_browser_left(world);
+    assert_ne!(diagnostics::window_dock_id("Model").unwrap(), 0);
+    let (_, size) = diagnostics::window_geometry(PANEL).unwrap();
+    world.docking_resize = Some((viewport(world), size[0]));
+    world.docking_node = Some(node);
     world.docking_active_tab = diagnostics::window_dock_tab_visible(APPEARANCE);
 }
 
@@ -45,15 +59,34 @@ fn restart_application(world: &mut ApplicationWorld) {
     world.close();
     run_desktop_restart_check();
     world.reopen_application();
-    super::open_docking_part(world);
-    world.pump(Vec::new());
+    if world.saved_path.is_none() {
+        super::open_docking_part(world);
+        world.pump(Vec::new());
+    }
+}
+
+#[when("the user opens the same native part")]
+fn open_same_part(world: &mut ApplicationWorld) {
+    assert!(world.state().documents.is_empty());
+    let document = super::open_docking_part(world);
+    let storage = &world.state().document_storage[&document];
+    assert_eq!(
+        storage.path.as_deref().map(std::path::Path::new),
+        world.saved_path.as_deref()
+    );
+    super::workspace_layout::browser_feature::expect_solid_visible(world);
 }
 
 #[then("the saved panel positions, sizes and tab groups are restored")]
-fn restored_group(world: &mut ApplicationWorld) {
+#[then(
+    "the saved left Model Browser and right tabbed browsers are restored in their positions and sizes"
+)]
+pub(super) fn restored_group(world: &mut ApplicationWorld) {
     let node = diagnostics::window_dock_id(PANEL).unwrap();
     assert_ne!(node, 0);
     assert_eq!(diagnostics::window_dock_id(APPEARANCE), Some(node));
+    super::browser_scenarios::model_browser_left(world);
+    assert_ne!(diagnostics::window_dock_id("Model").unwrap(), 0);
     assert_eq!(
         diagnostics::window_dock_tab_visible(APPEARANCE),
         world.docking_active_tab
