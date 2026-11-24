@@ -32,4 +32,21 @@ After moving that step into the shared bindings, the published
 [annotation-scale case](published/scale/cucumber.json) passed on rerun
 and the pinned [quick-access case](pinned/quick-access/cucumber.json) passed.
 
+## Pinned native cases
+
+| Scenario | Passed steps | Receipt |
+| --- | ---: | --- |
+| Cancel a custom annotation scale | 14 | [Run](pinned/cancel/cucumber.json) |
+| Accept a custom annotation scale | 11 | [Run](pinned/accept/cucumber.json) |
+| Correct an invalid custom annotation scale | 17 | [Run](pinned/invalid/cucumber.json) |
+| Toggle the publication setting of an active copied view | 8 | [Run](pinned/publish/cucumber.json) |
+| View bulk visibility commands leave the origin plane unchanged in an empty part | 9 | [Run](pinned/bulk/cucumber.json) |
+| Toggle an origin plane while the active view is locked | 12 | [Run](pinned/toggle/cucumber.json) |
+| Switch locked views after showing an origin plane | 10 | [Run](pinned/switch/cucumber.json) |
+| Copy and activates a view representation in an empty part | 15 | [Run](pinned/copy/cucumber.json) |
+
+All 96 steps passed at scenario revision
+`b576445b98cffd686dcc05aa8c017de2a591c8c8`. The custom scale,
+publication, and bulk visibility cases gained five R0 records.
+
 See [#3896](https://github.com/Oblikovati/Oblikovati/issues/3896).

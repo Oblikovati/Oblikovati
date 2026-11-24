@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:28:03.495951451Z" time="72.616873321"><testcase name="Scenario: Correct an invalid custom annotation scale: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1017:3" time="72.616873321"><system-out><![CDATA[  Scenario: Correct an invalid custom annotation scale
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And a copied view representation is active with annotation scale Auto
+   ✔  And the Edit Annotation Scale dialog is open
+   ✔  When the user replaces the scale with "0"
+   ✔  Then the scale text is red
+   ✔  And OK is disabled
+   ✔  When the user replaces the scale with "1:0"
+   ✔  Then the scale text is red
+   ✔  And OK is disabled
+   ✔  When the user replaces the scale with "abc"
+   ✔  Then the scale text is red
+   ✔  And OK is disabled
+   ✔  When the user replaces the scale with "3:2"
+   ✔  Then the scale text returns to its normal color
+   ✔  And OK is enabled
+   ✔  When the user cancels the dialog
+   ✔  Then the dialog closes
+]]></system-out></testcase></testsuite></testsuites>

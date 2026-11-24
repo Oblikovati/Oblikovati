@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:27:59.489324397Z" time="90.353649404"><testcase name="Scenario: Cancel a custom annotation scale: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:985:3" time="90.353649404"><system-out><![CDATA[  Scenario: Cancel a custom annotation scale
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And a copied view representation is active with annotation scale Auto
+   ✔  When the user opens the active view's Annotation Scale submenu
+   ✔  And the user chooses Custom
+   ✔  Then the Edit Annotation Scale dialog opens with Auto selected
+   ✔  And OK is disabled
+   ✔  When the user replaces the scale with "3:2"
+   ✔  Then the scale field displays "3:2"
+   ✔  And OK is enabled
+   ✔  When the user cancels the dialog
+   ✔  And the user reopens the active view's Annotation Scale submenu
+   ✔  Then Auto is checked
+   ✔  When the user dismisses the menus
+   ✔  Then the copied view remains active
+]]></system-out></testcase></testsuite></testsuites>
