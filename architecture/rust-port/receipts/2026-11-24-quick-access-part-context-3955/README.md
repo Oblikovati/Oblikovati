@@ -1,6 +1,6 @@
 # Quick Access shortcut across Part documents
 
-The scenario passed all 11 steps with the supplied PartOne, PartTwo, and
+The scenario passed all 10 steps with the supplied PartOne, PartTwo, and
 Assembly files. The native toolbar hid the Extrude shortcut while Assembly
 was active and showed it again on both Part tabs. PartTwo remained active.
 
