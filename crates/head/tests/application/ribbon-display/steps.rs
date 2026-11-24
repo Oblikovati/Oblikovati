@@ -56,6 +56,10 @@ fn expect_compact_groups(world: &ApplicationWorld) {
     }
     world.expect_no_text(WINDOWS_COMMAND);
 }
+pub(super) fn compact_panel_point(world: &ApplicationWorld, name: &str) -> [i32; 2] {
+    let label = world.run(name).center();
+    super::diagnostics::pointer_pixels([label[0], label[1] - 35.])
+}
 pub(super) fn click_display_menu(world: &mut ApplicationWorld) {
     let control = world.run("Ribbon Display");
     let center = control.center();

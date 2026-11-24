@@ -22,7 +22,7 @@ fn separate_points(world: &mut ApplicationWorld) {
 #[when("I invoke Coincident and select the upper-left point")]
 #[when("the user invokes Coincident and selects the upper-left point")]
 fn first_pick(world: &mut ApplicationWorld) {
-    world.click_text("Coincident");
+    super::coincident_segments::invoke_coincident(world);
     world.sketch_click(FIRST);
 }
 #[then("the prompt requests a second curve or point")]

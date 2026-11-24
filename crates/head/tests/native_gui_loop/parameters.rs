@@ -2,6 +2,16 @@
 use super::*;
 use oblikovati_viewport::ViewportPhysicalKey;
 
+pub(super) fn infer_from_all_geometry(owner: &mut NativeDesktopOwner) {
+    owner
+        .set_inference_scope_from_gui(&oblikovati_api::wire::SketchInferenceScopeView {
+            sketch_index: 0,
+            scope: oblikovati_api::types::INFERENCE_SCOPE_ALL_GEOMETRY,
+            entities: None,
+        })
+        .unwrap();
+}
+
 pub(super) fn create_size_parameter(
     window: &mut ScriptedGuiWindow,
     owner: &mut NativeDesktopOwner,

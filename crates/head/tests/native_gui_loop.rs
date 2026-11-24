@@ -136,6 +136,7 @@ fn native_new_part_button_creates_and_selects_an_unsaved_document() {
         application_bdd::rendered_label_center("XY Plane"),
     );
     assert!(owner.active_sketch_edit().is_some());
+    parameters::infer_from_all_geometry(&mut owner);
     click_shell_position(
         &mut window,
         &mut owner,
@@ -242,6 +243,10 @@ fn verify_browser_reentry_pixels(
     owner: &mut NativeDesktopOwner,
     edit: crate::HeadSketchEdit,
 ) {
+    // Sketch axes are intentionally drawn only in edit mode.
+    let mut options = owner.gui_command_state().unwrap().sketch_options.unwrap();
+    options.axes_visible = false;
+    owner.set_sketch_options_from_gui(options).unwrap();
     move_pointer_away(window, owner);
     let before = capture_framebuffer(&mut window.native);
     rectangle_visibility::assert_committed_rectangle_visible(window, owner, edit, &before);

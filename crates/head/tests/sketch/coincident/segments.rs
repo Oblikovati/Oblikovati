@@ -11,10 +11,18 @@ fn separate_segments(world: &mut ApplicationWorld) {
     world.record_initial_sketch();
 }
 #[when("I invoke Coincident")]
-fn invoke_coincident(world: &mut ApplicationWorld) {
+#[when("the user invoke Coincident")]
+pub(super) fn invoke_coincident(world: &mut ApplicationWorld) {
+    if !world.shows("Coincident") {
+        world.click(super::super::ribbon_display::compact_panel_point(
+            world,
+            "Constrain",
+        ));
+    }
     world.click_text("Coincident");
 }
 #[when("I select the first segment end followed by the second segment start")]
+#[when("the user select the first segment end followed by the second segment start")]
 fn join_endpoints(world: &mut ApplicationWorld) {
     world.sketch_click([750, 350]);
     world.sketch_click([850, 400]);
@@ -53,6 +61,7 @@ fn joined_remains(world: &mut ApplicationWorld) {
     endpoints_meet(world);
 }
 #[when("I press F8")]
+#[when("the user press F8")]
 fn show_constraint_marks(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::F8, false);
 }

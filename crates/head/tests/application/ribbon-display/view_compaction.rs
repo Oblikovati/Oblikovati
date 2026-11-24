@@ -24,10 +24,6 @@ fn narrow_windows_panel(world: &mut ApplicationWorld) {
     world.expect_no_text("User Interface");
 }
 
-fn compact_panel_point(world: &ApplicationWorld, name: &str) -> [i32; 2] {
-    let label = world.run(name).center();
-    super::super::diagnostics::pointer_pixels([label[0], label[1] - 35.])
-}
 pub(super) fn click_compact_panel(world: &mut ApplicationWorld, name: &str) {
     super::super::x11_input::click(compact_panel_point(world, name));
     world.pump(Vec::new());

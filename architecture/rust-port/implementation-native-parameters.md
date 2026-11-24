@@ -64,6 +64,12 @@ An inferred anchor to the existing origin removes the rectangle's translation
 degrees of freedom. Slot tests verify their inferred corner constraint and retain
 the tool's stage prompt alongside the dimensional fields.
 
+The native X11 cube journey uses an explicit Coincident constraint to anchor the
+size-driven rectangle at the projected origin under the default Geometry in
+current command scope. The owner and frame-loop inference tests select All
+Geometry when they exercise automatic anchoring. See the
+[cube and Coincident checks](receipts/2026-11-24-coincident-ribbon-3857/README.md).
+
 The full local `make gate` passed at `40e4d4a8` for all 13 application/build crates.
 It included native Xvfb tests with software Vulkan and validation layers 1.4.313,
 formatting, Clippy, build, tests, coverage, doc tests, Markdown/link/SPDX checks,

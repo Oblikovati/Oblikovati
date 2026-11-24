@@ -17,7 +17,7 @@ pub(super) fn draw_oblique_lines(world: &mut ApplicationWorld) {
 #[given("the joined line endpoints and visible constraints")]
 pub(super) fn joined_lines(world: &mut ApplicationWorld) {
     draw_oblique_lines(world);
-    world.click_text("Coincident");
+    super::coincident_segments::invoke_coincident(world);
     world.sketch_click([750, 350]);
     world.sketch_click([850, 400]);
     let geometry = world.edited_geometry();
@@ -102,6 +102,7 @@ fn moving_a_constrained_segment_follows_the_cursor_and_drags_the_join() {
     world.close();
 }
 #[when("I right-click the joint")]
+#[when("the user right-click the joint")]
 fn right_click_joint(world: &mut ApplicationWorld) {
     world.right_click(world.observed_view.expect("expected the joint position"));
     world.pump(Vec::new());
@@ -131,6 +132,7 @@ fn menu_closes(world: &mut ApplicationWorld) {
     world.expect_no_text("Repeat Coincident");
 }
 #[when("I select the joint point and right-click it again")]
+#[when("the user select the joint point and right-click it again")]
 fn select_and_open(world: &mut ApplicationWorld) {
     world.sketch_click(world.observed_view.unwrap());
     assert!(world.state().sketch_delete_available);

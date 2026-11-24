@@ -40,6 +40,7 @@ fn draw_parameter_rectangle(world: &mut ApplicationWorld) -> crate::HeadSketchEd
     assert_eq!(edit.plane, oblikovati_model::sketch::SketchPlane::xy());
     click_label(world, "Rectangle");
     place_rectangle_with_size(world);
+    anchor_rectangle_at_origin(world);
     super::super::parameters::verify_rectangle(&world.app().owner, edit, 1.);
     assert_eq!(world.edited_geometry().lines().len(), 4);
     click_label(world, "Finish Sketch");
@@ -49,16 +50,38 @@ fn draw_parameter_rectangle(world: &mut ApplicationWorld) -> crate::HeadSketchEd
 }
 
 fn place_rectangle_with_size(world: &mut ApplicationWorld) {
-    let point = world.sketch_pixel_of([0., 0.]);
+    let point = world.sketch_pixel_of([3., 3.]);
     x11_input::click(point);
     world.pump(Vec::new());
-    x11_input::move_pointer(world.sketch_pixel_of([1., 1.]));
+    x11_input::move_pointer(world.sketch_pixel_of([4., 4.]));
     world.pump(Vec::new());
     for key in [0xff09, 0xff0d] {
         type_text(world, "size");
         x11_input::press_keysym(key);
         world.pump(Vec::new());
     }
+}
+
+fn anchor_rectangle_at_origin(world: &mut ApplicationWorld) {
+    // The default current-command inference scope excludes the projected origin.
+    x11_input::press_keysym(0xff1b);
+    world.pump(Vec::new());
+    if !world.shows("Coincident") {
+        x11_input::click(super::ribbon_display::compact_panel_point(
+            world,
+            "Constrain",
+        ));
+        world.pump(Vec::new());
+    }
+    click_label(world, "Coincident");
+    for point in [world.sketch_pixel_of([0., 0.]), world.line_point(0, 0.)] {
+        x11_input::move_pointer(point);
+        world.pump(Vec::new());
+        x11_input::click(point);
+        world.pump(Vec::new());
+    }
+    x11_input::press_keysym(0xff1b);
+    world.pump(Vec::new());
 }
 
 fn extrude_parameter_rectangle(world: &mut ApplicationWorld) -> u64 {

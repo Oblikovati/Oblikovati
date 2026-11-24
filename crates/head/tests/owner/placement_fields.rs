@@ -46,6 +46,14 @@ fn origin_rectangle_owner() -> (TestOwner, u64, DocumentSketchId) {
     owner.edit_sketch_from_gui(true).unwrap();
     add_size_parameter(&mut owner);
     let edit = owner.active_sketch_edit().unwrap();
+    Client::new(owner.document_host())
+        .sketch()
+        .set_inference_scope(&oblikovati_api::wire::SketchInferenceScopeView {
+            sketch_index: 0,
+            scope: oblikovati_api::types::INFERENCE_SCOPE_ALL_GEOMETRY,
+            entities: None,
+        })
+        .unwrap();
     owner
         .start_sketch_placement(edit.document, edit.sketch, SketchPlacementTool::Rectangle)
         .unwrap();
