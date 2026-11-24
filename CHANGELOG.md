@@ -179,6 +179,8 @@
 
 ### Changed
 
+- Reused part checkpoints when the typed suppression command reports feature health. (#4079)
+
 - Reused current part checkpoints when applying Feature Properties. (#4079)
 
 - Avoided replaying a part when inspecting an independent sketch. (#4079)

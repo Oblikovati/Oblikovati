@@ -139,7 +139,7 @@ fn publish_checkpoint<
         })
 }
 
-fn adopt_parameter_candidate(
+pub(super) fn adopt_session_candidate(
     owner: &mut impl CommandOwner,
     replay: &CheckpointReplay,
     candidate: NamedCandidate,
@@ -182,7 +182,7 @@ pub(super) fn try_edit(
         )
         .map_err(|error| Error(error.to_string()))?;
     if let Some(candidate) = candidate {
-        adopt_parameter_candidate(owner, &replay, candidate, &transition).map_err(|error| {
+        adopt_session_candidate(owner, &replay, candidate, &transition).map_err(|error| {
             Error(format!(
                 "document {document}: parameter edit committed but replay adoption failed: {error}"
             ))

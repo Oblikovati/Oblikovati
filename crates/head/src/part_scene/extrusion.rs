@@ -84,6 +84,9 @@ impl ExtrudeRegionAccess for CertifiedExtrudeAccess {
             .prepare(history, candidate, feature)
             .map_err(|error| error.to_string())
     }
+    fn checkpoint_health_policy(&self) -> Option<PrismResolutionPolicy> {
+        Some(self.0)
+    }
     fn feature_health(
         &self,
         candidate: &DocumentSnapshot,

@@ -68,6 +68,11 @@ pub trait ExtrudeRegionAccess {
     ) -> Result<Option<ExtrudePrefixReplay>, String> {
         Ok(None)
     }
+    /// Opt into projecting feature health from document-owned checkpoints under this policy.
+    /// Example: `backend.checkpoint_health_policy()` before a suppression edit.
+    fn checkpoint_health_policy(&self) -> Option<oblikovati_martensite::PrismResolutionPolicy> {
+        None
+    }
     /// Replay a feature and return its failure reason, or an empty string when healthy or suppressed.
     /// Example: `backend.feature_health(candidate, feature)?`.
     fn feature_health(

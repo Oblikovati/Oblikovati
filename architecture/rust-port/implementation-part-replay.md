@@ -71,6 +71,11 @@ edits. Applying conditional suppression to a later feature can publish
 the new ordered result during the edit when the document has a current
 checkpoint and replay proves the earlier inputs are unchanged.
 See the [Feature Properties receipt](receipts/2026-11-24-feature-properties-checkpoint-4079/README.md).
+The typed suppression command can also read the changed feature's health from
+its candidate tail and publish that replay with the accepted edit. It uses this
+path only for a current checkpoint under the certified backend's policy.
+The backend still validates edits that require full replay. See the
+[typed suppression receipt](receipts/2026-11-24-typed-suppression-checkpoint-4079/README.md).
 
 Run `CARGO_NET_OFFLINE=true make gate` for the complete local Linux checks.
 

@@ -3,7 +3,8 @@
 use crate::{
     DocumentSession, TransactionObserver,
     part_evaluation::{
-        CapturedPartCheckpointCandidate, CompletedPartCheckpoints, PartCheckpointPrefix,
+        CapturedPartCheckpointCandidate, CompletedPartCheckpoints, PartCheckpointCandidate,
+        PartCheckpointPrefix,
     },
 };
 use oblikovati_martensite::{
@@ -11,7 +12,7 @@ use oblikovati_martensite::{
     PrismResolutionPolicy,
 };
 use oblikovati_model::{
-    feature::FeatureId,
+    feature::{FeatureEvaluationStatus, FeatureId, part::PartFeatureFailure},
     history::{DocumentEditHistory, DocumentSnapshot, EvaluationTransition},
     identity::DocumentGuid,
 };
@@ -20,6 +21,8 @@ use oblikovati_model::{
 pub type OwnedCheckpointCandidate =
     CapturedPartCheckpointCandidate<CapturedNamedSolid, EvaluationFailure>;
 type NamedPrefix = PartCheckpointPrefix<NamedSolid, EvaluationFailure>;
+type NamedCheckpointCandidate = PartCheckpointCandidate<NamedSolid, EvaluationFailure>;
+type NamedFeatureStatus = FeatureEvaluationStatus<PartFeatureFailure<EvaluationFailure>>;
 
 /// Current policy-scoped checkpoints bound to their document identity.
 pub struct OwnedCheckpointReplay {
@@ -61,7 +64,8 @@ impl OwnedCheckpointReplay {
         candidate: &DocumentSnapshot,
         history: &DocumentEditHistory,
     ) -> Result<Option<OwnedCheckpointCandidate>, String> {
-        self.prepare_checked(candidate, history, None)
+        self.prepare_projected(candidate, history, |_| Ok(()))
+            .map(|result| result.map(|(_, candidate)| candidate))
             .map_err(|error| error.0)
     }
     /// Replay an edit and require a valid current descendant for the changed feature.
@@ -72,14 +76,39 @@ impl OwnedCheckpointReplay {
         history: &DocumentEditHistory,
         feature: FeatureId,
     ) -> Result<Option<OwnedCheckpointCandidate>, oblikovati_api::Error> {
-        self.prepare_checked(candidate, history, Some(feature))
+        self.prepare_projected(candidate, history, |candidate| {
+            if candidate.has_current_source(feature) {
+                return Ok(());
+            }
+            Err(oblikovati_api::Error(format!(
+                "feature {feature:?}: expected a valid current descendant body"
+            )))
+        })
+        .map(|result| result.map(|(_, candidate)| candidate))
     }
-    fn prepare_checked(
+    /// Capture a safe changed tail along with the queried feature's status.
+    /// Example: `replay.prepare_feature_status(candidate, history, feature)?` for suppression.
+    pub fn prepare_feature_status(
         &self,
         candidate: &DocumentSnapshot,
         history: &DocumentEditHistory,
-        required: Option<FeatureId>,
-    ) -> Result<Option<OwnedCheckpointCandidate>, oblikovati_api::Error> {
+        feature: FeatureId,
+    ) -> Result<Option<(NamedFeatureStatus, OwnedCheckpointCandidate)>, oblikovati_api::Error> {
+        self.prepare_projected(candidate, history, |candidate| {
+            candidate.feature_status(feature).cloned().ok_or_else(|| {
+                oblikovati_api::Error(format!(
+                    "feature {feature:?}: expected a replay health record"
+                ))
+            })
+        })
+    }
+
+    fn prepare_projected<T>(
+        &self,
+        candidate: &DocumentSnapshot,
+        history: &DocumentEditHistory,
+        project: impl FnOnce(&NamedCheckpointCandidate) -> Result<T, oblikovati_api::Error>,
+    ) -> Result<Option<(T, OwnedCheckpointCandidate)>, oblikovati_api::Error> {
         self.prefix
             .validate_history(history)
             .map_err(oblikovati_api::Error)?;
@@ -101,16 +130,10 @@ impl OwnedCheckpointReplay {
         else {
             return Ok(None);
         };
-        if let Some(feature) = required
-            && !candidate.has_current_source(feature)
-        {
-            return Err(oblikovati_api::Error(format!(
-                "feature {feature:?}: expected a valid current descendant body"
-            )));
-        }
+        let value = project(&candidate)?;
         candidate
             .capture(history, |_, body| body.capture_detached(history, self.guid))
-            .map(Some)
+            .map(|candidate| Some((value, candidate)))
             .map_err(oblikovati_api::Error)
     }
     /// Restore a captured candidate only after the exact accepted transition.

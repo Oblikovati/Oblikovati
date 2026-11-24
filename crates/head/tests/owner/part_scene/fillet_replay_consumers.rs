@@ -183,6 +183,67 @@ fn unsuppressed_fillet_reports_healthy() {
 }
 
 #[test]
+fn typed_suppression_publishes_current_ordered_health_and_checkpoints() {
+    let (mut owner, document) = fillet_owner();
+    let policy = crate::part_scene::resolution_policy::desktop_policy();
+    let mut replay = oblikovati_automation::PartReplayService::with_policy(policy).unwrap();
+    replay
+        .ensure_checkpoints(&mut owner.files, document)
+        .unwrap();
+    for suppressed in [true, false] {
+        let detail = Client::new(owner.document_host())
+            .features()
+            .set_suppressed(&oblikovati_api::wire::SetFeatureSuppressedArgs { id: 2, suppressed })
+            .unwrap()
+            .feature
+            .feature_info;
+        assert_eq!(detail.suppressed, suppressed);
+        assert!(detail.health.is_empty());
+        let current = replay.current_part(&owner.files, document).unwrap();
+        assert_eq!(current.body(FeatureId(2)).is_none(), suppressed);
+        assert!(
+            replay
+                .checkpoint_prefix(&owner.files, document)
+                .unwrap()
+                .is_some()
+        );
+    }
+}
+
+#[test]
+fn typed_suppression_declines_checkpoints_from_another_policy() {
+    use oblikovati_martensite::PrismResolutionPolicy;
+    let (mut owner, document) = fillet_owner();
+    let PrismResolutionPolicy::ModelRelative {
+        reference,
+        reference_size,
+        minimum_size,
+    } = crate::part_scene::resolution_policy::desktop_policy()
+    else {
+        panic!("expected a model-relative desktop policy");
+    };
+    let alternate = PrismResolutionPolicy::ModelRelative {
+        reference,
+        reference_size: reference_size * 2.,
+        minimum_size,
+    };
+    let mut replay = oblikovati_automation::PartReplayService::with_policy(alternate).unwrap();
+    replay
+        .ensure_checkpoints(&mut owner.files, document)
+        .unwrap();
+    let reply = Client::new(owner.document_host())
+        .features()
+        .set_suppressed(&oblikovati_api::wire::SetFeatureSuppressedArgs {
+            id: 2,
+            suppressed: true,
+        })
+        .unwrap();
+    assert!(reply.feature.feature_info.suppressed);
+    assert!(reply.feature.feature_info.health.is_empty());
+    assert!(replay.current_part(&owner.files, document).is_err());
+}
+
+#[test]
 fn extrusion_preview_replays_existing_fillet() {
     let (owner, document) = fillet_owner();
     let request = oblikovati_api::wire::featureargs::Extrude {

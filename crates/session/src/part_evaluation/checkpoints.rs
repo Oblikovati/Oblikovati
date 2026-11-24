@@ -284,6 +284,22 @@ impl<Body, Failure: Clone> PartCheckpointPrefix<Body, Failure> {
     }
 }
 impl<Body, Failure: Clone> PartCheckpointCandidate<Body, Failure> {
+    pub(crate) fn feature_status(
+        &self,
+        feature: oblikovati_model::feature::FeatureId,
+    ) -> Option<
+        &oblikovati_model::feature::FeatureEvaluationStatus<
+            oblikovati_model::feature::part::PartFeatureFailure<Failure>,
+        >,
+    > {
+        self.checkpoints
+            .result()
+            .health()
+            .iter()
+            .find(|record| record.feature == feature)
+            .map(|record| &record.status)
+    }
+
     /// Resolve a feature to its live descendant; example: `candidate.has_current_source(id)`.
     pub fn has_current_source(&self, feature: oblikovati_model::feature::FeatureId) -> bool {
         self.checkpoints.result().body_from_source(feature).is_ok()
