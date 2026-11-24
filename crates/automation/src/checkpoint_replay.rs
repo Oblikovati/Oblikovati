@@ -38,8 +38,8 @@ pub(super) fn certified_prefix(
 }
 
 /// Commit an edit and publish a matching checkpoint when its prefix is safe.
-/// Example: `edit_with_owner(files, owner, document, label, edit)?`.
-pub(super) fn edit_with_owner<
+/// Example: `oblikovati_automation::edit_part_with_checkpoints(files, owner, document, label, edit)?`.
+pub fn edit_with_owner<
     R,
     O: oblikovati_session::TransactionObserver,
     W: oblikovati_session::workspace::WorkspaceObserver,

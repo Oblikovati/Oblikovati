@@ -31,6 +31,84 @@ fn fillet_owner() -> (TestOwner, u64) {
 }
 
 #[test]
+fn feature_properties_publishes_the_checkpointed_suppression_tail() {
+    let (mut owner, document) = fillet_owner();
+    let policy = crate::part_scene::resolution_policy::desktop_policy();
+    let mut replay = oblikovati_automation::PartReplayService::with_policy(policy).unwrap();
+    replay
+        .ensure_checkpoints(&mut owner.files, document)
+        .unwrap();
+    let fillet = FeatureId(2);
+    let edit = oblikovati_gui::GuiFeatureEdit {
+        feature: fillet,
+        name: "Conditional fillet".into(),
+        always_suppressed: false,
+        condition: Some(oblikovati_gui::GuiFeatureCondition {
+            parameter: "width".into(),
+            comparison: 4,
+            value: "40 mm".into(),
+        }),
+    };
+    assert!(owner.edit_feature_from_gui(document, &edit).unwrap());
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, document)
+            .unwrap()
+            .is_some()
+    );
+    assert_published_suppression(&owner, document, &replay, fillet);
+
+    owner.files.commands(document).unwrap().undo().unwrap();
+    owner.take_scene().unwrap().unwrap();
+    assert!(
+        replay
+            .current_part(&owner.files, document)
+            .unwrap()
+            .body(fillet)
+            .is_some()
+    );
+    owner.files.commands(document).unwrap().redo().unwrap();
+    owner.take_scene().unwrap().unwrap();
+    assert_published_suppression(&owner, document, &replay, fillet);
+}
+
+fn assert_published_suppression(
+    owner: &TestOwner,
+    document: u64,
+    replay: &oblikovati_automation::PartReplayService,
+    fillet: FeatureId,
+) {
+    use oblikovati_model::feature::FeatureEvaluationStatus;
+    let workspace = owner.files.workspace();
+    let session = workspace.session(document).unwrap();
+    let guid = workspace.identity(document).unwrap().internal_name;
+    let current = replay.current_part(&owner.files, document).unwrap();
+    assert!(current.body(fillet).is_none());
+    assert!(current.health().iter().any(|record| {
+        record.feature == fillet && matches!(record.status, FeatureEvaluationStatus::Suppressed)
+    }));
+    assert_eq!(
+        session.snapshot().work_geometry.get(fillet).unwrap().name(),
+        "Conditional fillet"
+    );
+    let full = crate::drawing_fixture_replay::evaluate(session.history(), guid).unwrap();
+    let body = current.body(FeatureId(1)).unwrap();
+    let expected = full.body(FeatureId(1)).unwrap();
+    let keys = body.face_reference_keys(session.history(), guid).unwrap();
+    assert_eq!(
+        keys,
+        expected
+            .face_reference_keys(session.history(), guid)
+            .unwrap()
+    );
+    for key in keys {
+        let area = body.face_area(session.history(), guid, &key).unwrap();
+        let expected = expected.face_area(session.history(), guid, &key).unwrap();
+        assert!((area - expected).abs() < 1e-10);
+    }
+}
+
+#[test]
 fn base_view_projects_fillet_cube() {
     let (owner, document) = fillet_owner();
     let session = owner.files.workspace().session(document).unwrap();

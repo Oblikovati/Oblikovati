@@ -36,6 +36,25 @@ fn feature_properties_title_close_discards_pending_suppression() {
     cancel(&mut world);
     world.close();
 }
+
+#[test]
+fn feature_properties_commits_suppression_and_native_undo_restores_the_solid() {
+    use oblikovati_viewport::{ViewportKey, ViewportPhysicalKey};
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    open_properties(&mut world);
+    toggle(&mut world, ALWAYS);
+    world.click_text("OK");
+    settle(&mut world);
+    world.expect_no_text(TITLE);
+    let status = world.app().window.native.scene_status().unwrap();
+    assert_eq!(status.visible_bodies, 0);
+    world.command_key(ViewportPhysicalKey::Z, ViewportKey::Undo);
+    settle(&mut world);
+    expect_solid_visible(&mut world);
+    world.close();
+}
+
 fn toggle(world: &mut ApplicationWorld, label: &str) {
     world.click_text(label);
     settle(world);

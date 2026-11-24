@@ -200,7 +200,12 @@ fn sketch_inspection_reuses_only_current_matching_datums() {
     assert!((plane.recipe().origin[2] - 4.).abs() < 1e-9);
     assert_eq!(session.generation(), draft_generation);
     assert!(session.in_transaction());
-    assert!(resolver.cached_datums(workspace, document).unwrap().is_none());
+    assert!(
+        resolver
+            .cached_datums(workspace, document)
+            .unwrap()
+            .is_none()
+    );
     owner.files.commands(document).unwrap().abort().unwrap();
     let workspace = owner.files.workspace();
     let session = workspace.session(document).unwrap();

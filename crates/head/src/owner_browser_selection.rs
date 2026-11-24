@@ -87,25 +87,14 @@ impl<
         edit: &oblikovati_gui::GuiFeatureEdit,
     ) -> Result<bool, String> {
         self.require_browser_document(document)?;
-        let edit = edit.clone();
-        self.files
-            .commands(document)
-            .map_err(|cause| cause.to_string())?
-            .run("Feature Properties", move |snapshot, _| {
-                let condition = feature_condition(&snapshot.parameters, &edit)?;
-                let features = &mut snapshot.work_geometry;
-                features
-                    .rename(edit.feature, &edit.name)
-                    .map_err(|cause| cause.to_string())?;
-                features
-                    .set_suppression_condition(edit.feature, condition)
-                    .map_err(|cause| cause.to_string())?;
-                snapshot
-                    .set_feature_suppressed(edit.feature, edit.always_suppressed)
-                    .map_err(|cause| cause.to_string())?;
-                Ok::<(), String>(())
-            })
-            .map_err(|cause| cause.to_string())?;
+        oblikovati_automation::edit_part_with_checkpoints(
+            &mut self.files,
+            &mut self.part_scenes,
+            document,
+            "Feature Properties",
+            |snapshot, _| apply_feature_properties(snapshot, edit).map_err(oblikovati_api::Error),
+        )
+        .map_err(|cause| cause.0)?;
         Ok(true)
     }
     /// A saved, undoable change to how a sketch's lines are drawn.
@@ -344,6 +333,24 @@ const FEATURE_COMPARISONS: [oblikovati_model::feature::FeatureSuppressionCompari
         GreaterOrEqual,
     ]
 };
+
+fn apply_feature_properties(
+    snapshot: &mut oblikovati_model::history::DocumentSnapshot,
+    edit: &oblikovati_gui::GuiFeatureEdit,
+) -> Result<(), String> {
+    let condition = feature_condition(&snapshot.parameters, edit)?;
+    let features = &mut snapshot.work_geometry;
+    features
+        .rename(edit.feature, &edit.name)
+        .map_err(|cause| cause.to_string())?;
+    features
+        .set_suppression_condition(edit.feature, condition)
+        .map_err(|cause| cause.to_string())?;
+    snapshot
+        .set_feature_suppressed(edit.feature, edit.always_suppressed)
+        .map_err(|cause| cause.to_string())
+}
+
 /// The dialog names a parameter and types a value; a condition holds the identity and quantity.
 fn feature_condition(
     parameters: &oblikovati_model::parameter::ParameterCollection<u64>,

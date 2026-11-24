@@ -77,6 +77,7 @@ mod collection;
 mod detail;
 pub use detail::parameter_detail;
 mod checkpoint_replay;
+pub use checkpoint_replay::edit_with_owner as edit_part_with_checkpoints;
 mod document_sketch_settings;
 mod end_of_part;
 mod expressions;

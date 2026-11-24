@@ -16890,8 +16890,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b: model/feature/suppression.go and model/feature/suppression_reorder_test.go.",
+      "mapping_reason": "Native feature suppression controls and cancellation.",
+      "go_test_premise": "The Go tests check explicit suppression and parameter-driven suppression. The pinned native scenarios check the dialog controls and cancellation.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "A visible prism supplies the state that the canceled dialog must preserve.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop stages the controls and Cancel retains the current solid.",
+      "rust_tests": "application_scenarios_use_the_native_window: Inspect and cancels conditional feature suppression",
+      "oracle": "The pinned native test checks the rendered Feature Properties controls and retained solid. See receipts/2026-11-24-feature-properties-checkpoint-4079/pinned/controls/cucumber.json.",
+      "expected_result": "The conditional controls and six operators appear after checking If. Cancel discards the draft and leaves the solid visible.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:580ae89355c1e3bb06e178672abd5e90e436d77a67621b74d7d201cbc94cfabe",
@@ -16907,8 +16917,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b: model/feature/suppression.go and model/feature/suppression_reorder_test.go.",
+      "mapping_reason": "Native feature suppression controls and cancellation.",
+      "go_test_premise": "The Go tests check explicit suppression and parameter-driven suppression. The pinned native scenarios check the dialog controls and cancellation.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "A visible prism supplies the state that the canceled dialog must preserve.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop stages the controls and Cancel retains the current solid.",
+      "rust_tests": "application_scenarios_use_the_native_window: Switch between unconditional and conditional suppression",
+      "oracle": "The pinned native test checks the rendered Feature Properties controls and retained solid. See receipts/2026-11-24-feature-properties-checkpoint-4079/pinned/modes/cucumber.json.",
+      "expected_result": "Always and If select mutually exclusive modes. Conditional input controls and OK follow the draft, and Cancel preserves the solid.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:828b04ec303433d7e370cbfff59fae76c80333bb497121b0ec4cc21ee1177720",

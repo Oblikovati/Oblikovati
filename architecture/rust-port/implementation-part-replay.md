@@ -66,6 +66,12 @@ session's generation-sealed replay request and leaves the transaction and
 published results intact. See the
 [native sketch support cases](receipts/2026-11-24-owned-sketch-datums-4079/README.md).
 
+Feature Properties uses the same checkpoint edit path as other feature
+edits. Applying conditional suppression to a later feature can publish
+the new ordered result during the edit when the document has a current
+checkpoint and replay proves the earlier inputs are unchanged.
+See the [Feature Properties receipt](receipts/2026-11-24-feature-properties-checkpoint-4079/README.md).
+
 Run `CARGO_NET_OFFLINE=true make gate` for the complete local Linux checks.
 
 A regression first proved that a raw snapshot with a prism construction-datum

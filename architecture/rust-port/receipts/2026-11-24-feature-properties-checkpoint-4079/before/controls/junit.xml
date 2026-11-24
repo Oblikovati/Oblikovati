@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T14:04:28.53040993Z" time="99.577876223"><testcase name="Scenario: Inspect and cancels conditional feature suppression: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:678:3" time="99.577876223"><system-out><![CDATA[  Scenario: Inspect and cancels conditional feature suppression
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And an unsuppressed extrusion is selected in the MCAD Software model browser
+   ✔  When the user chooses Properties from the extrusion context menu
+   ✔  Then Feature Properties shows the feature name and Suppress, Adaptive and Feature Appearance controls
+   ✔  And Always and If are unchecked
+   ✔  And the conditional suppression controls are disabled
+   ✔  When the user checks If
+   ✔  Then the parameter selector, comparison operator and value field are enabled
+   ✔  And OK is disabled while the comparison value is empty
+   ✔  When the user opens the comparison operator list
+   ✔  Then it offers equals, not equals, less than, less than or equal, greater than and greater than or equal
+   ✔  When the user chooses greater than or equal
+   ✔  Then that operator is displayed
+   ✔  When the user clicks Cancel and reopens Feature Properties
+   ✔  Then If is unchecked and the conditional controls are disabled
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the solid remains visible
+]]></system-out></testcase></testsuite></testsuites>
