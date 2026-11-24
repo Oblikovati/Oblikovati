@@ -35,6 +35,8 @@ mod model_state_copy;
 mod model_state_fixture;
 #[path = "model_state_new_feature.rs"]
 mod model_state_new_feature;
+#[path = "model_state_property_fixture.rs"]
+mod model_state_property_fixture;
 #[path = "model_state_scope.rs"]
 mod model_state_scope;
 #[path = "model_state_suppression.rs"]

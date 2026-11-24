@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:44:20.608605065Z" time="42.669749744"><testcase name="Scenario: Cancel removal of a model-state property column: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:887:3" time="42.669749744"><system-out><![CDATA[  Scenario: Cancel removal of a model-state property column
+   ✔  Given an empty part with multiple model states is active in the MCAD Software
+   ✔  And its model-state table includes a Category column
+   ✔  And the active state's Category value is "Prototype"
+   ✔  When the user opens the model-state table and selects Properties
+   ✔  And the user selects Category in the chosen-property list
+   ✔  Then the remove transfer control is enabled
+   ✔  When the user removes the selected property from the table
+   ✔  Then Category disappears from the chosen-property list
+   ✔  And the Category column disappears from the member table
+   ✔  And OK is enabled
+   ✔  When the user cancels the table and reopens it in the same session
+   ✔  Then the Category column is present
+   ✔  And the active state's Category value is "Prototype"
+   ✔  When the user cancels the table
+   ✔  Then the same part remains active
+]]></system-out></testcase></testsuite></testsuites>

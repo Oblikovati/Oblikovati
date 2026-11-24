@@ -16636,8 +16636,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/assembly/modelstate.go and ADR-0038.",
+      "mapping_reason": "The native Model Browser table exposes document-owned per-member attributes.",
+      "go_test_premise": "The Go assembly reference separates member creation and activation. The pinned native Part case supplies the exact table and per-member oracle.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native Browser and viewport presentation.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop applies document table changes and presents the current member and its data.",
+      "rust_tests": "application_scenarios_use_the_native_window: Accept and cancels edits to a model-state property cell",
+      "oracle": "The pinned native run verifies the table controls and the observable result. See receipts/2026-11-24-browser-property-fixture-3896/pinned/cell/cucumber.json.",
+      "expected_result": "The active member keeps Prototype after reopening. Cancel discards Review, and the other members keep empty cells.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:341a9c73cac86300160c5a591fdb88a6f67fb8d96350fd943f3a719770ae9718",
@@ -16653,8 +16663,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/assembly/modelstate.go and ADR-0038.",
+      "mapping_reason": "The native Model Browser table exposes document-owned per-member attributes.",
+      "go_test_premise": "The Go assembly reference separates member creation and activation. The pinned native Part case supplies the exact table and per-member oracle.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native Browser and viewport presentation.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop applies document table changes and presents the current member and its data.",
+      "rust_tests": "application_scenarios_use_the_native_window: Cancel removal of a model-state property column",
+      "oracle": "The pinned native run verifies the table controls and the observable result. See receipts/2026-11-24-browser-property-fixture-3896/pinned/removal/cucumber.json.",
+      "expected_result": "The draft removes Category, and reopening after Cancel restores the column and its Prototype value.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:bb67273fc6f67195264155fdaa1a2c01a7f91099c670cb595a4ac931edc1aca1",
@@ -16886,8 +16906,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/assembly/modelstate.go and ADR-0038.",
+      "mapping_reason": "The native Model Browser table exposes document-owned per-member attributes.",
+      "go_test_premise": "The Go assembly reference separates member creation and activation. The pinned native Part case supplies the exact table and per-member oracle.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native Browser and viewport presentation.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop applies document table changes and presents the current member and its data.",
+      "rust_tests": "application_scenarios_use_the_native_window: Retain a staged property column while switching table categories",
+      "oracle": "The pinned native run verifies the table controls and the observable result. See receipts/2026-11-24-browser-property-fixture-3896/pinned/staged/cucumber.json.",
+      "expected_result": "Category and the staged Comments column remain visible when switching between Properties and Suppression.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:80face24788b4324562046866475a5367387835421357848f819020c606d734d",

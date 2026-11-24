@@ -99,3 +99,8 @@ The [named model-state runs](receipts/2026-11-24-browser-states-saved-fixture-38
 create Capture State and Copy State through the saved Part's browser.
 They verify edit scope, committing and discarding a Category column, and
 the browser and viewport effects of creating a feature in one member.
+
+The [Category property runs](receipts/2026-11-24-browser-property-fixture-3896/README.md)
+verify editing the active member's cell, cancelling column removal, and
+keeping a staged column while switching categories. The same receipt records
+the missing feature-owned distance parameter after native extrusion.

@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native property-table interactions for model-state drafts.
 use super::model_state_fixture::{
-    CAPTURE_STATE, COPY_STATE, expect_empty_named_states, has_named_states,
+    CAPTURE_STATE, COPY_STATE, expand_state_branch, expect_empty_named_states, has_named_states,
+};
+use super::model_state_property_fixture::{
+    active_table_member, category_column, expect_saved_category,
 };
 use super::*;
 use cucumber::{given, then, when};
@@ -77,11 +80,11 @@ fn properties_category(world: &mut ApplicationWorld) {
     world.click_text("Properties");
 }
 #[when("the user selects Category under the Summary group")]
-fn select_category(world: &mut ApplicationWorld) {
+pub(super) fn select_category(world: &mut ApplicationWorld) {
     world.click_text("Category");
 }
 #[when("the user adds the selected property to the table")]
-fn add_category(world: &mut ApplicationWorld) {
+pub(super) fn add_category(world: &mut ApplicationWorld) {
     world.click_text("Add >");
 }
 #[then("Category appears in the chosen-property list")]
@@ -108,7 +111,7 @@ fn grid_has_category(world: &ApplicationWorld) -> bool {
         .any(|run| run.text.trim() == "Category" && (run.center()[1] - baseline).abs() < 3.)
 }
 #[then("a Category column appears in the member table")]
-fn category_in_grid(world: &mut ApplicationWorld) {
+pub(super) fn category_in_grid(world: &mut ApplicationWorld) {
     assert!(grid_has_category(world));
 }
 #[then("it does not have a Category column")]
@@ -167,7 +170,7 @@ fn no_category_initially(world: &mut ApplicationWorld) {
     }));
 }
 #[when("the user accepts the table change")]
-fn accept_table(world: &mut ApplicationWorld) {
+pub(super) fn accept_table(world: &mut ApplicationWorld) {
     world.click_text("OK");
     world.pump(Vec::new());
 }
@@ -245,6 +248,10 @@ fn reopen_part(world: &mut ApplicationWorld, document: u64, path: &std::path::Pa
 
 #[given("the second named state is active")]
 fn activate_second(world: &mut ApplicationWorld) {
+    if has_named_states(world) {
+        assert_eq!(active_table_member(world).name, COPY_STATE);
+        return;
+    }
     let client = Client::new(world.app().owner.document_host());
     let states = client
         .model_states()
@@ -260,7 +267,22 @@ fn activate_second(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[given("the model-state table has a Category column with empty cells")]
+fn empty_category_fixture(world: &mut ApplicationWorld) {
+    category_fixture(world);
+    assert!(
+        category_column(world)
+            .cells
+            .unwrap()
+            .iter()
+            .all(|cell| cell.value.is_none())
+    );
+}
+
 pub(super) fn category_fixture(world: &mut ApplicationWorld) {
+    if has_named_states(world) {
+        category_column(world);
+        return;
+    }
     use oblikovati_api::{
         types::{MODEL_STATE_TABLE_PROPERTY_COLUMN, ModelStatePropertyKey},
         wire::{
@@ -323,20 +345,14 @@ pub(super) fn category_fixture(world: &mut ApplicationWorld) {
 #[when("the user reopens the model-state table")]
 #[when("the user reopens the model-state table in the same session")]
 pub(super) fn open_property_table(world: &mut ApplicationWorld) {
-    if !world
-        .frame
-        .runs
-        .iter()
-        .any(|run| run.text == "Primary" || run.text.starts_with("Primary("))
-    {
-        world.click_text("Model State");
-    }
+    expand_state_branch(world);
     open_table(world);
 }
 #[when("the user double-clicks the active state's Category cell")]
-fn edit_active_cell(world: &mut ApplicationWorld) {
+pub(super) fn edit_active_cell(world: &mut ApplicationWorld) {
+    let member = active_table_member(world);
     let x = world.run("Category").center()[0];
-    let y = world.run("Small").center()[1];
+    let y = world.run(&member.name).center()[1];
     world.double_click(diagnostics::pointer_pixels([x, y]));
 }
 #[when(regex = r#"^the user replaces its value with "([^"]*)"$"#)]
@@ -351,19 +367,13 @@ fn cell_text(world: &mut ApplicationWorld, text: String) {
 }
 #[then("the other states' Category cells are empty")]
 fn other_cells_empty(world: &mut ApplicationWorld) {
-    let client = Client::new(world.app().owner.document_host());
-    let view = client
-        .model_states()
-        .get_table(&oblikovati_api::json::EmptyObject::default())
-        .unwrap();
-    let column = &view.properties.unwrap()[0];
+    let member = active_table_member(world);
+    let cells = category_column(world).cells.unwrap();
+    assert_eq!(cells.len(), 3);
     assert!(
-        column
-            .cells
-            .as_ref()
-            .unwrap()
+        cells
             .iter()
-            .take(2)
+            .filter(|cell| cell.row.member_id != member.id)
             .all(|cell| cell.value.is_none())
     );
 }
@@ -382,6 +392,10 @@ fn existing_category(world: &mut ApplicationWorld) {
 }
 #[given("the active state's Category value is \"Prototype\"")]
 fn existing_category_value(world: &mut ApplicationWorld) {
+    if has_named_states(world) {
+        expect_saved_category(world, "Prototype");
+        return;
+    }
     use oblikovati_api::{
         types::{Variant, VariantValue},
         wire::SetPropertyArgs,
@@ -402,7 +416,7 @@ fn existing_category_value(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[when("the user opens the model-state table and selects Properties")]
-fn open_properties(world: &mut ApplicationWorld) {
+pub(super) fn open_properties(world: &mut ApplicationWorld) {
     open_property_table(world);
     properties_category(world);
 }

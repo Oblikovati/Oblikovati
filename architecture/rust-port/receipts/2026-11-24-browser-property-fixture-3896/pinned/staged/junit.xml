@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:44:20.602402379Z" time="36.02896438"><testcase name="Scenario: Retain a staged property column while switching table categories: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1052:3" time="36.02896438"><system-out><![CDATA[  Scenario: Retain a staged property column while switching table categories
+   ✔  Given an empty part with multiple model states is active in the MCAD Software
+   ✔  And the model-state table contains the Category property column
+   ✔  And the Properties category is selected
+   ✔  When the user selects Comments and adds it to the chosen properties
+   ✔  Then the chosen properties include Category and Comments
+   ✔  And the member grid contains Category and Comments columns
+   ✔  And OK is enabled
+   ✔  When the user selects the Suppression category
+   ✔  Then the member grid still contains Category and Comments columns
+   ✔  When the user returns to the Properties category
+   ✔  Then the chosen properties include Category and Comments
+   ✔  And OK is enabled
+   ✔  When the user cancels the table dialog
+   ✔  Then the dialog closes
+]]></system-out></testcase></testsuite></testsuites>

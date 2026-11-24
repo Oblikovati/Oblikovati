@@ -10,8 +10,10 @@ fn category_column(world: &mut ApplicationWorld) {
 }
 #[given("the Properties category is selected")]
 fn properties_selected(world: &mut ApplicationWorld) {
-    open_property_table(world);
-    click(world, "Properties");
+    if !world.shows("Model State Table") {
+        open_property_table(world);
+        click(world, "Properties");
+    }
     world.expect_text("Chosen properties");
 }
 #[when("the user selects Comments and adds it to the chosen properties")]

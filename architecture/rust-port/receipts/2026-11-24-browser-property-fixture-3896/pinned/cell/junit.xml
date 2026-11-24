@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:44:20.6058241Z" time="64.124420422"><testcase name="Scenario: Accept and cancels edits to a model-state property cell: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:865:3" time="64.124420422"><system-out><![CDATA[  Scenario: Accept and cancels edits to a model-state property cell
+   ✔  Given an empty part with Primary and two named model states is active in the MCAD Software
+   ✔  And the second named state is active
+   ✔  And the model-state table has a Category column with empty cells
+   ✔  When the user opens the model-state table
+   ✔  And the user double-clicks the active state's Category cell
+   ✔  And the user enters "Prototype"
+   ✔  Then the cell displays "Prototype"
+   ✔  And OK is enabled
+   ✔  When the user accepts the table change
+   ✔  And the user reopens the model-state table in the same session
+   ✔  Then the active state's Category cell displays "Prototype"
+   ✔  And the other states' Category cells are empty
+   ✔  When the user double-clicks the active state's Category cell
+   ✔  And the user replaces its value with "Review"
+   ✔  And the user cancels the table
+   ✔  And the user reopens the model-state table
+   ✔  Then the active state's Category cell displays "Prototype"
+   ✔  When the user cancels the table
+   ✔  Then the same part remains active
+]]></system-out></testcase></testsuite></testsuites>
