@@ -35,3 +35,8 @@ Clearing Modify through the direct selector leaves an unpinned expansion
 as a compact title strip. Checking Modify again restores its commands.
 Clicking the strip dismisses both the strip and the selector. The selector
 button also closes its own checklist on a second click.
+
+A right-click on a face outside the open selector dismisses the
+selector and passes the point to the native Part selection path.
+That gesture shows the face mini toolbar. A later right-click with
+the selector closed opens the face context menu.

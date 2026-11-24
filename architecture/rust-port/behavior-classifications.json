@@ -13192,8 +13192,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon panel visibility and its interaction with active commands."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/chrome_ribbon.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Direct panel selector dismissal, pointer routing and side-docked group visibility.",
+      "go_test_premise": "The Go ribbon tests cover group widths and collapse. The benchmark specifies the face-selection and selector-button interactions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The face case uses an existing one-solid Part with native face picking. The right-docked case uses an active Part.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "Native picking resolves the model face through the owner. Docked visibility stays in the GUI.",
+      "rust_tests": "application_scenarios_use_the_native_window: Right-click a solid face while the panel selector is open",
+      "oracle": "The pinned case checks pointer actions, rendered visibility and the expected native selection or docking state. See receipts/2026-11-24-selector-face-3856/after/pinned/face/cucumber.json.",
+      "expected_result": "One right-click dismisses the Tools selector, selects the visible native face and displays its nearby mini toolbar.",
+      "baseline_source_sha256": "2a475fd633348f2ab3bc100be152dde52c2ef0d548947de439f50b8fa379c7ab"
     },
     {
       "id": "scenario:cf9046870a1bd5f608b6be4da1b85bb12b2f9e42f1c454c0411ece60daca88b5",
@@ -13351,8 +13361,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon panel visibility and its interaction with active commands."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/chrome_ribbon.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Direct panel selector dismissal, pointer routing and side-docked group visibility.",
+      "go_test_premise": "The Go ribbon tests cover group widths and collapse. The benchmark specifies the face-selection and selector-button interactions.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "The face case uses an existing one-solid Part with native face picking. The right-docked case uses an active Part.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "Native picking resolves the model face through the owner. Docked visibility stays in the GUI.",
+      "rust_tests": "application_scenarios_use_the_native_window: Toggle a panel from the right-docked ribbon selector",
+      "oracle": "The pinned case checks pointer actions, rendered visibility and the expected native selection or docking state. See receipts/2026-11-24-selector-face-3856/after/pinned/right/cucumber.json.",
+      "expected_result": "The right-docked selector hides and restores Modify while staying open. Clicking the selector button closes it and keeps the right dock.",
+      "baseline_source_sha256": "2a475fd633348f2ab3bc100be152dde52c2ef0d548947de439f50b8fa379c7ab"
     },
     {
       "id": "scenario:539f2e4dc66e85165f5674ce721314f4807ee5c5be9256f3203eeb5e6f0be383",

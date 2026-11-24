@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T09:42:26.074612602Z" time="13.942317883"><testcase name="Scenario: Right-click a solid face while the panel selector is open: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:396:3" time="13.942317883"><failure type="Step Panicked" message="Step panicked. Captured output: assertion failed: world.state().model_face_chosen"/><system-out><![CDATA[  Scenario: Right-click a solid face while the panel selector is open
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the full Tools ribbon and its panel selector are open
+   ✔  When the user right-clicks a visible solid face outside the selector
+   ✔  Then the panel selector closes
+   ✔  And the Tools ribbon and part remain visible
+   ✔  And no face context menu is visible in the captured state
+   ✘  And a small face-selection control appears near the pointer
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:403:5
+      Matched: crates/head/src/../tests/application/ribbon-panel-visibility/face_selector.rs:37:1
+      Step panicked. Captured output: assertion failed: world.state().model_face_chosen
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nReady\nRibbonDisplay\nv\nv\n...\nextruded\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nMeasure\nMeasure\nDefault\nMaterial\nDefault\nAppearance\nMaterialandAppearance\nCustomize\nApplicationOptions\nDocumentSettings\nOptionsv\nCopy\nClipboard\nFind\nFind\nOpenTeamWeb\nTeamWeb\nHome\nextruded<Primary>\nDocuments\nX\nY\nZ\nStart2DSketch\nFillet\nExtrude\nChamfer\nOffsetPlane\nLookAt\nHomeView",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

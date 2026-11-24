@@ -29,6 +29,13 @@ impl GuiFrameEngine {
         crate::application::workspace_layout::browser_feature::draw_feature_edges(ui, request);
         self.workspace.draw_selected_origin(ui, request);
         self.document_files.home_in_front = self.home.active;
+        // The selector can close before the same gesture releases over the viewport.
+        let right = imgui::MouseButton::Right;
+        if ui.is_mouse_clicked(right) {
+            self.selector_context_gesture = self.ribbon.display.selector_open;
+        }
+        let selector_context_gesture = self.selector_context_gesture;
+        self.selector_context_gesture &= ui.is_mouse_down(right);
         let band_height = crate::chrome::ribbon_band(
             ui,
             request,
@@ -167,13 +174,9 @@ impl GuiFrameEngine {
         self.workspace.browser_panel(
             ui,
             &request.commands,
-            (
-                request.extent[1] as f32 / request.layout_scale()[1]
-                    - self.workspace.status_height(),
-                band_height,
-            ),
             area,
             self.part_context_open,
+            selector_context_gesture,
             &mut selected,
         );
         if selected.contains(&GuiShellAction::OpenModelStateTable) {
@@ -246,7 +249,8 @@ impl GuiFrameEngine {
         if !self.home.active {
             let mut menu_actions = Vec::new();
             let mut repeat_wheel = self.orientation.can_repeat_wheel().then_some(false);
-            self.part_context_open = !self.orientation.navigation_owns_viewport()
+            self.part_context_open = !selector_context_gesture
+                && !self.orientation.navigation_owns_viewport()
                 && crate::part_context_menu::canvas_menu(
                     ui,
                     &request.commands,

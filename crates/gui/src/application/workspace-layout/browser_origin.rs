@@ -185,12 +185,13 @@ pub(crate) fn follow_view_click(
     state: &GuiCommandState,
     view: &mut BrowserView,
     part_context_open: bool,
+    selector_context_gesture: bool,
     actions: &mut Vec<GuiShellAction>,
 ) {
     let left_click = ui.is_mouse_clicked(MouseButton::Left)
         && (part_context_open || !crate::widget_abi::any_popup_open(ui));
-    let context_click =
-        ui.is_mouse_clicked(MouseButton::Right) && !crate::widget_abi::any_popup_open(ui);
+    let context_click = ui.is_mouse_clicked(MouseButton::Right)
+        && (selector_context_gesture || !crate::widget_abi::any_popup_open(ui));
     let on_view = (left_click || context_click)
         && !ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel());
     let [x, y] = ui.io().mouse_pos;

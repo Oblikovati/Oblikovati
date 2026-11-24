@@ -174,14 +174,14 @@ impl WorkspaceLayout {
             browser_feature::selection_toolbar(ui, request, actions);
         }
     }
-    /// Draw the browser in its dock; example: `layout.browser_panel(ui, state, 900., 158., actions)`.
+    /// Draw the browser in its dock and route pointer input in the document area.
     pub(crate) fn browser_panel(
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
-        _bounds: (f32, f32),
         document_area: crate::application::document_creation::workspaces::WorkspaceArea,
         part_context_open: bool,
+        selector_context_gesture: bool,
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.pending_layout |= self.panels.visibility_changed_since_layout();
@@ -189,7 +189,14 @@ impl WorkspaceLayout {
         self.view.feature_keyboard_focus = false;
         self.view.document_area = Some(document_area);
         self.view.view_clicks_taken = self.view_clicks_taken;
-        browser_origin::follow_view_click(ui, state, &mut self.view, part_context_open, actions);
+        browser_origin::follow_view_click(
+            ui,
+            state,
+            &mut self.view,
+            part_context_open,
+            selector_context_gesture,
+            actions,
+        );
         let focus = self.panels.take_tab_focus();
         if self.panels.model_open {
             let mut open = true;

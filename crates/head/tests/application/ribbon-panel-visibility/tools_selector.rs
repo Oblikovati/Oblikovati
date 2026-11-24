@@ -7,6 +7,8 @@ use super::super::{side_selector, *};
 
 const HOME: &str = "##home-workspace";
 const OPTIONS: &str = "##ribbon-additional-ToolOptions";
+#[path = "face_selector.rs"]
+mod face_selector;
 
 #[given("a part and the Home workspace are open in the MCAD Software")]
 fn part_and_home(world: &mut ApplicationWorld) {

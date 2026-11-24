@@ -275,6 +275,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Selected the clicked face when a viewport right-click dismisses the ribbon panel selector, and showed its mini toolbar. (#3856)
+
 - Kept the unpinned Modify title strip available while its panel is hidden in the direct selector, and fixed closing the selector with its own button. (#3856)
 
 - Kept the active ribbon tab selected when opening the context menu on an inactive tab. (#3856)
