@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T08:19:31.539626827Z" time="14.016028272"><testcase name="Scenario: Dismiss a compact panel using its lower title: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature:459:3" time="14.016028272"><system-out><![CDATA[  Scenario: Dismiss a compact panel using its lower title
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon is minimized to panel buttons
+   ✔  When the user clicks the Options panel button
+   ✔  Then the temporary Options command panel appears below the button strip
+   ✔  When the user clicks the Options title at the bottom of that panel
+   ✔  Then the temporary Options command panel closes
+   ✔  And the Tools panel buttons remain visible
+]]></system-out></testcase></testsuite></testsuites>

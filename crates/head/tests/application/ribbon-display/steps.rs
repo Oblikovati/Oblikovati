@@ -116,6 +116,7 @@ fn activate(world: &mut ApplicationWorld) {
 }
 #[then("the View groups are shown as compact buttons")]
 #[then("the View ribbon displays compact group buttons")]
+#[then("the ribbon displays compact group buttons")]
 #[then("the View ribbon shows compact buttons for Visibility, Appearance, Windows and Navigate")]
 fn compact_buttons(world: &mut ApplicationWorld) {
     expect_compact_groups(world);

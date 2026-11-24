@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T08:17:46.83337001Z" time="22.211219632"><testcase name="Scenario: Access a ribbon tab in tabs-only mode: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature:39:3" time="22.211219632"><failure type="Step Panicked" message="Step panicked. Captured output: expected full 3D Model or View ribbon commands"/><system-out><![CDATA[  Scenario: Access a ribbon tab in tabs-only mode
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the ribbon display control is configured to cycle through all modes
+   ✔  And the View ribbon displays its group titles
+   ✔  When the user activates the ribbon display control once
+   ✔  Then the ribbon shows its tabs without the group strip
+   ✔  When the user selects the View tab
+   ✔  Then the View commands appear in a temporary panel below the tabs
+   ✔  When the user activates the ribbon display control
+   ✔  Then the expanded View ribbon is restored
+   ✔  When the user clicks in an empty area of the viewport
+   ✔  Then the expanded View ribbon remains visible
+   ✔  When the user chooses Minimize to Panel Buttons from the ribbon display menu
+   ✔  And the user activates the ribbon display control twice
+   ✘  Then the full ribbon is restored
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature:53:5
+      Matched: crates/head/src/../tests/application/ribbon-panel-visibility/minimized_context.rs:94:1
+      Step panicked. Captured output: expected full 3D Model or View ribbon commands
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nPart2<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nReady\nRibbonDisplay\nv\nVisibility\nAppearance\nWindows\nNavigate\n...\nPart2\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nHome\nPart1<Primary>*\nPart2<Primary>*\nDocuments\nX\nY\nZ\nShowFullRibbon",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

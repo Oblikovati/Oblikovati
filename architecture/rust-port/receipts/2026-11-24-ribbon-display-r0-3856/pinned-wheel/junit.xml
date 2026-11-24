@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T08:17:36.783105521Z" time="9.939401507"><testcase name="Scenario: Stop wheel navigation at the visible ends of the part ribbon: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature:274:3" time="9.939401507"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Stop wheel navigation at the visible ends of the part ribbon
+   ✔  Given a part is active in the MCAD Software with the full ribbon visible
+   ✔  And the 3D Model tab is the first visible command tab and is active
+   ✔  When the user scrolls up over the 3D Model tab
+   ✔  Then the 3D Model tab remains active
+   ✔  And its command groups remain visible
+   ✘  When the user selects Fusion, the last visible command tab
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature:280:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,21 @@
+
+running 1 test
+Feature: Expand a ribbon panel
+  Scenario: Open the Tools Options additional command area
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Options additional command area is closed
+   ✔  When the user opens the Options additional command area
+   ✔  Then it appears beneath the Options panel over the viewport
+   ✔  And Reset UI Layout and iLogic Configuration are displayed
+   ✔  And the active part and model browser remain visible
+   ✔  When the user clicks empty viewport space
+   ✔  Then the Options additional command area closes
+   ✔  And the Tools ribbon and part remain visible
+[Summary]
+1 feature
+1 scenario (1 passed)
+10 steps (10 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 9.57s

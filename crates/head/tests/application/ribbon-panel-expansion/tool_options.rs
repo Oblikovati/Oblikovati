@@ -20,6 +20,15 @@ fn open_blank_metric_part(world: &mut ApplicationWorld) {
     world.previous_document = Some(id);
 }
 
+#[given(
+    "`fixtures/cad/blank-metric-part.opd` is open with the full 3D Model ribbon displayed in the MCAD Software"
+)]
+fn open_blank_metric_part_with_full_ribbon(world: &mut ApplicationWorld) {
+    open_blank_metric_part(world);
+    world.expect_text("Extrude");
+    world.expect_text("Start 2D Sketch");
+}
+
 #[given("the Options additional command area is closed")]
 #[then("the Options additional command area closes")]
 #[then("the Options additional-command area is closed")]
@@ -55,6 +64,12 @@ fn reset_is_displayed(world: &mut ApplicationWorld) {
 fn ilogic_is_displayed(world: &mut ApplicationWorld) {
     assert!(world.window_text(OPTIONS).contains("iLogicConfiguration"));
     assert!(!world.run_is_enabled("iLogic Configuration"));
+}
+
+#[then("Reset UI Layout and iLogic Configuration are displayed")]
+fn options_commands_are_displayed(world: &mut ApplicationWorld) {
+    reset_is_displayed(world);
+    ilogic_is_displayed(world);
 }
 
 #[when("the user activates Reset UI Layout")]

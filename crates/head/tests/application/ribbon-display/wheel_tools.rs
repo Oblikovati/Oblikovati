@@ -37,6 +37,7 @@ fn select_last_tab(world: &mut ApplicationWorld) {
     world.click_text("Annotate");
 }
 #[when("the user scrolls down over that tab")]
+#[when("the user scrolls down over the last visible command tab")]
 fn wheel_down_on_last(world: &mut ApplicationWorld) {
     scroll_tab(world, "Annotate", -1);
 }

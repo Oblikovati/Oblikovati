@@ -1,0 +1,26 @@
+
+running 1 test
+Feature: Ribbon display modes
+  Scenario: Access a ribbon tab in tabs-only mode
+   ✔  Given a part document is open in the MCAD Software
+   ✔  And the ribbon display control is configured to cycle through all modes
+   ✔  And the View ribbon displays its group titles
+   ✔  When the user activates the ribbon display control once
+   ✔  Then the ribbon shows its tabs without the group strip
+   ✔  When the user selects the View tab
+   ✔  Then the View commands appear in a temporary panel below the tabs
+   ✔  When the user activates the ribbon display control
+   ✔  Then the expanded View ribbon is restored
+   ✔  When the user clicks in an empty area of the viewport
+   ✔  Then the expanded View ribbon remains visible
+   ✔  When the user chooses Minimize to Panel Buttons from the ribbon display menu
+   ✔  Then the ribbon displays compact group buttons
+   ✔  When the user activates the ribbon display control once
+   ✔  Then the full ribbon is restored
+[Summary]
+1 feature
+1 scenario (1 passed)
+15 steps (15 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 20.52s

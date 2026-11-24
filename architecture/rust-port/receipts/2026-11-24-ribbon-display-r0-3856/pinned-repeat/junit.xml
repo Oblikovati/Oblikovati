@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T08:19:31.556950506Z" time="16.990447357"><testcase name="Scenario: Repeat the active compact panel button: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-display/ribbon-display.feature:434:3" time="16.990447357"><system-out><![CDATA[  Scenario: Repeat the active compact panel button
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the Tools ribbon is minimized to panel buttons
+   ✔  When the user clicks the Options panel button
+   ✔  Then the temporary Options command panel appears below the button strip
+   ✔  And the Options panel button is highlighted
+   ✔  When the user clicks the Options panel button again
+   ✔  Then the temporary Options command panel remains visible
+   ✔  And the Options panel button remains highlighted
+   ✔  When the user opens the ribbon display-mode menu
+   ✔  Then the menu shows "Minimize to Panel Buttons" as selected
+   ✔  And the temporary Options command panel remains visible
+   ✔  When the user selects "Minimize to Tabs"
+   ✔  Then the temporary Options command panel closes
+   ✔  And the ribbon displays tabs without a permanent panel-button strip
+]]></system-out></testcase></testsuite></testsuites>
