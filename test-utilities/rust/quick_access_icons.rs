@@ -80,6 +80,7 @@ pub(super) fn standard_icon(label: &str) -> Option<ToolbarImage> {
         "Materials" => "qat-materials",
         "AppearanceBrowser" => "qat-appearance-browser",
         "Parameters" => "parameters",
+        "Print" => "qat-print",
         "Extrude" => "extrude",
         _ => return None,
     };

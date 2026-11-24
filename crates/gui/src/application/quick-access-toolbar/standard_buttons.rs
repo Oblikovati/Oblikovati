@@ -102,8 +102,16 @@ impl QuickAccessToolbar {
                     icons.compact_button(ui, label, crate::icons::IconGlyph::Parameters);
                 drop(disabled);
             }
-            StandardCommand::Print
-            | StandardCommand::RefineAppearance
+            StandardCommand::Print => {
+                {
+                    let _muted = ui.begin_disabled(true);
+                    icons.compact_button(ui, label, crate::icons::IconGlyph::Print);
+                }
+                if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+                    ui.tooltip_text(NOT_AVAILABLE);
+                }
+            }
+            StandardCommand::RefineAppearance
             | StandardCommand::AppearanceOverride
             | StandardCommand::AdjustAppearance
             | StandardCommand::DesignDoctor => muted_button(ui, label),

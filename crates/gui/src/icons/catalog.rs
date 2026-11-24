@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Exact Go glyph sources for the currently supported command set.
+//! Glyph sources for the currently supported command set.
 macro_rules! glyph_catalog {
     ($($variant:ident => $name:literal),+ $(,)?) => {
         #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -109,4 +109,5 @@ glyph_catalog! {
     DirectionFlipped => "direction-flipped",
     DirectionSymmetric => "direction-symmetric",
     DirectionAsymmetric => "direction-asymmetric",
+    Print => "qat-print",
 }

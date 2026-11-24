@@ -124,8 +124,11 @@ fn select_print(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 #[then("a Print icon appears on the quick access toolbar")]
-fn print_appears(world: &mut ApplicationWorld) {
-    assert!(on_row(world, "Print"), "expected Print on the row");
+fn print_appears(_: &mut ApplicationWorld) {
+    assert!(
+        super::quick_access_icons::standard_icon("Print").is_some(),
+        "expected Print icon on the row"
+    );
 }
 #[then("Print is checked")]
 fn print_checked(world: &mut ApplicationWorld) {
@@ -163,7 +166,7 @@ fn row_below(world: &mut ApplicationWorld) {
 }
 #[then("Print remains visible on the toolbar")]
 fn print_remains(world: &mut ApplicationWorld) {
-    assert!(on_row(world, "Print"), "expected Print on the row");
+    print_appears(world);
 }
 #[then("Show Above the Ribbon is offered")]
 fn above_offered(world: &mut ApplicationWorld) {

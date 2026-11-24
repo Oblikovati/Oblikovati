@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature" package="testsuite/Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T21:22:18.5978921Z" time="70.687958"><testcase name="Scenario: Keep a standard shortcut selection when switching document contexts: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:155:3" time="70.687958"><system-out><![CDATA[  Scenario: Keep a standard shortcut selection when switching document contexts
+   ✔  Given "fixtures/cad/quick-access-toolbar/PartOne.opd" and "fixtures/cad/quick-access-toolbar/Assembly.oad" are open in the MCAD Software
+   ✔  And Print is not selected in either document's quick access customization menu
+   ✔  When the user activates PartOne.opd and selects Print in its quick access customization menu
+   ✔  Then Print appears on the part's quick access toolbar
+   ✔  When the user activates Assembly.oad
+   ✔  Then Print is absent from the assembly's quick access toolbar
+   ✔  When the user opens its quick access customization menu
+   ✔  Then Print is unchecked
+   ✔  When the user returns to PartOne.opd
+   ✔  Then Print is visible on the part's quick access toolbar
+   ✔  When the user opens its quick access customization menu
+   ✔  Then Print is checked
+   ✔  When the user selects Print again
+   ✔  Then Print is removed from the part's quick access toolbar
+]]></system-out></testcase></testsuite></testsuites>
