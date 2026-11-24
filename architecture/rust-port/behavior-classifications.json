@@ -17338,8 +17338,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/param/parameters.go and model/assembly/modelstate.go.",
+      "mapping_reason": "The native Model Browser presents member-specific extrusion distance on the owned Part.",
+      "go_test_premise": "Go tests allocate a built-in Model parameter. The pinned native Part case supplies the exact member-table behavior.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Untapered extrusion of the selected sketch region and analytic solid measurements.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The active member projects its parameter expression into the document recipe. The extrusion depends on the owned distance parameter.",
+      "rust_tests": "application_scenarios_use_the_native_window: Cancel a staged model-state parameter column and value",
+      "oracle": "The pinned native run checks visible draft and persisted table values. See receipts/2026-11-24-native-extrusion-distance-4119/pinned/cancel/cucumber.json.",
+      "expected_result": "The staged Copy State value is discarded and reopening the table shows no d0 column.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:022ebe21daa5c9afd572df1fda42b11b870faf82717da81805e3e2a92ed90c7c",
@@ -17355,8 +17365,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/param/parameters.go and model/assembly/modelstate.go.",
+      "mapping_reason": "The native Model Browser presents member-specific extrusion distance on the owned Part.",
+      "go_test_premise": "Go tests allocate a built-in Model parameter. The pinned native Part case supplies the exact member-table behavior.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Untapered extrusion of the selected sketch region and analytic solid measurements.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The active member projects its parameter expression into the document recipe. The extrusion depends on the owned distance parameter.",
+      "rust_tests": "application_scenarios_use_the_native_window: Accept distinct parameter values for model-state members",
+      "oracle": "The pinned native run checks visible draft and persisted table values. See receipts/2026-11-24-native-extrusion-distance-4119/pinned/accept/cucumber.json.",
+      "expected_result": "Copy State retains 2 in, while Primary and Capture State retain 1 in. The parameter tree follows the active member.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:7311eff25c3a4e88985021b860a4ba4dc32247b25ad5e5e9d2b5d0ceb5f10d73",

@@ -12,7 +12,7 @@ use oblikovati_model::{
         sketch_prism::{SketchPrismDefinition, SketchPrismSelection},
         work_geometry::DatumLength,
     },
-    history::DocumentSnapshot,
+    history::{DocumentSnapshot, RecipeReservations},
     identity::DocumentGuid,
     quantity::Dimension,
 };
@@ -21,6 +21,8 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 
 mod replay;
 use replay::{ExtrudeProjection, adopt_extrude_candidate, prepare_owned_prefix};
+
+pub(super) const DISTANCE_ROLE: &str = "distance";
 
 /// A current named result prefix for certified extrusion validation.
 pub type ExtrudeReplayPrefix = oblikovati_session::OwnedPartReplay;
@@ -104,18 +106,52 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
 pub struct PreparedExtrusion {
     name: String,
     definition: SketchPrismDefinition,
+    owned_distance: Option<String>,
 }
 impl PreparedExtrusion {
     /// Create the feature on a caller-owned candidate; example: `prepared.create(candidate, ids)?`.
     pub fn create(
         self,
         candidate: &mut DocumentSnapshot,
-        ids: &mut oblikovati_model::history::RecipeReservations<'_>,
+        ids: &mut RecipeReservations<'_>,
     ) -> Result<FeatureId, Error> {
-        candidate
-            .create_sketch_prism(&self.name, self.definition, ids)
-            .map_err(api_error)
+        let Some(source) = self.owned_distance else {
+            return candidate
+                .create_sketch_prism(&self.name, self.definition, ids)
+                .map_err(api_error);
+        };
+        create_with_owned_distance(candidate, ids, &self.name, self.definition, &source)
     }
+}
+
+fn create_with_owned_distance(
+    candidate: &mut DocumentSnapshot,
+    ids: &mut RecipeReservations<'_>,
+    name: &str,
+    definition: SketchPrismDefinition,
+    source: &str,
+) -> Result<FeatureId, Error> {
+    let parameter = ids.allocate().map_err(api_error)?;
+    candidate
+        .parameters
+        .insert_auto_model_scalar(parameter, source, Dimension::Length)
+        .map_err(api_error)?;
+    let mut displacement = definition.displacement();
+    displacement[2] = DatumLength::Parameter(parameter);
+    let definition = SketchPrismDefinition::new(
+        definition.sketch(),
+        definition.selection().clone(),
+        displacement,
+    )
+    .map_err(api_error)?;
+    let feature = candidate
+        .create_sketch_prism(name, definition, ids)
+        .map_err(api_error)?;
+    candidate
+        .work_geometry
+        .assign_scalar_owner(feature, DISTANCE_ROLE, parameter)
+        .map_err(api_error)?;
+    Ok(feature)
 }
 /// Resolve a canonical Extrude request against current geometry; example: `prepare_extrusion(snapshot, backend, &input)?`.
 pub fn prepare_extrusion(
@@ -132,6 +168,8 @@ pub fn prepare_extrusion(
         ))
     })?;
     let depth = distance(snapshot, &input.distance)?;
+    let owned_distance =
+        matches!(depth, DatumLength::Constant(_)).then(|| input.distance.trim().to_owned());
     let selection = backend.region(snapshot, sketch, index).map_err(Error)?;
     let definition = SketchPrismDefinition::new(
         sketch,
@@ -140,7 +178,11 @@ pub fn prepare_extrusion(
     )
     .map_err(api_error)?;
     let name = next_name(snapshot)?;
-    Ok(PreparedExtrusion { name, definition })
+    Ok(PreparedExtrusion {
+        name,
+        definition,
+        owned_distance,
+    })
 }
 
 fn create<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(

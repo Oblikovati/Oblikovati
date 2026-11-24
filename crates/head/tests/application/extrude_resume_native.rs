@@ -215,7 +215,7 @@ fn set_depth_expression(world: &mut ApplicationWorld, expression: &str) {
         .unwrap();
     world.pump(Vec::new());
 }
-fn set_extrusion_distance(world: &mut ApplicationWorld, value: &str) {
+pub(super) fn set_extrusion_distance(world: &mut ApplicationWorld, value: &str) {
     let label = world.run("Distance A").clone();
     world.click([label.minimum[0] as i32 - 30, label.center()[1] as i32]);
     world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);

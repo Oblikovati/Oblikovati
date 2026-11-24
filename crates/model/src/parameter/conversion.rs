@@ -51,14 +51,36 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
 
     /// Add a feature-owned dimension under the first unused dN name; for example `parameters.insert_auto_model(id, "3 cm")`.
     pub fn insert_auto_model(&mut self, id: Id, source: &str) -> Result<(), ParameterError<Id>> {
-        let name = self.first_available_name((0..).map(|index: usize| format!("d{index}")));
+        let name = self.auto_model_name();
         self.insert_expression(id, &name, MODEL_PARAM, source)?;
+        self.mark_auto_model(id);
+        Ok(())
+    }
+
+    /// Store a built-in dimension with its captured unit context.
+    /// Example: `parameters.insert_auto_model_scalar(id, "3", Dimension::Length)?`.
+    pub fn insert_auto_model_scalar(
+        &mut self,
+        id: Id,
+        source: &str,
+        dimension: crate::quantity::Dimension,
+    ) -> Result<(), ParameterError<Id>> {
+        let name = self.auto_model_name();
+        self.insert_scalar_expression(id, &name, source, dimension)?;
+        self.mark_auto_model(id);
+        Ok(())
+    }
+
+    fn auto_model_name(&self) -> String {
+        self.first_available_name((0..).map(|index: usize| format!("d{index}")))
+    }
+
+    fn mark_auto_model(&mut self, id: Id) {
         self.records
             .get_mut(&id)
             .expect("inserted model parameter")
             .state
             .built_in = true;
-        Ok(())
     }
 
     pub(super) fn first_available_name(&self, candidates: impl Iterator<Item = String>) -> String {

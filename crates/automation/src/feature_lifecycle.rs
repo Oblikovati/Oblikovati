@@ -66,19 +66,23 @@ pub(crate) fn delete<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFi
         owner,
         document,
         "Delete Feature",
-        |snapshot, _| {
-            snapshot
-                .work_geometry
-                .remove(FeatureId(request.id))
-                .map_err(api_error)?;
-            Ok(())
-        },
+        |snapshot, _| delete_owned_feature(snapshot, FeatureId(request.id)),
     )?;
     refresh(access, files, document)?;
     encode(&DeleteFeatureResult {
         id: request.id,
         deleted: true,
     })
+}
+
+fn delete_owned_feature(snapshot: &mut DocumentSnapshot, id: FeatureId) -> Result<(), Error> {
+    let feature = snapshot.work_geometry.get(id).map_err(api_error)?;
+    if feature.owned_scalars().is_empty() {
+        snapshot.work_geometry.remove(id).map_err(api_error)?;
+        return Ok(());
+    }
+    snapshot.delete_datum(id).map_err(api_error)?;
+    crate::model_states::record_parameter_edits(snapshot)
 }
 
 fn apply_edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -144,6 +148,18 @@ pub fn apply_feature_distance_edit(
     require_empty_repicks(request)?;
     let value = single_distance_edit(request)?;
     let distance = crate::extrusion::distance(snapshot, value)?;
+    if let Some(owned) = owned_prism_distance(snapshot, request.id)? {
+        if matches!(distance, oblikovati_model::feature::work_geometry::DatumLength::Parameter(id) if id == owned)
+        {
+            return Ok(());
+        }
+        snapshot
+            .parameters
+            .set_scalar_expression(owned, value.trim(), Dimension::Length)
+            .map_err(api_error)?;
+        snapshot.parameters.model_value(owned).map_err(api_error)?;
+        return crate::model_states::record_parameter_edits(snapshot);
+    }
     let definition = revised_prism(snapshot, request.id, distance)?;
     let reads = definition.reads(snapshot).map_err(api_error)?;
     snapshot
@@ -155,6 +171,17 @@ pub fn apply_feature_distance_edit(
         )
         .map_err(api_error)?;
     Ok(())
+}
+fn owned_prism_distance(snapshot: &DocumentSnapshot, id: u64) -> Result<Option<u64>, Error> {
+    let (feature, _) = locate(&snapshot.work_geometry, id)?;
+    if !matches!(feature.definition(), PartFeatureDefinition::SketchPrism(_)) {
+        return Ok(None);
+    }
+    Ok(feature
+        .owned_scalars()
+        .iter()
+        .find(|binding| binding.role == crate::extrusion::DISTANCE_ROLE)
+        .map(|binding| binding.parameter))
 }
 fn revised_prism(
     snapshot: &DocumentSnapshot,

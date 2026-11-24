@@ -277,6 +277,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Stored literal Extrude distances as built-in feature parameters so the model-state table could edit them per member. (#4119)
+
 - Selected the clicked face when a viewport right-click dismisses the ribbon panel selector, and showed its mini toolbar. (#3856)
 
 - Kept the unpinned Modify title strip available while its panel is hidden in the direct selector, and fixed closing the selector with its own button. (#3856)

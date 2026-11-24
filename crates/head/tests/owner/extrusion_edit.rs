@@ -13,6 +13,24 @@ fn typed_distance_edit_accepts_literal_extrusions_without_editing_sketch_paramet
         .add_feature(&input)
         .unwrap();
     let id = response.0.unwrap()["id"].as_u64().unwrap();
+    let distance = {
+        let session = owner.documents().workspace().session(document).unwrap();
+        let snapshot = session.snapshot();
+        let parameter = snapshot
+            .parameters
+            .find("d0")
+            .expect("owned distance parameter");
+        let detail = snapshot.parameters.get(parameter).unwrap();
+        assert_eq!(detail.source, "10 mm");
+        assert!(detail.built_in);
+        let feature = snapshot
+            .work_geometry
+            .get(oblikovati_model::feature::FeatureId(id))
+            .unwrap();
+        assert_eq!(feature.owned_scalars()[0].role, "distance");
+        assert_eq!(feature.owned_scalars()[0].parameter, parameter);
+        parameter
+    };
     let request = EditFeatureArgs {
         id,
         scalars: Some(vec![ScalarEdit {
@@ -32,6 +50,8 @@ fn typed_distance_edit_accepts_literal_extrusions_without_editing_sketch_paramet
     assert_eq!(detail.feature.scalars.unwrap()[0].value, 20.);
     let session = owner.documents().workspace().session(document).unwrap();
     let parameters = &session.snapshot().parameters;
+    assert_eq!(parameters.find("d0"), Some(distance));
+    assert_eq!(parameters.get(distance).unwrap().source, "20 mm");
     assert_eq!(
         parameters
             .model_value(parameters.find("width").unwrap())
@@ -39,6 +59,28 @@ fn typed_distance_edit_accepts_literal_extrusions_without_editing_sketch_paramet
             .value,
         1.
     );
+    Client::new(owner.document_host())
+        .features()
+        .delete(&FeatureRefArgs { id })
+        .unwrap();
+    let snapshot = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot();
+    assert!(snapshot.parameters.find("d0").is_none());
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
+    let snapshot = owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot();
+    assert_eq!(snapshot.parameters.find("d0"), Some(distance));
 }
 
 #[test]

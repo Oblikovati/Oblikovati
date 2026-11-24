@@ -35,6 +35,9 @@ mod model_state_copy;
 mod model_state_fixture;
 #[path = "model_state_new_feature.rs"]
 mod model_state_new_feature;
+#[cfg(target_os = "linux")]
+#[path = "model_state_parameter_fixture.rs"]
+mod model_state_parameter_fixture;
 #[path = "model_state_property_fixture.rs"]
 mod model_state_property_fixture;
 #[path = "model_state_scope.rs"]

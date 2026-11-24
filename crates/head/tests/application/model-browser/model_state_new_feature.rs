@@ -50,6 +50,11 @@ fn copy_single_scope(world: &mut ApplicationWorld) {
 }
 #[when("the user creates a rectangular sketch and extrudes it as a solid")]
 fn create_sketch_extrusion(world: &mut ApplicationWorld) {
+    prepare_rectangle_extrusion(world);
+    world.click_text("OK");
+}
+
+pub(super) fn prepare_rectangle_extrusion(world: &mut ApplicationWorld) {
     for label in ["Extrude", "XY Plane", "Rectangle"] {
         world.click_text(label);
     }
@@ -58,9 +63,9 @@ fn create_sketch_extrusion(world: &mut ApplicationWorld) {
         world.pump(Vec::new());
     }
     assert_eq!(world.edited_geometry().lines().len(), 4);
+    assert_eq!(world.edited_geometry().dimensional_constraints().count(), 0);
     world.click_text("Finish Sketch");
     world.expect_text("1 Profile");
-    world.click_text("OK");
 }
 #[then("the extrusion is computed in Copy State")]
 fn extrusion_computed(world: &mut ApplicationWorld) {

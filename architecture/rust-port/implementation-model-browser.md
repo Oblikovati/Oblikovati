@@ -105,6 +105,15 @@ verify editing the active member's cell, cancelling column removal, and
 keeping a staged column while switching categories. The same receipt records
 the missing feature-owned distance parameter after native extrusion.
 
+Native Extrude now stores an inline distance expression under the next
+available built-in `dN` name. That parameter drives the saved extrusion
+and appears in the model-state table. An extrusion created from an
+existing named parameter keeps using that parameter. Editing an owned
+distance preserves the parameter's identity. Deleting its extrusion
+clears the parameter and its model-state entries through the same
+transaction. The [native distance cases](receipts/2026-11-24-native-extrusion-distance-4119/README.md)
+check per-member values and the resulting solid centroid.
+
 The [suppression cases](receipts/2026-11-24-browser-suppression-fixture-3896/README.md)
 keep the saved solid Part through table edits, model-state switches and
 row insertion. The published fixture sets the extrusion's suppression

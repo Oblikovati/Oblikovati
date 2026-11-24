@@ -100,11 +100,18 @@ pub(super) fn set_parameter_cell(world: &mut ApplicationWorld, row: &str, value:
 #[given("The MCAD Software has a part with three model-state members")]
 #[given("The MCAD Software has a part with Primary, Capture State, and Copy State model states")]
 fn given_three_member_prism(world: &mut ApplicationWorld) {
+    if super::model_state_fixture::has_named_states(world) {
+        let browser = world.state().browser.unwrap();
+        assert_eq!(browser.model_states.unwrap().list().len(), 3);
+        assert_eq!(browser.features.len(), 1);
+        assert_eq!(browser.features[0].kind, "Extrusion");
+        return;
+    }
     three_state_prism(world);
 }
 #[given("an extrusion has a length parameter d0 of 1 in")]
 #[given("an extrusion has a length parameter d0 of 1 in in each state")]
-fn given_length_parameter(world: &mut ApplicationWorld) {
+pub(super) fn given_length_parameter(world: &mut ApplicationWorld) {
     let view = Client::new(world.app().owner.document_host())
         .model_states()
         .get_table(&Default::default())
@@ -253,10 +260,12 @@ pub(super) fn reopen_parameter_table(world: &mut ApplicationWorld) {
 #[then("the parameter tree displays d0 as 2 in")]
 fn tree_displays_two_inches(world: &mut ApplicationWorld) {
     tree_expression(world, "2 in");
+    super::model_state_parameter_fixture::expect_native_extrusion_centroid(world, 25.4);
 }
 #[then("the parameter tree displays d0 as 1 in")]
 fn tree_displays_one_inch(world: &mut ApplicationWorld) {
     tree_expression(world, "1 in");
+    super::model_state_parameter_fixture::expect_native_extrusion_centroid(world, 12.7);
 }
 pub(super) fn tree_expression(world: &ApplicationWorld, expression: &str) {
     let expected = format!(
