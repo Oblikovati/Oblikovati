@@ -15853,8 +15853,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Native Model Browser keyboard navigation and origin-plane selection.",
+      "go_test_premise": "The Go browser shares selection with the viewport. The pinned scenario supplies the exact keyboard navigation and rendered highlight checks.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native extrusion replay and viewport presentation of the selected origin planes.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop routes browser selection into the native viewport and retains the active Part.",
+      "rust_tests": "application_scenarios_use_the_native_window: Navigate the origin branch with arrow keys",
+      "oracle": "The pinned case checks browser focus and the rendered origin plane. See receipts/2026-11-24-browser-origin-and-favorites-fixture-3896/pinned/navigate/cucumber.json.",
+      "expected_result": "Arrow keys move origin selection between planes and the parent branch. Folding and reopening restores its rows. An empty viewport click clears the plane highlight and keeps the block visible.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:37e64bd99812680274c65cf3a8302f5b62ad6de5863539705aaae2c7a76b79e9",
@@ -15870,8 +15880,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Native Model Browser keyboard navigation and origin-plane selection.",
+      "go_test_premise": "The Go browser shares selection with the viewport. The pinned scenario supplies the exact keyboard navigation and rendered highlight checks.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native extrusion replay and viewport presentation of the selected origin planes.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop routes browser selection into the native viewport and retains the active Part.",
+      "rust_tests": "application_scenarios_use_the_native_window: Move between origin planes with Shift and Down Arrow",
+      "oracle": "The pinned case checks browser focus and the rendered origin plane. See receipts/2026-11-24-browser-origin-and-favorites-fixture-3896/pinned/shift/cucumber.json.",
+      "expected_result": "Shift and Down move selection from YZ to XZ and then XY without leaving the previous plane highlighted. Clicking empty viewport space clears the selection.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:a57dd46897f2e3bdd60dc8c079961d0b71065513f9d7ab980e1be5e52890d357",

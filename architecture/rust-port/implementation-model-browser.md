@@ -71,3 +71,7 @@ also covers X11 deselection with the Appearance browser docked.
 The [Favorites and search runs](receipts/2026-11-24-model-browser-favorites-dock-3896/README.md)
 exercise the dock icons through native pointer input. The Favorites case
 also checks that switching panes leaves the solid in the same view.
+
+The [origin navigation and Favorites viewport runs](receipts/2026-11-24-browser-origin-and-favorites-fixture-3896/README.md)
+keep the named block active on the published source and preserve keyboard
+highlighting and the Part view.

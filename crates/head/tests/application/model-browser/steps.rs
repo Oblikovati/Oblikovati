@@ -130,6 +130,7 @@ fn inspect_single_extrusion(world: &mut ApplicationWorld) -> oblikovati_gui::Gui
 #[given("an active part in the MCAD Software contains a single block created by an extrusion")]
 #[given("an active part in the MCAD Software contains a block created by an extrusion")]
 #[given("an active part is visible in the MCAD Software")]
+#[given("a part with a visible block is open in the MCAD Software")]
 fn inspect_visible_block(world: &mut ApplicationWorld) {
     let browser = inspect_single_extrusion(world);
     let [body] = browser.bodies.as_slice() else {
@@ -200,7 +201,6 @@ fn expect_no_origin_rows(world: &ApplicationWorld) {
     "an active part in the MCAD Software has one solid body made by an extrusion from a sketch"
 )]
 #[given("the MCAD Software displays the single-block part fixture")]
-#[given("a part with a visible block is open in the MCAD Software")]
 #[given("a part is open in the MCAD Software with its model browser visible")]
 #[given("an active part in the MCAD Software contains one extrusion forming a block")]
 #[given("a part with one unsuppressed extrusion and no fillet is open in the MCAD Software")]

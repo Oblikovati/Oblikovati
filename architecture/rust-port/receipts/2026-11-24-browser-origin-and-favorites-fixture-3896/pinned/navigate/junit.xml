@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:10:30.532451399Z" time="46.6762067"><testcase name="Scenario: Navigate the origin branch with arrow keys: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:257:3" time="46.6762067"><system-out><![CDATA[  Scenario: Navigate the origin branch with arrow keys
+   ✔  Given a part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded with its origin planes hidden
+   ✔  When the user selects the YZ Plane row in the model browser
+   ✔  Then the YZ plane is highlighted in the viewport
+   ✔  When the user presses Down Arrow
+   ✔  Then the XZ Plane row is selected and the XZ plane is highlighted
+   ✔  And the YZ plane highlight is removed
+   ✔  When the user presses Up Arrow
+   ✔  Then the YZ Plane row is selected and the YZ plane is highlighted again
+   ✔  When the user presses Left Arrow
+   ✔  Then the Origin parent row is selected and the plane highlight is removed
+   ✔  When the user presses Left Arrow again
+   ✔  Then the Origin branch collapses and its children are hidden
+   ✔  When the user presses Right Arrow
+   ✔  Then the Origin branch expands and its children are visible
+   ✔  When the user presses Right Arrow again
+   ✔  Then the YZ Plane row is selected and the YZ plane is highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the plane highlight disappears and the block remains visible
+]]></system-out></testcase></testsuite></testsuites>
