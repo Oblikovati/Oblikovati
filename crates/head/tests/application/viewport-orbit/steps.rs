@@ -12,38 +12,36 @@ mod saved_block;
 /// The guide's colour, as it blends over the view; the control's faces are darker.
 const GUIDE_COLOR: [i32; 3] = [200, 200, 212];
 const GUIDE_REACH: i32 = 12;
-/// Left of the orientation control and clear of the panels.
-const GUIDE_COLUMNS: [usize; 2] = [320, 1200];
-const GUIDE_ROWS: [usize; 2] = [170, 860];
+const GUIDE_RADIUS_SHARE: f32 = 0.35;
+const GUIDE_SAMPLE_REACH: usize = 3;
 const DRAG: [[i32; 2]; 2] = [[500, 400], [560, 440]];
 const INCREMENT_FIELD_VALUE: &str = "10";
 const SAME_VIEW: f64 = 1e-6;
 
-fn guide_pixels(world: &mut ApplicationWorld) -> usize {
+fn ring_quadrants(world: &mut ApplicationWorld) -> [bool; 4] {
+    let [left, top, right, bottom] = world.viewport_bounds().map(|edge| edge as f32);
+    let center = [(left + right) / 2., (top + bottom) / 2.];
+    let diagonal =
+        (right - left).min(bottom - top) * GUIDE_RADIUS_SHARE * std::f32::consts::FRAC_1_SQRT_2;
     let capture = capture_framebuffer(&mut world.app().window.native);
     let width = capture.extent[0] as usize;
-    capture
-        .rgba
-        .chunks_exact(width * 4)
-        .skip(GUIDE_ROWS[0])
-        .take(GUIDE_ROWS[1] - GUIDE_ROWS[0])
-        .map(|row| {
-            row[GUIDE_COLUMNS[0] * 4..GUIDE_COLUMNS[1] * 4]
-                .as_chunks::<4>()
-                .0
-                .iter()
-                .filter(|pixel| {
-                    (0..3).all(|channel| {
-                        (i32::from(pixel[channel]) - GUIDE_COLOR[channel]).abs() < GUIDE_REACH
-                    })
+    // Sample the ring well away from the solid's projected edges near the center.
+    [[-1., -1.], [1., -1.], [1., 1.], [-1., 1.]].map(|[across, down]| {
+        let x = (center[0] + across * diagonal).round() as usize;
+        let y = (center[1] + down * diagonal).round() as usize;
+        (y - GUIDE_SAMPLE_REACH..=y + GUIDE_SAMPLE_REACH).any(|row| {
+            (x - GUIDE_SAMPLE_REACH..=x + GUIDE_SAMPLE_REACH).any(|column| {
+                let at = (row * width + column) * 4;
+                (0..3).all(|channel| {
+                    (i32::from(capture.rgba[at + channel]) - GUIDE_COLOR[channel]).abs()
+                        < GUIDE_REACH
                 })
-                .count()
+            })
         })
-        .sum()
+    })
 }
 fn expect_guide(world: &mut ApplicationWorld, shown: bool) {
-    let pixels = guide_pixels(world);
-    assert_eq!(pixels > 0, shown, "guide pixels {pixels}");
+    assert_eq!(ring_quadrants(world), [shown; 4], "orbit guide ring");
 }
 /// The bar's second dropdown belongs to Orbit.
 fn open_orbit_menu(world: &mut ApplicationWorld) {
@@ -94,6 +92,7 @@ fn drag_view(world: &mut ApplicationWorld) {
 #[then("a circular rotation guide appears over the viewport")]
 fn guide_visible(world: &mut ApplicationWorld) {
     expect_guide(world, true);
+    world.save_capture("orbit-guide-visible");
 }
 #[when("I open the context menu in the viewport")]
 #[when("the user opens the context menu in the viewport")]
