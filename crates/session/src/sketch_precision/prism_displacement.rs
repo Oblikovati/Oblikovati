@@ -122,6 +122,11 @@ impl<'s, O: TransactionObserver> SessionConditionalSketch<'s, O> {
         constants: [Option<[f64; 2]>; 3],
     ) -> Result<ConditionalPrismDisplacement<'e, 's, O>, String> {
         let definition = self.prism_definition(feature)?;
+        if definition.extent().is_some() {
+            return Err(format!(
+                "feature {feature:?}: conditional displacement does not bound reference planes"
+            ));
+        }
         if matches!(
             definition.direction(),
             SketchPrismDirection::Symmetric | SketchPrismDirection::Asymmetric

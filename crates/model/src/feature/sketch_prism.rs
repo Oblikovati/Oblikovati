@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Authored prism inputs, separate from kernel results and the complete extrude feature contract.
 mod error;
+mod extent;
 mod recipe;
 mod resolve;
 pub(crate) mod validation;
 use super::work_geometry::DatumLength;
 use crate::{document_sketch::DocumentSketchId, sketch::SketchEntityId};
 pub use error::{SketchPrismCause, SketchPrismError};
+pub use extent::SketchPrismExtent;
 pub use recipe::SketchPrismRecipe;
 pub use resolve::ResolvedSketchPrism;
 /// One authored curve in a directed boundary; reversal changes traversal, not its source identity.
@@ -32,6 +34,7 @@ pub struct SketchPrismDefinition {
     displacement: [DatumLength; 3],
     direction: SketchPrismDirection,
     second_depth: Option<DatumLength>,
+    extent: Option<SketchPrismExtent>,
 }
 /// Placement of the extrusion span relative to the source sketch plane.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -56,6 +59,7 @@ impl SketchPrismDefinition {
             displacement,
             direction: SketchPrismDirection::Positive,
             second_depth: None,
+            extent: None,
         };
         validation::validate_sources(&definition).map_err(|cause| definition.decline(cause))?;
         Ok(definition)
@@ -89,6 +93,10 @@ impl SketchPrismDefinition {
     pub fn second_depth(&self) -> Option<DatumLength> {
         self.second_depth
     }
+    /// Return the authored plane bounds, if any. Example: `definition.extent()` before exposing distance edits.
+    pub fn extent(&self) -> Option<&SketchPrismExtent> {
+        self.extent.as_ref()
+    }
     /// Set the opposite-side depth; example: `definition.with_second_depth(DatumLength::Constant(0.5))?`.
     pub fn with_second_depth(mut self, depth: DatumLength) -> Result<Self, SketchPrismError> {
         self.second_depth = Some(depth);
@@ -107,6 +115,7 @@ impl SketchPrismDefinition {
         self.sketch == other.sketch
             && self.selection == other.selection
             && self.direction == other.direction
+            && self.extent == other.extent
             && match (self.second_depth, other.second_depth) {
                 (None, None) => true,
                 (Some(a), Some(b)) => a.same_recipe(b),

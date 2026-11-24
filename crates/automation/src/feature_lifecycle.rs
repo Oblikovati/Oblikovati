@@ -285,7 +285,7 @@ pub(crate) fn feature_scalars(
     snapshot: &DocumentSnapshot,
 ) -> Result<Option<Vec<FeatureScalar>>, Error> {
     let (length, label, second) = match feature.definition() {
-        PartFeatureDefinition::SketchPrism(definition) => (
+        PartFeatureDefinition::SketchPrism(definition) if definition.extent().is_none() => (
             definition.displacement()[2],
             if definition.second_depth().is_some() {
                 "Distance A"

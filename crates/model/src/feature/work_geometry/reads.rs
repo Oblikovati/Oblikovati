@@ -41,23 +41,23 @@ fn point_key(reference: WorkPointReference) -> Option<FeatureReadKey> {
         WorkPointReference::Feature(id) => Some(FeatureReadKey::Feature(id)),
     }
 }
-fn plane_key(base: WorkPlaneReference) -> Option<FeatureReadKey> {
+pub(crate) fn plane_key(base: &WorkPlaneReference) -> Option<FeatureReadKey> {
     match base {
         WorkPlaneReference::Origin(_) => None,
-        WorkPlaneReference::Feature(id) => Some(FeatureReadKey::Feature(id)),
+        WorkPlaneReference::Feature(id) => Some(FeatureReadKey::Feature(*id)),
         WorkPlaneReference::Face(reference) | WorkPlaneReference::GoPrismFace(reference) => {
             Some(FeatureReadKey::Feature(reference.source()))
         }
     }
 }
 fn offset_keys(base: WorkPlaneReference, distance: DatumLength) -> Vec<FeatureReadKey> {
-    plane_key(base)
+    plane_key(&base)
         .into_iter()
         .chain(length_key(distance))
         .collect()
 }
 fn parallel_keys(source: super::WorkPlaneThroughPoint) -> Vec<FeatureReadKey> {
-    plane_key(source.base)
+    plane_key(&source.base)
         .into_iter()
         .chain(point_key(source.point))
         .collect()
@@ -81,7 +81,7 @@ fn axis_key(reference: crate::feature::work_axis::WorkAxisReference) -> Option<F
 fn line_angle_keys(source: super::WorkPlaneLineAngle) -> Vec<FeatureReadKey> {
     axis_key(source.line)
         .into_iter()
-        .chain(plane_key(source.base))
+        .chain(plane_key(&source.base))
         .chain(source.angle.parameter_id().map(FeatureReadKey::Parameter))
         .collect()
 }

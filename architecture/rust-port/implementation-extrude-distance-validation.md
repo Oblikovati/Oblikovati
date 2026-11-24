@@ -75,3 +75,20 @@ presentation preserves the current direction and preview. Selecting a
 direction from either style sends the same draft through validation.
 
 See the [Direction selector receipt](receipts/2026-11-24-extrusion-direction-selector-3893/README.md).
+
+## Reference extents (#3893)
+
+The typed Extrude command accepts To Face and From–To extents for new solids.
+Each target can be a named planar face, an origin plane, or an indexed work
+plane. An index resolves to the work plane's stable identity when the command
+is authored. Replay resolves the current planes against the feature prefix,
+validates that they are parallel to the profile, and passes the ordered normal
+span to the same certified prism operation as a numeric extrusion. The recipe
+stores the references and reads their producing features. A reference span
+has no distance parameter.
+
+The desktop reference controls and viewport picking for `extrusion-10` and
+`extrusion-11` remain open. Geometric face selectors, taper, Through All,
+and To Next also remain open.
+
+See the [Reference extent receipt](receipts/2026-11-24-extrusion-reference-extents-3893/README.md).

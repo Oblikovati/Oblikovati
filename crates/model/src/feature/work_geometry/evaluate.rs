@@ -3,6 +3,7 @@
 use super::result::WorkGeometryResult;
 use super::{WorkGeometryDefinition as WorkPlaneDefinition, WorkGeometryError as WorkPlaneError};
 mod face;
+pub(crate) use face::DatumFaceResolver;
 mod freshness;
 mod queries;
 use crate::{

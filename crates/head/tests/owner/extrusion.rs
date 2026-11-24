@@ -6,6 +6,8 @@ use oblikovati_martensite::PrismResolution;
 use oblikovati_persistence::package::DocumentPackage;
 #[path = "extrusion_direction.rs"]
 mod direction;
+#[path = "extrusion_extent.rs"]
+mod extent;
 #[path = "extrusion_suppression.rs"]
 mod suppression;
 

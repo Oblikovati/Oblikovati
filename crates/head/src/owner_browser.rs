@@ -190,6 +190,9 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             else {
                 return None;
             };
+            if definition.extent().is_some() {
+                return None;
+            }
             let two_sided = definition.second_depth().is_some();
             let expression =
                 |source| prism_distance_expression(snapshot, feature, source, two_sided);
@@ -323,6 +326,14 @@ fn extended_feature_name(
     let SketchPrism(definition) = feature.definition() else {
         return None;
     };
+    if let Some(extent) = definition.extent() {
+        use oblikovati_model::feature::sketch_prism::SketchPrismExtent;
+        let label = match extent {
+            SketchPrismExtent::ToFace { .. } => "To Face",
+            SketchPrismExtent::FromTo { .. } => "From–To",
+        };
+        return Some(format!("New Solid, {label}"));
+    }
     let depth = definition.displacement()[2]
         .resolve(&snapshot.parameters)
         .ok()?;

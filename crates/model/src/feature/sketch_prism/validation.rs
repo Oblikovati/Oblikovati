@@ -9,6 +9,9 @@ pub(super) fn validate_sources(definition: &SketchPrismDefinition) -> Result<(),
         )));
     }
     validate_selection(&definition.selection)?;
+    if definition.extent.is_some() {
+        return validate_plane_extent(definition);
+    }
     for (axis, source) in definition.displacement.into_iter().enumerate() {
         validate_scalar_source(source, axis)?;
     }
@@ -29,6 +32,19 @@ pub(super) fn validate_sources(definition: &SketchPrismDefinition) -> Result<(),
         }
     }
     Ok(())
+}
+pub(super) fn validate_plane_extent(
+    definition: &SketchPrismDefinition,
+) -> Result<(), SketchPrismCause> {
+    if definition.displacement == [DatumLength::Constant(0.); 3]
+        && definition.direction == SketchPrismDirection::Positive
+        && definition.second_depth.is_none()
+    {
+        return Ok(());
+    }
+    Err(SketchPrismCause::Definition(
+        "prism plane extent: expected plane bounds without authored distance or direction".into(),
+    ))
 }
 pub(super) fn require_second_depth(value: f64) -> Result<(), SketchPrismCause> {
     if value <= 0. || !value.is_finite() {

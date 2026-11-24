@@ -137,6 +137,9 @@ fn feature_depth_text(
     let SketchPrism(definition) = row.definition() else {
         return None;
     };
+    if definition.extent().is_some() {
+        return None;
+    }
     let depth = definition.displacement()[2]
         .resolve(&snapshot.parameters)
         .ok()?;

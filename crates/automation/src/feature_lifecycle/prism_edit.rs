@@ -16,6 +16,12 @@ pub fn apply_feature_distance_edit(
             request.id
         )));
     };
+    if definition.extent().is_some() {
+        return Err(Error(format!(
+            "features.edit id {}: plane-bounded extrusion has no authored distance",
+            request.id
+        )));
+    }
     let edits = validated_edits(request, definition.second_depth().is_some())?;
     let mut changes_parameters = false;
     for edit in edits {

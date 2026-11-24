@@ -446,8 +446,14 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         feature: &crate::feature::AuthoredFeature<PartFeatureDefinition>,
         definition: &crate::feature::sketch_prism::SketchPrismDefinition,
     ) -> Result<(), PartFeatureFailure<Failure>> {
+        let resolve_face =
+            |reference: &_| resolve_body_face(&self.bodies, &self.body_lineage, backend, reference);
+        let resolver = crate::feature::work_geometry::DatumFaceResolver {
+            datums: &self.datums,
+            resolve_face: &resolve_face,
+        };
         let input = definition
-            .resolve_with_datums(snapshot, &self.datums)
+            .resolve_with_datums(snapshot, &self.datums, &resolver)
             .map_err(PartFeatureFailure::Inputs)?;
         let body = backend
             .evaluate_prism(feature.id(), input)

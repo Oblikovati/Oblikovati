@@ -3,7 +3,7 @@
 use super::*;
 use crate::feature::work_plane::{WorkPlaneFaceReference, WorkPlaneResolver};
 
-pub(super) struct DatumFaceResolver<'a, F> {
+pub(crate) struct DatumFaceResolver<'a, F> {
     pub datums: &'a WorkGeometryEvaluation,
     pub resolve_face: &'a F,
 }

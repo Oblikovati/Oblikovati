@@ -19,6 +19,7 @@ use oblikovati_model::{
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
+mod extent;
 mod replay;
 use replay::{ExtrudeProjection, adopt_extrude_candidate, prepare_owned_prefix};
 
@@ -177,6 +178,7 @@ pub fn prepare_extrusion(
     input: &Extrude,
 ) -> Result<PreparedExtrusion, Error> {
     require_supported(input)?;
+    let extent = extent::reference_extent(snapshot, input)?;
     let sketch = sketch_index(snapshot, input.sketch_index)?;
     let index = usize::try_from(input.profile_index).map_err(|_| {
         Error(format!(
@@ -184,13 +186,31 @@ pub fn prepare_extrusion(
             input.profile_index
         ))
     })?;
+    let resolve_profile = || backend.region(snapshot, sketch, index).map_err(Error);
+    if let Some(extent) = extent {
+        return Ok(PreparedExtrusion {
+            name: next_name(snapshot)?,
+            definition: SketchPrismDefinition::between_planes(sketch, resolve_profile()?, extent)
+                .map_err(api_error)?,
+            owned_distance: None,
+            owned_second_distance: None,
+        });
+    }
+    prepare_distance_prism(snapshot, input, sketch, resolve_profile)
+}
+
+fn prepare_distance_prism(
+    snapshot: &DocumentSnapshot,
+    input: &Extrude,
+    sketch: DocumentSketchId,
+    resolve_profile: impl FnOnce() -> Result<SketchPrismSelection, Error>,
+) -> Result<PreparedExtrusion, Error> {
     let depth = distance(snapshot, &input.distance)?;
     let owned_distance =
         matches!(depth, DatumLength::Constant(_)).then(|| input.distance.trim().to_owned());
-    let selection = backend.region(snapshot, sketch, index).map_err(Error)?;
     let definition = SketchPrismDefinition::new(
         sketch,
-        selection,
+        resolve_profile()?,
         [DatumLength::Constant(0.), DatumLength::Constant(0.), depth],
     )
     .map_err(api_error)?;
@@ -274,7 +294,6 @@ fn require_supported(input: &Extrude) -> Result<(), Error> {
             input.operation.as_str(),
             &["new", "newbody", "new-body"][..],
         ),
-        ("extent", input.extent.as_str(), &["distance"][..]),
         (
             "direction",
             input.direction.as_str(),
@@ -293,16 +312,14 @@ fn require_supported(input: &Extrude) -> Result<(), Error> {
         }
     }
     if !input.taper.is_empty()
-        || !input.to_face.is_empty()
         || input.to_face_geom.is_some()
-        || !input.from_face.is_empty()
         || input.from_face_geom.is_some()
         || input
             .profile_seeds
             .as_ref()
             .is_some_and(|seeds| !seeds.is_empty())
     {
-        return Err(Error("extrude extent inputs: expected positive distances without taper, target faces, or profile seeds".into()));
+        return Err(Error("extrude extent inputs: expected an extent without taper, geometric face selectors, or profile seeds".into()));
     }
     Ok(())
 }

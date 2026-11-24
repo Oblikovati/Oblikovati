@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::DatumLength;
-use crate::feature::work_geometry::DatumLengthError;
+use crate::feature::work_geometry::{DatumLengthError, WorkGeometryError};
 use crate::{
     document_sketch::DocumentSketchId, history::DocumentSketchPlacementError, sketch::SketchError,
 };
@@ -16,6 +16,7 @@ pub struct SketchPrismError {
 pub enum SketchPrismCause {
     Definition(String),
     Placement(DocumentSketchPlacementError),
+    Extent(WorkGeometryError),
     Sketch(SketchError),
     Length {
         axis: usize,
@@ -37,6 +38,7 @@ impl fmt::Display for SketchPrismCause {
         match self {
             Self::Definition(message) => write!(output, "{message}"),
             Self::Placement(cause) => cause.fmt(output),
+            Self::Extent(cause) => cause.fmt(output),
             Self::Sketch(cause) => cause.fmt(output),
             Self::Length {
                 axis,
@@ -59,6 +61,7 @@ impl Error for SketchPrismCause {
         match self {
             Self::Definition(_) => None,
             Self::Placement(cause) => Some(cause),
+            Self::Extent(cause) => Some(cause),
             Self::Sketch(cause) => Some(cause),
             Self::Length { cause, .. } => Some(cause),
         }

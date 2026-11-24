@@ -11,6 +11,7 @@ mod orientation;
 pub use display::WorkPlaneDisplaySettings;
 mod point;
 mod reads;
+pub(crate) use reads::plane_key;
 mod result;
 mod visibility;
 pub use super::work_plane::{
@@ -23,6 +24,7 @@ use super::{
 };
 use crate::parameter::ParameterCollection;
 pub use error::{WorkGeometryError, WorkGeometryKindMismatch};
+pub(crate) use evaluate::DatumFaceResolver;
 pub use evaluate::WorkGeometryEvaluation;
 pub use length::{DatumLength, DatumLengthError};
 pub(crate) use point::validate_position;

@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use crate::{
-    feature::{FeatureReadFootprint, FeatureReadKey},
+    feature::{
+        FeatureReadFootprint, FeatureReadKey, work_geometry::WorkGeometryEvaluation,
+        work_plane::WorkPlaneResolver,
+    },
     history::{DocumentSnapshot, ResolvedDocumentSketch},
     sketch::SketchPlane,
 };
@@ -23,27 +26,35 @@ impl SketchPrismDefinition {
         let sketch = snapshot
             .require_converged_resolved_sketch(self.sketch)
             .map_err(|cause| self.decline(SketchPrismCause::Placement(cause)))?;
-        self.resolve_current_sketch(snapshot, sketch)
+        self.resolve_current_sketch(snapshot, sketch, &WorkGeometryEvaluation::default())
     }
     pub(crate) fn resolve_with_datums<'a>(
         &'a self,
         snapshot: &'a DocumentSnapshot,
-        datums: &crate::feature::work_geometry::WorkGeometryEvaluation,
+        datums: &WorkGeometryEvaluation,
+        resolver: &impl WorkPlaneResolver,
     ) -> Result<ResolvedSketchPrism<'a>, SketchPrismError> {
         let sketch = snapshot
             .require_converged_sketch_with_datums(self.sketch, datums)
             .map_err(|cause| self.decline(SketchPrismCause::Placement(cause)))?;
-        self.resolve_current_sketch(snapshot, sketch)
+        self.resolve_current_sketch(snapshot, sketch, resolver)
     }
     fn resolve_current_sketch<'a>(
         &'a self,
         snapshot: &'a DocumentSnapshot,
         sketch: ResolvedDocumentSketch<'a>,
+        resolver: &impl WorkPlaneResolver,
     ) -> Result<ResolvedSketchPrism<'a>, SketchPrismError> {
         let mut displacement = self.resolve_displacement(snapshot)?;
-        self.validate_normal_source(displacement[2])
-            .map_err(|cause| self.decline(cause))?;
-        let (offset, depth) = self.normal_span(snapshot, displacement[2])?;
+        let (offset, depth) = if let Some(extent) = &self.extent {
+            extent
+                .span(sketch.plane, resolver)
+                .map_err(|cause| self.decline(cause))?
+        } else {
+            self.validate_normal_source(displacement[2])
+                .map_err(|cause| self.decline(cause))?;
+            self.normal_span(snapshot, displacement[2])?
+        };
         displacement[2] = depth;
         let sweep_start = self.sweep_start(sketch.plane, offset)?;
         Ok(ResolvedSketchPrism {
@@ -134,13 +145,15 @@ impl SketchPrismDefinition {
 impl SketchPrismDefinition {
     /// Attribute direct authored sources without requiring evaluated geometry; example: `definition.source_reads()` before program restore.
     pub fn source_reads(&self) -> FeatureReadFootprint {
-        let keys = std::iter::once(FeatureReadKey::Sketch(self.sketch.0)).chain(
-            self.displacement
-                .into_iter()
-                .chain(self.second_depth)
-                .filter_map(DatumLength::parameter)
-                .map(FeatureReadKey::Parameter),
-        );
+        let keys = std::iter::once(FeatureReadKey::Sketch(self.sketch.0))
+            .chain(
+                self.displacement
+                    .into_iter()
+                    .chain(self.second_depth)
+                    .filter_map(DatumLength::parameter)
+                    .map(FeatureReadKey::Parameter),
+            )
+            .chain(self.extent.iter().flat_map(SketchPrismExtent::reads));
         FeatureReadFootprint::new(keys, false)
     }
 }

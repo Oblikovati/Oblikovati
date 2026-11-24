@@ -14,6 +14,8 @@ pub struct SketchPrismRecipe {
     pub centered_normal: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub second_depth: Option<DatumLength>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extent: Option<SketchPrismExtent>,
 }
 impl SketchPrismDefinition {
     /// Capture only authored inputs; example: `serde_json::to_string(&definition.recipe())?`.
@@ -26,6 +28,7 @@ impl SketchPrismDefinition {
             reversed_normal: self.direction == SketchPrismDirection::Negative,
             centered_normal: self.direction == SketchPrismDirection::Symmetric,
             second_depth: self.second_depth,
+            extent: self.extent.clone(),
         }
     }
     /// Validate the saved version and sources before adoption; example: `SketchPrismDefinition::from_recipe(&recipe)?`.
@@ -38,6 +41,9 @@ impl SketchPrismDefinition {
                     recipe.version
                 ))),
             });
+        }
+        if let Some(extent) = &recipe.extent {
+            return Self::from_plane_recipe(recipe, extent);
         }
         let definition = Self::new(recipe.sketch, recipe.selection.clone(), recipe.displacement)?;
         match (
@@ -56,5 +62,21 @@ impl SketchPrismDefinition {
                 )),
             }),
         }
+    }
+    fn from_plane_recipe(
+        recipe: &SketchPrismRecipe,
+        extent: &SketchPrismExtent,
+    ) -> Result<Self, SketchPrismError> {
+        let mut definition =
+            Self::between_planes(recipe.sketch, recipe.selection.clone(), extent.clone())?;
+        definition.displacement = recipe.displacement;
+        if recipe.reversed_normal || recipe.centered_normal || recipe.second_depth.is_some() {
+            return Err(definition.decline(SketchPrismCause::Definition(
+                "prism plane extent: expected plane bounds alone".into(),
+            )));
+        }
+        validation::validate_plane_extent(&definition)
+            .map_err(|cause| definition.decline(cause))?;
+        Ok(definition)
     }
 }
