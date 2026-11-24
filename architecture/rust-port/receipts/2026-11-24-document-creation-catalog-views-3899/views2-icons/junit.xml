@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" package="testsuite/Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:55:18.544728827Z" time="44.326823531"><testcase name="Scenario: Change template icon size: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature:128:3" time="44.326823531"><system-out><![CDATA[  Scenario: Change template icon size
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And the native catalog contains metric and inch templates in their respective folders
+   ✔> And the catalog root has no direct template files
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the user presses Control+N to open the new-document template chooser
+   ✔  And the new-document template chooser is open in the MCAD Software
+   ✔  And the metric folder is selected and templates are grouped by type
+   ✔  And the standard metric assembly template details are displayed
+   ✔  When the user chooses Extra large icons in the template display menu
+   ✔  Then the template gallery displays extra-large tiles
+   ✔  And the metric assembly template details remain displayed
+   ✔  When the user chooses Small icons in the template display menu
+   ✔  Then the template gallery displays small icons
+   ✔  And the metric assembly template details remain displayed
+   ✔  When the user chooses Medium icons in the template display menu
+   ✔  Then the template gallery displays medium-sized icons
+   ✔  And the metric assembly template details remain displayed
+]]></system-out></testcase></testsuite></testsuites>

@@ -79,3 +79,9 @@ selected assembly template and its details. [Project inspection report](receipts
 The first three native catalog cases checked stored Metric and English units,
 group collapse and expansion, and selection across folder changes.
 [Catalog reports](receipts/2026-11-24-document-creation-catalog-first-cases-3899/README.md)
+
+Nine more catalog scenarios passed for Details and List views, grouping,
+folder history and Home, cancel and reopen, icon sizing, and creating a
+Part by double-click or Enter. The current catalog basics feature has
+passed 12 of 21 scenarios.
+[Chooser reports](receipts/2026-11-24-document-creation-catalog-views-3899/README.md)

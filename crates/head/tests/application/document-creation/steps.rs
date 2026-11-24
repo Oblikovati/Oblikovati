@@ -438,16 +438,24 @@ fn details_rows(world: &mut ApplicationWorld) {
     for heading in ["Name", "Size", "Type"] {
         world.expect_text(heading);
     }
-    let row = world.run(METRIC_PART).clone();
-    let kind = world
+    let title = basic_catalog::catalog_title(world, METRIC_PART, "Standard (mm)");
+    let row = world.run(title);
+    let size_column = world.run("Size").minimum[0];
+    let type_column = world.run("Type").minimum[0];
+    let values = world
         .frame
         .runs
         .iter()
-        .find(|run| run.text == "Part" && (run.center()[1] - row.center()[1]).abs() < 3.)
-        .cloned();
+        .filter(|run| run.list == row.list && (run.center()[1] - row.center()[1]).abs() < 3.);
     assert!(
-        kind.is_some(),
-        "row {row:?}: expected its Type column to read Part"
+        values.clone().any(|run| {
+            (run.minimum[0] - size_column).abs() < 3.
+                && run.text.starts_with(|ch: char| ch.is_ascii_digit())
+        }) && values
+            .clone()
+            .any(|run| run.maximum[0] > type_column && run.text.ends_with("Part")),
+        "row {row:?}: expected file size and Part values, got {:?}",
+        values.collect::<Vec<_>>()
     );
 }
 #[then("the template details pane remains visible")]

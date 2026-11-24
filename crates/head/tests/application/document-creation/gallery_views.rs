@@ -52,25 +52,16 @@ fn english_medium_chooser(world: &mut ApplicationWorld) {
 #[given("the metric template folder is selected")]
 fn metric_selected(world: &mut ApplicationWorld) {
     world.click_text("Metric");
-    world.expect_text(METRIC_PART);
+    metric_gallery(world);
 }
 fn expect_part_details(world: &mut ApplicationWorld) {
-    world.expect_text("Document type: Part");
-    world.expect_text("millimeters (mm)");
-    let tile_and_details = world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| run.text == METRIC_PART.replace(' ', ""))
-        .count();
-    assert_eq!(
-        tile_and_details, 2,
-        "expected the tile and the details pane"
-    );
+    let title = basic_catalog::catalog_title(world, METRIC_PART, "Standard (mm)");
+    expect_selected_template(world, title);
+    metric_details(world);
 }
 #[given("a standard metric part template's details are displayed")]
 fn part_details_shown(world: &mut ApplicationWorld) {
-    world.click_text(METRIC_PART);
+    select_metric(world);
     expect_part_details(world);
 }
 #[given("templates are grouped by type")]
@@ -119,14 +110,14 @@ fn flat_gallery(world: &mut ApplicationWorld) {
         "rendered text {:?}: expected no group headings",
         world.text()
     );
-    for tile in [
-        METRIC_PART,
-        METRIC_SHEET_METAL,
-        METRIC_ASSEMBLY,
-        METRIC_DRAWING,
-    ] {
-        world.expect_text(tile);
+    let templates = basic_catalog::metric_part_titles(world);
+    for title in templates {
+        assert!(
+            gallery_has_template(world, &title),
+            "expected {title} in the flat gallery"
+        );
     }
+    other_group_templates(world);
 }
 #[then("the details pane continues to display the metric part template information")]
 fn details_continue(world: &mut ApplicationWorld) {
@@ -143,8 +134,17 @@ fn choose_template_view(world: &mut ApplicationWorld, view: &str) {
     world.pump(Vec::new());
 }
 /// The vertical distance between the part group's two tiles.
-fn tile_spacing(world: &ApplicationWorld) -> f32 {
-    (world.run(METRIC_SHEET_METAL).center()[1] - world.run(METRIC_PART).center()[1]).abs()
+fn first_two_part_titles(world: &mut ApplicationWorld) -> (String, String) {
+    let mut titles = basic_catalog::metric_part_titles(world);
+    titles.sort_by_cached_key(|title| title.to_lowercase());
+    let [first, second, ..] = titles.as_slice() else {
+        panic!("expected at least two Metric Part templates");
+    };
+    (first.clone(), second.clone())
+}
+fn tile_spacing(world: &mut ApplicationWorld) -> f32 {
+    let (first, second) = first_two_part_titles(world);
+    (world.run(&first).center()[1] - world.run(&second).center()[1]).abs()
 }
 #[when("I choose List in the template display menu")]
 #[when("the user chooses List in the template display menu")]
@@ -163,11 +163,13 @@ fn compact_entries(world: &mut ApplicationWorld) {
 #[when("I select the standard metric assembly template in the list")]
 #[when("the user selects the standard metric assembly template in the list")]
 fn select_assembly_in_list(world: &mut ApplicationWorld) {
-    world.click_text(METRIC_ASSEMBLY);
+    select_assembly(world);
 }
 fn expect_assembly_details(world: &mut ApplicationWorld) {
-    world.expect_text("Document type: Assembly");
-    world.expect_text("millimeters (mm)");
+    let title = basic_catalog::catalog_title(world, METRIC_ASSEMBLY, "Standard Assembly");
+    expect_selected_template(world, title);
+    expect_selected_template(world, "Document type: Assembly");
+    expect_selected_template(world, "Length: millimeters (mm)");
 }
 #[then("the details pane identifies an assembly with millimeter units")]
 #[then("the details pane continues to identify the metric assembly template")]
@@ -183,14 +185,15 @@ fn choose_medium_view(world: &mut ApplicationWorld) {
 fn medium_tiles(world: &mut ApplicationWorld) {
     expect_icon_row(world, 40.);
 }
-fn expect_icon_row(world: &ApplicationWorld, expected_size: f32) {
-    let first = world.run(METRIC_SHEET_METAL).center();
-    let second = world.run(METRIC_PART).center();
+fn expect_icon_row(world: &mut ApplicationWorld, expected_size: f32) {
+    let (left, right) = first_two_part_titles(world);
+    let first = world.run(&left).center();
+    let second = world.run(&right).center();
     assert!(
         second[0] > first[0] && (second[1] - first[1]).abs() < 3.,
         "expected template icons in a horizontal row"
     );
-    let size = gallery_icons::template_icon_size(world, METRIC_SHEET_METAL);
+    let size = gallery_icons::template_icon_size(world, &left);
     assert!(
         (size[0] - expected_size).abs() < 1. && (size[1] - expected_size).abs() < 1.,
         "icon size {size:?}: expected {expected_size}"
@@ -222,13 +225,17 @@ fn metric_folder_selected(world: &mut ApplicationWorld) {
 }
 #[then("the gallery displays its inch templates")]
 fn inch_gallery(world: &mut ApplicationWorld) {
-    assert!(gallery_has_template(world, "Standard inch part"));
-    assert!(!gallery_has_template(world, METRIC_PART));
+    let inch = basic_catalog::catalog_title(world, "Standard inch part", "Standard (in)");
+    let metric = basic_catalog::catalog_title(world, METRIC_PART, "Standard (mm)");
+    assert!(gallery_has_template(world, inch));
+    assert!(!gallery_has_template(world, metric));
 }
 #[then("the gallery displays its metric templates")]
 fn metric_gallery(world: &mut ApplicationWorld) {
-    assert!(gallery_has_template(world, METRIC_PART));
-    assert!(!gallery_has_template(world, "Standard inch part"));
+    let inch = basic_catalog::catalog_title(world, "Standard inch part", "Standard (in)");
+    let metric = basic_catalog::catalog_title(world, METRIC_PART, "Standard (mm)");
+    assert!(gallery_has_template(world, metric));
+    assert!(!gallery_has_template(world, inch));
 }
 fn gallery_has_template(world: &ApplicationWorld, name: &str) -> bool {
     let details = world.run("Template details").minimum[0];
@@ -243,7 +250,7 @@ fn gallery_has_template(world: &ApplicationWorld, name: &str) -> bool {
 #[given("the standard metric assembly template details are displayed")]
 fn assembly_details_shown(world: &mut ApplicationWorld) {
     world.click_text("Metric");
-    world.click_text(METRIC_ASSEMBLY);
+    select_assembly(world);
     expect_assembly_details(world);
 }
 #[when("I reopen the new-document chooser during the same session")]
@@ -254,13 +261,9 @@ fn reopen_chooser(world: &mut ApplicationWorld) {
 }
 #[then("the standard metric assembly template is selected")]
 fn assembly_tile_selected(world: &mut ApplicationWorld) {
-    let tile = world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| run.text == METRIC_ASSEMBLY.replace(' ', ""))
-        .count();
-    assert_eq!(tile, 2, "expected the tile and the details pane");
+    let title = basic_catalog::catalog_title(world, METRIC_ASSEMBLY, "Standard Assembly");
+    assert!(gallery_has_template(world, title));
+    expect_selected_template(world, title);
 }
 #[then("its details identify an assembly with millimeter units")]
 fn its_assembly_details(world: &mut ApplicationWorld) {
@@ -268,6 +271,7 @@ fn its_assembly_details(world: &mut ApplicationWorld) {
 }
 #[given("the template root has no templates directly in it")]
 fn root_has_no_templates(world: &mut ApplicationWorld) {
+    basic_catalog::catalog_root_is_empty(world);
     world.expect_text("Templates");
 }
 #[when("I select Home in the chooser navigation bar")]
@@ -285,18 +289,25 @@ fn root_selected(world: &mut ApplicationWorld) {
 #[then("the gallery type sections contain no template entries")]
 fn empty_sections(world: &mut ApplicationWorld) {
     expect_group_headings(world, &["Part", "Assembly", "Drawing"]);
-    world.expect_no_text(METRIC_PART);
-    world.expect_no_text(METRIC_DRAWING);
+    let templates = basic_catalog::metric_part_titles(world);
+    assert!(
+        templates
+            .iter()
+            .all(|title| !gallery_has_template(world, title))
+    );
+    let drawing = basic_catalog::catalog_title(world, METRIC_DRAWING, "Standard Drawing");
+    let assembly = basic_catalog::catalog_title(world, METRIC_ASSEMBLY, "Standard Assembly");
+    assert!(!gallery_has_template(world, drawing));
+    assert!(!gallery_has_template(world, assembly));
 }
 #[then("the metric assembly template details remain displayed")]
 fn assembly_details_remain(world: &mut ApplicationWorld) {
-    world.expect_text(METRIC_ASSEMBLY);
     expect_assembly_details(world);
 }
 #[then("the metric template folder and its gallery are displayed again")]
 fn metric_folder_back(world: &mut ApplicationWorld) {
     metric_folder_selected(world);
-    world.expect_text(METRIC_PART);
+    metric_gallery(world);
 }
 #[given("the metric folder is selected and templates are grouped by type")]
 fn metric_grouped(world: &mut ApplicationWorld) {
@@ -328,7 +339,8 @@ fn medium_sized(world: &mut ApplicationWorld) {
 #[when("I double-click the standard metric part template")]
 #[when("the user double-clicks the standard metric part template")]
 fn double_click_part(world: &mut ApplicationWorld) {
-    let center = world.run(METRIC_PART).center().map(|value| value as i32);
+    let title = basic_catalog::catalog_title(world, METRIC_PART, "Standard (mm)");
+    let center = world.run(title).center().map(|value| value as i32);
     world.pump(super::super::pointer_click_events(center, 2));
     world.pump(Vec::new());
 }
@@ -390,8 +402,21 @@ fn name_sort_reverses_group_order_without_changing_selected_template() {
 
 #[given("the selected template folder contains templates")]
 fn selected_folder_contains_templates(world: &mut ApplicationWorld) {
-    world.expect_text(METRIC_PART);
-    world.expect_text(METRIC_ASSEMBLY);
+    metric_gallery(world);
+    other_group_templates(world);
+}
+
+fn other_group_templates(world: &mut ApplicationWorld) {
+    for (built_in, native) in [
+        (METRIC_ASSEMBLY, "Standard Assembly"),
+        (METRIC_DRAWING, "Standard Drawing"),
+    ] {
+        let title = basic_catalog::catalog_title(world, built_in, native);
+        assert!(
+            gallery_has_template(world, title),
+            "expected {title} in the gallery"
+        );
+    }
 }
 
 pub(super) fn expect_selected_template(world: &ApplicationWorld, title: &str) {
@@ -410,33 +435,6 @@ pub(super) fn expect_selected_template(world: &ApplicationWorld, title: &str) {
         world.text()
     );
 }
-#[test]
-fn arrow_and_endpoint_keys_navigate_the_selected_template_group() {
-    let mut world = ApplicationWorld::new();
-    let part = world.add_part();
-    world.key(ViewportPhysicalKey::N, true);
-    choose_template_view(&mut world, "Medium Icons");
-    world.click_text(METRIC_SHEET_METAL);
-    expect_selected_template(&world, METRIC_SHEET_METAL);
-    world.key(ViewportPhysicalKey::RightArrow, false);
-    expect_selected_template(&world, METRIC_PART);
-    world.key(ViewportPhysicalKey::LeftArrow, false);
-    expect_selected_template(&world, METRIC_SHEET_METAL);
-    world.key(ViewportPhysicalKey::End, false);
-    expect_selected_template(&world, METRIC_PART);
-    world.key(ViewportPhysicalKey::Home, false);
-    expect_selected_template(&world, METRIC_SHEET_METAL);
-    world.key(ViewportPhysicalKey::LeftArrow, false);
-    expect_selected_template(&world, METRIC_SHEET_METAL);
-    world.click_text("Display");
-    world.key(ViewportPhysicalKey::End, false);
-    expect_selected_template(&world, METRIC_SHEET_METAL);
-    world.key(ViewportPhysicalKey::Escape, false);
-    world.key(ViewportPhysicalKey::Escape, false);
-    assert_eq!(world.active_id(), part);
-    world.close();
-}
-
 #[given("the selected template folder is not the English folder")]
 fn selected_folder_is_not_english(world: &mut ApplicationWorld) {
     assert!(

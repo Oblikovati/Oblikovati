@@ -53,7 +53,7 @@ fn verify_catalog_folders(world: &mut ApplicationWorld) {
 }
 
 #[given("the catalog root has no direct template files")]
-fn catalog_root_is_empty(world: &mut ApplicationWorld) {
+pub(super) fn catalog_root_is_empty(world: &mut ApplicationWorld) {
     assert!(
         world
             .state()

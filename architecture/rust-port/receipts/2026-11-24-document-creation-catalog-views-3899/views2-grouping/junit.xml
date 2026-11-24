@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" package="testsuite/Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:53:03.731574949Z" time="27.666043207"><testcase name="Scenario: Toggle template grouping by document type: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature:60:3" time="27.666043207"><system-out><![CDATA[  Scenario: Toggle template grouping by document type
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And the native catalog contains metric and inch templates in their respective folders
+   ✔> And the catalog root has no direct template files
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the user presses Control+N to open the new-document template chooser
+   ✔  And the new-document template chooser is open in the MCAD Software
+   ✔  And the metric template folder is selected
+   ✔  And a standard metric part template's details are displayed
+   ✔  And templates are grouped by type
+   ✔  When the user clears Grouped by Type in the template display menu
+   ✔  Then the template gallery displays a flat collection without type group headings
+   ✔  And the details pane continues to display the metric part template information
+   ✔  When the user selects Grouped by Type in the template display menu
+   ✔  Then the gallery displays part, assembly and drawing group headings
+   ✔  And the details pane continues to display the metric part template information
+]]></system-out></testcase></testsuite></testsuites>

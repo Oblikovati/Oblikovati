@@ -93,3 +93,30 @@ fn down_scrolls_the_gallery_without_changing_its_selection() {
     assert_eq!(world.active_id(), original);
     world.close();
 }
+
+#[test]
+fn arrow_and_endpoint_keys_navigate_the_selected_template_group() {
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    world.key(ViewportPhysicalKey::N, true);
+    choose_template_view(&mut world, "Medium Icons");
+    world.click_text(METRIC_SHEET_METAL);
+    expect_selected_template(&world, METRIC_SHEET_METAL);
+    world.key(ViewportPhysicalKey::RightArrow, false);
+    expect_selected_template(&world, METRIC_PART);
+    world.key(ViewportPhysicalKey::LeftArrow, false);
+    expect_selected_template(&world, METRIC_SHEET_METAL);
+    world.key(ViewportPhysicalKey::End, false);
+    expect_selected_template(&world, METRIC_PART);
+    world.key(ViewportPhysicalKey::Home, false);
+    expect_selected_template(&world, METRIC_SHEET_METAL);
+    world.key(ViewportPhysicalKey::LeftArrow, false);
+    expect_selected_template(&world, METRIC_SHEET_METAL);
+    world.click_text("Display");
+    world.key(ViewportPhysicalKey::End, false);
+    expect_selected_template(&world, METRIC_SHEET_METAL);
+    world.key(ViewportPhysicalKey::Escape, false);
+    world.key(ViewportPhysicalKey::Escape, false);
+    assert_eq!(world.active_id(), part);
+    world.close();
+}

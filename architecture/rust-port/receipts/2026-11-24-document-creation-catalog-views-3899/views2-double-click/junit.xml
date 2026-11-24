@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" package="testsuite/Feature: Navigate the native template catalog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T19:56:03.860983496Z" time="19.860512735"><testcase name="Scenario: Create a part by double-clicking its template: tmp/oblikovati-ribbon-relocated.RcZVDl/current-document-creation-catalog-source/features/application/document-creation/document-creation-catalog-basics.feature:145:3" time="19.860512735"><system-out><![CDATA[  Scenario: Create a part by double-clicking its template
+   ✔> Given a fresh MCAD Software session loads `fixtures/cad/document-creation-native-candidate.opj` as its active project
+   ✔> And the native catalog contains metric and inch templates in their respective folders
+   ✔> And the catalog root has no direct template files
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with `Sketch1` visible in the MCAD Software
+   ✔  And the new-document template chooser is open
+   ✔  And the metric template folder is selected
+   ✔  When the user double-clicks the standard metric part template
+   ✔  Then the chooser closes
+   ✔  And a new part document becomes active
+   ✔  And its viewport contains no visible model geometry
+   ✔  And its model browser displays an origin and an end-of-part marker
+   ✔  And a new document tab is visible
+]]></system-out></testcase></testsuite></testsuites>
