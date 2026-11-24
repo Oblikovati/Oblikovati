@@ -14,6 +14,7 @@ impl<
         &mut self,
         document: u64,
         distance: &str,
+        second_distance: Option<&str>,
     ) -> Result<bool, String> {
         if self.files.workspace().active_document() != Some(document) {
             return Err(format!(
@@ -26,6 +27,12 @@ impl<
             .session(document)
             .map_err(|cause| cause.to_string())?;
         let error = oblikovati_automation::validate_extrude_distance(session.snapshot(), distance)
+            .and_then(|()| {
+                second_distance.map_or(Ok(()), |distance| {
+                    oblikovati_automation::validate_extrude_distance(session.snapshot(), distance)
+                        .map_err(|cause| oblikovati_api::Error(format!("Distance B: {cause}")))
+                })
+            })
             .err()
             .map(|cause| cause.to_string());
         self.extrusion_distance_validation = Some((
@@ -34,6 +41,7 @@ impl<
                 generation: session.generation(),
                 document,
                 distance: distance.into(),
+                second_distance: second_distance.map(str::to_owned),
                 error,
             },
         ));
@@ -46,9 +54,17 @@ impl<
         profile: i64,
         distance: &str,
         direction: oblikovati_gui::GuiExtrudeDirection,
+        second_distance: Option<&str>,
     ) -> Result<bool, String> {
         self.clear_extrusion_preview();
-        let request = self.extrusion_request(document, sketch, profile, distance, direction)?;
+        let request = self.extrusion_request(
+            document,
+            sketch,
+            profile,
+            distance,
+            direction,
+            second_distance,
+        )?;
         oblikovati_api::client::Client::new(self.document_host())
             .features()
             .add_feature(&request)
@@ -62,15 +78,25 @@ impl<
         profile: i64,
         distance: &str,
         direction: oblikovati_gui::GuiExtrudeDirection,
+        second_distance: Option<&str>,
     ) -> Result<oblikovati_api::wire::featureargs::Extrude, String> {
+        use oblikovati_gui::GuiExtrudeDirection::*;
+        if (direction == Asymmetric) != second_distance.is_some()
+            || second_distance.is_some_and(|value| value.trim().is_empty())
+        {
+            return Err(format!(
+                "extrusion {direction:?}: expected Distance B only in Asymmetric mode"
+            ));
+        }
         Ok(oblikovati_api::wire::featureargs::Extrude {
             sketch_index: self.extrusion_sketch_index(document, sketch)?,
             profile_index: profile,
             distance: distance.into(),
+            second_distance: second_distance.unwrap_or_default().into(),
             direction: match direction {
-                oblikovati_gui::GuiExtrudeDirection::Positive => "",
-                oblikovati_gui::GuiExtrudeDirection::Negative => "negative",
-                oblikovati_gui::GuiExtrudeDirection::Symmetric => "symmetric",
+                Positive | Asymmetric => "",
+                Negative => "negative",
+                Symmetric => "symmetric",
             }
             .into(),
             ..Default::default()

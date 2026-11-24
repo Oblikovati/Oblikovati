@@ -12,6 +12,8 @@ pub struct SketchPrismRecipe {
     pub reversed_normal: bool,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub centered_normal: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub second_depth: Option<DatumLength>,
 }
 impl SketchPrismDefinition {
     /// Capture only authored inputs; example: `serde_json::to_string(&definition.recipe())?`.
@@ -23,6 +25,7 @@ impl SketchPrismDefinition {
             displacement: self.displacement,
             reversed_normal: self.direction == SketchPrismDirection::Negative,
             centered_normal: self.direction == SketchPrismDirection::Symmetric,
+            second_depth: self.second_depth,
         }
     }
     /// Validate the saved version and sources before adoption; example: `SketchPrismDefinition::from_recipe(&recipe)?`.
@@ -36,20 +39,22 @@ impl SketchPrismDefinition {
                 ))),
             });
         }
-        let direction = match (recipe.reversed_normal, recipe.centered_normal) {
-            (false, false) => SketchPrismDirection::Positive,
-            (true, false) => SketchPrismDirection::Negative,
-            (false, true) => SketchPrismDirection::Symmetric,
-            (true, true) => {
-                return Err(SketchPrismError {
-                    sketch: recipe.sketch,
-                    cause: Box::new(SketchPrismCause::Definition(
-                        "prism recipe: expected only one normal direction".into(),
-                    )),
-                });
-            }
-        };
-        Self::new(recipe.sketch, recipe.selection.clone(), recipe.displacement)?
-            .with_direction(direction)
+        let definition = Self::new(recipe.sketch, recipe.selection.clone(), recipe.displacement)?;
+        match (
+            recipe.reversed_normal,
+            recipe.centered_normal,
+            recipe.second_depth,
+        ) {
+            (false, false, None) => Ok(definition),
+            (true, false, None) => definition.with_direction(SketchPrismDirection::Negative),
+            (false, true, None) => definition.with_direction(SketchPrismDirection::Symmetric),
+            (false, false, Some(depth)) => definition.with_second_depth(depth),
+            _ => Err(SketchPrismError {
+                sketch: recipe.sketch,
+                cause: Box::new(SketchPrismCause::Definition(
+                    "prism recipe: expected only one normal direction".into(),
+                )),
+            }),
+        }
     }
 }

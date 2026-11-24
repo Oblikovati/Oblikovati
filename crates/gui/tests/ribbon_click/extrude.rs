@@ -54,6 +54,7 @@ fn extrusion_dialog_accepts_keyboard_distance_and_emits_owner_action() {
             sketch: DocumentSketchId(4),
             profile: 0,
             distance: "size".into(),
+            second_distance: None,
             direction: Default::default(),
         }]
     );
@@ -87,6 +88,7 @@ fn extrusion_preview_button_and_escape_send_transient_actions() {
             sketch: DocumentSketchId(4),
             profile: 0,
             distance: "size".into(),
+            second_distance: None,
             direction: Default::default(),
         }))]
     );
@@ -140,6 +142,7 @@ fn validate_size(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
             generation: 1,
             document: 7,
             distance: "size".into(),
+            second_distance: None,
             error: None,
         });
     let actions = engine.frame(request).unwrap().actions;

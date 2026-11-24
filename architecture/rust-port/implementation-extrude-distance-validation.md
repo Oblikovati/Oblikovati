@@ -51,3 +51,17 @@ identities. The conditional sweep report requires a sketch-plane start and
 declines centered spans until it can bound the shifted start.
 
 See the [Symmetric direction receipt](receipts/2026-11-24-extrusion-symmetric-3893/README.md).
+
+## Asymmetric direction (#3893)
+
+Asymmetric extrusion uses a positive Distance A and a separate positive
+Distance B. Replay starts at `-B` along the sketch normal and sweeps by
+`A + B` through the same certified prism operation. The typed request uses
+`secondDistance` to select this mode. Both lengths have independent
+parameter reads, and both are available through the feature's scalar slots.
+Edit Feature can change either length or swap the pair in one history step.
+
+The desktop exposes Taper B as a disabled zero-angle field pending a
+validated tapered sweep. See the
+[Asymmetric direction receipt](receipts/2026-11-24-extrusion-asymmetric-3893/README.md)
+and [Martensite #463](https://github.com/Oblikovati/Martensite/issues/463).

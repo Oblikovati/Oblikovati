@@ -119,7 +119,7 @@ pub trait HeadWork: HeadSketchWork {
         ))
     }
     /// Apply an Extrude dialog request through the document command owner.
-    /// Example: `work.extrude_from_gui(document, sketch, 0, "10 mm", Default::default())?`.
+    /// Example: `work.extrude_from_gui(document, sketch, 0, "10 mm", Default::default(), None)?`.
     fn extrude_from_gui(
         &mut self,
         document: u64,
@@ -127,6 +127,7 @@ pub trait HeadWork: HeadSketchWork {
         profile: i64,
         distance: &str,
         _direction: oblikovati_gui::GuiExtrudeDirection,
+        _second_distance: Option<&str>,
     ) -> Result<bool, String> {
         Err(format!(
             "extrude document {document}, sketch {sketch:?}, profile {profile}, distance {distance:?}: expected a certified extrusion owner"
@@ -150,11 +151,12 @@ pub trait HeadWork: HeadSketchWork {
             "fillet {request:?}: expected a certified fillet owner"
         ))
     }
-    /// Validate a draft through the document owner; example: `work.validate_extrusion_distance(1, "10 mm")?`.
+    /// Validate a draft through the document owner; example: `work.validate_extrusion_distance(1, "10 mm", None)?`.
     fn validate_extrusion_distance(
         &mut self,
         document: u64,
         distance: &str,
+        _second_distance: Option<&str>,
     ) -> Result<bool, String> {
         Err(format!(
             "extrusion document {document}, distance {distance:?}: expected a document owner"

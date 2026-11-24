@@ -109,7 +109,7 @@ fn distance_edit_preview_uses_private_candidate_and_cancel_preserves_history() {
         .generation();
     assert!(
         owner
-            .preview_edited_extrusion(document, id, "20 mm")
+            .preview_edited_extrusion(document, id, "20 mm", None)
             .unwrap()
     );
     assert_eq!(
@@ -156,7 +156,7 @@ fn distance_edit_preview_uses_private_candidate_and_cancel_preserves_history() {
     );
     assert!(
         owner
-            .preview_edited_extrusion(document, id, "0 mm")
+            .preview_edited_extrusion(document, id, "0 mm", None)
             .is_err()
     );
     assert_eq!(
@@ -200,6 +200,7 @@ fn stale_extrusion_edit_is_rejected_without_changing_the_feature() {
         document,
         feature: oblikovati_model::feature::FeatureId(1),
         distance: "20 mm".into(),
+        second_distance: None,
     };
     assert!(
         owner

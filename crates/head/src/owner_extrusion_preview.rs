@@ -143,6 +143,7 @@ impl<
             preview.profile,
             &preview.distance,
             preview.direction,
+            preview.second_distance.as_deref(),
         )?;
         let presentation = self.preview_extrusion_from_gui(document, &request)?;
         let scene = oblikovati_viewport::ViewportScene::from_prism(
@@ -172,9 +173,10 @@ impl<
         document: u64,
         feature: u64,
         distance: &str,
+        second_distance: Option<&str>,
     ) -> Result<bool, String> {
         self.clear_extrusion_preview();
-        let scene = self.edited_extrusion_scene(document, feature, distance)?;
+        let scene = self.edited_extrusion_scene(document, feature, distance, second_distance)?;
         let generation = self
             .files
             .workspace()
@@ -190,6 +192,7 @@ impl<
         document: u64,
         feature: u64,
         distance: &str,
+        second_distance: Option<&str>,
     ) -> Result<oblikovati_viewport::ViewportScene, String> {
         self.require_browser_document(document)?;
         let session = self
@@ -197,7 +200,7 @@ impl<
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
-        let request = feature_distance_request(feature, distance);
+        let request = feature_distances_request(feature, distance, second_distance);
         session
             .preview_projected(
                 |candidate, _| {
@@ -244,8 +247,14 @@ impl<
                 request.generation
             ));
         }
-        self.edited_extrusion_scene(request.document, request.feature.0, &request.distance)?;
-        let edit = feature_distance_request(request.feature.0, &request.distance);
+        let second_distance = request.second_distance.as_deref();
+        self.edited_extrusion_scene(
+            request.document,
+            request.feature.0,
+            &request.distance,
+            second_distance,
+        )?;
+        let edit = feature_distances_request(request.feature.0, &request.distance, second_distance);
         oblikovati_api::client::Client::new(self.document_host())
             .features()
             .edit(&edit)
@@ -378,12 +387,26 @@ pub(super) fn feature_distance_request(
     feature: u64,
     distance: &str,
 ) -> oblikovati_api::wire::EditFeatureArgs {
+    feature_distances_request(feature, distance, None)
+}
+fn feature_distances_request(
+    feature: u64,
+    distance: &str,
+    second_distance: Option<&str>,
+) -> oblikovati_api::wire::EditFeatureArgs {
+    let mut scalars = vec![oblikovati_api::wire::ScalarEdit {
+        index: 0,
+        value: distance.into(),
+    }];
+    if let Some(second) = second_distance {
+        scalars.push(oblikovati_api::wire::ScalarEdit {
+            index: 1,
+            value: second.into(),
+        });
+    }
     oblikovati_api::wire::EditFeatureArgs {
         id: feature,
-        scalars: Some(vec![oblikovati_api::wire::ScalarEdit {
-            index: 0,
-            value: distance.into(),
-        }]),
+        scalars: Some(scalars),
         ..Default::default()
     }
 }

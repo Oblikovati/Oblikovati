@@ -61,6 +61,7 @@ pub struct GuiModelBrowser {
 pub struct GuiExtrudeEditSeed {
     pub sketch: DocumentSketchId,
     pub distance: String,
+    pub second_distance: Option<String>,
     pub direction: crate::GuiExtrudeDirection,
 }
 /// Authored radius and document generation for a Fillet edit.

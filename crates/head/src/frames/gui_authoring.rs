@@ -284,6 +284,7 @@ mod tests {
             sketch: oblikovati_model::document_sketch::DocumentSketchId(4),
             profile: 0,
             distance: "size".into(),
+            second_distance: None,
             direction: Default::default(),
         };
         let cause = apply(&mut crate::work_idle::IdleHeadWork, &action).unwrap_err();

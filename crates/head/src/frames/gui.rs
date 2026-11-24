@@ -388,6 +388,7 @@ pub(super) fn dispatch_gui_action(
             profile,
             distance,
             direction,
+            second_distance,
         } = action
     {
         window.reject_extrusion(
@@ -398,6 +399,7 @@ pub(super) fn dispatch_gui_action(
                 profile: *profile,
                 distance: distance.clone(),
                 direction: *direction,
+                second_distance: second_distance.clone(),
             },
             cause,
         );

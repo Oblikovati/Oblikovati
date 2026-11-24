@@ -202,9 +202,16 @@ macro_rules! forward_owner_view_work {
             profile: i64,
             distance: &str,
             direction: oblikovati_gui::GuiExtrudeDirection,
+            second_distance: Option<&str>,
         ) -> Result<bool, String> {
-            self.$owner
-                .extrude_from_gui(document, sketch, profile, distance, direction)
+            self.$owner.extrude_from_gui(
+                document,
+                sketch,
+                profile,
+                distance,
+                direction,
+                second_distance,
+            )
         }
         fn extrusion_preview_from_gui(
             &mut self,
@@ -216,8 +223,10 @@ macro_rules! forward_owner_view_work {
             &mut self,
             document: u64,
             distance: &str,
+            second_distance: Option<&str>,
         ) -> Result<bool, String> {
-            self.$owner.validate_extrusion_distance(document, distance)
+            self.$owner
+                .validate_extrusion_distance(document, distance, second_distance)
         }
         fn preview_extrusion_edit(
             &mut self,

@@ -122,16 +122,26 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::PreviewExtrude(request) => {
             owner.extrusion_preview_from_gui(request.as_ref())
         }
-        GuiShellAction::ValidateExtrudeDistance { document, distance } => {
-            owner.validate_extrusion_distance(*document, distance)
-        }
+        GuiShellAction::ValidateExtrudeDistance {
+            document,
+            distance,
+            second_distance,
+        } => owner.validate_extrusion_distance(*document, distance, second_distance.as_deref()),
         GuiShellAction::Extrude {
             document,
             sketch,
             profile,
             distance,
             direction,
-        } => owner.extrude_from_gui(*document, *sketch, *profile, distance, *direction),
+            second_distance,
+        } => owner.extrude_from_gui(
+            *document,
+            *sketch,
+            *profile,
+            distance,
+            *direction,
+            second_distance.as_deref(),
+        ),
         GuiShellAction::ToggleSketchFormat(format) => owner.toggle_sketch_format_from_gui(*format),
         GuiShellAction::DeleteSketchSelection => owner.delete_sketch_selection_from_gui(),
         GuiShellAction::Dimension(action) => owner.dimension_tool_from_gui(action),

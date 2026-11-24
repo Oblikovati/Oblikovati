@@ -190,25 +190,52 @@ fn populate_browser<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             else {
                 return None;
             };
-            let distance = match definition.displacement()[2] {
-                oblikovati_model::feature::work_geometry::DatumLength::Constant(value) => {
-                    format!("{value} cm")
-                }
-                oblikovati_model::feature::work_geometry::DatumLength::Parameter(id) => {
-                    snapshot.parameters.get(id)?.name.clone()
-                }
+            let two_sided = definition.second_depth().is_some();
+            let expression =
+                |source| prism_distance_expression(snapshot, feature, source, two_sided);
+            let distance = expression(definition.displacement()[2])?;
+            let second_distance = match definition.second_depth() {
+                Some(source) => Some(expression(source)?),
+                None => None,
             };
             Some((
                 feature.id(),
                 oblikovati_gui::GuiExtrudeEditSeed {
                     sketch: definition.sketch(),
                     distance,
+                    second_distance,
                     direction: definition.direction(),
                 },
             ))
         })
         .collect();
     Ok(())
+}
+fn prism_distance_expression(
+    snapshot: &oblikovati_model::history::DocumentSnapshot,
+    feature: &oblikovati_model::feature::AuthoredFeature<
+        oblikovati_model::feature::part::PartFeatureDefinition,
+    >,
+    source: oblikovati_model::feature::work_geometry::DatumLength,
+    two_sided: bool,
+) -> Option<String> {
+    use oblikovati_model::feature::work_geometry::DatumLength;
+    match source {
+        DatumLength::Constant(value) => Some(format!("{value} cm")),
+        DatumLength::Parameter(id) => {
+            let parameter = snapshot.parameters.get(id)?;
+            // A/B swapping needs their expressions, without turning two owned lengths into a cycle.
+            if two_sided
+                && feature
+                    .owned_scalars()
+                    .iter()
+                    .any(|binding| binding.parameter == id)
+            {
+                return Some(parameter.source.clone());
+            }
+            Some(parameter.name.clone())
+        }
+    }
 }
 fn browser_rectangular_patterns(
     snapshot: &oblikovati_model::history::DocumentSnapshot,

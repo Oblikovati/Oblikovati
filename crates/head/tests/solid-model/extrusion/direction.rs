@@ -32,11 +32,37 @@ fn choose_symmetric(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 
+#[when("Asymmetric is selected in Direction")]
+fn choose_asymmetric(world: &mut ApplicationWorld) {
+    click_text_native(world, "Asymmetric");
+    world.pump(Vec::new());
+}
+
+#[then("Distance B and Taper B controls appear")]
+fn asymmetric_controls_appear(world: &mut ApplicationWorld) {
+    world.run_in_window("Extrude", "DistanceB");
+    world.run_in_window("Extrude", "TaperB");
+    assert_eq!(preview_depth(world), [-0.5, 1.], "5 mm on B and 10 mm on A");
+}
+
 #[then("the preview extends on both sides of the source plane")]
 fn symmetric_preview_spans_the_sketch_plane(world: &mut ApplicationWorld) {
     assert!(world.state().extrude_preview_active);
     assert_eq!(feature_count(world), 0);
-    let depth = world
+    assert_eq!(
+        preview_depth(world),
+        [-0.5, 0.5],
+        "10 mm total depth about the XY plane"
+    );
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
+    let windows = super::super::diagnostics::window_occlusions();
+    assert!(super::super::solid_visibility::visible_preview_fill(
+        &capture, &windows
+    ));
+}
+
+fn preview_depth(world: &mut ApplicationWorld) -> [f32; 2] {
+    world
         .app()
         .window
         .scene_triangles
@@ -45,13 +71,52 @@ fn symmetric_preview_spans_the_sketch_plane(world: &mut ApplicationWorld) {
         .map(|point| point[2])
         .fold([f32::INFINITY, f32::NEG_INFINITY], |[lo, hi], z| {
             [lo.min(z), hi.max(z)]
-        });
-    assert_eq!(depth, [-0.5, 0.5], "10 mm total depth about the XY plane");
-    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
-    let windows = super::super::diagnostics::window_occlusions();
-    assert!(super::super::solid_visibility::visible_preview_fill(
-        &capture, &windows
-    ));
+        })
+}
+
+#[test]
+fn native_asymmetric_flip_changes_both_distances_and_one_history_step() {
+    use oblikovati_api::{client::Client, wire::BodyPhysicalPropertiesArgs};
+    let mut world = ApplicationWorld::new();
+    default_direction(&mut world);
+    choose_asymmetric(&mut world);
+    asymmetric_controls_appear(&mut world);
+    click_text_native(&mut world, "OK");
+    assert_eq!(feature_count(&mut world), 1);
+    super::acceptance::open_extrusion_editor(&mut world);
+    replace_second_distance(&mut world, "0");
+    assert!(!world.state().extrude_preview_active);
+    assert!(!world.run_is_enabled("OK"));
+    replace_second_distance(&mut world, "6");
+    assert_eq!(preview_depth(&mut world), [-0.6, 1.]);
+    click_text_native(&mut world, "Flip A/B");
+    world.pump(Vec::new());
+    assert_eq!(preview_depth(&mut world), [-1., 0.6]);
+    click_text_native(&mut world, "OK");
+    let client = Client::new(world.app().owner.document_host());
+    let request = BodyPhysicalPropertiesArgs {
+        body_index: 0,
+        density_g_cm3: 1.,
+        accuracy: String::new(),
+    };
+    let body = client.body().physical_properties(&request).unwrap();
+    assert!((body.centroid_z_mm + 2.).abs() < 1e-8);
+    client.transactions().undo().unwrap();
+    let body = client.body().physical_properties(&request).unwrap();
+    assert!((body.centroid_z_mm - 2.5).abs() < 1e-8);
+    drop(client);
+    world.close();
+}
+
+fn replace_second_distance(world: &mut ApplicationWorld, value: &str) {
+    use super::super::x11_input;
+    let label = world.run_in_window("Extrude", "DistanceB");
+    let position = [label.minimum[0] as i32 - 30, label.center()[1] as i32];
+    x11_input::click(position);
+    world.pump(Vec::new());
+    x11_input::press_control_a();
+    x11_input::type_digits(value);
+    world.pump(Vec::new());
 }
 
 #[then("the preview changes its side or extent relative to Default direction")]

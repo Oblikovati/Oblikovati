@@ -227,7 +227,7 @@ fn save_and_reopen(world: &mut ApplicationWorld, path: &std::path::Path) {
         .unwrap();
 }
 
-fn open_extrusion_editor(world: &mut ApplicationWorld) {
+pub(super) fn open_extrusion_editor(world: &mut ApplicationWorld) {
     let position = world.run("Extrusion1").center().map(|value| value as i32);
     world.right_click(position);
     world.pump(Vec::new());

@@ -127,8 +127,16 @@ macro_rules! desktop_extrusion_work {
             profile: i64,
             distance: &str,
             direction: oblikovati_gui::GuiExtrudeDirection,
+            second_distance: Option<&str>,
         ) -> Result<bool, String> {
-            self.create_extrusion_from_gui(document, sketch, profile, distance, direction)
+            self.create_extrusion_from_gui(
+                document,
+                sketch,
+                profile,
+                distance,
+                direction,
+                second_distance,
+            )
         }
         fn extrusion_preview_from_gui(
             &mut self,
@@ -154,8 +162,9 @@ macro_rules! desktop_extrusion_work {
             &mut self,
             document: u64,
             distance: &str,
+            second_distance: Option<&str>,
         ) -> Result<bool, String> {
-            self.validate_extrusion_distance_from_gui(document, distance)
+            self.validate_extrusion_distance_from_gui(document, distance, second_distance)
         }
         fn preview_extrusion_edit(
             &mut self,
@@ -164,7 +173,12 @@ macro_rules! desktop_extrusion_work {
             if !self.feature_edit_is_current(request)? {
                 return Ok(false);
             }
-            self.preview_edited_extrusion(request.document, request.feature.0, &request.distance)
+            self.preview_edited_extrusion(
+                request.document,
+                request.feature.0,
+                &request.distance,
+                request.second_distance.as_deref(),
+            )
         }
         fn commit_extrusion_edit(
             &mut self,

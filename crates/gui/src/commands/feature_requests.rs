@@ -16,6 +16,7 @@ pub struct GuiExtrudePreview {
     pub sketch: oblikovati_model::document_sketch::DocumentSketchId,
     pub profile: i64,
     pub distance: String,
+    pub second_distance: Option<String>,
     pub direction: crate::GuiExtrudeDirection,
 }
 /// One generation-scoped face and size for a straight-hole draft.
@@ -66,6 +67,7 @@ pub struct GuiExtrudeEditRequest {
     pub document: u64,
     pub feature: oblikovati_model::feature::FeatureId,
     pub distance: String,
+    pub second_distance: Option<String>,
 }
 
 /// Sheet-space display geometry and any model-resolution failure.

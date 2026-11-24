@@ -43,10 +43,9 @@ impl SketchPrismDefinition {
         let mut displacement = self.resolve_displacement(snapshot)?;
         self.validate_normal_source(displacement[2])
             .map_err(|cause| self.decline(cause))?;
-        if self.direction == SketchPrismDirection::Negative {
-            displacement[2] = -displacement[2];
-        }
-        let sweep_start = self.sweep_start(sketch.plane, displacement[2])?;
+        let (offset, depth) = self.normal_span(snapshot, displacement[2])?;
+        displacement[2] = depth;
+        let sweep_start = self.sweep_start(sketch.plane, offset)?;
         Ok(ResolvedSketchPrism {
             sketch,
             sweep_start,
@@ -54,14 +53,45 @@ impl SketchPrismDefinition {
             displacement,
         })
     }
-    fn sweep_start(&self, plane: SketchPlane, depth: f64) -> Result<SketchPlane, SketchPrismError> {
-        if self.direction != SketchPrismDirection::Symmetric {
+    fn normal_span(
+        &self,
+        snapshot: &DocumentSnapshot,
+        depth: f64,
+    ) -> Result<(f64, f64), SketchPrismError> {
+        if let Some(source) = self.second_depth {
+            let second = source.resolve(&snapshot.parameters).map_err(|cause| {
+                self.decline(SketchPrismCause::Length {
+                    axis: 3,
+                    source,
+                    cause,
+                })
+            })?;
+            validation::require_second_depth(second).map_err(|cause| self.decline(cause))?;
+            let span = depth + second;
+            if !span.is_finite() {
+                return Err(self.decline(SketchPrismCause::Definition(format!(
+                    "prism depths {depth:?} and {second:?}: expected a finite total span"
+                ))));
+            }
+            return Ok((-second, span));
+        }
+        Ok(match self.direction {
+            SketchPrismDirection::Negative => (0., -depth),
+            SketchPrismDirection::Symmetric => (-depth / 2., depth),
+            _ => (0., depth),
+        })
+    }
+    fn sweep_start(
+        &self,
+        plane: SketchPlane,
+        offset: f64,
+    ) -> Result<SketchPlane, SketchPrismError> {
+        if offset == 0. {
             return Ok(plane);
         }
         let mut start = plane.recipe();
         let normal = plane.normal();
-        start.origin =
-            std::array::from_fn(|axis| normal[axis].mul_add(-depth / 2., start.origin[axis]));
+        start.origin = std::array::from_fn(|axis| normal[axis].mul_add(offset, start.origin[axis]));
         SketchPlane::from_recipe(start, plane.options())
             .map_err(|cause| self.decline(SketchPrismCause::Sketch(cause)))
     }
@@ -107,6 +137,7 @@ impl SketchPrismDefinition {
         let keys = std::iter::once(FeatureReadKey::Sketch(self.sketch.0)).chain(
             self.displacement
                 .into_iter()
+                .chain(self.second_depth)
                 .filter_map(DatumLength::parameter)
                 .map(FeatureReadKey::Parameter),
         );

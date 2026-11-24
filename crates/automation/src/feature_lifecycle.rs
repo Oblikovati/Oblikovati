@@ -9,7 +9,9 @@ use oblikovati_model::{
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 mod blend_edit;
+mod prism_edit;
 pub use blend_edit::{apply_chamfer_distance_edit, apply_fillet_radius_edit};
+pub use prism_edit::apply_feature_distance_edit;
 
 /// Native feature lifecycle calls that operate on the active part history.
 pub const FEATURE_LIFECYCLE_METHODS: [&str; 5] = [
@@ -137,64 +139,6 @@ fn edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
         },
     )?;
     Ok(id)
-}
-
-/// Edit one prism distance on a caller-owned candidate, with no geometry or history side effects.
-/// Example: `apply_feature_distance_edit(&mut candidate, &request)?` before preview.
-pub fn apply_feature_distance_edit(
-    snapshot: &mut DocumentSnapshot,
-    request: &EditFeatureArgs,
-) -> Result<(), Error> {
-    require_empty_repicks(request)?;
-    let value = single_distance_edit(request)?;
-    let distance = crate::extrusion::distance(snapshot, value)?;
-    if let Some(owned) = owned_prism_distance(snapshot, request.id)? {
-        if matches!(distance, oblikovati_model::feature::work_geometry::DatumLength::Parameter(id) if id == owned)
-        {
-            return Ok(());
-        }
-        snapshot
-            .parameters
-            .set_scalar_expression(owned, value.trim(), Dimension::Length)
-            .map_err(api_error)?;
-        snapshot.parameters.model_value(owned).map_err(api_error)?;
-        return crate::model_states::record_parameter_edits(snapshot);
-    }
-    let definition = revised_prism(snapshot, request.id, distance)?;
-    let reads = definition.reads(snapshot).map_err(api_error)?;
-    snapshot
-        .work_geometry
-        .replace(
-            FeatureId(request.id),
-            PartFeatureDefinition::SketchPrism(Box::new(definition)),
-            reads,
-        )
-        .map_err(api_error)?;
-    Ok(())
-}
-fn owned_prism_distance(snapshot: &DocumentSnapshot, id: u64) -> Result<Option<u64>, Error> {
-    let (feature, _) = locate(&snapshot.work_geometry, id)?;
-    if !matches!(feature.definition(), PartFeatureDefinition::SketchPrism(_)) {
-        return Ok(None);
-    }
-    Ok(feature
-        .owned_scalars()
-        .iter()
-        .find(|binding| binding.role == crate::extrusion::DISTANCE_ROLE)
-        .map(|binding| binding.parameter))
-}
-fn revised_prism(
-    snapshot: &DocumentSnapshot,
-    id: u64,
-    distance: oblikovati_model::feature::work_geometry::DatumLength,
-) -> Result<oblikovati_model::feature::sketch_prism::SketchPrismDefinition, Error> {
-    let (feature, _) = locate(&snapshot.work_geometry, id)?;
-    let PartFeatureDefinition::SketchPrism(previous) = feature.definition() else {
-        return Err(Error(format!(
-            "features.edit id {id}: expected a sketch prism feature"
-        )));
-    };
-    previous.with_normal_source(distance).map_err(api_error)
 }
 
 fn require_empty_repicks(request: &EditFeatureArgs) -> Result<(), Error> {
@@ -340,30 +284,56 @@ pub(crate) fn feature_scalars(
     feature: &AuthoredFeature<PartFeatureDefinition>,
     snapshot: &DocumentSnapshot,
 ) -> Result<Option<Vec<FeatureScalar>>, Error> {
-    let (length, label) = match feature.definition() {
-        PartFeatureDefinition::SketchPrism(definition) => {
-            (definition.displacement()[2], "Distance")
-        }
-        PartFeatureDefinition::Fillet(definition) => (definition.radius(), "Radius"),
-        PartFeatureDefinition::Chamfer(definition) => (definition.distance(), "Distance"),
+    let (length, label, second) = match feature.definition() {
+        PartFeatureDefinition::SketchPrism(definition) => (
+            definition.displacement()[2],
+            if definition.second_depth().is_some() {
+                "Distance A"
+            } else {
+                "Distance"
+            },
+            definition.second_depth(),
+        ),
+        PartFeatureDefinition::Fillet(definition) => (definition.radius(), "Radius", None),
+        PartFeatureDefinition::Chamfer(definition) => (definition.distance(), "Distance", None),
         _ => return Ok(None),
     };
+    let mut scalars = vec![length_scalar(snapshot, feature.id(), 0, length, label)?];
+    if let Some(length) = second {
+        scalars.push(length_scalar(
+            snapshot,
+            feature.id(),
+            1,
+            length,
+            "Distance B",
+        )?);
+    }
+    Ok(Some(scalars))
+}
+
+fn length_scalar(
+    snapshot: &DocumentSnapshot,
+    feature: FeatureId,
+    index: i64,
+    length: oblikovati_model::feature::work_geometry::DatumLength,
+    label: &str,
+) -> Result<FeatureScalar, Error> {
     let distance = length.resolve(&snapshot.parameters).map_err(api_error)?;
     let units = snapshot.parameters.units();
     let value = units.to_preferred(Quantity::new(distance, Dimension::Length));
     if !value.is_finite() {
         return Err(Error(format!(
             "feature {} distance {distance}: expected a finite display value",
-            feature.id().0
+            feature.0
         )));
     }
-    Ok(Some(vec![FeatureScalar {
-        index: 0,
+    Ok(FeatureScalar {
+        index,
         label: label.into(),
         unit: units.preferred_name(Dimension::Length).into(),
         value,
         integer: false,
-    }]))
+    })
 }
 
 fn checked_index(id: u64, index: usize) -> Result<i64, Error> {

@@ -122,7 +122,10 @@ impl<'s, O: TransactionObserver> SessionConditionalSketch<'s, O> {
         constants: [Option<[f64; 2]>; 3],
     ) -> Result<ConditionalPrismDisplacement<'e, 's, O>, String> {
         let definition = self.prism_definition(feature)?;
-        if definition.direction() == SketchPrismDirection::Symmetric {
+        if matches!(
+            definition.direction(),
+            SketchPrismDirection::Symmetric | SketchPrismDirection::Asymmetric
+        ) {
             return Err(format!(
                 "feature {feature:?}: conditional displacement expects a sweep from the sketch plane"
             ));

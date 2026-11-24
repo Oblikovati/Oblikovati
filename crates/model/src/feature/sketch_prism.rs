@@ -31,6 +31,7 @@ pub struct SketchPrismDefinition {
     selection: SketchPrismSelection,
     displacement: [DatumLength; 3],
     direction: SketchPrismDirection,
+    second_depth: Option<DatumLength>,
 }
 /// Placement of the extrusion span relative to the source sketch plane.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -39,6 +40,7 @@ pub enum SketchPrismDirection {
     Positive,
     Negative,
     Symmetric,
+    Asymmetric,
 }
 impl SketchPrismDefinition {
     /// Validate authored identities and scalar sources before adoption.
@@ -53,6 +55,7 @@ impl SketchPrismDefinition {
             selection,
             displacement,
             direction: SketchPrismDirection::Positive,
+            second_depth: None,
         };
         validation::validate_sources(&definition).map_err(|cause| definition.decline(cause))?;
         Ok(definition)
@@ -82,6 +85,15 @@ impl SketchPrismDefinition {
     pub fn direction(&self) -> SketchPrismDirection {
         self.direction
     }
+    /// Read Distance B when present; example: `definition.second_depth()` for the edit panel.
+    pub fn second_depth(&self) -> Option<DatumLength> {
+        self.second_depth
+    }
+    /// Set the opposite-side depth; example: `definition.with_second_depth(DatumLength::Constant(0.5))?`.
+    pub fn with_second_depth(mut self, depth: DatumLength) -> Result<Self, SketchPrismError> {
+        self.second_depth = Some(depth);
+        self.with_direction(SketchPrismDirection::Asymmetric)
+    }
     /// Replace the authored depth without changing its direction.
     /// Example: `definition.with_normal_source(DatumLength::Parameter(3))?`.
     pub fn with_normal_source(&self, depth: DatumLength) -> Result<Self, SketchPrismError> {
@@ -95,6 +107,11 @@ impl SketchPrismDefinition {
         self.sketch == other.sketch
             && self.selection == other.selection
             && self.direction == other.direction
+            && match (self.second_depth, other.second_depth) {
+                (None, None) => true,
+                (Some(a), Some(b)) => a.same_recipe(b),
+                _ => false,
+            }
             && self
                 .displacement
                 .into_iter()

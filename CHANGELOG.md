@@ -4,7 +4,7 @@
 
 ### Added
 
-- Added Flipped and Symmetric directions for new solid extrusions in the desktop and typed API. (#3893)
+- Added Flipped, Symmetric, and Asymmetric directions for new solid extrusions in the desktop and typed API. (#3893)
 
 - Added analytic solid-edge lengths to the Part Measure panel. (#3967)
 

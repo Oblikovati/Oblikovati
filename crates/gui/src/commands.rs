@@ -389,6 +389,7 @@ pub enum GuiShellAction {
         sketch: oblikovati_model::document_sketch::DocumentSketchId,
         profile: i64,
         distance: String,
+        second_distance: Option<String>,
         direction: crate::GuiExtrudeDirection,
     },
     /// Show or clear a transient extrusion preview.
@@ -397,6 +398,7 @@ pub enum GuiShellAction {
     ValidateExtrudeDistance {
         document: u64,
         distance: String,
+        second_distance: Option<String>,
     },
     DeleteSketchSelection,
     ToggleSketchFormat(oblikovati_model::sketch::SketchCurveFormat),
@@ -469,6 +471,7 @@ pub struct GuiExtrudeDistanceValidation {
     pub generation: u64,
     pub document: u64,
     pub distance: String,
+    pub second_distance: Option<String>,
     pub error: Option<String>,
 }
 mod parameter_mutation;

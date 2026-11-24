@@ -350,8 +350,7 @@ impl GuiShellAction {
             }
             Self::OpenFillet => blend_enabled::create(state),
             Self::OpenChamfer => blend_enabled::create(state),
-            Self::PreviewFillet(None) => true,
-            Self::PreviewChamfer(None) => true,
+            Self::PreviewFillet(None) | Self::PreviewChamfer(None) => true,
             Self::OpenFilletEdit(feature) => blend_enabled::open(state, *feature),
             Self::OpenChamferEdit(feature) => blend_enabled::open_chamfer(state, *feature),
             Self::PreviewFilletEdit(request) | Self::EditFilletRadius(request) => {
@@ -418,6 +417,7 @@ impl GuiShellAction {
                 sketch: preview.sketch,
                 profile: preview.profile,
                 distance: preview.distance.clone(),
+                second_distance: preview.second_distance.clone(),
                 direction: preview.direction,
             }
             .enabled(state),

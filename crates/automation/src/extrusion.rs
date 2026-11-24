@@ -23,6 +23,7 @@ mod replay;
 use replay::{ExtrudeProjection, adopt_extrude_candidate, prepare_owned_prefix};
 
 pub(super) const DISTANCE_ROLE: &str = "distance";
+pub(super) const SECOND_DISTANCE_ROLE: &str = "distance-b";
 
 /// A current named result prefix for certified extrusion validation.
 pub type ExtrudeReplayPrefix = oblikovati_session::OwnedPartReplay;
@@ -112,6 +113,7 @@ pub struct PreparedExtrusion {
     name: String,
     definition: SketchPrismDefinition,
     owned_distance: Option<String>,
+    owned_second_distance: Option<String>,
 }
 impl PreparedExtrusion {
     /// Create the feature on a caller-owned candidate; example: `prepared.create(candidate, ids)?`.
@@ -120,38 +122,53 @@ impl PreparedExtrusion {
         candidate: &mut DocumentSnapshot,
         ids: &mut RecipeReservations<'_>,
     ) -> Result<FeatureId, Error> {
-        let Some(source) = self.owned_distance else {
-            return candidate
-                .create_sketch_prism(&self.name, self.definition, ids)
-                .map_err(api_error);
-        };
-        create_with_owned_distance(candidate, ids, &self.name, self.definition, &source)
+        let mut definition = self.definition;
+        let first = self
+            .owned_distance
+            .as_deref()
+            .map(|source| insert_owned_distance(candidate, ids, source))
+            .transpose()?;
+        let second = self
+            .owned_second_distance
+            .as_deref()
+            .map(|source| insert_owned_distance(candidate, ids, source))
+            .transpose()?;
+        if let Some(parameter) = first {
+            definition = definition
+                .with_normal_source(DatumLength::Parameter(parameter))
+                .map_err(api_error)?;
+        }
+        if let Some(parameter) = second {
+            definition = definition
+                .with_second_depth(DatumLength::Parameter(parameter))
+                .map_err(api_error)?;
+        }
+        let feature = candidate
+            .create_sketch_prism(&self.name, definition, ids)
+            .map_err(api_error)?;
+        for (role, parameter) in [(DISTANCE_ROLE, first), (SECOND_DISTANCE_ROLE, second)] {
+            if let Some(parameter) = parameter {
+                candidate
+                    .work_geometry
+                    .assign_scalar_owner(feature, role, parameter)
+                    .map_err(api_error)?;
+            }
+        }
+        Ok(feature)
     }
 }
 
-fn create_with_owned_distance(
+fn insert_owned_distance(
     candidate: &mut DocumentSnapshot,
     ids: &mut RecipeReservations<'_>,
-    name: &str,
-    definition: SketchPrismDefinition,
     source: &str,
-) -> Result<FeatureId, Error> {
+) -> Result<u64, Error> {
     let parameter = ids.allocate().map_err(api_error)?;
     candidate
         .parameters
         .insert_auto_model_scalar(parameter, source, Dimension::Length)
         .map_err(api_error)?;
-    let definition = definition
-        .with_normal_source(DatumLength::Parameter(parameter))
-        .map_err(api_error)?;
-    let feature = candidate
-        .create_sketch_prism(name, definition, ids)
-        .map_err(api_error)?;
-    candidate
-        .work_geometry
-        .assign_scalar_owner(feature, DISTANCE_ROLE, parameter)
-        .map_err(api_error)?;
-    Ok(feature)
+    Ok(parameter)
 }
 /// Resolve a canonical Extrude request against current geometry; example: `prepare_extrusion(snapshot, backend, &input)?`.
 pub fn prepare_extrusion(
@@ -182,12 +199,22 @@ pub fn prepare_extrusion(
         "symmetric" => SketchPrismDirection::Symmetric,
         _ => SketchPrismDirection::Positive,
     };
-    let definition = definition.with_direction(direction).map_err(api_error)?;
+    let second = (!input.second_distance.is_empty())
+        .then(|| positive_length(snapshot, &input.second_distance, "extrude Distance B"))
+        .transpose()?;
+    let owned_second_distance = matches!(second, Some(DatumLength::Constant(_)))
+        .then(|| input.second_distance.trim().to_owned());
+    let definition = match second {
+        Some(depth) => definition.with_second_depth(depth),
+        None => definition.with_direction(direction),
+    }
+    .map_err(api_error)?;
     let name = next_name(snapshot)?;
     Ok(PreparedExtrusion {
         name,
         definition,
         owned_distance,
+        owned_second_distance,
     })
 }
 
@@ -265,8 +292,7 @@ fn require_supported(input: &Extrude) -> Result<(), Error> {
             )));
         }
     }
-    if !input.second_distance.is_empty()
-        || !input.taper.is_empty()
+    if !input.taper.is_empty()
         || !input.to_face.is_empty()
         || input.to_face_geom.is_some()
         || !input.from_face.is_empty()
@@ -276,7 +302,7 @@ fn require_supported(input: &Extrude) -> Result<(), Error> {
             .as_ref()
             .is_some_and(|seeds| !seeds.is_empty())
     {
-        return Err(Error("extrude extent inputs: expected one positive distance without taper, target faces, or profile seeds".into()));
+        return Err(Error("extrude extent inputs: expected positive distances without taper, target faces, or profile seeds".into()));
     }
     Ok(())
 }

@@ -17,6 +17,7 @@ pub(crate) struct ExtrudeDialog {
     sketch: Option<DocumentSketchId>,
     profile: i32,
     distance: String,
+    second_distance: String,
     direction: GuiExtrudeDirection,
     previewed: bool,
     attempted: Option<crate::GuiExtrudePreview>,
@@ -65,6 +66,7 @@ impl ExtrudeDialog {
         self.sketch = Some(seed.sketch);
         self.profile = 0;
         self.distance = seed.distance.clone();
+        self.second_distance = seed.second_distance.clone().unwrap_or_default();
         self.direction = seed.direction;
         self.edit_feature = Some(feature);
         self.attempted = None;
@@ -89,6 +91,7 @@ impl ExtrudeDialog {
             });
             self.profile = 0;
             self.distance.clear();
+            self.second_distance = "5 mm".into();
             self.direction = GuiExtrudeDirection::Positive;
             self.edit_feature = None;
         }
@@ -117,6 +120,7 @@ impl ExtrudeDialog {
             self.sketch = Some(sketch);
             self.profile = 0;
             self.distance = "10 mm".into();
+            self.second_distance = "5 mm".into();
             self.direction = GuiExtrudeDirection::Positive;
             self.attempted = None;
             self.edit_feature = None;
@@ -133,7 +137,7 @@ impl ExtrudeDialog {
         let Some(document) = self.document else {
             return;
         };
-        Self::fit_dockable(ui, "Extrude", [640., 280.], [420., 200.]);
+        Self::fit_dockable(ui, "Extrude", [640., 280.], [420., 266.]);
         let mut open = true;
         Self::dockable_window(ui, "Extrude", &mut open).build(|| {
             let disabled_sketch = ui.begin_disabled(self.edit_feature.is_some());
@@ -146,6 +150,13 @@ impl ExtrudeDialog {
             drop(disabled_sketch);
             edited |= ui.input_text("Distance A", &mut self.distance).build();
             edited |= direction::draw(ui, &mut self.direction, self.edit_feature.is_some());
+            if self.direction == GuiExtrudeDirection::Asymmetric {
+                edited |= direction::draw_second_distance(
+                    ui,
+                    &mut self.distance,
+                    &mut self.second_distance,
+                );
+            }
             if edited {
                 self.commit_error = None;
             }
@@ -159,6 +170,7 @@ impl ExtrudeDialog {
                 actions.push(GuiShellAction::ValidateExtrudeDistance {
                     document,
                     distance: self.distance.clone(),
+                    second_distance: self.active_second_distance().map(str::to_owned),
                 });
             }
             if let Some(error) = validation.and_then(|result| result.error.as_ref()) {
@@ -202,6 +214,7 @@ impl ExtrudeDialog {
                         document,
                         feature,
                         distance: request.distance,
+                        second_distance: request.second_distance,
                     },
                 ));
             } else {
@@ -226,6 +239,7 @@ impl ExtrudeDialog {
             sketch: self.sketch?,
             profile: i64::from(self.profile),
             distance: self.distance.clone(),
+            second_distance: self.active_second_distance().map(str::to_owned),
             direction: self.direction,
         })
     }
@@ -283,6 +297,7 @@ impl ExtrudeDialog {
             sketch: request.sketch,
             profile: request.profile,
             distance: request.distance.clone(),
+            second_distance: request.second_distance.clone(),
             direction: request.direction,
         }
     }
@@ -295,6 +310,7 @@ impl ExtrudeDialog {
             document: request.document,
             feature: self.edit_feature?,
             distance: request.distance.clone(),
+            second_distance: request.second_distance.clone(),
         })
     }
     fn preview_control(
@@ -361,10 +377,14 @@ impl ExtrudeDialog {
         state: &'a GuiCommandState,
         document: u64,
     ) -> Option<&'a crate::GuiExtrudeDistanceValidation> {
-        state
-            .extrude_distance_validation
-            .as_ref()
-            .filter(|result| result.document == document && result.distance == self.distance)
+        state.extrude_distance_validation.as_ref().filter(|result| {
+            result.document == document
+                && result.distance == self.distance
+                && result.second_distance.as_deref() == self.active_second_distance()
+        })
+    }
+    fn active_second_distance(&self) -> Option<&str> {
+        (self.direction == GuiExtrudeDirection::Asymmetric).then_some(self.second_distance.as_str())
     }
     pub(crate) fn reject(&mut self, request: &crate::GuiExtrudePreview, cause: &str) {
         if self.submitted.as_ref() != Some(request) {
@@ -384,103 +404,5 @@ impl ExtrudeDialog {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::{GuiAuthoringContext, GuiBrowserSketch, GuiModelBrowser};
-    fn part() -> GuiCommandState {
-        GuiCommandState {
-            document: Some(7),
-            authoring: GuiAuthoringContext::Part,
-            extrude_available: true,
-            browser: Some(GuiModelBrowser {
-                sketches: vec![GuiBrowserSketch {
-                    id: DocumentSketchId(4),
-                    inspection: Ok(Default::default()),
-                    name: "Sketch".into(),
-                    visible: true,
-                    consumed_by: None,
-                    line_style: Default::default(),
-                    dimensions_shown: false,
-                }],
-                ..Default::default()
-            }),
-            ..Default::default()
-        }
-    }
-    #[test]
-    fn stale_extrusion_closes_before_docking_without_consuming_a_new_request() {
-        let mut dialog = ExtrudeDialog::default();
-        dialog.set_document(Some(7));
-        let mut state = part();
-        state.document = Some(8);
-        dialog.sync_before_docking(&state);
-        assert!(dialog.document.is_none());
-        dialog.requested = true;
-        dialog.sync_before_docking(&state);
-        assert!(dialog.requested);
-    }
-    #[test]
-    fn draft_is_bound_to_the_open_document() {
-        let mut state = part();
-        let mut dialog = ExtrudeDialog {
-            requested: true,
-            ..Default::default()
-        };
-        dialog.synchronize(&state);
-        assert_eq!(dialog.document, Some(7));
-        assert_eq!(dialog.sketch, Some(DocumentSketchId(4)));
-        dialog.distance = "size".into();
-        state.document = Some(8);
-        dialog.synchronize(&state);
-        assert_eq!(dialog.document, None);
-        assert_eq!(start_action(&state), GuiShellAction::OpenExtrude);
-        state.browser.as_mut().unwrap().sketches.clear();
-        assert_eq!(
-            start_action(&state),
-            GuiShellAction::ChooseSketchPlaneForExtrude
-        );
-    }
-    #[test]
-    fn extrusion_requires_capability_current_sketch_and_nonempty_distance() {
-        let mut state = part();
-        let action = GuiShellAction::Extrude {
-            document: 7,
-            sketch: DocumentSketchId(4),
-            profile: 0,
-            distance: "size".into(),
-            direction: GuiExtrudeDirection::Positive,
-        };
-        assert!(action.dispatchable(&state));
-        state.extrude_available = false;
-        assert!(!action.dispatchable(&state));
-        state.extrude_available = true;
-        state.transaction_open = true;
-        assert!(!action.dispatchable(&state));
-        state.transaction_open = false;
-        state.document = Some(8);
-        assert!(!action.dispatchable(&state));
-    }
-    #[test]
-    fn edit_seed_keeps_its_source_and_new_extrusion_clears_edit_mode() {
-        let mut state = part();
-        let feature = oblikovati_model::feature::FeatureId(9);
-        state.browser.as_mut().unwrap().extrusion_edits.insert(
-            feature,
-            crate::GuiExtrudeEditSeed {
-                sketch: DocumentSketchId(4),
-                distance: "size".into(),
-                direction: GuiExtrudeDirection::Symmetric,
-            },
-        );
-        let mut dialog = ExtrudeDialog::default();
-        dialog.open_edit(&state, feature);
-        assert_eq!(dialog.edit_feature, Some(feature));
-        assert_eq!(dialog.distance, "size");
-        assert_eq!(dialog.direction, GuiExtrudeDirection::Symmetric);
-        dialog.requested = true;
-        dialog.synchronize(&state);
-        assert_eq!(dialog.edit_feature, None);
-        assert!(dialog.distance.is_empty());
-        assert_eq!(dialog.direction, GuiExtrudeDirection::Positive);
-    }
-}
+#[path = "extrude_dialog_tests.rs"]
+mod tests;

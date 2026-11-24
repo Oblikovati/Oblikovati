@@ -15,6 +15,27 @@ pub(super) fn validate_sources(definition: &SketchPrismDefinition) -> Result<(),
     if let DatumLength::Constant(normal) = definition.displacement[2] {
         definition.validate_normal_source(normal)?;
     }
+    if (definition.direction == SketchPrismDirection::Asymmetric)
+        != definition.second_depth.is_some()
+    {
+        return Err(SketchPrismCause::Definition(
+            "asymmetric prism: expected Distance B only for a two-sided sweep".into(),
+        ));
+    }
+    if let Some(depth) = definition.second_depth {
+        validate_scalar_source(depth, 3)?;
+        if let DatumLength::Constant(value) = depth {
+            require_second_depth(value)?;
+        }
+    }
+    Ok(())
+}
+pub(super) fn require_second_depth(value: f64) -> Result<(), SketchPrismCause> {
+    if value <= 0. || !value.is_finite() {
+        return Err(SketchPrismCause::Definition(format!(
+            "prism Distance B {value:?}: expected a finite positive length"
+        )));
+    }
     Ok(())
 }
 /// Validate one shared directed closed-profile selection before a sweep operation.

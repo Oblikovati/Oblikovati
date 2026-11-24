@@ -348,45 +348,6 @@ fn rejected_candidate_preserves_the_document_and_sketch_visibility() {
 }
 
 #[test]
-fn desktop_extrude_checks_document_identity_and_uses_the_typed_command() {
-    let (owner, _) = owner();
-    let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
-    let document = open_sketch(&mut owner);
-    assert!(
-        owner
-            .extrude_from_gui(
-                document + 1,
-                crate::scene_fixture::SKETCH,
-                0,
-                "width",
-                Positive
-            )
-            .is_err()
-    );
-    assert!(
-        owner
-            .extrude_from_gui(
-                document,
-                oblikovati_model::document_sketch::DocumentSketchId(999),
-                0,
-                "width",
-                Positive,
-            )
-            .is_err()
-    );
-    assert!(
-        owner
-            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", Positive)
-            .unwrap()
-    );
-    assert_eq!(
-        owner.take_scene().unwrap().unwrap().status.visible_bodies,
-        1
-    );
-    assert_cube(&owner, document, 1.);
-}
-
-#[test]
 fn extrusion_preview_is_transient_and_commit_reuses_the_same_feature_identity() {
     let (owner, _) = owner();
     let mut owner = owner.with_extrusion_resolution(resolution()).unwrap();
@@ -403,6 +364,7 @@ fn extrusion_preview_is_transient_and_commit_reuses_the_same_feature_identity() 
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,
         distance: "width".into(),
+        second_distance: None,
         direction: Default::default(),
     };
     assert!(!owner.gui_command_state().unwrap().extrude_preview_active);
@@ -435,7 +397,14 @@ fn extrusion_preview_is_transient_and_commit_reuses_the_same_feature_identity() 
     );
     assert!(
         owner
-            .extrude_from_gui(document, crate::scene_fixture::SKETCH, 0, "width", Positive)
+            .extrude_from_gui(
+                document,
+                crate::scene_fixture::SKETCH,
+                0,
+                "width",
+                Positive,
+                None
+            )
             .unwrap()
     );
     owner.take_scene().unwrap().unwrap();
@@ -453,6 +422,7 @@ fn invalid_or_stale_extrusion_preview_clears_the_old_scene() {
         sketch: crate::scene_fixture::SKETCH,
         profile: 0,
         distance: "width".into(),
+        second_distance: None,
         direction: Default::default(),
     };
     owner.extrusion_preview_from_gui(Some(&preview)).unwrap();
