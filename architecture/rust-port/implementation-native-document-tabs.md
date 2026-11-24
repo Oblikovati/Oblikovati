@@ -28,6 +28,11 @@ native regression suite also checks camera isolation, model pixels, resize,
 keyboard commands and browser editing. The full local gate and real MCPBridge
 mouse journey are required before publication.
 
+The native Home preview and the pinned tab scenarios use the same pixel check
+below the rendered thumbnail caption. The 2× placement test gives the Part tab
+room in a saved workspace with the asset panels closed. See the
+[native tab preview checks](receipts/2026-11-24-document-tab-previews-4078/README.md).
+
 Remaining Go parity includes per-document camera restoration, document-close
 confirmation choices, docking and a dedicated content-area viewport layout.
 These tabs do not complete the Extrude or cube journey.

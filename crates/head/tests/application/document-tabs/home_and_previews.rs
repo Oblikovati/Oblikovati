@@ -35,7 +35,7 @@ fn expect_home_hidden() {
         "expected no Home workspace"
     );
 }
-fn expect_preview_above(world: &mut ApplicationWorld, label: &str) {
+pub(super) fn expect_preview_above(world: &mut ApplicationWorld, label: &str) {
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);
     let (position, size) = window_geometry(PREVIEW).expect("expected a tab preview");
     let tab = world.expect_tab(label);

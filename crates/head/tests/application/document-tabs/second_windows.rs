@@ -233,7 +233,7 @@ fn hidden_tabs_survive_closing_a_window_and_show_the_survivor_preview() {
 
 #[test]
 fn scaled_preview_avoids_the_tab_when_ribbon_is_minimized() {
-    let mut world = ApplicationWorld::new();
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     let part = world.add_part();
     super::super::ribbon_display::click_display_menu(&mut world);
     world.click_text("Minimize to Tabs");
