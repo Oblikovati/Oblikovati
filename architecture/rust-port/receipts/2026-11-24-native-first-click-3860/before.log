@@ -1,0 +1,16 @@
+
+running 1 test
+
+thread 'native::gui_loop::tests::first_click_without_motion_is_captured_and_dispatched_once' (1105220) panicked at crates/head/src/native/gui_loop/../../../tests/gui_loop_clock.rs:55:5:
+assertion `left == right` failed
+  left: []
+ right: [Save]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test native::gui_loop::tests::first_click_without_motion_is_captured_and_dispatched_once ... FAILED
+
+failures:
+
+failures:
+    native::gui_loop::tests::first_click_without_motion_is_captured_and_dispatched_once
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 3.40s

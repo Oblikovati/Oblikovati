@@ -2,6 +2,12 @@
 use super::*;
 use oblikovati_gui::GuiShellAction;
 use oblikovati_viewport::{ViewportButton, ViewportInput};
+#[allow(unsafe_code)]
+#[path = "../../../test-utilities/rust/drawn_windows.rs"]
+mod drawn_windows;
+#[allow(dead_code, unsafe_code)]
+#[path = "../../../test-utilities/rust/quick_access_icons.rs"]
+mod quick_access_icons;
 fn gui_step(gui: &mut NativeGui, tick: u32, event: Option<&ViewportEvent>) -> HeadGuiUpdate {
     gui.step(
         GUI_TICK * tick,
@@ -20,11 +26,11 @@ fn gui_step_for_document(gui: &mut NativeGui, tick: u32, document: u64) -> HeadG
     gui.step(GUI_TICK * tick, [640, 480], None, &commands, None)
         .unwrap()
 }
-fn click_event(pressed: bool) -> ViewportEvent {
+fn click_event(position: [i32; 2], pressed: bool) -> ViewportEvent {
     ViewportEvent::Input(ViewportInput::Button {
         button: ViewportButton::Left,
         pressed,
-        position: [111, 45],
+        position,
         modifiers: Default::default(),
     })
 }
@@ -42,15 +48,34 @@ fn fit_area_requires_a_current_nonempty_layout() {
 #[test]
 fn first_click_without_motion_is_captured_and_dispatched_once() {
     let mut gui = NativeGui::new(None).unwrap();
-    gui_step(&mut gui, 0, None);
-    let down = gui_step(&mut gui, 1, Some(&click_event(true)));
+    let commands = GuiCommandState {
+        document: Some(7),
+        document_type: Some(oblikovati_api::types::DOCUMENT_PART),
+        authoring: oblikovati_gui::GuiAuthoringContext::Part,
+        documents: vec![oblikovati_api::wire::DocumentInfo {
+            id: 7,
+            name: "Part1".into(),
+            visible: true,
+            ..Default::default()
+        }],
+        ..Default::default()
+    };
+    let mut step = |tick, event: Option<&ViewportEvent>| {
+        gui.step(GUI_TICK * tick, [640, 480], event, &commands, None)
+            .unwrap()
+    };
+    step(0, None);
+    let save = quick_access_icons::standard_icon("Save").expect("expected a rendered Save icon");
+    assert_eq!(save.alpha, 255);
+    let position = save.center.map(|axis| axis.round() as i32);
+    let down = step(1, Some(&click_event(position, true)));
     assert!(down.consumed_input);
-    let up = gui_step(&mut gui, 2, Some(&click_event(false)));
+    let up = step(2, Some(&click_event(position, false)));
     assert!(up.consumed_input);
     let mut actions = down.actions;
     actions.extend(up.actions);
     for tick in 3..8 {
-        actions.extend(gui_step(&mut gui, tick, None).actions);
+        actions.extend(step(tick, None).actions);
     }
     assert_eq!(actions, [GuiShellAction::Save]);
 }
@@ -229,10 +254,10 @@ fn idle_sketch_motion_gate_rejects_pointer_and_gui_interactions() {
     gui.document_area = Some(([640, 480], Some([100, 100, 600, 400])));
     assert!(gui.allows_ready_sketch_motion([300, 200]));
     assert!(!gui.allows_ready_sketch_motion([99, 200]));
-    let down = click_event(true);
+    let down = click_event([111, 45], true);
     gui.pointer.consumed(Some(&down), Default::default());
     assert!(!gui.allows_ready_sketch_motion([300, 200]));
-    let up = click_event(false);
+    let up = click_event([111, 45], false);
     gui.pointer.consumed(Some(&up), Default::default());
     gui.last_capture.popup = true;
     assert!(!gui.allows_ready_sketch_motion([300, 200]));
