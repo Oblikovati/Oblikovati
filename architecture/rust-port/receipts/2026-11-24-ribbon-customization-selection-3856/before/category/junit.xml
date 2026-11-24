@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T12:57:33.140963289Z" time="9.068992612"><testcase name="Scenario: Return to a command category after selecting a source row: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1099:3" time="9.068992612"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Return to a command category after selecting a source row
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✘  And the Ribbon customization dialog shows All Commands and an empty Part 3D Model target
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1101:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

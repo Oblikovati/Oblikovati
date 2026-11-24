@@ -227,8 +227,13 @@ impl Draft {
         self.selected = None;
         self.target_extra.clear();
         self.target_extent = None;
-        self.source = None;
-        self.source_extra.clear();
+        let mut additional = std::mem::take(&mut self.source_extra);
+        additional.retain(|command| self.available(*command));
+        self.source = self.source.filter(|command| self.available(*command));
+        if self.source.is_none() && !additional.is_empty() {
+            self.source = Some(additional.remove(0));
+        }
+        self.source_extra = additional;
         self.source_extent = None;
     }
     pub fn available(&self, command: Command) -> bool {
@@ -237,7 +242,13 @@ impl Draft {
     }
     pub fn set_category(&mut self, category: Category) {
         self.category = category;
-        self.source = None;
+        self.source = self.source.map(|command| {
+            if self.available(command) {
+                command
+            } else {
+                Command::Separator
+            }
+        });
         self.source_extra.clear();
         self.source_extent = None;
     }

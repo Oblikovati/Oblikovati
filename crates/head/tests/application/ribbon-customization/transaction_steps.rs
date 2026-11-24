@@ -3,6 +3,7 @@
 use super::*;
 
 #[given("the source category is All Commands")]
+#[given("the command category is \"All Commands\"")]
 pub(super) fn all_commands(world: &mut ApplicationWorld) {
     world.run_in_window("Customize", "AllCommands");
 }
@@ -40,7 +41,7 @@ pub(super) fn target_row_runs(world: &ApplicationWorld) -> Vec<&diagnostics::Ren
     rows
 }
 
-fn target_label(world: &ApplicationWorld) -> &str {
+pub(super) fn target_label(world: &ApplicationWorld) -> &str {
     let panel = world.run_in_window("Customize", "Custompanel");
     let x = panel.minimum[0];
     let y = panel.center()[1];
@@ -175,13 +176,15 @@ fn select_tools(world: &mut ApplicationWorld) {
 }
 
 pub(super) fn choose_target(world: &mut ApplicationWorld, tab: &str) {
-    let current = target_label(world).to_owned();
-    click_in_customize(world, &current);
+    if !(world.shows("Part | Annotate") && world.shows("Part | Manage")) {
+        let current = target_label(world).to_owned();
+        click_in_customize(world, &current);
+    }
     world.click_text(&format!("Part | {tab}"));
     world.pump(Vec::new());
     assert_eq!(
         target_label(world).trim_end_matches('*'),
-        format!("Part|{tab}")
+        super::super::world::squeezed(&format!("Part | {tab}"))
     );
 }
 

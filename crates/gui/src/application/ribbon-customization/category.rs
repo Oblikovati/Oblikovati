@@ -28,6 +28,7 @@ impl RibbonCustomization {
                 .build();
             if clicked || (enter && index == self.category_cursor) {
                 self.draft.set_category(category);
+                self.scroll_source_to_selection = self.draft.source.is_some();
                 ui.close_current_popup();
             }
         }

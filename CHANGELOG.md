@@ -279,6 +279,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Preserved available ribbon command selections when switching targets and selected the separator when a source filter hid the selected command. (#3856)
+
 - Returned to Ribbon Customization with an error when importing invalid XML, preserving staged edits. (#3856)
 
 - Selected command rows on secondary click in both Ribbon Customization lists. (#3856)

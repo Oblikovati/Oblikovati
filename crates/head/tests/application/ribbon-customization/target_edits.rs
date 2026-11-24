@@ -162,6 +162,7 @@ fn double_click_source_separator(world: &mut ApplicationWorld) {
 }
 
 #[then("the custom panel list contains one separator")]
+#[then("the Part Tools custom panel list contains one separator")]
 #[then("one separator row remains in the custom panel list")]
 fn single_separator(world: &mut ApplicationWorld) {
     assert_eq!(target_rows(world), ["<Separator>"]);
@@ -179,6 +180,7 @@ fn reusable_separator(world: &mut ApplicationWorld) {
 }
 
 #[when("the user double-clicks the first separator row in the custom panel list")]
+#[when("the user double-clicks the separator in the custom panel list")]
 fn double_click_first_target_separator(world: &mut ApplicationWorld) {
     let at = target_row(world, "<Separator>");
     world.double_click(at);

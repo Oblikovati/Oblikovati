@@ -4,6 +4,8 @@ use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
 #[path = "row_selection.rs"]
 mod row_selection;
+#[path = "source_continuity.rs"]
+mod source_continuity;
 use row_selection::shift_down;
 #[path = "cancel_dialog.rs"]
 mod cancel_dialog;
@@ -113,6 +115,8 @@ fn customization_all_commands(world: &mut ApplicationWorld) {
     assert!(world.window_text("Customize").contains("AllCommands"));
 }
 #[when("the user chooses \"Sketch Tab\" as the command category")]
+#[when("the user selects \"Sketch Tab\" as the command category")]
+#[when("the user changes the command source to Sketch Tab")]
 #[given("the command category is \"Sketch Tab\"")]
 fn select_sketch_category(world: &mut ApplicationWorld) {
     click_in_customize(world, "AllCommands");
@@ -196,6 +200,7 @@ fn customization_closed(_world: &mut ApplicationWorld) {
 #[then("no User Commands panel is displayed on the Tools ribbon")]
 #[then("no User Commands panel appears on the Tools ribbon")]
 #[then("no User Commands panel is visible on the Tools ribbon")]
+#[then("no custom panel appears on the Tools ribbon")]
 #[then("the \"User Commands\" panel is no longer visible on the active ribbon")]
 fn no_user_commands(world: &mut ApplicationWorld) {
     world.expect_no_text("User Commands");

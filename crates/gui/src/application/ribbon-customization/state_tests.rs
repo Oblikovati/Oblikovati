@@ -2,6 +2,41 @@
 use super::*;
 
 #[test]
+fn switching_targets_retains_only_available_source_selections() {
+    let mut draft = Draft::default();
+    draft.open(RibbonTab::Manage);
+    draft.reset_source_selection(Command::Sketches);
+    draft.add();
+    draft.switch(RibbonTab::Tools);
+    draft.reset_source_selection(Command::Sketches);
+    draft.extend_source(1);
+    draft.switch(RibbonTab::Model);
+    assert_eq!(draft.source, Some(Command::Sketches));
+    assert_eq!(draft.source_extra, [Command::Annotations]);
+    draft.switch(RibbonTab::Manage);
+    assert_eq!(draft.source, Some(Command::Annotations));
+    assert!(draft.source_extra.is_empty());
+    draft.add();
+    assert_eq!(draft.rows()[1].command, Command::Annotations);
+}
+
+#[test]
+fn changing_categories_replaces_a_hidden_selection_with_the_separator() {
+    let mut draft = Draft::default();
+    draft.open(RibbonTab::Model);
+    draft.set_category(Category::View);
+    assert_eq!(draft.source, None);
+    draft.reset_source_selection(Command::Sketches);
+    draft.set_category(Category::All);
+    assert_eq!(draft.source, Some(Command::Sketches));
+    draft.set_category(Category::Sketch);
+    assert_eq!(draft.source, Some(Command::Separator));
+    draft.set_category(Category::All);
+    draft.add();
+    assert_eq!(draft.rows()[0].command, Command::Separator);
+}
+
+#[test]
 fn zoom_commands_are_sorted_in_view_with_stable_ids() {
     let mut draft = Draft::default();
     draft.open(RibbonTab::Tools);

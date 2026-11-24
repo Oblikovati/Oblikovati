@@ -13,18 +13,12 @@ fn manage_is_empty(world: &mut ApplicationWorld) {
 }
 
 #[when("the user opens the custom panel target selector")]
+#[when("the user opens the target selector")]
 #[when("the user clicks the target selector")]
 #[when("the user clicks the target selector again")]
 fn open_target_selector(world: &mut ApplicationWorld) {
-    let text = world.window_text("Customize");
-    let target = if text.contains("Part|Tools*") {
-        "Part|Tools*"
-    } else if text.contains("Part|Manage") {
-        "Part|Manage"
-    } else {
-        "Part|Tools"
-    };
-    click_in_customize(world, target);
+    let target = transaction_steps::target_label(world).to_owned();
+    click_in_customize(world, &target);
 }
 
 #[then("the target list is not open")]

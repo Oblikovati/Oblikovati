@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:02:11.431705395Z" time="31.49718781"><testcase name="Scenario: Switch between the source and target selectors: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1129:3" time="31.49718781"><system-out><![CDATA[  Scenario: Switch between the source and target selectors
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an empty Part Tools target
+   ✔  And there are no pending customization changes
+   ✔  When the user opens the command-source list
+   ✔  And the user clicks the target selector
+   ✔  Then the command-source list closes
+   ✔  And the target list is not open
+   ✔  When the user clicks the target selector again
+   ✔  Then the target list opens with Part Tools selected
+   ✔  When the user clicks the command-source selector
+   ✔  Then the target list closes
+   ✔  And the command-source list is not open
+   ✔  When the user clicks the command-source selector again
+   ✔  Then the command-source list opens with All Commands selected
+   ✔  When the user clicks Close
+   ✔  Then the command-source list closes
+   ✔  And the customization dialog remains open
+   ✔  When the user clicks Close again
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

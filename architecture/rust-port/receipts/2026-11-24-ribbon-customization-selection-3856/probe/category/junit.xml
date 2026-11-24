@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T12:59:49.187816539Z" time="38.373913251"><testcase name="Scenario: Return to a command category after selecting a source row: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1099:3" time="38.373913251"><failure type="Step Panicked" message="Step panicked. Captured output: assertion failed: transaction_steps::target_rows(world).contains(&amp;&quot;&lt;Separator&gt;&quot;)"/><system-out><![CDATA[  Scenario: Return to a command category after selecting a source row
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And the Ribbon customization dialog shows All Commands and an empty Part 3D Model target
+   ✔  When the user selects "2D Sketches" in the available commands list
+   ✔  And the user changes the command source to Sketch Tab
+   ✔  And the user returns the command source to All Commands
+   ✔  And the user clicks the add command button
+   ✘  Then a "<Separator>" row appears in the target list
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1106:5
+      Matched: crates/head/src/../tests/application/ribbon-customization/source_continuity.rs:35:1
+      Step panicked. Captured output: assertion failed: transaction_steps::target_rows(world).contains(&"<Separator>")
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nReady\nRibbonDisplay\nv\nv\n...\nPart1\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\nextruded<Primary>\nPart1<Primary>*\nDocuments\nX\nY\nZ\nCustomize\nRibbon\nCustomizeusercommands\nAvailablecommands\nAllCommands\nName\n>\n<\nCustompanel\nPart|3DModel\nName\nLarge\nText\nUp\nDown\nKeyboard\nMarkingMenu\nOK\nCancel\nApply\nClose\nImport\nExport\n<Separator>\n2DSketches\n3DAnnotations\n3-PointArc\n3-PointCircle\n3-PtCenterRect.\n3-PtRect.\nCenterArc\nCenterRect.\nCircle(CenterPoint)\nCoincident",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

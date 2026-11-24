@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:02:13.374894299Z" time="37.399282266"><testcase name="Scenario: Commit a separator as the only custom panel item: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:755:3" time="37.399282266"><system-out><![CDATA[  Scenario: Commit a separator as the only custom panel item
+   ✔  Given a part is active in the MCAD Software with the Tools ribbon visible
+   ✔  And the Part Tools custom panel list is empty
+   ✔  When the user opens ribbon customization with All Commands selected
+   ✔  And the user double-clicks "<Separator>" in the available list
+   ✔  Then the custom panel list contains one separator
+   ✔  When the user clicks OK
+   ✔  Then no User Commands panel is visible on the Tools ribbon
+   ✔  When the user reopens ribbon customization
+   ✔  Then the Part Tools custom panel list contains one separator
+   ✔  When the user double-clicks the separator in the custom panel list
+   ✔  And the user clicks OK
+   ✔  Then no User Commands panel is visible on the Tools ribbon
+]]></system-out></testcase></testsuite></testsuites>
