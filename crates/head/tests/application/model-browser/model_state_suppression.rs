@@ -218,8 +218,15 @@ fn native_state_switch_updates_scene_and_suppression_row() {
 
 #[cfg(target_os = "linux")]
 fn native_double_click(world: &mut ApplicationWorld, label: &str) {
+    use super::super::x11_input;
+
+    x11_input::focus_window();
+    world.pump(Vec::new());
     let point = diagnostics::pointer_pixels(world.run(label).center());
-    super::super::x11_input::click(point);
-    super::super::x11_input::click(point);
+    x11_input::move_pointer(point);
+    world.pump(Vec::new());
+    let point = diagnostics::pointer_pixels(world.run(label).center());
+    x11_input::click(point);
+    x11_input::click(point);
     world.pump(Vec::new());
 }

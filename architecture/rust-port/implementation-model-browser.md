@@ -123,6 +123,11 @@ keep the saved solid Part through table edits, model-state switches and
 row insertion. The published fixture sets the extrusion's suppression
 through the native table before checking each member's result.
 
+The standalone native test focuses the application and processes pointer
+motion over the model-state row before sending both X11 clicks. This setup
+also works with a window manager when earlier tests used the same display.
+See the [grouped input regression](receipts/2026-11-24-model-state-x11-focus-3896/README.md).
+
 The [earlier published feature-wide run](receipts/2026-11-24-model-browser-full-3896/README.md)
 recorded 54 passes, 44 scenarios that stopped at undefined steps, and two
 Favorites failures. It used the application revision before these fixes.
