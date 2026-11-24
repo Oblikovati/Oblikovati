@@ -67,6 +67,11 @@ pub(super) fn window_popup_open(window: &str, popup: &str) -> bool {
         .iter()
         .any(|entry| entry.PopupId == id)
 }
+pub(super) fn command_popup_open() -> bool {
+    let context =
+        unsafe { sys::igGetCurrentContext().as_ref() }.expect("expected a live GUI context");
+    context.OpenPopupStack.Size > 0
+}
 /// Read a window's dock node; example: compare two visible tool windows after a drag.
 pub(super) fn window_dock_id(title: &str) -> Option<u32> {
     let title = CString::new(title).ok()?;

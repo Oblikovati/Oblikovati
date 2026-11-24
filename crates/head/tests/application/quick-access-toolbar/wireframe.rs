@@ -96,21 +96,12 @@ fn tooltip_identifies(world: &mut ApplicationWorld, command: String) {
 
 #[then("the part remains active without a command dialog")]
 fn part_remains_without_dialog(world: &mut ApplicationWorld) {
-    assert!(world.state().document.is_some());
-    for title in [
-        "Create New File",
-        "Open",
-        "Save As",
-        "Projects",
-        "Material Browser",
-        "Appearance Browser",
-        "Parameters",
-    ] {
-        assert!(
-            diagnostics::window_geometry(title).is_none(),
-            "unexpected {title} dialog"
-        );
-    }
+    let part = world.previous_document.expect("expected the fixture Part");
+    world.expect_active_by_id(part);
+    assert!(
+        !diagnostics::command_popup_open(),
+        "unexpected command popup"
+    );
 }
 
 #[when("the user moves the pointer to an empty area of the viewport")]
