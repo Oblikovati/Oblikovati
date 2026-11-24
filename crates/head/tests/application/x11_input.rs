@@ -41,6 +41,14 @@ pub(super) fn click(position: [i32; 2]) {
     send_click(&connection, root, x, y, 1);
 }
 
+pub(super) fn control_click(position: [i32; 2]) {
+    let (connection, root, x, y) = pointer_target(position);
+    let control = keyboard_keycode(&connection, 0xffe3);
+    send_key_sequence(&connection, root, &[(KEY_PRESS_EVENT, control)]);
+    send_click(&connection, root, x, y, 1);
+    send_key_sequence(&connection, root, &[(KEY_RELEASE_EVENT, control)]);
+}
+
 /// Change the real left-button state; example: `left_button(at, true)` starts a drag.
 pub(super) fn left_button(position: [i32; 2], pressed: bool) {
     let (connection, root, x, y) = pointer_target(position);

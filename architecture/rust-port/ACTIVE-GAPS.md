@@ -18,12 +18,11 @@ BDD receipt. Check [STATUS.md](STATUS.md) and the ledger before using counts.
 - Cube replay: current headless and native frame-loop checks passed; they do
   not establish OS input, solve precision, or verified acceptance. See
   `receipts/2026-11-16-cube-current-3857/` (#3857, #3928, #3978).
-- Extrusion undo and redo: the native diagnostic passed three of four scenario
-  steps. Named edge lengths are available through the typed API; selecting and
-  measuring two edges in the viewport remains open (#3967). See
-  `receipts/2026-11-15-extrusion-history-diagnostic/`. General analytic curve
-  picking is blocked by missing interior extrema in
-  [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
+- Extrusion undo and redo: all six steps of pinned `extrusion-06` passed,
+  including two analytic edge lengths from X11 viewport input (#3967). See
+  [the solid-edge Measure receipt](receipts/2026-11-24-solid-edge-measure-3967/README.md).
+  The scenario uses straight edges. General analytic curve picking is tracked
+  in [Martensite #462](https://github.com/Oblikovati/Martensite/issues/462).
 - Extrusion entry: the new metric part and origin-plane selection scenario
   and the following preview, cancel/reopen and zero distance recovery scenarios
   passed on the current pin (#3927, #3931, #3929); their receipts are now

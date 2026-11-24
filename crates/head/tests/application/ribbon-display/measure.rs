@@ -17,7 +17,7 @@ fn select_measure(world: &mut ApplicationWorld) {
 #[then("the Measure panel remains open")]
 fn measure_open(world: &mut ApplicationWorld) {
     assert!(window_geometry("Measure").is_some());
-    world.expect_text("Select a solid face to measure its area");
+    world.expect_text("Select a solid face or edge to measure");
 }
 #[when("the user selects the View tab")]
 fn select_view(world: &mut ApplicationWorld) {

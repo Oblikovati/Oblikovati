@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added analytic solid-edge lengths to the Part Measure panel. (#3967)
+
 - Added Zoom, Zoom All, Zoom Selected, and Zoom Window to ribbon customization. (#3856)
 
 - Added Show Panels instructions and F1 help to the ribbon panel selector. (#3856)

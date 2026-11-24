@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Measure a selected solid face using its analytic Martensite report.
+//! Measure named solid faces and edges using analytic Martensite reports.
 use super::*;
 use oblikovati_gui::GuiMeasurePanel;
 use oblikovati_model::feature::FeatureId;
 
-const SELECT_FACE: &str = "Select a solid face to measure its area";
+const SELECT_GEOMETRY: &str = "Select a solid face or edge to measure";
 
 pub(super) struct PartMeasure {
     pub(super) document: u64,
@@ -16,7 +16,7 @@ impl PartMeasure {
         if self.generation == generation {
             return self.rows.clone();
         }
-        vec![SELECT_FACE.into()]
+        vec![SELECT_GEOMETRY.into()]
     }
 }
 impl<
@@ -34,15 +34,9 @@ impl<
             .workspace()
             .active_document()
             .ok_or("Measure: expected an active part")?;
-        let generation = self.part_inspection_generation(document)?;
-        let selected = self.single_measure_face(document)?;
-        let rows = self.part_measure_rows(document, selected)?;
-        self.part_measure = Some(PartMeasure {
-            document,
-            generation,
-            rows,
-        });
-        Ok(())
+        self.part_inspection_generation(document)?;
+        let rows = self.preselected_measure_rows(document)?;
+        self.set_part_measure(document, rows)
     }
     pub(super) fn measure_selected_face(
         &mut self,
@@ -53,21 +47,27 @@ impl<
         self.start_part_measure()?;
         Ok(true)
     }
-    fn single_measure_face(&self, document: u64) -> Result<Option<(FeatureId, Vec<u8>)>, String> {
-        let [pick] = self.current_face_appearance_picks(document) else {
-            return Ok(None);
-        };
+    fn preselected_measure_rows(&self, document: u64) -> Result<Vec<String>, String> {
         let session = self
             .files
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
-        if !self.chosen_model_edges(document).is_empty()
-            || !session.selected_browser_bodies().is_empty()
-        {
-            return Ok(None);
+        if !session.selected_browser_bodies().is_empty() {
+            return Ok(vec![SELECT_GEOMETRY.into()]);
         }
-        Ok(Some((pick.face.feature, pick.face.key.clone())))
+        match (
+            self.current_face_appearance_picks(document),
+            self.chosen_model_edges(document),
+        ) {
+            ([pick], []) => {
+                self.part_measure_face_rows(document, Some((pick.face.feature, &pick.face.key)))
+            }
+            ([], [_, ..]) if self.chosen_model_face(document).is_none() => {
+                self.part_measure_edge_rows(document)
+            }
+            _ => Ok(vec![SELECT_GEOMETRY.into()]),
+        }
     }
     pub(super) fn part_inspection_generation(&self, document: u64) -> Result<u64, String> {
         let kind = self
@@ -108,20 +108,29 @@ impl<
         document: u64,
         picked: Option<(FeatureId, Vec<u8>)>,
     ) -> Result<(), String> {
-        if self
-            .part_measure
-            .as_ref()
-            .is_none_or(|measure| measure.document != document)
-        {
+        if !self.measuring_part(document) {
             return Ok(());
         }
-        let rows = self.part_measure_rows(document, picked)?;
-        let generation = self
-            .files
-            .workspace()
-            .session(document)
-            .map_err(|cause| cause.to_string())?
-            .generation();
+        let selected = picked
+            .as_ref()
+            .map(|(feature, key)| (*feature, key.as_slice()));
+        let rows = self.part_measure_face_rows(document, selected)?;
+        self.set_part_measure(document, rows)
+    }
+    pub(super) fn measuring_part(&self, document: u64) -> bool {
+        self.part_measure
+            .as_ref()
+            .is_some_and(|tool| tool.document == document)
+    }
+    pub(super) fn measure_part_edges(&mut self, document: u64) -> Result<(), String> {
+        if !self.measuring_part(document) {
+            return Ok(());
+        }
+        let rows = self.part_measure_edge_rows(document)?;
+        self.set_part_measure(document, rows)
+    }
+    fn set_part_measure(&mut self, document: u64, rows: Vec<String>) -> Result<(), String> {
+        let generation = self.part_inspection_generation(document)?;
         self.part_measure = Some(PartMeasure {
             document,
             generation,
@@ -129,21 +138,39 @@ impl<
         });
         Ok(())
     }
-    fn part_measure_rows(
+    fn part_measure_face_rows(
         &self,
         document: u64,
-        picked: Option<(FeatureId, Vec<u8>)>,
+        picked: Option<(FeatureId, &[u8])>,
     ) -> Result<Vec<String>, String> {
         let Some((feature, face)) = picked else {
-            return Ok(vec![SELECT_FACE.into()]);
+            return Ok(vec![SELECT_GEOMETRY.into()]);
         };
         let area = self
             .part_scenes
-            .face_area_mm2(&self.files, document, feature, &face)?;
+            .face_area_mm2(&self.files, document, feature, face)?;
         Ok(vec![
             "Selection 1: Face".into(),
             format!("Area {area:.3} mm²"),
         ])
+    }
+    fn part_measure_edge_rows(&self, document: u64) -> Result<Vec<String>, String> {
+        let edges = self.chosen_model_edges(document);
+        if edges.is_empty() {
+            return Ok(vec![SELECT_GEOMETRY.into()]);
+        }
+        let mut rows = Vec::with_capacity(edges.len() * 2);
+        for (index, edge) in edges.iter().enumerate() {
+            let length =
+                self.part_scenes
+                    .edge_length_mm(&self.files, document, edge.feature, &edge.key)?;
+            rows.push(format!("Selection {}: Edge", index + 1));
+            rows.push(format!("Length {length:.3} mm"));
+        }
+        if edges.len() == 1 {
+            rows.push("Ctrl-click another edge to add its length".into());
+        }
+        Ok(rows)
     }
 }
 
@@ -158,7 +185,7 @@ mod tests {
             rows: vec!["Area 100.000 mm²".into()],
         };
         assert_eq!(measure.rows_for_generation(4), measure.rows);
-        assert_eq!(measure.rows_for_generation(5), [SELECT_FACE]);
+        assert_eq!(measure.rows_for_generation(5), [SELECT_GEOMETRY]);
     }
 }
 

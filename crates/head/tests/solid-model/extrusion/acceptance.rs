@@ -47,6 +47,70 @@ fn restored_solid_is_visible(world: &mut ApplicationWorld) {
     );
 }
 
+#[cfg(target_os = "linux")]
+#[then("the subsequent Measure result lists two extrusion edges of length 8.000 mm")]
+fn measure_two_extrusion_edges(world: &mut ApplicationWorld) {
+    use super::super::x11_input;
+    use super::viewport_interaction::click_text_native;
+    crate::HeadWindow::navigate_view(
+        &mut world.app().window.native,
+        oblikovati_viewport::ViewportNavigation::Home { margin: 0.25 },
+    )
+    .unwrap();
+    world.pump(Vec::new());
+    click_text_native(world, "Tools");
+    let command = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == "Measure")
+        .min_by(|a, b| a.center()[1].total_cmp(&b.center()[1]))
+        .expect("expected the Measure ribbon command");
+    x11_input::click(super::super::diagnostics::pointer_pixels(command.center()));
+    world.pump(Vec::new());
+    assert!(world.state().measure.is_some(), "expected Measure to open");
+    let [first, second] = visible_depth_edge_midpoints(world)
+        .map(|point| world.app().window.native.view.model_pixel(point).unwrap());
+    x11_input::click(first);
+    world.pump(Vec::new());
+    x11_input::control_click(second);
+    world.pump(Vec::new());
+    assert_eq!(world.state().selected_edge_count, 2);
+    let text = world.window_text("Measure");
+    assert!(
+        text.contains("Selection1:Edge Length8.000mm Selection2:Edge Length8.000mm"),
+        "Measure should show both 8 mm edges, found {text:?}"
+    );
+}
+
+#[cfg(target_os = "linux")]
+fn visible_depth_edge_midpoints(world: &mut ApplicationWorld) -> [[f64; 3]; 2] {
+    let document = world.active_id();
+    let session = world
+        .app()
+        .owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap();
+    let geometry = session.snapshot().sketches.sketches()[0].geometry();
+    let corners = geometry.lines().iter().flat_map(|line| {
+        line.endpoints
+            .map(|id| geometry.point(id).unwrap().position)
+    });
+    let (minimum, maximum) = corners.fold(
+        ([f64::INFINITY; 2], [f64::NEG_INFINITY; 2]),
+        |(min, max), point| {
+            (
+                std::array::from_fn(|axis| min[axis].min(point[axis])),
+                std::array::from_fn(|axis| max[axis].max(point[axis])),
+            )
+        },
+    );
+    // Home looks from positive X, Y and Z. Both corner edges lie on the visible outline.
+    [[maximum[0], minimum[1], 0.4], [minimum[0], maximum[1], 0.4]]
+}
+
 fn assert_eight_millimeter_edges(world: &mut ApplicationWorld) {
     let edges = named_solid_edges(world);
     let matching = edges

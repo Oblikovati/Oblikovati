@@ -9,7 +9,7 @@ fn tools_measure_respects_context_and_opens_sketch_inspection() {
     world.click_text("Tools");
     assert_eq!(measure_command(&world).alpha, u8::MAX);
     click_measure_command(&mut world);
-    world.expect_text("Select a solid face to measure its area");
+    world.expect_text("Select a solid face or edge to measure");
     world.click_text("Done");
     world.click_text("3D Model");
     world.start_sketch();
@@ -83,7 +83,7 @@ fn part_measure_reports_analytic_face_area_and_survives_ribbon_tab_changes() {
     world.click_text("View");
     world.expect_text("Selection 1: Face");
     world.click([1000, 800]);
-    world.expect_text("Select a solid face to measure its area");
+    world.expect_text("Select a solid face or edge to measure");
     world.click_text("Done");
     assert!(diagnostics::window_geometry("Measure").is_none());
     world.close();

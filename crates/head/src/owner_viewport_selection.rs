@@ -143,15 +143,14 @@ impl<
         has_window: bool,
     ) -> Option<oblikovati_session::selection::SelectionFilter> {
         use oblikovati_session::selection::{SelectionFilter, SelectionKind};
-        let measure = self
-            .part_measure
-            .as_ref()
-            .is_some_and(|tool| tool.document == document);
+        let measure = self.measuring_part(document);
         if !measure && !has_window && !self.ambient_selection.filter().accepts(SelectionKind::Face)
         {
             return None;
         }
-        let allowed = if measure || !has_window {
+        let allowed = if measure && has_window {
+            SelectionFilter::only([SelectionKind::Edge, SelectionKind::Face])
+        } else if measure || !has_window {
             SelectionFilter::only([SelectionKind::Face])
         } else {
             self.ambient_selection.filter()
@@ -169,7 +168,9 @@ impl<
         toggle: bool,
     ) -> Result<bool, String> {
         if let Some(crate::part_scene::pick_candidates::PickTarget::Edge(feature, key)) = &picked {
-            return self.select_model_edge(document, *feature, key.clone(), toggle);
+            let changed = self.select_model_edge(document, *feature, key.clone(), toggle)?;
+            self.measure_part_edges(document)?;
+            return Ok(changed);
         }
         if !toggle {
             self.model_edges.clear();

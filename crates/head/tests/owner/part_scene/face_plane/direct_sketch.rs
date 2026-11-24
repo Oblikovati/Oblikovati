@@ -347,7 +347,7 @@ fn assert_measure_requests_face(owner: &mut TestOwner) {
     start_measure(owner);
     assert_eq!(
         owner.gui_command_state().unwrap().measure.unwrap().rows,
-        ["Select a solid face to measure its area"]
+        ["Select a solid face or edge to measure"]
     );
     finish_measure(owner);
 }
