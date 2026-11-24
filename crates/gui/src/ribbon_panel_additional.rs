@@ -6,6 +6,8 @@ mod bend_notice;
 #[path = "ribbon_panel_additional/commands.rs"]
 mod commands;
 pub(super) use commands::tool_options;
+#[path = "ribbon_panel_additional/hidden_strip.rs"]
+mod hidden_strip;
 #[path = "ribbon_panel_additional/temporary_tab.rs"]
 mod temporary_tab;
 const ADDITIONAL_WIDTH: f32 = 230.;
@@ -142,10 +144,11 @@ pub(super) fn draw(
 ) -> bool {
     let mut closed = false;
     layout.additional.last_ribbon_bottom = context.ribbon_bottom;
-    layout.additional.open.retain(|(owner, panel), _| {
+    layout.additional.open.retain(|(owner, panel), expansion| {
         *owner == tab
-            && !display.hidden_panels.contains(&(tab, *panel))
             && context.additional_allowed
+            && (!display.hidden_panels.contains(&(tab, *panel))
+                || hidden_strip::retains(*panel, expansion, display))
     });
     let preserve_tab_press =
         std::mem::take(&mut layout.additional.preserve_tab_press) || layout.pending_model_pick;
@@ -154,6 +157,10 @@ pub(super) fn draw(
         let Some(expansion) = layout.additional.open.get_mut(&key) else {
             continue;
         };
+        if display.hidden_panels.contains(&key) {
+            hidden_strip::draw(context, key.1, expansion);
+            continue;
+        }
         let area = context
             .owners
             .workspace
@@ -219,7 +226,7 @@ fn draw_window(
     crate::widget_abi::window_geometry(ui, [x, top], [width, height], imgui::Condition::Always);
     let mut close = false;
     let focus = std::mem::take(&mut expansion.focus);
-    ui.window(format!("##ribbon-additional-{panel:?}"))
+    ui.window(expansion_window(panel))
         .flags(
             imgui::WindowFlags::NO_DOCKING
                 | imgui::WindowFlags::NO_SAVED_SETTINGS
@@ -311,6 +318,9 @@ fn draw_window(
             }
         });
     close
+}
+fn expansion_window(panel: RibbonPanel) -> String {
+    format!("##ribbon-additional-{panel:?}")
 }
 fn shows_pin(display: &RibbonDisplayState) -> bool {
     !(display.mode == crate::application::ribbon_display::RibbonDisplay::Tabs

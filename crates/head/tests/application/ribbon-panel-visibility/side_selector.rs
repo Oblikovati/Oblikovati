@@ -18,6 +18,11 @@ fn click_side_selector(world: &mut ApplicationWorld) {
 #[when("the user opens the direct panel selector")]
 #[given("the direct panel selector is open")]
 pub(super) fn open_side_selector(world: &mut ApplicationWorld) {
+    click_selector(world);
+    assert!(selector_popup_open(), "expected panel selector popup");
+}
+
+pub(super) fn click_selector(world: &mut ApplicationWorld) {
     if window_geometry("##ribbon-column").is_some() {
         click_side_selector(world);
     } else {
@@ -27,7 +32,6 @@ pub(super) fn open_side_selector(world: &mut ApplicationWorld) {
             position[1] + 45.,
         ]));
     }
-    assert!(selector_popup_open(), "expected panel selector popup");
 }
 
 pub(super) fn selector_popup_open() -> bool {
@@ -42,8 +46,10 @@ pub(super) fn selector_popup_open() -> bool {
 #[when("the user selects Modify in the panel selector")]
 #[when("the user clicks Modify in the checklist")]
 #[when("the user clicks Modify in the checklist again")]
-fn toggle_side_modify(world: &mut ApplicationWorld) {
-    world.ribbon_height = side_group_y(world, "Work Features");
+fn toggle_selector_modify(world: &mut ApplicationWorld) {
+    if window_geometry("##ribbon-column").is_some() {
+        world.ribbon_height = side_group_y(world, "Work Features");
+    }
     world.click_text("Modify");
 }
 
@@ -51,7 +57,7 @@ fn toggle_side_modify(world: &mut ApplicationWorld) {
 #[when("the user hides Modify through the direct panel selector")]
 fn hide_modify_with_selector(world: &mut ApplicationWorld) {
     open_side_selector(world);
-    toggle_side_modify(world);
+    toggle_selector_modify(world);
 }
 
 #[when("I switch to the View ribbon")]

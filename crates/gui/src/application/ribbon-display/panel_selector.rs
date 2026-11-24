@@ -97,7 +97,13 @@ impl RibbonDisplayState {
     fn selector_button(&mut self, ui: &Ui, position: [f32; 2]) -> bool {
         crate::widget_abi::cursor_position(ui, position);
         let clicked = crate::widget_abi::button(ui, "v##ribbon-panel-selector", [22., 24.]);
-        let activate = self.selector_press.button(ui, self.placement, clicked);
+        let activate = if self.selector_open {
+            // The outside press closes this popup. Do not replay it as a new open.
+            self.selector_press.finish_frame(ui);
+            false
+        } else {
+            self.selector_press.button(ui, self.placement, clicked)
+        };
         let pressed = ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
         if activate {
             ui.open_popup(SELECTOR_POPUP);

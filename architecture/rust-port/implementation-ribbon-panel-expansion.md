@@ -30,3 +30,8 @@ covers these transitions.
 A right-click on an inactive ribbon tab opens the active ribbon's context
 menu. Show Panels uses the active tab's panel inventory, and the inactive
 tab remains unselected through the mouse release.
+
+Clearing Modify through the direct selector leaves an unpinned expansion
+as a compact title strip. Checking Modify again restores its commands.
+Clicking the strip dismisses both the strip and the selector. The selector
+button also closes its own checklist on a second click.

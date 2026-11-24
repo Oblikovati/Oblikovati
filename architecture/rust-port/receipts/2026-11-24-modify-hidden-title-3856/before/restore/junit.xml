@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T09:36:58.826351776Z" time="12.20476585"><testcase name="Scenario: Hide and restore a panel while its unpinned expansion is open: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:493:3" time="12.20476585"><failure type="Step Panicked" message="Step panicked. Captured output: expected the retained Modify title"/><system-out><![CDATA[  Scenario: Hide and restore a panel while its unpinned expansion is open
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon docked at the top
+   ✔  And the Modify panel is visible with its additional command area open and unpinned
+   ✔  When the user opens the ribbon panel selector
+   ✔  Then the selector and the Modify additional commands are visible together
+   ✔  When the user clears Modify in the panel selector
+   ✔  Then Modify is unchecked and its main panel and additional commands are hidden
+   ✘  And a small Modify title strip with a pin remains visible beneath the ribbon
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:500:5
+      Matched: crates/head/src/../tests/application/ribbon-panel-visibility/hidden_expansion.rs:45:1
+      Step panicked. Captured output: expected the retained Modify title
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nPart1<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nReady\nRibbonDisplay\nv\nv\n...\nPart1\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\nPart1<Primary>*\nDocuments\nX\nY\nZ\nSketch\nCreate\nModify\nWorkFeatures\nPattern\nSimplification\nParameters",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

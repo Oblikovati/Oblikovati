@@ -12877,8 +12877,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon panel visibility and its interaction with active commands."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/chrome_ribbon.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Direct panel selector and additional commands in the native ribbon.",
+      "go_test_premise": "The Go tests cover panel widths and collapse. The benchmark specifies the selector and expansion state across pointer clicks.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "An active Part is sufficient. Panel visibility and popup dismissal do not invoke geometry operations.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "Ribbon controls change visibility while retaining the active document.",
+      "rust_tests": "application_scenarios_use_the_native_window: Hide and restore a panel while its expansion is pinned",
+      "oracle": "The pinned native scenario checks rendered menus, panel controls, visibility and expansion state. See receipts/2026-11-24-modify-hidden-title-3856/pinned/pinned-expansion/cucumber.json.",
+      "expected_result": "Hiding pinned Modify removes the panel and its additional-command area. Rechecking Modify restores the main panel. Opening its expansion again starts unpinned and an outside click dismisses it.",
+      "baseline_source_sha256": "2a475fd633348f2ab3bc100be152dde52c2ef0d548947de439f50b8fa379c7ab"
     },
     {
       "id": "scenario:c7da1e82903e338fc5fea68de453f105272b76a3ac5f1ef51fba3aaed4aa574f",
@@ -12928,8 +12938,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon panel visibility and its interaction with active commands."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/chrome_ribbon.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Direct panel selector and additional commands in the native ribbon.",
+      "go_test_premise": "The Go tests cover panel widths and collapse. The benchmark specifies the selector and expansion state across pointer clicks.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "An active Part is sufficient. Panel visibility and popup dismissal do not invoke geometry operations.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "Ribbon controls change visibility while retaining the active document.",
+      "rust_tests": "application_scenarios_use_the_native_window: Toggle the direct panel list without changing a checkbox",
+      "oracle": "The pinned native scenario checks rendered menus, panel controls, visibility and expansion state. See receipts/2026-11-24-modify-hidden-title-3856/pinned/toggle/cucumber.json.",
+      "expected_result": "Clicking the side-docked selector arrow opens the checklist and clicking it again closes the checklist. Modify remains visible and checked.",
+      "baseline_source_sha256": "2a475fd633348f2ab3bc100be152dde52c2ef0d548947de439f50b8fa379c7ab"
     },
     {
       "id": "scenario:d0c43b6bab5f0db8676561de7880ae06e2e311ae65d9e862d43a8de2ab1fd10b",
@@ -13348,8 +13368,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon panel visibility and its interaction with active commands."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/chrome_ribbon.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Direct panel selector and additional commands in the native ribbon.",
+      "go_test_premise": "The Go tests cover panel widths and collapse. The benchmark specifies the selector and expansion state across pointer clicks.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "An active Part is sufficient. Panel visibility and popup dismissal do not invoke geometry operations.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "Ribbon controls change visibility while retaining the active document.",
+      "rust_tests": "application_scenarios_use_the_native_window: Hide and restore a panel while its unpinned expansion is open",
+      "oracle": "The pinned native scenario checks rendered menus, panel controls, visibility and expansion state. See receipts/2026-11-24-modify-hidden-title-3856/pinned/restore/cucumber.json.",
+      "expected_result": "Hiding Modify from the direct selector retains a compact title strip and removes the commands. Rechecking Modify restores its panel and the open commands.",
+      "baseline_source_sha256": "2a475fd633348f2ab3bc100be152dde52c2ef0d548947de439f50b8fa379c7ab"
     },
     {
       "id": "scenario:f27ea2f492c89c960304708e82c36fe332c4ce81f16c2279daa829abb76f92d9",
@@ -13365,8 +13395,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon panel visibility and its interaction with active commands."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/chrome_ribbon.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Direct panel selector and additional commands in the native ribbon.",
+      "go_test_premise": "The Go tests cover panel widths and collapse. The benchmark specifies the selector and expansion state across pointer clicks.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "An active Part is sufficient. Panel visibility and popup dismissal do not invoke geometry operations.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "Ribbon controls change visibility while retaining the active document.",
+      "rust_tests": "application_scenarios_use_the_native_window: Dismiss the remaining title strip of a hidden expanded panel",
+      "oracle": "The pinned native scenario checks rendered menus, panel controls, visibility and expansion state. See receipts/2026-11-24-modify-hidden-title-3856/pinned/dismiss/cucumber.json.",
+      "expected_result": "Clicking the hidden Modify title closes it and the selector. Rechecking Modify later restores the main panel with the additional command area closed.",
+      "baseline_source_sha256": "2a475fd633348f2ab3bc100be152dde52c2ef0d548947de439f50b8fa379c7ab"
     },
     {
       "id": "scenario:34e4c2c92122a2957ac6d95bf6bd93f974a8611f3747085e52ee9b9403c41ffe",

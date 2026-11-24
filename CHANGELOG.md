@@ -275,6 +275,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Kept the unpinned Modify title strip available while its panel is hidden in the direct selector, and fixed closing the selector with its own button. (#3856)
+
 - Kept the active ribbon tab selected when opening the context menu on an inactive tab. (#3856)
 
 - Kept clicks on Home, Customize, Options, and the ribbon display menu working while the panel selector is open. (#3856)

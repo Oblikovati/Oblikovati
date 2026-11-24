@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:37:57.284866009Z" time="12.376591705"><testcase name="Scenario: Switch between panel visibility and ribbon display menus: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:416:3" time="12.376591705"><system-out><![CDATA[  Scenario: Switch between panel visibility and ribbon display menus
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the direct panel selector is open
+   ✔  When the user opens the ribbon display policy menu
+   ✔  Then the panel selector closes
+   ✔  And the display policy menu opens with Minimize to Tabs selected
+   ✔  When the user opens the direct panel selector
+   ✔  Then the display policy menu closes
+   ✔  And the panel selector opens
+   ✔  When the user closes the panel selector
+   ✔  Then the full Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -2,6 +2,8 @@
 use super::*;
 #[path = "expansion_reflow.rs"]
 mod expansion_reflow;
+#[path = "hidden_expansion.rs"]
+mod hidden_expansion;
 
 const EXPANSION: &str = "##ribbon-additional-PartModify";
 

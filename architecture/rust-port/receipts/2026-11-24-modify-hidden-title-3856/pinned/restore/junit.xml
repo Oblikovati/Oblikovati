@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:38:38.929587015Z" time="15.474688669"><testcase name="Scenario: Hide and restore a panel while its unpinned expansion is open: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:493:3" time="15.474688669"><system-out><![CDATA[  Scenario: Hide and restore a panel while its unpinned expansion is open
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon docked at the top
+   ✔  And the Modify panel is visible with its additional command area open and unpinned
+   ✔  When the user opens the ribbon panel selector
+   ✔  Then the selector and the Modify additional commands are visible together
+   ✔  When the user clears Modify in the panel selector
+   ✔  Then Modify is unchecked and its main panel and additional commands are hidden
+   ✔  And a small Modify title strip with a pin remains visible beneath the ribbon
+   ✔  And the panel selector remains open
+   ✔  When the user selects Modify in the panel selector
+   ✔  Then Modify is checked and its main panel and additional commands are visible again
+   ✔  And the panel selector remains open
+]]></system-out></testcase></testsuite></testsuites>

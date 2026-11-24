@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:38:40.865650083Z" time="23.265151652"><testcase name="Scenario: Hide and restore a panel while its expansion is pinned: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:183:3" time="23.265151652"><system-out><![CDATA[  Scenario: Hide and restore a panel while its expansion is pinned
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the expanded 3D Model ribbon is docked at the top
+   ✔  And the Modify panel is visible with its additional commands expanded and pinned
+   ✔  When the user opens the ribbon panel selector
+   ✔  And the user clears Modify in the panel list
+   ✔  Then the Modify panel and its expanded command area disappear
+   ✔  And the panel list remains open with Modify unchecked
+   ✔  When the user selects Modify in the panel list
+   ✔  Then the Modify panel returns to the ribbon
+   ✔  And its additional command area is not open
+   ✔  And the panel list remains open with Modify checked
+   ✔  When the user presses Escape
+   ✔  Then the panel list closes
+   ✔  When the user opens the Modify additional command area
+   ✔  And the user clicks empty viewport space
+   ✔  Then the additional command area closes
+]]></system-out></testcase></testsuite></testsuites>
