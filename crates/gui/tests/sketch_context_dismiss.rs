@@ -8,6 +8,14 @@ fn popup() -> (GuiFrameEngine, GuiFrameRequest) {
         delta_seconds: 1. / 60.,
         framebuffer_scale: [1.; 2],
         commands: GuiCommandState {
+            document: Some(1),
+            document_type: Some(oblikovati_api::types::DOCUMENT_PART),
+            documents: vec![oblikovati_api::wire::DocumentInfo {
+                id: 1,
+                name: "Part1".into(),
+                visible: true,
+                ..Default::default()
+            }],
             authoring: GuiAuthoringContext::Sketch,
             sketch_at_ready: true,
             sketch_context: Some(GuiSketchContext {
@@ -19,10 +27,12 @@ fn popup() -> (GuiFrameEngine, GuiFrameRequest) {
         events: Vec::new(),
         status: None,
     };
-    for _ in 0..5 {
+    for _ in 0..4 {
         engine.frame(&request).unwrap();
     }
-    request.events = vec![GuiInputEvent::PointerMoved([600., 400.])];
+    let area = engine.frame(&request).unwrap().document_area.unwrap();
+    let position = canvas_point(area, [0.5, 0.5]);
+    request.events = vec![GuiInputEvent::PointerMoved(position)];
     engine.frame(&request).unwrap();
     for pressed in [true, false] {
         request.events = vec![GuiInputEvent::PointerButton {
@@ -31,7 +41,18 @@ fn popup() -> (GuiFrameEngine, GuiFrameRequest) {
         }];
         engine.frame(&request).unwrap();
     }
+    request.events.clear();
+    assert!(
+        engine.frame(&request).unwrap().accessibility_popup_active,
+        "expected a canvas popup at {position:?} within {area:?}"
+    );
     (engine, request)
+}
+fn canvas_point([left, top, right, bottom]: [u32; 4], fraction: [f32; 2]) -> [f32; 2] {
+    [
+        left as f32 + (right - left) as f32 * fraction[0],
+        top as f32 + (bottom - top) as f32 * fraction[1],
+    ]
 }
 fn frame(
     engine: &mut GuiFrameEngine,
@@ -68,10 +89,11 @@ fn escape_retires_the_popup_token() {
 }
 fn outside_click_retires_the_popup_token() {
     let (mut engine, mut request) = popup();
+    let area = engine.frame(&request).unwrap().document_area.unwrap();
     frame(
         &mut engine,
         &mut request,
-        GuiInputEvent::PointerMoved([900., 600.]),
+        GuiInputEvent::PointerMoved(canvas_point(area, [0.2, 0.8])),
     );
     let mut actions = Vec::new();
     for pressed in [true, false] {
