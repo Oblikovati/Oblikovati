@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Keyboard navigation of visible feature rows while ribbon tips are present.
 use super::super::workspace_layout::browser_feature::{
-    FEATURE, SKETCH, expect_outline, open_visible_extruded_part,
+    FEATURE, SKETCH, click_branch_arrow, colored_pixels, expect_outline, open_visible_extruded_part,
 };
 use super::*;
+use oblikovati_gui::{GuiBrowserFeature, GuiBrowserSketch, GuiModelBrowser};
 
 #[given("a part is active in the MCAD Software with the full 3D Model ribbon visible")]
 fn part_with_feature(world: &mut ApplicationWorld) {
@@ -13,13 +14,40 @@ fn part_with_feature(world: &mut ApplicationWorld) {
 }
 #[given("an extrusion is expanded in the model browser to show its child sketch")]
 fn expanded_feature(world: &mut ApplicationWorld) {
-    world.expect_text(FEATURE);
-    world.expect_text(SKETCH);
+    let browser = world.state().browser.expect("expected the Part browser");
+    let feature = extrusion(&browser);
+    let sketch = profile(&browser);
+    if !world.shows(&sketch.name) {
+        click_branch_arrow(world, &feature.name);
+    }
+    assert!(world.run(&feature.name).center()[1] < world.run(&sketch.name).center()[1]);
 }
+
+fn extrusion(browser: &GuiModelBrowser) -> &GuiBrowserFeature {
+    let mut features = browser
+        .features
+        .iter()
+        .filter(|row| row.kind == "Extrusion");
+    let feature = features.next().expect("expected a fixture extrusion");
+    assert!(features.next().is_none(), "expected one fixture extrusion");
+    feature
+}
+
+fn profile(browser: &GuiModelBrowser) -> &GuiBrowserSketch {
+    let owner = extrusion(browser).id;
+    browser
+        .sketches
+        .iter()
+        .find(|sketch| sketch.consumed_by == Some(owner))
+        .expect("expected the extrusion's profile sketch")
+}
+
 #[given("the extrusion is selected in the browser")]
 fn select_feature(world: &mut ApplicationWorld) {
-    world.click_text(FEATURE);
-    assert!(world.row_highlighted(FEATURE));
+    let browser = world.state().browser.expect("expected the Part browser");
+    let feature = extrusion(&browser);
+    world.click_text(&feature.name);
+    assert!(world.row_highlighted(&feature.name));
 }
 #[when("the user presses Down Arrow")]
 fn down(world: &mut ApplicationWorld) {
@@ -27,13 +55,9 @@ fn down(world: &mut ApplicationWorld) {
 }
 #[then("the child sketch is selected in the browser")]
 fn sketch_selected(world: &mut ApplicationWorld) {
-    assert!(world.row_highlighted(SKETCH));
-    let browser = world.state().browser.unwrap();
-    let sketch = browser
-        .sketches
-        .iter()
-        .find(|row| row.name == SKETCH)
-        .unwrap();
+    let browser = world.state().browser.expect("expected the Part browser");
+    let sketch = profile(&browser);
+    assert!(world.row_highlighted(&sketch.name));
     assert_eq!(browser.selected_sketches, [sketch.id]);
     assert_eq!(
         super::super::viewport_pan::camera(world),
@@ -42,6 +66,18 @@ fn sketch_selected(world: &mut ApplicationWorld) {
 }
 #[then("the corresponding sketch geometry is highlighted in the viewport")]
 fn sketch_highlighted(world: &mut ApplicationWorld) {
+    let browser = world.state().browser.expect("expected the Part browser");
+    if profile(&browser).visible {
+        let theme = oblikovati_model::theme::ThemeDefinition::dark().unwrap();
+        let selected = theme.color(&oblikovati_api::types::TOKEN_SKETCH_SELECTED);
+        let color = [selected.r, selected.g, selected.b]
+            .map(|channel| (channel * f32::from(u8::MAX)).round() as u8);
+        assert!(
+            colored_pixels(world, color) > 0,
+            "expected selected sketch color in the viewport"
+        );
+        return;
+    }
     expect_outline(world, true);
     assert!(
         !crate::HeadSketchWork::sketch_dimension_annotations(&world.app().owner)
@@ -56,13 +92,9 @@ fn up(world: &mut ApplicationWorld) {
 }
 #[then("the extrusion is selected again")]
 fn feature_selected(world: &mut ApplicationWorld) {
-    assert!(world.row_highlighted(FEATURE));
-    let browser = world.state().browser.unwrap();
-    let feature = browser
-        .features
-        .iter()
-        .find(|row| row.name == FEATURE)
-        .unwrap();
+    let browser = world.state().browser.expect("expected the Part browser");
+    let feature = extrusion(&browser);
+    assert!(world.row_highlighted(&feature.name));
     assert_eq!(browser.selected_feature, Some(feature.id));
     assert_eq!(
         super::super::viewport_pan::camera(world),

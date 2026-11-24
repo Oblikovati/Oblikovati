@@ -3,6 +3,19 @@
 use super::*;
 use crate::HeadWindow;
 
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` is open with its asymmetric solid visible in the MCAD Software"
+)]
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` is open with the full 3D Model ribbon visible in the MCAD Software"
+)]
+fn open_named_solid(world: &mut ApplicationWorld) {
+    use super::super::workspace_layout::{browser_feature, native_part};
+    native_part::open_named_extrusion(world);
+    model_selected(world);
+    browser_feature::expect_solid_visible(world);
+}
+
 #[given("the full 3D Model ribbon is selected")]
 fn model_selected(world: &mut ApplicationWorld) {
     world.expect_text("Extrude");
