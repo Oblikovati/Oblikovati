@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exercise model-state scope with native pointer input.
+use super::model_state_fixture::{COPY_STATE, expect_empty_named_states, has_named_states};
 use super::*;
 use cucumber::{given, then, when};
 use oblikovati_api::{
@@ -10,6 +11,9 @@ use oblikovati_model::model_state::ModelStateEditScope::{AllMembers, SingleMembe
 
 #[given("an empty part with Primary and a second model state is active in the MCAD Software")]
 fn active_variant(world: &mut ApplicationWorld) {
+    if expect_empty_named_states(world) {
+        return;
+    }
     world.add_part();
     let client = Client::new(world.app().owner.document_host());
     let member = client
@@ -28,8 +32,9 @@ fn active_variant(world: &mut ApplicationWorld) {
 }
 #[given("the second state is active and the edit scope is Single Member")]
 fn single_scope(world: &mut ApplicationWorld) {
+    let expected = scope_member_name(world);
     let states = world.state().browser.unwrap().model_states.unwrap();
-    assert_eq!(states.active().unwrap().name, "Variant");
+    assert_eq!(states.active().unwrap().name, expected);
     assert_eq!(states.edit_scope(), SingleMember);
 }
 #[when("I click the edit-scope control on the Model State branch")]
@@ -58,26 +63,31 @@ fn single_scope_tooltip(world: &mut ApplicationWorld) {
 #[then("the browser root indicates All")]
 fn root_all(world: &mut ApplicationWorld) {
     assert!(
-        world
-            .frame
-            .runs
-            .iter()
-            .any(|run| run.text.contains("Part1") && run.text.contains("(All)"))
+        super::feature_rows::root_caption(world)
+            .text
+            .contains("(All)")
     );
 }
 #[then("the All indicator is removed from the browser root")]
 fn root_single(world: &mut ApplicationWorld) {
     assert!(
-        !world
-            .frame
-            .runs
-            .iter()
-            .any(|run| run.text.contains("Part1") && run.text.contains("(All)"))
+        !super::feature_rows::root_caption(world)
+            .text
+            .contains("(All)")
     );
 }
 #[then("the second model state remains active")]
 fn variant_remains_active(world: &mut ApplicationWorld) {
+    let expected = scope_member_name(world);
     let states = world.state().browser.unwrap().model_states.unwrap();
-    assert_eq!(states.active().unwrap().name, "Variant");
+    assert_eq!(states.active().unwrap().name, expected);
     assert!(matches!(states.edit_scope(), SingleMember | AllMembers));
+}
+
+fn scope_member_name(world: &mut ApplicationWorld) -> &'static str {
+    if has_named_states(world) {
+        COPY_STATE
+    } else {
+        "Variant"
+    }
 }

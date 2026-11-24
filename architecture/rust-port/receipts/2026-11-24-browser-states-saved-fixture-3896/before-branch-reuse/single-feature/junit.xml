@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T11:36:36.586815895Z" time="93.286991738"><testcase name="Scenario: Create a feature while editing a single model-state member: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1658:3" time="93.286991738"><failure type="Step Panicked" message="Step panicked. Captured output: Primary model-state row"/><system-out><![CDATA[  Scenario: Create a feature while editing a single model-state member
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✔  And the user creates model states Capture State and Copy State and activates Copy State
+   ✔  And The MCAD Software has an empty part with Primary, Capture State, and Copy State model states
+   ✔  And Copy State is active and the edit scope is a single member
+   ✔  When the user creates a rectangular sketch and extrudes it as a solid
+   ✔  Then the extrusion is computed in Copy State
+   ✔  And its model-state indicator lists the extrusion as suppressed in Primary and Capture State
+   ✔  When the user shows the solid using All Visible on the active view representation
+   ✘  And activates Primary
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1667:5
+      Matched: crates/head/src/../tests/application/model-browser/model_state_new_feature.rs:95:1
+      Step panicked. Captured output: Primary model-state row
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nBlankmetricpart<CopyState>\nRepresentations\nModelState\n<CopyState>\n1\nView\n<Primary>\nPrimary\nIsometric\nFront\nTop\nRight\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrusion1\nStates\nSketch1\n[DOF4]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nSketchfinished.\nRibbonDisplay\nv\nv\n...\nBlankmetricpart\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\nBlankmetricpart<CopyState>*\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

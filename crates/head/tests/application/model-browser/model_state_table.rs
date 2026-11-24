@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native property-table interactions for model-state drafts.
+use super::model_state_fixture::{
+    CAPTURE_STATE, COPY_STATE, expect_empty_named_states, has_named_states,
+};
 use super::*;
 use cucumber::{given, then, when};
 use oblikovati_api::{
@@ -9,6 +12,9 @@ use oblikovati_api::{
 
 #[given("an empty part with Primary and two named model states is active in the MCAD Software")]
 fn three_states(world: &mut ApplicationWorld) {
+    if expect_empty_named_states(world) {
+        return;
+    }
     world.add_part();
     let client = Client::new(world.app().owner.document_host());
     let large = client
@@ -45,10 +51,16 @@ fn table_opens(world: &mut ApplicationWorld) {
 }
 #[then("its member table lists Primary and both named states")]
 fn members_listed(world: &mut ApplicationWorld) {
+    let names = if has_named_states(world) {
+        ["Primary", CAPTURE_STATE, COPY_STATE]
+    } else {
+        ["Primary", "Large", "Small"]
+    };
     let header = world.run("Member");
-    for name in ["Primary", "Large", "Small"] {
+    for name in names {
+        let label = super::super::world::squeezed(name);
         assert!(
-            world.frame.runs.iter().any(|run| run.text.trim() == name
+            world.frame.runs.iter().any(|run| run.text.trim() == label
                 && run.center()[1] > header.center()[1]
                 && (run.minimum[0] - header.minimum[0]).abs() < 12.),
             "expected member {name:?} in grid"

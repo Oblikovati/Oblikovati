@@ -94,3 +94,8 @@ The [inactive and renamed view cases](receipts/2026-11-24-browser-view-saved-fix
 keep the saved blank Part active while toggling Lock and Autosave Camera
 or checking how inline editing handles duplicate, empty, and case-distinct
 names.
+
+The [named model-state runs](receipts/2026-11-24-browser-states-saved-fixture-3896/README.md)
+create Capture State and Copy State through the saved Part's browser.
+They verify edit scope, committing and discarding a Category column, and
+the browser and viewport effects of creating a feature in one member.

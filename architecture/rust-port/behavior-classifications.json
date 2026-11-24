@@ -16582,8 +16582,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/assembly/modelstate.go and ADR-0038.",
+      "mapping_reason": "Native Model Browser model-state commands on a Part.",
+      "go_test_premise": "The Go assembly reference separates member creation from activation. The pinned native Part scenario supplies the table or per-member feature oracle.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native viewport rendering and browser presentation.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop presents the active Part and its document-owned settings in the browser and viewport.",
+      "rust_tests": "application_scenarios_use_the_native_window: Cancel adding a property to the model-state table",
+      "oracle": "The pinned native run checks the browser controls and their visible effects. See receipts/2026-11-24-browser-states-saved-fixture-3896/pinned/table-cancel/cucumber.json.",
+      "expected_result": "Cancelling the table discards the draft Category column and preserves the active Part.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:96b45561cdb21919487430015c0981c8a4667f59ad12bb7a0992129bb0b945b3",
@@ -16599,8 +16609,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/assembly/modelstate.go and ADR-0038.",
+      "mapping_reason": "Native Model Browser model-state commands on a Part.",
+      "go_test_premise": "The Go assembly reference separates member creation from activation. The pinned native Part scenario supplies the table or per-member feature oracle.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native viewport rendering and browser presentation.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop presents the active Part and its document-owned settings in the browser and viewport.",
+      "rust_tests": "application_scenarios_use_the_native_window: Accept a property column in the model-state table",
+      "oracle": "The pinned native run checks the browser controls and their visible effects. See receipts/2026-11-24-browser-states-saved-fixture-3896/pinned/table-accept/cucumber.json.",
+      "expected_result": "Accepting the Category column persists it when the table reopens in the same Part.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:c26eefcc8c964c9fe3de9031649b21c2ab8933e9e3d76279b72837652bdeb21c",
@@ -17513,8 +17533,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/assembly/modelstate.go and ADR-0038.",
+      "mapping_reason": "Native Model Browser model-state commands on a Part.",
+      "go_test_premise": "The Go assembly reference separates member creation from activation. The pinned native Part scenario supplies the table or per-member feature oracle.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native viewport rendering and browser presentation.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop presents the active Part and its document-owned settings in the browser and viewport.",
+      "rust_tests": "application_scenarios_use_the_native_window: Create a feature while editing a single model-state member",
+      "oracle": "The pinned native run checks the browser controls and their visible effects. See receipts/2026-11-24-browser-states-saved-fixture-3896/pinned/single-feature/cucumber.json.",
+      "expected_result": "The extrusion is computed only in Copy State and its browser and viewport presentation follow the active member.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:7b1b861aaa87e8d18fc20c5c0c2ccce4d081c94c3ada5e675454188b0c0ccfa8",

@@ -11,6 +11,9 @@ use oblikovati_api::{
     "The MCAD Software has an empty part with Primary, Capture State, and Copy State model states"
 )]
 fn empty_three_states(world: &mut ApplicationWorld) {
+    if super::model_state_fixture::expect_empty_named_states(world) {
+        return;
+    }
     world.add_part();
     let client = Client::new(world.app().owner.document_host());
     for name in ["Capture State", "Copy State"] {
@@ -91,7 +94,7 @@ fn show_solid(world: &mut ApplicationWorld) {
 }
 #[when("activates Primary")]
 fn activate_primary(world: &mut ApplicationWorld) {
-    world.click_text("Model State");
+    super::model_state_fixture::expand_state_branch(world);
     let view_y = super::part_views::view_branch(world).center()[1];
     let state_y = world.run("Model State").center()[1];
     let member = world

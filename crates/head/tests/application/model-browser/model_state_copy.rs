@@ -27,8 +27,7 @@ fn active_named_state(world: &mut ApplicationWorld) {
 
 #[given("the Model State branch is expanded")]
 fn expanded_state_branch(world: &mut ApplicationWorld) {
-    world.click_text("Model State");
-    world.expect_text("Large (Active)");
+    super::model_state_fixture::expand_state_branch(world);
 }
 
 #[then("the duplicate action identifies the active state by name")]

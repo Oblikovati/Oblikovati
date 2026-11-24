@@ -24,7 +24,7 @@ fn expanded_primary(world: &mut ApplicationWorld) {
 
 #[when("I open the Model State branch context menu")]
 #[when("the user opens the Model State branch context menu")]
-fn open_state_menu(world: &mut ApplicationWorld) {
+pub(super) fn open_state_menu(world: &mut ApplicationWorld) {
     right_click_row(world, "Model State");
 }
 
@@ -57,7 +57,7 @@ fn native_model_state_menu_shows_creation_and_tree_actions() {
 
 #[when("I open the New Model State submenu")]
 #[when("the user opens the New Model State submenu")]
-fn open_state_submenu(world: &mut ApplicationWorld) {
+pub(super) fn open_state_submenu(world: &mut ApplicationWorld) {
     let position = super::super::diagnostics::pointer_pixels(world.run("New Model State").center());
     world.hover(position);
     world.pump(Vec::new());
@@ -70,7 +70,7 @@ fn state_submenu_options(world: &mut ApplicationWorld) {
 
 #[when("I choose New Model State")]
 #[when("the user chooses New Model State")]
-fn create_state(world: &mut ApplicationWorld) {
+pub(super) fn create_state(world: &mut ApplicationWorld) {
     world.click_text("New Model State");
     world.pump(Vec::new());
 }
