@@ -134,7 +134,7 @@ fn log_available(world: &mut ApplicationWorld) {
 }
 #[when("I add the log panel from the plus menu")]
 #[when("the user adds the log panel from the plus menu")]
-pub(super) fn add_log(world: &mut ApplicationWorld) {
+pub(in super::super) fn add_log(world: &mut ApplicationWorld) {
     open_plus(world);
     let center = world.run("Log Panel").center();
     click_panel_action(world, center);

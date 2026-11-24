@@ -24,3 +24,24 @@ See the [Cucumber diagnostic](pinned-express/cucumber.json).
 The pinned source still marks **Create a drawing from a sheet template**
 as capture-host-only. The native portrait regression uses an authored
 saved drawing and runs independently of that fixture.
+
+## Read the stale assembly cache warning in the Log Panel
+
+The assembly save regression at `cc07df1d1` raised the expected stale-cache
+warning and then failed while looking for the workspace's standalone `+`
+launcher. With Model docked, the panel menu is an icon in its tab bar. The
+test now opens Log Panel through the existing workspace driver and still
+checks the complete warning against the rendered log.
+
+The standalone assembly save test passed. Its executable had debug sections
+stripped to shorten hashing of the running image. The test still verifies the
+saved producer digest against that executable. Strict Clippy passed for all
+desktop targets.
+
+The pinned **Add and switch between browser panel tabs** scenario passed all
+13 steps on the same test build with Xvfb, Openbox, and Vulkan Lavapipe. It
+opens Log beside Model, switches between both tabs, and closes Log. The
+workspace-layout feature stayed at SHA-256
+`72f20c5bcf466b9ee01a4d3a547a4412ed9a1ae243c07f256a027e237ed2e554`.
+See the [Cucumber result](pinned-workspace-log/cucumber.json) and
+[source revision](pinned-workspace-log/source-revision.json).

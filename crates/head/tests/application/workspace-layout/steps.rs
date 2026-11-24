@@ -34,7 +34,7 @@ mod dockspace_restart;
 #[path = "drawing_browser.rs"]
 mod drawing_browser;
 #[path = "drawing_browser_steps.rs"]
-mod drawing_browser_steps;
+pub(super) mod drawing_browser_steps;
 #[cfg(target_os = "linux")]
 #[path = "external_close_native.rs"]
 mod external_close_native;

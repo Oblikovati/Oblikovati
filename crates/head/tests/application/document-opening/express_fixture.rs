@@ -229,8 +229,7 @@ fn saving_assembly_stages_unselected_cache_and_reports_stale_source() {
     assert!(
         matches!(world.app().window.native.command_notice.as_ref(), Some(crate::DesktopCommandNotice::SavedWithWarning { detail, .. }) if detail.contains("expected the package loaded"))
     );
-    world.click_text("+");
-    world.click_text("Log Panel");
+    super::super::workspace_layout::drawing_browser_steps::add_log(&mut world);
     settle(&mut world);
     world.expect_text("Application messages");
     let visible: String = world
