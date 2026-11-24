@@ -101,7 +101,7 @@ fn apply_edit<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
             fillet,
             crate::decode(method, encoded)?,
         ),
-        METHOD_FEATURES_RENAME => rename(files, document, crate::decode(method, encoded)?),
+        METHOD_FEATURES_RENAME => rename(files, access, document, crate::decode(method, encoded)?),
         METHOD_FEATURES_REORDER => {
             reorder(files, access, document, crate::decode(method, encoded)?)
         }
@@ -227,21 +227,30 @@ fn single_distance_edit(request: &EditFeatureArgs) -> Result<&str, Error> {
 
 fn rename<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
+    access: &mut Option<&mut dyn PartTopologyAccess<O, W, F>>,
     document: u64,
     request: RenameFeatureArgs,
 ) -> Result<u64, Error> {
-    files
-        .commands(document)
-        .map_err(api_error)?
-        .run("Rename Feature", |snapshot, _| {
+    let owner = access.as_deref_mut().ok_or_else(|| {
+        Error(format!(
+            "document {document}: expected a feature replay owner"
+        ))
+    })?;
+    let (id, _) = crate::checkpoint_replay::edit_with_owner(
+        files,
+        owner,
+        document,
+        "Rename Feature",
+        |snapshot, _| {
             let features = &mut snapshot.work_geometry;
             require_rename(features, request.id, &request.name)?;
             features
                 .rename(FeatureId(request.id), &request.name)
                 .map_err(api_error)?;
             Ok::<_, Error>(request.id)
-        })
-        .map_err(api_error)
+        },
+    )?;
+    Ok(id)
 }
 
 fn reorder<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(

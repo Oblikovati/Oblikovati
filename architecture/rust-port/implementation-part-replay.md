@@ -77,6 +77,11 @@ path only for a current checkpoint under the certified backend's policy.
 The backend still validates edits that require full replay. See the
 [typed suppression receipt](receipts/2026-11-24-typed-suppression-checkpoint-4079/README.md).
 
+Typed feature renames use the same checkpoint edit path as feature reorder.
+Renaming the later Fillet in a Part can preserve the certified Extrude prefix
+and its face references. See the
+[typed rename receipt](receipts/2026-11-24-typed-rename-checkpoint-4079/README.md).
+
 Run `CARGO_NET_OFFLINE=true make gate` for the complete local Linux checks.
 
 A regression first proved that a raw snapshot with a prism construction-datum

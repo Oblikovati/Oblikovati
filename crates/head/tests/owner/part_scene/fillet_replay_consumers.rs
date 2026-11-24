@@ -211,6 +211,57 @@ fn typed_suppression_publishes_current_ordered_health_and_checkpoints() {
 }
 
 #[test]
+fn typed_rename_of_later_feature_reuses_document_checkpoints() {
+    let (mut owner, document) = fillet_owner();
+    let policy = crate::part_scene::resolution_policy::desktop_policy();
+    let mut replay = oblikovati_automation::PartReplayService::with_policy(policy).unwrap();
+    replay
+        .ensure_checkpoints(&mut owner.files, document)
+        .unwrap();
+    let previous_keys = fillet_face_keys(&owner, document, &replay);
+    let (full_replays, _) = owner.part_scenes.checkpoint_preview_metrics();
+
+    let renamed = Client::new(owner.document_host())
+        .features()
+        .rename(&oblikovati_api::wire::RenameFeatureArgs {
+            id: 2,
+            name: "Finish round".into(),
+        })
+        .unwrap();
+
+    assert_eq!(renamed.feature.feature_info.name, "Finish round");
+    assert!(renamed.feature.feature_info.health.is_empty());
+    assert_eq!(
+        owner.part_scenes.checkpoint_preview_metrics().0,
+        full_replays
+    );
+    assert!(
+        replay
+            .checkpoint_prefix(&owner.files, document)
+            .unwrap()
+            .is_some()
+    );
+    assert_eq!(fillet_face_keys(&owner, document, &replay), previous_keys);
+}
+
+fn fillet_face_keys(
+    owner: &TestOwner,
+    document: u64,
+    replay: &oblikovati_automation::PartReplayService,
+) -> Vec<Vec<u8>> {
+    let workspace = owner.files.workspace();
+    let session = workspace.session(document).unwrap();
+    let guid = workspace.identity(document).unwrap().internal_name;
+    replay
+        .current_part(&owner.files, document)
+        .unwrap()
+        .body(FeatureId(2))
+        .unwrap()
+        .face_reference_keys(session.history(), guid)
+        .unwrap()
+}
+
+#[test]
 fn typed_suppression_declines_checkpoints_from_another_policy() {
     use oblikovati_martensite::PrismResolutionPolicy;
     let (mut owner, document) = fillet_owner();
