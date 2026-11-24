@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T13:20:53.406639602Z" time="10.119812719"><testcase name="Scenario: Select visible available commands with the keyboard: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1375:3" time="10.119812719"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Select visible available commands with the keyboard
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an empty Part Tools target
+   ✘  When the user selects 2D Sketches in the available command list
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:1378:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

@@ -42,6 +42,32 @@ impl RibbonCustomization {
         self.scroll_source_to_selection = true;
         true
     }
+
+    pub(super) fn navigate_target_page(&mut self, ui: &Ui) -> bool {
+        if ui.io().key_ctrl || ui.io().key_alt || ui.io().key_super {
+            return false;
+        }
+        let down = ui.is_key_pressed_no_repeat(Key::PageDown);
+        if !down && !ui.is_key_pressed_no_repeat(Key::PageUp) {
+            return false;
+        }
+        if let Some(last) = self.draft.rows().len().checked_sub(1) {
+            let current = self.draft.selected.unwrap_or(0);
+            let selected = target_page_row(current, last, self.visible_target_rows, down);
+            self.draft.reset_target_selection(selected);
+            self.scroll_target_to_selection = true;
+        }
+        true
+    }
+}
+
+fn target_page_row(current: usize, last: usize, visible: usize, down: bool) -> usize {
+    let page = visible.max(1);
+    if down {
+        current.saturating_add(page).min(last)
+    } else {
+        current.saturating_sub(page)
+    }
 }
 
 fn pressed_navigation(ui: &Ui) -> Option<Navigation> {
@@ -123,6 +149,16 @@ fn initial_match(commands: &[Command], index: Option<usize>, initial: char) -> O
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn target_pages_use_visible_rows_and_stop_at_either_end() {
+        assert_eq!(target_page_row(2, 19, 7, true), 9);
+        assert_eq!(target_page_row(9, 19, 7, false), 2);
+        assert_eq!(target_page_row(16, 19, 7, true), 19);
+        assert_eq!(target_page_row(3, 19, 7, false), 0);
+        assert_eq!(target_page_row(0, 1, 2, true), 1);
+        assert_eq!(target_page_row(1, 1, 2, false), 0);
+    }
 
     #[test]
     fn navigation_clamps_and_initial_search_wraps() {

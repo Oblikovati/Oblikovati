@@ -15,7 +15,7 @@ mod store;
 mod target_selector;
 use crate::dockable_window::DockableWindow;
 use crate::ribbon::RibbonTab;
-use imgui::Ui;
+use imgui::{FocusedWidget, Ui};
 use state::{Category, Command, Draft};
 pub use store::GuiRibbonSettingsStore;
 
@@ -43,7 +43,9 @@ pub(crate) struct RibbonCustomization {
     target_selector_open: bool,
     target_cursor: usize,
     visible_source: Vec<Command>,
+    visible_target_rows: usize,
     scroll_source_to_selection: bool,
+    scroll_target_to_selection: bool,
     settings: settings_dialog::SettingsDialog,
     store: Option<Box<dyn GuiRibbonSettingsStore>>,
     settings_error: Option<String>,
@@ -99,6 +101,7 @@ impl RibbonCustomization {
         self.category_open = false;
         self.target_selector_open = false;
         self.scroll_source_to_selection = false;
+        self.scroll_target_to_selection = false;
         self.settings_error = None;
         self.open.set_open(true);
     }
@@ -327,6 +330,7 @@ impl RibbonCustomization {
             .border(true)
             .build(|| {
                 self.target_focused = ui.is_window_focused();
+                self.visible_target_rows = 0;
                 let mut selected = self.draft.selected;
                 let mut remove = false;
                 let mut clear_extra = false;
@@ -339,6 +343,14 @@ impl RibbonCustomization {
                             selected == Some(index) || self.draft.target_extra.contains(&index),
                         )
                         .build();
+                    if ui.is_item_visible() {
+                        self.visible_target_rows += 1;
+                    }
+                    if self.scroll_target_to_selection && selected == Some(index) {
+                        ui.set_keyboard_focus_here_with_offset(FocusedWidget::Previous);
+                        ui.set_scroll_here_y();
+                        self.scroll_target_to_selection = false;
+                    }
                     let secondary_clicked =
                         ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Right);
                     if clicked || secondary_clicked {
@@ -404,7 +416,11 @@ impl RibbonCustomization {
             return;
         }
         if !ui.io().key_shift {
-            if matches!(active_list, ListFocus::Source) && self.navigate_source(ui) {
+            let handled = match active_list {
+                ListFocus::Source => self.navigate_source(ui),
+                ListFocus::Target => self.navigate_target_page(ui),
+            };
+            if handled {
                 self.navigation_consumed = true;
             }
             return;

@@ -16,6 +16,8 @@ mod category_steps;
 mod custom_panel_title;
 #[path = "file_exchange.rs"]
 mod file_exchange;
+#[path = "list_keyboard_steps.rs"]
+mod list_keyboard_steps;
 #[path = "list_steps.rs"]
 mod list_steps;
 #[path = "location_steps.rs"]

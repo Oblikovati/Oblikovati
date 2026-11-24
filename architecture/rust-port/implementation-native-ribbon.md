@@ -22,6 +22,9 @@ check small and large captions, large icon-only buttons, and a divider
 between two small command icons.
 The [native keyboard transfer scenario](receipts/2026-11-24-ribbon-customization-keyboard-transfer-3856/README.md)
 checks Enter in the source list and Tab followed by Space on Add.
+The [native list navigation runs](receipts/2026-11-24-ribbon-customization-list-navigation-3856/README.md)
+cover paging staged rows, selecting all visible source rows, and keeping a
+staged ribbon edit while viewing Keyboard customization.
 
 The Rust shell uses a fixed ribbon band across the window instead of the temporary
 floating command palette. The File menu and quick-access controls remain available.

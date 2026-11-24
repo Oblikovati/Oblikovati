@@ -27,6 +27,7 @@ impl RibbonCustomization {
                 .build();
             if clicked || (enter && index == self.target_cursor) {
                 self.draft.switch(target);
+                self.scroll_target_to_selection = false;
                 self.scroll_source_to_selection = self.draft.source.is_some();
                 ui.close_current_popup();
             }

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T13:27:25.619175507Z" time="20.776151466"><testcase name="Scenario: Preserve a staged ribbon edit while viewing keyboard customization: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-customization/ribbon-customization.feature:388:3" time="20.776151466"><system-out><![CDATA[  Scenario: Preserve a staged ribbon edit while viewing keyboard customization
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the ribbon customization dialog has an empty Part Tools custom panel
+   ✔  When the user adds "2D Sketches" to the custom panel
+   ✔  And the user selects the "Keyboard" customization tab
+   ✔  Then the keyboard command list is displayed
+   ✔  And "Apply" and "Cancel" remain available
+   ✔  When the user returns to the "Ribbon" customization tab
+   ✔  Then "2D Sketches" remains in the Part Tools custom panel list
+   ✔  And the target indicates a pending change
+   ✔  When the user clicks "Cancel"
+   ✔  Then the customization dialog closes
+   ✔  And no User Commands panel appears on the Tools ribbon
+]]></system-out></testcase></testsuite></testsuites>
