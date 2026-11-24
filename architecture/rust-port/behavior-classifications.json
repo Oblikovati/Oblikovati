@@ -54292,7 +54292,7 @@
         "https://github.com/Oblikovati/Oblikovati/issues/4030",
         "https://github.com/Oblikovati/Oblikovati/issues/4038"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "baseline_source_sha256": "d87eaf041fc93701e0de5c911dd3b4c0622386d184f05954a8409400e412c0d0",
       "go_reference": "Go aa8297d1b: head/ui/close_guard.go dirtyDocuments and head/ui/close_guard_draw.go HandleClose and drawCloseModal; Go uses Save, Don't Save, Cancel rather than the scenario's Yes, No, Cancel labels.",
@@ -54318,7 +54318,7 @@
         "https://github.com/Oblikovati/Oblikovati/issues/4030",
         "https://github.com/Oblikovati/Oblikovati/issues/4038"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "baseline_source_sha256": "d87eaf041fc93701e0de5c911dd3b4c0622386d184f05954a8409400e412c0d0",
       "go_reference": "Go aa8297d1b: head/ui/close_guard.go dirtyDocuments and head/ui/close_guard_draw.go HandleClose and drawCloseModal; Go uses Save, Don't Save, Cancel rather than the scenario's Yes, No, Cancel labels.",
@@ -54344,7 +54344,7 @@
         "https://github.com/Oblikovati/Oblikovati/issues/4030",
         "https://github.com/Oblikovati/Oblikovati/issues/4038"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "baseline_source_sha256": "d87eaf041fc93701e0de5c911dd3b4c0622386d184f05954a8409400e412c0d0",
       "go_reference": "Go aa8297d1b: head/ui/close_guard.go dirtyDocuments and head/ui/close_guard_draw.go HandleClose and drawCloseModal; Go uses Save, Don't Save, Cancel rather than the scenario's Yes, No, Cancel labels.",

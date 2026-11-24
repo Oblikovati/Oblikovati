@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Close the application: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/application-closing/application-closing.feature" package="testsuite/Feature: Close the application: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/application-closing/application-closing.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T17:56:09.280865253Z" time="9.663200895"><testcase name="Scenario: Close the application when the open document has no unsaved changes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/application-closing/application-closing.feature:15:3" time="9.663200895"><system-out><![CDATA[  Scenario: Close the application when the open document has no unsaved changes
+   ✔  Given the MCAD Software has an open saved document with no unsaved changes
+   ✔  When the user selects the application window's Close control
+   ✔  Then the MCAD Software closes without a save-changes prompt
+]]></system-out></testcase></testsuite></testsuites>

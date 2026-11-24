@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Close the application: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/application-closing/application-closing.feature" package="testsuite/Feature: Close the application: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/application-closing/application-closing.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T17:53:16.384685953Z" time="19.270271786"><testcase name="Scenario: Cancel closing the application when a document has unsaved changes: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/application-closing/application-closing.feature:4:3" time="19.270271786"><system-out><![CDATA[  Scenario: Cancel closing the application when a document has unsaved changes
+   ✔  Given the MCAD Software has an open part document with unsaved changes
+   ✔  When the user selects the application window's Close control
+   ✔  Then a save-changes prompt identifies the part document
+   ✔  And the prompt offers Yes, No and Cancel
+   ✔  When the user chooses Cancel
+   ✔  Then the save-changes prompt closes
+   ✔  And the part document remains open
+   ✔  And the MCAD Software remains open
+]]></system-out></testcase></testsuite></testsuites>

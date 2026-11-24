@@ -293,11 +293,10 @@ using this status; the live scenario directory can change.
   with `tools/bdd/feature_progress.py` before reporting them.
 - Sketch constraint-glyph hover passed its complete one-scenario native run at
   `e33bac9dd`.
-- Application Closing (#4030): all four scenarios and 25 steps passed against
-  the current native fixtures. Dirty part and assembly cancellation, clean
-  assembly exit and Home-only exit passed together. See
-  `receipts/2026-11-20-application-closing-native-4030/`. Strict verification
-  still depends on build and runtime provenance (#3978).
+- Application Closing (#4030) passed all three pinned scenarios and 14 steps individually.
+  See the [pinned run](receipts/2026-11-24-application-closing-pinned-4030/README.md)
+  and the [earlier published run](receipts/2026-11-20-application-closing-native-4030/README.md).
+  Strict build and runtime provenance remains open under #3978.
 - Viewport pan has a full-feature diagnostic: all four scenarios and 32 steps
   passed at SHA-256 `4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647`.
   Two separate X11 mouse tests passed for pan dragging and context-menu actions.
@@ -472,6 +471,7 @@ using this status; the live scenario directory can change.
 
 ## Work queue
 
+Work dependency-ready application scenarios one at a time, then sketch and modeling.
 1. Diagnose Ribbon Appearance (#3957) against its current source. Its fixture
    notes require a visible solid, but the shared part setup creates an empty
    part; clarification was requested. Midpoint Line (#4178)

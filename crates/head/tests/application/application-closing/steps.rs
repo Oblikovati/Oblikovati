@@ -48,6 +48,10 @@ fn home_only(world: &mut ApplicationWorld) {
 pub(super) fn request_application_close(world: &mut ApplicationWorld) {
     world.application_close_requested = true;
     let can_close = world.app().owner.close_allowed().unwrap();
+    if can_close {
+        // A successful clean exit destroys the drawable before the final capture hook.
+        world.save_capture("application-closing-ready");
+    }
     #[cfg(target_os = "linux")]
     {
         super::x11_input::focus_window();
