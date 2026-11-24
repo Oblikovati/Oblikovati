@@ -32,7 +32,7 @@ impl RibbonDisplayState {
             }
         }
         if ui.menu_item("Reset Ribbon") {
-            self.reset_requested = true;
+            self.request_reset();
             self.close_context_menu = true;
         }
     }

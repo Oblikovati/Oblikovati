@@ -63,7 +63,7 @@ fn draw_side_group(
     let floating = display.placement == RibbonPlacement::Floating;
     if panel == RibbonPanel::Exit {
         // Sketch editing needs a direct way out in the vertical ribbon too (#3856).
-        draw_expanded(context, tab, panel, ui.cursor_pos(), layout);
+        draw_expanded(context, tab, panel, ui.cursor_pos(), layout, None);
         return;
     }
     let pressed = if floating && panel == RibbonPanel::Sketch && tab == RibbonTab::Model {

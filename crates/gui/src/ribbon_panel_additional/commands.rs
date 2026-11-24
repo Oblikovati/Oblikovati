@@ -3,6 +3,19 @@
 use super::*;
 #[path = "coordinate_restriction.rs"]
 mod coordinate_restriction;
+
+pub(in super::super) fn tool_options(ui: &Ui, display: &mut RibbonDisplayState) -> bool {
+    let left = ui.cursor_pos()[0];
+    let reset = ui.button("Reset UI Layout");
+    if reset {
+        display.request_reset();
+    }
+    let _disabled = ui.begin_disabled(true);
+    crate::widget_abi::cursor_position(ui, [left, ui.cursor_pos()[1]]);
+    ui.button("iLogic Configuration");
+    reset
+}
+
 pub(super) fn draw(
     context: &mut PanelDrawContext<'_>,
     tab: RibbonTab,

@@ -228,7 +228,7 @@ fn temporary_panel(
         .collapsible(false)
         .focused(focus)
         .build(|| {
-            let local = temporary_contents(context, tab, layout, shown, display.placement);
+            let local = temporary_contents(context, tab, layout, shown, display);
             keep = !local
                 && (ui.is_window_hovered_with_flags(
                     imgui::WindowHoveredFlags::CHILD_WINDOWS
@@ -260,11 +260,12 @@ fn temporary_contents(
     tab: RibbonTab,
     layout: &mut RibbonPanelLayout,
     shown: TemporaryPanel,
-    placement: crate::application::ribbon_display::RibbonPlacement,
+    display: &mut RibbonDisplayState,
 ) -> bool {
     let ui = context.ui;
     let available = ui.content_region_avail()[0].max(1.);
-    let floating_notes = placement == crate::application::ribbon_display::RibbonPlacement::Floating
+    let floating_notes = display.placement
+        == crate::application::ribbon_display::RibbonPlacement::Floating
         && shown == TemporaryPanel::Group(RibbonPanel::PartNotes);
     let content_height = temporary_content_height(context.owners.icons.appearance, floating_notes);
     let height = 6. + content_height * context.owners.icons.layout_factor();
@@ -278,8 +279,11 @@ fn temporary_contents(
     }
     match shown {
         TemporaryPanel::Group(panel) => {
-            let (width, local) = draw_expanded(context, tab, panel, [0.; 2], layout);
-            if !context.side_groups || panel != RibbonPanel::PartModify {
+            let combines_options = panel == RibbonPanel::ToolOptions && context.additional_allowed;
+            let compact_options = combines_options.then_some(display);
+            let (width, local) =
+                draw_expanded(context, tab, panel, [0.; 2], layout, compact_options);
+            if !combines_options && (!context.side_groups || panel != RibbonPanel::PartModify) {
                 layout.record_width(tab, panel, width);
             }
             local
@@ -323,7 +327,7 @@ fn draw_row(
             && panel == RibbonPanel::PartSimplification;
         // Keep Finish directly available when other groups collapse (#3956).
         let width = if (index < expanded || panel == RibbonPanel::Exit) && !force_compact {
-            let (width, local_action) = draw_expanded(context, tab, panel, [x, 0.], layout);
+            let (width, local_action) = draw_expanded(context, tab, panel, [x, 0.], layout, None);
             activated |= local_action;
             layout.record_width(tab, panel, width);
             width
@@ -342,6 +346,7 @@ fn draw_expanded(
     panel: RibbonPanel,
     origin: [f32; 2],
     layout: &mut RibbonPanelLayout,
+    compact_options: Option<&mut RibbonDisplayState>,
 ) -> (f32, bool) {
     let ui = context.ui;
     crate::widget_abi::cursor_position(ui, origin);
@@ -349,9 +354,15 @@ fn draw_expanded(
     let mut local_action = false;
     ui.group(|| {
         local_action = context.content(panel, origin);
+        let combines_options = compact_options.is_some();
+        if let Some(display) = compact_options {
+            context.owners.icons.cursor(ui, origin, [270., 0.]);
+            local_action |= additional::tool_options(ui, display);
+        }
         let title_y = context.owners.icons.appearance.command_height() + 6.;
         context.owners.icons.cursor(ui, origin, [0., title_y]);
-        let expandable = context.additional_allowed
+        let expandable = !combines_options
+            && context.additional_allowed
             && (additional::available(tab, panel)
                 || builtin::is_expanded(panel, context.state, context.owners.customization)
                 || (panel == RibbonPanel::UserCommands

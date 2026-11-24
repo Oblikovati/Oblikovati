@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Actions and readings shared by the document scenarios: they use real input and rendered output.
-use super::{ApplicationWorld, diagnostics};
+use super::{ApplicationWorld, diagnostics, world::squeezed};
 use crate::HeadWork;
 use oblikovati_viewport::{
     ViewportButton, ViewportEvent, ViewportInput, ViewportKey, ViewportPhysicalKey,
@@ -297,10 +297,11 @@ impl ApplicationWorld {
     /// Assert the browser shows this document: its root names it and it lists its sketches.
     pub fn expect_browser_of(&mut self, id: u64) {
         let name = self.document_name(id);
+        let rendered_name = squeezed(&name);
         let (position, size) = diagnostics::window_geometry("Model").expect("expected the browser");
         let shown = self.frame.runs.iter().any(|run| {
             let center = run.center();
-            run.text.contains(&name)
+            squeezed(&run.text).contains(&rendered_name)
                 && center[0] >= position[0]
                 && center[0] <= position[0] + size[0]
                 && center[1] >= position[1]

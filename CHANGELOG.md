@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added a Tools Options expansion with a ribbon layout reset confirmation. (#3856)
+
 - Added a curvature comb and live density and scale settings for sketch ellipses. (#3995)
 
 - Added Italic to the Sketch Text editor and kept Bold when applying it. (#3907)

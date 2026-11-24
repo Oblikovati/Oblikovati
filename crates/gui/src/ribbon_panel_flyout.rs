@@ -29,7 +29,7 @@ pub(super) fn draw_panel_popup(
         return;
     }
     let before = context.actions.len();
-    let (measured, local_action) = draw_expanded(context, tab, panel, [0.; 2], layout);
+    let (measured, local_action) = draw_expanded(context, tab, panel, [0.; 2], layout, None);
     layout.record_width(tab, panel, measured);
     if context.actions.len() != before || local_action {
         ui.close_current_popup();

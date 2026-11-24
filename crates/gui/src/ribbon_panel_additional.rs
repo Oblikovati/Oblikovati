@@ -5,6 +5,7 @@ use super::*;
 mod bend_notice;
 #[path = "ribbon_panel_additional/commands.rs"]
 mod commands;
+pub(super) use commands::tool_options;
 #[path = "ribbon_panel_additional/temporary_tab.rs"]
 mod temporary_tab;
 const ADDITIONAL_WIDTH: f32 = 230.;
@@ -79,10 +80,11 @@ pub(super) fn available(tab: RibbonTab, panel: RibbonPanel) -> bool {
         (
             RibbonTab::Model,
             RibbonPanel::PartModify | RibbonPanel::PartSimplification
-        ) | (
-            RibbonTab::Sketch,
-            RibbonPanel::Constrain | RibbonPanel::Create
-        )
+        ) | (RibbonTab::Tools, RibbonPanel::ToolOptions)
+            | (
+                RibbonTab::Sketch,
+                RibbonPanel::Constrain | RibbonPanel::Create
+            )
     )
 }
 pub(super) fn trigger(
@@ -241,6 +243,8 @@ fn draw_window(
                 );
                 context.owners.quick_access.command_took_right_click |= right;
                 close |= !context.owners.customization.has_expanded(tab);
+            } else if panel == RibbonPanel::ToolOptions {
+                close |= commands::tool_options(ui, display);
             } else {
                 let before = context.actions.len();
                 commands::draw(context, tab, panel, display, &mut expansion.bend_notice);

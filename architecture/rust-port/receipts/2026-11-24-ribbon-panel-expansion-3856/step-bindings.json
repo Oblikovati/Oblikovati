@@ -1,0 +1,574 @@
+{
+  "features": 1,
+  "scenarios": 67,
+  "excluded_capture_only": 0,
+  "blocked_capture_host_only": 0,
+  "steps": 756,
+  "unresolved": [
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Launch a main-panel command while its expansion is open",
+      "line": 285,
+      "step": "the user clicks Shell in the main Modify panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Launch a main-panel command while its expansion is open",
+      "line": 286,
+      "step": "the Shell properties panel opens with a preview in the viewport",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Launch a main-panel command while its expansion is open",
+      "line": 287,
+      "step": "the Modify additional command area remains visible in the captured state",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Launch a main-panel command while its expansion is open",
+      "line": 288,
+      "step": "the user clicks Cancel in the Shell properties panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Launch a main-panel command while its expansion is open",
+      "line": 289,
+      "step": "the properties panel and preview close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Launch a command moved to the expanded panel",
+      "line": 307,
+      "step": "the full 3D Model ribbon shows Shell in the Modify main panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Launch a command moved to the expanded panel",
+      "line": 310,
+      "step": "the user selects Shell from the expanded panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Launch a command moved to the expanded panel",
+      "line": 311,
+      "step": "the Shell properties panel opens with a preview in the viewport",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Launch a command moved to the expanded panel",
+      "line": 312,
+      "step": "the Modify expanded panel remains visible in the captured state",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Launch a command moved to the expanded panel",
+      "line": 313,
+      "step": "the user clicks Cancel in the Shell properties panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Launch a command moved to the expanded panel",
+      "line": 314,
+      "step": "the properties panel and preview close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Launch a command moved to the expanded panel",
+      "line": 315,
+      "step": "the Modify expanded panel is no longer visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Open a main-panel menu while additional commands are visible",
+      "line": 357,
+      "step": "the Options additional command area is open and unpinned",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Open a main-panel menu while additional commands are visible",
+      "line": 358,
+      "step": "the user opens the Highlight New drop-down in the main Options panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Open a main-panel menu while additional commands are visible",
+      "line": 359,
+      "step": "the drop-down menu appears over the additional command area",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Open a main-panel menu while additional commands are visible",
+      "line": 360,
+      "step": "the Options additional command area remains visible behind the menu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Open a main-panel menu while additional commands are visible",
+      "line": 362,
+      "step": "the drop-down menu closes",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Open a main-panel menu while additional commands are visible",
+      "line": 363,
+      "step": "the Options additional command area remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Toggle Explore from an expanded panel title menu",
+      "line": 606,
+      "step": "the user opens the \"Show Panels\" submenu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Toggle Explore from an expanded panel title menu",
+      "line": 607,
+      "step": "Explore is checked in the submenu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Toggle Explore from an expanded panel title menu",
+      "line": 609,
+      "step": "the user selects Explore in the submenu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Toggle Explore from an expanded panel title menu",
+      "line": 610,
+      "step": "Explore is hidden and the ribbon panels reflow",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Toggle Explore from an expanded panel title menu",
+      "line": 614,
+      "step": "the user opens the \"Show Panels\" submenu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Toggle Explore from an expanded panel title menu",
+      "line": 615,
+      "step": "Explore is unchecked in the submenu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Toggle Explore from an expanded panel title menu",
+      "line": 616,
+      "step": "the user selects Explore in the submenu",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Toggle Explore from an expanded panel title menu",
+      "line": 617,
+      "step": "Explore returns to the 3D Model ribbon",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Use a panel expansion while a modeling command is active",
+      "line": 734,
+      "step": "the full 3D Model ribbon is visible with Modify unpinned",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Use a panel expansion while a modeling command is active",
+      "line": 735,
+      "step": "the Shell command is active with its properties and preview visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Use a panel expansion while a modeling command is active",
+      "line": 737,
+      "step": "the additional area opens while Shell properties and preview remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Use a panel expansion while a modeling command is active",
+      "line": 738,
+      "step": "the user selects a solid face for Shell",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Use a panel expansion while a modeling command is active",
+      "line": 740,
+      "step": "Shell remains active with one face selected and an updated preview",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Use a panel expansion while a modeling command is active",
+      "line": 741,
+      "step": "the user opens the Modify additional-command area again",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Use a panel expansion while a modeling command is active",
+      "line": 742,
+      "step": "the area opens while the Shell face selection and preview remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Use a panel expansion while a modeling command is active",
+      "line": 743,
+      "step": "the user cancels Shell",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Use a panel expansion while a modeling command is active",
+      "line": 744,
+      "step": "the properties, preview and additional-command area close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Use a panel expansion while a modeling command is active",
+      "line": 745,
+      "step": "no Shell feature is created",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Keep a pinned panel expansion through face selection and command cancellation",
+      "line": 750,
+      "step": "the Shell command is active with its properties and preview visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Keep a pinned panel expansion through face selection and command cancellation",
+      "line": 751,
+      "step": "the user opens and pins the Modify additional-command area",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Keep a pinned panel expansion through face selection and command cancellation",
+      "line": 752,
+      "step": "the user selects a solid face for Shell",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Keep a pinned panel expansion through face selection and command cancellation",
+      "line": 753,
+      "step": "the pinned additional area remains open",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Keep a pinned panel expansion through face selection and command cancellation",
+      "line": 754,
+      "step": "Shell remains active with one face selected and an updated preview",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Keep a pinned panel expansion through face selection and command cancellation",
+      "line": 755,
+      "step": "the user cancels Shell",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Keep a pinned panel expansion through face selection and command cancellation",
+      "line": 756,
+      "step": "the Shell properties and preview close without creating a feature",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Keep a pinned panel expansion through face selection and command cancellation",
+      "line": 757,
+      "step": "the pinned additional area remains open",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Keep a pinned panel expansion through face selection and command cancellation",
+      "line": 758,
+      "step": "the user unpins the area and clicks its lower title",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Choose an additional command while another modeling command is active",
+      "line": 763,
+      "step": "the full 3D Model ribbon is visible with Modify unpinned",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Choose an additional command while another modeling command is active",
+      "line": 764,
+      "step": "the Shell command is active with its properties and preview visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Choose an additional command while another modeling command is active",
+      "line": 766,
+      "step": "the user selects Move Bodies from that area",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Choose an additional command while another modeling command is active",
+      "line": 767,
+      "step": "the Shell properties and preview close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Choose an additional command while another modeling command is active",
+      "line": 768,
+      "step": "the Move Bodies dialog and its preview are visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Choose an additional command while another modeling command is active",
+      "line": 769,
+      "step": "the user cancels Move Bodies",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Choose an additional command while another modeling command is active",
+      "line": 770,
+      "step": "the dialog and preview close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Choose an additional command while another modeling command is active",
+      "line": 771,
+      "step": "the original solid remains visible without a new Shell or Move Bodies feature",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while an unpinned panel is expanded",
+      "line": 774,
+      "step": "a part containing a solid block is active in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while an unpinned panel is expanded",
+      "line": 775,
+      "step": "the full 3D Model ribbon displays the Modify panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while an unpinned panel is expanded",
+      "line": 776,
+      "step": "the Modify additional-command area is unpinned and closed",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while an unpinned panel is expanded",
+      "line": 777,
+      "step": "the user starts Shell from Modify",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while an unpinned panel is expanded",
+      "line": 778,
+      "step": "the Shell properties panel and model preview appear",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while an unpinned panel is expanded",
+      "line": 780,
+      "step": "the additional commands and Shell properties are both visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while an unpinned panel is expanded",
+      "line": 781,
+      "step": "the user clicks the Shell thickness field",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while an unpinned panel is expanded",
+      "line": 783,
+      "step": "the thickness value is selected in the field",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while an unpinned panel is expanded",
+      "line": 784,
+      "step": "the Shell properties panel and model preview remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while an unpinned panel is expanded",
+      "line": 785,
+      "step": "the user cancels Shell",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while an unpinned panel is expanded",
+      "line": 786,
+      "step": "the command properties and preview close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while an unpinned panel is expanded",
+      "line": 787,
+      "step": "the original solid block remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 790,
+      "step": "a part containing a solid block is active in the MCAD Software",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 791,
+      "step": "the full 3D Model ribbon displays the Modify panel",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 792,
+      "step": "the user starts Shell from Modify",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 793,
+      "step": "the user opens and pins the Modify additional-command area",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 794,
+      "step": "the additional commands and Shell properties are both visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 795,
+      "step": "the user clicks the Shell thickness field",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 796,
+      "step": "the thickness value is selected in the field",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 797,
+      "step": "the pinned additional-command area remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 798,
+      "step": "the Shell properties panel and model preview remain visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 799,
+      "step": "the user cancels Shell",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 800,
+      "step": "the command properties and preview close",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 801,
+      "step": "the original solid block remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 802,
+      "step": "the pinned additional-command area remains visible",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 803,
+      "step": "the user unpins the additional-command area",
+      "cause": "undefined step"
+    },
+    {
+      "source": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature",
+      "scenario": "Focus a command property while a pinned panel is expanded",
+      "line": 804,
+      "step": "the user clicks its Modify title",
+      "cause": "undefined step"
+    }
+  ],
+  "source_revision": {
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout",
+    "commit": "dfbe3564d8e78386834e955d833ad0f6d5c06ea5",
+    "dirty": false
+  }
+}

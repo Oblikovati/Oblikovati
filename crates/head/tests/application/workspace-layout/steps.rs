@@ -41,7 +41,7 @@ mod external_close_native;
 #[path = "interface_menu.rs"]
 mod interface_menu;
 #[path = "native_part.rs"]
-mod native_part;
+pub(super) mod native_part;
 #[cfg(target_os = "linux")]
 #[path = "representation_preference_native.rs"]
 mod representation_preference_native;

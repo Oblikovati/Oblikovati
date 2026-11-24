@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native finish and keyboard paths for Sketch ribbon expansion.
+#[cfg(target_os = "linux")]
+use super::super::super::workspace_layout::browser_feature::SKETCH;
+use super::super::super::workspace_layout::browser_feature::right_click_row;
 use super::*;
 
 #[cfg(target_os = "linux")]
@@ -74,4 +77,55 @@ fn x11_sketch_tab_closes_unpinned_modify_expansion() {
     world.expect_active(part);
     expect_solid_visible(&mut world);
     world.close();
+}
+
+pub(super) fn finish_unavailable_outside_edit(world: &mut ApplicationWorld) {
+    // Line can enter the only existing sketch through the Part ribbon.
+    assert!(world.app().owner.active_sketch_edit().is_none());
+    assert!(!world.run_is_enabled("Finish Sketch"));
+}
+
+#[when("the user enters sketch edit from the model browser")]
+pub(super) fn edit_sketch(world: &mut ApplicationWorld) {
+    let browser = world
+        .state()
+        .browser
+        .expect("expected the Part model browser");
+    let [sketch] = browser.sketches.as_slice() else {
+        panic!(
+            "fixture contains {} sketches: expected one existing sketch",
+            browser.sketches.len()
+        );
+    };
+    right_click_row(world, &sketch.name);
+    world.click_text("Edit Sketch");
+    world.pump(Vec::new());
+    world.record_initial_sketch();
+}
+
+#[when("the user selects Finish without changing sketch geometry")]
+pub(super) fn finish_sketch(world: &mut ApplicationWorld) {
+    let edit = world
+        .app()
+        .owner
+        .active_sketch_edit()
+        .expect("expected the edited sketch");
+    let before = world
+        .observed_sketch
+        .as_ref()
+        .expect("expected the original sketch")
+        .geometry
+        .clone();
+    world.finish_sketch();
+    world.pump(Vec::new());
+    let workspace = world.app().owner.documents().workspace();
+    let session = workspace
+        .session(edit.document)
+        .expect("expected the same Part");
+    let after = session
+        .snapshot()
+        .sketches
+        .get(edit.sketch)
+        .expect("expected the same sketch");
+    assert!(after.geometry().same_recipe(&before));
 }

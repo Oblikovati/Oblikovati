@@ -323,7 +323,11 @@ impl RibbonDisplayState {
     pub(crate) fn take_customization_request(&mut self) -> bool {
         std::mem::take(&mut self.customize_requested)
     }
-    /// Consume a reset-menu request; example: `display.take_reset_request()`.
+    /// Open ribbon reset confirmation; example: `display.request_reset()`.
+    pub(crate) fn request_reset(&mut self) {
+        self.reset_requested = true;
+    }
+    /// Consume a reset request; example: `display.take_reset_request()`.
     pub(crate) fn take_reset_request(&mut self) -> bool {
         std::mem::take(&mut self.reset_requested)
     }

@@ -1,0 +1,22 @@
+
+running 1 test
+Feature: Ribbon display modes
+  Scenario: Press Escape with a compact Options panel open
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with a solid face visible in the MCAD Software
+   ✔  And the Tools ribbon is minimized to panel buttons
+   ✔  When the user clicks the Options panel button
+   ✔  Then the Options commands appear in a temporary panel below the buttons
+   ✔  And the Options panel button is highlighted
+   ✔  When the user presses Escape
+   ✔  Then the temporary Options panel remains visible
+   ✔  And the Options panel button remains highlighted
+   ✔  When the user clicks a face of the part outside the panel
+   ✔  Then the temporary Options panel closes
+   ✔  And the compact panel buttons remain visible
+[Summary]
+1 feature
+1 scenario (1 passed)
+11 steps (11 passed)
+test native::gui_loop_tests::application_bdd::application_scenarios_use_the_native_window ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1617 filtered out; finished in 23.54s

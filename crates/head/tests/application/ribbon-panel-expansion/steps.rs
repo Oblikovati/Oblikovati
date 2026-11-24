@@ -52,6 +52,8 @@ mod temporary_tab_native;
 mod title_appearance;
 #[path = "title_customization.rs"]
 mod title_customization;
+#[path = "tool_options.rs"]
+mod tool_options;
 const WINDOW: &str = "##ribbon-additional-PartModify";
 const SIMPLIFICATION: &str = "##ribbon-additional-PartSimplification";
 
@@ -77,6 +79,7 @@ fn additional_closed(_: &mut ApplicationWorld) {
 #[when("I select the expansion arrow on the Modify panel title")]
 #[when("the user opens the Modify panel's additional commands")]
 #[when("the user opens the Modify additional command area")]
+#[when("the user opens the Modify additional area")]
 #[when("the user opens the Modify additional command area again")]
 #[when("the user opens the Modify additional-command area")]
 fn open_modify(world: &mut ApplicationWorld) {
@@ -174,6 +177,7 @@ pub(super) fn toggle_pin(world: &mut ApplicationWorld) {
 #[then("the Modify additional command area remains visible")]
 #[then("the Modify additional-command area opens")]
 #[then("the additional command area remains open")]
+#[then("the Modify additional area remains visible")]
 fn pinned_visible(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry(WINDOW).is_some());
     world.expect_text("Move Bodies");
@@ -189,6 +193,7 @@ fn pin_highlight(world: &mut ApplicationWorld) {
 }
 #[then("the Modify additional command area is closed")]
 #[then("the additional commands are closed")]
+#[then("the Modify additional area is not visible")]
 #[then("the additional command area closes")]
 #[then("the additional area closes")]
 #[then("the additional command area is no longer open")]

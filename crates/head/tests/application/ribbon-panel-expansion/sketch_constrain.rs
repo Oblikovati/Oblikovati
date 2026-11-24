@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Sketch Constrain expansion while the part is outside sketch edit.
 use super::super::workspace_layout::browser_feature::{
-    SKETCH, expect_solid_visible, open_visible_extruded_part, right_click_row,
+    expect_solid_visible, open_visible_extruded_part,
 };
 use super::{ApplicationWorld, click_expansion_arrow, diagnostics};
 use cucumber::{given, then, when};
 
 #[path = "sketch_constrain_finish.rs"]
 mod finish_checks;
+use finish_checks::{edit_sketch, finish_sketch, finish_unavailable_outside_edit};
 #[path = "sketch_constrain_pinned.rs"]
 mod pinned_checks;
 
@@ -29,14 +30,6 @@ fn sketch_tab(world: &mut ApplicationWorld) {
         click_sketch_tab(world);
     }
     world.expect_text("Constrain");
-}
-fn unavailable_sketch_commands(world: &mut ApplicationWorld) {
-    for label in ["Line", "Finish Sketch"] {
-        assert!(
-            !world.run_is_enabled(label),
-            "{label}: expected unavailable outside sketch edit"
-        );
-    }
 }
 #[given("the Constrain additional-command area is closed")]
 fn constrain_closed(_: &mut ApplicationWorld) {
@@ -118,13 +111,7 @@ fn sketch_visible_outside_edit(world: &mut ApplicationWorld) {
         world.state().authoring,
         oblikovati_gui::GuiAuthoringContext::Part
     );
-    unavailable_sketch_commands(world);
-}
-#[when("the user enters sketch edit from the model browser")]
-fn edit_sketch(world: &mut ApplicationWorld) {
-    right_click_row(world, SKETCH);
-    world.click_text("Edit Sketch");
-    world.pump(Vec::new());
+    finish_unavailable_outside_edit(world);
 }
 #[then("sketch commands become available and the Exit group shows Finish")]
 fn sketch_commands_available(world: &mut ApplicationWorld) {
@@ -139,11 +126,6 @@ fn sketch_commands_available(world: &mut ApplicationWorld) {
 fn constrain_commands_visible(world: &mut ApplicationWorld) {
     world.expect_text("Edit Coordinate System");
     world.expect_text("Constraint Inference Scope");
-}
-#[when("the user selects Finish without changing sketch geometry")]
-fn finish_sketch(world: &mut ApplicationWorld) {
-    world.finish_sketch();
-    world.pump(Vec::new());
 }
 #[then("sketch edit ends and the part view returns")]
 fn returns_to_part(world: &mut ApplicationWorld) {
@@ -166,6 +148,7 @@ fn original_part_visible(world: &mut ApplicationWorld) {
 #[given("a part containing an existing sketch is active in the MCAD Software")]
 fn existing_sketch_part(world: &mut ApplicationWorld) {
     open_visible_extruded_part(world);
+    world.previous_document = Some(world.active_id());
 }
 #[given("the full Sketch ribbon is selected outside sketch edit")]
 fn select_sketch_outside_edit(world: &mut ApplicationWorld) {

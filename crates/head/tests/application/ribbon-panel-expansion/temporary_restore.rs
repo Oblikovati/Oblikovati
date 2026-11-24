@@ -21,3 +21,11 @@ fn additional_below_temporary(_: &mut ApplicationWorld) {
     let (ribbon, size) = diagnostics::window_geometry("##ribbon-temporary-panel").unwrap();
     assert!(area[1] >= ribbon[1] + size[1]);
 }
+
+#[then("the temporary ribbon and its additional command area close")]
+fn temporary_model_closes(world: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("##ribbon-temporary-panel").is_none());
+    assert!(diagnostics::window_geometry("##ribbon-additional-PartModify").is_none());
+    world.expect_no_text("Start 2D Sketch");
+    world.expect_text("3D Model");
+}

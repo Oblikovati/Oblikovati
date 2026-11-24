@@ -76,7 +76,14 @@ pub(super) fn temporary_geometry(
     } else {
         0.
     };
-    let width = (measured.max(compact_width) + 32.)
+    let options_width = if panel == RibbonPanel::ToolOptions
+        && display.placement == crate::application::ribbon_display::RibbonPlacement::Top
+    {
+        430. * factor
+    } else {
+        0.
+    };
+    let width = (measured.max(compact_width).max(options_width) + 32.)
         .max(140.)
         .min(viewport - 16.);
     if let Some(anchor) = display.side_anchor {

@@ -31,7 +31,7 @@ fn band_height() -> f32 {
         .expect("ribbon: expected a drawn band")
         .1[1]
 }
-fn activate_display_control(world: &mut ApplicationWorld) {
+pub(super) fn activate_display_control(world: &mut ApplicationWorld) {
     world.ribbon_height = band_height();
     world.click_text("Ribbon Display");
 }
@@ -75,7 +75,7 @@ pub(super) fn click_display_menu(world: &mut ApplicationWorld) {
 }
 #[given("the ribbon display control is configured to cycle through all modes")]
 #[given("the ribbon display control is set to cycle through all modes")]
-fn cycling(world: &mut ApplicationWorld) {
+pub(super) fn cycling(world: &mut ApplicationWorld) {
     click_display_menu(world);
     if !world.checked("Cycle through All") {
         world.click_text("Cycle through All");
@@ -394,6 +394,7 @@ fn model_ribbon_expanded(world: &mut ApplicationWorld) {
     world.expect_text("Start 2D Sketch");
 }
 #[then("the permanent command groups disappear and the ribbon tabs remain visible")]
+#[then("the ribbon is minimized to tabs")]
 fn groups_gone(world: &mut ApplicationWorld) {
     world.expect_no_text("Start 2D Sketch");
     world.expect_text("3D Model");

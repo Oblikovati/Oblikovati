@@ -9,10 +9,9 @@ use cucumber::{given, then, when};
 const CREATE: &str = "##ribbon-additional-Create";
 const CONSTRAIN: &str = "##ribbon-additional-Constrain";
 
-fn wide_sketch(world: &mut ApplicationWorld) {
+fn widen_sketch_ribbon(world: &mut ApplicationWorld) {
     world.app().window.native.view.resize([2400, 900]).unwrap();
     world.pump(Vec::new());
-    world.record_initial_sketch();
 }
 #[given(
     "a part containing an existing sketch is active and the sketch is being edited in the MCAD Software"
@@ -22,7 +21,40 @@ fn existing_sketch_under_edit(world: &mut ApplicationWorld) {
     right_click_row(world, SKETCH);
     world.click_text("Edit Sketch");
     world.pump(Vec::new());
-    wide_sketch(world);
+    widen_sketch_ribbon(world);
+    world.record_initial_sketch();
+}
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` is open with an existing sketch in the MCAD Software"
+)]
+#[given("`fixtures/cad/workspace-layout-native.opd` contains an existing editable `Sketch1`")]
+fn named_sketch_part(world: &mut ApplicationWorld) {
+    super::super::workspace_layout::native_part::open_named_extrusion(world);
+    widen_sketch_ribbon(world);
+}
+
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` is open with `Sketch1` being edited in the MCAD Software"
+)]
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` is open with an active editable `Sketch1` in the MCAD Software"
+)]
+fn named_sketch_edit(world: &mut ApplicationWorld) {
+    named_sketch_part(world);
+    super::super::workspace_layout::native_part::edit_named_sketch(world);
+    world.record_initial_sketch();
+}
+
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is open with its visible solid in the MCAD Software"
+)]
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is open with a solid face visible in the MCAD Software"
+)]
+fn named_visible_solid(world: &mut ApplicationWorld) {
+    let path = super::super::scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
+    super::super::viewport_orientation::open_saved_navigation_block(world, &path);
+    world.previous_document = Some(world.active_id());
 }
 #[given("the Sketch ribbon is expanded and the Create panel is visible")]
 #[given("the Sketch ribbon is expanded and the Constrain panel is visible")]

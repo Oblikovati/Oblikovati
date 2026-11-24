@@ -70,7 +70,7 @@ pub(super) fn prepare_sketch_menu_fixture(world: &mut ApplicationWorld) -> Strin
 #[given(
     "`fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software with an extrusion and its underlying dimensioned sketch"
 )]
-pub(super) fn open_named_extrusion(world: &mut ApplicationWorld) {
+pub(in super::super) fn open_named_extrusion(world: &mut ApplicationWorld) {
     let browser = open_workspace_part(world, WORKSPACE_PART);
     assert!(
         browser
@@ -101,7 +101,7 @@ fn open_named_points(world: &mut ApplicationWorld) {
 }
 
 #[given("Sketch1 is being edited")]
-fn edit_named_sketch(world: &mut ApplicationWorld) {
+pub(in super::super) fn edit_named_sketch(world: &mut ApplicationWorld) {
     browser_feature::right_click_row(world, "Sketch1");
     browser_feature::choose_menu_row(world, "Edit Sketch");
     assert_eq!(

@@ -114,6 +114,7 @@ fn click_options_panel_title(world: &mut ApplicationWorld) {
 
 #[then("the Tools panel buttons remain visible")]
 #[then("the compact Tools panel buttons remain visible")]
+#[then("the compact panel buttons remain visible")]
 fn tools_buttons_remain(world: &mut ApplicationWorld) {
     world.expect_text("Tools");
     let _button = options_button(world);
@@ -132,6 +133,25 @@ fn options_main_commands(world: &mut ApplicationWorld) {
 
 #[then("it also shows Reset UI Layout and iLogic Configuration")]
 fn options_additional_commands(world: &mut ApplicationWorld) {
-    world.expect_text("Reset UI Layout");
-    world.expect_text("iLogic Configuration");
+    reset_is_visible(world);
+    world.run_in_window("##ribbon-temporary-panel", "iLogicConfiguration");
+}
+
+#[then("it also shows Reset UI Layout")]
+fn reset_is_visible(world: &mut ApplicationWorld) {
+    world.run_in_window("##ribbon-temporary-panel", "ResetUILayout");
+}
+
+#[when("the user clicks a face of the part outside the panel")]
+fn click_face_outside_panel(world: &mut ApplicationWorld) {
+    let face = super::super::ribbon_keyboard_navigation::visible_face_point(world);
+    let (origin, size) = window_geometry("##ribbon-temporary-panel").unwrap();
+    let position = face.map(|axis| axis as f32);
+    assert!(
+        (0..2).any(
+            |axis| position[axis] < origin[axis] || position[axis] >= origin[axis] + size[axis]
+        ),
+        "face point {face:?}: expected outside Options panel"
+    );
+    world.click(face);
 }

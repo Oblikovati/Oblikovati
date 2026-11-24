@@ -25,7 +25,9 @@ impl DocumentRibbon {
         let Some(_popup) = ui.begin_modal_popup(RESET_TITLE) else {
             return;
         };
-        ui.text_wrapped("All ribbon user interface customizations will be removed. Continue?");
+        ui.text_wrapped(
+            "All ribbon user interface customizations will be removed. The ribbon will return to its default layout. Continue?",
+        );
         if let Some(error) = &self.reset_error {
             ui.text_wrapped(error);
         }

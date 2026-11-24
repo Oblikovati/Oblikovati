@@ -96,6 +96,8 @@ fn other_groups_unavailable(world: &mut ApplicationWorld) {
     ] {
         inspect_unavailable_group(world, group, commands);
     }
+    world.expect_text(SKETCH);
+    super::workspace_layout::browser_feature::expect_solid_visible(world);
 }
 fn inspect_unavailable_group(world: &mut ApplicationWorld, group: &str, commands: &[&str]) {
     world.expect_text(group);
@@ -143,10 +145,8 @@ fn inspect_unavailable_group(world: &mut ApplicationWorld, group: &str, commands
 }
 #[then("the active part and model browser remain visible")]
 fn part_and_browser_visible(world: &mut ApplicationWorld) {
-    assert!(world.state().document.is_some());
-    assert!(world.state().browser.is_some());
-    world.expect_text(SKETCH);
-    super::workspace_layout::browser_feature::expect_solid_visible(world);
+    let part = world.previous_document.expect("expected the original Part");
+    world.expect_active(part);
 }
 #[when("the user opens the existing sketch from the model browser")]
 fn open_sketch(world: &mut ApplicationWorld) {
