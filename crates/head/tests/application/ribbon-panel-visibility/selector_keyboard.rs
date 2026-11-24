@@ -56,10 +56,10 @@ fn create_still_focused(world: &mut ApplicationWorld) {
 
 #[then("the panel selector remains open")]
 fn selector_open(_: &mut ApplicationWorld) {
-    assert!(super::side_selector::popup_depth() > 0);
+    assert!(super::side_selector::selector_popup_open());
 }
 
 #[then("the panel selector closes")]
 fn selector_closed(_: &mut ApplicationWorld) {
-    assert_eq!(super::side_selector::popup_depth(), 0);
+    assert!(!super::side_selector::selector_popup_open());
 }

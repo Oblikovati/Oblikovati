@@ -5,6 +5,8 @@ use super::{
 };
 use cucumber::{given, then, when};
 const PARAMETERS: &str = "Parameters";
+#[path = "context_visibility.rs"]
+mod context_visibility;
 #[path = "minimized_context.rs"]
 mod minimized_context;
 #[path = "modify_expansion.rs"]
@@ -438,7 +440,7 @@ fn submenu_closed(world: &mut ApplicationWorld) {
 }
 #[then("the ribbon context menu remains open")]
 fn context_open(world: &mut ApplicationWorld) {
-    world.expect_text("Show Panels");
+    world.expect_text("Show Panel Titles");
 }
 #[when("I press Escape again")]
 fn escape_again(world: &mut ApplicationWorld) {
@@ -447,7 +449,7 @@ fn escape_again(world: &mut ApplicationWorld) {
 }
 #[then("the ribbon context menu closes")]
 fn context_closed(world: &mut ApplicationWorld) {
-    world.expect_no_text("Show Panels");
+    world.expect_no_text("Show Panel Titles");
 }
 #[then("Create and Modify remain visible")]
 fn create_modify_visible(world: &mut ApplicationWorld) {

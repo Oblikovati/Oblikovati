@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:09:51.164248101Z" time="47.714714691"><testcase name="Scenario: Show and hides the Layout panel during sketch editing: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:607:3" time="47.714714691"><system-out><![CDATA[  Scenario: Show and hides the Layout panel during sketch editing
+   ✔  Given a part document is in sketch edit in the MCAD Software
+   ✔  And the Sketch tab is active
+   ✔  And the Layout panel is hidden
+   ✔  When the user opens the Create panel title context menu
+   ✔  And the user opens Show Panels
+   ✔  Then Layout is unchecked in the panel list
+   ✔  When the user selects Layout
+   ✔  Then the Layout panel appears between Constrain and Insert
+   ✔  And Make Part and Make Components are disabled
+   ✔  And Create Block is enabled
+   ✔  When the user opens the Create panel title context menu
+   ✔  And the user opens Show Panels
+   ✔  And the user selects Layout
+   ✔  Then the Layout panel is hidden again
+   ✔  And the other visible Sketch panels remain in place
+   ✔  And the sketch remains in edit mode
+]]></system-out></testcase></testsuite></testsuites>

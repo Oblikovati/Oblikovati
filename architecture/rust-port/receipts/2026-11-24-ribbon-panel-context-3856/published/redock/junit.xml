@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T09:09:53.209418149Z" time="52.864940742"><testcase name="Scenario: Keep a panel hidden when redocking the floating ribbon: tmp/oblikovati-ribbon-relocated.RcZVDl/panel-visibility-snapshot/checkout/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:114:3" time="52.864940742"><system-out><![CDATA[  Scenario: Keep a panel hidden when redocking the floating ribbon
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the floating 3D Model ribbon shows the Modify group
+   ✔  When the user hides Modify through Show Panels
+   ✔  Then the floating ribbon no longer shows the Modify group
+   ✔  When the user docks the ribbon at the top
+   ✔  Then the top ribbon does not show the Modify panel
+   ✔  When the user opens Show Panels on the top ribbon
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify
+   ✔  Then the Modify panel is visible again
+]]></system-out></testcase></testsuite></testsuites>

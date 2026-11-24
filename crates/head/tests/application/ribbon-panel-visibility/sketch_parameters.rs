@@ -4,6 +4,11 @@ use super::super::diagnostics;
 use super::*;
 use cucumber::{given, then, when};
 
+#[given("a part document is in sketch edit in the MCAD Software")]
+fn start_sketch_edit(world: &mut ApplicationWorld) {
+    world.start_empty_sketch();
+}
+
 #[given("the Sketch tab is active")]
 fn sketch_tab(world: &mut ApplicationWorld) {
     assert_eq!(
@@ -14,6 +19,33 @@ fn sketch_tab(world: &mut ApplicationWorld) {
     world.app().window.native.view.resize([2400, 900]).unwrap();
     world.pump(Vec::new());
     world.expect_text("Finish Sketch");
+    world.observed_view = Some(layout_neighbors(world));
+}
+
+fn caption_x(world: &ApplicationWorld, name: &str) -> i32 {
+    ribbon_runs(world, name)
+        .last()
+        .unwrap_or_else(|| panic!("expected {name:?} ribbon caption: {:?}", world.text()))
+        .center()[0] as i32
+}
+
+fn layout_neighbors(world: &ApplicationWorld) -> [i32; 2] {
+    ["Constrain", "Insert"].map(|label| caption_x(world, label))
+}
+
+#[then("the Layout panel appears between Constrain and Insert")]
+fn layout_order(world: &mut ApplicationWorld) {
+    let [constrain, insert] = layout_neighbors(world);
+    let layout = caption_x(world, "Layout");
+    assert!(constrain < layout && layout < insert);
+}
+
+#[then("the other visible Sketch panels remain in place")]
+fn sketch_panel_positions_restored(world: &mut ApplicationWorld) {
+    assert_eq!(Some(layout_neighbors(world)), world.observed_view);
+    for label in ["Create", "Modify", "Format", "Exit"] {
+        assert!(ribbon_runs(world, label).next().is_some(), "{label}");
+    }
 }
 
 #[then("Parameters is unchecked in the panel list")]
