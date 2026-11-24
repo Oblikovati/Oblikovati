@@ -125,9 +125,17 @@ mod sketch_display_tests;
 
 mod accessibility;
 #[cfg(test)]
+#[allow(unsafe_code)]
+#[path = "../../../test-utilities/rust/drawn_windows.rs"]
+mod drawn_windows;
+#[cfg(test)]
 #[path = "../tests/native_gui_composition.rs"]
 mod gui_composition_tests;
 mod gui_loop;
 #[cfg(all(test, target_os = "linux"))]
 #[path = "../tests/native_gui_loop.rs"]
 mod gui_loop_tests;
+#[cfg(test)]
+#[allow(dead_code, unsafe_code)]
+#[path = "../../../test-utilities/rust/quick_access_icons.rs"]
+mod quick_access_icons;

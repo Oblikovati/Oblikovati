@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use crate::native::{drawn_windows, quick_access_icons};
 use cucumber::{
     Parser as _, World as _, WriterExt as _,
     writer::{self, Stats as _},
@@ -16,8 +17,6 @@ mod diagnostics;
 mod docking_system;
 mod document_save_native;
 mod documents;
-#[path = "../../../../test-utilities/rust/drawn_windows.rs"]
-mod drawn_windows;
 mod gap_runner;
 #[cfg(target_os = "linux")]
 #[path = "main-window-frame/steps.rs"]
@@ -29,8 +28,6 @@ mod main_window_frame_native;
 #[cfg(target_os = "linux")]
 #[path = "main-window-frame/resize.rs"]
 mod main_window_frame_resize;
-#[path = "../../../../test-utilities/rust/quick_access_icons.rs"]
-mod quick_access_icons;
 mod refinements;
 mod report_destination;
 mod scenario_arguments;

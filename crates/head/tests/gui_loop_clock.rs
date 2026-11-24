@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use crate::native::quick_access_icons;
 use oblikovati_gui::GuiShellAction;
 use oblikovati_viewport::{ViewportButton, ViewportInput};
-#[allow(unsafe_code)]
-#[path = "../../../test-utilities/rust/drawn_windows.rs"]
-mod drawn_windows;
-#[allow(dead_code, unsafe_code)]
-#[path = "../../../test-utilities/rust/quick_access_icons.rs"]
-mod quick_access_icons;
 fn gui_step(gui: &mut NativeGui, tick: u32, event: Option<&ViewportEvent>) -> HeadGuiUpdate {
     gui.step(
         GUI_TICK * tick,
