@@ -1,0 +1,756 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="67" errors="0" failures="9" hostname="localhost" timestamp="2026-11-24T08:02:19.453239183Z" time="1386.123259297"><testcase name="Scenario: Open the Sketch Create panel expansion: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:6:3" time="32.261299789"><system-out><![CDATA[  Scenario: Open the Sketch Create panel expansion
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with `Sketch1` being edited in the MCAD Software
+   ✔  And the Sketch ribbon is expanded and the Create panel is visible
+   ✔  And the Create panel's additional command area is closed
+   ✔  When the user selects the expansion arrow on the Create panel title
+   ✔  Then an additional command area opens below that panel over the workspace
+   ✔  And the Create Block command is visible
+   ✔  And Precise Input is visible but unavailable in this captured state
+   ✔  And the sketch and model browser remain visible
+   ✔  When the user presses Escape
+   ✔  Then the Create additional command area remains open
+   ✔  When the user clicks empty viewport space
+   ✔  Then the Create additional command area closes
+   ✔  And the editable sketch remains active and unchanged
+]]></system-out></testcase><testcase name="Scenario: Open and close the Sketch Constrain panel expansion: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:22:3" time="34.186049154"><system-out><![CDATA[  Scenario: Open and close the Sketch Constrain panel expansion
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with an active editable `Sketch1` in the MCAD Software
+   ✔  And the Sketch ribbon is expanded and the Constrain panel is visible
+   ✔  And the Constrain panel's additional command area is closed
+   ✔  When the user opens the Constrain panel expansion
+   ✔  Then an additional command area opens below the panel over the workspace
+   ✔  And Edit Coordinate System and Constraint Inference Scope are visible
+   ✔  And the sketch and model browser remain visible
+   ✔  When the user presses Escape
+   ✔  Then the Constrain additional command area remains open
+   ✔  When the user clicks empty viewport space
+   ✔  Then the Constrain additional command area closes
+   ✔  And the editable sketch remains active and unchanged
+]]></system-out></testcase><testcase name="Scenario: Inspect a command context menu in the Sketch Constrain expansion: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:37:3" time="50.321399916"><system-out><![CDATA[  Scenario: Inspect a command context menu in the Sketch Constrain expansion
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with an active editable `Sketch1` in the MCAD Software
+   ✔  And the full Sketch ribbon is visible
+   ✔  And the Constrain additional command area is open
+   ✔  When the user right-clicks Edit Coordinate System
+   ✔  Then the command context menu lists Ribbon Appearance, Add to Quick Access Toolbar, Move to Main Panel, Show Panels, Customize User Commands, Undock Ribbon and Docking Positions
+   ✔  And the Constrain additional command area remains open
+   ✔  When the user presses Escape
+   ✔  Then the command context menu closes
+   ✔  And the Constrain additional command area remains open
+   ✔  And the Edit Coordinate System help tooltip appears while the pointer remains over that command
+   ✔  And the editable sketch remains active and unchanged
+]]></system-out></testcase><testcase name="Scenario: Dismiss Show Panels from the expanded Constrain command menu: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:50:3" time="46.945720454"><system-out><![CDATA[  Scenario: Dismiss Show Panels from the expanded Constrain command menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with an active editable `Sketch1` in the MCAD Software
+   ✔  And the full Sketch ribbon is visible
+   ✔  And the Constrain additional command area is open
+   ✔  When the user right-clicks Edit Coordinate System
+   ✔  And the user opens Show Panels
+   ✔  Then Sketch, Create, Modify, Pattern, Constrain, Insert and Format are checked
+   ✔  And Layout and Parameters are unchecked
+   ✔  When the user presses Escape
+   ✔  Then the Show Panels submenu closes and the command context menu remains open
+   ✔  And the Constrain additional command area remains open
+   ✔  When the user presses Escape again
+   ✔  Then the command context menu and Constrain additional command area close
+   ✔  And the editable sketch remains active and unchanged
+]]></system-out></testcase><testcase name="Scenario: Switch ribbon tabs with the Sketch Constrain context menu open: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:65:3" time="38.436609665"><system-out><![CDATA[  Scenario: Switch ribbon tabs with the Sketch Constrain context menu open
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with an active editable `Sketch1` in the MCAD Software
+   ✔  And the full Sketch ribbon is visible
+   ✔  And the Constrain additional command area is open
+   ✔  When the user right-clicks Edit Coordinate System
+   ✔  Then the command context menu is visible
+   ✔  And the Constrain additional command area remains open
+   ✔  When the user selects the Tools ribbon tab
+   ✔  Then the command context menu and Constrain additional command area close
+   ✔  And the full Tools ribbon is visible
+   ✔  And sketch edit remains active
+   ✔  When the user returns to the Sketch ribbon tab
+   ✔  Then the full Sketch ribbon is visible
+   ✔  And the Constrain additional command area remains closed
+   ✔  And the editable sketch remains active and unchanged
+]]></system-out></testcase><testcase name="Scenario: Dismiss Docking Positions from the expanded Constrain title menu: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:81:3" time="50.40367575"><system-out><![CDATA[  Scenario: Dismiss Docking Positions from the expanded Constrain title menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with an active editable `Sketch1` in the MCAD Software
+   ✔  And the full Sketch ribbon is visible
+   ✔  And the Constrain additional command area is open
+   ✔  When the user right-clicks the lower Constrain title
+   ✔  Then the title context menu offers Ribbon Appearance, Show Panels, Customize User Commands, Undock Ribbon and Docking Positions
+   ✔  And the Constrain additional command area remains open
+   ✔  When the user opens Docking Positions
+   ✔  Then Top is checked and Left and Right are available
+   ✔  When the user presses Escape
+   ✔  Then the Docking Positions submenu closes and the title context menu remains open
+   ✔  And the Constrain additional command area remains open
+   ✔  When the user presses Escape again
+   ✔  Then the title context menu and Constrain additional command area close
+   ✔  And the editable sketch remains active and unchanged
+]]></system-out></testcase><testcase name="Scenario: Open the 3D Model Modify panel expansion with keyboard tips: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:96:3" time="16.188344384"><system-out><![CDATA[  Scenario: Open the 3D Model Modify panel expansion with keyboard tips
+   ✔  Given a part containing visible solid bodies is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible with the Modify panel
+   ✔  And the Modify panel's additional command area is closed
+   ✔  When the user presses Alt, then M, then Y
+   ✔  Then the Modify additional command area opens below the ribbon over the browser area
+   ✔  And Move Bodies, Bend Part and Copy Object are visible
+   ✔  And the solid body and model browser remain visible
+   ✔  When the user clicks the lower Modify title
+   ✔  Then the additional command area closes and keyboard tips disappear
+]]></system-out></testcase><testcase name="Scenario: Pin and unpin the expanded Modify panel: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:108:3" time="25.970149625"><system-out><![CDATA[  Scenario: Pin and unpin the expanded Modify panel
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its visible solid in the MCAD Software
+   ✔  And the 3D Model Modify panel is expanded with its pin control unselected
+   ✔  When the user selects the pin control
+   ✔  And the user clicks an empty area of the viewport
+   ✔  Then the expanded Modify command area remains visible
+   ✔  And the pin control is highlighted
+   ✔  When the user selects the pin control again
+   ✔  And the user clicks an empty area of the viewport
+   ✔  Then the additional command area closes
+   ✔  And the part remains active
+]]></system-out></testcase><testcase name="Scenario: Open and cancels Create Block from the expanded Create panel: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:120:3" time="23.293378422"><system-out><![CDATA[  Scenario: Open and cancels Create Block from the expanded Create panel
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✔  And the Sketch Create panel's additional command area is open
+   ✔  When the user selects Create Block from that area
+   ✔  Then the Create Block dialog opens over the sketch
+   ✔  And the dialog offers geometry and insert-point selectors
+   ✔  And the block name and description fields are visible
+   ✔  When the user cancels the dialog
+   ✔  Then the dialog closes without creating a block
+   ✔  And the sketch remains active and unchanged
+]]></system-out></testcase><testcase name="Scenario: Close an expanded Modify panel using its title: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:131:3" time="14.586588013"><system-out><![CDATA[  Scenario: Close an expanded Modify panel using its title
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the 3D Model Modify panel is expanded and unpinned
+   ✔  When the user clicks the Modify title at the bottom of the expanded area
+   ✔  Then the additional command area closes
+   ✔  And the 3D Model ribbon and part remain visible
+]]></system-out></testcase><testcase name="Scenario: Switch between unpinned panel expansions: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:138:3" time="14.129798814"><system-out><![CDATA[  Scenario: Switch between unpinned panel expansions
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the 3D Model Modify panel's unpinned additional command area is open
+   ✔  When the user clicks the Simplification panel expansion arrow
+   ✔  Then the Modify additional command area closes
+   ✔  And the Simplification additional command area opens
+   ✔  And it displays "Remove Details", "Fill Voids", and "Define Envelopes"
+   ✔  When the user clicks an empty area of the viewport
+   ✔  Then the Simplification additional command area closes
+   ✔  And the part and 3D Model ribbon remain visible
+]]></system-out></testcase><testcase name="Scenario: Switch tabs after selecting the expansion pin: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:149:3" time="18.44329812"><system-out><![CDATA[  Scenario: Switch tabs after selecting the expansion pin
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the 3D Model Modify additional command area is open
+   ✔  When the user clicks its pin control
+   ✔  And the user selects the Tools ribbon tab
+   ✔  Then the Modify additional command area is no longer visible
+   ✔  When the user selects the 3D Model ribbon tab
+   ✔  Then the Modify additional command area is not automatically displayed
+   ✔  When the user opens the Modify additional command area
+   ✔  And the user clicks an empty area of the viewport
+   ✔  Then the additional command area closes
+]]></system-out></testcase><testcase name="Scenario: Move a command between the main and expanded areas: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:161:3" time="29.693704609"><system-out><![CDATA[  Scenario: Move a command between the main and expanded areas
+   ✔  Given a part is active in the MCAD Software
+   ✔  And "Shell" appears in the main area of the 3D Model "Modify" panel
+   ✔  When the user right-clicks "Shell" and selects "Move to Expanded Panel"
+   ✔  Then "Shell" is no longer visible in the main area
+   ✔  When the user opens the "Modify" panel expansion
+   ✔  Then "Shell" appears in the expanded area
+   ✔  When the user right-clicks "Shell" in the expanded area
+   ✔  And the user selects "Move to Main Panel"
+   ✔  Then the expansion closes
+   ✔  And "Shell" appears again in the main area of the "Modify" panel
+]]></system-out></testcase><testcase name="Scenario: Move a grouped control into and out of an expanded panel: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:173:3" time="22.980599581"><system-out><![CDATA[  Scenario: Move a grouped control into and out of an expanded panel
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the grouped "Plane" control is in the 3D Model Work Features main panel
+   ✔  When the user right-clicks "Plane" and selects "Move to Expanded Panel"
+   ✔  Then "Plane" is no longer visible in the main panel
+   ✔  When the user opens the Work Features expansion
+   ✔  Then a "Plane" control appears in the expanded area
+   ✔  And its context menu offers "Ungroup Commands from Drop-Down Menu"
+   ✔  When the user selects "Move to Main Panel" from that context menu
+   ✔  Then "Plane" returns to the main panel
+   ✔  And the part remains active
+]]></system-out></testcase><testcase name="Scenario: Launch a command in a panel expansion by keyboard: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:185:3" time="17.693649631"><system-out><![CDATA[  Scenario: Launch a command in a panel expansion by keyboard
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the full ribbon is displayed
+   ✔  When the user presses Alt and then "M"
+   ✔  Then the 3D Model ribbon displays command key tips
+   ✔  When the user presses "Y"
+   ✔  Then the Modify additional command area opens with key tips for its commands
+   ✔  When the user enters "OD"
+   ✔  Then the Move Bodies dialog opens
+   ✔  And the additional command area closes
+   ✔  When the user cancels the dialog
+   ✔  Then the part remains visible without applying the preview
+]]></system-out></testcase><testcase name="Scenario: Dismiss a keyboard-opened panel after Escape: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:198:3" time="15.185828665"><system-out><![CDATA[  Scenario: Dismiss a keyboard-opened panel after Escape
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the 3D Model Modify additional command area is open using Alt, "M", and "Y"
+   ✔  And its command key tips are visible
+   ✔  When the user presses Escape twice
+   ✔  Then the additional command area and its key tips remain visible
+   ✔  When the user clicks the Modify title at the bottom of the additional area
+   ✔  Then the additional command area and key tips close
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Open the Tools Options additional command area: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:209:3" time="14.05342446"><system-out><![CDATA[  Scenario: Open the Tools Options additional command area
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Options additional command area is closed
+   ✔  When the user opens the Options additional command area
+   ✔  Then it appears beneath the Options panel over the viewport
+   ✔  And Reset UI Layout is displayed
+   ✔  And iLogic Configuration is displayed
+   ✔  And the active part and model browser remain visible
+   ✔  When the user clicks empty viewport space
+   ✔  Then the Options additional command area closes
+   ✔  And the Tools ribbon and part remain visible
+]]></system-out></testcase><testcase name="Scenario: Minimize the ribbon while an expanded panel is pinned: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:222:3" time="16.759315296"><system-out><![CDATA[  Scenario: Minimize the ribbon while an expanded panel is pinned
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon uses the Cycle Through All display policy
+   ✔  And the Options additional command area is open and pinned
+   ✔  And clicking outside the panel leaves the additional area open
+   ✔  When the user activates the ribbon display control
+   ✔  Then the ribbon shows compact panel buttons
+   ✔  And the Options additional command area is no longer visible
+   ✔  When the user continues the display cycle to restore the full ribbon
+   ✔  Then the full Tools ribbon is visible
+   ✔  And the Options additional command area is not automatically reopened
+   ✔  When the user opens the Options additional command area and clicks outside it
+   ✔  Then the additional area closes
+]]></system-out></testcase><testcase name="Scenario: Keep a pinned expansion open while opening another panel: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:236:3" time="15.21381407"><system-out><![CDATA[  Scenario: Keep a pinned expansion open while opening another panel
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is open and pinned
+   ✔  When the user opens the Simplification additional command area
+   ✔  Then both the Modify and Simplification additional command areas are visible
+   ✔  When the user clicks empty viewport space
+   ✔  Then the Simplification additional command area closes
+   ✔  And the pinned Modify additional command area remains visible
+   ✔  When the user unpins Modify and clicks empty viewport space
+   ✔  Then the Modify additional command area closes
+]]></system-out></testcase><testcase name="Scenario: Pin two expanded panels independently: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:248:3" time="18.318342972"><system-out><![CDATA[  Scenario: Pin two expanded panels independently
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is open and pinned
+   ✔  When the user opens and pins the Simplification additional command area
+   ✔  And the user clicks empty viewport space
+   ✔  Then both additional command areas remain visible
+   ✔  When the user unpins Simplification and clicks empty viewport space
+   ✔  Then the Simplification additional command area closes
+   ✔  And the pinned Modify additional command area remains visible
+   ✔  When the user unpins Modify and clicks empty viewport space
+   ✔  Then the Modify additional command area closes
+]]></system-out></testcase><testcase name="Scenario: The panel title does not close a pinned expansion: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:261:3" time="13.128520746"><system-out><![CDATA[  Scenario: The panel title does not close a pinned expansion
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is open and pinned
+   ✔  When the user clicks the Modify title at the bottom of the additional area
+   ✔  Then the additional command area remains open
+   ✔  When the user unpins the additional area
+   ✔  And the user clicks its Modify title again
+   ✔  Then the additional command area closes
+]]></system-out></testcase><testcase name="Scenario: Cancel a command launched from a pinned expansion: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:271:3" time="14.573214366"><system-out><![CDATA[  Scenario: Cancel a command launched from a pinned expansion
+   ✔  Given a part with a solid body is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is open and pinned
+   ✔  When the user selects "Move Bodies" from the additional command area
+   ✔  Then the Move Bodies dialog opens
+   ✔  When the user cancels the Move Bodies dialog
+   ✔  Then the dialog closes without applying the move
+   ✔  And the pinned Modify additional command area remains visible
+]]></system-out></testcase><testcase name="Scenario: Launch a main-panel command while its expansion is open: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:281:3" time="8.998466249"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Launch a main-panel command while its expansion is open
+   ✔  Given a part containing a solid is active in the MCAD Software
+   ✔  And the full 3D Model ribbon shows the Modify panel
+   ✔  And the unpinned Modify additional command area is open
+   ✘  When the user clicks Shell in the main Modify panel
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:285:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Retain a command in the expanded panel across tab switches: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:293:3" time="28.283698265"><system-out><![CDATA[  Scenario: Retain a command in the expanded panel across tab switches
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And Shell is in the Modify main panel
+   ✔  When the user moves Shell to the expanded panel using its context menu
+   ✔  And the user selects Tools and then returns to 3D Model
+   ✔  Then Shell is absent from the Modify main panel
+   ✔  When the user opens the Modify expanded panel
+   ✔  Then Shell is available in the expanded panel
+   ✔  When the user moves Shell back to the main panel using its context menu
+   ✔  Then Shell appears in the main Modify panel
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Launch a command moved to the expanded panel: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:305:3" time="8.208591866"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Launch a command moved to the expanded panel
+   ✔  Given a part containing a solid is active in the MCAD Software
+   ✘  And the full 3D Model ribbon shows Shell in the Modify main panel
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:307:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Move an unavailable command to an expanded panel and back: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:321:3" time="16.161430523"><system-out><![CDATA[  Scenario: Move an unavailable command to an expanded panel and back
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon shows an unavailable Copy command in the Clipboard main panel
+   ✔  When the user right-clicks Copy and selects "Move to Expanded Panel"
+   ✔  Then Copy is no longer visible in the Clipboard main panel
+   ✔  And the Clipboard panel has an expansion arrow
+   ✔  When the user opens the Clipboard expanded panel
+   ✔  Then Copy appears there as an unavailable command
+   ✔  When the user clicks Copy in the expanded panel
+   ✔  Then the expanded panel remains open and no command opens
+   ✔  When the user right-clicks Copy in the expanded panel
+   ✔  Then the context menu offers "Move to Main Panel" and "Add to Quick Access Toolbar"
+   ✔  When the user selects "Move to Main Panel"
+   ✔  Then the expansion closes
+   ✔  And the unavailable Copy command appears in the Clipboard main panel again
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Click the active ribbon tab with an expansion open: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:338:3" time="17.010792923"><system-out><![CDATA[  Scenario: Click the active ribbon tab with an expansion open
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user clicks the selected 3D Model tab
+   ✔  Then the Modify additional command area closes
+   ✔  And the full 3D Model ribbon remains visible
+   ✔  When the user opens the Modify additional command area and pins it
+   ✔  And the user clicks the selected 3D Model tab
+   ✔  Then the Modify additional command area remains open
+   ✔  And the full 3D Model ribbon remains visible
+   ✔  When the user unpins the additional command area
+   ✔  And the user clicks the selected 3D Model tab
+   ✔  Then the additional command area closes
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Open a main-panel menu while additional commands are visible: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:354:3" time="7.689000366"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Open a main-panel menu while additional commands are visible
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✘  And the Options additional command area is open and unpinned
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:357:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Dismiss an additional area in the temporary ribbon: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:368:3" time="15.191558609"><system-out><![CDATA[  Scenario: Dismiss an additional area in the temporary ribbon
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  When the user clicks the 3D Model tab
+   ✔  Then the temporary command area opens
+   ✔  When the user opens the Modify additional-command area
+   ✔  Then the additional area shows Move Bodies, Bend Part and Copy Object
+   ✔  When the user clicks empty viewport space
+   ✔  Then the additional area and the temporary command area close
+   ✔  And the ribbon remains minimized to tabs
+   ✔  When the user clicks the 3D Model tab again
+   ✔  Then the temporary command area opens
+   ✔  And the Modify additional-command area remains closed
+]]></system-out></testcase><testcase name="Scenario: Switch tabs with a temporary additional area open: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:382:3" time="13.381529226"><system-out><![CDATA[  Scenario: Switch tabs with a temporary additional area open
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  When the user clicks the 3D Model tab
+   ✔  And the user opens the Modify additional-command area
+   ✔  And the user clicks the Tools tab
+   ✔  Then the Modify additional-command area closes
+   ✔  And the temporary command area displays the Tools panels
+   ✔  When the user clicks the 3D Model tab
+   ✔  Then the temporary command area displays the 3D Model panels
+   ✔  And the Modify additional-command area remains closed
+]]></system-out></testcase><testcase name="Scenario: Press Escape with an additional area open in the temporary ribbon: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:394:3" time="14.844525023"><system-out><![CDATA[  Scenario: Press Escape with an additional area open in the temporary ribbon
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  When the user clicks the 3D Model tab
+   ✔  And the user opens the Modify additional-command area
+   ✔  And the user presses Escape twice
+   ✔  Then the temporary command area remains visible
+   ✔  And the Modify additional-command area remains visible
+   ✔  When the user clicks empty viewport space
+   ✔  Then both command areas close
+   ✔  And the ribbon remains minimized to tabs
+]]></system-out></testcase><testcase name="Scenario: Close a temporary expansion using its lower title: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:406:3" time="12.067698382"><system-out><![CDATA[  Scenario: Close a temporary expansion using its lower title
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  When the user clicks the 3D Model tab
+   ✔  And the user opens the Modify additional-command area
+   ✔  And the user clicks the lower Modify title
+   ✔  Then the additional-command area closes
+   ✔  And the temporary command area closes
+   ✔  And the ribbon remains minimized to tabs
+]]></system-out></testcase><testcase name="Scenario: Click the selected tab with a temporary expansion open: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:416:3" time="13.984409085"><system-out><![CDATA[  Scenario: Click the selected tab with a temporary expansion open
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  When the user clicks the 3D Model tab
+   ✔  And the user opens the Modify additional-command area
+   ✔  When the user clicks the selected 3D Model tab
+   ✔  Then the Modify additional-command area remains visible
+   ✔  And the temporary command area remains visible
+   ✔  When the user clicks the selected 3D Model tab again
+   ✔  Then the additional-command area closes
+   ✔  And the temporary command area closes
+   ✔  And the ribbon remains minimized to tabs
+]]></system-out></testcase><testcase name="Scenario: Restore the full ribbon while a temporary panel is expanded: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:429:3" time="20.762833495"><system-out><![CDATA[  Scenario: Restore the full ribbon while a temporary panel is expanded
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the ribbon is minimized to tabs
+   ✔  And the ribbon display policy is "Minimize to Tabs"
+   ✔  And the 3D Model tab is selected
+   ✔  When the user clicks the 3D Model tab
+   ✔  Then its ribbon panels appear temporarily
+   ✔  When the user opens the Modify panel's additional commands
+   ✔  Then the additional commands appear below the temporary ribbon
+   ✔  When the user clicks the ribbon display control to restore the full ribbon
+   ✔  Then the full 3D Model ribbon is displayed
+   ✔  And the additional commands are closed
+   ✔  And the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Select a face while an unpinned panel expansion is open: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:443:3" time="15.940570489"><system-out><![CDATA[  Scenario: Select a face while an unpinned panel expansion is open
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is displayed
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user clicks a visible solid face outside the expanded area
+   ✔  Then the Modify additional command area closes
+   ✔  And the clicked face is selected
+   ✔  And the full 3D Model ribbon remains visible
+   ✔  When the user clicks empty viewport space
+   ✔  Then the face selection is cleared
+]]></system-out></testcase><testcase name="Scenario: Select a face while keyboard tips are displayed: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:454:3" time="21.703165158"><system-out><![CDATA[  Scenario: Select a face while keyboard tips are displayed
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is displayed with the Modify area closed
+   ✔  When the user presses Alt, then M, then Y
+   ✔  And the user clicks a visible solid face outside the expanded area
+   ✔  Then the Modify additional command area remains visible with keyboard tips displayed
+   ✔  When the user presses Escape
+   ✔  Then the keyboard tips and Modify additional command area close
+   ✔  And the clicked face is visibly selected
+   ✔  When the user clicks empty viewport space
+   ✔  Then the face selection is cleared
+]]></system-out></testcase><testcase name="Scenario: Select a face while a panel expansion is pinned: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:466:3" time="17.961060223"><system-out><![CDATA[  Scenario: Select a face while a panel expansion is pinned
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is displayed
+   ✔  And the Modify additional command area is open and pinned
+   ✔  When the user clicks a visible solid face outside the expanded area
+   ✔  Then the clicked face is selected
+   ✔  And the Modify additional command area remains open
+   ✔  And the full 3D Model ribbon remains visible
+   ✔  When the user unpins the Modify additional command area
+   ✔  And the user clicks empty viewport space
+   ✔  Then the face selection is cleared
+   ✔  And the Modify additional command area closes
+]]></system-out></testcase><testcase name="Scenario: Open a face context menu while an expansion is open: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:479:3" time="21.223871966"><system-out><![CDATA[  Scenario: Open a face context menu while an expansion is open
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is displayed
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks a visible solid face outside the expanded area
+   ✔  Then the face context menu is displayed
+   ✔  And the Modify additional command area remains visible
+   ✔  When the user presses Escape
+   ✔  Then the face context menu closes
+   ✔  And the Modify additional command area closes
+   ✔  And the face remains selected
+   ✔  When the user clicks empty viewport space
+   ✔  Then the face selection is cleared
+]]></system-out></testcase><testcase name="Scenario: Select a model browser feature with an unpinned expansion: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:493:3" time="13.380310886"><system-out><![CDATA[  Scenario: Select a model browser feature with an unpinned expansion
+   ✔  Given a part containing an extrusion is active in the MCAD Software
+   ✔  And the full 3D Model ribbon has the Modify additional-command area open and unpinned
+   ✔  When the user selects the extrusion in the model browser
+   ✔  Then the additional-command area closes
+   ✔  And the extrusion is selected in the browser
+   ✔  And its geometry is highlighted in the viewport
+]]></system-out></testcase><testcase name="Scenario: Select a model browser feature with a pinned expansion: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:501:3" time="16.896763617"><system-out><![CDATA[  Scenario: Select a model browser feature with a pinned expansion
+   ✔  Given a part containing an extrusion is active in the MCAD Software
+   ✔  And the full 3D Model ribbon has the Modify additional-command area open and pinned
+   ✔  When the user selects the extrusion in the model browser
+   ✔  Then the additional-command area remains open
+   ✔  And the extrusion is selected in the browser
+   ✔  And its geometry is highlighted in the viewport
+   ✔  When the user unpins the additional-command area and clicks empty viewport space
+   ✔  Then the additional-command area closes
+]]></system-out></testcase><testcase name="Scenario: Press Escape after opening the full ribbon expansion by pointer: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:511:3" time="17.01920925"><system-out><![CDATA[  Scenario: Press Escape after opening the full ribbon expansion by pointer
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is unpinned
+   ✔  When the user clicks the Modify panel title
+   ✔  Then Move Bodies, Bend Part and Copy Object are visible in the additional area
+   ✔  When the user presses Escape
+   ✔  Then the additional area remains visible with those commands
+   ✔  When the user clicks the lower Modify title
+   ✔  Then the additional area closes
+   ✔  And the full 3D Model ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Minimize to tabs after pinning the Modify expansion: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:523:3" time="24.806260068"><system-out><![CDATA[  Scenario: Minimize to tabs after pinning the Modify expansion
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And the ribbon display policy is "Minimize to Tabs"
+   ✔  When the user opens and pins the Modify additional command area
+   ✔  And the user clicks empty viewport space
+   ✔  Then the Modify additional area remains visible
+   ✔  When the user clicks the ribbon display control
+   ✔  Then the ribbon is minimized to tabs
+   ✔  And the Modify additional area is not visible
+   ✔  When the user clicks the 3D Model tab
+   ✔  And the user opens the Modify additional area
+   ✔  And the user clicks empty viewport space
+   ✔  Then the temporary ribbon and its additional command area close
+   ✔  When the user clicks the ribbon display control to restore the full ribbon
+   ✔  Then the full 3D Model ribbon is displayed
+   ✔  And the additional commands are closed
+   ✔  When the user opens the Modify additional area
+   ✔  And the user clicks empty viewport space
+   ✔  Then the additional area closes
+   ✔  And the full 3D Model ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Switch to Home while the Modify expansion is pinned: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:543:3" time="20.021701664"><system-out><![CDATA[  Scenario: Switch to Home while the Modify expansion is pinned
+   ✔  Given a part with a visible solid is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is pinned and remains open after a click in empty viewport space
+   ✔  When the user selects the Home document tab
+   ✔  Then Home is displayed and the Modify additional command area is no longer visible
+   ✔  When the user returns to the part document tab
+   ✔  Then the 3D Model ribbon is visible and the Modify additional command area is closed
+   ✔  When the user opens the Modify additional command area
+   ✔  And the user clicks an empty area of the viewport
+   ✔  Then the Modify additional command area closes
+]]></system-out></testcase><testcase name="Scenario: Switch ribbon tabs while an unpinned panel expansion is open: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:555:3" time="11.065634761"><system-out><![CDATA[  Scenario: Switch ribbon tabs while an unpinned panel expansion is open
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user selects the Sketch ribbon tab
+   ✔  Then the Modify additional command area closes
+   ✔  And the full Sketch ribbon is displayed
+   ✔  And the part remains visible
+   ✔  And the part remains active
+]]></system-out></testcase><testcase name="Scenario: Cancel the layout reset from the Options expansion: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:564:3" time="9.206075884"><system-out><![CDATA[  Scenario: Cancel the layout reset from the Options expansion
+   ✔  Given a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the Options panel displays its additional commands
+   ✔  When the user activates Reset UI Layout
+   ✔  Then a confirmation dialog warns that the UI layout will be reset to its default
+   ✔  And the dialog offers Yes and No
+   ✔  When the user clicks No
+   ✔  Then the confirmation dialog closes
+   ✔  And the Tools ribbon remains visible
+   ✔  And the Options additional-command area is closed
+]]></system-out></testcase><testcase name="Scenario: Open customization from an expanded panel title: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:575:3" time="19.38485472"><system-out><![CDATA[  Scenario: Open customization from an expanded panel title
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon at the top
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks the lower Modify title
+   ✔  Then the ribbon context menu is displayed
+   ✔  And the Modify additional commands remain visible
+   ✔  And the context menu offers "Customize User Commands"
+   ✔  When the user chooses "Customize User Commands"
+   ✔  Then the customization dialog opens on its Ribbon tab
+   ✔  And the target is "Part | 3D Model"
+   ✔  And the Modify additional command area is closed
+   ✔  When the user closes the customization dialog without making changes
+   ✔  Then the dialog closes and the full 3D Model ribbon remains visible
+   ✔  And the Modify additional command area remains closed
+]]></system-out></testcase><testcase name="Scenario: Dismiss the context menu of an expanded panel: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:590:3" time="21.947095446"><system-out><![CDATA[  Scenario: Dismiss the context menu of an expanded panel
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks the lower Modify title
+   ✔  Then the ribbon context menu appears and the additional commands remain visible
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the Modify additional commands remain visible
+   ✔  When the user clicks the lower Modify title
+   ✔  Then the additional command area closes
+   ✔  And the full 3D Model ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Toggle Explore from an expanded panel title menu: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:602:3" time="12.720505523"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Toggle Explore from an expanded panel title menu
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon at the top
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks the lower Modify title
+   ✘  And the user opens the "Show Panels" submenu
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:606:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Change appearance from an expanded panel title: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:619:3" time="32.784483595"><system-out><![CDATA[  Scenario: Change appearance from an expanded panel title
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon at the top
+   ✔  And the ribbon appearance is "Normal"
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks the lower Modify title
+   ✔  And the user opens the "Ribbon Appearance" submenu
+   ✔  Then "Normal" is checked and the Modify additional commands remain visible
+   ✔  When the user selects "Text Off"
+   ✔  Then the menus and Modify additional command area close
+   ✔  And the ribbon displays command icons without their command labels
+   ✔  And the panel titles remain visible
+   ✔  When the user opens the Modify additional command area again
+   ✔  And the user right-clicks the lower Modify title
+   ✔  And the user opens the "Ribbon Appearance" submenu
+   ✔  Then "Text Off" is checked
+   ✔  When the user selects "Normal"
+   ✔  Then the full ribbon displays its command labels again
+   ✔  And the Modify additional command area remains closed
+]]></system-out></testcase><testcase name="Scenario: Select the current appearance from an expanded panel title: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:638:3" time="23.645163779"><system-out><![CDATA[  Scenario: Select the current appearance from an expanded panel title
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon at the top
+   ✔  And the ribbon appearance is "Normal"
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks the lower Modify title and opens "Ribbon Appearance"
+   ✔  Then "Normal" is checked and the Modify additional commands remain visible
+   ✔  When the user selects the checked "Normal" option
+   ✔  Then the menus and Modify additional command area close
+   ✔  And the full ribbon remains visible with command labels
+]]></system-out></testcase><testcase name="Scenario: Inspect an additional command context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:648:3" time="19.603143207"><system-out><![CDATA[  Scenario: Inspect an additional command context menu
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks "Move Bodies" in the additional area
+   ✔  Then a context menu offers "Move to Main Panel"
+   ✔  And the menu offers "Add to Quick Access Toolbar"
+   ✔  And the Modify additional command area remains visible
+   ✔  When the user presses Escape
+   ✔  Then the command context menu closes
+   ✔  And the Modify additional command area remains visible
+   ✔  When the user clicks the lower Modify title
+   ✔  Then the additional command area closes
+   ✔  And the full 3D Model ribbon remains visible
+]]></system-out></testcase><testcase name="Scenario: Compare the expansion footer in full and temporary ribbon displays: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:662:3" time="14.369646769"><system-out><![CDATA[  Scenario: Compare the expansion footer in full and temporary ribbon displays
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon at the top
+   ✔  When the user opens the Modify additional command area
+   ✔  Then the additional area shows Move Bodies, Bend Part and Copy Object
+   ✔  And its lower title strip shows a pin control and the Modify title
+   ✔  When the user minimizes the ribbon to tabs
+   ✔  And the user opens the temporary 3D Model ribbon
+   ✔  And the user opens the Modify additional command area
+   ✔  Then the same three additional commands are visible
+   ✔  And the lower title strip shows the Modify title without a visible pin control
+   ✔  When the user clicks empty viewport space
+   ✔  Then the additional area and the temporary ribbon close
+   ✔  And the ribbon remains minimized to tabs
+]]></system-out></testcase><testcase name="Scenario: Activate another expanded command while a command context menu is open: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:676:3" time="17.238933431"><system-out><![CDATA[  Scenario: Activate another expanded command while a command context menu is open
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And the part has no visible unadaptive sketch suitable for Bend Part
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks Move Bodies in the additional area
+   ✔  Then the command context menu is visible
+   ✔  When the user clicks Bend Part outside that menu
+   ✔  Then the context menu closes and a notice says a visible unadaptive sketch is needed
+   ✔  And the Modify additional command area remains visible behind the notice
+   ✔  When the user acknowledges the notice
+   ✔  Then the notice closes and the Modify additional command area closes
+   ✔  And no bend feature has been created
+]]></system-out></testcase><testcase name="Scenario: Switch ribbon tabs with an expanded command context menu open: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:689:3" time="16.695031421"><system-out><![CDATA[  Scenario: Switch ribbon tabs with an expanded command context menu open
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks Move Bodies in the additional area
+   ✔  Then its command context menu is visible
+   ✔  And the Modify additional command area remains visible
+   ✔  When the user clicks the Tools tab
+   ✔  Then the command context menu and Modify additional command area close
+   ✔  And the full Tools ribbon is visible
+   ✔  When the user clicks the 3D Model tab
+   ✔  Then the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area remains closed
+]]></system-out></testcase><testcase name="Scenario: Close the Sketch Constrain area and its menu on a tab switch: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:702:3" time="31.993800681"><system-out><![CDATA[  Scenario: Close the Sketch Constrain area and its menu on a tab switch
+   ✔  Given a part contains an active editable sketch in the MCAD Software
+   ✔  And the full Sketch ribbon is selected
+   ✔  And the Constrain additional-command area is open
+   ✔  When the user right-clicks Constraint Inference Scope in the additional area
+   ✔  Then the Constrain area context menu is visible
+   ✔  And the Constrain additional-command area remains open
+   ✔  When the user selects the Tools tab
+   ✔  Then the context menu and Constrain additional-command area close
+   ✔  And the full Tools ribbon is visible
+   ✔  When the user selects the Sketch tab
+   ✔  Then the full Sketch ribbon is visible
+   ✔  And the Constrain additional-command area remains closed
+]]></system-out></testcase><testcase name="Scenario: Keep a pinned constraint expansion across sketch edit: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:717:3" time="52.912091345"><system-out><![CDATA[  Scenario: Keep a pinned constraint expansion across sketch edit
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with an existing sketch in the MCAD Software
+   ✔  And the full Sketch ribbon is visible outside sketch edit
+   ✔  When the user opens the Constrain panel additional area
+   ✔  Then Edit Coordinate System and Constraint Inference Scope are unavailable
+   ✔  When the user clicks the unavailable Edit Coordinate System command
+   ✔  Then the additional area remains open and no command starts
+   ✔  When the user pins the additional area
+   ✔  And the user opens the existing sketch for editing
+   ✔  Then the Constrain additional area remains open and pinned
+   ✔  And Edit Coordinate System and Constraint Inference Scope are available
+   ✔  When the user finishes the sketch without editing it
+   ✔  Then the Constrain additional area remains open and pinned
+   ✔  And Edit Coordinate System and Constraint Inference Scope are unavailable
+]]></system-out></testcase><testcase name="Scenario: Use a panel expansion while a modeling command is active: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:732:3" time="7.232217582"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Use a panel expansion while a modeling command is active
+   ✔  Given a part containing a solid is active in the MCAD Software
+   ✘  And the full 3D Model ribbon is visible with Modify unpinned
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:734:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Keep a pinned panel expansion through face selection and command cancellation: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:747:3" time="7.495541952"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Keep a pinned panel expansion through face selection and command cancellation
+   ✔  Given a part containing a solid is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✘  And the Shell command is active with its properties and preview visible
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:750:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Choose an additional command while another modeling command is active: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:761:3" time="8.023953443"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Choose an additional command while another modeling command is active
+   ✔  Given a part containing a solid is active in the MCAD Software
+   ✘  And the full 3D Model ribbon is visible with Modify unpinned
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:763:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Focus a command property while an unpinned panel is expanded: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:773:3" time="4.401613967"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Focus a command property while an unpinned panel is expanded
+   ✘  Given a part containing a solid block is active in the MCAD Software
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:774:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Focus a command property while a pinned panel is expanded: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:789:3" time="4.449565858"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Focus a command property while a pinned panel is expanded
+   ✘  Given a part containing a solid block is active in the MCAD Software
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:790:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Move a custom command into and out of the expanded panel: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:807:3" time="37.288831639"><system-out><![CDATA[  Scenario: Move a custom command into and out of the expanded panel
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Part Tools custom panel target is initially empty
+   ✔  When the user opens Customize from Tools
+   ✔  And the user adds 2D Sketches to the Part Tools target
+   ✔  And the user confirms the customization
+   ✔  Then the 2D Sketches icon appears in the User Commands main panel
+   ✔  When the user right-clicks that icon
+   ✔  Then its context menu offers Move to Expanded Panel
+   ✔  When the user selects Move to Expanded Panel
+   ✔  Then the icon is absent from the main panel
+   ✔  And the User Commands title offers an expansion control
+   ✔  When the user opens the User Commands expansion
+   ✔  Then the 2D Sketches icon appears in the expanded area
+   ✔  When the user right-clicks the expanded icon
+   ✔  And the user selects Move to Main Panel
+   ✔  Then the expansion closes
+   ✔  And the 2D Sketches icon returns to the main panel
+   ✔  When the user reopens Customize from Tools
+   ✔  And the user removes 2D Sketches from the Part Tools target
+   ✔  And the user confirms the customization
+   ✔  Then the User Commands panel is removed
+]]></system-out></testcase><testcase name="Scenario: Retain a custom command in its expanded area across a ribbon tab switch: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:831:3" time="25.697010378999998"><system-out><![CDATA[  Scenario: Retain a custom command in its expanded area across a ribbon tab switch
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Part Tools custom panel target is initially empty
+   ✔  And 2D Sketches has been added to the Part Tools custom panel
+   ✔  And 2D Sketches has been moved into the User Commands expanded area
+   ✔  When the user opens the User Commands expanded area
+   ✔  Then the 2D Sketches icon is visible in that area
+   ✔  When the user selects the 3D Model ribbon tab
+   ✔  Then the Tools expanded area is no longer visible
+   ✔  When the user selects the Tools ribbon tab again
+   ✔  Then the User Commands panel is collapsed and offers an expansion control
+   ✔  And the 2D Sketches icon is absent from its main area
+   ✔  When the user opens the User Commands expanded area
+   ✔  Then the 2D Sketches icon is visible in that area
+]]></system-out></testcase><testcase name="Scenario: Close the Sketch Constrain expansion when switching tabs: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:847:3" time="15.307060369"><system-out><![CDATA[  Scenario: Close the Sketch Constrain expansion when switching tabs
+   ✔  Given a part is active in the MCAD Software outside sketch edit
+   ✔  And the full Sketch ribbon is selected
+   ✔  And the Constrain additional-command area is closed
+   ✔  When the user opens the Constrain additional-command area
+   ✔  Then the additional area appears below the Sketch ribbon
+   ✔  And its visible commands are unavailable outside sketch edit
+   ✔  When the user selects the 3D Model ribbon tab
+   ✔  Then the Sketch additional area closes
+   ✔  And the 3D Model ribbon is visible
+   ✔  When the user returns to the Sketch ribbon tab
+   ✔  Then the Sketch ribbon is visible with its Constrain additional area closed
+]]></system-out></testcase><testcase name="Scenario: Close the Constrain expansion when finishing sketch edit: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:861:3" time="38.604947525"><system-out><![CDATA[  Scenario: Close the Constrain expansion when finishing sketch edit
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` contains an existing editable `Sketch1`
+   ✔  And the full Sketch ribbon is visible outside sketch edit
+   ✔  When the user enters sketch edit from the model browser
+   ✔  Then sketch commands become available and the Exit group shows Finish
+   ✔  When the user opens the Constrain additional-command area
+   ✔  Then Edit Coordinate System and Constraint Inference Scope are visible
+   ✔  When the user selects Finish without changing sketch geometry
+   ✔  Then sketch edit ends and the part view returns
+   ✔  And the Constrain additional-command area closes
+   ✔  And the original part geometry remains visible
+]]></system-out></testcase><testcase name="Scenario: Inspect Sketch Create commands outside sketch edit: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:872:3" time="20.292692638"><system-out><![CDATA[  Scenario: Inspect Sketch Create commands outside sketch edit
+   ✔  Given a part containing an existing sketch is active in the MCAD Software
+   ✔  And the full Sketch ribbon is selected outside sketch edit
+   ✔  And the Create additional-command area is closed
+   ✔  When the user presses Alt, then S, then D
+   ✔  Then the Create additional-command area opens
+   ✔  And Create Block and Precise Input are visible but unavailable
+   ✔  And the active part remains visible
+   ✔  And no sketch edit is active
+   ✔  When the user clicks empty viewport space
+   ✔  Then the Create additional-command area closes
+]]></system-out></testcase><testcase name="Scenario: Show and hides a ribbon panel from its title context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/snapshot/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:884:3" time="45.459189548"><system-out><![CDATA[  Scenario: Show and hides a ribbon panel from its title context menu
+   ✔  Given a part has an active editable sketch in the MCAD Software
+   ✔  And the Sketch ribbon's Layout panel is hidden
+   ✔  When the user opens Show Panels from the Create panel title context menu
+   ✔  Then Layout is listed as unchecked in the panel visibility submenu
+   ✔  When the user selects Layout
+   ✔  Then the Layout panel appears on the Sketch ribbon
+   ✔  And Make Part and Make Components are unavailable
+   ✔  And Create Block is available
+   ✔  When the user opens Show Panels from the Create panel title context menu
+   ✔  And the user selects Layout again
+   ✔  Then the Layout panel is hidden from the Sketch ribbon
+   ✔  And the sketch remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>
