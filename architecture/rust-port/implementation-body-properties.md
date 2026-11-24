@@ -42,6 +42,10 @@ passing `--mass`. Run `cargo test -p oblikovati-martensite` and
 `make gate` for the full workspace. Host tests cover units, density lookup,
 overflow, edit/undo, local feature failure, and pending presentation.
 
+The six pinned Body Properties desktop scenarios passed individually. The
+69 steps cover physical value updates, reopening in the same session, and
+applying or discarding appearance changes. [Native reports and captures](receipts/2026-11-24-body-properties-pinned-3954/README.md)
+
 This does not implement whole-part aggregation, assembly analysis, non-prism
 feature families, or full foreground MCPBridge acceptance. Full port acceptance
 remains open. Geometry recognizers, fallbacks, and native type assertions have

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Body properties dialog: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/body-properties/body-properties.feature" package="testsuite/Feature: Body properties dialog: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/body-properties/body-properties.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T18:00:01.526721482Z" time="70.262060688"><testcase name="Scenario: Cancel a body appearance selection: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/body-properties/body-properties.feature:25:3" time="70.262060688"><system-out><![CDATA[  Scenario: Cancel a body appearance selection
+   ✔  Given a part with a visible solid body is active in the MCAD Software
+   ✔  And the body appearance is set to As Part
+   ✔  When the user opens Body Properties for the body from the model browser
+   ✔  And the user opens the Body Appearance list
+   ✔  Then a scrollable list of named appearances is displayed
+   ✔  When the user chooses Black
+   ✔  Then Body Appearance displays Black
+   ✔  When the user chooses Cancel
+   ✔  And the user reopens Body Properties for the same body
+   ✔  Then Body Appearance displays As Part
+   ✔  And the solid remains visible
+   ✔  When the user chooses Cancel
+   ✔  Then the dialog closes
+]]></system-out></testcase></testsuite></testsuites>

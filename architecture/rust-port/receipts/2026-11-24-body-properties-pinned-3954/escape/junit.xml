@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Body properties dialog: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/body-properties/body-properties.feature" package="testsuite/Feature: Body properties dialog: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/body-properties/body-properties.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T18:02:36.787011145Z" time="29.854371707"><testcase name="Scenario: Dismiss body properties with Escape: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/body-properties/body-properties.feature:57:3" time="29.854371707"><system-out><![CDATA[  Scenario: Dismiss body properties with Escape
+   ✔  Given a part with a visible solid body is active in the MCAD Software
+   ✔  And Body Properties is open for the body
+   ✔  When the user presses Escape
+   ✔  Then the dialog closes
+   ✔  And the body row remains selected in the model browser
+   ✔  And the solid remains highlighted in the viewport
+]]></system-out></testcase></testsuite></testsuites>
