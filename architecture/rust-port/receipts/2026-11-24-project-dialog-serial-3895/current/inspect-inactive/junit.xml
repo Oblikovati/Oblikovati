@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect the project dialog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-project-dialog-source/features/application/project-dialog/project-dialog.feature" package="testsuite/Feature: Inspect the project dialog: tmp/oblikovati-ribbon-relocated.RcZVDl/current-project-dialog-source/features/application/project-dialog/project-dialog.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T18:10:38.844442391Z" time="19.835663859"><testcase name="Scenario: Inspect an inactive project without activating it: tmp/oblikovati-ribbon-relocated.RcZVDl/current-project-dialog-source/features/application/project-dialog/project-dialog.feature:21:3" time="19.835663859"><system-out><![CDATA[  Scenario: Inspect an inactive project without activating it
+   ✔  Given the MCAD Software starts with `fixtures/cad/project-dialog-native/ActiveProject.opj` first and `fixtures/cad/project-dialog-native/AlternateProject.opj` second
+   ✔  And the user opens the Projects dialog from the template chooser
+   ✔  And `ActiveProject` and `AlternateProject` are listed
+   ✔  And `ActiveProject` is marked active and `AlternateProject` remains unselected
+   ✔  And the active project is marked in the list
+   ✔  When the user selects the other project with a single click
+   ✔  Then the other project row is highlighted
+   ✔  And the settings tree displays information for the selected project
+   ✔  And the active-project mark remains beside the original project
+   ✔  When the user chooses Done
+   ✔  Then the Projects dialog closes
+   ✔  And the chooser still displays the original active project
+]]></system-out></testcase></testsuite></testsuites>

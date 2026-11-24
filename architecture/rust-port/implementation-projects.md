@@ -20,7 +20,7 @@ unconfigured. The resulting lookup reuses workspace/library order and template
 selection. Binding does not alter the portable configuration saved to disk.
 Tests cover Go round trips, malformed records, relative/absolute roots, extension
 checks before I/O, read failures, atomic commit failure, and native loaded-project
-attachment/template lookup. Active project selection in host startup is pending.
+attachment/template lookup.
 
 ## Active project ownership — partial R2
 
@@ -42,5 +42,10 @@ attachment status; project selection does not create hidden native I/O.
 
 Tests cover first selection, switching, aliases, duplicate loads, failed loads,
 unknown selection, reference/template behavior, and typed attachment results.
-Project selection UI, startup configuration, and project wire methods remain
-pending; the file-owner methods are ready for those host consumers.
+Desktop startup loads projects in argument order before opening documents.
+The Projects dialog can inspect another registered project while preserving the
+original active project. The current feature exercises named native startup
+files, chooser state, wizard navigation, and keyboard expansion. All eight
+scenarios passed individually. [Native reports and captures](receipts/2026-11-24-project-dialog-serial-3895/README.md)
+
+Project wire methods remain pending.

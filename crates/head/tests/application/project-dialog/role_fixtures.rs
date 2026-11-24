@@ -8,6 +8,7 @@ use std::path::PathBuf;
 const ACTIVE: &str = "ActiveProject";
 const ALTERNATE: &str = "AlternateProject";
 const WIZARD: &str = "WizardProject";
+const VISIBLE_PART: &str = "fixtures/cad/workspace-layout-native.opd";
 
 pub(super) fn active_file(project: &str) -> &'static str {
     match project {
@@ -62,8 +63,23 @@ fn register(world: &mut ApplicationWorld, file: &str) {
     "`fixtures/cad/workspace-layout-native.opd` is open with `Sketch1` visible and the new-document template chooser open in the MCAD Software"
 )]
 fn open_part_and_chooser(world: &mut ApplicationWorld) {
-    let path = super::super::scenario_root().join("fixtures/cad/workspace-layout-native.opd");
-    world.open_fixture(&path);
+    start_active_project(world);
+    world.open_fixture(&super::super::scenario_root().join(VISIBLE_PART));
+    visible_sketch_and_chooser(world);
+}
+
+#[given(
+    "the MCAD Software starts with `fixtures/cad/project-dialog-native/ActiveProject.opj` as its first project and `fixtures/cad/workspace-layout-native.opd` as its part"
+)]
+fn start_project_with_part(world: &mut ApplicationWorld) {
+    start_active_project(world);
+    let part = super::super::scenario_root().join(VISIBLE_PART);
+    crate::startup::open_startup_documents(&mut world.app().owner, &[part]).unwrap();
+    world.pump(Vec::new());
+}
+
+#[given("`Sketch1` is visible and the new-document template chooser is open")]
+fn visible_sketch_and_chooser(world: &mut ApplicationWorld) {
     let browser = world.state().browser.expect("expected an open part");
     assert!(
         browser
@@ -76,15 +92,42 @@ fn open_part_and_chooser(world: &mut ApplicationWorld) {
     world.expect_text("Template folders");
 }
 
+#[given(
+    "the MCAD Software starts with `fixtures/cad/project-dialog-native/ActiveProject.opj` as its first project"
+)]
+fn start_active_project(world: &mut ApplicationWorld) {
+    register(world, active_file(ACTIVE));
+}
+
+#[given(
+    "the MCAD Software starts with `fixtures/cad/project-dialog-native/ActiveProject.opj` first and `fixtures/cad/project-dialog-native/AlternateProject.opj` second"
+)]
+fn start_two_projects(world: &mut ApplicationWorld) {
+    start_active_project(world);
+    register(world, "AlternateProject.opj");
+}
+
+#[given(
+    "the MCAD Software starts with `fixtures/cad/project-dialog-native/WizardProject.opj` as its first project"
+)]
+fn start_wizard_project(world: &mut ApplicationWorld) {
+    register(world, active_file(WIZARD));
+}
+
 #[given("`ActiveProject` is the active project")]
 fn active_project(world: &mut ApplicationWorld) {
-    register(world, active_file(ACTIVE));
     world.expect_text("Project: ActiveProject");
 }
 
 #[given("the Projects dialog is open with `ActiveProject` and `AlternateProject` listed")]
 fn two_projects(world: &mut ApplicationWorld) {
     open_registered_dialog(world, ACTIVE, &["AlternateProject.opj"]);
+    project_rows_listed(world);
+}
+
+#[given("`ActiveProject` and `AlternateProject` are listed")]
+fn project_rows_listed(world: &mut ApplicationWorld) {
+    world.expect_text("(active) ActiveProject");
     world.expect_text(ALTERNATE);
     super::expect_list_location(world, "AlternateProject.opj");
 }
@@ -117,9 +160,33 @@ fn open_registered_dialog(world: &mut ApplicationWorld, active: &str, others: &[
     for file in others {
         register(world, file);
     }
+    open_projects_from_chooser(world);
+}
+
+#[given("the user opens the Projects dialog from the template chooser")]
+fn open_projects_from_chooser(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::N, true);
     open_projects(world);
     super::expect_project_marked(world);
+}
+
+#[given("the user opens the Projects dialog from the template chooser with `ActiveProject` active")]
+fn open_active_projects(world: &mut ApplicationWorld) {
+    open_projects_from_chooser(world);
+    world.expect_text("(active) ActiveProject");
+}
+
+#[given("the user opens the Projects dialog from the template chooser and selects `ActiveProject`")]
+fn select_active_project(world: &mut ApplicationWorld) {
+    open_active_projects(world);
+    choose_button(world, "(active) ActiveProject");
+    world.expect_text("Workspace: workspace-active");
+}
+
+#[given("the user opens the Projects dialog from the template chooser with `WizardProject` active")]
+fn open_wizard_projects(world: &mut ApplicationWorld) {
+    open_projects_from_chooser(world);
+    world.expect_text("(active) WizardProject");
 }
 
 #[given(
@@ -128,7 +195,29 @@ fn open_registered_dialog(world: &mut ApplicationWorld, active: &str, others: &[
 fn wizard_type_page(world: &mut ApplicationWorld) {
     wizard_project(world);
     choose_button(world, "New");
+    project_type_page(world);
+}
+
+#[given("the user opens Projects from the template chooser and chooses New")]
+fn choose_new_project(world: &mut ApplicationWorld) {
+    open_wizard_projects(world);
+    choose_button(world, "New");
+}
+
+#[given("the new single-user project wizard is on its project-type page")]
+fn project_type_page(world: &mut ApplicationWorld) {
     world.expect_text(super::NEW_PROJECT_ROW);
+}
+
+#[given(
+    "the user opens Projects from the template chooser, chooses New and advances to the project-file page"
+)]
+fn choose_project_file_page(world: &mut ApplicationWorld) {
+    super::point_home_at_scratch(world);
+    choose_new_project(world);
+    project_type_page(world);
+    choose_button(world, "Next");
+    world.expect_text("Project File to be Created");
 }
 
 #[given(

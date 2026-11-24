@@ -6890,7 +6890,7 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3895",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -6924,7 +6924,7 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3895",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -6978,7 +6978,7 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3895",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -7012,7 +7012,7 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3895",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -7056,7 +7056,7 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3895",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -7095,7 +7095,7 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3895",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -7134,7 +7134,7 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3895",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
@@ -7183,7 +7183,7 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3895",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "implemented",
       "last_receipt": null,
       "go_reference": "Go aa8297d1b: persistence/project_file.go stores project paths; no matching project dialog or wizard was found in head/ui.",
       "mapping_reason": "Application project dialog, wizard, and keyboard interaction; persistence depends on project services.",
