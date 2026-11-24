@@ -63,3 +63,44 @@ fn selector_open(_: &mut ApplicationWorld) {
 fn selector_closed(_: &mut ApplicationWorld) {
     assert!(!super::side_selector::selector_popup_open());
 }
+
+const MODEL_PANELS: [&str; 7] = [
+    "Sketch",
+    "Create",
+    "Modify",
+    "Work Features",
+    "Pattern",
+    "Simplification",
+    "Parameters",
+];
+
+fn check_arrow_wrap(world: &mut ApplicationWorld) {
+    world.key(Key::DownArrow, false);
+    let first = focus_id();
+    assert_ne!(first, 0, "expected a focused first row");
+    world.key(Key::UpArrow, false);
+    let wrapped_up = focus_id();
+    assert_ne!(first, wrapped_up, "Up from the first row should wrap");
+    world.key(Key::DownArrow, false);
+    assert_eq!(focus_id(), first, "Down from the last row should wrap");
+    for _ in 1..MODEL_PANELS.len() {
+        world.key(Key::DownArrow, false);
+    }
+    assert_eq!(
+        focus_id(),
+        wrapped_up,
+        "Up should have reached the last row"
+    );
+}
+
+#[test]
+fn panel_selector_wraps_arrow_focus_without_changing_visibility() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    super::side_selector::open_side_selector(&mut world);
+    let before = MODEL_PANELS.map(|panel| world.checked(panel));
+    check_arrow_wrap(&mut world);
+    assert_eq!(MODEL_PANELS.map(|panel| world.checked(panel)), before);
+    selector_open(&mut world);
+    world.close();
+}

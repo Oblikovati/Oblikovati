@@ -45,3 +45,10 @@ Hovering over the closed direct selector shows how to add or remove
 ribbon panels. Pressing F1 while the hint is visible opens built-in help.
 The [native help receipt](receipts/2026-11-24-selector-help-3856/README.md)
 covers tooltip dismissal, F1, and switching between ribbon menus.
+
+The direct checklist wraps keyboard focus from the first row to the last
+with Up and from the last row to the first with Down. The
+[native regression](receipts/2026-11-24-selector-keyboard-wrap-3856/README.md)
+checks all seven rows in the current 3D Model catalog and verifies their
+checkbox states after navigation. The published wrap scenario names the
+3D Print panel, which is still absent from that catalog.
