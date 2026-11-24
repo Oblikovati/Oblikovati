@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature" package="testsuite/Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T21:17:54.496327978Z" time="39.183952621"><testcase name="Scenario: Open and close the Material Browser from quick access: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:197:3" time="39.183952621"><system-out><![CDATA[  Scenario: Open and close the Material Browser from quick access
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the Tools ribbon is selected
+   ✔  And the Material Browser quick access command is visible
+   ✔  And the Material Browser window is closed
+   ✔  When the user selects the Material Browser quick access command
+   ✔  Then the Material Browser window opens over the part workspace
+   ✔  And the part remains active
+   ✔  When the user closes the Material Browser window
+   ✔  Then the browser window closes
+   ✔  And the Tools ribbon and active part remain visible
+]]></system-out></testcase></testsuite></testsuites>

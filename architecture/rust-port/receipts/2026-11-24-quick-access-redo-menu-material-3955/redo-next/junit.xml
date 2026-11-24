@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature" package="testsuite/Feature: Quick access toolbar customization: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T21:16:55.159300231Z" time="13.773223522"><testcase name="Scenario: Show Redo disabled when no redo action is available: tmp/oblikovati-ribbon-relocated.RcZVDl/current-quick-access-source/features/application/quick-access-toolbar/quick-access-toolbar.feature:172:3" time="13.773223522"><system-out><![CDATA[  Scenario: Show Redo disabled when no redo action is available
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And Redo is present on the quick access toolbar
+   ✔  And no redo action is available in the active document
+   ✔  When the user inspects the quick access toolbar
+   ✔  Then Redo remains visible but disabled
+   ✔  And the active part remains open
+]]></system-out></testcase></testsuite></testsuites>
