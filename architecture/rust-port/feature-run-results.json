@@ -615,7 +615,6 @@
       "645576c3b62e89cdb6c668d5579123e6880a33f9e4a8020f922f1b08e0502ca2": {
         "feature_sha256": "645576c3b62e89cdb6c668d5579123e6880a33f9e4a8020f922f1b08e0502ca2",
         "supporting_files": {
-          "features/application/ribbon-panel-expansion/BLOCKERS.md": "49605b8217a06a8b2185fc7f53095b2e60427becbb0b08cb766fa9e2461de21c",
           "features/application/ribbon-panel-expansion/FIXTURES.md": "38eec46e771394c170aefded5c1bb0714115da364c692a84fd83860158310d24",
           "features/application/ribbon-panel-expansion/FUNCTIONAL.md": "6cfb93ea59eeb1a2cd6767d490cf939421d12bc2d255666d7a9d53b316889e36",
           "features/application/ribbon-panel-expansion/VISUAL.md": "33e331d90ccd383b2d96e4a65435256747ed5b75004cf45622c460d01855b361",
@@ -666,12 +665,14 @@
           "features/application/ribbon-panel-expansion/unpinned-expansion-face-selection.svg": "db3c031bc230282b079d15f6f85a40c054b25f32fe77893bf03e6358a9237eff",
           "features/application/ribbon-panel-expansion/unpinned-tab-switch.svg": "ce5b07d3e0fee7c9de7f41b0210ce566b173add27dce5a2637acdbc0c93f4065"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-19-ribbon-expansion-c3a218f02/cucumber.json",
-        "cucumber_sha256": "b22be02bea96c6b8f40d26d116bceb034a1eb9406c2d18f95fb9fb08f19f7c68",
-        "application_commit": "c3a218f02",
-        "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-panel-expansion OBK_BDD_REPORTS=/tmp/obk-ribbon-full-c3a218f02 cargo test --locked -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture",
-        "environment": "Linux X11, Xvfb and Vulkan lavapipe; scripted native scenario input",
-        "notes": "Full diagnostic run: 53 of 67 scenarios passed; 14 stopped at undefined steps. The feature hash matched before and after; supporting files matched the prior recorded hashes after the run, but no separate before-run support snapshot was captured. The scenario source is unversioned, so strict verified acceptance remains unavailable. Options, pin-state and Explore scenario questions are in BLOCKERS.md. Shell preview is blocked by Martensite #554; Bend Part and further step bindings remain open."
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-ribbon-panel-expansion-pinned-3856/cucumber.json",
+        "cucumber_sha256": "77073032a4c536d1a9b0b96bf7c638619124e38f3bbf9382950d3ad71f7a138b",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-ribbon-panel-expansion-pinned-3856/scenario-arguments.json",
+        "scenario_arguments_sha256": "2cdae309f51cdc8a206d5212d5786fb52236a95242dce6a1e2a85d40b8f74077",
+        "application_commit": "d1700229505e5405ae37a61d3e3c377d7a3c5701",
+        "command": "tools/with-xvfb.sh sh -c 'openbox & exec env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json LP_NUM_THREADS=4 OBK_BDD_ROOT=/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout OBK_BDD_FEATURE=ribbon-panel-expansion OBK_BDD_REPORTS=/tmp/oblikovati-ribbon-relocated.RcZVDl/ribbon-expansion-pinned-current /tmp/oblikovati-ribbon-relocated.RcZVDl/head-keyboard-visible-profile application_scenarios_use_the_native_window --nocapture'",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe.",
+        "notes": "57 of 67 scenarios and 643 of 653 executed steps passed. Ten scenarios stopped at an undefined step. The build included existing local file-browser edits."
       },
       "3941cd9f652313f9209c5c9fe64f881414f6939a36591d725798b8e73ba39345": {
         "feature_sha256": "3941cd9f652313f9209c5c9fe64f881414f6939a36591d725798b8e73ba39345",

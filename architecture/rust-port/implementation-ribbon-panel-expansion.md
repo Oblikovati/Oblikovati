@@ -1,5 +1,9 @@
 # Tools Options expansion
 
+The [full pinned benchmark](receipts/2026-11-24-ribbon-panel-expansion-pinned-3856/README.md)
+passed 57 of 67 scenarios. The ten incomplete cases stopped at an
+undefined step. All 57 passing declarations have R0 baseline records.
+
 The full Tools ribbon opens additional Options commands below the panel
 title. The expansion uses the shared pin control and follows the ribbon
 display cycle. Clicking outside an unpinned expansion dismisses it.
