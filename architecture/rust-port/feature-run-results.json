@@ -411,19 +411,56 @@
     "scenario_inventory_sha256": "8a616afb8082eed961217b8642d5b966700c706af719392eac0af8434d152ebf"
   },
   "features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature": {
-    "feature_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
-    "supporting_files": {
-      "features/application/ribbon-keyboard-navigation/FUNCTIONAL.md": "0071bbdd5b8bafcd6bb65bb749f7114a5fbd26de960d08a2accd699041d035c3",
-      "features/application/ribbon-keyboard-navigation/VISUAL.md": "4455872833e235fe242c49eeab738f44cb1828033cab1b1206d8e4a72c862826",
-      "features/application/ribbon-keyboard-navigation/FIXTURES.md": "53d28b3a02b8e56ba5a458529c93e469f15f82c537cce4f179190c78ab595e2c",
-      "features/application/ribbon-keyboard-navigation/BLOCKERS.md": "247a89fc61b82bd5a3604f1df222bbf57352cb536ec22767ea61cf15cbcd15b4"
-    },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-ribbon-keyboard-hole/cucumber.json",
-    "cucumber_sha256": "81bbb8b1a66cf58e58d6ebb1877dcaa1242220bd36d2cf3fb2f73c275bbf168f",
-    "application_commit": "b9a07431c16f2c345fc83175a30b94ec45769b1a",
-    "command": "xvfb-run -a -s '-screen 0 1600x1000x24' env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=ribbon-keyboard-navigation OBK_BDD_REPORTS=/tmp/obk-hole-ribbon-final-4093 CARGO_BUILD_JOBS=2 cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb, Vulkan Lavapipe; scripted scenario input; separate X11 keyboard and mouse Hole test passed",
-    "notes": "18 of 18 scenarios and 219 steps passed; feature and supporting documentation hashes matched before and after the run."
+    "by_source_sha256": {
+      "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4": {
+        "feature_sha256": "835ba9fd1dfa3e007e9555b4b890cbf75a006e40c4e14b4285709f93ab5889d4",
+        "supporting_files": {
+          "features/application/ribbon-keyboard-navigation/key-tips-panel-selector.svg": "55771030969c53ff3c3061a9ca4d161254e2b10bf778ea9120a15a60d9e283c8",
+          "features/application/ribbon-keyboard-navigation/minimized-command-launch.svg": "f1f575402c213202925593aa80db6d34ee3e6caac67f1655e2b381d0501de29b",
+          "features/application/ribbon-keyboard-navigation/key-tips-face-selection.svg": "61d99e5a427f15db3c56ec986d4b189c9c80538e6cc7d8d76b18a7c75af09de5",
+          "features/application/ribbon-keyboard-navigation/FUNCTIONAL.md": "0071bbdd5b8bafcd6bb65bb749f7114a5fbd26de960d08a2accd699041d035c3",
+          "features/application/ribbon-keyboard-navigation/side-docked-key-tips.svg": "0c1f50b5153a78bb2a587e172f249168782719b71b67d1ef43219062e102426b",
+          "features/application/ribbon-keyboard-navigation/FIXTURES.md": "53d28b3a02b8e56ba5a458529c93e469f15f82c537cce4f179190c78ab595e2c",
+          "features/application/ribbon-keyboard-navigation/temporary-key-tip-sequence.svg": "16de05cda3e57a95712728db21fe2a759e06aabf8482ba14ac881759f42206e2",
+          "features/application/ribbon-keyboard-navigation/VISUAL.md": "4455872833e235fe242c49eeab738f44cb1828033cab1b1206d8e4a72c862826",
+          "features/application/ribbon-keyboard-navigation/property-focus-key-tips.svg": "cd40b3e2234dfdc3b95662f0e2a6f0e7dd02a85e26d2fee8be0ed8a45b21b210",
+          "features/application/ribbon-keyboard-navigation/key-tip-states.svg": "9c2f83449e39d6ad1c8d4c04ac0504cb8aaf56bd179ee9ef4cb2568a886a3e3c"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-ribbon-keyboard-pinned-3856/cucumber.json",
+        "cucumber_sha256": "05f11eaf3e43bed363c83411794bbf03c8f4d0cec45f41594ab659f46d05687c",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-ribbon-keyboard-pinned-3856/scenario-arguments.json",
+        "scenario_arguments_sha256": "6ea16c3160cd23d37df579a142e1ec21ee932aa25b326855358981c8818a4443",
+        "application_commit": "e05f0d6c729798b5d301e00c5a63274bd8a1cb32",
+        "command": "tools/with-xvfb.sh sh -c 'openbox & exec env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json LP_NUM_THREADS=4 OBK_BDD_ROOT=/tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout OBK_BDD_FEATURE=ribbon-keyboard-navigation OBK_BDD_REPORTS=/tmp/oblikovati-ribbon-relocated.RcZVDl/keyboard-navigation-pinned-full /tmp/oblikovati-ribbon-relocated.RcZVDl/head-e05f0d6c7 application_scenarios_use_the_native_window --nocapture'",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe.",
+        "notes": "18 of 18 scenarios and 219 steps passed on the pinned source. The build included existing local file-browser edits."
+      },
+      "a19716cccff808b2160a4d98164a62f04c84ee5fb761219fb73857d71ee5619b": {
+        "feature_sha256": "a19716cccff808b2160a4d98164a62f04c84ee5fb761219fb73857d71ee5619b",
+        "supporting_files": {
+          "features/application/ribbon-keyboard-navigation/BLOCKERS.md": "5360700b3610a9255ee4aa7ae7dfd9890c3ea3bea551c2ea1302b13efbbfcb81",
+          "features/application/ribbon-keyboard-navigation/FIXTURES.md": "bbcf97cb0582d791180d433ede4d68710a53084add4baea41b31510e68e3ab86",
+          "features/application/ribbon-keyboard-navigation/FUNCTIONAL.md": "0071bbdd5b8bafcd6bb65bb749f7114a5fbd26de960d08a2accd699041d035c3",
+          "features/application/ribbon-keyboard-navigation/VISUAL.md": "4455872833e235fe242c49eeab738f44cb1828033cab1b1206d8e4a72c862826",
+          "features/application/ribbon-keyboard-navigation/key-tip-states.svg": "9c2f83449e39d6ad1c8d4c04ac0504cb8aaf56bd179ee9ef4cb2568a886a3e3c",
+          "features/application/ribbon-keyboard-navigation/key-tips-face-selection.svg": "61d99e5a427f15db3c56ec986d4b189c9c80538e6cc7d8d76b18a7c75af09de5",
+          "features/application/ribbon-keyboard-navigation/key-tips-panel-selector.svg": "55771030969c53ff3c3061a9ca4d161254e2b10bf778ea9120a15a60d9e283c8",
+          "features/application/ribbon-keyboard-navigation/minimized-command-launch.svg": "f1f575402c213202925593aa80db6d34ee3e6caac67f1655e2b381d0501de29b",
+          "features/application/ribbon-keyboard-navigation/property-focus-key-tips.svg": "cd40b3e2234dfdc3b95662f0e2a6f0e7dd02a85e26d2fee8be0ed8a45b21b210",
+          "features/application/ribbon-keyboard-navigation/side-docked-key-tips.svg": "0c1f50b5153a78bb2a587e172f249168782719b71b67d1ef43219062e102426b",
+          "features/application/ribbon-keyboard-navigation/temporary-key-tip-sequence.svg": "16de05cda3e57a95712728db21fe2a759e06aabf8482ba14ac881759f42206e2",
+          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-ribbon-keyboard-fixture-3856/full/cucumber.json",
+        "cucumber_sha256": "986a64f5ba65bdbae7abe36061dd232ff0c251720c4f064836c9ed1b57f61002",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-ribbon-keyboard-fixture-3856/full/scenario-arguments.json",
+        "scenario_arguments_sha256": "18f2919642f9ece541f4f6c96eab246a866ab7d154b7982e2c55df09b8f07dd6",
+        "application_commit": "d1700229505e5405ae37a61d3e3c377d7a3c5701",
+        "command": "tools/with-xvfb.sh sh -c 'openbox & exec env VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json LP_NUM_THREADS=4 OBK_BDD_ROOT=/tmp/oblikovati-ribbon-relocated.RcZVDl/keyboard-navigation-published-snapshot/checkout OBK_BDD_FEATURE=ribbon-keyboard-navigation OBK_BDD_REPORTS=/tmp/oblikovati-ribbon-relocated.RcZVDl/keyboard-navigation-published-final /tmp/oblikovati-ribbon-relocated.RcZVDl/head-keyboard-visible-profile application_scenarios_use_the_native_window --nocapture'",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe.",
+        "notes": "18 of 18 scenarios and 219 steps passed on the published snapshot with the named Part. The build included existing local file-browser edits."
+      }
+    }
   },
   "features/application/document-tabs/document-tabs.feature": {
     "by_source_sha256": {

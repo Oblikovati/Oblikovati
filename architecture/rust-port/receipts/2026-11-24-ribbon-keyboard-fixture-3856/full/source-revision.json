@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "f5d798970cc9f38cbf57e32b2358fedc3a85de8a",
+    "dirty": false,
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/keyboard-navigation-published-snapshot/checkout"
+  },
+  "before": {
+    "commit": "f5d798970cc9f38cbf57e32b2358fedc3a85de8a",
+    "dirty": false,
+    "root": "/tmp/oblikovati-ribbon-relocated.RcZVDl/keyboard-navigation-published-snapshot/checkout"
+  },
+  "source_changed": false
+}

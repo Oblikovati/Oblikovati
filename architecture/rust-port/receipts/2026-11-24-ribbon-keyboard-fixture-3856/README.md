@@ -15,6 +15,9 @@ selection color. The updated check passed all 13 steps on the
 [published Part](after/published-browser/cucumber.json) and on the
 [pinned hidden profile](after/pinned-browser/cucumber.json).
 
+The [final full published run](full/cucumber.json) passed all 18 scenarios
+and 219 steps with the changes in `d17002295`.
+
 The native runs used application base `277dce9f7` with the local fixture
 bindings, X11, Xvfb, Openbox, and Vulkan Lavapipe. The full pinned run is
 recorded in [its own receipt](../2026-11-24-ribbon-keyboard-pinned-3856/README.md).
