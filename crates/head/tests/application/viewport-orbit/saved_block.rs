@@ -6,12 +6,17 @@ use super::*;
 use std::path::Path;
 
 const ORBIT_BLOCK: &str = "fixtures/cad/body-properties-start.opd";
+const CURRENT_ORBIT_BLOCK: &str = "fixtures/cad/docking-visible-solid-current.opd";
 
 #[given(
     "`fixtures/cad/body-properties-start.opd` is open with its rectangular solid visible in the active part in the MCAD Software"
 )]
 fn saved_block_visible(world: &mut ApplicationWorld) {
-    open_saved_navigation_block(world, &super::super::scenario_root().join(ORBIT_BLOCK));
+    open_orbit_block(world, ORBIT_BLOCK);
+}
+
+fn open_orbit_block(world: &mut ApplicationWorld, relative_path: &str) {
+    open_saved_navigation_block(world, &super::super::scenario_root().join(relative_path));
     world.observed_view_camera = Some(camera(world));
 }
 
@@ -20,6 +25,18 @@ fn saved_block_visible(world: &mut ApplicationWorld) {
 )]
 fn saved_block_face_on(world: &mut ApplicationWorld) {
     saved_block_visible(world);
+    expect_face_on(world);
+}
+
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is open with a rectangular face oriented toward the viewer in the active part in the MCAD Software"
+)]
+fn current_saved_block_face_on(world: &mut ApplicationWorld) {
+    open_orbit_block(world, CURRENT_ORBIT_BLOCK);
+    expect_face_on(world);
+}
+
+fn expect_face_on(world: &mut ApplicationWorld) {
     let view = camera(world);
     let normal: [f64; 3] = std::array::from_fn(|axis| view.eye[axis] - view.target[axis]);
     let aligned = normal.iter().filter(|axis| axis.abs() > SAME_VIEW).count();
@@ -31,6 +48,18 @@ fn saved_block_face_on(world: &mut ApplicationWorld) {
 )]
 fn saved_block_inclined(world: &mut ApplicationWorld) {
     saved_block_face_on(world);
+    incline_block(world);
+}
+
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is open with its solid at an inclined orientation in the MCAD Software"
+)]
+fn current_saved_block_inclined(world: &mut ApplicationWorld) {
+    current_saved_block_face_on(world);
+    incline_block(world);
+}
+
+fn incline_block(world: &mut ApplicationWorld) {
     choose_rotate(world);
     first_direction(world);
     view_changes(world);

@@ -15,12 +15,10 @@ using this status; the live scenario directory can change.
 ## Current evidence
 
 - All 12 current [Viewport Navigation Wheel scenarios](receipts/2026-11-24-navigation-wheel-current-3881/README.md) passed individually with the named native Part.
-- Viewport Orbit (#3872): all ten pinned cases and 94 steps passed, including
-  both examples of the opposite-button outline. A saved native block
-  reproduced a stale status message after Rotate at Angle. All ten cases
-  also passed after the fix in a copy of the current feature with the native
-  Part. The published feature still uses the Inventor path. See
-  `receipts/2026-11-21-viewport-orbit-r0-3872/`.
+- Viewport Orbit (#3872) passed all ten current cases and 94 steps with
+  the published native Part, including both opposite-direction examples.
+  See the [current run](receipts/2026-11-24-viewport-orbit-current-3872/README.md)
+  and the [pinned run](receipts/2026-11-21-viewport-orbit-r0-3872/README.md).
 - File Menu (#3894): all eight pinned scenarios and all eight in a copy of
   the current feature passed with native fixtures. The published source
   still names the Inventor Part in the Save As and Home cases. X11 tests
@@ -322,10 +320,6 @@ using this status; the live scenario directory can change.
   used a disposable dirty copy, which conflicts with the current fixture notes;
   clarification is in the scenario folder. The run is diagnostic, not verified;
   see `receipts/2026-11-20-main-frame-native-4063/`.
-- Viewport orbit has a full-feature diagnostic: all 10 executed cases,
-  including both examples of one outline, passed at SHA-256
-  `d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6`.
-  This run used scripted window input.
 - Viewport entity selection now has executable scenarios and an Inventor part
   fixture. The fixture step reaches the document host, which rejects the binary
   file as invalid YAML; native Inventor and 3D-sketch support remain open

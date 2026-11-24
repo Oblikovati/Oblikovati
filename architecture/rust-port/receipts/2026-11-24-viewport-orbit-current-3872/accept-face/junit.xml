@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:08:50.735564116Z" time="39.345096496"><testcase name="Scenario: Accept an incremental view rotation: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature:50:3" time="39.345096496"><system-out><![CDATA[  Scenario: Accept an incremental view rotation
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with a rectangular face oriented toward the viewer in the active part in the MCAD Software
+   ✔  When the user chooses Rotate at Angle from the orbit menu
+   ✔  And the increment field displays 10
+   ✔  And the user clicks the first direction button
+   ✔  Then the visible view changes while the dialog remains open
+   ✔  When the user clicks OK
+   ✔  Then the dialog closes
+   ✔  And the changed view remains visible
+   ✔  And the same part remains active
+   ✔  And the status area displays Ready
+]]></system-out></testcase></testsuite></testsuites>

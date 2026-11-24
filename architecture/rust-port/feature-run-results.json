@@ -223,12 +223,32 @@
     }
   },
   "features/application/viewport-orbit/viewport-orbit.feature": {
-    "feature_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-viewport-orbit/cucumber.json",
-    "cucumber_sha256": "4a4ddef11f28504696886e2b317bd1afc512dd04775cd8800bf150c93230e4e8",
-    "application_commit": "c69eb89dde71bd2bf49376774ef7a34b2cd919b1",
-    "command": "OBK_BDD_FEATURE=viewport-orbit tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb, Vulkan Lavapipe; scripted window input"
+    "by_source_sha256": {
+      "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6": {
+        "feature_sha256": "d0e82e1671dc51da3c8eafa7d25101dc66713552639adf9dec041fac6d05eeb6",
+        "cucumber": "architecture/rust-port/receipts/2026-11-18-viewport-orbit/cucumber.json",
+        "cucumber_sha256": "4a4ddef11f28504696886e2b317bd1afc512dd04775cd8800bf150c93230e4e8",
+        "application_commit": "c69eb89dde71bd2bf49376774ef7a34b2cd919b1",
+        "command": "OBK_BDD_FEATURE=viewport-orbit tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11, Xvfb, Vulkan Lavapipe; scripted window input"
+      },
+      "4939dc9aef7fd87a7cfce57e0019b0f2a5be82d53663a2d2790c8d61726d179a": {
+        "feature_sha256": "4939dc9aef7fd87a7cfce57e0019b0f2a5be82d53663a2d2790c8d61726d179a",
+        "supporting_files": {
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-viewport-orbit-current-3872/cucumber.json",
+        "cucumber_sha256": "2f20bca199dc75a0e7c281e5f3bddcbc692382780ddc4131989f461b3396b926",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-24-viewport-orbit-current-3872/scenario-inventory.json",
+        "scenario_inventory_sha256": "e5cf0edada60db88d2e783446ade501a7f559e20f16f9ddf0393d6fe8c21b98d",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-viewport-orbit-current-3872/scenario-arguments.json",
+        "scenario_arguments_sha256": "a405203127712b588824d6285904ffd551c77372bd797d092b873c2d2f0a919f",
+        "application_commit": "e9978b07e1866a01d3913b334432fd71b5a5ebd2",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=viewport-orbit OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All nine current declarations passed with the published native Part, including both examples of the adjacent-pair outline. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   },
   "features/application/main-window-frame/main-window-frame.feature": {
     "feature_sha256": "382162b5c11e33a252989ae65fee05e83d2e53a9ec3cac2f8ccad9ee05d7fe55",

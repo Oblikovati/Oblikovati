@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T22:14:10.728298226Z" time="25.65702792"><testcase name="Scenario: Leave free orbit using the Pan control: tmp/oblikovati-ribbon-relocated.RcZVDl/current-viewport-orbit-source/features/application/viewport-orbit/viewport-orbit.feature:97:3" time="25.65702792"><system-out><![CDATA[  Scenario: Leave free orbit using the Pan control
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid visible in the active part in the MCAD Software
+   ✔  And Orbit is active with its circular guide visible
+   ✔  When the user clicks Pan on the navigation bar
+   ✔  Then the circular orbit guide disappears
+   ✔  And the status area displays Ready
+   ✔  And the block remains visible in the same apparent orientation
+]]></system-out></testcase></testsuite></testsuites>
