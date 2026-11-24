@@ -431,7 +431,8 @@ fn edges_gone_block_stays(world: &mut ApplicationWorld) {
 #[when("I right-click the nested sketch row")]
 #[when("the user right-clicks the nested sketch row")]
 fn right_click_sketch(world: &mut ApplicationWorld) {
-    right_click_row(world, SKETCH);
+    let sketch = super::super::workspace_layout::native_part::fixture_sketch(world);
+    right_click_row(world, &sketch.name);
 }
 #[then("its rectangular geometry and dimensions appear highlighted in the viewport")]
 fn sketch_shown(world: &mut ApplicationWorld) {

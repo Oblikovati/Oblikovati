@@ -105,6 +105,38 @@ pub(super) fn open_block(world: &mut ApplicationWorld) {
     open_extruded_part(world);
     world.observed_view_camera = Some(camera(world));
 }
+fn inspect_single_extrusion(world: &mut ApplicationWorld) -> oblikovati_gui::GuiModelBrowser {
+    if world.state().document.is_none() {
+        open_block(world);
+    }
+    let state = world.state();
+    if let Some(document) = world.previous_document {
+        assert_eq!(state.document, Some(document), "expected the named Part");
+    }
+    let browser = state.browser.expect("expected a Part browser");
+    let [feature] = browser.features.as_slice() else {
+        panic!("expected one extrusion, got {:?}", browser.features);
+    };
+    assert_eq!(feature.kind, "Extrusion");
+    browser
+}
+
+#[given("a part with one extrusion and no fillet is open in the MCAD Software")]
+fn extrusion_without_fillet(world: &mut ApplicationWorld) {
+    inspect_single_extrusion(world);
+}
+
+#[given(
+    "an active part in the MCAD Software contains a dimensioned rectangular sketch used by an extrusion"
+)]
+fn inspect_nested_profile(world: &mut ApplicationWorld) {
+    let browser = inspect_single_extrusion(world);
+    let [sketch] = browser.sketches.as_slice() else {
+        panic!("expected one nested sketch, got {:?}", browser.sketches);
+    };
+    assert_eq!(sketch.consumed_by, Some(browser.features[0].id));
+}
+
 pub(super) fn expect_block_kept(world: &mut ApplicationWorld) {
     expect_solid_visible(world);
     let earlier = world
@@ -149,9 +181,6 @@ fn expect_no_origin_rows(world: &ApplicationWorld) {
 #[given("an active part is open in the MCAD Software")]
 #[given("an active part is visible in the MCAD Software")]
 #[given("an active part with a visible block is open in the MCAD Software")]
-#[given(
-    "an active part in the MCAD Software contains a dimensioned rectangular sketch used by an extrusion"
-)]
 #[given("a dimensioned sketch is nested under an extrusion in the MCAD Software")]
 #[given(
     "an active part in the MCAD Software contains a single extrusion forming a rectangular block"
@@ -164,7 +193,6 @@ fn expect_no_origin_rows(world: &ApplicationWorld) {
 #[given("a part with a visible block is open in the MCAD Software")]
 #[given("a part is open in the MCAD Software with its model browser visible")]
 #[given("an active part in the MCAD Software contains one extrusion forming a block")]
-#[given("a part with one extrusion and no fillet is open in the MCAD Software")]
 #[given("a part with one unsuppressed extrusion and no fillet is open in the MCAD Software")]
 #[given("a nested sketch in the MCAD Software has Default line color")]
 #[given("a nested sketch in the MCAD Software has Default line weight")]

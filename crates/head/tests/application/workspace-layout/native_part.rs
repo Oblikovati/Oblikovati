@@ -26,7 +26,7 @@ fn open_workspace_part(world: &mut ApplicationWorld, relative: &str) -> GuiModel
     browser
 }
 
-pub(super) fn single_extrusion_name(world: &mut ApplicationWorld) -> String {
+pub(in super::super) fn single_extrusion_name(world: &mut ApplicationWorld) -> String {
     let browser = world.state().browser.expect("expected a Part browser");
     let mut extrusions = browser
         .features
@@ -40,7 +40,9 @@ pub(super) fn single_extrusion_name(world: &mut ApplicationWorld) -> String {
     extrusion.name
 }
 
-pub(super) fn fixture_sketch(world: &mut ApplicationWorld) -> oblikovati_gui::GuiBrowserSketch {
+pub(in super::super) fn fixture_sketch(
+    world: &mut ApplicationWorld,
+) -> oblikovati_gui::GuiBrowserSketch {
     let browser = world
         .state()
         .browser
@@ -61,6 +63,7 @@ pub(super) fn prepare_sketch_menu_fixture(world: &mut ApplicationWorld) -> Strin
 }
 
 #[given("`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software")]
+#[given("`fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software")]
 #[given(
     "`fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software with nested model browser branches"
 )]

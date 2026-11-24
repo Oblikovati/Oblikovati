@@ -290,7 +290,8 @@ fn close_find(world: &mut ApplicationWorld) {
 #[then("the extrusion remains selected and the block edges remain highlighted")]
 #[then("the extrusion row is selected and the block edges are highlighted")]
 fn extrusion_stays(world: &mut ApplicationWorld) {
-    assert!(row_accent(world, FEATURE), "expected the row's accent");
+    let name = super::super::workspace_layout::native_part::single_extrusion_name(world);
+    assert!(row_accent(world, &name), "expected the row's accent");
     expect_outline(world, true);
 }
 // Grouping
