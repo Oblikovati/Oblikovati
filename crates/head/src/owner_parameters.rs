@@ -147,6 +147,7 @@ pub(super) fn owner_parameter_snapshot<
         .session(document)
         .map_err(|cause| cause.to_string())?;
     let parameters = &session.snapshot().parameters;
+    let units = std::sync::Arc::new(parameters.units().clone());
     let feature_consumers = feature_parameter_consumers(session.snapshot());
     let rows = parameters
         .ids()
@@ -157,6 +158,7 @@ pub(super) fn owner_parameter_snapshot<
                 document,
                 *id,
                 feature_consumers.get(id).map(Vec::as_slice),
+                &units,
             )
         })
         .collect::<Result<Vec<_>, String>>()?;
@@ -261,6 +263,7 @@ fn projected_parameter_row(
     document: u64,
     id: u64,
     feature_consumers: Option<&[(oblikovati_model::feature::FeatureId, String)]>,
+    units: &std::sync::Arc<oblikovati_model::units::UnitsOfMeasure>,
 ) -> Result<GuiParameterRow, String> {
     let detail = parameter_detail(parameters, id)
         .map_err(|cause| format!("GUI parameter ID {id} in document {document}: {cause}"))?;
@@ -272,12 +275,34 @@ fn projected_parameter_row(
             .map_err(|cause| cause.to_string())?
             .is_some_and(|value| value.dimension == oblikovati_model::quantity::Dimension::Length),
         feature_consumers: feature_consumers.unwrap_or_default().to_vec(),
+        engineering: parameter_engineering(parameters, units, id),
         tolerance_text: owner_tolerance_text(parameters, id)?,
         model_value_text: owner_model_value_text(parameters, id)?,
         has_groups: !parameters
             .groups_of(id)
             .map_err(|cause| cause.to_string())?
             .is_empty(),
+    })
+}
+
+fn parameter_engineering(
+    parameters: &ParameterCollection<u64>,
+    units: &std::sync::Arc<oblikovati_model::units::UnitsOfMeasure>,
+    id: u64,
+) -> Option<oblikovati_gui::GuiParameterEngineering> {
+    use oblikovati_model::{parameter::ParameterValue, quantity::Dimension};
+    let ParameterValue::Numeric(nominal) = *parameters.get(id)?.last_good_value.as_ref()? else {
+        return None;
+    };
+    let settings = parameters.settings();
+    let precision = match nominal.dimension {
+        Dimension::Angle => settings.angular_dimension_precision,
+        _ => settings.linear_dimension_precision,
+    };
+    Some(oblikovati_gui::GuiParameterEngineering {
+        nominal,
+        units: units.clone(),
+        default_precision: precision.clamp(0, 8) as u8,
     })
 }
 

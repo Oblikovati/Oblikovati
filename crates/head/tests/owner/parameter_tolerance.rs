@@ -21,6 +21,7 @@ fn tolerance_action(
         },
         request: 1,
         selection,
+        precision: None,
         tolerance: Tolerance {
             type_: TOLERANCE_DEVIATION,
             upper,
@@ -175,6 +176,39 @@ fn tolerance_gui_edits_support_angle_and_unitless_values_without_length_conversi
         assert_eq!(view.rows[row].detail.model_value, nominal + 0.2);
         assert_eq!(view.rows[row].detail.tolerance.as_ref().unwrap().upper, 0.2);
     }
+}
+#[test]
+fn gui_fit_style_resolves_current_bounds_and_undo_restores_precision() {
+    use oblikovati_api::types::TOLERANCE_LIMITS_FITS_SHOW_SIZE;
+    let (mut owner, awake) = owner();
+    let document = create(&mut owner, &awake);
+    add_view_parameters(&mut owner);
+    let before = owner.gui_parameter_snapshot().unwrap().unwrap();
+    let mut action = tolerance_action(&owner, 0, 0., 0., MODEL_VALUE_UPPER);
+    let GuiParameterAction::Tolerance(edit) = &mut action else {
+        unreachable!()
+    };
+    edit.precision = Some(5);
+    edit.tolerance.type_ = TOLERANCE_LIMITS_FITS_SHOW_SIZE;
+    edit.tolerance.hole_tolerance = "invalid".into();
+    assert!(owner.apply_gui_parameter(&action).is_err());
+    assert_eq!(owner.gui_parameter_snapshot().unwrap().unwrap(), before);
+    let GuiParameterAction::Tolerance(edit) = &mut action else {
+        unreachable!()
+    };
+    edit.tolerance.hole_tolerance = "H7".into();
+    owner.apply_gui_parameter(&action).unwrap();
+    let view = owner.gui_parameter_snapshot().unwrap().unwrap();
+    let detail = &view.rows[0].detail;
+    let band = detail.tolerance.as_ref().unwrap();
+    assert_eq!(band.type_, "limitsFitsShowSize");
+    assert_eq!(band.hole_tolerance, "H7");
+    assert!((detail.model_value - 4.0025).abs() < 1e-12);
+    assert_eq!(detail.precision, 5);
+    owner.files.commands(document).unwrap().undo().unwrap();
+    assert_eq!(owner.gui_parameter_snapshot().unwrap().unwrap(), before);
+    owner.files.commands(document).unwrap().redo().unwrap();
+    assert_eq!(owner.gui_parameter_snapshot().unwrap().unwrap(), view);
 }
 #[test]
 fn tolerance_rows_use_document_display_units_without_changing_stored_deviations() {

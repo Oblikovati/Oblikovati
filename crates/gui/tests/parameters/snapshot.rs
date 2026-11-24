@@ -30,6 +30,7 @@ impl ParameterSnapshotFixture {
                     has_groups: false,
                     is_length: true,
                     feature_consumers: Vec::new(),
+                    engineering: None,
                     parameter: 11,
                     detail,
                 }],
@@ -148,6 +149,7 @@ fn parameter_row_editability_includes_tables_and_refuses_reference_derived_and_u
             has_groups: false,
             is_length: true,
             feature_consumers: Vec::new(),
+            engineering: None,
             parameter: 0,
             detail: Default::default(),
         };

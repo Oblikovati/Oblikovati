@@ -111,8 +111,12 @@ prompts for a feature and offers length parameters read by that feature.
 The Parameters table displays consuming features from the model read graph.
 Done closes the table while the Extrude draft stays open.
 
-For an editable parameter in Distance A, Tolerance opens the existing
-parameter tolerance editor. The full format and controls from pinned
-`extrusion-12` remain open.
+For an editable parameter in Distance A, Tolerance opens an engineering
+draft with the document's precision and units. The draft shows the
+evaluated model value and the selected tolerance type. Limits use working
+unit deviations and fits use the same ISO table as the owner. OK applies
+the tolerance, evaluated-size choice, and any precision change together.
+Cancel dismisses that draft and leaves the extrusion edit open.
 
 See the [Distance A editor receipt](receipts/2026-11-24-extrusion-distance-editor-3893/README.md).
+See the [Distance tolerance receipt](receipts/2026-11-24-extrusion-tolerance-3893/README.md).

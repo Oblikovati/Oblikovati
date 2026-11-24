@@ -182,7 +182,9 @@ impl<Id: Copy + Ord + Debug> ParameterCollection<Id> {
     }
 }
 
-fn selected_offset(tolerance: &Tolerance, selection: ModelValueType) -> f64 {
+/// Return the engineering offset from nominal, in document working units.
+/// Example: `tolerance_offset(&band, MODEL_VALUE_UPPER)`.
+pub fn tolerance_offset(tolerance: &Tolerance, selection: ModelValueType) -> f64 {
     match selection {
         MODEL_VALUE_UPPER => tolerance.upper,
         MODEL_VALUE_LOWER => tolerance.lower,
@@ -232,7 +234,7 @@ fn selected_quantity<Id: Copy>(
     if state.model_value_type == MODEL_VALUE_NOMINAL {
         return Ok(nominal);
     }
-    let value = nominal.value + selected_offset(&state.tolerance, state.model_value_type);
+    let value = nominal.value + tolerance_offset(&state.tolerance, state.model_value_type);
     if !value.is_finite() {
         return Err(numeric_error(id, value, "a finite selected model value"));
     }

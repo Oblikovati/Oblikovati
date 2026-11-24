@@ -7,11 +7,13 @@ fn tolerance_row() -> GuiParameterRow {
         has_groups: false,
         is_length: true,
         feature_consumers: Vec::new(),
+        engineering: None,
         parameter: 0,
         detail: oblikovati_api::wire::ParameterDetail {
             units: "mm".into(),
             model_value_type: "upper".into(),
             tolerance: Some(Box::new(oblikovati_api::wire::ToleranceInfo {
+                type_: "deviation".into(),
                 upper: 0.2,
                 lower: -0.1,
                 ..Default::default()
@@ -33,12 +35,44 @@ fn tolerance_editor_seeds_working_deviations_and_each_canonical_model_value() {
         let edit = editor.submit().unwrap().unwrap();
         edit.validate().unwrap();
         assert_eq!(edit.selection, selection);
-        assert_eq!(edit.tolerance, deviation_band(0.2, -0.1));
+        assert_eq!(
+            edit.tolerance.type_,
+            oblikovati_api::types::TOLERANCE_DEVIATION
+        );
+        assert_eq!((edit.tolerance.upper, edit.tolerance.lower), (0.2, -0.1));
         assert!(editor.submit().unwrap().is_none());
         assert_eq!(editor.acknowledge(&edit, Ok(())), GuiParameterAck::Applied);
         editor.open(7, &tolerance_row()).unwrap();
     }
     assert_eq!(selection_from_name("").unwrap(), MODEL_VALUE_NOMINAL);
+}
+#[test]
+fn tolerance_preview_formats_the_draft_in_document_units() {
+    use oblikovati_model::quantity::{Dimension, Quantity};
+    let mut row = tolerance_row();
+    row.detail.tolerance = None;
+    row.detail.model_value_type = "nominal".into();
+    row.engineering = Some(crate::GuiParameterEngineering {
+        nominal: Quantity::new(0.8, Dimension::Length),
+        units: Default::default(),
+        default_precision: 3,
+    });
+    let mut editor = ParameterToleranceEditor::default();
+    editor.open(7, &row).unwrap();
+    assert_eq!(editor.current_model_label(), "8.000 mm");
+    editor.change_kind(TOLERANCE_SYMMETRIC);
+    editor.upper = 0.05;
+    editor.selection = Some(MODEL_VALUE_UPPER);
+    assert_eq!(editor.current_model_label(), "8.500 mm");
+    let edit = editor.submit().unwrap().unwrap();
+    assert_eq!(edit.tolerance.lower, -0.05);
+    editor.open(7, &row).unwrap();
+    editor.change_kind(oblikovati_api::types::TOLERANCE_LIMITS_FITS_SHOW_SIZE);
+    editor.hole = "H7".into();
+    editor.selection = Some(MODEL_VALUE_UPPER);
+    assert_eq!(editor.current_model_label(), "8.015 mm");
+    editor.precision = 4;
+    assert_eq!(editor.submit().unwrap().unwrap().precision, Some(4));
 }
 #[test]
 fn failed_tolerance_edits_keep_fields_and_signed_zero_results_must_match_exactly() {

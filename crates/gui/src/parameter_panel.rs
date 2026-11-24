@@ -15,6 +15,7 @@ pub use group::GuiParameterGroupEdit;
 mod request_state;
 mod rows;
 mod tolerance;
+mod tolerance_format;
 mod value_list;
 pub use create::{GuiParameterCreation, GuiParameterInitialValue};
 pub use tolerance::GuiParameterToleranceEdit;

@@ -7,6 +7,7 @@ fn value_list_row() -> GuiParameterRow {
         has_groups: false,
         is_length: true,
         feature_consumers: Vec::new(),
+        engineering: None,
         parameter: 0,
         detail: oblikovati_api::wire::ParameterDetail {
             expression_list: Some(Box::new(ExpressionListInfo {

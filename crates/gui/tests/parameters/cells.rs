@@ -24,6 +24,7 @@ impl ParameterCellWidgetFixture {
                 has_groups: false,
                 is_length: true,
                 feature_consumers: Vec::new(),
+                engineering: None,
                 parameter: 11,
                 detail: Default::default(),
             }],
@@ -122,6 +123,7 @@ fn panel_response_forwarding_retires_only_the_matching_text_request() {
             has_groups: false,
             is_length: true,
             feature_consumers: Vec::new(),
+            engineering: None,
             parameter: 11,
             detail: Default::default(),
         }],
@@ -146,6 +148,7 @@ fn choice_labels_retain_the_current_custom_expression_after_a_list_changes() {
         has_groups: false,
         is_length: true,
         feature_consumers: Vec::new(),
+        engineering: None,
         detail: Default::default(),
     };
     row.detail.parameter_info.expression = "custom".into();
@@ -315,6 +318,7 @@ fn value_list_menu_opens_or_clears_lists_and_hides_commands_on_boolean_and_read_
             has_groups: false,
             is_length: true,
             feature_consumers: Vec::new(),
+            engineering: None,
             parameter: 11,
             detail,
         });
@@ -389,6 +393,7 @@ fn tolerance_menu_is_available_only_for_editable_numeric_rows() {
             has_groups: false,
             is_length: true,
             feature_consumers: Vec::new(),
+            engineering: None,
             parameter: 11,
             detail: oblikovati_api::wire::ParameterDetail {
                 units: units.into(),
@@ -431,6 +436,7 @@ fn group_menu_offers_add_on_read_only_rows_and_remove_only_when_memberships_exis
             has_groups: grouped,
             is_length: true,
             feature_consumers: Vec::new(),
+            engineering: None,
         });
         fixture.frame(false, false, &[GuiInputEvent::PointerMoved([120., 120.])]);
         fixture.frame(true, false, &[]);
@@ -462,6 +468,7 @@ fn failed_parameter_values_keep_last_good_text_and_show_an_explicit_warning() {
         has_groups: false,
         is_length: true,
         feature_consumers: Vec::new(),
+        engineering: None,
     };
     row.detail.parameter_info.value = "80 mm".into();
     assert_eq!(parameter_value_label(&row), "80 mm");

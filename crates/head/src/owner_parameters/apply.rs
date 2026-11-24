@@ -318,11 +318,44 @@ fn apply_parameter_tolerance(
     id: u64,
     edit: &oblikovati_gui::GuiParameterToleranceEdit,
 ) -> Result<(), String> {
-    parameters
-        .set_deviation(id, edit.tolerance.upper, edit.tolerance.lower)
-        .map_err(|cause| cause.to_string())?;
+    let mut tolerance = edit.tolerance.clone();
+    if oblikovati_model::parameter::is_fit_tolerance(tolerance.type_) {
+        parameters
+            .set_fits(id, &tolerance.hole_tolerance, &tolerance.shaft_tolerance)
+            .map_err(|cause| cause.to_string())?;
+        let resolved = &parameters
+            .get(id)
+            .ok_or("tolerance target disappeared")?
+            .tolerance;
+        tolerance.upper = resolved.upper;
+        tolerance.lower = resolved.lower;
+    }
+    if tolerance.type_.0 == 0 || tolerance.type_ == oblikovati_api::types::TOLERANCE_DEFAULT {
+        parameters
+            .set_tolerance_default(id)
+            .map_err(|cause| cause.to_string())?;
+    } else {
+        parameters
+            .set_tolerance(id, tolerance)
+            .map_err(|cause| cause.to_string())?;
+    }
+    if let Some(precision) = edit.precision {
+        let mut annotations = parameters
+            .get(id)
+            .ok_or("tolerance target disappeared")?
+            .annotations
+            .clone();
+        annotations.precision = precision;
+        parameters
+            .set_annotations(id, annotations)
+            .map_err(|cause| cause.to_string())?;
+    }
     parameters
         .set_model_value_type(id, edit.selection)
+        .map_err(|cause| cause.to_string())?;
+    parameters
+        .model_value(id)
+        .map(|_| ())
         .map_err(|cause| cause.to_string())
 }
 

@@ -1,0 +1,2 @@
+test owner::tests::parameter_view::edits::tolerance::gui_fit_style_resolves_current_bounds_and_undo_restores_precision ... ok
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 1636 filtered out; finished in 0.01s

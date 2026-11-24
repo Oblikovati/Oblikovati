@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T17:51:37.742999879Z" time="55.941939674"><testcase name="Scenario: extrusion-12 Distance tolerance dialog can be inspected and cancelled: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/solid-model/extrusion/extrusion.feature:116:3" time="55.941939674"><system-out><![CDATA[  Scenario: extrusion-12 Distance tolerance dialog can be inspected and cancelled
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given Edit Feature with Distance A 8 mm
+   ✔  When Tolerance is opened from its dropdown
+   ✔  Then Model Value is 8.000 mm and Type is Default
+   ✔  And Precision, evaluated-size controls, Upper and Lower fields, Hole and Shaft fields are visible
+   ✔  When the Type list is opened
+   ✔  Then it offers Default, Basic, Symmetric, Deviation, Limits-Stacked, Limits-Linear, MAX, MIN, Limits/Fits-Stacked, Limits/Fits-Linear, Limits/Fits-Show Size Limits and Limits/Fits-Show Tolerance
+   ✔  When the Type list is dismissed and Cancel is clicked
+   ✔  Then the extrusion panel remains at Distance A 8 mm
+]]></system-out></testcase></testsuite></testsuites>

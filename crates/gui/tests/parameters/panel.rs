@@ -39,6 +39,7 @@ fn parameter_row(
         has_groups: false,
         is_length: true,
         feature_consumers: Vec::new(),
+        engineering: None,
         parameter,
         detail: ParameterDetail {
             parameter_info: ParameterInfo {

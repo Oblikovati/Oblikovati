@@ -171,6 +171,7 @@ fn authored_size() -> GuiParameterRow {
         has_groups: false,
         is_length: true,
         feature_consumers: Vec::new(),
+        engineering: None,
         detail: ParameterDetail {
             parameter_info: ParameterInfo {
                 name: "size".into(),

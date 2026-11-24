@@ -19,6 +19,7 @@ impl ParameterDraftFixture {
                 has_groups: false,
                 is_length: true,
                 feature_consumers: Vec::new(),
+                engineering: None,
                 parameter: 11,
                 detail: Default::default(),
             }],

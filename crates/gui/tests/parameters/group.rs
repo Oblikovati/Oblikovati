@@ -9,6 +9,7 @@ fn group_row() -> GuiParameterRow {
         has_groups: false,
         is_length: true,
         feature_consumers: Vec::new(),
+        engineering: None,
     }
 }
 #[test]

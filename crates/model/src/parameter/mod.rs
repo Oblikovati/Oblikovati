@@ -23,6 +23,7 @@ pub use expression_context::DimensionExpressionContext;
 mod error;
 mod evaluate;
 mod fits;
+pub use fits::{is_fit_tolerance, resolve_fit_tolerance};
 mod groups;
 mod membership;
 pub use groups::ParameterGroup;
@@ -38,6 +39,7 @@ pub use settings::CollectionSettings;
 mod sweep;
 mod tolerance;
 pub use reads::ParameterReads;
+pub use tolerance::tolerance_offset;
 
 use crate::{
     dependency::{DependencyError, DependencyGraph},

@@ -54,8 +54,8 @@ pub use parameter_panel::{
     GuiParameterRowOperation, GuiParameterToggleField, GuiParameterToleranceEdit,
 };
 pub use parameter_snapshot::{
-    GuiParameterGroup, GuiParameterLinkParameter, GuiParameterLinkSource, GuiParameterRow,
-    GuiParameterSnapshot,
+    GuiParameterEngineering, GuiParameterGroup, GuiParameterLinkParameter, GuiParameterLinkSource,
+    GuiParameterRow, GuiParameterSnapshot,
 };
 mod parameters;
 mod ribbon;

@@ -14,7 +14,14 @@ fn model_value_uses_selected_tolerance_and_document_units() {
     parameters
         .set_model_value_type(1, MODEL_VALUE_UPPER)
         .unwrap();
-    let row = projected_parameter_row(&parameters, 1, 1, None).unwrap();
+    let row = projected_parameter_row(
+        &parameters,
+        1,
+        1,
+        None,
+        &std::sync::Arc::new(parameters.units().clone()),
+    )
+    .unwrap();
     assert_eq!(row.detail.parameter_info.value, "10 mm");
     assert_eq!(row.model_value_text, "15 mm");
 }

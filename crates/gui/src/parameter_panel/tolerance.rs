@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::request_state::ParameterEditRequest;
+use super::tolerance_format as format;
 use super::*;
 use oblikovati_api::types::{
     MODEL_VALUE_LOWER, MODEL_VALUE_MEDIAN, MODEL_VALUE_NOMINAL, MODEL_VALUE_UPPER, ModelValueType,
-    TOLERANCE_DEVIATION, Tolerance,
+    TOLERANCE_DEFAULT, TOLERANCE_SYMMETRIC, Tolerance, ToleranceType,
 };
 const MODEL_SELECTIONS: [(ModelValueType, &str, &str); 4] = [
     (MODEL_VALUE_NOMINAL, "nominal", "Nominal"),
@@ -17,6 +18,7 @@ pub struct GuiParameterToleranceEdit {
     pub request: u64,
     pub tolerance: Tolerance,
     pub selection: ModelValueType,
+    pub precision: Option<i64>,
 }
 impl PartialEq for GuiParameterToleranceEdit {
     fn eq(&self, other: &Self) -> bool {
@@ -24,13 +26,14 @@ impl PartialEq for GuiParameterToleranceEdit {
         self.target == other.target
             && self.request == other.request
             && self.selection == other.selection
+            && self.precision == other.precision
             && self.tolerance == other.tolerance
             && self.tolerance.upper.to_bits() == other.tolerance.upper.to_bits()
             && self.tolerance.lower.to_bits() == other.tolerance.lower.to_bits()
     }
 }
 impl GuiParameterToleranceEdit {
-    /// Check a deviation edit before mutation; example: `edit.validate()?` on the document owner.
+    /// Check an engineering tolerance edit before mutation; example: `edit.validate()?` on the document owner.
     pub fn validate(&self) -> Result<(), String> {
         if self.target.document == 0
             || self.target.field != GuiParameterTextField::Equation
@@ -41,7 +44,14 @@ impl GuiParameterToleranceEdit {
                 self.target, self.request
             ));
         }
-        validate_deviation(&self.tolerance)?;
+        format::validate_band(&self.tolerance)?;
+        if let Some(precision) = self.precision
+            && !(0..=8).contains(&precision)
+        {
+            return Err(format!(
+                "GUI tolerance precision {precision}: expected 0..=8"
+            ));
+        }
         selection_label(self.selection).map(|_| ())
     }
 }
@@ -51,6 +61,12 @@ pub(super) struct ParameterToleranceEditor {
     dock_state: crate::dockable_lifecycle::DockableState,
     upper: f64,
     lower: f64,
+    kind: ToleranceType,
+    hole: String,
+    shaft: String,
+    precision: i64,
+    original_precision: i64,
+    engineering: Option<crate::GuiParameterEngineering>,
     selection: Option<ModelValueType>,
     request: ParameterEditRequest<GuiParameterToleranceEdit>,
 }
@@ -73,13 +89,19 @@ impl ParameterToleranceEditor {
             ));
         }
         let selection = selection_from_name(&row.detail.model_value_type)?;
+        let source = row.detail.tolerance.as_deref();
+        let kind = format::seed_kind(source.map_or("", |band| band.type_.as_str()))?;
         let (upper, lower) = row
             .detail
             .tolerance
             .as_ref()
             .map(|band| (band.upper, band.lower))
             .unwrap_or((0., 0.));
-        validate_deviation(&deviation_band(upper, lower))?;
+        if !upper.is_finite() || !lower.is_finite() || upper < lower {
+            return Err(format!(
+                "GUI tolerance bounds {upper}/{lower}: expected finite ordered values"
+            ));
+        }
         self.target = Some(GuiParameterTextTarget {
             document,
             parameter: row.parameter,
@@ -88,28 +110,36 @@ impl ParameterToleranceEditor {
         self.dock_state.set_open(true);
         self.upper = upper;
         self.lower = lower;
+        self.kind = kind;
+        self.hole = source.map_or_else(String::new, |band| band.hole_tolerance.clone());
+        self.shaft = source.map_or_else(String::new, |band| band.shaft_tolerance.clone());
+        self.precision = row.detail.precision;
+        self.original_precision = row.detail.precision;
+        self.engineering = row.engineering.clone();
         self.selection = Some(selection);
         self.request.retire();
         Ok(())
     }
     pub(super) fn synchronize(&mut self, snapshot: Option<&GuiParameterSnapshot>) {
-        let valid = self.target.is_some_and(|target| {
-            snapshot.is_some_and(|view| {
-                view.document == target.document
-                    && view
-                        .rows
-                        .iter()
-                        .any(|row| row.parameter == target.parameter)
-            })
-        });
-        if !valid {
-            self.close();
+        let row = self
+            .target
+            .zip(snapshot)
+            .filter(|(target, view)| target.document == view.document)
+            .and_then(|(target, view)| {
+                view.rows
+                    .iter()
+                    .find(|row| row.parameter == target.parameter)
+            });
+        match row {
+            Some(row) => self.engineering.clone_from(&row.engineering),
+            None => self.close(),
         }
     }
     fn close(&mut self) {
         self.target = None;
         self.dock_state.set_open(false);
         self.selection = None;
+        self.engineering = None;
         self.request.retire();
     }
     fn submit(&mut self) -> Result<Option<GuiParameterToleranceEdit>, String> {
@@ -127,7 +157,8 @@ impl ParameterToleranceEditor {
             target,
             request,
             selection,
-            tolerance: deviation_band(self.upper, self.lower),
+            tolerance: self.draft_band()?,
+            precision: (self.precision != self.original_precision).then_some(self.precision),
         };
         edit.validate()?;
         self.request.publish(request, edit.clone())?;
@@ -150,7 +181,7 @@ impl ParameterToleranceEditor {
         }
         let mut open = true;
         Self::dockable_window(ui, "Tolerance", &mut open)
-            .size([360., 230.], Condition::FirstUseEver)
+            .size([440., 320.], Condition::FirstUseEver)
             .build(|| self.draw_body(ui, actions));
         if !open {
             self.close();
@@ -163,13 +194,15 @@ impl ParameterToleranceEditor {
         let _identity =
             parameter_controls_identity(ui, Some(target.document), Some(target.parameter));
         let _disabled = ui.begin_disabled(self.request.pending.is_some());
-        ui.text("Deviation tolerance in document working units:");
-        ui.input_scalar("Upper", &mut self.upper)
-            .display_format("%.17g")
-            .build();
-        ui.input_scalar("Lower", &mut self.lower)
-            .display_format("%.17g")
-            .build();
+        let model = self.current_model_label();
+        ui.text(format!("Model Value: {model}"));
+        self.draw_bounds(ui);
+        self.draw_type(ui);
+        ui.input_scalar("Precision", &mut self.precision).build();
+        if ui.is_item_hovered() {
+            ui.tooltip_text("Use 0 for the document precision");
+        }
+        self.draw_fits(ui);
         self.draw_selection(ui);
         if ui.button("OK") {
             self.enqueue(actions);
@@ -182,6 +215,86 @@ impl ParameterToleranceEditor {
             ui.text_wrapped(issue.replace('\0', "\\0"));
         }
     }
+    fn draw_bounds(&mut self, ui: &Ui) {
+        let _bounds = ui.begin_disabled(!format::bounds_editable(self.kind));
+        ui.input_scalar("Upper", &mut self.upper)
+            .display_format("%.17g")
+            .build();
+        let _symmetric = ui.begin_disabled(self.kind == TOLERANCE_SYMMETRIC);
+        if self.kind == TOLERANCE_SYMMETRIC {
+            ui.input_scalar("Lower", &mut -self.upper)
+                .display_format("%.17g")
+                .build();
+        } else {
+            ui.input_scalar("Lower", &mut self.lower)
+                .display_format("%.17g")
+                .build();
+        }
+    }
+    fn draw_type(&mut self, ui: &Ui) {
+        let Some(label) = format::kind_label(self.kind) else {
+            return;
+        };
+        let Some(_list) =
+            ui.begin_combo_with_flags("Type", label, imgui::ComboBoxFlags::HEIGHT_LARGEST)
+        else {
+            return;
+        };
+        for (kind, label) in format::FORMATS {
+            if ui
+                .selectable_config(label)
+                .selected(self.kind == kind)
+                .build()
+            {
+                self.change_kind(kind);
+            }
+        }
+    }
+    fn change_kind(&mut self, kind: ToleranceType) {
+        self.kind = kind;
+        if kind == TOLERANCE_SYMMETRIC {
+            self.upper = self.upper.abs();
+        }
+        self.request.issue = None;
+    }
+    fn draw_fits(&mut self, ui: &Ui) {
+        let _disabled = ui.begin_disabled(!format::is_fit(self.kind));
+        ui.input_text("Hole", &mut self.hole).build();
+        ui.input_text("Shaft", &mut self.shaft).build();
+    }
+    fn draft_band(&self) -> Result<Tolerance, String> {
+        if format::is_fit(self.kind) {
+            return format::fit_band(
+                self.engineering.as_ref(),
+                self.kind,
+                &self.hole,
+                &self.shaft,
+            );
+        }
+        if self.kind == TOLERANCE_DEFAULT {
+            return Ok(Tolerance::default());
+        }
+        let (upper, lower) = match self.kind {
+            TOLERANCE_SYMMETRIC => (self.upper, -self.upper),
+            kind if format::bounds_editable(kind) => (self.upper, self.lower),
+            _ => (0., 0.),
+        };
+        Ok(Tolerance {
+            type_: self.kind,
+            upper,
+            lower,
+            ..Default::default()
+        })
+    }
+    fn current_model_label(&self) -> String {
+        self.engineering
+            .as_ref()
+            .zip(self.selection)
+            .and_then(|(seed, selection)| {
+                format::model_label(seed, &self.draft_band().ok()?, selection, self.precision)
+            })
+            .unwrap_or_else(|| "—".into())
+    }
     fn draw_selection(&mut self, ui: &Ui) {
         let Some(selection) = self.selection else {
             return;
@@ -189,7 +302,7 @@ impl ParameterToleranceEditor {
         let Ok(label) = selection_label(selection) else {
             return;
         };
-        let Some(_combo) = ui.begin_combo("Model value", label) else {
+        let Some(_combo) = ui.begin_combo("Evaluated Size", label) else {
             return;
         };
         for (value, _, label) in MODEL_SELECTIONS {
@@ -209,28 +322,6 @@ impl ParameterToleranceEditor {
             Err(issue) => self.request.issue = Some(issue),
         }
     }
-}
-fn deviation_band(upper: f64, lower: f64) -> Tolerance {
-    Tolerance {
-        type_: TOLERANCE_DEVIATION,
-        upper,
-        lower,
-        ..Default::default()
-    }
-}
-fn validate_deviation(band: &Tolerance) -> Result<(), String> {
-    if band.type_ != TOLERANCE_DEVIATION
-        || !band.upper.is_finite()
-        || !band.lower.is_finite()
-        || band.upper < band.lower
-        || !band.hole_tolerance.is_empty()
-        || !band.shaft_tolerance.is_empty()
-    {
-        return Err(format!(
-            "GUI tolerance {band:?}: expected finite deviation bounds with upper >= lower and no fit annotations"
-        ));
-    }
-    Ok(())
 }
 fn selection_label(selection: ModelValueType) -> Result<&'static str, String> {
     MODEL_SELECTIONS

@@ -10,6 +10,100 @@ fn existing_extrusion_editor(world: &mut ApplicationWorld) {
     open_extrusion_editor(world);
 }
 
+#[given("Edit Feature with Distance A 8 mm")]
+fn eight_millimetre_tolerance_target(world: &mut ApplicationWorld) {
+    existing_extrusion_editor(world);
+}
+
+#[when("Tolerance is opened from its dropdown")]
+fn open_distance_tolerance(world: &mut ApplicationWorld) {
+    open_distance_menu(world);
+    click_popup(world, "Tolerance");
+}
+
+#[then("Model Value is 8.000 mm and Type is Default")]
+fn tolerance_seeds_the_current_model_value(world: &mut ApplicationWorld) {
+    world.run_in_window("Tolerance", "ModelValue:8.000mm");
+    world.run_in_window("Tolerance", "Default");
+    world.run_in_window("Tolerance", "Type");
+}
+
+#[then(
+    "Precision, evaluated-size controls, Upper and Lower fields, Hole and Shaft fields are visible"
+)]
+fn tolerance_controls_are_visible(world: &mut ApplicationWorld) {
+    for label in [
+        "Precision",
+        "EvaluatedSize",
+        "Upper",
+        "Lower",
+        "Hole",
+        "Shaft",
+    ] {
+        world.run_in_window("Tolerance", label);
+    }
+    world.save_capture("distance-tolerance");
+}
+
+#[when("the Type list is opened")]
+fn open_tolerance_types(world: &mut ApplicationWorld) {
+    click_window_label(world, "Tolerance", "Default");
+}
+
+#[then(
+    "it offers Default, Basic, Symmetric, Deviation, Limits-Stacked, Limits-Linear, MAX, MIN, Limits/Fits-Stacked, Limits/Fits-Linear, Limits/Fits-Show Size Limits and Limits/Fits-Show Tolerance"
+)]
+fn tolerance_types_are_listed(world: &mut ApplicationWorld) {
+    for label in [
+        "Default",
+        "Basic",
+        "Symmetric",
+        "Deviation",
+        "Limits-Stacked",
+        "Limits-Linear",
+        "MAX",
+        "MIN",
+        "Limits/Fits-Stacked",
+        "Limits/Fits-Linear",
+        "Limits/Fits-ShowSizeLimits",
+        "Limits/Fits-ShowTolerance",
+    ] {
+        popup_label(world, label);
+    }
+    world.save_capture("distance-tolerance-types");
+}
+
+#[when("the Type list is dismissed and Cancel is clicked")]
+fn cancel_tolerance(world: &mut ApplicationWorld) {
+    x11_input::press_escape();
+    world.pump(Vec::new());
+    click_window_label(world, "Tolerance", "Cancel");
+}
+
+#[then("the extrusion panel remains at Distance A 8 mm")]
+fn original_distance_survives_tolerance_cancel(world: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry("Tolerance").is_none());
+    world.run_in_window("Extrude", "DistanceA");
+    let parameter = current_feature_parameter(world);
+    world.run_in_window("Extrude", &parameter);
+    assert_eq!(feature_count(world), 1);
+    assert_eq!(feature_distance(world), 8.);
+    let document = world.active_id();
+    let snapshot = world
+        .app()
+        .owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot();
+    let parameter = snapshot.parameters.find(&parameter).unwrap();
+    assert_eq!(
+        snapshot.parameters.get(parameter).unwrap().tolerance,
+        Default::default()
+    );
+}
+
 fn create_first_extrusion(world: &mut ApplicationWorld) {
     selected_rectangle_preview(world);
     replace_distance_native(world, "8");

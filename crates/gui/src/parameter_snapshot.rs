@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_api::wire::{ParameterDetail, ToleranceInfo};
 use std::collections::BTreeSet;
+/// Numeric source and document units for evaluating an engineering tolerance draft.
+#[derive(Clone, Debug, PartialEq)]
+pub struct GuiParameterEngineering {
+    pub nominal: oblikovati_model::quantity::Quantity,
+    pub units: std::sync::Arc<oblikovati_model::units::UnitsOfMeasure>,
+    pub default_precision: u8,
+}
 /// Owned model identity with the canonical parameter presentation contract.
 #[derive(Clone, Debug)]
 pub struct GuiParameterRow {
@@ -14,6 +21,7 @@ pub struct GuiParameterRow {
     pub is_length: bool,
     /// Current model features that read this parameter.
     pub feature_consumers: Vec<(oblikovati_model::feature::FeatureId, String)>,
+    pub engineering: Option<GuiParameterEngineering>,
 }
 impl PartialEq for GuiParameterRow {
     fn eq(&self, other: &Self) -> bool {
@@ -21,6 +29,7 @@ impl PartialEq for GuiParameterRow {
         self.has_groups == other.has_groups
             && self.is_length == other.is_length
             && self.feature_consumers == other.feature_consumers
+            && self.engineering == other.engineering
             && self.tolerance_text == other.tolerance_text
             && self.model_value_text == other.model_value_text
             && self.parameter == other.parameter
