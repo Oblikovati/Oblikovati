@@ -1,6 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 impl GuiFrameEngine {
+    /// Apply a viewport hit to the armed extrusion slot. The callback runs only while awaiting a pick.
+    /// Example: `engine.resolve_extrusion_model_pick(|| Some((document, face)))`.
+    pub fn resolve_extrusion_model_pick(
+        &mut self,
+        hit: impl FnOnce() -> Option<(u64, String)>,
+    ) -> bool {
+        if !self.extrude_dialog.awaits_reference_pick() {
+            return false;
+        }
+        let Some((document, face)) = hit() else {
+            return false;
+        };
+        self.extrude_dialog.pick_reference(document, face);
+        true
+    }
+
     /// Check whether a model click must resolve a ribbon expansion; example: `engine.has_pending_ribbon_model_pick()`.
     pub fn has_pending_ribbon_model_pick(&self) -> bool {
         self.ribbon.panels.has_pending_model_pick()

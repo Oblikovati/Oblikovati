@@ -367,6 +367,7 @@ fn extrusion_preview_is_transient_and_commit_reuses_the_same_feature_identity() 
         profile: 0,
         distance: "width".into(),
         second_distance: None,
+        reference_extent: None,
         direction: Default::default(),
     };
     assert!(!owner.gui_command_state().unwrap().extrude_preview_active);
@@ -425,6 +426,7 @@ fn invalid_or_stale_extrusion_preview_clears_the_old_scene() {
         profile: 0,
         distance: "width".into(),
         second_distance: None,
+        reference_extent: None,
         direction: Default::default(),
     };
     owner.extrusion_preview_from_gui(Some(&preview)).unwrap();

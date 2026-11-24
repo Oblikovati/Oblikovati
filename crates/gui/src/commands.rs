@@ -394,6 +394,7 @@ pub enum GuiShellAction {
     },
     /// Show or clear a transient extrusion preview.
     PreviewExtrude(Option<GuiExtrudePreview>),
+    CommitReferenceExtrude(GuiExtrudePreview),
     /// Ask the document owner to validate the current extrusion expression.
     ValidateExtrudeDistance {
         document: u64,
@@ -462,8 +463,8 @@ pub enum GuiSelectionMode {
 mod feature_requests;
 pub use feature_requests::{
     GuiBaseViewRequest, GuiDrawingLine, GuiDrawingProjection, GuiExtrudeEditRequest,
-    GuiExtrudePreview, GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest, GuiMoveBodyRequest,
-    GuiShellFeatureRequest,
+    GuiExtrudePreview, GuiExtrudeReferenceExtent, GuiFilletEditRequest, GuiFilletRequest,
+    GuiHoleRequest, GuiMoveBodyRequest, GuiShellFeatureRequest,
 };
 /// Owner validation for one extrusion expression and active document.
 #[derive(Clone, Debug, PartialEq, Eq)]

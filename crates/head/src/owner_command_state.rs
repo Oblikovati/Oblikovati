@@ -224,6 +224,13 @@ impl<
             extrude_preview_active: self.extrusion_preview.as_ref().is_some_and(
                 |(id, generation, _, _)| *id == document && *generation == session.generation(),
             ),
+            extrude_reference_preview: self
+                .extrusion_reference_preview
+                .as_ref()
+                .filter(|draft| {
+                    draft.document == document && draft.generation == Some(session.generation())
+                })
+                .cloned(),
             sketch_tool_keyboard: self
                 .placement_state()
                 .is_some_and(|tool| self.placement_context_valid(tool)),

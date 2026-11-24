@@ -87,8 +87,16 @@ span to the same certified prism operation as a numeric extrusion. The recipe
 stores the references and reads their producing features. A reference span
 has no distance parameter.
 
-The desktop reference controls and viewport picking for `extrusion-10` and
-`extrusion-11` remain open. Geometric face selectors, taper, Through All,
-and To Next also remain open.
-
 See the [Reference extent receipt](receipts/2026-11-24-extrusion-reference-extents-3893/README.md).
+
+The desktop From and Termination controls can switch the draft to From–To
+or To Face. The selector arms a specific endpoint for the next viewport
+face pick. Missing targets clear the preview and disable OK. When all targets
+are selected, the owner validates the exact draft at the active document
+generation by previewing it through the same replay as acceptance. Switching
+back to Distance restores the numeric draft.
+
+See the [Desktop reference controls receipt](receipts/2026-11-24-extrusion-reference-controls-3893/README.md).
+
+Geometric face selectors in the typed API, desktop work-plane picking,
+taper, Through All, and To Next remain open.

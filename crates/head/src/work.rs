@@ -118,21 +118,7 @@ pub trait HeadWork: HeadSketchWork {
             "assembly {assembly} preview file {path:?}: expected an assembly owner"
         ))
     }
-    /// Apply an Extrude dialog request through the document command owner.
-    /// Example: `work.extrude_from_gui(document, sketch, 0, "10 mm", Default::default(), None)?`.
-    fn extrude_from_gui(
-        &mut self,
-        document: u64,
-        sketch: oblikovati_model::document_sketch::DocumentSketchId,
-        profile: i64,
-        distance: &str,
-        _direction: oblikovati_gui::GuiExtrudeDirection,
-        _second_distance: Option<&str>,
-    ) -> Result<bool, String> {
-        Err(format!(
-            "extrude document {document}, sketch {sketch:?}, profile {profile}, distance {distance:?}: expected a certified extrusion owner"
-        ))
-    }
+    crate::work_extrusion::work_extrusion!();
     /// Preview selected edges without changing history; example: `work.preview_fillet_from_gui(Some(&request))?`.
     fn preview_fillet_from_gui(
         &mut self,

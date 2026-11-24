@@ -15,6 +15,7 @@ fn desktop_resolution_supports_preview_commit_and_parameter_replay() {
         profile: 0,
         distance: "width".into(),
         second_distance: None,
+        reference_extent: None,
         direction: Default::default(),
     };
     owner.extrusion_preview_from_gui(Some(&preview)).unwrap();
@@ -101,6 +102,7 @@ fn stale_extrusion_request_does_not_replace_the_current_preview() {
         profile: 0,
         distance: "width".into(),
         second_distance: None,
+        reference_extent: None,
         direction: Default::default(),
     };
     set_size(&mut owner, "20 mm");

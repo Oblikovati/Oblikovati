@@ -8,6 +8,8 @@ use oblikovati_model::document_sketch::DocumentSketchId;
 mod direction;
 #[path = "extrude_pending.rs"]
 mod pending;
+#[path = "extrude_reference.rs"]
+mod reference;
 
 #[derive(Default)]
 pub(crate) struct ExtrudeDialog {
@@ -20,6 +22,7 @@ pub(crate) struct ExtrudeDialog {
     second_distance: String,
     direction: GuiExtrudeDirection,
     direction_style: direction::SelectorStyle,
+    reference: reference::ReferenceDraft,
     previewed: bool,
     attempted: Option<crate::GuiExtrudePreview>,
     pending: pending::PendingExtrude,
@@ -69,6 +72,7 @@ impl ExtrudeDialog {
         self.distance = seed.distance.clone();
         self.second_distance = seed.second_distance.clone().unwrap_or_default();
         self.direction = seed.direction;
+        self.reference = Default::default();
         self.edit_feature = Some(feature);
         self.attempted = None;
         self.commit_error = None;
@@ -94,6 +98,7 @@ impl ExtrudeDialog {
             self.distance.clear();
             self.second_distance = "5 mm".into();
             self.direction = GuiExtrudeDirection::Positive;
+            self.reference = Default::default();
             self.edit_feature = None;
         }
         if self.document != state.document
@@ -125,6 +130,7 @@ impl ExtrudeDialog {
             self.distance = "10 mm".into();
             self.second_distance = "5 mm".into();
             self.direction = GuiExtrudeDirection::Positive;
+            self.reference = Default::default();
             self.attempted = None;
             self.edit_feature = None;
         }
@@ -151,20 +157,7 @@ impl ExtrudeDialog {
             }
             edited |= ui.input_int("Profile", &mut self.profile).build();
             drop(disabled_sketch);
-            edited |= ui.input_text("Distance A", &mut self.distance).build();
-            edited |= self.direction_style.draw(
-                ui,
-                &mut self.direction,
-                self.edit_feature.is_some(),
-                icons,
-            );
-            if self.direction == GuiExtrudeDirection::Asymmetric {
-                edited |= direction::draw_second_distance(
-                    ui,
-                    &mut self.distance,
-                    &mut self.second_distance,
-                );
-            }
+            edited |= self.draw_extent(ui, icons);
             if edited {
                 self.commit_error = None;
             }
@@ -174,7 +167,8 @@ impl ExtrudeDialog {
             }
             self.refresh_preview(state, document, edited, actions);
             let validation = self.current_distance_validation(state, document);
-            if !self.distance.trim().is_empty() && validation.is_none() {
+            if self.reference.numeric() && !self.distance.trim().is_empty() && validation.is_none()
+            {
                 actions.push(GuiShellAction::ValidateExtrudeDistance {
                     document,
                     distance: self.distance.clone(),
@@ -199,6 +193,37 @@ impl ExtrudeDialog {
             }
             self.set_document(None);
             self.edit_feature = None;
+        }
+    }
+    fn draw_extent(&mut self, ui: &Ui, icons: &crate::icons::GuiRibbonIcons) -> bool {
+        let mut edited = false;
+        if self.reference.numeric() {
+            edited |= ui.input_text("Distance A", &mut self.distance).build();
+            edited |= self.direction_style.draw(
+                ui,
+                &mut self.direction,
+                self.edit_feature.is_some(),
+                icons,
+            );
+            if self.direction == GuiExtrudeDirection::Asymmetric {
+                edited |= direction::draw_second_distance(
+                    ui,
+                    &mut self.distance,
+                    &mut self.second_distance,
+                );
+            }
+        }
+        if self.edit_feature.is_none() {
+            edited |= self.reference.draw(ui);
+        }
+        edited
+    }
+    pub(super) fn awaits_reference_pick(&self) -> bool {
+        self.document.is_some() && self.reference.awaits_pick()
+    }
+    pub(super) fn pick_reference(&mut self, document: u64, face: String) {
+        if self.document == Some(document) {
+            self.reference.pick(face);
         }
     }
     fn refresh_preview(
@@ -240,8 +265,23 @@ impl ExtrudeDialog {
         document: u64,
         edited: bool,
     ) -> Option<crate::GuiExtrudePreview> {
+        if edited {
+            return None;
+        }
+        if !self.reference.numeric() {
+            return Some(crate::GuiExtrudePreview {
+                generation: Some(state.document_generation?),
+                document,
+                sketch: self.sketch?,
+                profile: i64::from(self.profile),
+                distance: String::new(),
+                second_distance: None,
+                direction: GuiExtrudeDirection::Positive,
+                reference_extent: Some(self.reference.request()?),
+            });
+        }
         let validation = self.current_distance_validation(state, document)?;
-        if edited || validation.error.is_some() {
+        if validation.error.is_some() {
             return None;
         }
         Some(crate::GuiExtrudePreview {
@@ -252,6 +292,7 @@ impl ExtrudeDialog {
             distance: self.distance.clone(),
             second_distance: self.active_second_distance().map(str::to_owned),
             direction: self.direction,
+            reference_extent: None,
         })
     }
     fn sketch_choice(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
@@ -304,6 +345,9 @@ impl ExtrudeDialog {
         self.cancel_control(ui, shortcuts, actions);
     }
     fn creation_action(&self, request: &crate::GuiExtrudePreview) -> GuiShellAction {
+        if request.reference_extent.is_some() {
+            return GuiShellAction::CommitReferenceExtrude(request.clone());
+        }
         GuiShellAction::Extrude {
             document: request.document,
             sketch: request.sketch,
@@ -390,6 +434,9 @@ impl ExtrudeDialog {
         state: &'a GuiCommandState,
         document: u64,
     ) -> Option<&'a crate::GuiExtrudeDistanceValidation> {
+        if !self.reference.numeric() {
+            return None;
+        }
         state.extrude_distance_validation.as_ref().filter(|result| {
             result.document == document
                 && result.distance == self.distance

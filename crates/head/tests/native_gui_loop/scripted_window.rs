@@ -226,6 +226,9 @@ impl HeadWindow for ScriptedGuiWindow {
     fn resolve_ribbon_model_pick(&mut self, face: bool) {
         self.native.resolve_ribbon_model_pick(face);
     }
+    fn resolve_extrusion_model_pick(&mut self, hit: &mut dyn FnMut() -> Option<(u64, String)>) {
+        self.native.resolve_extrusion_model_pick(hit);
+    }
     fn request_extrusion(&mut self) {
         self.native.request_extrusion();
     }

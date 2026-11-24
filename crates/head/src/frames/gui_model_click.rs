@@ -10,6 +10,15 @@ pub(super) fn dispatch(
     toggle: bool,
 ) -> Result<bool, String> {
     let result = select(window, owner, document, pixel, toggle);
+    if !toggle && matches!(result, Ok(true)) {
+        window.resolve_extrusion_model_pick(&mut || {
+            let state = owner.gui_command_state().ok()?;
+            let [(key, _)] = state.selected_face_appearances.as_slice() else {
+                return None;
+            };
+            Some((document, key.clone()))
+        });
+    }
     if !window.has_pending_ribbon_model_pick() {
         return result;
     }

@@ -102,6 +102,56 @@ impl<
             ..Default::default()
         })
     }
+    pub(super) fn extrusion_draft_request(
+        &self,
+        draft: &oblikovati_gui::GuiExtrudePreview,
+    ) -> Result<oblikovati_api::wire::featureargs::Extrude, String> {
+        use oblikovati_gui::GuiExtrudeReferenceExtent::{FromTo, ToFace};
+        let Some(extent) = &draft.reference_extent else {
+            return self.extrusion_request(
+                draft.document,
+                draft.sketch,
+                draft.profile,
+                &draft.distance,
+                draft.direction,
+                draft.second_distance.as_deref(),
+            );
+        };
+        let (extent, from, to) = match extent {
+            ToFace { to } => ("to-face", "", to),
+            FromTo { from, to } => ("from-to", from.as_str(), to),
+        };
+        Ok(oblikovati_api::wire::featureargs::Extrude {
+            sketch_index: self.extrusion_sketch_index(draft.document, draft.sketch)?,
+            profile_index: draft.profile,
+            extent: extent.into(),
+            from_face: from.into(),
+            to_face: to.clone(),
+            ..Default::default()
+        })
+    }
+    pub(super) fn commit_plane_extrusion(
+        &mut self,
+        draft: &oblikovati_gui::GuiExtrudePreview,
+    ) -> Result<bool, String> {
+        let session = self
+            .files
+            .workspace()
+            .session(draft.document)
+            .map_err(|cause| cause.to_string())?;
+        if self.extrusion_reference_preview.as_ref() != Some(draft)
+            || draft.generation != Some(session.generation())
+        {
+            return Err("extrusion reference draft: expected its current certified preview".into());
+        }
+        let request = self.extrusion_draft_request(draft)?;
+        self.clear_extrusion_preview();
+        oblikovati_api::client::Client::new(self.document_host())
+            .features()
+            .add_feature(&request)
+            .map_err(|cause| cause.to_string())?;
+        Ok(true)
+    }
     fn extrusion_sketch_index(
         &self,
         document: u64,

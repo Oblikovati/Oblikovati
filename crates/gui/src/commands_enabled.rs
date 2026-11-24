@@ -4,6 +4,8 @@ use super::*;
 mod blend_enabled;
 #[path = "commands/dispatchable.rs"]
 mod dispatchable;
+#[path = "commands/extrude_enabled.rs"]
+mod extrude_enabled;
 #[path = "commands/hole_enabled.rs"]
 mod hole_enabled;
 #[path = "commands/move_body_enabled.rs"]
@@ -376,18 +378,10 @@ impl GuiShellAction {
                 profile,
                 distance,
                 ..
-            } => {
-                state.extrude_available
-                    && state.document == Some(*document)
-                    && state.authoring == GuiAuthoringContext::Part
-                    && !state.transaction_open
-                    && *profile >= 0
-                    && !distance.trim().is_empty()
-                    && !distance.contains('\0')
-                    && state
-                        .browser
-                        .as_ref()
-                        .is_some_and(|browser| browser.sketches.iter().any(|row| row.id == *sketch))
+            } => extrude_enabled::numeric(state, *document, *sketch, *profile, distance),
+            Self::CommitReferenceExtrude(request) => {
+                extrude_enabled::reference(state, request)
+                    && state.extrude_reference_preview.as_ref() == Some(request)
             }
             Self::PreviewExtrude(None) => true,
             Self::OpenExtrudeEdit(feature) => {
@@ -412,15 +406,7 @@ impl GuiShellAction {
             Self::ValidateExtrudeDistance { document, .. } => {
                 state.document == Some(*document) && state.extrude_available
             }
-            Self::PreviewExtrude(Some(preview)) => Self::Extrude {
-                document: preview.document,
-                sketch: preview.sketch,
-                profile: preview.profile,
-                distance: preview.distance.clone(),
-                second_distance: preview.second_distance.clone(),
-                direction: preview.direction,
-            }
-            .enabled(state),
+            Self::PreviewExtrude(Some(preview)) => extrude_enabled::preview(state, preview),
             Self::Parameter { .. } | Self::OpenIProperties => state.document.is_some(),
             Self::OpenModelStateTable => state.model_state_table.is_some(),
             Self::SetModelStateTable { document, .. }

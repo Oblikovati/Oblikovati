@@ -213,6 +213,12 @@ macro_rules! forward_owner_view_work {
                 second_distance,
             )
         }
+        fn commit_reference_extrusion(
+            &mut self,
+            draft: &oblikovati_gui::GuiExtrudePreview,
+        ) -> Result<bool, String> {
+            self.$owner.commit_reference_extrusion(draft)
+        }
         fn extrusion_preview_from_gui(
             &mut self,
             request: Option<&oblikovati_gui::GuiExtrudePreview>,

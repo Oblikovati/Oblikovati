@@ -110,6 +110,8 @@ pub struct GuiCommandState {
     pub extrude_available: bool,
     /// The owner has accepted an extrusion preview for the active document.
     pub extrude_preview_active: bool,
+    /// The exact reference draft accepted for preview at this document generation.
+    pub extrude_reference_preview: Option<crate::GuiExtrudePreview>,
     /// The owner-validated distance for the current document generation.
     pub extrude_distance_validation: Option<crate::GuiExtrudeDistanceValidation>,
     /// The owner-validated offset for the current document generation.

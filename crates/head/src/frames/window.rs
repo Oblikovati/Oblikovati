@@ -174,6 +174,9 @@ pub trait HeadWindow {
     }
     /// Resolve a deferred ribbon click after the model pick; example: `window.resolve_ribbon_model_pick(true)`.
     fn resolve_ribbon_model_pick(&mut self, _face: bool) {}
+    /// Supply a confirmed semantic face hit to an armed extrusion picker.
+    /// Example: `window.resolve_extrusion_model_pick(&mut || Some((document, face.clone())))`.
+    fn resolve_extrusion_model_pick(&mut self, _hit: &mut dyn FnMut() -> Option<(u64, String)>) {}
     /// Open an extrusion draft; example: `window.request_extrusion()`.
     fn request_extrusion(&mut self) {}
     /// Return a rejected draft and its reason; example: `window.reject_dimension_edit(&value, "invalid")`.

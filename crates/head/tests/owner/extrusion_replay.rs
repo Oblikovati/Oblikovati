@@ -359,6 +359,7 @@ fn repeated_extrusion_previews_reuse_the_current_part_and_cancel_cleanly() {
         profile: 0,
         distance: "1 cm".into(),
         second_distance: None,
+        reference_extent: None,
         direction: Default::default(),
     };
     assert!(owner.extrusion_preview_from_gui(Some(&preview)).unwrap());
@@ -450,6 +451,7 @@ fn extrusion_preview_does_not_reuse_a_different_policy() {
         profile: 0,
         distance: "1 cm".into(),
         second_distance: None,
+        reference_extent: None,
         direction: Default::default(),
     };
     assert!(owner.extrusion_preview_from_gui(Some(&preview)).unwrap());

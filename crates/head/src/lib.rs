@@ -81,6 +81,8 @@ mod work_selection;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
+mod work_extrusion;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_forwarding;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 #[path = "work_idle.rs"]

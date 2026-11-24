@@ -18,6 +18,13 @@ pub struct GuiExtrudePreview {
     pub distance: String,
     pub second_distance: Option<String>,
     pub direction: crate::GuiExtrudeDirection,
+    pub reference_extent: Option<GuiExtrudeReferenceExtent>,
+}
+/// Bound a new extrusion using the document's selected semantic face keys.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum GuiExtrudeReferenceExtent {
+    ToFace { to: String },
+    FromTo { from: String, to: String },
 }
 /// One generation-scoped face and size for a straight-hole draft.
 #[derive(Clone, Debug, PartialEq, Eq)]

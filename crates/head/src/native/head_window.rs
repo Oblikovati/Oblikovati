@@ -215,6 +215,11 @@ impl HeadWindow for NativeHeadWindow {
             gui.resolve_ribbon_model_pick(face);
         }
     }
+    fn resolve_extrusion_model_pick(&mut self, hit: &mut dyn FnMut() -> Option<(u64, String)>) {
+        self.gui
+            .iter_mut()
+            .for_each(|gui| gui.resolve_extrusion_model_pick(&mut *hit));
+    }
     fn reject_dimension_edit(&mut self, value: &oblikovati_gui::GuiDimensionValue, cause: &str) {
         if let Some(gui) = self.gui.as_mut() {
             gui.reject_dimension_edit(value, cause);

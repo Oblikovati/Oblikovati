@@ -1,0 +1,2 @@
+test native::gui_loop_tests::application_bdd::solid_extrusion::reference_extent::viewport_face_pick_previews_and_commits_reference_extent ... ok
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1640 filtered out; finished in 48.34s

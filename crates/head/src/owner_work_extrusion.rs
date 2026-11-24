@@ -138,6 +138,12 @@ macro_rules! desktop_extrusion_work {
                 second_distance,
             )
         }
+        fn commit_reference_extrusion(
+            &mut self,
+            draft: &oblikovati_gui::GuiExtrudePreview,
+        ) -> Result<bool, String> {
+            self.commit_plane_extrusion(draft)
+        }
         fn extrusion_preview_from_gui(
             &mut self,
             request: Option<&oblikovati_gui::GuiExtrudePreview>,

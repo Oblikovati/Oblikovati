@@ -137,14 +137,7 @@ impl<
     ) -> Result<bool, String> {
         self.clear_extrusion_preview();
         let document = preview.document;
-        let request = self.extrusion_request(
-            document,
-            preview.sketch,
-            preview.profile,
-            &preview.distance,
-            preview.direction,
-            preview.second_distance.as_deref(),
-        )?;
+        let request = self.extrusion_draft_request(preview)?;
         let presentation = self.preview_extrusion_from_gui(document, &request)?;
         let scene = oblikovati_viewport::ViewportScene::from_prism(
             &presentation,
@@ -158,10 +151,13 @@ impl<
             .map_err(|cause| cause.to_string())?
             .generation();
         self.extrusion_preview = Some((document, generation, scene, PreviewKind::Additive));
+        self.extrusion_reference_preview =
+            preview.reference_extent.as_ref().map(|_| preview.clone());
         self.part_scenes.invalidate_presentation();
         Ok(true)
     }
     pub(super) fn clear_extrusion_preview(&mut self) -> bool {
+        self.extrusion_reference_preview = None;
         if self.extrusion_preview.take().is_none() {
             return false;
         }

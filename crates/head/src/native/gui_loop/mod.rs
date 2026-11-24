@@ -78,6 +78,15 @@ impl NativeGui {
         self.dirty = true;
         self.deadline = Some(Duration::ZERO);
     }
+    pub(super) fn resolve_extrusion_model_pick(
+        &mut self,
+        hit: impl FnOnce() -> Option<(u64, String)>,
+    ) {
+        if self.engine.resolve_extrusion_model_pick(hit) {
+            self.dirty = true;
+            self.deadline = Some(Duration::ZERO);
+        }
+    }
     pub(super) fn request_extrusion(&mut self) {
         self.engine.request_extrusion();
         self.deadline = Some(Duration::ZERO);
