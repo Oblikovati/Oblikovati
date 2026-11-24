@@ -90,3 +90,8 @@ source, with 313 steps. The final nine covered retained selections,
 secondary-click selection, keyboard folder navigation, size sorting,
 and Create availability.
 [Complete catalog report](receipts/2026-11-24-document-creation-catalog-complete-3899/README.md)
+
+Home and End selected the first and last named tiles within the active Part
+or Assembly group. Escape returned to the original Part. The current
+scenario passed all 18 steps.
+[Group endpoints report](receipts/2026-11-24-document-creation-group-endpoints-3899/README.md)

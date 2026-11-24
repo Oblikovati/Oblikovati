@@ -7,6 +7,43 @@ const SHEET_DIN: &str = "Sheet Metal (DIN)";
 const SHEET_MM: &str = "Sheet Metal (mm)";
 const STANDARD_DIN: &str = "Standard (DIN)";
 const STANDARD_MM: &str = "Standard (mm)";
+const MOLD_DIN: &str = "Mold Design (DIN)";
+const MOLD_MM: &str = "Mold Design (mm)";
+const WELDMENT_JIS: &str = "Weldment (JIS)";
+
+#[given(
+    "a fresh MCAD Software session loads `fixtures/cad/document-creation-group-endpoints-candidate.opj` as its active project"
+)]
+fn load_endpoints_project(world: &mut ApplicationWorld) {
+    open_fixture_project(
+        world,
+        "fixtures/cad/document-creation-group-endpoints-candidate.opj",
+    );
+}
+
+#[given("its native catalog contains the named part and assembly templates used below")]
+fn check_endpoints_catalog(world: &mut ApplicationWorld) {
+    use oblikovati_gui::{GuiTemplateFolder, GuiTemplateKind, GuiTemplateUnits};
+    let state = world.state();
+    for (title, kind) in [
+        (SHEET_DIN, GuiTemplateKind::SheetMetal),
+        (SHEET_MM, GuiTemplateKind::SheetMetal),
+        (STANDARD_MM, GuiTemplateKind::Part),
+        (MOLD_DIN, GuiTemplateKind::Assembly),
+        (MOLD_MM, GuiTemplateKind::Assembly),
+        (WELDMENT_JIS, GuiTemplateKind::Assembly),
+    ] {
+        assert!(
+            state.project_templates.iter().any(|entry| {
+                entry.title == title
+                    && entry.kind == kind
+                    && entry.folder == GuiTemplateFolder::Units(GuiTemplateUnits::Metric)
+            }),
+            "expected {title} in the Metric catalog: {:?}",
+            state.project_template_issue
+        );
+    }
+}
 
 pub(super) fn metric_icons(world: &mut ApplicationWorld) {
     world.click_text("Metric");
@@ -111,6 +148,7 @@ fn inspect_adjacent_tiles(world: &mut ApplicationWorld, gap: f32) {
 }
 
 #[when("the user selects the Sheet Metal (mm) part template")]
+#[when("the user selects Sheet Metal (mm) in the Part group")]
 fn select_metric_sheet(world: &mut ApplicationWorld) {
     select_tile(world, SHEET_MM);
 }
@@ -209,6 +247,36 @@ fn part_endpoints(world: &mut ApplicationWorld) {
     at_leftmost_position(world);
 }
 
+#[given("the Assembly group begins with Mold Design (DIN) and ends with Weldment (JIS)")]
+fn assembly_endpoints(world: &mut ApplicationWorld) {
+    assert!(gallery_tile(world, MOLD_DIN).center()[0] < gallery_tile(world, MOLD_MM).center()[0]);
+    move_to_track_edge(world, true);
+    assert!(
+        gallery_tile(world, "Standard Assembly").center()[0]
+            < gallery_tile(world, WELDMENT_JIS).center()[0]
+    );
+    move_to_track_edge(world, false);
+    at_leftmost_position(world);
+}
+
+#[when("the user selects Mold Design (mm) in the Assembly group")]
+fn select_mold_assembly(world: &mut ApplicationWorld) {
+    move_to_track_edge(world, false);
+    select_tile(world, MOLD_MM);
+}
+
+#[then("Weldment (JIS) is selected and identified in the details pane")]
+fn weldment_selected(world: &mut ApplicationWorld) {
+    expect_selected_template(world, WELDMENT_JIS);
+    gallery_tile(world, WELDMENT_JIS);
+}
+
+#[then("Mold Design (DIN) is selected and identified in the details pane")]
+fn mold_din_selected(world: &mut ApplicationWorld) {
+    expect_selected_template(world, MOLD_DIN);
+    gallery_tile(world, MOLD_DIN);
+}
+
 fn reveal_rightmost_tile(world: &mut ApplicationWorld) {
     let gallery = gallery_scroll(world);
     let [left, right, y] = gallery.horizontal_track;
@@ -233,6 +301,7 @@ fn press_right_on_last_tile(world: &mut ApplicationWorld) {
 }
 
 #[then("Standard (mm) remains selected and identified in the details pane")]
+#[then("Standard (mm) is selected and identified in the details pane")]
 fn remains_last(world: &mut ApplicationWorld) {
     expect_selected_template(world, STANDARD_MM);
     gallery_tile(world, STANDARD_MM);
@@ -263,6 +332,7 @@ fn home_then_left(world: &mut ApplicationWorld) {
 }
 
 #[then("Sheet Metal (DIN) remains selected and identified in the details pane")]
+#[then("Sheet Metal (DIN) is selected and identified in the details pane")]
 fn remains_first(world: &mut ApplicationWorld) {
     expect_selected_template(world, SHEET_DIN);
     gallery_tile(world, SHEET_DIN);
