@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T10:49:03.341154598Z" time="70.329451162"><testcase name="Scenario: Duplicate the active model state in an empty part: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:808:3" time="70.329451162"><system-out><![CDATA[  Scenario: Duplicate the active model state in an empty part
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And a named non-primary model state is active
+   ✔  And the Model State branch is expanded
+   ✔  When the user opens the Model State branch context menu
+   ✔  And the user opens the New Model State submenu
+   ✔  Then the duplicate action identifies the active state by name
+   ✔  When the user chooses to duplicate the active state
+   ✔  Then a new model-state row appears with its generated name selected for editing
+   ✔  And the source model state remains marked active
+   ✔  When the user enters a distinct name and presses Enter
+   ✔  Then the source and renamed duplicate both remain in the tree
+   ✔  And the source model state remains marked active
+   ✔  When the user double-clicks the duplicate
+   ✔  Then the duplicate is marked active
+   ✔  And the Model State branch, browser root and document tab identify the duplicate
+   ✔  And the viewport remains empty
+]]></system-out></testcase></testsuite></testsuites>

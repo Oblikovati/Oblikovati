@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T10:49:01.337108146Z" time="52.597138746"><testcase name="Scenario: Copy and activates a view representation in an empty part: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:905:3" time="52.597138746"><system-out><![CDATA[  Scenario: Copy and activates a view representation in an empty part
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And the View representation branch is expanded with Primary active
+   ✔  When the user chooses Copy from the Primary view representation context menu
+   ✔  Then a new view representation appears with its generated name selected for editing
+   ✔  And Primary remains active
+   ✔  When the user enters "Capture View" and presses Enter
+   ✔  Then the new view representation has the name "Capture View"
+   ✔  And Primary remains active
+   ✔  When the user double-clicks "Capture View"
+   ✔  Then "Capture View" is marked active
+   ✔  And the View branch identifies "Capture View"
+   ✔  When the user double-clicks Primary
+   ✔  Then Primary is marked active
+   ✔  And the View branch identifies Primary
+   ✔  And the viewport remains empty
+]]></system-out></testcase></testsuite></testsuites>
