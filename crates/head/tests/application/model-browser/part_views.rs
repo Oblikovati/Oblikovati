@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Drive the part-view copy and activation journey through the native window (#4118).
 use super::view_fixture::{
-    CAPTURE_VIEW, activate_view, expect_copy_active, expect_prepared_copy, expect_view_active,
-    rename_view, right_click_copy,
+    CAPTURE_VIEW, activate_view, copy_name, expect_copy_active, expect_prepared_copy,
+    expect_view_active, has_browser_view, rename_view, right_click_copy,
 };
 use super::*;
 use cucumber::{given, then, when};
@@ -169,21 +169,24 @@ fn primary_active_before_copy(world: &mut ApplicationWorld) {
 
 #[given("an inactive copied view representation exists")]
 pub(super) fn inactive_view_copy(world: &mut ApplicationWorld) {
-    expanded_primary_view(world);
-    copy_primary_view(world);
-    rename_copied_view(world);
+    if !has_browser_view(world) {
+        expanded_primary_view(world);
+        copy_primary_view(world);
+        rename_copied_view(world);
+    }
     primary_view_active(world);
 }
 
 #[given("its camera autosave option is checked")]
 fn copied_view_autosave_enabled(world: &mut ApplicationWorld) {
+    let name = copy_name(world);
     let state = world.state();
     let views = state.browser.unwrap().part_design_views.unwrap();
     assert!(
         views
             .list()
             .iter()
-            .find(|view| view.name() == "Capture View")
+            .find(|view| view.name() == name)
             .unwrap()
             .autosave_camera()
     );

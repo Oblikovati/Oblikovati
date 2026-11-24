@@ -1,18 +1,30 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exercise part-view inline naming and duplicate correction in the native browser (#4118).
-use super::part_views::{activate_copy_for_camera, expect_branch_label, select_all_text};
+use super::part_views::{
+    activate_copy_for_camera, copy_primary_view, expect_branch_label, select_all_text,
+};
+use super::view_fixture::{CAPTURE_VIEW, expect_view_active, rename_view};
 use super::*;
 use cucumber::{given, then, when};
 use oblikovati_api::contract::PartDesignView as _;
 
 #[given("an active copied view is named \"Capture View\"")]
 fn active_copy_named_capture(world: &mut ApplicationWorld) {
-    activate_copy_for_camera(world);
-    expect_active_name(world, "Capture View");
+    let views = world.state().browser.unwrap().part_design_views.unwrap();
+    if views.active().unwrap().name() != CAPTURE_VIEW {
+        activate_copy_for_camera(world);
+    }
+    expect_view_active(world, CAPTURE_VIEW);
 }
 #[given("a sibling view is named \"Front\"")]
 fn sibling_front(world: &mut ApplicationWorld) {
+    let views = world.state().browser.unwrap().part_design_views.unwrap();
+    if !views.list().iter().any(|view| view.name() == "Front") {
+        copy_primary_view(world);
+        rename_view(world, "Front");
+    }
     world.expect_text("Front");
+    expect_view_active(world, CAPTURE_VIEW);
 }
 #[when("the user selects the copied view and presses F2")]
 fn start_view_rename(world: &mut ApplicationWorld) {

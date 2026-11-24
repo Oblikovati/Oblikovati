@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Verify an inactive copied view's lock and context menu (#4118).
 use super::part_views::inactive_view_copy;
+use super::view_fixture::{copy_name, right_click_copy};
 use super::view_visibility::lock_icon_visible;
 use super::*;
 use cucumber::{given, then, when};
@@ -15,7 +16,7 @@ fn inactive_unlocked_copy(world: &mut ApplicationWorld) {
 #[when("the user reopens the copied view representation's context menu")]
 #[when("the user reopens its context menu")]
 fn copied_view_menu(world: &mut ApplicationWorld) {
-    right_click_row(world, "Capture View");
+    right_click_copy(world);
 }
 #[then("Lock is unchecked")]
 fn lock_menu_unchecked(world: &mut ApplicationWorld) {
@@ -54,12 +55,13 @@ fn inactive_copy_is_unlocked(world: &mut ApplicationWorld) {
     assert!(!lock_icon_visible(world));
 }
 fn copied_view_locked(world: &mut ApplicationWorld) -> bool {
+    let name = copy_name(world);
     let state = world.state();
     let views = state.browser.unwrap().part_design_views.unwrap();
     views
         .list()
         .iter()
-        .find(|view| view.name() == "Capture View")
+        .find(|view| view.name() == name)
         .unwrap()
         .locked()
 }

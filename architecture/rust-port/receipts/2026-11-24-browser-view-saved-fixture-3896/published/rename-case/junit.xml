@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:34:03.762930465Z" time="93.890015231"><testcase name="Scenario: Use a view name differing only in letter case: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1212:3" time="93.890015231"><system-out><![CDATA[  Scenario: Use a view name differing only in letter case
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And the user copies Primary as Capture View and activates the copied view
+   ✔  And an empty part is active in the MCAD Software
+   ✔  And an active copied view is named "Capture View"
+   ✔  And a sibling view is named "Front"
+   ✔  When the user selects the copied view and presses F2
+   ✔  And the user replaces its name with "front" and presses Enter
+   ✔  Then both "Front" and "front" appear as sibling views
+   ✔  And the View branch identifies "front" as active
+   ✔  And the "front" view is checked
+]]></system-out></testcase></testsuite></testsuites>

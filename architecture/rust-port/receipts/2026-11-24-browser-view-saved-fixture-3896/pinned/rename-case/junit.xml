@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:36:19.435632388Z" time="96.086841353"><testcase name="Scenario: Use a view name differing only in letter case: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1117:3" time="96.086841353"><system-out><![CDATA[  Scenario: Use a view name differing only in letter case
+   ✔  Given an empty part is active in the MCAD Software
+   ✔  And an active copied view is named "Capture View"
+   ✔  And a sibling view is named "Front"
+   ✔  When the user selects the copied view and presses F2
+   ✔  And the user replaces its name with "front" and presses Enter
+   ✔  Then both "Front" and "front" appear as sibling views
+   ✔  And the View branch identifies "front" as active
+   ✔  And the "front" view is checked
+]]></system-out></testcase></testsuite></testsuites>

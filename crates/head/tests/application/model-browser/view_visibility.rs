@@ -83,9 +83,11 @@ pub(super) fn lock_icon_visible(world: &mut ApplicationWorld) -> bool {
     let row = world.run(name).clone();
     let left = row.maximum[0] as usize + 5;
     let top = row.minimum[1] as usize;
+    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
     (top..top + 15).any(|y| {
         (left..left + 12).any(|x| {
-            let color = world.pixel_at([x, y]);
+            let offset = (y * capture.extent[0] as usize + x) * 4;
+            let color = &capture.rgba[offset..offset + 3];
             color[0] > 150 && color[1] > 150 && color[2] > 150
         })
     })

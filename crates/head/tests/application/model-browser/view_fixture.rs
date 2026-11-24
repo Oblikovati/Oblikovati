@@ -12,13 +12,32 @@ const BROWSER_VIEW: &str = "BrowserView";
 #[given("the user copies the Primary view representation as BrowserView and activates BrowserView")]
 #[given("the user copies Primary as BrowserView and activates the copied view")]
 fn copy_browser_view(world: &mut ApplicationWorld) {
+    copy_view_on_saved_part(world, BROWSER_VIEW);
+    activate_view(world, BROWSER_VIEW);
+    expect_view_active(world, BROWSER_VIEW);
+}
+
+#[given("the user copies the Primary view representation as BrowserView and leaves Primary active")]
+fn copy_inactive_browser_view(world: &mut ApplicationWorld) {
+    copy_view_on_saved_part(world, BROWSER_VIEW);
+    expect_view_active(world, "Primary");
+    assert_eq!(copy_name(world), BROWSER_VIEW);
+}
+
+#[given("the user copies Primary as Capture View and activates the copied view")]
+fn copy_capture_view(world: &mut ApplicationWorld) {
+    copy_view_on_saved_part(world, CAPTURE_VIEW);
+    activate_view(world, CAPTURE_VIEW);
+    expect_view_active(world, CAPTURE_VIEW);
+}
+
+fn copy_view_on_saved_part(world: &mut ApplicationWorld, name: &str) {
     let part = world.previous_document.expect("expected the saved Part");
     world.expect_active(part);
     expanded_primary_view(world);
     copy_primary_view(world);
-    rename_view(world, BROWSER_VIEW);
-    activate_view(world, BROWSER_VIEW);
-    expect_view_active(world, BROWSER_VIEW);
+    rename_view(world, name);
+    world.expect_text(name);
 }
 
 #[given("the user copies Primary as BrowserView, activates it and enables its Lock option")]
@@ -66,6 +85,10 @@ pub(super) fn expect_prepared_copy(world: &mut ApplicationWorld) -> bool {
     }
     expect_view_active(world, BROWSER_VIEW);
     true
+}
+
+pub(super) fn has_browser_view(world: &mut ApplicationWorld) -> bool {
+    copy_name(world) == BROWSER_VIEW
 }
 
 pub(super) fn right_click_copy(world: &mut ApplicationWorld) {

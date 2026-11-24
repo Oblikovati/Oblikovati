@@ -89,3 +89,8 @@ Three [solid visibility cases](receipts/2026-11-24-browser-solid-view-fixture-38
 exercise the copied view on the saved native block in the published source.
 They check viewport visibility and whether a locked or unlocked copy
 restores the solid after switching views. The matching pinned cases passed.
+
+The [inactive and renamed view cases](receipts/2026-11-24-browser-view-saved-fixture-3896/README.md)
+keep the saved blank Part active while toggling Lock and Autosave Camera
+or checking how inline editing handles duplicate, empty, and case-distinct
+names.
