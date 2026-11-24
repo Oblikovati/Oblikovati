@@ -7,6 +7,7 @@ use oblikovati_viewport::ViewportEvent;
 
 #[path = "fixtures.rs"]
 mod fixtures;
+pub(super) use fixtures::save_staged_part_on_exit;
 
 #[given("the MCAD Software has an open part document with unsaved changes")]
 fn dirty_part(world: &mut ApplicationWorld) {

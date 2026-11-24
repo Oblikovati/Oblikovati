@@ -1,28 +1,49 @@
 {
   "features/application/application-closing/application-closing.feature": {
-    "feature_sha256": "c300b47689c7ea2095436beaada53bd32a5672746d15501b98888cba5818ebe7",
-    "supporting_files": {
-      "features/application/application-closing/BLOCKERS.md": "c0a11a87238bba2fc58326dea180b0755f1346fd76d22d23680e9b7d9aad9645",
-      "features/application/application-closing/FIXTURES.md": "8708dd5f8f59daff39dcadf65abcfd7d2d5ef9e3b02f7c290a037e9d88ccd9bc",
-      "features/application/application-closing/FUNCTIONAL.md": "b68bfea97238398696df70276271090154d47227f8c02856257d60159e693335",
-      "features/application/application-closing/VISUAL.md": "ddf67c69e66cf6774c64ec79f501fa05b2044b7c69c3890287d6bd30caa5bbe7",
-      "features/application/application-closing/reference/01-dirty-close-prompt.jpg": "0610484771dbf48966ab80eb3d45a9dec5a583f25f7fdba82cd2472cb0bf4440",
-      "features/application/application-closing/reference/dirty-assembly-close-canceled-2026-11-19.jpg": "ba68034e3bd47b17581f0f4e9213aa76abae85724e4c4d26bca98bff2ae512d1",
-      "features/application/application-closing/reference/dirty-assembly-close-context-2026-11-19.jpg": "adf6779c74ee0fc90f3ef733ca2ed2c9c9ccd94c4f5f08a7b5a7b7230b3d736f",
-      "features/application/application-closing/reference/dirty-assembly-close-dialog-2026-11-19.jpg": "551dd092e4d9c4d8dff5399701cbc6c2c8f9024a858bdff4f15fa1d43efa2c49",
-      "features/application/application-closing/reference/no-document-home-2026-11-19.jpg": "0ae57ab8665c0ddb1c1769ba10149e17bad7809ff9927693f6e91d7f4cce79ff",
-      "fixtures/cad/blank-metric-assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
-      "fixtures/cad/extrusion/extrusion-rect-8mm.opd": "e25b898cb5edead91cac7da7d9c71f7905b13603957a51c7bab5350d50f7bb1f"
-    },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-application-closing-native-4030/cucumber.json",
-    "cucumber_sha256": "c32410dcdd9516f53414ba73c11b7822bd5ff55599abd5b96fba5e2ecee2b903",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-application-closing-native-4030/scenario-arguments.json",
-    "scenario_arguments_sha256": "901cbff3ec62e2abad722b006bbef6af89fccfc2399baefba5aed58c04fa191d",
-    "application_commit": "e12f967ff7d91d2cd96786f773f84f86c5db1753",
-    "command": "Full application-closing run; see receipt README.",
-    "environment": "Linux Xvfb 1600x1200, Openbox, Vulkan Lavapipe",
-    "notes": "All four scenarios and 25 steps passed. The feature, support files and fixtures matched before and after.",
-    "blocker": "Build and runtime provenance remain unsealed (#3978)."
+    "by_source_sha256": {
+      "c300b47689c7ea2095436beaada53bd32a5672746d15501b98888cba5818ebe7": {
+        "feature_sha256": "c300b47689c7ea2095436beaada53bd32a5672746d15501b98888cba5818ebe7",
+        "supporting_files": {
+          "features/application/application-closing/BLOCKERS.md": "c0a11a87238bba2fc58326dea180b0755f1346fd76d22d23680e9b7d9aad9645",
+          "features/application/application-closing/FIXTURES.md": "8708dd5f8f59daff39dcadf65abcfd7d2d5ef9e3b02f7c290a037e9d88ccd9bc",
+          "features/application/application-closing/FUNCTIONAL.md": "b68bfea97238398696df70276271090154d47227f8c02856257d60159e693335",
+          "features/application/application-closing/VISUAL.md": "ddf67c69e66cf6774c64ec79f501fa05b2044b7c69c3890287d6bd30caa5bbe7",
+          "features/application/application-closing/reference/01-dirty-close-prompt.jpg": "0610484771dbf48966ab80eb3d45a9dec5a583f25f7fdba82cd2472cb0bf4440",
+          "features/application/application-closing/reference/dirty-assembly-close-canceled-2026-11-19.jpg": "ba68034e3bd47b17581f0f4e9213aa76abae85724e4c4d26bca98bff2ae512d1",
+          "features/application/application-closing/reference/dirty-assembly-close-context-2026-11-19.jpg": "adf6779c74ee0fc90f3ef733ca2ed2c9c9ccd94c4f5f08a7b5a7b7230b3d736f",
+          "features/application/application-closing/reference/dirty-assembly-close-dialog-2026-11-19.jpg": "551dd092e4d9c4d8dff5399701cbc6c2c8f9024a858bdff4f15fa1d43efa2c49",
+          "features/application/application-closing/reference/no-document-home-2026-11-19.jpg": "0ae57ab8665c0ddb1c1769ba10149e17bad7809ff9927693f6e91d7f4cce79ff",
+          "fixtures/cad/blank-metric-assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
+          "fixtures/cad/extrusion/extrusion-rect-8mm.opd": "e25b898cb5edead91cac7da7d9c71f7905b13603957a51c7bab5350d50f7bb1f"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-20-application-closing-native-4030/cucumber.json",
+        "cucumber_sha256": "c32410dcdd9516f53414ba73c11b7822bd5ff55599abd5b96fba5e2ecee2b903",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-application-closing-native-4030/scenario-arguments.json",
+        "scenario_arguments_sha256": "901cbff3ec62e2abad722b006bbef6af89fccfc2399baefba5aed58c04fa191d",
+        "application_commit": "e12f967ff7d91d2cd96786f773f84f86c5db1753",
+        "command": "Full application-closing run; see receipt README.",
+        "environment": "Linux Xvfb 1600x1200, Openbox, Vulkan Lavapipe",
+        "notes": "All four scenarios and 25 steps passed. The feature, support files and fixtures matched before and after.",
+        "blocker": "Build and runtime provenance remain unsealed (#3978)."
+      },
+      "31e5c2c93f2d6c8569da372a661a0f64edfa4f80c821d402149931dc17c8b94c": {
+        "feature_sha256": "31e5c2c93f2d6c8569da372a661a0f64edfa4f80c821d402149931dc17c8b94c",
+        "supporting_files": {
+          "fixtures/cad/blank-metric-assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
+          "fixtures/cad/extrusion/extrusion-rect-8mm.opd": "e25b898cb5edead91cac7da7d9c71f7905b13603957a51c7bab5350d50f7bb1f"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-24-application-closing-current-complete-4030/cucumber.json",
+        "cucumber_sha256": "d68663def3739182deedac39af384a0b8af5e45722ca3f77af18647457e9ae3b",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-24-application-closing-current-complete-4030/scenario-inventory.json",
+        "scenario_inventory_sha256": "449298c6a0166b2e90c08b699eef91d9349115b7191d2d870ed1295cd0a1407b",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-application-closing-current-complete-4030/scenario-arguments.json",
+        "scenario_arguments_sha256": "d226aef50ad35ecf1985ba12df6f6651437ad502c8a46f5cb318a219d10ad655",
+        "application_commit": "6429cc234683bc3454dd11de4c605438058321dc",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=application-closing <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "All seven current scenarios passed. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   },
   "features/application/viewport-pan/viewport-pan.feature": {
     "by_source_sha256": {

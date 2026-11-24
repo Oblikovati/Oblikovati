@@ -293,9 +293,9 @@ using this status; the live scenario directory can change.
   with `tools/bdd/feature_progress.py` before reporting them.
 - Sketch constraint-glyph hover passed its complete one-scenario native run at
   `e33bac9dd`.
-- Application Closing (#4030) passed all three pinned scenarios and 14 steps individually.
-  See the [pinned run](receipts/2026-11-24-application-closing-pinned-4030/README.md)
-  and the [earlier published run](receipts/2026-11-20-application-closing-native-4030/README.md).
+- Application Closing (#4030) passed seven current scenarios and 51 steps in one native run.
+  Save and Discard were checked on reopen. Cancelling the first Save As kept the sketch open.
+  See the [current run](receipts/2026-11-24-application-closing-current-complete-4030/README.md).
   Strict build and runtime provenance remains open under #3978.
 - Viewport pan has a full-feature diagnostic: all four scenarios and 32 steps
   passed at SHA-256 `4303c8a64b9262841dba3b8b48a74e51581a6a0ef9d98798286d514c53155647`.

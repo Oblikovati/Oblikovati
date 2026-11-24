@@ -425,7 +425,9 @@ fn part_remains(world: &mut ApplicationWorld) {
 #[when("I choose Yes to save changes")]
 #[when("the user chooses Yes to save changes")]
 fn prompt_yes(world: &mut ApplicationWorld) {
-    world.click_text("Yes");
+    if !super::application_closing::save_staged_part_on_exit(world) {
+        world.click_text("Yes");
+    }
 }
 #[when("I open the prompt-frequency list")]
 #[when("the user opens the prompt-frequency list")]

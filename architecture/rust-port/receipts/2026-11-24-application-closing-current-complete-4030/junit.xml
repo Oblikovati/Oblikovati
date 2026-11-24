@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Close the application: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature" package="testsuite/Feature: Close the application: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature" tests="7" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T21:45:04.987578964Z" time="162.921634184"><testcase name="Scenario: Cancel closing the application when a document has unsaved changes: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature:5:3" time="23.605119315"><system-out><![CDATA[  Scenario: Cancel closing the application when a document has unsaved changes
+   ✔  Given a writable copy of `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open in the MCAD Software
+   ✔  And the user creates a sketch on the XY datum plane without saving the document
+   ✔  When the user selects the application window's Close control
+   ✔  Then a save-changes prompt identifies the part document
+   ✔  And the prompt offers Yes, No and Cancel
+   ✔  When the user chooses Cancel
+   ✔  Then the save-changes prompt closes
+   ✔  And the part document remains open
+   ✔  And the MCAD Software remains open
+]]></system-out></testcase><testcase name="Scenario: Cancel closing the application when an assembly has unsaved changes: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature:17:3" time="25.784339147"><system-out><![CDATA[  Scenario: Cancel closing the application when an assembly has unsaved changes
+   ✔  Given a writable copy of `fixtures/cad/blank-metric-assembly.oad` is open in the MCAD Software
+   ✔  And the user inserts `fixtures/cad/extrusion/extrusion-rect-8mm.opd` as an occurrence without saving the assembly
+   ✔  When the user presses Alt+F4
+   ✔  Then a save-changes prompt identifies the assembly document
+   ✔  And the prompt offers Yes, No and Cancel
+   ✔  And the prompt shows the "Always show this message" setting
+   ✔  When the user presses Escape
+   ✔  Then the save-changes prompt closes
+   ✔  And the assembly document remains open
+   ✔  And the MCAD Software remains open
+]]></system-out></testcase><testcase name="Scenario: Save a modified existing part while closing the application: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature:30:3" time="35.027036183"><system-out><![CDATA[  Scenario: Save a modified existing part while closing the application
+   ✔  Given `fixtures/cad/extrusion/extrusion-rect-8mm.opd` has been staged as a writable `SavePart.opd` in a disposable directory
+   ✔  And that staged part is the only open model document
+   ✔  And the user creates and finishes a new XY sketch without saving
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user selects the application window's Close control
+   ✔  And the user chooses Yes in the save-changes prompt
+   ✔  Then the changed part is saved to its existing path and the MCAD Software closes
+   ✔  When the user starts the MCAD Software again and opens the working part
+   ✔  Then the new sketch is present in the reopened part
+]]></system-out></testcase><testcase name="Scenario: Discard a modified existing part while closing the application: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature:42:3" time="36.23362521"><system-out><![CDATA[  Scenario: Discard a modified existing part while closing the application
+   ✔  Given `fixtures/cad/extrusion/extrusion-rect-8mm.opd` has been staged as a writable `DiscardPart.opd` in a disposable directory
+   ✔  And that staged part is the only open model document
+   ✔  And the user creates and finishes a new XY sketch without saving
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user selects the application window's Close control
+   ✔  And the user chooses No in the save-changes prompt
+   ✔  Then the MCAD Software closes without saving the new sketch
+   ✔  When the user starts the MCAD Software again and opens the working part
+   ✔  Then the new sketch is absent from the reopened part
+]]></system-out></testcase><testcase name="Scenario: Cancel the first save requested during application close: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature:54:3" time="22.126351136"><system-out><![CDATA[  Scenario: Cancel the first save requested during application close
+   ✔  Given the user creates a new unsaved metric part as the only open model document
+   ✔  And the user creates and finishes a new XY sketch
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user selects the application window's Close control
+   ✔  And the user chooses Yes in the save-changes prompt
+   ✔  Then a Save As dialog opens
+   ✔  When the user cancels Save As
+   ✔  Then the MCAD Software remains open with the unsaved part and its sketch
+]]></system-out></testcase><testcase name="Scenario: Close the application when the open document has no unsaved changes: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature:65:3" time="10.288973262"><system-out><![CDATA[  Scenario: Close the application when the open document has no unsaved changes
+   ✔  Given the saved assembly fixture "fixtures/cad/blank-metric-assembly.oad" is the only open model document and is unchanged in the MCAD Software
+   ✔  When the user selects the application window's Close control
+   ✔  Then the MCAD Software closes without a save-changes prompt
+]]></system-out></testcase><testcase name="Scenario: Close the application when no document is open: tmp/oblikovati-ribbon-relocated.RcZVDl/current-application-closing-source/features/application/application-closing/application-closing.feature:71:3" time="9.856189931"><system-out><![CDATA[  Scenario: Close the application when no document is open
+   ✔  Given Home is the only open document tab with no model, drawing, or presentation document open in the MCAD Software
+   ✔  When the user selects the application window's Close control
+   ✔  Then the MCAD Software closes without a save-changes prompt
+]]></system-out></testcase></testsuite></testsuites>
