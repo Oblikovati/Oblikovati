@@ -40,3 +40,8 @@ A right-click on a face outside the open selector dismisses the
 selector and passes the point to the native Part selection path.
 That gesture shows the face mini toolbar. A later right-click with
 the selector closed opens the face context menu.
+
+Hovering over the closed direct selector shows how to add or remove
+ribbon panels. Pressing F1 while the hint is visible opens built-in help.
+The [native help receipt](receipts/2026-11-24-selector-help-3856/README.md)
+covers tooltip dismissal, F1, and switching between ribbon menus.

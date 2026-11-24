@@ -13716,8 +13716,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon panel visibility and its interaction with active commands."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/chrome_ribbon.go and head/ui/ribbon_collapse_test.go.",
+      "mapping_reason": "Context help for the direct ribbon panel selector.",
+      "go_test_premise": "The Go ribbon tests cover group widths and collapse. The benchmark specifies the selector tooltip and its F1 prompt.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Uses an active Part and its 3D Model ribbon.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop GUI handles selector help. The Part remains active throughout.",
+      "rust_tests": "application_scenarios_use_the_native_window: Read and dismisses the direct panel selector help",
+      "oracle": "The pinned case reads the rendered tooltip after a second selector click and verifies its dismissal. See receipts/2026-11-24-selector-help-3856/after/pinned/cucumber.json.",
+      "expected_result": "The tooltip explains how to show and hide panels and offers F1 help. A viewport click dismisses it and keeps the Part and 3D Model ribbon visible.",
+      "baseline_source_sha256": "2a475fd633348f2ab3bc100be152dde52c2ef0d548947de439f50b8fa379c7ab"
     },
     {
       "id": "scenario:6baf37b030b497ea4bbcf7e3913dc3e6a1f5eca50a444eeff7eaa17a0cf3e5a7",

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::super::diagnostics::{pointer_pixels, window_geometry};
 use super::*;
+#[path = "selector_help.rs"]
+mod selector_help;
 
 fn click_side_selector(world: &mut ApplicationWorld) {
     let (position, size) = window_geometry("##ribbon-column").expect("expected side ribbon");

@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added Show Panels instructions and F1 help to the ribbon panel selector. (#3856)
+
 - Added the Standard overview and Units tab to Document Settings. (#3856)
 
 - Added a Tools Options expansion with a ribbon layout reset confirmation. (#3856)

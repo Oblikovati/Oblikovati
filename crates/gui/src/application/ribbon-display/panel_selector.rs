@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The direct panel list shares visibility with the context menu but stays open on a change (#3856).
 use super::*;
+#[path = "panel_selector_help.rs"]
+mod help;
 pub(crate) const PANEL_SELECTOR_WIDTH: f32 = 32.;
 const SELECTOR_POPUP: &str = "##ribbon-panel-selector-list";
 impl RibbonDisplayState {
@@ -26,7 +28,7 @@ impl RibbonDisplayState {
             return;
         }
         let width = ui.window_size()[0];
-        let clicked = self.selector_button(ui, [width - 30., 35.]);
+        let (clicked, hovered) = self.selector_button(ui, [width - 30., 35.]);
         self.selector_trigger = Some([ui.item_rect_min(), ui.item_rect_max()]);
         if temporary_tab && (clicked || self.selector_pointer_press(ui)) {
             self.keep_temporary_on_click = true;
@@ -34,6 +36,7 @@ impl RibbonDisplayState {
         let origin = ui.window_pos();
         crate::widget_abi::next_window_position(ui, [origin[0] + width - 180., origin[1] + 60.]);
         self.selector_choices(ui, tab, panels);
+        help::draw(ui, hovered && !self.selector_open);
     }
     /// Show the same checklist at the bottom of a side ribbon.
     /// Example: `display.side_panel_selector(ui, tab, panels)`.
@@ -42,7 +45,7 @@ impl RibbonDisplayState {
             self.selector_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
         let size = ui.window_size();
         let position = [size[0] - 30., size[1] - 32.];
-        let clicked = self.selector_button(ui, position);
+        let (clicked, hovered) = self.selector_button(ui, position);
         self.selector_trigger = Some([ui.item_rect_min(), ui.item_rect_max()]);
         if clicked || self.selector_pointer_press(ui) {
             self.keep_temporary_on_click = true;
@@ -55,6 +58,7 @@ impl RibbonDisplayState {
         };
         crate::widget_abi::next_window_position(ui, [x, origin[1] + position[1]]);
         self.selector_choices(ui, tab, panels);
+        help::draw(ui, hovered && !self.selector_open);
     }
     fn selector_choices(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
         let Some(_list) = ui.begin_popup(SELECTOR_POPUP) else {
@@ -94,7 +98,7 @@ impl RibbonDisplayState {
         }
     }
 
-    fn selector_button(&mut self, ui: &Ui, position: [f32; 2]) -> bool {
+    fn selector_button(&mut self, ui: &Ui, position: [f32; 2]) -> (bool, bool) {
         crate::widget_abi::cursor_position(ui, position);
         let clicked = crate::widget_abi::button(ui, "v##ribbon-panel-selector", [22., 24.]);
         let activate = if self.selector_open {
@@ -108,9 +112,6 @@ impl RibbonDisplayState {
         if activate {
             ui.open_popup(SELECTOR_POPUP);
         }
-        if ui.is_item_hovered() {
-            ui.tooltip_text("Show Panels");
-        }
-        activate || pressed
+        (activate || pressed, ui.is_item_hovered())
     }
 }
