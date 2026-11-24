@@ -148,6 +148,7 @@ mod tests {
             kind: GuiTemplateKind::Part,
             length_unit: "mm",
             size: 42,
+            material: None,
         };
         let din = make_entry("Standard (DIN)");
         let mm = make_entry("Standard (mm)");

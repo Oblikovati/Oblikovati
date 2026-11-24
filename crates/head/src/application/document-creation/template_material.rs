@@ -5,6 +5,7 @@ use oblikovati_api::contract::Material;
 use oblikovati_gui::{GuiTemplateMaterial, GuiTemplateMaterialEntry, GuiTemplateUnits};
 use oblikovati_model::assets::{AssetCollection, DocumentAssets, MaterialAsset, ScopedAssets};
 use oblikovati_persistence::file_access::DocumentFiles;
+use oblikovati_persistence::package::DocumentPackage;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
 type CachedRecipes = Vec<(GuiDocumentTemplate, Result<DocumentAssets, String>)>;
@@ -56,6 +57,21 @@ fn template_assets(template: GuiDocumentTemplate) -> Result<DocumentAssets, Stri
     package
         .restore_assets()
         .map_err(|cause| format!("template {template:?}: {cause}"))
+}
+pub(in super::super) fn project_material<
+    O: TransactionObserver,
+    W: WorkspaceObserver,
+    F: DocumentFiles,
+>(
+    files: &FileWorkspace<O, W, F>,
+    package: &DocumentPackage,
+) -> GuiTemplateMaterial {
+    match package.restore_assets() {
+        Ok(assets) => workspace_material(files, &assets),
+        Err(cause) => GuiTemplateMaterial::Unavailable {
+            cause: cause.to_string(),
+        },
+    }
 }
 fn workspace_material<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,

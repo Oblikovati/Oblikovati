@@ -139,6 +139,39 @@ impl NativeWorkspaceLayout {
     }
 }
 
+pub(super) struct NativeTemplateSelection {
+    path: PathBuf,
+}
+
+impl NativeTemplateSelection {
+    pub(super) fn new(directory: &Path) -> Self {
+        Self {
+            path: directory.join("template-selection.json"),
+        }
+    }
+
+    pub(super) fn load(&self) -> Result<Option<PathBuf>, String> {
+        let Some(bytes) = read_settings_file(&self.path, "template selection")? else {
+            return Ok(None);
+        };
+        serde_json::from_slice(&bytes).map_err(|cause| {
+            format!(
+                "template selection {:?}: expected a JSON path: {cause}",
+                self.path
+            )
+        })
+    }
+
+    pub(super) fn save(&self, path: Option<&Path>) -> Result<(), String> {
+        if path.is_none() && !self.path.try_exists().map_err(|cause| cause.to_string())? {
+            return Ok(());
+        }
+        let bytes = serde_json::to_vec(&path)
+            .map_err(|cause| format!("template selection: expected a JSON path: {cause}"))?;
+        save_settings_file(&self.path, &bytes)
+    }
+}
+
 fn read_settings_file(path: &Path, label: &str) -> Result<Option<Vec<u8>>, String> {
     use std::io::Read;
     let file = match std::fs::File::open(path) {

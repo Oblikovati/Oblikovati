@@ -29,7 +29,7 @@ const SAVE_AS_COMMANDS: [(&str, &str); 3] = [
 const FILE_MENU_WIDTH: f32 = 440.;
 #[derive(Default)]
 pub(crate) struct GuiDocumentFiles {
-    templates: crate::application::document_creation::TemplateChooser,
+    pub(crate) templates: crate::application::document_creation::TemplateChooser,
     projects: crate::application::project_dialog::ProjectsDialog,
     recent_menu: RecentMenu,
     open: OpenDialog,

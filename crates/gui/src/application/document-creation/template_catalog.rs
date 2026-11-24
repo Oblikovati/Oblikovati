@@ -68,6 +68,32 @@ impl TemplateChoice {
 }
 
 impl TemplateChooser {
+    pub(crate) fn remember_project_template(&mut self, path: Option<std::path::PathBuf>) {
+        self.remembered_project_template = path;
+    }
+
+    pub(crate) fn project_template_path(&self) -> Option<&std::path::Path> {
+        match &self.selected {
+            Some(TemplateChoice::Project(template)) => Some(&template.path),
+            Some(TemplateChoice::BuiltIn(_)) => None,
+            None => self.remembered_project_template.as_deref(),
+        }
+    }
+
+    pub(super) fn restore_project_selection(&mut self, state: &GuiCommandState) {
+        if self.selected.is_none()
+            && let Some(path) = self.remembered_project_template.as_deref()
+            && let Some(template) = state
+                .project_templates
+                .iter()
+                .find(|entry| entry.path == path)
+        {
+            self.folder = template.folder;
+            self.selected = Some(TemplateChoice::Project(template.clone()));
+            self.remembered_project_template = None;
+        }
+    }
+
     pub(super) fn reveal_project_root(&mut self, state: &GuiCommandState) {
         let has_entries = |folder| {
             state

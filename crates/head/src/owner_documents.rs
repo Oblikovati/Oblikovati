@@ -62,9 +62,11 @@ impl<
             format!("startup project {path:?}: expected a readable native project: {cause}")
         })?;
         if first {
-            self.project_template_catalog = document_creation::ProjectTemplateCatalog::load(
-                project.bound.lookup.templates_root(),
-            );
+            let root = project.bound.lookup.templates_root().map(ToOwned::to_owned);
+            self.project_template_catalog =
+                document_creation::ProjectTemplateCatalog::load(root.as_deref(), |package| {
+                    document_creation::project_material(&self.files, package)
+                });
         }
         Ok(())
     }

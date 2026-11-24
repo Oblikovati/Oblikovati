@@ -1,9 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{GuiCommandState, GuiDocumentTemplate, GuiTemplateKind};
+use super::{GuiCommandState, GuiDocumentTemplate, GuiTemplateKind, TemplateChoice};
+use crate::GuiTemplateMaterial;
 use imgui::Ui;
 
-pub(super) fn material_detail(ui: &Ui, state: &GuiCommandState, selected: GuiDocumentTemplate) {
-    if let Some(label) = material_label(state, selected) {
+pub(super) fn material_detail(ui: &Ui, state: &GuiCommandState, selected: &TemplateChoice) {
+    let label = match selected {
+        TemplateChoice::BuiltIn(template) => material_label(state, *template),
+        TemplateChoice::Project(template) => template
+            .material
+            .as_ref()
+            .map(|material| material_caption(Some(material))),
+    };
+    if let Some(label) = label {
         ui.text_wrapped(label);
     }
 }
@@ -18,18 +26,19 @@ fn material_label(state: &GuiCommandState, selected: GuiDocumentTemplate) -> Opt
         .template_materials
         .iter()
         .find(|item| item.template == selected);
-    let label = match material.map(|item| &item.material) {
-        Some(crate::GuiTemplateMaterial::Unassigned) => "Material: Unassigned".into(),
-        Some(crate::GuiTemplateMaterial::Assigned { name, .. }) => format!("Material: {name}"),
-        Some(crate::GuiTemplateMaterial::Unresolved { id }) => {
-            format!("Material unavailable: {id}")
-        }
-        Some(crate::GuiTemplateMaterial::Unavailable { cause }) => {
+    Some(material_caption(material.map(|item| &item.material)))
+}
+
+fn material_caption(material: Option<&GuiTemplateMaterial>) -> String {
+    match material {
+        Some(GuiTemplateMaterial::Unassigned) => "Material: Unassigned".into(),
+        Some(GuiTemplateMaterial::Assigned { name, .. }) => format!("Material: {name}"),
+        Some(GuiTemplateMaterial::Unresolved { id }) => format!("Material unavailable: {id}"),
+        Some(GuiTemplateMaterial::Unavailable { cause }) => {
             format!("Material unavailable: {cause}")
         }
         None => "Material: unavailable".into(),
-    };
-    Some(label)
+    }
 }
 #[cfg(test)]
 #[path = "../../../tests/application/document-creation/template_material.rs"]

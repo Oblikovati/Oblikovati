@@ -10,6 +10,7 @@ use std::time::Duration;
 mod advance;
 mod drawing_windows;
 mod input;
+mod profile;
 pub(super) use drawing_windows::DrawingWindows;
 // Go head/cmd/oblikovati-head/main.go uses animationTickSeconds = 1/60.
 const GUI_TICK: Duration = Duration::from_nanos(1_000_000_000 / 60);
@@ -409,12 +410,7 @@ impl NativeHeadWindow {
             GuiClipboard::new(self.clipboard.clone(), super::clipboard::CLIPBOARD_BYTES)?;
         let mut gui = NativeGui::new(Some(clipboard))?;
         if let Some(directory) = &self.ribbon_settings_directory {
-            gui.engine.set_ribbon_settings_store(Box::new(
-                super::preferences::NativeRibbonSettings::new(directory),
-            ))?;
-            if let Some(bytes) = super::preferences::NativeWorkspaceLayout::new(directory).load()? {
-                gui.engine.load_workspace_layout(&bytes)?;
-            }
+            gui.load_profile(directory)?;
         }
         if let Some(crate::DesktopCommandNotice::SavePathRequired { document }) =
             &self.command_notice

@@ -71,6 +71,7 @@ pub struct GuiProjectTemplate {
     pub kind: GuiTemplateKind,
     pub length_unit: &'static str,
     pub size: u64,
+    pub material: Option<GuiTemplateMaterial>,
 }
 /// Physical material described by a template recipe.
 #[derive(Clone, Debug, PartialEq, Eq)]

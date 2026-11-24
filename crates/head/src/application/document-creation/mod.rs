@@ -7,6 +7,7 @@ use oblikovati_api::{
 use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind};
 mod project_catalog;
 pub(super) use project_catalog::ProjectTemplateCatalog;
+pub(super) use template_material::project_material;
 mod template_material;
 use oblikovati_gui::GuiTemplateUnits;
 pub(crate) use template_material::gui_template_materials;

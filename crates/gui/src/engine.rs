@@ -27,6 +27,8 @@ mod frame_inputs;
 mod inference_dialog;
 mod quick_access;
 use quick_access::apply_quick_access;
+#[path = "engine/template_selection.rs"]
+mod template_selection;
 #[path = "engine/workspace_layout.rs"]
 mod workspace_layout;
 #[derive(Clone, Debug)]

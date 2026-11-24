@@ -29,6 +29,7 @@ pub(crate) struct TemplateChooser {
     folders_ahead: Vec<TemplateFolder>,
     /// Kept between openings: reopening after Cancel shows the same choice.
     selected: Option<TemplateChoice>,
+    remembered_project_template: Option<std::path::PathBuf>,
     /// A drawing template offers previews, and one must be accepted before it can be created.
     drawing_layout: Option<DrawingLayout>,
     component: component_dialog::ComponentDialog,
@@ -124,6 +125,7 @@ impl TemplateChooser {
         }
         if std::mem::take(&mut self.requested) {
             self.reveal_project_root(state);
+            self.restore_project_selection(state);
             ui.open_popup("New document");
             dialog_geometry(ui);
         }
@@ -331,6 +333,12 @@ impl TemplateChooser {
         let chosen = if self.view.is_icon_view() {
             self.icon_tile(ui, icons, template, width, selected)
         } else {
+            let _selected_color = selected.then(|| {
+                ui.push_style_color(
+                    imgui::StyleColor::Header,
+                    ui.style_color(imgui::StyleColor::HeaderActive),
+                )
+            });
             ui.selectable_config(template.title())
                 .flags(
                     imgui::SelectableFlags::DONT_CLOSE_POPUPS
@@ -368,9 +376,7 @@ impl TemplateChooser {
         ui.text_wrapped(selected.title());
         ui.text(format!("Document type: {}", selected.type_label()));
         ui.text(selected.unit_label());
-        if let TemplateChoice::BuiltIn(template) = selected {
-            template_material::material_detail(ui, state, *template);
-        }
+        template_material::material_detail(ui, state, selected);
         if selected.kind() == GuiTemplateKind::Drawing {
             self.drawing_previews(ui);
         }

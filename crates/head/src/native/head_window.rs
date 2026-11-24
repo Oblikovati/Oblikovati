@@ -466,11 +466,8 @@ impl HeadWindow for NativeHeadWindow {
         Ok(ready.worker_wake)
     }
     fn finish(&mut self) -> Result<(), String> {
-        let workspace_error = match (&mut self.gui, &self.ribbon_settings_directory) {
-            (Some(gui), Some(directory)) => gui
-                .save_workspace_layout()
-                .and_then(|bytes| preferences::NativeWorkspaceLayout::new(directory).save(&bytes))
-                .err(),
+        let profile_error = match (&mut self.gui, &self.ribbon_settings_directory) {
+            (Some(gui), Some(directory)) => gui.save_profile(directory).err(),
             _ => None,
         };
         self.drawing_windows.close();
@@ -488,7 +485,7 @@ impl HeadWindow for NativeHeadWindow {
         };
         #[cfg(target_os = "linux")]
         errors.extend(clipboard.err());
-        errors.extend(workspace_error);
+        errors.extend(profile_error);
         if errors.is_empty() {
             return Ok(());
         }

@@ -1,5 +1,38 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+
+#[test]
+fn restored_selection_matches_the_file_in_the_active_catalog() {
+    let saved = crate::GuiProjectTemplate {
+        path: "/project/English/Standard (in).opd".into(),
+        title: "Standard (in)".into(),
+        folder: TemplateFolder::Units(GuiTemplateUnits::Inch),
+        kind: GuiTemplateKind::Part,
+        length_unit: "in",
+        size: 42,
+        material: None,
+    };
+    let unrelated = crate::GuiProjectTemplate {
+        path: "/other/English/Standard (in).opd".into(),
+        ..saved.clone()
+    };
+    let mut chooser = TemplateChooser::default();
+    chooser.remember_project_template(Some(saved.path.clone()));
+    chooser.restore_project_selection(&GuiCommandState {
+        project_templates: vec![unrelated].into(),
+        ..Default::default()
+    });
+    assert!(chooser.selected.is_none());
+    assert_eq!(chooser.project_template_path(), Some(saved.path.as_path()));
+
+    chooser.restore_project_selection(&GuiCommandState {
+        project_templates: vec![saved.clone()].into(),
+        ..Default::default()
+    });
+    assert_eq!(chooser.folder, saved.folder);
+    assert_eq!(chooser.selected, Some(TemplateChoice::Project(saved)));
+}
+
 #[test]
 fn a_root_only_catalog_opens_at_its_named_templates() {
     let mut chooser = TemplateChooser::default();
@@ -10,6 +43,7 @@ fn a_root_only_catalog_opens_at_its_named_templates() {
         kind: GuiTemplateKind::Assembly,
         length_unit: "mm",
         size: 42,
+        material: None,
     };
     let state = GuiCommandState {
         project_templates: vec![root_template.clone()].into(),

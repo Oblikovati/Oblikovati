@@ -20,6 +20,8 @@ mod named_navigation;
 mod project_inspection;
 #[path = "template_content.rs"]
 mod template_content;
+#[path = "template_restart.rs"]
+mod template_restart;
 #[given("the new-document chooser shows the metric folder grouped by type using Medium icons")]
 #[given("the template chooser shows the metric folder grouped by type using Medium icons")]
 fn metric_medium_chooser(world: &mut ApplicationWorld) {

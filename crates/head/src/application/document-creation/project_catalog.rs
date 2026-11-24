@@ -2,7 +2,7 @@
 //! Read native template metadata at project load, outside the frame loop.
 use super::*;
 use oblikovati_api::types::*;
-use oblikovati_gui::{GuiProjectTemplate, GuiTemplateFolder};
+use oblikovati_gui::{GuiProjectTemplate, GuiTemplateFolder, GuiTemplateMaterial};
 use oblikovati_model::quantity::Dimension;
 use oblikovati_persistence::{
     load::{NativePackageReader, PackageFileReader},
@@ -20,7 +20,10 @@ pub(in super::super) struct ProjectTemplateCatalog {
 }
 
 impl ProjectTemplateCatalog {
-    pub(in super::super) fn load(root: Option<&Path>) -> Self {
+    pub(in super::super) fn load(
+        root: Option<&Path>,
+        part_material: impl Fn(&DocumentPackage) -> GuiTemplateMaterial,
+    ) -> Self {
         let Some(root) = root else {
             return Self::default();
         };
@@ -38,7 +41,9 @@ impl ProjectTemplateCatalog {
             ),
         ] {
             match native_files(&directory) {
-                Ok(files) => collect_templates(files, folder, &mut templates, &mut issues),
+                Ok(files) => {
+                    collect_templates(files, folder, &part_material, &mut templates, &mut issues)
+                }
                 Err(cause) => issues.push(cause),
             }
         }
@@ -87,11 +92,12 @@ fn file_kind(path: &Path) -> Option<DocumentType> {
 fn collect_templates(
     files: Vec<PathBuf>,
     folder: GuiTemplateFolder,
+    part_material: &impl Fn(&DocumentPackage) -> GuiTemplateMaterial,
     templates: &mut Vec<GuiProjectTemplate>,
     issues: &mut Vec<String>,
 ) {
     for path in files {
-        match read_template(&path, folder) {
+        match read_template(&path, folder, part_material) {
             Ok((template, _)) => templates.push(template),
             Err(cause) => issues.push(format!("Template {path:?}: {cause}")),
         }
@@ -101,6 +107,7 @@ fn collect_templates(
 fn read_template(
     path: &Path,
     folder: GuiTemplateFolder,
+    part_material: impl Fn(&DocumentPackage) -> GuiTemplateMaterial,
 ) -> Result<(GuiProjectTemplate, DocumentPackage), String> {
     let bytes = NativePackageReader
         .read(path)
@@ -132,6 +139,8 @@ fn read_template(
             kind,
             length_unit: units.preferred_name(Dimension::Length),
             size: bytes.len() as u64,
+            material: matches!(kind, GuiTemplateKind::Part | GuiTemplateKind::SheetMetal)
+                .then(|| part_material(&package)),
         },
         package,
     ))
@@ -177,7 +186,9 @@ impl<
                 selected.path
             ));
         }
-        let (current, package) = read_template(&selected.path, selected.folder)?;
+        let (current, package) = read_template(&selected.path, selected.folder, |package| {
+            template_material::project_material(&self.files, package)
+        })?;
         if &current != selected {
             return Err(format!(
                 "Template {:?} changed since the project was loaded",
