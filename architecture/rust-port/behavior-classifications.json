@@ -17257,8 +17257,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/assembly/modelstate.go and ADR-0038.",
+      "mapping_reason": "The native Model Browser table exposes document-owned per-member attributes.",
+      "go_test_premise": "The Go assembly reference separates member creation and activation. The pinned native Part case supplies the exact table and per-member oracle.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native Browser and viewport presentation.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop applies document table changes and presents the current member and its data.",
+      "rust_tests": "application_scenarios_use_the_native_window: Switch between states with different feature suppression",
+      "oracle": "The pinned native run verifies the table controls and the observable result. See receipts/2026-11-24-browser-suppression-fixture-3896/pinned/switch/cucumber.json.",
+      "expected_result": "The browser and viewport follow suppression when switching from Copy State to Primary and back.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:8612e6c443fc54aa6131523c744b540c27fa9a1e74bfa4110fe77d4595413451",
@@ -17274,8 +17284,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/assembly/modelstate.go and ADR-0038.",
+      "mapping_reason": "The native Model Browser table exposes document-owned per-member attributes.",
+      "go_test_premise": "The Go assembly reference separates member creation and activation. The pinned native Part case supplies the exact table and per-member oracle.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native Browser and viewport presentation.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop applies document table changes and presents the current member and its data.",
+      "rust_tests": "application_scenarios_use_the_native_window: Cancel a staged model-state suppression change",
+      "oracle": "The pinned native run verifies the table controls and the observable result. See receipts/2026-11-24-browser-suppression-fixture-3896/pinned/cancel/cucumber.json.",
+      "expected_result": "Cancel discards a staged change from Suppress to Compute and leaves the other members unchanged.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:006c272fd5afd3a7e2cf59c6b50ed608ac568aa871555f3f50b3cb5867e5d217",
@@ -17291,8 +17311,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/assembly/modelstate.go and ADR-0038.",
+      "mapping_reason": "The native Model Browser table exposes document-owned per-member attributes.",
+      "go_test_premise": "The Go assembly reference separates member creation and activation. The pinned native Part case supplies the exact table and per-member oracle.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native Browser and viewport presentation.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop applies document table changes and presents the current member and its data.",
+      "rust_tests": "application_scenarios_use_the_native_window: Apply a feature suppression change through the model-state table",
+      "oracle": "The pinned native run verifies the table controls and the observable result. See receipts/2026-11-24-browser-suppression-fixture-3896/pinned/apply/cucumber.json.",
+      "expected_result": "Accept applies Compute and Suppress to Primary, and reactivating Copy State restores its solid.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:2fc506088b0a73c50f56c686ae1501cd0f36d2623ffa4fe7d69a47d8c013df12",
@@ -17427,8 +17457,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: model/assembly/modelstate.go and ADR-0038.",
+      "mapping_reason": "The native Model Browser table exposes document-owned per-member attributes.",
+      "go_test_premise": "The Go assembly reference separates member creation and activation. The pinned native Part case supplies the exact table and per-member oracle.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native Browser and viewport presentation.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop applies document table changes and presents the current member and its data.",
+      "rust_tests": "application_scenarios_use_the_native_window: Apply an inserted model-state table row",
+      "oracle": "The pinned native run verifies the table controls and the observable result. See receipts/2026-11-24-browser-suppression-fixture-3896/pinned/insert/cucumber.json.",
+      "expected_result": "The inserted member follows Capture State in the browser and inherits its suppressed extrusion.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:bbf23214b00f1efebc2ddb5b725f96607d56e25284ab38ec9543b15ec72db6d5",

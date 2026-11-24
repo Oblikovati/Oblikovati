@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native steps for copied model-state rows (#4119).
+use super::model_state_fixture::has_named_states;
+use super::model_state_suppression::current_state_extrusion;
+use super::model_state_suppression_fixture::expect_saved_suppression;
+use super::model_state_table::open_property_table;
 use super::model_state_table_extra::{click, grid_run, open, row_run};
 use super::model_state_table_parameter_steps::{
     grid_cell_text, persist_parameter_column, three_state_prism,
@@ -81,6 +85,12 @@ fn setup_suppressed_rows(world: &mut ApplicationWorld) {
     "The MCAD Software has a model-state table with Capture State followed by active Copy State"
 )]
 fn given_suppressed_rows(world: &mut ApplicationWorld) {
+    if has_named_states(world) {
+        expect_saved_suppression(world);
+        assert!(world.checked("Copy State (Active)"));
+        open_property_table(world);
+        return;
+    }
     setup_suppressed_rows(world);
 }
 #[given("Capture State has extrusion status Suppress and d0 value 1 in")]
@@ -93,11 +103,9 @@ fn capture_values(world: &mut ApplicationWorld) {
 }
 #[given("the extrusion is suppressed in Capture State and computed in Copy State")]
 fn capture_and_copy_values(world: &mut ApplicationWorld) {
-    assert_eq!(
-        grid_cell_text(world, "Extrusion", "Capture State"),
-        "Suppress"
-    );
-    assert_eq!(grid_cell_text(world, "Extrusion", "Copy State"), "Compute");
+    let name = current_state_extrusion(world).name;
+    assert_eq!(grid_cell_text(world, &name, "Capture State"), "Suppress");
+    assert_eq!(grid_cell_text(world, &name, "Copy State"), "Compute");
 }
 #[when("the user opens the context menu on the Capture State row number")]
 fn open_capture_row_menu(world: &mut ApplicationWorld) {
@@ -209,7 +217,10 @@ fn generated_is_active(world: &mut ApplicationWorld) {
 }
 #[then("the extrusion row is struck through")]
 fn generated_extrusion_suppressed(world: &mut ApplicationWorld) {
-    assert!(diagnostics::has_strike(world.run("Extrusion (suppressed)")));
+    let name = current_state_extrusion(world).name;
+    assert!(diagnostics::has_strike(
+        world.run(&format!("{name} (suppressed)"))
+    ));
 }
 #[then("the solid is absent from the viewport")]
 fn generated_solid_absent(world: &mut ApplicationWorld) {

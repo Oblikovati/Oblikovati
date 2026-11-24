@@ -1,0 +1,1021 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature" tests="100" errors="0" failures="46" hostname="localhost" timestamp="2026-11-24T10:52:39.230595711Z" time="3427.766327668"><testcase name="Scenario: Collapse and expands the origin branch: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:5:3" time="22.367530949"><system-out><![CDATA[  Scenario: Collapse and expands the origin branch
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains a visible solid and has a visible model browser
+   ✔  And the Origin branch is expanded
+   ✔  Then the branch shows three origin planes, three origin axes and a center point
+   ✔  When the user clicks the Origin branch expansion control
+   ✔  Then the origin children are hidden
+   ✔  And the Origin branch remains visible
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user clicks the Origin branch expansion control again
+   ✔  Then the origin planes, axes and center point are visible again
+   ✔  And the solid remains in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Select a solid feature in the browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:19:3" time="21.32096984"><system-out><![CDATA[  Scenario: Select a solid feature in the browser
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains a single block created by an extrusion
+   ✔  And the model browser shows the extrusion and its nested sketch
+   ✔  When the user selects the extrusion row in the model browser
+   ✔  Then the extrusion row is highlighted
+   ✔  And the visible block edges are highlighted in blue
+   ✔  And a contextual toolbar appears over the model
+   ✔  When the user clicks an empty area of the viewport
+   ✔  Then the blue edge highlighting and contextual toolbar disappear
+   ✔  And the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Collapse and expands a feature branch: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:32:3" time="30.30420732"><system-out><![CDATA[  Scenario: Collapse and expands a feature branch
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains a visible block made by an extrusion with a nested sketch
+   ✔  And the extrusion branch is expanded in the model browser
+   ✔  When the user clicks the extrusion branch expansion control
+   ✔  Then the sketch row is hidden and the extrusion row remains visible
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user clicks the extrusion branch expansion control again
+   ✔  Then the sketch row appears beneath the extrusion
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Inspect the extrusion row context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:44:3" time="31.032080248"><system-out><![CDATA[  Scenario: Inspect the extrusion row context menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains a block created by an extrusion
+   ✔  And the extrusion row is visible in the model browser
+   ✔  When the user right-clicks the extrusion row
+   ✔  Then the row is highlighted and the block edges are highlighted in blue
+   ✔  And the context menu offers Edit Sketch and Edit Feature
+   ✔  And the context menu offers Show Dimensions, Measure and Properties
+   ✔  And the context menu offers Expand All Children and collapses All Children
+   ✔  When the user dismisses the menu and clicks empty viewport space
+   ✔  Then the context menu and blue edge highlighting disappear
+   ✔  And the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Filter the model browser by a feature name: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:58:3" time="30.896222373"><system-out><![CDATA[  Scenario: Filter the model browser by a feature name
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains a visible block made by an extrusion named Extrusion1
+   ✔  And the model browser shows its normal hierarchy
+   ✔  When the user opens browser search and enters "Extrusion"
+   ✔  Then the browser shows matching extrusion rows and their ancestor hierarchy
+   ✔  And unrelated origin rows are absent from the filtered tree
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user clears the search text
+   ✔  Then the normal model hierarchy returns
+   ✔  When the user closes browser search
+   ✔  Then the search field disappears
+   ✔  And the normal hierarchy remains visible
+]]></system-out></testcase><testcase name="Scenario: Collapse and expands all browser branches: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:73:3" time="35.525930801"><system-out><![CDATA[  Scenario: Collapse and expands all browser branches
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains a visible block made by an extrusion
+   ✔  And its browser has expanded representation, origin and extrusion branches
+   ✔  When the user opens the model browser menu and chooses Collapse All
+   ✔  Then the top-level branches remain visible with their children hidden
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user opens the model browser menu and chooses Expand All
+   ✔  Then the origin planes and the nested extrusion sketch are visible
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Toggle extended feature names in the browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:85:3" time="58.100394976"><system-out><![CDATA[  Scenario: Toggle extended feature names in the browser
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains a 20 mm new-solid extrusion
+   ✔  And Show Extended Names is disabled in the model browser display preferences
+   ✔  When the user enables Show Extended Names from the browser display preferences
+   ✔  Then the extrusion row includes its new-solid operation and 20 mm extent after its name
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user reopens the browser display preferences
+   ✔  Then Show Extended Names is checked
+   ✔  When the user chooses Show Extended Names again
+   ✔  Then the extrusion row returns to its shorter name
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Inspect the Find feature criteria: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:99:3" time="61.137044051"><system-out><![CDATA[  Scenario: Inspect the Find feature criteria
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part is open in the MCAD Software
+   ✔  When the user chooses Find from the model browser menu
+   ✔  Then a search criteria dialog opens over the workspace
+   ✔  And its object type list offers Sketches and Features
+   ✔  When the user selects Features and opens the Property list
+   ✔  Then the list offers Name, Note contents, Note title, Suppress status and Type
+   ✔  When the user selects Name and opens the Condition list
+   ✔  Then the list offers any value, begins with, ends with, includes, is exactly and is not
+   ✔  When the user dismisses the list and closes the dialog
+   ✔  Then the model browser and part remain visible
+]]></system-out></testcase><testcase name="Scenario: Open and closes an additional browser pane: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:113:3" time="13.598930231"><failure type="Step Panicked" message="Step panicked. Captured output: expected &quot;+&quot; in rendered text &quot;W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nextruded&lt;Primary&gt;\nRepresentations\nModelState\n&lt;Primary&gt;\n1\nView\n&lt;Primary&gt;\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument1:/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/fixtures/cad/workspace-layout-native.opd\nRibbonDisplay\nv\nv\n...\nextruded\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\ndocking-visible-solid-current&lt;Primary&gt;\nDocuments\nX\nY\nZ&quot;"/><system-out><![CDATA[  Scenario: Open and closes an additional browser pane
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part is visible in the MCAD Software
+   ✔  And the Model browser tab is active
+   ✘  When the user opens the add-pane menu in the browser header
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:117:5
+      Matched: crates/head/src/../tests/application/model-browser/panes.rs:51:1
+      Step panicked. Captured output: expected "+" in rendered text "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument1:/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/fixtures/cad/workspace-layout-native.opd\nRibbonDisplay\nv\nv\n...\nextruded\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\ndocking-visible-solid-current<Primary>\nDocuments\nX\nY\nZ"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument1:/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/fixtures/cad/workspace-layout-native.opd\nRibbonDisplay\nv\nv\n...\nextruded\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\ndocking-visible-solid-current<Primary>\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Select an origin plane in the browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:129:3" time="24.379664755"><system-out><![CDATA[  Scenario: Select an origin plane in the browser
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  And the YZ origin plane is not visible in the viewport
+   ✔  When the user selects the YZ Plane row
+   ✔  Then the row is highlighted
+   ✔  And the plane appears as a translucent blue rectangle in the viewport
+   ✔  And the block remains visible
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary plane highlight disappears
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Show and hide an origin plane from its browser menu: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:143:3" time="48.907955334"><system-out><![CDATA[  Scenario: Show and hide an origin plane from its browser menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part with a visible block is open in the MCAD Software
+   ✔  And the YZ origin plane is hidden and its browser row is visible
+   ✔  When the user right-clicks the YZ Plane row
+   ✔  Then the context menu offers Visibility and New Sketch
+   ✔  And Visibility is not checked
+   ✔  When the user chooses Visibility and clicks empty viewport space
+   ✔  Then the plane remains visible as a translucent plane beside the block
+   ✔  When the user right-clicks the YZ Plane row again
+   ✔  Then Visibility is checked
+   ✔  When the user chooses Visibility again
+   ✔  Then the plane is hidden and the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Inspect a nested sketch from the model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:158:3" time="41.445369766"><system-out><![CDATA[  Scenario: Inspect a nested sketch from the model browser
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains a dimensioned rectangular sketch used by an extrusion
+   ✔  And the extrusion branch is expanded in the model browser
+   ✔  When the user right-clicks the nested sketch row
+   ✔  Then the sketch row is highlighted
+   ✔  And its rectangular geometry and dimensions appear highlighted in the viewport
+   ✔  And the sketch context menu offers Edit Sketch, Redefine, Share Sketch and Properties
+   ✔  And the menu offers Visibility and Export Sketch As
+   ✔  When the user dismisses the menu and clears the selection
+   ✔  Then the highlighted sketch geometry and dimensions disappear from the viewport
+   ✔  And the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Cancel a sketch line style change: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:172:3" time="54.461431477"><system-out><![CDATA[  Scenario: Cancel a sketch line style change
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a dimensioned sketch is nested under an extrusion in the MCAD Software
+   ✔  And the sketch line type is Default
+   ✔  When the user opens Properties from the sketch row context menu
+   ✔  Then the geometry properties dialog shows line color, line type and line weight controls
+   ✔  And the line type field displays Default
+   ✔  And Apply is disabled
+   ✔  When the user chooses Dashed as the line type
+   ✔  Then the line type field displays Dashed and Apply is enabled
+   ✔  When the user clicks Cancel and reopens the sketch properties
+   ✔  Then the line type field displays Default
+   ✔  When the user clicks Cancel
+   ✔  Then the properties dialog closes
+]]></system-out></testcase><testcase name="Scenario: Find a browser feature in the viewport: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:188:3" time="33.813608948"><system-out><![CDATA[  Scenario: Find a browser feature in the viewport
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains a single extrusion forming a rectangular block
+   ✔  And the block appears small in the viewport
+   ✔  When the user right-clicks the extrusion row in the model browser
+   ✔  And the user chooses Find in Window
+   ✔  Then the block appears larger and fits within the viewport
+   ✔  And the extrusion row remains selected
+   ✔  And the visible block edges remain highlighted
+   ✔  And the apparent orientation is unchanged
+]]></system-out></testcase><testcase name="Scenario: Hide and show a solid body from the browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:200:3" time="50.552914239"><system-out><![CDATA[  Scenario: Hide and show a solid body from the browser
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains one visible solid block
+   ✔  And the solid body row is visible in the model browser
+   ✔  When the user right-clicks the solid body row
+   ✔  Then the block faces are highlighted in blue
+   ✔  And Visibility is checked in the context menu
+   ✔  When the user chooses Visibility
+   ✔  Then the block disappears from the viewport
+   ✔  And the body and its feature remain represented in the browser
+   ✔  When the user right-clicks the hidden body row
+   ✔  Then Visibility is not checked
+   ✔  And the hidden body is indicated by a blue wireframe while selected
+   ✔  When the user chooses Visibility again
+   ✔  Then the shaded block returns in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Collapse and expands descendants of the solid bodies folder: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:217:3" time="55.224632013"><system-out><![CDATA[  Scenario: Collapse and expands descendants of the solid bodies folder
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software has one solid body made by an extrusion from a sketch
+   ✔  And the Solid Bodies folder shows the body, its extrusion and nested sketch
+   ✔  When the user right-clicks Solid Bodies and chooses Collapse All Children
+   ✔  Then the body row remains visible under the folder
+   ✔  And the extrusion and sketch rows under the body are hidden
+   ✔  And the solid remains visible in the viewport
+   ✔  When the user right-clicks Solid Bodies and chooses Expand All Children
+   ✔  Then the body's extrusion and nested sketch rows are visible again
+   ✔  And the solid remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Hide and restore work features in the model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:230:3" time="55.995893538"><system-out><![CDATA[  Scenario: Hide and restore work features in the model browser
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And the MCAD Software displays the single-block part fixture
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  And the Hide Work Features display preference is disabled
+   ✔  When the user enables Hide Work Features in the browser display preferences
+   ✔  Then the Origin branch is absent from the model browser
+   ✔  And the solid body and extrusion entries remain visible
+   ✔  And the block remains visible in the same view
+   ✔  When the user opens the browser display preferences
+   ✔  Then Hide Work Features is checked
+   ✔  When the user disables Hide Work Features
+   ✔  Then the Origin branch returns to the model browser collapsed
+   ✔  And the block remains visible in the same view
+]]></system-out></testcase><testcase name="Scenario: Inspect the part root context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:246:3" time="34.04638069"><system-out><![CDATA[  Scenario: Inspect the part root context menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active saved part in the MCAD Software contains one visible solid block
+   ✔  And the document root row is visible in the model browser
+   ✔  When the user right-clicks the document root row
+   ✔  Then the root row is highlighted and the visible block edges are blue
+   ✔  And the context menu offers file-location and file-path actions
+   ✔  And the context menu offers drawing actions
+   ✔  And the context menu offers Expand All Children, Collapse All Children and Find in Window
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes and the block edges remain highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the blue edge highlighting disappears and the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Show and hide an origin axis from its browser menu: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:261:3" time="49.784627066"><system-out><![CDATA[  Scenario: Show and hide an origin axis from its browser menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded and the X Axis is hidden
+   ✔  When the user right-clicks the X Axis row
+   ✔  Then the row is highlighted and the axis is highlighted in blue in the viewport
+   ✔  And Visibility is unchecked and Auto Resize is checked in the context menu
+   ✔  When the user chooses Visibility and clicks empty viewport space
+   ✔  Then the axis remains visible as a line beside the block
+   ✔  When the user right-clicks the X Axis row again
+   ✔  Then Visibility is checked in the context menu
+   ✔  When the user chooses Visibility again
+   ✔  Then the axis is hidden and the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Navigate the origin branch with arrow keys: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:276:3" time="49.789443155"><system-out><![CDATA[  Scenario: Navigate the origin branch with arrow keys
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded with its origin planes hidden
+   ✔  When the user selects the YZ Plane row in the model browser
+   ✔  Then the YZ plane is highlighted in the viewport
+   ✔  When the user presses Down Arrow
+   ✔  Then the XZ Plane row is selected and the XZ plane is highlighted
+   ✔  And the YZ plane highlight is removed
+   ✔  When the user presses Up Arrow
+   ✔  Then the YZ Plane row is selected and the YZ plane is highlighted again
+   ✔  When the user presses Left Arrow
+   ✔  Then the Origin parent row is selected and the plane highlight is removed
+   ✔  When the user presses Left Arrow again
+   ✔  Then the Origin branch collapses and its children are hidden
+   ✔  When the user presses Right Arrow
+   ✔  Then the Origin branch expands and its children are visible
+   ✔  When the user presses Right Arrow again
+   ✔  Then the YZ Plane row is selected and the YZ plane is highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the plane highlight disappears and the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Move between origin planes with Shift and Down Arrow: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:299:3" time="37.92024072"><system-out><![CDATA[  Scenario: Move between origin planes with Shift and Down Arrow
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded and its planes are hidden
+   ✔  And the YZ Plane row is selected and its plane is highlighted
+   ✔  When the user presses Shift and Down Arrow together
+   ✔  Then the XZ Plane row is selected and its plane is highlighted
+   ✔  And the YZ plane is no longer highlighted
+   ✔  When the user presses Shift and Down Arrow together again
+   ✔  Then the XY Plane row is selected and its plane is highlighted
+   ✔  And the XZ plane is no longer highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the plane highlight disappears and the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Inspect the center point context menu: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:314:3" time="27.73586025"><system-out><![CDATA[  Scenario: Inspect the center point context menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part with a visible block is open in the MCAD Software
+   ✔  And the Origin branch is expanded in the model browser
+   ✔  When the user right-clicks the Center Point row
+   ✔  Then the Center Point row is highlighted
+   ✔  And its context menu offers Copy, Measure, Create Note and Visibility
+   ✔  And the menu offers Relationships
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Change the Favorites pane view mode: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:327:3" time="13.567398837"><failure type="Step Panicked" message="Step panicked. Captured output: expected &quot;+&quot; in rendered text &quot;W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nextruded&lt;Primary&gt;\nRepresentations\nModelState\n&lt;Primary&gt;\n1\nView\n&lt;Primary&gt;\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument1:/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/fixtures/cad/workspace-layout-native.opd\nRibbonDisplay\nv\nv\n...\nextruded\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\ndocking-visible-solid-current&lt;Primary&gt;\nDocuments\nX\nY\nZ&quot;"/><system-out><![CDATA[  Scenario: Change the Favorites pane view mode
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part with a visible block is open in the MCAD Software
+   ✘  And the Favorites pane is open with Tree View selected
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:330:5
+      Matched: crates/head/src/../tests/application/model-browser/panes.rs:92:1
+      Step panicked. Captured output: expected "+" in rendered text "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument1:/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/fixtures/cad/workspace-layout-native.opd\nRibbonDisplay\nv\nv\n...\nextruded\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\ndocking-visible-solid-current<Primary>\nDocuments\nX\nY\nZ"
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument1:/tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/fixtures/cad/workspace-layout-native.opd\nRibbonDisplay\nv\nv\n...\nextruded\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nShell\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\ndocking-visible-solid-current<Primary>\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase><testcase name="Scenario: Inspect sketch parameter search criteria: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:345:3" time="51.236485072"><system-out><![CDATA[  Scenario: Inspect sketch parameter search criteria
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part is open in the MCAD Software with its model browser visible
+   ✔  When the user chooses Find from the model browser menu
+   ✔  And the user chooses Sketches in the object type list
+   ✔  And the user opens the Property list
+   ✔  Then the list offers Name, Note contents, Note title and Sketch Parameter Name
+   ✔  When the user chooses Sketch Parameter Name
+   ✔  Then the Condition field displays contains
+   ✔  And the Value field is empty and adds to list is disabled
+   ✔  When the user opens the Condition list
+   ✔  Then it offers contains and does not contain
+   ✔  When the user dismisses the list and closes the dialog
+   ✔  Then the model browser and part are visible
+]]></system-out></testcase><testcase name="Scenario: Find an extrusion by feature type: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:361:3" time="64.047343892"><system-out><![CDATA[  Scenario: Find an extrusion by feature type
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains one extrusion forming a block
+   ✔  And the model browser is visible
+   ✔  And the Find criteria list is empty
+   ✔  When the user chooses Find from the model browser menu
+   ✔  And the user selects Features as the object type
+   ✔  And the user selects Type as the property and Extrusion as the value
+   ✔  Then the condition displays equals
+   ✔  When the user clicks Add to list
+   ✔  Then the criteria list contains Type equals Extrusion
+   ✔  When the user clicks Find Now
+   ✔  Then the extrusion row is selected in the model browser
+   ✔  And the visible edges of the block are highlighted in blue
+   ✔  And the Find dialog remains open
+   ✔  When the user closes the dialog
+   ✔  Then the extrusion remains selected and the block edges remain highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the selection highlight disappears and the block remains visible
+]]></system-out></testcase><testcase name="Scenario: Group search criteria for the same feature property: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:382:3" time="103.183662757"><system-out><![CDATA[  Scenario: Group search criteria for the same feature property
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part with one extrusion and no fillet is open in the MCAD Software
+   ✔  And the Find dialog contains the criterion Type equals Extrusion
+   ✔  And Features is the selected object type and And is selected for additional criteria
+   ✔  When the user chooses Type equals Fillet and clicks Add to list
+   ✔  Then a prompt says criteria using the same property must be grouped
+   ✔  And the prompt offers to add the criterion using the OR operator
+   ✔  When the user chooses Yes
+   ✔  Then the criteria list shows Type equals Extrusion
+   ✔  And the next line shows OR Type equals Fillet
+   ✔  When the user closes and reopens the Find dialog
+   ✔  Then both criteria remain in the list
+   ✔  When the user clicks Find Now
+   ✔  Then the extrusion row is selected and the block edges are highlighted
+   ✔  And the Find dialog remains open
+   ✔  When the user closes the Find dialog and clicks empty viewport space
+   ✔  Then the highlight disappears and the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Report no matching feature search results: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:402:3" time="106.321140354"><system-out><![CDATA[  Scenario: Report no matching feature search results
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part with one unsuppressed extrusion and no fillet is open in the MCAD Software
+   ✔  And the Find dialog contains Type equals Extrusion OR Type equals Fillet
+   ✔  And And is selected for additional criteria
+   ✔  When the user selects Suppress status as the property
+   ✔  Then the condition is equals and the value is Suppressed
+   ✔  When the user clicks Add to list
+   ✔  Then the criteria list includes Suppress status equals Suppressed
+   ✔  When the user clicks Find Now
+   ✔  Then an information message says that no objects matched the criteria
+   ✔  When the user acknowledges the message
+   ✔  Then the Find dialog remains open with the criteria displayed
+   ✔  When the user closes the Find dialog
+   ✔  Then the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Decline grouping an additional feature type: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:419:3" time="114.198521942"><system-out><![CDATA[  Scenario: Decline grouping an additional feature type
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part is open in the MCAD Software with the Find dialog open
+   ✔  And the criteria list contains Type equals Extrusion OR Type equals Fillet
+   ✔  And the criteria list contains Suppress status equals Suppressed
+   ✔  And And is selected for additional criteria
+   ✔  When the user chooses Type equals Hole and clicks Add to list
+   ✔  Then a prompt offers to group the additional type criterion using OR
+   ✔  When the user chooses No
+   ✔  Then the prompt closes and the existing three criteria remain in the list
+   ✔  And Type equals Hole is not added to the list
+   ✔  And the property, condition and value controls still show Type equals Hole
+   ✔  When the user closes the Find dialog
+   ✔  Then the part remains visible
+]]></system-out></testcase><testcase name="Scenario: Toggle visibility from the solid bodies folder: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:435:3" time="46.85112886"><system-out><![CDATA[  Scenario: Toggle visibility from the solid bodies folder
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains one visible solid block
+   ✔  And the Solid Bodies folder is visible in the model browser
+   ✔  When the user right-clicks the Solid Bodies folder
+   ✔  Then its context menu offers Visibility, Expand All Children and collapses All Children
+   ✔  And Visibility is checked
+   ✔  When the user chooses Visibility
+   ✔  Then the shaded block is hidden and its body remains listed in the browser
+   ✔  When the user right-clicks the Solid Bodies folder again
+   ✔  Then Visibility is unchecked
+   ✔  When the user chooses Visibility again
+   ✔  Then the shaded block returns in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Collapse descendants of the Origin folder: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:450:3" time="33.591399448"><system-out><![CDATA[  Scenario: Collapse descendants of the Origin folder
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part with a visible block is open in the MCAD Software
+   ✔  And the Origin folder is expanded with its planes, axes and center point visible as rows
+   ✔  When the user right-clicks the Origin folder
+   ✔  Then its context menu offers Expand All Children and collapses All Children
+   ✔  When the user chooses Collapse All Children
+   ✔  Then the Origin folder remains expanded with its direct reference rows visible
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user clicks the Origin expansion control
+   ✔  Then the reference rows are hidden and the Origin folder remains visible
+   ✔  When the user clicks the Origin expansion control again
+   ✔  Then the reference rows are visible again
+]]></system-out></testcase><testcase name="Scenario: Cancel a sketch line color change: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:465:3" time="53.327718094"><system-out><![CDATA[  Scenario: Cancel a sketch line color change
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a dimensioned sketch is nested under an extrusion in the MCAD Software
+   ✔  And its line color is Default
+   ✔  When the user opens Properties from the sketch row context menu
+   ✔  And the user opens the Line Color list
+   ✔  Then the list offers Default, Black, Red, Yellow, Green, Cyan, Blue, Magenta and White
+   ✔  And it offers a Select action
+   ✔  When the user chooses Red
+   ✔  Then the Line Color field displays Red and Apply is enabled
+   ✔  When the user clicks Cancel and reopens the sketch properties
+   ✔  Then the Line Color field displays Default and Apply is disabled
+   ✔  When the user clicks Cancel
+   ✔  Then the properties dialog closes
+]]></system-out></testcase><testcase name="Scenario: Inspect and cancels the custom line color picker: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:481:3" time="50.362712235"><system-out><![CDATA[  Scenario: Inspect and cancels the custom line color picker
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a nested sketch in the MCAD Software has Default line color
+   ✔  And its geometry properties dialog is open
+   ✔  When the user chooses Select from the Line Color list
+   ✔  Then a color dialog opens with basic color swatches and custom color slots
+   ✔  When the user chooses Define Custom Colors
+   ✔  Then the dialog expands to show a color field, brightness control and color preview
+   ✔  And it shows hue, saturation, luminance and red, green and blue fields
+   ✔  And it offers Add to Custom Colors
+   ✔  When the user cancels the color dialog
+   ✔  Then the geometry properties dialog shows Default line color
+   ✔  And Apply is disabled
+   ✔  When the user cancels the geometry properties dialog
+   ✔  Then the dialog closes without applying a color change
+]]></system-out></testcase><testcase name="Scenario: Cancel a sketch line weight change: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:498:3" time="52.922370088"><system-out><![CDATA[  Scenario: Cancel a sketch line weight change
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a nested sketch in the MCAD Software has Default line weight
+   ✔  When the user opens Properties from the sketch row context menu
+   ✔  And the user opens the Line Weight list
+   ✔  Then the list shows Default and numeric millimeter weights with line samples
+   ✔  And 0.25 mm is available
+   ✔  When the user chooses 0.25 mm
+   ✔  Then the Line Weight field displays 0.25 mm and Apply is enabled
+   ✔  When the user clicks Cancel and reopens the sketch properties
+   ✔  Then the Line Weight field displays Default and Apply is disabled
+   ✔  When the user clicks Cancel
+   ✔  Then the properties dialog closes
+]]></system-out></testcase><testcase name="Scenario: Toggle sketch line scale editing: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:513:3" time="36.62207213"><system-out><![CDATA[  Scenario: Toggle sketch line scale editing
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a nested sketch in the MCAD Software has Default line type
+   ✔  And its geometry properties dialog is open with Scale unchecked
+   ✔  Then the scale value is shown as 1.00 and its field is disabled
+   ✔  When the user checks Scale
+   ✔  Then the scale field is enabled and shows 1.00
+   ✔  And Apply is enabled
+   ✔  When the user clears Scale
+   ✔  Then the scale field is disabled and still shows 1.00
+   ✔  When the user clicks Cancel
+   ✔  Then the geometry properties dialog closes
+]]></system-out></testcase><testcase name="Scenario: Inspect and navigate sketch dependencies: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:527:3" time="46.411273141"><system-out><![CDATA[  Scenario: Inspect and navigate sketch dependencies
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part in the MCAD Software contains a rectangular sketch on the XY plane used by one extrusion
+   ✔  And the sketch references the center point
+   ✔  When the user chooses Relationships from the sketch row context menu
+   ✔  Then the Relationships dialog identifies the sketch as the selected item
+   ✔  And its Parents list contains the XY plane and center point
+   ✔  And its Children list contains the extrusion
+   ✔  When the user selects the XY plane in the Parents list
+   ✔  Then the XY plane row is highlighted in the model browser
+   ✔  And the plane is highlighted in the viewport
+   ✔  When the user selects the extrusion in the Children list
+   ✔  Then the extrusion row and its solid edges are highlighted
+   ✔  When the user activates the navigation control beside the extrusion
+   ✔  Then the dialog identifies the extrusion as the selected item
+   ✔  And its Parents list contains the XY plane and the sketch
+   ✔  And its Children list is empty
+   ✔  When the user activates the navigation control beside the sketch in the Parents list
+   ✔  Then the dialog identifies the sketch as the selected item again
+   ✔  And its Children list contains the extrusion
+   ✔  When the user clicks Done
+   ✔  Then the Relationships dialog closes
+]]></system-out></testcase><testcase name="Scenario: Navigate relationships from an origin plane: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:551:3" time="36.643914867"><system-out><![CDATA[  Scenario: Navigate relationships from an origin plane
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part in the MCAD Software contains a sketch on the XY plane and an extrusion using that sketch
+   ✔  When the user chooses Relationships from the XY plane row context menu
+   ✔  Then the dialog identifies the XY plane as the selected item
+   ✔  And the Parents list is empty
+   ✔  And the Children list contains the sketch and the extrusion
+   ✔  When the user activates the navigation control beside the sketch
+   ✔  Then the sketch becomes the selected item in the dialog
+   ✔  And the Parents list contains the XY plane and center point
+   ✔  And the Children list contains the extrusion
+   ✔  When the user activates the navigation control beside the XY plane
+   ✔  Then the XY plane becomes the selected item again
+   ✔  And the Parents list is empty
+   ✔  And the Children list contains the sketch and the extrusion
+   ✔  When the user clicks Done
+   ✔  Then the Relationships dialog closes
+]]></system-out></testcase><testcase name="Scenario: Inspect an origin plane with no listed relationships: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:570:3" time="28.017746155"><system-out><![CDATA[  Scenario: Inspect an origin plane with no listed relationships
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part in the MCAD Software contains a sketch on the XY plane and an extrusion using it
+   ✔  When the user chooses Relationships from the YZ plane row context menu
+   ✔  Then the dialog identifies the YZ plane as the selected item
+   ✔  And the Parents list is empty
+   ✔  And the Children list is empty
+   ✔  When the user clicks Done
+   ✔  Then the Relationships dialog closes
+   ✔  And the YZ plane remains highlighted in the viewport
+]]></system-out></testcase><testcase name="Scenario: Toggle the design view expansion preference: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:582:3" time="48.506864619"><system-out><![CDATA[  Scenario: Toggle the design view expansion preference
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part is open in the MCAD Software with the model browser visible
+   ✔  And Design View Expansion is unchecked in the browser Display Preferences menu
+   ✔  When the user chooses Design View Expansion
+   ✔  And the user reopens the Display Preferences menu
+   ✔  Then Design View Expansion is checked
+   ✔  When the user chooses Design View Expansion again
+   ✔  And the user reopens the Display Preferences menu
+   ✔  Then Design View Expansion is unchecked
+   ✔  And the part remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Inspect existing feature search criteria: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:595:3" time="115.53963218"><system-out><![CDATA[  Scenario: Inspect existing feature search criteria
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And the MCAD Software Find dialog contains these feature criteria in order:
+       | Property        | Condition | Value      | Join |
+       | Type            | equals    | Extrusion  | And  |
+       | Type            | equals    | Fillet     | Or   |
+       | Suppress status | equals    | Suppressed | And  |
+   ✔  When the user selects the Suppress status criterion
+   ✔  Then the criterion controls show Suppress status, equals and Suppressed
+   ✔  And And is selected
+   ✔  When the user selects the Fillet criterion
+   ✔  Then the criterion controls show Type, equals and Fillet
+   ✔  And Or is selected
+   ✔  When the user selects the Extrusion criterion
+   ✔  Then the criterion controls show Type, equals and Extrusion
+   ✔  And And is selected
+   ✔  And the three criteria remain listed
+   ✔  When the user closes the Find dialog
+   ✔  Then the part workspace is visible
+]]></system-out></testcase><testcase name="Scenario: Change a pending Find value without replacing a listed criterion: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:616:3" time="104.246018767"><system-out><![CDATA[  Scenario: Change a pending Find value without replacing a listed criterion
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And the MCAD Software Find dialog lists Type equals Extrusion and OR Type equals Fillet
+   ✔  And Type equals Extrusion is selected with And selected
+   ✔  When the user chooses Hole in the Value list
+   ✔  Then the Value field shows Hole and adds to list is enabled
+   ✔  And the listed Extrusion and Fillet criteria remain unchanged
+   ✔  When the user selects the Fillet criterion
+   ✔  Then the controls show Type, equals, Fillet and Or
+   ✔  When the user selects the Extrusion criterion
+   ✔  Then the controls show Type, equals, Extrusion and And
+   ✔  And adds to list is disabled
+   ✔  When the user closes the Find dialog
+   ✔  Then the part workspace is visible
+]]></system-out></testcase><testcase name="Scenario: Cancel the saved-search name prompt: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:632:3" time="78.600701879"><system-out><![CDATA[  Scenario: Cancel the saved-search name prompt
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And the MCAD Software Find dialog contains feature search criteria
+   ✔  When the user chooses Save Search
+   ✔  Then a prompt shows an empty search-name field
+   ✔  And OK is disabled and cancels is available
+   ✔  When the user clicks Cancel
+   ✔  Then the Find dialog remains open with its criteria unchanged
+]]></system-out></testcase><testcase name="Scenario: Cancel the open-search picker: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:642:3" time="97.072632049"><system-out><![CDATA[  Scenario: Cancel the open-search picker
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And the MCAD Software Find dialog contains feature search criteria
+   ✔  And at least one saved search is available
+   ✔  When the user chooses Open Search
+   ✔  Then a picker shows a saved-search list and opens, Cancel and Delete actions
+   ✔  When the user clicks Cancel
+   ✔  Then the Find dialog remains open with its original criteria unchanged
+]]></system-out></testcase><testcase name="Scenario: Show the input of a nested sketch: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:652:3" time="39.991921529"><system-out><![CDATA[  Scenario: Show the input of a nested sketch
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part in the MCAD Software contains a sketch on the XY plane used by an extrusion
+   ✔  And the origin plane is not persistently visible
+   ✔  When the user chooses Show Input from the sketch row context menu
+   ✔  Then the XY plane row is selected in the model browser
+   ✔  And the XY plane is highlighted in blue in the viewport
+   ✔  When the user clicks empty viewport space
+   ✔  Then the plane highlight is cleared and the shaded solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Show dimensions from an extrusion row: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:663:3" time="46.273639389"><system-out><![CDATA[  Scenario: Show dimensions from an extrusion row
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a rectangular block in the MCAD Software is made by an extrusion of a dimensioned sketch
+   ✔  And the feature dimensions are not displayed
+   ✔  When the user chooses Show Dimensions from the extrusion row context menu
+   ✔  Then dimension annotations appear around the block
+   ✔  And the extrusion row and block edges are highlighted
+   ✔  When the user clicks empty viewport space
+   ✔  Then the selection highlight clears and the dimensions remain displayed
+   ✔  When the user right-clicks the extrusion row
+   ✔  Then the dimensions disappear and the extrusion context menu opens
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes and the shaded block remains visible
+]]></system-out></testcase><testcase name="Scenario: Inspect and cancels conditional feature suppression: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:678:3" time="67.346556116"><system-out><![CDATA[  Scenario: Inspect and cancels conditional feature suppression
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And an unsuppressed extrusion is selected in the MCAD Software model browser
+   ✔  When the user chooses Properties from the extrusion context menu
+   ✔  Then Feature Properties shows the feature name and Suppress, Adaptive and Feature Appearance controls
+   ✔  And Always and If are unchecked
+   ✔  And the conditional suppression controls are disabled
+   ✔  When the user checks If
+   ✔  Then the parameter selector, comparison operator and value field are enabled
+   ✔  And OK is disabled while the comparison value is empty
+   ✔  When the user opens the comparison operator list
+   ✔  Then it offers equals, not equals, less than, less than or equal, greater than and greater than or equal
+   ✔  When the user chooses greater than or equal
+   ✔  Then that operator is displayed
+   ✔  When the user clicks Cancel and reopens Feature Properties
+   ✔  Then If is unchecked and the conditional controls are disabled
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Switch between unconditional and conditional suppression: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:698:3" time="42.465500893"><system-out><![CDATA[  Scenario: Switch between unconditional and conditional suppression
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And an unsuppressed extrusion in the MCAD Software has Feature Properties open
+   ✔  And Always and If are unchecked
+   ✔  When the user checks Always
+   ✔  Then Always is checked and If is unchecked
+   ✔  And the conditional controls are disabled
+   ✔  When the user checks If
+   ✔  Then If is checked and Always is unchecked
+   ✔  And the conditional controls are enabled
+   ✔  And OK is disabled while the comparison value is empty
+   ✔  When the user checks Always again
+   ✔  Then Always is checked and If is unchecked
+   ✔  And the conditional controls are disabled and OK is enabled
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Cancel adaptive feature options: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:716:3" time="54.850832974"><system-out><![CDATA[  Scenario: Cancel adaptive feature options
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And an extrusion in the MCAD Software has Feature Properties open
+   ✔  And the Adaptive Sketch and Parameters options are unchecked
+   ✔  And From/To Planes is disabled for this extrusion
+   ✔  When the user checks Sketch and Parameters
+   ✔  Then both options are checked
+   ✔  And From/To Planes remains disabled
+   ✔  When the user clicks Cancel and reopens Feature Properties
+   ✔  Then Sketch and Parameters are unchecked
+   ✔  And From/To Planes remains disabled
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Cancel a feature appearance choice: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:731:3" time="55.842500274"><system-out><![CDATA[  Scenario: Cancel a feature appearance choice
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And an extrusion in the MCAD Software has Feature Appearance set to As Body
+   ✔  When the user opens Feature Properties from its browser context menu
+   ✔  And the user opens the Feature Appearance list
+   ✔  Then the list offers As Body and named appearances including Black
+   ✔  When the user chooses Black
+   ✔  Then Feature Appearance shows Black
+   ✔  When the user clicks Cancel and reopens Feature Properties
+   ✔  Then Feature Appearance shows As Body
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Toggle a nested sketch and its dimension visibility: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:745:3" time="113.015832771"><system-out><![CDATA[  Scenario: Toggle a nested sketch and its dimension visibility
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And the MCAD Software has a rectangular dimensioned sketch consumed by an extrusion
+   ✔  And the sketch is hidden and its Dimension Visibility setting is enabled
+   ✔  When the user chooses Visibility from the sketch row context menu
+   ✔  Then the sketch is visible and its dimension annotations appear
+   ✔  When the user clicks empty viewport space
+   ✔  Then the dimension annotations remain visible
+   ✔  When the user reopens the sketch context menu
+   ✔  Then Visibility and Dimension Visibility are checked
+   ✔  When the user chooses Dimension Visibility
+   ✔  Then the dimension annotations disappear while the sketch remains visible
+   ✔  When the user reopens the sketch context menu
+   ✔  Then Visibility is checked and Dimension Visibility is unchecked
+   ✔  When the user chooses Dimension Visibility again
+   ✔  Then the dimension annotations reappear
+   ✔  When the user chooses Visibility from the sketch context menu
+   ✔  Then the sketch and its annotations are hidden again
+   ✔  And the shaded solid remains visible
+]]></system-out></testcase><testcase name="Scenario: Resize the docked model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:766:3" time="41.776043611"><system-out><![CDATA[  Scenario: Resize the docked model browser
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part is open in the MCAD Software with the model browser docked at the left
+   ✔  And the browser tree and a shaded block are visible
+   ✔  When the user drags the divider between the browser and viewport to the right
+   ✔  Then the browser becomes wider and the viewport becomes narrower
+   ✔  And the tree hierarchy remains visible
+   ✔  And the block remains visible with the same apparent size and orientation
+   ✔  When the user drags the divider back to the left
+   ✔  Then the browser becomes narrower and the viewport becomes wider
+   ✔  And the tree and block remain visible
+]]></system-out></testcase><testcase name="Scenario: Float and redock the model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:779:3" time="45.870245253"><system-out><![CDATA[  Scenario: Float and redock the model browser
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part is open in the MCAD Software with the model browser docked on the left
+   ✔  And the browser tree and shaded block are visible
+   ✔  When the user drags the Model tab into the viewport and release it
+   ✔  Then the browser becomes a floating panel over the viewport
+   ✔  And the browser tree remains available in the floating panel
+   ✔  And the viewport occupies the space formerly used by the docked panel
+   ✔  When the user drags the floating Model tab to the left edge and release it
+   ✔  Then the browser docks on the left again
+   ✔  And the tree and shaded block remain visible
+]]></system-out></testcase><testcase name="Scenario: Dock the model browser on the opposite side: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:792:3" time="49.912112045"><system-out><![CDATA[  Scenario: Dock the model browser on the opposite side
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part is open in the MCAD Software with the model browser docked on the left
+   ✔  When the user drags the Model tab to the right edge and release it
+   ✔  Then the browser docks on the right of the viewport
+   ✔  And its tree remains visible
+   ✔  And the shaded block remains visible with the same apparent orientation
+   ✔  When the user drags the Model tab to the left edge and release it
+   ✔  Then the browser docks on the left again
+   ✔  And the tree and shaded block remain visible
+]]></system-out></testcase><testcase name="Scenario: Inspect representation branches in an empty part: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:804:3" time="35.26767828"><system-out><![CDATA[  Scenario: Inspect representation branches in an empty part
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And a new empty part is active in the MCAD Software
+   ✔  And the model browser shows an expanded Representations branch
+   ✔  And the Model State and View branches are collapsed
+   ✔  When the user expands the Model State branch
+   ✔  Then a checked Primary entry appears beneath it
+   ✔  When the user expands the View branch
+   ✔  Then Primary, Isometric, Front, Top and Right entries appear beneath it
+   ✔  When the user right-clicks the Primary view entry
+   ✔  Then the entry is selected
+   ✔  And its context menu offers Activate and Copy
+   ✔  And Lock is unavailable
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  When the user collapses the View branch
+   ✔  Then its entries are hidden
+   ✔  And the checked Primary model-state entry remains visible
+   ✔  And the part viewport remains empty
+]]></system-out></testcase><testcase name="Scenario: Create and switch model states in an empty part: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:825:3" time="123.133262774"><system-out><![CDATA[  Scenario: Create and switch model states in an empty part
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And a new empty part is active in the MCAD Software
+   ✔  And the model browser shows the expanded Model State branch with Primary active
+   ✔  When the user opens the Model State branch context menu
+   ✔  Then it offers New Model State, Expand All Children and collapses All Children
+   ✔  When the user opens the New Model State submenu
+   ✔  Then it offers New Model State and Duplicate Primary
+   ✔  When the user chooses New Model State
+   ✔  Then a new model-state entry appears and is active
+   ✔  And its generated name is selected for inline editing
+   ✔  When the user enters a new state name and presses Enter
+   ✔  Then the new name appears in the model-state row and branch label
+   ✔  And the browser root and document tab identify the new state
+   ✔  When the user double-clicks the Primary model-state entry
+   ✔  Then Primary is marked as active
+   ✔  And the browser root and document tab identify Primary
+   ✔  When the user double-clicks the new model-state entry
+   ✔  Then the new state is marked as active
+   ✔  And the browser root and document tab identify the new state
+   ✔  And the viewport remains empty
+]]></system-out></testcase><testcase name="Scenario: Toggle the model-state edit scope: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:848:3" time="11.669141396"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Toggle the model-state edit scope
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user creates model states Capture State and Copy State and activates Copy State
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:850:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Duplicate the active model state in an empty part: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:864:3" time="12.407520303"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Duplicate the active model state in an empty part
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And an empty part is active in the MCAD Software
+   ✘  And the user creates and activates a named non-primary model state in this session
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:867:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel adding a property to the model-state table: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:884:3" time="11.83540679"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel adding a property to the model-state table
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user creates model states Capture State and Copy State and activates Copy State
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:886:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Accept a property column in the model-state table: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:906:3" time="10.868360113"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Accept a property column in the model-state table
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user creates model states Capture State and Copy State and activates Copy State
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:908:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Accept and cancels edits to a model-state property cell: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:926:3" time="10.633760537"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Accept and cancels edits to a model-state property cell
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user creates model states Capture State and Copy State and activates Copy State
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:928:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel removal of a model-state property column: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:951:3" time="10.723203764"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel removal of a model-state property column
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user creates model states Capture State and Copy State and activates Copy State
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:953:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Copy and activates a view representation in an empty part: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:973:3" time="49.989211503"><system-out><![CDATA[  Scenario: Copy and activates a view representation in an empty part
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And an empty part is active in the MCAD Software
+   ✔  And the View representation branch is expanded with Primary active
+   ✔  When the user chooses Copy from the Primary view representation context menu
+   ✔  Then a new view representation appears with its generated name selected for editing
+   ✔  And Primary remains active
+   ✔  When the user enters "Capture View" and presses Enter
+   ✔  Then the new view representation has the name "Capture View"
+   ✔  And Primary remains active
+   ✔  When the user double-clicks "Capture View"
+   ✔  Then "Capture View" is marked active
+   ✔  And the View branch identifies "Capture View"
+   ✔  When the user double-clicks Primary
+   ✔  Then Primary is marked active
+   ✔  And the View branch identifies Primary
+   ✔  And the viewport remains empty
+]]></system-out></testcase><testcase name="Scenario: Toggle the lock marker on a copied view representation: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:992:3" time="10.956804673"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Toggle the lock marker on a copied view representation
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies the Primary view representation as BrowserView and leaves Primary active
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:994:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Toggle camera autosave for an inactive copied view: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1016:3" time="11.708250075"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Toggle camera autosave for an inactive copied view
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies the Primary view representation as BrowserView and leaves Primary active
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1018:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Choose and restore annotation scale for an active view: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1038:3" time="11.761029978"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Choose and restore annotation scale for an active view
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies the Primary view representation as BrowserView and activates BrowserView
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1040:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel a custom annotation scale: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1060:3" time="10.970660959"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel a custom annotation scale
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies the Primary view representation as BrowserView and activates BrowserView
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1062:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Accept a custom annotation scale: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1080:3" time="9.897890671999999"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Accept a custom annotation scale
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies the Primary view representation as BrowserView and activates BrowserView
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1082:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Correct an invalid custom annotation scale: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1096:3" time="10.152437445"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Correct an invalid custom annotation scale
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies the Primary view representation as BrowserView and activates BrowserView
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1098:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Restore a saved camera for an active view representation: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1118:3" time="10.559212509"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Restore a saved camera for an active view representation
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies the Primary view representation as BrowserView and activates BrowserView
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1120:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Retain a staged property column while switching table categories: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1135:3" time="11.111880904"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Retain a staged property column while switching table categories
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user creates model states Capture State and Copy State and activates Copy State
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1137:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel a duplicate view representation name: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1156:3" time="11.131018883"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel a duplicate view representation name
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies Primary as Capture View and activates the copied view
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1158:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Correct a duplicate view representation name: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1171:3" time="10.496729493"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Correct a duplicate view representation name
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies Primary as Capture View and activates the copied view
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1173:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Submit an empty view representation name: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1186:3" time="10.467840592"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Submit an empty view representation name
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies Primary as Capture View and activates the copied view
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1188:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel an inline view rename with Escape: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1199:3" time="12.794866289"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel an inline view rename with Escape
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies Primary as Capture View and activates the copied view
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1201:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Use a view name differing only in letter case: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1212:3" time="11.898011772"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Use a view name differing only in letter case
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies Primary as Capture View and activates the copied view
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1214:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Toggle an origin plane while the active view is locked: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1225:3" time="11.496961088"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Toggle an origin plane while the active view is locked
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies the Primary view representation as BrowserView and activates BrowserView
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1227:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Switch locked views after showing an origin plane: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1242:3" time="11.096929011"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch locked views after showing an origin plane
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies Primary as BrowserView, activates it and enables its Lock option
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1244:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Toggle the publication setting of an active copied view: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1257:3" time="10.996016532"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Toggle the publication setting of an active copied view
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies the Primary view representation as BrowserView and activates BrowserView
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1259:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: View bulk visibility commands leave the origin plane unchanged in an empty part: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1270:3" time="10.958133691"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: View bulk visibility commands leave the origin plane unchanged in an empty part
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user copies the Primary view representation as BrowserView and activates BrowserView
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1272:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Hide and show a solid using the active view commands: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1284:3" time="11.223803954"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Hide and show a solid using the active view commands
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✘  And the user copies Primary as BrowserView and activates the copied view
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1286:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Restore a locked view after temporarily hiding its solid: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1298:3" time="11.227554463"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Restore a locked view after temporarily hiding its solid
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✘  And the user copies Primary as BrowserView and activates the copied view
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1300:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Restore an unlocked view after hiding its solid: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1314:3" time="11.682105564"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Restore an unlocked view after hiding its solid
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✘  And the user copies Primary as BrowserView and activates the copied view
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1316:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Switch between states with different feature suppression: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1329:3" time="11.853183907"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch between states with different feature suppression
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✘  And the user creates model states Capture State and Copy State
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1331:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel a staged model-state suppression change: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1347:3" time="11.815080209"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel a staged model-state suppression change
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✘  And the user creates model states Capture State and Copy State
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1349:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Apply a feature suppression change through the model-state table: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1367:3" time="10.780009776"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Apply a feature suppression change through the model-state table
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✘  And the user creates model states Capture State and Copy State
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1369:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel a staged model-state parameter column and value: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1390:3" time="10.232993967"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel a staged model-state parameter column and value
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1392:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Accept distinct parameter values for model-state members: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1411:3" time="10.468952218"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Accept distinct parameter values for model-state members
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1413:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel removal of a model-state parameter column: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1435:3" time="10.479958929"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel removal of a model-state parameter column
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1437:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Report an unevaluable model-state parameter equation: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1451:3" time="10.477497306"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Report an unevaluable model-state parameter equation
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1453:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Retain an arithmetic expression in a model-state parameter: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1472:3" time="10.269698135"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Retain an arithmetic expression in a model-state parameter
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1474:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Parameter interface follows the active model state: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1489:3" time="10.447981168"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Parameter interface follows the active model state
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1491:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Cancel inserting a model-state table row: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1505:3" time="10.118448508"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Cancel inserting a model-state table row
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1507:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Apply an inserted model-state table row: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1524:3" time="10.583834954"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Apply an inserted model-state table row
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✘  And the user creates model states Capture State and Copy State
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1526:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Decline removal of duplicate model-state member names: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1541:3" time="10.670514978"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Decline removal of duplicate model-state member names
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1543:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Rename an inactive model state through the table: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1560:3" time="10.4515062"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Rename an inactive model state through the table
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1562:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Reject an empty model-state member name: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1575:3" time="10.618962566"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Reject an empty model-state member name
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1577:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Add and apply a second model-state parameter: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1594:3" time="10.365975471"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Add and apply a second model-state parameter
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1596:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Show active member parameter values in the table tree: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1614:3" time="10.637491729"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Show active member parameter values in the table tree
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1616:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Inspect parameter column and cell context menus: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1629:3" time="10.474547891"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Inspect parameter column and cell context menus
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✘  And the user creates an undimensioned rectangular sketch and extrudes it 1 in with zero taper
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1631:5
+      Step doesn't match any function
+]]></system-out></testcase><testcase name="Scenario: Collapse descendants of an extrusion with a direct sketch child: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1648:3" time="29.12036191"><system-out><![CDATA[  Scenario: Collapse descendants of an extrusion with a direct sketch child
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And The MCAD Software shows a visible block made by an extrusion
+   ✔  And the extrusion branch is expanded and shows its direct sketch child
+   ✔  When the user right-clicks the extrusion row
+   ✔  And chooses Collapse All Children
+   ✔  Then the direct sketch row remains visible under the extrusion
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase><testcase name="Scenario: Create a feature while editing a single model-state member: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1658:3" time="11.826388878"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Create a feature while editing a single model-state member
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✘  And the user creates model states Capture State and Copy State and activates Copy State
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/model-browser-published-snapshot/checkout/features/application/model-browser/model-browser.feature:1660:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

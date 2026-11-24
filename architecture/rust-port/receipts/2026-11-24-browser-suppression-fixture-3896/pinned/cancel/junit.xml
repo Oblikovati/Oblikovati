@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T11:49:41.761593534Z" time="30.085344012"><testcase name="Scenario: Cancel a staged model-state suppression change: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/model-browser/model-browser.feature:1232:3" time="30.085344012"><system-out><![CDATA[  Scenario: Cancel a staged model-state suppression change
+   ✔  Given The MCAD Software has a part with an extrusion suppressed in Primary and Capture State
+   ✔  And the extrusion is computed in Copy State
+   ✔  When the user opens the model-state table
+   ✔  Then the extrusion column shows Suppress for Primary and Capture State
+   ✔  And the extrusion column shows Compute for Copy State
+   ✔  When the user edits the Primary extrusion cell
+   ✔  Then the cell offers Compute and Suppress
+   ✔  When the user selects Compute
+   ✔  Then the Primary cell displays Compute
+   ✔  And OK is enabled
+   ✔  When the user cancels and reopens the model-state table
+   ✔  Then the Primary extrusion cell displays Suppress
+   ✔  And the other two extrusion values are unchanged
+]]></system-out></testcase></testsuite></testsuites>

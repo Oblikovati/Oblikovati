@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native checks for staged feature suppression in the model-state table (#4119).
+use super::model_state_fixture::has_named_states;
+use super::model_state_suppression::current_state_extrusion;
+use super::model_state_suppression_fixture::expect_saved_suppression;
 use super::model_state_table_extra::{grid_run, row_run};
 use super::model_state_table_parameter_steps::{grid_cell_text, three_state_prism};
 use super::*;
@@ -11,6 +14,10 @@ use oblikovati_api::{
 
 #[given("The MCAD Software has a part with an extrusion suppressed in Primary and Capture State")]
 fn suppressed_fixture(world: &mut ApplicationWorld) {
+    if has_named_states(world) {
+        expect_saved_suppression(world);
+        return;
+    }
     three_state_prism(world);
     let client = Client::new(world.app().owner.document_host());
     let states = client
@@ -73,22 +80,29 @@ fn copy_computed(world: &mut ApplicationWorld) {
 }
 #[then("the extrusion column shows Suppress for Primary and Capture State")]
 fn primary_and_capture_suppressed(world: &mut ApplicationWorld) {
+    let name = current_state_extrusion(world).name;
     for row in ["Primary", "Capture State"] {
-        assert_eq!(grid_cell_text(world, "Extrusion", row), "Suppress");
+        assert_eq!(grid_cell_text(world, &name, row), "Suppress");
     }
 }
 #[then("the extrusion column shows Compute for Copy State")]
 fn copy_cell_computed(world: &mut ApplicationWorld) {
-    assert_eq!(grid_cell_text(world, "Extrusion", "Copy State"), "Compute");
+    let name = current_state_extrusion(world).name;
+    assert_eq!(grid_cell_text(world, &name, "Copy State"), "Compute");
 }
 #[when("the user edits the Primary extrusion cell")]
 fn open_primary_cell(world: &mut ApplicationWorld) {
-    let point = [
-        grid_run(world, "Extrusion")[0],
-        row_run(world, "Primary")[1],
-    ];
+    open_suppression_cell(world, "Primary");
+}
+fn open_suppression_cell(world: &mut ApplicationWorld, row: &str) {
+    let name = current_state_extrusion(world).name;
+    let point = [grid_run(world, &name)[0], row_run(world, row)[1]];
     super::super::x11_input::click(diagnostics::pointer_pixels(point));
     world.pump(Vec::new());
+}
+pub(super) fn select_suppression_cell(world: &mut ApplicationWorld, row: &str, label: &str) {
+    open_suppression_cell(world, row);
+    click_suppression_choice(world, label);
 }
 #[then("the cell offers Compute and Suppress")]
 fn choices_visible(world: &mut ApplicationWorld) {
@@ -104,12 +118,15 @@ fn choices_visible(world: &mut ApplicationWorld) {
 }
 #[when("the user selects Compute")]
 fn select_compute(world: &mut ApplicationWorld) {
+    click_suppression_choice(world, "Compute");
+}
+fn click_suppression_choice(world: &mut ApplicationWorld, label: &str) {
     let point = world
         .frame
         .runs
         .iter()
         .rev()
-        .find(|run| run.text == "Compute")
+        .find(|run| run.text == label)
         .unwrap()
         .center();
     super::super::x11_input::click(diagnostics::pointer_pixels(point));
@@ -117,19 +134,19 @@ fn select_compute(world: &mut ApplicationWorld) {
 }
 #[then("the Primary cell displays Compute")]
 fn primary_computed(world: &mut ApplicationWorld) {
-    assert_eq!(grid_cell_text(world, "Extrusion", "Primary"), "Compute");
+    let name = current_state_extrusion(world).name;
+    assert_eq!(grid_cell_text(world, &name, "Primary"), "Compute");
 }
 #[then("the Primary extrusion cell displays Suppress")]
 fn primary_restored(world: &mut ApplicationWorld) {
-    assert_eq!(grid_cell_text(world, "Extrusion", "Primary"), "Suppress");
+    let name = current_state_extrusion(world).name;
+    assert_eq!(grid_cell_text(world, &name, "Primary"), "Suppress");
 }
 #[then("the other two extrusion values are unchanged")]
 fn other_values(world: &mut ApplicationWorld) {
-    assert_eq!(
-        grid_cell_text(world, "Extrusion", "Capture State"),
-        "Suppress"
-    );
-    assert_eq!(grid_cell_text(world, "Extrusion", "Copy State"), "Compute");
+    let name = current_state_extrusion(world).name;
+    assert_eq!(grid_cell_text(world, &name, "Capture State"), "Suppress");
+    copy_cell_computed(world);
 }
 
 #[given("The MCAD Software has an extrusion suppressed in Primary and computed in Copy State")]
@@ -172,17 +189,7 @@ fn primary_value_is_compute(world: &mut ApplicationWorld) {
 }
 #[when("the user changes the Primary extrusion cell to Suppress and accepts the table")]
 fn suppress_primary_and_accept(world: &mut ApplicationWorld) {
-    open_primary_cell(world);
-    let point = world
-        .frame
-        .runs
-        .iter()
-        .rev()
-        .find(|run| run.text == "Suppress")
-        .unwrap()
-        .center();
-    super::super::x11_input::click(diagnostics::pointer_pixels(point));
-    world.pump(Vec::new());
+    select_suppression_cell(world, "Primary", "Suppress");
     super::model_state_table_extra::click(world, "OK");
     for _ in 0..8 {
         if !world

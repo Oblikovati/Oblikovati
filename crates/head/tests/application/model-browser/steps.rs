@@ -41,6 +41,9 @@ mod model_state_property_fixture;
 mod model_state_scope;
 #[path = "model_state_suppression.rs"]
 mod model_state_suppression;
+#[cfg(target_os = "linux")]
+#[path = "model_state_suppression_fixture.rs"]
+mod model_state_suppression_fixture;
 #[path = "model_state_table.rs"]
 mod model_state_table;
 #[cfg(target_os = "linux")]

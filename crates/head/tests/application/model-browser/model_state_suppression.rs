@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Switch model states using the browser and inspect the native scene and feature row.
+use super::model_state_fixture::{COPY_STATE, expand_state_branch, has_named_states};
 use super::*;
 use cucumber::{given, then, when};
 use oblikovati_api::{
     client::Client,
-    wire::{CreateModelStateArgs, RepRef, SetFeatureSuppressedArgs},
+    wire::{CreateModelStateArgs, ModelStateTableSuppression, RepRef, SetFeatureSuppressedArgs},
 };
 
 #[given("The MCAD Software has a part with Primary and Copy State model states")]
 fn states_with_extrusion(world: &mut ApplicationWorld) {
+    if has_named_states(world) {
+        current_state_extrusion(world);
+        return;
+    }
     open_extruded_part(world);
     let client = Client::new(world.app().owner.document_host());
     client
@@ -22,6 +27,10 @@ fn states_with_extrusion(world: &mut ApplicationWorld) {
 }
 #[given("the extrusion is suppressed in Primary and computed in Copy State")]
 fn set_primary_suppression(world: &mut ApplicationWorld) {
+    if has_named_states(world) {
+        expect_table_suppression(world, &[("Primary", true), (COPY_STATE, false)]);
+        return;
+    }
     let id = world.state().browser.unwrap().features[0].id.0;
     Client::new(world.app().owner.document_host())
         .features()
@@ -34,6 +43,11 @@ fn set_primary_suppression(world: &mut ApplicationWorld) {
 }
 #[given("Copy State is active and its solid body is visible")]
 fn activate_copy_fixture(world: &mut ApplicationWorld) {
+    if has_named_states(world) {
+        assert!(world.checked("Copy State (Active)"));
+        expect_solid_visible(world);
+        return;
+    }
     let client = Client::new(world.app().owner.document_host());
     let states = client
         .model_states()
@@ -53,13 +67,21 @@ fn activate_copy_fixture(world: &mut ApplicationWorld) {
 }
 #[when("the user activates the Primary model state")]
 fn activate_primary(world: &mut ApplicationWorld) {
-    world.double_click(diagnostics::pointer_pixels(world.run("Primary").center()));
+    activate_state_row(world, "Primary");
 }
+#[given("the user activates Copy State")]
 #[when("the user activates Copy State")]
 fn activate_copy(world: &mut ApplicationWorld) {
-    world.double_click(diagnostics::pointer_pixels(
-        world.run("Copy State").center(),
-    ));
+    activate_state_row(world, COPY_STATE);
+}
+
+fn activate_state_row(world: &mut ApplicationWorld, name: &str) {
+    expand_state_branch(world);
+    let checked = format!("{name} (Active)");
+    if !world.shows(&checked) {
+        world.double_click(diagnostics::pointer_pixels(world.run(name).center()));
+    }
+    assert!(world.checked(&checked));
 }
 #[then("the Primary model state is marked active")]
 fn primary_marked(world: &mut ApplicationWorld) {
@@ -105,7 +127,8 @@ fn solid_visible(world: &mut ApplicationWorld) {
 }
 #[then("the extrusion row is dimmed and struck through")]
 fn suppressed_row(world: &mut ApplicationWorld) {
-    let run = world.run("Extrude1 (suppressed)");
+    let name = current_state_extrusion(world).name;
+    let run = world.run(&format!("{name} (suppressed)"));
     let regular = world.run("Model State");
     assert!(
         run.color.iter().map(|v| u32::from(*v)).sum::<u32>() * u32::from(run.alpha)
@@ -116,6 +139,54 @@ fn suppressed_row(world: &mut ApplicationWorld) {
         diagnostics::has_strike(run),
         "expected a line across the feature name"
     );
+}
+
+pub(super) fn current_state_extrusion(
+    world: &mut ApplicationWorld,
+) -> oblikovati_gui::GuiBrowserFeature {
+    let browser = world.state().browser.unwrap();
+    let [feature] = browser.features.as_slice() else {
+        panic!("expected one extrusion, got {:?}", browser.features);
+    };
+    assert_eq!(feature.kind, "Extrusion");
+    feature.clone()
+}
+
+pub(super) fn expect_table_suppression(world: &mut ApplicationWorld, expected: &[(&str, bool)]) {
+    let feature = current_state_extrusion(world);
+    let table = Client::new(world.app().owner.document_host())
+        .model_states()
+        .get_table(&Default::default())
+        .unwrap();
+    let rows = table.rows.unwrap();
+    let column = table
+        .suppressions
+        .unwrap()
+        .into_iter()
+        .find(|column| column.feature_id == feature.id.0)
+        .expect("expected the extrusion suppression column");
+    for &(name, suppressed) in expected {
+        let member = rows
+            .iter()
+            .find(|row| row.name == name)
+            .unwrap_or_else(|| panic!("expected a model-state member named {name:?}"));
+        assert_eq!(
+            member_suppression(&column, member.ref_.member_id),
+            suppressed,
+            "member {name:?}"
+        );
+    }
+}
+
+fn member_suppression(column: &ModelStateTableSuppression, member: u64) -> bool {
+    let cell = column
+        .cells
+        .as_deref()
+        .unwrap()
+        .iter()
+        .find(|cell| cell.row.member_id == member)
+        .expect("expected the member's suppression cell");
+    cell.suppressed.as_deref().copied().unwrap_or(column.base)
 }
 #[then("the extrusion row is no longer struck through")]
 fn computed_row(world: &mut ApplicationWorld) {

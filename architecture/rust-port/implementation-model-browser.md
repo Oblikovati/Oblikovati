@@ -104,3 +104,12 @@ The [Category property runs](receipts/2026-11-24-browser-property-fixture-3896/R
 verify editing the active member's cell, cancelling column removal, and
 keeping a staged column while switching categories. The same receipt records
 the missing feature-owned distance parameter after native extrusion.
+
+The [suppression cases](receipts/2026-11-24-browser-suppression-fixture-3896/README.md)
+keep the saved solid Part through table edits, model-state switches and
+row insertion. The published fixture sets the extrusion's suppression
+through the native table before checking each member's result.
+
+The [earlier published feature-wide run](receipts/2026-11-24-model-browser-full-3896/README.md)
+recorded 54 passes, 44 scenarios that stopped at undefined steps, and two
+Favorites failures. It used the application revision before these fixes.
