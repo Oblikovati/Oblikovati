@@ -12648,10 +12648,11 @@
         "https://github.com/Oblikovati/Oblikovati/issues/3856",
         "https://github.com/Oblikovati/Oblikovati/issues/3861"
       ],
-      "state": "inventoried",
+      "state": "blocked",
       "last_receipt": null,
       "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon panel expansion, pinning, and command interaction."
+      "mapping_reason": "Desktop ribbon panel expansion, pinning, and command interaction.",
+      "reason": "The pinned scenario expects the temporary ribbon and Modify expansion to stay open after an outside click. The published source requires both to close after the same sequence and passes natively. See scenario-defects/temporary-modify-pin.md."
     },
     {
       "id": "scenario:400e75eefa45e3bf068ee71548dba736e154e07fe8feffd9a55d3cae48f678f1",

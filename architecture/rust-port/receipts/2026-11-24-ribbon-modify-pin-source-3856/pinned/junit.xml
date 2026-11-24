@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T10:50:19.962520588Z" time="18.568600337"><testcase name="Scenario: Minimize to tabs after pinning the Modify expansion: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:522:3" time="18.568600337"><failure type="Step Panicked" message="Step panicked. Captured output: assertion failed: diagnostics::window_geometry(&quot;##ribbon-temporary-panel&quot;).is_some()"/><system-out><![CDATA[  Scenario: Minimize to tabs after pinning the Modify expansion
+   ✔  Given a part is active in the MCAD Software with the full 3D Model ribbon visible
+   ✔  And the ribbon display policy is "Minimize to Tabs"
+   ✔  When the user opens and pins the Modify additional command area
+   ✔  And the user clicks empty viewport space
+   ✔  Then the Modify additional area remains visible
+   ✔  When the user clicks the ribbon display control
+   ✔  Then the ribbon is minimized to tabs
+   ✔  And the Modify additional area is not visible
+   ✔  When the user clicks the 3D Model tab
+   ✔  And the user opens the Modify additional area
+   ✔  And the user clicks empty viewport space
+   ✘  Then the temporary ribbon and pinned additional area remain visible
+      Step failed:
+      Defined: tmp/oblikovati-ribbon-relocated.RcZVDl/pinned-checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:534:5
+      Matched: crates/head/src/../tests/application/ribbon-panel-expansion/temporary_restore.rs:18:1
+      Step panicked. Captured output: assertion failed: diagnostics::window_geometry("##ribbon-temporary-panel").is_some()
+      ApplicationWorld {
+          text: "W\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\nextruded<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nReady\nRibbonDisplay\nv\n...\nextruded\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nHome\nextruded<Primary>\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

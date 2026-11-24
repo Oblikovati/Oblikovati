@@ -4,6 +4,11 @@ The [full pinned benchmark](receipts/2026-11-24-ribbon-panel-expansion-pinned-38
 passed 57 of 67 scenarios. The ten incomplete cases stopped at an
 undefined step. All 57 passing declarations have R0 baseline records.
 
+A focused rerun of the Modify pin case confirmed a
+[source conflict](scenario-defects/temporary-modify-pin.md). The pinned
+assertion expects the temporary ribbon to stay open after an outside click.
+The published case passes with both the temporary ribbon and Modify closed.
+
 The full Tools ribbon opens additional Options commands below the panel
 title. The expansion uses the shared pin control and follows the ribbon
 display cycle. Clicking outside an unpinned expansion dismisses it.

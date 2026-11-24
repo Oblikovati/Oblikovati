@@ -15,6 +15,12 @@ fn temporary_model_panels(world: &mut ApplicationWorld) {
     world.expect_text("Start 2D Sketch");
 }
 
+#[then("the temporary ribbon and pinned additional area remain visible")]
+fn temporary_pinned_expansion_remains(world: &mut ApplicationWorld) {
+    temporary_model_panels(world);
+    super::pinned_visible(world);
+}
+
 #[then("the additional commands appear below the temporary ribbon")]
 fn additional_below_temporary(_: &mut ApplicationWorld) {
     let (area, _) = diagnostics::window_geometry("##ribbon-additional-PartModify").unwrap();
