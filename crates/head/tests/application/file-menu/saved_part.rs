@@ -63,7 +63,8 @@ pub(super) fn expect_saved_menu_part_on_home(world: &mut ApplicationWorld) {
         .expect("expected the opened Part in recent documents");
     assert!(
         home_shows(world, &recent.name),
-        "expected {:?} in Home",
-        recent.name
+        "expected {:?} in Home, rendered runs: {:?}",
+        recent.name,
+        world.text()
     );
 }

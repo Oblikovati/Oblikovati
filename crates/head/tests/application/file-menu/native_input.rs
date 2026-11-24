@@ -41,11 +41,13 @@ fn native_escape_and_outside_click_preserve_the_active_part() {
 #[test]
 fn saved_part_and_home_show_contextual_file_commands_with_x11_input() {
     let mut world = ApplicationWorld::new();
-    let path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../test-utilities/fixtures/planar-sketch-empty-xy.opd")
-        .canonicalize()
-        .unwrap();
-    let before = std::fs::read(&path).unwrap();
+    let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../test-utilities/fixtures/planar-sketch-empty-xy.opd");
+    let directory = tempfile::tempdir().unwrap();
+    // Keep the whole name visible in Home's narrow Recent Name column.
+    let path = directory.path().canonicalize().unwrap().join("Menu.opd");
+    let before = std::fs::read(fixture).unwrap();
+    std::fs::write(&path, &before).unwrap();
     open_saved_menu_part(&mut world, &path);
     inspect_saved_part_file_menu(&mut world);
     inspect_home_file_menu(&mut world);
@@ -74,9 +76,15 @@ fn inspect_saved_part_file_menu(world: &mut ApplicationWorld) {
 }
 
 fn inspect_home_file_menu(world: &mut ApplicationWorld) {
-    let at = diagnostics::pointer_pixels(world.run("Home").center());
+    let at = diagnostics::pointer_pixels(world.expect_tab("Home").center());
+    x11_input::move_pointer(at);
+    world.pump(Vec::new());
     x11_input::click(at);
     settle(world);
+    assert!(
+        diagnostics::window_geometry("##home-workspace").is_some(),
+        "expected the Home workspace after clicking its tab"
+    );
     expect_saved_menu_part_on_home(world);
     open_with_mouse(world);
     for command in ["Save As", "Document Properties", "Print"] {

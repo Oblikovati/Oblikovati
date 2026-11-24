@@ -47,6 +47,8 @@ current viewport bounds and verify that its view ray misses the solid. The
 [native receipt](receipts/2026-11-24-browser-viewport-deselection-3896/README.md)
 covers clearing a nested sketch, clearing a Find result, and toggling an
 origin plane with another browser docked on the right.
+The [native root-menu test](receipts/2026-11-24-native-home-and-root-input-4078/README.md)
+uses the same viewport check before clearing the selected document.
 
 The published nested-sketch and grouped Find cases use the saved
 `workspace-layout-native.opd` Part and read its actual browser rows.

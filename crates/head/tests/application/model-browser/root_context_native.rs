@@ -15,7 +15,8 @@ fn native_root_menu_selects_and_clears_the_document() {
     super::super::super::x11_input::press_escape();
     settle(&mut world);
     menu_closed_edges_stay(&mut world);
-    super::super::super::x11_input::click([1300, 800]);
+    let empty = super::super::super::viewport_entity_selection::empty_viewport_point(&mut world);
+    super::super::super::x11_input::click(empty);
     settle(&mut world);
     assert!(!world.state().browser.unwrap().root_selected);
     expect_nothing_chosen(&mut world);
