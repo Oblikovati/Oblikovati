@@ -15836,8 +15836,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Native origin visibility through Model Browser menus and view state.",
+      "go_test_premise": "The Go browser tests cover menu commands. The pinned benchmark supplies the exact origin visibility and view-lock sequences.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native viewport presentation of origin references and, in the axis case, of an extruded solid.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop routes browser visibility choices into native viewport rendering.",
+      "rust_tests": "application_scenarios_use_the_native_window: Show and hide an origin axis from its browser menu",
+      "oracle": "The pinned native case checks browser controls and rendered origin visibility. See receipts/2026-11-24-browser-origin-visibility-3896/after/axis/cucumber.json.",
+      "expected_result": "The X Axis can be shown and hidden via its menu while the solid stays visible. The menu check reflects the axis visibility.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:98a8c4adad68c06e16c4c50261fa9eb66536726842844162788f369a37edaf37",
@@ -16918,8 +16928,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Native origin visibility through Model Browser menus and view state.",
+      "go_test_premise": "The Go browser tests cover menu commands. The pinned benchmark supplies the exact origin visibility and view-lock sequences.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native viewport presentation of origin references and, in the axis case, of an extruded solid.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop routes browser visibility choices into native viewport rendering.",
+      "rust_tests": "application_scenarios_use_the_native_window: Toggle an origin plane while the active view is locked",
+      "oracle": "The pinned native case checks browser controls and rendered origin visibility. See receipts/2026-11-24-browser-origin-visibility-3896/after/locked-toggle/cucumber.json.",
+      "expected_result": "Locking the copied view leaves YZ visibility independently editable. Toggling shows and hides the plane and leaves the lock in effect until it is cleared.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:8d6a39936c707a737e9f47569622deed3206d54f92f8141bfea69478205fed8d",
@@ -16935,8 +16955,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/browser_view.go; ../Oblikovati/head/ui/dockable_panel.go",
-      "mapping_reason": "Model browser UI behavior; model-state and geometry prerequisites belong to their domain milestones."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a: head/ui/browser_view.go and app/browser_menu_test.go.",
+      "mapping_reason": "Native origin visibility through Model Browser menus and view state.",
+      "go_test_premise": "The Go browser tests cover menu commands. The pinned benchmark supplies the exact origin visibility and view-lock sequences.",
+      "api_revision": "907cd4c28713b47501b077b8d902dbb6a008aada",
+      "kernel_revision": "bef25f47548431c8f128f08f66a1f719bcee4982",
+      "kernel_capabilities": "Native viewport presentation of origin references and, in the axis case, of an extruded solid.",
+      "platforms": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe.",
+      "kernel_integration": "The desktop routes browser visibility choices into native viewport rendering.",
+      "rust_tests": "application_scenarios_use_the_native_window: Switch locked views after showing an origin plane",
+      "oracle": "The pinned native case checks browser controls and rendered origin visibility. See receipts/2026-11-24-browser-origin-visibility-3896/after/locked-switch/cucumber.json.",
+      "expected_result": "The YZ origin plane stays visible when switching between the locked Primary view and the locked copied view.",
+      "baseline_source_sha256": "603382ec4009d73a74e960c5981d255c4ca9ac5489b94fcf57193c7b09458b2e"
     },
     {
       "id": "scenario:5d312f96bd08a8916cc072627c22cc85d8c5607a4381ddb919cc196fbcf5be6e",

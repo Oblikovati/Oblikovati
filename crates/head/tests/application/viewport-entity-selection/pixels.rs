@@ -30,13 +30,7 @@ pub(super) fn expect_neutral_face(world: &mut ApplicationWorld) {
 }
 
 pub(in super::super) fn empty_viewport_point(world: &mut ApplicationWorld) -> [i32; 2] {
-    let [left, top, right, bottom] = world
-        .app()
-        .window
-        .orientation_fit_frame()
-        .unwrap()
-        .area
-        .map(|side| side as i32);
+    let [left, top, right, bottom] = world.viewport_bounds().map(|side| side as i32);
     let windows = diagnostics::window_occlusions();
     let border = 24;
     let corners = [

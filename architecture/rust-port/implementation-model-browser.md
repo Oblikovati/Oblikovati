@@ -75,3 +75,7 @@ also checks that switching panes leaves the solid in the same view.
 The [origin navigation and Favorites viewport runs](receipts/2026-11-24-browser-origin-and-favorites-fixture-3896/README.md)
 keep the named block active on the published source and preserve keyboard
 highlighting and the Part view.
+
+The viewport click helper works in empty Parts as well as solid Parts.
+The [pinned origin visibility runs](receipts/2026-11-24-browser-origin-visibility-3896/README.md)
+check plane toggles and view switches while a view is locked.
