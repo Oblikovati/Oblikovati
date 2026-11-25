@@ -2320,19 +2320,19 @@
           "fixtures/cad/document-creation-layout-candidate/English/layout-data/alternate-component.opd": "50d6b58b9d2d48e778334b9bce4f1610c0401f88e3e37d304536120b6d099643",
           "fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd": "e25b898cb5edead91cac7da7d9c71f7905b13603957a51c7bab5350d50f7bb1f",
           "fixtures/cad/document-creation-layout-candidate/English/layout-data/suppression-two-occurrences.oad": "a7140e0b9162cf26a635ccb686a4309a501074df5aca04ca638f8feb7d0470fe",
-          "fixtures/cad/document-opening/OpenPart.opd": "e25b898cb5edead91cac7da7d9c71f7905b13603957a51c7bab5350d50f7bb1f"
+          "fixtures/cad/document-opening/OpenPart.opd": "d55a0cce8c436ece286dd96d1ebf8aa7a9e58058e5f059a528bd4f38e6ae8ea4"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-25-document-creation-populated-layout-current-3899/cucumber.json",
-        "cucumber_sha256": "87bd6085d2ef3e13b5289d6a9c12405d7468e5e5fec4d87f0d98d7756057ef82",
+        "cucumber": "architecture/rust-port/receipts/2026-11-25-layout-cancellation-3899/wayland-cucumber.json",
+        "cucumber_sha256": "77c290a79a2c3ba797952de1b31daab9882f5be047dced22000fac2b1b50ff14",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-document-creation-populated-layout-current-3899/scenario-inventory.json",
         "scenario_inventory_sha256": "26b95d7430a1d9f645860155584b0d42d03923d859626db0c9941e9d731b24f3",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-document-creation-populated-layout-current-3899/scenario-arguments.json",
-        "scenario_arguments_sha256": "d8d9462419fbc75892fc28f6a2b62f904bddcb2e3bc268b0217fc68139022797",
-        "application_commit": "c9333c66e8db6caba5647a023fdc8498306b6d55",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-layout-cancellation-3899/wayland-arguments.json",
+        "scenario_arguments_sha256": "d5b754234939a3df3fe6427a7984e96cac40ccc66eb440c8de7d428c856cef4b",
+        "application_commit": "5593d27932334fc1ec10462be1595e4be8c7dbf9",
         "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=document-creation <head-test-binary> application_scenarios_use_the_native_window --nocapture",
-        "environment": "Linux X11, Openbox, Xvfb and Vulkan Lavapipe",
-        "notes": "Both cancellation scenarios passed, with 32 steps including the backgrounds. Strict build and runtime provenance is open under #3978.",
-        "blocker": "The two confirmation scenarios require drawing placement and model-backed view and parts-list results. The component dialog currently disables OK (#3899)."
+        "environment": "Linux Wayland, headless Weston and Vulkan Lavapipe",
+        "notes": "Both cancellation scenarios passed on Wayland and X11 with 32 steps per backend. Strict build and runtime provenance remains open under #3978.",
+        "blocker": "The confirmation scenarios have unbound steps and Select Component still disables OK. Live Part-backed drawings can already display parts lists (#3899)."
       }
     }
   },

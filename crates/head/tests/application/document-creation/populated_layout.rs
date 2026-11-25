@@ -128,13 +128,16 @@ pub(super) fn expect_active_component_name(world: &mut ApplicationWorld) {
     let id = world.active_id();
     let expected = world.document_name(id).replace(' ', "");
     let label = world.run("Document name");
+    // Adjacent glyphs can be grouped into one diagnostic run.
+    let joined = format!("Documentname{expected}");
     assert!(
-        world.frame.runs.iter().any(|run| {
-            run.list == label.list
-                && run.minimum[0] > label.maximum[0]
-                && (run.center()[1] - label.center()[1]).abs() < 4.
-                && run.text == expected
-        }),
+        label.text == joined
+            || world.frame.runs.iter().any(|run| {
+                run.list == label.list
+                    && run.minimum[0] > label.maximum[0]
+                    && (run.center()[1] - label.center()[1]).abs() < 4.
+                    && run.text == expected
+            }),
         "expected the component field to display {expected:?}: {}",
         world.text()
     );
@@ -157,7 +160,11 @@ pub(super) fn expect_sheet_previews(world: &mut ApplicationWorld) {
                     .as_chunks::<4>()
                     .0
                     .iter()
-                    .filter(|pixel| pixel[..3] == [237, 237, 232])
+                    .filter(|pixel| {
+                        let rgb = &pixel[..3];
+                        // Both palettes use light neutral paper, with dark ink inside it.
+                        rgb.iter().all(|&channel| channel >= 220)
+                    })
                     .count()
             })
             .sum::<usize>();
