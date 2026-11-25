@@ -280,7 +280,23 @@ impl RibbonCustomization {
         expanded: bool,
         draw: impl FnOnce(),
     ) -> bool {
-        self.draw_builtin_with_menu(ui, id, expanded, false, |_| draw())
+        self.draw_builtin_with_menu(
+            ui,
+            id,
+            expanded,
+            false,
+            |_| draw(),
+            || unavailable_shortcut(ui),
+        )
+    }
+    pub(crate) fn builtin_draw_with_shortcut(
+        &mut self,
+        ui: &imgui::Ui,
+        id: &str,
+        draw: impl FnOnce(),
+        shortcut: impl FnOnce(),
+    ) -> bool {
+        self.draw_builtin_with_menu(ui, id, false, false, |_| draw(), shortcut)
     }
     pub(crate) fn builtin_group_draw(
         &mut self,
@@ -289,7 +305,7 @@ impl RibbonCustomization {
         expanded: bool,
         draw: impl FnOnce(bool),
     ) -> bool {
-        self.draw_builtin_with_menu(ui, id, expanded, true, draw)
+        self.draw_builtin_with_menu(ui, id, expanded, true, draw, || unavailable_shortcut(ui))
     }
     fn draw_builtin_with_menu(
         &mut self,
@@ -298,6 +314,7 @@ impl RibbonCustomization {
         expanded: bool,
         group: bool,
         draw: impl FnOnce(bool),
+        shortcut: impl FnOnce(),
     ) -> bool {
         if self.builtin_expanded(id) != expanded {
             return false;
@@ -315,10 +332,17 @@ impl RibbonCustomization {
         if hovered && ui.is_mouse_released(imgui::MouseButton::Right) {
             ui.open_popup("##builtin-command-context");
         }
-        self.builtin_menu(ui, id, expanded, group);
+        self.builtin_menu(ui, id, expanded, group, shortcut);
         right
     }
-    fn builtin_menu(&mut self, ui: &imgui::Ui, id: &str, expanded: bool, group: bool) {
+    fn builtin_menu(
+        &mut self,
+        ui: &imgui::Ui,
+        id: &str,
+        expanded: bool,
+        group: bool,
+        shortcut: impl FnOnce(),
+    ) {
         let Some(_menu) = ui.begin_popup("##builtin-command-context") else {
             return;
         };
@@ -361,8 +385,12 @@ impl RibbonCustomization {
                 }
             }
         }
-        let disabled = ui.begin_disabled(true);
-        ui.menu_item("Add to Quick Access Toolbar");
-        drop(disabled);
+        shortcut();
     }
+}
+
+fn unavailable_shortcut(ui: &imgui::Ui) {
+    ui.menu_item_config("Add to Quick Access Toolbar")
+        .enabled(false)
+        .build();
 }

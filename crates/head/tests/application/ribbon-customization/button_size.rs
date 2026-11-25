@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Match Shell's caption and rendered icon with the main-panel sizing choice.
-use super::super::ribbon_appearance::icon_quads::{icon_images_inside, icon_quads_inside};
+use super::super::ribbon_appearance::icon_quads::icon_images_inside;
 use super::*;
+
+#[path = "shell_shortcut.rs"]
+mod shell_shortcut;
 
 const RIBBON: &str = "##application-ribbon";
 
@@ -106,15 +109,16 @@ fn shell_standard(world: &mut ApplicationWorld) {
     let shell = world.run_in_window(RIBBON, "Shell");
     let [_, y] = shell.center();
     let x = shell.minimum[0];
-    let icons = icon_quads_inside(([x - 34., y - 15.], [x + 1., y + 15.]));
-    assert!(
-        icons.iter().any(|(first, last)| {
+    let icons = icon_images_inside(([x - 34., y - 15.], [x + 1., y + 15.]));
+    let (_, texture) = icons
+        .iter()
+        .find(|((first, last), _)| {
             (16. ..22.).contains(&(last[0] - first[0]))
                 && (first[1]..last[1]).contains(&y)
                 && (0. ..10.).contains(&(x - last[0]))
-        }),
-        "expected a small Shell icon left of its caption: {icons:?}"
-    );
+        })
+        .unwrap_or_else(|| panic!("expected a small Shell icon left of its caption: {icons:?}"));
+    world.shell_button_texture = Some(*texture);
 }
 
 #[when("the user selects Text Off from Ribbon Appearance")]

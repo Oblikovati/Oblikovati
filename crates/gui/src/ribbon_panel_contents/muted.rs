@@ -76,19 +76,23 @@ pub(super) fn part_modify_controls(
         } else {
             muted_command_position(ui, origin, icons, 3)
         };
-        let right = owners
-            .customization
-            .builtin_draw(ui, crate::shell_ribbon::ID, false, || {
+        let quick_access = &mut *owners.quick_access;
+        let right = owners.customization.builtin_draw_with_shortcut(
+            ui,
+            crate::shell_ribbon::ID,
+            || {
                 icons.command_button(
                     ui,
-                    "Shell",
+                    crate::shell_ribbon::LABEL,
                     crate::GuiShellAction::OpenShellFeature,
                     state,
                     size,
                     actions,
                 );
-            });
-        owners.quick_access.command_took_right_click |= right;
+            },
+            || quick_access.add_shortcut_menu_item(ui, crate::shell_ribbon::LABEL, true, state),
+        );
+        quick_access.command_took_right_click |= right;
     }
     if crate::move_body_ribbon::is_main(owners.customization) {
         let size = muted_command_position(ui, origin, icons, 4 + usize::from(large_shell));

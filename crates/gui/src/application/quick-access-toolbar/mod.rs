@@ -229,8 +229,13 @@ impl QuickAccessToolbar {
                 AddedEntry::Separator => None,
             })
             .nth(index);
-        if label == Some("Move Bodies") && GuiShellAction::OpenMoveBody.dispatchable(state) {
-            actions.push(GuiShellAction::OpenMoveBody);
+        let action = match label {
+            Some(crate::move_body_ribbon::LABEL) => GuiShellAction::OpenMoveBody,
+            Some(crate::shell_ribbon::LABEL) => GuiShellAction::OpenShellFeature,
+            _ => return,
+        };
+        if action.dispatchable(state) {
+            actions.push(action);
         }
     }
     /// Right-click on Undo reads what it would undo, latest first.
@@ -278,6 +283,12 @@ impl QuickAccessToolbar {
                 actions.push(action);
             }
             drop(disabled);
+        } else if label == crate::shell_ribbon::LABEL {
+            let action = GuiShellAction::OpenShellFeature;
+            let _disabled = ui.begin_disabled(!action.dispatchable(state));
+            if icons.compact_button(ui, label, crate::icons::IconGlyph::Shell) {
+                actions.push(action);
+            }
         } else if label == EXTRUDE {
             let _disabled = ui.begin_disabled(!extrude_can_start(state));
             if icons.compact_button(ui, label, crate::icons::IconGlyph::Extrude) {
@@ -378,15 +389,23 @@ impl QuickAccessToolbar {
         let Some(_menu) = ui.begin_popup(&identity) else {
             return;
         };
-        let present = self.selection(state).has_command(label);
+        self.add_shortcut_menu_item(ui, label, supported, state);
+    }
+    /// Offer the standard Quick Access shortcut action in an existing command menu.
+    pub(crate) fn add_shortcut_menu_item(
+        &mut self,
+        ui: &Ui,
+        label: &str,
+        supported: bool,
+        state: &GuiCommandState,
+    ) {
+        let present = self.has_ribbon_command(state, label);
         if ui
             .menu_item_config("Add to Quick Access Toolbar")
             .enabled(supported && !present)
             .build()
         {
-            self.selection(state)
-                .added
-                .push(AddedEntry::Command(label.to_owned()));
+            self.add_ribbon_command(state, label);
         }
     }
     /// Return the height needed by the lower toolbar at the chosen icon scale.

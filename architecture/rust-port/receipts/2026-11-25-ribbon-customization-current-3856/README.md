@@ -1,7 +1,7 @@
 # Current native Ribbon Customization
 
-Ninety of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 86 of 122 declarations and 1,223
+Ninety-one of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 87 of 122 declarations and 1,238
 passing steps. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
@@ -23,6 +23,8 @@ window resizing. [Plane grouping and reflow](../2026-11-25-ribbon-customization-
 Three cases verified Shell's Button Size menu, adjacent command reflow,
 and retention across tab and appearance changes.
 [Shell button size](../2026-11-25-ribbon-customization-button-size-3856/README.md)
+A separate case verified adding and removing Shell in Quick Access.
+[Shell shortcut](../2026-11-25-ribbon-customization-shell-shortcut-3856/README.md)
 
 The [command list](case-059/cucumber.json),
 [reorder](case-082/cucumber.json), and [remove](case-083/cucumber.json)

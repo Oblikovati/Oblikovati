@@ -48,6 +48,9 @@ until a ribbon width change triggers a new measurement.
 Shell's Button Size menu switches the main-panel command between
 Standard and Large. Its setting follows the ribbon profile, including
 XML import and export. Global Text Off still hides its caption.
+Shell can also be added to Quick Access from its main-panel menu.
+The shortcut uses the same availability check and action as the
+ribbon control, and Quick Access owns its removal.
 Both command lists resize with the floating Customize window without
 losing staged edits. Reopening restores its default size and keeps its
 position within the visible workspace.

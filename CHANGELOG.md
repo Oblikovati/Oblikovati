@@ -308,12 +308,12 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Enabled Offset from Plane in the Plane menu and as a separate ungrouped command. Added menu icons and kept Work Features compact after regrouping until the ribbon width changes. (#3856)
 - Resized both Customize command lists with the dialog and restored its default size on reopening. (#3856)
 - Added a saved Standard or Large button size for Shell in the Modify panel. (#3856)
+- Added Shell to the commands that can be pinned to Quick Access. (#3856)
 - Kept the entire Add Separator label visible in the Quick Access context menu and displayed icons for the Extrude and Print shortcuts. (#3955)
 - Preserved available ribbon command selections when switching targets and selected the separator when a source filter hid the selected command. (#3856)
 - Returned to Ribbon Customization with an error when importing invalid XML, preserving staged edits. (#3856)
 - Selected command rows on secondary click in both Ribbon Customization lists. (#3856)
 - Stored literal Extrude distances as built-in feature parameters so the model-state table could edit them per member. (#4119)
-
 - Selected the clicked face when a viewport right-click dismisses the ribbon panel selector, and showed its mini toolbar. (#3856)
 
 - Kept the unpinned Modify title strip available while its panel is hidden in the direct selector, and fixed closing the selector with its own button. (#3856)
