@@ -350,6 +350,10 @@ fn dialog_open(world: &mut ApplicationWorld) {
 #[given("a saved part is selected with its name and preview displayed")]
 #[given("a saved part with a preview is selected in the detailed file list")]
 fn saved_part_selected(world: &mut ApplicationWorld) {
+    if let Some(path) = published_preview::named_views_path(world).map(Path::to_path_buf) {
+        published_preview::select_preview_path(world, path);
+        return;
+    }
     cancel_dialog(world);
     open_on_saved_part(world);
     expect_name_and_preview(world, PART_FILE);
@@ -358,18 +362,6 @@ fn saved_part_selected(world: &mut ApplicationWorld) {
 #[then("the Design View field still displays Last Active")]
 fn view_last_active(world: &mut ApplicationWorld) {
     world.expect_text("Design View: Last Active");
-}
-#[then("Last Active and the part's named design views are displayed")]
-#[then("Last Active, the primary view, and the part's named design views are displayed")]
-fn view_rows(world: &mut ApplicationWorld) {
-    for row in ["Last Active", "Primary", VIEW_NAME] {
-        world.expect_text(row);
-    }
-}
-#[then("the Design View list closes")]
-fn view_list_closed(world: &mut ApplicationWorld) {
-    settle(world);
-    world.expect_no_text(VIEW_NAME);
 }
 #[then("the Open dialog remains open")]
 fn dialog_stays(world: &mut ApplicationWorld) {
