@@ -38,6 +38,10 @@ use disposable copies of PartOne and PartTwo. Inactive Properties reads
 the actual file name, location and size, and both tab close controls
 preserve the saved bytes.
 
+Dragging a drawing out of the strip opens a native window. The main
+window activates another attached document when one is available and
+shows Home when the detached drawing was the only attached document.
+
 Remaining Go parity includes per-document camera restoration, document-close
 confirmation choices, docking and a dedicated content-area viewport layout.
 These tabs do not complete the Extrude or cube journey.

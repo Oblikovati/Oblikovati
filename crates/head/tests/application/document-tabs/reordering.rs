@@ -59,6 +59,32 @@ fn parts_and_drawing(world: &mut ApplicationWorld) {
         tab_x(world, id);
     }
 }
+#[given(
+    "`fixtures/cad/quick-access-toolbar/PartOne.opd`, `fixtures/cad/quick-access-toolbar/PartTwo.opd`, `fixtures/cad/revolve/revolve-profile.opd` and `fixtures/cad/blank-drawing.odd` are open in that order"
+)]
+fn saved_parts_then_drawing(world: &mut ApplicationWorld) {
+    use oblikovati_api::types::{DOCUMENT_DRAWING, DOCUMENT_PART};
+    world.restore_layout_without_asset_tools();
+    let first = saved_tabs::open_disposable_part(world, "PartOne.opd");
+    let second = saved_tabs::open_disposable_part(world, "PartTwo.opd");
+    let profile = saved_tabs::open_disposable_tab(
+        world,
+        "fixtures/cad/revolve/revolve-profile.opd",
+        DOCUMENT_PART,
+    );
+    world.parts.push(profile);
+    let drawing =
+        saved_tabs::open_disposable_tab(world, "fixtures/cad/blank-drawing.odd", DOCUMENT_DRAWING);
+    world.previous_document = Some(drawing);
+    assert!(
+        world
+            .state()
+            .documents
+            .iter()
+            .map(|row| row.id)
+            .eq([first, second, profile, drawing])
+    );
+}
 #[given("the drawing is active and its tab is visible")]
 #[given("the drawing is active")]
 fn drawing_tab_visible(world: &mut ApplicationWorld) {
@@ -123,6 +149,10 @@ fn dragged_part_shown(world: &mut ApplicationWorld) {
     let part = world.parts[NEIGHBOR_PARTS - 1];
     world.expect_active(part);
     world.expect_browser_of(part);
+    if saved_sketch_parts::is_saved_sketch_part(world, part) {
+        assert!(saved_sketch_parts::published_rectangle_visible(world));
+        return;
+    }
     world.expect_blank_region(
         super::super::documents::VIEWPORT_X,
         super::super::documents::VIEWPORT_Y,

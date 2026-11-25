@@ -18,6 +18,18 @@ fn drag_drawing_out(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 
+#[given("the user drags its tab into the workspace to detach it into a separate window")]
+#[given("the user drags the drawing tab into the workspace to detach it into a separate window")]
+fn detach_saved_drawing(world: &mut ApplicationWorld) {
+    let only_drawing = world.state().documents.len() == 1;
+    world.activate_through_tab(drawing_of(world));
+    drag_drawing_out(world);
+    expect_drawing_window(world);
+    if only_drawing {
+        assert!(window_geometry("##home-workspace").is_some());
+    }
+}
+
 fn drag_tab_with_x11(world: &mut ApplicationWorld, from: [i32; 2], target: [i32; 2]) {
     use super::super::x11_input::{left_button, move_pointer};
     move_pointer(from);
@@ -48,7 +60,11 @@ fn sheet_in_window(world: &mut ApplicationWorld) {
 }
 #[then("the part remains open in the main workspace")]
 fn part_in_main(world: &mut ApplicationWorld) {
-    world.expect_active(part_of(world));
+    let active = world.active_id();
+    assert!(world.parts.contains(&active));
+    world.expect_browser_of(active);
+    let name = world.document_name(active);
+    world.expect_tab(&name);
 }
 #[when("I select another open part tab in the main workspace")]
 #[when("I select the part tab in the main workspace")]
@@ -119,11 +135,12 @@ fn detached_tab_position(world: &mut ApplicationWorld) -> [i32; 2] {
     let frame = detached_frame(world);
     let height = detached_extent(world)[1] as f32;
     let name = world.document_name(drawing_of(world));
+    let label = super::super::world::squeezed(&name);
     let run = frame
         .runs
         .iter()
-        .find(|run| run.text == name && run.center()[1] > height * 0.8)
-        .expect("expected the drawing tab below the sheet");
+        .find(|run| run.text == label && run.center()[1] > height * 0.8)
+        .unwrap_or_else(|| panic!("expected drawing tab {name:?} below the sheet"));
     super::super::diagnostics::pointer_pixels(run.center())
 }
 

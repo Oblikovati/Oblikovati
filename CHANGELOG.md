@@ -299,6 +299,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 ### Fixed
 
 - Kept long tab labels readable when the ribbon is docked on either side. (#3860)
+- Allowed the only attached drawing to open in its own window, with Home in the main window. (#3900)
 - Wrapped long project names in the Projects dialog. (#3899)
 - Restored the template gallery's left edge when keyboard navigation reaches the first tile. (#3899)
 - Enabled Page Up and Page Down in the staged ribbon command list. (#3856)
@@ -462,7 +463,6 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Kept expanded ribbon commands open while their docking menu is in use.
 
 - Kept the ribbon docking submenu closed after Escape until it is opened again.
-
 - Made the default ribbon display control toggle between full and tabs-only modes.
 
 - Made Precise Input show coordinates and the triad for the selected reference mode.

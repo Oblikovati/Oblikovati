@@ -3,25 +3,30 @@
 use super::*;
 use std::path::Path;
 
-fn open_disposable_part(world: &mut ApplicationWorld, file: &str) -> u64 {
-    let source = super::super::scenario_root()
-        .join("fixtures/cad/quick-access-toolbar")
-        .join(file);
-    let working = world.scratch_folder().join(file);
+pub(super) fn open_disposable_tab(
+    world: &mut ApplicationWorld,
+    relative: &str,
+    kind: oblikovati_api::types::DocumentType,
+) -> u64 {
+    let source = super::super::scenario_root().join(relative);
+    let working = world.scratch_folder().join(source.file_name().unwrap());
     std::fs::copy(&source, &working).unwrap_or_else(|error| panic!("copy {source:?}: {error}"));
     world.open_fixture(&working);
     let id = world.active_id();
     let state = world.state();
-    assert_eq!(
-        state.document_type,
-        Some(oblikovati_api::types::DOCUMENT_PART)
-    );
+    assert_eq!(state.document_type, Some(kind));
     let storage = &state.document_storage[&id];
     assert_eq!(
         storage.path.as_deref().map(Path::new),
         Some(working.as_path())
     );
     assert!(!storage.unsaved_edits);
+    id
+}
+
+pub(super) fn open_disposable_part(world: &mut ApplicationWorld, file: &str) -> u64 {
+    let fixture = format!("fixtures/cad/quick-access-toolbar/{file}");
+    let id = open_disposable_tab(world, &fixture, oblikovati_api::types::DOCUMENT_PART);
     world.parts.push(id);
     world.previous_document = Some(id);
     id

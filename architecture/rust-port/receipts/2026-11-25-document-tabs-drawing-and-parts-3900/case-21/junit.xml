@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:40:05.758354946Z" time="23.201989557"><testcase name="Scenario: Switch shared controls between a detached drawing and a part: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:231:3" time="23.201989557"><system-out><![CDATA[  Scenario: Switch shared controls between a detached drawing and a part
+   ✔  Given `fixtures/cad/blank-drawing.odd` and `fixtures/cad/quick-access-toolbar/PartOne.opd` are open
+   ✔  And the user drags the drawing tab into the workspace to detach it into a separate window
+   ✔  And the part context is active in the main workspace
+   ✔  When the user clicks the detached drawing sheet
+   ✔  Then the main application browser displays the drawing tree
+   ✔  And the main application ribbon displays drawing-context tabs
+   ✔  When the user selects the part tab in the main workspace
+   ✔  Then the main application browser displays the part tree
+   ✔  And the main application ribbon displays part-context tabs
+   ✔  And the detached drawing remains open
+]]></system-out></testcase></testsuite></testsuites>

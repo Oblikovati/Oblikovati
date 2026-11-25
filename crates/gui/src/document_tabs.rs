@@ -189,16 +189,16 @@ impl DocumentTabs {
         };
         let above_strip = ui.io().mouse_pos[1] < strip_top - DETACH_DISTANCE;
         let state = &request.commands;
-        let Some(next) = next_attached(state, id, &self.detached).filter(|_| above_strip) else {
+        if !above_strip || !is_drawing(state, id) {
             return;
-        };
-        if is_drawing(state, id) {
-            self.detached.push(id);
-            actions.push(GuiShellAction::ActivateDocument(ActivateDocumentArgs {
-                id: next,
-            }));
-            self.settling_frames = SETTLING_FRAMES;
         }
+        let workspace = next_attached(state, id, &self.detached)
+            .map_or(GuiShellAction::ShowHome, |id| {
+                GuiShellAction::ActivateDocument(ActivateDocumentArgs { id })
+            });
+        self.detached.push(id);
+        actions.push(workspace);
+        self.settling_frames = SETTLING_FRAMES;
     }
 }
 fn is_drawing(state: &crate::GuiCommandState, id: u64) -> bool {

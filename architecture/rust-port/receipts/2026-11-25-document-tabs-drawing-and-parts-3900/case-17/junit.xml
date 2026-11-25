@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:28:59.89606507Z" time="45.811251927"><testcase name="Scenario: Reorder an active drawing tab: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:189:3" time="45.811251927"><system-out><![CDATA[  Scenario: Reorder an active drawing tab
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd`, `fixtures/cad/quick-access-toolbar/PartTwo.opd`, `fixtures/cad/revolve/revolve-profile.opd` and `fixtures/cad/blank-drawing.odd` are open in that order
+   ✔  And the drawing is active and its tab is visible
+   ✔  When the user drags the drawing tab left across several neighboring tabs
+   ✔  Then the drawing tab appears at its new position among the document tabs
+   ✔  And the drawing remains active
+   ✔  And its sheet and browser remain displayed
+   ✔  When the user drags the drawing tab back to its earlier position
+   ✔  Then the drawing tab returns to its earlier position
+   ✔  And the drawing remains active
+]]></system-out></testcase></testsuite></testsuites>

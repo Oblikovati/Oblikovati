@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:37:26.040023776Z" time="20.447200498"><testcase name="Scenario: Switch backward and forward between neighboring part tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:243:3" time="20.447200498"><system-out><![CDATA[  Scenario: Switch backward and forward between neighboring part tabs
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd` and `fixtures/cad/quick-access-toolbar/PartTwo.opd` are open as adjacent tabs in that order
+   ✔  And the part on the right is active
+   ✔  When the user presses Control+Shift+Tab
+   ✔  Then the part on the left becomes active
+   ✔  And its viewport and model browser are displayed
+   ✔  When the user presses Control+Tab
+   ✔  Then the part on the right becomes active again
+   ✔  And its viewport and model browser are displayed
+]]></system-out></testcase></testsuite></testsuites>

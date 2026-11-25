@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:28:08.078241593Z" time="31.661729705"><testcase name="Scenario: Switch between a drawing and a part being edited: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:160:3" time="31.661729705"><system-out><![CDATA[  Scenario: Switch between a drawing and a part being edited
+   ✔  Given `fixtures/cad/blank-drawing.odd` and `fixtures/cad/planar-sketch-empty-xy.opd` are open
+   ✔  And the user edits Sketch1 in the part, activates the drawing and collapses its drawing resources branch
+   ✔  When the user selects the part document tab
+   ✔  Then the part sketch viewport and model browser are displayed
+   ✔  And the sketch ribbon is active
+   ✔  When the user selects the drawing document tab
+   ✔  Then the drawing sheet and drawing browser are displayed
+   ✔  And the drawing ribbon is active
+   ✔  And the drawing resources branch is collapsed
+   ✔  And the part remains available as an open tab
+   ✔  When the user selects the part document tab again
+   ✔  Then the part sketch viewport and model browser are displayed
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase></testsuite></testsuites>

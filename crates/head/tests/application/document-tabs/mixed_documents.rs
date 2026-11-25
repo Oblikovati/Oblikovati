@@ -1,5 +1,58 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use oblikovati_api::types::{DOCUMENT_DRAWING, DOCUMENT_PART};
+
+const DRAWING: &str = "fixtures/cad/blank-drawing.odd";
+const EMPTY_SKETCH: &str = "fixtures/cad/planar-sketch-empty-xy.opd";
+
+#[given("`fixtures/cad/blank-drawing.odd` is open")]
+fn saved_drawing(world: &mut ApplicationWorld) {
+    let drawing = saved_tabs::open_disposable_tab(world, DRAWING, DOCUMENT_DRAWING);
+    world.previous_document = Some(drawing);
+}
+
+#[given("`fixtures/cad/blank-drawing.odd` and `fixtures/cad/planar-sketch-empty-xy.opd` are open")]
+fn saved_drawing_and_empty_sketch(world: &mut ApplicationWorld) {
+    saved_drawing(world);
+    let part = saved_tabs::open_disposable_tab(world, EMPTY_SKETCH, DOCUMENT_PART);
+    world.parts.push(part);
+    world.other_document = Some(part);
+}
+
+#[given(
+    "`fixtures/cad/blank-drawing.odd` and `fixtures/cad/quick-access-toolbar/PartOne.opd` are open"
+)]
+fn saved_drawing_and_part_one(world: &mut ApplicationWorld) {
+    saved_drawing(world);
+    let drawing = drawing_of(world);
+    let part = saved_tabs::open_disposable_part(world, "PartOne.opd");
+    world.previous_document = Some(drawing);
+    world.other_document = Some(part);
+}
+
+#[given(
+    "`fixtures/cad/quick-access-toolbar/PartOne.opd`, `fixtures/cad/quick-access-toolbar/PartTwo.opd` and `fixtures/cad/blank-drawing.odd` are open"
+)]
+fn saved_parts_and_drawing(world: &mut ApplicationWorld) {
+    saved_tabs::open_disposable_part(world, "PartOne.opd");
+    let part = saved_tabs::open_disposable_part(world, "PartTwo.opd");
+    world.other_document = Some(part);
+    saved_drawing(world);
+}
+
+#[given(
+    "the user edits Sketch1 in the part, activates the drawing and collapses its drawing resources branch"
+)]
+fn edit_saved_sketch_and_collapse_resources(world: &mut ApplicationWorld) {
+    use super::super::workspace_layout::browser_feature::{choose_menu_row, right_click_row};
+    let part = part_of(world);
+    world.activate_through_tab(part);
+    right_click_row(world, "Sketch1");
+    choose_menu_row(world, "Edit Sketch");
+    assert_eq!(world.state().authoring, GuiAuthoringContext::Sketch);
+    drawing_active_collapsed(world);
+}
+
 #[given("the part has an active sketch editing environment")]
 fn part_in_sketch(world: &mut ApplicationWorld) {
     // A mixed fixture names its part; on its own the scenario's part is the active document.

@@ -33,7 +33,9 @@ pub(super) fn is_saved_sketch_part(world: &mut ApplicationWorld, id: u64) -> boo
         .as_deref()
         .is_some_and(|path| {
             let path = Path::new(path);
-            path.ends_with(EMPTY) || path.ends_with(PROFILE)
+            [EMPTY, PROFILE]
+                .into_iter()
+                .any(|fixture| path.file_name() == Path::new(fixture).file_name())
         })
 }
 
