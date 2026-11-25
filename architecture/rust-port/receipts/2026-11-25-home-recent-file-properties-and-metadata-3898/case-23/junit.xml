@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:26:37.273909905Z" time="16.841462599"><testcase name="Scenario: Sort recent rows by file size: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:301:3" time="16.841462599"><system-out><![CDATA[  Scenario: Sort recent rows by file size
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent documents with different known file sizes are displayed in List View
+   ✔  And Last Opened is the active descending sort
+   ✔  When the user selects the Size column header
+   ✔  Then the visible rows with known sizes are ordered from larger to smaller
+   ✔  When the user selects the Size column header again
+   ✔  Then the visible rows with known sizes are ordered from smaller to larger
+]]></system-out></testcase></testsuite></testsuites>

@@ -20,6 +20,9 @@ const COMPONENT: &str = "extrusion/extrusion-rect-8mm.opd";
 #[given(
     "the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`"
 )]
+#[given(
+    "a fresh MCAD Software process starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`"
+)]
 fn prepare_published_profile(world: &mut ApplicationWorld) {
     let source = super::super::scenario_root().join(PACKAGE);
     let package = world.scratch_folder().join(DISPOSABLE);
@@ -65,7 +68,7 @@ fn recent_rows(package: &Path, now: SystemTime) -> Vec<RecentDocument> {
         .collect()
 }
 
-fn published_profile_folder(world: &ApplicationWorld) -> Option<PathBuf> {
+pub(super) fn published_profile_folder(world: &ApplicationWorld) -> Option<PathBuf> {
     world
         .scratch
         .as_ref()

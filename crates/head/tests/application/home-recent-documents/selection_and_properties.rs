@@ -33,11 +33,46 @@ fn choose_properties(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
+#[given(
+    "the disposable copy of `fixtures/cad/home-recent-native/Part23.opd` is displayed in List View"
+)]
+fn part23_in_list(world: &mut ApplicationWorld) {
+    displayed_as_list(world);
+    let path = published_profile::published_profile_folder(world)
+        .unwrap()
+        .join("Part23.opd");
+    assert!(recent_name(world, "Part23").is_some());
+    assert!(
+        path.is_file(),
+        "expected the disposable Part23 file at {path:?}"
+    );
+    world.saved_path = Some(path);
+}
+#[given("no Recent-file properties action has been requested in this process")]
+fn no_properties_requested(world: &mut ApplicationWorld) {
+    assert!(world.state().documents.is_empty());
+    assert!(window_geometry("Information").is_none());
+    world.expect_no_text("Properties");
+}
 #[given("an informational notice is displayed after choosing its document properties action")]
+#[given(
+    "the user chooses the part's document properties action and an informational notice is displayed"
+)]
 fn notice_after_properties(world: &mut ApplicationWorld) {
-    open_row_actions(world);
+    let name = properties_name(world);
+    open_actions_of(world, &name);
     choose_properties(world);
     notice_shown(world);
+}
+fn properties_name(world: &ApplicationWorld) -> String {
+    world
+        .saved_path
+        .as_deref()
+        .and_then(std::path::Path::file_stem)
+        .map_or_else(
+            || SEARCHED.to_owned(),
+            |stem| stem.to_string_lossy().into_owned(),
+        )
 }
 #[when("the user dismisses the informational notice")]
 #[when("I dismiss the informational notice")]
@@ -48,7 +83,7 @@ fn dismiss_notice(world: &mut ApplicationWorld) {
 }
 #[then("a file properties window for the part is displayed")]
 fn properties_shown(world: &mut ApplicationWorld) {
-    world.expect_text(&format!("{SEARCHED} Properties"));
+    world.expect_text(&format!("{} Properties", properties_name(world)));
 }
 #[then("its General page shows the file name, type, location, sizes, dates and attributes")]
 fn general_shown(world: &mut ApplicationWorld) {
@@ -64,6 +99,18 @@ fn general_shown(world: &mut ApplicationWorld) {
     ] {
         world.expect_text(field);
     }
+    if let Some(path) = &world.saved_path {
+        let name = path.file_name().unwrap().to_string_lossy();
+        let folder = path.parent().unwrap();
+        let size = std::fs::metadata(path).unwrap().len();
+        for field in [
+            format!("File name: {name}"),
+            format!("Location: {}", folder.display()),
+            format!("Size: {size} bytes"),
+        ] {
+            world.expect_text(&field);
+        }
+    }
 }
 #[when("the user dismisses the properties window")]
 #[when("I dismiss the properties window")]
@@ -73,14 +120,21 @@ fn dismiss_properties(world: &mut ApplicationWorld) {
 }
 #[then("the Recent list is visible again")]
 fn recent_visible(world: &mut ApplicationWorld) {
-    world.expect_no_text(&format!("{SEARCHED} Properties"));
-    assert!(home_shows(world, SEARCHED), "expected the list");
+    let name = properties_name(world);
+    world.expect_no_text(&format!("{name} Properties"));
+    assert!(
+        recent_name(world, &name).is_some(),
+        "expected {name} in Recent"
+    );
 }
 // Mixed selection
 #[given("a recent part and a recent assembly are checked in List View")]
 fn mixed_checked(world: &mut ApplicationWorld) {
+    let assembly = assembly_name(world);
     toggle_row(world, SEARCHED);
-    toggle_row(world, ASSEMBLY);
+    toggle_row(world, assembly);
+    assert!(row_checked(world, SEARCHED));
+    assert!(row_checked(world, assembly));
 }
 #[when("the user opens Filter and selects Part")]
 #[when("I open Filter and select Part")]
@@ -99,7 +153,8 @@ fn part_remains_checked(world: &mut ApplicationWorld) {
 }
 #[then("the assembly is displayed again unchecked")]
 fn assembly_back_clear(world: &mut ApplicationWorld) {
-    assert!(!row_checked(world, ASSEMBLY), "expected {ASSEMBLY} clear");
+    let assembly = assembly_name(world);
+    assert!(!row_checked(world, assembly), "expected {assembly} clear");
 }
 // Size sort
 #[given("recent documents with different known file sizes are displayed in List View")]
