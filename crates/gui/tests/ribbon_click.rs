@@ -10,6 +10,8 @@ mod rendered_ribbon;
 use rendered_ribbon::{expect_caption, open_collapsed_panel, open_tool_choices, ribbon_caption};
 #[path = "support/view_tab.rs"]
 mod view_tab;
+#[path = "ribbon_click/tab_underline.rs"]
+mod tab_underline;
 
 fn ribbon_request() -> GuiFrameRequest {
     GuiFrameRequest {

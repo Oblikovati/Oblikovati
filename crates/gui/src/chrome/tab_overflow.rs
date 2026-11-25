@@ -97,6 +97,7 @@ fn ribbon_tabs(
     let context_click = tab_click::context_button_event(ui);
     let restore = (changed || context_click).then_some(ribbon.active);
     let requested = frame.select.or(restore);
+    let mut bounds = Vec::with_capacity(visible.len());
     for tab in visible {
         let selected = requested == Some(*tab);
         let flags = if selected {
@@ -105,9 +106,7 @@ fn ribbon_tabs(
             TabItemFlags::empty()
         };
         let item = ui.tab_item_with_flags(tab.label(), None, flags);
-        if *tab == ribbon.active {
-            crate::theme::active_tab_underline(ui);
-        }
+        bounds.push((*tab, ui.item_rect_min(), ui.item_rect_max()));
         if ribbon.display.selector_pointer_press(ui) || ribbon.display.context_tab_press(ui) {
             selector_tab = Some(*tab);
         }
@@ -155,6 +154,9 @@ fn ribbon_tabs(
     }
     if hovered {
         ribbon.scroll_tabs(&frame.tabs, ui.io().mouse_wheel);
+    }
+    if let Some((_, minimum, maximum)) = bounds.iter().find(|(tab, _, _)| *tab == ribbon.active) {
+        crate::theme::tab_underline_at(ui, *minimum, *maximum);
     }
 }
 

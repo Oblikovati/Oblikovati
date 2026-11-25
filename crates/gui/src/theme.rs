@@ -100,8 +100,10 @@ pub(crate) fn configure_chrome(style: &mut imgui::Style) -> Result<(), String> {
 }
 
 pub(crate) fn active_tab_underline(ui: &imgui::Ui) {
-    let [left, _] = ui.item_rect_min();
-    let [right, bottom] = ui.item_rect_max();
+    tab_underline_at(ui, ui.item_rect_min(), ui.item_rect_max());
+}
+
+pub(crate) fn tab_underline_at(ui: &imgui::Ui, [left, _]: [f32; 2], [right, bottom]: [f32; 2]) {
     let bottom = bottom.min(crate::widget_abi::window_draw_clip_bottom(ui));
     ui.get_window_draw_list()
         .add_rect(

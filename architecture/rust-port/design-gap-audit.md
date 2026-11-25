@@ -23,4 +23,4 @@ here uses the Rust desktop on Linux under Xvfb, Openbox, and Vulkan Lavapipe.
 | GAP-13 | Verify viewport telemetry in the status bar. |
 | GAP-14 | Verify browser row artwork, representation state, rollback marker, and search. |
 | GAP-15 | Verify ViewCube face labels, dimensions, selection colors, and Drawing workspace styling. |
-| GAP-16 | Verify that an input event updates the active tab underline and body together. |
+| GAP-16 | Verified that the first frame with the View commands underlines View and clears the previous 3D Model underline. The regression reads rendered text and the underline quad from the same frame. [GUI test](../../crates/gui/tests/ribbon_click/tab_underline.rs) |
