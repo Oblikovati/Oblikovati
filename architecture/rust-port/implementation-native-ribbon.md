@@ -65,6 +65,10 @@ ribbon control, and Quick Access owns its removal.
 The Marking Menu tab stages the Classic Context Menu preference.
 Apply saves it with any changed menu assignments in a single write,
 and Cancel discards the draft.
+With Sketch1 in edit, Customize shows the configured 2D Sketch marking
+menu positions and saved presentation settings. Closing keeps the sketch
+in edit with the same geometry.
+[Native initial-state runs](receipts/2026-11-26-marking-menu-initial-3856/README.md)
 The radial menu can show icons and captions, icons only, or captions
 only. Full Menu includes applicable canvas command rows. Short Menu
 includes the configured overflow rows. Radial Menu Only shows the

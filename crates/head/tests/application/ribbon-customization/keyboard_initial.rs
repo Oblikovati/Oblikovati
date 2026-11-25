@@ -95,22 +95,19 @@ fn keyboard_buttons(world: &mut ApplicationWorld) {
 #[then("the customization dialog closes without changing the active sketch")]
 fn active_sketch_unchanged(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Customize").is_none());
+    let document = world
+        .previous_document
+        .expect("expected the original document");
+    let state = world.state();
+    assert_eq!(state.document, Some(document));
     if let Some(original) = world
         .observed_sketch
         .as_ref()
         .map(|sketch| sketch.geometry.clone())
     {
+        assert!(state.active_sketch.is_some());
         assert!(world.edited_geometry().same_recipe(&original));
     } else {
-        let state = world.state();
-        assert_eq!(
-            state.document,
-            Some(
-                world
-                    .previous_document
-                    .expect("expected the original active Part")
-            )
-        );
         assert!(state.active_sketch.is_none());
     }
 }

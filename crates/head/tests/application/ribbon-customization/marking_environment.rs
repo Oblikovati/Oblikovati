@@ -4,9 +4,43 @@ use super::super::*;
 use super::open_marking_menu_tab;
 use oblikovati_api::types::{self, Environment};
 
+#[then("the environment selector shows \"2D Sketch\"")]
+fn initial_sketch_environment(world: &mut ApplicationWorld) {
+    world.run_in_window("Customize", "2DSketch");
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+}
+
 #[then("the sub-environment selector shows \"None Selected\"")]
 fn initial_sub_environment(world: &mut ApplicationWorld) {
     world.run_in_window("Customize", "NoneSelected");
+}
+
+#[then("the menu-location area shows the configured sketch command positions")]
+fn configured_sketch_locations(world: &mut ApplicationWorld) {
+    for (location, command) in [
+        ("North", "Line"),
+        ("NorthEast", "Dimension"),
+        ("East", "Circle"),
+        ("SouthEast", "None"),
+        ("South", "Rectangle"),
+        ("SouthWest", "None"),
+        ("West", "Arc"),
+        ("NorthWest", "FinishSketch"),
+    ] {
+        let label = world.run_in_window("Customize", location);
+        assert!(
+            world.frame.runs.iter().any(|run| {
+                run.list == label.list
+                    && run.text == command
+                    && run.maximum[0] < label.minimum[0]
+                    && (run.center()[1] - label.center()[1]).abs() < 3.
+            }),
+            "expected {command} at {location}"
+        );
+    }
 }
 
 #[then("the command search field is empty with \"All Commands\" selected")]
