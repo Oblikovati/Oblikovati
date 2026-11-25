@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:33:22.030485384Z" time="66.073434368"><testcase name="Scenario: Show and hide an origin plane from its browser menu: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:143:3" time="66.073434368"><system-out><![CDATA[  Scenario: Show and hide an origin plane from its browser menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part with a visible block is open in the MCAD Software
+   ✔  And the YZ origin plane is hidden and its browser row is visible
+   ✔  When the user right-clicks the YZ Plane row
+   ✔  Then the context menu offers Visibility and New Sketch
+   ✔  And Visibility is not checked
+   ✔  When the user chooses Visibility and clicks empty viewport space
+   ✔  Then the plane remains visible as a translucent plane beside the block
+   ✔  When the user right-clicks the YZ Plane row again
+   ✔  Then Visibility is checked
+   ✔  When the user chooses Visibility again
+   ✔  Then the plane is hidden and the block remains visible
+]]></system-out></testcase></testsuite></testsuites>
