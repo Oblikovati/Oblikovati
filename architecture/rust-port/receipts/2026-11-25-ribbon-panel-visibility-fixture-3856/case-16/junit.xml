@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:09:37.096665722Z" time="30.588340149"><testcase name="Scenario: Dismiss the panel selector and expansion with Escape: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:230:3" time="30.588340149"><system-out><![CDATA[  Scenario: Dismiss the panel selector and expansion with Escape
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the 3D Model ribbon is docked on the left with the Modify panel visible
+   ✔  And the Modify additional command area is open
+   ✔  When the user opens the direct panel selector
+   ✔  Then the panel list opens with Modify checked
+   ✔  And the Modify additional command area remains visible
+   ✔  When the user presses Escape
+   ✔  Then the panel list closes
+   ✔  And the Modify additional command area closes
+   ✔  And the Modify panel remains visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:09:14.374161642Z" time="26.638368567"><testcase name="Scenario: Inspect panel visibility from a minimized ribbon tab: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:313:3" time="26.638368567"><system-out><![CDATA[  Scenario: Inspect panel visibility from a minimized ribbon tab
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  And the Modify panel is visible and Parameters is hidden
+   ✔  When the user right-clicks the 3D Model tab
+   ✔  Then the ribbon context menu opens
+   ✔  When the user opens Show Panels
+   ✔  Then the submenu lists the 3D Model panels
+   ✔  And Modify is checked and Parameters is unchecked
+   ✔  And the ribbon remains minimized to tabs
+   ✔  When the user clicks an empty area of the viewport
+   ✔  Then both menus close
+   ✔  And the ribbon remains minimized to tabs
+]]></system-out></testcase></testsuite></testsuites>

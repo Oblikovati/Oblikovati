@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:09:45.252791776Z" time="36.237430774"><testcase name="Scenario: Hide a panel while the ribbon shows compact group buttons: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:50:3" time="36.237430774"><system-out><![CDATA[  Scenario: Hide a panel while the ribbon shows compact group buttons
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the 3D Model ribbon shows compact group buttons
+   ✔  And the Parameters group button is visible
+   ✔  When the user opens the compact ribbon context menu and expand Show Panels
+   ✔  Then Parameters is checked
+   ✔  When the user selects Parameters in Show Panels
+   ✔  Then the Parameters group button disappears
+   ✔  And the other compact group buttons remain visible and close the gap
+   ✔  When the user returns the ribbon to its expanded display
+   ✔  Then the Parameters panel is absent from the expanded ribbon
+]]></system-out></testcase></testsuite></testsuites>
