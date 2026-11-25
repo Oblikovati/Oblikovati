@@ -184,7 +184,10 @@ fn browser_closed_from_its_contents_returns_to_shared_dock() {
     select_dock_tab(&mut world, "Material Browser");
     world.run_in_window("Material Browser", "Assigntopart");
     select_dock_tab(&mut world, "Appearance Browser");
-    let close = world.run_in_window("Appearance Browser", "Close").center();
+    let (min, max) =
+        super::super::diagnostics::window_dock_tab_bounds("Appearance Browser").unwrap();
+    let close = [max[0] - 8., (min[1] + max[1]) * 0.5];
+    world.hover(super::super::diagnostics::pointer_pixels(close));
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(close));
     assert_remaining_tab_without_blank_frame(&mut world);
     world.save_capture("material-after-appearance-close");

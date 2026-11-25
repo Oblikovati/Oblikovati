@@ -175,6 +175,7 @@ impl<
             |asset: &AppearanceAsset| GuiAppearanceChoice {
                 id: asset.id(),
                 name: asset.display_name(),
+                swatch: Some(super::part_assets::appearance_swatch(asset)),
             },
         ))
     }

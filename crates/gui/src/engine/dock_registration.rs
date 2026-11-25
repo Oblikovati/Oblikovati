@@ -85,6 +85,8 @@ impl GuiFrameEngine {
         self.sketch_text.synchronize(state);
         self.workspace.sync_before_docking(state);
         self.home.sync_before_docking();
+        self.material_browser.sync_before_docking(state);
+        self.appearance_browser.sync_before_docking(state);
         self.document_tabs
             .menu
             .properties

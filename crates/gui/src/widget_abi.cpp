@@ -326,13 +326,23 @@ std::uint32_t oblikovati_gui_draw_dock_tab_actions() {
         if (!ImGui::DockNodeBeginAmendTabBar(node)) continue;
 
         const ImGuiTabItemFlags trailing = ImGuiTabItemFlags_Trailing;
-        if (ImGui::TabItemButton("   ##dock-panel-menu", trailing))
+        ImDrawList* draw = ImGui::GetWindowDrawList();
+        const ImGuiTabItem* selected = ImGui::TabBarFindTabByID(node->TabBar, node->TabBar->VisibleTabId);
+        if (selected && selected->Window) {
+            const ImRect tab = selected->Window->DockTabItemRect;
+            const ImRect clip = node->TabBar->BarRect;
+            const float left = ImMax(tab.Min.x, clip.Min.x);
+            const float right = ImMin(tab.Max.x, clip.Max.x);
+            if (right > left)
+                draw->AddRectFilled(ImVec2(left, tab.Max.y - 2.0f), ImVec2(right, tab.Max.y),
+                                    ImGui::GetColorU32(ImGuiCol_NavHighlight));
+        }
+        if (ImGui::TabItemButton("      ##dock-panel-menu", trailing))
             ImGui::OpenPopup("##dock-panel-menu-popup");
         const ImVec2 menu_min = ImGui::GetItemRectMin();
         const ImVec2 menu_max = ImGui::GetItemRectMax();
         const ImVec2 menu_center((menu_min.x + menu_max.x) * 0.5f, (menu_min.y + menu_max.y) * 0.5f);
-        const float menu_extent = ImGui::GetFontSize() * 0.18f;
-        ImDrawList* draw = ImGui::GetWindowDrawList();
+        const float menu_extent = ImGui::GetFontSize() * 0.48f;
         const ImU32 icon_color = ImGui::GetColorU32(ImGuiCol_Text);
         draw->AddLine(ImVec2(menu_center.x - menu_extent, menu_center.y),
                       ImVec2(menu_center.x + menu_extent, menu_center.y), icon_color, 1.5f);
@@ -341,16 +351,16 @@ std::uint32_t oblikovati_gui_draw_dock_tab_actions() {
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Open dockable windows");
         actions |= dock_panel_menu();
 
-        if (ImGui::TabItemButton("   ##dock-search", trailing)) actions |= 1u << 8;
+        if (ImGui::TabItemButton("      ##dock-search", trailing)) actions |= 1u << 8;
         const ImVec2 search_min = ImGui::GetItemRectMin();
         const ImVec2 search_max = ImGui::GetItemRectMax();
         const ImVec2 search_center((search_min.x + search_max.x) * 0.5f,
                                    (search_min.y + search_max.y) * 0.5f);
-        const float lens = ImGui::GetFontSize() * 0.18f;
+        const float lens = ImGui::GetFontSize() * 0.34f;
         draw->AddCircle(ImVec2(search_center.x - lens * 0.2f, search_center.y - lens * 0.2f),
                         lens, icon_color, 12, 1.5f);
         draw->AddLine(ImVec2(search_center.x + lens * 0.45f, search_center.y + lens * 0.45f),
-                      ImVec2(search_center.x + lens, search_center.y + lens), icon_color, 1.5f);
+                      ImVec2(search_center.x + lens * 1.45f, search_center.y + lens * 1.45f), icon_color, 1.5f);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Find in Model Browser");
         ImGui::DockNodeEndAmendTabBar();
     }

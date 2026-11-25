@@ -65,6 +65,15 @@ pub(crate) fn asset_combo(
     choices: &[crate::GuiAssetChoice],
 ) -> Option<String> {
     let preview = asset_preview(choices, selected);
+    if let Some(rgb) = choices
+        .iter()
+        .find(|asset| Some(asset.id.as_str()) == selected)
+        .and_then(|asset| asset.swatch)
+    {
+        ui.dummy([16., ui.frame_height()]);
+        paint_swatch(ui, rgb);
+        ui.same_line();
+    }
     ui.set_next_item_width(150.);
     let _list = ui.begin_combo(label, preview)?;
     choices
@@ -92,10 +101,30 @@ fn row_choices(
 fn select_asset(ui: &Ui, asset: &crate::GuiAssetChoice, selected: Option<&str>) -> bool {
     let _id = ui.push_id(&asset.id);
     let already_selected = Some(asset.id.as_str()) == selected;
-    ui.selectable_config(&asset.name)
+    let caption = if asset.swatch.is_some() {
+        format!("       {}", asset.name)
+    } else {
+        asset.name.clone()
+    };
+    let clicked = ui
+        .selectable_config(caption)
         .selected(already_selected)
-        .build()
-        && !already_selected
+        .build();
+    if let Some(rgb) = asset.swatch {
+        paint_swatch(ui, rgb);
+    }
+    clicked && !already_selected
+}
+fn paint_swatch(ui: &Ui, [r, g, b]: [u8; 3]) {
+    let [x, top] = ui.item_rect_min();
+    let y = (top + ui.item_rect_max()[1]) * 0.5;
+    let minimum = [x + 2., y - 5.];
+    let maximum = [x + 14., y + 5.];
+    let color = [r, g, b, 255].map(|channel| f32::from(channel) / 255.);
+    let draw = ui.get_window_draw_list();
+    draw.add_rect(minimum, maximum, color).filled(true).build();
+    draw.add_rect(minimum, maximum, ui.style_color(imgui::StyleColor::Border))
+        .build();
 }
 fn asset_preview<'a>(choices: &'a [crate::GuiAssetChoice], selected: Option<&'a str>) -> &'a str {
     choices
@@ -150,6 +179,7 @@ mod tests {
         let choices = [crate::GuiAssetChoice {
             id: "steel".into(),
             name: "Steel".into(),
+            swatch: None,
         }];
         assert_eq!(asset_preview(&choices, Some("steel")), "Steel");
         assert_eq!(asset_preview(&choices, Some("missing")), "missing");

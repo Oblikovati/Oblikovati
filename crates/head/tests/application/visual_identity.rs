@@ -207,3 +207,49 @@ fn native_title_bar_centers_the_document_and_highlights_the_close_control() {
     world.save_capture("centered-title-bar");
     world.close();
 }
+
+#[test]
+fn native_dock_indicator_follows_the_active_asset_tab() {
+    let mut world = ApplicationWorld::new();
+    viewport_orientation::open_block(&mut world);
+    let panel_names = ["Material Browser", "Appearance Browser"];
+    for name in panel_names {
+        let (left, right) = diagnostics::window_dock_tab_bounds(name).unwrap();
+        let center = std::array::from_fn(|axis| (left[axis] + right[axis]) / 2.);
+        world.click(diagnostics::pointer_pixels(center));
+        assert_eq!(diagnostics::window_dock_tab_visible(name), Some(true));
+        for tab in panel_names {
+            let (min, max) = diagnostics::window_dock_tab_bounds(tab).unwrap();
+            let at = diagnostics::pointer_pixels([min[0] + 4., max[1] - 1.]);
+            let color = world.pixel_at(at.map(|value| value as usize));
+            assert_eq!(
+                &color[..3] == [129, 114, 250],
+                tab == name,
+                "{tab} {color:?}"
+            );
+        }
+        world.save_capture(name);
+    }
+    world.close();
+}
+
+#[test]
+fn native_studio_colors_keep_cube_labels_readable_and_drawing_paper_neutral() {
+    let mut world = ApplicationWorld::new();
+    viewport_orientation::open_block(&mut world);
+    assert!(world.run("FRONT").color[0] > 200);
+    world.app().owner.select_theme_from_gui("Light").unwrap();
+    world.pump(Vec::new());
+    assert!(world.run("FRONT").color[0] < 80);
+    world.save_capture("light-viewcube");
+    world.add_template(oblikovati_gui::GuiTemplateKind::Drawing);
+    assert!(diagnostics::window_dock_tab_bounds("Appearance Browser").is_none());
+    let [left, top, right, bottom] = world.viewport_bounds().map(|side| side as usize);
+    let center = [(left + right) / 2, (top + bottom) / 2];
+    assert_eq!(&world.pixel_at(center)[..3], &[255; 3]);
+    world.app().owner.select_theme_from_gui("Dark").unwrap();
+    world.pump(Vec::new());
+    assert_eq!(&world.pixel_at(center)[..3], &[248, 249, 251]);
+    world.save_capture("dark-drawing-paper");
+    world.close();
+}

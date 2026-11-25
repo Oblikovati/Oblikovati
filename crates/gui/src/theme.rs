@@ -142,7 +142,7 @@ pub(crate) fn primary_button(ui: &imgui::Ui, label: &str, size: [f32; 2]) -> boo
     );
     crate::widget_abi::button(ui, label, size)
 }
-fn hex_rgb(hex: u32) -> [f32; 4] {
+pub(crate) fn hex_rgb(hex: u32) -> [f32; 4] {
     let channel = |shift| ((hex >> shift) & 0xff_u32) as f32 / 255.;
     [channel(16), channel(8), channel(0), 1.]
 }

@@ -39,9 +39,6 @@ const MARGIN: f32 = 8.;
 const CUBE_SHARE: f32 = 0.3;
 /// How much of a face-on square's half width, from its edge, picks an edge or a corner.
 const EDGE_BAND: f32 = 0.6;
-const FACE_FILL: [f32; 4] = [0.72, 0.75, 0.8, 0.92];
-const FACE_EDGE: [f32; 4] = [0.2, 0.22, 0.26, 1.];
-const LABEL_COLOR: [f32; 4] = [0.08, 0.09, 0.11, 1.];
 const LABEL_SHOWS_FROM: f32 = 0.3;
 const FACING_VIEWER: f32 = 0.02;
 const FACE_ON: f32 = 0.999;

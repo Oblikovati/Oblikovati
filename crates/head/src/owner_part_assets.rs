@@ -3,7 +3,7 @@
 use super::*;
 use oblikovati_api::{
     client::Client,
-    contract::Material,
+    contract::{Appearance, Material},
     wire::{AssignAppearanceArgs, AssignMaterialArgs},
 };
 use oblikovati_gui::{GuiMaterialChoice, GuiPartAssetKind};
@@ -27,18 +27,30 @@ impl<
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
-        let project = self
-            .files
-            .active_project()
+        let project = self.files.active_project();
+        let catalog = self.files.builtin_catalog()?;
+        let document = &session.snapshot().assets;
+        let look_up = |id: &str| {
+            document
+                .appearances()
+                .get(id)
+                .or_else(|| project?.assets.appearances().get(id))
+                .or_else(|| catalog.appearances().get(id))
+                .map(appearance_swatch)
+        };
+        let project_materials = project
             .into_iter()
             .flat_map(|project| project.assets.materials().ordered());
-        let catalog = self.files.builtin_catalog()?.materials().ordered();
-        let document = session.snapshot().assets.materials().ordered();
         Ok(collect_choices(
-            document.chain(project).chain(catalog),
+            document
+                .materials()
+                .ordered()
+                .chain(project_materials)
+                .chain(catalog.materials().ordered()),
             |asset: &MaterialAsset| GuiMaterialChoice {
                 id: asset.id(),
                 name: asset.display_name(),
+                swatch: look_up(&asset.appearance_id()),
             },
         ))
     }
@@ -76,6 +88,11 @@ impl<
     }
 }
 
+pub(super) fn appearance_swatch(asset: &oblikovati_model::assets::AppearanceAsset) -> [u8; 3] {
+    let color = asset.base().color;
+    [color.r, color.g, color.b].map(|channel| (channel * 255.).round() as u8)
+}
+
 /// Merge document, project and catalog choices without losing their priority order.
 pub(super) fn collect_choices<'a, T: 'a>(
     assets: impl Iterator<Item = &'a T>,
@@ -102,6 +119,7 @@ mod tests {
             oblikovati_gui::GuiAssetChoice {
                 id: (*id).into(),
                 name: (*name).into(),
+                swatch: None,
             }
         });
         assert_eq!(

@@ -21,7 +21,7 @@ const INSERT: &str = "Insert";
 const SHEET_RATIO: f32 = 420. / 297.;
 const SHEET_MARGIN: f32 = 12.;
 const TITLE_BLOCK_SIZE: [f32; 2] = [280., 70.];
-pub(super) const SHEET_COLOR: [f32; 4] = [0.93, 0.93, 0.91, 1.];
+pub(super) const SHEET_COLOR: [f32; 4] = [248. / 255., 249. / 255., 251. / 255., 1.];
 pub(super) const LINE_COLOR: [f32; 4] = [0.1, 0.1, 0.12, 1.];
 const SNAPSHOT_WIDTH: f32 = 220.;
 const STORYBOARD_HEIGHT: f32 = 128.;
@@ -158,6 +158,7 @@ pub(crate) fn draw_active_sheet(ui: &Ui, state: &GuiCommandState, area: Workspac
         area,
         drawing,
         state.drawing_projections.get(&id),
+        sheet_color(ui),
     );
     true
 }
@@ -196,9 +197,23 @@ pub(crate) fn draw_sheet_in_window(
         bottom: minimum[1] + height,
     };
     if height > 0. {
-        sheet_on_list(&ui.get_window_draw_list(), name, area, drawing, projection);
+        sheet_on_list(
+            &ui.get_window_draw_list(),
+            name,
+            area,
+            drawing,
+            projection,
+            sheet_color(ui),
+        );
     }
     ui.dummy([0., height]);
+}
+fn sheet_color(ui: &Ui) -> [f32; 4] {
+    if ui.style_color(imgui::StyleColor::WindowBg)[0] > 0.5 {
+        [1.; 4]
+    } else {
+        SHEET_COLOR
+    }
 }
 fn sheet_on_list(
     list: &imgui::DrawListMut<'_>,
@@ -206,15 +221,14 @@ fn sheet_on_list(
     area: WorkspaceArea,
     drawing: &oblikovati_model::drawing::DrawingDocument,
     projection: Option<&crate::GuiDrawingProjection>,
+    paper: [f32; 4],
 ) {
     let sheet = &drawing.sheets()[drawing.active_sheet()];
     let Ok(dimensions) = sheet.dimensions_mm() else {
         return;
     };
     let (minimum, maximum) = sheet_rectangle(area, dimensions);
-    list.add_rect(minimum, maximum, SHEET_COLOR)
-        .filled(true)
-        .build();
+    list.add_rect(minimum, maximum, paper).filled(true).build();
     if let Some(projection) = projection {
         drawing_lines::draw(list, projection, minimum, maximum, dimensions);
     }

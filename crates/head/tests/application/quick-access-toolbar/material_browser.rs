@@ -110,8 +110,10 @@ fn browser_open(world: &mut ApplicationWorld) {
 }
 #[when("the user closes the Material Browser window")]
 fn close_browser(world: &mut ApplicationWorld) {
-    let position = world.run_in_window("Material Browser", "Close").center();
-    world.click(super::super::diagnostics::pointer_pixels(position));
+    let (position, size) = window_geometry("Material Browser").unwrap();
+    let close = [position[0] + size[0] - 13., position[1] + 10.];
+    world.click(super::super::diagnostics::pointer_pixels(close));
+    assert!(window_geometry("Material Browser").is_none());
 }
 #[then("the Tools ribbon and active part remain visible")]
 fn tools_and_part(world: &mut ApplicationWorld) {

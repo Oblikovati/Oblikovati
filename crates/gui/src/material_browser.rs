@@ -35,6 +35,9 @@ impl MaterialBrowser {
     pub(crate) fn is_open(&self) -> bool {
         self.open.is_open()
     }
+    pub(crate) fn is_requested(&self) -> bool {
+        self.open.is_requested()
+    }
     /// Create a separate appearance browser; example: `MaterialBrowser::appearances()`.
     pub(crate) fn appearances() -> Self {
         Self {
@@ -46,6 +49,14 @@ impl MaterialBrowser {
     pub(crate) fn open(&mut self) {
         self.open.set_open(true);
     }
+    pub(crate) fn sync_before_docking(&self, state: &GuiCommandState) {
+        use oblikovati_api::types::{DOCUMENT_ASSEMBLY, DOCUMENT_DRAWING};
+        let unavailable = state
+            .document_type
+            .as_ref()
+            .is_some_and(|kind| *kind == DOCUMENT_DRAWING || *kind == DOCUMENT_ASSEMBLY);
+        self.open.set_suspended(unavailable);
+    }
     /// Draw the current part's asset choices and queue explicit assignments.
     /// Example: `browser.panel(ui, state, actions)` once per frame.
     pub(crate) fn panel(
@@ -54,12 +65,12 @@ impl MaterialBrowser {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        self.sync_before_docking(state);
         if !self.open.is_open() {
             return;
         }
         self.sync_document(state);
         let mut open = self.open.is_open();
-        let mut close_requested = false;
         let title = if self.appearance_browser {
             "Appearance Browser"
         } else {
@@ -71,9 +82,8 @@ impl MaterialBrowser {
             [ui.io().display_size[0] - 460., 200.],
             [440., 200.],
         );
-        Self::dockable_window(ui, title, &mut open)
-            .build(|| close_requested = self.content(ui, state, actions));
-        self.open.set_open(open && !close_requested);
+        Self::dockable_window(ui, title, &mut open).build(|| self.content(ui, state, actions));
+        self.open.set_open(open);
     }
     fn sync_document(&mut self, state: &GuiCommandState) {
         if self.document == state.document {
@@ -83,19 +93,14 @@ impl MaterialBrowser {
         self.material = None;
         self.appearance = None;
     }
-    fn content(
-        &mut self,
-        ui: &Ui,
-        state: &GuiCommandState,
-        actions: &mut Vec<GuiShellAction>,
-    ) -> bool {
+    fn content(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         let Some(browser) = state
             .browser
             .as_ref()
             .filter(|_| state.authoring == crate::GuiAuthoringContext::Part)
         else {
             ui.text("Select a part to browse its assets.");
-            return ui.button("Close");
+            return;
         };
         if self.appearance_browser {
             asset_tab(
@@ -118,8 +123,6 @@ impl MaterialBrowser {
                 actions,
             );
         }
-        ui.separator();
-        ui.button("Close")
     }
 }
 fn asset_tab(
@@ -189,6 +192,7 @@ mod tests {
         let choices = [GuiAssetChoice {
             id: "steel".into(),
             name: "Steel".into(),
+            swatch: None,
         }];
         let mut chosen = None;
         initialize_selection(&mut chosen, Some("assigned"), &choices);

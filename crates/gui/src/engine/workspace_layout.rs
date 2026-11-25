@@ -72,8 +72,8 @@ impl GuiFrameEngine {
         let mut ini = String::new();
         self.context.save_ini_settings(&mut ini);
         let mut settings = WorkspaceDockSettings::new(ini);
-        settings.material_browser = self.material_browser.is_open();
-        settings.appearance_browser = self.appearance_browser.is_open();
+        settings.material_browser = self.material_browser.is_requested();
+        settings.appearance_browser = self.appearance_browser.is_requested();
         settings.parameters = self.parameter_editor.is_open();
         settings.selection_filter = self.selection_filter.is_open();
         settings.history_browser = self.history_browser.is_open();

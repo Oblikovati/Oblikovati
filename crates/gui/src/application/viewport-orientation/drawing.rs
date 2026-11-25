@@ -33,16 +33,18 @@ pub(super) fn draw_control(
     alpha: f32,
 ) {
     let list = ui.get_window_draw_list();
+    let paint = cube_paint(ui.style_color(StyleColor::WindowBg));
     let mut faces = shown_faces(axes, layout, origin);
     faces.reverse();
     let at = |point: [f32; 2]| [origin[0] + point[0], origin[1] + point[1]];
     for shown in &faces {
-        list.add_polyline(shown.corners.to_vec(), faded(FACE_FILL, alpha))
+        let fill = faded(paint.fill(shown.face), alpha);
+        list.add_polyline(shown.corners.to_vec(), fill)
             .filled(true)
             .build();
         for index in 0..4 {
             let next = shown.corners[(index + 1) % 4];
-            list.add_line(shown.corners[index], next, faded(FACE_EDGE, alpha))
+            list.add_line(shown.corners[index], next, faded(paint.edge, alpha))
                 .build();
         }
     }
@@ -53,16 +55,15 @@ pub(super) fn draw_control(
     }
     drop(list);
     for shown in faces.iter().filter(|shown| shown.facing > LABEL_SHOWS_FROM) {
-        draw_face_label(ui, shown, axes, alpha);
+        draw_face_label(ui, shown, axes, faded(paint.label, alpha));
     }
 }
-fn draw_face_label(ui: &Ui, shown: &ShownFace, axes: &GuiViewAxes, alpha: f32) {
+fn draw_face_label(ui: &Ui, shown: &ShownFace, axes: &GuiViewAxes, color: [f32; 4]) {
     let center: [f32; 2] = std::array::from_fn(|axis| {
         shown.corners.iter().map(|corner| corner[axis]).sum::<f32>() / 4.
     });
     let reading = shown.face.reading();
     let angle = (-dot(reading, axes.up)).atan2(dot(reading, axes.right));
-    let color = faded(LABEL_COLOR, alpha);
     crate::widget_abi::rotated_text(
         ui,
         center,
@@ -70,6 +71,36 @@ fn draw_face_label(ui: &Ui, shown: &ShownFace, axes: &GuiViewAxes, alpha: f32) {
         &shown.face.label().to_ascii_uppercase(),
         angle,
     );
+}
+
+struct CubePaint {
+    faces: [[f32; 4]; 3],
+    edge: [f32; 4],
+    label: [f32; 4],
+}
+impl CubePaint {
+    fn fill(&self, face: GuiCubeFace) -> [f32; 4] {
+        self.faces[match face {
+            GuiCubeFace::Top | GuiCubeFace::Bottom => 0,
+            GuiCubeFace::Front | GuiCubeFace::Back => 1,
+            GuiCubeFace::Left | GuiCubeFace::Right => 2,
+        }]
+    }
+}
+fn cube_paint(background: [f32; 4]) -> CubePaint {
+    let [top, front, side, edge, label] = if background[0] > 0.5 {
+        [0xffffff, 0xeef1f6, 0xdce1eb, 0xaeb6c6, 0x1e2430]
+    } else if background[..3].iter().all(|channel| *channel < 0.01) {
+        [0x212734, 0x0a0a0d, 0x141820, 0xa7aebd, 0xffffff]
+    } else {
+        [0x323744, 0x252934, 0x1c1f28, 0x4b5368, 0xeceef2]
+    }
+    .map(crate::theme::hex_rgb);
+    CubePaint {
+        faces: [top, front, side],
+        edge,
+        label,
+    }
 }
 fn draw_home(list: &imgui::DrawListMut, [x, y]: [f32; 2], color: [f32; 4]) {
     list.add_triangle([x - 6., y], [x + 6., y], [x, y - 6.], color)
