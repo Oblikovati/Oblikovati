@@ -52,6 +52,7 @@ fn zero_document_ribbon_submits_the_owned_new_part_icon_and_caption() {
 fn modeling_and_sketch_ribbons_submit_the_extrude_and_move_icons() {
     let mut owner = GuiFrameEngine::new().unwrap();
     let mut request = ribbon_request();
+    request.extent = [2880, 1800];
     request.commands.document = Some(7);
     request.commands.document_type = Some(oblikovati_api::types::DOCUMENT_PART);
     request.commands.authoring = crate::GuiAuthoringContext::Part;
