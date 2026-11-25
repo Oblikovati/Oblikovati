@@ -3,6 +3,8 @@
 use crate::{GuiCommandState, GuiOffsetPlaneBase, GuiShellAction, dockable_window::DockableWindow};
 use imgui::Ui;
 
+const WIDTH: f32 = 280.;
+
 #[derive(Default)]
 pub(crate) struct OffsetPlaneDialog {
     document: Option<u64>,
@@ -70,11 +72,16 @@ impl OffsetPlaneDialog {
         let Some(document) = self.document else {
             return;
         };
-        crate::widget_abi::fit_viewport_properties(ui, "Offset Plane", area, [340., 210.]);
+        let messages = self.validation_messages(state, document);
+        let height = properties_height(ui, area.right - area.left, messages);
+        crate::widget_abi::fit_viewport_properties(ui, "Offset Plane", area, [WIDTH, height]);
+        let _border = crate::theme::property_window_border(ui);
         let mut open = true;
         let mut done = false;
-        Self::dockable_window(ui, "Offset Plane", &mut open)
-            .build(|| done = self.controls(ui, state, actions, document));
+        Self::dockable_window(ui, "Offset Plane", &mut open).build(|| {
+            crate::theme::floating_property_shadow(ui);
+            done = self.controls(ui, state, actions, document);
+        });
         if !open || done {
             self.set_document(None);
         }
@@ -92,6 +99,7 @@ impl OffsetPlaneDialog {
             base,
             offset: self.offset.clone(),
         });
+        ui.separator();
         submit_buttons(ui, state, request, actions)
     }
     fn offset_field(
@@ -107,7 +115,13 @@ impl OffsetPlaneDialog {
             "Select Plane"
         });
         let disabled = ui.begin_disabled(self.base.is_none());
-        if ui.input_text("Offset", &mut self.offset).build() {
+        crate::theme::property_label(ui, "Offset");
+        let edited = {
+            let _numeric = crate::ui_scale::numeric_font(ui);
+            let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
+            ui.input_text("##Offset", &mut self.offset).build()
+        };
+        if edited {
             self.error = None;
         }
         drop(disabled);
@@ -120,23 +134,64 @@ impl OffsetPlaneDialog {
         actions: &mut Vec<GuiShellAction>,
         document: u64,
     ) {
-        let validation = state
-            .offset_plane_validation
-            .as_ref()
-            .filter(|result| result.document == document && result.offset == self.offset);
-        if self.base.is_some() && !self.offset.trim().is_empty() && validation.is_none() {
+        if self.base.is_some()
+            && !self.offset.trim().is_empty()
+            && self.current_validation(state, document).is_none()
+        {
             actions.push(GuiShellAction::ValidateOffsetPlane {
                 document,
                 offset: self.offset.clone(),
             });
         }
-        if let Some(error) = validation.and_then(|result| result.error.as_ref()) {
-            ui.text_colored([1., 0.25, 0.25, 1.], error);
-        }
-        if let Some(error) = &self.error {
+        let _wrap = ui.push_text_wrap_pos();
+        for error in self
+            .validation_messages(state, document)
+            .into_iter()
+            .flatten()
+        {
             ui.text_colored([1., 0.25, 0.25, 1.], error);
         }
     }
+
+    fn current_validation<'a>(
+        &self,
+        state: &'a GuiCommandState,
+        document: u64,
+    ) -> Option<&'a crate::GuiOffsetPlaneValidation> {
+        state
+            .offset_plane_validation
+            .as_ref()
+            .filter(|result| result.document == document && result.offset == self.offset)
+    }
+
+    fn validation_messages<'a>(
+        &'a self,
+        state: &'a GuiCommandState,
+        document: u64,
+    ) -> [Option<&'a str>; 2] {
+        let current = self
+            .current_validation(state, document)
+            .and_then(|result| result.error.as_deref());
+        [
+            current,
+            self.error
+                .as_deref()
+                .filter(|error| Some(*error) != current),
+        ]
+    }
+}
+
+fn properties_height(ui: &Ui, viewport_width: f32, messages: [Option<&str>; 2]) -> f32 {
+    let style = ui.clone_style();
+    let width = ((viewport_width - 28.).min(WIDTH) - 2. * style.window_padding[0]).max(1.);
+    let diagnostics: f32 = messages
+        .into_iter()
+        .flatten()
+        .map(|message| {
+            ui.calc_text_size_with_opts(message, false, width)[1] + style.item_spacing[1]
+        })
+        .sum();
+    3. * ui.frame_height_with_spacing() + 2. * style.window_padding[1] + 28. + diagnostics
 }
 
 fn submit_buttons(
@@ -145,15 +200,14 @@ fn submit_buttons(
     request: Option<GuiShellAction>,
     actions: &mut Vec<GuiShellAction>,
 ) -> bool {
-    let disabled = ui.begin_disabled(
-        !request
+    let accepted = crate::theme::property_accept(
+        ui,
+        request
             .as_ref()
             .is_some_and(|action| action.dispatchable(state)),
     );
-    let accepted = crate::widget_abi::button(ui, "OK", [0., 0.]);
-    drop(disabled);
     ui.same_line();
-    let cancelled = crate::widget_abi::button(ui, "Cancel", [0., 0.]);
+    let cancelled = crate::widget_abi::button(ui, "Cancel", [72., 28.]);
     if accepted && let Some(action) = request {
         actions.push(action);
     }

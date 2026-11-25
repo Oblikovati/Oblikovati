@@ -24,7 +24,8 @@ values come from the same handoff.
   restores its saved camera in the current layout.
 - Hole uses the shared left-aligned property labels and outlined numeric
   fields. An empty Depth field displays Through all. The floating panel
-  fits the rows and action footer.
+  fits the rows and action footer. Offset Plane uses the same property
+  layout and grows to fit wrapped validation messages.
 - Home Recent leaves 12 logical pixels of scroll-end padding above the
   document tab strip in both List and Grid views.
 - The application bar displays the brand mark. Mapped ribbon commands and

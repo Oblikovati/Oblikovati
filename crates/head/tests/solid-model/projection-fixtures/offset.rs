@@ -25,8 +25,7 @@ fn choose_xz_plane_for_offset(world: &mut ApplicationWorld) {
 
 #[when("its offset is set to 50 mm and accepted")]
 fn accept_fifty_millimetre_offset(world: &mut ApplicationWorld) {
-    let label = world.run("Offset").clone();
-    world.click([label.minimum[0] as i32 - 100, label.center()[1] as i32]);
+    world.click_text("10 mm");
     world.key(ViewportPhysicalKey::A, true);
     world.type_text("50 mm");
     world.click_text("OK");

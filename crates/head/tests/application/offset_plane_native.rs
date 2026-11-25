@@ -28,8 +28,7 @@ fn offset_plane_from_xz_is_created_and_supports_history() {
     world.click_text("Plane");
     world.click_text("XZ Plane");
     world.expect_text("1 Plane");
-    let label = world.run("Offset").clone();
-    world.click([label.minimum[0] as i32 - 100, label.center()[1] as i32]);
+    world.click_text("10 mm");
     world.key(ViewportPhysicalKey::A, true);
     world.type_text("50 mm");
     world.click_text("OK");
@@ -120,22 +119,49 @@ fn rejected_zero_offset_keeps_the_draft_and_creates_no_plane() {
     world.add_part();
     world.click_text("Plane");
     world.click_text("XZ Plane");
-    let label = world.run("Offset").clone();
-    world.click([label.minimum[0] as i32 - 100, label.center()[1] as i32]);
+    world.click_text("10 mm");
     world.key(ViewportPhysicalKey::A, true);
     world.type_text("0 mm");
-    world.pump(Vec::new());
+    super::x11_input::resize_application_window([640, 480]);
+    for _ in 0..3 {
+        world.pump(Vec::new());
+    }
+    assert_eq!(world.extent(), [640, 480]);
+    world.save_capture("offset-plane-invalid-at-minimum-size");
     world.expect_text("expected a nonzero length");
     world.expect_text("Offset Plane");
     assert!(!world.run_is_enabled("OK"));
     assert!(world.state().browser.unwrap().features.is_empty());
-    world.click([label.minimum[0] as i32 - 100, label.center()[1] as i32]);
+    assert_offset_plane_fits(&mut world);
+    world.click_text("0 mm");
     world.key(ViewportPhysicalKey::A, true);
     world.type_text("-5 mm");
     world.pump(Vec::new());
     assert!(world.run_is_enabled("OK"));
     world.click_text("Cancel");
+    world.expect_no_text("Offset Plane");
+    assert!(world.state().browser.unwrap().features.is_empty());
     world.close();
+}
+
+fn assert_offset_plane_fits(world: &mut ApplicationWorld) {
+    let viewport = world.viewport_bounds().map(|edge| edge as f32);
+    let panel = super::diagnostics::window_pixel_bounds("Offset Plane").expect("offset properties");
+    assert!(
+        panel[0] >= viewport[0]
+            && panel[1] >= viewport[1]
+            && panel[2] <= viewport[2]
+            && panel[3] <= viewport[3],
+        "properties {panel:?}, viewport {viewport:?}"
+    );
+    let label = world.run_in_window("Offset Plane", "Offset");
+    let value = world.run_in_window("Offset Plane", "0mm");
+    assert!(
+        label.maximum[0] < value.minimum[0],
+        "Offset label must lead the field"
+    );
+    let cancel = world.run_in_window("Offset Plane", "Cancel");
+    assert!(cancel.maximum[1] < panel[3] && panel[3] - cancel.maximum[1] < 40.);
 }
 
 #[test]
