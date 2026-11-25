@@ -28,7 +28,6 @@
 - Added typed Sketch Text creation, editing, and queries for automation. (#3907)
 - Added paragraph bullets, numbering, and diameter-symbol insertion to Format Text. (#3907)
 - Preserved valid character-format ranges in native sketch files and sketch history. (#3907)
-
 - Added a saved Mini-Toolbar visibility option to the View ribbon. (#3897)
 
 - Add an exact best-fit certificate for explicit affine equations; sketch drag integration remains open. (#4171)
@@ -297,6 +296,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Kept Extrude actions visible in short panels, made feature drafts exclusive, fitted and labelled the Sketch ribbon groups, and cleared origin-plane paint from the viewport controls. (#4063)
 - Updated the active ribbon underline in the same frame as its commands. (#4063)
 - Aligned Fillet and Chamfer properties and put Extrude distance tools and direction choices inline. (#4063)
+- Centered the active document and model state in the titlebar and restyled its window controls. (#4063)
 - Aligned the Large and Text headings with their Ribbon Customization checkboxes. (#3856)
 - Kept long tab labels readable when the ribbon is docked on either side. (#3860)
 - Allowed the only attached drawing to open in its own window, with Home in the main window. (#3900)

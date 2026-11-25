@@ -17,7 +17,7 @@ here uses the Rust desktop on Linux under Xvfb, Openbox, and Vulkan Lavapipe.
 | GAP-07 | Verify Home recent-document columns, selection, and action hierarchy. |
 | GAP-08 | Verify dock tab selection, header controls, and asset swatches. |
 | GAP-09 | Existing artwork is mapped for several ribbons. Verify the remaining command mappings. [Ribbon icon checks](receipts/2026-11-25-identity-ribbon-icons-4063/README.md) |
-| GAP-10 | Audit the existing brand mark and window controls, and verify title alignment. |
+| GAP-10 | Verified the centered document and model-state title, flush 46 × 32 px window controls, and rose Close hover. The brand mark uses the 16 px handoff size. [Native frame](receipts/2026-11-25-design-gap-10-4063/Titlebar.png) |
 | GAP-11 | Verify ribbon group separators, captions, and density control. |
 | GAP-12 | Verify document tab spacing, artwork, and close controls. |
 | GAP-13 | Verify viewport telemetry in the status bar. |

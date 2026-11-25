@@ -44,7 +44,9 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
             data: include_bytes!("../assets/fonts/Inter-Regular.ttf"),
             size_pixels: config.size_pixels,
             config: Some(FontConfig {
-                glyph_ranges: FontGlyphRanges::from_slice(&[0x20, 0xff, 0x203a, 0x203a, 0]),
+                glyph_ranges: FontGlyphRanges::from_slice(&[
+                    0x20, 0xff, 0x2014, 0x2014, 0x203a, 0x203a, 0,
+                ]),
                 ..config.clone()
             }),
         },

@@ -3,7 +3,7 @@
 use crate::{GuiFrameRequest, GuiShellAction, GuiWindowAction};
 use imgui::{Condition, MouseButton, Ui};
 
-const CONTROL_WIDTH: f32 = 48.;
+const CONTROL_WIDTH: f32 = 46.;
 
 #[derive(Default)]
 pub(crate) struct FrameInteraction {
@@ -112,6 +112,20 @@ fn control(
     controls: &mut ControlResults,
     interaction: &mut FrameInteraction,
 ) -> bool {
+    let _flat = ui.push_style_color(imgui::StyleColor::Button, [0.; 4]);
+    let close = index == 2;
+    let _danger = close.then(|| {
+        ui.push_style_color(
+            imgui::StyleColor::ButtonHovered,
+            [225. / 255., 29. / 255., 72. / 255., 1.],
+        )
+    });
+    let _pressed = close.then(|| {
+        ui.push_style_color(
+            imgui::StyleColor::ButtonActive,
+            [190. / 255., 18. / 255., 60. / 255., 1.],
+        )
+    });
     let clicked = crate::widget_abi::button(ui, label, [CONTROL_WIDTH, bar_height]);
     let through_popup = interaction.popup_press.released(ui, index);
     let clicked = clicked || through_popup;
@@ -140,7 +154,11 @@ fn draw_icon(ui: &Ui, kind: &str) {
     let max = ui.item_rect_max();
     let center = [(min[0] + max[0]) / 2., (min[1] + max[1]) / 2.];
     let draw = ui.get_window_draw_list();
-    let color = ui.style_color(imgui::StyleColor::Text);
+    let color = if kind == "Close" && (ui.is_item_hovered() || ui.is_item_active()) {
+        [1.; 4]
+    } else {
+        ui.style_color(imgui::StyleColor::Text)
+    };
     let point = |x: f32, y: f32| [center[0] + x, center[1] + y];
     match kind {
         "Minimize" => {

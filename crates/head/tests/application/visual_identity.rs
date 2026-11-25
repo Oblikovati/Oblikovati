@@ -187,3 +187,23 @@ fn native_feature_properties_align_blend_fields_and_keep_extrude_directions_in_o
     world.save_capture("extrude-properties");
     world.close();
 }
+
+#[test]
+fn native_title_bar_centers_the_document_and_highlights_the_close_control() {
+    let mut world = ApplicationWorld::new();
+    viewport_orientation::open_block(&mut world);
+    let center = world.run("— Oblikovati").center();
+    assert!(world.shows("<Primary> — Oblikovati"));
+    assert!((center[0] - world.extent()[0] as f32 / 2.).abs() < 2.);
+    let [left, top, right, bottom] =
+        diagnostics::window_pixel_bounds("##application-window-controls").unwrap();
+    assert_eq!(right - left, 3. * 46.);
+    assert_eq!(bottom - top, 32.);
+    world.hover([right as i32 - 23, top as i32 + 16]);
+    assert_eq!(
+        &world.pixel_at([right as usize - 9, top as usize + 8])[..3],
+        &[225, 29, 72]
+    );
+    world.save_capture("centered-title-bar");
+    world.close();
+}

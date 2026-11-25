@@ -4,7 +4,7 @@ use crate::ribbon::{DocumentRibbon, RibbonFrame};
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
 use imgui::{Condition, Ui};
 /// Vertical space reserved for application controls and the native frame.
-pub(crate) const APPLICATION_BAR_HEIGHT: f32 = 34.;
+pub(crate) const APPLICATION_BAR_HEIGHT: f32 = 32.;
 /// Right side reserved for the platform window controls (#4063).
 pub(crate) const APPLICATION_BAR_TRAILING_RESERVED: f32 = 150.;
 /// Reserve enough space for the chosen quick-access icon scale.
@@ -294,8 +294,8 @@ fn application_controls_row(
     owners: &mut RibbonDrawOwners<'_>,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    crate::widget_abi::cursor_position(ui, [8., 4.]);
-    let width = (ui.window_size()[0] - APPLICATION_BAR_TRAILING_RESERVED - 8.).max(1.);
+    crate::widget_abi::cursor_position(ui, [10., 4.]);
+    let width = (ui.window_size()[0] - APPLICATION_BAR_TRAILING_RESERVED - 10.).max(1.);
     let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([0., 0.]));
     ui.child_window("##application-bar-controls")
         .size([width, application_bar_height(owners.icons) - 4.])
@@ -312,20 +312,49 @@ fn application_controls_row(
                     &owners.ribbon.tips,
                 );
             }
-            application_document_context(ui, &request.commands, !owners.quick_access.below_ribbon);
+            application_document_context(
+                ui,
+                &request.commands,
+                application_bar_height(owners.icons),
+            );
         });
 }
-fn application_document_context(ui: &Ui, state: &GuiCommandState, follows_toolbar: bool) {
+fn application_document_context(ui: &Ui, state: &GuiCommandState, height: f32) {
     let title = state
         .documents
         .iter()
         .find(|item| Some(item.id) == state.document)
-        .map_or("Oblikovati", |document| document.name.as_str());
-    if ui.content_region_avail()[0] > ui.calc_text_size(title)[0] + 16. {
-        if follows_toolbar {
-            ui.same_line();
-        }
-        ui.text(title);
+        .map_or_else(
+            || "Oblikovati".to_owned(),
+            |document| document_title(state, document),
+        );
+    let left = ui.item_rect_max()[0] + 12.;
+    let right = ui.window_pos()[0] + ui.window_size()[0] - 8.;
+    let screen_center = ui.io().display_size[0] / 2.;
+    let title = crate::application::home_recent_documents::recent_rows::fit_recent_cell(
+        &title,
+        right - left,
+        |text| ui.calc_text_size(text)[0],
+    );
+    let [width, text_height] = ui.calc_text_size(&title);
+    if right > left + width {
+        let x = (screen_center - width / 2.).clamp(left, right - width);
+        ui.get_window_draw_list().add_text(
+            [x, (height - text_height) / 2.],
+            ui.style_color(imgui::StyleColor::Text),
+            title,
+        );
+    }
+}
+fn document_title(
+    state: &GuiCommandState,
+    document: &oblikovati_api::wire::DocumentInfo,
+) -> String {
+    let changed = if document.dirty { "* " } else { "" };
+    let model_state = state.document_model_states.get(&document.id);
+    match model_state {
+        Some(active) => format!("{changed}{} <{active}> — Oblikovati", document.name),
+        None => format!("{changed}{} — Oblikovati", document.name),
     }
 }
 fn ribbon_menu_row(

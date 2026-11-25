@@ -7,7 +7,7 @@ use imgui::Ui;
 impl GuiRibbonIcons {
     pub(crate) fn brand_mark(&self, ui: &Ui) {
         let texture = imgui::TextureId::new(self.key(IconGlyph::BrandMark, IconSize::Small).raw());
-        imgui::Image::new(texture, [20.; 2]).build(ui);
+        imgui::Image::new(texture, [16.; 2]).build(ui);
         ui.same_line();
     }
 
