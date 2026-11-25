@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:43:25.339000387Z" time="20.94184872"><testcase name="Scenario: Close a width-compacted panel by switching ribbon tabs: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:434:3" time="20.94184872"><system-out><![CDATA[  Scenario: Close a width-compacted panel by switching ribbon tabs
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full View ribbon displayed
+   ✔  And the narrow window shows Windows as a compact panel button
+   ✔  And the temporary Windows panel is open
+   ✔  When the user selects the visible Tools tab
+   ✔  Then the Windows panel closes
+   ✔  And the Tools ribbon groups are displayed
+   ✔  When the user selects View from the tab overflow menu
+   ✔  Then the View ribbon groups are displayed
+   ✔  And the temporary Windows panel remains closed
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

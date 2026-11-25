@@ -4,7 +4,7 @@ use super::*;
 
 #[given("a part is active in the MCAD Software with the full Tools ribbon displayed")]
 fn part_with_tools(world: &mut ApplicationWorld) {
-    world.previous_document = Some(world.add_part());
+    super::super::workspace_layout::part_open(world);
     full_tools(world);
 }
 

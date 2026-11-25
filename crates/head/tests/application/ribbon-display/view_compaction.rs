@@ -4,7 +4,7 @@ use super::*;
 
 #[given("a part is active in the MCAD Software with the full View ribbon displayed")]
 fn part_on_view(world: &mut ApplicationWorld) {
-    world.previous_document = Some(world.add_part());
+    super::super::workspace_layout::part_open(world);
     world.click_text("View");
     world.expect_text("User Interface");
 }
@@ -70,12 +70,14 @@ fn tools_groups_visible(world: &mut ApplicationWorld) {
         world.pump(Vec::new());
     }
     world.expect_text("Options");
-    world.expect_no_text("Show Sketches");
+    let command = sketch_visibility_label(world);
+    world.expect_no_text(command);
 }
 
 #[then("the View ribbon groups are displayed")]
 fn view_groups_visible(world: &mut ApplicationWorld) {
-    world.expect_text("Show Sketches");
+    let command = sketch_visibility_label(world);
+    world.expect_text(command);
 }
 
 #[test]

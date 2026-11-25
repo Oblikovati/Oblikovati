@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:42:08.557028572Z" time="24.996113258"><testcase name="Scenario: Dismiss tab overflow without changing the active ribbon: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:388:3" time="24.996113258"><system-out><![CDATA[  Scenario: Dismiss tab overflow without changing the active ribbon
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full ribbon displayed
+   ✔  And View is active but outside the visible tab row because the window is narrow
+   ✔  When the user opens the ribbon tab overflow menu
+   ✔  And the user presses Escape
+   ✔  Then the overflow menu closes
+   ✔  And the View command groups remain displayed
+   ✔  When the user reopens the ribbon tab overflow menu
+   ✔  And the user clicks the overflow control again
+   ✔  Then the overflow menu closes and the View command groups remain displayed
+   ✔  When the user reopens the ribbon tab overflow menu
+   ✔  And the user clicks the visible Tools tab
+   ✔  Then the overflow menu closes
+   ✔  And Tools becomes active and its command groups replace the View groups
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

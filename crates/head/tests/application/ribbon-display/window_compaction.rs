@@ -4,7 +4,7 @@ use super::*;
 
 #[given("a part is active in the MCAD Software with the full 3D Model ribbon displayed")]
 fn full_model_part(world: &mut ApplicationWorld) {
-    world.previous_document = Some(world.add_part());
+    super::super::workspace_layout::part_open(world);
     world.expect_text("Extrude");
     world.expect_text("Hole");
 }

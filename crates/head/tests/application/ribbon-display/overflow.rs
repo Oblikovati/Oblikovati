@@ -4,7 +4,7 @@ use super::*;
 
 #[given("a part is active in the MCAD Software with the full Manage ribbon visible")]
 fn part_on_manage(world: &mut ApplicationWorld) {
-    world.previous_document = Some(world.add_part());
+    super::super::workspace_layout::part_open(world);
     world.click_text("Manage");
     assert!(
         world
@@ -19,7 +19,7 @@ fn part_on_manage(world: &mut ApplicationWorld) {
 
 #[given("a part is active in the MCAD Software with the full ribbon displayed")]
 fn part_with_full_ribbon(world: &mut ApplicationWorld) {
-    world.previous_document = Some(world.add_part());
+    super::super::workspace_layout::part_open(world);
     world.expect_text("Start 2D Sketch");
 }
 
@@ -29,7 +29,8 @@ fn active_view_in_overflow(world: &mut ApplicationWorld) {
     view_in_overflow(world);
     open_overflow(world);
     select_hidden_view(world);
-    world.expect_text("Show Sketches");
+    let command = sketch_visibility_label(world);
+    world.expect_text(command);
 }
 
 #[given("the application window is narrow enough that View is outside the visible tab row")]
@@ -46,7 +47,7 @@ pub(super) fn view_in_overflow(world: &mut ApplicationWorld) {
 
 #[given("a part is active in the MCAD Software with Tools active in tabs-only ribbon display")]
 fn part_with_minimized_tools(world: &mut ApplicationWorld) {
-    world.previous_document = Some(world.add_part());
+    super::super::workspace_layout::part_open(world);
     full_tools(world);
     choose_tabs_mode(world);
 }
@@ -128,7 +129,8 @@ fn overflow_popup_check_ignores_the_browser_view_row() {
 #[then("the View command groups remain displayed")]
 #[then("the overflow menu closes and the View command groups remain displayed")]
 fn view_commands_remain(world: &mut ApplicationWorld) {
-    world.expect_text("Show Sketches");
+    let command = sketch_visibility_label(world);
+    world.expect_text(command);
     overflow_menu_closed(world);
 }
 
@@ -142,7 +144,8 @@ fn click_visible_tools(world: &mut ApplicationWorld) {
 
 #[then("Tools becomes active and its command groups replace the View groups")]
 fn tools_replace_view(world: &mut ApplicationWorld) {
-    world.expect_no_text("Show Sketches");
+    let command = sketch_visibility_label(world);
+    world.expect_no_text(command);
     world.hover([500, 600]);
     let inactive = world.pixel_left_of("Sketch");
     assert_ne!(world.pixel_left_of("Tools"), inactive);
@@ -155,16 +158,14 @@ fn no_temporary_ribbon(_world: &mut ApplicationWorld) {
 
 #[then("the menu closes and the View command groups replace the Manage command groups")]
 fn view_commands_replace_manage(world: &mut ApplicationWorld) {
-    world.expect_text("Show Sketches");
-    assert_eq!(
-        world
-            .frame
-            .runs
-            .iter()
-            .filter(|run| run.text == "Parameters")
-            .count(),
-        1
+    let command = sketch_visibility_label(world);
+    world.expect_text(command);
+    assert!(
+        !world
+            .window_text("##application-ribbon")
+            .contains("Parameters")
     );
+    overflow_menu_closed(world);
 }
 
 #[then("View remains outside the visible tab row at this window width")]

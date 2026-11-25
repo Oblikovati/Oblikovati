@@ -26,6 +26,18 @@ mod window_compaction;
 use wheel_tools::full_tools;
 const VIEW_GROUPS: [&str; 4] = ["Visibility", "Appearance", "Windows", "Navigate"];
 const WINDOWS_COMMAND: &str = "User Interface";
+fn sketch_visibility_label(world: &mut ApplicationWorld) -> &'static str {
+    let sketches_visible = world
+        .state()
+        .browser
+        .is_some_and(|browser| browser.sketches.iter().any(|sketch| sketch.visible));
+    if sketches_visible {
+        "Hide Sketches"
+    } else {
+        "Show Sketches"
+    }
+}
+
 fn band_height() -> f32 {
     window_geometry("##application-ribbon")
         .expect("ribbon: expected a drawn band")

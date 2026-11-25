@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:43:01.958684628Z" time="22.518874149"><testcase name="Scenario: Switch between panels compacted by a narrow window: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:419:3" time="22.518874149"><system-out><![CDATA[  Scenario: Switch between panels compacted by a narrow window
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full View ribbon displayed
+   ✔  And the narrow window shows Appearance and Windows as compact panel buttons
+   ✔  When the user clicks the Appearance panel button
+   ✔  Then the temporary Appearance panel opens below the ribbon
+   ✔  When the user clicks the Windows panel button
+   ✔  Then the Appearance panel closes and the temporary Windows panel opens
+   ✔  When the user clicks the Windows panel button again
+   ✔  Then the Windows panel remains open
+   ✔  When the user clicks empty viewport space
+   ✔  Then the Windows panel closes
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>
