@@ -1,7 +1,7 @@
 # Current native Ribbon Customization
 
-Ninety-eight of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 94 of 122 declarations and 1,329
+Ninety-nine of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 95 of 122 declarations and 1,343
 passing steps. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
@@ -45,6 +45,9 @@ left the custom panel empty.
 The Ctrl+A transfer placed the focused sketch-exit command first and
 kept the separator available for reuse.
 [Sketch-exit transfer](../2026-11-25-ribbon-customization-exit-transfer-3856/README.md)
+The target arrow-key case selected a staged separator and its adjacent
+commands without reordering the draft.
+[Target navigation](../2026-11-25-ribbon-customization-target-arrows-3856/README.md)
 
 The [command list](case-059/cucumber.json),
 [reorder](case-082/cucumber.json), and [remove](case-083/cucumber.json)

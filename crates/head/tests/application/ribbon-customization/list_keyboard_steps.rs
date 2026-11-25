@@ -7,7 +7,9 @@ use oblikovati_viewport::{ViewportCapture, ViewportPhysicalKey};
 
 #[given("ribbon customization is open in the MCAD Software for the Part Tools target")]
 fn open_tools_draft(world: &mut ApplicationWorld) {
-    world.add_part();
+    if world.state().document.is_none() {
+        world.add_part();
+    }
     empty_tools_customization(world);
 }
 
@@ -80,6 +82,7 @@ fn only_target_display_is_unchanged(world: &mut ApplicationWorld) {
 }
 
 #[then("the customization dialog closes without applying the staged commands")]
+#[then("the customization dialog closes without applying the staged entries")]
 fn customization_closed_without_apply(world: &mut ApplicationWorld) {
     customization_closed(world);
     no_user_commands(world);
@@ -150,7 +153,7 @@ pub(super) fn expect_source_selection(
     }
 }
 
-fn expect_target_selection(world: &mut ApplicationWorld, selected: &str) {
+pub(super) fn expect_target_selection(world: &mut ApplicationWorld, selected: &str) {
     world.hover([800, 900]);
     let rows = target_row_runs(world);
     let last = rows.last().expect("expected staged rows");

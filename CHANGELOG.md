@@ -14,7 +14,7 @@
 - Added Show Panels instructions and F1 help to the ribbon panel selector. (#3856)
 - Added an Explore panel with Measure to the 3D Model ribbon. (#3856)
 - Added the Standard overview and Units tab to Document Settings. (#3856)
-- Added the Exit 2D Sketch Tab category and source paging. Transfers after Ctrl+A put the focused command first. (#3856)
+- Added the Exit 2D Sketch Tab category and source paging. Transfers after Ctrl+A put the focused command first. Up and Down select staged rows without reordering them. (#3856)
 - Added a Tools Options expansion with a ribbon layout reset confirmation. (#3856)
 
 - Added a curvature comb and live density and scale settings for sketch ellipses. (#3995)

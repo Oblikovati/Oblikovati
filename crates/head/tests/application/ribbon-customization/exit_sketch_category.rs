@@ -2,10 +2,12 @@
 //! Navigate the published sketch-exit customization category.
 use super::{
     ApplicationWorld, click_in_customize, diagnostics, empty_tools_customization,
-    list_keyboard_steps::{capture_plain_source_rows, expect_source_selection},
+    list_keyboard_steps::{
+        capture_plain_source_rows, expect_source_selection, expect_target_selection,
+    },
     list_steps::source_rows,
     row_option_checked,
-    transaction_steps::{expect_target_pending, target_rows},
+    transaction_steps::{expect_target_pending, target_row_runs, target_rows},
 };
 use cucumber::{given, then, when};
 use oblikovati_viewport::ViewportPhysicalKey;
@@ -55,17 +57,21 @@ fn page_down_from_cancel(world: &mut ApplicationWorld) {
 
 #[then("\"Finish Sketch\" is highlighted")]
 fn finish_highlighted(world: &mut ApplicationWorld) {
-    source_highlighted(world, "Finish Sketch");
+    exit_row_highlighted(world, "FinishSketch");
 }
 
 #[then("the separator is highlighted")]
 fn separator_highlighted(world: &mut ApplicationWorld) {
-    source_highlighted(world, "<Separator>");
+    exit_row_highlighted(world, "<Separator>");
 }
 
-fn source_highlighted(world: &mut ApplicationWorld, expected: &str) {
-    world.hover([1250, 780]);
-    assert!(world.row_accented_beside(expected, "Cancel Sketch"));
+fn exit_row_highlighted(world: &mut ApplicationWorld, expected: &str) {
+    if target_rows(world) == TARGET_ORDER {
+        expect_target_selection(world, expected);
+    } else {
+        world.hover([1250, 780]);
+        assert!(world.row_accented_beside(expected, "Cancel Sketch"));
+    }
 }
 
 #[then("all three source entries are highlighted")]
@@ -80,8 +86,28 @@ fn transfer_selected_rows(world: &mut ApplicationWorld) {
 }
 
 #[then("the target contains Cancel Sketch, Separator, and Finish Sketch in that order")]
+#[then("the staged rows remain in their original order")]
 fn exit_sketch_target_order(world: &mut ApplicationWorld) {
     assert_eq!(target_rows(world), TARGET_ORDER);
+}
+
+#[given("the target contains \"Cancel Sketch\", a separator, and \"Finish Sketch\" in that order")]
+fn stage_exit_commands(world: &mut ApplicationWorld) {
+    select_exit_sketch_filter(world);
+    select_cancel_in_source(world);
+    world.key(ViewportPhysicalKey::A, true);
+    transfer_selected_rows(world);
+    exit_sketch_target_order(world);
+}
+
+#[when("the user selects \"Cancel Sketch\" in the target list")]
+fn select_cancel_in_target(world: &mut ApplicationWorld) {
+    let row = target_row_runs(world)
+        .into_iter()
+        .find(|run| run.text == "CancelSketch")
+        .expect("Cancel Sketch in the target list");
+    world.click(diagnostics::pointer_pixels(row.center()));
+    expect_target_selection(world, "CancelSketch");
 }
 
 #[then("the source list still contains Separator")]

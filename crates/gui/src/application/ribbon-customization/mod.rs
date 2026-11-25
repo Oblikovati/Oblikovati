@@ -410,7 +410,7 @@ impl RibbonCustomization {
         if !ui.io().key_shift {
             let handled = match active_list {
                 ListFocus::Source => self.navigate_source(ui),
-                ListFocus::Target => self.navigate_target_page(ui),
+                ListFocus::Target => self.navigate_target(ui),
             };
             if handled {
                 self.navigation_consumed = true;

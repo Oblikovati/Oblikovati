@@ -55,6 +55,7 @@ fn categories_visible(world: &mut ApplicationWorld) {
 }
 
 #[when("the user presses Down")]
+#[when("the user presses Down again")]
 fn down(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::DownArrow, false);
 }

@@ -58,16 +58,22 @@ impl RibbonCustomization {
         true
     }
 
-    pub(super) fn navigate_target_page(&mut self, ui: &Ui) -> bool {
+    pub(super) fn navigate_target(&mut self, ui: &Ui) -> bool {
         if ui.io().key_ctrl || ui.io().key_alt || ui.io().key_super {
             return false;
         }
-        let Some(down) = pressed_page(ui) else {
+        let (down, count) = if let Some(down) = pressed_page(ui) {
+            (down, self.visible_target_rows)
+        } else if ui.is_key_pressed_no_repeat(Key::DownArrow) {
+            (true, 1)
+        } else if ui.is_key_pressed_no_repeat(Key::UpArrow) {
+            (false, 1)
+        } else {
             return false;
         };
         if let Some(last) = self.draft.rows().len().checked_sub(1) {
             let current = self.draft.selected.unwrap_or(0);
-            let selected = page_row(current, last, self.visible_target_rows, down);
+            let selected = page_row(current, last, count, down);
             self.draft.reset_target_selection(selected);
             self.scroll_target_to_selection = true;
         }
