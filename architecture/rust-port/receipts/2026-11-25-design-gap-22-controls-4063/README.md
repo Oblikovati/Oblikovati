@@ -22,3 +22,7 @@ The GUI geometry and host camera tests passed. The orientation checks
 sample unhighlighted face paint when looking for diagonal seams and use
 the rendered radio marks to verify scope selection.
 [Scope scenario](scope/cucumber.json)
+
+The complete published feature passed all 23 scenarios and 253 steps
+on the native X11 desktop.
+[Full Cucumber report](full/cucumber.json) · [JUnit](full/junit.xml)
