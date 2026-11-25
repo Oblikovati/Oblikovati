@@ -1,7 +1,7 @@
 # Current native Ribbon Customization
 
-Eighty-two of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 78 of 122 declarations and 1,121
+Eighty-four of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 80 of 122 declarations and 1,156
 passing steps. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
@@ -14,6 +14,8 @@ The [resize cases](../2026-11-25-ribbon-customization-resize-3856/README.md)
 verified resizing both lists, retaining staged edits, and restoring the default size.
 The [Sketch entry cases](../2026-11-25-ribbon-customization-sketch-entry-3856/README.md)
 verified the Create title menu and picking a source command without staging it.
+The Tools and Manage cases verified independent pending edits and their
+rollback on Cancel. [Two-target runs](../2026-11-25-ribbon-customization-two-targets-3856/README.md)
 
 The [Button Size case](case-025/cucumber.json) reached the main-panel
 command menu. The [grouped menu case](case-028/cucumber.json) needs

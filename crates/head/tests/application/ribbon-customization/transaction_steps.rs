@@ -163,6 +163,7 @@ fn tools_all_commands(world: &mut ApplicationWorld) {
 #[when("the user selects the Part Manage target")]
 #[when("the user selects \"Part | Manage\" as the target")]
 #[when("the user selects the Part | Manage target")]
+#[when("the user selects Part Manage as the target")]
 fn select_manage(world: &mut ApplicationWorld) {
     choose_target(world, "Manage");
 }
@@ -172,6 +173,7 @@ fn select_manage(world: &mut ApplicationWorld) {
 #[then("the Part | Manage target list is empty")]
 #[then("the Part | Tools custom target remains empty")]
 #[then("the Part | Tools target remains empty")]
+#[then("its target list is empty")]
 fn empty_target_list(world: &mut ApplicationWorld) {
     target_is_empty(world);
 }
@@ -228,6 +230,7 @@ fn expect_target_command(world: &ApplicationWorld, name: &str) {
 
 #[when("the user adds \"2D Sketches\" to the Part Tools custom panel")]
 #[when("the user adds \"2D Sketches\" to the Part | Tools target without applying")]
+#[when("the user adds \"2D Sketches\" to Part Tools")]
 fn add_sketches_to_tools(world: &mut ApplicationWorld) {
     assert_eq!(target_label(world), "Part|Tools");
     add_command(world, "2DSketches");
@@ -247,6 +250,7 @@ fn add_annotations(world: &mut ApplicationWorld) {
 #[then("\"2D Sketches\" appears in the Part Tools custom panel list")]
 #[then("\"2D Sketches\" appears in the Part Manage custom panel list")]
 #[then("\"2D Sketches\" remains in its custom panel list")]
+#[then("its staged 2D Sketches command remains present")]
 #[then("\"2D Sketches\" is absent from the visible available commands list")]
 fn sketches_in_selected_target(world: &mut ApplicationWorld) {
     expect_target_command(world, "2DSketches");

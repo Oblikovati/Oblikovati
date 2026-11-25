@@ -96,11 +96,72 @@ fn target_has_sketches(world: &mut ApplicationWorld) {
 }
 
 #[given("ribbon customization shows All Commands and empty Part Tools and Part Manage targets")]
+#[given("the ribbon customization dialog has empty Part Tools and Part Manage targets")]
+#[given("the Part Tools and Part Manage custom panel lists are empty")]
 fn tools_and_manage_empty(world: &mut ApplicationWorld) {
     empty_tools_customization(world);
     choose_target(world, "Manage");
     target_is_empty(world);
     choose_target(world, "Tools");
+}
+
+#[given("ribbon customization is open with All Commands as the source")]
+fn all_commands_in_open_draft(world: &mut ApplicationWorld) {
+    assert_eq!(transaction_steps::target_label(world), "Part|Tools");
+    all_commands(world);
+}
+
+#[when("the user double-clicks 2D Sketches in the source list for Part Tools")]
+fn double_click_on_tools(world: &mut ApplicationWorld) {
+    assert_eq!(transaction_steps::target_label(world), "Part|Tools");
+    double_click_sketches(world);
+}
+
+#[then("the command appears in the Part Tools target and the target is marked as changed")]
+fn sketches_staged_on_tools(world: &mut ApplicationWorld) {
+    expect_staged_sketches(world, "Part|Tools*");
+}
+
+#[then("the command appears in the Part Manage target and that target is marked as changed")]
+fn sketches_staged_on_manage(world: &mut ApplicationWorld) {
+    expect_staged_sketches(world, "Part|Manage*");
+}
+
+fn expect_staged_sketches(world: &ApplicationWorld, label: &str) {
+    assert_eq!(transaction_steps::target_label(world), label);
+    assert_eq!(transaction_steps::target_rows(world), ["2DSketches"]);
+}
+
+#[then("the target is empty and 2D Sketches is available in the source list")]
+fn untouched_manage_target(world: &mut ApplicationWorld) {
+    assert_eq!(transaction_steps::target_label(world), "Part|Manage");
+    target_is_empty(world);
+    sketches_in_available_commands(world);
+}
+
+#[when("the user adds \"3D Annotations\" to Part Manage")]
+fn stage_manage_annotations(world: &mut ApplicationWorld) {
+    assert_eq!(transaction_steps::target_label(world), "Part|Manage");
+    add_command(world, "3DAnnotations");
+}
+
+#[then("its target list contains \"3D Annotations\"")]
+fn annotations_in_manage(world: &mut ApplicationWorld) {
+    assert_eq!(transaction_steps::target_rows(world), ["3DAnnotations"]);
+}
+
+#[then("Part Tools is selected and its target list is empty")]
+fn tools_empty_after_reopen(world: &mut ApplicationWorld) {
+    assert_eq!(transaction_steps::target_label(world), "Part|Tools");
+    target_is_empty(world);
+}
+
+#[then("\"2D Sketches\" and \"3D Annotations\" are available in the source list")]
+fn both_commands_available(world: &mut ApplicationWorld) {
+    let rows = list_steps::source_rows(world);
+    for name in ["2DSketches", "3DAnnotations"] {
+        assert!(rows.iter().any(|row| row.text == name), "expected {name}");
+    }
 }
 
 #[when("the user stages 2D Sketches on Part Tools")]
@@ -128,7 +189,9 @@ fn manage_options_clear(world: &mut ApplicationWorld) {
 }
 
 #[then("the Part Tools target shows a pending-change marker")]
+#[then("the Part Tools target is marked as changed")]
 #[then("the Part Manage target shows a pending-change marker")]
+#[then("Part Manage is marked as having pending changes")]
 fn draft_remains_pending(world: &mut ApplicationWorld) {
     transaction_steps::expect_target_pending(world, true);
 }

@@ -295,6 +295,7 @@ fn customization_remains_open(_world: &mut ApplicationWorld) {
 #[then("the target no longer indicates a pending change")]
 #[then("the target is not marked as changed")]
 #[then("the target has no pending-change marker")]
+#[then("the target selector has no pending-change marker")]
 #[then("the Part Tools target has no pending-change marker")]
 #[then("no pending-change marker is shown")]
 fn tools_not_pending(world: &mut ApplicationWorld) {

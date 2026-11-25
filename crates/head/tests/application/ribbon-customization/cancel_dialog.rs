@@ -4,6 +4,7 @@ use super::*;
 
 #[when("the user clicks \"Cancel\"")]
 #[when("the user clicks Cancel")]
+#[when("the user clicks Cancel without applying the changes")]
 pub(super) fn cancel_customization(world: &mut ApplicationWorld) {
     if world.state().sketch_text.is_some() {
         let at = world.run_in_window("Format Text", "Cancel").center();
