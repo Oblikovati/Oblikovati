@@ -56,6 +56,10 @@ pub(super) fn request_application_close(world: &mut ApplicationWorld) {
         world.save_capture("application-closing-ready");
     }
     #[cfg(target_os = "linux")]
+    if world.app().window.native.view.uses_wayland() {
+        return close_from_wayland_frame(world, can_close);
+    }
+    #[cfg(target_os = "linux")]
     {
         super::x11_input::focus_window();
         let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
@@ -87,6 +91,19 @@ pub(super) fn request_application_close(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 
+#[cfg(target_os = "linux")]
+fn close_from_wayland_frame(world: &mut ApplicationWorld, can_close: bool) {
+    let close = super::main_window_frame_native::frame_control_center(2);
+    let events = super::pointer_click_events(close, 1);
+    if can_close {
+        world.app().window.scripted = events;
+        finish_clean_application(world);
+    } else {
+        world.pump(events);
+        world.pump(Vec::new());
+    }
+}
+
 fn finish_clean_application(world: &mut ApplicationWorld) {
     let mut app = world.app.take().expect("expected an open application");
     crate::run_window_with_owner(
@@ -105,7 +122,9 @@ fn application_closed_without_prompt(world: &mut ApplicationWorld) {
 
 pub(super) fn cancel_application_close(world: &mut ApplicationWorld) {
     #[cfg(target_os = "linux")]
-    {
+    if world.app().window.native.view.uses_wayland() {
+        world.click_text("Cancel");
+    } else {
         let position = super::rendered_label_center("Cancel");
         super::x11_input::click(position);
         world.pump(Vec::new());

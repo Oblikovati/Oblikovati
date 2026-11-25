@@ -301,9 +301,9 @@ using this status; the live scenario directory can change.
   with `tools/bdd/feature_progress.py` before reporting them.
 - Sketch constraint-glyph hover passed its complete one-scenario native run at
   `e33bac9dd`.
-- Application Closing (#4030) passed seven current scenarios and 51 steps in one native run.
-  Save and Discard were checked on reopen. Cancelling the first Save As kept the sketch open.
-  See the [current run](receipts/2026-11-24-application-closing-current-complete-4030/README.md).
+- Application Closing (#4030) passed seven scenarios and 51 steps in the [previous full run](receipts/2026-11-24-application-closing-current-complete-4030/README.md).
+  The revised unsaved-Part Cancel scenario passed all nine steps on
+  [Wayland and X11](receipts/2026-11-25-application-closing-wayland-4030/README.md).
   Strict build and runtime provenance remains open under #3978.
 - Viewport Pan (#3881) passed all four current scenarios and 32 steps with the native Part.
   See the [current run](receipts/2026-11-24-viewport-pan-current-3881/README.md).
