@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:08:09.269203748Z" time="28.612759672"><testcase name="Scenario: Add a selected command using the keyboard transfer button: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1135:3" time="28.612759672"><system-out><![CDATA[  Scenario: Add a selected command using the keyboard transfer button
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And ribbon customization is open with "All Commands" selected
+   ✔  And the Part | Tools custom target is empty
+   ✔  When the user selects "2D Sketches" in the available commands list
+   ✔  And the user presses Enter while the list has focus
+   ✔  Then "2D Sketches" remains selected in the available commands list
+   ✔  And the Part | Tools target remains empty
+   ✔  And Apply remains disabled
+   ✔  When the user presses Tab and then Space
+   ✔  Then "2D Sketches" appears in the Part | Tools target
+   ✔  And the target is marked as changed
+   ✔  And Apply and cancels are enabled
+   ✔  When the user cancels customization
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>
