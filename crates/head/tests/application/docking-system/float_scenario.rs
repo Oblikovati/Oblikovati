@@ -22,6 +22,7 @@ fn float_docked_panel(world: &mut ApplicationWorld) {
 fn panel_is_floating(world: &mut ApplicationWorld) {
     assert_eq!(diagnostics::window_dock_id(PANEL), Some(0));
     world.run_in_window(PANEL, "Assigntopart");
+    world.save_capture("material-browser-floating");
 }
 
 #[then("the viewport expands into the space released by the panel")]
@@ -47,15 +48,30 @@ fn redock_floating_panel(world: &mut ApplicationWorld) {
 }
 
 #[then("the panel docks at that target")]
-fn panel_is_redocked(_: &mut ApplicationWorld) {
+fn panel_is_redocked(world: &mut ApplicationWorld) {
     assert_ne!(diagnostics::window_dock_id(PANEL).unwrap(), 0);
+    let [_, _, right, _] = diagnostics::window_pixel_bounds(PANEL).expect("redocked panel");
+    let width = world.extent()[0] as f32;
+    assert!(
+        (right - width).abs() <= 1.,
+        "right dock edge {right}, window {width}"
+    );
 }
 
 #[then("the viewport adjusts to the resulting workspace layout")]
 fn viewport_adjusts(world: &mut ApplicationWorld) {
-    let (before, _) = world.docking_resize.expect("original docked viewport");
-    let after = viewport(world);
-    assert_eq!(after, before, "viewport {before:?} -> {after:?}");
+    let [left, _, right, _] = viewport(world).map(|edge| edge as f32);
+    let [_, _, model_right, _] = diagnostics::window_pixel_bounds("Model").expect("Model dock");
+    let [material_left, _, _, _] = diagnostics::window_pixel_bounds(PANEL).expect("Material dock");
+    assert!(
+        left < right
+            && (0. ..=3.).contains(&(left - model_right))
+            && (0. ..=3.).contains(&(material_left - right)),
+        "viewport {left}..{right} must fill the space between docks at {model_right} and {material_left}"
+    );
     world.run_in_window(PANEL, "Assigntopart");
     world.expect_text("End of Part");
+    assert_eq!(world.state().document, world.previous_document);
+    super::workspace_layout::browser_feature::expect_solid_visible(world);
+    world.save_capture("material-browser-redocked");
 }
