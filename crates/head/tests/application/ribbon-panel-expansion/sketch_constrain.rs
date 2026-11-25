@@ -467,16 +467,20 @@ fn create_expansion_opens_the_existing_precise_input_for_a_line() {
     world.select_line_tool();
     assert!(world.state().precise_target.is_some());
     open_create(&mut world);
+    let right_edge = super::sketch_create_live::check_create_flyout_rows(&mut world);
     let control = world.run_in_window("##ribbon-additional-Create", "PreciseInput");
     assert_eq!(control.alpha, u8::MAX);
-    let center = diagnostics::pointer_pixels(control.center());
-    world.click(center);
+    world.click(diagnostics::pointer_pixels([
+        right_edge,
+        control.center()[1],
+    ]));
     world.pump(Vec::new());
     assert!(diagnostics::window_geometry("Precise Input").is_some());
-    let footer = world.run_in_window("##ribbon-additional-Create", "Create");
-    world.click(diagnostics::pointer_pixels(footer.center()));
-    let control = world.run_in_window("##application-ribbon", "PreciseInput");
-    world.click(diagnostics::pointer_pixels(control.center()));
+    let control = world.run_in_window("##ribbon-additional-Create", "PreciseInput");
+    world.click(diagnostics::pointer_pixels([
+        right_edge,
+        control.center()[1],
+    ]));
     world.pump(Vec::new());
     assert!(diagnostics::window_geometry("Precise Input").is_none());
     world.close();

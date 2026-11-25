@@ -22,4 +22,4 @@ pub(crate) use cache::{GuiIconCache, GuiRibbonIcons, IconSize};
 pub(crate) use catalog::{IconGlyph, document_glyph};
 
 mod buttons;
-pub(crate) use buttons::action_glyph;
+pub(crate) use buttons::{FLYOUT_ROW_HEIGHT, action_glyph};

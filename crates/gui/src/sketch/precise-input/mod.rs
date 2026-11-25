@@ -129,17 +129,27 @@ impl PreciseInputBar {
         }
     }
     pub(crate) fn toggle_icon(&mut self, ui: &Ui, icons: &crate::icons::GuiRibbonIcons) {
+        self.toggle_with_icon(ui, || {
+            icons.button(
+                ui,
+                "Precise Input",
+                crate::icons::IconGlyph::PreciseInput,
+                icons.appearance.cell(3).1,
+            )
+        });
+    }
+    pub(crate) fn toggle_flyout(&mut self, ui: &Ui, icons: &crate::icons::GuiRibbonIcons) {
+        self.toggle_with_icon(ui, || {
+            icons.flyout_button(ui, "Precise Input", crate::icons::IconGlyph::PreciseInput)
+        });
+    }
+    fn toggle_with_icon(&mut self, ui: &Ui, button: impl FnOnce() -> bool) {
         let lit = ui.style_color(StyleColor::ButtonActive);
         let _highlight = self
             .open
             .is_requested()
             .then(|| ui.push_style_color(StyleColor::Button, lit));
-        if icons.button(
-            ui,
-            "Precise Input",
-            crate::icons::IconGlyph::PreciseInput,
-            icons.appearance.cell(3).1,
-        ) {
+        if button() {
             self.toggle_visibility();
         }
     }

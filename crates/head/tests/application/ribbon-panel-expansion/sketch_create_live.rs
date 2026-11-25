@@ -9,6 +9,25 @@ use cucumber::{given, then, when};
 const CREATE: &str = "##ribbon-additional-Create";
 const CONSTRAIN: &str = "##ribbon-additional-Constrain";
 
+pub(super) fn check_create_flyout_rows(world: &mut ApplicationWorld) -> f32 {
+    world.hover([850, 350]);
+    world.save_capture("sketch-create-flyout-rows");
+    let (position, size) = diagnostics::window_geometry(CREATE).unwrap();
+    let rows = ["CreateBlock", "PreciseInput"].map(|label| world.run_in_window(CREATE, label));
+    let pitch = rows[1].center()[1] - rows[0].center()[1];
+    assert!((pitch - 32.).abs() < 2., "Create flyout row pitch {pitch}");
+    for row in rows {
+        let y = row.center()[1];
+        let icons = super::super::ribbon_appearance::icon_quads::icon_quads_inside((
+            [position[0], y - 12.],
+            [row.minimum[0], y + 12.],
+        ));
+        assert_eq!(icons.len(), 1, "expected a leading icon for {:?}", row.text);
+        assert_eq!(icons[0].1[0] - icons[0].0[0], 16.);
+    }
+    position[0] + size[0] - 18.
+}
+
 fn widen_sketch_ribbon(world: &mut ApplicationWorld) {
     world.app().window.native.view.resize([2400, 900]).unwrap();
     world.pump(Vec::new());

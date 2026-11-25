@@ -3,20 +3,18 @@
 use super::*;
 #[path = "coordinate_restriction.rs"]
 mod coordinate_restriction;
-const COMMAND_ROW_HEIGHT: f32 = 28.;
-
 pub(super) fn options_flyout(
     ui: &Ui,
     display: &mut RibbonDisplayState,
     icons: &crate::icons::GuiRibbonIcons,
 ) -> bool {
     use crate::icons::IconGlyph;
-    let reset = normal_command_button(ui, icons, "Reset UI Layout", IconGlyph::UserInterface);
+    let reset = icons.flyout_button(ui, "Reset UI Layout", IconGlyph::UserInterface);
     if reset {
         display.request_reset();
     }
     let _disabled = ui.begin_disabled(true);
-    normal_command_button(ui, icons, "iLogic Configuration", IconGlyph::Preferences);
+    icons.flyout_button(ui, "iLogic Configuration", IconGlyph::Preferences);
     reset
 }
 
@@ -83,7 +81,7 @@ pub(super) fn draw(
                     .as_ref()
                     .is_none_or(|action| !action.dispatchable(context.state)),
         );
-        let clicked = normal_command_button(ui, context.owners.icons, label, glyph)
+        let clicked = context.owners.icons.flyout_button(ui, label, glyph)
             || bend && display.context_tab_press(ui);
         if clicked && coordinate {
             coordinate_restriction::open(ui);
@@ -108,31 +106,12 @@ pub(super) fn draw(
     }
 }
 
-fn normal_command_button(
-    ui: &Ui,
-    icons: &crate::icons::GuiRibbonIcons,
-    label: &str,
-    glyph: crate::icons::IconGlyph,
-) -> bool {
-    crate::widget_abi::icon_button(
-        ui,
-        label,
-        crate::widget_abi::IconButtonPresentation {
-            texture: icons.key(glyph, crate::icons::IconSize::Small),
-            size: [ui.content_region_avail()[0].max(1.), COMMAND_ROW_HEIGHT],
-            icon: [16.; 2],
-            large: false,
-            show_caption: true,
-        },
-    )
-}
-
 pub(super) fn normal_expansion_height(
     ui: &Ui,
     panel: RibbonPanel,
     customization: &crate::application::ribbon_customization::RibbonCustomization,
 ) -> Option<f32> {
-    let rows = if panel == RibbonPanel::ToolOptions {
+    let rows = if matches!(panel, RibbonPanel::ToolOptions | RibbonPanel::Create) {
         2
     } else {
         additional_icon_entries(panel)?
@@ -142,7 +121,7 @@ pub(super) fn normal_expansion_height(
     };
     let style = ui.clone_style();
     let footer = ui.text_line_height() + 2. * style.window_padding[1] + 7.;
-    Some(rows as f32 * (COMMAND_ROW_HEIGHT + style.item_spacing[1]) + footer)
+    Some(rows as f32 * (crate::icons::FLYOUT_ROW_HEIGHT + style.item_spacing[1]) + footer)
 }
 
 fn additional_visible(
@@ -276,16 +255,18 @@ fn create_commands(
     icons: &crate::icons::GuiRibbonIcons,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    let size = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-        [0., 0.]
+    use crate::sketch::create_block::{CreateBlockButton, ribbon_button};
+    let normal = icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal;
+    let button = if normal {
+        CreateBlockButton::Flyout
     } else {
-        icons.appearance.cell(0).1
+        CreateBlockButton::Ribbon(icons.appearance.cell(0).1)
     };
     let origin = ui.cursor_pos();
-    crate::sketch::create_block::ribbon_button(ui, state, create_block, actions, size, icons);
+    ribbon_button(ui, state, create_block, actions, button, icons);
     let disabled = ui.begin_disabled(state.precise_target.is_none() || state.transaction_open);
-    if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-        precise_input.toggle(ui, icons.cell([108., 20.]));
+    if normal {
+        precise_input.toggle_flyout(ui, icons);
     } else {
         icons.cursor(ui, origin, icons.appearance.cell(1).0);
         precise_input.toggle_icon(ui, icons);

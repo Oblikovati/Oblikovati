@@ -36,8 +36,9 @@ values come from the same handoff.
 - The application bar displays the brand mark. Mapped ribbon commands and
   document chooser entries use the handoff SVGs. Navigation uses 16 px
   wheel, pan, zoom, and orbit glyphs and
-  chevrons inside a 28 px bar. The Tools Options flyout uses 28 px
-  full-width rows with 16 px leading icons and a compact Pin footer.
+  chevrons inside a 28 px bar. The Tools Options and Normal Sketch Create
+  flyouts use 28 px full-width rows with 16 px leading icons and compact
+  Pin footers.
 - The Sketch and 3D Model ribbons use additional handoff icons for draw
   tools, constraints, work features, and model operations. The rectangle and
   arc variants use their own artwork, and sketch fillets use a different

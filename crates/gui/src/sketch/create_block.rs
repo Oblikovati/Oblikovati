@@ -4,24 +4,35 @@ use crate::dockable_window::DockableWindow;
 use crate::{GuiAuthoringContext, GuiCommandState, GuiShellAction};
 use imgui::{Key, Ui};
 
+pub(crate) enum CreateBlockButton {
+    Ribbon([f32; 2]),
+    Flyout,
+}
+
 pub(crate) fn ribbon_button(
     ui: &Ui,
     state: &GuiCommandState,
     dialog: &mut CreateBlockDialog,
     actions: &mut Vec<GuiShellAction>,
-    size: [f32; 2],
+    placement: CreateBlockButton,
     icons: &crate::icons::GuiRibbonIcons,
 ) {
     let disabled = ui.begin_disabled(!state.sketch_at_ready || state.transaction_open);
-    let clicked = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-        crate::widget_abi::button(ui, "Create Block", size)
-    } else {
-        icons.button(
+    let clicked = match placement {
+        CreateBlockButton::Flyout => {
+            icons.flyout_button(ui, "Create Block", crate::icons::IconGlyph::CreateBlock)
+        }
+        CreateBlockButton::Ribbon(size)
+            if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal =>
+        {
+            crate::widget_abi::button(ui, "Create Block", size)
+        }
+        CreateBlockButton::Ribbon(size) => icons.button(
             ui,
             "Create Block",
             crate::icons::IconGlyph::CreateBlock,
             size,
-        )
+        ),
     };
     if clicked {
         dialog.open(state);

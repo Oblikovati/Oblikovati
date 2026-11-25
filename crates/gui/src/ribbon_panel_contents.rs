@@ -111,7 +111,7 @@ pub(crate) fn draw_panel_content(
                 state,
                 owners.create_block,
                 actions,
-                size,
+                crate::sketch::create_block::CreateBlockButton::Ribbon(size),
                 owners.icons,
             );
         }

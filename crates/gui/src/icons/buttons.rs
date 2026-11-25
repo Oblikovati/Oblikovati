@@ -4,7 +4,23 @@ use super::{GuiRibbonIcons, IconGlyph, IconSize};
 use crate::{GuiCommandState, GuiShellAction, GuiSketchConstraint, GuiSketchTool};
 use imgui::Ui;
 
+pub(crate) const FLYOUT_ROW_HEIGHT: f32 = 28.;
+
 impl GuiRibbonIcons {
+    pub(crate) fn flyout_button(&self, ui: &Ui, label: &str, glyph: IconGlyph) -> bool {
+        crate::widget_abi::icon_button(
+            ui,
+            label,
+            crate::widget_abi::IconButtonPresentation {
+                texture: self.key(glyph, IconSize::Small),
+                size: [ui.content_region_avail()[0].max(1.), FLYOUT_ROW_HEIGHT],
+                icon: [16.; 2],
+                large: false,
+                show_caption: true,
+            },
+        )
+    }
+
     pub(crate) fn brand_mark(&self, ui: &Ui, beside_toolbar: bool) {
         let texture = imgui::TextureId::new(self.key(IconGlyph::BrandMark, IconSize::Small).raw());
         imgui::Image::new(texture, [16.; 2]).build(ui);
