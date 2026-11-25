@@ -8,10 +8,13 @@ use imgui::Ui;
 
 #[path = "recent_cell_text.rs"]
 mod recent_cell_text;
+#[path = "recent_checkbox.rs"]
+mod recent_checkbox;
 #[path = "recent_list_layout.rs"]
 mod recent_list_layout;
 pub(crate) use recent_cell_text::fit_recent_cell;
 use recent_cell_text::{fit_recent_timestamp, reveal_full_cell, visible_source_text};
+use recent_checkbox::checkbox;
 use recent_list_layout::RecentListLayout;
 
 const CHECK_COLUMN: f32 = 28.;
@@ -87,11 +90,8 @@ impl HomeWorkspace {
     fn list_header(&mut self, ui: &Ui, rows: &[&GuiRecentDocument], layout: RecentListLayout) {
         let state = self.checks.header(rows);
         let mut all = state == HeaderCheck::All;
-        if ui.checkbox("##recent-all", &mut all) {
+        if checkbox(ui, "##recent-all", &mut all, state == HeaderCheck::Partial) {
             self.checks.toggle_header(rows);
-        }
-        if state == HeaderCheck::Partial {
-            partial_mark(ui);
         }
         self.header_cell(ui, SortField::Name, CHECK_COLUMN + KIND_COLUMN, layout);
         let mut x = CHECK_COLUMN + KIND_COLUMN + layout.width(SortField::Name);
@@ -134,7 +134,7 @@ impl HomeWorkspace {
             accent_row(ui, ui.frame_height(), ui.content_region_avail()[0]);
         }
         let mut box_state = checked;
-        if ui.checkbox(format!("##check-{}", row.path), &mut box_state) {
+        if checkbox(ui, &format!("##check-{}", row.path), &mut box_state, false) {
             self.checks.set(&row.path, box_state);
         }
         ui.same_line_with_pos(CHECK_COLUMN);
@@ -324,7 +324,12 @@ impl HomeWorkspace {
             accent_row(ui, CARD_SIZE[1], width);
         }
         let mut box_state = checked;
-        if ui.checkbox(format!("##card-check-{}", row.path), &mut box_state) {
+        if checkbox(
+            ui,
+            &format!("##card-check-{}", row.path),
+            &mut box_state,
+            false,
+        ) {
             self.checks.set(&row.path, box_state);
         }
         ui.same_line();
@@ -379,14 +384,4 @@ fn pin_control(ui: &Ui, row: &GuiRecentDocument, actions: &mut Vec<GuiShellActio
             pinned: !row.pinned,
         }));
     }
-}
-/// The header's partial state: a short horizontal mark in its box.
-fn partial_mark(ui: &Ui) {
-    let [minimum, maximum] = [ui.item_rect_min(), ui.item_rect_max()];
-    let middle = (minimum[1] + maximum[1]) * 0.5;
-    let color = ui.style_color(imgui::StyleColor::CheckMark);
-    ui.get_window_draw_list()
-        .add_line([minimum[0] + 4., middle], [maximum[0] - 4., middle], color)
-        .thickness(2.)
-        .build();
 }
