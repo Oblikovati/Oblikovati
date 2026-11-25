@@ -5,6 +5,21 @@ use super::*;
 mod coordinate_restriction;
 const COMMAND_ROW_HEIGHT: f32 = 28.;
 
+pub(super) fn options_flyout(
+    ui: &Ui,
+    display: &mut RibbonDisplayState,
+    icons: &crate::icons::GuiRibbonIcons,
+) -> bool {
+    use crate::icons::IconGlyph;
+    let reset = normal_command_button(ui, icons, "Reset UI Layout", IconGlyph::UserInterface);
+    if reset {
+        display.request_reset();
+    }
+    let _disabled = ui.begin_disabled(true);
+    normal_command_button(ui, icons, "iLogic Configuration", IconGlyph::Preferences);
+    reset
+}
+
 pub(in super::super) fn tool_options(ui: &Ui, display: &mut RibbonDisplayState) -> bool {
     let left = ui.cursor_pos()[0];
     let reset = ui.button("Reset UI Layout");
@@ -68,20 +83,8 @@ pub(super) fn draw(
                     .as_ref()
                     .is_none_or(|action| !action.dispatchable(context.state)),
         );
-        let clicked = crate::widget_abi::icon_button(
-            ui,
-            label,
-            crate::widget_abi::IconButtonPresentation {
-                texture: context
-                    .owners
-                    .icons
-                    .key(glyph, crate::icons::IconSize::Small),
-                size: [ui.content_region_avail()[0].max(1.), COMMAND_ROW_HEIGHT],
-                icon: [16.; 2],
-                large: false,
-                show_caption: true,
-            },
-        ) || bend && display.context_tab_press(ui);
+        let clicked = normal_command_button(ui, context.owners.icons, label, glyph)
+            || bend && display.context_tab_press(ui);
         if clicked && coordinate {
             coordinate_restriction::open(ui);
         } else if clicked && bend {
@@ -105,15 +108,38 @@ pub(super) fn draw(
     }
 }
 
+fn normal_command_button(
+    ui: &Ui,
+    icons: &crate::icons::GuiRibbonIcons,
+    label: &str,
+    glyph: crate::icons::IconGlyph,
+) -> bool {
+    crate::widget_abi::icon_button(
+        ui,
+        label,
+        crate::widget_abi::IconButtonPresentation {
+            texture: icons.key(glyph, crate::icons::IconSize::Small),
+            size: [ui.content_region_avail()[0].max(1.), COMMAND_ROW_HEIGHT],
+            icon: [16.; 2],
+            large: false,
+            show_caption: true,
+        },
+    )
+}
+
 pub(super) fn normal_expansion_height(
     ui: &Ui,
     panel: RibbonPanel,
     customization: &crate::application::ribbon_customization::RibbonCustomization,
 ) -> Option<f32> {
-    let rows = additional_icon_entries(panel)?
-        .iter()
-        .filter(|(label, _)| additional_visible(label, customization))
-        .count();
+    let rows = if panel == RibbonPanel::ToolOptions {
+        2
+    } else {
+        additional_icon_entries(panel)?
+            .iter()
+            .filter(|(label, _)| additional_visible(label, customization))
+            .count()
+    };
     let style = ui.clone_style();
     let footer = ui.text_line_height() + 2. * style.window_padding[1] + 7.;
     Some(rows as f32 * (COMMAND_ROW_HEIGHT + style.item_spacing[1]) + footer)

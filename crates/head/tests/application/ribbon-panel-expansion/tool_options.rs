@@ -8,6 +8,54 @@ pub(super) const OPTIONS: &str = "##ribbon-additional-ToolOptions";
 const RESET: &str = "Reset Ribbon";
 const HIGHLIGHTS: &str = "No release highlights available";
 
+#[test]
+fn native_tools_options_rows_fill_the_flyout_with_leading_icons() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.click_text("Tools");
+    open_options(&mut world);
+    world.hover([850, 350]);
+    world.save_capture("tools-options-rows");
+    let right_edge = check_options_rows(&mut world);
+    let disabled = world.run_in_window(OPTIONS, "iLogicConfiguration").center();
+    world.click(diagnostics::pointer_pixels([right_edge, disabled[1]]));
+    assert!(diagnostics::window_geometry(RESET).is_none());
+    let reset = world.run_in_window(OPTIONS, "ResetUILayout").center();
+    world.click(diagnostics::pointer_pixels([right_edge, reset[1]]));
+    reset_warning(&mut world);
+    cancel_reset(&mut world);
+    reset_closed(&mut world);
+    options_closed(&mut world);
+    world.close();
+}
+
+fn check_options_rows(world: &mut ApplicationWorld) -> f32 {
+    let (position, size) = diagnostics::window_geometry(OPTIONS).unwrap();
+    let rows =
+        ["ResetUILayout", "iLogicConfiguration"].map(|label| world.run_in_window(OPTIONS, label));
+    let first = rows[0].center()[1];
+    let second = rows[1].center()[1];
+    assert!(
+        (second - first - 32.).abs() < 2.,
+        "expected a 32 px row pitch"
+    );
+    for row in rows {
+        let [x, y] = row.center();
+        let icons = super::super::ribbon_appearance::icon_quads::icon_quads_inside((
+            [position[0], y - 12.],
+            [row.minimum[0], y + 12.],
+        ));
+        assert_eq!(
+            icons.len(),
+            1,
+            "expected a leading icon for text at {x}, {y}"
+        );
+        assert_eq!(icons[0].1[0] - icons[0].0[0], 16.);
+    }
+    ilogic_is_displayed(world);
+    position[0] + size[0] - 18.
+}
+
 #[given("`fixtures/cad/blank-metric-part.opd` is open in the MCAD Software")]
 #[given("`fixtures/cad/blank-metric-part.opd` is active in the MCAD Software")]
 #[given("`fixtures/cad/blank-metric-part.opd` is open and active")]

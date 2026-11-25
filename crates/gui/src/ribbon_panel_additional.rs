@@ -196,7 +196,9 @@ fn draw_window(
     let left = 0.;
     let right = viewport_width.max(1.);
     let appearance = context.owners.icons.appearance;
-    let preferred_width = if appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+    let command_rows = appearance == crate::ribbon_command_layout::RibbonAppearance::Normal
+        || panel == RibbonPanel::ToolOptions;
+    let preferred_width = if command_rows {
         ADDITIONAL_WIDTH
     } else {
         let count = if panel == RibbonPanel::UserCommands {
@@ -215,7 +217,7 @@ fn draw_window(
             area.top
         };
     let top = anchor_top.min((viewport_height - 1.).max(0.));
-    let preferred_height = if appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+    let preferred_height = if command_rows {
         commands::normal_expansion_height(ui, panel, context.owners.customization)
             .unwrap_or(ADDITIONAL_HEIGHT)
     } else {
@@ -252,7 +254,7 @@ fn draw_window(
                 context.owners.quick_access.command_took_right_click |= right;
                 close |= !context.owners.customization.has_expanded(tab);
             } else if panel == RibbonPanel::ToolOptions {
-                close |= commands::tool_options(ui, display);
+                close |= commands::options_flyout(ui, display, context.owners.icons);
             } else {
                 let before = context.actions.len();
                 commands::draw(context, tab, panel, display, &mut expansion.bend_notice);
