@@ -18,11 +18,19 @@ pub(super) fn source_rows(world: &ApplicationWorld) -> Vec<&diagnostics::Rendere
     let remove = world.run_in_window("Customize", "<");
     let x = header.minimum[0] - 10. ..add.minimum[0].min(remove.minimum[0]);
     let top = header.maximum[1];
+    let inside_source = [header.center()[0] + 12., top + 24.];
+    let Some(list) = diagnostics::child_draw_list_at("Customize", inside_source) else {
+        return Vec::new();
+    };
     let mut rows: Vec<_> = world
         .frame
         .runs
         .iter()
-        .filter(|run| x.contains(&run.minimum[0]) && (top..top + 200.).contains(&run.center()[1]))
+        .filter(|run| {
+            run.list == list
+                && x.contains(&run.minimum[0])
+                && (top..top + 200.).contains(&run.center()[1])
+        })
         .collect();
     rows.sort_by(|a, b| a.center()[1].total_cmp(&b.center()[1]));
     rows
@@ -77,8 +85,94 @@ fn source_starts_ascending(world: &mut ApplicationWorld) {
 
 #[when("the user clicks the available command list Name header")]
 #[when("the user clicks the available command list Name header again")]
+#[when("the user clicks the available-command Name header")]
 fn reverse_source(world: &mut ApplicationWorld) {
     click_in_customize(world, "Name");
+}
+
+#[given(
+    "`fixtures/cad/blank-metric-part.opd` is open and ribbon customization is open with All Commands selected"
+)]
+fn open_blank_part_customization(world: &mut ApplicationWorld) {
+    super::super::ribbon_panel_expansion::open_blank_metric_part(world);
+    empty_tools_customization(world);
+}
+
+#[given("the available commands are in ascending name order")]
+#[then("All Commands is selected and the available commands are in ascending name order")]
+fn all_commands_ascending(world: &mut ApplicationWorld) {
+    transaction_steps::all_commands(world);
+    expect_name_order(world, false);
+}
+
+#[then("the separator remains first and the commands appear in descending name order")]
+#[then("the available commands remain in descending name order")]
+fn all_commands_descending(world: &mut ApplicationWorld) {
+    transaction_steps::all_commands(world);
+    expect_name_order(world, true);
+}
+
+#[when("the user selects the Sketch Tab command category")]
+fn switch_to_sketch(world: &mut ApplicationWorld) {
+    click_in_customize(world, "AllCommands");
+    world.click_text("Sketch Tab");
+}
+
+#[then("the separator remains first and the Sketch commands appear in descending name order")]
+fn sketch_commands_descending(world: &mut ApplicationWorld) {
+    world.run_in_window("Customize", "SketchTab");
+    let rows = source_rows(world);
+    assert!(rows.iter().any(|row| row.text == "Vertical"));
+    assert!(!rows.iter().any(|row| row.text == "ZoomWindow"));
+    expect_name_order(world, true);
+}
+
+#[when("the user selects All Commands again")]
+fn switch_to_all(world: &mut ApplicationWorld) {
+    click_in_customize(world, "SketchTab");
+    world.click_text("All Commands");
+    world.pump(Vec::new());
+}
+
+#[when("the user closes customization without making an edit and reopens it from Tools")]
+fn reopen_without_staging(world: &mut ApplicationWorld) {
+    assert!(!world.run_is_enabled("Apply"));
+    close_customization_button(world);
+    assert!(diagnostics::window_geometry("Customize").is_none());
+    open_tools_customization(world);
+    assert_eq!(world.state().document, world.previous_document);
+}
+
+#[then("the custom-panel target remains empty")]
+fn target_remains_empty(world: &mut ApplicationWorld) {
+    target_is_empty(world);
+}
+
+fn expect_name_order(world: &ApplicationWorld, descending: bool) {
+    let rows = source_rows(world);
+    let [separator, commands @ ..] = rows.as_slice() else {
+        panic!("expected available commands");
+    };
+    assert_eq!(separator.text, "<Separator>");
+    assert!(commands.len() >= 3, "expected visible command names");
+    let names: Vec<String> = commands
+        .iter()
+        .map(|row| {
+            row.text
+                .chars()
+                .filter(|letter| letter.is_alphanumeric())
+                .flat_map(char::to_lowercase)
+                .collect()
+        })
+        .collect();
+    assert!(
+        names.windows(2).all(|pair| if descending {
+            pair[0] >= pair[1]
+        } else {
+            pair[0] <= pair[1]
+        }),
+        "command order: {names:?}"
+    );
 }
 
 #[then("the separator remains at the top of the visible list")]

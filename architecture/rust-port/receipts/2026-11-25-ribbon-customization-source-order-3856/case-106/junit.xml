@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:30:46.509706749Z" time="28.199579654"><testcase name="Scenario: Retain command sort order across category switches until the dialog closes: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1740:3" time="28.199579654"><system-out><![CDATA[  Scenario: Retain command sort order across category switches until the dialog closes
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and ribbon customization is open with All Commands selected
+   ✔  And the available commands are in ascending name order
+   ✔  When the user clicks the available-command Name header
+   ✔  Then the separator remains first and the commands appear in descending name order
+   ✔  When the user selects the Sketch Tab command category
+   ✔  Then the separator remains first and the Sketch commands appear in descending name order
+   ✔  When the user selects All Commands again
+   ✔  Then the available commands remain in descending name order
+   ✔  When the user closes customization without making an edit and reopens it from Tools
+   ✔  Then All Commands is selected and the available commands are in ascending name order
+   ✔  And the custom-panel target remains empty
+]]></system-out></testcase></testsuite></testsuites>
