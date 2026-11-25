@@ -252,7 +252,7 @@ fn insert_unsaved_occurrence(world: &mut ApplicationWorld) {
 
 fn place_from_file(world: &mut ApplicationWorld, component: &Path) {
     world.click_text("Place");
-    world.click_text("Browse");
+    document_opening::browse_assembly_component(world);
     document_opening::look_in(world, component.parent().unwrap());
     document_opening::select_row(world, component.file_name().unwrap().to_str().unwrap());
     document_opening::choose_open(world);

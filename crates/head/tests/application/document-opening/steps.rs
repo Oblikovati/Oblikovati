@@ -111,6 +111,14 @@ pub(super) fn open_dialog(world: &mut ApplicationWorld) {
     settle(world);
     world.expect_text("Look in");
 }
+pub(super) fn browse_assembly_component(world: &mut ApplicationWorld) {
+    let browse = world.run("Browse...");
+    // The draw packet can group the preceding Component label with the button.
+    let glyph_height = browse.maximum[1] - browse.minimum[1];
+    let point = [browse.maximum[0] - glyph_height, browse.center()[1]];
+    world.click(super::diagnostics::pointer_pixels(point));
+    world.expect_text("Look in");
+}
 pub(super) fn look_in(world: &mut ApplicationWorld, folder: &Path) {
     world.enter_in_field("Look in", folder.to_str().unwrap());
     settle(world);

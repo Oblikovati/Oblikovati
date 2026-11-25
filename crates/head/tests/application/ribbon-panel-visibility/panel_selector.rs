@@ -116,7 +116,7 @@ fn list_stays_open(world: &mut ApplicationWorld) {
 #[when("the user presses Escape again")]
 fn escape_selector(world: &mut ApplicationWorld) {
     #[cfg(target_os = "linux")]
-    if world.application_close_requested {
+    if world.application_close_requested && !world.app().window.native.view.uses_wayland() {
         super::super::x11_input::press_escape();
         world.pump(Vec::new());
         world.application_close_requested = false;
@@ -124,6 +124,7 @@ fn escape_selector(world: &mut ApplicationWorld) {
     }
     world.escape();
     world.pump(Vec::new());
+    world.application_close_requested = false;
 }
 #[then("the panel list closes")]
 fn list_closes(world: &mut ApplicationWorld) {

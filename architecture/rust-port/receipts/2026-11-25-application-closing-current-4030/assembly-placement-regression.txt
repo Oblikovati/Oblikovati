@@ -1,0 +1,4 @@
+running 1 test
+test native::gui_loop_tests::application_bdd::document_opening::selections::assembly_placement_tests::assembly_ribbon_places_a_component_from_a_file ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1702 filtered out; finished in 31.34s

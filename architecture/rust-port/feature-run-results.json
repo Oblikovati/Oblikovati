@@ -42,6 +42,21 @@
         "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=application-closing <head-test-binary> application_scenarios_use_the_native_window --nocapture",
         "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
         "notes": "All seven current scenarios passed. Strict build and runtime provenance remains open under #3978."
+      },
+      "1ffa84cea78602ce78d6917cf92019bc7b1dbda5a2c328f774080717730b0a61": {
+        "feature_sha256": "1ffa84cea78602ce78d6917cf92019bc7b1dbda5a2c328f774080717730b0a61",
+        "supporting_files": {
+          "fixtures/cad/blank-metric-assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
+          "fixtures/cad/extrusion/extrusion-rect-8mm.opd": "d55a0cce8c436ece286dd96d1ebf8aa7a9e58058e5f059a528bd4f38e6ae8ea4"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-25-application-closing-current-4030/x11.json",
+        "cucumber_sha256": "d54b314b86c0d2fdaae8317c9059cdfa77f79bcf5783ae13ef8774e104179b65",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-application-closing-current-4030/x11-scenario-arguments.json",
+        "scenario_arguments_sha256": "eadd01286bd802a5103fbba5d191755fa79f7a3906775e419c0bdbdc406991dd",
+        "application_commit": "afced5c5fc66c5f6d0568f8da1cbab95c142f8dd",
+        "command": "OBK_BDD_FEATURE=application-closing OBK_BDD_SCENARIO=<name> <head-test-binary> application_scenarios_use_the_native_window --test-threads=1",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "Seven individually executed cases passed 51 steps. The receipt records the local test changes, inputs, and the Wayland run. Strict provenance remains open under #3978."
       }
     }
   },

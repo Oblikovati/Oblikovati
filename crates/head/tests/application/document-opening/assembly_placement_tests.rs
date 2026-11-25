@@ -33,7 +33,7 @@ fn assembly_ribbon_places_a_component_from_a_file() {
         .unwrap()
         .len();
     world.click_text("Place");
-    world.click_text("Browse");
+    browse_assembly_component(&mut world);
     look_in(&mut world, &folder);
     select_row(&mut world, "file-part.opd");
     choose_open(&mut world);
@@ -72,7 +72,7 @@ fn assembly_ribbon_places_a_component_from_a_file() {
         .len();
     assert_eq!(after_cancel, initial_count);
     world.click_text("Place");
-    world.click_text("Browse");
+    browse_assembly_component(&mut world);
     look_in(&mut world, &folder);
     select_row(&mut world, "file-part.opd");
     choose_open(&mut world);
