@@ -471,7 +471,7 @@ using this status; the live scenario directory can change.
 ## Work queue
 
 Work dependency-ready application scenarios one at a time, then sketch and modeling.
-1. Continue the dependency-ready application scenarios with populated drawing layout cancellation.
+1. Continue the dependency-ready application scenarios with Document Tabs.
    Midpoint Line (#4178) still names a deferred Inventor fixture. Revisit it when
    the scenario owner adopts the supplied native fixture.
    Constraint Settings (#4158) is paused with uncommitted work while its
