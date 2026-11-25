@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:32:13.312602983Z" time="66.541822505"><testcase name="Scenario: Cancel a sketch line weight change: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:498:3" time="66.541822505"><system-out><![CDATA[  Scenario: Cancel a sketch line weight change
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a nested sketch in the MCAD Software has Default line weight
+   ✔  When the user opens Properties from the sketch row context menu
+   ✔  And the user opens the Line Weight list
+   ✔  Then the list shows Default and numeric millimeter weights with line samples
+   ✔  And 0.25 mm is available
+   ✔  When the user chooses 0.25 mm
+   ✔  Then the Line Weight field displays 0.25 mm and Apply is enabled
+   ✔  When the user clicks Cancel and reopens the sketch properties
+   ✔  Then the Line Weight field displays Default and Apply is disabled
+   ✔  When the user clicks Cancel
+   ✔  Then the properties dialog closes
+]]></system-out></testcase></testsuite></testsuites>

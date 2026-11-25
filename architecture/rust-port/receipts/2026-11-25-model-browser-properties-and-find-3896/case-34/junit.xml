@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:33:20.874536635Z" time="47.973851638"><testcase name="Scenario: Toggle sketch line scale editing: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:513:3" time="47.973851638"><system-out><![CDATA[  Scenario: Toggle sketch line scale editing
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a nested sketch in the MCAD Software has Default line type
+   ✔  And its geometry properties dialog is open with Scale unchecked
+   ✔  Then the scale value is shown as 1.00 and its field is disabled
+   ✔  When the user checks Scale
+   ✔  Then the scale field is enabled and shows 1.00
+   ✔  And Apply is enabled
+   ✔  When the user clears Scale
+   ✔  Then the scale field is disabled and still shows 1.00
+   ✔  When the user clicks Cancel
+   ✔  Then the geometry properties dialog closes
+]]></system-out></testcase></testsuite></testsuites>
