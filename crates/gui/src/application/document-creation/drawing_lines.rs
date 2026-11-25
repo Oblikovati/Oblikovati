@@ -3,6 +3,7 @@
 use crate::GuiDrawingProjection;
 
 pub(super) fn draw(
+    ui: &imgui::Ui,
     list: &imgui::DrawListMut<'_>,
     projection: &GuiDrawingProjection,
     minimum: [f32; 2],
@@ -29,6 +30,9 @@ pub(super) fn draw(
                 }
             }
         }
+        for table in &projection.parts_lists {
+            draw_parts_list(ui, list, table, minimum, maximum, dimensions);
+        }
         if let Some(error) = &projection.error {
             list.add_text(
                 [minimum[0] + 8., minimum[1] + 8.],
@@ -37,6 +41,34 @@ pub(super) fn draw(
             );
         }
     });
+}
+fn draw_parts_list(
+    ui: &imgui::Ui,
+    list: &imgui::DrawListMut<'_>,
+    table: &oblikovati_model::drawing::DrawingPartsListPresentation,
+    minimum: [f32; 2],
+    maximum: [f32; 2],
+    dimensions: [f64; 2],
+) {
+    const INK: [f32; 4] = [0.1, 0.1, 0.12, 1.];
+    let to_screen = |point| screen_point(point, minimum, maximum, dimensions);
+    for line in &table.lines {
+        if let Some([start, end]) = clip_segment(line.start, line.end, dimensions) {
+            list.add_line(to_screen(start), to_screen(end), INK).build();
+        }
+    }
+    for label in &table.labels {
+        let [x, y] = label.center;
+        let [w, h] = label.cell_size.map(|length| length / 2.);
+        let left_top = to_screen([x - w, y + h]);
+        let right_bottom = to_screen([x + w, y - h]);
+        let [width, height] = ui.calc_text_size(&label.text);
+        let [cx, cy] = to_screen(label.center);
+        list.with_clip_rect_intersect(left_top, right_bottom, || {
+            let origin = [(cx - width * 0.5).max(left_top[0] + 2.), cy - height * 0.5];
+            list.add_text(origin, INK, &label.text);
+        });
+    }
 }
 fn screen_point(
     point: [f64; 2],

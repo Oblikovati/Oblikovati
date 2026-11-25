@@ -24,6 +24,12 @@ fn sheet_branch(sheet: &DrawingSheetRecipe) -> DrawingBranch {
         rows.push("Title Block".into());
     }
     rows.extend(sheet.views.iter().map(|view| view.name.clone()));
+    rows.extend(
+        sheet
+            .annotations
+            .iter()
+            .map(|annotation| annotation.name().to_owned()),
+    );
     (sheet.name.clone(), rows)
 }
 

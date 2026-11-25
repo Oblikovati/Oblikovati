@@ -81,6 +81,7 @@ pub struct GuiExtrudeEditRequest {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiDrawingProjection {
     pub lines: Vec<GuiDrawingLine>,
+    pub parts_lists: Vec<oblikovati_model::drawing::DrawingPartsListPresentation>,
     pub error: Option<String>,
 }
 /// One sampled edge in sheet millimetres.

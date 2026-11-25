@@ -153,6 +153,7 @@ pub(crate) fn draw_active_sheet(ui: &Ui, state: &GuiCommandState, area: Workspac
         return false;
     };
     sheet_on_list(
+        ui,
         &ui.get_background_draw_list(),
         active_name(state),
         area,
@@ -198,6 +199,7 @@ pub(crate) fn draw_sheet_in_window(
     };
     if height > 0. {
         sheet_on_list(
+            ui,
             &ui.get_window_draw_list(),
             name,
             area,
@@ -216,6 +218,7 @@ fn sheet_color(ui: &Ui) -> [f32; 4] {
     }
 }
 fn sheet_on_list(
+    ui: &Ui,
     list: &imgui::DrawListMut<'_>,
     name: &str,
     area: WorkspaceArea,
@@ -230,7 +233,7 @@ fn sheet_on_list(
     let (minimum, maximum) = sheet_rectangle(area, dimensions);
     list.add_rect(minimum, maximum, paper).filled(true).build();
     if let Some(projection) = projection {
-        drawing_lines::draw(list, projection, minimum, maximum, dimensions);
+        drawing_lines::draw(ui, list, projection, minimum, maximum, dimensions);
     }
     let (border_minimum, border_maximum) =
         sheet_inner_bounds(minimum, maximum, dimensions, sheet.border_margins_mm());

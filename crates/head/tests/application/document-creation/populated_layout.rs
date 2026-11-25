@@ -168,3 +168,93 @@ pub(super) fn expect_sheet_previews(world: &mut ApplicationWorld) {
     }
     world.save_capture("drawing-template-previews");
 }
+
+#[test]
+fn a_part_backed_drawing_displays_its_authored_parts_list() {
+    let mut world = ApplicationWorld::new();
+    super::super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    let part = world.active_id();
+    open_part_backed_layout(&mut world);
+    world.expect_text("PART NUMBER");
+    world.expect_text("Parts List1");
+    world.expect_text("Front");
+    expect_part_row(&mut world, "extruded");
+
+    set_part_list_metadata(&mut world, part);
+    world.pump(Vec::new());
+    expect_part_row(&mut world, "LAYOUT-08");
+    world.expect_text("LAYOUT-08");
+    world.expect_text("Layout bracket");
+    world.save_capture("part-layout-parts-list");
+    world.close();
+}
+
+fn open_part_backed_layout(world: &mut ApplicationWorld) {
+    use oblikovati_model::drawing::{DrawingBaseViewDefinition, DrawingDocument};
+    let mut drawing = DrawingDocument::new();
+    drawing.set_model_reference("extruded.opd").unwrap();
+    let front = DrawingBaseViewDefinition::new(
+        "Front",
+        oblikovati_api::types::BASE_VIEW_FRONT,
+        1.,
+        [100., 100.],
+    )
+    .unwrap();
+    drawing.add_base_view_definition(0, front).unwrap();
+    let list = DrawingAnnotationDefinition::parts_list("Parts List1", [210., 170.]).unwrap();
+    drawing.add_annotation_definition(0, list).unwrap();
+    let bytes = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 3\n")
+        .unwrap()
+        .with_drawing(Some(&drawing))
+        .unwrap()
+        .encode()
+        .unwrap();
+    let copy = world.scratch_folder().join("part-layout.odd");
+    std::fs::write(&copy, bytes).unwrap();
+    world.open_fixture(&copy);
+}
+
+fn expect_part_row(world: &mut ApplicationWorld, part_number: &str) {
+    let drawing = world.active_id();
+    let state = world.state();
+    let projection = &state.drawing_projections[&drawing];
+    assert_eq!(projection.error, None);
+    assert!(!projection.lines.is_empty());
+    let [table] = projection.parts_lists.as_slice() else {
+        panic!(
+            "expected one authored parts list: {:?}",
+            projection.parts_lists
+        );
+    };
+    assert_eq!(table.row_count, 1);
+    let row: Vec<_> = table.labels[4..]
+        .iter()
+        .map(|label| label.text.as_str())
+        .collect();
+    assert_eq!([row[0], row[1], row[3]], ["1", part_number, "1"]);
+}
+
+fn set_part_list_metadata(world: &mut ApplicationWorld, part: u64) {
+    use oblikovati_api::{
+        types::{Variant, VariantValue},
+        wire::SetPropertyArgs,
+    };
+    let client = Client::new(world.app().owner.document_host());
+    for (name, text) in [
+        ("Part Number", "LAYOUT-08"),
+        ("Description", "Layout bracket"),
+    ] {
+        client
+            .documents()
+            .set_property(&SetPropertyArgs {
+                document: part,
+                set: oblikovati_model::property::DESIGN_TRACKING.into(),
+                name: name.into(),
+                value: Variant {
+                    value: VariantValue::String(text.into()),
+                    ..Default::default()
+                },
+            })
+            .unwrap();
+    }
+}

@@ -33,6 +33,8 @@ pub struct DrawingTableLine {
 pub struct DrawingTableLabel {
     pub text: String,
     pub center: [f64; 2],
+    /// Cell dimensions in sheet millimetres.
+    pub cell_size: [f64; 2],
 }
 /// Derived table geometry; it is rebuilt from the source and is never persisted.
 #[derive(Clone, Debug, PartialEq)]
@@ -110,6 +112,7 @@ fn add_labels(labels: &mut Vec<DrawingTableLabel>, origin: [f64; 2], values: &[S
         labels.push(DrawingTableLabel {
             text: text.clone(),
             center: [x + width / 2., origin[1] - ROW_HEIGHT_MM / 2.],
+            cell_size: [*width, ROW_HEIGHT_MM],
         });
         x += width;
     }

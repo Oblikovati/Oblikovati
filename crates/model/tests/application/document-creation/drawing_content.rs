@@ -200,6 +200,7 @@ fn parts_list_rebuilds_go_table_geometry_from_current_source_rows() {
     assert_eq!(first.labels[1].text, "PART NUMBER");
     assert_eq!(first.labels[5].text, "BRKT-01");
     assert_eq!(first.labels[5].center, [72., 188.]);
+    assert_eq!(first.labels[5].cell_size, [40., 8.]);
     source.rows.borrow_mut().push(DrawingPartsListRow {
         item: 2,
         part_number: "BOLT".into(),

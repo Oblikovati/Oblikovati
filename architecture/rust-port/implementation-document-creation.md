@@ -49,6 +49,19 @@ native window. It measures the paper inside the visible document viewport
 and compares its width and height with portrait A3.
 See the [native document checks](receipts/2026-11-24-native-document-oracles-4078/README.md).
 
+## Parts lists in Part-backed drawings
+
+The desktop resolves the drawing's existing model reference and reads the
+referenced Part's Design Tracking properties. A Part contributes one row
+with quantity one. The Part's display name fills a missing Part Number and
+a missing Description leaves an empty cell.
+
+The authored annotation supplies the table's position. The sheet draws
+the model's table geometry and clips text to each cell. The browser lists
+the authored table beside the sheet's views. The live drawing presentation
+is keyed to the drawing and source revisions, so metadata edits refresh the
+table. [Native checks and screenshot](receipts/2026-11-25-part-backed-parts-list-3899/README.md)
+
 ## Remaining creation work
 
 Port subtype registration and flavor setup;

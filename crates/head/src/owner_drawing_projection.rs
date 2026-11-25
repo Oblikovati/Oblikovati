@@ -3,7 +3,8 @@
 use super::*;
 use oblikovati_drawing::project_evaluated_part;
 use oblikovati_gui::{GuiDrawingLine, GuiDrawingProjection};
-use oblikovati_model::drawing::DrawingDocument;
+use oblikovati_model::drawing::{DrawingDocument, DrawingPartsListRow, DrawingPartsListSource};
+use oblikovati_model::property::DESIGN_TRACKING;
 use std::collections::BTreeMap;
 
 type ProjectionKey = (u64, u64, u64);
@@ -16,6 +17,12 @@ pub(super) struct DrawingViewPreview {
     source_generation: u64,
     focus: oblikovati_session::workspace::WorkspaceFocusIdentity,
     projection: GuiDrawingProjection,
+}
+struct PartListRow(DrawingPartsListRow);
+impl DrawingPartsListSource for PartListRow {
+    fn parts_list_rows(&self, _reference: &str) -> Result<Vec<DrawingPartsListRow>, String> {
+        Ok(vec![self.0.clone()])
+    }
 }
 impl<
     O: TransactionObserver,
@@ -134,18 +141,19 @@ impl<
             Ok(None) => {}
             Err(cause) => {
                 return GuiDrawingProjection {
-                    lines: Vec::new(),
                     error: Some(cause.to_string()),
+                    ..Default::default()
                 };
             }
         }
-        if drawing.sheets()[drawing.active_sheet()].views.is_empty() {
+        let sheet = &drawing.sheets()[drawing.active_sheet()];
+        if sheet.views.is_empty() && sheet.annotations.is_empty() {
             return GuiDrawingProjection::default();
         }
         let result = self.resolve_drawing_projection(drawing_id, generation, drawing);
         result.unwrap_or_else(|error| GuiDrawingProjection {
-            lines: Vec::new(),
             error: Some(error),
+            ..Default::default()
         })
     }
     fn resolve_drawing_projection(
@@ -195,17 +203,57 @@ impl<
         {
             return Ok(cached.clone());
         }
-        let output = self
-            .evaluate_drawing_projection(source, drawing)
-            .unwrap_or_else(|error| GuiDrawingProjection {
-                lines: Vec::new(),
-                error: Some(error),
-            });
+        let sheet = &drawing.sheets()[drawing.active_sheet()];
+        let mut output = if sheet.views.is_empty() {
+            GuiDrawingProjection::default()
+        } else {
+            self.evaluate_drawing_projection(source, drawing)
+                .unwrap_or_else(|error| GuiDrawingProjection {
+                    error: Some(error),
+                    ..Default::default()
+                })
+        };
+        if !sheet.annotations.is_empty() {
+            match self.drawing_parts_lists(source, drawing) {
+                Ok(tables) => output.parts_lists = tables,
+                Err(error) => {
+                    output.error.get_or_insert(error);
+                }
+            }
+        }
         self.drawing_projections
             .borrow_mut()
             .0
             .insert(drawing_id, (key, output.clone()));
         Ok(output)
+    }
+    fn drawing_parts_lists(
+        &self,
+        source: u64,
+        drawing: &DrawingDocument,
+    ) -> Result<Vec<oblikovati_model::drawing::DrawingPartsListPresentation>, String> {
+        let workspace = self.files.workspace();
+        let session = workspace
+            .session(source)
+            .map_err(|cause| cause.to_string())?;
+        let name = workspace
+            .display_name(source)
+            .map_err(|cause| cause.to_string())?;
+        let properties = &session.snapshot().properties;
+        let row = PartListRow(DrawingPartsListRow {
+            item: 1,
+            part_number: text_property(properties, "Part Number")
+                .unwrap_or(name)
+                .to_owned(),
+            description: text_property(properties, "Description")
+                .unwrap_or_default()
+                .to_owned(),
+            quantity: 1,
+        });
+        drawing
+            .evaluate_parts_lists(drawing.active_sheet(), &row)
+            .map(|tables| tables.into_iter().map(|(_, table)| table).collect())
+            .map_err(|cause| cause.to_string())
     }
     fn evaluate_drawing_projection(
         &mut self,
@@ -264,7 +312,21 @@ fn saved_sheet_projection(
             preview: false,
         })
         .collect();
-    GuiDrawingProjection { lines, error: None }
+    GuiDrawingProjection {
+        lines,
+        ..Default::default()
+    }
+}
+
+fn text_property<'a>(
+    properties: &'a oblikovati_model::property::DocumentProperties,
+    name: &str,
+) -> Option<&'a str> {
+    use oblikovati_api::types::VariantValue;
+    match &properties.get(DESIGN_TRACKING, name)?.value {
+        VariantValue::String(text) if !text.trim().is_empty() => Some(text),
+        _ => None,
+    }
 }
 
 fn append_curves(
