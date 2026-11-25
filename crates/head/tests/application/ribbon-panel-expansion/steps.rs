@@ -58,7 +58,6 @@ pub(super) use tool_options::open_blank_metric_part;
 const WINDOW: &str = "##ribbon-additional-PartModify";
 const SIMPLIFICATION: &str = "##ribbon-additional-PartSimplification";
 
-#[given("a part with a solid body is active in the MCAD Software")]
 #[given("a part containing a solid is active in the MCAD Software")]
 #[given("a part containing visible solid bodies is active in the MCAD Software")]
 #[given("a part with a visible solid is active in the MCAD Software")]

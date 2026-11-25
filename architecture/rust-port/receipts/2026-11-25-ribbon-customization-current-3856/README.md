@@ -1,11 +1,13 @@
 # Current native Ribbon Customization
 
-Seventy-five of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 71 of 122 declarations and 1,033
+Seventy-seven of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 73 of 122 declarations and 1,056
 passing steps. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
-opening Offset Plane from the grouped Plane menu.
+opening Offset Plane from the grouped Plane menu. The
+[placement and selection cases](../2026-11-25-ribbon-customization-dialog-placement-3856/README.md)
+verified reopening at the moved position and preserving one selected face.
 
 The [Button Size case](case-025/cucumber.json) reached the main-panel
 command menu. The [grouped menu case](case-028/cucumber.json) needs
@@ -26,7 +28,8 @@ cases stopped at the Options panel menu step.
 The combined report retains the failed and undefined cases. The
 [source inventory](scenario-inventory.json), [input hashes](current-inputs.sha256),
 and [argument capture](scenario-arguments.json) tie results to source
-lines, examples, and table data. The latest native test build used
+lines, examples, and table data. The first 75 passes used builds through
 `934df02ce` with the local command-list probes and existing local GUI
-filesystem, opening, and saving edits. Issue #3978 tracks strict build
-and runtime provenance.
+filesystem, opening, and saving edits. The follow-up receipt identifies
+the build for the two added cases. Issue #3978 tracks strict build and
+runtime provenance.

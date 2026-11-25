@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:28:12.052645381Z" time="21.730541964"><testcase name="Scenario: Open and close customization while one face is selected: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1866:3" time="21.730541964"><system-out><![CDATA[  Scenario: Open and close customization while one face is selected
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part with a solid body is active in the MCAD Software
+   ✔  And one face is selected
+   ✔  And the Tools ribbon tab is selected
+   ✔  When the user opens Customize from the Tools ribbon
+   ✔  Then the customization dialog opens on the Ribbon tab
+   ✔  And the command category is All Commands
+   ✔  And the target is Part Tools with an empty custom panel list
+   ✔  And Close is available while Cancel and Apply are disabled
+   ✔  When the user closes customization without making changes
+   ✔  Then the part remains visible
+   ✔  And the selection indicator reports one face
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:27:43.549918111Z" time="27.699175536"><testcase name="Scenario: Move and reopens the ribbon customization dialog: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1728:3" time="27.699175536"><system-out><![CDATA[  Scenario: Move and reopens the ribbon customization dialog
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization is open without pending edits
+   ✔  When the user drags the dialog title bar to another visible position
+   ✔  Then the dialog moves to the new position
+   ✔  And its Ribbon tab, command lists and target selector remain visible
+   ✔  When the user closes customization and reopens it from Tools in the same session
+   ✔  Then the dialog reopens at the moved position
+   ✔  And its Ribbon tab and Part Tools target are displayed
+]]></system-out></testcase></testsuite></testsuites>

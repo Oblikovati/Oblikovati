@@ -14,6 +14,8 @@ use cancel_dialog::cancel_customization;
 mod category_steps;
 #[path = "custom_panel_title.rs"]
 mod custom_panel_title;
+#[path = "dialog_placement.rs"]
+mod dialog_placement;
 #[path = "file_exchange.rs"]
 mod file_exchange;
 #[path = "list_keyboard_steps.rs"]
@@ -143,7 +145,7 @@ fn target_still_model(world: &mut ApplicationWorld) {
 fn part_with_tools(world: &mut ApplicationWorld) {
     if super::ribbon_appearance::uses_appearance_fixture(world) {
         super::ribbon_appearance::open_appearance_part(world);
-    } else {
+    } else if world.state().document.is_none() {
         world.add_part();
     }
     world.click_text("Tools");
@@ -490,7 +492,6 @@ fn row_option_checked(world: &ApplicationWorld, row: &str, option: &str) -> bool
 }
 #[path = "native_tests.rs"]
 mod native_tests;
-
 #[path = "marking_menu_tests.rs"]
 mod marking_menu_tests;
 

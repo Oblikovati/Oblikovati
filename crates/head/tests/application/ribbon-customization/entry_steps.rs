@@ -199,6 +199,12 @@ fn close_clean_dialog(world: &mut ApplicationWorld) {
     customization_closed(world);
 }
 
+#[given("a part with a solid body is active in the MCAD Software")]
+fn fixture_solid_remains_active(world: &mut ApplicationWorld) {
+    assert_eq!(world.state().document, world.previous_document);
+    super::super::super::workspace_layout::browser_feature::expect_solid_visible(world);
+}
+
 #[given("one face is selected")]
 fn select_fixture_face(world: &mut ApplicationWorld) {
     let part = world.active_id();
