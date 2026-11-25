@@ -50,13 +50,14 @@ fn filename_selected(world: &mut ApplicationWorld) {
 }
 #[when("the user cancels the file picker")]
 fn cancel_picker(world: &mut ApplicationWorld) {
+    let target = transaction_steps::target_label(world).to_owned();
     cancel_customization(world);
+    assert_eq!(transaction_steps::target_label(world), target);
 }
 #[then("the customization dialog remains open without a pending-change marker")]
 fn customization_unchanged(world: &mut ApplicationWorld) {
     customization_remains_open(world);
-    assert!(world.window_text("Customize").contains("Part|3DModel"));
-    assert!(!world.window_text("Customize").contains("Part|3DModel*"));
+    transaction_steps::expect_target_pending(world, false);
 }
 #[then("\"Apply\" is unavailable")]
 fn apply_disabled(world: &mut ApplicationWorld) {

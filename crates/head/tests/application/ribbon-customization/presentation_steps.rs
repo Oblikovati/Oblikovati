@@ -46,6 +46,12 @@ fn large_icon_without_caption(world: &mut ApplicationWorld) {
     assert!(sketch_caption(world).is_none());
 }
 
+#[then("the User Commands panel appears with a small command icon and no visible label")]
+fn small_icon_without_caption(world: &mut ApplicationWorld) {
+    panel_icons::<1>(world, false);
+    assert!(sketch_caption(world).is_none());
+}
+
 #[when("the user adds \"2D Sketches\", a separator, and \"3D Annotations\" in that order")]
 fn stage_two_small_commands_and_separator(world: &mut ApplicationWorld) {
     add_command(world, "2DSketches");

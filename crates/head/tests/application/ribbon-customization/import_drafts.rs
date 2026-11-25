@@ -66,6 +66,7 @@ fn manage_is_selected(world: &mut ApplicationWorld) {
 }
 
 #[when("the user imports the settings file")]
+#[when("the user imports the exported XML file")]
 fn import_settings_file(world: &mut ApplicationWorld) {
     import_customization(world);
     import_exported_settings(world);
@@ -73,6 +74,7 @@ fn import_settings_file(world: &mut ApplicationWorld) {
 
 #[then("the Part Tools target shows only 2D Sketches with Large and Text unchecked")]
 #[then("the target contains 2D Sketches with Large and Text unchecked")]
+#[then("\"2D Sketches\" appears in the target list with Large and Text unchecked")]
 fn imported_sketches(world: &mut ApplicationWorld) {
     sketches_still_staged(world);
     for option in ["Large", "Text"] {

@@ -60,6 +60,7 @@ fn cancel_customize(world: &mut ApplicationWorld) {
 }
 
 #[given("2D Sketches has been staged with Large and Text unchecked")]
+#[given("\"2D Sketches\" is staged with Large and Text unchecked")]
 fn stage_small_sketches(world: &mut ApplicationWorld) {
     stage_sketch_visibility(world);
     for option in ["Large", "Text"] {
@@ -68,6 +69,29 @@ fn stage_small_sketches(world: &mut ApplicationWorld) {
         }
         assert!(!row_option_checked(world, "2DSketches", option));
     }
+}
+
+#[given("\"2D Sketches\" is added with Large and Text unchecked and applied")]
+fn apply_small_sketches(world: &mut ApplicationWorld) {
+    empty_tools_customization(world);
+    stage_small_sketches(world);
+    click_in_customize(world, "Apply");
+    transaction_steps::expect_target_pending(world, false);
+}
+
+#[given("the customization is exported to a new XML file")]
+fn export_applied_sketches(world: &mut ApplicationWorld) {
+    export_new_file(world);
+    assert_eq!(exported_tools_commands(world), ["sketch-visibility"]);
+}
+
+#[given("the command is returned to the available list and the empty panel is applied")]
+fn remove_and_apply_empty_tools_panel(world: &mut ApplicationWorld) {
+    click_in_customize(world, "2DSketches");
+    transfer_to_source(world);
+    transaction_steps::target_is_empty(world);
+    click_in_customize(world, "Apply");
+    no_user_commands(world);
 }
 
 #[given("the target shows a pending-change marker")]
@@ -232,6 +256,7 @@ fn imported_model_empty(world: &mut ApplicationWorld) {
     );
 }
 #[then("no custom panel appears on the active ribbon")]
+#[then("the User Commands panel is not yet visible on the Tools ribbon")]
 fn no_custom_panel(world: &mut ApplicationWorld) {
     world.expect_no_text("User Commands");
 }
