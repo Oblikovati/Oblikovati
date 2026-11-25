@@ -21,6 +21,10 @@ mod lists;
 #[cfg(target_os = "linux")]
 #[path = "native_existing.rs"]
 mod native_existing;
+#[path = "published_entry.rs"]
+mod published_entry;
+#[path = "published_preview.rs"]
+mod published_preview;
 #[path = "selections.rs"]
 mod selections;
 
@@ -174,7 +178,7 @@ fn open_on_saved_part(world: &mut ApplicationWorld) {
     select_row(world, PART_FILE);
 }
 /// The Details pane's control, right of the list: the toolbar has a Details of its own.
-fn choose_pane(world: &mut ApplicationWorld, label: &str) {
+pub(super) fn choose_pane(world: &mut ApplicationWorld, label: &str) {
     let at = world
         .frame
         .runs
@@ -199,7 +203,9 @@ fn part_in_folder(world: &mut ApplicationWorld) {
 #[when("I press Control+O and navigate to that folder")]
 #[when("the user presses Control+O and navigates to that folder")]
 fn control_o_to_folder(world: &mut ApplicationWorld) {
-    let folder = models_folder(world);
+    let folder = published_preview::inspection_path(world)
+        .map(|path| path.parent().unwrap().to_path_buf())
+        .unwrap_or_else(|| models_folder(world));
     open_dialog(world);
     look_in(world, &folder);
 }
@@ -218,9 +224,16 @@ fn select_saved_part(world: &mut ApplicationWorld) {
 }
 #[then("the part row is selected and the file name field identifies it")]
 fn part_row_selected(world: &mut ApplicationWorld) {
-    assert!(row_lit(world, PART_FILE), "expected the row's accent");
+    let file = published_preview::inspection_path(world)
+        .and_then(|path| path.file_name().unwrap().to_str())
+        .unwrap_or(PART_FILE)
+        .to_owned();
+    assert!(row_lit(world, &file), "expected the row's accent");
     let shown = file_name_shown(world);
-    assert!(shown.contains(PART_FILE), "file name {shown:?}");
+    assert!(
+        shown.contains(&file),
+        "file name {shown:?}: expected {file}"
+    );
 }
 #[then("the preview displays the part")]
 #[then("the preview remains visible")]
@@ -237,6 +250,10 @@ fn part_options(world: &mut ApplicationWorld) {
 fn part_details(world: &mut ApplicationWorld) {
     for row in ["Type: Part", "Modified:", "Size:"] {
         assert!(holds_text(world, row), "expected {row} in the details");
+    }
+    if published_preview::inspection_path(world).is_some() {
+        published_preview::published_part_details(world);
+        return;
     }
     assert!(
         holds_text(world, &format!("Author: {AUTHOR}")),

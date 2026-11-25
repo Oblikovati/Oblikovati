@@ -441,7 +441,11 @@ fn display_menu(world: &mut ApplicationWorld) {
 #[when("I choose Details")]
 #[when("the user chooses Details")]
 fn choose_details(world: &mut ApplicationWorld) {
-    world.click_text("Details");
+    if world.shows("Look in") {
+        super::document_opening::choose_pane(world, "Details");
+    } else {
+        world.click_text("Details");
+    }
 }
 #[then("the template gallery displays rows with Name, Size, and Type columns")]
 fn details_rows(world: &mut ApplicationWorld) {
