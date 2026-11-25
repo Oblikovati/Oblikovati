@@ -30,6 +30,7 @@ impl<
                 sketch_options: Some(self.sketch_options.clone()),
                 part_options: self.part_store.as_ref().map(|store| store.part_options()),
                 recent_documents: self.gui_recent_rows(),
+                inspected_file: self.inspected_file.clone(),
                 theme,
                 color_scheme,
                 projects: self.gui_projects(),

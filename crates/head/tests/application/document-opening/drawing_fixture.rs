@@ -60,12 +60,18 @@ fn write_drawing(path: &Path, source: &Path) {
 #[given("a saved drawing with a sheet, border and view is available and not already open")]
 #[given("a saved drawing with a sheet, border and views is available and not already open")]
 pub(super) fn drawing_available(world: &mut ApplicationWorld) {
-    let folder = models_folder(world);
-    let source = folder.join("source.opd");
-    write_source_model(&source);
-    let drawing = folder.join(DRAWING_FILE);
-    write_drawing(&drawing, &source);
-    world.saved_path = Some(drawing);
+    world.saved_path = Some(
+        if let Some(folder) = published_drawings::staged_folder(world) {
+            folder.join(published_drawings::FIRST)
+        } else {
+            let folder = models_folder(world);
+            let source = folder.join("source.opd");
+            write_source_model(&source);
+            let drawing = folder.join(DRAWING_FILE);
+            write_drawing(&drawing, &source);
+            drawing
+        },
+    );
     world.observed_counts = vec![
         world
             .state()
@@ -309,10 +315,11 @@ fn deferred_part_remains(world: &mut ApplicationWorld) {
 }
 #[when("the user presses Control+O and selects the drawing")]
 fn choose_drawing(world: &mut ApplicationWorld) {
-    let folder = models_folder(world);
+    let folder = published_drawings::staged_folder(world).unwrap_or_else(|| models_folder(world));
     open_dialog(world);
     look_in(world, &folder);
-    select_row(world, DRAWING_FILE);
+    let name = published_drawings::first_drawing_name(world);
+    select_row(world, name);
 }
 #[then("the drawing becomes active in a new document tab")]
 fn drawing_active(world: &mut ApplicationWorld) {

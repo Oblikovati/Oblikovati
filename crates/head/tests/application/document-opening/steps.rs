@@ -21,6 +21,8 @@ mod lists;
 #[cfg(target_os = "linux")]
 #[path = "native_existing.rs"]
 mod native_existing;
+#[path = "published_drawings.rs"]
+mod published_drawings;
 #[path = "published_entry.rs"]
 mod published_entry;
 #[path = "published_preview.rs"]
@@ -277,6 +279,11 @@ fn part_still_shown(world: &mut ApplicationWorld) {
 // Inspect a drawing after selecting a part
 #[given("the Open dialog is displaying a folder containing a saved part and drawing with previews")]
 fn folder_with_part_and_drawing(world: &mut ApplicationWorld) {
+    if let Some(folder) = published_drawings::staged_folder(world) {
+        open_dialog(world);
+        look_in(world, &folder);
+        return;
+    }
     let folder = models_folder(world);
     saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
     saved_part(world, &folder);
@@ -285,18 +292,21 @@ fn folder_with_part_and_drawing(world: &mut ApplicationWorld) {
 }
 #[given("the saved part is selected and its details are displayed")]
 fn part_selected_details(world: &mut ApplicationWorld) {
-    select_row(world, PART_FILE);
+    let name = published_drawings::part_name(world);
+    select_row(world, name);
     choose_pane(world, "Details");
 }
 #[when("I select the drawing")]
 #[when("the user selects the drawing")]
 fn select_drawing(world: &mut ApplicationWorld) {
-    select_row(world, DRAWING_FILE);
+    let name = published_drawings::first_drawing_name(world);
+    select_row(world, name);
 }
 #[then("the file name field identifies the drawing")]
 fn name_is_drawing(world: &mut ApplicationWorld) {
     let shown = file_name_shown(world);
-    assert!(shown.contains(DRAWING_FILE), "file name {shown:?}");
+    let name = published_drawings::first_drawing_name(world);
+    assert!(shown.contains(name), "file name {shown:?}: expected {name}");
 }
 #[then("the preview displays the drawing sheet")]
 fn drawing_preview(world: &mut ApplicationWorld) {
@@ -321,6 +331,9 @@ fn drawing_options(world: &mut ApplicationWorld) {
 #[then("the dialog closes without opening the selected drawing")]
 fn closed_unopened(world: &mut ApplicationWorld) {
     world.expect_no_text("Look in");
+    if published_drawings::staged_folder(world).is_some() {
+        assert!(world.state().drawing_documents.is_empty());
+    }
 }
 // Design views and properties
 #[given("the Open dialog is open in the MCAD Software")]

@@ -19,6 +19,11 @@ document. Failed Open and an unsupported saved-package version also preserve
 the current document and its history. File operations use the existing save
 binding, atomic package publication, document restore, and close guards.
 
+The desktop command state publishes Open dialog file inspections while Home
+is active. A saved drawing preview remains available after the last drawing
+is closed, as verified by the
+[native drawing scenarios](receipts/2026-11-25-document-opening-drawing-previews-3889/README.md).
+
 The GUI frame tests exercise menu choices, keyboard submit, mouse and keyboard
 cancellation, empty paths, document switches, and canonical request fields. They
 drain pending input, layout, and navigation transitions before typing. Host
