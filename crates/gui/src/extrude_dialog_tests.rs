@@ -96,6 +96,6 @@ fn edit_seed_keeps_its_source_and_new_extrusion_clears_edit_mode() {
     dialog.requested = true;
     dialog.synchronize(&state);
     assert_eq!(dialog.edit_feature, None);
-    assert!(dialog.distance.is_empty());
+    assert_eq!(dialog.distance, "10.00 mm");
     assert_eq!(dialog.direction, GuiExtrudeDirection::Positive);
 }
