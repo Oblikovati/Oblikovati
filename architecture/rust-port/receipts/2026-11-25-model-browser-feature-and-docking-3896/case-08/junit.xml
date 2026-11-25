@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:37:03.491907045Z" time="87.040778228"><testcase name="Scenario: Inspect the Find feature criteria: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:99:3" time="87.040778228"><system-out><![CDATA[  Scenario: Inspect the Find feature criteria
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part is open in the MCAD Software
+   ✔  When the user chooses Find from the model browser menu
+   ✔  Then a search criteria dialog opens over the workspace
+   ✔  And its object type list offers Sketches and Features
+   ✔  When the user selects Features and opens the Property list
+   ✔  Then the list offers Name, Note contents, Note title, Suppress status and Type
+   ✔  When the user selects Name and opens the Condition list
+   ✔  Then the list offers any value, begins with, ends with, includes, is exactly and is not
+   ✔  When the user dismisses the list and closes the dialog
+   ✔  Then the model browser and part remain visible
+]]></system-out></testcase></testsuite></testsuites>

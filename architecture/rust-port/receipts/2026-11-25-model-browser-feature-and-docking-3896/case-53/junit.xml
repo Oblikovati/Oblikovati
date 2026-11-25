@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:36:41.492493839Z" time="39.044000845"><testcase name="Scenario: Inspect representation branches in an empty part: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:804:3" time="39.044000845"><system-out><![CDATA[  Scenario: Inspect representation branches in an empty part
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And a new empty part is active in the MCAD Software
+   ✔  And the model browser shows an expanded Representations branch
+   ✔  And the Model State and View branches are collapsed
+   ✔  When the user expands the Model State branch
+   ✔  Then a checked Primary entry appears beneath it
+   ✔  When the user expands the View branch
+   ✔  Then Primary, Isometric, Front, Top and Right entries appear beneath it
+   ✔  When the user right-clicks the Primary view entry
+   ✔  Then the entry is selected
+   ✔  And its context menu offers Activate and Copy
+   ✔  And Lock is unavailable
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  When the user collapses the View branch
+   ✔  Then its entries are hidden
+   ✔  And the checked Primary model-state entry remains visible
+   ✔  And the part viewport remains empty
+]]></system-out></testcase></testsuite></testsuites>

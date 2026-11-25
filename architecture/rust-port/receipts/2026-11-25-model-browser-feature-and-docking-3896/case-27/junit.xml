@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:35:41.112865066Z" time="133.318198121"><testcase name="Scenario: Report no matching feature search results: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:402:3" time="133.318198121"><system-out><![CDATA[  Scenario: Report no matching feature search results
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part with one unsuppressed extrusion and no fillet is open in the MCAD Software
+   ✔  And the Find dialog contains Type equals Extrusion OR Type equals Fillet
+   ✔  And And is selected for additional criteria
+   ✔  When the user selects Suppress status as the property
+   ✔  Then the condition is equals and the value is Suppressed
+   ✔  When the user clicks Add to list
+   ✔  Then the criteria list includes Suppress status equals Suppressed
+   ✔  When the user clicks Find Now
+   ✔  Then an information message says that no objects matched the criteria
+   ✔  When the user acknowledges the message
+   ✔  Then the Find dialog remains open with the criteria displayed
+   ✔  When the user closes the Find dialog
+   ✔  Then the block remains visible in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>

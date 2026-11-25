@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:33:43.176500261Z" time="120.781791954"><testcase name="Scenario: Cancel the open-search picker: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:642:3" time="120.781791954"><system-out><![CDATA[  Scenario: Cancel the open-search picker
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And the MCAD Software Find dialog contains feature search criteria
+   ✔  And at least one saved search is available
+   ✔  When the user chooses Open Search
+   ✔  Then a picker shows a saved-search list and opens, Cancel and Delete actions
+   ✔  When the user clicks Cancel
+   ✔  Then the Find dialog remains open with its original criteria unchanged
+]]></system-out></testcase></testsuite></testsuites>

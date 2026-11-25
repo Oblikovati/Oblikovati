@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:37:29.59932839Z" time="70.833850593"><testcase name="Scenario: Hide and show a solid body from the browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:200:3" time="70.833850593"><system-out><![CDATA[  Scenario: Hide and show a solid body from the browser
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part in the MCAD Software contains one visible solid block
+   ✔  And the solid body row is visible in the model browser
+   ✔  When the user right-clicks the solid body row
+   ✔  Then the block faces are highlighted in blue
+   ✔  And Visibility is checked in the context menu
+   ✔  When the user chooses Visibility
+   ✔  Then the block disappears from the viewport
+   ✔  And the body and its feature remain represented in the browser
+   ✔  When the user right-clicks the hidden body row
+   ✔  Then Visibility is not checked
+   ✔  And the hidden body is indicated by a blue wireframe while selected
+   ✔  When the user chooses Visibility again
+   ✔  Then the shaded block returns in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>
