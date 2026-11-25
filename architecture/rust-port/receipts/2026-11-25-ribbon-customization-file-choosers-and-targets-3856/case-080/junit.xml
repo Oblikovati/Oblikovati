@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:57:58.675702739Z" time="44.561720309"><testcase name="Scenario: Switch between the source and target selectors: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1287:3" time="44.561720309"><system-out><![CDATA[  Scenario: Switch between the source and target selectors
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and an empty Part Tools target
+   ✔  And there are no pending customization changes
+   ✔  When the user opens the command-source list
+   ✔  And the user clicks the target selector
+   ✔  Then the command-source list closes
+   ✔  And the target list is not open
+   ✔  When the user clicks the target selector again
+   ✔  Then the target list opens with Part Tools selected
+   ✔  When the user clicks the command-source selector
+   ✔  Then the target list closes
+   ✔  And the command-source list is not open
+   ✔  When the user clicks the command-source selector again
+   ✔  Then the command-source list opens with All Commands selected
+   ✔  When the user clicks Close
+   ✔  Then the command-source list closes
+   ✔  And the customization dialog remains open
+   ✔  When the user clicks Close again
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

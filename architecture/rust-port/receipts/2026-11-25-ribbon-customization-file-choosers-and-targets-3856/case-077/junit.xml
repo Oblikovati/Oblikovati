@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:57:32.995292502Z" time="34.513201192"><testcase name="Scenario: Close customization with the command-source list open: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1239:3" time="34.513201192"><system-out><![CDATA[  Scenario: Close customization with the command-source list open
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And the Ribbon customization dialog has no pending edits
+   ✔  And the command source is All Commands
+   ✔  When the user opens the command-source list
+   ✔  And the user clicks Close
+   ✔  Then the command-source list closes
+   ✔  And the customization dialog remains open with All Commands selected
+   ✔  When the user clicks Close again
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

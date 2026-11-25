@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:58:46.341622536Z" time="65.731799742"><testcase name="Scenario: Import settings with edits staged on two ribbon targets: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1542:3" time="65.731799742"><system-out><![CDATA[  Scenario: Import settings with edits staged on two ribbon targets
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full Tools ribbon visible
+   ✔  And ribbon customization shows All Commands and initially empty Part Tools and Part Manage targets
+   ✔  And a settings file contains 2D Sketches on Part Tools and no custom entries for Part Manage
+   ✔  And 3D Annotations is staged on Part Tools
+   ✔  And 2D Sketches is staged on Part Manage
+   ✔  And Part Manage is the selected target
+   ✔  When the user imports the settings file
+   ✔  Then the import chooser closes
+   ✔  And the Part Manage target list is empty
+   ✔  And Part Manage shows a pending-change marker
+   ✔  When the user selects the Part Tools target
+   ✔  Then the target contains 2D Sketches with Large and Text unchecked
+   ✔  And 3D Annotations is available in the source list
+   ✔  And Part Tools shows a pending-change marker
+   ✔  When the user clicks Cancel in the customization dialog
+   ✔  Then the customization dialog closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>
