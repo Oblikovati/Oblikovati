@@ -4,6 +4,17 @@ use imgui::Ui;
 use oblikovati_api::wire::BindingInfo;
 
 impl RibbonCustomization {
+    pub(super) fn reset_keyboard(&mut self) {
+        self.keyboard_draft = None;
+        self.keyboard_base = None;
+        self.keyboard_selected = None;
+        self.keyboard_error = None;
+        self.keyboard_conflict = false;
+        self.keyboard_search.clear();
+        self.keyboard_category = 0;
+        self.keyboard_kind = 0;
+    }
+
     pub(super) fn sync_keyboard(&mut self, commands: &crate::GuiCommandState) {
         let Some(current) = &commands.keymap else {
             return;
@@ -265,6 +276,19 @@ fn clipboard_table(bindings: &[BindingInfo]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn reopening_customize_resets_keyboard_filters() {
+        let mut dialog = RibbonCustomization {
+            keyboard_search: "undo".into(),
+            keyboard_category: 1,
+            keyboard_kind: 2,
+            ..Default::default()
+        };
+        dialog.open(crate::ribbon::RibbonTab::Tools);
+        assert!(dialog.keyboard_search.is_empty());
+        assert_eq!(dialog.keyboard_category, 0);
+        assert_eq!(dialog.keyboard_kind, 0);
+    }
     #[test]
     fn search_uses_actual_names_and_aliases_in_alphabetical_order() {
         let bindings = vec![

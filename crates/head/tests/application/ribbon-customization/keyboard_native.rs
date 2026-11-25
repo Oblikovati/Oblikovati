@@ -50,7 +50,7 @@ fn external_keymap_change_blocks_a_stale_dialog_draft() {
     world.add_part();
     open_tools_customization(&mut world);
     click_in_customize(&mut world, "Keyboard");
-    let search = world.run_in_window("Customize", "Searchcommands").clone();
+    let search = keyboard_initial::search_label(&world).clone();
     world.click([(search.minimum[0] - 70.) as i32, search.center()[1] as i32]);
     world.type_text("Undo");
     click_in_customize(&mut world, "Ctrl+Z");
@@ -101,7 +101,7 @@ fn rectangle_alias_is_edited_and_used_from_the_dialog() {
     world.add_part();
     open_tools_customization(&mut world);
     click_in_customize(&mut world, "Keyboard");
-    let search = world.run_in_window("Customize", "Searchcommands").clone();
+    let search = keyboard_initial::search_label(&world).clone();
     world.click([(search.minimum[0] - 70.) as i32, search.center()[1] as i32]);
     world.type_text("Rect");
     click_in_customize(&mut world, "Rectangle");
@@ -187,7 +187,7 @@ fn text_input_owns_a_bound_sketch_shortcut() {
     world.click_text("Customize");
     world.pump(Vec::new());
     click_in_customize(&mut world, "Keyboard");
-    let label = world.run_in_window("Customize", "Searchcommands").clone();
+    let label = keyboard_initial::search_label(&world).clone();
     world.click([(label.minimum[0] - 70.) as i32, label.center()[1] as i32]);
     world.key(ViewportPhysicalKey::R, true);
     assert!(!world.state().sketch_tool_keyboard);
@@ -233,15 +233,15 @@ fn keyboard_filter_and_reset_are_staged_until_applied() {
     world.pump(Vec::new());
     open_tools_customization(&mut world);
     click_in_customize(&mut world, "Keyboard");
-    let label = world.run_in_window("Customize", "Searchcommands").clone();
+    let label = keyboard_initial::search_label(&world).clone();
     world.click([(label.minimum[0] - 70.) as i32, label.center()[1] as i32]);
     world.type_text("home");
     let text = world.window_text("Customize");
     assert!(text.contains("HomeView"));
     assert!(!text.contains("PreviousView"));
-    click_in_customize(&mut world, "Clear");
+    clear_keyboard_search(&mut world);
     assert!(world.window_text("Customize").contains("Circle"));
-    let label = world.run_in_window("Customize", "Searchcommands").clone();
+    let label = keyboard_initial::search_label(&world).clone();
     world.click([(label.minimum[0] - 70.) as i32, label.center()[1] as i32]);
     world.type_text("Undo");
     click_in_customize(&mut world, "ResetAllKeys");
@@ -250,15 +250,33 @@ fn keyboard_filter_and_reset_are_staged_until_applied() {
     assert_eq!(undo_shortcut(&mut world), "Ctrl+U");
     world.click_text("Customize");
     world.pump(Vec::new());
-    if !world.window_text("Customize").contains("ResetAllKeys") {
-        click_in_customize(&mut world, "Keyboard");
-    }
+    keyboard_initial::keyword_search_is_empty(&mut world);
+    keyboard_initial::displayed_all(&world);
     click_in_customize(&mut world, "ResetAllKeys");
     click_in_customize(&mut world, "Apply");
     assert_eq!(undo_shortcut(&mut world), "Ctrl+Z");
     click_in_customize(&mut world, "Close");
     world.close();
 }
+fn clear_keyboard_search(world: &mut ApplicationWorld) {
+    let label = keyboard_initial::search_label(world);
+    let clear = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| {
+            run.list == label.list
+                && run.text.ends_with("Clear")
+                && (run.center()[1] - label.center()[1]).abs() < 3.
+        })
+        .expect("expected Clear beside the keyboard search field");
+    world.click(diagnostics::pointer_pixels([
+        clear.maximum[0] - 6.,
+        clear.center()[1],
+    ]));
+    world.pump(Vec::new());
+}
+
 fn undo_shortcut(world: &mut ApplicationWorld) -> String {
     world
         .state()
@@ -276,7 +294,7 @@ fn keyboard_shortcut_edit_is_staged_and_applied_from_the_dialog() {
     world.add_part();
     open_tools_customization(&mut world);
     click_in_customize(&mut world, "Keyboard");
-    let search = world.run_in_window("Customize", "Searchcommands").clone();
+    let search = keyboard_initial::search_label(&world).clone();
     world.click([(search.minimum[0] - 70.) as i32, search.center()[1] as i32]);
     world.type_text("Undo");
     click_in_customize(&mut world, "Ctrl+Z");

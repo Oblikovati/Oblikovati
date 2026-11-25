@@ -97,12 +97,8 @@ impl RibbonCustomization {
         self.draft.open(tab);
         self.builtins.open();
         self.staged_appearance = self.appearance;
-        self.keyboard_draft = None;
-        self.keyboard_base = None;
-        self.keyboard_selected = None;
-        self.keyboard_error = None;
+        self.reset_keyboard();
         self.close_after_apply = false;
-        self.keyboard_conflict = false;
         self.marking_draft = None;
         self.marking_base = None;
         self.marking_environment = None;

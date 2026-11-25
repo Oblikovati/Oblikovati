@@ -19,7 +19,7 @@
 - Added a Highlight New drop-down that can open over Tools Options additional commands and close independently. (#3856)
 - Added Assembly Design customization for the Assemble ribbon. Listed unavailable targets and kept a clean draft open when Escape dismissed its target selector. (#3856)
 - Added a curvature comb and live density and scale settings for sketch ellipses. (#3995)
-- Added a saved, opt-in set of default multi-character command aliases to Keyboard customization. (#3856)
+- Added a saved, opt-in set of default multi-character command aliases to Keyboard customization. Reset its search and filters when reopening Customize. (#3856)
 - Added Italic to the Sketch Text editor and kept Bold when applying it. (#3907)
 - Included applied ribbon, Quick Access, keyboard, marking menu, and mini-toolbar state in Customize exports. (#3856)
 - Opened the editor for existing Sketch Text on a double-click of the glyph. (#3907)

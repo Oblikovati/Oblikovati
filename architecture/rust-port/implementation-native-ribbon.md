@@ -31,6 +31,9 @@ checks Enter in the source list and Tab followed by Space on Add.
 The [native list navigation runs](receipts/2026-11-24-ribbon-customization-list-navigation-3856/README.md)
 cover paging staged rows, selecting all visible source rows, and keeping a
 staged ribbon edit while viewing Keyboard customization.
+Reopening Customize clears the Keyboard search and restores both filters
+to All. The selected customization tab is retained.
+[Keyboard initial-state checks](receipts/2026-11-26-keyboard-customization-initial-3856/README.md)
 The [native entry-point runs](receipts/2026-11-24-ribbon-customization-entry-points-3856/README.md)
 cover Tools Options and the View and Sketch title menus. They also check
 that opening and closing Customize preserves a selected solid face.
