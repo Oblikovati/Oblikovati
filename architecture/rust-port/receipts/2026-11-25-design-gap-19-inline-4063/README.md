@@ -14,3 +14,7 @@ Modify flyout, and the larger icon scale.
 
 [3D Model](model-command-band.png) · [Tools](tools-command-band.png) ·
 [Sketch](sketch-command-band.png)
+
+All 18 published Ribbon Appearance scenarios passed on the ribbon change
+(201 steps). The serial GUI library run passed 822 tests with one ignored.
+[Appearance scenario report](appearance/cucumber.json)
