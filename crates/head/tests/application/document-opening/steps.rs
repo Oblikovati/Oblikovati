@@ -14,6 +14,8 @@ use std::path::{Path, PathBuf};
 
 #[path = "drawing_fixture.rs"]
 mod drawing_fixture;
+#[path = "drawing_options.rs"]
+mod drawing_options;
 #[path = "express_fixture.rs"]
 mod express_fixture;
 #[path = "lists.rs"]

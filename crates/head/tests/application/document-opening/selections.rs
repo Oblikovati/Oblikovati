@@ -3,8 +3,7 @@
 use super::*;
 
 const EXPRESS: &str = "Load in Express Mode";
-const DEFER: &str = "Load in Defer Mode";
-const SKIP: &str = "Skip all unresolved files";
+pub(super) const DEFER: &str = "Load in Defer Mode";
 
 #[cfg(test)]
 #[path = "assembly_placement_tests.rs"]
@@ -13,7 +12,7 @@ mod assembly_placement_tests;
 fn documents(world: &mut ApplicationWorld) -> usize {
     world.state().documents.len()
 }
-fn click_option(world: &mut ApplicationWorld, label: &str) {
+pub(super) fn click_option(world: &mut ApplicationWorld, label: &str) {
     world.click_text(label);
     settle(world);
 }
@@ -163,87 +162,6 @@ pub(super) fn drawing_tab_kept(world: &mut ApplicationWorld) {
     let drawing = world.other_document.expect("expected the original drawing");
     let name = world.document_name(drawing);
     world.expect_tab(&name);
-}
-// Drawing options
-#[given("a saved drawing is selected with its Options pane displayed")]
-fn drawing_selected(world: &mut ApplicationWorld) {
-    cancel_dialog(world);
-    let folder = models_folder(world);
-    saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
-    open_dialog(world);
-    look_in(world, &folder);
-    select_row(world, DRAWING_FILE);
-}
-#[given("Load in Defer Mode is unchecked")]
-#[given("Load in Defer Mode is unchecked for the first drawing")]
-#[then("Load in Defer Mode is unchecked")]
-#[then("Load in Defer Mode is unchecked for the second drawing")]
-fn defer_off(world: &mut ApplicationWorld) {
-    assert!(!world.checked(DEFER), "expected {DEFER} unchecked");
-}
-#[given("Skip all unresolved files is checked")]
-fn skip_on(world: &mut ApplicationWorld) {
-    click_option(world, SKIP);
-    assert!(world.checked(SKIP), "expected {SKIP} checked");
-}
-#[when("I select Load in Defer Mode")]
-#[when("the user selects Load in Defer Mode")]
-#[when("I clear Load in Defer Mode")]
-#[when("the user clears Load in Defer Mode")]
-fn toggle_defer(world: &mut ApplicationWorld) {
-    click_option(world, DEFER);
-}
-#[then("Skip all unresolved files is unavailable")]
-fn skip_off(world: &mut ApplicationWorld) {
-    assert!(!world.run_is_enabled(SKIP), "expected {SKIP} unavailable");
-}
-#[then("Skip all unresolved files is available and unchecked")]
-fn skip_clear(world: &mut ApplicationWorld) {
-    assert!(world.run_is_enabled(SKIP), "expected {SKIP} available");
-    assert!(!world.checked(SKIP), "expected {SKIP} unchecked");
-}
-#[then("the selected drawing and its preview remain displayed")]
-fn drawing_kept(world: &mut ApplicationWorld) {
-    expect_name_and_preview(world, DRAWING_FILE);
-}
-#[given("two saved drawings are visible in the same folder")]
-fn two_drawings(world: &mut ApplicationWorld) {
-    cancel_dialog(world);
-    let folder = models_folder(world);
-    saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
-    saved_document(
-        world,
-        GuiTemplateKind::Drawing,
-        &folder,
-        SECOND_DRAWING_FILE,
-    );
-    open_dialog(world);
-    look_in(world, &folder);
-}
-#[given("the first drawing is selected in the Options pane")]
-fn first_selected(world: &mut ApplicationWorld) {
-    select_row(world, DRAWING_FILE);
-}
-#[when("I select the second drawing")]
-#[when("the user selects the second drawing")]
-fn select_second(world: &mut ApplicationWorld) {
-    select_row(world, SECOND_DRAWING_FILE);
-}
-#[then("the second drawing is selected and its file name is displayed")]
-fn second_shown(world: &mut ApplicationWorld) {
-    let shown = file_name_shown(world);
-    assert!(shown.contains(SECOND_DRAWING_FILE), "file name {shown:?}");
-}
-#[when("I select the first drawing again")]
-#[when("the user selects the first drawing again")]
-fn select_first_again(world: &mut ApplicationWorld) {
-    select_row(world, DRAWING_FILE);
-}
-#[then("the drawing remains selected without being opened")]
-fn still_selected(world: &mut ApplicationWorld) {
-    world.expect_text("Look in");
-    let shown = file_name_shown(world);
-    assert!(shown.contains(DRAWING_FILE), "file name {shown:?}");
 }
 // Thumbnails
 #[given(

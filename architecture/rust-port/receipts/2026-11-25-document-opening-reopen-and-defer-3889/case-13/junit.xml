@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:55:04.561210612Z" time="119.88922399"><testcase name="Scenario: Reset drawing options when switching selected files: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:171:3" time="119.88922399"><system-out><![CDATA[  Scenario: Reset drawing options when switching selected files
+   ✔  Given writable copies of `fixtures/cad/document-opening/OpenDrawingA.odd`, `OpenDrawingB.odd` and `OpenPart.opd` are staged in the same working folder
+   ✔  And the user opens and saves each drawing to establish its sheet preview, then closes the drawings
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And two saved drawings are visible in the same folder
+   ✔  And the first drawing is selected in the Options pane
+   ✔  And Load in Defer Mode is unchecked for the first drawing
+   ✔  And `OpenDrawingA.odd` and `OpenDrawingB.odd` are visible in the same folder
+   ✔  When the user selects Load in Defer Mode
+   ✔  And the user selects the second drawing
+   ✔  Then the second drawing is selected and its file name is displayed
+   ✔  And Load in Defer Mode is unchecked for the second drawing
+   ✔  When the user selects the first drawing again
+   ✔  Then Load in Defer Mode is unchecked
+   ✔  And the drawing remains selected without being opened
+]]></system-out></testcase></testsuite></testsuites>

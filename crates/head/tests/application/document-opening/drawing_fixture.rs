@@ -220,13 +220,14 @@ fn deferred_message_enabled(world: &mut ApplicationWorld) {
 }
 #[when("the user opens the drawing's file selection dialog")]
 fn open_drawing_picker(world: &mut ApplicationWorld) {
-    let folder = models_folder(world);
+    let folder = published_drawings::staged_folder(world).unwrap_or_else(|| models_folder(world));
     open_dialog(world);
     look_in(world, &folder);
 }
 #[when("the user selects the drawing and enable Load in Defer Mode")]
 fn select_deferred_drawing(world: &mut ApplicationWorld) {
-    select_row(world, DRAWING_FILE);
+    let name = published_drawings::first_drawing_name(world);
+    select_row(world, name);
     assert!(!world.checked("Load in Defer Mode"));
     world.click_text("Load in Defer Mode");
     assert!(world.checked("Load in Defer Mode"));
@@ -282,6 +283,7 @@ fn deferred_sheet(world: &mut ApplicationWorld) {
     let package = DocumentPackage::decode(&std::fs::read(path).unwrap()).unwrap();
     let saved = package.restore_saved_drawing_views().unwrap().unwrap();
     let state = world.state();
+    assert!(state.drawing_updates_deferred);
     let projection = &state.drawing_projections[&state.document.unwrap()];
     let expected: Vec<_> = saved.views[0]
         .lines

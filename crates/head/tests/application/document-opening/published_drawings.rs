@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Stage the published drawing variants and save their previews through the desktop.
 use super::{
-    ApplicationWorld, DRAWING_FILE, PART_FILE, holds_text, published_entry::fixture, settle,
+    ApplicationWorld, DRAWING_FILE, PART_FILE, SECOND_DRAWING_FILE, expect_name_and_preview,
+    holds_text, look_in, published_entry::fixture, settle,
 };
 use cucumber::given;
 use oblikovati_persistence::package::{DocumentPackage, preview_picture_of_file};
@@ -49,6 +50,33 @@ pub(super) fn part_name(world: &ApplicationWorld) -> &'static str {
 
 pub(super) fn first_drawing_name(world: &ApplicationWorld) -> &'static str {
     staged_folder(world).map_or(DRAWING_FILE, |_| FIRST)
+}
+
+pub(super) fn second_drawing_name(world: &ApplicationWorld) -> &'static str {
+    staged_folder(world).map_or(SECOND_DRAWING_FILE, |_| SECOND)
+}
+
+pub(super) fn show_staged_drawings(world: &mut ApplicationWorld) -> bool {
+    let Some(folder) = staged_folder(world) else {
+        return false;
+    };
+    look_in(world, &folder);
+    staged_drawing_rows(world);
+    true
+}
+
+#[given("`OpenDrawingA.odd` and `OpenDrawingB.odd` are visible in the same folder")]
+fn staged_drawing_rows(world: &mut ApplicationWorld) {
+    for name in [FIRST, SECOND] {
+        world.expect_text(name);
+    }
+}
+
+#[given("`OpenDrawingB.odd` is selected in the Options pane")]
+fn second_drawing_options(world: &mut ApplicationWorld) {
+    expect_name_and_preview(world, SECOND);
+    world.expect_text("Load in Defer Mode");
+    world.expect_text("Skip all unresolved files");
 }
 
 #[given(
@@ -143,6 +171,7 @@ fn insert_and_save_base_view(world: &mut ApplicationWorld, path: &Path, part: &P
 }
 
 #[given("`OpenPart.opd` is the active part and `OpenDrawingA.odd` is closed")]
+#[given("`OpenPart.opd` is active and the closed `OpenDrawingA.odd` drawing is available")]
 fn staged_part_active(world: &mut ApplicationWorld) {
     let folder = staged_folder(world).unwrap();
     let active = world.active_id();

@@ -2,6 +2,7 @@
 //! Open the published assembly from Home and preserve the active model on cancellation.
 use super::{ApplicationWorld, choose_open, look_in, open_dialog, select_row, settle};
 use cucumber::{given, then, when};
+use oblikovati_api::{client::Client, wire::CloseDocumentArgs};
 use oblikovati_gui::GuiBrowserKind;
 use std::path::PathBuf;
 
@@ -108,4 +109,55 @@ fn original_model_active(world: &mut ApplicationWorld) {
     world.expect_tab(&name);
     assert_eq!(world.state().documents.len(), 1);
     exact_part_active(world);
+}
+
+#[given(
+    "`fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open and `fixtures/cad/blank-drawing.odd` is the active drawing"
+)]
+fn published_open_part_and_drawing(world: &mut ApplicationWorld) {
+    let original_part = world.parts.pop().unwrap();
+    close_setup_documents(world, [world.other_document.unwrap(), original_part]);
+    let part = open_published_tab(world, PART);
+    let drawing = open_published_tab(world, "blank-drawing.odd");
+    world.parts.push(part);
+    world.other_document = Some(drawing);
+    world.observed_counts = vec![world.state().documents.len()];
+    world.observed_document_windows = world.state().document_windows;
+}
+
+fn close_setup_documents(world: &mut ApplicationWorld, ids: [u64; 2]) {
+    // The generic steps create an unsaved scratch drawing before choosing the native variant.
+    for id in ids {
+        Client::new(world.app().owner.document_host())
+            .documents()
+            .close(&CloseDocumentArgs { id, force: true })
+            .unwrap();
+    }
+    settle(world);
+}
+
+fn open_published_tab(world: &mut ApplicationWorld, file: &str) -> u64 {
+    let path = fixture(file);
+    world.open_fixture(&path);
+    let id = world.active_id();
+    assert_eq!(
+        world.state().document_storage[&id].path.as_deref(),
+        path.to_str()
+    );
+    id
+}
+
+#[when("I press Control+O and choose the already open part at that location")]
+#[when("the user presses Control+O and chooses the already open part at that location")]
+fn choose_open_part(world: &mut ApplicationWorld) {
+    let part = *world.parts.last().expect("expected the saved part");
+    let path = PathBuf::from(
+        world.state().document_storage[&part]
+            .path
+            .as_deref()
+            .unwrap(),
+    );
+    open_dialog(world);
+    look_in(world, path.parent().unwrap());
+    select_row(world, path.file_name().unwrap().to_str().unwrap());
 }
