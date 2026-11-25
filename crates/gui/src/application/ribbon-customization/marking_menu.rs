@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Staged edits for the active sketch marking menu.
+//! Staged edits for radial and overflow commands.
 use super::{RibbonCustomization, marking_environment};
 use imgui::Ui;
 use oblikovati_api::{
@@ -19,6 +19,18 @@ const OVERFLOW: [(MarkingMenuOverflow, &str); 3] = [
     (MarkingMenuOverflow::Full, "Full Menu"),
     (MarkingMenuOverflow::RadialOnly, "Radial Menu Only"),
     (MarkingMenuOverflow::Short, "Short Menu"),
+];
+#[path = "marking_search.rs"]
+mod marking_search;
+const LOCATIONS: [&str; 8] = [
+    "North",
+    "North East",
+    "East",
+    "South East",
+    "South",
+    "South West",
+    "West",
+    "North West",
 ];
 
 impl RibbonCustomization {
@@ -100,21 +112,16 @@ impl RibbonCustomization {
         let original = menus.get(*environment);
         let mut menu = original.clone();
         ui.group(|| {
-            for (slot, label) in [
-                (0, "North"),
-                (1, "North East"),
-                (2, "East"),
-                (3, "South East"),
-                (4, "South"),
-                (5, "South West"),
-                (6, "West"),
-                (7, "North West"),
-            ] {
-                slot_editor(ui, &mut menu, slot, label, &commands);
+            for (slot, label) in LOCATIONS.into_iter().enumerate() {
+                slot_editor(ui, &mut menu, slot as u8, label, &commands);
             }
         });
         ui.same_line();
-        ui.group(|| super::marking_overflow::editor(ui, &mut menu, &commands));
+        ui.group(|| {
+            self.marking_selector_open |=
+                marking_search::editor(ui, &mut self.marking_search, &mut menu, &commands);
+            super::marking_overflow::editor(ui, &mut menu, &commands);
+        });
         if ui.button("Restore Default") {
             menu = MarkingMenus::default().get(*environment);
         }

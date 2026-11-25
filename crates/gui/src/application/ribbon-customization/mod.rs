@@ -70,6 +70,7 @@ pub(crate) struct RibbonCustomization {
     marking_draft: Option<oblikovati_model::marking_menu::MarkingMenus>,
     marking_base: Option<oblikovati_model::marking_menu::MarkingMenus>,
     marking_environment: Option<oblikovati_api::types::Environment>,
+    marking_search: String,
     marking_display_draft: oblikovati_model::marking_menu::MarkingMenuDisplay,
     marking_display_base: oblikovati_model::marking_menu::MarkingMenuDisplay,
     marking_selector_open: bool,
@@ -105,6 +106,7 @@ impl RibbonCustomization {
         self.marking_draft = None;
         self.marking_base = None;
         self.marking_environment = None;
+        self.marking_search.clear();
         self.marking_conflict = false;
         self.marking_selector_open = false;
         self.escape = Default::default();

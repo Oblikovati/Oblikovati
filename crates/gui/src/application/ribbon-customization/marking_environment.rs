@@ -101,11 +101,9 @@ pub(super) fn sub_environment_selector(ui: &Ui, environment: Environment) -> boo
     let choices = match environment {
         types::SKETCH_ENVIRONMENT => SKETCH_SUB_ENVIRONMENTS,
         types::SKETCH3_D_ENVIRONMENT => SKETCH_3D_SUB_ENVIRONMENTS,
-        _ => {
-            ui.text("Sub-Environment: None Selected");
-            return false;
-        }
+        _ => &[],
     };
+    let _disabled = ui.begin_disabled(choices.is_empty());
     ui.set_next_item_width(190.);
     let Some(_menu) = ui.begin_combo_with_flags(
         "Sub-Environment",

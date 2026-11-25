@@ -1,9 +1,16 @@
-# Part marking menu: Chamfer
+# Part marking menu
 
-The default Part marking menu's Chamfer slot starts the existing Chamfer tool.
-It uses the tool's normal availability checks and honors configured menu slots.
+The default Part profile follows the published eight-position layout. Measure,
+Undo, and Hole route to the same actions as their ribbon commands. Revolve
+appears disabled pending the modeling command. Customize searches the active
+profile's command names and stages assignments to a radial slot or overflow.
+The editor loads saved profiles when available and applies edits through the
+marking-menu preferences owner (#3856).
+
+The default Part marking menu offers Chamfer in its overflow. The selected-face
+preset still has a Chamfer slot. Both start the existing tool with its normal
+availability checks. A saved layout can also assign Chamfer to a radial slot.
 A native X11 test opens Chamfer from the menu, cancels, and checks that the
 feature list is unchanged (#4046).
 
-This does not complete the selected-face context-menu scenario. Its separate
-standard menu and other observed commands remain open (#4048, #4050).
+Issues #4048 and #4050 track the outstanding selected-face commands.

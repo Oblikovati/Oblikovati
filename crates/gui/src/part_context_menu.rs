@@ -4,7 +4,10 @@ use crate::icons::GuiRibbonIcons;
 use crate::marking_menu::{MarkingEntry, ResolveCommand};
 use crate::{GuiAuthoringContext, GuiCommandState, GuiShellAction};
 use imgui::Ui;
-use oblikovati_api::{types, wire::MarkingMenuView};
+use oblikovati_api::{
+    types,
+    wire::{MarkingMenuItem, MarkingMenuView},
+};
 use oblikovati_model::marking_menu::{MarkingMenuOverflow, MarkingMenus};
 
 const POPUP: &str = "##part-canvas-menu";
@@ -245,19 +248,27 @@ fn part_menu(state: &GuiCommandState, face: bool) -> Option<MarkingMenuView> {
     if !face || menu != MarkingMenus::default().get(types::BASE_ENVIRONMENT) {
         return Some(menu);
     }
-    // These default positions have no drawable Part command. Keep the saved
-    // profile intact and leave custom profiles in full control of their slots (#4055).
-    for slot in menu.quadrants.iter_mut().flatten() {
-        if part_entry(&slot.command_id).is_some() {
-            continue;
-        }
-        if slot.quadrant == types::QUADRANT_SOUTH {
-            slot.command_id = FACE_TANGENCIES.into();
-        } else if slot.quadrant == types::QUADRANT_WEST {
-            slot.command_id = FACE_OTHER.into();
-        }
-    }
+    // The selected-face preset has its own selection commands and positions (#4055).
+    menu.quadrants = Some(default_face_slots());
+    menu.overflow = None;
     Some(menu)
+}
+fn default_face_slots() -> Vec<MarkingMenuItem> {
+    [
+        (types::QUADRANT_NORTH, "Sketch.Create2D"),
+        (types::QUADRANT_NORTH_EAST, "Modify.Fillet"),
+        (types::QUADRANT_EAST, "Create.Extrude"),
+        (types::QUADRANT_SOUTH_EAST, "Modify.Chamfer"),
+        (types::QUADRANT_SOUTH, FACE_TANGENCIES),
+        (types::QUADRANT_SOUTH_WEST, "WorkPlane.Offset"),
+        (types::QUADRANT_WEST, FACE_OTHER),
+    ]
+    .into_iter()
+    .map(|(quadrant, command_id)| MarkingMenuItem {
+        quadrant,
+        command_id: command_id.into(),
+    })
+    .collect()
 }
 fn selected_face_action(state: &GuiCommandState) -> Option<GuiShellAction> {
     let document = state.document?;
@@ -282,12 +293,23 @@ fn selected_face_command(id: &str) -> Option<MarkingEntry> {
     }
 }
 fn part_entry(id: &str) -> Option<MarkingEntry> {
+    if id == REVOLVE_COMMAND.0 {
+        return Some(MarkingEntry::disabled(REVOLVE_COMMAND.1));
+    }
     command(id).map(MarkingEntry::command)
 }
-const MARKING_COMMANDS: [(&str, &str, GuiShellAction); 5] = [
+const REVOLVE_COMMAND: (&str, &str) = ("Create.Revolve", "Revolve");
+const MARKING_COMMANDS: [(&str, &str, GuiShellAction); 8] = [
     ("Create.Extrude", "Extrude", GuiShellAction::OpenExtrude),
     ("Modify.Fillet", "Fillet", GuiShellAction::OpenFillet),
     ("Modify.Chamfer", "Chamfer", GuiShellAction::OpenChamfer),
+    ("Modify.Hole", "Hole", GuiShellAction::OpenHole),
+    ("edit.undo", "Undo", GuiShellAction::Undo),
+    (
+        "Inspect.Measure",
+        "Measure",
+        GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure),
+    ),
     (
         "Sketch.Create2D",
         "Start 2D Sketch",
@@ -300,7 +322,14 @@ const MARKING_COMMANDS: [(&str, &str, GuiShellAction); 5] = [
     ),
 ];
 pub(crate) fn marking_commands() -> impl Iterator<Item = (&'static str, &'static str)> {
-    MARKING_COMMANDS.iter().map(|&(id, label, _)| (id, label))
+    MARKING_COMMANDS
+        .iter()
+        .map(|&(id, label, _)| match id {
+            "Sketch.Create2D" => (id, "New Sketch"),
+            "WorkPlane.Offset" => (id, "Work Plane"),
+            _ => (id, label),
+        })
+        .chain([REVOLVE_COMMAND])
 }
 fn command(id: &str) -> Option<(&'static str, GuiShellAction)> {
     MARKING_COMMANDS
@@ -432,6 +461,22 @@ mod tests {
         assert_eq!(
             command("Modify.Chamfer"),
             Some(("Chamfer", GuiShellAction::OpenChamfer))
+        );
+        assert_eq!(
+            command("Modify.Hole"),
+            Some(("Hole", GuiShellAction::OpenHole))
+        );
+        assert_eq!(command("edit.undo"), Some(("Undo", GuiShellAction::Undo)));
+        assert_eq!(
+            command("Inspect.Measure"),
+            Some((
+                "Measure",
+                GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure)
+            ))
+        );
+        assert_eq!(
+            part_entry("Create.Revolve"),
+            Some(MarkingEntry::disabled("Revolve"))
         );
         assert_eq!(command("Modify.Unknown"), None);
     }

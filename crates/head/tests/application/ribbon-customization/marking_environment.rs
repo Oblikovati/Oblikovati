@@ -4,6 +4,25 @@ use super::super::*;
 use super::open_marking_menu_tab;
 use oblikovati_api::types::{self, Environment};
 
+#[then("the sub-environment selector shows \"None Selected\"")]
+fn initial_sub_environment(world: &mut ApplicationWorld) {
+    world.run_in_window("Customize", "NoneSelected");
+}
+
+#[then("the command search field is empty with \"All Commands\" selected")]
+fn marking_search_is_empty(world: &mut ApplicationWorld) {
+    for label in ["Searchcommand", "Typekeyword", "AllCommands"] {
+        world.run_in_window("Customize", label);
+    }
+    world.save_capture("marking-search-initial");
+}
+
+#[then("the Restore Default control is visible")]
+#[then("Restore Default is visible")]
+fn restore_marking_defaults_visible(world: &mut ApplicationWorld) {
+    world.run_in_window("Customize", "RestoreDefault");
+}
+
 #[given("Environment is \"2D Sketch\"")]
 pub(in super::super::super) fn choose_sketch_environment(world: &mut ApplicationWorld) {
     if !world

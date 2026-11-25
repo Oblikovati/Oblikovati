@@ -16,9 +16,11 @@ pub(super) fn editor(ui: &Ui, menu: &mut MarkingMenuView, available: &[(&str, &s
     let Some(commands) = &mut menu.overflow else {
         return;
     };
+    let rows_height = commands.len() as f32 * ui.frame_height_with_spacing();
+    let padding = 2. * ui.clone_style().window_padding[1];
     let mut removed_last = false;
     ui.child_window("##marking-overflow-list")
-        .size([255., 180.])
+        .size([255., (rows_height + padding).min(100.)])
         .border(true)
         .build(|| {
             let mut remove = None;

@@ -3,6 +3,8 @@
 use super::*;
 #[path = "marking_environment.rs"]
 mod marking_environment;
+#[path = "marking_part.rs"]
+mod marking_part;
 #[path = "marking_presentation.rs"]
 mod marking_presentation;
 pub(in super::super) use marking_environment::choose_sketch_environment;

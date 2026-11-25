@@ -3,6 +3,55 @@
 use super::*;
 
 #[test]
+fn search_stages_a_marking_command_and_only_apply_saves_it() {
+    use oblikovati_api::types;
+
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.start_sketch();
+    let original = world.state().marking_menus.unwrap();
+    open_tools_customization(&mut world);
+    click_in_customize(&mut world, "MarkingMenu");
+
+    stage_three_point_circle(&mut world);
+    assert_eq!(world.state().marking_menus.unwrap(), original);
+    click_in_customize(&mut world, "Cancel");
+    assert!(diagnostics::window_geometry("Customize").is_none());
+    assert_eq!(world.state().marking_menus.unwrap(), original);
+
+    world.click_text("Customize");
+    world.pump(Vec::new());
+    world.run_in_window("Customize", "Typekeyword");
+    stage_three_point_circle(&mut world);
+    click_in_customize(&mut world, "Apply");
+    let saved = world
+        .state()
+        .marking_menus
+        .unwrap()
+        .get(types::SKETCH_ENVIRONMENT);
+    assert!(saved.quadrants.unwrap().iter().any(|item| {
+        item.quadrant == types::QUADRANT_NORTH_EAST && item.command_id == "Sketch.Circle.ThreePoint"
+    }));
+    click_in_customize(&mut world, "Clear");
+    world.run_in_window("Customize", "Typekeyword");
+    world.close();
+}
+
+fn stage_three_point_circle(world: &mut ApplicationWorld) {
+    click_in_customize(world, "Typekeyword");
+    world.type_text("ThReE PoInT CiRcLe");
+    world.expect_no_text("Center Point Arc");
+    click_in_customize(world, "ThreePointCircle");
+    world.expect_text("Assign to North East");
+    world.escape();
+    world.pump(Vec::new());
+    world.expect_no_text("Assign to North East");
+    click_in_customize(world, "ThreePointCircle");
+    world.click_text("Assign to North East");
+    world.pump(Vec::new());
+}
+
+#[test]
 fn api_marking_menu_overflow_runs_its_sketch_command() {
     use oblikovati_api::{
         client::Client,

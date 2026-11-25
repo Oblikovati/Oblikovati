@@ -112,18 +112,21 @@ fn menu(environment: Environment, slots: &[(ScreenQuadrant, &str)]) -> MarkingMe
     }
 }
 fn base_menu() -> MarkingMenuView {
-    menu(
+    let mut part = menu(
         types::BASE_ENVIRONMENT,
         &[
-            (types::QUADRANT_NORTH, "Sketch.Create2D"),
-            (types::QUADRANT_NORTH_EAST, "Modify.Fillet"),
-            (types::QUADRANT_EAST, "Create.Extrude"),
-            (types::QUADRANT_SOUTH_EAST, "Modify.Chamfer"),
-            (types::QUADRANT_SOUTH, "Modify.Hole"),
+            (types::QUADRANT_NORTH, "Modify.Fillet"),
+            (types::QUADRANT_NORTH_EAST, "Create.Extrude"),
+            (types::QUADRANT_EAST, "Create.Revolve"),
+            (types::QUADRANT_SOUTH_EAST, "Modify.Hole"),
+            (types::QUADRANT_SOUTH, "Sketch.Create2D"),
             (types::QUADRANT_SOUTH_WEST, "WorkPlane.Offset"),
-            (types::QUADRANT_WEST, "Create.Revolve"),
+            (types::QUADRANT_WEST, "edit.undo"),
+            (types::QUADRANT_NORTH_WEST, "Inspect.Measure"),
         ],
-    )
+    );
+    part.overflow = Some(vec!["Modify.Chamfer".into()]);
+    part
 }
 fn sketch_menu() -> MarkingMenuView {
     menu(

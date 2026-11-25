@@ -245,12 +245,11 @@ fn native_part_menu_chamfer_opens_and_cancels_without_model_changes() {
         .frame
         .runs
         .iter()
-        .find(|run| run.text == "Chamfer" && run.center()[0] > 700. && run.center()[1] > 250.)
+        .find(|run| run.text == "Chamfer" && world.frame.is_popup_row(run))
         .unwrap_or_else(|| panic!("Part menu: expected Chamfer; rendered {:?}", world.text()));
     x11_input::click(diagnostics::pointer_pixels(button.center()));
     world.pump(Vec::new());
-    world.expect_text("Select Edges");
-    assert!(!world.state().extrude_preview_active);
+    world.run_in_window("Chamfer", "Distance");
     click_native_label(&mut world, "Cancel");
     assert_eq!(world.state().browser.unwrap().features, before);
     assert!(!world.state().extrude_preview_active);
@@ -269,7 +268,7 @@ fn native_selected_face_menu_measures_exact_area_and_closes() {
         .frame
         .runs
         .iter()
-        .find(|run| run.text == "Measure" && run.center()[0] > 500.)
+        .find(|run| run.text == "Measure" && world.frame.is_popup_row(run))
         .unwrap_or_else(|| panic!("face menu: expected Measure; rendered {:?}", world.text()));
     x11_input::click(diagnostics::pointer_pixels(entry.center()));
     world.pump(Vec::new());

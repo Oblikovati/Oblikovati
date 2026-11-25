@@ -5,6 +5,8 @@ use super::open_marking_menu_tab;
 use oblikovati_model::marking_menu::{MarkingMenuOverflow, MarkingMenuStyle};
 
 #[given("Marking Menu Style is \"Show Icon and Text\"")]
+#[then("the Marking Menu Style is \"Show Icon and Text\"")]
+#[then("Marking Menu Style is \"Show Icon and Text\"")]
 fn default_style(world: &mut ApplicationWorld) {
     world.run_in_window("Customize", "ShowIconandText");
     assert_eq!(
@@ -14,6 +16,8 @@ fn default_style(world: &mut ApplicationWorld) {
 }
 
 #[given("Overflow Menu is \"Full Menu\"")]
+#[then("the Overflow Menu is \"Full Menu\"")]
+#[then("Overflow Menu is \"Full Menu\"")]
 fn default_overflow(world: &mut ApplicationWorld) {
     world.run_in_window("Customize", "FullMenu");
     assert_eq!(
