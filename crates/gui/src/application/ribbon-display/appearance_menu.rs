@@ -29,21 +29,13 @@ impl RibbonDisplayState {
                 .build()
             {
                 customization.select_appearance(appearance);
-                self.record_appearance_selection();
+                self.finish_title_context_selection();
             }
         }
         if ui.menu_item("Reset Ribbon") {
             self.request_reset();
             self.close_context_menu = true;
         }
-    }
-    fn record_appearance_selection(&mut self) {
-        self.close_context_menu = true;
-        self.close_unpinned_expansion =
-            self.context_expansion.is_some() && self.context_command.is_none();
-    }
-    pub(crate) fn take_appearance_expansion_close(&mut self) -> bool {
-        std::mem::take(&mut self.close_unpinned_expansion)
     }
 }
 
@@ -56,18 +48,18 @@ mod tests {
     #[test]
     fn appearance_selection_requests_only_its_title_expansion_close() {
         let mut display = RibbonDisplayState::default();
-        display.record_appearance_selection();
-        assert!(!display.take_appearance_expansion_close());
+        display.finish_title_context_selection();
+        assert!(!display.take_context_expansion_close());
         display.request_expansion_context(RibbonTab::Model, RibbonPanel::PartModify);
-        display.record_appearance_selection();
-        assert!(display.take_appearance_expansion_close());
-        assert!(!display.take_appearance_expansion_close());
+        display.finish_title_context_selection();
+        assert!(display.take_context_expansion_close());
+        assert!(!display.take_context_expansion_close());
         display.request_expansion_command_context(
             RibbonTab::Model,
             RibbonPanel::PartModify,
             "Move Bodies",
         );
-        display.record_appearance_selection();
-        assert!(!display.take_appearance_expansion_close());
+        display.finish_title_context_selection();
+        assert!(!display.take_context_expansion_close());
     }
 }

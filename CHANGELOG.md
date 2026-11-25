@@ -12,7 +12,7 @@
 - Added Zoom, Zoom All, Zoom Selected, and Zoom Window to ribbon customization. (#3856)
 
 - Added Show Panels instructions and F1 help to the ribbon panel selector. (#3856)
-
+- Added an Explore panel with Measure to the 3D Model ribbon. (#3856)
 - Added the Standard overview and Units tab to Document Settings. (#3856)
 
 - Added a Tools Options expansion with a ribbon layout reset confirmation. (#3856)
@@ -460,7 +460,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 - Closed unpinned ribbon expansions when Escape dismisses their title menu.
 
-- Kept expanded ribbon commands open while their docking menu is in use.
+- Kept expanded ribbon commands open while their docking menu is in use. Closed unpinned expansions after panel visibility changes from their title menu. (#3856)
 
 - Kept the ribbon docking submenu closed after Escape until it is opened again.
 - Made the default ribbon display control toggle between full and tabs-only modes.

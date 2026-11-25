@@ -1257,16 +1257,16 @@
           "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
         },
         "cucumber": "architecture/rust-port/receipts/2026-11-25-ribbon-panel-expansion-current-3856/cucumber.json",
-        "cucumber_sha256": "f3fdffd520971ade53e0476dc31587927f3b850a7e24bdd4222b7a68bc7f7935",
+        "cucumber_sha256": "138b92ea1a06b6443d1bfcad5ae0ff8689bc113cf83e09bf98d6fa1d3f0d02da",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-ribbon-panel-expansion-current-3856/scenario-inventory.json",
         "scenario_inventory_sha256": "f487e5d4cffd3d4fc67888732194eed57b8c6e2d10b81c15b4fe8b85e2f8776c",
         "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-ribbon-panel-expansion-current-3856/scenario-arguments.json",
-        "scenario_arguments_sha256": "44dfdecf728aa0a21b7f4a9266f06976be820fdee2c85892c3a4b963c4afadb1",
-        "application_commit": "e0f670a5f0444511050899c8a01f13ac7c9a75cd",
+        "scenario_arguments_sha256": "9ada608b29e73c515854c445eca348566a09bb427fc538ea057ffaecd8212d4e",
+        "application_commit": "1c721000b37b1d0f979dfb12fc58c5ead1210301",
         "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-panel-expansion OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
         "environment": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe",
-        "blocker": "Seven cases require a Shell preview. Tools Options does not expose Highlight New, and the 3D Model Show Panels catalog has no Explore entry.",
-        "notes": "58 of 67 current native cases passed. The Shell, Highlight New and Explore reports retain their actual failure or undefined step. The individual receipts identify the test builds and the existing local GUI changes. Strict build and runtime provenance remains open under #3978."
+        "blocker": "Seven cases require a Shell preview. Tools Options does not expose Highlight New.",
+        "notes": "59 of 67 current native cases passed. The Shell and Highlight New reports retain their actual failure or undefined step. The individual receipts identify the test builds and the existing local GUI changes. Strict build and runtime provenance remains open under #3978."
       }
     }
   },

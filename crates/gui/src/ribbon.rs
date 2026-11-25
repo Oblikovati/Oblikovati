@@ -15,7 +15,7 @@ impl DocumentRibbon {
         if let Some((owner, panel)) = self.display.take_context_relocated() {
             self.panels.close_additional(owner, panel);
         }
-        if self.display.take_appearance_expansion_close() {
+        if self.display.take_context_expansion_close() {
             self.panels.close_unpinned_additional();
         }
         if self.display.take_customization_request() {

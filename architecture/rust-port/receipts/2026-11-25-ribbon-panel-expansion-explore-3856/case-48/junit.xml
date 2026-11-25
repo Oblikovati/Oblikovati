@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T06:01:10.751957381Z" time="40.552510011"><testcase name="Scenario: Toggle Explore from an expanded panel title menu: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:648:3" time="40.552510011"><system-out><![CDATA[  Scenario: Toggle Explore from an expanded panel title menu
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is at the top
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks the lower Modify title
+   ✔  And the user opens the "Show Panels" submenu
+   ✔  Then Explore is checked in the submenu
+   ✔  And the Modify additional commands remain visible
+   ✔  When the user selects Explore in the submenu
+   ✔  Then Explore is hidden and the ribbon panels reflow
+   ✔  And the Modify additional command area closes
+   ✔  When the user opens the Modify additional command area
+   ✔  And the user right-clicks the lower Modify title
+   ✔  And the user opens the "Show Panels" submenu
+   ✔  Then Explore is unchecked in the submenu
+   ✔  When the user selects Explore in the submenu
+   ✔  Then Explore returns to the 3D Model ribbon
+   ✔  And the Modify additional command area closes
+]]></system-out></testcase></testsuite></testsuites>

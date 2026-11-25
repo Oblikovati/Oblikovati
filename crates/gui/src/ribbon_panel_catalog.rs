@@ -41,6 +41,7 @@ pub(crate) enum RibbonPanel {
     AnnotateSymbols,
     PartCreate,
     PartModify,
+    PartExplore,
     PartWorkFeatures,
     PartPattern,
     PartSimplification,
@@ -83,6 +84,7 @@ impl RibbonPanel {
             Self::SheetMetalTools => "Sheet Metal",
             Self::DrawingViews | Self::PartCreate => "Create",
             Self::DrawingModify | Self::PartModify => "Modify",
+            Self::PartExplore => "Explore",
             Self::PartWorkFeatures => "Work Features",
             Self::PartNotes => "Notes",
             Self::PartShapeGenerator => "Shape Generator",
@@ -108,7 +110,7 @@ impl RibbonPanel {
             Self::Exit => ("Finish Sketch", GuiShellAction::FinishSketch),
             Self::Modify => ("Delete", GuiShellAction::DeleteSketchSelection),
             Self::Navigate => ("Home", GuiShellAction::Home),
-            Self::ToolMeasure => (
+            Self::ToolMeasure | Self::PartExplore => (
                 "Measure",
                 GuiShellAction::Inspect(crate::GuiInspectAction::StartMeasure),
             ),
@@ -214,6 +216,7 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
             Sketch,
             PartCreate,
             PartModify,
+            PartExplore,
             PartWorkFeatures,
             PartPattern,
             PartSimplification,

@@ -39,6 +39,14 @@ impl RibbonDisplayState {
     pub(crate) fn take_context_relocated(&mut self) -> Option<(RibbonTab, RibbonPanel)> {
         self.context_relocated.take()
     }
+    pub(super) fn finish_title_context_selection(&mut self) {
+        self.close_context_menu = true;
+        self.close_unpinned_expansion =
+            self.context_expansion.is_some() && self.context_command.is_none();
+    }
+    pub(crate) fn take_context_expansion_close(&mut self) -> bool {
+        std::mem::take(&mut self.close_unpinned_expansion)
+    }
     pub(super) fn expanded_command_menu(
         &mut self,
         ui: &Ui,

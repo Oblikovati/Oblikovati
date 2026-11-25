@@ -13,6 +13,8 @@ mod builtin_commands;
 mod command_context;
 #[path = "custom_commands.rs"]
 mod custom_commands;
+#[path = "explore.rs"]
+mod explore;
 #[path = "face_selection.rs"]
 mod face_selection;
 #[path = "footer_comparison.rs"]

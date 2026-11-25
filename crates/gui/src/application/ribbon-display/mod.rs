@@ -254,7 +254,7 @@ impl RibbonDisplayState {
             let shown = !self.hidden_panels.contains(&(tab, *panel));
             if ui.menu_item_config(panel.label()).selected(shown).build() {
                 self.toggle_panel(tab, *panel);
-                self.close_context_menu = true;
+                self.finish_title_context_selection();
             }
         }
     }
