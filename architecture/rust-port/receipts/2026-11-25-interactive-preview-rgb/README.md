@@ -47,6 +47,20 @@ eleven animated ViewCube turns. Timing uses successful present-entry
 intervals within each recorded workload. [Raw traces](runs/) ·
 [Selected face](selected-face.png) · [Animation setting](animation-enabled.png)
 
+## Final release build checks
+
+The checked-in ViewCube probe reproduced the result at 210.1 FPS and
+6.27 ms p95. Two further selection runs averaged 131.2–155.3 FPS with
+12.30–12.95 ms p95. The system-wide one-minute load averages at the start
+of these selection trials were 8.64 and 9.25, versus 15.63 and 15.90 in
+the initial RGB trials.
+
+A separate selection run with CPU and Vulkan phase tracing reached
+216.4 FPS and 7.13 ms p95. Its longest present interval took 26.17 ms.
+The traced Vulkan calls occupied 0.22 ms of that interval. This leaves
+CPU preparation, other renderer work, and scheduling to be attributed.
+[Final selection traces](runs/) · [CPU and Vulkan phase run](runs/rgb-selection-cpu/)
+
 ## Verification
 
 The viewport test compared every packed RGB pixel with the full capture at

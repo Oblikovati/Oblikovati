@@ -58,8 +58,11 @@ requested immediate mode, and record the selected mode with validation
 on and off. The 120 FPS interval budget is 8.33 ms. Attribute a stage before
 changing cache or synchronization policy so correctness and resource lifetime
 can be verified against the same pixel and resize oracles.
-With packed RGB in use, face hover and selection still show p95 intervals
-of 16.52–23.51 ms. Include this workload in the phase comparison.
+With packed RGB in use, uninstrumented face hover and selection trials
+showed p95 intervals of 12.30–23.51 ms. In a separate instrumented run,
+traced Vulkan calls accounted for 0.22 ms of the longest 26.17 ms interval.
+Include selection in the phase comparison to attribute the remaining time.
+[Selection traces](../2026-11-25-interactive-preview-rgb/README.md#final-release-build-checks)
 
 ## Attribute X11 window observations
 
