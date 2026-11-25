@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Keep the published preview target separate from the already active part.
-use super::{ApplicationWorld, holds_text, published_entry::fixture};
+use super::{
+    ApplicationWorld, expect_name_and_preview, holds_text, look_in, published_entry::fixture,
+    select_row,
+};
 use cucumber::given;
 use std::path::Path;
 
@@ -47,4 +50,15 @@ pub(super) fn published_part_details(world: &ApplicationWorld) {
             "expected {row} in the published part details"
         );
     }
+}
+
+#[given("`fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected with its name and preview")]
+#[given("`fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected in the detailed file list")]
+fn preview_target_selected(world: &mut ApplicationWorld) {
+    let path = fixture(EXTRUSION);
+    let name = path.file_name().unwrap().to_str().unwrap();
+    look_in(world, path.parent().unwrap());
+    select_row(world, name);
+    expect_name_and_preview(world, name);
+    world.saved_path = Some(path);
 }

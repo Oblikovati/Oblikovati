@@ -476,5 +476,10 @@ fn open_again(world: &mut ApplicationWorld) {
 #[then("the selected part remains selected with its file name and preview displayed")]
 #[then("the selected part, file name and preview remain displayed")]
 fn part_stays_selected(world: &mut ApplicationWorld) {
-    expect_name_and_preview(world, PART_FILE);
+    let name = published_preview::inspection_path(world)
+        .and_then(|path| path.file_name().unwrap().to_str())
+        .or_else(|| lists::published_sort_name(world))
+        .unwrap_or(PART_FILE)
+        .to_owned();
+    expect_name_and_preview(world, &name);
 }

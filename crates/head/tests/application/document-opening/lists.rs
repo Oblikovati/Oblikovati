@@ -6,13 +6,19 @@ const CHILD_FOLDER: &str = "brackets";
 /// Larger than the fixture's documents, for a row that sorts first by size.
 const LARGE_FILE_BYTES: usize = 500_000;
 const LARGE_FILE: &str = "archive.odd";
+const SORT_FILES: [&str; 3] = [
+    "OpenSortSmall.opd",
+    "OpenSortMedium.opd",
+    "OpenSortLarge.opd",
+];
 
 fn rows_in_order(world: &ApplicationWorld, names: &[&str]) -> Vec<String> {
+    let listing = world.run("Date modified").list;
     let mut rows: Vec<_> = world
         .frame
         .runs
         .iter()
-        .filter(|run| names.contains(&run.text.as_str()))
+        .filter(|run| run.list == listing && names.contains(&run.text.as_str()))
         .map(|run| (run.center()[1], run.text.clone()))
         .collect();
     rows.sort_by(|first, second| first.0.total_cmp(&second.0));
@@ -82,13 +88,64 @@ fn different_sizes(world: &mut ApplicationWorld) {
 fn sorted_down(world: &mut ApplicationWorld) {
     world.click_text("Size");
     settle(world);
+    if published_sort_name(world).is_some() {
+        assert_eq!(
+            rows_in_order(world, &SORT_FILES),
+            [SORT_FILES[2], SORT_FILES[1], SORT_FILES[0]]
+        );
+        return;
+    }
     let rows = rows_in_order(world, &[PART_FILE, LARGE_FILE]);
     assert_eq!(rows[0], LARGE_FILE, "largest first");
 }
 #[then("the file list is sorted by increasing size")]
 fn sorted_up(world: &mut ApplicationWorld) {
+    if published_sort_name(world).is_some() {
+        assert_eq!(rows_in_order(world, &SORT_FILES), SORT_FILES);
+        return;
+    }
     let rows = rows_in_order(world, &[PART_FILE, LARGE_FILE]);
     assert_eq!(rows[0], PART_FILE, "smallest first");
+}
+
+pub(super) fn published_sort_name(world: &ApplicationWorld) -> Option<&'static str> {
+    world
+        .saved_path
+        .as_ref()
+        .filter(|path| path.ends_with(SORT_FILES[2]))?;
+    Some(SORT_FILES[2])
+}
+
+#[given("OpenSortLarge.opd is selected with its file name and preview displayed")]
+fn large_sort_file_selected(world: &mut ApplicationWorld) {
+    let path = published_entry::fixture("document-opening/OpenSortLarge.opd");
+    look_in(world, path.parent().unwrap());
+    select_row(world, SORT_FILES[2]);
+    expect_name_and_preview(world, SORT_FILES[2]);
+    world.saved_path = Some(path);
+}
+
+#[given(
+    "`fixtures/cad/document-opening/OpenSortSmall.opd`, `fixtures/cad/document-opening/OpenSortMedium.opd`, and `fixtures/cad/document-opening/OpenSortLarge.opd` are visible with distinct sizes"
+)]
+fn published_sort_sizes(world: &mut ApplicationWorld) {
+    let folder = world.saved_path.as_ref().unwrap().parent().unwrap();
+    let mut last_size = 0;
+    for name in SORT_FILES {
+        let row = world.run(name);
+        let size = folder.join(name).metadata().unwrap().len();
+        assert!(size > last_size, "expected a greater size for {name}");
+        last_size = size;
+        let rendered = format!("{size}B");
+        assert!(
+            world.frame.runs.iter().any(|run| {
+                run.list == row.list
+                    && (run.center()[1] - row.center()[1]).abs() < 4.
+                    && run.text == rendered
+            }),
+            "expected {rendered} in the size column for {name}"
+        );
+    }
 }
 // Folders
 fn child_folder(world: &mut ApplicationWorld) -> PathBuf {

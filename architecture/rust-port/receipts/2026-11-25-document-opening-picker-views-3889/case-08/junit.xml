@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:48:29.304944308Z" time="46.786771224"><testcase name="Scenario: Reverse the size sort without losing the selected file: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:99:3" time="46.786771224"><system-out><![CDATA[  Scenario: Reverse the size sort without losing the selected file
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And the detailed file list contains files of different sizes
+   ✔  And OpenSortLarge.opd is selected with its file name and preview displayed
+   ✔  And the file list is sorted by decreasing size
+   ✔  And `fixtures/cad/document-opening/OpenSortSmall.opd`, `fixtures/cad/document-opening/OpenSortMedium.opd`, and `fixtures/cad/document-opening/OpenSortLarge.opd` are visible with distinct sizes
+   ✔  When the user clicks the Size column header
+   ✔  Then the file list is sorted by increasing size
+   ✔  And the selected part remains selected with its file name and preview displayed
+]]></system-out></testcase></testsuite></testsuites>
