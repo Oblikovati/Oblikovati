@@ -48,6 +48,8 @@ differing pixels across the matching 1440×800 client regions in the
 The rootful XWayland `-hidpi` probe failed during the initial Wayland surface
 configure. The final compositor screenshot attempt timed out, so the client
 capture cannot resolve the reported residual blur at the 150% output scale.
+The follow-up found 144 DPI in COSMIC's XSETTINGS manager while the X resource
+database omitted `Xft.dpi`. See the [X11 DPI fallback](../../implementation-native-ui-scale.md#linux-x11-display-dpi).
 
 ## Reproduction
 

@@ -81,13 +81,19 @@ The Windows full gate was attempted after merging `17ddaee72`. It did not pass: 
 
 ## Linux X11 display DPI
 
-Linux native windows use the display-wide `Xft.dpi` resource from
-`RESOURCE_MANAGER`. A property notification refreshes the scale and schedules
-a new frame for each open window. The GUI uses the same backing-scale path for
-the main window and detached drawings. A missing or invalid DPI falls back
-to 96 DPI. [X.Org resource database documentation](https://www.x.org/docs/man/man.pdf)
+Linux native windows use `Xft.dpi` from `RESOURCE_MANAGER` when it contains a
+valid value. They otherwise read `Xft/DPI` from the XSETTINGS manager for the
+screen. COSMIC at 150% publishes 144 DPI through XSETTINGS. When neither
+source supplies a valid value, the backing density defaults to 96 DPI.
+[XSETTINGS client and property format](https://specifications.freedesktop.org/xsettings/latest/)
 
-The isolated Xvfb regression opened the main window at 144 DPI and clicked
-File through X11. It detached a drawing, switched the display to 192 DPI and
-back to 96 DPI, and verified the main titlebar and detached drawing framebuffer
-scale at 150%, 200%, and 100%.
+An X resource change, XSETTINGS property change, or settings manager
+replacement refreshes the scale and schedules a new frame when the density
+changes. The main window and detached drawings share the same backing-scale
+path, including font rasterization and coordinate conversion.
+
+The isolated Xvfb regression exercises a 144 DPI XSETTINGS startup, a File
+click through X11, and a detached drawing. It checks live XSETTINGS changes,
+X resource precedence, fallback after removing the resource, and the default
+after the settings manager exits. Both windows are checked at 150%, 200%, and
+100%.
