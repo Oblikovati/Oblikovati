@@ -23,6 +23,58 @@ const EXISTING_NAME: &str = "ExistingPart.opd";
 const SOLID_NAME: &str = "ExistingSolidPart.opd";
 const SUBFOLDER_NAME: &str = "Subfolder";
 
+#[given(
+    "a writable copy of `fixtures/cad/blank-metric-part.opd` is open as a saved empty part in the MCAD Software"
+)]
+#[given(
+    "a writable copy of `fixtures/cad/blank-metric-part.opd` is open as a saved active part in the MCAD Software"
+)]
+fn open_published_empty_part(world: &mut ApplicationWorld) {
+    let source = super::super::scenario_root().join("fixtures/cad/blank-metric-part.opd");
+    let path = world.scratch_folder().join("blank-metric-part.opd");
+    fs::write(&path, fs::read(source).unwrap()).unwrap();
+    world.reopen_through_dialog(&path);
+    let id = world.active_id();
+    assert_eq!(
+        world.state().document_storage[&id].path.as_deref(),
+        path.to_str()
+    );
+    assert_eq!(world.browser_sketch_count(), 0);
+    world.saved_path = Some(path);
+}
+
+#[given("`fixtures/cad/quick-access-toolbar/PartOne.opd` is open in the MCAD Software")]
+fn open_other_published_part(world: &mut ApplicationWorld) {
+    let path = super::super::scenario_root().join("fixtures/cad/quick-access-toolbar/PartOne.opd");
+    world.reopen_through_dialog(&path);
+    let id = world.active_id();
+    assert_eq!(
+        world.state().document_storage[&id].path.as_deref(),
+        path.to_str()
+    );
+    world.other_document = Some(id);
+}
+
+#[given("the user creates a new unsaved metric part")]
+fn new_unsaved_metric_part(world: &mut ApplicationWorld) {
+    world.add_part();
+}
+
+#[given("the user creates and finishes an empty sketch on the XY datum plane")]
+fn finish_empty_sketch(world: &mut ApplicationWorld) {
+    world.add_finished_sketch();
+}
+
+#[given("the unsaved part containing that sketch is active")]
+#[given("the unsaved modified part is active")]
+fn active_modified_part(world: &mut ApplicationWorld) {
+    let id = world.active_id();
+    let state = world.state();
+    assert!(state.document_storage[&id].path.is_none());
+    assert!(state.document_storage[&id].unsaved_edits);
+    assert_eq!(world.browser_sketch_count(), 1);
+}
+
 #[test]
 fn document_saving_native_fixtures_reopen_and_survive_declined_replacement() {
     let mut world = ApplicationWorld::new();

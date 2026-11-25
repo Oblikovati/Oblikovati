@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:24:09.198349611Z" time="19.759861497"><testcase name="Scenario: Inspect save-change prompt frequency choices: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature:114:3" time="19.759861497"><system-out><![CDATA[  Scenario: Inspect save-change prompt frequency choices
+   ✔  Given the user creates a new unsaved metric part in the MCAD Software
+   ✔  And the user creates and finishes an empty sketch on the XY datum plane
+   ✔  And the unsaved modified part is active
+   ✔  And save-change prompts are configured to always show
+   ✔  When the user closes the document tab
+   ✔  And the user opens the prompt-frequency list
+   ✔  Then the list offers always show, once per operation, suppress for this session and suppress permanently
+   ✔  When the user dismisses the list without changing its selection
+   ✔  And the user cancels the save-changes prompt
+   ✔  Then the part remains active
+]]></system-out></testcase></testsuite></testsuites>

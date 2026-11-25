@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:24:29.82126591Z" time="42.752269586"><testcase name="Scenario: Save a new modified part while closing it: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature:127:3" time="42.752269586"><system-out><![CDATA[  Scenario: Save a new modified part while closing it
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd` is open in the MCAD Software
+   ✔  And the user creates a new unsaved metric part
+   ✔  And the user creates and finishes an empty sketch on the XY datum plane
+   ✔  And the unsaved part containing that sketch is active
+   ✔  And save-change prompts are configured to always show
+   ✔  And another document is open
+   ✔  And the proposed file name does not exist in the selected folder
+   ✔  When the user closes the document tab
+   ✔  And the user chooses Yes in the save-changes prompt
+   ✔  And the user accepts the proposed file name in Save As
+   ✔  Then the document closes
+   ✔  And another open document becomes active
+   ✔  When the user reopens the newly saved part in the same session
+   ✔  Then the part becomes active
+   ✔  And its model browser contains the finished sketch
+]]></system-out></testcase></testsuite></testsuites>

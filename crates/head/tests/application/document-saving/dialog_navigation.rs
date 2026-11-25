@@ -1,10 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
-#[given("the Save As dialog is open for a new empty part in the MCAD Software")]
-fn dialog_open_on_empty_part(world: &mut ApplicationWorld) {
-    world.add_part();
+#[given("the user presses Control+S to open Save As")]
+fn save_with_workspace_preview_baseline(world: &mut ApplicationWorld) {
     world.workspace_color = Some(world.pixel_at(VIEWPORT_CENTRE));
     world.press_save_shortcut();
+    world.expect_text(SAVE_IN);
+}
+
+#[given("the Save As dialog is open for a new empty part in the MCAD Software")]
+fn dialog_open_on_empty_part(world: &mut ApplicationWorld) {
+    if !world.shows(SAVE_IN) {
+        world.add_part();
+        save_with_workspace_preview_baseline(world);
+    }
     world.expect_text(SAVE_IN);
 }
 #[when("I choose Active Window as the preview source")]

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:22:30.338786602Z" time="19.753815961"><testcase name="Scenario: Toggle the preview picture controls before saving: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature:49:3" time="19.753815961"><system-out><![CDATA[  Scenario: Toggle the preview picture controls before saving
+   ✔  Given the user creates a new unsaved metric part in the MCAD Software
+   ✔  And the user presses Control+S to open Save As
+   ✔  And the Save As dialog is open for a new part in the MCAD Software
+   ✔  And Save Preview Picture is selected
+   ✔  When the user clears Save Preview Picture
+   ✔  Then the preview source choices are hidden
+   ✔  And the preview area displays a placeholder
+   ✔  When the user selects Save Preview Picture again
+   ✔  Then the preview source choices reappear
+   ✔  When the user chooses Active Window on Save
+   ✔  Then that preview source is selected
+   ✔  And Active Component Iso View on Save is not selected
+   ✔  When the user chooses Active Component Iso View on Save
+   ✔  And the user cancels the dialog
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase></testsuite></testsuites>

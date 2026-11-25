@@ -31,6 +31,7 @@ fn modified_part(world: &mut ApplicationWorld) -> u64 {
 }
 #[given("a new unsaved part is active in the MCAD Software")]
 #[given("a new unsaved empty part is active in the MCAD Software")]
+#[given("the user creates a new unsaved metric part in the MCAD Software")]
 fn new_part(world: &mut ApplicationWorld) {
     world.add_part();
 }
@@ -233,8 +234,10 @@ fn rectangle_visible(world: &mut ApplicationWorld) {
 }
 #[given("the Save As dialog is open for a new part in the MCAD Software")]
 fn dialog_open(world: &mut ApplicationWorld) {
-    world.add_part();
-    world.press_save_shortcut();
+    if !world.shows(SAVE_IN) {
+        world.add_part();
+        world.press_save_shortcut();
+    }
     world.expect_text(SAVE_IN);
 }
 #[given("Save Preview Picture is selected")]

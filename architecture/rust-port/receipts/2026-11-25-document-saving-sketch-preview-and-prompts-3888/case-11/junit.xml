@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:25:13.499389585Z" time="17.00384183"><testcase name="Scenario: Capture an active window preview before saving: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature:144:3" time="17.00384183"><system-out><![CDATA[  Scenario: Capture an active window preview before saving
+   ✔  Given the user creates a new unsaved metric part in the MCAD Software
+   ✔  And the user presses Control+S to open Save As
+   ✔  And the Save As dialog is open for a new empty part in the MCAD Software
+   ✔  And Save Preview Picture is selected
+   ✔  When the user chooses Active Window as the preview source
+   ✔  Then a capture control appears beside Active Window
+   ✔  And the preview area displays a placeholder
+   ✔  When the user activates the capture control
+   ✔  Then the preview area displays a dark image matching the empty workspace
+   ✔  And the Save As dialog remains open
+   ✔  When the user cancels the dialog
+   ✔  Then the unsaved part remains active
+]]></system-out></testcase></testsuite></testsuites>
