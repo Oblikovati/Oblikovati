@@ -1,0 +1,8 @@
+Wayland
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1706 filtered out; finished in 16.14s
+
+X11
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1706 filtered out; finished in 26.14s
+
+The first X11 invocation timed out while mapping its window.
+The retry used a separate Xvfb display after the scenario run finished.

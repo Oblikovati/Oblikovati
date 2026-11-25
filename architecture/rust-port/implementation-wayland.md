@@ -26,7 +26,8 @@ Docking checks use the native window on both Linux backends. On Wayland,
 the harness sends pointer motion and button transitions through the window
 frame loop. On X11, it sends the same drag through XTest. Holding the
 button across frames lets the checks observe edge and tab previews before
-release. [Docking scenario results](receipts/2026-11-25-docking-pointer-backends-4133/README.md)
+release. [Docking drag results](receipts/2026-11-25-docking-pointer-backends-4133/README.md) ·
+[Dock tab menu results](receipts/2026-11-25-dock-menu-wayland-4133/README.md)
 
 ## Performance check
 
