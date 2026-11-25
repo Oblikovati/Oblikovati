@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Shared radial layout for configurable canvas menus.
+use crate::icons::{GuiRibbonIcons, IconGlyph, IconSize};
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 use oblikovati_api::wire::MarkingMenuView;
+use oblikovati_model::marking_menu::{MarkingMenuOverflow, MarkingMenuStyle};
 
 pub(crate) type ResolveCommand = fn(&str) -> Option<MarkingEntry>;
 
@@ -50,33 +52,44 @@ pub(crate) fn draw(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
     resolve: ResolveCommand,
+    icons: &GuiRibbonIcons,
 ) {
-    let slots = resolved_slots(ui, menu, resolve);
+    let style = state.marking_menu_display.style;
+    let slots = resolved_slots(ui, menu, resolve, style, icons);
     if !slots.is_empty() {
-        draw_ring(ui, slots, state, actions);
+        draw_ring(ui, slots, state, actions, icons);
     }
-    ui.separator();
-    draw_overflow(ui, menu, state, actions, resolve);
+    if state.marking_menu_display.overflow != MarkingMenuOverflow::RadialOnly {
+        ui.separator();
+        draw_overflow(ui, menu, state, actions, resolve);
+    }
 }
 fn draw_ring(
     ui: &Ui,
     slots: Vec<Slot>,
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
+    icons: &GuiRibbonIcons,
 ) {
     let ring = slot_layout(&slots);
     let origin = ui.cursor_pos();
     ui.dummy([ring.size, ring.size]);
     for slot in slots {
-        draw_slot(ui, slot, &ring, origin, state, actions);
+        draw_slot(ui, slot, &ring, origin, state, actions, icons);
     }
     ui.set_cursor_pos([
         origin[0],
         origin[1] + ring.size + ui.clone_style().item_spacing[1],
     ]);
 }
-pub(crate) fn ring_size(ui: &Ui, menu: &MarkingMenuView, resolve: ResolveCommand) -> Option<f32> {
-    let slots = resolved_slots(ui, menu, resolve);
+pub(crate) fn ring_size(
+    ui: &Ui,
+    menu: &MarkingMenuView,
+    resolve: ResolveCommand,
+    style: MarkingMenuStyle,
+    icons: &GuiRibbonIcons,
+) -> Option<f32> {
+    let slots = resolved_slots(ui, menu, resolve, style, icons);
     (!slots.is_empty()).then(|| slot_layout(&slots).size)
 }
 fn slot_layout(slots: &[Slot]) -> crate::marking_menu_layout::RingLayout {
@@ -137,7 +150,13 @@ struct Slot {
     entry: MarkingEntry,
     size: [f32; 2],
 }
-fn resolved_slots(ui: &Ui, menu: &MarkingMenuView, resolve: ResolveCommand) -> Vec<Slot> {
+fn resolved_slots(
+    ui: &Ui,
+    menu: &MarkingMenuView,
+    resolve: ResolveCommand,
+    style: MarkingMenuStyle,
+    icons: &GuiRibbonIcons,
+) -> Vec<Slot> {
     let padding = ui.clone_style().frame_padding;
     menu.quadrants
         .iter()
@@ -145,10 +164,19 @@ fn resolved_slots(ui: &Ui, menu: &MarkingMenuView, resolve: ResolveCommand) -> V
         .filter_map(|item| {
             let entry = resolve(&item.command_id)?;
             let text = ui.calc_text_size(entry.label);
+            let [icon_width, icon_height] = icons.logical[IconSize::Small.index()];
+            let size = match style {
+                MarkingMenuStyle::IconAndText => [
+                    text[0] + icon_width + (2. * padding[0]).max(7.),
+                    ui.frame_height().max(icon_height + 4.),
+                ],
+                MarkingMenuStyle::IconOnly => [icon_width + 8., icon_height + 4.],
+                MarkingMenuStyle::TextOnly => [text[0] + 2. * padding[0], ui.frame_height()],
+            };
             Some(Slot {
                 quadrant: item.quadrant.0,
                 entry,
-                size: [text[0] + 2. * padding[0], ui.frame_height()],
+                size,
             })
         })
         .collect()
@@ -160,21 +188,51 @@ fn draw_slot(
     origin: [f32; 2],
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
+    icons: &GuiRibbonIcons,
 ) {
     let Some(position) = ring.position(slot.quadrant, slot.size) else {
         return;
     };
     ui.set_cursor_pos([origin[0] + position[0], origin[1] + position[1]]);
     let disabled = ui.begin_disabled(!slot.entry.dispatchable(state));
-    let pressed = ui.button_with_size(
-        format!("{}##marking-{}", slot.entry.label, slot.quadrant),
-        slot.size,
-    );
+    let pressed = slot_button(ui, &slot, state.marking_menu_display.style, icons);
     drop(disabled);
     if pressed && let Some(action) = slot.entry.action {
         actions.push(action);
         ui.close_current_popup();
     }
+}
+
+fn slot_button(ui: &Ui, slot: &Slot, style: MarkingMenuStyle, icons: &GuiRibbonIcons) -> bool {
+    let label = format!("{}##marking-{}", slot.entry.label, slot.quadrant);
+    if style == MarkingMenuStyle::TextOnly {
+        return ui.button_with_size(label, slot.size);
+    }
+    let glyph = match slot.entry.action.as_ref() {
+        Some(GuiShellAction::OpenExtrude) => IconGlyph::Extrude,
+        Some(GuiShellAction::OpenFillet) => IconGlyph::Fillet,
+        Some(GuiShellAction::OpenChamfer) => IconGlyph::Chamfer,
+        Some(GuiShellAction::OpenOffsetPlane) => IconGlyph::WorkPlane,
+        Some(action) => crate::icons::action_glyph(action).unwrap_or(IconGlyph::Customize),
+        None => IconGlyph::Select,
+    };
+    let pressed = crate::widget_abi::icon_button(
+        ui,
+        &label,
+        crate::widget_abi::IconButtonPresentation {
+            texture: icons.key(glyph, IconSize::Small),
+            size: slot.size,
+            icon: icons.logical[IconSize::Small.index()],
+            large: false,
+            show_caption: style == MarkingMenuStyle::IconAndText,
+        },
+    );
+    if style == MarkingMenuStyle::IconOnly
+        && ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED)
+    {
+        ui.tooltip_text(slot.entry.label);
+    }
+    pressed
 }
 
 #[cfg(test)]

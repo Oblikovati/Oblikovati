@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Session tab retention through the Tools customization entry point.
 use super::*;
+#[path = "marking_presentation.rs"]
+mod marking_presentation;
 
 #[given("the customization dialog is open on Ribbon for an empty Part Tools custom panel")]
 fn empty_ribbon(world: &mut ApplicationWorld) {

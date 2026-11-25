@@ -8,7 +8,7 @@ impl<O, W, F, G, R, S: super::DispatchWakeup> super::DesktopOwner<O, W, F, G, R,
         for menu in store.menus() {
             self.marking_menus.set(menu)?;
         }
-        self.classic_marking_menu = store.classic();
+        self.marking_menu_display = store.display();
         self.marking_store = Some(store);
         Ok(self)
     }
@@ -26,9 +26,9 @@ impl<
     pub(super) fn set_marking_menu_action(
         &mut self,
         menu: Option<&oblikovati_api::wire::MarkingMenuView>,
-        classic: Option<bool>,
+        display: Option<oblikovati_model::marking_menu::MarkingMenuDisplay>,
     ) -> Result<bool, String> {
-        let Some(classic) = classic else {
+        let Some(display) = display else {
             let Some(menu) = menu else { return Ok(false) };
             oblikovati_api::client::Client::new(self.document_host())
                 .ui()
@@ -41,10 +41,10 @@ impl<
             menus.set(menu.clone())?;
         }
         if let Some(store) = &mut self.marking_store {
-            store.save_with_classic(&menus, classic)?;
+            store.save_with_display(&menus, display)?;
         }
         self.marking_menus = menus;
-        self.classic_marking_menu = classic;
+        self.marking_menu_display = display;
         Ok(true)
     }
 }

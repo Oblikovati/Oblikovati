@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Part canvas menu uses the user's configured base marking menu (#4045).
+use crate::icons::GuiRibbonIcons;
 use crate::marking_menu::{MarkingEntry, ResolveCommand};
 use crate::{GuiAuthoringContext, GuiCommandState, GuiShellAction};
 use imgui::Ui;
 use oblikovati_api::{types, wire::MarkingMenuView};
-use oblikovati_model::marking_menu::MarkingMenus;
+use oblikovati_model::marking_menu::{MarkingMenuOverflow, MarkingMenus};
 
 const POPUP: &str = "##part-canvas-menu";
 const FACE_EXPORT: &str = "Export Face As...";
@@ -17,31 +18,36 @@ pub(crate) fn canvas_menu(
     actions: &mut Vec<GuiShellAction>,
     repeat_wheel: &mut Option<bool>,
     marking_enabled: bool,
+    icons: &GuiRibbonIcons,
 ) -> bool {
     if state.authoring != GuiAuthoringContext::Part || state.document.is_none() {
         return false;
     }
     let classic = crate::marking_menu::use_classic(state.sketch_classic_menu, marking_enabled);
+    let full = classic || state.marking_menu_display.overflow == MarkingMenuOverflow::Full;
     if !ui.is_window_hovered_with_flags(crate::widget_abi::over_any_panel())
         && ui.is_mouse_released(imgui::MouseButton::Right)
     {
         ui.open_popup(POPUP);
-        position_face_popup(ui, state, area, classic);
+        position_face_popup(ui, state, area, classic, icons);
     }
     let face = selected_face_action(state);
-    let separate = face.is_some() && !classic;
+    let separate = face.is_some() && !classic && full;
     let _background =
         separate.then(|| ui.push_style_color(imgui::StyleColor::PopupBg, [0., 0., 0., 0.]));
     let Some(_popup) = ui.begin_popup(POPUP) else {
         return false;
     };
     if separate {
-        draw_face_standard(ui, state, actions, face.as_ref());
+        draw_face_standard(ui, state, actions, face.as_ref(), icons);
     }
-    if repeat_wheel.is_some() && ui.menu_item("Repeat Navigation Wheel") {
+    if full && repeat_wheel.is_some() && ui.menu_item("Repeat Navigation Wheel") {
         *repeat_wheel = Some(true);
     }
-    draw_configured_menu(ui, state, actions, classic);
+    draw_configured_menu(ui, state, actions, classic, icons);
+    if !full {
+        return true;
+    }
     draw_face_measure(ui, state, actions, face.as_ref());
     if !separate {
         draw_face_details(ui, state, actions, face.as_ref());
@@ -64,11 +70,12 @@ fn position_face_popup(
     state: &GuiCommandState,
     area: crate::application::document_creation::workspaces::WorkspaceArea,
     classic: bool,
+    icons: &GuiRibbonIcons,
 ) {
     if classic || selected_face_action(state).is_none() {
         return;
     }
-    let Some(ring) = face_ring_size(ui, state) else {
+    let Some(ring) = face_ring_size(ui, state, icons) else {
         return;
     };
     let origin = face_popup_origin(ui, state, area, ring);
@@ -81,11 +88,22 @@ fn face_popup_origin(
     ring: f32,
 ) -> [f32; 2] {
     let style = ui.clone_style();
-    let above = face_standard_size(ui)[1] + style.item_spacing[1];
-    let overflow = part_menu(state, true).map_or(0, |menu| {
-        crate::marking_menu::overflow_count(&menu, selected_face_command)
-    });
-    let below = (overflow + 2) as f32 * ui.frame_height_with_spacing() + style.item_spacing[1];
+    let mode = state.marking_menu_display.overflow;
+    let full = mode == MarkingMenuOverflow::Full;
+    let above = if full {
+        face_standard_size(ui)[1] + style.item_spacing[1]
+    } else {
+        0.
+    };
+    let below = if mode == MarkingMenuOverflow::RadialOnly {
+        0.
+    } else {
+        let overflow = part_menu(state, true).map_or(0, |menu| {
+            crate::marking_menu::overflow_count(&menu, selected_face_command)
+        });
+        (overflow + if full { 2 } else { 0 }) as f32 * ui.frame_height_with_spacing()
+            + style.item_spacing[1]
+    };
     crate::marking_menu_layout::popup_origin(
         ui.io().mouse_pos,
         [[area.left, area.top], [area.right, area.bottom]],
@@ -95,9 +113,15 @@ fn face_popup_origin(
         style.window_padding,
     )
 }
-fn face_ring_size(ui: &Ui, state: &GuiCommandState) -> Option<f32> {
+fn face_ring_size(ui: &Ui, state: &GuiCommandState, icons: &GuiRibbonIcons) -> Option<f32> {
     let menu = part_menu(state, true)?;
-    crate::marking_menu::ring_size(ui, &menu, selected_face_command)
+    crate::marking_menu::ring_size(
+        ui,
+        &menu,
+        selected_face_command,
+        state.marking_menu_display.style,
+        icons,
+    )
 }
 fn face_standard_size(ui: &Ui) -> [f32; 2] {
     let style = ui.clone_style();
@@ -117,10 +141,11 @@ fn draw_face_standard(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
     face: Option<&GuiShellAction>,
+    icons: &GuiRibbonIcons,
 ) {
     let size = face_standard_size(ui);
     let origin = ui.cursor_pos();
-    let ring = face_ring_size(ui, state).unwrap_or(size[0]);
+    let ring = face_ring_size(ui, state, icons).unwrap_or(size[0]);
     ui.set_cursor_pos([origin[0] + ((ring - size[0]) / 2.).max(0.), origin[1]]);
     ui.child_window("##face-standard-menu")
         .size(size)
@@ -190,6 +215,7 @@ fn draw_configured_menu(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
     classic: bool,
+    icons: &GuiRibbonIcons,
 ) {
     let selected = selected_face_action(state);
     let Some(menu) = part_menu(state, selected.is_some()) else {
@@ -204,7 +230,7 @@ fn draw_configured_menu(
     if classic {
         crate::marking_menu::draw_classic(ui, &menu, state, actions, resolve);
     } else {
-        crate::marking_menu::draw(ui, &menu, state, actions, resolve);
+        crate::marking_menu::draw(ui, &menu, state, actions, resolve, icons);
     }
     for action in &mut actions[start..] {
         if *action == GuiShellAction::ChooseSketchPlane

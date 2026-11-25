@@ -19,6 +19,7 @@ pub(super) fn list_size(ui: &Ui, default_width: f32, minimum_width: f32) -> [f32
 impl RibbonCustomization {
     pub(super) fn tabs(&mut self, ui: &Ui) {
         self.ribbon_tab_active = false;
+        self.marking_selector_open = false;
         if let Some(_tabs) = ui.tab_bar("##customize-tabs") {
             if let Some(_ribbon) = ui.tab_item("Ribbon") {
                 self.ribbon_tab_active = true;

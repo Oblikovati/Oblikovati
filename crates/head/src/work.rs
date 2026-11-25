@@ -26,10 +26,10 @@ pub trait HeadWork: HeadSketchWork {
     fn set_marking_menu_from_gui(
         &mut self,
         menu: Option<&oblikovati_api::wire::MarkingMenuView>,
-        classic: Option<bool>,
+        display: Option<oblikovati_model::marking_menu::MarkingMenuDisplay>,
     ) -> Result<bool, String> {
         Err(format!(
-            "marking menu {menu:?}, classic {classic:?}: expected a desktop menu owner"
+            "marking menu {menu:?}, display {display:?}: expected a desktop menu owner"
         ))
     }
     /// Take a resolved command shortcut after GUI input ownership is known.

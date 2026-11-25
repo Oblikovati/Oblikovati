@@ -118,7 +118,7 @@ pub use dispatch_options::DesktopDispatchOptions;
 /// ```
 pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     marking_menus: oblikovati_model::marking_menu::MarkingMenus,
-    classic_marking_menu: bool,
+    marking_menu_display: oblikovati_model::marking_menu::MarkingMenuDisplay,
     marking_store: Option<Box<dyn oblikovati_model::marking_menu::MarkingMenuPreferenceAccess>>,
     keymap: oblikovati_model::keymap::Keymap,
     keymap_store: Option<Box<dyn oblikovati_model::keymap::KeymapPreferenceAccess>>,
@@ -239,7 +239,7 @@ impl<
         let (dispatch, caller) = owner_dispatch(options.capacity, options.timeout, wake);
         Self {
             marking_menus: Default::default(),
-            classic_marking_menu: false,
+            marking_menu_display: Default::default(),
             marking_store: None,
             keymap: oblikovati_model::keymap::Keymap::desktop_defaults(),
             keymap_store: None,

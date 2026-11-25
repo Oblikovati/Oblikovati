@@ -214,6 +214,7 @@ pub(crate) fn canvas_menu(
     actions: &mut Vec<GuiShellAction>,
     open_token: &mut Option<u64>,
     marking_enabled: bool,
+    icons: &crate::icons::GuiRibbonIcons,
 ) {
     if state.authoring != GuiAuthoringContext::Sketch || !state.sketch_at_ready {
         retire_closed_context(open_token, actions);
@@ -235,7 +236,12 @@ pub(crate) fn canvas_menu(
         if crate::marking_menu::use_classic(state.sketch_classic_menu, marking_enabled) {
             super::marking_menu::draw_classic(ui, menu, state, actions);
         } else {
-            super::marking_menu::draw(ui, menu, state, actions);
+            super::marking_menu::draw(ui, menu, state, actions, icons);
+            if state.marking_menu_display.overflow
+                != oblikovati_model::marking_menu::MarkingMenuOverflow::Full
+            {
+                return;
+            }
         }
     }
     super::text::edit_menu_row(ui, state, actions);

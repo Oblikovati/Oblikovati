@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T05:36:29.59283831Z" time="28.020819087"><testcase name="Scenario: Inspect marking-menu presentation choices without changing settings: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1953:3" time="28.020819087"><system-out><![CDATA[  Scenario: Inspect marking-menu presentation choices without changing settings
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the customization dialog is open on the Marking Menu tab in the MCAD Software
+   ✔  And Marking Menu Style is "Show Icon and Text"
+   ✔  And Overflow Menu is "Full Menu"
+   ✔  When the user opens the Marking Menu Style selector
+   ✔  Then the available styles include "Show Icon and Text", "Show Icon Only" and "Show Text Only"
+   ✔  And "Show Icon and Text" remains selected
+   ✔  When the user dismisses the selector without choosing an option
+   ✔  And the user opens the Overflow Menu selector
+   ✔  Then the available overflow choices include "Full Menu", "Radial Menu Only" and "Short Menu"
+   ✔  And "Full Menu" remains selected
+   ✔  When the user dismisses the selector without choosing an option
+   ✔  Then no customization change is pending
+]]></system-out></testcase></testsuite></testsuites>

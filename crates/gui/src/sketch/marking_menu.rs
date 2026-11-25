@@ -11,8 +11,9 @@ pub(super) fn draw(
     menu: &MarkingMenuView,
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
+    icons: &crate::icons::GuiRibbonIcons,
 ) {
-    crate::marking_menu::draw(ui, menu, state, actions, entry);
+    crate::marking_menu::draw(ui, menu, state, actions, entry, icons);
 }
 pub(super) fn draw_classic(
     ui: &Ui,

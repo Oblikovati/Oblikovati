@@ -22,8 +22,8 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::SetMarkingMenu(args) => {
             owner.set_marking_menu_from_gui(Some(&args.menu), None)
         }
-        GuiShellAction::SetMarkingMenuPreferences(menu, classic) => {
-            owner.set_marking_menu_from_gui(menu.as_ref(), Some(*classic))
+        GuiShellAction::SetMarkingMenuPreferences(menu, display) => {
+            owner.set_marking_menu_from_gui(menu.as_ref(), Some(*display))
         }
         GuiShellAction::SetKeymap(delta) => owner.set_keymap_from_gui(delta),
         GuiShellAction::PlaceSketchBlock(name) => owner.place_sketch_block_from_gui(name),

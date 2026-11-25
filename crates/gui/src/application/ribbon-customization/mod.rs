@@ -65,8 +65,9 @@ pub(crate) struct RibbonCustomization {
     keyboard_conflict: bool,
     marking_draft: Option<oblikovati_api::wire::MarkingMenuView>,
     marking_base: Option<oblikovati_api::wire::MarkingMenuView>,
-    marking_classic_draft: bool,
-    marking_classic_base: bool,
+    marking_display_draft: oblikovati_model::marking_menu::MarkingMenuDisplay,
+    marking_display_base: oblikovati_model::marking_menu::MarkingMenuDisplay,
+    marking_selector_open: bool,
     marking_conflict: bool,
     ribbon_tab_active: bool,
     pub(crate) pending_zoom: Option<crate::application::viewport_orientation::ZoomAction>,
@@ -99,6 +100,7 @@ impl RibbonCustomization {
         self.marking_draft = None;
         self.marking_base = None;
         self.marking_conflict = false;
+        self.marking_selector_open = false;
         self.escape = Default::default();
         self.list_focus = None;
         self.category_open = false;
@@ -172,6 +174,7 @@ impl RibbonCustomization {
         let mut window_open = self.open.is_open();
         let category_was_open = self.category_open;
         let target_was_open = self.target_selector_open;
+        let marking_selector_was_open = self.marking_selector_open;
         Self::dockable_window(ui, "Customize", &mut window_open)
             .build(|| {
                 self.tabs(ui);
@@ -192,7 +195,9 @@ impl RibbonCustomization {
                 let selector_was_open = category_was_open || target_was_open;
                 let close_dialog = self.escape.pressed(ui)
                     || (selector_was_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape));
-                if close_dialog && (focused || selector_was_open) {
+                if close_dialog && marking_selector_was_open {
+                    self.escape_consumed = true;
+                } else if close_dialog && (focused || selector_was_open) {
                     self.open.set_open(false);
                     self.escape_consumed = true;
                 }

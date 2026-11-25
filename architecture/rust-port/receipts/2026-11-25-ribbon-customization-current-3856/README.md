@@ -1,7 +1,7 @@
 # Current native Ribbon Customization
 
-Ninety-two of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 88 of 122 declarations and 1,251
+Ninety-three of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 89 of 122 declarations and 1,265
 passing steps. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
@@ -27,6 +27,9 @@ A separate case verified adding and removing Shell in Quick Access.
 [Shell shortcut](../2026-11-25-ribbon-customization-shell-shortcut-3856/README.md)
 The Classic Context Menu case canceled a staged checkbox change and
 reopened at the saved value. [Classic menu](../2026-11-25-ribbon-customization-classic-menu-3856/README.md)
+The presentation case opened and dismissed both Marking Menu selectors
+without editing their saved values.
+[Marking Menu presentation](../2026-11-25-ribbon-customization-marking-display-3856/README.md)
 
 The [command list](case-059/cucumber.json),
 [reorder](case-082/cucumber.json), and [remove](case-083/cucumber.json)

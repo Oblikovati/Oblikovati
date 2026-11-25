@@ -6,12 +6,23 @@ use oblikovati_api::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "marking_menu_display.rs"]
+mod display;
+pub use display::{MarkingMenuDisplay, MarkingMenuOverflow, MarkingMenuStyle};
+
 /// Storage for a user's marking-menu assignments.
 pub trait MarkingMenuPreferenceAccess {
     /// Read the classic context-menu choice; example: `store.classic()`.
     fn classic(&self) -> bool;
     /// Read the saved menus; example: `store.menus()`.
     fn menus(&self) -> Vec<MarkingMenuView>;
+    /// Read the saved presentation choices and classic-menu preference.
+    fn display(&self) -> MarkingMenuDisplay {
+        MarkingMenuDisplay {
+            classic: self.classic(),
+            ..Default::default()
+        }
+    }
     /// Save validated menus; example: `store.save(&menus)?`.
     fn save(&mut self, menus: &MarkingMenus) -> Result<(), String>;
     /// Save assignments and the classic-menu choice together.
@@ -20,6 +31,18 @@ pub trait MarkingMenuPreferenceAccess {
             return Err("marking menu storage does not support changing the classic choice".into());
         }
         self.save(menus)
+    }
+    /// Save the menu assignments and presentation choices together.
+    fn save_with_display(
+        &mut self,
+        menus: &MarkingMenus,
+        display: MarkingMenuDisplay,
+    ) -> Result<(), String> {
+        let current = self.display();
+        if current.style != display.style || current.overflow != display.overflow {
+            return Err("marking menu storage does not support changing the presentation".into());
+        }
+        self.save_with_classic(menus, display.classic)
     }
 }
 

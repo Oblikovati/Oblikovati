@@ -6,7 +6,10 @@ use oblikovati_api::{
     types,
     wire::{MarkingMenuItem, MarkingMenuView},
 };
-use oblikovati_model::marking_menu::{MarkingMenuPreferenceAccess, MarkingMenus};
+use oblikovati_model::marking_menu::{
+    MarkingMenuDisplay, MarkingMenuOverflow, MarkingMenuPreferenceAccess, MarkingMenuStyle,
+    MarkingMenus,
+};
 use oblikovati_persistence::marking_menu_preferences::MarkingMenuPreferenceFile;
 use std::{cell::RefCell, path::Path, rc::Rc};
 
@@ -68,6 +71,15 @@ fn go_yaml_classic_and_unknown_fields_survive_atomic_save_and_reload() {
     let after_successful_save = load();
     assert!(!after_successful_save.classic());
     assert_eq!(after_successful_save.menus(), reopened.menus());
+
+    let display = MarkingMenuDisplay {
+        classic: false,
+        style: MarkingMenuStyle::IconOnly,
+        overflow: MarkingMenuOverflow::Short,
+    };
+    store.save_with_display(&menus, display).unwrap();
+    assert_eq!(load().display(), display);
+    assert_eq!(load().menus(), reopened.menus());
 }
 
 #[test]

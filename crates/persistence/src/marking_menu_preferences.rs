@@ -9,7 +9,10 @@ use oblikovati_api::{
     types::{Environment, ScreenQuadrant},
     wire::{MarkingMenuItem, MarkingMenuView},
 };
-use oblikovati_model::marking_menu::{MarkingMenuPreferenceAccess, MarkingMenus};
+use oblikovati_model::marking_menu::{
+    MarkingMenuDisplay, MarkingMenuOverflow, MarkingMenuPreferenceAccess, MarkingMenuStyle,
+    MarkingMenus,
+};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
@@ -22,6 +25,10 @@ use std::{
 struct MenuDocument {
     menus: Vec<StoredMenu>,
     classic: bool,
+    #[serde(rename = "radial-style")]
+    style: MarkingMenuStyle,
+    #[serde(rename = "radial-overflow")]
+    overflow: MarkingMenuOverflow,
     #[serde(flatten)]
     retained: BTreeMap<String, serde_yaml_ng::Value>,
 }
@@ -72,13 +79,35 @@ impl<Files: PackageFileReader + AtomicFiles> MarkingMenuPreferenceAccess
     fn menus(&self) -> Vec<MarkingMenuView> {
         self.document.menus.iter().map(to_view).collect()
     }
+    fn display(&self) -> MarkingMenuDisplay {
+        MarkingMenuDisplay {
+            classic: self.document.classic,
+            style: self.document.style,
+            overflow: self.document.overflow,
+        }
+    }
     fn save(&mut self, menus: &MarkingMenus) -> Result<(), String> {
-        self.save_with_classic(menus, self.classic())
+        self.save_with_display(menus, self.display())
     }
     fn save_with_classic(&mut self, menus: &MarkingMenus, classic: bool) -> Result<(), String> {
+        self.save_with_display(
+            menus,
+            MarkingMenuDisplay {
+                classic,
+                ..self.display()
+            },
+        )
+    }
+    fn save_with_display(
+        &mut self,
+        menus: &MarkingMenus,
+        display: MarkingMenuDisplay,
+    ) -> Result<(), String> {
         let mut candidate = self.document.clone();
         candidate.menus = menus.all().iter().map(to_stored).collect();
-        candidate.classic = classic;
+        candidate.classic = display.classic;
+        candidate.style = display.style;
+        candidate.overflow = display.overflow;
         let bytes = crate::preference_yaml_guard::encode(&candidate)
             .map_err(|error| failure(&self.path, error).to_string())?;
         self.revision

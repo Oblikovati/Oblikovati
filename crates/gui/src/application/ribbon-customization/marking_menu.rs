@@ -6,6 +6,18 @@ use oblikovati_api::{
     types::{self, ScreenQuadrant},
     wire::{MarkingMenuItem, MarkingMenuView, SetMarkingMenuArgs},
 };
+use oblikovati_model::marking_menu::{MarkingMenuDisplay, MarkingMenuOverflow, MarkingMenuStyle};
+
+const STYLES: [(MarkingMenuStyle, &str); 3] = [
+    (MarkingMenuStyle::IconAndText, "Show Icon and Text"),
+    (MarkingMenuStyle::IconOnly, "Show Icon Only"),
+    (MarkingMenuStyle::TextOnly, "Show Text Only"),
+];
+const OVERFLOW: [(MarkingMenuOverflow, &str); 3] = [
+    (MarkingMenuOverflow::Full, "Full Menu"),
+    (MarkingMenuOverflow::RadialOnly, "Radial Menu Only"),
+    (MarkingMenuOverflow::Short, "Short Menu"),
+];
 
 impl RibbonCustomization {
     pub(super) fn sync_marking(&mut self, state: &crate::GuiCommandState) {
@@ -13,30 +25,33 @@ impl RibbonCustomization {
             return;
         };
         let current = menus.get(types::SKETCH_ENVIRONMENT);
-        let classic = state.sketch_classic_menu;
+        let display = MarkingMenuDisplay {
+            classic: state.sketch_classic_menu,
+            ..state.marking_menu_display
+        };
         if self.marking_draft.is_none() || !self.marking_changed() {
             self.marking_draft = Some(current.clone());
             self.marking_base = Some(current);
-            self.marking_classic_draft = classic;
-            self.marking_classic_base = classic;
+            self.marking_display_draft = display;
+            self.marking_display_base = display;
             self.marking_conflict = false;
             return;
         }
-        if self.marking_draft.as_ref() == Some(&current) && self.marking_classic_draft == classic {
+        if self.marking_draft.as_ref() == Some(&current) && self.marking_display_draft == display {
             self.marking_base = Some(current);
-            self.marking_classic_base = classic;
+            self.marking_display_base = display;
             self.marking_conflict = false;
             return;
         }
         self.marking_conflict =
-            self.marking_base.as_ref() != Some(&current) || self.marking_classic_base != classic;
+            self.marking_base.as_ref() != Some(&current) || self.marking_display_base != display;
     }
     pub(super) fn marking_changed(&self) -> bool {
         self.marking_draft
             .as_ref()
             .zip(self.marking_base.as_ref())
             .is_some_and(|(draft, base)| {
-                draft != base || self.marking_classic_draft != self.marking_classic_base
+                draft != base || self.marking_display_draft != self.marking_display_base
             })
     }
     pub(super) fn submit_marking(&self, actions: &mut Vec<crate::GuiShellAction>) -> bool {
@@ -44,13 +59,13 @@ impl RibbonCustomization {
             return false;
         }
         if let Some(menu) = &self.marking_draft {
-            let action = if self.marking_classic_draft == self.marking_classic_base {
+            let action = if self.marking_display_draft == self.marking_display_base {
                 crate::GuiShellAction::SetMarkingMenu(SetMarkingMenuArgs { menu: menu.clone() })
             } else {
                 let menu_changed = self.marking_base.as_ref() != Some(menu);
                 crate::GuiShellAction::SetMarkingMenuPreferences(
                     menu_changed.then(|| menu.clone()),
-                    self.marking_classic_draft,
+                    self.marking_display_draft,
                 )
             };
             actions.push(action);
@@ -92,8 +107,48 @@ impl RibbonCustomization {
                 .get(types::SKETCH_ENVIRONMENT);
         }
         ui.same_line();
-        ui.checkbox("Use Classic Context Menu", &mut self.marking_classic_draft);
+        ui.checkbox(
+            "Use Classic Context Menu",
+            &mut self.marking_display_draft.classic,
+        );
+        self.marking_selector_open |= marking_selector(
+            ui,
+            "Marking Menu Style",
+            &mut self.marking_display_draft.style,
+            &STYLES,
+        );
+        self.marking_selector_open |= marking_selector(
+            ui,
+            "Overflow Menu",
+            &mut self.marking_display_draft.overflow,
+            &OVERFLOW,
+        );
     }
+}
+
+fn marking_selector<T: Copy + Eq>(
+    ui: &Ui,
+    label: &str,
+    value: &mut T,
+    choices: &[(T, &str)],
+) -> bool {
+    let Some((_, preview)) = choices.iter().find(|(choice, _)| choice == value) else {
+        return false;
+    };
+    ui.set_next_item_width(190.);
+    let Some(_combo) = ui.begin_combo(label, preview) else {
+        return false;
+    };
+    for &(choice, name) in choices {
+        if ui
+            .selectable_config(name)
+            .selected(choice == *value)
+            .build()
+        {
+            *value = choice;
+        }
+    }
+    true
 }
 fn slot_editor(ui: &Ui, menu: &mut MarkingMenuView, slot: u8, label: &str) {
     let current = menu

@@ -219,7 +219,6 @@ impl GuiFrameEngine {
         }
         selected.retain(|action| !matches!(action, GuiShellAction::OpenSketchPattern { .. }));
         selected.retain(|action| !matches!(action, GuiShellAction::OpenExtrudeEdit(_)));
-        // Over Home there is no view for it to turn.
         if !self.home.active {
             if let Some(zoom) = self.ribbon.customization.pending_zoom.take() {
                 self.orientation.run_zoom(zoom, request, &mut selected);
@@ -262,6 +261,7 @@ impl GuiFrameEngine {
                     &mut menu_actions,
                     &mut repeat_wheel,
                     self.workspace.marking_menu_enabled,
+                    &self.icons.presentation,
                 );
             if repeat_wheel == Some(true) {
                 self.orientation.repeat_wheel();
@@ -358,6 +358,7 @@ impl GuiFrameEngine {
             &mut selected,
             &mut self.sketch_popup_token,
             self.workspace.marking_menu_enabled,
+            icons,
         );
         self.dimension_value_editor
             .panel(ui, request, &dimension_positions, &mut selected);
@@ -435,9 +436,7 @@ impl GuiFrameEngine {
         let mut activity = frame_activity()?;
         let mut capture = input_capture(self.context.io());
         capture.keyboard &= !keys.tool_keyboard;
-        // Dear ImGui claims the keyboard for whichever window last had focus. A click on the
-        // ribbon must leave M and F8 to the sketch unless a widget is really using the keys.
-        // A popup always owns them, even on the frame Escape closes it and focus moves on.
+        // Keep sketch shortcuts after ribbon clicks, except while a widget or popup owns the keys.
         capture.keyboard &= capture.text || self.context.io().nav_visible;
         capture.keyboard |= popup_open
             || self.ribbon.tips.consumed

@@ -101,7 +101,7 @@ impl GuiRibbonIcons {
         });
     }
 }
-fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
+pub(crate) fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
     Some(match action {
         GuiShellAction::NewPart => IconGlyph::NewPart,
         GuiShellAction::NewDocumentWindow => IconGlyph::NewWindow,

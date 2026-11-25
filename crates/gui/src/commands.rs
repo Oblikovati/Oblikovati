@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use oblikovati_api::wire::MarkingMenuView;
+use oblikovati_model::marking_menu::MarkingMenuDisplay;
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
     OpenTeamWebInBrowser(&'static str),
     SetMarkingMenu(oblikovati_api::wire::SetMarkingMenuArgs),
-    SetMarkingMenuPreferences(Option<oblikovati_api::wire::MarkingMenuView>, bool),
-    /// Apply a staged keyboard customization.
+    SetMarkingMenuPreferences(Option<MarkingMenuView>, MarkingMenuDisplay),
     SetKeymap(oblikovati_api::wire::KeymapExport),
-    /// Place instances of a sketch block definition.
     PlaceSketchBlock(String),
     /// Enter or leave the Create Block geometry selection mode.
     SelectBlockGeometry(bool),

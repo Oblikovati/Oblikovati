@@ -25,6 +25,8 @@ pub struct GuiCommandState {
     pub sketch_marking_menu: Option<oblikovati_api::wire::MarkingMenuView>,
     /// Render sketch marking commands as a classic linear menu.
     pub sketch_classic_menu: bool,
+    /// Saved presentation of canvas marking-menu commands.
+    pub marking_menu_display: oblikovati_model::marking_menu::MarkingMenuDisplay,
     /// The owner's effective shortcut state for a customization draft.
     pub keymap: Option<oblikovati_model::keymap::Keymap>,
     /// Bindable commands currently provided by the desktop owner.
