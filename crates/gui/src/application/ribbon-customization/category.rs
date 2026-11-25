@@ -3,11 +3,12 @@
 use super::{Category, RibbonCustomization};
 use imgui::{Key, Ui};
 
-const CATEGORIES: [Category; 4] = [
+const CATEGORIES: [Category; 5] = [
     Category::All,
     Category::Macros,
     Category::Sketch,
     Category::View,
+    Category::ExitSketch,
 ];
 
 pub(super) fn category_index(category: Category) -> usize {

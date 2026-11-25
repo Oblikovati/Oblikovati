@@ -13,6 +13,8 @@ pub(super) enum Command {
     Constraint(GuiSketchConstraint),
     Dimension,
     Measure,
+    CancelSketch,
+    FinishSketch,
     Zoom(ZoomAction),
 }
 impl Command {
@@ -23,6 +25,8 @@ impl Command {
             Self::Annotations => "annotations-visibility",
             Self::Measure => "measure",
             Self::Dimension => "dimension",
+            Self::CancelSketch => "sketch-cancel",
+            Self::FinishSketch => "sketch-finish",
             Self::Zoom(ZoomAction::Zoom) => "view-zoom",
             Self::Zoom(ZoomAction::All) => "view-zoom-all",
             Self::Zoom(ZoomAction::Window) => "view-zoom-window",
@@ -67,11 +71,13 @@ impl Command {
             Self::Constraint(constraint) => constraint.label(),
             Self::Dimension => "Dimension",
             Self::Measure => "Measure",
+            Self::CancelSketch => "Cancel Sketch",
+            Self::FinishSketch => "Finish Sketch",
             Self::Zoom(zoom) => zoom.label(),
         }
     }
 }
-pub(super) const COMMANDS: [Command; 33] = [
+pub(super) const COMMANDS: [Command; 35] = [
     Command::Separator,
     Command::Tool(GuiSketchTool::Line),
     Command::Tool(GuiSketchTool::MidpointLine),
@@ -101,6 +107,8 @@ pub(super) const COMMANDS: [Command; 33] = [
     Command::Constraint(GuiSketchConstraint::Concentric),
     Command::Constraint(GuiSketchConstraint::Tangent),
     Command::Dimension,
+    Command::CancelSketch,
+    Command::FinishSketch,
     Command::Zoom(ZoomAction::Zoom),
     Command::Zoom(ZoomAction::All),
     Command::Zoom(ZoomAction::Window),
@@ -113,6 +121,7 @@ pub(super) enum Category {
     Macros,
     Sketch,
     View,
+    ExitSketch,
 }
 impl Category {
     pub fn label(self) -> &'static str {
@@ -121,6 +130,7 @@ impl Category {
             Self::Macros => "Macros",
             Self::Sketch => "Sketch Tab",
             Self::View => "View Tab",
+            Self::ExitSketch => "Exit 2D Sketch Tab",
         }
     }
     fn contains(self, command: Command) -> bool {
@@ -134,6 +144,10 @@ impl Category {
             Self::View => matches!(
                 command,
                 Command::Separator | Command::Sketches | Command::Zoom(_)
+            ),
+            Self::ExitSketch => matches!(
+                command,
+                Command::Separator | Command::CancelSketch | Command::FinishSketch
             ),
         }
     }

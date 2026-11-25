@@ -19,6 +19,8 @@ mod custom_panel_title;
 #[path = "dialog_placement.rs"]
 mod dialog_placement;
 use dialog_placement::close_customization_button;
+#[path = "exit_sketch_category.rs"]
+mod exit_sketch_category;
 #[path = "file_exchange.rs"]
 mod file_exchange;
 #[path = "list_keyboard_steps.rs"]

@@ -31,11 +31,26 @@ impl RibbonCustomization {
         if ui.io().key_ctrl || ui.io().key_alt || ui.io().key_super {
             return false;
         }
-        let Some(navigation) = pressed_navigation(ui) else {
+        let next = if let Some(down) = pressed_page(ui) {
+            let commands = self.draft.available_commands();
+            let current = commands
+                .iter()
+                .position(|command| Some(*command) == self.draft.source)
+                .unwrap_or(0);
+            let last = commands.len().saturating_sub(1);
+            commands
+                .get(page_row(current, last, self.visible_source.len(), down))
+                .copied()
+        } else if let Some(navigation) = pressed_navigation(ui) {
+            navigate(
+                &self.draft.available_commands(),
+                self.draft.source,
+                navigation,
+            )
+        } else {
             return false;
         };
-        let commands = self.draft.available_commands();
-        let Some(command) = navigate(&commands, self.draft.source, navigation) else {
+        let Some(command) = next else {
             return true;
         };
         self.draft.reset_source_selection(command);
@@ -47,13 +62,12 @@ impl RibbonCustomization {
         if ui.io().key_ctrl || ui.io().key_alt || ui.io().key_super {
             return false;
         }
-        let down = ui.is_key_pressed_no_repeat(Key::PageDown);
-        if !down && !ui.is_key_pressed_no_repeat(Key::PageUp) {
+        let Some(down) = pressed_page(ui) else {
             return false;
-        }
+        };
         if let Some(last) = self.draft.rows().len().checked_sub(1) {
             let current = self.draft.selected.unwrap_or(0);
-            let selected = target_page_row(current, last, self.visible_target_rows, down);
+            let selected = page_row(current, last, self.visible_target_rows, down);
             self.draft.reset_target_selection(selected);
             self.scroll_target_to_selection = true;
         }
@@ -61,7 +75,15 @@ impl RibbonCustomization {
     }
 }
 
-fn target_page_row(current: usize, last: usize, visible: usize, down: bool) -> usize {
+fn pressed_page(ui: &Ui) -> Option<bool> {
+    if ui.is_key_pressed_no_repeat(Key::PageDown) {
+        Some(true)
+    } else {
+        ui.is_key_pressed_no_repeat(Key::PageUp).then_some(false)
+    }
+}
+
+fn page_row(current: usize, last: usize, visible: usize, down: bool) -> usize {
     let page = visible.max(1);
     if down {
         current.saturating_add(page).min(last)
@@ -152,12 +174,12 @@ mod tests {
 
     #[test]
     fn target_pages_use_visible_rows_and_stop_at_either_end() {
-        assert_eq!(target_page_row(2, 19, 7, true), 9);
-        assert_eq!(target_page_row(9, 19, 7, false), 2);
-        assert_eq!(target_page_row(16, 19, 7, true), 19);
-        assert_eq!(target_page_row(3, 19, 7, false), 0);
-        assert_eq!(target_page_row(0, 1, 2, true), 1);
-        assert_eq!(target_page_row(1, 1, 2, false), 0);
+        assert_eq!(page_row(2, 19, 7, true), 9);
+        assert_eq!(page_row(9, 19, 7, false), 2);
+        assert_eq!(page_row(16, 19, 7, true), 19);
+        assert_eq!(page_row(3, 19, 7, false), 0);
+        assert_eq!(page_row(0, 1, 2, true), 1);
+        assert_eq!(page_row(1, 1, 2, false), 0);
     }
 
     #[test]

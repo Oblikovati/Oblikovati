@@ -76,6 +76,24 @@ impl RibbonCustomization {
                     size,
                     actions,
                 ),
+                Command::FinishSketch => {
+                    icons.command_button(
+                        ui,
+                        label,
+                        GuiShellAction::FinishSketch,
+                        state,
+                        size,
+                        actions,
+                    );
+                }
+                Command::CancelSketch => {
+                    let _disabled = ui.begin_disabled(true);
+                    let caption = if label == "##icon-only" { "×" } else { label };
+                    crate::widget_abi::button(ui, caption, size);
+                    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+                        ui.tooltip_text("Cancel Sketch is unavailable in this build.");
+                    }
+                }
                 Command::Zoom(zoom) => {
                     if zoom_button(ui, label, size, state, icons, zoom) {
                         self.pending_zoom = Some(zoom);
