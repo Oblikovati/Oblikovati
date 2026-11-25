@@ -103,6 +103,23 @@ fn corrupt_saved_settings_are_rejected_without_a_partial_store() {
 }
 
 #[test]
+fn applied_empty_panel_retires_when_customization_closes() {
+    let mut customization = RibbonCustomization::default();
+    customization.open(RibbonTab::Tools);
+    customization
+        .draft
+        .reset_source_selection(Command::Sketches);
+    customization.draft.add();
+    customization.apply().unwrap();
+    customization.draft.remove();
+    customization.apply().unwrap();
+    assert!(customization.draft.applied(RibbonTab::Tools).is_empty());
+    assert!(customization.has_panel(RibbonTab::Tools));
+    customization.open.set_open(false);
+    assert!(!customization.has_panel(RibbonTab::Tools));
+}
+
+#[test]
 fn reset_saves_defaults_before_changing_applied_ribbon() {
     let store = FakeRibbonStore::default();
     let mut customization = RibbonCustomization::default();

@@ -7,6 +7,16 @@ use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 
 impl RibbonCustomization {
+    /// Report whether the ribbon still shows the applied panel, such as on Tools during Apply.
+    pub(crate) fn has_panel(&self, tab: crate::ribbon::RibbonTab) -> bool {
+        self.open.is_open() && self.draft.retained_panels.contains(&tab)
+            || self
+                .draft
+                .applied(tab)
+                .iter()
+                .any(|entry| entry.command != Command::Separator)
+    }
+
     pub(crate) fn draw_panel(
         &mut self,
         ui: &Ui,

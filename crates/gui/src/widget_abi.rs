@@ -48,6 +48,8 @@ unsafe extern "C" {
         width: f32,
         height: f32,
         reset_size_on_reopen: bool,
+        companion: *const std::ffi::c_char,
+        companion_height: f32,
     );
     fn oblikovati_gui_begin_scroll_region(identity: *const u8, width: f32, height: f32) -> bool;
     fn oblikovati_gui_dummy(width: f32, height: f32);
@@ -402,15 +404,27 @@ pub(crate) fn fit_viewport_properties(
 
 /// Example: `fit_dialog(ui, "Parameters", [320.,8.], [540.,360.])` before opening that window.
 pub(crate) fn fit_dialog(_: &Ui, title: &str, origin: [f32; 2], size: [f32; 2]) {
-    fit_floating_dialog(title, origin, size, false);
+    fit_floating_dialog(title, origin, size, false, None);
 }
 
-/// Fit a floating dialog that remembers placement and restores its default size on reopen.
-pub(crate) fn fit_dialog_with_default_size(_: &Ui, title: &str, origin: [f32; 2], size: [f32; 2]) {
-    fit_floating_dialog(title, origin, size, true);
+/// Fit a dialog beside an active companion on open, for example Customize beside Shell.
+pub(crate) fn fit_dialog_beside(
+    _: &Ui,
+    title: &str,
+    origin: [f32; 2],
+    size: [f32; 2],
+    companion: (&std::ffi::CStr, f32),
+) {
+    fit_floating_dialog(title, origin, size, true, Some(companion));
 }
 
-fn fit_floating_dialog(title: &str, origin: [f32; 2], size: [f32; 2], reset_size_on_reopen: bool) {
+fn fit_floating_dialog(
+    title: &str,
+    origin: [f32; 2],
+    size: [f32; 2],
+    reset_size_on_reopen: bool,
+    companion: Option<(&std::ffi::CStr, f32)>,
+) {
     let title = ImString::new(title);
     // SAFETY: the frame owns the current context; the live ID and scalar values are copied by C++ (#3803, #3850).
     unsafe {
@@ -421,6 +435,8 @@ fn fit_floating_dialog(title: &str, origin: [f32; 2], size: [f32; 2], reset_size
             size[0],
             size[1],
             reset_size_on_reopen,
+            companion.map_or(std::ptr::null(), |(peer, _)| peer.as_ptr()),
+            companion.map_or(0., |(_, height)| height),
         )
     };
 }

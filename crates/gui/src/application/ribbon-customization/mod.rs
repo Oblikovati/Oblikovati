@@ -117,12 +117,6 @@ impl RibbonCustomization {
         self.settings_error = None;
         self.open.set_open(true);
     }
-    pub(crate) fn has_panel(&self, tab: RibbonTab) -> bool {
-        self.draft
-            .applied(tab)
-            .iter()
-            .any(|entry| entry.command != Command::Separator)
-    }
     pub(crate) fn needs_frame(&self) -> bool {
         self.open.is_open()
             && self.ribbon_tab_active

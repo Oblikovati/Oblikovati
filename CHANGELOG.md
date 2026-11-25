@@ -14,7 +14,7 @@
 - Added an Explore panel with Measure to the 3D Model ribbon. (#3856)
 - Added the Standard overview and Units tab to Document Settings. (#3856)
 - Added the Exit 2D Sketch Tab category and source paging. Transfers after Ctrl+A put the focused command first. Up and Down select staged rows without reordering them. (#3856)
-- Added a Tools Options expansion with a ribbon layout reset confirmation. (#3856)
+- Added a Tools Options expansion with a ribbon layout reset confirmation. Kept Shell and the solid visible when opening Customize and deferred removal of the empty User Commands group until Customize closed. (#3856)
 - Added a Highlight New drop-down that can open over Tools Options additional commands and close independently. (#3856)
 - Added Assembly Design customization for the Assemble ribbon. Listed unavailable targets and kept a clean draft open when Escape dismissed its target selector. (#3856)
 - Added a curvature comb and live density and scale settings for sketch ellipses. (#3995)

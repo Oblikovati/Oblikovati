@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! User Commands is a normal ribbon panel, including its title menu.
 use super::*;
+#[path = "shell_customization.rs"]
+mod shell_customization;
 
 #[given("the Part Tools custom panel target is initially empty")]
 fn empty_tools_panel(world: &mut ApplicationWorld) {
@@ -13,6 +15,7 @@ fn open_customize_from_tools(world: &mut ApplicationWorld) {
     open_tools_customization(world);
 }
 #[when("the user adds 2D Sketches to the Part Tools target")]
+#[when("the user adds 2D Sketches to the target list")]
 fn add_sketch_visibility(world: &mut ApplicationWorld) {
     stage_sketch_visibility(world);
 }
@@ -21,6 +24,8 @@ fn confirm_customization(world: &mut ApplicationWorld) {
     click_in_customize(world, "OK");
 }
 #[then("a User Commands panel is visible on Tools")]
+#[then("the User Commands panel is visible behind the dialog")]
+#[then("the User Commands panel remains visible behind the dialog")]
 fn user_panel_visible(world: &mut ApplicationWorld) {
     world.expect_text("User Commands");
 }
@@ -49,11 +54,13 @@ fn choose_customize_from_title(world: &mut ApplicationWorld) {
     choose_customize(world);
 }
 #[then("the Ribbon customization dialog opens with Part Tools selected")]
+#[then("the Ribbon customization dialog opens with Part Tools as the target")]
 fn tools_target_selected(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Customize").is_some());
     assert!(world.window_text("Customize").contains("Part|Tools"));
 }
 #[then("the target list contains 2D Sketches without a pending marker")]
+#[then("the target list retains 2D Sketches without a pending marker")]
 fn applied_sketch_command(world: &mut ApplicationWorld) {
     sketches_in_target(world);
     assert!(!world.window_text("Customize").contains("Part|Tools*"));

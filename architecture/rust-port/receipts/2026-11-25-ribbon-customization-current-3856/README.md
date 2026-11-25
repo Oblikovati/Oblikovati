@@ -85,10 +85,9 @@ selected the first and last staged rows and preserved their order and options.
 One [cancellation case](case-055/cucumber.json) closes Customize and
 then expects a Measure panel that the scenario never opens. Another
 [cancellation case](case-086/cucumber.json) expects Cancel to dismiss a
-clean draft, where the application disables Cancel. The two Shell
-cases stopped at the Options panel menu step.
-[First Shell case](case-110/cucumber.json) ·
-[Second Shell case](case-111/cucumber.json)
+clean draft, where the application disables Cancel. The later Shell Apply run passed, and the Cancel run reached the Martensite
+preview tolerance check.
+[Current Shell runs](../2026-11-25-ribbon-customization-shell-3856/README.md)
 
 The combined report retains the failed and undefined cases. The
 [source inventory](scenario-inventory.json), [input hashes](current-inputs.sha256),

@@ -140,6 +140,8 @@ pub(super) struct Draft {
     staged: BTreeMap<RibbonTab, Vec<Entry>>,
     removed: BTreeMap<RibbonTab, Vec<Entry>>,
     changed_tabs: BTreeSet<RibbonTab>,
+    // Keep the panel's group title in place until the editor closes.
+    pub(super) retained_panels: BTreeSet<RibbonTab>,
     pub target: RibbonTab,
     pub source: Option<Command>,
     pub source_extra: Vec<Command>,
@@ -159,6 +161,7 @@ impl Draft {
         self.staged = self.applied.clone();
         self.removed.clear();
         self.changed_tabs.clear();
+        self.retained_panels.clear();
         self.target = target;
         self.source = None;
         self.source_extra.clear();
@@ -371,6 +374,13 @@ impl Draft {
     }
     pub fn apply(&mut self) {
         self.normalize();
+        self.retained_panels
+            .extend(self.applied.iter().filter_map(|(tab, entries)| {
+                entries
+                    .iter()
+                    .any(|entry| entry.command != Command::Separator)
+                    .then_some(*tab)
+            }));
         self.applied = self.staged.clone();
         self.changed_tabs.clear();
         self.removed.clear();

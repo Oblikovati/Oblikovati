@@ -21,7 +21,13 @@ pub(super) fn same_row_at(ui: &Ui, x: f32) {
 }
 
 pub(super) fn fit_window(ui: &Ui) {
-    crate::widget_abi::fit_dialog_with_default_size(ui, "Customize", [340., 185.], DEFAULT_SIZE);
+    crate::widget_abi::fit_dialog_beside(
+        ui,
+        "Customize",
+        [340., 185.],
+        DEFAULT_SIZE,
+        (c"Shell", 360.),
+    );
 }
 
 pub(super) fn list_size(ui: &Ui, default_width: f32, minimum_width: f32) -> [f32; 2] {

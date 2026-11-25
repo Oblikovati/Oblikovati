@@ -266,23 +266,48 @@ bool oblikovati_gui_icon_button(const unsigned char* bytes, std::uint32_t textur
 }
 
 void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, float width, float height,
-                              bool reset_size_on_reopen) {
+                              bool reset_size_on_reopen, const char* companion, float companion_height) {
     const char* name = reinterpret_cast<const char*>(title);
     const ImGuiWindow* previous = ImGui::FindWindowByName(name);
+    const ImGuiWindow* peer = companion ? ImGui::FindWindowByName(companion) : nullptr;
+    const bool near_peer = peer && peer->Active && !peer->Hidden && (!previous || !previous->WasActive);
+    const ImGuiWindowSettings* saved = previous ? nullptr : ImGui::FindWindowSettings(ImHashStr(name));
     // ImGui applies saved docking and placement when the window is first created (#4069).
-    if (!previous && ImGui::FindWindowSettings(ImHashStr(name)))
+    if (saved && (saved->DockId != 0 || !near_peer))
         return;
     // Dock nodes own their members' bounds; fitting an individual member would undo that layout.
     if (previous && previous->DockId != 0)
         return;
-    const ImVec2 position = previous ? previous->Pos : ImVec2(x, y);
+    ImVec2 position = previous ? previous->Pos : ImVec2(x, y);
+    if (saved)
+        position = ImVec2(saved->Pos.x + saved->ViewportPos.x, saved->Pos.y + saved->ViewportPos.y);
     const bool keep_previous_size = previous && (!reset_size_on_reopen || previous->WasActive);
-    const ImVec2 size = keep_previous_size ? previous->SizeFull : ImVec2(width, height);
+    const ImVec2 size = keep_previous_size ? previous->SizeFull
+        : ImVec2(width, near_peer ? companion_height : height);
     const ImVec2 display = ImGui::GetIO().DisplaySize;
     const ImVec2 fitted_size(ImClamp(size.x, 1.0f, ImMax(1.0f, display.x - 32.0f)),
                              ImClamp(size.y, 1.0f, ImMax(1.0f, display.y - 32.0f)));
-    const ImVec2 fitted_position(ImClamp(position.x, 0.0f, ImMax(0.0f, display.x - fitted_size.x - 16.0f)),
-                                 ImClamp(position.y, 0.0f, ImMax(0.0f, display.y - fitted_size.y - 16.0f)));
+    const ImVec2 maximum(ImMax(0.0f, display.x - fitted_size.x - 16.0f),
+                         ImMax(0.0f, display.y - fitted_size.y - 16.0f));
+    ImVec2 fitted_position(ImClamp(position.x, 0.0f, maximum.x), ImClamp(position.y, 0.0f, maximum.y));
+    if (near_peer && ImRect(fitted_position,
+            ImVec2(fitted_position.x + fitted_size.x, fitted_position.y + fitted_size.y)).Overlaps(peer->Rect())) {
+        const auto peer_rect = peer->Rect();
+        const ImVec2 alternatives[] = {
+            // Leave the middle of the model viewport exposed above the companion dialog.
+            {peer_rect.Max.x + 8.0f, maximum.y},
+            {peer_rect.Min.x - fitted_size.x - 8.0f, maximum.y},
+            {fitted_position.x, peer_rect.Max.y + 8.0f},
+            {fitted_position.x, peer_rect.Min.y - fitted_size.y - 8.0f},
+        };
+        for (const auto candidate : alternatives) {
+            if (candidate.x >= 0.0f && candidate.x <= maximum.x &&
+                candidate.y >= 0.0f && candidate.y <= maximum.y) {
+                fitted_position = candidate;
+                break;
+            }
+        }
+    }
     if (!previous || position.x != fitted_position.x || position.y != fitted_position.y)
         ImGui::SetNextWindowPos(fitted_position, ImGuiCond_Always);
     if (!previous || previous->SizeFull.x != fitted_size.x || previous->SizeFull.y != fitted_size.y)
