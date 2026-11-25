@@ -430,7 +430,7 @@ pub(super) fn pointer_motion(position: [i32; 2]) -> ViewportEvent {
         modifiers: Default::default(),
     })
 }
-fn pointer_button(position: [i32; 2], pressed: bool) -> ViewportEvent {
+pub(super) fn pointer_button(position: [i32; 2], pressed: bool) -> ViewportEvent {
     ViewportEvent::Input(oblikovati_viewport::ViewportInput::Button {
         button: oblikovati_viewport::ViewportButton::Left,
         pressed,

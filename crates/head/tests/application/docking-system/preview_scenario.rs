@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Check an edge target before and after releasing a native pointer drag.
+use super::super::workspace_layout::dockspace_native::{move_drag, press_drag, release_drag};
 use super::{ApplicationWorld, PANEL, diagnostics, viewport};
 use cucumber::{given, then, when};
 
@@ -21,15 +22,8 @@ fn drag_to_left_target(world: &mut ApplicationWorld) {
     ];
     let area = viewport(world);
     let end = [15, ((area[1] + area[3]) / 2) as i32];
-    super::super::x11_input::move_pointer(start);
-    world.pump(Vec::new());
-    super::super::x11_input::left_button(start, true);
-    world.pump(Vec::new());
-    for step in 1..=8 {
-        let at = std::array::from_fn(|axis| start[axis] + (end[axis] - start[axis]) * step / 8);
-        super::super::x11_input::move_pointer(at);
-        world.pump(Vec::new());
-    }
+    press_drag(world, start);
+    move_drag(world, start, end);
     world.last_drag = Some([start, end]);
 }
 
@@ -46,9 +40,7 @@ fn target_preview(world: &mut ApplicationWorld) {
 #[when("the user releases the panel over that target")]
 fn release_target(world: &mut ApplicationWorld) {
     let end = world.last_drag.unwrap()[1];
-    super::super::x11_input::left_button(end, false);
-    world.pump(Vec::new());
-    world.pump(Vec::new());
+    release_drag(world, end);
 }
 
 #[then("the panel docks along the left edge of the workspace")]

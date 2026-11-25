@@ -147,21 +147,7 @@ fn material_browser_docks_at_workspace_right_and_reduces_viewport() {
 
 pub(in super::super) fn resize_boundary(world: &mut ApplicationWorld, area: [u32; 4], delta: i32) {
     let start = [area[2] as i32 + 2, ((area[1] + area[3]) / 2) as i32];
-    let end = [start[0] + delta, start[1]];
-    super::super::x11_input::move_pointer(start);
-    world.pump(Vec::new());
-    super::super::x11_input::left_button(start, true);
-    world.pump(Vec::new());
-    for step in 1..=8 {
-        super::super::x11_input::move_pointer([
-            start[0] + (end[0] - start[0]) * step / 8,
-            start[1],
-        ]);
-        world.pump(Vec::new());
-    }
-    super::super::x11_input::left_button(end, false);
-    world.pump(Vec::new());
-    world.pump(Vec::new());
+    native_drag(world, start, [start[0] + delta, start[1]]);
 }
 
 #[test]
@@ -218,22 +204,43 @@ fn check_workspace_edge(edge: &str) {
 }
 
 pub(in super::super) fn native_drag(world: &mut ApplicationWorld, start: [i32; 2], end: [i32; 2]) {
-    if world.app().window.native.view.uses_wayland() {
-        world.drag(start, end);
-        world.pump(Vec::new());
-        return;
-    }
-    super::super::x11_input::move_pointer(start);
-    world.pump(Vec::new());
-    super::super::x11_input::left_button(start, true);
-    world.pump(Vec::new());
+    press_drag(world, start);
+    move_drag(world, start, end);
+    release_drag(world, end);
+}
+
+pub(in super::super) fn press_drag(world: &mut ApplicationWorld, start: [i32; 2]) {
+    move_dock_pointer(world, start);
+    dock_button(world, start, true);
+}
+
+pub(in super::super) fn move_drag(world: &mut ApplicationWorld, start: [i32; 2], end: [i32; 2]) {
     for step in 1..=8 {
         let at = std::array::from_fn(|axis| start[axis] + (end[axis] - start[axis]) * step / 8);
-        super::super::x11_input::move_pointer(at);
-        world.pump(Vec::new());
+        move_dock_pointer(world, at);
     }
-    super::super::x11_input::left_button(end, false);
+}
+
+pub(in super::super) fn release_drag(world: &mut ApplicationWorld, end: [i32; 2]) {
+    dock_button(world, end, false);
     world.pump(Vec::new());
+}
+
+fn move_dock_pointer(world: &mut ApplicationWorld, position: [i32; 2]) {
+    if world.app().window.native.view.uses_wayland() {
+        world.pump(vec![super::super::world::pointer_motion(position)]);
+        return;
+    }
+    super::super::x11_input::move_pointer(position);
+    world.pump(Vec::new());
+}
+
+fn dock_button(world: &mut ApplicationWorld, position: [i32; 2], pressed: bool) {
+    if world.app().window.native.view.uses_wayland() {
+        world.pump(vec![super::super::world::pointer_button(position, pressed)]);
+        return;
+    }
+    super::super::x11_input::left_button(position, pressed);
     world.pump(Vec::new());
 }
 

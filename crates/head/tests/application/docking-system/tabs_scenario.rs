@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Verify the panel tab insertion target and the resulting selectable tabs.
-use super::super::x11_input;
+use super::super::workspace_layout::dockspace_native::{move_drag, press_drag};
 use super::{ApplicationWorld, PANEL, diagnostics, native_drag, panel_docked, viewport};
 use cucumber::{given, then, when};
 const SOURCE: &str = "Appearance Browser";
@@ -32,27 +32,16 @@ fn drag_to_panel(world: &mut ApplicationWorld) {
         ((area[0] + area[2]) / 2) as i32,
         ((area[1] + area[3]) / 2) as i32,
     ];
-    x11_input::move_pointer(from);
-    world.pump(Vec::new());
-    x11_input::left_button(from, true);
-    world.pump(Vec::new());
-    move_held_tab(world, from, middle);
+    press_drag(world, from);
+    move_drag(world, from, middle);
 
     // Detaching the source can change the destination width before the drop.
     let (position, size) = diagnostics::window_geometry(PANEL).unwrap();
     let end = diagnostics::pointer_pixels(std::array::from_fn(|axis| {
         position[axis] + size[axis] * 0.5
     }));
-    move_held_tab(world, middle, end);
+    move_drag(world, middle, end);
     world.last_drag = Some([from, end]);
-}
-
-fn move_held_tab(world: &mut ApplicationWorld, from: [i32; 2], end: [i32; 2]) {
-    for step in 1..=8 {
-        let at = std::array::from_fn(|axis| from[axis] + (end[axis] - from[axis]) * step / 8);
-        x11_input::move_pointer(at);
-        world.pump(Vec::new());
-    }
 }
 
 #[then("the destination region indicates a tab insertion target")]

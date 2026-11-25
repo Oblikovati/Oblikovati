@@ -22,6 +22,12 @@ three X11 frames under Xvfb. An advertised but unavailable Wayland socket
 also fell back to X11. The interactive development build connected
 directly to the COSMIC Wayland socket and was inspected by the user.
 
+Docking checks use the native window on both Linux backends. On Wayland,
+the harness sends pointer motion and button transitions through the window
+frame loop. On X11, it sends the same drag through XTest. Holding the
+button across frames lets the checks observe edge and tab previews before
+release. [Docking scenario results](receipts/2026-11-25-docking-pointer-backends-4133/README.md)
+
 ## Performance check
 
 Two interleaved runs per backend presented the same
