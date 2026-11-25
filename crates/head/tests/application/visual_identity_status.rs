@@ -6,6 +6,10 @@ fn native_status_bar_marks_fully_constrained_sketches_in_each_palette() {
     let mut world = ApplicationWorld::new();
     world.start_empty_sketch();
     assert_eq!(world.dimensions_needed(), 0);
+    let sketch = world.run_in_window("Model", "Sketch1");
+    let badge = world.run_in_window("Model", "[DOF0]");
+    assert!(badge.maximum[1] - badge.minimum[1] < sketch.maximum[1] - sketch.minimum[1]);
+    assert!((badge.center()[1] - sketch.center()[1]).abs() < 3.);
     for (theme, success) in [
         ("Dark", [0x22, 0xc5, 0x5e]),
         ("Light", [0x16, 0xa3, 0x4a]),

@@ -58,7 +58,7 @@ pub(crate) fn status_bar(
         });
 }
 fn telemetry(ui: &Ui, commands: &crate::GuiCommandState, width: f32, prompt_right: f32) {
-    let _numeric = crate::ui_scale::telemetry_font(ui);
+    let _numeric = crate::ui_scale::mono_micro_font(ui);
     let units = commands.document_units.as_ref();
     let coordinates = commands
         .viewport_coordinates

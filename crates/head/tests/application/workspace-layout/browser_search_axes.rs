@@ -28,8 +28,8 @@ fn matching_axes(world: &mut ApplicationWorld) {
 
 #[when("the user clears the search and closes the empty search field")]
 fn clear_and_close(world: &mut ApplicationWorld) {
-    world.click_text("x");
-    world.click_text("x");
+    world.click_text("×");
+    world.click_text("×");
 }
 
 #[then("the unfiltered browser tree is displayed")]
@@ -145,13 +145,16 @@ fn axis_row_selected(world: &mut ApplicationWorld) {
 
 #[then("its corresponding axis is highlighted in the viewport")]
 fn axis_visible(world: &mut ApplicationWorld) {
-    super::browser_feature::expect_outline(world, true);
+    assert!(
+        axis_highlight_visible(world),
+        "expected the blue origin axis"
+    );
 }
 
 #[when("the user clears the search using the search close control")]
 #[when("the user activates the search close control again")]
 fn use_search_close(world: &mut ApplicationWorld) {
-    world.click_text("x");
+    world.click_text("×");
 }
 
 #[then("X Axis remains selected and highlighted in the viewport")]
@@ -167,5 +170,12 @@ fn search_field_closed(world: &mut ApplicationWorld) {
 
 #[then("the axis highlight disappears from the viewport")]
 fn axis_no_longer_visible(world: &mut ApplicationWorld) {
-    super::browser_feature::expect_outline(world, false);
+    assert!(
+        !axis_highlight_visible(world),
+        "expected the origin highlight to clear"
+    );
+}
+
+fn axis_highlight_visible(world: &mut ApplicationWorld) -> bool {
+    super::browser_feature::colored_pixels(world, [64, 153, 255]) > 0
 }

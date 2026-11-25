@@ -23,7 +23,7 @@ pub(crate) fn prefix(ui: &Ui, view: &BrowserView, glyph: IconGlyph, [x, y]: [f32
 pub(super) fn rollback_marker(ui: &Ui, text: &str) {
     let [left, top] = ui.cursor_screen_pos();
     let width = ui.content_region_avail()[0];
-    let color = ui.style_color(StyleColor::TextDisabled);
+    let color = crate::theme::strong_border(ui);
     let draw = ui.get_window_draw_list();
     let mut x = left;
     while x < left + width {
@@ -44,7 +44,7 @@ pub(crate) fn strike_feature_name(ui: &Ui, name: &str, start: f32) {
         .add_line(
             [start, height],
             [end, height],
-            ui.style_color(imgui::StyleColor::TextDisabled),
+            ui.style_color(StyleColor::TextDisabled),
         )
         .thickness((ui.current_font_size() / 13.).max(1.))
         .build();

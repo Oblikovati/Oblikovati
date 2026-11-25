@@ -173,10 +173,12 @@ fn sketch_selectable(ui: &Ui, row: &GuiBrowserSketch, view: &BrowserView, select
         &row.name,
     );
     let metadata_x = caption_x + ui.calc_text_size(&row.name)[0] + 14.;
-    let _mono = crate::ui_scale::numeric_font(ui);
+    let row_height = ui.text_line_height();
+    let _mono = crate::ui_scale::mono_micro_font(ui);
+    let metadata_y = y + ((row_height - ui.text_line_height()) * 0.5).floor();
     crate::widget_abi::literal_text(
         ui,
-        [metadata_x, y],
+        [metadata_x, metadata_y],
         ui.style_color(StyleColor::TextDisabled),
         &sketch_metadata(row),
     );

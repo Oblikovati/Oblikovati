@@ -142,7 +142,7 @@ fn drawing_tree_back(world: &mut ApplicationWorld) {
 #[then("the search field is hidden")]
 fn drawing_search_hidden(world: &mut ApplicationWorld) {
     // Only the field's close control reads exactly this; "Field Text" holds the letter too.
-    let close_shown = world.frame.runs.iter().any(|run| run.text == "x");
+    let close_shown = world.frame.runs.iter().any(|run| run.text == "×");
     assert!(!close_shown, "expected no search close control");
 }
 #[when("I enter a query that matches no drawing browser entry")]

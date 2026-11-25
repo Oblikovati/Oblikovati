@@ -7,6 +7,36 @@ use imgui::sys;
 use std::ffi::CStr;
 
 #[test]
+fn native_model_search_clear_control_is_inside_the_field_at_minimum_width() {
+    use super::super::x11_input;
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    x11_input::resize_application_window([640, 480]);
+    for _ in 0..3 {
+        world.pump(Vec::new());
+    }
+    assert_eq!(world.extent(), [640, 480]);
+    click_model_search(&mut world);
+    world.type_text("axis");
+    world.expect_no_text("XY Plane");
+    world.hover([280, 310]);
+    world.save_capture("model-search-at-minimum-width");
+    let query = world.run_in_window("Model", "axis");
+    let clear = world.run_in_window("Model", "×");
+    assert!(query.maximum[0] < clear.minimum[0]);
+    assert!((query.center()[1] - clear.center()[1]).abs() < 3.);
+    x11_input::click(diagnostics::pointer_pixels(clear.center()));
+    world.pump(Vec::new());
+    world.run_in_window("Model", "TypeKeyword");
+    world.expect_text("XY Plane");
+    let close = world.run_in_window("Model", "×");
+    x11_input::click(diagnostics::pointer_pixels(close.center()));
+    world.pump(Vec::new());
+    world.expect_no_text("Type Keyword");
+    world.close();
+}
+
+#[test]
 fn native_model_menu_and_search_live_in_the_dock_title() {
     let mut world = ApplicationWorld::new();
     super::browser_feature::open_visible_extruded_part(&mut world);

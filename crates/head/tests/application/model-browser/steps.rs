@@ -355,13 +355,13 @@ fn clear_search_text(world: &mut ApplicationWorld) {
 #[when("I close browser search")]
 #[when("the user closes browser search")]
 fn press_search_close(world: &mut ApplicationWorld) {
-    let close = world.run("x").center().map(|value| value as i32);
-    world.click(close);
+    let close = world.run_in_window("Model", "×").center();
+    world.click(diagnostics::pointer_pixels(close));
     settle(world);
 }
 #[then("the search field disappears")]
 fn search_field_gone(world: &mut ApplicationWorld) {
-    let field = world.frame.runs.iter().any(|run| run.text == "x");
+    let field = world.frame.runs.iter().any(|run| run.text == "×");
     assert!(!field, "expected no search field: {}", world.text());
 }
 // Extended names

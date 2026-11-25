@@ -18,7 +18,9 @@ values come from the same handoff.
   gets priority within the available width, including after a restart. The
   viewport width limit also applies while the user holds a splitter.
   The asset selectors shrink inside narrow docks to keep their captions
-  and dropdown arrows visible beside the swatches.
+  and dropdown arrows visible beside the swatches. The Model browser’s
+  search field encloses its clear control, sketch badges use 10 px mono,
+  and the dashed rollback marker uses the theme’s strong border color.
 - The camera projects into the live document area as the window and docks
   resize. Layout changes preserve the current camera and Previous View
   restores its saved camera in the current layout.

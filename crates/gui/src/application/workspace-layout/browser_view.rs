@@ -276,9 +276,20 @@ impl BrowserView {
         let Some(query) = &mut self.query else {
             return;
         };
-        use imgui::StyleColor;
+        use imgui::{StyleColor, StyleVar};
+        let [left, top] = ui.cursor_screen_pos();
+        let width = ui.content_region_avail()[0];
+        let height = ui.frame_height();
         let clear_width = 24.;
-        ui.set_next_item_width((ui.content_region_avail()[0] - clear_width).max(1.));
+        let bounds = [[left, top], [left + width, top + height]];
+        let draw = ui.get_window_draw_list();
+        draw.add_rect(bounds[0], bounds[1], ui.style_color(StyleColor::FrameBg))
+            .rounding(4.)
+            .filled(true)
+            .build();
+        let _border = ui.push_style_var(StyleVar::FrameBorderSize(0.));
+        ui.set_next_item_width((width - clear_width).max(1.));
+        let field = ui.push_style_color(StyleColor::FrameBg, [0.; 4]);
         let hint = ui.push_style_color(StyleColor::TextDisabled, ui.style_color(StyleColor::Text));
         if std::mem::take(&mut self.focus_search) {
             ui.set_keyboard_focus_here();
@@ -286,19 +297,28 @@ impl BrowserView {
         ui.input_text("##browser-search", query)
             .hint(SEARCH_HINT)
             .build();
+        let focused = ui.is_item_active();
         drop(hint);
+        drop(field);
         ui.same_line_with_spacing(0., 0.);
-        let background =
-            ui.push_style_color(StyleColor::Button, ui.style_color(StyleColor::FrameBg));
-        let clear = crate::widget_abi::button(
-            ui,
-            "x##browser-search-close",
-            [clear_width, ui.frame_height()],
-        );
+        let background = ui.push_style_color(StyleColor::Button, [0.; 4]);
+        let clear = crate::widget_abi::button(ui, "×##browser-search-close", [clear_width, height]);
         drop(background);
         if ui.is_item_hovered() {
-            ui.tooltip_text("Clear search");
+            ui.tooltip_text(if query.is_empty() {
+                "Close search"
+            } else {
+                "Clear search"
+            });
         }
+        let outline = if focused {
+            StyleColor::NavHighlight
+        } else {
+            StyleColor::Border
+        };
+        draw.add_rect(bounds[0], bounds[1], ui.style_color(outline))
+            .rounding(4.)
+            .build();
         if clear {
             self.close_or_clear();
         }

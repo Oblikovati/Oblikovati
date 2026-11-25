@@ -344,7 +344,7 @@ fn press_search_close(world: &mut ApplicationWorld) {
         .runs
         .iter()
         .rev()
-        .find(|run| run.text == "x")
+        .find(|run| run.text == "×")
         .cloned()
         .expect("expected the search close control");
     world.click(close.center().map(|value| value as i32));

@@ -120,7 +120,7 @@ pub(crate) fn group_caption_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
     ui.fonts().fonts().get(6).map(|font| ui.push_font(*font))
 }
 
-pub(crate) fn telemetry_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
+pub(crate) fn mono_micro_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
     ui.fonts().fonts().get(7).map(|font| ui.push_font(*font))
 }
 

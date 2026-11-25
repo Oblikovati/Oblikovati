@@ -163,7 +163,7 @@ fn unrelated_filtered(world: &mut ApplicationWorld) {
 #[when("I close the empty search field")]
 #[when("the user closes the empty search field")]
 fn press_search_close(world: &mut ApplicationWorld) {
-    world.click_text("x");
+    world.click_text("×");
 }
 #[then("the unfiltered browser tree is shown again")]
 #[then("the unfiltered model browser tree is shown again")]
@@ -213,7 +213,7 @@ fn origin_row_shown(world: &ApplicationWorld) -> bool {
         .any(|run| run.text == "CenterPoint" && run.center()[1] > RIBBON_BAND_BOTTOM)
 }
 fn close_control_shown(world: &ApplicationWorld) -> bool {
-    world.frame.runs.iter().any(|run| run.text == "x")
+    world.frame.runs.iter().any(|run| run.text == "×")
 }
 #[given("a part document is open in the MCAD Software with a sketch being edited")]
 fn part_with_sketch_under_edit(world: &mut ApplicationWorld) {
@@ -303,7 +303,7 @@ fn empty_field(world: &mut ApplicationWorld) {
         .frame
         .runs
         .iter()
-        .find(|run| run.text == "x")
+        .find(|run| run.text == "×")
         .map_or(0., |run| run.center()[1]);
     assert!(close > tab[1], "expected the field beneath the header");
 }
