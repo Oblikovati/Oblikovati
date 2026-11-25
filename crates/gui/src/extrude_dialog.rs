@@ -2,13 +2,15 @@
 //! Desktop extrusion draft. The document changes only when the owner accepts Apply.
 use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiExtrudeDirection, GuiShellAction};
-use imgui::{Key, Ui};
+use imgui::Ui;
 use oblikovati_model::document_sketch::DocumentSketchId;
 #[path = "extrude_direction.rs"]
 mod direction;
 #[path = "extrude_distance_editor.rs"]
 mod distance_editor;
 pub(crate) use distance_editor::ExtrudePanelControls;
+#[path = "extrude_panel.rs"]
+mod panel;
 #[path = "extrude_pending.rs"]
 mod pending;
 #[path = "extrude_reference.rs"]
@@ -28,6 +30,8 @@ pub(crate) struct ExtrudeDialog {
     direction_style: direction::SelectorStyle,
     reference: reference::ReferenceDraft,
     previewed: bool,
+    preview_hidden: bool,
+    size: panel::PropertiesSize,
     attempted: Option<crate::GuiExtrudePreview>,
     pending: pending::PendingExtrude,
     submitted: Option<crate::GuiExtrudePreview>,
@@ -57,6 +61,8 @@ impl ExtrudeDialog {
     fn set_document(&mut self, document: Option<u64>) {
         if document.is_none() || self.document != document {
             self.distance_editor = Default::default();
+            self.preview_hidden = false;
+            self.size = Default::default();
         }
         self.document = document;
         self.dock_state.set_open(document.is_some());
@@ -84,6 +90,9 @@ impl ExtrudeDialog {
         self.edit_feature = Some(feature);
         self.attempted = None;
         self.commit_error = None;
+    }
+    pub(crate) fn needs_frame(&self) -> bool {
+        self.requested || self.size.needs_frame()
     }
     pub(crate) fn wait_for_sketch(&mut self, document: Option<u64>) {
         self.pending.start(document);
@@ -154,24 +163,39 @@ impl ExtrudeDialog {
         let Some(document) = self.document else {
             return;
         };
-        Self::fit_dockable(ui, "Extrude", controls.origin, [280., 396.]);
+        self.size.fit(ui, controls.origin);
+        let _border = crate::theme::property_window_border(ui);
         let mut open = true;
         Self::dockable_window(ui, "Extrude", &mut open)
             .scroll_bar(false)
             .scrollable(false)
+            .size_constraints([280., 104.], [f32::MAX; 2])
             .build(|| {
-                let reserve = 36. + ui.clone_style().item_spacing[1];
+                crate::theme::floating_property_shadow(ui);
+                let style = ui.clone_style();
+                let chrome = ui.cursor_pos()[1] + style.window_padding[1] + style.item_spacing[1];
+                let mut properties = 0.;
                 let mut edited = false;
                 ui.child_window("##extrude-properties")
-                    .size([0., -reserve])
+                    .size([0., -panel::FOOTER_HEIGHT])
                     .build(|| {
+                        let start = ui.cursor_pos()[1];
                         edited = self.properties(ui, state, document, &mut controls, actions);
+                        properties = ui.cursor_pos()[1] - start;
                     });
+                self.size.measure(chrome, properties);
                 // Child input still owns the draft. Popups keep their own Escape key.
                 let shortcuts = !controls.popup_was_open
                     && !crate::widget_abi::any_popup_open(ui)
                     && ui.is_window_focused_with_flags(imgui::WindowFocusedFlags::CHILD_WINDOWS);
-                self.controls(ui, state, document, edited, shortcuts, actions);
+                self.controls(
+                    ui,
+                    state,
+                    document,
+                    (edited, shortcuts),
+                    controls.icons,
+                    actions,
+                );
             });
         if !open {
             self.close(actions);
@@ -188,7 +212,7 @@ impl ExtrudeDialog {
         let expanded = imgui::TreeNodeFlags::DEFAULT_OPEN;
         self.breadcrumb(ui, state);
         let mut edited =
-            ui.collapsing_header("Input Geometry", expanded) && self.draw_input_geometry(ui, state);
+            ui.collapsing_header("Input Geometry", expanded) && self.geometry_controls(ui, state);
         if ui.collapsing_header("Behavior", expanded) {
             edited |= self.draw_extent(ui, state, controls.icons, controls.parameters, actions);
         }
@@ -225,18 +249,6 @@ impl ExtrudeDialog {
             ui.text_colored([1.0, 0.25, 0.25, 1.0], format!("Extrusion failed: {error}"));
         }
     }
-    fn draw_input_geometry(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
-        let _disabled = ui.begin_disabled(self.edit_feature.is_some());
-        let changed_sketch = self.sketch_choice(ui, state);
-        ui.text("Profiles");
-        if state.extrude_preview_active {
-            ui.same_line();
-            ui.text("1 Profile");
-        }
-        crate::theme::property_label(ui, "Profile");
-        let _numeric = crate::ui_scale::numeric_font(ui);
-        ui.input_int("##profile", &mut self.profile).build() || changed_sketch
-    }
     pub(super) fn awaits_reference_pick(&self) -> bool {
         self.document.is_some() && self.reference.awaits_pick()
     }
@@ -253,7 +265,7 @@ impl ExtrudeDialog {
         actions: &mut Vec<GuiShellAction>,
     ) {
         let request = self.valid_preview_request(state, document, edited);
-        if request == self.attempted {
+        if self.preview_hidden || request == self.attempted {
             return;
         }
         if self.previewed {
@@ -339,33 +351,6 @@ impl ExtrudeDialog {
         }
         self.sketch != previous
     }
-    fn controls(
-        &mut self,
-        ui: &Ui,
-        state: &GuiCommandState,
-        document: u64,
-        edited: bool,
-        shortcuts: bool,
-        actions: &mut Vec<GuiShellAction>,
-    ) {
-        let preview = self.valid_preview_request(state, document, edited);
-        let enabled = preview
-            .as_ref()
-            .is_some_and(|request| self.creation_action(request).dispatchable(state));
-        let disabled = ui.begin_disabled(!enabled);
-        let request = preview.as_ref().filter(|_| enabled);
-        ui.separator();
-        let committed = self.commit_control(ui, request, shortcuts, actions);
-        drop(disabled);
-        if committed {
-            return;
-        }
-        ui.same_line();
-        self.cancel_control(ui, shortcuts, actions);
-        ui.same_line();
-        let _disabled = ui.begin_disabled(!enabled);
-        self.preview_control(ui, request, actions);
-    }
     fn creation_action(&self, request: &crate::GuiExtrudePreview) -> GuiShellAction {
         if request.reference_extent.is_some() {
             return GuiShellAction::CommitReferenceExtrude(request.clone());
@@ -391,36 +376,11 @@ impl ExtrudeDialog {
             second_distance: request.second_distance.clone(),
         })
     }
-    fn preview_control(
+    fn commit_request(
         &mut self,
-        ui: &Ui,
         request: Option<&crate::GuiExtrudePreview>,
-        actions: &mut Vec<GuiShellAction>,
-    ) {
-        if !crate::widget_abi::button(ui, "Preview", [72., 28.]) {
-            return;
-        }
-        let Some(request) = request else {
-            return;
-        };
-        let action = match self.edit_request(request) {
-            Some(edit) => GuiShellAction::PreviewExtrudeEdit(edit),
-            None => GuiShellAction::PreviewExtrude(Some(request.clone())),
-        };
-        actions.push(action);
-        self.previewed = true;
-    }
-    fn commit_control(
-        &mut self,
-        ui: &Ui,
-        request: Option<&crate::GuiExtrudePreview>,
-        shortcuts: bool,
         actions: &mut Vec<GuiShellAction>,
     ) -> bool {
-        let pressed = crate::theme::primary_button(ui, "OK", [72., 28.]);
-        if !pressed && !(shortcuts && ui.is_key_pressed_no_repeat(Key::Enter)) {
-            return false;
-        }
         let Some(request) = request else {
             return false;
         };
@@ -437,15 +397,6 @@ impl ExtrudeDialog {
         self.edit_feature = None;
         self.previewed = false;
         true
-    }
-    fn cancel_control(&mut self, ui: &Ui, shortcuts: bool, actions: &mut Vec<GuiShellAction>) {
-        let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
-        if !crate::widget_abi::button(ui, "Cancel", [68., 28.])
-            && !(shortcuts && ui.is_key_pressed_no_repeat(Key::Escape))
-        {
-            return;
-        }
-        self.close(actions);
     }
     pub(crate) fn close(&mut self, actions: &mut Vec<GuiShellAction>) {
         if self.previewed {
@@ -481,6 +432,7 @@ impl ExtrudeDialog {
         if self.submitted.as_ref() != Some(request) {
             return;
         }
+        self.requested = false;
         self.set_document(Some(request.document));
         self.commit_error = Some(cause.into());
     }

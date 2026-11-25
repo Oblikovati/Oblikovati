@@ -223,7 +223,7 @@ fn native_dock_indicator_follows_the_active_asset_tab() {
             let at = diagnostics::pointer_pixels([min[0] + 4., max[1] - 1.]);
             let color = world.pixel_at(at.map(|value| value as usize));
             assert_eq!(
-                &color[..3] == [129, 114, 250],
+                color[..3] == [129, 114, 250],
                 tab == name,
                 "{tab} {color:?}"
             );
@@ -264,7 +264,12 @@ fn native_document_strip_and_status_bar_keep_labels_clear() {
     assert_eq!(status[3] - status[1], 24.);
     let [left, top, right, bottom] = world.viewport_bounds();
     world.hover([((left + right) / 2) as i32, ((top + bottom) / 2) as i32]);
-    let run = world.frame.runs.iter().find(|run| run.text.ends_with('%')).unwrap();
+    let run = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.text.ends_with('%'))
+        .unwrap();
     world.run_in_window("##status-bar", "mm");
     assert!(
         world.frame.runs.iter().any(|run| {
@@ -281,4 +286,95 @@ fn native_document_strip_and_status_bar_keep_labels_clear() {
     assert_eq!(zoom, "100%");
     world.save_capture("document-strip-and-status-telemetry");
     world.close();
+}
+
+#[test]
+fn native_extrude_applies_and_reopens_a_fresh_draft() {
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    world.draw_rectangle();
+    world.finish_sketch();
+    world.click_text("Extrude");
+    let expanded_height = diagnostics::window_geometry("Extrude").unwrap().1[1];
+    let behavior = world.run_in_window("Extrude", "Behavior").center();
+    world.click(diagnostics::pointer_pixels(behavior));
+    let folded_height = diagnostics::window_geometry("Extrude").unwrap().1[1];
+    assert!(folded_height + 25. < expanded_height);
+    let behavior = world.run_in_window("Extrude", "Behavior").center();
+    world.click(diagnostics::pointer_pixels(behavior));
+    let distance = world.run_in_window("Extrude", "DistanceA").center();
+    world.click(diagnostics::pointer_pixels([
+        distance[0] + 120.,
+        distance[1],
+    ]));
+    world.type_text("8 mm");
+    world.pump(Vec::new());
+    world.run_in_window("Extrude", "1Profile");
+    let preview = world.run_in_window("Extrude", "Preview").center();
+    world.click(diagnostics::pointer_pixels(preview));
+    assert!(!world.state().extrude_preview_active);
+    world.click(diagnostics::pointer_pixels(preview));
+    assert!(world.state().extrude_preview_active);
+    world.save_capture("extrude-profile-and-actions");
+    let plus = world.run_in_window("Extrude", "+").center();
+    world.click(diagnostics::pointer_pixels(plus));
+    assert_eq!(world.state().browser.unwrap().features.len(), 1);
+    world.run_in_window("Extrude", "DistanceA");
+    assert!(!world.state().extrude_preview_active);
+    let cancel = world.run_in_window("Extrude", "Cancel").center();
+    world.click(diagnostics::pointer_pixels(cancel));
+    assert!(diagnostics::window_geometry("Extrude").is_none());
+    world.close();
+}
+
+#[test]
+fn native_command_artwork_is_visible_across_document_workspaces() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.click_text("Manage");
+    assert_command_art(
+        &world,
+        &[
+            "Derive",
+            "Feature",
+            "InsertiFeature",
+            "InsertObject",
+            "Import",
+        ],
+    );
+    world.save_capture("manage-command-icons");
+    world.click_text("View");
+    assert_command_art(&world, &["UserInterface", "Switch", "New"]);
+    world.add_template(oblikovati_gui::GuiTemplateKind::Assembly);
+    world.click_text("Assemble");
+    assert_command_art(&world, &["Place", "Create"]);
+    world.save_capture("assembly-command-icons");
+    world.add_template(oblikovati_gui::GuiTemplateKind::Drawing);
+    world.click_text("Place Views");
+    assert_command_art(
+        &world,
+        &[
+            "BaseView",
+            "ProjectedView",
+            "Break",
+            "Crop",
+            "StartSketch",
+            "NewSheet",
+        ],
+    );
+    world.save_capture("drawing-command-icons");
+    world.close();
+}
+
+fn assert_command_art(world: &ApplicationWorld, labels: &[&str]) {
+    for label in labels {
+        let row = world.run(label);
+        let [x, y] = row.minimum;
+        let [_, bottom] = row.maximum;
+        let quads = ribbon_appearance::icon_quads::icon_quads_inside((
+            [x - 24., y - 11.],
+            [x, bottom + 10.],
+        ));
+        assert!(!quads.is_empty(), "expected command artwork beside {label}");
+    }
 }

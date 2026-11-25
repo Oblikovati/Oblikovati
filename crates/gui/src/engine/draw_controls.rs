@@ -469,7 +469,8 @@ impl GuiFrameEngine {
             || self.ribbon.customization.escape_consumed
             || self.ribbon.display.temporary_escape_consumed;
         capture.pointer |= self.dimension_value_editor.over_label || over_fields;
-        activity.pending_layout |= dock_lifecycle_changed || cancelled_pick;
+        activity.pending_layout |=
+            dock_lifecycle_changed || cancelled_pick || self.extrude_dialog.needs_frame();
         activity.pending_layout |= self.orientation.needs_frame();
         activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
         activity.pending_layout |=

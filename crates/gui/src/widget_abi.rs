@@ -48,6 +48,8 @@ unsafe extern "C" {
     );
     fn oblikovati_gui_begin_scroll_region(identity: *const u8, width: f32, height: f32) -> bool;
     fn oblikovati_gui_dummy(width: f32, height: f32);
+    fn oblikovati_gui_window_is_docked() -> bool;
+    fn oblikovati_gui_fit_floating_panel_height(title: *const u8, height: f32);
     fn oblikovati_gui_window_position(x: f32, y: f32, condition: i32);
     fn oblikovati_gui_window_size(width: f32, height: f32, condition: i32);
     fn oblikovati_gui_cursor_position(x: f32, y: f32);
@@ -347,6 +349,17 @@ pub(crate) fn dummy(_: &Ui, size: [f32; 2]) {
 }
 
 /// Keep a floating dialog inside the current content viewport while preserving valid user placement.
+pub(crate) fn window_is_docked(_: &Ui) -> bool {
+    // The Ui borrow keeps the active Dear ImGui window available.
+    unsafe { oblikovati_gui_window_is_docked() }
+}
+
+pub(crate) fn fit_floating_panel_height(_: &Ui, title: &str, height: f32) {
+    let title = ImString::new(title);
+    // Dear ImGui consumes the optional height before drawing the next window.
+    unsafe { oblikovati_gui_fit_floating_panel_height(title.as_ptr().cast(), height) };
+}
+
 /// Example: `fit_dialog(ui, "Parameters", [320.,8.], [540.,360.])` before opening that window.
 pub(crate) fn fit_dialog(_: &Ui, title: &str, origin: [f32; 2], size: [f32; 2]) {
     fit_floating_dialog(title, origin, size, false);

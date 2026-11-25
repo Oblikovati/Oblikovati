@@ -16,8 +16,10 @@ impl BlendDialog {
         }
         let title = if self.chamfer { "Chamfer" } else { "Fillet" };
         Self::fit_dockable(ui, title, origin, [280., 138.]);
+        let _border = crate::theme::property_window_border(ui);
         let mut open = true;
         Self::dockable_window(ui, title, &mut open).build(|| {
+            crate::theme::floating_property_shadow(ui);
             self.draw_properties(ui, state);
             self.refresh_preview(state, actions);
             ui.separator();

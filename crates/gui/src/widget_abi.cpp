@@ -280,6 +280,15 @@ void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, flo
         ImGui::SetNextWindowSize(fitted_size, ImGuiCond_Always);
 }
 
+bool oblikovati_gui_window_is_docked() { return ImGui::IsWindowDocked(); }
+
+void oblikovati_gui_fit_floating_panel_height(const unsigned char* title, float height) {
+    const ImGuiWindow* window = ImGui::FindWindowByName(reinterpret_cast<const char*>(title));
+    if (!window || window->DockId != 0) return;
+    const float maximum = ImMax(104.0f, ImGui::GetIO().DisplaySize.y - window->Pos.y - 32.0f);
+    ImGui::SetNextWindowSize(ImVec2(window->SizeFull.x, ImClamp(height, 104.0f, maximum)), ImGuiCond_Always);
+}
+
 void oblikovati_gui_window_position(float x, float y, int condition) {
     ImGui::SetNextWindowPos(ImVec2(x, y), condition);
 }

@@ -115,6 +115,38 @@ pub(crate) fn tab_underline_at(ui: &imgui::Ui, [left, _]: [f32; 2], [right, bott
         .build();
 }
 
+pub(crate) fn property_window_border(ui: &imgui::Ui) -> imgui::ColorStackToken<'_> {
+    let surface = ui.style_color(StyleColor::WindowBg);
+    let ink = if surface[..3].iter().all(|value| *value < 0.01) {
+        0xFFFFFF
+    } else if surface[0] > 0.5 {
+        0xAEB6C6
+    } else {
+        0x3F4556
+    };
+    ui.push_style_color(StyleColor::Border, hex_rgb(ink))
+}
+
+pub(crate) fn floating_property_shadow(ui: &imgui::Ui) {
+    if crate::widget_abi::window_is_docked(ui) {
+        return;
+    }
+    let top = ui.window_pos();
+    let size = ui.window_size();
+    let bottom: [f32; 2] = std::array::from_fn(|axis| top[axis] + size[axis]);
+    let draw = ui.get_background_draw_list();
+    for radius in [10., 7., 4.] {
+        draw.add_rect(
+            [top[0] - radius, top[1] - radius + 3.],
+            [bottom[0] + radius, bottom[1] + radius + 3.],
+            [0., 0., 0., 0.09],
+        )
+        .rounding(radius + 3.)
+        .filled(true)
+        .build();
+    }
+}
+
 pub(crate) fn property_label(ui: &imgui::Ui, label: &str) {
     let value_start = ui.cursor_pos()[0] + ui.content_region_avail()[0] * 0.4;
     ui.align_text_to_frame_padding();
