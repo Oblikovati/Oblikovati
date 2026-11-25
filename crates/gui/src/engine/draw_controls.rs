@@ -319,6 +319,7 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands, &mut selected);
         self.appearance_browser
             .panel(ui, &request.commands, &mut selected);
+        let properties_origin = [area.left + 14., area.top + 14.];
         self.extrude_dialog.panel(
             ui,
             commands,
@@ -328,10 +329,11 @@ impl GuiFrameEngine {
                 icons,
                 parameters: &mut self.parameter_editor,
                 popup_was_open: self.popup_was_open,
-                origin: [area.left + 14., area.top + 14.],
+                origin: properties_origin,
             },
         );
-        self.blend_dialog.panel(ui, commands, &mut selected);
+        self.blend_dialog
+            .panel(ui, commands, &mut selected, properties_origin);
         self.hole_dialog.panel(ui, &request.commands, &mut selected);
         self.shell_feature_dialog.panel(ui, commands, &mut selected);
         self.move_body_dialog

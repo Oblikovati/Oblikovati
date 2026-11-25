@@ -10,11 +10,36 @@ const MENU: &str = "extrude-distance-editor";
 const PARAMETERS: &str = "Available Parameters";
 const FEATURE_PROMPT: &str = "Select a feature and then one of its dimensions.";
 const EDIT_BUTTON: &str = "Edit Distance A";
+const EDIT_BUTTON_WIDTH: f32 = 24.;
 
-pub(super) fn draw_value(ui: &Ui, distance: &mut String) -> bool {
+fn draw_value(ui: &Ui, distance: &mut String, unit: Option<&str>, error: Option<[f32; 4]>) -> bool {
     crate::theme::property_label(ui, "Distance A");
+    let available = ui.content_region_avail()[0];
+    let spacing = ui.clone_style().item_spacing[0];
+    ui.set_next_item_width((available - EDIT_BUTTON_WIDTH - spacing).max(1.));
     let _numeric = crate::ui_scale::numeric_font(ui);
-    ui.input_text("##distance-a", distance).build()
+    let _border = error.map(|_| ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.)));
+    let _error = error.map(|color| ui.push_style_color(imgui::StyleColor::Border, color));
+    let edited = ui.input_text("##distance-a", distance).build();
+    if let Some(unit) =
+        unit.filter(|_| distance.is_empty() || distance.trim().parse::<f64>().is_ok())
+    {
+        draw_unit_suffix(ui, distance, unit);
+    }
+    edited
+}
+fn draw_unit_suffix(ui: &Ui, value: &str, unit: &str) {
+    let [end, _] = ui.item_rect_max();
+    let [start, top] = ui.item_rect_min();
+    let padding = ui.clone_style().frame_padding;
+    let suffix_start = end - padding[0] - ui.calc_text_size(unit)[0];
+    if suffix_start > start + 2. * padding[0] + ui.calc_text_size(value)[0] {
+        ui.get_window_draw_list().add_text(
+            [suffix_start, top + padding[1]],
+            ui.style_color(imgui::StyleColor::TextDisabled),
+            unit,
+        );
+    }
 }
 
 #[derive(Default)]
@@ -54,10 +79,6 @@ impl DistanceEditor {
         let Some(document) = state.document else {
             return false;
         };
-        if ui.small_button(EDIT_BUTTON) {
-            self.needs_parameters = true;
-            ui.open_popup(MENU);
-        }
         if let Some(tool) = menu_item(ui, parameter_rows(parameters, document), distance) {
             self.apply_tool(ui, tool, parameters, document, actions);
         }
@@ -75,6 +96,19 @@ impl DistanceEditor {
             *distance = name;
             changed
         })
+    }
+
+    fn menu_button(&mut self, ui: &Ui, icons: &crate::icons::GuiRibbonIcons) {
+        ui.same_line();
+        if icons.navigation_button(
+            ui,
+            EDIT_BUTTON,
+            crate::icons::IconGlyph::Parameters,
+            [EDIT_BUTTON_WIDTH, ui.frame_height()],
+        ) {
+            self.needs_parameters = true;
+            ui.open_popup(MENU);
+        }
     }
 
     fn apply_tool(
@@ -191,6 +225,38 @@ pub(crate) struct ExtrudePanelControls<'a> {
 }
 
 impl super::ExtrudeDialog {
+    pub(super) fn breadcrumb(&self, ui: &Ui, state: &GuiCommandState) {
+        let Some(browser) = &state.browser else {
+            return;
+        };
+        let feature = browser
+            .features
+            .iter()
+            .find(|row| Some(row.id) == self.edit_feature)
+            .map_or("New Extrusion", |row| row.name.as_str());
+        if let Some(sketch) = browser
+            .sketches
+            .iter()
+            .find(|row| Some(row.id) == self.sketch)
+        {
+            ui.text(format!("{feature} › {}", sketch.name));
+        }
+    }
+
+    fn distance_error_ink(&self, state: &GuiCommandState) -> Option<[f32; 4]> {
+        let validation = self.current_distance_validation(state, state.document?)?;
+        validation.error.as_ref()?;
+        Some(
+            state
+                .theme
+                .as_ref()
+                .map_or([0.96, 0.25, 0.37, 1.], |theme| {
+                    let color = &theme.palette()[&oblikovati_api::types::TOKEN_CHROME_DANGER];
+                    [color.r, color.g, color.b, color.a]
+                }),
+        )
+    }
+
     pub(super) fn draw_extent(
         &mut self,
         ui: &Ui,
@@ -201,7 +267,13 @@ impl super::ExtrudeDialog {
     ) -> bool {
         let mut edited = false;
         if self.reference.numeric() {
-            edited |= draw_value(ui, &mut self.distance);
+            let error = self.distance_error_ink(state);
+            let unit = state
+                .document_units
+                .as_ref()
+                .map(|units| units.length_unit.as_str());
+            edited |= draw_value(ui, &mut self.distance, unit, error);
+            self.distance_editor.menu_button(ui, icons);
             edited |= self.distance_editor.draw(
                 ui,
                 &mut self.distance,

@@ -78,30 +78,36 @@ fn draw_icons(
     let mut selected = None;
     let width = ui.content_region_avail()[0];
     let spacing = ui.clone_style().item_spacing[0];
-    let icon = icons.logical[IconSize::Small.index()];
-    let mut used = 0.;
-    for (choice, label, glyph) in DIRECTIONS {
-        let size = [ui.calc_text_size(label)[0] + icon[0] + 12., icon[1] + 6.];
-        if used > 0. && used + spacing + size[0] <= width {
+    let cells = (width - spacing * (DIRECTIONS.len() - 1) as f32).max(4.);
+    let captions = DIRECTIONS.map(|(_, label, _)| ui.calc_text_size(label)[0] + 4.);
+    let caption_width = captions.iter().sum::<f32>();
+    let show_caption = caption_width <= cells;
+    for (index, (choice, label, glyph)) in DIRECTIONS.into_iter().enumerate() {
+        if index > 0 {
             ui.same_line();
-            used += spacing;
-        } else {
-            used = 0.;
         }
-        used += size[0];
+        let cell = if show_caption {
+            captions[index] + (cells - caption_width) / DIRECTIONS.len() as f32
+        } else {
+            cells / DIRECTIONS.len() as f32
+        };
+        let icon = icons.logical[IconSize::Small.index()].map(|axis| axis.min(cell));
         if draw_direction_icon(
             ui,
             label,
             choice == direction,
             IconButtonPresentation {
                 texture: icons.key(glyph, IconSize::Small),
-                size,
+                size: [cell, icon[1] + ui.text_line_height() + 6.],
                 icon,
-                large: false,
-                show_caption: true,
+                large: true,
+                show_caption,
             },
         ) {
             selected = Some(choice);
+        }
+        if !show_caption && ui.is_item_hovered() {
+            ui.tooltip_text(label);
         }
     }
     selected

@@ -163,3 +163,27 @@ fn native_sketch_ribbon_keeps_group_labels_and_the_last_create_row_visible() {
     );
     world.close();
 }
+
+#[test]
+fn native_feature_properties_align_blend_fields_and_keep_extrude_directions_in_one_row() {
+    let mut world = ApplicationWorld::new();
+    viewport_orientation::open_block(&mut world);
+    world.click_text("Chamfer");
+    let (position, size) = diagnostics::window_geometry("Chamfer").unwrap();
+    let label = world.run_in_window("Chamfer", "Distance").center();
+    let value = world.run_in_window("Chamfer", "1mm").center();
+    assert!(label[0] < position[0] + size[0] * 0.4);
+    assert!(value[0] > position[0] + size[0] * 0.4);
+    assert!((label[1] - value[1]).abs() < 2.);
+    world.save_capture("chamfer-properties");
+
+    world.click_text("Extrude");
+    let row = ["Default", "Flipped", "Symmetric", "Asymmetric"]
+        .map(|name| world.run_in_window("Extrude", name).center());
+    assert!(
+        row.windows(2)
+            .all(|pair| { pair[0][0] < pair[1][0] && (pair[0][1] - pair[1][1]).abs() < 2. })
+    );
+    world.save_capture("extrude-properties");
+    world.close();
+}

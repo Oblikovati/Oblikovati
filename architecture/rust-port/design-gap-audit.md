@@ -12,7 +12,7 @@ here uses the Rust desktop on Linux under Xvfb, Openbox, and Vulkan Lavapipe.
 | GAP-02 | Verified the pinned Extrude footer and exclusive feature drafts. Content-based floating height and the Apply & Create New affordance remain open. [Native check](receipts/2026-11-25-design-gap-p0-4063/README.md) |
 | GAP-03 | Verified labelled Sketch groups, last-row clearance, and the emerald Finish Sketch at 1440 px. [Native check](receipts/2026-11-25-design-gap-p0-4063/README.md) |
 | GAP-04 | Verified translucent origin-plane selection beneath the viewport controls, with the ViewCube kept clear and plane selection still working. [Native check](receipts/2026-11-25-design-gap-p0-4063/README.md) |
-| GAP-05 | Bring the properties controls, placement, and floating elevation into alignment. |
+| GAP-05 | Verified 40/60 Fillet and Chamfer fields, upper-left placement, primary OK, inline Distance A tools, and a single direction row. The profile picker, preview toggle, and floating shadow remain open. [Native checks](receipts/2026-11-25-design-gap-05-4063/README.md) |
 | GAP-06 | Verify File menu iconography, row heights, long names, and pin controls. |
 | GAP-07 | Verify Home recent-document columns, selection, and action hierarchy. |
 | GAP-08 | Verify dock tab selection, header controls, and asset swatches. |

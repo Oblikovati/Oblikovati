@@ -43,7 +43,10 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
         FontSource::TtfData {
             data: include_bytes!("../assets/fonts/Inter-Regular.ttf"),
             size_pixels: config.size_pixels,
-            config: Some(config.clone()),
+            config: Some(FontConfig {
+                glyph_ranges: FontGlyphRanges::from_slice(&[0x20, 0xff, 0x203a, 0x203a, 0]),
+                ..config.clone()
+            }),
         },
         sketch_symbols(symbols.clone()),
     ]);

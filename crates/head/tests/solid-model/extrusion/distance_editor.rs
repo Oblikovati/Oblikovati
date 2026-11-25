@@ -10,6 +10,18 @@ fn existing_extrusion_editor(world: &mut ApplicationWorld) {
     open_extrusion_editor(world);
 }
 
+#[given(
+    "a copy of `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open with Edit Feature active"
+)]
+fn published_extrusion_editor(world: &mut ApplicationWorld) {
+    let source =
+        super::super::scenario_root().join("fixtures/cad/extrusion/extrusion-rect-8mm.opd");
+    let copy = world.scratch_folder().join("extrusion-rect-8mm.opd");
+    std::fs::copy(source, &copy).unwrap();
+    world.open_fixture(&copy);
+    open_extrusion_editor(world);
+}
+
 #[given("Edit Feature with Distance A 8 mm")]
 fn eight_millimetre_tolerance_target(world: &mut ApplicationWorld) {
     existing_extrusion_editor(world);
@@ -114,7 +126,9 @@ fn create_first_extrusion(world: &mut ApplicationWorld) {
 
 #[when("the user opens the Distance A editor menu")]
 fn open_distance_menu(world: &mut ApplicationWorld) {
-    click_window_label(world, "Extrude", "EditDistanceA");
+    let field = world.run_in_window("Extrude", "DistanceA").center();
+    let (position, size) = diagnostics::window_geometry("Extrude").unwrap();
+    click_position(world, [position[0] + size[0] - 21., field[1]]);
 }
 
 #[then("it offers Measure, Select Feature Dimension, Parameters, Tolerance and List Parameters")]
@@ -138,15 +152,23 @@ fn open_parameter_list(world: &mut ApplicationWorld) {
 
 #[then("a list of parameters available in the active part appears")]
 fn parameters_are_listed(world: &mut ApplicationWorld) {
-    let name = current_feature_parameter(world);
-    popup_label(world, "AvailableParameters");
+    let state = world.state();
     assert!(
-        world
-            .frame
-            .runs
-            .iter()
-            .any(|row| world.frame.is_popup_row(row) && row.text.starts_with(&name))
+        !state.parameters.is_empty(),
+        "expected authored parameters in the fixture"
     );
+    popup_label(world, "AvailableParameters");
+    for parameter in &state.parameters {
+        assert!(
+            world
+                .frame
+                .runs
+                .iter()
+                .any(|row| world.frame.is_popup_row(row) && row.text.starts_with(&parameter.name)),
+            "expected {} in the parameter list",
+            parameter.name
+        );
+    }
     world.save_capture("distance-parameter-list");
 }
 
@@ -155,8 +177,41 @@ fn parameters_are_listed(world: &mut ApplicationWorld) {
 fn accepted_extrusion_stays_unchanged(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Extrude").is_none());
     assert_eq!(feature_count(world), 1);
-    assert_eq!(feature_distance(world), 8.);
-    assert!(!world.state().extrude_preview_active);
+    let state = world.state();
+    let browser = state
+        .browser
+        .expect("expected a part after cancelling the draft");
+    let feature = browser
+        .extrusion_edits
+        .values()
+        .next()
+        .expect("expected the accepted extrusion");
+    assert_extrusion_is_eight_millimetres(world, &feature.distance);
+    assert!(!state.extrude_preview_active);
+}
+
+fn assert_extrusion_is_eight_millimetres(world: &mut ApplicationWorld, source: &str) {
+    use oblikovati_model::quantity::Dimension;
+    let document = world.active_id();
+    let snapshot = world
+        .app()
+        .owner
+        .documents()
+        .workspace()
+        .session(document)
+        .unwrap()
+        .snapshot();
+    let evaluate = |text: &str| {
+        snapshot
+            .parameters
+            .evaluate_scalar_expression(text, Dimension::Length)
+            .unwrap()
+            .value
+    };
+    assert!(
+        (evaluate(source) - evaluate("8 mm")).abs() < 1e-12,
+        "unexpected depth {source:?}"
+    );
 }
 
 #[when("the user opens the Distance A editor menu and chooses Select Feature Dimension")]

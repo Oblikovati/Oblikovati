@@ -3,6 +3,8 @@
 use crate::dockable_window::DockableWindow;
 use crate::{GuiCommandState, GuiFilletRequest, GuiShellAction};
 use imgui::Ui;
+#[path = "blend_panel.rs"]
+mod panel;
 
 #[derive(Default)]
 pub(crate) struct BlendDialog {
@@ -160,45 +162,6 @@ impl BlendDialog {
             self.close(actions);
         }
     }
-    pub(crate) fn panel(
-        &mut self,
-        ui: &Ui,
-        state: &GuiCommandState,
-        actions: &mut Vec<GuiShellAction>,
-    ) {
-        self.sync_before_docking(state, actions);
-        if self.document.is_none() {
-            return;
-        }
-        let display = ui.io().display_size;
-        let title = if self.chamfer { "Chamfer" } else { "Fillet" };
-        Self::fit_dockable(ui, title, [(display[0] - 380.).max(0.), 170.], [360., 190.]);
-        let mut open = true;
-        Self::dockable_window(ui, title, &mut open).build(|| {
-            {
-                let count = if self.edit.is_some() {
-                    self.edited_edges
-                } else {
-                    state.selected_edge_count
-                };
-                let selection = match count {
-                    0 => "Select Edges".to_owned(),
-                    1 => "1 Edge".to_owned(),
-                    count => format!("{count} Edges"),
-                };
-                ui.text(selection);
-            }
-            let label = if self.chamfer { "Distance" } else { "Radius" };
-            if ui.input_text(label, &mut self.radius).build() {
-                self.submitted = None;
-            }
-            self.refresh_preview(state, actions);
-            self.controls(ui, state, actions);
-        });
-        if !open {
-            self.close(actions);
-        }
-    }
     fn refresh_preview(&mut self, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         if self.edit.is_some() {
             let request = self.edit_request().filter(|request| {
@@ -241,7 +204,7 @@ impl BlendDialog {
             .request(state)
             .filter(|request| self.create_action(request.clone()).dispatchable(state));
         let disabled = ui.begin_disabled(request.is_none());
-        if (ui.button("OK")
+        if (crate::theme::primary_button(ui, "OK", [72., 28.])
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Enter)))
             && let Some(request) = request
         {
@@ -250,7 +213,8 @@ impl BlendDialog {
         }
         drop(disabled);
         ui.same_line();
-        if ui.button("Cancel")
+        let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
+        if crate::widget_abi::button(ui, "Cancel", [68., 28.])
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape))
         {
             self.close(actions);
@@ -296,7 +260,7 @@ impl BlendDialog {
             .edit_request()
             .filter(|request| self.commit_edit_action(request.clone()).dispatchable(state));
         let disabled = ui.begin_disabled(request.is_none());
-        if (ui.button("OK")
+        if (crate::theme::primary_button(ui, "OK", [72., 28.])
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Enter)))
             && let Some(request) = request
         {
@@ -305,7 +269,8 @@ impl BlendDialog {
         }
         drop(disabled);
         ui.same_line();
-        if ui.button("Cancel")
+        let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
+        if crate::widget_abi::button(ui, "Cancel", [68., 28.])
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape))
         {
             self.close(actions);
