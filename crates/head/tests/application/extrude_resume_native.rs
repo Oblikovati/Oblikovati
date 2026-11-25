@@ -217,7 +217,7 @@ fn set_depth_expression(world: &mut ApplicationWorld, expression: &str) {
 }
 pub(super) fn set_extrusion_distance(world: &mut ApplicationWorld, value: &str) {
     let label = world.run("Distance A").clone();
-    world.click([label.minimum[0] as i32 - 30, label.center()[1] as i32]);
+    world.click([label.minimum[0] as i32 + 130, label.center()[1] as i32]);
     world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
     world.type_text(value);
     world.pump(Vec::new());
@@ -315,6 +315,15 @@ fn set_extrusion_profile(world: &mut ApplicationWorld, old: &str, value: &str) {
 fn extrusion_preview_tracks_distance_and_parameter_changes() {
     let (mut world, document) = requested_extrusion_fixture();
     let initial = preview_height(&mut world);
+    assert!(
+        world
+            .app()
+            .window
+            .scene_triangles
+            .iter()
+            .any(|triangle| triangle.color == [20. / 255., 184. / 255., 166. / 255., 0.22])
+    );
+    world.save_capture("identity-Extrude");
     let stale = world
         .app()
         .window
@@ -371,12 +380,13 @@ fn preview_height(world: &mut ApplicationWorld) -> f32 {
 fn edit_depth_in_parameter_window(world: &mut ApplicationWorld) {
     world.click(super::toolbar_icon_center("Parameters"));
     let (position, size) = super::diagnostics::window_geometry("Parameters").unwrap();
+    let lower_right = [position[0] + size[0], position[1] + size[1]];
     let name = super::rendered_label_in_rect(
         "depth",
         position,
         [position[0] + 200., position[1] + size[1]],
     );
-    let equation_x = super::diagnostics::pointer_pixels([position[0] + 290., position[1]])[0];
+    let equation_x = super::rendered_label_in_rect("Equation", position, lower_right)[0];
     world.click([equation_x, name[1]]);
     world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
     world.type_text("16 mm");
@@ -395,7 +405,7 @@ fn edit_depth_in_parameter_window(world: &mut ApplicationWorld) {
 fn extrude_shortcut_reopens_after_cancel_without_intercepting_text() {
     let (mut world, document) = requested_extrusion_fixture();
     let field = world.run("Distance A").clone();
-    world.click([field.minimum[0] as i32 - 30, field.center()[1] as i32]);
+    world.click([field.minimum[0] as i32 + 130, field.center()[1] as i32]);
     world.key(oblikovati_viewport::ViewportPhysicalKey::E, false);
     world.type_text("e");
     world.pump(Vec::new());

@@ -13,10 +13,40 @@ pub(super) const EMPTY_VIEW: [i32; 2] = [420, 300];
 const ON_THE_STATUS: &str = "Escape cancels";
 const PAN_FIXTURE: &str = "fixtures/cad/body-properties-start.opd";
 
-/// Press one of the bar's buttons by the letter it carries.
-pub(super) fn press_bar(world: &mut ApplicationWorld, letter: &str) {
-    let at = world.run_in_window(NAVIGATION, letter).center();
-    world.click(at.map(|value| value as i32));
+#[derive(Clone, Copy)]
+pub(in super::super) enum NavigationControl {
+    Wheel,
+    Pan,
+    Zoom,
+    Orbit,
+}
+
+fn bar_icon(control: NavigationControl) -> ([f32; 2], [f32; 2]) {
+    let (min, size) =
+        diagnostics::window_geometry(NAVIGATION).expect("expected the navigation bar");
+    let max = [min[0] + size[0], min[1] + size[1]];
+    let mut icons = super::ribbon_appearance::icon_quads::icon_quads_inside((min, max));
+    icons.sort_by(|left, right| left.0[1].total_cmp(&right.0[1]));
+    assert_eq!(icons.len(), 4, "expected four navigation glyphs");
+    icons[control as usize]
+}
+
+pub(in super::super) fn bar_icon_center(control: NavigationControl) -> [f32; 2] {
+    let (min, max) = bar_icon(control);
+    [(min[0] + max[0]) / 2., (min[1] + max[1]) / 2.]
+}
+
+pub(super) fn bar_dropdown_center(control: NavigationControl) -> [f32; 2] {
+    let zoom = bar_icon_center(NavigationControl::Zoom);
+    let orbit = bar_icon_center(NavigationControl::Orbit);
+    let mut point = bar_icon_center(control);
+    point[1] += (orbit[1] - zoom[1]) * 0.5;
+    point
+}
+
+/// Press a control at the center of its actual drawn icon.
+pub(super) fn press_bar(world: &mut ApplicationWorld, control: NavigationControl) {
+    world.click(diagnostics::pointer_pixels(bar_icon_center(control)));
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
@@ -28,7 +58,7 @@ pub(super) fn expect_part_and_solid(world: &mut ApplicationWorld) {
     solid_extent(world);
 }
 fn start_pan(world: &mut ApplicationWorld) {
-    press_bar(world, "P");
+    press_bar(world, NavigationControl::Pan);
 }
 #[given("a part containing a visible solid is active in the MCAD Software")]
 fn visible_solid(world: &mut ApplicationWorld) {
@@ -143,22 +173,22 @@ fn zoom_prompt(world: &mut ApplicationWorld) {
     world.expect_status(ON_THE_STATUS);
 }
 /// A running command's button draws in the pressed colour; its neighbour stays plain.
-pub(super) fn bar_button_lit(world: &mut ApplicationWorld, letter: &str, other: &str) -> bool {
-    let beside = |world: &mut ApplicationWorld, letter: &str| {
-        let run = world.run_in_window(NAVIGATION, letter).clone();
-        let at = [
-            run.minimum[0] as usize - BUTTON_PROBE,
-            run.center()[1] as usize,
-        ];
-        world.pixel_at(at)
+pub(super) fn bar_button_lit(
+    world: &mut ApplicationWorld,
+    control: NavigationControl,
+    other: NavigationControl,
+) -> bool {
+    let probe = |control| {
+        let (min, max) = bar_icon(control);
+        diagnostics::pointer_pixels([min[0] - 1., (min[1] + max[1]) / 2.])
+            .map(|coordinate| coordinate as usize)
     };
-    beside(world, letter) != beside(world, other)
+    world.pixel_at(probe(control)) != world.pixel_at(probe(other))
 }
-const BUTTON_PROBE: usize = 3;
 #[then("the Pan control is highlighted")]
 fn pan_lit(world: &mut ApplicationWorld) {
     assert!(
-        bar_button_lit(world, "P", "W"),
+        bar_button_lit(world, NavigationControl::Pan, NavigationControl::Wheel),
         "expected the Pan button lit"
     );
 }
@@ -210,7 +240,7 @@ fn assert_pan_translation(before: ViewportCamera, after: ViewportCamera) {
 fn start_pan_with_x11(world: &mut ApplicationWorld) {
     super::x11_input::focus_window();
     world.pump(Vec::new());
-    let button = world.run_in_window(NAVIGATION, "P").center();
+    let button = bar_icon_center(NavigationControl::Pan);
     let button = diagnostics::pointer_pixels(button);
     super::x11_input::move_pointer(button);
     world.pump(Vec::new());

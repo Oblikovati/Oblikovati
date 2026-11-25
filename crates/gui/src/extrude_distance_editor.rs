@@ -12,15 +12,9 @@ const FEATURE_PROMPT: &str = "Select a feature and then one of its dimensions.";
 const EDIT_BUTTON: &str = "Edit Distance A";
 
 pub(super) fn draw_value(ui: &Ui, distance: &mut String) -> bool {
-    let label = "Distance A";
-    let style = ui.clone_style();
-    let reserved = ui.calc_text_size(label)[0]
-        + ui.calc_text_size(EDIT_BUTTON)[0]
-        + style.item_inner_spacing[0]
-        + style.item_spacing[0]
-        + style.frame_padding[0] * 2.;
-    ui.set_next_item_width((ui.content_region_avail()[0] - reserved).max(1.));
-    ui.input_text(label, distance).build()
+    crate::theme::property_label(ui, "Distance A");
+    let _numeric = crate::ui_scale::numeric_font(ui);
+    ui.input_text("##distance-a", distance).build()
 }
 
 #[derive(Default)]
@@ -60,7 +54,6 @@ impl DistanceEditor {
         let Some(document) = state.document else {
             return false;
         };
-        ui.same_line();
         if ui.small_button(EDIT_BUTTON) {
             self.needs_parameters = true;
             ui.open_popup(MENU);

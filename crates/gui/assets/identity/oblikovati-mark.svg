@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Oblikovati Brand Mark">
+  <title>Oblikovati Brand Mark</title>
+  <!-- Top chamfered isometric frame facet -->
+  <polygon points="16,3 27.26,9.5 20.76,13.25 16,10.5 11.24,13.25 4.74,9.5"
+           fill="var(--icon-body-top, #ECEEF2)"
+           stroke="var(--icon-body-stroke, #181B22)"
+           stroke-width="1" stroke-linejoin="round"/>
+  <!-- Left structural graphite flank -->
+  <polygon points="4.74,9.5 11.24,13.25 11.24,18.75 16,21.5 16,29 4.74,22.5"
+           fill="var(--icon-body-side, #677084)"
+           stroke="var(--icon-body-stroke, #181B22)"
+           stroke-width="1" stroke-linejoin="round"/>
+  <!-- Right extruded Indigo-Violet brand signature flank -->
+  <polygon points="27.26,9.5 27.26,22.5 16,29 16,21.5 20.76,18.75 20.76,13.25"
+           fill="var(--accent-brand, #8172FA)"
+           stroke="var(--icon-body-stroke, #181B22)"
+           stroke-width="1" stroke-linejoin="round"/>
+  <!-- Internal recessed parametric aperture facets (reversed void lighting) -->
+  <polygon points="16,10.5 20.76,13.25 16,16 11.24,13.25"
+           fill="var(--icon-void-side, #3A404F)" opacity="0.9"/>
+  <polygon points="11.24,13.25 16,16 16,21.5 11.24,18.75"
+           fill="var(--icon-mod-side, #5948D4)" opacity="0.88"/>
+  <polygon points="20.76,13.25 20.76,18.75 16,21.5 16,16"
+           fill="var(--icon-void-front, #5B6375)" opacity="0.72"/>
+  <!-- Crisp inner hexagon contour -->
+  <polygon points="16,10.5 20.76,13.25 20.76,18.75 16,21.5 11.24,18.75 11.24,13.25"
+           fill="none" stroke="var(--icon-body-stroke, #181B22)"
+           stroke-width="0.9" stroke-linejoin="round"/>
+</svg>

@@ -40,7 +40,9 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
         ..config.clone()
     };
     context.fonts().add_font(&[
-        FontSource::DefaultFontData {
+        FontSource::TtfData {
+            data: include_bytes!("../assets/fonts/Inter-Regular.ttf"),
+            size_pixels: config.size_pixels,
             config: Some(config.clone()),
         },
         sketch_symbols(symbols.clone()),
@@ -60,6 +62,14 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
             sketch_symbols(symbols.clone()),
         ]);
     }
+    context.fonts().add_font(&[
+        FontSource::TtfData {
+            data: include_bytes!("../assets/fonts/JetBrainsMono-Regular.ttf"),
+            size_pixels: config.size_pixels,
+            config: Some(config),
+        },
+        sketch_symbols(symbols),
+    ]);
 }
 
 fn sketch_symbols(config: FontConfig) -> FontSource<'static> {
@@ -75,6 +85,10 @@ pub(crate) fn sketch_content_font(ui: &Ui, bold: bool, italic: bool) -> Option<F
     // Atlas installation adds the chrome face first, then the four content faces in this order.
     let index = 1 + usize::from(bold) + 2 * usize::from(italic);
     ui.fonts().fonts().get(index).copied()
+}
+
+pub(crate) fn numeric_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
+    ui.fonts().fonts().get(5).map(|font| ui.push_font(*font))
 }
 
 #[derive(Default)]

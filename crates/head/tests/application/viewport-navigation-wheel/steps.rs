@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! `features/application/viewport-navigation-wheel`: the ring of view tools and its options.
 use super::viewport_orientation::solid_extent;
+use super::viewport_pan::NavigationControl;
 use super::viewport_pan::{camera, press_bar};
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
@@ -42,7 +43,7 @@ fn settle(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 fn open_wheel(world: &mut ApplicationWorld) {
-    press_bar(world, "W");
+    press_bar(world, NavigationControl::Wheel);
     world.click(PLACED_AT);
     settle(world);
 }
@@ -124,7 +125,7 @@ fn full_selected(world: &mut ApplicationWorld) {
 #[when("the user opens the navigation wheel from the navigation bar")]
 fn open_from_bar(world: &mut ApplicationWorld) {
     world.observed_view_camera = Some(camera(world));
-    press_bar(world, "W");
+    press_bar(world, NavigationControl::Wheel);
 }
 #[when("I click within the viewport")]
 #[when("the user clicks within the viewport")]

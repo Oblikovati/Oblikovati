@@ -16,7 +16,7 @@ struct GoScheme {
     secondary_select: Color,
 }
 #[test]
-fn every_builtin_scheme_property_matches_the_go_oracle_and_public_contract() {
+fn scheme_names_and_modes_keep_the_go_contract_with_updated_studio_colors() {
     let expected: Vec<GoScheme> =
         serde_json::from_str(include_str!("color_scheme/go-baseline.json")).unwrap();
     let registry = ColorSchemeRegistry::default();
@@ -25,12 +25,55 @@ fn every_builtin_scheme_property_matches_the_go_oracle_and_public_contract() {
         let contract: &dyn ColorSchemeContract = actual;
         assert_eq!(contract.name(), expected.name);
         assert_eq!(actual.background_type, expected.background_type);
-        assert_eq!(contract.screen_color(), expected.screen);
-        assert_eq!(contract.top_screen_color(), expected.top);
-        assert_eq!(contract.bottom_screen_color(), expected.bottom);
-        assert_eq!(contract.highlight_color(), expected.highlight);
-        assert_eq!(contract.primary_select_color(), expected.primary_select);
-        assert_eq!(contract.secondary_select_color(), expected.secondary_select);
+        let channels = |color: Color| [color.r, color.g, color.b];
+        let expected_colors = match expected.name.as_str() {
+            "Default" => [
+                [20, 22, 27],
+                [20, 22, 27],
+                [30, 33, 42],
+                [245, 158, 11],
+                [20, 184, 166],
+                [45, 212, 191],
+            ],
+            "Presentation" => [
+                [244, 246, 249],
+                [244, 246, 249],
+                [228, 232, 240],
+                [217, 119, 6],
+                [13, 148, 136],
+                [20, 184, 166],
+            ],
+            "High Contrast" => [
+                [0; 3],
+                [0; 3],
+                [0; 3],
+                [251, 191, 36],
+                [45, 212, 191],
+                [94, 234, 212],
+            ],
+            _ => [
+                expected.screen,
+                expected.top,
+                expected.bottom,
+                expected.highlight,
+                expected.primary_select,
+                expected.secondary_select,
+            ]
+            .map(channels),
+        };
+        let actual_colors = [
+            contract.screen_color(),
+            contract.top_screen_color(),
+            contract.bottom_screen_color(),
+            contract.highlight_color(),
+            contract.primary_select_color(),
+            contract.secondary_select_color(),
+        ];
+        for color in &actual_colors {
+            assert_eq!(color.source, OVERRIDE_COLOR_SOURCE);
+            assert_eq!(color.opacity, 1.);
+        }
+        assert_eq!(actual_colors.map(channels), expected_colors);
     }
 }
 #[test]

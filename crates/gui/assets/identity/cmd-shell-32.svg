@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Shell">
+  <title>Shell — Hollow Void Cavity (32px 2.5D Isometric)</title>
+  <!-- Layer 1: Outer neutral block flanks -->
+  <g id="layer-body">
+    <polygon points="5,11.5 16,17 16,27.5 5,22" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.2" stroke-linejoin="round"/>
+    <polygon points="27,11.5 16,17 16,27.5 27,22" fill="var(--icon-body-side, #677084)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.2" stroke-linejoin="round"/>
+    <!-- Interior recessed void cavity walls (reversed lighting: left inner dark, right inner lighter) -->
+    <polygon points="16,8.2 22.8,11.5 16,14.8 9.2,11.5" fill="var(--icon-void-front, #5B6375)"/>
+    <polygon points="16,8.2 9.2,11.5 16,14.8" fill="var(--icon-void-side, #3A404F)"/>
+    <polygon points="16,8.2 22.8,11.5 16,14.8" fill="var(--icon-void-top, #858DA0)"/>
+  </g>
+  <!-- Layer 2: Uniform thin wall top rim highlighted in Indigo-Violet -->
+  <g id="layer-accent">
+    <path fill-rule="evenodd" d="M16,6 L27,11.5 L16,17 L5,11.5 Z M16,8.3 L9.4,11.5 L16,14.7 L22.6,11.5 Z"
+          fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.15" stroke-linejoin="round"/>
+  </g>
+</svg>

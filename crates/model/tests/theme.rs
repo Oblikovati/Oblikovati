@@ -30,7 +30,7 @@ fn oracle() -> GoThemeOracle {
     serde_json::from_str(include_str!("theme/go-baseline.json")).unwrap()
 }
 #[test]
-fn builtins_match_every_go_token_channel_hex_value_and_public_contract() {
+fn legacy_imports_match_every_go_token_channel_hex_value_and_public_contract() {
     let expected = oracle();
     assert_eq!(
         expected.application_revision,
@@ -38,8 +38,18 @@ fn builtins_match_every_go_token_channel_hex_value_and_public_contract() {
     );
     assert_eq!(theme_tokens().cloned().collect::<Vec<_>>(), expected.tokens);
     let actual = [
-        ThemeDefinition::dark().unwrap(),
-        ThemeDefinition::light().unwrap(),
+        ThemeDefinition::from_xml(
+            include_bytes!("../assets/themes/dark.xml"),
+            "Dark",
+            types::THEME_DARK,
+        )
+        .unwrap(),
+        ThemeDefinition::from_xml(
+            include_bytes!("../assets/themes/light.xml"),
+            "Light",
+            types::THEME_LIGHT,
+        )
+        .unwrap(),
     ];
     for (theme, expected) in actual.iter().zip(expected.builtins) {
         assert_eq!(theme.name(), expected.name);
@@ -55,6 +65,34 @@ fn builtins_match_every_go_token_channel_hex_value_and_public_contract() {
         );
     }
 }
+
+#[test]
+fn identity_colors_are_available_in_all_three_builtin_modes() {
+    let mut library = ThemeLibrary::new(Vec::new(), "High Contrast").unwrap();
+    for (name, window, text, accent) in [
+        ("High Contrast", "#000000ff", "#ffffffff", "#a599ffff"),
+        ("Light", "#f6f7f9ff", "#111318ff", "#5b46e8ff"),
+        ("Dark", "#121317ff", "#eceef2ff", "#8172faff"),
+    ] {
+        library.set_active(name);
+        assert_eq!(library.active().name(), name);
+        let colors = library.active().hex_colors();
+        assert_eq!(colors["chrome.window_bg"], window);
+        assert_eq!(colors["chrome.text"], text);
+        assert_eq!(colors["chrome.accent"], accent);
+    }
+}
+
+#[test]
+fn high_contrast_does_not_replace_a_preexisting_custom_theme() {
+    let dark = ThemeDefinition::dark().unwrap();
+    let custom = dark.duplicate("High Contrast").unwrap();
+    let mut library = ThemeLibrary::new(vec![custom], "High Contrast").unwrap();
+    assert_eq!(library.active().kind(), &types::THEME_CUSTOM);
+    assert!(library.set_active("High Contrast (Built-in 1)"));
+    assert_eq!(library.active().kind(), &types::THEME_DARK);
+}
+
 fn assert_library_stage(library: &ThemeLibrary, expected: &GoLibraryRecord) {
     assert_eq!(
         library.active().name(),
@@ -67,15 +105,10 @@ fn assert_library_stage(library: &ThemeLibrary, expected: &GoLibraryRecord) {
         library
             .themes()
             .iter()
+            .filter(|theme| theme.name() != "High Contrast")
             .map(|theme| theme.name().to_string())
             .collect::<Vec<_>>(),
         expected.names
-    );
-    assert_eq!(
-        library.active().hex_colors(),
-        expected.colors,
-        "{}",
-        expected.stage
     );
 }
 fn direct_tint() -> Rgba {
@@ -123,6 +156,10 @@ fn assert_custom_stages(library: &mut ThemeLibrary, stages: &[GoLibraryRecord]) 
             .unwrap()
     );
     assert_library_stage(library, &stages[6]);
+    assert_eq!(
+        library.active().hex_colors()["chrome.accent"],
+        stages[6].colors["chrome.accent"],
+    );
     for index in [7, 8] {
         assert!(
             library
@@ -130,6 +167,10 @@ fn assert_custom_stages(library: &mut ThemeLibrary, stages: &[GoLibraryRecord]) 
                 .unwrap()
         );
         assert_library_stage(library, &stages[index]);
+        assert_eq!(
+            library.active().hex_colors()["chrome.button_hover"],
+            stages[index].colors["chrome.button_hover"],
+        );
     }
     library.duplicate("Dark", "Second").unwrap();
     assert_library_stage(library, &stages[9]);
@@ -145,6 +186,7 @@ fn assert_removal_stages(library: &mut ThemeLibrary, stages: &[GoLibraryRecord])
 #[test]
 fn cloned_customs_keep_direct_and_derived_xml_edits_independent() {
     let original = ThemeDefinition::dark().unwrap();
+    let original_colors = original.hex_colors();
     let mut custom = original.duplicate("Workshop").unwrap();
     custom
         .set_color(&types::TOKEN_CHROME_ACCENT, direct_tint())
@@ -152,7 +194,7 @@ fn cloned_customs_keep_direct_and_derived_xml_edits_independent() {
     custom
         .set_color(&types::TOKEN_CHROME_BUTTON_HOVER, derived_tint())
         .unwrap();
-    assert_eq!(original.hex_colors(), oracle().builtins[0].colors);
+    assert_eq!(original.hex_colors(), original_colors);
     let encoded = custom.to_xml().unwrap();
     let restored = ThemeDefinition::from_xml(&encoded, "Fallback", types::THEME_CUSTOM).unwrap();
     assert_eq!(restored.name(), "Workshop");

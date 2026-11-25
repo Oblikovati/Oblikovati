@@ -12,6 +12,9 @@ impl ThemeLibrary {
     pub fn new(customs: Vec<ThemeDefinition>, active: &str) -> Result<Self, String> {
         let mut themes = vec![ThemeDefinition::dark()?, ThemeDefinition::light()?];
         validate_customs(&customs, &themes)?;
+        themes.push(ThemeDefinition::high_contrast(&high_contrast_name(
+            &customs,
+        ))?);
         themes.extend(customs);
         let active = themes
             .iter()
@@ -110,6 +113,13 @@ impl ThemeLibrary {
     fn bump_revision(&mut self) {
         self.revision = self.revision.saturating_add(1);
     }
+}
+fn high_contrast_name(customs: &[ThemeDefinition]) -> String {
+    let mut names = std::iter::once("High Contrast".to_string())
+        .chain((1..).map(|index| format!("High Contrast (Built-in {index})")));
+    names
+        .find(|name| customs.iter().all(|custom| custom.name() != name))
+        .unwrap_or_else(|| "High Contrast".into())
 }
 fn validate_customs(
     customs: &[ThemeDefinition],

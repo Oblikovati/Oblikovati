@@ -2,6 +2,7 @@
 //! Open the saved block before setting the requested starting view.
 
 use super::super::viewport_orientation::open_saved_navigation_block;
+use super::super::viewport_pan::{NavigationControl, bar_icon_center};
 use super::*;
 use std::path::Path;
 
@@ -112,7 +113,7 @@ fn start_orbit_with_x11(world: &mut ApplicationWorld) {
     use super::super::x11_input::{click, focus_window, move_pointer};
     focus_window();
     world.pump(Vec::new());
-    let control = world.run_in_window("##navigation-bar", "O").center();
+    let control = bar_icon_center(NavigationControl::Orbit);
     let control = diagnostics::pointer_pixels(control);
     move_pointer(control);
     world.pump(Vec::new());

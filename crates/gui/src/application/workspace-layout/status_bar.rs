@@ -25,6 +25,7 @@ pub(crate) fn status_bar(
                 tool_prompt.or(request.status.as_deref()),
                 alias,
             ));
+            let _numeric = crate::ui_scale::numeric_font(ui);
             if let Some(needed) = request.commands.dimensions_needed {
                 let text = dimensions_needed_text(needed);
                 let advance = ui.calc_text_size(&text)[0];

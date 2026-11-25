@@ -6,7 +6,8 @@ use super::{
 };
 use crate::{GuiAtlas, GuiFrameRequest, GuiTextureKey, GuiTextureResources};
 use oblikovati_api::types::{
-    TOKEN_ICON_BACKGROUND, TOKEN_ICON_PRIMARY, TOKEN_ICON_SECONDARY, TOKEN_ICON_TERTIARY,
+    TOKEN_CHROME_WINDOW_BG, TOKEN_ICON_BACKGROUND, TOKEN_ICON_PRIMARY, TOKEN_ICON_SECONDARY,
+    TOKEN_ICON_TERTIARY,
 };
 use std::{collections::BTreeMap, sync::Arc};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -61,11 +62,13 @@ impl GuiRibbonIcons {
 struct IconPreparation {
     edges: [u32; 2],
     colors: [[f32; 4]; 4],
+    identity_mode: usize,
 }
 pub(crate) struct GuiIconCache {
     masks: BTreeMap<(IconGlyph, u32), Arc<IconRoleMasks>>,
     prepared: Option<IconPreparation>,
     defaults: [[f32; 4]; 4],
+    default_identity_mode: usize,
     pub resources: GuiTextureResources,
     pub presentation: GuiRibbonIcons,
 }
@@ -75,6 +78,7 @@ impl GuiIconCache {
             masks: BTreeMap::new(),
             prepared: None,
             defaults: role_colors(oblikovati_model::theme::ThemeDefinition::dark()?.palette()),
+            default_identity_mode: 0,
             resources: GuiTextureResources::new(font, [])?,
             presentation: GuiRibbonIcons::new()?,
         })
@@ -82,6 +86,7 @@ impl GuiIconCache {
     /// Retain the startup palette when a frame has no theme snapshot; example: `cache.set_theme(theme)`.
     pub(crate) fn set_theme(&mut self, theme: &oblikovati_model::theme::ThemeDefinition) {
         self.defaults = role_colors(theme.palette());
+        self.default_identity_mode = identity_mode(theme.palette());
     }
     /// Prepare owned pixels; true means ribbon geometry changed, not only its colors.
     pub(crate) fn prepare(
@@ -90,13 +95,11 @@ impl GuiIconCache {
         font: &GuiAtlas,
     ) -> Result<bool, String> {
         let first_preparation = self.prepared.is_none();
+        let theme = request.commands.theme.as_ref().map(|theme| theme.palette());
         let preparation = IconPreparation {
             edges: physical_edges(request)?,
-            colors: request
-                .commands
-                .theme
-                .as_ref()
-                .map_or(self.defaults, |theme| role_colors(theme.palette())),
+            colors: theme.map_or(self.defaults, role_colors),
+            identity_mode: theme.map_or(self.default_identity_mode, identity_mode),
         };
         let previous_logical = self.presentation.logical;
         self.presentation.logical = preparation
@@ -122,14 +125,23 @@ impl GuiIconCache {
         for glyph in GLYPHS {
             for size in [IconSize::Small, IconSize::Large] {
                 let edge = preparation.edges[size.index()];
-                let masks = self.masks_for(*glyph, edge)?;
-                images.push((
-                    self.presentation.key(*glyph, size),
-                    masks.compose(preparation.colors)?,
-                ));
+                let image = self.compose_icon(*glyph, edge, preparation)?;
+                images.push((self.presentation.key(*glyph, size), image));
             }
         }
         Ok(images)
+    }
+    fn compose_icon(
+        &mut self,
+        glyph: IconGlyph,
+        edge: u32,
+        preparation: &IconPreparation,
+    ) -> Result<GuiAtlas, String> {
+        if let Some(svg) = super::identity_sources::source(glyph) {
+            return super::raster::rasterize_identity(svg, edge, preparation.identity_mode)
+                .map_err(|cause| format!("identity icon {:?}: {cause}", glyph.name()));
+        }
+        self.masks_for(glyph, edge)?.compose(preparation.colors)
     }
     fn masks_for(&mut self, glyph: IconGlyph, edge: u32) -> Result<Arc<IconRoleMasks>, String> {
         if let Some(masks) = self.masks.get(&(glyph, edge)) {
@@ -141,6 +153,15 @@ impl GuiIconCache {
         );
         self.masks.insert((glyph, edge), masks.clone());
         Ok(masks)
+    }
+}
+fn identity_mode(palette: &oblikovati_model::theme::ThemePalette) -> usize {
+    let background = &palette[&TOKEN_CHROME_WINDOW_BG];
+    let lightness = background.r.max(background.g).max(background.b);
+    if lightness < 0.01 {
+        2
+    } else {
+        usize::from(lightness > 0.5)
     }
 }
 fn physical_edges(request: &GuiFrameRequest) -> Result<[u32; 2], String> {

@@ -5,6 +5,35 @@ use crate::{GuiCommandState, GuiShellAction, GuiSketchConstraint, GuiSketchTool}
 use imgui::Ui;
 
 impl GuiRibbonIcons {
+    pub(crate) fn brand_mark(&self, ui: &Ui) {
+        let texture = imgui::TextureId::new(self.key(IconGlyph::BrandMark, IconSize::Small).raw());
+        imgui::Image::new(texture, [20.; 2]).build(ui);
+        ui.same_line();
+    }
+
+    pub(crate) fn navigation_button(
+        &self,
+        ui: &Ui,
+        label: &str,
+        glyph: IconGlyph,
+        size: [f32; 2],
+    ) -> bool {
+        let pressed = crate::widget_abi::icon_button(
+            ui,
+            label,
+            crate::widget_abi::IconButtonPresentation {
+                texture: self.key(glyph, IconSize::Small),
+                size,
+                icon: [16.; 2],
+                large: false,
+                show_caption: false,
+            },
+        );
+        if ui.is_item_hovered() {
+            ui.tooltip_text(label);
+        }
+        pressed
+    }
     pub(crate) fn layout_factor(&self) -> f32 {
         self.logical
             .iter()

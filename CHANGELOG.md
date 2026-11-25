@@ -8,7 +8,6 @@
 - Added Flipped, Symmetric, and Asymmetric directions and To Face and From–To extents for new solid extrusions in the desktop and typed API. Added desktop Icons and Dropdown direction selectors and a Distance A editor menu. (#3893)
 - Expanded the desktop parameter tolerance editor with tolerance formats, precision, evaluated size, and ISO fit classes. (#3893)
 - Added analytic solid-edge lengths to the Part Measure panel. (#3967)
-
 - Added Zoom, Zoom All, Zoom Selected, and Zoom Window to ribbon customization. (#3856)
 
 - Added Show Panels instructions and F1 help to the ribbon panel selector. (#3856)
@@ -184,6 +183,7 @@
 
 ### Changed
 
+- Adopted the new desktop visual identity across Dark, Light, and High Contrast themes, including studio viewport palettes, bundled fonts, vector navigation icons, and the Extrude panel. (#4063)
 - Reused part checkpoints during Undo and Redo when a clean feature prefix remains. (#4079)
 
 - Reused part checkpoints when deleting bodies through the typed API. (#4079)

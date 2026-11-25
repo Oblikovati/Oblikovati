@@ -71,8 +71,8 @@ mod tests {
         assert_eq!(
             state.background(),
             ViewportBackground::VerticalGradient {
-                top: [60, 64, 72],
-                bottom: [30, 32, 36]
+                top: [20, 22, 27],
+                bottom: [30, 33, 42]
             }
         );
         assert!(state.contains("High Contrast"));

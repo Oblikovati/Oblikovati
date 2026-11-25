@@ -37,6 +37,9 @@ pub(super) fn home_tab(
         TabItemFlags::empty()
     };
     let shown = ui.tab_item_with_flags("Home###home-workspace-tab", None, flags);
+    if owner.home.active {
+        crate::theme::active_tab_underline(ui);
+    }
     owner.order.note(
         TabKey::Home,
         ui.item_rect_min()[0],
@@ -98,6 +101,9 @@ pub(super) fn document_tab(
             .is_some_and(|id| owner.detached.contains(&id));
     let selected = !behind && is_active_window(state, tab);
     let keep = draw_document_tab(ui, tab, selected);
+    if selected {
+        crate::theme::active_tab_underline(ui);
+    }
     #[cfg(test)]
     record_test_tab_bounds(ui, tab.row.id, owner.test_tab_bounds);
     owner.order.note(

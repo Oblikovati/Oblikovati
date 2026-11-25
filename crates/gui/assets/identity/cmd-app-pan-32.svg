@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Viewport Pan</title>
+  <desc id="d">Four-direction precision panning arrows.</desc>
+  <g id="layer-body">
+    <path d="M16,5 V27 M5,16 H27" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1.8" stroke-linecap="round"/><path d="M12.5,8.5 L16,4.5 L19.5,8.5 M12.5,23.5 L16,27.5 L19.5,23.5 M8.5,12.5 L4.5,16 L8.5,19.5 M23.5,12.5 L27.5,16 L23.5,19.5" fill="none" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-accent">
+    <circle cx="16" cy="16" r="2.5" fill="var(--icon-line-active, #8172FA)"/>
+  </g>
+</svg>

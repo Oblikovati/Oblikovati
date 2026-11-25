@@ -17,9 +17,10 @@ use cube::{ShownFace, inside, shown_faces};
 mod navigation_bar;
 #[path = "navigation_wheel.rs"]
 mod navigation_wheel;
+use navigation_bar::NavigationBar;
 pub(crate) use navigation_bar::ZoomAction;
 pub use navigation_bar::{GuiNavigationMode, GuiViewCommand};
-use navigation_bar::{NAVIGATION_SIZE, NAVIGATION_WINDOW, NavigationBar};
+mod navigation_capsule;
 #[path = "options.rs"]
 mod options;
 use drawing::{draw_compass, draw_control};
@@ -269,6 +270,7 @@ impl OrientationControl {
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,
+        icons: &crate::icons::GuiRibbonIcons,
         request: &crate::GuiFrameRequest,
         area: WorkspaceArea,
         actions: &mut Vec<GuiShellAction>,
@@ -323,14 +325,7 @@ impl OrientationControl {
             });
         }
         if visibility.navigation {
-            self.navigation_bar(
-                ui,
-                state,
-                request.extent,
-                area,
-                [position, [side, side]],
-                actions,
-            );
+            self.navigation_bar(ui, icons, request, area, [position, [side, side]], actions);
         }
         self.navigation.follow_view(ui, request, actions);
         let center = [(area.left + area.right) / 2., (area.top + area.bottom) / 2.];
@@ -353,34 +348,6 @@ impl OrientationControl {
             area.top + MARGIN
         };
         [x, y]
-    }
-    /// The bar keeps to the control's side of the view, under or over it.
-    fn navigation_bar(
-        &mut self,
-        ui: &Ui,
-        state: &GuiCommandState,
-        extent: [u32; 2],
-        area: WorkspaceArea,
-        [control, control_size]: [[f32; 2]; 2],
-        actions: &mut Vec<GuiShellAction>,
-    ) {
-        let corner = self.options.corner();
-        let x = if corner.is_left() {
-            area.left + MARGIN
-        } else {
-            area.right - NAVIGATION_SIZE[0] - MARGIN
-        };
-        let below = corner == ScreenCorner::TopLeft || corner == ScreenCorner::TopRight;
-        let y = if below {
-            control[1] + control_size[1] + MARGIN
-        } else {
-            control[1] - NAVIGATION_SIZE[1] - MARGIN
-        };
-        ui.window(NAVIGATION_WINDOW)
-            .position([x, y], imgui::Condition::Always)
-            .size(NAVIGATION_SIZE, imgui::Condition::Always)
-            .flags(control_flags())
-            .build(|| self.navigation.buttons(ui, state, extent, actions));
     }
     /// Available with something to lock to; once locked, it stays to let the lock go.
     fn lock_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {

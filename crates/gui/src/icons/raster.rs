@@ -6,6 +6,51 @@ use image::{
     imageops::{self, FilterType},
 };
 use resvg::{tiny_skia, usvg};
+use std::sync::Arc;
+
+pub(super) fn rasterize_identity(
+    source: &str,
+    edge: u32,
+    mode: usize,
+) -> Result<crate::GuiAtlas, String> {
+    let resolved = resolve_identity_paints(source, mode)?;
+    let pixels = render(resolved.as_bytes(), edge)?;
+    let rgba = pixels
+        .pixels()
+        .iter()
+        .map(|pixel| {
+            let pixel = pixel.demultiply();
+            [pixel.red(), pixel.green(), pixel.blue(), pixel.alpha()]
+        })
+        .collect();
+    Ok(crate::GuiAtlas {
+        extent: [edge; 2],
+        rgba: Arc::new(rgba),
+    })
+}
+
+fn resolve_identity_paints(mut source: &str, mode: usize) -> Result<String, String> {
+    use super::identity_paints::PAINTS;
+    let mut resolved = String::with_capacity(source.len());
+    while let Some((before, paint)) = source.split_once("var(--") {
+        let (name, rest) = paint
+            .split_once(',')
+            .ok_or("icon paint: expected a fallback")?;
+        let end = rest
+            .find(['"', '\''])
+            .and_then(|quote| rest[..quote].rfind(')'))
+            .ok_or("icon paint: expected a closing delimiter")?;
+        let color = PAINTS
+            .iter()
+            .find(|(key, _)| *key == name)
+            .ok_or_else(|| format!("identity icon paint {name:?}: expected a design token"))?;
+        resolved.push_str(before);
+        resolved.push_str(color.1[mode]);
+        source = &rest[end + 1..];
+    }
+    resolved.push_str(source);
+    Ok(resolved)
+}
 #[derive(Clone, Debug)]
 pub(crate) struct IconRoleMasks {
     pub edge: u32,

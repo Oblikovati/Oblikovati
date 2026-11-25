@@ -110,4 +110,9 @@ glyph_catalog! {
     DirectionSymmetric => "direction-symmetric",
     DirectionAsymmetric => "direction-asymmetric",
     Print => "qat-print",
+    BrandMark => "view-cube",
+    NavPan => "rotate-translate",
+    NavOrbit => "orbit-constrained",
+    NavZoom => "zoom-window",
+    NavWheel => "steering-wheel",
 }

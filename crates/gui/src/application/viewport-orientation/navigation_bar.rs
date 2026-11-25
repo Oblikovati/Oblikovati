@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The navigation bar beside the orientation control: Pan, Zoom and Orbit as running commands.
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
+#[path = "navigation_buttons.rs"]
+mod navigation_buttons;
 use imgui::{Key, MouseButton, StyleColor, Ui};
 
 #[path = "rotate_dialog.rs"]
@@ -8,7 +10,7 @@ mod rotate_dialog;
 use rotate_dialog::DEFAULT_INCREMENT;
 
 pub(super) const NAVIGATION_WINDOW: &str = "##navigation-bar";
-pub(super) const NAVIGATION_SIZE: [f32; 2] = [36., 176.];
+pub(super) const NAVIGATION_SIZE: [f32; 2] = [28., 176.];
 const ZOOM_MENU: &str = "##zoom-menu";
 const ORBIT_MENU: &str = "##orbit-menu";
 const VIEW_MENU: &str = "##navigation-menu";
@@ -177,40 +179,6 @@ impl NavigationBar {
         self.press = None;
         actions.push(GuiShellAction::ViewCommand(GuiViewCommand::Prompt(None)));
     }
-    /// The bar's buttons; example: inside its window.
-    pub(super) fn buttons(
-        &mut self,
-        ui: &Ui,
-        state: &GuiCommandState,
-        extent: [u32; 2],
-        actions: &mut Vec<GuiShellAction>,
-    ) {
-        if crate::widget_abi::button(ui, "W", BUTTON) {
-            self.wheel.request();
-        }
-        if self.mode_button(ui, "P", GuiNavigationMode::Pan) {
-            // Pan's own control ends a rotation, as the recording shows; it starts nothing then.
-            if self.is_rotating() {
-                self.end(actions);
-            } else {
-                self.start(GuiNavigationMode::Pan, actions);
-            }
-        }
-        if self.mode_button(ui, "Z", GuiNavigationMode::Zoom) {
-            self.run_zoom_action(self.zoom_action, state, extent, actions);
-        }
-        if crate::widget_abi::button(ui, "v##zoom-actions", BUTTON) {
-            ui.open_popup(ZOOM_MENU);
-        }
-        if self.mode_button(ui, "O", GuiNavigationMode::Orbit) {
-            self.run_orbit_action(actions);
-        }
-        if crate::widget_abi::button(ui, "v##orbit-actions", BUTTON) {
-            ui.open_popup(ORBIT_MENU);
-        }
-        self.zoom_menu(ui, state, extent, actions);
-        self.orbit_menu(ui, actions);
-    }
     fn orbit_menu(&mut self, ui: &Ui, actions: &mut Vec<GuiShellAction>) {
         let Some(_menu) = ui.begin_popup(ORBIT_MENU) else {
             return;
@@ -244,12 +212,6 @@ impl NavigationBar {
     /// A frame must follow so the dialog opens without waiting for an event.
     pub(super) fn needs_frame(&self) -> bool {
         self.rotate_opening || self.wheel.needs_frame()
-    }
-    fn mode_button(&self, ui: &Ui, label: &str, mode: GuiNavigationMode) -> bool {
-        let active = ui.style_color(StyleColor::ButtonActive);
-        let _lit =
-            (self.mode == Some(mode)).then(|| ui.push_style_color(StyleColor::Button, active));
-        crate::widget_abi::button(ui, label, BUTTON)
     }
     fn zoom_menu(
         &mut self,

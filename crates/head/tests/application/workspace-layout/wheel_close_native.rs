@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Verify that Navigation Wheel Options releases its selected dock tab.
+use super::super::viewport_pan::{NavigationControl, bar_icon_center};
 use super::dockspace_native::{open_toolbar_tool, viewport};
 use super::dockspace_restart::{native_click_label, select_dock_tab};
 use super::orientation_close_native::drag_title;
 use super::*;
 
 fn open_wheel(world: &mut ApplicationWorld) {
-    let point = world.run_in_window("##navigation-bar", "W").center();
+    let point = bar_icon_center(NavigationControl::Wheel);
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(point));
     world.pump(Vec::new());
     super::super::x11_input::click([760, 480]);

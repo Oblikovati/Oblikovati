@@ -10,6 +10,13 @@ impl GuiFrameRequest {
     }
 }
 impl GuiFrameEngine {
+    pub(super) fn refresh_chrome(&mut self, request: &GuiFrameRequest) -> bool {
+        // Docked tab bars use their windows' colors from the previous frame.
+        request.commands.theme.as_ref().is_some_and(|theme| {
+            crate::theme::apply_chrome_theme(&mut self.context.style_mut().colors, theme.palette())
+        })
+    }
+
     pub(super) fn refresh_font_scale(&mut self, request: &GuiFrameRequest) -> Result<(), String> {
         let scale = crate::ui_scale::font_raster_scale(request)?;
         if self.raster_scale == scale {

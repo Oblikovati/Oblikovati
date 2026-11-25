@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
+mod identity_paints;
+mod identity_sources;
 mod raster;
 mod svg_roles;
 pub(crate) use raster::{IconRoleMasks, rasterize_roles};

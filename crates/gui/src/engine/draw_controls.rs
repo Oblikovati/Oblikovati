@@ -225,6 +225,7 @@ impl GuiFrameEngine {
             }
             self.orientation.panel(
                 ui,
+                &self.icons.presentation,
                 request,
                 area,
                 &mut selected,

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Customize Ribbon</title>
+  <desc id="d">Two command panes bridged by a transfer arrow.</desc>
+  <g id="layer-body">
+    <rect x="3" y="6" width="10" height="20" rx="2" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.15"/><rect x="19" y="6" width="10" height="20" rx="2" fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.15"/>
+  </g>
+  <g id="layer-accent">
+    <path d="M11,16 L21,16 M17.93,17.88 L21,16 L17.93,14.12" fill="none" stroke="var(--icon-cutout, #121317)" stroke-width="3.3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M11,16 L21,16 M17.93,17.88 L21,16 L17.93,14.12" fill="none" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

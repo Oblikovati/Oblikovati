@@ -7,7 +7,7 @@ fn file_host_theme_queries_use_the_injected_application_library() {
     let library = ThemeLibrary::new(Vec::new(), "Light").unwrap();
     let client = Client::new(FileHost::new(&mut files, &mut source, "test").with_themes(&library));
     assert_eq!(client.theme().active().unwrap().name, "Light");
-    assert_eq!(client.theme().list().unwrap().themes.unwrap().len(), 2);
+    assert_eq!(client.theme().list().unwrap().themes.unwrap().len(), 3);
     assert_eq!(files.workspace().active_document(), Some(id));
     assert!(
         files

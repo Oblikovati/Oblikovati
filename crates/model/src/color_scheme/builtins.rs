@@ -1,31 +1,32 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_api::types::OVERRIDE_COLOR_SOURCE;
-// Go aa8297d1 model/colorscheme/scheme.go is the palette oracle.
+// The studio schemes use the handoff's background, selection, and work-feature colors.
+// Sky retains the palette from Go aa8297d1 model/colorscheme/scheme.go.
 type SchemeRecipe = (&'static str, BackgroundTypeEnum, [[u8; 3]; 6]);
 const BUILTIN_SCHEME_RECIPES: [SchemeRecipe; 4] = [
     (
         "Default",
         GRADIENT_BACKGROUND,
         [
-            [45, 48, 54],
-            [60, 64, 72],
-            [30, 32, 36],
-            [255, 196, 0],
-            [60, 160, 255],
-            [0, 200, 160],
+            [20, 22, 27],
+            [20, 22, 27],
+            [30, 33, 42],
+            [245, 158, 11],
+            [20, 184, 166],
+            [45, 212, 191],
         ],
     ),
     (
         "Presentation",
         GRADIENT_BACKGROUND,
         [
-            [235, 238, 242],
-            [245, 247, 250],
-            [205, 212, 222],
-            [255, 140, 0],
-            [0, 120, 215],
-            [0, 160, 120],
+            [244, 246, 249],
+            [244, 246, 249],
+            [228, 232, 240],
+            [217, 119, 6],
+            [13, 148, 136],
+            [20, 184, 166],
         ],
     ),
     (
@@ -35,9 +36,9 @@ const BUILTIN_SCHEME_RECIPES: [SchemeRecipe; 4] = [
             [0, 0, 0],
             [0, 0, 0],
             [0, 0, 0],
-            [255, 255, 0],
-            [0, 255, 255],
-            [255, 0, 255],
+            [251, 191, 36],
+            [45, 212, 191],
+            [94, 234, 212],
         ],
     ),
     (

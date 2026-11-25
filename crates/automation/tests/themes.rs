@@ -14,11 +14,13 @@ fn canonical_client_reads_complete_active_palette_and_ordered_gallery() {
     assert_eq!(active.kind, "light");
     assert_eq!(active.colors.unwrap(), library.active().hex_colors());
     let gallery = client.theme().list().unwrap().themes.unwrap();
-    assert_eq!(gallery.len(), 2);
+    assert_eq!(gallery.len(), 3);
     assert_eq!(gallery[0].name, "Dark");
     assert!(!gallery[0].active);
     assert_eq!(gallery[1].name, "Light");
     assert!(gallery[1].active);
+    assert_eq!(gallery[2].name, "High Contrast");
+    assert!(!gallery[2].active);
 }
 #[test]
 fn custom_edits_and_selection_are_visible_to_new_client_views() {

@@ -142,7 +142,7 @@ impl<
         let scene = oblikovati_viewport::ViewportScene::from_prism(
             &presentation,
             [0., 0., 1.],
-            [1., 0.65, 0.1, 1.],
+            [20. / 255., 184. / 255., 166. / 255., 0.22],
         )?;
         let generation = self
             .files

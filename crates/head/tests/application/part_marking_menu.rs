@@ -385,7 +385,7 @@ fn context_pick_does_not_select_face_while_navigation_owns_viewport() {
         ((low[0] + high[0]) / 2) as i32,
         ((low[1] + high[1]) / 2) as i32,
     ];
-    super::viewport_pan::press_bar(&mut world, "W");
+    super::viewport_pan::press_bar(&mut world, super::viewport_pan::NavigationControl::Wheel);
     x11_input::click([760, 480]);
     world.pump(Vec::new());
     assert!(diagnostics::window_geometry("##navigation-wheel").is_some());

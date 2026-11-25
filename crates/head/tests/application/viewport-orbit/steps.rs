@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! `features/application/viewport-orbit`: free and constrained rotation, and turns by an angle.
 use super::viewport_orientation::{open_block, solid_extent};
+use super::viewport_pan::NavigationControl;
 use super::viewport_pan::{camera, press_bar};
 use super::{ApplicationWorld, capture_framebuffer, diagnostics};
 use cucumber::{given, then, when};
@@ -45,23 +46,8 @@ fn expect_guide(world: &mut ApplicationWorld, shown: bool) {
 }
 /// The bar's second dropdown belongs to Orbit.
 fn open_orbit_menu(world: &mut ApplicationWorld) {
-    let (position, size) =
-        super::diagnostics::window_geometry("##navigation-bar").expect("expected the bar");
-    let arrow = world
-        .frame
-        .runs
-        .iter()
-        .rfind(|run| {
-            let [x, y] = run.center();
-            run.text == "v"
-                && x >= position[0]
-                && x <= position[0] + size[0]
-                && y >= position[1]
-                && y <= position[1] + size[1]
-        })
-        .expect("expected the orbit dropdown")
-        .center();
-    world.click(arrow.map(|value| value as i32));
+    let arrow = super::viewport_pan::bar_dropdown_center(NavigationControl::Orbit);
+    world.click(super::diagnostics::pointer_pixels(arrow));
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
@@ -74,7 +60,7 @@ fn choose(world: &mut ApplicationWorld, row: &str) {
 #[when("I select the orbit control on the navigation bar")]
 #[when("the user selects the orbit control on the navigation bar")]
 fn select_orbit(world: &mut ApplicationWorld) {
-    press_bar(world, "O");
+    press_bar(world, NavigationControl::Orbit);
 }
 #[then("the status area indicates free rotation")]
 fn free_rotation(world: &mut ApplicationWorld) {
@@ -339,18 +325,18 @@ fn numbered_direction(world: &mut ApplicationWorld, ordinal: usize) {
 #[when("I select Orbit on the navigation bar")]
 #[when("the user selects Orbit on the navigation bar")]
 fn select_orbit_named(world: &mut ApplicationWorld) {
-    press_bar(world, "O");
+    press_bar(world, NavigationControl::Orbit);
 }
 #[given("Orbit is active with its circular guide visible")]
 fn orbit_active(world: &mut ApplicationWorld) {
     world.observed_view_camera = Some(camera(world));
-    press_bar(world, "O");
+    press_bar(world, NavigationControl::Orbit);
     expect_guide(world, true);
 }
 #[when("I click Pan on the navigation bar")]
 #[when("the user clicks Pan on the navigation bar")]
 fn click_pan(world: &mut ApplicationWorld) {
-    press_bar(world, "P");
+    press_bar(world, NavigationControl::Pan);
 }
 #[then("the circular orbit guide disappears")]
 fn orbit_guide_gone(world: &mut ApplicationWorld) {

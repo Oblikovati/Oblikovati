@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Viewport Zoom</title>
+  <desc id="d">Precision magnifying lens with Teal zoom crosshair.</desc>
+  <g id="layer-body">
+    <circle cx="14" cy="14" r="7.5" fill="var(--accent-selection-subtle, rgba(20,184,166,0.22))" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.9"/><line x1="19.6" y1="19.6" x2="27" y2="27" stroke="var(--icon-line-active, #8172FA)" stroke-width="2.4" stroke-linecap="round"/><path d="M14,11 V17 M11,14 H17" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.6" stroke-linecap="round"/>
+  </g>
+</svg>

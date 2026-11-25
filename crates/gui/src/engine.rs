@@ -162,7 +162,7 @@ impl GuiFrameEngine {
         #[cfg(test)]
         let test_context_lease = crate::test_context::acquire();
         let mut context = create_owner_context()?;
-        let atlas = configure_owner_context(&mut context);
+        let atlas = configure_owner_context(&mut context)?;
         let resources = crate::GuiTextureResources::new(atlas.clone(), [])?;
         let icons = crate::icons::GuiIconCache::new(atlas.clone())?;
         let mut engine = Self {
@@ -311,11 +311,11 @@ impl GuiFrameEngine {
             self.ribbon.panels = Default::default();
         }
         self.resources = self.icons.resources.clone();
-        if let Some(theme) = &request.commands.theme {
-            crate::theme::apply_chrome_theme(&mut self.context.style_mut().colors, theme.palette());
-        }
+        let restyled = self.refresh_chrome(request);
         self.external_docks.synchronize(&request.commands);
-        self.draw_controls(request)
+        let mut frame = self.draw_controls(request)?;
+        frame.activity.pending_layout |= restyled;
+        Ok(frame)
     }
     /// Focus an accessible control; example: `engine.focus_accessible(GuiAccessibleFocus::Frame(0))`.
     pub fn focus_accessible(&mut self, target: crate::GuiAccessibleFocus) {
@@ -376,14 +376,15 @@ impl GuiFrameEngine {
             .request_save_path(document, &name, self.known_document_type)
     }
 }
-pub(crate) fn configure_owner_context(context: &mut Context) -> GuiAtlas {
+pub(crate) fn configure_owner_context(context: &mut Context) -> Result<GuiAtlas, String> {
     context.set_ini_filename(None);
     context.set_log_filename(None);
     context
         .io_mut()
         .config_flags
         .insert(ConfigFlags::DOCKING_ENABLE | ConfigFlags::NAV_ENABLE_KEYBOARD);
-    crate::ui_scale::rebuild_font_atlas(context, 1.)
+    crate::theme::configure_chrome(context.style_mut())?;
+    Ok(crate::ui_scale::rebuild_font_atlas(context, 1.))
 }
 pub(crate) fn copy_atlas(context: &mut Context) -> GuiAtlas {
     let atlas = context.fonts().build_rgba32_texture();

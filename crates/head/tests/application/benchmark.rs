@@ -42,6 +42,7 @@ pub(super) fn observe_orientation_solid(
     solid_visibility::visible_fixture_bounds(capture, &diagnostics::window_occlusions())
 }
 mod viewport_background;
+mod visual_identity;
 mod world;
 #[cfg(target_os = "linux")]
 mod x11_input;

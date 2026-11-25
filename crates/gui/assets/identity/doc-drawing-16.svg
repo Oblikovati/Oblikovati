@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" role="img" aria-label="Drawing Document">
+  <title>Oblikovati Drawing Document (.odd)</title>
+  <rect x="1.5" y="2.5" width="13" height="11" rx="1" fill="var(--icon-body-top, #D2D7E2)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1"/>
+  <!-- Orthographic view outlines -->
+  <rect x="3.5" y="4.5" width="4.5" height="3.5" fill="none" stroke="var(--icon-body-stroke, #181B22)" stroke-width="0.9"/>
+  <circle cx="11" cy="6.2" r="1.6" fill="none" stroke="var(--icon-mod-front, #8172FA)" stroke-width="0.95"/>
+  <!-- Warm Amber title block in lower-right -->
+  <rect x="8.5" y="9.5" width="4.5" height="2.5" fill="var(--icon-surf-front, #F59E0B)" stroke="var(--icon-surf-stroke, #2E1D05)" stroke-width="0.75"/>
+</svg>

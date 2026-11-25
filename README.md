@@ -47,6 +47,13 @@ The desktop executable is `oblikovati` (`oblikovati.exe` on Windows). The
 command-line executable is `oblikovati-cli`. See [Build and run](BUILDING.md)
 for prerequisites, platform details, and other build commands.
 
+## Desktop appearance
+
+Choose Dark, Light, or High Contrast under **View → Appearance → Theme**.
+Use **Colour scheme** to control the viewport backdrop independently. Default
+uses the dark studio gradient, Presentation uses the light studio gradient,
+and High Contrast uses a solid black background.
+
 ## Learn more
 
 - [Project website](https://oblikovati.org)

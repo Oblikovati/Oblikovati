@@ -5,6 +5,7 @@ use super::viewport_orientation::{
     expect_same_part, open_block, open_saved_navigation_block, solid_bounds, solid_extent,
     whole_block_visible,
 };
+use super::viewport_pan::NavigationControl;
 use super::viewport_pan::{camera, expect_part_and_solid, press_bar};
 use crate::{HeadWindow, HeadWork};
 use cucumber::{given, then, when};
@@ -70,8 +71,8 @@ fn zoom_menu(world: &mut ApplicationWorld) {
 }
 /// The bar's first dropdown belongs to Zoom.
 fn press_zoom_arrow(world: &mut ApplicationWorld) {
-    let at = world.run_in_window("##navigation-bar", "v").center();
-    world.click(at.map(|value| value as i32));
+    let at = super::viewport_pan::bar_dropdown_center(NavigationControl::Zoom);
+    world.click(super::diagnostics::pointer_pixels(at));
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
@@ -209,7 +210,7 @@ fn appears_larger(world: &mut ApplicationWorld) {
 #[when("I select Zoom on the navigation bar")]
 #[when("the user selects Zoom on the navigation bar")]
 fn select_zoom(world: &mut ApplicationWorld) {
-    press_bar(world, "Z");
+    press_bar(world, NavigationControl::Zoom);
 }
 #[then("Zoom is active")]
 fn zoom_active(world: &mut ApplicationWorld) {
@@ -413,7 +414,11 @@ fn unchanged_face(world: &mut ApplicationWorld) {
 }
 #[then("the Zoom control is highlighted")]
 fn zoom_lit(world: &mut ApplicationWorld) {
-    let lit = super::viewport_pan::bar_button_lit(world, "Z", "W");
+    let lit = super::viewport_pan::bar_button_lit(
+        world,
+        NavigationControl::Zoom,
+        NavigationControl::Wheel,
+    );
     assert!(lit, "expected the Zoom button lit");
 }
 #[then("the face is no longer highlighted as selected")]

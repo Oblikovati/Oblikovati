@@ -347,12 +347,29 @@ fn cancelling_a_theme_preview_restores_the_startup_icon_colors() {
 fn recoloring_icons_does_not_restart_the_measured_ribbon_layout() {
     let mut owner = GuiFrameEngine::new().unwrap();
     let mut request = ribbon_request();
-    settled_frame(&mut owner, &request);
+    let initial = settled_frame(&mut owner, &request);
+    let key = owner
+        .icons
+        .presentation
+        .key(IconGlyph::NewPart, IconSize::Large);
     let light = oblikovati_model::theme::ThemeLibrary::new(Vec::new(), "Light").unwrap();
     request.commands.theme = Some(crate::GuiThemeState::from_library(&light));
     let preview = owner.frame(&request).unwrap();
+    let initial_icon = initial
+        .batches
+        .iter()
+        .find(|batch| batch.texture == key)
+        .unwrap();
+    let preview_icon = preview
+        .draws
+        .batches
+        .iter()
+        .find(|batch| batch.texture == key)
+        .unwrap();
+    assert_eq!(initial_icon.vertices, preview_icon.vertices);
     assert!(
-        !preview.activity.pending_layout,
-        "theme preview must keep measured command positions"
+        preview.activity.pending_layout,
+        "dock tabs need a theme refresh frame"
     );
+    assert!(!owner.frame(&request).unwrap().activity.pending_layout);
 }

@@ -155,7 +155,7 @@ pub fn drawing_preview_frame(
 
 fn drawing_context() -> Result<(Context, GuiTextureResources), String> {
     let mut context = crate::context_owner::create_owner_context()?;
-    let atlas = crate::engine::configure_owner_context(&mut context);
+    let atlas = crate::engine::configure_owner_context(&mut context)?;
     let resources = GuiTextureResources::new(atlas, [])?;
     Ok((context, resources))
 }

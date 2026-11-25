@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Revolve">
+  <title>Revolve (32px 2.5D Isometric)</title>
+  <defs>
+    <linearGradient id="revCyl" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8172FA"/>
+      <stop offset="28%" stop-color="#B4AAFF"/>
+      <stop offset="65%" stop-color="#8172FA"/>
+      <stop offset="100%" stop-color="#5948D4"/>
+    </linearGradient>
+  </defs>
+  <!-- Layer 1: Centerline Axis & Source Profile -->
+  <g id="layer-body">
+    <line x1="12" y1="3" x2="12" y2="29" stroke="var(--icon-line-center, #38BDF8)" stroke-width="1.25" stroke-dasharray="4 1.5 1.5 1.5" stroke-linecap="round"/>
+    <polygon points="5,11 12,11 12,24 5,24" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.2" stroke-linejoin="round"/>
+  </g>
+  <!-- Layer 2: Revolved Indigo-Violet Cylindrical Volume -->
+  <g id="layer-accent">
+    <path d="M12,11 C19.5,11 26,13.2 26,15.5 L26,23.5 C26,25.8 19.5,27.5 12,27.5 Z"
+          fill="url(#revCyl)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.2" stroke-linejoin="round"/>
+    <path d="M12,11 C19.5,11 26,13.2 26,15.5 C26,17.8 19.5,19.5 12,19.5 Z"
+          fill="var(--icon-mod-top, #B4AAFF)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.2" stroke-linejoin="round"/>
+    <!-- Curved revolution arc arrow -->
+    <path d="M15.5,5.5 C20.8,5.8 24.5,7.5 24.5,9.6 C24.5,10.5 23.8,11.2 22.6,11.8"
+          fill="none" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.5" stroke-linecap="round"/>
+    <polygon points="15.8,3.6 13.4,5.6 16.2,7.2" fill="var(--accent-selection-bright, #2DD4BF)"/>
+  </g>
+</svg>

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Save Document</title>
+  <desc id="d">Storage tray with descending document and Indigo-Violet accent.</desc>
+  <g id="layer-body">
+    <path d="M5,17 H27 V26 A2,2 0 0,1 25,28 H7 A2,2 0 0,1 5,26 Z" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.2" stroke-linejoin="round"/><rect x="9" y="21" width="14" height="3.5" rx="1" fill="var(--icon-body-top, #D2D7E2)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="0.9"/>
+  </g>
+  <g id="layer-accent">
+    <path d="M10,4 H20 L23,7 V16 H10 Z" fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.15" stroke-linejoin="round"/><path d="M16.5,6.5 L16.5,15.5 M14.93,12.94 L16.5,15.5 L18.07,12.94" fill="none" stroke="var(--icon-cutout, #121317)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M16.5,6.5 L16.5,15.5 M14.93,12.94 L16.5,15.5 L18.07,12.94" fill="none" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

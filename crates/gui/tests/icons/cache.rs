@@ -66,7 +66,7 @@ fn stable_preparation_reuses_masks_and_font_changes_preserve_icon_pixels() {
         &first.source(key).unwrap().pixels().rgba,
         &cache.resources.source(key).unwrap().pixels().rgba
     ));
-    assert_eq!(cache.masks.len(), catalog::GLYPHS.len() * 2);
+    assert_eq!(cache.masks.len(), legacy_mask_count());
 }
 #[test]
 fn theme_changes_recompose_without_rasterizing_the_svg_again() {
@@ -77,8 +77,33 @@ fn theme_changes_recompose_without_rasterizing_the_svg_again() {
     let library = oblikovati_model::theme::ThemeLibrary::new(Vec::new(), "Light").unwrap();
     request.commands.theme = Some(crate::GuiThemeState::from_library(&library));
     assert!(!cache.prepare(&request, &font()).unwrap());
-    assert_eq!(cache.masks.len(), catalog::GLYPHS.len() * 2);
+    assert_eq!(cache.masks.len(), legacy_mask_count());
     assert!(cache.resources != first);
+}
+fn legacy_mask_count() -> usize {
+    catalog::GLYPHS
+        .iter()
+        .filter(|glyph| crate::icons::identity_sources::source(**glyph).is_none())
+        .count()
+        * 2
+}
+
+#[test]
+fn design_assets_draw_visible_vectors_at_native_and_double_density() {
+    for glyph in catalog::GLYPHS {
+        let Some(svg) = crate::icons::identity_sources::source(*glyph) else {
+            continue;
+        };
+        for (edge, mode) in [(16, 0), (32, 1), (64, 2)] {
+            let image = crate::icons::raster::rasterize_identity(svg, edge, mode).unwrap();
+            assert_eq!(image.extent, [edge; 2]);
+            assert!(
+                image.rgba.iter().any(|pixel| pixel[3] > 192),
+                "{} at {edge}px",
+                glyph.name()
+            );
+        }
+    }
 }
 #[test]
 fn invalid_edges_leave_the_published_bank_unchanged() {

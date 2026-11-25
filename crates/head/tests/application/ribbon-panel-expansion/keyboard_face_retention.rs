@@ -55,7 +55,10 @@ fn x11_pinned_expansion_survives_face_click() {
 fn x11_navigation_consumed_click_cannot_leave_a_pending_pick() {
     let mut world = ApplicationWorld::new();
     super::solid_part(&mut world);
-    super::super::viewport_pan::press_bar(&mut world, "P");
+    super::super::viewport_pan::press_bar(
+        &mut world,
+        super::super::viewport_pan::NavigationControl::Pan,
+    );
     keyboard_open(&mut world);
     assert!(expansion_visible());
     super::super::x11_input::click([1000, 600]);

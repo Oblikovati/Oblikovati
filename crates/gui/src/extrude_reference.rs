@@ -71,25 +71,22 @@ impl ReferenceDraft {
     }
 
     fn draw_extent_modes(&mut self, ui: &Ui) {
-        ui.text("From");
-        ui.same_line();
+        crate::theme::property_label(ui, "From");
         let from = if self.mode == ExtentMode::FromTo {
             "From / To"
         } else {
             "Sketch Plane"
         };
-        if ui.button(from) {
+        if ui.button_with_size(from, [ui.content_region_avail()[0], 0.]) {
             self.toggle(ExtentMode::FromTo);
         }
-        ui.same_line();
-        ui.text("Termination");
-        ui.same_line();
+        crate::theme::property_label(ui, "Termination");
         let to = if self.numeric() {
             "Distance"
         } else {
             "To Face"
         };
-        if ui.button(to) {
+        if ui.button_with_size(to, [ui.content_region_avail()[0], 0.]) {
             self.toggle(ExtentMode::ToFace);
         }
     }

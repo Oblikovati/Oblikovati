@@ -15,6 +15,9 @@ use std::collections::BTreeMap;
 use xml_document::BlenderThemeDocument;
 pub type ThemePalette = BTreeMap<ThemeToken, Rgba>;
 
+const DARK_XML: &[u8] = include_bytes!("../../assets/themes/dark.xml");
+const LIGHT_XML: &[u8] = include_bytes!("../../assets/themes/light.xml");
+
 #[derive(Clone, Debug)]
 pub struct ThemeDefinition {
     name: String,
@@ -40,19 +43,42 @@ impl ThemeDefinition {
     }
     /// Load a fresh embedded dark theme; example: `let dark = ThemeDefinition::dark()?;`.
     pub fn dark() -> Result<Self, String> {
-        Self::from_xml(
-            include_bytes!("../../assets/themes/dark.xml"),
+        Self::builtin(
+            DARK_XML,
+            include_bytes!("../../assets/themes/dark-identity.xml"),
             "Dark",
             oblikovati_api::types::THEME_DARK,
         )
     }
     /// Load a fresh embedded light theme; example: `let light = ThemeDefinition::light()?;`.
     pub fn light() -> Result<Self, String> {
-        Self::from_xml(
-            include_bytes!("../../assets/themes/light.xml"),
+        Self::builtin(
+            LIGHT_XML,
+            include_bytes!("../../assets/themes/light-identity.xml"),
             "Light",
             oblikovati_api::types::THEME_LIGHT,
         )
+    }
+    fn high_contrast(name: &str) -> Result<Self, String> {
+        Self::builtin(
+            DARK_XML,
+            include_bytes!("../../assets/themes/high-contrast-identity.xml"),
+            name,
+            oblikovati_api::types::THEME_DARK,
+        )
+    }
+    fn builtin(base: &[u8], identity: &[u8], name: &str, kind: ThemeKind) -> Result<Self, String> {
+        let mut theme = Self::from_xml(base, name, kind)?;
+        let colors = BlenderThemeDocument::parse(identity)?.snapshot();
+        for token in theme_tokens() {
+            let value = colors
+                .get(token.0.as_ref())
+                .ok_or_else(|| format!("{name} identity: expected color for {}", token.0))?;
+            theme
+                .palette
+                .insert(token.clone(), color::parse_hex(value)?);
+        }
+        Ok(theme)
     }
     /// Read the display identity; example: `assert_eq!(ThemeDefinition::dark()?.name(), "Dark");`.
     pub fn name(&self) -> &str {

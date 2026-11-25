@@ -154,18 +154,15 @@ impl ExtrudeDialog {
         let Some(document) = self.document else {
             return;
         };
-        Self::fit_dockable(ui, "Extrude", [640., 280.], [420., 266.]);
+        Self::fit_dockable(ui, "Extrude", [640., 280.], [280., 396.]);
         let mut open = true;
         Self::dockable_window(ui, "Extrude", &mut open).build(|| {
-            let disabled_sketch = ui.begin_disabled(self.edit_feature.is_some());
-            let mut edited = self.sketch_choice(ui, state);
-            ui.text("Profiles");
-            if state.extrude_preview_active {
-                ui.text("1 Profile");
+            let expanded = imgui::TreeNodeFlags::DEFAULT_OPEN;
+            let mut edited = ui.collapsing_header("Input Geometry", expanded)
+                && self.draw_input_geometry(ui, state);
+            if ui.collapsing_header("Behavior", expanded) {
+                edited |= self.draw_extent(ui, state, controls.icons, controls.parameters, actions);
             }
-            edited |= ui.input_int("Profile", &mut self.profile).build();
-            drop(disabled_sketch);
-            edited |= self.draw_extent(ui, state, controls.icons, controls.parameters, actions);
             if edited {
                 self.commit_error = None;
             }
@@ -203,6 +200,18 @@ impl ExtrudeDialog {
             self.set_document(None);
             self.edit_feature = None;
         }
+    }
+    fn draw_input_geometry(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
+        let _disabled = ui.begin_disabled(self.edit_feature.is_some());
+        let changed_sketch = self.sketch_choice(ui, state);
+        ui.text("Profiles");
+        if state.extrude_preview_active {
+            ui.same_line();
+            ui.text("1 Profile");
+        }
+        crate::theme::property_label(ui, "Profile");
+        let _numeric = crate::ui_scale::numeric_font(ui);
+        ui.input_int("##profile", &mut self.profile).build() || changed_sketch
     }
     pub(super) fn awaits_reference_pick(&self) -> bool {
         self.document.is_some() && self.reference.awaits_pick()
@@ -290,7 +299,8 @@ impl ExtrudeDialog {
             .iter()
             .find(|row| Some(row.id) == self.sketch)
             .map_or("Choose a sketch", |row| row.name.as_str());
-        let Some(_list) = ui.begin_combo("Sketch", shown) else {
+        crate::theme::property_label(ui, "Sketch");
+        let Some(_list) = ui.begin_combo("##extrude-sketch", shown) else {
             return false;
         };
         let previous = self.sketch;
@@ -320,8 +330,7 @@ impl ExtrudeDialog {
             .is_some_and(|request| self.creation_action(request).dispatchable(state));
         let disabled = ui.begin_disabled(!enabled);
         let request = preview.as_ref().filter(|_| enabled);
-        self.preview_control(ui, request, actions);
-        ui.same_line();
+        ui.separator();
         let committed = self.commit_control(ui, request, shortcuts, actions);
         drop(disabled);
         if committed {
@@ -329,6 +338,9 @@ impl ExtrudeDialog {
         }
         ui.same_line();
         self.cancel_control(ui, shortcuts, actions);
+        ui.same_line();
+        let _disabled = ui.begin_disabled(!enabled);
+        self.preview_control(ui, request, actions);
     }
     fn creation_action(&self, request: &crate::GuiExtrudePreview) -> GuiShellAction {
         if request.reference_extent.is_some() {
@@ -361,7 +373,7 @@ impl ExtrudeDialog {
         request: Option<&crate::GuiExtrudePreview>,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        if !crate::widget_abi::button(ui, "Preview", [0.; 2]) {
+        if !crate::widget_abi::button(ui, "Preview", [72., 28.]) {
             return;
         }
         let Some(request) = request else {
@@ -381,7 +393,7 @@ impl ExtrudeDialog {
         shortcuts: bool,
         actions: &mut Vec<GuiShellAction>,
     ) -> bool {
-        let pressed = crate::widget_abi::button(ui, "OK", [0.; 2]);
+        let pressed = crate::theme::primary_button(ui, "OK", [72., 28.]);
         if !pressed && !(shortcuts && ui.is_key_pressed_no_repeat(Key::Enter)) {
             return false;
         }
@@ -403,7 +415,8 @@ impl ExtrudeDialog {
         true
     }
     fn cancel_control(&mut self, ui: &Ui, shortcuts: bool, actions: &mut Vec<GuiShellAction>) {
-        if !crate::widget_abi::button(ui, "Cancel", [0.; 2])
+        let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
+        if !crate::widget_abi::button(ui, "Cancel", [68., 28.])
             && !(shortcuts && ui.is_key_pressed_no_repeat(Key::Escape))
         {
             return;

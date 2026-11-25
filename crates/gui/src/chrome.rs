@@ -2,7 +2,7 @@
 use crate::application::ribbon_display::{RibbonDisplay, RibbonPlacement, TemporaryPanel};
 use crate::ribbon::{DocumentRibbon, RibbonFrame};
 use crate::{GuiCommandState, GuiFrameRequest, GuiShellAction};
-use imgui::{Condition, TabItemFlags, Ui};
+use imgui::{Condition, Ui};
 /// Vertical space reserved for application controls and the native frame.
 pub(crate) const APPLICATION_BAR_HEIGHT: f32 = 34.;
 /// Right side reserved for the platform window controls (#4063).
@@ -298,6 +298,7 @@ fn application_controls_row(
         .scroll_bar(false)
         .scrollable(false)
         .build(|| {
+            owners.icons.brand_mark(ui);
             if !owners.quick_access.below_ribbon {
                 owners.quick_access.row(
                     ui,
@@ -320,7 +321,7 @@ fn application_document_context(ui: &Ui, state: &GuiCommandState, follows_toolba
         if follows_toolbar {
             ui.same_line();
         }
-        ui.text_disabled(title);
+        ui.text(title);
     }
 }
 fn ribbon_menu_row(
@@ -391,79 +392,6 @@ fn ribbon_panel_row(
         &mut ribbon.display,
         actions,
     );
-}
-fn ribbon_tabs(
-    ui: &Ui,
-    ribbon: &mut DocumentRibbon,
-    frame: &RibbonFrame,
-    visible: &[crate::ribbon::RibbonTab],
-    changed: bool,
-) {
-    let Some(_tabs) = ui.tab_bar("##document-ribbon-tabs") else {
-        return;
-    };
-    let mut hovered = false;
-    let mut selector_tab = None;
-    let hidden_active = !visible.contains(&ribbon.active);
-    let context_click = tab_click::context_button_event(ui);
-    let restore = (changed || context_click).then_some(ribbon.active);
-    let requested = frame.select.or(restore);
-    for tab in visible {
-        let selected = requested == Some(*tab);
-        let flags = if selected {
-            TabItemFlags::SET_SELECTED
-        } else {
-            TabItemFlags::empty()
-        };
-        let item = ui.tab_item_with_flags(tab.label(), None, flags);
-        if ribbon.display.selector_pointer_press(ui) || ribbon.display.context_tab_press(ui) {
-            selector_tab = Some(*tab);
-        }
-        let tip = crate::ribbon_key_tips::tab_tip(*tab).to_string();
-        if ribbon.tips.tabs() && ribbon.tips.matching(&tip) {
-            crate::ribbon_key_tips::badge(ui, &tip);
-        }
-        hovered |= ui.is_item_hovered();
-        // On release: the press itself is a click outside any panel still open, and closes it.
-        let released = ui.is_item_hovered() && ui.is_mouse_released(imgui::MouseButton::Left);
-        let clicked = ui.is_item_hovered() && ui.is_mouse_clicked(imgui::MouseButton::Left);
-        let through_popup = ribbon.tab_popup_press.released(ui, *tab);
-        let double_click = clicked && ui.is_mouse_double_clicked(imgui::MouseButton::Left);
-        tab_click::temporary_expansion_press(ribbon, *tab, clicked, double_click);
-        if clicked && ribbon.active != *tab {
-            ribbon.display.switch_from_open_compact_panel();
-        }
-        let doubled = double_click && ribbon.double_click_tab == Some(*tab);
-        if clicked && !double_click {
-            ribbon.double_click_tab = (ribbon.active == *tab).then_some(*tab);
-        }
-        if double_click {
-            ribbon.double_click_tab = None;
-        }
-        if (hidden_active && clicked) || through_popup {
-            ribbon.select_tab(*tab);
-        }
-        if item.is_some()
-            && (!hidden_active || clicked || selected)
-            && (requested.is_none() || clicked || selected)
-        {
-            ribbon.active = *tab;
-        }
-        drop(item);
-        if doubled {
-            ribbon.display.advance_from_tab();
-        }
-        if released && ribbon.display.take_tab_release() {
-            ribbon.display.open_temporary(TemporaryPanel::WholeTab);
-        }
-    }
-    ribbon.tab_popup_press.finish_frame(ui);
-    if let Some(tab) = selector_tab.or(context_click.then_some(ribbon.active)) {
-        ribbon.select_tab(tab);
-    }
-    if hovered {
-        ribbon.scroll_tabs(&frame.tabs, ui.io().mouse_wheel);
-    }
 }
 pub(crate) fn command_button(
     ui: &Ui,
