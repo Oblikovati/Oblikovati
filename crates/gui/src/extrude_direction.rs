@@ -77,20 +77,16 @@ fn draw_icons(
 ) -> Option<GuiExtrudeDirection> {
     let mut selected = None;
     let width = ui.content_region_avail()[0];
-    let spacing = ui.clone_style().item_spacing[0];
-    let cells = (width - spacing * (DIRECTIONS.len() - 1) as f32).max(4.);
-    let captions = DIRECTIONS.map(|(_, label, _)| ui.calc_text_size(label)[0] + 4.);
-    let caption_width = captions.iter().sum::<f32>();
-    let show_caption = caption_width <= cells;
+    let spacing = 4.;
+    let cell =
+        ((width - spacing * (DIRECTIONS.len() - 1) as f32) / DIRECTIONS.len() as f32).max(1.);
+    let show_caption = DIRECTIONS
+        .iter()
+        .all(|(_, label, _)| ui.calc_text_size(label)[0] + 2. <= cell);
     for (index, (choice, label, glyph)) in DIRECTIONS.into_iter().enumerate() {
         if index > 0 {
-            ui.same_line();
+            ui.same_line_with_spacing(0., spacing);
         }
-        let cell = if show_caption {
-            captions[index] + (cells - caption_width) / DIRECTIONS.len() as f32
-        } else {
-            cells / DIRECTIONS.len() as f32
-        };
         let icon = icons.logical[IconSize::Small.index()].map(|axis| axis.min(cell));
         if draw_direction_icon(
             ui,
@@ -142,6 +138,7 @@ pub(super) fn draw_second_distance(ui: &Ui, first: &mut String, second: &mut Str
         + style.item_spacing[0]
         + 2. * style.frame_padding[0];
     ui.set_next_item_width((ui.content_region_avail()[0] - reserved).max(1.));
+    let _border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
     let edited = ui.input_text(label, second).build();
     ui.same_line();
     let flipped = crate::widget_abi::button(ui, flip, [0.; 2]);

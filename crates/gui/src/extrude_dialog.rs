@@ -16,9 +16,12 @@ mod pending;
 #[path = "extrude_reference.rs"]
 mod reference;
 
+const DEFAULT_DISTANCE: &str = "10.00 mm";
+
 #[derive(Default)]
 pub(crate) struct ExtrudeDialog {
     pub requested: bool,
+    start_without_sketch: bool,
     document: Option<u64>,
     dock_state: crate::dockable_lifecycle::DockableState,
     sketch: Option<DocumentSketchId>,
@@ -104,7 +107,12 @@ impl ExtrudeDialog {
             self.commit_error = None;
             self.attempted = None;
             self.set_document(state.document);
-            self.sketch = state.browser.as_ref().and_then(|browser| {
+            let browser = state
+                .browser
+                .as_ref()
+                .filter(|_| !self.start_without_sketch);
+            self.start_without_sketch = false;
+            self.sketch = browser.and_then(|browser| {
                 browser
                     .selected_sketches
                     .first()
@@ -112,7 +120,7 @@ impl ExtrudeDialog {
                     .or_else(|| browser.sketches.first().map(|row| row.id))
             });
             self.profile = 0;
-            self.distance.clear();
+            self.distance = DEFAULT_DISTANCE.into();
             self.distance_editor = Default::default();
             self.second_distance = "5 mm".into();
             self.direction = GuiExtrudeDirection::Positive;
@@ -144,7 +152,7 @@ impl ExtrudeDialog {
             self.set_document(state.document);
             self.sketch = Some(sketch);
             self.profile = 0;
-            self.distance = "10 mm".into();
+            self.distance = DEFAULT_DISTANCE.into();
             self.second_distance = "5 mm".into();
             self.direction = GuiExtrudeDirection::Positive;
             self.reference = Default::default();
@@ -403,6 +411,7 @@ impl ExtrudeDialog {
             self.previewed = false;
         }
         self.requested = false;
+        self.start_without_sketch = false;
         self.pending = Default::default();
         self.set_document(None);
         self.edit_feature = None;

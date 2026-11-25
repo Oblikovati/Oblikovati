@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
 use oblikovati_model::document_sketch::DocumentSketchId;
+const DEFAULT_DISTANCE: &str = "10.00 mm";
+
 fn request_with_profile() -> GuiFrameRequest {
     let mut request = ribbon_request();
     enter_part(&mut request);
     request.commands.extrude_available = true;
+    request.commands.extrude_distance_validation = Some(valid_distance(DEFAULT_DISTANCE));
     request.commands.browser = Some(GuiModelBrowser {
         name: "Part".into(),
         sketches: vec![GuiBrowserSketch {
@@ -25,15 +28,22 @@ fn extrusion_ribbon_opens_the_dialog_and_escape_cancels() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = request_with_profile();
     settle_ribbon(&mut engine, &mut request);
+    expect_open_default(&click_ribbon(&mut engine, &mut request, [160., 70.]));
     assert_eq!(
-        click_ribbon(&mut engine, &mut request, [160., 70.]),
-        [GuiShellAction::OpenExtrude]
+        dimension_editor_key(&mut engine, &mut request, GuiKey::Escape),
+        [GuiShellAction::PreviewExtrude(None)]
     );
-    assert!(dimension_editor_key(&mut engine, &mut request, GuiKey::Escape).is_empty());
     assert!(dimension_editor_key(&mut engine, &mut request, GuiKey::Enter).is_empty());
-    assert_eq!(
-        click_ribbon(&mut engine, &mut request, [160., 70.]),
-        [GuiShellAction::OpenExtrude]
+    expect_open_default(&click_ribbon(&mut engine, &mut request, [160., 70.]));
+}
+
+fn expect_open_default(actions: &[GuiShellAction]) {
+    assert!(
+        matches!(actions,
+            [GuiShellAction::OpenExtrude, GuiShellAction::PreviewExtrude(Some(preview))]
+            if preview.distance == DEFAULT_DISTANCE
+        ),
+        "expected the default extrusion preview, got {actions:?}"
     );
 }
 #[test]
@@ -127,13 +137,12 @@ fn reopening_extrusion_clears_the_previous_preview() {
     validate_size(&mut engine, &mut request);
     let preview = ribbon_caption(&mut engine, &mut request, "Preview", false);
     click_ribbon(&mut engine, &mut request, preview);
-    assert_eq!(
-        click_ribbon(&mut engine, &mut request, [160., 70.]),
-        [
-            GuiShellAction::OpenExtrude,
-            GuiShellAction::PreviewExtrude(None)
-        ]
-    );
+    let actions = click_ribbon(&mut engine, &mut request, [160., 70.]);
+    assert_eq!(actions.first(), Some(&GuiShellAction::OpenExtrude));
+    assert!(actions.contains(&GuiShellAction::PreviewExtrude(None)));
+    assert!(actions.iter().any(|action| matches!(action,
+        GuiShellAction::ValidateExtrudeDistance { distance, .. } if distance == DEFAULT_DISTANCE
+    )));
 }
 
 fn click_distance_field(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
@@ -144,16 +153,19 @@ fn click_distance_field(engine: &mut GuiFrameEngine, request: &mut GuiFrameReque
 
 fn validate_size(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
     request.events.clear();
-    request.commands.extrude_distance_validation =
-        Some(oblikovati_gui::GuiExtrudeDistanceValidation {
-            generation: 1,
-            document: 7,
-            distance: "size".into(),
-            second_distance: None,
-            error: None,
-        });
+    request.commands.extrude_distance_validation = Some(valid_distance("size"));
     let actions = engine.frame(request).unwrap().actions;
     assert!(actions.iter().any(|action| matches!(action,
         GuiShellAction::PreviewExtrude(Some(preview)) if preview.distance == "size" && preview.generation == Some(1)
     )));
+}
+
+fn valid_distance(distance: &str) -> oblikovati_gui::GuiExtrudeDistanceValidation {
+    oblikovati_gui::GuiExtrudeDistanceValidation {
+        generation: 1,
+        document: 7,
+        distance: distance.into(),
+        second_distance: None,
+        error: None,
+    }
 }

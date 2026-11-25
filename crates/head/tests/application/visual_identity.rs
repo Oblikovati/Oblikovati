@@ -78,11 +78,7 @@ fn native_feature_drafts_are_exclusive_and_extrude_actions_survive_a_short_panel
     assert!(diagnostics::window_pixel_bounds("Chamfer").is_some());
     world.click_text("Extrude");
     assert!(diagnostics::window_pixel_bounds("Chamfer").is_none());
-    let [_, top, right, bottom] = diagnostics::window_pixel_bounds("Extrude").unwrap();
-    world.drag(
-        [right as i32 - 2, bottom as i32 - 2],
-        [right as i32 - 2, top as i32 + 138],
-    );
+    resize_properties_window(&mut world, [1100, 390]);
     let [_, top, _, bottom] = diagnostics::window_pixel_bounds("Extrude").unwrap();
     assert!(
         bottom - top < 170.,
@@ -186,11 +182,17 @@ fn native_feature_properties_align_blend_fields_and_keep_extrude_directions_in_o
     world.save_capture("chamfer-properties");
 
     world.click_text("Extrude");
-    let row = ["Default", "Flipped", "Symmetric", "Asymmetric"]
-        .map(|name| world.run_in_window("Extrude", name).center());
+    let ([left, _], [width, _]) = diagnostics::window_geometry("Extrude").unwrap();
+    let y = world.run_in_window("Extrude", "Default").center()[1];
+    let row =
+        ribbon_appearance::icon_quads::icon_quads_inside(([left, y - 28.], [left + width, y - 4.]));
+    assert_eq!(row.len(), 4, "expected all four direction icons");
+    let pitch = (row[3].0[0] - row[0].0[0]) / 3.;
     assert!(
         row.windows(2)
-            .all(|pair| { pair[0][0] < pair[1][0] && (pair[0][1] - pair[1][1]).abs() < 2. })
+            .all(|pair| (pair[1].0[0] - pair[0].0[0] - pitch).abs() < 2.
+                && (pair[1].0[1] - pair[0].0[1]).abs() < 1.),
+        "direction icons must share a row and pitch, got {row:?}"
     );
     world.save_capture("extrude-properties");
     world.close();
@@ -355,6 +357,7 @@ fn native_extrude_applies_and_reopens_a_fresh_draft() {
     world.draw_rectangle();
     world.finish_sketch();
     world.click_text("Extrude");
+    world.run_in_window("Extrude", "10.00mm");
     let expanded_height = diagnostics::window_geometry("Extrude").unwrap().1[1];
     let behavior = world.run_in_window("Extrude", "Behavior").center();
     world.click(diagnostics::pointer_pixels(behavior));
@@ -369,17 +372,20 @@ fn native_extrude_applies_and_reopens_a_fresh_draft() {
     ]));
     world.type_text("8 mm");
     world.pump(Vec::new());
-    world.run_in_window("Extrude", "1Profile");
+    for label in ["8mm", "1Profile"] {
+        world.run_in_window("Extrude", label);
+    }
     let preview = world.run_in_window("Extrude", "Preview").center();
     world.click(diagnostics::pointer_pixels(preview));
     assert!(!world.state().extrude_preview_active);
+    let preview = world.run_in_window("Extrude", "Preview").center();
     world.click(diagnostics::pointer_pixels(preview));
     assert!(world.state().extrude_preview_active);
     world.save_capture("extrude-profile-and-actions");
     let plus = world.run_in_window("Extrude", "+").center();
     world.click(diagnostics::pointer_pixels(plus));
     assert_eq!(world.state().browser.unwrap().features.len(), 1);
-    world.run_in_window("Extrude", "DistanceA");
+    world.run_in_window("Extrude", "10.00mm");
     assert!(!world.state().extrude_preview_active);
     let cancel = world.run_in_window("Extrude", "Cancel").center();
     world.click(diagnostics::pointer_pixels(cancel));

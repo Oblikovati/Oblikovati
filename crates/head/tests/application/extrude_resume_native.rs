@@ -14,7 +14,7 @@ fn extrusion_requested_free_sketch_shows_and_cancels_preview() {
     world.pump(Vec::new());
     world.expect_text("Profiles");
     world.expect_text("Distance A");
-    world.expect_text("10 mm");
+    world.expect_text("10.00 mm");
     world.expect_text("1 Profile");
     assert!(world.state().extrude_preview_active);
     let session = world
@@ -54,7 +54,7 @@ fn extrusion_requested_constrained_sketch_shows_and_cancels_preview() {
     world.expect_text("Profiles");
     world.expect_text("1 Profile");
     world.expect_text("Distance A");
-    world.expect_text("10 mm");
+    world.expect_text("10.00 mm");
     assert!(world.state().extrude_preview_active);
     assert!(!world.app().window.scene_colors.is_empty());
     let capture = super::capture_framebuffer(&mut world.app().window.native);

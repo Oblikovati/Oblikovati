@@ -106,6 +106,7 @@ impl ExtrudeDialog {
         }
         if apply_more && self.commit_request(request, actions) {
             self.requested = true;
+            self.start_without_sketch = true;
         }
     }
 

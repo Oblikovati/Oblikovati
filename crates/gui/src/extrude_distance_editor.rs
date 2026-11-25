@@ -18,9 +18,12 @@ fn draw_value(ui: &Ui, distance: &mut String, unit: Option<&str>, error: Option<
     let spacing = ui.clone_style().item_spacing[0];
     ui.set_next_item_width((available - EDIT_BUTTON_WIDTH - spacing).max(1.));
     let _numeric = crate::ui_scale::numeric_font(ui);
-    let _border = error.map(|_| ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.)));
+    let _border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
     let _error = error.map(|color| ui.push_style_color(imgui::StyleColor::Border, color));
-    let edited = ui.input_text("##distance-a", distance).build();
+    let edited = ui
+        .input_text("##distance-a", distance)
+        .auto_select_all(true)
+        .build();
     if let Some(unit) =
         unit.filter(|_| distance.is_empty() || distance.trim().parse::<f64>().is_ok())
     {

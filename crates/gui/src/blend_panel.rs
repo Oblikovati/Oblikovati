@@ -45,6 +45,7 @@ impl BlendDialog {
         ui.text(selection);
         crate::theme::property_label(ui, label);
         let _numeric = crate::ui_scale::numeric_font(ui);
+        let _border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
         if ui.input_text("##blend-value", &mut self.radius).build() {
             self.submitted = None;
         }
