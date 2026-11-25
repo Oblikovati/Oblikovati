@@ -49,7 +49,7 @@ fn zero_document_ribbon_submits_the_owned_new_part_icon_and_caption() {
 }
 
 #[test]
-fn modeling_and_sketch_ribbons_submit_the_go_extrude_and_move_icons() {
+fn modeling_and_sketch_ribbons_submit_the_extrude_and_move_icons() {
     let mut owner = GuiFrameEngine::new().unwrap();
     let mut request = ribbon_request();
     request.commands.document = Some(7);
@@ -127,6 +127,8 @@ fn sketch_appearance_keeps_create_and_constraint_icons_in_the_frame() {
             IconGlyph::Construction,
             IconGlyph::Centerline,
             IconGlyph::CenterPoint,
+            IconGlyph::SketchFillet,
+            IconGlyph::SketchText,
         ] {
             assert_named_icon(&owner, &frame, glyph, size, pixels);
         }
@@ -134,7 +136,7 @@ fn sketch_appearance_keeps_create_and_constraint_icons_in_the_frame() {
 }
 
 #[test]
-fn model_ribbon_submits_go_icons_for_work_features_and_patterns() {
+fn model_ribbon_submits_icons_for_work_features_and_patterns() {
     let mut owner = GuiFrameEngine::new().unwrap();
     let mut request = ribbon_request();
     request.extent = [2880, 1800];

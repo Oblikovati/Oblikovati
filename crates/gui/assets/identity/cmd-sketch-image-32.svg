@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Insert Sketch Image</title>
+  <desc id="d">Framed image canvas with geometric mountain and sun vector glyph.</desc>
+  <g id="layer-body">
+    <rect x="4" y="6" width="24" height="20" rx="2" fill="var(--icon-body-side, #677084)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.2"/>
+  </g>
+  <g id="layer-accent">
+    <polygon points="6,24 13,14 18,20 22,16 26,24" fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1" stroke-linejoin="round"/><circle cx="21" cy="11.5" r="2.3" fill="var(--icon-surf-top, #FDE08A)"/>
+  </g>
+</svg>

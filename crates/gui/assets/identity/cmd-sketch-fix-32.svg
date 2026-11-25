@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Fix Constraint</title>
+  <desc id="d">Grounded precision padlock/anchor locking a sketch point permanently in place.</desc>
+  <g id="layer-body">
+    <path d="M16,6 V25 M8,25 H24" stroke="var(--icon-line-active, #8172FA)" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <g id="layer-accent">
+    <circle cx="16" cy="8.5" r="3.2" fill="none" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.8"/><path d="M9,19 C9,24 13,26 16,26 C19,26 23,24 23,19" fill="none" stroke="var(--icon-line-active, #8172FA)" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>

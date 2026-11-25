@@ -94,14 +94,16 @@ fn design_assets_draw_visible_vectors_at_native_and_double_density() {
         let Some(svg) = crate::icons::identity_sources::source(*glyph) else {
             continue;
         };
-        for (edge, mode) in [(16, 0), (32, 1), (64, 2)] {
-            let image = crate::icons::raster::rasterize_identity(svg, edge, mode).unwrap();
-            assert_eq!(image.extent, [edge; 2]);
-            assert!(
-                image.rgba.iter().any(|pixel| pixel[3] > 192),
-                "{} at {edge}px",
-                glyph.name()
-            );
+        for edge in [18, 27, 36, 40, 60, 80] {
+            for mode in 0..3 {
+                let image = crate::icons::raster::rasterize_identity(svg, edge, mode).unwrap();
+                assert_eq!(image.extent, [edge; 2]);
+                assert!(
+                    image.rgba.iter().any(|pixel| pixel[3] > 192),
+                    "{} at {edge}px in palette {mode}",
+                    glyph.name()
+                );
+            }
         }
     }
 }

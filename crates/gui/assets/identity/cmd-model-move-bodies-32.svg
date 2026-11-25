@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Move Bodies</title>
+  <desc id="d">Translate or rotate a solid body from its dashed origin to a new Indigo-Violet pose.</desc>
+  <g id="layer-body">
+    <polygon points="10,13 16,16 10,19 4,16" fill="var(--icon-body-top, #D2D7E2)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.05" stroke-linejoin="round" opacity="0.42" stroke-dasharray="2.2 1.4"/>
+    <polygon points="4,16 10,19 10,25.8 4,22.8" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.05" stroke-linejoin="round" opacity="0.42" stroke-dasharray="2.2 1.4"/>
+    <polygon points="16,16 10,19 10,25.8 16,22.8" fill="var(--icon-body-side, #677084)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.05" stroke-linejoin="round" opacity="0.42" stroke-dasharray="2.2 1.4"/>
+  </g>
+  <g id="layer-accent">
+    <polygon points="21,7.4 27.2,10.5 21,13.6 14.8,10.5" fill="var(--icon-mod-top, #B4AAFF)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon points="14.8,10.5 21,13.6 21,20.6 14.8,17.5" fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon points="27.2,10.5 21,13.6 21,20.6 27.2,17.5" fill="var(--icon-mod-side, #5948D4)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.15" stroke-linejoin="round"/>
+    <path d="M12,16 L18.5,12.5 M16.99,15.09 L18.5,12.5 L15.5,12.33" fill="none" stroke="var(--icon-cutout, #121317)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M12,16 L18.5,12.5 M16.99,15.09 L18.5,12.5 L15.5,12.33" fill="none" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

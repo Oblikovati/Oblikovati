@@ -154,16 +154,17 @@ fn tool_glyph(tool: GuiSketchTool) -> IconGlyph {
     match tool {
         GuiSketchTool::Line => IconGlyph::Line,
         GuiSketchTool::MidpointLine => IconGlyph::MidpointLine,
-        GuiSketchTool::Rectangle
-        | GuiSketchTool::CenterRectangle
-        | GuiSketchTool::ThreePointRectangle
-        | GuiSketchTool::ThreePointCenterRectangle => IconGlyph::Rectangle,
+        GuiSketchTool::Rectangle => IconGlyph::Rectangle,
+        GuiSketchTool::CenterRectangle => IconGlyph::CenterRectangle,
+        GuiSketchTool::ThreePointRectangle => IconGlyph::ThreePointRectangle,
+        GuiSketchTool::ThreePointCenterRectangle => IconGlyph::ThreePointCenterRectangle,
         GuiSketchTool::Circle | GuiSketchTool::ThreePointCircle => IconGlyph::Circle,
-        GuiSketchTool::CenterPointArc | GuiSketchTool::ThreePointArc => IconGlyph::Arc,
+        GuiSketchTool::CenterPointArc => IconGlyph::CenterPointArc,
+        GuiSketchTool::ThreePointArc => IconGlyph::Arc,
         GuiSketchTool::Point => IconGlyph::Point,
         GuiSketchTool::Ellipse => IconGlyph::Ellipse,
-        GuiSketchTool::Fillet => IconGlyph::Fillet,
-        GuiSketchTool::Text => IconGlyph::Annotation,
+        GuiSketchTool::Fillet => IconGlyph::SketchFillet,
+        GuiSketchTool::Text => IconGlyph::SketchText,
     }
 }
 fn constraint_glyph(constraint: GuiSketchConstraint) -> IconGlyph {

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Create Sketch Block</title>
+  <desc id="d">Grouped sketch entities framed into a reusable block with add badge.</desc>
+  <g id="layer-body">
+    <rect x="4" y="5" width="22" height="20" rx="2" fill="var(--accent-brand-subtle, rgba(129,114,250,0.16))" stroke="var(--icon-line-active, #8172FA)" stroke-width="1.5"/>
+  </g>
+  <g id="layer-accent">
+    <circle cx="12" cy="15" r="4" fill="none" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1.5"/><rect x="16" y="11" width="6" height="8" fill="none" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.5"/>
+  </g>
+  <g id="layer-badge">
+    <circle cx="25" cy="25" r="5.6" fill="var(--icon-cutout, #121317)"/>
+    <circle cx="25" cy="25" r="4.5" fill="var(--status-success, #22C55E)" stroke="#0B2E18" stroke-width="0.9"/><path d="M25,22.7 L25,27.3 M22.7,25 L27.3,25" stroke="#FFF" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+</svg>

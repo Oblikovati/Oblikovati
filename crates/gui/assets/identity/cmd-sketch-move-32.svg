@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Move Sketch</title>
+  <desc id="d">Dashed original rectangle translated along a Teal vector to its Indigo-Violet pose.</desc>
+  <g id="layer-body">
+    <rect x="4" y="15" width="11" height="11" rx="1" fill="none" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1.3" stroke-dasharray="2.4 1.5"/>
+  </g>
+  <g id="layer-accent">
+    <rect x="17" y="5" width="11" height="11" rx="1" fill="var(--accent-brand-subtle, rgba(129,114,250,0.22))" stroke="var(--icon-line-active, #8172FA)" stroke-width="1.7"/><path d="M11,19 L21,12 M19.8,14.75 L21,12 L18.01,12.18" fill="none" stroke="var(--icon-cutout, #121317)" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M11,19 L21,12 M19.8,14.75 L21,12 L18.01,12.18" fill="none" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

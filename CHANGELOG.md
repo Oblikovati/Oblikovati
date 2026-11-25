@@ -182,7 +182,7 @@
 
 ### Changed
 
-- Adopted the new desktop visual identity across Dark, Light, and High Contrast themes, including studio viewport palettes, bundled fonts, vector navigation icons, and the Extrude panel. (#4063)
+- Adopted the new desktop visual identity across Dark, Light, and High Contrast themes, including studio viewport palettes, bundled fonts, vector navigation and ribbon icons, and the Extrude panel. (#4063)
 - Reused part checkpoints during Undo and Redo when a clean feature prefix remains. (#4079)
 
 - Reused part checkpoints when deleting bodies through the typed API. (#4079)

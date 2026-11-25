@@ -12,10 +12,15 @@ values come from the same handoff.
   Selected ribbon and document tabs have an indigo underline.
 - The Model, Material Browser, and Appearance Browser use the same chrome when
   docked. Theme changes schedule the frame needed to refresh native dock tabs.
-- The application bar displays the brand mark. The ribbon and document chooser
-  use the matching SVGs where the handoff supplies artwork for a shipped
-  command. Navigation uses 16 px wheel, pan, zoom, and orbit glyphs and
+- The application bar displays the brand mark. Mapped ribbon commands and
+  document chooser entries use the handoff SVGs. Navigation uses 16 px
+  wheel, pan, zoom, and orbit glyphs and
   chevrons inside a 28 px bar.
+- The Sketch and 3D Model ribbons use additional handoff icons for draw
+  tools, constraints, work features, and model operations. The rectangle and
+  arc variants use their own artwork, and sketch fillets use a different
+  glyph from solid fillets. The Precise Input icon draws its lettering as
+  vector paths so it renders without system fonts.
 - Inter is the default UI font. Numeric fields in Extrude and status readouts
   use JetBrains Mono. Sketch Text keeps its existing authored text faces.
 - Extrude uses 40/60 field alignment for the sketch, profile, primary distance,
@@ -37,3 +42,7 @@ show one Part in the three theme and viewport palette pairs,
 sample the navigation and dock surfaces, and save the frames. Additional
 checks cover live Extrude preview and validation, native Pan and Orbit input,
 icon rasterization across display densities, and theme persistence.
+
+The [ribbon icon checks](receipts/2026-11-25-identity-ribbon-icons-4063/README.md)
+include the rendered Sketch ribbon and the 3D Model ribbon in all three
+palettes.

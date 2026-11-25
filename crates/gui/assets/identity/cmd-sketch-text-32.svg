@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Sketch Text</title>
+  <desc id="d">Crisp typographic &#x27;A&#x27; inside a dashed sketch text bounding frame.</desc>
+  <g id="layer-body">
+    <rect x="4" y="5" width="24" height="22" rx="1.5" fill="none" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1.1" stroke-dasharray="2.5 1.5"/>
+  </g>
+  <g id="layer-accent">
+    <path d="M10,23 L16,9 L22,23 M12.2,18.5 H19.8" fill="none" stroke="var(--icon-line-active, #8172FA)" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

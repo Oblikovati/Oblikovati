@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Work Axis</title>
+  <desc id="d">Warm Amber 3D construction centerline axis with open precision endpoints.</desc>
+  <g id="layer-body">
+    <polygon points="7,19 16,14.5 25,19 16,23.5" fill="var(--icon-body-front, #9EA6B8)" fill-opacity="0.25" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1" stroke-dasharray="2 1.5"/>
+  </g>
+  <g id="layer-accent">
+    <line x1="5" y1="26" x2="27" y2="6" stroke="var(--accent-work, #F59E0B)" stroke-width="2" stroke-dasharray="6 2 2 2" stroke-linecap="round"/><circle cx="5.5" cy="25.5" r="2.2" fill="var(--icon-surf-top, #FDE08A)" stroke="var(--icon-surf-stroke, #2E1D05)" stroke-width="1"/><circle cx="26.5" cy="6.5" r="2.2" fill="var(--icon-surf-top, #FDE08A)" stroke="var(--icon-surf-stroke, #2E1D05)" stroke-width="1"/>
+  </g>
+</svg>

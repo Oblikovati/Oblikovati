@@ -35,6 +35,71 @@ pub(super) fn source(glyph: IconGlyph) -> Option<&'static str> {
         IconGlyph::NavOrbit => include_str!("../../assets/identity/cmd-app-orbit-32.svg"),
         IconGlyph::NavZoom => include_str!("../../assets/identity/cmd-app-zoom-32.svg"),
         IconGlyph::NavWheel => include_str!("../../assets/identity/cmd-app-nav-wheel-32.svg"),
+        IconGlyph::Line => include_str!("../../assets/identity/cmd-sketch-line-32.svg"),
+        IconGlyph::MidpointLine => {
+            include_str!("../../assets/identity/cmd-sketch-line-midpoint-32.svg")
+        }
+        IconGlyph::Rectangle => {
+            include_str!("../../assets/identity/cmd-sketch-rectangle-two-point-32.svg")
+        }
+        IconGlyph::Circle => {
+            include_str!("../../assets/identity/cmd-sketch-circle-center-point-32.svg")
+        }
+        IconGlyph::Point => include_str!("../../assets/identity/cmd-sketch-point-32.svg"),
+        IconGlyph::Ellipse => include_str!("../../assets/identity/cmd-sketch-ellipse-32.svg"),
+        IconGlyph::Coincident => include_str!("../../assets/identity/cmd-sketch-coincident-32.svg"),
+        IconGlyph::Collinear => include_str!("../../assets/identity/cmd-sketch-collinear-32.svg"),
+        IconGlyph::Parallel => include_str!("../../assets/identity/cmd-sketch-parallel-32.svg"),
+        IconGlyph::Perpendicular => {
+            include_str!("../../assets/identity/cmd-sketch-perpendicular-32.svg")
+        }
+        IconGlyph::Horizontal => include_str!("../../assets/identity/cmd-sketch-horizontal-32.svg"),
+        IconGlyph::Vertical => include_str!("../../assets/identity/cmd-sketch-vertical-32.svg"),
+        IconGlyph::Tangent => include_str!("../../assets/identity/cmd-sketch-tangent-32.svg"),
+        IconGlyph::Concentric => include_str!("../../assets/identity/cmd-sketch-concentric-32.svg"),
+        IconGlyph::Equal => include_str!("../../assets/identity/cmd-sketch-equal-32.svg"),
+        IconGlyph::Fix => include_str!("../../assets/identity/cmd-sketch-fix-32.svg"),
+        IconGlyph::Construction => {
+            include_str!("../../assets/identity/cmd-sketch-construction-32.svg")
+        }
+        IconGlyph::Centerline => include_str!("../../assets/identity/cmd-sketch-centerline-32.svg"),
+        IconGlyph::Move => include_str!("../../assets/identity/cmd-sketch-move-32.svg"),
+        IconGlyph::PreciseInput => {
+            include_str!("../../assets/identity/cmd-sketch-precise-input-32.svg")
+        }
+        IconGlyph::InsertImage => include_str!("../../assets/identity/cmd-sketch-image-32.svg"),
+        IconGlyph::ProjectGeometry => {
+            include_str!("../../assets/identity/cmd-sketch-project-geometry-32.svg")
+        }
+        IconGlyph::CreateBlock => {
+            include_str!("../../assets/identity/cmd-sketch-create-block-32.svg")
+        }
+        IconGlyph::Chamfer => include_str!("../../assets/identity/cmd-model-chamfer-32.svg"),
+        IconGlyph::MoveBodies => include_str!("../../assets/identity/cmd-model-move-bodies-32.svg"),
+        IconGlyph::CircularPattern => {
+            include_str!("../../assets/identity/cmd-model-circular-pattern-32.svg")
+        }
+        IconGlyph::Simplify => include_str!("../../assets/identity/cmd-model-simplify-32.svg"),
+        IconGlyph::WorkAxis => include_str!("../../assets/identity/cmd-model-work-axis-32.svg"),
+        IconGlyph::WorkPoint => include_str!("../../assets/identity/cmd-model-work-point-32.svg"),
+        IconGlyph::WorkCoordinateSystem => {
+            include_str!("../../assets/identity/cmd-model-user-coordinate-system-32.svg")
+        }
+        IconGlyph::CenterRectangle => {
+            include_str!("../../assets/identity/cmd-sketch-rectangle-center-32.svg")
+        }
+        IconGlyph::ThreePointRectangle => {
+            include_str!("../../assets/identity/cmd-sketch-rectangle-three-point-32.svg")
+        }
+        IconGlyph::ThreePointCenterRectangle => {
+            include_str!("../../assets/identity/cmd-sketch-rectangle-three-point-center-32.svg")
+        }
+        IconGlyph::CenterPointArc => {
+            include_str!("../../assets/identity/cmd-sketch-arc-center-point-32.svg")
+        }
+        IconGlyph::Arc => include_str!("../../assets/identity/cmd-sketch-arc-three-point-32.svg"),
+        IconGlyph::SketchFillet => include_str!("../../assets/identity/cmd-sketch-fillet-32.svg"),
+        IconGlyph::SketchText => include_str!("../../assets/identity/cmd-sketch-text-32.svg"),
         _ => return None,
     })
 }

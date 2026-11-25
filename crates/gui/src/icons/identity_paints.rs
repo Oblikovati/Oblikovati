@@ -22,6 +22,7 @@ pub(super) const PAINTS: &[(&str, [&str; 3])] = &[
     ),
     ("accent-work", ["#F59E0B", "#D97706", "#FBBF24"]),
     ("bg-surface-base", ["#121317", "#F6F7F9", "#000000"]),
+    ("bg-surface-elevated", ["#181A20", "#FFFFFF", "#0A0A0D"]),
     ("icon-body-front", ["#9EA6B8", "#C5CCD9", "#C8CEDC"]),
     ("icon-body-side", ["#677084", "#8C95A8", "#8E96A8"]),
     ("icon-body-stroke", ["#181B22", "#282E3A", "#000000"]),
@@ -45,4 +46,7 @@ pub(super) const PAINTS: &[(&str, [&str; 3])] = &[
     ("icon-void-side", ["#3A404F", "#555E6F", "#444956"]),
     ("icon-void-top", ["#858DA0", "#A6AFBF", "#9EA6B8"]),
     ("status-success", ["#22C55E", "#16A34A", "#4ADE80"]),
+    ("vp-triad-x", ["#EF4444", "#DC2626", "#FF5555"]),
+    ("vp-triad-y", ["#22C55E", "#16A34A", "#4ADE80"]),
+    ("vp-triad-z", ["#3B82F6", "#2563EB", "#60A5FA"]),
 ];

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Tangent Constraint</title>
+  <desc id="d">Straight Indigo-Violet line touching a neutral circle cleanly at a Teal tangency point.</desc>
+  <g id="layer-body">
+    <circle cx="14" cy="18" r="8.5" fill="none" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1.8"/>
+  </g>
+  <g id="layer-accent">
+    <line x1="8" y1="6" x2="28" y2="17" stroke="var(--icon-line-active, #8172FA)" stroke-width="2" stroke-linecap="round"/><circle cx="18.2" cy="11.4" r="2.5" fill="var(--accent-selection-bright, #2DD4BF)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/>
+  </g>
+</svg>

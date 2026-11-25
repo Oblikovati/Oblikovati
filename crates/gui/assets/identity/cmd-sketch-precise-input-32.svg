@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Precise Coordinate Input</title>
+  <desc id="d">Crosshair coordinate reticle paired with tabular numeric input box.</desc>
+  <g id="layer-body">
+    <path d="M11,5 V19 M4,12 H18" stroke="var(--icon-line-center, #38BDF8)" stroke-width="1.3"/><circle cx="11" cy="12" r="2.2" fill="var(--icon-line-active, #8172FA)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/>
+  </g>
+  <g id="layer-accent">
+    <rect x="13" y="17" width="15" height="10" rx="1.8" fill="var(--bg-surface-elevated, #181A20)" stroke="var(--icon-line-active, #8172FA)" stroke-width="1.3"/>
+    <!-- The native SVG renderer does not load host fonts. -->
+    <path d="M15.4,20.1 l3.2,4 m0,-4 -3.2,4 M21,23.8 l-.5,1.1 M22.6,20.1 l1.6,2.3 1.6,-2.3 m-1.6,2.3 v1.7" fill="none" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width=".85" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

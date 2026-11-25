@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">2D Sketch Fillet</title>
+  <desc id="d">Sharp 90-degree sketch corner rounded smoothly with a Teal fillet arc.</desc>
+  <g id="layer-body">
+    <path d="M6,26 V16 M16,6 H26" fill="none" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1.9" stroke-linecap="round"/><path d="M6,16 V6 H16" fill="none" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1.1" stroke-dasharray="2.2 1.4" opacity="0.6"/>
+  </g>
+  <g id="layer-accent">
+    <path d="M6,16 A10,10 0 0,1 16,6" fill="none" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="2.2" stroke-linecap="round"/><circle cx="16" cy="16" r="2" fill="var(--icon-line-active, #8172FA)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/>
+  </g>
+</svg>

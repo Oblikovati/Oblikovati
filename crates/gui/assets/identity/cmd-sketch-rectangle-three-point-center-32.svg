@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Three-Point Center Rectangle</title>
+  <desc id="d">Oriented rectangle anchored by center, mid-edge direction, and corner.</desc>
+  <g id="layer-body">
+    <polygon points="5,18 20,7 27,16 12,27" fill="var(--accent-brand-subtle, rgba(129,114,250,0.12))" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1.75" stroke-linejoin="round"/><line x1="16" y1="17" x2="23.5" y2="11.5" stroke="var(--icon-line-center, #38BDF8)" stroke-width="1.1" stroke-dasharray="2.2 1.4"/>
+  </g>
+  <g id="layer-accent">
+    <circle cx="16" cy="17" r="2.4" fill="var(--icon-line-active, #8172FA)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/><circle cx="23.5" cy="11.5" r="2.1" fill="var(--accent-work, #F59E0B)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/><circle cx="27" cy="16" r="2.2" fill="var(--accent-selection-bright, #2DD4BF)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/>
+  </g>
+</svg>

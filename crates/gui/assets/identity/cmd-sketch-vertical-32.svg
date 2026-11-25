@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Vertical Constraint</title>
+  <desc id="d">Vertical bar with plumb alignment ticks constraining slope to 90 degrees.</desc>
+  <g id="layer-body">
+    <line x1="16" y1="4" x2="16" y2="28" stroke="var(--icon-line-active, #8172FA)" stroke-width="2.4" stroke-linecap="round"/>
+  </g>
+  <g id="layer-accent">
+    <path d="M11,6 H21 M11,26 H21" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.6" stroke-linecap="round"/>
+  </g>
+</svg>

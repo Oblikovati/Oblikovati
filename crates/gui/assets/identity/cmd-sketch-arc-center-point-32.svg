@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Center-Point Arc</title>
+  <desc id="d">Circular arc defined by a Warm Amber center node and two radial endpoints.</desc>
+  <g id="layer-body">
+    <line x1="16" y1="24" x2="6" y2="14" stroke="var(--icon-line-center, #38BDF8)" stroke-width="1.15" stroke-dasharray="2.5 1.5"/><line x1="16" y1="24" x2="26" y2="14" stroke="var(--icon-line-center, #38BDF8)" stroke-width="1.15" stroke-dasharray="2.5 1.5"/>
+  </g>
+  <g id="layer-accent">
+    <path d="M6,14 A14,14 0 0,1 26,14" fill="none" stroke="var(--icon-line-active, #8172FA)" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="24" r="2.5" fill="var(--accent-work, #F59E0B)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/><circle cx="6" cy="14" r="2.1" fill="var(--accent-selection-bright, #2DD4BF)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/><circle cx="26" cy="14" r="2.1" fill="var(--accent-selection-bright, #2DD4BF)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/>
+  </g>
+</svg>

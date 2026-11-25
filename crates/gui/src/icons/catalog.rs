@@ -115,4 +115,10 @@ glyph_catalog! {
     NavOrbit => "orbit-constrained",
     NavZoom => "zoom-window",
     NavWheel => "steering-wheel",
+    CenterRectangle => "rectangle",
+    ThreePointRectangle => "rectangle",
+    ThreePointCenterRectangle => "rectangle",
+    CenterPointArc => "arc",
+    SketchFillet => "fillet",
+    SketchText => "drawing-note",
 }

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Simplify</title>
+  <desc id="d">Complex multi-part geometry distilled into a clean single-envelope Indigo-Violet solid.</desc>
+  <g id="layer-body">
+    <polygon points="9.5,9.6 14.3,12 9.5,14.4 4.7,12" fill="var(--icon-body-top, #D2D7E2)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="4.7,12 9.5,14.4 9.5,19.4 4.7,17" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="14.3,12 9.5,14.4 9.5,19.4 14.3,17" fill="var(--icon-body-side, #677084)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="9.5,17.1 14.3,19.5 9.5,21.9 4.7,19.5" fill="var(--icon-body-top, #D2D7E2)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="4.7,19.5 9.5,21.9 9.5,26.9 4.7,24.5" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.0" stroke-linejoin="round"/>
+    <polygon points="14.3,19.5 9.5,21.9 9.5,26.9 14.3,24.5" fill="var(--icon-body-side, #677084)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.0" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-accent">
+    <polygon points="22,10.4 28.2,13.5 22,16.6 15.8,13.5" fill="var(--icon-mod-top, #B4AAFF)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon points="15.8,13.5 22,16.6 22,24.6 15.8,21.5" fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon points="28.2,13.5 22,16.6 22,24.6 28.2,21.5" fill="var(--icon-mod-side, #5948D4)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.15" stroke-linejoin="round"/>
+    <path d="M13,16 L17,16 M14.78,17.36 L17,16 L14.78,14.64" fill="none" stroke="var(--icon-cutout, #121317)" stroke-width="2.9" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M13,16 L17,16 M14.78,17.36 L17,16 L14.78,14.64" fill="none" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

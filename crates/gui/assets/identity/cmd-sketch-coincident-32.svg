@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Coincident Constraint</title>
+  <desc id="d">Two line endpoints locked together at a single glowing Teal coincident node.</desc>
+  <g id="layer-body">
+    <line x1="5" y1="25" x2="16" y2="16" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="1.9" stroke-linecap="round"/><line x1="27" y1="8" x2="16" y2="16" stroke="var(--icon-line-active, #8172FA)" stroke-width="1.9" stroke-linecap="round"/>
+  </g>
+  <g id="layer-accent">
+    <circle cx="16" cy="16" r="4.2" fill="var(--accent-selection-subtle, rgba(20,184,166,0.28))" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.6"/><circle cx="16" cy="16" r="2" fill="var(--accent-selection-bright, #2DD4BF)" stroke="var(--icon-cutout, #121317)" stroke-width="0.7"/>
+  </g>
+</svg>
