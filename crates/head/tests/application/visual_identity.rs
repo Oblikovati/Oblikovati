@@ -2,6 +2,8 @@
 use super::*;
 #[path = "visual_identity_light.rs"]
 mod light;
+#[path = "visual_identity_ribbon.rs"]
+mod ribbon_chrome;
 
 #[test]
 fn native_visual_identity_uses_three_distinct_palettes_on_the_same_part() {

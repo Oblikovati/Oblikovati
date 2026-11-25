@@ -16,11 +16,14 @@ fn check_icon_command_hit_area(text: f32, icon: f32, backing: f32) {
     request.commands.ui_scale = Some(UiScaleOptions::new(text, icon).unwrap());
     settle_ribbon(&mut engine, &mut request);
     let factor = (icon / text).max(1.);
-    for y in [64. + 10. * factor, 60. + 53. * factor] {
+    let viewport_top = engine.frame(&request).unwrap().document_area.unwrap()[1] as f32;
+    let scale = text * backing;
+    let command_top = viewport_top - 88. * factor * scale;
+    for y in [10., 53.] {
         expect_ribbon(
             &mut engine,
             &mut request,
-            [50. * text * backing, y * text * backing],
+            [50. * scale, command_top + y * factor * scale],
             NewPart,
         );
     }

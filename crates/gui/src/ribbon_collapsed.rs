@@ -19,15 +19,9 @@ pub(super) fn collapsed_button(
 ) -> bool {
     let ui = context.ui;
     let icons = context.owners.icons;
-    if !matches!(tab, RibbonTab::Model | RibbonTab::Sketch) {
-        let height = (icons.appearance.command_height() - 2.).max(18.) * icons.layout_factor();
-        return crate::widget_abi::button(ui, &format!("v{identity}"), [width, height]);
-    }
-    let height = if tab == RibbonTab::Sketch {
-        52.
-    } else {
-        icons.appearance.command_height() - 2.
-    };
+    let cap = if tab == RibbonTab::Sketch { 52. } else { 58. };
+    let height = (icons.appearance.command_height() - 2.).clamp(18., cap);
+    let stacked = height >= 42.;
     let size = [width, icons.cell([0., height])[1]];
     let glyph = compact_group_icon(panel);
     let clicked = crate::widget_abi::icon_button(
@@ -36,40 +30,83 @@ pub(super) fn collapsed_button(
         crate::widget_abi::IconButtonPresentation {
             texture: icons.key(glyph, crate::icons::IconSize::Large),
             size,
-            icon: icons.cell([24.; 2]),
-            large: true,
+            icon: icons.cell([if stacked { 24. } else { 14. }; 2]),
+            large: stacked,
             show_caption: true,
         },
     );
-    let [right, top] = [ui.item_rect_max()[0] - 5., ui.item_rect_min()[1] + 8.];
+    draw_disclosure(ui, panel.label(), stacked);
+    clicked
+}
+
+fn draw_disclosure(ui: &Ui, label: &str, stacked: bool) {
+    let [left, top] = ui.item_rect_min();
+    let [right, bottom] = ui.item_rect_max();
+    let [label_width, label_height] = ui.calc_text_size(label);
+    let x = if stacked {
+        ((left + right + label_width) * 0.5 + 5.).min(right - 4.)
+    } else {
+        right - 5.
+    };
+    let y = if stacked {
+        bottom - label_height * 0.5 - 4.
+    } else {
+        (top + bottom) * 0.5 - 2.
+    };
     ui.get_window_draw_list()
         .add_triangle(
-            [right - 6., top],
-            [right, top],
-            [right - 3., top + 4.],
+            [x - 3., y],
+            [x + 3., y],
+            [x, y + 4.],
             ui.style_color(imgui::StyleColor::Text),
         )
         .filled(true)
         .build();
-    clicked
 }
 fn compact_group_icon(panel: RibbonPanel) -> crate::icons::IconGlyph {
     use crate::icons::IconGlyph;
     match panel {
-        RibbonPanel::Create => IconGlyph::CreateSketch,
+        RibbonPanel::Launch => IconGlyph::NewPart,
+        RibbonPanel::Create | RibbonPanel::Sketch | RibbonPanel::DrawingSketch => {
+            IconGlyph::CreateSketch
+        }
+        RibbonPanel::Exit => IconGlyph::FinishSketch,
         RibbonPanel::Constrain => IconGlyph::Coincident,
-        RibbonPanel::Modify => IconGlyph::Move,
-        RibbonPanel::SketchPattern => IconGlyph::RectangularPattern,
+        RibbonPanel::Layout => IconGlyph::CreateBlock,
+        RibbonPanel::Modify | RibbonPanel::PresentationModel => IconGlyph::Move,
+        RibbonPanel::SketchPattern | RibbonPanel::PartPattern => IconGlyph::RectangularPattern,
         RibbonPanel::Insert => IconGlyph::InsertImage,
+        RibbonPanel::ManageInsert => IconGlyph::InsertModel,
         RibbonPanel::Format => IconGlyph::Construction,
         RibbonPanel::Parameters => IconGlyph::Parameters,
-        RibbonPanel::Sketch => IconGlyph::CreateSketch,
+        RibbonPanel::ToolOptions => IconGlyph::Preferences,
+        RibbonPanel::ToolAssets => IconGlyph::Materials,
+        RibbonPanel::ToolMeasure | RibbonPanel::PartExplore => IconGlyph::Measure,
+        RibbonPanel::ToolFind => IconGlyph::Find,
+        RibbonPanel::ToolClipboard => IconGlyph::Copy,
+        RibbonPanel::ToolTutorials => IconGlyph::TemplateDocument,
+        RibbonPanel::ToolTeamWeb => IconGlyph::TeamWeb,
+        RibbonPanel::Navigate => IconGlyph::Home,
+        RibbonPanel::Appearance => IconGlyph::AppearanceBrowser,
+        RibbonPanel::Visibility => IconGlyph::SketchVisibility,
+        RibbonPanel::Windows => IconGlyph::SwitchWindow,
+        RibbonPanel::Component => IconGlyph::PlaceComponent,
+        RibbonPanel::SheetMetalTools => IconGlyph::SheetFlange,
+        RibbonPanel::DrawingViews => IconGlyph::DrawingBase,
+        RibbonPanel::DrawingModify => IconGlyph::DrawingBreak,
+        RibbonPanel::DrawingSheets => IconGlyph::DrawingSheet,
+        RibbonPanel::AnnotateDimension | RibbonPanel::PartToleranceAnalysis => IconGlyph::Dimension,
+        RibbonPanel::AnnotateText | RibbonPanel::PartNotes | RibbonPanel::PartGeneralAnnotation => {
+            IconGlyph::Annotation
+        }
+        RibbonPanel::AnnotateSymbols | RibbonPanel::PartGeometricAnnotation => {
+            IconGlyph::DrawingSurface
+        }
         RibbonPanel::PartCreate => IconGlyph::Extrude,
         RibbonPanel::PartModify => IconGlyph::Fillet,
-        RibbonPanel::PartExplore => IconGlyph::Measure,
         RibbonPanel::PartWorkFeatures => IconGlyph::WorkPlane,
-        RibbonPanel::PartPattern => IconGlyph::RectangularPattern,
-        RibbonPanel::PartSimplification => IconGlyph::Simplify,
-        _ => IconGlyph::Customize,
+        RibbonPanel::PartSimplification | RibbonPanel::PartShapeGenerator => IconGlyph::Simplify,
+        RibbonPanel::PartFreeform => IconGlyph::Envelope,
+        RibbonPanel::UserCommands | RibbonPanel::PartAnnotationManage => IconGlyph::Customize,
     }
 }

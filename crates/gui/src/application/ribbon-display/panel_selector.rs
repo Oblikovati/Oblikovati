@@ -10,8 +10,14 @@ impl RibbonDisplayState {
         self.temporary = None;
         self.tab_release_consumed = true;
     }
-    /// Toggle panels without reopening the list; example: `display.panel_selector(ui, tab, panels)`.
-    pub(crate) fn panel_selector(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
+    /// Toggle panels without reopening the list; example: `display.panel_selector(ui, tab, panels, 47.)`.
+    pub(crate) fn panel_selector(
+        &mut self,
+        ui: &Ui,
+        tab: RibbonTab,
+        panels: &[RibbonPanel],
+        row_center: f32,
+    ) {
         self.selector_escape =
             self.selector_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
         let temporary_tab =
@@ -28,13 +34,16 @@ impl RibbonDisplayState {
             return;
         }
         let width = ui.window_size()[0];
-        let (clicked, hovered) = self.selector_button(ui, [width - 30., 35.]);
+        let (clicked, hovered) = self.selector_button(ui, [width - 30., row_center - 12.]);
         self.selector_trigger = Some([ui.item_rect_min(), ui.item_rect_max()]);
         if temporary_tab && (clicked || self.selector_pointer_press(ui)) {
             self.keep_temporary_on_click = true;
         }
         let origin = ui.window_pos();
-        crate::widget_abi::next_window_position(ui, [origin[0] + width - 180., origin[1] + 60.]);
+        crate::widget_abi::next_window_position(
+            ui,
+            [origin[0] + width - 180., origin[1] + row_center + 14.],
+        );
         self.selector_choices(ui, tab, panels);
         help::draw(ui, hovered && !self.selector_open);
     }

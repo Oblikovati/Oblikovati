@@ -57,7 +57,8 @@ fn underline_at(frame: &GuiFrame, tab: [f32; 2]) -> bool {
             let right = bound(0, |a, b| b.total_cmp(a));
             let top = bound(1, f32::total_cmp);
             let bottom = bound(1, |a, b| b.total_cmp(a));
-            (left..right).contains(&x) && (y..y + 10.).contains(&top) && bottom - top == 2.
+            // Text ink is centered in the 28 px tab strip, above the two-pixel underline.
+            (left..right).contains(&x) && (y..y + 14.).contains(&top) && bottom - top == 2.
         })
     })
 }

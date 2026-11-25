@@ -209,7 +209,10 @@ pub(crate) fn draw_panel_content(
                         .as_ref()
                         .is_none_or(|browser| browser.kind == crate::GuiBrowserKind::Drawing),
             );
-            if crate::widget_abi::button(ui, "Find", [108., 58.]) {
+            if owners
+                .icons
+                .button(ui, "Find", crate::icons::IconGlyph::Find, [108., 58.])
+            {
                 owners.workspace.request_find();
             }
             drop(disabled);

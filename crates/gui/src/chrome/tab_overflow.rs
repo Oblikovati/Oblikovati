@@ -30,7 +30,10 @@ pub(super) fn draw(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
         .size([tabs_width, tab_row_height(ui)])
         .scroll_bar(false)
         .scrollable(false)
-        .build(|| draw_visible(ui, ribbon, frame, visible, changed));
+        .build(|| {
+            let _padding = tab_item_padding(ui);
+            draw_visible(ui, ribbon, frame, visible, changed);
+        });
     if !hidden.is_empty() {
         ui.same_line();
         overflow_menu(ui, ribbon, hidden, overflow_width);
@@ -175,7 +178,16 @@ fn overflow_menu(ui: &Ui, ribbon: &mut DocumentRibbon, hidden: &[RibbonTab], wid
 }
 
 pub(super) fn tab_row_height(ui: &Ui) -> f32 {
-    ui.frame_height().max(20.) + 4.
+    (ui.frame_height() + 2.).ceil().max(28.)
+}
+
+pub(super) fn tab_item_padding(ui: &Ui) -> imgui::StyleStackToken<'_> {
+    let style = ui.clone_style();
+    let height = tab_row_height(ui) - 2.;
+    ui.push_style_var(imgui::StyleVar::FramePadding([
+        style.frame_padding[0],
+        ((height - ui.current_font_size()) * 0.5).floor(),
+    ]))
 }
 
 #[cfg(test)]

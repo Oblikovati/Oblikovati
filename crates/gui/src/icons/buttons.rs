@@ -5,10 +5,26 @@ use crate::{GuiCommandState, GuiShellAction, GuiSketchConstraint, GuiSketchTool}
 use imgui::Ui;
 
 impl GuiRibbonIcons {
-    pub(crate) fn brand_mark(&self, ui: &Ui) {
+    pub(crate) fn brand_mark(&self, ui: &Ui, beside_toolbar: bool) {
         let texture = imgui::TextureId::new(self.key(IconGlyph::BrandMark, IconSize::Small).raw());
         imgui::Image::new(texture, [16.; 2]).build(ui);
-        ui.same_line();
+        if !beside_toolbar {
+            ui.same_line();
+            return;
+        }
+        let [right, _] = ui.item_rect_max();
+        let top = ui.item_rect_min()[1];
+        let x = right + 4.5;
+        ui.get_window_draw_list()
+            .add_line(
+                [x, top + 1.],
+                [x, top + 15.],
+                ui.style_color(imgui::StyleColor::Border),
+            )
+            .build();
+        ui.same_line_with_spacing(0., 0.);
+        ui.dummy([9., 16.]);
+        ui.same_line_with_spacing(0., 0.);
     }
 
     pub(crate) fn brand_wordmark(&self, ui: &Ui, available: f32) {

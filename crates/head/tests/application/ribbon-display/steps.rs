@@ -66,8 +66,7 @@ fn expect_compact_groups(world: &ApplicationWorld) {
     world.expect_no_text(WINDOWS_COMMAND);
 }
 pub(super) fn compact_panel_point(world: &ApplicationWorld, name: &str) -> [i32; 2] {
-    let label = world.run(name).center();
-    super::diagnostics::pointer_pixels([label[0], label[1] - 35.])
+    super::diagnostics::pointer_pixels(world.run(name).center())
 }
 pub(super) fn display_control_point(world: &ApplicationWorld) -> [i32; 2] {
     let (position, size) = window_geometry("##application-ribbon").unwrap();

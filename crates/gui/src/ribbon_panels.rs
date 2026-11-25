@@ -317,9 +317,14 @@ fn draw_row(
         context.owners.customization,
     );
     let minimum = collapsed::minimum_width(tab);
+    let caption_room = if context.owners.icons.appearance.command_height() >= 44. {
+        20.
+    } else {
+        34.
+    };
     let collapsed = panels
         .iter()
-        .map(|panel| (context.ui.calc_text_size(panel.label())[0] + 12.).max(minimum))
+        .map(|panel| (context.ui.calc_text_size(panel.label())[0] + caption_room).max(minimum))
         .fold(0., f32::max);
     let factor = context.owners.icons.layout_factor();
     let expanded = layout.expanded_count(tab, &panels, collapsed, available, factor);
@@ -449,12 +454,6 @@ fn draw_collapsed(
     let anchor = ui.item_rect_min()[0];
     if ui.is_item_hovered() {
         ui.tooltip_text(format!("Show {} commands", panel.label()));
-    }
-    if !matches!(tab, RibbonTab::Model | RibbonTab::Sketch) {
-        let title_y = context.owners.icons.appearance.command_height() + 6.;
-        context.owners.icons.cursor(ui, origin, [0., title_y]);
-        // Collapsed buttons need their label even when expanded panel captions are hidden.
-        place_group_caption(ui, panel, width, false, true);
     }
     draw_panel_popup(context, tab, panel, &identity, anchor, layout);
 }

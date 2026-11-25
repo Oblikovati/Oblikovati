@@ -32,8 +32,7 @@ pub(super) fn resize_window(world: &mut ApplicationWorld, width: i32) {
 
 #[given("the temporary Modify panel is open")]
 fn open_modify(world: &mut ApplicationWorld) {
-    let label = world.run("Modify").center();
-    let button = super::super::diagnostics::pointer_pixels([label[0], label[1] - 35.]);
+    let button = compact_panel_point(world, "Modify");
     super::super::x11_input::click(button);
     world.pump(Vec::new());
     world.expect_text("Hole");

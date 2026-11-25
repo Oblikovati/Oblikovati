@@ -3,6 +3,7 @@
 use super::*;
 #[path = "coordinate_restriction.rs"]
 mod coordinate_restriction;
+const COMMAND_ROW_HEIGHT: f32 = 28.;
 
 pub(in super::super) fn tool_options(ui: &Ui, display: &mut RibbonDisplayState) -> bool {
     let left = ui.cursor_pos()[0];
@@ -46,26 +47,15 @@ pub(super) fn draw(
         );
         return;
     }
-    if context.owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal
-        && let Some(entries) = additional_icon_entries(panel)
-    {
+    let Some(entries) = additional_icon_entries(panel) else {
+        return;
+    };
+    if context.owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal {
         additional_icons(context, tab, panel, display, entries, bend_notice);
         return;
     }
-    let labels = match panel {
-        RibbonPanel::PartModify => &["Move Bodies", "Bend Part", "Copy Object", "Shell"][..],
-        RibbonPanel::PartSimplification => {
-            &["Remove Details", "Fill Voids", "Define Envelopes"][..]
-        }
-        RibbonPanel::Constrain => &["Edit Coordinate System", "Constraint Inference Scope"][..],
-        _ => return,
-    };
-    for &label in labels {
-        if label == "Move Bodies" && crate::move_body_ribbon::is_main(context.owners.customization)
-        {
-            continue;
-        }
-        if label == "Shell" && !crate::shell_ribbon::is_expanded(context.owners.customization) {
+    for &(label, glyph) in entries {
+        if !additional_visible(label, context.owners.customization) {
             continue;
         }
         let action = additional_action(label);
@@ -78,7 +68,20 @@ pub(super) fn draw(
                     .as_ref()
                     .is_none_or(|action| !action.dispatchable(context.state)),
         );
-        let clicked = ui.button(label) || bend && display.context_tab_press(ui);
+        let clicked = crate::widget_abi::icon_button(
+            ui,
+            label,
+            crate::widget_abi::IconButtonPresentation {
+                texture: context
+                    .owners
+                    .icons
+                    .key(glyph, crate::icons::IconSize::Small),
+                size: [ui.content_region_avail()[0].max(1.), COMMAND_ROW_HEIGHT],
+                icon: [16.; 2],
+                large: false,
+                show_caption: true,
+            },
+        ) || bend && display.context_tab_press(ui);
         if clicked && coordinate {
             coordinate_restriction::open(ui);
         } else if clicked && bend {
@@ -99,6 +102,31 @@ pub(super) fn draw(
         if label == coordinate_restriction::LABEL {
             coordinate_restriction::dialog(ui);
         }
+    }
+}
+
+pub(super) fn normal_expansion_height(
+    ui: &Ui,
+    panel: RibbonPanel,
+    customization: &crate::application::ribbon_customization::RibbonCustomization,
+) -> Option<f32> {
+    let rows = additional_icon_entries(panel)?
+        .iter()
+        .filter(|(label, _)| additional_visible(label, customization))
+        .count();
+    let style = ui.clone_style();
+    let footer = ui.text_line_height() + 2. * style.window_padding[1] + 7.;
+    Some(rows as f32 * (COMMAND_ROW_HEIGHT + style.item_spacing[1]) + footer)
+}
+
+fn additional_visible(
+    label: &str,
+    customization: &crate::application::ribbon_customization::RibbonCustomization,
+) -> bool {
+    match label {
+        "Move Bodies" => !crate::move_body_ribbon::is_main(customization),
+        "Shell" => crate::shell_ribbon::is_expanded(customization),
+        _ => true,
     }
 }
 fn additional_icons(

@@ -132,7 +132,7 @@ pub(super) fn trigger(
         expansion.anchor = anchor;
         expansion.trigger = trigger;
     }
-    if ui.is_item_hovered() {
+    if ui.is_item_hovered() && !layout.additional.open.contains_key(&key) {
         ui.tooltip_text("Additional commands");
     }
 }
@@ -216,7 +216,8 @@ fn draw_window(
         };
     let top = anchor_top.min((viewport_height - 1.).max(0.));
     let preferred_height = if appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-        ADDITIONAL_HEIGHT
+        commands::normal_expansion_height(ui, panel, context.owners.customization)
+            .unwrap_or(ADDITIONAL_HEIGHT)
     } else {
         appearance.command_height() + 50.
     };

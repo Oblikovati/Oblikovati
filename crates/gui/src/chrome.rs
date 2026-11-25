@@ -264,6 +264,7 @@ fn begin_ribbon_band(ui: &Ui, width: f32, height: f32) -> Option<imgui::WindowTo
     crate::widget_abi::window_geometry(ui, [0., 0.], [width, height], Condition::Always);
     // Keep focused ribbon commands below the window controls in the shared bar (#4063).
     ui.window("##application-ribbon")
+        .flags(imgui::WindowFlags::NO_NAV_FOCUS)
         .bring_to_front_on_focus(false)
         .title_bar(false)
         .movable(false)
@@ -283,6 +284,7 @@ fn ribbon_contents(
 ) {
     application_controls_row(ui, request, owners, actions);
     let tab_top = application_bar_height(owners.icons) + 1.;
+    let row_height = tab_row_height(ui);
     crate::widget_abi::cursor_position(ui, [0., tab_top]);
     ribbon_menu_row(ui, request, owners, actions);
     if owners.ribbon.display.placement == RibbonPlacement::Top {
@@ -290,9 +292,10 @@ fn ribbon_contents(
         tab_overflow::draw(ui, owners.ribbon, frame);
         let control = [
             ui.window_size()[0] - tab_overflow::RIBBON_CONTROL_WIDTH,
-            tab_top,
+            tab_top + (row_height - 22.) * 0.5,
         ];
-        owners.ribbon.display.control(
+        let display = &mut owners.ribbon.display;
+        display.control(
             ui,
             control,
             owners.icons,
@@ -305,11 +308,9 @@ fn ribbon_contents(
             &request.commands,
             &owners.ribbon.customization,
         );
-        owners
-            .ribbon
-            .display
-            .panel_selector(ui, owners.ribbon.active, &panels);
-        ribbon_panel_row(ui, request, owners, actions, tab_top + tab_row_height(ui));
+        let center = tab_top + row_height * 0.5;
+        display.panel_selector(ui, owners.ribbon.active, &panels, center);
+        ribbon_panel_row(ui, request, owners, actions, tab_top + row_height);
     }
     crate::theme_editor::panel(
         ui,
@@ -332,7 +333,9 @@ fn application_controls_row(
         .scroll_bar(false)
         .scrollable(false)
         .build(|| {
-            owners.icons.brand_mark(ui);
+            owners
+                .icons
+                .brand_mark(ui, !owners.quick_access.below_ribbon);
             if !owners.quick_access.below_ribbon {
                 owners.quick_access.row(
                     ui,
@@ -399,8 +402,10 @@ fn ribbon_menu_row(
         + style.item_spacing[0]
         + style.window_padding[0] * 2.)
         .max(40.);
+    let height = tab_row_height(ui);
+    let _padding = tab_overflow::tab_item_padding(ui);
     ui.child_window("##ribbon-menu-row")
-        .size([width, tab_row_height(ui)])
+        .size([width, height])
         .menu_bar(true)
         .build(|| {
             ui.menu_bar(|| {
