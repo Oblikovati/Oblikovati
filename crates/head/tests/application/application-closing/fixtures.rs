@@ -99,11 +99,15 @@ fn discard_staged_part_on_exit(world: &mut ApplicationWorld) {
 fn answer_staged_part_exit(world: &mut ApplicationWorld, answer: &str) {
     super::prompt_identifies_document(world);
     world.save_capture("application-closing-ready");
+    let position = diagnostics::pointer_pixels(world.run(answer).center());
     #[cfg(target_os = "linux")]
-    super::super::x11_input::click(super::super::rendered_label_center(answer));
+    if world.app().window.native.view.uses_wayland() {
+        world.app().window.scripted = super::super::pointer_click_events(position, 1);
+    } else {
+        super::super::x11_input::click(position);
+    }
     #[cfg(not(target_os = "linux"))]
     {
-        let position = diagnostics::pointer_pixels(world.run(answer).center());
         world.app().window.scripted = super::super::pointer_click_events(position, 1);
     }
     let mut app = world.app.take().expect("expected an open application");

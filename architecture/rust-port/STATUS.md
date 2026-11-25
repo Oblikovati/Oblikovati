@@ -303,7 +303,7 @@ using this status; the live scenario directory can change.
   `e33bac9dd`.
 - Application Closing (#4030) passed seven scenarios and 51 steps in the [previous full run](receipts/2026-11-24-application-closing-current-complete-4030/README.md).
   The revised unsaved-Part Cancel scenario passed all nine steps on
-  [Wayland and X11](receipts/2026-11-25-application-closing-wayland-4030/README.md).
+  [Wayland and X11](receipts/2026-11-25-application-closing-wayland-4030/README.md), as did [Save and Discard](receipts/2026-11-25-application-closing-existing-part-4030/README.md).
   Strict build and runtime provenance remains open under #3978.
 - Viewport Pan (#3881) passed all four current scenarios and 32 steps with the native Part.
   See the [current run](receipts/2026-11-24-viewport-pan-current-3881/README.md).

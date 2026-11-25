@@ -12,6 +12,13 @@ pub(super) use fixture::{open_dirty_frame_part, open_frame_part};
 #[when("the user presses Alt+F4")]
 fn invoke_desktop_close(world: &mut ApplicationWorld) {
     world.application_close_requested = true;
+    #[cfg(target_os = "linux")]
+    if world.app().window.native.view.uses_wayland() {
+        // The compositor owns Alt+F4 and sends xdg_toplevel.close to the client.
+        world.pump(vec![oblikovati_viewport::ViewportEvent::CloseRequested]);
+        world.pump(Vec::new());
+        return;
+    }
     super::x11_input::focus_window();
     super::x11_input::press_alt_f4();
     world.pump(Vec::new());
