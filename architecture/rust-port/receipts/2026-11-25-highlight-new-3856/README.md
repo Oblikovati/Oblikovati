@@ -36,3 +36,14 @@ OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-panel-expansion \
 
 The pinned run omitted `OBK_BDD_ROOT`. Shell previews remain open work
 under [#3856](https://github.com/Oblikovati/Oblikovati/issues/3856).
+
+## Layout-reset regression
+
+The confirmation warning wraps after `to` in the current design. The
+assertion now joins the rendered runs before checking the complete warning.
+The published reset cancellation scenario passed all ten steps. The separate
+`x11_options_layout_reset_can_be_cancelled` test passed with native pointer
+input through the expansion, confirmation, and No button.
+[Cucumber](reset-regression/cucumber.json), [JUnit](reset-regression/junit.xml),
+[source report](reset-regression/source-revision.json), and
+[confirmation capture](reset-regression/tools-options-reset-confirmation.png).

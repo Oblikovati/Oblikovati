@@ -115,7 +115,11 @@ fn request_reset(world: &mut ApplicationWorld) {
 #[then("a confirmation dialog warns that the UI layout will be reset to its default")]
 fn reset_warning(world: &mut ApplicationWorld) {
     let text = world.window_text(RESET);
-    assert!(text.contains("ribbonwillreturntoitsdefaultlayout"));
+    let warning: String = text.split_whitespace().collect();
+    assert!(
+        warning.contains("ribbonwillreturntoitsdefaultlayout"),
+        "expected a layout-reset warning in {text:?}"
+    );
 }
 
 #[then("the dialog offers Yes and No")]
