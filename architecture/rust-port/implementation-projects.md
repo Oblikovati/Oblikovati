@@ -50,6 +50,12 @@ scenarios passed individually on Wayland and X11. In the workspace folder
 browser, Cancel retains the prior path and OK updates the workspace and
 derived project file. [Native reports](receipts/2026-11-25-project-workspace-folder-3895/README.md)
 
+Make New Folder accepts a name under the selected directory and selects
+the created folder. The workspace and derived project file update when
+the user chooses OK. Cancelling the name editor leaves the filesystem
+untouched. Cancelling the folder browser retains the created directory
+and the wizard's previous workspace. [Folder creation checks](receipts/2026-11-25-project-create-folder-3895/README.md)
+
 Project wire methods remain pending.
 
 ## Projects dock lifecycle

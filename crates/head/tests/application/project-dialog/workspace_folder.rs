@@ -158,3 +158,41 @@ fn file_in_documents(world: &mut ApplicationWorld) {
         "expected the derived file"
     );
 }
+
+#[test]
+fn make_new_folder_changes_workspace_only_after_accepting_it() {
+    let mut world = ApplicationWorld::new();
+    point_home_at_scratch(&mut world);
+    open_wizard_on_file_page(&mut world);
+    locations_shown(&mut world);
+    browse_folder(&mut world);
+    select_documents(&mut world);
+    choose_folder_button(&mut world, "Make New Folder");
+    world.type_text("Abandoned");
+    choose_folder_button(&mut world, "Cancel New Folder");
+    let documents = world.scratch_folder().join("Documents");
+    assert!(!documents.join("Abandoned").exists());
+    folder_field(&mut world);
+
+    choose_folder_button(&mut world, "Make New Folder");
+    world.type_text("Workspace");
+    choose_folder_button(&mut world, "Create");
+    assert!(documents.join("Workspace").is_dir());
+    world.expect_text("Folder: Workspace");
+    cancel_browser(&mut world);
+    browser_closed(&mut world);
+    locations_kept(&mut world);
+
+    browse_folder(&mut world);
+    select_documents(&mut world);
+    let row = world
+        .run_in_window("Browse for Folder", "Workspace")
+        .center();
+    world.click(diagnostics::pointer_pixels(row));
+    accept_folder(&mut world);
+    assert!(holds_text(&world, "/Documents/Workspace/New Project.opj"));
+    cancel_wizard(&mut world);
+    projects_shown(&mut world);
+    assert!(!documents.join("Workspace/New Project.opj").exists());
+    world.close();
+}

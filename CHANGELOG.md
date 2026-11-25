@@ -4,6 +4,7 @@
 
 ### Added
 
+- Enabled Make New Folder in the project wizard and selected the created folder for workspace confirmation. (#3895)
 - Added Home and End navigation to the staged Ribbon Customization list. Advanced the available command selection after a single transfer and kept Space on Add after a mouse edit to Large or Text. (#3856)
 - Added named native templates from the active project's root, Metric, and English folders to the desktop chooser. The chooser shows Part materials, previews drawing sheets, and restores the selected template after restart. Populated drawing layouts accept a Part, warn when its previous evaluated geometry is used, and show its authored parts list. (#3899)
 - Added Flipped, Symmetric, and Asymmetric directions and To Face and From–To extents for new solid extrusions in the desktop and typed API. Added desktop Icons and Dropdown direction selectors and a Distance A editor menu. (#3893)
@@ -270,7 +271,6 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Displayed visible authored work planes with a translucent fill and themed border in part views. (#3981)
 
 - Enabled creation of offset work planes from the 3D Model ribbon, with document-unit validation and undo/redo. (#3977)
-
 - Enabled analytic length measurements for named solid edges through the Analysis API. (#3967)
 
 - Saved assemblies can include a qualified display cache; save warnings explain when it cannot be created. Express loading remains unavailable. (#3949)

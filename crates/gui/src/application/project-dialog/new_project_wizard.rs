@@ -4,7 +4,7 @@
 use crate::application::document_saving::folder_browser::center_dialog;
 use crate::application::file_system::{GuiFolders, NativeFolders};
 use imgui::{Key, Ui};
-use std::rc::Rc;
+use std::path::Path;
 
 const TITLE: &str = "New Project";
 const SIZE: [f32; 2] = [620., 300.];
@@ -22,7 +22,7 @@ enum WizardPage {
     Libraries,
 }
 pub(super) struct NewProjectWizard {
-    folders: Rc<dyn GuiFolders>,
+    folders: NativeFolders,
     opening: bool,
     open: bool,
     page: WizardPage,
@@ -31,11 +31,18 @@ pub(super) struct NewProjectWizard {
     browser_opening: bool,
     /// The folder the browser has chosen, before OK hands it to the wizard.
     browsed: String,
+    new_folder: Option<NewFolder>,
+}
+#[derive(Default)]
+struct NewFolder {
+    name: String,
+    error: Option<String>,
+    focus: bool,
 }
 impl Default for NewProjectWizard {
     fn default() -> Self {
         Self {
-            folders: Rc::new(NativeFolders),
+            folders: NativeFolders,
             opening: false,
             open: false,
             page: WizardPage::default(),
@@ -43,6 +50,7 @@ impl Default for NewProjectWizard {
             workspace: String::new(),
             browser_opening: false,
             browsed: String::new(),
+            new_folder: None,
         }
     }
 }
@@ -52,6 +60,7 @@ impl NewProjectWizard {
         self.open = false;
         self.opening = false;
         self.browser_opening = false;
+        self.new_folder = None;
     }
     /// Start from the first page, with a name and folder to change; example: on New.
     pub(super) fn request(&mut self) {
@@ -62,7 +71,9 @@ impl NewProjectWizard {
         self.workspace = self.folders.default_folder();
     }
     pub(super) fn needs_frame(&self) -> bool {
-        self.opening || self.browser_opening
+        self.opening
+            || self.browser_opening
+            || self.new_folder.as_ref().is_some_and(|draft| draft.focus)
     }
     /// The entry the project list shows while the wizard is open.
     pub(super) fn provisional_name(&self) -> Option<&str> {
@@ -132,7 +143,7 @@ impl NewProjectWizard {
         }
         ui.same_line();
         if crate::widget_abi::button(ui, "Cancel##wizard", [0.; 2])
-            || ui.is_key_pressed_no_repeat(Key::Escape)
+            || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape)
         {
             self.open = false;
             ui.close_current_popup();
@@ -154,9 +165,14 @@ impl NewProjectWizard {
         let Some(_browser) = ui.begin_modal_popup(BROWSER_TITLE) else {
             return;
         };
+        let footer = if self.new_folder.is_some() {
+            FOOTER_HEIGHT * 2.
+        } else {
+            FOOTER_HEIGHT
+        };
         // The tree scrolls by itself, so a long folder path cannot push the buttons away.
         ui.child_window("##folder-tree")
-            .size([0., -FOOTER_HEIGHT])
+            .size([0., -footer])
             .build(|| {
                 for (label, folder) in self.folders.system_locations() {
                     self.folder_node(ui, &label, &folder);
@@ -164,9 +180,18 @@ impl NewProjectWizard {
             });
         ui.separator();
         ui.text(format!("Folder: {}", folder_label(&self.browsed)));
-        {
-            let _muted = ui.begin_disabled(true);
-            crate::widget_abi::button(ui, "Make New Folder", [0.; 2]);
+        if self.new_folder.is_some() {
+            self.new_folder_controls(ui);
+        } else {
+            self.folder_buttons(ui);
+        }
+    }
+    fn folder_buttons(&mut self, ui: &Ui) {
+        if crate::widget_abi::button(ui, "Make New Folder", [0.; 2]) {
+            self.new_folder = Some(NewFolder {
+                focus: true,
+                ..Default::default()
+            });
         }
         ui.same_line();
         if crate::widget_abi::button(ui, "OK##folder", [0.; 2]) {
@@ -174,8 +199,39 @@ impl NewProjectWizard {
             ui.close_current_popup();
         }
         ui.same_line();
-        if crate::widget_abi::button(ui, "Cancel##folder", [0.; 2]) {
+        if crate::widget_abi::button(ui, "Cancel##folder", [0.; 2])
+            || ui.is_key_pressed_no_repeat(Key::Escape)
+        {
             ui.close_current_popup();
+        }
+    }
+    fn new_folder_controls(&mut self, ui: &Ui) {
+        let Some(draft) = &mut self.new_folder else {
+            return;
+        };
+        if std::mem::take(&mut draft.focus) {
+            ui.set_keyboard_focus_here();
+        }
+        if ui.input_text("Folder name", &mut draft.name).build() {
+            draft.error = None;
+        }
+        if let Some(error) = &draft.error {
+            ui.text_wrapped(error);
+        }
+        if crate::widget_abi::button(ui, "Create", [0.; 2]) {
+            match self.folders.create_child(&self.browsed, &draft.name) {
+                Ok(path) => {
+                    self.browsed = path;
+                    self.new_folder = None;
+                }
+                Err(error) => draft.error = Some(error),
+            }
+        }
+        ui.same_line();
+        if crate::widget_abi::button(ui, "Cancel New Folder", [0.; 2])
+            || ui.is_key_pressed_no_repeat(Key::Escape)
+        {
+            self.new_folder = None;
         }
     }
     /// A branch shows its own folders only once a click has reached it.
@@ -185,7 +241,7 @@ impl NewProjectWizard {
         if selected {
             flags |= imgui::TreeNodeFlags::SELECTED;
         }
-        let chosen_path = self.browsed.starts_with(folder);
+        let chosen_path = Path::new(&self.browsed).starts_with(folder);
         let token = ui
             .tree_node_config(label)
             .flags(flags)
@@ -258,5 +314,30 @@ mod tests {
         wizard.request();
         assert_eq!(wizard.page, WizardPage::ProjectType);
         assert_eq!(wizard.provisional_name(), Some(DEFAULT_NAME));
+    }
+
+    #[test]
+    fn a_new_folder_uses_one_name_and_keeps_existing_entries() {
+        let scratch = tempfile::tempdir().unwrap();
+        let parent = scratch.path().to_str().unwrap();
+        assert!(NativeFolders.create_child(parent, "../escape").is_err());
+        assert!(
+            NativeFolders
+                .create_child(parent, "nested\\escape")
+                .is_err()
+        );
+        assert!(NativeFolders.create_child(parent, "  ").is_err());
+        let target = scratch.path().join("Workspace");
+        assert_eq!(
+            Path::new(&NativeFolders.create_child(parent, " Workspace ").unwrap()),
+            target
+        );
+        std::fs::write(target.join("keep"), b"existing project files").unwrap();
+        assert!(NativeFolders.create_child(parent, "Workspace").is_err());
+        assert_eq!(
+            std::fs::read(target.join("keep")).unwrap(),
+            b"existing project files"
+        );
+        assert_eq!(std::fs::read_dir(scratch.path()).unwrap().count(), 1);
     }
 }

@@ -30,6 +30,29 @@ pub(crate) trait GuiFolders {
     fn system_locations(&self) -> Vec<(String, String)>;
 }
 pub(crate) struct NativeFolders;
+impl NativeFolders {
+    /// Create one folder under the chosen parent, for example `folders.create_child("/work", "Parts")`.
+    pub(crate) fn create_child(&self, parent: &str, name: &str) -> Result<String, String> {
+        let parent = std::path::Path::new(parent);
+        let name = name.trim();
+        if !parent.is_absolute() || !valid_folder_name(name) {
+            return Err(format!(
+                "folder {name:?} in {parent:?}: expected a single name and an absolute parent"
+            ));
+        }
+        let path = parent.join(name);
+        std::fs::create_dir(&path).map_err(|cause| format!("folder {path:?}: {cause}"))?;
+        Ok(path.display().to_string())
+    }
+}
+
+fn valid_folder_name(name: &str) -> bool {
+    !name.is_empty()
+        && !name.ends_with('.')
+        && !name.contains(['/', '\\', ':', '*', '?', '"', '<', '>', '|'])
+        && !name.chars().any(char::is_control)
+}
+
 impl GuiFolders for NativeFolders {
     fn system_locations(&self) -> Vec<(String, String)> {
         let mut places = Vec::new();
