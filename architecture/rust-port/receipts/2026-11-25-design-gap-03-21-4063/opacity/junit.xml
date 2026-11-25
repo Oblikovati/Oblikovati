@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Orient a model using the viewport control: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature" package="testsuite/Feature: Orient a model using the viewport control: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T14:12:24.774991337Z" time="19.650601436"><testcase name="Scenario: Adjust the inactive opacity of the orientation control: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:111:3" time="19.650601436"><system-out><![CDATA[  Scenario: Adjust the inactive opacity of the orientation control
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the orientation control has 50 percent inactive opacity
+   ✔  When the user opens the orientation control options and expands the inactive opacity list
+   ✔  Then the list offers 0, 25, 50, 75 and 100 percent
+   ✔  When the user chooses 100 percent and confirms the options
+   ✔  And the user moves the pointer away from the orientation control
+   ✔  Then the inactive control appears more opaque than at 50 percent
+   ✔  And the part remains in its existing view
+   ✔  When the user reopens the options, chooses 50 percent and confirms
+   ✔  And the user moves the pointer away from the control
+   ✔  Then the control returns to its earlier translucent appearance
+   ✔  And the same part remains active
+]]></system-out></testcase></testsuite></testsuites>

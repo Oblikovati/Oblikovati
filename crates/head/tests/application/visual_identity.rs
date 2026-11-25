@@ -139,7 +139,8 @@ fn native_origin_plane_picker_draws_behind_navigation_and_enters_the_sketch() {
 #[test]
 fn native_sketch_ribbon_keeps_group_labels_and_the_last_create_row_visible() {
     let mut world = ApplicationWorld::new();
-    world.start_sketch_on("XY Plane");
+    resize_properties_window(&mut world, [1440, 900]);
+    world.start_sketch_on_plane(oblikovati_model::sketch::SketchPlane::xy());
     let [_, top, _, _] = world.viewport_bounds();
     for label in [
         "Line",
@@ -158,6 +159,9 @@ fn native_sketch_ribbon_keeps_group_labels_and_the_last_create_row_visible() {
         );
     }
     world.save_capture("sketch-ribbon-compaction");
+    resize_properties_window(&mut world, [920, 680]);
+    assert_eq!(world.viewport_bounds()[1], top);
+    world.save_capture("sketch-ribbon-920x680");
     world.click_text("Finish Sketch");
     assert_eq!(
         world.state().authoring,
@@ -291,8 +295,10 @@ fn native_studio_colors_keep_cube_labels_readable_and_drawing_paper_neutral() {
     viewport_orientation::open_block(&mut world);
     assert!(world.run("FRONT").color[0] > 200);
     world.app().owner.select_theme_from_gui("Light").unwrap();
-    world.pump(Vec::new());
-    assert!(world.run("FRONT").color[0] < 80);
+    world.hover([450, 340]);
+    let label = world.run("FRONT");
+    assert_eq!(label.color, [0x1E, 0x24, 0x30]);
+    assert_eq!(label.alpha, 255);
     world.save_capture("light-viewcube");
     world.add_template(oblikovati_gui::GuiTemplateKind::Drawing);
     assert!(diagnostics::window_dock_tab_bounds("Appearance Browser").is_none());

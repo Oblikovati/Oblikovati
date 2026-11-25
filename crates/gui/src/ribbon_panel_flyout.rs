@@ -10,14 +10,14 @@ pub(super) fn draw_panel_popup(
     layout: &mut RibbonPanelLayout,
 ) {
     let ui = context.ui;
-    let width = layout.widths.get(&(tab, panel)).copied().unwrap_or(108.);
     let factor = context.owners.icons.layout_factor();
-    let command_height = context.owners.icons.appearance.tab_command_height(tab);
+    let width = layout.panel_width(tab, panel, factor).unwrap_or(108.);
+    let command_height = context.owners.icons.appearance.command_height();
     let size = popup_geometry(
         ui,
         anchor,
         width,
-        78. + layout.scrollbar_height(ui) + (20. + command_height) * factor,
+        context.ribbon_bottom,
         factor,
         command_height,
     );

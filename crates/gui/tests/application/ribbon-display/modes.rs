@@ -40,7 +40,7 @@ fn a_chosen_minimization_alternates_with_the_full_ribbon() {
 }
 #[test]
 fn each_reduction_gives_the_workspace_more_height() {
-    let heights: Vec<f32> = CYCLE.iter().map(|mode| mode.band_height(0.)).collect();
+    let heights: Vec<f32> = CYCLE.iter().map(|mode| mode.band_height()).collect();
     assert!(
         heights.windows(2).all(|pair| pair[0] > pair[1]),
         "{heights:?}"

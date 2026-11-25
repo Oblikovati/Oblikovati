@@ -27,10 +27,10 @@ pub(crate) enum RibbonDisplay {
     Tabs,
 }
 impl RibbonDisplay {
-    /// The band height this mode leaves the workspace; example: `mode.band_height(0.)`.
-    pub(crate) fn band_height(self, scrollbar: f32) -> f32 {
+    /// The band height this mode leaves the workspace; example: `mode.band_height()`.
+    pub(crate) fn band_height(self) -> f32 {
         match self {
-            Self::Full => 158. + scrollbar,
+            Self::Full => 158.,
             Self::PanelButtons => 122.,
             Self::PanelTitles => 102.,
             Self::Tabs => 80.,

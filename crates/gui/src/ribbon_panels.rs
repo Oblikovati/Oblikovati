@@ -24,7 +24,6 @@ pub(crate) use side_groups::draw_side_groups;
 pub(crate) struct RibbonPanelLayout {
     widths: BTreeMap<(RibbonTab, RibbonPanel), f32>,
     full_row_available: Option<f32>,
-    scrollbar_shown: bool,
     measured_appearance: Option<crate::ribbon_command_layout::RibbonAppearance>,
     popup_press: crate::popup_press::PopupPress<(RibbonTab, RibbonPanel)>,
     title_press: crate::popup_press::PopupPress<(RibbonTab, RibbonPanel)>,
@@ -154,14 +153,13 @@ fn full_row(context: &mut PanelDrawContext<'_>, tab: RibbonTab, layout: &mut Rib
     let ui = context.ui;
     let available = ui.content_region_avail()[0].max(1.);
     layout.use_available_width(available);
-    let height = (20. + context.owners.icons.appearance.tab_command_height(tab))
-        * context.owners.icons.layout_factor()
-        + layout.scrollbar_height(ui);
-    let region = crate::widget_abi::scroll_region(ui, "##ribbon-panels", [available, height]);
-    if region.visible {
-        draw_row(context, tab, layout, available);
-        layout.observe_scrollbar(ui.scroll_max_x() > 0.);
-    }
+    let icons = context.owners.icons;
+    let height = icons.appearance.full_row_height() * icons.layout_factor();
+    // Scrolling remains available below the compact row's minimum width without moving the viewport.
+    ui.child_window("##ribbon-panels")
+        .size([available, height])
+        .flags(imgui::WindowFlags::HORIZONTAL_SCROLLBAR | imgui::WindowFlags::NO_SCROLLBAR)
+        .build(|| draw_row(context, tab, layout, available));
 }
 fn group_key_tip(ui: &Ui, panel: RibbonPanel, owners: &RibbonPanelOwners<'_>) {
     let tip = match panel {
@@ -271,8 +269,7 @@ fn temporary_contents(
     let floating_notes = display.placement
         == crate::application::ribbon_display::RibbonPlacement::Floating
         && shown == TemporaryPanel::Group(RibbonPanel::PartNotes);
-    let content_height =
-        temporary_content_height(context.owners.icons.appearance, tab, floating_notes);
+    let content_height = temporary_content_height(context.owners.icons.appearance, floating_notes);
     let height = 6. + content_height * context.owners.icons.layout_factor();
     let region = crate::widget_abi::scroll_region(ui, "##temporary-contents", [available, height]);
     if !region.visible {
@@ -324,12 +321,13 @@ fn draw_row(
         .iter()
         .map(|panel| (context.ui.calc_text_size(panel.label())[0] + 12.).max(minimum))
         .fold(0., f32::max);
-    let expanded = layout.expanded_count(tab, &panels, collapsed, available);
+    let factor = context.owners.icons.layout_factor();
+    let expanded = layout.expanded_count(tab, &panels, collapsed, available, factor);
     let mut x = 0.;
     let mut activated = false;
     for (index, panel) in panels.into_iter().enumerate() {
         if index > 0 {
-            draw_divider(context, tab, x - 4.);
+            draw_divider(context, x - 4.);
         }
         let force_compact = context.owners.icons.appearance
             == crate::ribbon_command_layout::RibbonAppearance::Compact
@@ -350,14 +348,14 @@ fn draw_row(
     layout.title_press.finish_frame(context.ui);
     activated
 }
-fn draw_divider(context: &PanelDrawContext<'_>, tab: RibbonTab, x: f32) {
+fn draw_divider(context: &PanelDrawContext<'_>, x: f32) {
     let ui = context.ui;
     let origin = ui.window_pos();
     let x = (origin[0] + x - ui.scroll_x()).floor() + 0.5;
-    let bottom = context.owners.icons.cell([
-        0.,
-        context.owners.icons.appearance.tab_command_height(tab) + 12.,
-    ])[1];
+    let bottom = context
+        .owners
+        .icons
+        .cell([0., context.owners.icons.appearance.command_height() + 12.])[1];
     ui.get_window_draw_list()
         .add_line(
             [x, origin[1] + 8.],
@@ -399,7 +397,7 @@ fn draw_expanded(
             }
         });
         let content_width = ui.item_rect_size()[0];
-        let title_y = context.owners.icons.appearance.tab_command_height(tab) + 6.;
+        let title_y = context.owners.icons.appearance.command_height() + 6.;
         context.owners.icons.cursor(ui, origin, [0., title_y]);
         let expandable = !combines_options
             && context.additional_allowed
@@ -453,7 +451,7 @@ fn draw_collapsed(
         ui.tooltip_text(format!("Show {} commands", panel.label()));
     }
     if !matches!(tab, RibbonTab::Model | RibbonTab::Sketch) {
-        let title_y = context.owners.icons.appearance.tab_command_height(tab) + 6.;
+        let title_y = context.owners.icons.appearance.command_height() + 6.;
         context.owners.icons.cursor(ui, origin, [0., title_y]);
         // Collapsed buttons need their label even when expanded panel captions are hidden.
         place_group_caption(ui, panel, width, false, true);

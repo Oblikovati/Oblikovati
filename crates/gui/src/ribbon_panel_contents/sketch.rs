@@ -10,7 +10,7 @@ pub(super) const CONSTRAINT_CONTROLS: [(crate::GuiSketchConstraint, [f32; 2]); 1
     (Horizontal, [0.0, 0.0]),
     (Vertical, [0.0, 20.0]),
     (Coincident, [0.0, 40.0]),
-    (Fix, [116.0, 60.0]),
+    (Fix, [116.0, 40.0]),
     (Parallel, [232.0, 0.0]),
     (Perpendicular, [232.0, 20.0]),
     (Collinear, [232.0, 40.0]),
@@ -46,7 +46,7 @@ pub(super) fn sketch_constraint_controls(
         "Dimension",
         GuiShellAction::Dimension(crate::GuiDimensionAction::Start),
         state,
-        [108., 58.],
+        [108., 38.],
         actions,
     );
 }
@@ -98,7 +98,7 @@ pub(super) fn sketch_create_controls(
         [108., 18.],
         actions,
     );
-    icons.cursor(ui, origin, [124., 60.]);
+    icons.cursor(ui, origin, [356., 40.]);
     crate::sketch_flyouts::sketch_tool_flyout_button(
         ui,
         state,
@@ -106,7 +106,7 @@ pub(super) fn sketch_create_controls(
         crate::GuiSketchTool::Line,
         icons,
     );
-    icons.cursor(ui, origin, [240., 60.]);
+    icons.cursor(ui, origin, [472., 0.]);
     let disabled = ui.begin_disabled(true);
     icons.button(
         ui,

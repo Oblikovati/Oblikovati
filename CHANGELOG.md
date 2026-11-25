@@ -292,7 +292,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Rendered Windows windows at the monitor DPI and scaled layout, input, and fonts when display density changes. Linux X11 uses desktop DPI from X resources or XSETTINGS for the same layout, input, and font scaling. (#3850)
 
 - Matched the default viewport and status bar to the desktop theme while preserving explicit colour schemes and readable viewport labels. (#4063)
-- Kept Extrude actions visible in short panels, made feature drafts exclusive, fitted and labelled the Sketch ribbon groups, and cleared origin-plane paint from the viewport controls. (#4063)
+- Kept Extrude actions visible in short panels, made feature drafts exclusive, and cleared origin-plane paint from the viewport controls. Fitted and labelled the Sketch ribbon groups in a stable 88 px Normal ribbon row and kept Light ViewCube labels readable when inactive. (#4063)
 - Updated the active ribbon underline in the same frame as its commands. (#4063)
 - Aligned Fillet and Chamfer properties and put Extrude distance tools and direction choices inline. Kept floating modeling properties inside the viewport during resize and improved Light theme contrast for disabled property actions and read-only Theme Editor values. (#4063)
 - Centered the active document and model state in the titlebar and restyled its window controls. (#4063)

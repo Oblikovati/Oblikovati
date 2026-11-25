@@ -33,7 +33,8 @@ pub(super) fn draw_control(
     alpha: f32,
 ) {
     let list = ui.get_window_draw_list();
-    let paint = cube_paint(ui.style_color(StyleColor::WindowBg));
+    let background = ui.style_color(StyleColor::WindowBg);
+    let paint = cube_paint(background);
     let mut faces = shown_faces(axes, layout, origin);
     faces.reverse();
     let at = |point: [f32; 2]| [origin[0] + point[0], origin[1] + point[1]];
@@ -54,8 +55,14 @@ pub(super) fn draw_control(
         draw_arrows(&list, layout, origin, accent);
     }
     drop(list);
+    // Keep dark ink readable over the Light face while it fades. Zero still hides the control.
+    let label_alpha = if background[0] > 0.5 && alpha > 0. {
+        1.
+    } else {
+        alpha
+    };
     for shown in faces.iter().filter(|shown| shown.facing > LABEL_SHOWS_FROM) {
-        draw_face_label(ui, shown, axes, faded(paint.label, alpha));
+        draw_face_label(ui, shown, axes, faded(paint.label, label_alpha));
     }
 }
 fn draw_face_label(ui: &Ui, shown: &ShownFace, axes: &GuiViewAxes, color: [f32; 4]) {

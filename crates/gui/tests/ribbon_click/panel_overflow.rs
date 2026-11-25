@@ -49,6 +49,29 @@ fn the_narrow_model_ribbon_shows_and_opens_its_last_group_without_scrolling() {
     assert!(ribbon_caption(&mut engine, &mut request, "Simplify", true)[0] < 780.);
 }
 
+#[test]
+fn sketch_compaction_is_visible_on_the_first_frame_and_keeps_the_viewport_height() {
+    let mut engine = GuiFrameEngine::new().unwrap();
+    let mut request = ribbon_request();
+    request.extent = [920, 680];
+    enter_part(&mut request);
+    settle_ribbon(&mut engine, &mut request);
+    let part_top = engine.frame(&request).unwrap().document_area.unwrap()[1];
+    request.commands.authoring = GuiAuthoringContext::Sketch;
+    for _ in 0..4 {
+        let frame = engine.frame(&request).unwrap();
+        assert_eq!(frame.document_area.unwrap()[1], part_top);
+        let runs = drawn_text::rendered_frame();
+        let finish = runs
+            .runs
+            .iter()
+            .find(|run| run.text == "FinishSketch")
+            .unwrap();
+        assert!(finish.maximum[0] < 920. && finish.maximum[1] < part_top as f32);
+        assert!(runs.runs.iter().any(|run| run.text == "Create"));
+    }
+}
+
 use GuiSketchTool::*;
 const PRIMARY_TOOLS: [GuiSketchTool; 8] = [
     Line,

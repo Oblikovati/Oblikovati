@@ -47,29 +47,24 @@ pub(crate) fn ribbon_band(
         return home_band(ui, request, &mut owners, width, actions);
     }
     let height_total = request.extent[1] as f32 / request.layout_scale()[1];
-    let scrollbar = owners.ribbon.panels.scrollbar_height(ui);
     let placement = owners.ribbon.display.placement;
     let mut frame = owners.ribbon.prepare(&request.commands);
     // A moved ribbon leaves only the menu, quick access and status in the top band.
-    let row_growth =
-        application_bar_height(owners.icons) - APPLICATION_BAR_HEIGHT + tab_row_height(ui) - 24.;
-    let height = row_growth
-        + if placement == RibbonPlacement::Top {
-            owners.ribbon.display.mode.band_height(scrollbar)
-                + if owners.ribbon.display.mode == RibbonDisplay::Full {
-                    (20. + owners
-                        .ribbon
-                        .display
-                        .appearance
-                        .tab_command_height(owners.ribbon.active))
-                        * owners.icons.layout_factor()
-                        - 80.
-                } else {
-                    0.
-                }
-        } else {
-            RibbonDisplay::Tabs.band_height(scrollbar)
-        };
+    let bar_height = application_bar_height(owners.icons);
+    let tabs_height = tab_row_height(ui);
+    let mode = if placement == RibbonPlacement::Top {
+        owners.ribbon.display.mode
+    } else {
+        RibbonDisplay::Tabs
+    };
+    let height = if mode == RibbonDisplay::Full {
+        bar_height
+            + 1.
+            + tabs_height
+            + owners.ribbon.display.appearance.full_row_height() * owners.icons.layout_factor()
+    } else {
+        bar_height - APPLICATION_BAR_HEIGHT + tabs_height - 24. + mode.band_height()
+    };
     owners.ribbon.display.temporary_escape_consumed = false;
     let blocked = ui.io().want_text_input
         || ui.io().key_ctrl

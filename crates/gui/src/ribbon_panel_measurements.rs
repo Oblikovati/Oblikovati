@@ -3,13 +3,6 @@
 use super::*;
 
 impl RibbonPanelLayout {
-    pub(crate) fn scrollbar_height(&self, ui: &Ui) -> f32 {
-        if self.scrollbar_shown {
-            ui.clone_style().scrollbar_size
-        } else {
-            0.
-        }
-    }
     pub(super) fn use_appearance(
         &mut self,
         appearance: crate::ribbon_command_layout::RibbonAppearance,
@@ -37,10 +30,11 @@ impl RibbonPanelLayout {
         panels: &[RibbonPanel],
         collapsed: f32,
         available: f32,
+        factor: f32,
     ) -> usize {
         let widths: Vec<f32> = panels
             .iter()
-            .map(|panel| self.widths.get(&(tab, *panel)).copied().unwrap_or(0.))
+            .map(|panel| self.panel_width(tab, *panel, factor).unwrap_or(0.))
             .collect();
         let required = panels.iter().position(|panel| *panel == RibbonPanel::Exit);
         if required.is_none() {
@@ -50,9 +44,19 @@ impl RibbonPanelLayout {
             &widths, 8., collapsed, available, required,
         )
     }
-    pub(super) fn observe_scrollbar(&mut self, shown: bool) {
-        self.pending_layout |= self.scrollbar_shown != shown;
-        self.scrollbar_shown = shown;
+    pub(super) fn panel_width(
+        &self,
+        tab: RibbonTab,
+        panel: RibbonPanel,
+        factor: f32,
+    ) -> Option<f32> {
+        use crate::ribbon_command_layout::RibbonAppearance;
+        if tab == RibbonTab::Sketch && self.measured_appearance == Some(RibbonAppearance::Normal) {
+            if let Some(width) = sketch_normal_width(panel) {
+                return Some(width * factor);
+            }
+        }
+        self.widths.get(&(tab, panel)).copied()
     }
 }
 
@@ -70,13 +74,13 @@ pub(super) fn temporary_geometry(
     let floating_notes = display.placement
         == crate::application::ribbon_display::RibbonPlacement::Floating
         && shown == TemporaryPanel::Group(RibbonPanel::PartNotes);
-    let content_height = temporary_content_height(display.appearance, tab, floating_notes);
+    let content_height = temporary_content_height(display.appearance, floating_notes);
     let panel_height = 24. + content_height * factor;
     let viewport = ui.io().display_size[0];
     let TemporaryPanel::Group(panel) = shown else {
         return ([8., top], [viewport - 16., panel_height]);
     };
-    let measured = layout.widths.get(&(tab, panel)).copied().unwrap_or(108.);
+    let measured = layout.panel_width(tab, panel, factor).unwrap_or(108.);
     let compact_width = if display.side_anchor.is_some() && panel == RibbonPanel::PartModify {
         crate::ribbon_panel_contents::compact_modify_width(
             display.appearance,
@@ -111,12 +115,26 @@ pub(super) fn temporary_geometry(
 
 pub(super) fn temporary_content_height(
     appearance: crate::ribbon_command_layout::RibbonAppearance,
-    tab: RibbonTab,
     floating_notes: bool,
 ) -> f32 {
     if floating_notes {
         crate::ribbon_panel_contents::FLOATING_NOTES_HEIGHT
     } else {
-        20. + appearance.tab_command_height(tab)
+        appearance.full_row_height()
     }
+}
+
+// These authored grids have known bounds before their controls first enter the draw list.
+fn sketch_normal_width(panel: RibbonPanel) -> Option<f32> {
+    Some(match panel {
+        RibbonPanel::Create => 622.,
+        RibbonPanel::Constrain => 456.,
+        RibbonPanel::Format | RibbonPanel::Layout => 224.,
+        RibbonPanel::Modify
+        | RibbonPanel::Insert
+        | RibbonPanel::SketchPattern
+        | RibbonPanel::Parameters
+        | RibbonPanel::Exit => 108.,
+        _ => return None,
+    })
 }
