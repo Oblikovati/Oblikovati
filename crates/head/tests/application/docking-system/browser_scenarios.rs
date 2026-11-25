@@ -1,9 +1,71 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exercise the observed Appearance and Material Browser docking workflows.
+use super::super::x11_input;
 use super::{ApplicationWorld, diagnostics, native_drag, resize_boundary, viewport};
 use cucumber::{given, then, when};
 const APPEARANCE: &str = "Appearance Browser";
 const MATERIAL: &str = "Material Browser";
+
+#[test]
+fn viewport_keeps_its_reserved_width_while_the_splitter_is_held() {
+    let mut world = ApplicationWorld::with_asset_tools_closed();
+    super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    open_floating(&mut world, APPEARANCE);
+    dock_appearance_right(&mut world);
+    hold_splitter_past_its_limit(&mut world, false);
+    world.close();
+}
+
+#[test]
+fn held_model_splitter_respects_the_same_viewport_limit() {
+    let mut world = ApplicationWorld::new();
+    super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    hold_splitter_past_its_limit(&mut world, true);
+    world.close();
+}
+
+fn hold_splitter_past_its_limit(world: &mut ApplicationWorld, left: bool) {
+    let original = viewport(world);
+    let height = ((original[1] + original[3]) / 2) as i32;
+    let (edge, start, end, capture) = if left {
+        (0, original[0] as i32 - 1, original[2] as i32 - 100, "model")
+    } else {
+        (
+            2,
+            original[2] as i32 + 2,
+            original[0] as i32 + 100,
+            "appearance",
+        )
+    };
+    let handle = [start, height];
+    let beyond_limit = [end, height];
+    x11_input::move_pointer(handle);
+    world.pump(Vec::new());
+    x11_input::left_button(handle, true);
+    world.pump(Vec::new());
+    x11_input::move_pointer(beyond_limit);
+    world.pump(Vec::new());
+    let held = viewport(world);
+    let minimum = (world.extent()[0] * 55).div_ceil(100);
+    world.save_capture(&format!("{capture}-splitter-held-at-cap"));
+    assert!(
+        held[2] - held[0] >= minimum,
+        "held viewport {held:?}, expected {minimum} px"
+    );
+    assert!(
+        held[edge].abs_diff(original[edge]) > 40,
+        "expected the splitter to move: {original:?} -> {held:?}"
+    );
+    x11_input::move_pointer(handle);
+    world.pump(Vec::new());
+    let returned = viewport(world);
+    x11_input::left_button(handle, false);
+    world.pump(Vec::new());
+    assert!(
+        original[0].abs_diff(returned[0]) <= 1 && original[2].abs_diff(returned[2]) <= 1,
+        "expected the splitter to return without releasing it: {original:?} -> {returned:?}"
+    );
+}
 
 #[test]
 fn capped_appearance_splitter_keeps_the_selected_width_across_restart() {
