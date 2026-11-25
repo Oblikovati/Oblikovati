@@ -2407,15 +2407,15 @@
           "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
         },
         "cucumber": "architecture/rust-port/receipts/2026-11-25-ribbon-customization-current-3856/cucumber.json",
-        "cucumber_sha256": "3a82d5159af53ba059ac7e3b8abd0a27763b5a3a3924c572d5b4b0eab20231df",
+        "cucumber_sha256": "e9046b4af9ae059abfcd61339d06efd1d64d9fd2c480e7795d2e1533fc6a4a01",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-ribbon-customization-current-3856/scenario-inventory.json",
         "scenario_inventory_sha256": "f5ffc92a1596db2741aa0edaa272a340c62c06d16219090977ee0a0bceb4302c",
         "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-ribbon-customization-current-3856/scenario-arguments.json",
-        "scenario_arguments_sha256": "401b4ca0e2d5729ea5e485ec775e0c20d7d8080f802dba17e37b8c01d8a82e69",
-        "application_commit": "66370d3b30516391e9ea2ef1162efc0ab0ca8ef2",
+        "scenario_arguments_sha256": "6d71ce212c845440b2145a93a8a760e86a8dc686b0e4a200b4f5932ddd92925c",
+        "application_commit": "7f4807ad4883c4f6ae3b703f0b6b839d73fc27e8",
         "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-customization OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
         "environment": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe",
-        "notes": "Current diagnostic checkpoint. 105 native executions and 1432 steps in passing cases. 101 of 122 declarations passed, counting each outline only after every example passed. Individual receipts identify the builds and existing local GUI changes. Strict provenance remains open under #3978."
+        "notes": "Current diagnostic checkpoint. 106 native executions and 1446 steps in passing cases. 102 of 122 declarations passed, counting each outline only after every example passed. Individual receipts identify the builds and existing local GUI changes. Strict provenance remains open under #3978."
       }
     }
   }

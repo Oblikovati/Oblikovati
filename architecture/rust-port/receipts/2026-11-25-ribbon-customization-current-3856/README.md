@@ -1,7 +1,7 @@
 # Current native Ribbon Customization
 
-One hundred and five of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 101 of 122 declarations and 1,432
+One hundred and six of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 102 of 122 declarations and 1,446
 passing steps on this retained input snapshot. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
@@ -71,9 +71,9 @@ includes the rerun with the published design references.
 Case 60 verified the first two rows stay selected and in place after Down.
 [Down ordering](../2026-11-25-ribbon-customization-multiselect-down-3856/README.md)
 
-The earlier [reorder](case-082/cucumber.json) and
-[remove](case-083/cucumber.json) runs stopped at the missing 2-D Drawing
-entry. Both cases are queued for current runs.
+The [reorder after source selection run](../2026-11-25-ribbon-customization-reorder-after-source-3856/README.md)
+verified that Up still moves the selected target row. The earlier
+[remove run](case-083/cucumber.json) is queued for a current rerun.
 [Letter navigation](case-071/cucumber.json) also remains open.
 
 One [cancellation case](case-055/cucumber.json) closes Customize and

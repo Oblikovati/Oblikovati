@@ -66,6 +66,24 @@ fn first_target_pair_remains_selected(world: &mut ApplicationWorld) {
     expect_target_selections(world, &["2-DDrawing", "2DSketches"]);
 }
 
+#[when("the user selects \"3D Annotations\" in the target list")]
+fn select_target_annotations(world: &mut ApplicationWorld) {
+    let row = target_row_runs(world)
+        .into_iter()
+        .find(|row| row.text == "3DAnnotations")
+        .expect("expected staged 3D Annotations");
+    world.click(diagnostics::pointer_pixels(row.center()));
+}
+
+#[then("\"2-D Drawing\" remains available in the source list")]
+fn drawing_remains_available(world: &mut ApplicationWorld) {
+    assert!(
+        source_rows(world)
+            .iter()
+            .any(|row| row.text == "2-DDrawing")
+    );
+}
+
 #[when("the user clicks the command name in the target row")]
 fn click_only_target_name(world: &mut ApplicationWorld) {
     let rows = target_row_runs(world);
