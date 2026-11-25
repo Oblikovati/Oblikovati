@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:59:09.406414055Z" time="43.747831237"><testcase name="Scenario: Retain separate zoom levels in two windows of a part: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:414:3" time="43.747831237"><system-out><![CDATA[  Scenario: Retain separate zoom levels in two windows of a part
+   ✔  Given `fixtures/cad/revolve/revolve-profile.opd` is open with Sketch1 being edited
+   ✔  And the user creates a second window for the part through View New
+   ✔  And the first window displays an active sketch
+   ✔  And the second window is active
+   ✔  When the user scrolls to zoom in within the second window
+   ✔  Then its displayed geometry appears enlarged
+   ✔  When the user selects the first window from the View tab's Switch menu
+   ✔  Then the first window retains its previous sketch view and scale
+   ✔  When the user returns to the second window
+   ✔  Then the second window retains its zoomed-in view
+]]></system-out></testcase></testsuite></testsuites>

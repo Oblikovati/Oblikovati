@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:50:50.236559782Z" time="120.01383182"><testcase name="Scenario: Reveal earlier tabs without changing the active document: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:299:3" time="120.01383182"><system-out><![CDATA[  Scenario: Reveal earlier tabs without changing the active document
+   ✔  Given the user opens `Window01.opd` through `Window12.opd` from `fixtures/cad/document-tabs-native/overflow` in order
+   ✔  And `fixtures/cad/document-creation-native-candidate/Metric/Standard Presentation.ord` is open
+   ✔  And the tab strip overflows its available width
+   ✔  And a presentation is active while earlier tabs are out of view
+   ✔  When the user clicks the left navigation arrow at the end of the tab strip
+   ✔  Then earlier tabs, including Home, become visible
+   ✔  And the presentation remains active in the workspace
+]]></system-out></testcase></testsuite></testsuites>

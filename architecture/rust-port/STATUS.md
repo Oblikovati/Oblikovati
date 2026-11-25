@@ -47,11 +47,11 @@ using this status; the live scenario directory can change.
   declarations in the older pinned snapshot have R0 baseline records.
   Strict verification still needs a current pin and bounded build and runtime
   inputs under #3978.
-- Document Tabs (#3900): all 39 scenarios and 343 steps passed on the November 21 published source
-  on Linux X11 with Openbox. The pinned snapshot also passed all 38
-  scenarios and 334 steps. All 38 pinned declarations have R0 baseline
-  records. The native checks include separate drawing windows and independent
-  Part views. See `receipts/2026-11-21-document-tabs-r0-3900/`.
+- Document Tabs (#3900) passed all 39 current scenarios and 343 steps on Linux X11.
+  See the [current run](receipts/2026-11-25-document-tabs-current-3900/README.md).
+  The pinned snapshot also passed all 38 scenarios and 334 steps.
+  All 38 pinned declarations have R0 baseline records in
+  `receipts/2026-11-21-document-tabs-r0-3900/`.
   Strict verification remains blocked by #3978.
 - Document Saving (#3888): all 23 pinned scenarios and 218 steps passed
   under Linux X11 with Openbox. The three reusable native Part fixtures
@@ -471,7 +471,7 @@ using this status; the live scenario directory can change.
 ## Work queue
 
 Work dependency-ready application scenarios one at a time, then sketch and modeling.
-1. Continue the dependency-ready application scenarios with Document Tabs.
+1. Continue the dependency-ready application scenarios with Home Recent Documents.
    Midpoint Line (#4178) still names a deferred Inventor fixture. Revisit it when
    the scenario owner adopts the supplied native fixture.
    Constraint Settings (#4158) is paused with uncommitted work while its

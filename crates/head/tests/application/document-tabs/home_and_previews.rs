@@ -6,6 +6,8 @@ use super::super::world::squeezed;
 use cucumber::{given, then, when};
 #[path = "preview_probe.rs"]
 mod preview_probe;
+#[path = "saved_overflow.rs"]
+mod saved_overflow;
 #[path = "saved_previews.rs"]
 mod saved_previews;
 
@@ -403,23 +405,6 @@ fn many_open(world: &mut ApplicationWorld) {
 fn strip_overflows(world: &mut ApplicationWorld) {
     world.expect_text("<");
 }
-#[given("a presentation is active while earlier tabs are out of view")]
-fn presentation_active(world: &mut ApplicationWorld) {
-    let presentation = world.add_template(oblikovati_gui::GuiTemplateKind::Presentation);
-    world.previous_document = Some(presentation);
-    world.pump(Vec::new());
-    for _ in 0..=MANY_DOCUMENTS {
-        if world.tab_run("Home").is_some() {
-            break;
-        }
-        world.click_text("<");
-        world.pump(Vec::new());
-    }
-    world.expect_tab("Home");
-    world.click_text(">");
-    world.pump(Vec::new());
-    assert!(world.tab_run("Home").is_none(), "expected Home out of view");
-}
 #[when("I click the left navigation arrow at the end of the tab strip")]
 #[when("the user clicks the left navigation arrow at the end of the tab strip")]
 fn click_left_arrow(world: &mut ApplicationWorld) {
@@ -429,7 +414,7 @@ fn click_left_arrow(world: &mut ApplicationWorld) {
 #[then("earlier tabs, including Home, become visible")]
 fn earlier_visible(world: &mut ApplicationWorld) {
     world.expect_tab("Home");
-    let earlier = world.parts[HIDDEN_PART];
+    let earlier = world.other_document.unwrap_or(world.parts[HIDDEN_PART]);
     let name = world.document_name(earlier);
     world.expect_tab(&name);
 }
@@ -444,7 +429,7 @@ fn presentation_stays(world: &mut ApplicationWorld) {
 }
 #[given("an open part's tab is outside the visible portion of the strip")]
 fn part_outside(world: &mut ApplicationWorld) {
-    let hidden = world.parts[HIDDEN_PART];
+    let hidden = world.other_document.unwrap_or(world.parts[HIDDEN_PART]);
     let name = world.document_name(hidden);
     assert!(
         world.tab_run(&name).is_none(),
@@ -454,7 +439,7 @@ fn part_outside(world: &mut ApplicationWorld) {
 #[when("I select that part from the View tab's Switch menu")]
 #[when("the user selects that part from the View tab's Switch menu")]
 fn select_from_switch(world: &mut ApplicationWorld) {
-    let hidden = world.parts[HIDDEN_PART];
+    let hidden = world.other_document.unwrap_or(world.parts[HIDDEN_PART]);
     let name = world.document_name(hidden);
     open_switch(world);
     world.click_text(&name);
@@ -463,15 +448,16 @@ fn select_from_switch(world: &mut ApplicationWorld) {
 }
 #[then("the tab strip shifts to show its active tab")]
 fn strip_shows_active(world: &mut ApplicationWorld) {
-    let hidden = world.parts[HIDDEN_PART];
+    let hidden = world.other_document.unwrap_or(world.parts[HIDDEN_PART]);
     world.expect_active(hidden);
     let name = world.document_name(hidden);
     world.expect_tab(&name);
 }
 #[then("the part's viewport and model browser are displayed")]
 fn part_viewport_browser(world: &mut ApplicationWorld) {
-    let hidden = world.parts[HIDDEN_PART];
+    let hidden = world.other_document.unwrap_or(world.parts[HIDDEN_PART]);
     world.expect_browser_of(hidden);
+    world.expect_blank_region([400, 600], [250, 300]);
 }
 // Keyboard ring with Home
 #[given("Home and a part window are adjacent in the MCAD Software tab strip")]

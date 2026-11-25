@@ -107,7 +107,8 @@ fn probe_intersects_window(probe: [i64; 4], window: [f32; 4]) -> bool {
         && (probe[3] as f64) > f64::from(window[1])
 }
 
-fn edge_visible(
+/// Check contrast along one projected edge, for example `edge_visible(capture, a, b, [0, -1])`.
+pub(super) fn edge_visible(
     capture: &ViewportCapture,
     start: [i32; 2],
     end: [i32; 2],

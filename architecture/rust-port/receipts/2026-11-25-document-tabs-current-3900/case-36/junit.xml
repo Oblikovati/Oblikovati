@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:54:58.799011822Z" time="35.176723988"><testcase name="Scenario: Wrap keyboard navigation between Home and the last window: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:378:3" time="35.176723988"><system-out><![CDATA[  Scenario: Wrap keyboard navigation between Home and the last window
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd`, `fixtures/cad/quick-access-toolbar/PartTwo.opd` and `fixtures/cad/revolve/revolve-profile.opd` are open
+   ✔  And the user creates a second window for the profile part through View New
+   ✔  And Home is the first tab and a part's second window is the last tab
+   ✔  And Home is active
+   ✔  When the user presses Control+Shift+Tab
+   ✔  Then the part's second window becomes active
+   ✔  When the user presses Control+Tab
+   ✔  Then the Home workspace becomes active again
+]]></system-out></testcase></testsuite></testsuites>
