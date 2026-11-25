@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:22:46.528820677Z" time="35.92677582"><testcase name="Scenario: Minimize to tabs after pinning the Modify expansion: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:558:3" time="35.92677582"><system-out><![CDATA[  Scenario: Minimize to tabs after pinning the Modify expansion
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the ribbon display policy is "Minimize to Tabs"
+   ✔  When the user opens and pins the Modify additional command area
+   ✔  And the user clicks empty viewport space
+   ✔  Then the Modify additional area remains visible
+   ✔  When the user clicks the ribbon display control
+   ✔  Then the ribbon is minimized to tabs
+   ✔  And the Modify additional area is not visible
+   ✔  When the user clicks the 3D Model tab
+   ✔  And the user opens the Modify additional area
+   ✔  And the user clicks empty viewport space
+   ✔  Then the temporary ribbon and its additional command area close
+   ✔  When the user clicks the ribbon display control to restore the full ribbon
+   ✔  Then the full 3D Model ribbon is displayed
+   ✔  And the additional commands are closed
+   ✔  When the user opens the Modify additional area
+   ✔  And the user clicks empty viewport space
+   ✔  Then the additional area closes
+   ✔  And the full 3D Model ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

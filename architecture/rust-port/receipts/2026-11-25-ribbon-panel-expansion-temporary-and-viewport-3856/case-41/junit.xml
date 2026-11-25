@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:22:17.88800723Z" time="27.661729532"><testcase name="Scenario: Press Escape after opening the full ribbon expansion by pointer: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:545:3" time="27.661729532"><system-out><![CDATA[  Scenario: Press Escape after opening the full ribbon expansion by pointer
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is unpinned
+   ✔  When the user clicks the Modify panel title
+   ✔  Then Move Bodies, Bend Part and Copy Object are visible in the additional area
+   ✔  When the user presses Escape
+   ✔  Then the additional area remains visible with those commands
+   ✔  When the user clicks the lower Modify title
+   ✔  Then the additional area closes
+   ✔  And the full 3D Model ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

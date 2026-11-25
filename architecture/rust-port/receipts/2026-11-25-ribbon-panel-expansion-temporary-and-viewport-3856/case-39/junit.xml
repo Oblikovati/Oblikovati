@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:21:23.364693252Z" time="22.598656971"><testcase name="Scenario: Select a model browser feature with an unpinned expansion: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:525:3" time="22.598656971"><system-out><![CDATA[  Scenario: Select a model browser feature with an unpinned expansion
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon has the Modify additional-command area open and unpinned
+   ✔  When the user selects the extrusion in the model browser
+   ✔  Then the additional-command area closes
+   ✔  And the extrusion is selected in the browser
+   ✔  And its geometry is highlighted in the viewport
+]]></system-out></testcase></testsuite></testsuites>
