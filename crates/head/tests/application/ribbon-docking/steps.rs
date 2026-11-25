@@ -343,7 +343,28 @@ fn remains_left(world: &mut ApplicationWorld) {
         position[0], 0.,
         "column at {position:?}: expected the left edge"
     );
-    tabs_on_left(world);
+    expect_primary_tab_on_left(world);
+    expect_vertical(world, &["Manage", "View"]);
+}
+fn expect_primary_tab_on_left(world: &mut ApplicationWorld) {
+    use oblikovati_gui::GuiBrowserKind;
+    let primary_tab = match world.state().browser.map(|browser| browser.kind) {
+        Some(GuiBrowserKind::Assembly) => "Assemble",
+        Some(GuiBrowserKind::SheetMetal) => "Sheet Metal",
+        _ => "3D Model",
+    };
+    let label = super::world::squeezed(primary_tab);
+    let manage = world.run("Manage").center();
+    assert!(
+        world.frame.runs.iter().any(|run| {
+            let [x, y] = run.center();
+            super::world::squeezed(&run.text) == label
+                && x < 90.
+                && (x - manage[0]).abs() < 40.
+                && y < manage[1]
+        }),
+        "expected {primary_tab} above Manage in the left tab column"
+    );
 }
 fn work_features_y(world: &ApplicationWorld) -> f32 {
     world.run("Work Features").center()[1]
@@ -436,49 +457,6 @@ fn model_groups_again(world: &mut ApplicationWorld) {
     }
     same_part(world);
 }
-#[given("a part, an assembly and a sheet-metal part are open in the MCAD Software")]
-fn three_documents(world: &mut ApplicationWorld) {
-    use oblikovati_gui::GuiTemplateKind;
-    world.previous_document = Some(world.add_part());
-    world.other_document = Some(world.add_template(GuiTemplateKind::Assembly));
-    let sheet_metal = world.add_template(GuiTemplateKind::SheetMetal);
-    world.parts.push(sheet_metal);
-}
-#[given("the part is active with the ribbon docked on the left")]
-fn part_docked_left(world: &mut ApplicationWorld) {
-    let part = world.previous_document.expect("expected the part");
-    world.activate_through_tab(part);
-    choose_position(world, "Left");
-    let (position, _) = window_geometry(COLUMN).expect("expected the side column");
-    assert_eq!(position[0], 0.);
-}
-#[when("I activate the assembly document")]
-fn activate_assembly(world: &mut ApplicationWorld) {
-    let assembly = world.other_document.expect("expected the assembly");
-    world.click_tab(assembly);
-    world.pump(Vec::new());
-}
-#[then("it displays assembly tabs and commands")]
-fn assembly_tabs(world: &mut ApplicationWorld) {
-    world.expect_text("Assemble");
-    world.expect_text("Component");
-}
-#[when("I activate the sheet-metal part")]
-fn activate_sheet_metal(world: &mut ApplicationWorld) {
-    let sheet_metal = *world.parts.last().expect("expected the sheet-metal part");
-    world.click_tab(sheet_metal);
-    world.pump(Vec::new());
-}
-#[then("it displays the Sheet Metal tab and its commands")]
-fn sheet_metal_tabs(world: &mut ApplicationWorld) {
-    world.expect_text("Sheet Metal");
-    world.expect_text("Sketch");
-}
-#[then("the sheet-metal part is active")]
-fn sheet_metal_active(world: &mut ApplicationWorld) {
-    let sheet_metal = *world.parts.last().expect("expected the sheet-metal part");
-    assert_eq!(world.state().document, Some(sheet_metal));
-}
 pub(super) fn dock_ribbon_top(world: &mut ApplicationWorld) {
     choose_position(world, "Top");
 }
@@ -494,3 +472,6 @@ mod right_docked;
 
 #[path = "floating_title.rs"]
 mod floating_title;
+
+#[path = "document_switch.rs"]
+mod document_switch;

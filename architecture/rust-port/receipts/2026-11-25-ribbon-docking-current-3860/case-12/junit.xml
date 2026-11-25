@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:48:39.644078868Z" time="31.453828199"><testcase name="Scenario: Dock the floating ribbon to the left: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:181:3" time="31.453828199"><system-out><![CDATA[  Scenario: Dock the floating ribbon to the left
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active and the 3D Model ribbon is docked at the top
+   ✔  When the user undocks the ribbon
+   ✔  And chooses Dock to Left from the floating title menu
+   ✔  Then the ribbon tabs and command groups are arranged vertically on the left
+   ✔  And the model browser appears to the right of the ribbon
+   ✔  When the user chooses Top from the docked ribbon tab menu
+   ✔  Then the ribbon returns to a horizontal position above the viewport
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

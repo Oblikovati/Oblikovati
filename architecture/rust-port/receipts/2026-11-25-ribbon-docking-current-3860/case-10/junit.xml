@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-24T23:45:43.767341836Z" time="4.764516567"><testcase name="Scenario: Switch tabs on a left-docked ribbon during a modeling command: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:136:3" time="4.764516567"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Switch tabs on a left-docked ribbon during a modeling command
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` with its solid block is active in the MCAD Software
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:137:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

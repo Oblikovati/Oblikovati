@@ -1448,6 +1448,28 @@
         "cucumber_sha256": "721f03b1d2db750c30357d5fceb14224c0b247f596c27fdde0b6de6ec00cddb9",
         "scenario_arguments": "architecture/rust-port/receipts/2026-11-21-floating-ribbon-3856/scenario-arguments.json",
         "scenario_arguments_sha256": "53ab574cdf515f338d2bcfa5f7896a6d5a18e699e6cfc22fe1d1336a8bd6b8a4"
+      },
+      "0b7b27483f6be93a63fe32625880dd5e10bfc5dafbf20276001565dfb9ef9724": {
+        "feature_sha256": "0b7b27483f6be93a63fe32625880dd5e10bfc5dafbf20276001565dfb9ef9724",
+        "supporting_files": {
+          "fixtures/cad/blank-metric-assembly.oad": "f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5",
+          "fixtures/cad/blank-metric-part.opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+          "fixtures/cad/planar-sketch-empty-xy.opd": "d936ef6b165b4bcbe14e04ac1b08bb5b16c81fddb597e70acb781e753c07e9a8",
+          "fixtures/cad/ribbon-docking/native-sheet-metal.opd": "6c66a37d638eecec635e003e45ee5062da4e7fd68a24f780408a77b03e59376d",
+          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-25-ribbon-docking-current-3860/cucumber.json",
+        "cucumber_sha256": "7ff4a13a18147bf46b3913281a7c8a8bf69456990234dd55d61349fab6ca1f94",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-ribbon-docking-current-3860/scenario-inventory.json",
+        "scenario_inventory_sha256": "110315cbedd64de83d4ba03868df8f809f165fa2ee061c1fd5ff3e24bf30d1af",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-ribbon-docking-current-3860/scenario-arguments.json",
+        "scenario_arguments_sha256": "74250fe0d6bad363405abfe51d9f10411372d1a7e35e702c8fdf086acb6af937",
+        "application_commit": "a8971f506be6abf0e99a09bbfc408704e868bd16",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-docking OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "21 current scenarios and 223 steps passed. Strict build and runtime provenance remains open under #3978.",
+        "blocker": "The active Shell case requires a valid preview. The published Part reproduced the vertex-tolerance refusal with the pinned Martensite build (#554). See the native Shell probe."
       }
     }
   },

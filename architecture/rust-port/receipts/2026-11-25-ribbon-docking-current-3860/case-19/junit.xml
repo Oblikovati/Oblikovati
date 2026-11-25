@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:52:32.940731007Z" time="42.556066487"><testcase name="Scenario: Switch compact groups in the right-docked ribbon: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:267:3" time="42.556066487"><system-out><![CDATA[  Scenario: Switch compact groups in the right-docked ribbon
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active with the 3D Model ribbon docked on the right
+   ✔  And Modify and Work Features are shown as compact group buttons
+   ✔  When the user selects Modify
+   ✔  Then Modify is highlighted
+   ✔  And its command panel opens to the left of the ribbon
+   ✔  When the user selects Work Features
+   ✔  Then its command panel replaces the Modify panel
+   ✔  And lists Plane, Axis, Point and UCS
+   ✔  When the user docks the ribbon at the top
+   ✔  Then the temporary command panel closes
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

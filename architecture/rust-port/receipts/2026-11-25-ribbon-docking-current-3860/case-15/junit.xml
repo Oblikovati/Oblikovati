@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:50:17.038927414Z" time="32.069482149"><testcase name="Scenario: Undock from a pinned expanded panel and redock at the top: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:220:3" time="32.069482149"><system-out><![CDATA[  Scenario: Undock from a pinned expanded panel and redock at the top
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active with the full 3D Model ribbon docked at the top
+   ✔  And the Modify additional command area is open and pinned
+   ✔  When the user chooses Undock Ribbon from its title context menu
+   ✔  Then the additional command area closes
+   ✔  And the ribbon floats vertically over the workspace
+   ✔  When the user docks the floating ribbon at the top
+   ✔  Then the full ribbon returns to the top
+   ✔  And the Modify additional command area is closed
+   ✔  When the user opens Modify and clicks empty viewport space
+   ✔  Then the additional command area closes
+]]></system-out></testcase></testsuite></testsuites>

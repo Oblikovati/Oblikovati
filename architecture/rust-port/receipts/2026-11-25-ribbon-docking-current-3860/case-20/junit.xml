@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:01:38.412273072Z" time="30.045714236"><testcase name="Scenario: Finish a sketch while the ribbon is docked left: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:282:3" time="30.045714236"><system-out><![CDATA[  Scenario: Finish a sketch while the ribbon is docked left
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with `Sketch1` being edited and the ribbon docked at the top
+   ✔  When the user docks the Sketch ribbon on the left
+   ✔  Then the sketch tools appear in a vertical group column
+   ✔  And Finish remains visible in the Exit group at the bottom
+   ✔  When the user selects Finish
+   ✔  Then sketch editing ends and the part model view returns
+   ✔  And the ribbon remains docked on the left
+   ✔  And the 3D Model tab and groups are active
+   ✔  And no sketch geometry has changed
+]]></system-out></testcase></testsuite></testsuites>

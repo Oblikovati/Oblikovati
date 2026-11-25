@@ -298,6 +298,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Kept long tab labels readable when the ribbon is docked on either side. (#3860)
 - Wrapped long project names in the Projects dialog. (#3899)
 - Restored the template gallery's left edge when keyboard navigation reaches the first tile. (#3899)
 - Enabled Page Up and Page Down in the staged ribbon command list. (#3856)
@@ -329,7 +330,6 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Highlighted active groups on side and floating ribbons and listed Slot, Draft, and Thread as disabled in Modify. (#3856)
 
 - Kept the desktop responsive when a resize clips a dock tab bar. (#3860)
-
 - Kept the Cargo workspace and repository checks running when the BDD ledger failed, and reported all failed stages. (#3860)
 - Canceled superseded Rust CI runs on the same branch or pull request so the latest checks can start sooner. (#3860)
 

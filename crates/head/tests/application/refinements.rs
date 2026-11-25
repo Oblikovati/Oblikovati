@@ -303,14 +303,6 @@ fn create_lit(world: &mut ApplicationWorld) {
 fn modify_lit(world: &mut ApplicationWorld) {
     group_lit_against(world, "Modify", "Create");
 }
-#[then("the browser and viewport show the assembly")]
-fn shows_assembly(world: &mut ApplicationWorld) {
-    world.expect_text("Assembly");
-}
-#[then("the browser and viewport show the sheet-metal part")]
-fn shows_sheet_metal(world: &mut ApplicationWorld) {
-    world.expect_text("SheetMetal");
-}
 // Panels
 #[then("the other compact group buttons remain visible and close the gap")]
 fn compact_close_gap(world: &mut ApplicationWorld) {

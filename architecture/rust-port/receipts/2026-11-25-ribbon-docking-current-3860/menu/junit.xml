@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:40:50.40312438Z" time="36.797072787"><testcase name="Scenario: Open the ribbon context menu: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:6:3" time="15.680855029"><system-out><![CDATA[  Scenario: Open the ribbon context menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the ribbon is docked at the top
+   ✔  When the user right-clicks the Modify group title
+   ✔  Then the ribbon context menu offers Ribbon Appearance and Show Panels
+   ✔  And it offers Customize User Commands and undocks Ribbon
+   ✔  And it offers Docking Positions
+]]></system-out></testcase><testcase name="Scenario: Open the ribbon context menu from the active tab: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:16:3" time="21.116217758"><system-out><![CDATA[  Scenario: Open the ribbon context menu from the active tab
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is docked at the top
+   ✔  And panel titles are shown
+   ✔  When the user right-clicks the active 3D Model tab
+   ✔  Then the ribbon context menu offers Ribbon Appearance and Show Panels
+   ✔  And Show Panel Titles is checked
+   ✔  And the menu offers Customize User Commands, Undock Ribbon and Docking Positions
+   ✔  When the user presses Escape
+   ✔  Then the context menu closes
+   ✔  And the 3D Model ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

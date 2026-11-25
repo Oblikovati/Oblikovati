@@ -15,7 +15,8 @@ pub(super) fn reserve_ribbon_margins(owners: &mut RibbonDrawOwners<'_>, _width: 
     owners.workspace.reserve_for_ribbon(left, right);
 }
 const SIDE_RIBBON_WIDTH: f32 = 212.;
-const SIDE_TABS_WIDTH: f32 = 84.;
+const MINIMUM_SIDE_TABS_WIDTH: f32 = 84.;
+const SIDE_TABS_PADDING: f32 = 16.;
 const FLOATING_RIBBON_POSITION: [f32; 2] = [420., 240.];
 // Fit five annotation rows while the longer model list still scrolls.
 const FLOATING_RIBBON_SIZE: [f32; 2] = [250., 302.];
@@ -86,18 +87,32 @@ pub(super) fn side_ribbon(
         .display
         .side_panel_selector(ui, owners.ribbon.active, &panels);
     crate::widget_abi::cursor_position(ui, cursor);
-    side_tabs(ui, owners.ribbon, frame, selector_was_open);
-    ui.same_line_with_pos(SIDE_TABS_WIDTH);
+    let tabs_width = side_tabs_width(ui, frame);
+    side_tabs(ui, owners.ribbon, frame, selector_was_open, tabs_width);
+    ui.same_line_with_pos(tabs_width);
     side_groups(ui, request, owners, panel_x, actions);
 }
-fn side_tabs(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame, selector_was_open: bool) {
+fn side_tabs_width(ui: &Ui, frame: &RibbonFrame) -> f32 {
+    frame
+        .tabs
+        .iter()
+        .map(|tab| ui.calc_text_size(tab.label())[0] + SIDE_TABS_PADDING)
+        .fold(MINIMUM_SIDE_TABS_WIDTH, f32::max)
+}
+fn side_tabs(
+    ui: &Ui,
+    ribbon: &mut DocumentRibbon,
+    frame: &RibbonFrame,
+    selector_was_open: bool,
+    width: f32,
+) {
     ui.group(|| {
         let mut hovered = false;
         for tab in &frame.tabs {
             let chosen = ui
                 .selectable_config(tab.label())
                 .selected(ribbon.active == *tab)
-                .size([SIDE_TABS_WIDTH - 16., 0.])
+                .size([width - SIDE_TABS_PADDING, 0.])
                 .build();
             let context_press = ribbon.display.context_tab_press(ui);
             let selector_press =

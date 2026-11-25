@@ -1,0 +1,7 @@
+0b7b27483f6be93a63fe32625880dd5e10bfc5dafbf20276001565dfb9ef9724  features/application/ribbon-docking/ribbon-docking.feature
+f5168615164c72ae5314a7b66af724e1ee63e450590e2243e455035a93b3d9d5  fixtures/cad/blank-metric-assembly.oad
+9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c  fixtures/cad/blank-metric-part.opd
+54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a  fixtures/cad/docking-visible-solid-current.opd
+d936ef6b165b4bcbe14e04ac1b08bb5b16c81fddb597e70acb781e753c07e9a8  fixtures/cad/planar-sketch-empty-xy.opd
+6c66a37d638eecec635e003e45ee5062da4e7fd68a24f780408a77b03e59376d  fixtures/cad/ribbon-docking/native-sheet-metal.opd
+58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9  fixtures/cad/workspace-layout-native.opd

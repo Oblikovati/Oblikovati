@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" package="testsuite/Feature: Ribbon docking: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-24T23:43:41.128705104Z" time="29.527882574"><testcase name="Scenario: Open the Modify command list on the floating ribbon: target/native-scratch.HSqCy5/current-ribbon-docking-source/features/application/ribbon-docking/ribbon-docking.feature:79:3" time="29.527882574"><system-out><![CDATA[  Scenario: Open the Modify command list on the floating ribbon
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the ribbon is floating with the 3D Model tab selected
+   ✔  When the user selects the Modify group button
+   ✔  Then the Modify button is highlighted blue
+   ✔  And an adjacent command list opens with Hole, Slot, Fillet, Chamfer, Shell, and other Modify commands
+   ✔  When the user selects a face in the viewport outside the command list
+   ✔  Then the command list closes
+   ✔  And the face is highlighted with a one-face selection indicator
+   ✔  When the user clicks empty workspace outside the part
+   ✔  Then the face selection clears
+   ✔  And the ribbon remains floating
+]]></system-out></testcase></testsuite></testsuites>

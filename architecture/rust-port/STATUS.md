@@ -92,6 +92,8 @@ using this status; the live scenario directory can change.
   includes the pinned scenarios and X11 Text and Fillet checks.
 - Ribbon Keyboard Navigation (#3856) passed all 18 current scenarios and 220 steps.
   See the [current run](receipts/2026-11-25-ribbon-keyboard-current-3856/README.md).
+- Ribbon Docking (#3860) passed 21 current scenarios and 223 steps. The pinned Martensite build rejects the Shell preview (#554).
+  See the [current run](receipts/2026-11-25-ribbon-docking-current-3860/README.md).
 - Sketch Text (#3907) opens the dockable Format Text editor from the Sketch
   ribbon. Point placement, preview, Cancel, OK, and creation undo and redo
   passed native input checks. Existing text now opens for editing from its
@@ -470,11 +472,9 @@ using this status; the live scenario directory can change.
 ## Work queue
 
 Work dependency-ready application scenarios one at a time, then sketch and modeling.
-1. Diagnose Ribbon Appearance (#3957) against its current source. Its fixture
-   notes require a visible solid, but the shared part setup creates an empty
-   part; clarification was requested. Midpoint Line (#4178)
-   still names a deferred Inventor fixture; revisit it when the scenario owner
-   adopts the supplied native fixture.
+1. Verify the solid-face Viewport Entity Selection scenarios against the native Part.
+   Midpoint Line (#4178) still names a deferred Inventor fixture. Revisit it when
+   the scenario owner adopts the supplied native fixture.
    Constraint Settings (#4158) is paused with uncommitted work while its
    fixture questions and Relax Mode (#4164) remain open. Revisit `new-sketch`
    when fixture #4011 and circular patterns #3905 are available. Defer
