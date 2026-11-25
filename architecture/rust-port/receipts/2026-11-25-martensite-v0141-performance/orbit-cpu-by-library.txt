@@ -1,0 +1,23 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 1K of event 'cycles:u'
+# Event count (approx.): 15768265391
+#
+# Overhead  Shared Object
+# ........  ................................
+#
+     0.00%  [vdso]
+    16.03%  libVkLayer_khronos_validation.so
+     0.34%  libX11.so.6.4.0
+    41.89%  libc.so.6
+     0.14%  libdrm.so.2.134.0
+     0.00%  libdrm_amdgpu.so.1.134.0
+     3.04%  libm.so.6
+     1.35%  libstdc++.so.6.0.33
+     1.50%  libvulkan_radeon.so
+     0.42%  libxcb.so.1.1.0
+    31.87%  oblikovati
+     3.44%  [unknown]
