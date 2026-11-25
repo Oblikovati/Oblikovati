@@ -20,6 +20,13 @@ restores ribbon placement, appearance, and command customization. Selecting
 No closes the confirmation and keeps the current ribbon layout. iLogic
 Configuration appears disabled while its host integration is pending.
 
+The Highlight New drop-down opens over the Options additional commands.
+Escape dismisses the drop-down and leaves the expansion open. Clicking the
+selected Tools tab then closes the expansion and keeps the Part visible.
+The drop-down reports that no release highlights are available until the
+application provides release-highlight data. See the
+[published and pinned runs](receipts/2026-11-25-highlight-new-3856/README.md).
+
 The [native receipt](receipts/2026-11-24-ribbon-panel-expansion-3856/README.md)
 records nine focused published cases and the remaining binding gaps.
 See [#3856](https://github.com/Oblikovati/Oblikovati/issues/3856).

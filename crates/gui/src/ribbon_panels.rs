@@ -2,6 +2,7 @@
 //! Per-owner panel measurements keep the Go ribbon's width-dependent collapse behavior.
 use crate::application::ribbon_display::{RibbonDisplay, RibbonDisplayState, TemporaryPanel};
 use crate::ribbon::RibbonTab;
+use crate::ribbon_panel_contents::highlight_new;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
 use std::collections::BTreeMap;
@@ -73,6 +74,7 @@ struct PanelDrawContext<'a> {
     show_panel_titles: bool,
     additional_allowed: bool,
     side_groups: bool,
+    options_menu_hovered: bool,
     ribbon_bottom: f32,
     owners: RibbonPanelOwners<'a>,
     actions: &'a mut Vec<GuiShellAction>,
@@ -131,6 +133,7 @@ pub(crate) fn draw_panels(
         additional_allowed: !owners.home_active
             && display.placement == crate::application::ribbon_display::RibbonPlacement::Top,
         side_groups: false,
+        options_menu_hovered: false,
         ribbon_bottom: ui.window_pos()[1] + ui.window_size()[1],
         owners,
         actions,
@@ -380,6 +383,8 @@ fn draw_expanded(
         let combines_options = compact_options.is_some();
         ui.group(|| {
             local_action = context.content(panel, origin);
+            context.options_menu_hovered |= panel == RibbonPanel::ToolOptions
+                && highlight_new(ui, origin, context.owners.icons, context.ribbon_bottom);
             if let Some(display) = compact_options {
                 context.owners.icons.cursor(ui, origin, [270., 0.]);
                 local_action |= additional::tool_options(ui, display);

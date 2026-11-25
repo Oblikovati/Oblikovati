@@ -3,6 +3,36 @@
 use super::*;
 use crate::icons::IconGlyph;
 
+/// Draw the main-panel menu and report whether the pointer is on its trigger or popup.
+pub(crate) fn highlight_new(
+    ui: &Ui,
+    origin: [f32; 2],
+    icons: &crate::icons::GuiRibbonIcons,
+    ribbon_bottom: f32,
+) -> bool {
+    const MENU: &str = "##highlight-new-menu";
+    let clicked = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+        icons.cursor(ui, origin, [156., 30.]);
+        crate::widget_abi::button(ui, "Highlight New ▼", icons.cell([108., 26.]))
+    } else {
+        let (position, size) = icons.appearance.cell(3);
+        icons.cursor(ui, origin, position);
+        icons.button(ui, "Highlight New", IconGlyph::Preferences, size)
+    };
+    let trigger_hovered = ui.is_item_hovered();
+    if clicked {
+        ui.open_popup(MENU);
+        // Keep the menu clear of the main ribbon and above its expansion.
+        let top = ui.item_rect_max()[1].max(ribbon_bottom);
+        crate::widget_abi::next_window_position(ui, [ui.item_rect_min()[0], top]);
+    }
+    let Some(_popup) = ui.begin_popup(MENU) else {
+        return trigger_hovered;
+    };
+    ui.text("No release highlights available");
+    trigger_hovered || ui.is_window_hovered()
+}
+
 pub(super) fn options(
     ui: &Ui,
     origin: [f32; 2],

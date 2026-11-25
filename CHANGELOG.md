@@ -15,6 +15,7 @@
 - Added the Standard overview and Units tab to Document Settings. (#3856)
 - Added the Exit 2D Sketch Tab category and source paging. Transfers after Ctrl+A put the focused command first. Up and Down select staged rows without reordering them. (#3856)
 - Added a Tools Options expansion with a ribbon layout reset confirmation. (#3856)
+- Added a Highlight New drop-down that can open over Tools Options additional commands and close independently. (#3856)
 - Added Assembly Design customization for the Assemble ribbon. Listed unavailable targets and kept a clean draft open when Escape dismissed its target selector. (#3856)
 - Added a curvature comb and live density and scale settings for sketch ellipses. (#3995)
 - Added a saved, opt-in set of default multi-character command aliases to Keyboard customization. (#3856)
@@ -30,7 +31,6 @@
 - Preserved valid character-format ranges in native sketch files and sketch history. (#3907)
 - Added a saved Mini-Toolbar visibility option to the View ribbon. (#3897)
 - Add an exact best-fit certificate for explicit affine equations; sketch drag integration remains open. (#4171)
-
 - Draw midpoint lines with pointer or typed length and angle, including explicit point selection. (#4178)
 
 - Choose and select one relation when sketch constraint glyphs overlap. (#4169)

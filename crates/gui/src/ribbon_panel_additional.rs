@@ -294,6 +294,7 @@ fn draw_window(
                 && ui.is_mouse_clicked(imgui::MouseButton::Left)
                 && !inside_window(ui)
                 && !inside(ui.io().mouse_pos, expansion.trigger)
+                && !(panel == RibbonPanel::ToolOptions && context.options_menu_hovered)
                 && !display.context_contains(ui.io().mouse_pos)
                 && !display.selector_open
                 && !display

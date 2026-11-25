@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: tmp/oblikovati-bdd-1dT1Uy/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: tmp/oblikovati-bdd-1dT1Uy/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T11:17:10.140977367Z" time="12.98299079"><testcase name="Scenario: Open a main-panel menu while additional commands are visible: tmp/oblikovati-bdd-1dT1Uy/checkout/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:353:3" time="12.98299079"><system-out><![CDATA[  Scenario: Open a main-panel menu while additional commands are visible
+   ✔  Given a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Options additional command area is open and unpinned
+   ✔  When the user opens the Highlight New drop-down in the main Options panel
+   ✔  Then the drop-down menu appears over the additional command area
+   ✔  And the Options additional command area remains visible behind the menu
+   ✔  When the user presses Escape
+   ✔  Then the drop-down menu closes
+   ✔  And the Options additional command area remains visible
+   ✔  When the user clicks the selected Tools tab
+   ✔  Then the additional command area closes
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -34,6 +34,7 @@ pub(crate) fn draw_side_groups(
         show_panel_titles: display.show_panel_titles,
         additional_allowed: !owners.home_active,
         side_groups: true,
+        options_menu_hovered: false,
         ribbon_bottom: ui.window_pos()[1] + ui.window_size()[1],
         owners,
         actions,

@@ -6,6 +6,7 @@ use imgui::Ui;
 mod appearance_other;
 mod appearance_sketch;
 mod appearance_tools;
+pub(super) use appearance_tools::highlight_new;
 mod appearance_view;
 mod muted;
 pub(crate) use muted::{

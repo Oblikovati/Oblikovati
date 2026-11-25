@@ -4,8 +4,9 @@ use super::super::ribbon_display::{activate_display_control, cycling};
 use super::{ApplicationWorld, click_expansion_arrow, diagnostics};
 use cucumber::{given, then, when};
 
-const OPTIONS: &str = "##ribbon-additional-ToolOptions";
+pub(super) const OPTIONS: &str = "##ribbon-additional-ToolOptions";
 const RESET: &str = "Reset Ribbon";
+const HIGHLIGHTS: &str = "No release highlights available";
 
 #[given("`fixtures/cad/blank-metric-part.opd` is open in the MCAD Software")]
 #[given("`fixtures/cad/blank-metric-part.opd` is active in the MCAD Software")]
@@ -50,8 +51,33 @@ fn open_options(world: &mut ApplicationWorld) {
 
 #[when("the user opens the Highlight New drop-down in the main Options panel")]
 fn open_highlight_new(world: &mut ApplicationWorld) {
-    let control = world.run_in_window("##application-ribbon", "HighlightNew");
-    world.click(diagnostics::pointer_pixels(control.center()));
+    #[cfg(target_os = "linux")]
+    click_native_command(world, "##application-ribbon", "HighlightNew▼");
+    #[cfg(not(target_os = "linux"))]
+    world.click_text("Highlight New ▼");
+}
+
+#[then("the drop-down menu appears over the additional command area")]
+fn highlight_new_over_options(world: &mut ApplicationWorld) {
+    let (position, size) =
+        diagnostics::window_geometry(OPTIONS).expect("expected the Options pane");
+    let row = world.run(HIGHLIGHTS);
+    assert!((0..2).all(|axis| {
+        position[axis] < row.maximum[axis] && row.minimum[axis] < position[axis] + size[axis]
+    }));
+    world.save_capture("highlight-new-over-options");
+}
+
+#[then("the Options additional command area remains visible behind the menu")]
+#[then("the Options additional command area remains visible")]
+fn options_still_visible(world: &mut ApplicationWorld) {
+    reset_is_displayed(world);
+}
+
+#[then("the drop-down menu closes")]
+fn highlight_new_closed(world: &mut ApplicationWorld) {
+    world.expect_no_text(HIGHLIGHTS);
+    world.save_capture("options-after-highlight-new-escape");
 }
 
 #[then("it appears beneath the Options panel over the viewport")]

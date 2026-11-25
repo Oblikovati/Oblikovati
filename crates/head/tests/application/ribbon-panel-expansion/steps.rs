@@ -204,6 +204,7 @@ fn pin_highlight(world: &mut ApplicationWorld) {
 #[then("the Modify additional command area is not automatically displayed")]
 fn area_closed(_: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry(WINDOW).is_none());
+    assert!(diagnostics::window_geometry(tool_options::OPTIONS).is_none());
 }
 #[given("the Modify additional command area is unpinned")]
 #[given("the full 3D Model ribbon is visible with Modify unpinned")]
