@@ -26,6 +26,25 @@ fn separate_test_threads_can_create_gui_owners_without_shared_context_failures()
 }
 
 #[test]
+fn detached_drawing_waits_for_the_gui_context_lease() {
+    let lease = crate::test_context::acquire();
+    let (started, start) = mpsc::channel();
+    let (finished, finish) = mpsc::channel();
+    let worker = std::thread::spawn(move || {
+        started.send(()).unwrap();
+        finished
+            .send(crate::GuiDetachedDrawing::new(7).is_ok())
+            .unwrap();
+    });
+    start.recv().unwrap();
+    let while_leased = finish.recv_timeout(Duration::from_millis(250));
+    drop(lease);
+    worker.join().unwrap();
+    assert_eq!(while_leased, Err(mpsc::RecvTimeoutError::Timeout));
+    assert!(finish.recv().unwrap());
+}
+
+#[test]
 fn nested_owner_refusal_keeps_the_original_context_and_releases_the_lease() {
     let context = crate::test_context::create();
     assert!(matches!(GuiFrameEngine::new(), Err(error) if error.contains("GUI context occupied")));

@@ -227,20 +227,30 @@ fn activate(context: &mut Option<SuspendedContext>) -> Context {
         .expect("expected exclusive drawing context activation")
 }
 
-struct RestorePrimaryContext(*mut sys::ImGuiContext);
+struct RestorePrimaryContext {
+    primary: *mut sys::ImGuiContext,
+    #[cfg(test)]
+    _lease: crate::test_context::TestContextLease,
+}
 
 impl RestorePrimaryContext {
     fn park() -> Self {
+        #[cfg(test)]
+        let lease = crate::test_context::acquire();
         // All contexts belong to the same desktop thread and the primary frame has ended.
         let primary = unsafe { sys::igGetCurrentContext() };
         unsafe { sys::igSetCurrentContext(std::ptr::null_mut()) };
-        Self(primary)
+        Self {
+            primary,
+            #[cfg(test)]
+            _lease: lease,
+        }
     }
 }
 
 impl Drop for RestorePrimaryContext {
     fn drop(&mut self) {
-        unsafe { sys::igSetCurrentContext(self.0) };
+        unsafe { sys::igSetCurrentContext(self.primary) };
     }
 }
 

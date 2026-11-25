@@ -41,6 +41,8 @@ preserve the saved bytes.
 Dragging a drawing out of the strip opens a native window. The main
 window activates another attached document when one is available and
 shows Home when the detached drawing was the only attached document.
+Detached drawing and sheet preview tests take the same ImGui context
+lease as the main frame owner. [Parallel test results](receipts/2026-11-26-gui-context-lease-4078/README.md)
 
 Remaining Go parity includes per-document camera restoration, document-close
 confirmation choices, docking and a dedicated content-area viewport layout.
