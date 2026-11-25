@@ -201,6 +201,10 @@ fn close_clean_dialog(world: &mut ApplicationWorld) {
 
 #[given("a part with a solid body is active in the MCAD Software")]
 fn fixture_solid_remains_active(world: &mut ApplicationWorld) {
+    if world.previous_document.is_none() {
+        super::super::super::workspace_layout::browser_feature::open_visible_extruded_part(world);
+        world.previous_document = Some(world.active_id());
+    }
     assert_eq!(world.state().document, world.previous_document);
     super::super::super::workspace_layout::browser_feature::expect_solid_visible(world);
 }
