@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:52:15.394231046Z" time="18.004017292"><testcase name="Scenario: Inspect the model browser menu: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:158:3" time="18.004017292"><system-out><![CDATA[  Scenario: Inspect the model browser menu
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And the model browser is visible
+   ✔  When the user opens the model browser menu
+   ✔  Then the menu offers Autoscroll, Expand All and Collapse All
+   ✔  And it offers Find, Display Preferences and Help
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:56:52.533935411Z" time="171.679462462"><testcase name="Scenario: Filter model browser entries by name: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:213:3" time="171.679462462"><system-out><![CDATA[  Scenario: Filter model browser entries by name
+   ✔  Given `fixtures/cad/workspace-layout-points.opd` is open in the MCAD Software with multiple work points and other features
+   ✔  And the model browser is visible
+   ✔  When the user opens the browser search field
+   ✔  And the user enters "InspectionPoint"
+   ✔  Then InspectionPointA, InspectionPointB and InspectionPointC are shown in the browser
+   ✔  And the matching text is highlighted in those rows
+   ✔  And unrelated visible feature rows are filtered from the browser
+   ✔  And the model remains displayed in the viewport
+   ✔  When the user activates the search field close control
+   ✔  Then the search text is cleared
+   ✔  And the unfiltered browser tree is shown again
+   ✔  When the user activates the close control again
+   ✔  Then the browser search field is hidden
+]]></system-out></testcase></testsuite></testsuites>
