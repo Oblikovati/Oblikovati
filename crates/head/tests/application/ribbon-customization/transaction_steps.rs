@@ -256,6 +256,7 @@ fn sketches_in_selected_target(world: &mut ApplicationWorld) {
 }
 
 #[then("the Part Tools target still has a pending-change marker")]
+#[then("the Part Tools target retains its pending-change marker")]
 #[then("the target still shows a pending-change marker")]
 fn tools_stays_pending(world: &mut ApplicationWorld) {
     assert_eq!(target_label(world), "Part|Tools*");

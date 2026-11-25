@@ -47,6 +47,38 @@ fn staged_sketches_selected(world: &mut ApplicationWorld) {
     expect_target_selection(world, "2DSketches");
 }
 
+#[when("the user clicks the command name in the target row")]
+fn click_only_target_name(world: &mut ApplicationWorld) {
+    let rows = target_row_runs(world);
+    let [row] = rows.as_slice() else {
+        panic!("expected one staged command name");
+    };
+    world.click(diagnostics::pointer_pixels(row.center()));
+}
+
+#[when("the user presses Space")]
+fn press_space(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::Space, false);
+}
+
+#[when("the user presses Delete")]
+fn press_delete(world: &mut ApplicationWorld) {
+    world.key(ViewportPhysicalKey::Delete, false);
+}
+
+#[then("the command row remains selected")]
+fn only_target_remains_selected(world: &mut ApplicationWorld) {
+    assert_eq!(target_rows(world), ["2DSketches"]);
+    expect_target_selection(world, "2DSketches");
+}
+
+#[then("its Large and Text checkboxes remain unchecked")]
+fn only_target_display_is_unchanged(world: &mut ApplicationWorld) {
+    for option in ["Large", "Text"] {
+        assert!(!row_option_checked(world, "2DSketches", option));
+    }
+}
+
 #[then("the customization dialog closes without applying the staged commands")]
 fn customization_closed_without_apply(world: &mut ApplicationWorld) {
     customization_closed(world);

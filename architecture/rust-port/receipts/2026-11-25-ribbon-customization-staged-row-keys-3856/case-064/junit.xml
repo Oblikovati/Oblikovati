@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="3" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:14:37.91711878Z" time="78.031918683"><testcase name="Scenario: Press a key on a selected staged command row: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1017:5" time="26.569842537"><system-out><![CDATA[  Scenario Outline: Press a key on a selected staged command row
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Ribbon customization dialog shows an initially empty Part Tools target
+   ✔  And "2D Sketches" is staged with Large and Text unchecked
+   ✔  When the user clicks the command name in the target row
+   ✔  And the user presses Space
+   ✔  Then the command row remains selected
+   ✔  And its Large and Text checkboxes remain unchecked
+   ✔  And the Part Tools target retains its pending-change marker
+   ✔  And Apply and cancels remain enabled
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+]]></system-out></testcase><testcase name="Scenario: Press a key on a selected staged command row: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1018:5" time="26.435168697"><system-out><![CDATA[  Scenario Outline: Press a key on a selected staged command row
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Ribbon customization dialog shows an initially empty Part Tools target
+   ✔  And "2D Sketches" is staged with Large and Text unchecked
+   ✔  When the user clicks the command name in the target row
+   ✔  And the user presses Enter
+   ✔  Then the command row remains selected
+   ✔  And its Large and Text checkboxes remain unchecked
+   ✔  And the Part Tools target retains its pending-change marker
+   ✔  And Apply and cancels remain enabled
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+]]></system-out></testcase><testcase name="Scenario: Press a key on a selected staged command row: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1019:5" time="25.026907449"><system-out><![CDATA[  Scenario Outline: Press a key on a selected staged command row
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Ribbon customization dialog shows an initially empty Part Tools target
+   ✔  And "2D Sketches" is staged with Large and Text unchecked
+   ✔  When the user clicks the command name in the target row
+   ✔  And the user presses Delete
+   ✔  Then the command row remains selected
+   ✔  And its Large and Text checkboxes remain unchecked
+   ✔  And the Part Tools target retains its pending-change marker
+   ✔  And Apply and cancels remain enabled
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>
