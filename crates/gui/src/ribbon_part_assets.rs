@@ -123,7 +123,7 @@ fn paint_swatch(ui: &Ui, [r, g, b]: [u8; 3]) {
     let color = [r, g, b, 255].map(|channel| f32::from(channel) / 255.);
     let draw = ui.get_window_draw_list();
     draw.add_rect(minimum, maximum, color).filled(true).build();
-    draw.add_rect(minimum, maximum, ui.style_color(imgui::StyleColor::Border))
+    draw.add_rect(minimum, maximum, crate::theme::strong_border(ui))
         .build();
 }
 fn asset_preview<'a>(choices: &'a [crate::GuiAssetChoice], selected: Option<&'a str>) -> &'a str {

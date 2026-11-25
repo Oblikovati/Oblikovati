@@ -116,6 +116,11 @@ pub(crate) fn tab_underline_at(ui: &imgui::Ui, [left, _]: [f32; 2], [right, bott
 }
 
 pub(crate) fn property_window_border(ui: &imgui::Ui) -> imgui::ColorStackToken<'_> {
+    ui.push_style_color(StyleColor::Border, strong_border(ui))
+}
+
+/// Resolve the Studio strong outline for the active surface, such as a dark asset swatch.
+pub(crate) fn strong_border(ui: &imgui::Ui) -> [f32; 4] {
     let surface = ui.style_color(StyleColor::WindowBg);
     let ink = if surface[..3].iter().all(|value| *value < 0.01) {
         0xFFFFFF
@@ -124,7 +129,7 @@ pub(crate) fn property_window_border(ui: &imgui::Ui) -> imgui::ColorStackToken<'
     } else {
         0x3F4556
     };
-    ui.push_style_color(StyleColor::Border, hex_rgb(ink))
+    hex_rgb(ink)
 }
 
 pub(crate) fn floating_property_shadow(ui: &imgui::Ui) {
