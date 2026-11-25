@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:45:32.640025399Z" time="32.294406212"><testcase name="Scenario: Collapse descendants of an extrusion with a direct sketch child: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:1648:3" time="32.294406212"><system-out><![CDATA[  Scenario: Collapse descendants of an extrusion with a direct sketch child
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And The MCAD Software shows a visible block made by an extrusion
+   ✔  And the extrusion branch is expanded and shows its direct sketch child
+   ✔  When the user right-clicks the extrusion row
+   ✔  And chooses Collapse All Children
+   ✔  Then the direct sketch row remains visible under the extrusion
+   ✔  And the block remains visible in the same apparent view
+]]></system-out></testcase></testsuite></testsuites>

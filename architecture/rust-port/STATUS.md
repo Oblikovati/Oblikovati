@@ -37,8 +37,7 @@ using this status; the live scenario directory can change.
   current native Part fixture. A separate X11 click under Openbox showed an
   intermediate frame before the model and ViewCube reached Top. See
   `receipts/2026-11-20-orientation-transition-3961/`. Strict verification
-  remains open under #3978. All 20 declarations in the older pinned snapshot
-  have R0 records. See `receipts/2026-11-20-viewport-orientation-r0-3961/`.
+  remains open under #3978. The 20 pinned declarations have R0 records in `receipts/2026-11-20-viewport-orientation-r0-3961/`.
 - Workspace Layout (#3897) passed all [53 current cases and 523 steps](receipts/2026-11-25-workspace-layout-current-3897/README.md).
   The 52 declarations include two examples in one outline. The older
   foreground X11 check captured the View checklist and Mini-Toolbar with
@@ -56,6 +55,7 @@ using this status; the live scenario directory can change.
 - Ribbon Display (#3856) passed [48 dependency-ready scenarios and 556 steps](receipts/2026-11-25-ribbon-display-current-3856/README.md). Two Shell cases require Martensite #554.
 - Ribbon Panel Visibility (#3856) passed [43 of 55 current cases and 508 steps](receipts/2026-11-25-ribbon-panel-visibility-current-3856/README.md). Twelve cases remain open across panel inventory, Shell preview, and the User Commands specification.
 - Ribbon Panel Expansion (#3856) passed [58 of 67 current cases and 651 steps](receipts/2026-11-25-ribbon-panel-expansion-current-3856/README.md). Nine cases require Shell previews, Highlight New, or Explore.
+- Model Browser (#3896) passed [96 of 100 current cases and 1,305 steps](receipts/2026-11-25-model-browser-current-3896/README.md). Four `d1` cases require the extrusion taper contract in #4127 and Martensite #463.
 - Document Saving (#3888) passed 23 dependency-ready current scenarios and 260
   steps. The generated Part requires Assembly Simplify (#3963). See the
   [current run](receipts/2026-11-25-document-saving-current-3888/README.md).
@@ -474,7 +474,7 @@ using this status; the live scenario directory can change.
 ## Work queue
 
 Work dependency-ready application scenarios one at a time, then sketch and modeling.
-1. Continue the dependency-ready application scenarios with Model Browser.
+1. Continue the dependency-ready application scenarios with Ribbon Customization.
    Midpoint Line (#4178) still names a deferred Inventor fixture. Revisit it when
    the scenario owner adopts the supplied native fixture.
    Constraint Settings (#4158) is paused with uncommitted work while its
