@@ -103,6 +103,7 @@ impl NativeHeadWindow {
             sketch_view: None,
             document_title: None,
             status_pointer: None,
+            status_projection: Default::default(),
             view_slot: 0,
             saved_views: Default::default(),
             command_notice: None,

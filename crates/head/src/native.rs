@@ -47,6 +47,7 @@ pub struct NativeHeadWindow {
     /// What the title bar names: the active document, with its window number when it has one.
     document_title: Option<String>,
     status_pointer: Option<[i32; 2]>,
+    status_projection: status_telemetry::StatusProjection,
     view_slot: u64,
     saved_views: std::collections::BTreeMap<u64, SavedWindowView>,
     command_notice: Option<crate::DesktopCommandNotice>,

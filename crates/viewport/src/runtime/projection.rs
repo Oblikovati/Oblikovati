@@ -3,6 +3,12 @@ use super::*;
 use martensite_tkmath::gp::Point3;
 use oblikovati_model::sketch::SketchPlane;
 impl Viewport {
+    /// Read the camera and surface revisions that govern viewport projection.
+    /// Example: `view.projection_generations()` keys a screen-coordinate display cache.
+    pub fn projection_generations(&self) -> [u64; 2] {
+        [self.camera, self.surface]
+    }
+
     /// Map a framebuffer pixel to the unsnapped sketch plane; edge-on planes return `None`.
     /// Example: `view.sketch_point([320,240], SketchPlane::xy())?`.
     pub fn sketch_point(

@@ -31,14 +31,6 @@ pub struct HeadGuiUpdate {
     pub wake_after: Option<Duration>,
 }
 
-fn project_model_pick(window: &dyn HeadWindow, pick: &mut Option<oblikovati_gui::GuiModelPickCue>) {
-    if let Some(cue) = pick {
-        match window.model_pixel(cue.position) {
-            Ok(pixel) => cue.pixel = pixel,
-            Err(_) => *pick = None,
-        }
-    }
-}
 pub(super) fn advance_gui(
     window: &mut dyn HeadWindow,
     owner: &mut dyn HeadWork,
@@ -53,8 +45,7 @@ pub(super) fn advance_gui(
             Err(_) => commands.sketch_pick_cue = None,
         }
     }
-    project_model_pick(window, &mut commands.face_toolbar_anchor);
-    project_model_pick(window, &mut commands.model_pick_cue);
+    model_click::project_cues(window, &mut commands);
     let (labels, projection_resized) = dimension_labels::projected_dimension_labels(window, owner)?;
     commands.dimension_labels = labels;
     commands.origin_planes = dimension_labels::origin_plane_outlines(window, &commands);

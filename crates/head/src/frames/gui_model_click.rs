@@ -1,6 +1,32 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Resolve ribbon pick ownership even when viewport selection fails (#4099).
 use super::{HeadWindow, HeadWork};
+use oblikovati_gui::{GuiCommandState, GuiModelPickCue};
+
+pub(super) fn project_cues(window: &dyn HeadWindow, commands: &mut GuiCommandState) {
+    let shared = commands
+        .face_toolbar_anchor
+        .as_ref()
+        .zip(commands.model_pick_cue.as_ref())
+        .is_some_and(|(toolbar, cue)| toolbar.position == cue.position);
+    project_cue(window, &mut commands.face_toolbar_anchor);
+    if shared {
+        commands
+            .model_pick_cue
+            .clone_from(&commands.face_toolbar_anchor);
+    } else {
+        project_cue(window, &mut commands.model_pick_cue);
+    }
+}
+
+fn project_cue(window: &dyn HeadWindow, cue: &mut Option<GuiModelPickCue>) {
+    if let Some(anchor) = cue {
+        match window.model_pixel(anchor.position) {
+            Ok(pixel) => anchor.pixel = pixel,
+            Err(_) => *cue = None,
+        }
+    }
+}
 
 pub(super) fn dispatch(
     window: &mut dyn HeadWindow,
@@ -59,6 +85,7 @@ mod tests {
     struct RefusingProjectionWindow {
         pending: bool,
         resolutions: Vec<bool>,
+        projections: std::cell::Cell<u8>,
     }
     impl HeadWindow for RefusingProjectionWindow {
         fn has_pending_ribbon_model_pick(&self) -> bool {
@@ -70,6 +97,13 @@ mod tests {
         }
         fn view_line(&self, _: [i32; 2]) -> Result<[[f64; 3]; 2], String> {
             Err("test projection refused".into())
+        }
+        fn model_pixel(&self, point: [f64; 3]) -> Result<[i32; 2], String> {
+            self.projections.set(self.projections.get() + 1);
+            if point[0] < 0. {
+                return Err("test projection refused".into());
+            }
+            Ok([point[0] as i32, point[1] as i32])
         }
         fn events(&mut self, _: usize) -> Result<Vec<ViewportEvent>, String> {
             Ok(Vec::new())
@@ -113,5 +147,26 @@ mod tests {
             "test projection refused"
         );
         assert_eq!(window.resolutions, [false]);
+    }
+
+    #[test]
+    fn face_label_and_toolbar_share_projection_and_decline_together() {
+        let window = RefusingProjectionWindow::default();
+        let mut commands = GuiCommandState::default();
+        for (index, position) in [[3., 4., 5.], [-1., 4., 5.]].into_iter().enumerate() {
+            let cue = GuiModelPickCue {
+                pixel: [0; 2],
+                position,
+            };
+            commands.face_toolbar_anchor = Some(cue.clone());
+            commands.model_pick_cue = Some(cue);
+            project_cues(&window, &mut commands);
+            assert_eq!(usize::from(window.projections.get()), index + 1);
+            assert_eq!(commands.face_toolbar_anchor, commands.model_pick_cue);
+            assert_eq!(
+                commands.model_pick_cue.as_ref().map(|cue| cue.pixel),
+                (index == 0).then_some([3, 4])
+            );
+        }
     }
 }
