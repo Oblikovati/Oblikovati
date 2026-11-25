@@ -103,6 +103,34 @@ fn repeated_compilation_shares_the_prepared_font_resource() {
     assert!(std::ptr::eq(original.as_ptr(), repeated.as_ptr()));
 }
 
+#[test]
+fn repeated_gui_frames_share_unchanged_draw_geometry_in_order() {
+    let mut snapshot = colored_quad([20, 80, 160, 255], [4., 8., 24., 28.]);
+    snapshot
+        .batches
+        .extend(colored_quad([255, 0, 0, 128], [0., 0., 32., 32.]).batches);
+    let compiler = GuiFrameCompiler::with_resources(&snapshot.resources).unwrap();
+    let first = compiler.compile(&snapshot).unwrap();
+    snapshot.batches[1].vertices[0].srgb[3] = 64;
+    let next = compiler.compile(&snapshot).unwrap();
+    assert!(std::ptr::eq(
+        first.draws()[0].vertices().as_ptr(),
+        next.draws()[0].vertices().as_ptr(),
+    ));
+    assert_eq!(next.draws()[1].vertices()[0].color[3], 64. / 255.);
+    assert_eq!(first.draws()[1].vertices()[0].color[3], 128. / 255.);
+
+    snapshot.extent = [40, 32];
+    let resized = compiler.compile(&snapshot).unwrap();
+    let rebuilt = compile_gui_frame(&snapshot, &atlas()).unwrap();
+    assert_eq!(resized.draws(), rebuilt.draws());
+    assert_eq!(resized.extent(), [40, 32]);
+    assert!(!std::ptr::eq(
+        next.draws()[0].vertices().as_ptr(),
+        resized.draws()[0].vertices().as_ptr(),
+    ));
+}
+
 fn require_invalid_font(snapshot: &GuiFrame) {
     let colored = GuiAtlas {
         extent: [1, 1],

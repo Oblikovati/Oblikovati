@@ -5,7 +5,7 @@ use martensite_vulkan::{
     TexturedStyle, identity_clip,
 };
 use std::collections::BTreeMap;
-use std::sync::LazyLock;
+use std::sync::{LazyLock, Mutex};
 
 static SRGB_CHANNELS: LazyLock<[f32; 256]> =
     LazyLock::new(|| std::array::from_fn(|byte| srgb_channel(byte as u8)));
@@ -13,6 +13,18 @@ static SRGB_CHANNELS: LazyLock<[f32; 256]> =
 pub struct GuiFrameCompiler {
     resources: GuiTextureResources,
     images: BTreeMap<GuiTextureKey, RasterImage>,
+    prepared: Mutex<PreparedGuiLayer>,
+}
+
+#[derive(Default)]
+struct PreparedGuiLayer {
+    extent: [u32; 2],
+    batches: Vec<PreparedGuiBatch>,
+}
+
+struct PreparedGuiBatch {
+    source: GuiBatch,
+    draw: PrimitiveDraw,
 }
 impl GuiFrameCompiler {
     /// Prepare the font resource independently of the UI context; example: `GuiFrameCompiler::new(&atlas)?`.
@@ -28,6 +40,7 @@ impl GuiFrameCompiler {
         Ok(Self {
             resources: resources.clone(),
             images,
+            prepared: Mutex::default(),
         })
     }
     /// Compile a standalone review frame; example: `compiler.compile(&snapshot)?`.
@@ -50,14 +63,49 @@ impl GuiFrameCompiler {
             );
         }
         let projection = pixel_projection(frame.extent)?;
-        let mut draws = Vec::new();
-        for batch in &frame.batches {
-            let image = self.image(batch.texture)?;
-            if !batch.indices.is_empty() {
-                draws.push(compile_batch(batch, image, projection)?);
-            }
+        let mut prepared = self
+            .prepared
+            .lock()
+            .map_err(|_| "GUI frame preparation: expected a live draw cache")?;
+        if prepared.extent != frame.extent {
+            prepared.batches.clear();
+            prepared.extent = frame.extent;
         }
+        let mut draws = Vec::with_capacity(frame.batches.len());
+        for batch in &frame.batches {
+            if batch.indices.is_empty() {
+                self.image(batch.texture)?;
+                continue;
+            }
+            draws.push(self.prepare_draw(batch, projection, &mut prepared.batches, draws.len())?);
+        }
+        prepared.batches.truncate(draws.len());
         Ok(RenderLayer::new(draws, false, false, false))
+    }
+    fn prepare_draw(
+        &self,
+        batch: &GuiBatch,
+        projection: [f32; 16],
+        prepared: &mut Vec<PreparedGuiBatch>,
+        index: usize,
+    ) -> Result<PrimitiveDraw, String> {
+        let previous = prepared.get_mut(index);
+        if let Some(slot) = &previous
+            && slot.source == *batch
+        {
+            return Ok(slot.draw.clone());
+        }
+        let draw = compile_batch(batch, self.image(batch.texture)?, projection)?;
+        let next = PreparedGuiBatch {
+            source: batch.clone(),
+            draw: draw.clone(),
+        };
+        if let Some(slot) = previous {
+            *slot = next;
+        } else {
+            prepared.push(next);
+        }
+        Ok(draw)
     }
     fn image(&self, key: GuiTextureKey) -> Result<RasterImage, String> {
         self.images
