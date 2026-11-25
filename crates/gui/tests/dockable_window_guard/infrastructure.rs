@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
-// Fixed chrome and transient modal file pickers, wizards, and confirmations
+// Fixed chrome and transient modal file pickers, wizards, confirmations, and help
 // have a separate owner. Every entry is exact, so another window fails the guard.
 pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
     (
@@ -28,6 +28,10 @@ pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
     (
         "application/quick-access-toolbar/plane_selection.rs",
         "##plane-selection",
+    ),
+    (
+        "application/ribbon-display/panel_selector_help.rs",
+        "modal:HELP",
     ),
     (
         "application/viewport-orientation/axis_triad.rs",

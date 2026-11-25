@@ -226,7 +226,7 @@ fn draw_window(
     crate::widget_abi::window_geometry(ui, [x, top], [width, height], imgui::Condition::Always);
     let mut close = false;
     let focus = std::mem::take(&mut expansion.focus);
-    ui.window(expansion_window(panel))
+    expansion_window(ui, panel)
         .flags(
             imgui::WindowFlags::NO_DOCKING
                 | imgui::WindowFlags::NO_SAVED_SETTINGS
@@ -319,8 +319,9 @@ fn draw_window(
         });
     close
 }
-fn expansion_window(panel: RibbonPanel) -> String {
-    format!("##ribbon-additional-{panel:?}")
+fn expansion_window(ui: &Ui, panel: RibbonPanel) -> imgui::Window<'_, '_, String> {
+    // The hidden title strip is another presentation of the same transient ribbon window.
+    ui.window(format!("##ribbon-additional-{panel:?}"))
 }
 fn shows_pin(display: &RibbonDisplayState) -> bool {
     !(display.mode == crate::application::ribbon_display::RibbonDisplay::Tabs

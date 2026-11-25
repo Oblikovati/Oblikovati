@@ -25,7 +25,7 @@ pub(super) fn draw(context: &PanelDrawContext<'_>, panel: RibbonPanel, expansion
     let size = [width, ui.frame_height() + 2. * style.window_padding[1]];
     expansion.bounds = [position, [position[0] + size[0], position[1] + size[1]]];
     crate::widget_abi::window_geometry(ui, position, size, imgui::Condition::Always);
-    ui.window(expansion_window(panel))
+    expansion_window(ui, panel)
         .flags(
             imgui::WindowFlags::NO_DECORATION
                 | imgui::WindowFlags::NO_DOCKING
