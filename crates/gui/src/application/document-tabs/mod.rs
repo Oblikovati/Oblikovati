@@ -193,6 +193,7 @@ impl TabMenu {
         }
         if let Some(_menu) = ui.begin_popup(&identity) {
             self.items(ui, state, row, actions);
+            ui.dummy([0., 4.]);
         }
     }
     /// Home closes nothing of its own, so its menu acts only on the documents beside it.

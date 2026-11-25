@@ -1,13 +1,16 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Rendering and interaction for document strip tabs.
 use super::*;
+use crate::icons::{IconGlyph, IconSize};
+
+const TAB_ICON_SIZE: f32 = 14.;
 
 /// Home first, then one width per window, as they will be drawn.
 pub(super) fn tab_widths(ui: &Ui, tabs: &[StripTab<'_>]) -> Vec<f32> {
     let spacing = ui.clone_style().item_inner_spacing[0];
     tabs.iter()
         .map(|tab| match tab {
-            StripTab::Home => ui.calc_text_size("Home")[0] + TAB_ROOM / 2.,
+            StripTab::Home => ui.calc_text_size("Home")[0] + HOME_TAB_ROOM,
             StripTab::Document(tab) => ui.calc_text_size(tab_label(tab))[0] + TAB_ROOM,
         })
         .map(|width| width + spacing)
@@ -36,7 +39,9 @@ pub(super) fn home_tab(
     } else {
         TabItemFlags::empty()
     };
-    let shown = ui.tab_item_with_flags("Home###home-workspace-tab", None, flags);
+    ui.set_next_item_width(ui.calc_text_size("Home")[0] + HOME_TAB_ROOM);
+    let shown = ui.tab_item_with_flags("###home-workspace-tab", None, flags);
+    draw_tab_label(ui, owner.icons, IconGlyph::Home, "Home");
     if owner.home.active {
         crate::theme::active_tab_underline(ui);
     }
@@ -65,17 +70,20 @@ pub(super) fn document_strip_window(
     contents: impl FnOnce(),
 ) {
     let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([1., 1.]));
+    let window_padding = ui.push_style_var(imgui::StyleVar::WindowPadding([6., 0.]));
+    let _tab_padding = ui.push_style_var(imgui::StyleVar::FramePadding([6., 5.]));
     crate::widget_abi::window_geometry(
         ui,
-        [span.0, strip_top + 1.],
-        [span.1, 24.],
+        [span.0, strip_top],
+        [span.1, TAB_STRIP_HEIGHT],
         Condition::Always,
     );
     let mut flags = imgui::WindowFlags::NO_DOCKING;
     if crate::widget_abi::moving_window(ui) {
         flags |= imgui::WindowFlags::NO_INPUTS;
     }
-    ui.window("##open-document-tabs")
+    let strip = ui
+        .window("##open-document-tabs")
         .flags(flags)
         .title_bar(false)
         .movable(false)
@@ -83,7 +91,11 @@ pub(super) fn document_strip_window(
         .scroll_bar(false)
         .scrollable(false)
         .collapsible(false)
-        .build(contents);
+        .begin();
+    drop(window_padding);
+    if let Some(_strip) = strip {
+        contents();
+    }
 }
 /// A tab is chosen by its own click: the strip may scroll, or Home may stand in front, without
 /// the owner's document changing.
@@ -100,7 +112,7 @@ pub(super) fn document_tab(
             .document
             .is_some_and(|id| owner.detached.contains(&id));
     let selected = !behind && is_active_window(state, tab);
-    let keep = draw_document_tab(ui, tab, selected);
+    let keep = draw_document_tab(ui, owner.icons, tab, selected);
     if selected {
         crate::theme::active_tab_underline(ui);
     }
@@ -154,7 +166,12 @@ fn note_hovered_tab(
 fn tab_label(tab: &TabRow<'_>) -> String {
     format!("{}{}", tab.name, if tab.row.dirty { " *" } else { "" })
 }
-fn draw_document_tab(ui: &Ui, tab: &TabRow<'_>, selected: bool) -> bool {
+fn draw_document_tab(
+    ui: &Ui,
+    icons: &crate::icons::GuiRibbonIcons,
+    tab: &TabRow<'_>,
+    selected: bool,
+) -> bool {
     let flags = if selected {
         TabItemFlags::SET_SELECTED
     } else {
@@ -168,18 +185,34 @@ fn draw_document_tab(ui: &Ui, tab: &TabRow<'_>, selected: bool) -> bool {
         Some(&mut keep),
         flags,
     );
-    draw_literal_tab_label(ui, &label);
+    let glyph = match tab.row.type_.as_str() {
+        "assembly" => IconGlyph::NewAssembly,
+        "drawing" => IconGlyph::NewDrawing,
+        "presentation" => IconGlyph::TemplateDocument,
+        _ => IconGlyph::NewPart,
+    };
+    draw_tab_label(ui, icons, glyph, &label);
     drop(contents);
     keep
 }
-fn draw_literal_tab_label(ui: &Ui, label: &str) {
-    let minimum = ui.item_rect_min();
-    // The tab body can extend past the strip clip and cut off descenders (#3889).
-    let bottom = crate::widget_abi::window_draw_clip_bottom(ui);
-    let label_y = (minimum[1] + 3.).min(bottom - ui.current_font_size());
+fn draw_tab_label(ui: &Ui, icons: &crate::icons::GuiRibbonIcons, glyph: IconGlyph, label: &str) {
+    let [left, top] = ui.item_rect_min();
+    let bottom = ui.item_rect_max()[1].min(crate::widget_abi::window_draw_clip_bottom(ui)) - 2.;
+    let center = (top + bottom) / 2.;
+    let texture = imgui::TextureId::new(icons.key(glyph, IconSize::Small).raw());
+    ui.get_window_draw_list()
+        .add_image(
+            texture,
+            [left + 8., center - TAB_ICON_SIZE / 2.],
+            [left + 8. + TAB_ICON_SIZE, center + TAB_ICON_SIZE / 2.],
+        )
+        .build();
     crate::widget_abi::literal_text(
         ui,
-        [minimum[0] + 8., label_y],
+        [
+            left + 8. + TAB_ICON_SIZE + 5.,
+            (center - ui.current_font_size() / 2.).floor(),
+        ],
         ui.style_color(imgui::StyleColor::Text),
         label,
     );

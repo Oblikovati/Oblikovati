@@ -46,6 +46,7 @@ pub struct NativeHeadWindow {
     /// The window of a document in front; each keeps its own view while another is shown.
     /// What the title bar names: the active document, with its window number when it has one.
     document_title: Option<String>,
+    status_pointer: Option<[i32; 2]>,
     view_slot: u64,
     saved_views: std::collections::BTreeMap<u64, SavedWindowView>,
     command_notice: Option<crate::DesktopCommandNotice>,
@@ -74,6 +75,7 @@ mod scene_status;
 mod view_inputs;
 use view_inputs::validate_window_extent;
 mod head_window;
+mod status_telemetry;
 
 mod capture;
 #[cfg(target_os = "linux")]

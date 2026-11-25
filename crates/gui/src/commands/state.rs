@@ -31,6 +31,10 @@ pub struct GuiCommandState {
     pub keymap: Option<oblikovati_model::keymap::Keymap>,
     /// Bindable commands currently provided by the desktop owner.
     pub keymap_bindings: Vec<oblikovati_api::wire::BindingInfo>,
+    /// Pointer coordinates in the current document’s displayed length unit.
+    pub viewport_coordinates: Option<[f64; 2]>,
+    /// Camera magnification as a percentage of the default camera scale.
+    pub viewport_zoom_percent: Option<u64>,
     pub document_units: Option<oblikovati_api::wire::DocumentUnitsInfo>,
     pub ui_scale: Option<oblikovati_model::ui_scale::UiScaleOptions>,
     pub dimension_labels: Vec<crate::GuiDimensionLabel>,

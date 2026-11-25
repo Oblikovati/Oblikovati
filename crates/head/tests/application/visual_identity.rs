@@ -253,3 +253,32 @@ fn native_studio_colors_keep_cube_labels_readable_and_drawing_paper_neutral() {
     world.save_capture("dark-drawing-paper");
     world.close();
 }
+
+#[test]
+fn native_document_strip_and_status_bar_keep_labels_clear() {
+    let mut world = ApplicationWorld::new();
+    workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    let tabs = diagnostics::window_pixel_bounds("##open-document-tabs").unwrap();
+    let status = diagnostics::window_pixel_bounds("##status-bar").unwrap();
+    assert_eq!(tabs[3] - tabs[1], 26.);
+    assert_eq!(status[3] - status[1], 24.);
+    let [left, top, right, bottom] = world.viewport_bounds();
+    world.hover([((left + right) / 2) as i32, ((top + bottom) / 2) as i32]);
+    let run = world.frame.runs.iter().find(|run| run.text.ends_with('%')).unwrap();
+    world.run_in_window("##status-bar", "mm");
+    assert!(
+        world.frame.runs.iter().any(|run| {
+            run.center()[1] > status[1] && run.text.starts_with('X') && run.text.contains('Y')
+        }),
+        "the viewport pointer must have model coordinates"
+    );
+    let zoom = run.text.clone();
+    let mut camera = crate::HeadWindow::view_camera(&world.app().window).unwrap();
+    camera.scale *= 0.5;
+    crate::HeadWindow::set_view_camera(&mut world.app().window, camera).unwrap();
+    world.pump(Vec::new());
+    world.run_in_window("##status-bar", "200%");
+    assert_eq!(zoom, "100%");
+    world.save_capture("document-strip-and-status-telemetry");
+    world.close();
+}

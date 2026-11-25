@@ -19,8 +19,8 @@ here uses the Rust desktop on Linux under Xvfb, Openbox, and Vulkan Lavapipe.
 | GAP-09 | Existing artwork is mapped for several ribbons. Verify the remaining command mappings. [Ribbon icon checks](receipts/2026-11-25-identity-ribbon-icons-4063/README.md) |
 | GAP-10 | Verified the centered document and model-state title, flush 46 × 32 px window controls, and rose Close hover. The brand mark uses the 16 px handoff size. [Native frame](receipts/2026-11-25-design-gap-10-4063/Titlebar.png) |
 | GAP-11 | Verify ribbon group separators, captions, and density control. |
-| GAP-12 | Verify document tab spacing, artwork, and close controls. |
-| GAP-13 | Verify viewport telemetry in the status bar. |
+| GAP-12 | Verified the taller icon-led document strip and its context menu. Native close and reorder workflows use the same tab engine. [Native checks](receipts/2026-11-25-design-gap-12-13-4063/README.md) |
+| GAP-13 | Verified native pointer coordinates, document units, and camera zoom. The status bar also retains the sketch dimension message and displays DOF. [Native checks](receipts/2026-11-25-design-gap-12-13-4063/README.md) |
 | GAP-14 | Verify browser row artwork, representation state, rollback marker, and search. |
 | GAP-15 | Verified Light and Dark ViewCube contrast, neutral drawing paper, and hiding Part assets in Drawing. Dimension presentation and model selection color remain open. [Native checks](receipts/2026-11-25-design-gap-08-15-4063/README.md) |
 | GAP-16 | Verified that the first frame with the View commands underlines View and clears the previous 3D Model underline. The regression reads rendered text and the underline quad from the same frame. [GUI test](../../crates/gui/tests/ribbon_click/tab_underline.rs) |

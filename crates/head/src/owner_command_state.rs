@@ -98,6 +98,8 @@ impl<
             marking_menu_display: self.marking_menu_display,
             keymap: Some(self.keymap.clone()),
             keymap_bindings: self.keymap.catalog(),
+            viewport_coordinates: None,
+            viewport_zoom_percent: None,
             document_units: Some(
                 oblikovati_api::client::Client::new(oblikovati_automation::FileQueryHost::new(
                     &self.files,

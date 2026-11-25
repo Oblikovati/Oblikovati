@@ -15,7 +15,7 @@ pub(crate) mod panel_tabs;
 #[path = "status_bar.rs"]
 pub(crate) mod status_bar;
 /// The document tab row and the gap above it.
-const TAB_STRIP_HEIGHT: f32 = 26.;
+use crate::document_tabs::TAB_STRIP_HEIGHT;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(crate) struct ToolVisibility {

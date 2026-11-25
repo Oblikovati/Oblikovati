@@ -20,7 +20,9 @@ const DETACH_DISTANCE: f32 = 90.;
 const DRAWING_TYPE_NAME: &str = "drawing";
 /// The room the document list control takes at the end of the strip.
 const DOCUMENT_LIST_WIDTH: f32 = 92.;
-const TAB_ROOM: f32 = 40.;
+const TAB_ROOM: f32 = 58.;
+const HOME_TAB_ROOM: f32 = 38.;
+pub(crate) const TAB_STRIP_HEIGHT: f32 = 26.;
 #[derive(Default)]
 pub(crate) struct DocumentTabs {
     #[cfg(test)]
@@ -47,7 +49,10 @@ impl DocumentTabs {
         ui: &Ui,
         request: &GuiFrameRequest,
         layout: &crate::application::workspace_layout::WorkspaceLayout,
-        area: crate::application::document_creation::workspaces::WorkspaceArea,
+        presentation: (
+            crate::application::document_creation::workspaces::WorkspaceArea,
+            &crate::icons::GuiRibbonIcons,
+        ),
         home: &mut crate::application::home_recent_documents::HomeWorkspace,
         actions: &mut Vec<GuiShellAction>,
     ) {
@@ -66,11 +71,13 @@ impl DocumentTabs {
         let height = request.extent[1] as f32 / request.layout_scale()[1];
         let width = request.extent[0] as f32 / request.layout_scale()[0];
         let strip_top = layout.tab_top(height);
+        let (area, icons) = presentation;
         let span = layout.document_tab_span(width, area);
         let strip = (span.0, (span.1 - DOCUMENT_LIST_WIDTH).max(1.));
         let mut strip_owner = StripOwner {
             #[cfg(test)]
             test_tab_bounds: &mut self.test_tab_bounds,
+            icons,
             menu: &mut self.menu,
             detached: &self.detached,
             pressed: &mut self.pressed_tab,
@@ -139,6 +146,7 @@ impl DocumentTabs {
 struct StripOwner<'a> {
     #[cfg(test)]
     test_tab_bounds: &'a mut TestTabBounds,
+    icons: &'a crate::icons::GuiRibbonIcons,
     menu: &'a mut crate::application::document_tabs::TabMenu,
     detached: &'a [u64],
     pressed: &'a mut Option<u64>,

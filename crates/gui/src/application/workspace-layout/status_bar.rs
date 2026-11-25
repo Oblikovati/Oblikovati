@@ -4,7 +4,9 @@ use crate::GuiFrameRequest;
 use imgui::{StyleColor, Ui, WindowFlags};
 use oblikovati_api::types::{TOKEN_CHROME_WINDOW_BG, TOKEN_DIMENSION_DRIVEN};
 
-pub(crate) const STATUS_BAR_HEIGHT: f32 = 22.;
+pub(crate) const STATUS_BAR_HEIGHT: f32 = 24.;
+const STATUS_INSET: f32 = 12.;
+const CELL_GAP: f32 = 9.;
 
 /// Draw the status line across the window's foot; example: `Ready` and `4 dimensions needed`.
 pub(crate) fn status_bar(
@@ -32,27 +34,80 @@ pub(crate) fn status_bar(
         .size([width, STATUS_BAR_HEIGHT], imgui::Condition::Always)
         .flags(flags())
         .build(|| {
-            crate::widget_abi::cursor_position(ui, [8., 4.]);
-            ui.text(command_status(
-                tool_prompt.or(request.status.as_deref()),
-                alias,
-            ));
-            let _numeric = crate::ui_scale::numeric_font(ui);
-            if let Some(needed) = request.commands.dimensions_needed {
-                let text = dimensions_needed_text(needed);
-                let advance = ui.calc_text_size(&text)[0];
-                crate::widget_abi::cursor_position(ui, [width - advance - 12., 4.]);
-                ui.text(text);
-            } else if let Some(text) = selected_entities_text(
-                request.commands.selected_face_appearances.len(),
-                request.commands.selected_edge_count,
-            ) {
-                let advance = ui.calc_text_size(&text)[0];
-                crate::widget_abi::cursor_position(ui, [width - advance - 12., 4.]);
-                ui.text(text);
-            }
+            let prompt = command_status(tool_prompt.or(request.status.as_deref()), alias);
+            let origin = ui.window_pos();
+            let y = ((STATUS_BAR_HEIGHT - ui.current_font_size()) * 0.5).floor();
+            ui.get_window_draw_list()
+                .add_circle(
+                    [origin[0] + STATUS_INSET, origin[1] + STATUS_BAR_HEIGHT / 2.],
+                    3.,
+                    ui.style_color(StyleColor::NavHighlight),
+                )
+                .filled(true)
+                .build();
+            let prompt_x = STATUS_INSET + 10.;
+            crate::widget_abi::cursor_position(ui, [prompt_x, y]);
+            ui.text(&prompt);
+            let prompt_right = prompt_x + ui.calc_text_size(&prompt)[0] + CELL_GAP;
+            telemetry(ui, &request.commands, width, prompt_right);
         });
 }
+fn telemetry(ui: &Ui, commands: &crate::GuiCommandState, width: f32, prompt_right: f32) {
+    let _numeric = crate::ui_scale::numeric_font(ui);
+    let units = commands.document_units.as_ref();
+    let coordinates = commands
+        .viewport_coordinates
+        .zip(units)
+        .map(|([x, y], units)| {
+            let precision = units.length_display_precision.clamp(0, 6) as usize;
+            format!("X {x:.precision$}  Y {y:.precision$}")
+        });
+    let zoom = commands
+        .viewport_zoom_percent
+        .map(|percent| format!("{percent}%"));
+    let selection_or_constraint = commands.dimensions_needed.map_or_else(
+        || {
+            selected_entities_text(
+                commands.selected_face_appearances.len(),
+                commands.selected_edge_count,
+            )
+        },
+        |needed| Some(dimensions_needed_text(needed)),
+    );
+    let dof = commands
+        .dimensions_needed
+        .map(|needed| format!("DOF {needed}"));
+    let cells = [
+        coordinates.as_deref(),
+        dof.as_deref(),
+        selection_or_constraint.as_deref(),
+        units.map(|units| units.length_unit.as_str()),
+        zoom.as_deref(),
+    ];
+    let mut right = width - STATUS_INSET;
+    let y = ((STATUS_BAR_HEIGHT - ui.current_font_size()) * 0.5).floor();
+    let origin = ui.window_pos();
+    for cell in cells.into_iter().flatten().rev() {
+        let left = right - ui.calc_text_size(cell)[0];
+        if left < prompt_right {
+            continue;
+        }
+        if right < width - STATUS_INSET {
+            let x = origin[0] + right + CELL_GAP;
+            ui.get_window_draw_list()
+                .add_line(
+                    [x, origin[1] + 5.],
+                    [x, origin[1] + STATUS_BAR_HEIGHT - 5.],
+                    ui.style_color(StyleColor::Border),
+                )
+                .build();
+        }
+        crate::widget_abi::cursor_position(ui, [left, y]);
+        ui.text(cell);
+        right = left - 2. * CELL_GAP;
+    }
+}
+
 fn selected_entities_text(faces: usize, edges: usize) -> Option<String> {
     let face_text = selection_count_text(faces, "Face", "Faces");
     let edge_text = selection_count_text(edges, "Edge", "Edges");

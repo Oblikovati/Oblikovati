@@ -123,7 +123,7 @@ impl GuiFrameEngine {
             ui,
             request,
             &self.workspace,
-            area,
+            (area, &self.icons.presentation),
             &mut self.home,
             &mut selected,
         );
