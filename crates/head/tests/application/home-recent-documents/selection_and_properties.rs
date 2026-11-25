@@ -15,14 +15,13 @@ fn card_checked(world: &mut ApplicationWorld) {
 #[when("the user checks the second part's card")]
 #[when("I check the second part's card")]
 fn check_card(world: &mut ApplicationWorld) {
-    let at = card_check_at(world, OTHERS[0]);
+    let at = card_check_at(world, other_recent_names(world)[0]);
     world.click(at);
     world.pump(Vec::new());
 }
 #[then("assembly rows are displayed and the selected part is not displayed")]
 fn assembly_only(world: &mut ApplicationWorld) {
-    assert!(home_shows(world, ASSEMBLY), "expected {ASSEMBLY}");
-    assert!(!home_shows(world, SEARCHED), "expected no {SEARCHED}");
+    assemblies_shown(world);
 }
 #[then("the part row is displayed again without a checkmark")]
 fn part_unchecked(world: &mut ApplicationWorld) {

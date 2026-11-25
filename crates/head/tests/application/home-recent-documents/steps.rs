@@ -214,17 +214,19 @@ fn activate_search(world: &mut ApplicationWorld) {
 #[then("the matching part is displayed")]
 #[then("the matching part is displayed again")]
 fn shows_match(world: &mut ApplicationWorld) {
-    let row = world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| in_home(run) && run.text == SEARCHED)
-        .count();
     assert!(
-        row > 0,
+        matched_part_is_visible(world),
         "expected {SEARCHED} on the list: {:?}",
         world.window_text(HOME)
     );
+}
+fn matched_part_is_visible(world: &ApplicationWorld) -> bool {
+    let search = home_run(world, "Search").expect("expected the Search button");
+    world
+        .frame
+        .runs
+        .iter()
+        .any(|run| in_home(run) && run.text == SEARCHED && run.minimum[1] > search.maximum[1])
 }
 #[then("the other previously visible documents are not displayed")]
 fn others_hidden(world: &mut ApplicationWorld) {

@@ -68,7 +68,16 @@ fn field_contains(world: &mut ApplicationWorld) {
         !home_shows(world, "Search recent"),
         "expected text in place of the hint"
     );
-    assert!(home_shows(world, SEARCHED), "expected the term");
+    let search = home_run(world, "Search").expect("expected the Search button");
+    assert!(
+        world.frame.runs.iter().any(|run| {
+            in_home(run)
+                && run.text == SEARCHED
+                && run.maximum[0] < search.minimum[0]
+                && (run.center()[1] - search.center()[1]).abs() < ROW_REACH
+        }),
+        "expected {SEARCHED} in the search field"
+    );
 }
 // Header checkbox
 fn header_box_at(world: &ApplicationWorld) -> [i32; 2] {
@@ -169,7 +178,11 @@ fn enter_no_match(world: &mut ApplicationWorld) {
 #[then("No results is displayed")]
 fn no_results(world: &mut ApplicationWorld) {
     assert!(home_shows(world, "No results"), "expected No results");
-    assert!(!home_shows(world, OTHERS[0]), "expected no rows");
+    assert!(
+        !matched_part_is_visible(world),
+        "expected no matching Part row"
+    );
+    others_hidden(world);
 }
 #[then("the page offers Clear search and filters")]
 fn offers_clear(world: &mut ApplicationWorld) {
@@ -184,9 +197,11 @@ fn activate_clear(world: &mut ApplicationWorld) {
     click_home(world, "Clear search and filters");
 }
 #[given(regex = r#"^no assembly matches "Part26"$"#)]
-fn no_assembly_match(_: &mut ApplicationWorld) {
+fn no_assembly_match(world: &mut ApplicationWorld) {
     assert!(
-        !ASSEMBLY.contains(SEARCHED),
+        world.state().recent_documents.into_iter().all(|row| {
+            row.kind != oblikovati_gui::GuiTemplateKind::Assembly || !row.name.contains(SEARCHED)
+        }),
         "expected the fixture's names apart"
     );
 }
@@ -207,7 +222,7 @@ fn assembly_clear(world: &mut ApplicationWorld) {
 #[given(regex = r#"^searching for "Part26" displays a matching recent part$"#)]
 fn searching_shows(world: &mut ApplicationWorld) {
     search_for(world, SEARCHED);
-    assert!(!home_shows(world, OTHERS[0]), "expected only the match");
+    filtered_remains(world);
 }
 #[when("the user activates the clear control beside the active filter indicator")]
 #[when("I activate the clear control beside the active filter indicator")]

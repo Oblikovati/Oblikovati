@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:21:40.95843209Z" time="21.763777331"><testcase name="Scenario: Clear an incompatible search and type filter: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:215:3" time="21.763777331"><system-out><![CDATA[  Scenario: Clear an incompatible search and type filter
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And the recent list includes a part named "Part26" and other document types
+   ✔  And no assembly matches "Part26"
+   ✔  And no recent-document filters are active
+   ✔  When the user searches recent documents for "Part26"
+   ✔  Then the matching part is displayed
+   ✔  When the user opens Filter and selects Assembly
+   ✔  Then the filter control indicates one active filter
+   ✔  And No results is displayed
+   ✔  And the search field still contains "Part26"
+   ✔  When the user activates Clear search and filters
+   ✔  Then the search field is empty
+   ✔  And the broader recent list includes parts and assemblies
+   ✔  When the user opens Filter
+   ✔  Then Assembly is unchecked
+   ✔  And All is selected under Date Modified
+]]></system-out></testcase></testsuite></testsuites>

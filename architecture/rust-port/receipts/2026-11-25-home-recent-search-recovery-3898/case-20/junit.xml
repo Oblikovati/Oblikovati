@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:22:47.768985014Z" time="22.81994505"><testcase name="Scenario: Filter out a selected recent part: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:262:3" time="22.81994505"><system-out><![CDATA[  Scenario: Filter out a selected recent part
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent parts and assemblies are displayed in List View
+   ✔  And one part row is checked and no other rows are checked
+   ✔  And no recent-document filters are active
+   ✔  When the user opens Filter and selects Assembly
+   ✔  Then assembly rows are displayed and the selected part is not displayed
+   ✔  And Open Selected and Remove Selected are no longer displayed
+   ✔  When the user clears the active filter
+   ✔  Then the part row is displayed again without a checkmark
+   ✔  And Open Selected and Remove Selected remain absent
+]]></system-out></testcase></testsuite></testsuites>

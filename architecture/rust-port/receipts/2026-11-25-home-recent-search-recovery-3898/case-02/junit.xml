@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:23:43.184663492Z" time="24.52842248"><testcase name="Scenario: Search and restore the recent-document list: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:16:3" time="24.52842248"><system-out><![CDATA[  Scenario: Search and restore the recent-document list
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And the recent list contains a part named "Part26" and other documents
+   ✔  And no other visible recent document matches "Part26"
+   ✔  And no recent-document filters are active
+   ✔  And the recent documents are displayed as a list
+   ✔  When the user enters "Part26" in Search recent
+   ✔  And the user activates the Search control
+   ✔  Then the recent list shows the matching part
+   ✔  And the other previously visible documents are not displayed
+   ✔  When the user clears the search field with its clear control
+   ✔  Then the search field is empty
+   ✔  And the filtered result remains displayed
+   ✔  When the user activates the Search control again
+   ✔  Then the other recent documents are displayed again
+]]></system-out></testcase></testsuite></testsuites>

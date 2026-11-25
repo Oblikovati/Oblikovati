@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:23:11.471176703Z" time="30.723589716"><testcase name="Scenario: Recall a previous recent-document search: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:157:3" time="30.723589716"><system-out><![CDATA[  Scenario: Recall a previous recent-document search
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And the user searches for "Part26", clears the field and activates Search to restore the broader list
+   ✔  And the recent search history contains "Part26"
+   ✔  And a recent part named "Part26" is the only visible document matching that term
+   ✔  And the search field is empty and the broader recent list is displayed
+   ✔  When the user focuses Search recent
+   ✔  And the user chooses "Part26" from Search History
+   ✔  Then the search field contains "Part26"
+   ✔  And the recent list displays the matching part
+   ✔  And the other previously visible documents are not displayed
+]]></system-out></testcase></testsuite></testsuites>
