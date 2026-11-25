@@ -242,7 +242,7 @@ pub(super) fn clear_field(world: &mut ApplicationWorld) {
         .runs
         .iter()
         .rev()
-        .find(|run| in_home(run) && run.text == "x")
+        .find(|run| in_home(run) && run.text == "×")
         .cloned()
         .expect("expected a clear control");
     world.click(run.center().map(|value| value as i32));

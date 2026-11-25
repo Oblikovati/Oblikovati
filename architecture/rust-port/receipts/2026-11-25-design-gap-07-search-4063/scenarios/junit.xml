@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature" tests="7" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T14:34:59.910041236Z" time="74.075382612"><testcase name="Scenario: Show recent search history after clearing a search: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature:33:3" time="7.242891922"><system-out><![CDATA[  Scenario: Show recent search history after clearing a search
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And the user has searched recent documents for "Part26"
+   ✔  When the user clears the search field with its clear control
+   ✔  Then a Search History panel appears beneath the field
+   ✔  And it includes "Part26" preceded by a history symbol
+]]></system-out></testcase><testcase name="Scenario: Recall a previous recent-document search: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature:157:3" time="8.816369776"><system-out><![CDATA[  Scenario: Recall a previous recent-document search
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And the user searches for "Part26", clears the field and activates Search to restore the broader list
+   ✔  And the recent search history contains "Part26"
+   ✔  And a recent part named "Part26" is the only visible document matching that term
+   ✔  And the search field is empty and the broader recent list is displayed
+   ✔  When the user focuses Search recent
+   ✔  And the user chooses "Part26" from Search History
+   ✔  Then the search field contains "Part26"
+   ✔  And the recent list displays the matching part
+   ✔  And the other previously visible documents are not displayed
+]]></system-out></testcase><testcase name="Scenario: Recover from a recent-document search with no matches: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature:202:3" time="7.890977686"><system-out><![CDATA[  Scenario: Recover from a recent-document search with no matches
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent documents are displayed in List View
+   ✔  And no recent document matches "zzq_no_match_7319"
+   ✔  When the user enters "zzq_no_match_7319" in Search recent
+   ✔  And the user activates the Search control
+   ✔  Then the recent-document rows are replaced by a No results message
+   ✔  And the page offers Clear search and filters
+   ✔  When the user activates Clear search and filters
+   ✔  Then the search field is empty
+   ✔  And the broader recent-document list is displayed again
+]]></system-out></testcase><testcase name="Scenario: Clear an incompatible search and type filter: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature:215:3" time="9.490611984"><system-out><![CDATA[  Scenario: Clear an incompatible search and type filter
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And the recent list includes a part named "Part26" and other document types
+   ✔  And no assembly matches "Part26"
+   ✔  And no recent-document filters are active
+   ✔  When the user searches recent documents for "Part26"
+   ✔  Then the matching part is displayed
+   ✔  When the user opens Filter and selects Assembly
+   ✔  Then the filter control indicates one active filter
+   ✔  And No results is displayed
+   ✔  And the search field still contains "Part26"
+   ✔  When the user activates Clear search and filters
+   ✔  Then the search field is empty
+   ✔  And the broader recent list includes parts and assemblies
+   ✔  When the user opens Filter
+   ✔  Then Assembly is unchecked
+   ✔  And All is selected under Date Modified
+]]></system-out></testcase><testcase name="Scenario: Clear an active type filter while retaining the search: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature:234:3" time="12.675796924"><system-out><![CDATA[  Scenario: Clear an active type filter while retaining the search
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And searching for "Part26" displays a matching recent part
+   ✔  And no assembly matches "Part26"
+   ✔  When the user opens Filter and selects Assembly
+   ✔  Then No results is displayed
+   ✔  And the filter control indicates one active filter
+   ✔  When the user activates the clear control beside the active filter indicator
+   ✔  Then the Assembly filter is unchecked
+   ✔  And the active-filter count is removed
+   ✔  And the search field still contains "Part26"
+   ✔  And the matching part is displayed again
+   ✔  And the Filter panel remains open
+]]></system-out></testcase><testcase name="Scenario: Keep search and type filter when changing Recent views: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature:311:3" time="10.572210435"><system-out><![CDATA[  Scenario: Keep search and type filter when changing Recent views
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And a recent part named "Part26" is displayed in List View
+   ✔  And the search for "Part26" and the Part filter are active
+   ✔  When the user switches to Grid View
+   ✔  Then the search field contains "Part26"
+   ✔  And the filter control indicates one active filter
+   ✔  And the matching part is displayed as a card
+   ✔  When the user switches back to List View
+   ✔  Then the search field still contains "Part26"
+   ✔  And the filter control still indicates one active filter
+   ✔  And the matching part is displayed as a row
+]]></system-out></testcase><testcase name="Scenario: Select search results with the list header checkbox: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature:346:3" time="17.386523885"><system-out><![CDATA[  Scenario: Select search results with the list header checkbox
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And a search for "part2" displays several matching part rows in List View
+   ✔  And the broader list includes visible recent documents that do not match the search
+   ✔  And no recent-document rows are checked
+   ✔  When the user checks the list header checkbox
+   ✔  Then all displayed search-result rows are checked and highlighted
+   ✔  And Open Selected and Remove Selected are displayed
+   ✔  When the user clears the search field and activates Search
+   ✔  Then the broader recent list is displayed
+   ✔  And the visible previously selected matching rows remain checked
+   ✔  And the visible nonmatching rows are unchecked
+   ✔  And the header checkbox shows a partial selection
+]]></system-out></testcase></testsuite></testsuites>

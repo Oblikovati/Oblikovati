@@ -60,7 +60,7 @@ fn fit_recent_columns(
     let heading_scale = (available / minimum).clamp(0., 1.);
     let name_minimum = minima[0].1;
     let name_target = if extra > 0. {
-        (available * 0.34).max(220.)
+        (available * 0.36).max(240.)
     } else {
         available
     };
@@ -123,6 +123,8 @@ fn compact_recent_columns_keep_width_for_size_and_its_sort_mark() {
     let shown = &super::super::recent_view::ADJUSTABLE;
     let minimum =
         SortField::MENU.map(|field| (field, if field == SortField::Size { 62. } else { 108. }));
+    let wide = fit_recent_columns(minimum, shown, 900.);
+    assert!((wide[0].1 - 324.).abs() < 0.01);
     let widths = fit_recent_columns(minimum, shown, 560.);
     let size = widths
         .into_iter()

@@ -120,7 +120,7 @@ impl HomeWorkspace {
         let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
         ui.text("Recent");
         self.view_controls(ui);
-        self.search_controls(ui);
+        self.search_controls(ui, icons);
         self.search_history(ui);
         let rows = self.shown_rows(state);
         self.checks.keep_only(&rows);
@@ -136,33 +136,67 @@ impl HomeWorkspace {
             self.list(ui, &rows, actions, icons);
         }
     }
-    fn search_controls(&mut self, ui: &Ui) {
+    fn search_controls(&mut self, ui: &Ui, icons: &crate::icons::GuiRibbonIcons) {
+        use crate::icons::{IconGlyph, IconSize};
+        use imgui::{StyleColor, StyleVar};
         let width = ui.content_region_avail()[0].min(320.);
         let height = ui.frame_height();
-        let clear_width = 22.;
-        let search_width = ui.calc_text_size("Search")[0] + 16.;
-        let _rounding = ui.push_style_var(imgui::StyleVar::FrameRounding(0.));
+        let clear_width = 24.;
+        let search_width = ui.calc_text_size("Search")[0] + 30.;
+        let [left, top] = ui.cursor_screen_pos();
+        let end = [left + width, top + height];
+        let background = ui.style_color(StyleColor::FrameBg);
+        ui.get_window_draw_list()
+            .add_rect([left, top], end, background)
+            .rounding(4.)
+            .filled(true)
+            .build();
+        let _border = ui.push_style_var(StyleVar::FrameBorderSize(0.));
+        let field = ui.push_style_color(StyleColor::FrameBg, [0.; 4]);
         ui.set_next_item_width((width - clear_width - search_width).max(1.));
         ui.input_text("##search-recent", &mut self.query)
             .hint("Search recent")
             .build();
+        drop(field);
+        let focused = ui.is_item_active();
         if ui.is_item_activated() && self.query.is_empty() {
             self.show_history = true;
         }
-        if !self.query.is_empty() && ui.is_item_active() {
+        if !self.query.is_empty() && focused {
             self.show_history = false;
         }
-        let field = ui.style_color(imgui::StyleColor::FrameBg);
-        let _background = ui.push_style_color(imgui::StyleColor::Button, field);
+        let _background = ui.push_style_color(StyleColor::Button, [0.; 4]);
         ui.same_line_with_spacing(0., 0.);
-        if ui.button_with_size("x##clear-search", [clear_width, height]) {
+        if ui.button_with_size("×##clear-search", [clear_width, height]) {
             self.query.clear();
             self.show_history = true;
         }
+        if ui.is_item_hovered() {
+            ui.tooltip_text("Clear search");
+        }
         ui.same_line_with_spacing(0., 0.);
-        if ui.button_with_size("Search", [search_width, height]) {
+        if crate::widget_abi::icon_button(
+            ui,
+            "Search",
+            crate::widget_abi::IconButtonPresentation {
+                texture: icons.key(IconGlyph::Find, IconSize::Small),
+                size: [search_width, height],
+                icon: [14.; 2],
+                large: false,
+                show_caption: true,
+            },
+        ) {
             self.apply_search();
         }
+        let outline = if focused {
+            StyleColor::NavHighlight
+        } else {
+            StyleColor::Border
+        };
+        ui.get_window_draw_list()
+            .add_rect([left, top], end, ui.style_color(outline))
+            .rounding(4.)
+            .build();
     }
     /// Activating Search is what changes the list; clearing the field alone leaves it filtered.
     fn apply_search(&mut self) {

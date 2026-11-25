@@ -18,7 +18,7 @@ fn home_recent_grid_filters_and_restores_with_x11_input() {
         assert!(!home_shows(&world, name), "expected {name} filtered out");
     }
     world.save_capture("x11-home-grid-search");
-    click_recent_control(&mut world, "x");
+    click_recent_control(&mut world, "×");
     wait_for_home_label(&mut world, "Search recent", true);
     click_recent_control(&mut world, "Search");
     wait_for_home_label(&mut world, OTHERS[0], true);
