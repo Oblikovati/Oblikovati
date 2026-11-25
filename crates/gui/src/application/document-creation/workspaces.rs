@@ -127,20 +127,7 @@ impl DocumentWorkspaces {
         }
         match state.document_type {
             Some(DOCUMENT_DRAWING) if !detached => {
-                if let Some(drawing) = state
-                    .document
-                    .and_then(|id| state.drawing_documents.get(&id))
-                {
-                    draw_sheet(
-                        ui,
-                        active_name(state),
-                        area,
-                        drawing,
-                        state
-                            .document
-                            .and_then(|id| state.drawing_projections.get(&id)),
-                    );
-                }
+                draw_active_sheet(ui, state, area);
             }
             Some(DOCUMENT_PRESENTATION) => presentation_panels(ui, area),
             _ => {}
@@ -156,6 +143,23 @@ fn active_name(state: &GuiCommandState) -> &str {
         .iter()
         .find(|row| Some(row.id) == state.document)
         .map_or("", |row| row.name.as_str())
+}
+
+pub(crate) fn draw_active_sheet(ui: &Ui, state: &GuiCommandState, area: WorkspaceArea) -> bool {
+    let Some(id) = state.document else {
+        return false;
+    };
+    let Some(drawing) = state.drawing_documents.get(&id) else {
+        return false;
+    };
+    sheet_on_list(
+        &ui.get_background_draw_list(),
+        active_name(state),
+        area,
+        drawing,
+        state.drawing_projections.get(&id),
+    );
+    true
 }
 /// The largest sheet of the template's ratio inside the area, centred.
 fn sheet_rectangle(area: WorkspaceArea, dimensions: [f64; 2]) -> ([f32; 2], [f32; 2]) {
@@ -173,22 +177,6 @@ fn sheet_rectangle(area: WorkspaceArea, dimensions: [f64; 2]) -> ([f32; 2], [f32
         area.top + (area.bottom - area.top - height) * 0.5,
     ];
     (minimum, [minimum[0] + width, minimum[1] + height])
-}
-/// Drawn over the viewport, behind every window: the host has no drawing renderer yet.
-fn draw_sheet(
-    ui: &Ui,
-    name: &str,
-    area: WorkspaceArea,
-    drawing: &oblikovati_model::drawing::DrawingDocument,
-    projection: Option<&crate::GuiDrawingProjection>,
-) {
-    sheet_on_list(
-        &ui.get_background_draw_list(),
-        name,
-        area,
-        drawing,
-        projection,
-    );
 }
 /// Draw a sheet with room for its bottom tab. Example: when a drawing is detached.
 pub(crate) fn draw_sheet_in_window(

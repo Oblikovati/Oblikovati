@@ -248,8 +248,11 @@ impl HeadWindow for ScriptedGuiWindow {
         self.native
             .reject_offset_plane(document, base, offset, cause);
     }
-    fn capture_window_preview(&mut self) -> Result<bool, String> {
-        self.native.capture_window_preview()
+    fn capture_window_preview(
+        &mut self,
+        state: &oblikovati_gui::GuiCommandState,
+    ) -> Result<bool, String> {
+        self.native.capture_window_preview(state)
     }
     fn capture_isometric_preview(&mut self, document: u64) -> Result<bool, String> {
         self.native.capture_isometric_preview(document)

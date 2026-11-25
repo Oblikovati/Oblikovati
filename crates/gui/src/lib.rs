@@ -174,7 +174,7 @@ mod context_parallel_tests;
 mod detached_drawing;
 mod popup_press;
 mod window_frame;
-pub use detached_drawing::{GuiDetachedDrawing, GuiDetachedDrawingFrame};
+pub use detached_drawing::{GuiDetachedDrawing, GuiDetachedDrawingFrame, drawing_preview_frame};
 
 mod model_state_table;
 mod model_state_table_acceptance;

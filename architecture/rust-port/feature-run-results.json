@@ -339,20 +339,55 @@
     "notes": "All 23 scenarios and 218 steps passed. The feature and supporting Markdown and SVG files had matching hashes before and after the run. The unversioned source and build provenance prevent strict verified acceptance (#3978)."
   },
   "features/application/document-opening/document-opening.feature": {
-    "feature_sha256": "ce0be44dd1e0ded53c12de6a96465ffafca2307db3029351147c6d9606bf4b8b",
-    "blocker": "The observed Finish and Simplify assembly commands need identification and behavior confirmation (#3963).",
-    "supporting_files": {
-      "features/application/document-opening/FUNCTIONAL.md": "05912fd64ef7fc579a11b2c0c14607f6728eed0f138d3d7a32d87c93b03b6bac",
-      "features/application/document-opening/VISUAL.md": "788c60876a734b13c25eaad5a1d34a043f95ec73bd847ae319140ce115088cc3",
-      "features/application/document-opening/FIXTURES.md": "0467dc99bc70783a1c875316baedeeb8cfa8ca2cb7cc9f90d45465929392fa9e",
-      "features/application/document-opening/BLOCKERS.md": "45017eef4ff192760837f93e73339eebdc4be0d70dd8fddbe30ead2a65dd5ba6"
-    },
-    "cucumber": "architecture/rust-port/receipts/2026-11-18-document-opening/cucumber.json",
-    "cucumber_sha256": "ecef00a45ea5505d23878aa2d144eb923d4f72d0c86cf40da765bd559f7c596a",
-    "application_commit": "bb4553dbc",
-    "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=document-opening VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
-    "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; reopening an already open part separately passed with X11 keyboard and pointer input",
-    "notes": "The run has one failed scenario, tracked in #3963. After the run BLOCKERS.md received a request for the observed assembly command outcomes. A separate X11 test opened a native drawing using a mixed-case folder path with an underscore and a space, and XMODIFIERS=@im=none. A separate X11 test opened an assembly in Express mode and chose Load Full; it does not cover the missing Finish and Simplify commands."
+    "by_source_sha256": {
+      "ce0be44dd1e0ded53c12de6a96465ffafca2307db3029351147c6d9606bf4b8b": {
+        "feature_sha256": "ce0be44dd1e0ded53c12de6a96465ffafca2307db3029351147c6d9606bf4b8b",
+        "blocker": "The observed Finish and Simplify assembly commands need identification and behavior confirmation (#3963).",
+        "supporting_files": {
+          "features/application/document-opening/FUNCTIONAL.md": "05912fd64ef7fc579a11b2c0c14607f6728eed0f138d3d7a32d87c93b03b6bac",
+          "features/application/document-opening/VISUAL.md": "788c60876a734b13c25eaad5a1d34a043f95ec73bd847ae319140ce115088cc3",
+          "features/application/document-opening/FIXTURES.md": "0467dc99bc70783a1c875316baedeeb8cfa8ca2cb7cc9f90d45465929392fa9e",
+          "features/application/document-opening/BLOCKERS.md": "45017eef4ff192760837f93e73339eebdc4be0d70dd8fddbe30ead2a65dd5ba6"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-18-document-opening/cucumber.json",
+        "cucumber_sha256": "ecef00a45ea5505d23878aa2d144eb923d4f72d0c86cf40da765bd559f7c596a",
+        "application_commit": "bb4553dbc",
+        "command": "OBK_BDD_ROOT=/mnt/vininas-projects/MCAD-Scenarios OBK_BDD_FEATURE=document-opening VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json CARGO_BUILD_JOBS=2 tools/with-xvfb.sh cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1",
+        "environment": "Linux X11, Xvfb and Vulkan Lavapipe; scripted window input; reopening an already open part separately passed with X11 keyboard and pointer input",
+        "notes": "The run has one failed scenario, tracked in #3963. After the run BLOCKERS.md received a request for the observed assembly command outcomes. A separate X11 test opened a native drawing using a mixed-case folder path with an underscore and a space, and XMODIFIERS=@im=none. A separate X11 test opened an assembly in Express mode and chose Load Full; it does not cover the missing Finish and Simplify commands."
+      },
+      "1f1ec30b571aa7c82ee039fde580b8df6ead098307945f2f1c650f314108a2a9": {
+        "feature_sha256": "1f1ec30b571aa7c82ee039fde580b8df6ead098307945f2f1c650f314108a2a9",
+        "supporting_files": {
+          "features/application/document-opening/BLOCKERS.md": "1c4c501fa4140630c0fbcfd6af0d8484b403c1d5e1e038c723fdcd6128bc88d2",
+          "features/application/document-opening/FIXTURES.md": "5a27020ff6eb9af45ad700513b0dacce3ac0cb123658aa65650015a7f651179b",
+          "features/application/document-opening/FUNCTIONAL.md": "f694cc7c79605d926702d2a3d0aee163ea3a52eba0d40fe679e9d1b3fefe8cfa",
+          "features/application/document-opening/VISUAL.md": "788c60876a734b13c25eaad5a1d34a043f95ec73bd847ae319140ce115088cc3",
+          "fixtures/cad/blank-drawing.odd": "74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e",
+          "fixtures/cad/document-opening/OpenDrawingA.odd": "1a2ac9fc358becac7c7a7b9c3f040e2d777f222cdf6dcd23352ed089a64db7d7",
+          "fixtures/cad/document-opening/OpenDrawingB.odd": "48630188feb69060e3792c05e0e37ac552588bf515541469162c8d91b630d2a7",
+          "fixtures/cad/document-opening/OpenPart.opd": "e25b898cb5edead91cac7da7d9c71f7905b13603957a51c7bab5350d50f7bb1f",
+          "fixtures/cad/document-opening/OpenSortLarge.opd": "e25b898cb5edead91cac7da7d9c71f7905b13603957a51c7bab5350d50f7bb1f",
+          "fixtures/cad/document-opening/OpenSortMedium.opd": "d936ef6b165b4bcbe14e04ac1b08bb5b16c81fddb597e70acb781e753c07e9a8",
+          "fixtures/cad/document-opening/OpenSortSmall.opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
+          "fixtures/cad/document-opening/folder-navigation/NativeParent/NativeChild/Navigation-Part.opd": "e25b898cb5edead91cac7da7d9c71f7905b13603957a51c7bab5350d50f7bb1f",
+          "fixtures/cad/document-opening/folder-navigation/NativeParent/NativeChild/NavigationDrawing.odd": "075dfa731410d1df901662268293742ebd51c116fb79234e07c591876c0ea393",
+          "fixtures/cad/extrusion/extrusion-rect-8mm.opd": "e25b898cb5edead91cac7da7d9c71f7905b13603957a51c7bab5350d50f7bb1f",
+          "fixtures/cad/quick-access-toolbar/PartOne.opd": "09fedf5c0e865867a3088067f3f8378dc01b6e226924a5c64210102e10227993",
+          "fixtures/cad/single-occurrence.oad": "7b0647bec297ebb6709ac99e8d4ee319a70f39b0cd24cd717288ed8af06ee1ea"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-25-document-opening-current-3889/cucumber.json",
+        "cucumber_sha256": "b2d2bc09f90e11287f34e414cd5af129c2d69a8774affc4cb44725eeb4814eb9",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-document-opening-current-3889/scenario-inventory.json",
+        "scenario_inventory_sha256": "98341d463e64c71e7d121749b04e7ac89d97ff8ce32b613785f4a87ccc9d01b6",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-document-opening-current-3889/scenario-arguments.json",
+        "scenario_arguments_sha256": "48a4c173cecec1d32437ec1d1249a8e4b8aae6ccdd2cd3278e078592564495d9",
+        "application_commit": "5099283140b93d4d3296c05efe158a0c5d4d0c62",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=document-opening OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe",
+        "notes": "All 27 current scenarios and 315 steps passed. The individual receipts identify the test builds and the existing local GUI changes. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   },
   "features/application/home-recent-documents/home-recent-documents.feature": {
     "by_source_sha256": {

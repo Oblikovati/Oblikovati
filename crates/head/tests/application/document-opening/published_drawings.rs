@@ -157,9 +157,16 @@ fn confirm_preview_save(world: &mut ApplicationWorld, path: &Path) {
     world.click_text("Yes");
     settle(world);
     world.expect_no_text("Save in");
+    let picture = preview_picture_of_file(path)
+        .unwrap_or_else(|| panic!("expected the saved sheet preview in {path:?}"));
+    let paper = picture
+        .rgb
+        .iter()
+        .filter(|pixel| pixel.iter().all(|channel| *channel >= 225))
+        .count();
     assert!(
-        preview_picture_of_file(path).is_some(),
-        "expected the saved sheet preview in {path:?}"
+        paper * 4 > picture.rgb.len(),
+        "saved preview {path:?}: expected the drawing paper, found {paper} light cells"
     );
 }
 

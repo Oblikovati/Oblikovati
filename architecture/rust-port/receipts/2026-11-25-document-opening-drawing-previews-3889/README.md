@@ -11,6 +11,11 @@ that file inspection completed while Home was active, but the desktop omitted
 the result when no document was active. With the result available in the Home
 state, the saved sheet preview appeared in the picker.
 
+The original assertions checked that the saved preview payload appeared. Later
+inspection found that capture could store the viewport background. The
+[sheet capture rerun](../2026-11-25-document-opening-sheet-capture-3889/README.md)
+verifies the sheet pixels after correcting capture.
+
 Case five placed a Base View of the staged Part on each sheet and saved each
 drawing. Reopening Drawing A restored projected sheet geometry and its model
 browser view while keeping the original Part tab available.

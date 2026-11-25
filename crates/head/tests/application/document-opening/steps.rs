@@ -313,6 +313,9 @@ fn name_is_drawing(world: &mut ApplicationWorld) {
 #[then("the preview displays the drawing sheet")]
 fn drawing_preview(world: &mut ApplicationWorld) {
     world.expect_no_text(NO_PREVIEW);
+    if published_drawings::staged_folder(world).is_some() {
+        world.save_capture("saved-drawing-sheet-in-open-dialog");
+    }
 }
 #[then("the Details pane identifies the drawing and displays its metadata")]
 fn drawing_details(world: &mut ApplicationWorld) {

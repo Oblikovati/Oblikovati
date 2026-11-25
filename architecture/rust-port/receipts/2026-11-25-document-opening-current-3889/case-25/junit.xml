@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:05:21.423658767Z" time="143.022409119"><testcase name="Scenario: Open two selected drawings together: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:357:3" time="143.022409119"><system-out><![CDATA[  Scenario: Open two selected drawings together
+   ✔  Given writable copies of `fixtures/cad/document-opening/OpenDrawingA.odd`, `OpenDrawingB.odd` and `OpenPart.opd` are staged in the same working folder
+   ✔  And the user opens each drawing, inserts a base view referencing the staged OpenPart.opd, saves it and closes it
+   ✔  Given the MCAD Software has an existing document open
+   ✔  And two saved drawings with available references and visible saved view geometry are not already open
+   ✔  And the Open dialog displays both drawings as thumbnails
+   ✔  And `OpenPart.opd` is open and `OpenDrawingA.odd` and `OpenDrawingB.odd` are closed
+   ✔  When the user selects both drawing thumbnails with a selection rectangle
+   ✔  And the user chooses Open
+   ✔  Then the Open dialog closes
+   ✔  And both drawings are available in separate document tabs
+   ✔  And one of the drawings is active with its sheet and saved geometry displayed
+   ✔  And the existing document tab remains available
+   ✔  When the user selects the other drawing tab
+   ✔  Then that drawing becomes active and its sheet is displayed
+]]></system-out></testcase></testsuite></testsuites>

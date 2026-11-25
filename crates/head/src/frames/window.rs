@@ -43,8 +43,11 @@ pub trait HeadWindow {
             "window capture requests {requests:?}: expected a native completed-frame capture target"
         ))
     }
-    /// Picture the viewport for the Save As preview; example: `window.capture_window_preview()?`.
-    fn capture_window_preview(&mut self) -> Result<bool, String> {
+    /// Picture the active workspace for Save As; example: `window.capture_window_preview(&state)?`.
+    fn capture_window_preview(
+        &mut self,
+        _state: &oblikovati_gui::GuiCommandState,
+    ) -> Result<bool, String> {
         Err("window preview: expected a native window that presents frames".into())
     }
     /// Render a document's isometric Save As preview without changing its live view.

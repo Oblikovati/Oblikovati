@@ -75,6 +75,32 @@ impl NativeHeadWindow {
             }
         }
     }
+    pub(super) fn publish_window_preview(
+        &mut self,
+        state: &oblikovati_gui::GuiCommandState,
+    ) -> Result<bool, String> {
+        let image = if state.document_type == Some(oblikovati_api::types::DOCUMENT_DRAWING) {
+            self.drawing_preview_image(state)?
+        } else {
+            self.scene_preview_image()?
+        };
+        if let Some(gui) = &mut self.gui {
+            gui.receive_window_preview(image);
+        }
+        Ok(true)
+    }
+
+    fn drawing_preview_image(
+        &self,
+        state: &oblikovati_gui::GuiCommandState,
+    ) -> Result<oblikovati_gui::GuiPreviewImage, String> {
+        let extent = [256, 144];
+        let frame = oblikovati_gui::drawing_preview_frame(extent, state)?;
+        let compiler = GuiFrameCompiler::with_resources(&frame.resources)?;
+        let mut preview = self.runtime.open_offscreen(extent)?;
+        preview.submit_gui_frame(&compiler, &frame)?;
+        Ok(downsampled_preview(&preview.redraw()?))
+    }
     pub fn clear_gui_frame(&mut self) -> Result<(), String> {
         self.view.clear_gui_frame()?;
         if let Some(gui) = &mut self.gui {

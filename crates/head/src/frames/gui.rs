@@ -294,7 +294,9 @@ pub(super) fn dispatch_gui_action(
         } => {
             return owner.part_view_choice_from_gui(*document, choice, window);
         }
-        GuiShellAction::CaptureWindowPreview => return window.capture_window_preview(),
+        GuiShellAction::CaptureWindowPreview => {
+            return window.capture_window_preview(&owner.gui_command_state()?);
+        }
         GuiShellAction::CaptureIsometricPreview { document } => {
             super::publish_owner_scene(window, owner)?;
             return window.capture_isometric_preview(*document);

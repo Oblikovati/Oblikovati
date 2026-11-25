@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Draw the sheet and tab for one separately managed desktop window.
-use crate::application::document_creation::workspaces::draw_sheet_in_window;
+use crate::application::document_creation::workspaces::{
+    WorkspaceArea, draw_active_sheet, draw_sheet_in_window,
+};
 use crate::application::document_tabs::TabMenu;
 use crate::{GuiCommandState, GuiFrame, GuiInputEvent, GuiShellAction, GuiTextureResources};
 use imgui::{Condition, Context, SuspendedContext, Ui, WindowFlags, sys};
@@ -25,9 +27,7 @@ impl GuiDetachedDrawing {
     /// Prepare the drawing UI without changing the main frame. Example: `GuiDetachedDrawing::new(id)?`.
     pub fn new(document: u64) -> Result<Self, String> {
         let _restore = RestorePrimaryContext::park();
-        let mut context = crate::context_owner::create_owner_context()?;
-        let atlas = crate::engine::configure_owner_context(&mut context);
-        let resources = GuiTextureResources::new(atlas, [])?;
+        let (context, resources) = drawing_context()?;
         Ok(Self {
             document,
             resources,
@@ -125,6 +125,39 @@ impl GuiDetachedDrawing {
         self.context = Some(context.suspend());
         output
     }
+}
+
+/// Prepare a sheet-only frame for Save As. Example: `drawing_preview_frame([256, 144], &state)?`.
+pub fn drawing_preview_frame(
+    extent: [u32; 2],
+    state: &GuiCommandState,
+) -> Result<GuiFrame, String> {
+    let _restore = RestorePrimaryContext::park();
+    let (mut context, resources) = drawing_context()?;
+    prepare(&mut context, extent, state, &[]);
+    let area = WorkspaceArea {
+        left: 0.,
+        top: 0.,
+        right: extent[0] as f32,
+        bottom: extent[1] as f32,
+    };
+    let drawn = draw_active_sheet(context.frame(), state, area);
+    let draws = context.render();
+    if drawn {
+        crate::snapshot::capture_frame(draws, extent, &resources)
+    } else {
+        Err(format!(
+            "drawing preview for {:?}: expected an active sheet",
+            state.document
+        ))
+    }
+}
+
+fn drawing_context() -> Result<(Context, GuiTextureResources), String> {
+    let mut context = crate::context_owner::create_owner_context()?;
+    let atlas = crate::engine::configure_owner_context(&mut context);
+    let resources = GuiTextureResources::new(atlas, [])?;
+    Ok((context, resources))
 }
 
 impl Drop for GuiDetachedDrawing {

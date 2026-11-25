@@ -407,12 +407,11 @@ impl HeadWindow for NativeHeadWindow {
         }
         Ok(events)
     }
-    fn capture_window_preview(&mut self) -> Result<bool, String> {
-        let image = self.scene_preview_image()?;
-        if let Some(gui) = &mut self.gui {
-            gui.receive_window_preview(image);
-        }
-        Ok(true)
+    fn capture_window_preview(
+        &mut self,
+        state: &oblikovati_gui::GuiCommandState,
+    ) -> Result<bool, String> {
+        self.publish_window_preview(state)
     }
     fn capture_isometric_preview(&mut self, document: u64) -> Result<bool, String> {
         self.publish_isometric_preview(document)
