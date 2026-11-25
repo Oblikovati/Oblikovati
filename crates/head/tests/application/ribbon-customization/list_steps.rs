@@ -251,12 +251,24 @@ fn click_target_header(world: &mut ApplicationWorld) {
 #[then("the custom panel list contains these rows in order:")]
 #[then("the target list contains these rows in order:")]
 fn expected_target_order(world: &mut ApplicationWorld, step: &cucumber::gherkin::Step) {
+    assert_eq!(target_rows(world), command_names(step));
+}
+
+#[given("the user has staged these commands in order:")]
+fn stage_commands_in_order(world: &mut ApplicationWorld, step: &cucumber::gherkin::Step) {
+    let expected = command_names(step);
+    for name in &expected {
+        add_command(world, name);
+    }
+    assert_eq!(target_rows(world), expected);
+}
+
+fn command_names(step: &cucumber::gherkin::Step) -> Vec<String> {
     let rows = step
         .table
         .as_ref()
         .expect("expected the ordered command names");
-    let expected: Vec<_> = rows
-        .rows
+    rows.rows
         .iter()
         .map(|row| {
             let [name] = row.as_slice() else {
@@ -264,8 +276,12 @@ fn expected_target_order(world: &mut ApplicationWorld, step: &cucumber::gherkin:
             };
             super::super::world::squeezed(name)
         })
-        .collect();
-    assert_eq!(target_rows(world), expected);
+        .collect()
+}
+
+#[then("\"2D Sketches\" and \"3D Annotations\" remain selected")]
+fn both_sketch_and_annotation_remain_selected(world: &mut ApplicationWorld) {
+    super::list_keyboard_steps::expect_target_selections(world, &["2DSketches", "3DAnnotations"]);
 }
 
 #[when("the user clicks an empty area of the target list")]

@@ -2407,15 +2407,15 @@
           "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
         },
         "cucumber": "architecture/rust-port/receipts/2026-11-25-ribbon-customization-current-3856/cucumber.json",
-        "cucumber_sha256": "86da7dec9d6a1e43ac67d3197c3cb13be2d5a5628cde1111cc1094d5774b3605",
+        "cucumber_sha256": "3308cb7333aed5b19ca6bf92dba1c96f7099875a8991ba336bcfbf9dc9e1e711",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-ribbon-customization-current-3856/scenario-inventory.json",
         "scenario_inventory_sha256": "f5ffc92a1596db2741aa0edaa272a340c62c06d16219090977ee0a0bceb4302c",
         "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-ribbon-customization-current-3856/scenario-arguments.json",
-        "scenario_arguments_sha256": "a0714197c175becf62a89c6d3612aaf3192b66b57cbbf8ebf08fc5443c730e2a",
-        "application_commit": "58c48d9f27de35e8bdae4c8848a4e493c5ca8898",
+        "scenario_arguments_sha256": "8ba3e990edb06010c928661ede21744198a26131f6064e804b614c52ec3131cc",
+        "application_commit": "2bdad5ecbb0c729ef55b03a54cafd02efb5eeeee",
         "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-customization OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
         "environment": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe",
-        "notes": "Current diagnostic checkpoint. 103 native executions and 1406 steps in passing cases. 99 of 122 declarations passed, counting each outline only after every example passed. Individual receipts identify the builds and existing local GUI changes. Strict provenance remains open under #3978."
+        "notes": "Current diagnostic checkpoint. 104 native executions and 1420 steps in passing cases. 100 of 122 declarations passed, counting each outline only after every example passed. Individual receipts identify the builds and existing local GUI changes. Strict provenance remains open under #3978."
       }
     }
   }

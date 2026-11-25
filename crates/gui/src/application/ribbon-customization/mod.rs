@@ -305,11 +305,7 @@ impl RibbonCustomization {
         if let Some(_targets) = targets {
             self.target_menu(ui);
         }
-        ui.text("Name");
-        ui.same_line_with_spacing(0., 110.);
-        ui.text("Large");
-        ui.same_line_with_spacing(0., 12.);
-        ui.text("Text");
+        layout::target_headings(ui);
         ui.child_window("##custom-selected")
             .size(size)
             .border(true)
@@ -321,6 +317,7 @@ impl RibbonCustomization {
                 let mut clear_extra = false;
                 let mut options = Vec::new();
                 for (index, entry) in self.draft.rows().iter().enumerate() {
+                    let row_x = ui.cursor_pos()[0];
                     let clicked = ui
                         .selectable_config(format!("{}##target-{index}", entry.command.label()))
                         .size([126., 0.])
@@ -349,11 +346,11 @@ impl RibbonCustomization {
                         clear_extra = true;
                         remove = true;
                     }
-                    ui.same_line();
+                    layout::same_row_at(ui, row_x + layout::TARGET_OPTIONS_X[0]);
                     let mut large = entry.large;
                     let mut text = entry.text;
                     let changed_large = ui.checkbox(format!("##large-{index}"), &mut large);
-                    ui.same_line_with_spacing(0., 28.);
+                    layout::same_row_at(ui, row_x + layout::TARGET_OPTIONS_X[1]);
                     let changed_text = ui.checkbox(format!("##text-{index}"), &mut text);
                     if changed_large || changed_text {
                         options.push((index, large, text));

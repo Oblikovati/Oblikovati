@@ -154,6 +154,10 @@ pub(super) fn expect_source_selection(
 }
 
 pub(super) fn expect_target_selection(world: &mut ApplicationWorld, selected: &str) {
+    expect_target_selections(world, &[selected]);
+}
+
+pub(super) fn expect_target_selections(world: &mut ApplicationWorld, selected: &[&str]) {
     world.hover([800, 900]);
     let rows = target_row_runs(world);
     let last = rows.last().expect("expected staged rows");
@@ -164,7 +168,7 @@ pub(super) fn expect_target_selection(world: &mut ApplicationWorld, selected: &s
     for (label, point) in rows {
         assert_eq!(
             pixel(&capture, point) != pixel(&capture, plain),
-            label == selected,
+            selected.contains(&label.as_str()),
             "target highlight for {label:?}"
         );
     }

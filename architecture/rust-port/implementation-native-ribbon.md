@@ -12,8 +12,9 @@ The [native list and selector runs](receipts/2026-11-24-ribbon-customization-lis
 cover target order, selection, selector dismissal, and tab retention.
 The [customizable Zoom commands](receipts/2026-11-24-ribbon-customization-zoom-3856/README.md)
 use the same viewport navigation handler as the navigation bar.
-The ascending source-list scenario still expects 2-D Drawing and an unlabeled
-entry, which have no mapped command in the Rust catalogue.
+The source list includes 2-D Drawing as a configurable entry. The ascending
+source-list scenario also expects an unlabeled row whose command is unidentified.
+The Large and Text headings align with their checkboxes across font widths.
 The [native edit and import scenarios](receipts/2026-11-24-ribbon-customization-edits-3856/README.md)
 cover reordering, repeated separators, committing with OK, and keeping a
 draft across target and dialog tab switches. Invalid XML closes the picker,

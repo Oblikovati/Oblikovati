@@ -9,7 +9,6 @@
 - Expanded the desktop parameter tolerance editor with tolerance formats, precision, evaluated size, and ISO fit classes. (#3893)
 - Added analytic solid-edge lengths to the Part Measure panel. (#3967)
 - Added Zoom, Zoom All, Zoom Selected, and Zoom Window to ribbon customization. (#3856)
-
 - Added Show Panels instructions and F1 help to the ribbon panel selector. (#3856)
 - Added an Explore panel with Measure to the 3D Model ribbon. (#3856)
 - Added the Standard overview and Units tab to Document Settings. (#3856)
@@ -298,6 +297,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Aligned the Large and Text headings with their Ribbon Customization checkboxes. (#3856)
 - Kept long tab labels readable when the ribbon is docked on either side. (#3860)
 - Allowed the only attached drawing to open in its own window, with Home in the main window. (#3900)
 - Wrapped long project names in the Projects dialog. (#3899)

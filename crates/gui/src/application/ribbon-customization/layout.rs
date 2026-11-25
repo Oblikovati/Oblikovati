@@ -3,6 +3,22 @@
 use super::{RibbonCustomization, Ui};
 
 const DEFAULT_SIZE: [f32; 2] = [760., 540.];
+pub(super) const TARGET_OPTIONS_X: [f32; 2] = [132., 180.];
+
+pub(super) fn target_headings(ui: &Ui) {
+    let origin = ui.cursor_pos()[0] + ui.clone_style().window_padding[0];
+    ui.text("Name");
+    for (offset, label) in TARGET_OPTIONS_X.into_iter().zip(["Large", "Text"]) {
+        let center = origin + offset + ui.frame_height() * 0.5;
+        same_row_at(ui, center - ui.calc_text_size(label)[0] * 0.5);
+        ui.text(label);
+    }
+}
+
+pub(super) fn same_row_at(ui: &Ui, x: f32) {
+    ui.same_line();
+    crate::widget_abi::cursor_position(ui, [x, ui.cursor_pos()[1]]);
+}
 
 pub(super) fn fit_window(ui: &Ui) {
     crate::widget_abi::fit_dialog_with_default_size(ui, "Customize", [340., 185.], DEFAULT_SIZE);

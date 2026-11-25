@@ -1,8 +1,8 @@
 # Current native Ribbon Customization
 
-One hundred and three of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 99 of 122 declarations and 1,406
-passing steps. Each case started with a writable copy of the published
+One hundred and four of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 100 of 122 declarations and 1,420
+passing steps on this retained input snapshot. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
 opening Offset Plane from the grouped Plane menu. The
@@ -64,6 +64,10 @@ Customize open.
 The staged drawing entry was inserted after the selected target row and
 discarded on Cancel.
 [2-D Drawing insertion](../2026-11-25-ribbon-customization-drawing-insertion-3856/README.md)
+
+Case 44 kept both selected rows in place after the Up button.
+[Multiple-row ordering](../2026-11-25-ribbon-customization-multiselect-up-3856/README.md)
+includes the rerun with the published design references.
 
 The earlier [reorder](case-082/cucumber.json) and
 [remove](case-083/cucumber.json) runs stopped at the missing 2-D Drawing
