@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:55:57.568499632Z" time="52.406079951"><testcase name="Scenario: Float and redock the model browser: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:127:3" time="52.406079951"><system-out><![CDATA[  Scenario: Float and redock the model browser
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And the model browser is docked to the left edge of the workspace
+   ✔  When the user drags the model browser by its header into the viewport
+   ✔  Then the model browser becomes a floating panel over the viewport
+   ✔  And the viewport occupies the space previously used by the docked browser
+   ✔  When the user drags the floating browser by its header to the left edge of the workspace
+   ✔  Then the model browser docks at the left edge
+   ✔  And the viewport occupies the remaining workspace
+]]></system-out></testcase></testsuite></testsuites>

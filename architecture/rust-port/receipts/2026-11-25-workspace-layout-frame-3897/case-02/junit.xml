@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:51:52.477571678Z" time="24.907305287"><testcase name="Scenario: Keep document tabs below the modeling workspace: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:22:3" time="24.907305287"><system-out><![CDATA[  Scenario: Keep document tabs below the modeling workspace
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the ribbon and model browser are visible
+   ✔  When the user inspects the workspace layout
+   ✔  Then the document tab strip appears below the model browser and viewport
+   ✔  And the status area appears below the document tab strip
+   ✔  And no document tab strip separates the ribbon from the viewport
+   ✔  And the active document remains visible in the viewport
+]]></system-out></testcase></testsuite></testsuites>

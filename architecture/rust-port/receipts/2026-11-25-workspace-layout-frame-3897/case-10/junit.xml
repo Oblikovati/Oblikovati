@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:55:18.136467928Z" time="19.428513799"><testcase name="Scenario: Inspect the View tab user interface options: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:103:3" time="19.428513799"><system-out><![CDATA[  Scenario: Inspect the View tab user interface options
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open in the MCAD Software
+   ✔  And the View ribbon tab is active
+   ✔  When the user opens the User Interface menu
+   ✔  Then the menu lists the viewport orientation control, navigation bar, contextual command toolbar, status bar, document tabs, marking menu, model browser, rule log, rule automation and favorites
+   ✔  And the viewport orientation control, navigation bar, status bar, document tabs, marking menu and model browser are checked
+   ✔  And the contextual command toolbar, rule log, rule automation and favorites are unchecked
+   ✔  And the part remains visible in the viewport
+]]></system-out></testcase></testsuite></testsuites>
