@@ -94,7 +94,8 @@ impl RibbonCustomization {
             return;
         };
         self.marking_selector_open |= marking_environment::selector(ui, environment);
-        ui.text("Sub-Environment: None Selected");
+        self.marking_selector_open |=
+            marking_environment::sub_environment_selector(ui, *environment);
         let commands = marking_environment::commands(*environment);
         let original = menus.get(*environment);
         let mut menu = original.clone();

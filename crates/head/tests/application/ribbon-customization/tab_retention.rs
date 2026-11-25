@@ -146,12 +146,10 @@ fn environment_unchanged(world: &mut ApplicationWorld) {
     marking_visible(world);
 }
 #[then("Sub-Environment remains \"None Selected\"")]
+#[then("Sub-Environment is \"None Selected\"")]
+#[given("Sub-Environment is \"None Selected\"")]
 fn sub_environment_unchanged(world: &mut ApplicationWorld) {
-    assert!(
-        world
-            .window_text("Customize")
-            .contains("Sub-Environment:NoneSelected")
-    );
+    assert!(world.window_text("Customize").contains("NoneSelected"));
 }
 #[then("no keyboard or ribbon changes are pending")]
 #[then("no customization change is pending")]

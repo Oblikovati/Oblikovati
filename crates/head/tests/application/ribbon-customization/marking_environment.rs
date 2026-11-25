@@ -53,6 +53,56 @@ fn sketch_remains_selected(world: &mut ApplicationWorld) {
     assert!(world.row_accented_beside("2D Sketch", "Part"));
 }
 
+#[when("the user opens the Sub-Environment selector")]
+fn open_sub_environment(world: &mut ApplicationWorld) {
+    click_in_customize(world, "NoneSelected");
+}
+
+#[then(
+    "the available choices include \"Arc\", \"Circle\", \"Dimension\", \"Line\", \"Point\", \"Sketch Block\", \"Sketch Pattern\", \"Spline\" and \"Text\""
+)]
+fn sketch_sub_environment_choices(world: &mut ApplicationWorld) {
+    let list = world.run("Constraint Glyphs").list;
+    for name in [
+        "Arc",
+        "Circle",
+        "Dimension",
+        "Line",
+        "Point",
+        "SketchBlock",
+        "SketchPattern",
+        "Spline",
+        "Text",
+    ] {
+        assert!(
+            world
+                .frame
+                .runs
+                .iter()
+                .any(|run| run.list == list && run.text == name),
+            "expected {name} in the Sub-Environment selector"
+        );
+    }
+}
+
+#[then("\"None Selected\" remains highlighted")]
+fn none_selected_highlighted(world: &mut ApplicationWorld) {
+    world.hover([1250, 780]);
+    let plain = world.run("Spline").clone();
+    let selected = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.list == plain.list && run.text == "NoneSelected")
+        .expect("None Selected in the Sub-Environment selector")
+        .clone();
+    let x = selected.maximum[0].max(plain.maximum[0]) as usize + 6;
+    assert_ne!(
+        world.pixel_at([x, selected.center()[1] as usize]),
+        world.pixel_at([x, plain.center()[1] as usize])
+    );
+}
+
 #[test]
 fn marking_environment_applies_both_profiles_together() {
     let mut world = ApplicationWorld::new();

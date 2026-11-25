@@ -82,6 +82,7 @@ fn dismiss_selector(world: &mut ApplicationWorld) {
         "Radial Menu Only",
         "Short Menu",
         "Sheet Metal",
+        "Constraint Glyphs",
     ] {
         world.expect_no_text(choice);
     }
