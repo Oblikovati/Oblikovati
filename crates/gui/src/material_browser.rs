@@ -139,7 +139,7 @@ fn asset_tab(
         GuiPartAssetKind::Appearance => "Appearance",
     };
     if let Some(id) =
-        crate::ribbon_part_assets::asset_combo(ui, label, selected.as_deref(), choices)
+        crate::ribbon_part_assets::dock_asset_combo(ui, label, selected.as_deref(), choices)
     {
         *selected = Some(id);
     }

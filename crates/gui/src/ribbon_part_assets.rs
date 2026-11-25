@@ -62,9 +62,9 @@ fn asset_row(
         let label_width = ui.calc_text_size("Appearance")[0] + 12. * factor;
         ui.same_line_with_spacing(0., label_width - ui.calc_text_size(label)[0]);
         let _id = ui.push_id(label);
-        asset_combo_at_width(ui, "##asset", selected, choices, 150. * factor, true)
+        asset_combo_at_width(ui, "##asset", selected, choices, Some(150. * factor), true)
     } else {
-        asset_combo(ui, label, selected, choices)
+        asset_combo_at_width(ui, label, selected, choices, Some(150.), false)
     };
     if let Some(id) = choice {
         queue_asset(state, kind, &id, actions);
@@ -90,21 +90,22 @@ pub(crate) fn document_asset_summary(ui: &Ui, state: &GuiCommandState) {
         ));
     }
 }
-/// Choose one named asset; example: `asset_combo(ui, "Material", current, choices)`.
-pub(crate) fn asset_combo(
+/// Fit the asset control and its caption in a resizable browser.
+/// Example: `dock_asset_combo(ui, "Material", current, choices)`.
+pub(crate) fn dock_asset_combo(
     ui: &Ui,
     label: &str,
     selected: Option<&str>,
     choices: &[crate::GuiAssetChoice],
 ) -> Option<String> {
-    asset_combo_at_width(ui, label, selected, choices, 150., false)
+    asset_combo_at_width(ui, label, selected, choices, None, false)
 }
 fn asset_combo_at_width(
     ui: &Ui,
     label: &str,
     selected: Option<&str>,
     choices: &[crate::GuiAssetChoice],
-    width: f32,
+    width: Option<f32>,
     reserve_swatch: bool,
 ) -> Option<String> {
     let preview = asset_preview(choices, selected);
@@ -119,12 +120,17 @@ fn asset_combo_at_width(
         }
         ui.same_line();
     }
-    ui.set_next_item_width(width);
+    ui.set_next_item_width(width.unwrap_or_else(|| dock_asset_combo_width(ui, label)));
     let _list = ui.begin_combo(label, preview)?;
     choices
         .iter()
         .find(|asset| select_asset(ui, asset, selected))
         .map(|asset| asset.id.clone())
+}
+fn dock_asset_combo_width(ui: &Ui, label: &str) -> f32 {
+    let caption = ui.calc_text_size(label)[0] + ui.clone_style().item_inner_spacing[0];
+    let available = ui.content_region_avail()[0] - caption;
+    available.max(ui.frame_height()).min(150.)
 }
 fn row_choices(
     browser: &crate::GuiModelBrowser,

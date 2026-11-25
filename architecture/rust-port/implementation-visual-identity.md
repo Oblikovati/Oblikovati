@@ -17,6 +17,8 @@ values come from the same handoff.
   workspace restores the user's preferred dock sizes. The last resized dock
   gets priority within the available width, including after a restart. The
   viewport width limit also applies while the user holds a splitter.
+  The asset selectors shrink inside narrow docks to keep their captions
+  and dropdown arrows visible beside the swatches.
 - Home Recent leaves 12 logical pixels of scroll-end padding above the
   document tab strip in both List and Grid views.
 - The application bar displays the brand mark. Mapped ribbon commands and

@@ -7,6 +7,64 @@ const APPEARANCE: &str = "Appearance Browser";
 const MATERIAL: &str = "Material Browser";
 
 #[test]
+fn narrow_asset_dock_keeps_both_chooser_labels_visible() {
+    let mut world = ApplicationWorld::new();
+    super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    check_narrow_asset_selector(&mut world, APPEARANCE, "Appearance");
+    check_narrow_asset_selector(&mut world, MATERIAL, "Material");
+    world.close();
+}
+
+fn check_narrow_asset_selector(world: &mut ApplicationWorld, panel: &str, label: &str) {
+    resize_asset_test_window(world, [1440, 900]);
+    select_tab(world, panel);
+    resize_asset_test_window(world, [780, 580]);
+    assert_eq!(diagnostics::window_dock_tab_visible(panel), Some(true));
+    let (position, size) = diagnostics::window_geometry(panel).expect("asset dock");
+    assert!(
+        (160. ..=180.).contains(&size[0]),
+        "{panel} width {}",
+        size[0]
+    );
+    world.save_capture(&format!("narrow-{label}-selector"));
+    let caption = world.run_in_window(panel, label);
+    assert!(
+        caption.maximum[0] <= position[0] + size[0] - 4.,
+        "{panel} clipped caption at {:?}, dock {position:?} + {size:?}",
+        caption.maximum
+    );
+    let arrow = [caption.minimum[0] - 12., caption.center()[1]];
+    open_narrow_asset_choices(world, panel, arrow);
+}
+
+fn resize_asset_test_window(world: &mut ApplicationWorld, extent: [u32; 2]) {
+    x11_input::resize_application_window(extent);
+    for _ in 0..3 {
+        world.pump(Vec::new());
+    }
+    assert_eq!(world.extent(), extent);
+}
+
+fn open_narrow_asset_choices(world: &mut ApplicationWorld, panel: &str, arrow: [f32; 2]) {
+    let browser = world.state().browser.expect("active Part asset catalog");
+    let (assigned, choices) = if panel == APPEARANCE {
+        (browser.part_appearance, browser.appearances)
+    } else {
+        (browser.part_material, browser.materials)
+    };
+    let preview = choices
+        .iter()
+        .find(|item| Some(&item.id) == assigned.as_ref())
+        .unwrap_or(&choices[0]);
+    x11_input::click(diagnostics::pointer_pixels(arrow));
+    world.pump(Vec::new());
+    let alternative = choices.iter().find(|item| item.id != preview.id).unwrap();
+    world.expect_text(&alternative.name);
+    world.save_capture(&format!("narrow-{panel}-choices"));
+    world.escape();
+}
+
+#[test]
 fn viewport_keeps_its_reserved_width_while_the_splitter_is_held() {
     let mut world = ApplicationWorld::with_asset_tools_closed();
     super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
