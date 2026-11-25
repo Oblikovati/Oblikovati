@@ -15,15 +15,6 @@ fn narrow_fixture(width: u32, scale: f32) -> (GuiFrameEngine, GuiFrameRequest) {
     settle_ribbon(&mut engine, &mut request);
     (engine, request)
 }
-fn open_panel(
-    engine: &mut GuiFrameEngine,
-    request: &mut GuiFrameRequest,
-    point: [f32; 2],
-    scale: f32,
-) {
-    assert!(click_ribbon(engine, request, point.map(|value| value * scale)).is_empty());
-    settle_ribbon(engine, request);
-}
 #[test]
 fn a_collapsed_format_and_constrain_panel_dispatch_the_same_actions_at_both_scales() {
     for scale in [1., 2.] {
@@ -155,12 +146,19 @@ fn the_scroll_tier_keeps_the_last_panel_reachable_below_its_minimum_row_width() 
 fn a_panel_wider_than_the_window_keeps_its_last_command_reachable() {
     for scale in [1., 2.] {
         let (mut engine, mut request) = narrow_fixture(320, scale);
-        open_panel(&mut engine, &mut request, [185., 88.], scale);
-        scroll_right(&mut engine, &mut request, [200., 200.], scale);
-        expect_ribbon(
+        open_collapsed_panel(&mut engine, &mut request, "Constrain");
+        let point = ribbon_caption(&mut engine, &mut request, "Horizontal", true);
+        scroll_right(
             &mut engine,
             &mut request,
-            [250. * scale, 229. * scale],
+            point.map(|value| value / scale),
+            scale,
+        );
+        expect_caption(
+            &mut engine,
+            &mut request,
+            "Tangent",
+            true,
             Constrain(GuiSketchConstraint::Tangent),
         );
     }
@@ -199,11 +197,12 @@ fn a_clipped_child_is_closed_before_the_next_visible_frame() {
     settle_ribbon(&mut engine, &mut request);
     request.extent[1] = 900;
     settle_ribbon(&mut engine, &mut request);
-    open_panel(&mut engine, &mut request, [70., 88.], 1.);
-    expect_ribbon(
+    open_collapsed_panel(&mut engine, &mut request, "Create");
+    expect_caption(
         &mut engine,
         &mut request,
-        [78., 195.],
+        "Rectangle",
+        true,
         Place(GuiSketchTool::Rectangle),
     );
 }

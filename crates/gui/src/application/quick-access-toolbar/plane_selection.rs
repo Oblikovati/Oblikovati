@@ -3,6 +3,7 @@
 use crate::application::document_creation::workspaces::WorkspaceArea;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{MouseButton, Ui};
+use oblikovati_api::types::{TOKEN_PLANE_FAINT, TOKEN_PLANE_FILL};
 
 /// One origin plane; each is a sketch plane the owner can start on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -30,9 +31,8 @@ pub struct GuiOriginPlane {
     pub automatic_corners: [[i32; 2]; 4],
 }
 /// Translucent and warm, so the planes read over a dark view without hiding it.
-const PLANE_FILL: [f32; 4] = [0.95, 0.65, 0.25, 0.22];
-const PLANE_EDGE: [f32; 4] = [0.95, 0.65, 0.25, 0.9];
-const LABEL: [f32; 4] = [1., 0.9, 0.7, 1.];
+const PLANE_FILL: [f32; 4] = [245. / 255., 158. / 255., 11. / 255., 0.16];
+const PLANE_EDGE: [f32; 4] = [245. / 255., 158. / 255., 11. / 255., 1.];
 
 /// Whether the display is up; while it is, Start 2D Sketch stays highlighted on the ribbon.
 #[derive(Default)]
@@ -47,6 +47,7 @@ impl PlaneSelection {
         state: &GuiCommandState,
         scale: [f32; 2],
         area: crate::application::document_creation::workspaces::WorkspaceArea,
+        cube: Option<[f32; 4]>,
         actions: &mut Vec<GuiShellAction>,
     ) {
         if !self.active {
@@ -64,7 +65,7 @@ impl PlaneSelection {
             .iter()
             .map(|plane| (logical_corners(plane.corners, scale), plane.kind))
             .collect();
-        draw_planes(ui, &planes, area);
+        draw_planes(ui, &planes, area, cube, state);
         if ui.is_key_pressed_no_repeat(imgui::Key::Escape) {
             self.active = false;
             return;
@@ -107,25 +108,92 @@ fn plane_chosen_over_workspace(
 fn logical_corners(corners: [[i32; 2]; 4], scale: [f32; 2]) -> [[f32; 2]; 4] {
     corners.map(|corner| [corner[0] as f32 / scale[0], corner[1] as f32 / scale[1]])
 }
-fn draw_planes(ui: &Ui, planes: &[([[f32; 2]; 4], GuiOriginPlaneKind)], area: WorkspaceArea) {
-    let draw = ui.get_foreground_draw_list();
-    for (corners, kind) in planes {
-        draw.add_triangle(corners[0], corners[1], corners[2], PLANE_FILL)
-            .filled(true)
-            .build();
-        draw.add_triangle(corners[0], corners[2], corners[3], PLANE_FILL)
-            .filled(true)
-            .build();
-        for index in 0..4 {
-            draw.add_line(corners[index], corners[(index + 1) % 4], PLANE_EDGE)
-                .build();
-        }
-        draw.add_text(
-            label_position(corners, ui.calc_text_size(kind.label()), area),
-            LABEL,
-            kind.label(),
-        );
+fn draw_planes(
+    ui: &Ui,
+    planes: &[([[f32; 2]; 4], GuiOriginPlaneKind)],
+    area: WorkspaceArea,
+    cube: Option<[f32; 4]>,
+    state: &GuiCommandState,
+) {
+    // The viewport controls and dialogs draw above the model overlays.
+    let draw = ui.get_background_draw_list();
+    let [mut fill, edge] = plane_colors(state);
+    // The overlapping picker planes share the theme's opacity budget.
+    fill[3] /= planes.len().max(1) as f32;
+    let text = ui.style_color(imgui::StyleColor::Text);
+    let ink = state
+        .color_scheme
+        .as_ref()
+        .map_or(text, |scheme| scheme.contrasting_ink(text));
+    for [left, top, right, bottom] in plane_regions(area, cube) {
+        draw.with_clip_rect([left, top], [right, bottom], || {
+            for (corners, kind) in planes {
+                draw_quad(&draw, *corners, fill, edge);
+                draw.add_text(
+                    label_position(corners, ui.calc_text_size(kind.label()), area),
+                    ink,
+                    kind.label(),
+                );
+            }
+        });
     }
+}
+fn plane_regions(area: WorkspaceArea, cube: Option<[f32; 4]>) -> Vec<[f32; 4]> {
+    let WorkspaceArea {
+        left,
+        top,
+        right,
+        bottom,
+    } = area;
+    if left >= right || top >= bottom {
+        return Vec::new();
+    }
+    let Some([cube_left, cube_top, cube_right, cube_bottom]) = cube else {
+        return vec![[left, top, right, bottom]];
+    };
+    let cube_left = cube_left.clamp(left, right);
+    let cube_right = cube_right.clamp(left, right);
+    let cube_top = cube_top.clamp(top, bottom);
+    let cube_bottom = cube_bottom.clamp(top, bottom);
+    // The faded cube and its controls still need a clean backdrop.
+    [
+        [left, top, right, cube_top],
+        [left, cube_top, cube_left, cube_bottom],
+        [cube_right, cube_top, right, cube_bottom],
+        [left, cube_bottom, right, bottom],
+    ]
+    .into_iter()
+    .filter(|rect| rect[0] < rect[2] && rect[1] < rect[3])
+    .collect()
+}
+fn plane_colors(state: &GuiCommandState) -> [[f32; 4]; 2] {
+    let Some(theme) = &state.theme else {
+        return [PLANE_FILL, PLANE_EDGE];
+    };
+    [TOKEN_PLANE_FILL, TOKEN_PLANE_FAINT].map(|token| {
+        let color = &theme.palette()[&token];
+        [color.r, color.g, color.b, color.a]
+    })
+}
+fn draw_quad(
+    draw: &imgui::DrawListMut<'_>,
+    mut corners: [[f32; 2]; 4],
+    fill: [f32; 4],
+    edge: [f32; 4],
+) {
+    // The antialias fringe assumes clockwise winding in screen coordinates.
+    if signed_edge(corners[0], corners[1], corners[2]) < 0. {
+        corners.reverse();
+    }
+    draw.add_polyline(corners.to_vec(), fill)
+        .filled(true)
+        .build();
+    draw.add_polyline(
+        [corners[0], corners[1], corners[2], corners[3], corners[0]].to_vec(),
+        edge,
+    )
+    .thickness(1.25)
+    .build();
 }
 pub(crate) fn label_position(
     corners: &[[f32; 2]; 4],

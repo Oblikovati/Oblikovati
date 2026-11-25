@@ -9,9 +9,9 @@ here uses the Rust desktop on Linux under Xvfb, Openbox, and Vulkan Lavapipe.
 | Gap | Evidence or remaining work |
 | --- | --- |
 | GAP-01 | Native Light Mode switch, theme-aware Default backdrop, explicit High Contrast override, and a light status bar. [Default](receipts/2026-11-25-design-gap-01-4063/Light.png) · [Override](receipts/2026-11-25-design-gap-01-4063/Override.png) |
-| GAP-02 | Verify that the scrollable properties content leaves the action footer visible and that a new feature draft replaces the old one. |
-| GAP-03 | Verify Sketch ribbon compaction, row clearance, compact group labels, and Finish Sketch styling. |
-| GAP-04 | Verify translucent, seamless origin planes beneath viewport controls. |
+| GAP-02 | Verified the pinned Extrude footer and exclusive feature drafts. Content-based floating height and the Apply & Create New affordance remain open. [Native check](receipts/2026-11-25-design-gap-p0-4063/README.md) |
+| GAP-03 | Verified labelled Sketch groups, last-row clearance, and the emerald Finish Sketch at 1440 px. [Native check](receipts/2026-11-25-design-gap-p0-4063/README.md) |
+| GAP-04 | Verified translucent origin-plane selection beneath the viewport controls, with the ViewCube kept clear and plane selection still working. [Native check](receipts/2026-11-25-design-gap-p0-4063/README.md) |
 | GAP-05 | Bring the properties controls, placement, and floating elevation into alignment. |
 | GAP-06 | Verify File menu iconography, row heights, long names, and pin controls. |
 | GAP-07 | Verify Home recent-document columns, selection, and action hierarchy. |

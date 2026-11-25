@@ -129,7 +129,7 @@ impl ExtrudeDialog {
         state: &GuiCommandState,
         plane_active: bool,
         actions: &mut Vec<GuiShellAction>,
-        controls: ExtrudePanelControls<'_>,
+        mut controls: ExtrudePanelControls<'_>,
     ) {
         if let Some(sketch) = self.pending.observe(state, plane_active, actions) {
             self.set_document(state.document);
@@ -154,51 +154,74 @@ impl ExtrudeDialog {
         let Some(document) = self.document else {
             return;
         };
-        Self::fit_dockable(ui, "Extrude", [640., 280.], [280., 396.]);
+        Self::fit_dockable(ui, "Extrude", controls.origin, [280., 396.]);
         let mut open = true;
-        Self::dockable_window(ui, "Extrude", &mut open).build(|| {
-            let expanded = imgui::TreeNodeFlags::DEFAULT_OPEN;
-            let mut edited = ui.collapsing_header("Input Geometry", expanded)
-                && self.draw_input_geometry(ui, state);
-            if ui.collapsing_header("Behavior", expanded) {
-                edited |= self.draw_extent(ui, state, controls.icons, controls.parameters, actions);
-            }
-            if edited {
-                self.commit_error = None;
-            }
-            if edited && self.previewed {
-                actions.push(GuiShellAction::PreviewExtrude(None));
-                self.previewed = false;
-            }
-            self.refresh_preview(state, document, edited, actions);
-            let validation = self.current_distance_validation(state, document);
-            if self.reference.numeric() && !self.distance.trim().is_empty() && validation.is_none()
-            {
-                actions.push(GuiShellAction::ValidateExtrudeDistance {
-                    document,
-                    distance: self.distance.clone(),
-                    second_distance: self.active_second_distance().map(str::to_owned),
-                });
-            }
-            if let Some(error) = validation.and_then(|result| result.error.as_ref()) {
-                ui.text_colored([1.0, 0.25, 0.25, 1.0], format!("Invalid distance: {error}"));
-            }
-            if let Some(error) = &self.commit_error {
-                ui.text_colored([1.0, 0.25, 0.25, 1.0], format!("Extrusion failed: {error}"));
-            }
-            // ImGui can dismiss a popup and restore dialog focus before drawing these buttons.
-            let shortcuts = !controls.popup_was_open
-                && !crate::widget_abi::any_popup_open(ui)
-                && ui.is_window_focused();
-            self.controls(ui, state, document, edited, shortcuts, actions);
-        });
+        Self::dockable_window(ui, "Extrude", &mut open)
+            .scroll_bar(false)
+            .scrollable(false)
+            .build(|| {
+                let reserve = 36. + ui.clone_style().item_spacing[1];
+                let mut edited = false;
+                ui.child_window("##extrude-properties")
+                    .size([0., -reserve])
+                    .build(|| {
+                        edited = self.properties(ui, state, document, &mut controls, actions);
+                    });
+                // Child input still owns the draft. Popups keep their own Escape key.
+                let shortcuts = !controls.popup_was_open
+                    && !crate::widget_abi::any_popup_open(ui)
+                    && ui.is_window_focused_with_flags(imgui::WindowFocusedFlags::CHILD_WINDOWS);
+                self.controls(ui, state, document, edited, shortcuts, actions);
+            });
         if !open {
+            self.close(actions);
+        }
+    }
+    fn properties(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        document: u64,
+        controls: &mut ExtrudePanelControls<'_>,
+        actions: &mut Vec<GuiShellAction>,
+    ) -> bool {
+        let expanded = imgui::TreeNodeFlags::DEFAULT_OPEN;
+        let mut edited =
+            ui.collapsing_header("Input Geometry", expanded) && self.draw_input_geometry(ui, state);
+        if ui.collapsing_header("Behavior", expanded) {
+            edited |= self.draw_extent(ui, state, controls.icons, controls.parameters, actions);
+        }
+        if edited {
+            self.commit_error = None;
             if self.previewed {
                 actions.push(GuiShellAction::PreviewExtrude(None));
                 self.previewed = false;
             }
-            self.set_document(None);
-            self.edit_feature = None;
+        }
+        self.refresh_preview(state, document, edited, actions);
+        self.draw_validation(ui, state, document, actions);
+        edited
+    }
+    fn draw_validation(
+        &self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        document: u64,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let validation = self.current_distance_validation(state, document);
+        if self.reference.numeric() && !self.distance.trim().is_empty() && validation.is_none() {
+            actions.push(GuiShellAction::ValidateExtrudeDistance {
+                document,
+                distance: self.distance.clone(),
+                second_distance: self.active_second_distance().map(str::to_owned),
+            });
+        }
+        if let Some(error) = validation.and_then(|result| result.error.as_ref()) {
+            ui.text_colored([1.0, 0.25, 0.25, 1.0], format!("Invalid distance: {error}"));
+        }
+        if let Some(error) = &self.commit_error {
+            ui.text_colored([1.0, 0.25, 0.25, 1.0], format!("Extrusion failed: {error}"));
         }
     }
     fn draw_input_geometry(&mut self, ui: &Ui, state: &GuiCommandState) -> bool {
@@ -421,12 +444,20 @@ impl ExtrudeDialog {
         {
             return;
         }
+        self.close(actions);
+    }
+    pub(crate) fn close(&mut self, actions: &mut Vec<GuiShellAction>) {
         if self.previewed {
             actions.push(GuiShellAction::PreviewExtrude(None));
             self.previewed = false;
         }
+        self.requested = false;
+        self.pending = Default::default();
         self.set_document(None);
         self.edit_feature = None;
+        self.attempted = None;
+        self.submitted = None;
+        self.submitted_edit = None;
     }
     fn current_distance_validation<'a>(
         &self,

@@ -12,14 +12,14 @@ pub(super) fn draw_panel_popup(
     let ui = context.ui;
     let width = layout.widths.get(&(tab, panel)).copied().unwrap_or(108.);
     let factor = context.owners.icons.layout_factor();
+    let command_height = context.owners.icons.appearance.tab_command_height(tab);
     let size = popup_geometry(
         ui,
         anchor,
         width,
-        78. + layout.scrollbar_height(ui)
-            + (20. + context.owners.icons.appearance.command_height()) * factor,
+        78. + layout.scrollbar_height(ui) + (20. + command_height) * factor,
         factor,
-        context.owners.icons.appearance,
+        command_height,
     );
     let Some(_popup) = ui.begin_popup(identity) else {
         return;
@@ -45,13 +45,13 @@ fn popup_geometry(
     width: f32,
     band_height: f32,
     factor: f32,
-    appearance: crate::ribbon_command_layout::RibbonAppearance,
+    command_height: f32,
 ) -> [f32; 2] {
     let viewport = ui.io().display_size[0];
     let content_width = width.min((viewport - 32.).max(1.));
     let padding = ui.clone_style().window_padding;
     let outer_width = content_width + 2. * padding[0];
-    let height = (20. + appearance.command_height()) * factor
+    let height = (20. + command_height) * factor
         + if content_width < width {
             ui.clone_style().scrollbar_size
         } else {

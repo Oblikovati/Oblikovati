@@ -61,10 +61,7 @@ pub(super) fn open_collapsed_panel(
 ) {
     let frame = settled_frame(engine, request);
     let caption = caption_run(&frame, panel, false);
-    let [x, y] = caption.minimum;
-    let arrow = arrow_in_region(&frame, caption, [x..x + 108., y - 80. ..y - 18.]);
-    let arrow = arrow.unwrap_or_else(|| panic!("{panel:?}: expected a collapsed panel arrow"));
-    assert!(click_ribbon(engine, request, pointer_pixels(request, arrow)).is_empty());
+    assert!(click_ribbon(engine, request, pointer_pixels(request, caption.center())).is_empty());
 }
 
 /// Open the arrow beside an inline tool. Example: `open_tool_choices(engine, request, "Circle")`.

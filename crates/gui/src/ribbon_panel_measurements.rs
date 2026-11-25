@@ -70,7 +70,7 @@ pub(super) fn temporary_geometry(
     let floating_notes = display.placement
         == crate::application::ribbon_display::RibbonPlacement::Floating
         && shown == TemporaryPanel::Group(RibbonPanel::PartNotes);
-    let content_height = temporary_content_height(display.appearance, floating_notes);
+    let content_height = temporary_content_height(display.appearance, tab, floating_notes);
     let panel_height = 24. + content_height * factor;
     let viewport = ui.io().display_size[0];
     let TemporaryPanel::Group(panel) = shown else {
@@ -111,11 +111,12 @@ pub(super) fn temporary_geometry(
 
 pub(super) fn temporary_content_height(
     appearance: crate::ribbon_command_layout::RibbonAppearance,
+    tab: RibbonTab,
     floating_notes: bool,
 ) -> f32 {
     if floating_notes {
         crate::ribbon_panel_contents::FLOATING_NOTES_HEIGHT
     } else {
-        20. + appearance.command_height()
+        20. + appearance.tab_command_height(tab)
     }
 }

@@ -36,6 +36,7 @@ pub(super) fn source(glyph: IconGlyph) -> Option<&'static str> {
         IconGlyph::NavZoom => include_str!("../../assets/identity/cmd-app-zoom-32.svg"),
         IconGlyph::NavWheel => include_str!("../../assets/identity/cmd-app-nav-wheel-32.svg"),
         IconGlyph::Line => include_str!("../../assets/identity/cmd-sketch-line-32.svg"),
+        IconGlyph::FinishSketch => include_str!("../../assets/identity/cmd-sketch-finish-32.svg"),
         IconGlyph::MidpointLine => {
             include_str!("../../assets/identity/cmd-sketch-line-midpoint-32.svg")
         }

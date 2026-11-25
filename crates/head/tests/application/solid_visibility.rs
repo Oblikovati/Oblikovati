@@ -57,7 +57,9 @@ pub(super) fn visible_selected_face_fill(capture: &ViewportCapture, windows: &[[
 }
 pub(super) fn visible_preview_fill(capture: &ViewportCapture, windows: &[[f32; 4]]) -> bool {
     visible_fill(capture, windows, &|pixel| {
-        pixel[0] > pixel[1].saturating_add(20) && pixel[1] > pixel[2].saturating_add(20)
+        pixel[2] > pixel[0].saturating_add(HUE_MARGIN)
+            && pixel[1] >= pixel[2]
+            && pixel[1] - pixel[2] < 2 * HUE_MARGIN
     })
 }
 pub(super) fn visible_fixture_point(

@@ -63,6 +63,14 @@ impl RibbonAppearance {
             Self::Large => 92.,
         }
     }
+    pub(crate) fn tab_command_height(self, tab: crate::ribbon::RibbonTab) -> f32 {
+        if self == Self::Normal && tab == crate::ribbon::RibbonTab::Sketch {
+            // The Sketch Create grid has a fourth row for Line and Project Geometry.
+            88.
+        } else {
+            self.command_height()
+        }
+    }
     pub(crate) fn cell(self, index: usize) -> ([f32; 2], [f32; 2]) {
         let (rows, size, stride) = match self {
             Self::Normal => (2, [108., 26.], [116., 30.]),

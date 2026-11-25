@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Read the completed native GUI frame and its live windows.
 pub(super) use super::drawn_windows::window_geometry;
+use super::world::squeezed;
 use imgui::sys;
 use std::ffi::CString;
 
@@ -232,3 +233,18 @@ fn dock_header_bounds(
 #[cfg(test)]
 #[path = "diagnostics_tests.rs"]
 mod tests;
+
+/// Resolve an origin plane label inside the active picker when its browser row has the same text.
+pub(super) fn plane_choice_center(frame: &RenderedFrame, text: &str) -> Option<[f32; 2]> {
+    if !["XY Plane", "XZ Plane", "YZ Plane"].contains(&text) {
+        return None;
+    }
+    let (position, size) = window_geometry("##plane-selection")?;
+    let wanted = squeezed(text);
+    frame.runs.iter().find_map(|run| {
+        let center = run.center();
+        let on_plane_picker = (0..2)
+            .all(|axis| (position[axis]..position[axis] + size[axis]).contains(&center[axis]));
+        (on_plane_picker && squeezed(&run.text) == wanted).then_some(center)
+    })
+}

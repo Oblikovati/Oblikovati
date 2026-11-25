@@ -46,6 +46,14 @@ pub(super) const PAINTS: &[(&str, [&str; 3])] = &[
     ("icon-void-side", ["#3A404F", "#555E6F", "#444956"]),
     ("icon-void-top", ["#858DA0", "#A6AFBF", "#9EA6B8"]),
     ("status-success", ["#22C55E", "#16A34A", "#4ADE80"]),
+    (
+        "status-success-subtle",
+        [
+            "rgba(34, 197, 94, 0.14)",
+            "rgba(22, 163, 74, 0.12)",
+            "rgba(74, 222, 128, 0.22)",
+        ],
+    ),
     ("vp-triad-x", ["#EF4444", "#DC2626", "#FF5555"]),
     ("vp-triad-y", ["#22C55E", "#16A34A", "#4ADE80"]),
     ("vp-triad-z", ["#3B82F6", "#2563EB", "#60A5FA"]),

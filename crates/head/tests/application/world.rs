@@ -293,7 +293,8 @@ impl ApplicationWorld {
             .iter()
             .any(|run| squeezed(&run.text) == squeezed(text));
         let center = if exact {
-            self.run(text).center()
+            diagnostics::plane_choice_center(&self.frame, text)
+                .unwrap_or_else(|| self.run(text).center())
         } else {
             super::quick_access_icons::standard_icon_center(text)
                 .unwrap_or_else(|| self.run(text).center())
@@ -425,7 +426,7 @@ pub(super) fn write_png(
     encoder.set_depth(png::BitDepth::Eight);
     encoder.write_header()?.write_image_data(&capture.rgba)
 }
-fn pointer_motion(position: [i32; 2]) -> ViewportEvent {
+pub(super) fn pointer_motion(position: [i32; 2]) -> ViewportEvent {
     ViewportEvent::Input(oblikovati_viewport::ViewportInput::Motion {
         position,
         modifiers: Default::default(),

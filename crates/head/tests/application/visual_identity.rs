@@ -65,3 +65,101 @@ fn select_scheme(world: &mut ApplicationWorld, scheme: &str) {
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
+
+#[test]
+fn native_feature_drafts_are_exclusive_and_extrude_actions_survive_a_short_panel() {
+    let mut world = ApplicationWorld::new();
+    viewport_orientation::open_block(&mut world);
+    world.click_text("Chamfer");
+    assert!(diagnostics::window_pixel_bounds("Chamfer").is_some());
+    world.click_text("Extrude");
+    assert!(diagnostics::window_pixel_bounds("Chamfer").is_none());
+    let [_, top, right, bottom] = diagnostics::window_pixel_bounds("Extrude").unwrap();
+    world.drag(
+        [right as i32 - 2, bottom as i32 - 2],
+        [right as i32 - 2, top as i32 + 138],
+    );
+    let [_, top, _, bottom] = diagnostics::window_pixel_bounds("Extrude").unwrap();
+    assert!(
+        bottom - top < 170.,
+        "shortened Extrude bounds {top}..{bottom}"
+    );
+    world.run_in_window("Extrude", "OK");
+    let cancel = world.run_in_window("Extrude", "Cancel").center();
+    world.save_capture("extrude-short-properties");
+    world.click(diagnostics::pointer_pixels(cancel));
+    assert!(diagnostics::window_pixel_bounds("Extrude").is_none());
+
+    world.click_text("Extrude");
+    assert!(diagnostics::window_pixel_bounds("Extrude").is_some());
+    world.click_text("Chamfer");
+    assert!(diagnostics::window_pixel_bounds("Extrude").is_none());
+    assert!(diagnostics::window_pixel_bounds("Chamfer").is_some());
+    world.close();
+}
+
+#[test]
+fn native_origin_plane_picker_draws_behind_navigation_and_enters_the_sketch() {
+    let mut world = ApplicationWorld::new();
+    viewport_orientation::open_block(&mut world);
+    viewport_orientation::press_part(&mut world, |layout| layout.home);
+    world.pump(vec![super::world::pointer_motion([700, 780])]);
+    let [left, top, right, bottom] =
+        diagnostics::window_pixel_bounds("##orientation-control").unwrap();
+    let cube = [
+        ((left + right) / 2.) as usize,
+        ((top + bottom) / 2.) as usize,
+    ];
+    let face = world.pixel_at(cube);
+    let nav = viewport_pan::bar_icon_center(viewport_pan::NavigationControl::Pan);
+    let nav = diagnostics::pointer_pixels(nav).map(|value| value as usize);
+    let icon = world.pixel_at(nav);
+    world.click_text("Start 2D Sketch");
+    world.pump(Vec::new());
+    assert_eq!(world.pixel_at(nav), icon);
+    assert_eq!(world.pixel_at(cube), face);
+    let shown = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == "XYPlane")
+        .count();
+    assert_eq!(shown, 2, "expected viewport label and browser row");
+    world.save_capture("origin-plane-picker");
+    world.click_text("XY Plane");
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+    world.close();
+}
+
+#[test]
+fn native_sketch_ribbon_keeps_group_labels_and_the_last_create_row_visible() {
+    let mut world = ApplicationWorld::new();
+    world.start_sketch_on("XY Plane");
+    let [_, top, _, _] = world.viewport_bounds();
+    for label in [
+        "Line",
+        "Project Geometry",
+        "Finish Sketch",
+        "Constrain",
+        "Modify",
+        "Insert",
+        "Format",
+    ] {
+        let run = world.run(label);
+        let bottom = diagnostics::pointer_pixels(run.maximum)[1];
+        assert!(
+            bottom < top as i32,
+            "{label}: {bottom} should be above the viewport at {top}"
+        );
+    }
+    world.save_capture("sketch-ribbon-compaction");
+    world.click_text("Finish Sketch");
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Part
+    );
+    world.close();
+}

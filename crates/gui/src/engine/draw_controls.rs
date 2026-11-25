@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{frame_inputs::sketch_activation, *};
-#[path = "blend_actions.rs"]
-mod blend_actions;
 #[path = "feature_actions.rs"]
 mod feature_actions;
 impl GuiFrameEngine {
@@ -213,12 +211,8 @@ impl GuiFrameEngine {
                 self.sketch_pattern
                     .open_edit(&request.commands, *sketch, *pattern);
             }
-            if let GuiShellAction::OpenExtrudeEdit(feature) = action {
-                self.extrude_dialog.open_edit(&request.commands, *feature);
-            }
         }
         selected.retain(|action| !matches!(action, GuiShellAction::OpenSketchPattern { .. }));
-        selected.retain(|action| !matches!(action, GuiShellAction::OpenExtrudeEdit(_)));
         if !self.home.active {
             if let Some(zoom) = self.ribbon.customization.pending_zoom.take() {
                 self.orientation.run_zoom(zoom, request, &mut selected);
@@ -245,6 +239,8 @@ impl GuiFrameEngine {
             &request.commands,
             request.layout_scale(),
             area,
+            (self.workspace.view_cube_visible && !self.home.active)
+                .then(|| self.orientation.cube_bounds(area)),
             &mut selected,
         );
         self.document_tabs.previews.showing = workspace_front(request, area, self.home.active);
@@ -293,7 +289,6 @@ impl GuiFrameEngine {
         } else {
             self.part_context_open = false;
         }
-        blend_actions::open_blend_edits(&mut self.blend_dialog, &request.commands, &mut selected);
         feature_actions::open_drafts(
             &request.commands,
             &mut selected,
@@ -301,6 +296,7 @@ impl GuiFrameEngine {
             &mut self.hole_dialog,
             &mut self.move_body_dialog,
             &mut self.blend_dialog,
+            &mut self.extrude_dialog,
         );
         self.home.panel(ui, &request.commands, area, &mut selected);
         let home_requests = std::mem::take(&mut self.home.requests);
@@ -332,6 +328,7 @@ impl GuiFrameEngine {
                 icons,
                 parameters: &mut self.parameter_editor,
                 popup_was_open: self.popup_was_open,
+                origin: [area.left + 14., area.top + 14.],
             },
         );
         self.blend_dialog.panel(ui, commands, &mut selected);

@@ -35,11 +35,12 @@ fn independent_icon_scaling_keeps_a_collapsed_sketch_create_panel_usable() {
     enter_part(&mut request);
     request.commands.authoring = GuiAuthoringContext::Sketch;
     settle_ribbon(&mut engine, &mut request);
-    assert!(click_ribbon(&mut engine, &mut request, [70., 90.]).is_empty());
-    expect_ribbon(
+    open_collapsed_panel(&mut engine, &mut request, "Create");
+    expect_caption(
         &mut engine,
         &mut request,
-        [110., 300.],
+        "Rectangle",
+        true,
         GuiShellAction::PlaceSketchTool(GuiSketchTool::Rectangle),
     );
 }
