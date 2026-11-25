@@ -60,7 +60,7 @@ pub(super) fn expect_sketch_lines(world: &mut ApplicationWorld, count: usize) {
 }
 
 #[given("the second part's sketch is visible")]
-fn second_sketch_is_visible(world: &mut ApplicationWorld) {
+pub(super) fn second_sketch_is_visible(world: &mut ApplicationWorld) {
     world.expect_active(second(world));
     let browser = world.state().browser.unwrap();
     let [sketch] = browser.sketches.as_slice() else {

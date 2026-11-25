@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Open disposable copies of the published PartOne and PartTwo files.
+//! Open disposable copies of the published tab fixtures.
 use super::*;
 use std::path::Path;
 
@@ -75,4 +75,11 @@ fn part_one_is_active(world: &mut ApplicationWorld) {
     assert_eq!(world.document_name(id), "PartOne");
     world.activate_through_tab(id);
     world.previous_document = Some(id);
+}
+
+pub(super) fn edit_active_saved_sketch(world: &mut ApplicationWorld) {
+    use super::super::workspace_layout::browser_feature::{choose_menu_row, right_click_row};
+    right_click_row(world, "Sketch1");
+    choose_menu_row(world, "Edit Sketch");
+    assert_eq!(world.state().authoring, GuiAuthoringContext::Sketch);
 }

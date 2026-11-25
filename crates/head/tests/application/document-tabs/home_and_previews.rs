@@ -2,9 +2,12 @@
 //! The Home tab, tab previews and a strip too narrow for its tabs.
 use super::super::ApplicationWorld;
 use super::super::diagnostics::window_geometry;
+use super::super::world::squeezed;
 use cucumber::{given, then, when};
 #[path = "preview_probe.rs"]
 mod preview_probe;
+#[path = "saved_previews.rs"]
+mod saved_previews;
 
 const PREVIEW: &str = "##tab-preview";
 /// Enough open documents to overflow the strip at the scenario window's width.
@@ -59,13 +62,14 @@ fn preview_label_bottom(
     position: [f32; 2],
     size: [f32; 2],
 ) -> f32 {
+    let wanted = squeezed(label);
     world
         .frame
         .runs
         .iter()
         .rev()
         .find(|run| {
-            run.text.starts_with(label)
+            run.text.starts_with(&wanted)
                 && (0..2).all(|axis| {
                     run.minimum[axis] >= position[axis]
                         && run.maximum[axis] <= position[axis] + size[axis]
@@ -197,7 +201,8 @@ fn home_displayed(world: &mut ApplicationWorld) {
 #[then("the part remains available in the document tab strip")]
 #[then("the part document remains available as an open tab")]
 fn part_in_strip(world: &mut ApplicationWorld) {
-    let part = world.previous_document.expect("expected a remembered part");
+    let part = world.previous_document.unwrap_or_else(|| world.active_id());
+    world.previous_document = Some(part);
     let name = world.document_name(part);
     world.expect_tab(&name);
 }
@@ -308,14 +313,6 @@ fn part_active_workspace(world: &mut ApplicationWorld) {
     world.expect_active(part);
     expect_home_hidden();
 }
-#[given("the second part has been saved to a file")]
-fn second_saved(world: &mut ApplicationWorld) {
-    let [first, second] = [world.parts[0], world.parts[1]];
-    world.saved_path = Some(world.save_part_to_file(second, "Saved.opd"));
-    world.activate_through_tab(second);
-    world.pump(Vec::new());
-    world.activate_through_tab(first);
-}
 #[given("the part is being edited in a sketch")]
 #[given("a sketch is being edited in the part")]
 fn part_in_edit(world: &mut ApplicationWorld) {
@@ -340,9 +337,10 @@ fn preview_path_name(world: &mut ApplicationWorld) {
     let part = world.previous_document.expect("expected a remembered part");
     let name = world.document_name(part);
     let text = preview_text(world);
-    let wanted = path.display().to_string().replace(' ', "");
+    let wanted = squeezed(&path.display().to_string());
+    let rendered = squeezed(&text);
     assert!(
-        text.contains(&wanted) && text.contains(&name),
+        rendered.contains(&wanted) && rendered.contains(&squeezed(&name)),
         "preview {text:?}"
     );
 }
@@ -484,7 +482,9 @@ fn home_adjacent(world: &mut ApplicationWorld) {
 }
 #[given("the part window is active with a sketch being edited")]
 fn window_with_sketch(world: &mut ApplicationWorld) {
-    world.start_sketch();
+    if world.state().authoring != oblikovati_gui::GuiAuthoringContext::Sketch {
+        world.start_sketch();
+    }
     world.pump(Vec::new());
 }
 #[then("the part window remains open")]

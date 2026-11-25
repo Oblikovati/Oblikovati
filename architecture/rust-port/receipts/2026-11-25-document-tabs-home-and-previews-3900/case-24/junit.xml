@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:42:20.120306795Z" time="35.8319555"><testcase name="Scenario: Activate an open sketch from the Switch menu: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:261:3" time="35.8319555"><system-out><![CDATA[  Scenario: Activate an open sketch from the Switch menu
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd` and `fixtures/cad/planar-sketch-empty-xy.opd` are open
+   ✔  And the user edits Sketch1 in the second part and activates the first part
+   ✔  When the user opens the Switch menu on the View tab
+   ✔  And the user selects the second part from the menu
+   ✔  Then the second part becomes active
+   ✔  And its sketch viewport and model browser are displayed
+   ✔  And its sketch editing environment remains active
+   ✔  And the first part remains open
+]]></system-out></testcase></testsuite></testsuites>

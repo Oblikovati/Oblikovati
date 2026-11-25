@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:45:11.503355275Z" time="29.085730318"><testcase name="Scenario: Preview an inactive document from its tab: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:280:3" time="29.085730318"><system-out><![CDATA[  Scenario: Preview an inactive document from its tab
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd` and `fixtures/cad/planar-sketch-empty-xy.opd` are open
+   ✔  And the second part's empty Sketch1 is visible and the first part is active
+   ✔  When the user hovers over the second part's document tab
+   ✔  Then a thumbnail of the second part's sketch appears above the tab
+   ✔  And the second part's name appears above the thumbnail
+   ✔  And the first part remains active
+   ✔  When the user moves the pointer away from the tab
+   ✔  Then the thumbnail and its name disappear
+   ✔  And the first part remains active
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:47:56.115106251Z" time="26.178443248"><testcase name="Scenario: Preview the active saved document from its tab: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:326:3" time="26.178443248"><system-out><![CDATA[  Scenario: Preview the active saved document from its tab
+   ✔  Given `fixtures/cad/revolve/revolve-profile.opd` is open with Sketch1 being edited
+   ✔  When the user hovers over the active part's document tab
+   ✔  Then a thumbnail of its sketch viewport appears above the tab
+   ✔  And the preview label displays the saved file's full path and part name
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase></testsuite></testsuites>

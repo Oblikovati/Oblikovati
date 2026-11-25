@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:45:41.37397172Z" time="19.144934924"><testcase name="Scenario: Preview Home while a part is active: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:291:3" time="19.144934924"><system-out><![CDATA[  Scenario: Preview Home while a part is active
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd` is open and active
+   ✔  And the Home workspace is available in the document tab strip
+   ✔  When the user hovers over the Home tab
+   ✔  Then a thumbnail of the Home workspace appears above the tab
+   ✔  And a Home label appears above the thumbnail
+   ✔  And the part remains active in the workspace
+]]></system-out></testcase></testsuite></testsuites>
