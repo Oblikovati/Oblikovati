@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T03:28:50.761527933Z" time="26.310819043"><testcase name="Scenario: Launch a command moved to the expanded panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:323:3" time="26.310819043"><failure type="Step Panicked" message="Step panicked. Captured output: Shell properties are visible, expected the model preview before any face is selected"/><system-out><![CDATA[  Scenario: Launch a command moved to the expanded panel
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon shows Shell in the Modify main panel
+   ✔  When the user moves Shell to the expanded panel using its context menu
+   ✔  And the user opens the Modify expanded panel
+   ✔  And the user selects Shell from the expanded panel
+   ✘  Then the Shell properties panel opens with a preview in the viewport
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:329:5
+      Matched: crates/head/src/../tests/application/ribbon-panel-visibility/shell_selector.rs:20:1
+      Step panicked. Captured output: Shell properties are visible, expected the model preview before any face is selected
+      ApplicationWorld {
+          text: "40\n30\nW\nP\nZ\nv\nO\nv\nFRONT\nModel\nMenu\nSearch\ndocking-visible-solid-current<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrude1\nProfile\n[DOF0]\nEndofPart\nOpeneddocument1:/git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/fixtures/cad/docking-visible-solid-current.opd\nRibbonDisplay\nv\nv\n...\ndocking-visible-solid-current\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nStart2DSketch\nSketch\nExtrude\nRevolve\nCreate\nHole\nFillet\nChamfer\nModifyv\nPlane\nv\nAxis\nPoint\nUCS\nWorkFeatures\nRectangular\nCircular\nPattern\nSimplify\nSimplificationv\nHome\ndocking-visible-solid-current<Primary>\nDocuments\nX\nY\nZ\nMoveBodies\nBendPart\nCopyObject\nShell\nPin\nModify\nShell\n0openingfacesselected\n1mm\nThickness\nOK\nCancel\nShell\nRemovefacestocreateahollowsolid.",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

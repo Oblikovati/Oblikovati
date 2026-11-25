@@ -205,6 +205,8 @@ fn area_closed(_: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry(WINDOW).is_none());
 }
 #[given("the Modify additional command area is unpinned")]
+#[given("the full 3D Model ribbon is visible with Modify unpinned")]
+#[given("the Modify additional-command area is unpinned and closed")]
 fn modify_starts_unpinned(world: &mut ApplicationWorld) {
     open_modify(world);
     click_lower_title(world);
@@ -459,6 +461,7 @@ fn temporary_model(world: &mut ApplicationWorld) {
 
 #[when("the user opens the Modify additional command area and pins it")]
 #[when("the user opens and pins the Modify additional command area")]
+#[when("the user opens and pins the Modify additional-command area")]
 fn open_and_pin_modify(world: &mut ApplicationWorld) {
     open_modify(world);
     toggle_pin(world);

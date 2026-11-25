@@ -203,7 +203,6 @@ fn turned_with_upright(world: &mut ApplicationWorld) {
     taller(world);
 }
 #[then("the rectangular block remains visible")]
-#[then("the active part remains visible")]
 fn block_visible(world: &mut ApplicationWorld) {
     solid_extent(world);
 }

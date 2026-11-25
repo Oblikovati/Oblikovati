@@ -8,6 +8,13 @@ const NOTICE: &str = "Bend Part##prerequisite";
 
 #[given("the part has no visible unadaptive sketch suitable for Bend Part")]
 fn no_visible_sketch(world: &mut ApplicationWorld) {
+    if world
+        .state()
+        .browser
+        .is_some_and(|browser| browser.sketches.iter().any(|sketch| sketch.visible))
+    {
+        super::super::workspace_layout::native_part::prepare_sketch_menu_fixture(world);
+    }
     let browser = world.state().browser.expect("expected active part browser");
     assert!(browser.sketches.iter().all(|sketch| !sketch.visible));
     assert!(

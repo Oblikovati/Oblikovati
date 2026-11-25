@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:28:07.421611778Z" time="47.826610304"><testcase name="Scenario: Show and hides a ribbon panel from its title context menu: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:954:3" time="47.826610304"><system-out><![CDATA[  Scenario: Show and hides a ribbon panel from its title context menu
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited
+   ✔  And the Sketch ribbon's Layout panel is hidden
+   ✔  When the user opens Show Panels from the Create panel title context menu
+   ✔  Then Layout is listed as unchecked in the panel visibility submenu
+   ✔  When the user selects Layout
+   ✔  Then the Layout panel appears on the Sketch ribbon
+   ✔  And Make Part and Make Components are unavailable
+   ✔  And Create Block is available
+   ✔  When the user opens Show Panels from the Create panel title context menu
+   ✔  And the user selects Layout again
+   ✔  Then the Layout panel is hidden from the Sketch ribbon
+   ✔  And the sketch remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>

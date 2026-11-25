@@ -6,6 +6,7 @@ const EXPANSION: &str = "##ribbon-additional-PartModify";
 
 #[given("\"Shell\" appears in the main area of the 3D Model \"Modify\" panel")]
 #[given("Shell is in the Modify main panel")]
+#[given("the full 3D Model ribbon shows Shell in the Modify main panel")]
 #[then("\"Shell\" appears again in the main area of the \"Modify\" panel")]
 #[then("Shell appears in the main Modify panel")]
 fn shell_in_main(world: &mut ApplicationWorld) {
@@ -35,6 +36,11 @@ fn open_modify(world: &mut ApplicationWorld) {
 #[then("Shell is available in the expanded panel")]
 fn shell_in_expanded(world: &mut ApplicationWorld) {
     world.run_in_window(EXPANSION, "Shell");
+}
+#[when("the user selects Shell from the expanded panel")]
+fn launch_expanded_shell(world: &mut ApplicationWorld) {
+    let shell = world.run_in_window(EXPANSION, "Shell");
+    world.click(diagnostics::pointer_pixels(shell.center()));
 }
 #[when("the user right-clicks \"Shell\" in the expanded area")]
 fn right_click_shell_expanded(world: &mut ApplicationWorld) {

@@ -39,8 +39,8 @@ fn icon_only_ribbon(world: &mut ApplicationWorld) {
     let icons =
         super::super::ribbon_appearance::icon_quads::ribbon_icon_quads(position[1] + size[1]);
     assert!(icons.len() >= 4, "expected visible command icons");
-    world.expect_no_text("Extrude");
-    world.expect_no_text("Hole");
+    let ribbon = world.window_text("##application-ribbon");
+    assert!(!ribbon.contains("Extrude") && !ribbon.contains("Hole"));
 }
 #[then("\"Text Off\" is checked")]
 fn text_off_checked(world: &mut ApplicationWorld) {
@@ -52,8 +52,8 @@ fn restored_labels(world: &mut ApplicationWorld) {
 }
 #[then("the full ribbon remains visible with command labels")]
 fn full_ribbon_with_labels(world: &mut ApplicationWorld) {
-    world.expect_text("Extrude");
-    world.expect_text("Hole");
+    world.run_in_window("##application-ribbon", "Extrude");
+    world.run_in_window("##application-ribbon", "Hole");
 }
 
 #[cfg(target_os = "linux")]

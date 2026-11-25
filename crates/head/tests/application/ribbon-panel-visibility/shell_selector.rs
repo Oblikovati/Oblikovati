@@ -9,6 +9,7 @@ fn modify_panel_shown(world: &mut ApplicationWorld) {
 }
 
 #[when("the user starts Shell from Modify")]
+#[when("the user clicks Shell in the main Modify panel")]
 fn start_shell(world: &mut ApplicationWorld) {
     let command = world.run_in_window("##application-ribbon", "Shell");
     world.click(pointer_pixels(command.center()));
@@ -16,10 +17,17 @@ fn start_shell(world: &mut ApplicationWorld) {
 }
 
 #[then("the Shell properties panel and model preview appear")]
+#[then("the Shell properties panel opens with a preview in the viewport")]
 fn shell_panel_and_preview(world: &mut ApplicationWorld) {
     world.run_in_window("Shell", "Thickness");
     assert!(
         world.state().extrude_preview_active,
         "Shell properties are visible, expected the model preview before any face is selected"
     );
+}
+
+#[given("the Shell command is active with its properties and preview visible")]
+fn shell_with_preview(world: &mut ApplicationWorld) {
+    start_shell(world);
+    shell_panel_and_preview(world);
 }

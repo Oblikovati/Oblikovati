@@ -11,6 +11,8 @@ mod finish_checks;
 use finish_checks::{edit_sketch, finish_sketch, finish_unavailable_outside_edit};
 #[path = "sketch_constrain_pinned.rs"]
 mod pinned_checks;
+#[path = "sketch_fixtures.rs"]
+mod sketch_fixtures;
 
 const WINDOW: &str = "##ribbon-additional-Constrain";
 
@@ -185,6 +187,7 @@ pub(super) fn active_editable_sketch(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.record_initial_sketch();
 }
+
 #[given("the Sketch Create panel's additional command area is open")]
 fn create_area_open(world: &mut ApplicationWorld) {
     open_create(world);
@@ -223,6 +226,8 @@ fn cancel_create_dialog(world: &mut ApplicationWorld) {
 fn create_dialog_closed(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Create Block").is_none());
     assert!(world.app().owner.active_sketch_edit().is_some());
+    let browser = world.state().browser.expect("expected the Part browser");
+    assert!(browser.block_definitions.is_empty());
 }
 #[then("the sketch remains active and unchanged")]
 fn sketch_remains_active(world: &mut ApplicationWorld) {
@@ -230,6 +235,10 @@ fn sketch_remains_active(world: &mut ApplicationWorld) {
         world.state().authoring,
         oblikovati_gui::GuiAuthoringContext::Sketch
     );
+    if world.observed_sketch.is_some() {
+        let geometry = world.edited_geometry();
+        assert!(geometry.same_recipe(&world.observed_sketch.as_ref().unwrap().geometry));
+    }
 }
 
 #[test]

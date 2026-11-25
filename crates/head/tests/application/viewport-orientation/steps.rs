@@ -134,6 +134,29 @@ pub(super) fn solid_extent(world: &mut ApplicationWorld) -> [usize; 2] {
     let (low, high) = solid_bounds(world);
     [high[0] - low[0] + 1, high[1] - low[1] + 1]
 }
+
+#[then("the active part remains visible")]
+fn visible_active_part(world: &mut ApplicationWorld) {
+    let part = world.active_id();
+    let state = world.state();
+    let path = super::scenario_root().join("fixtures/cad/planar-sketch-empty-xy.opd");
+    if state.document_storage[&part].path.as_deref() != path.to_str() {
+        solid_extent(world);
+        return;
+    }
+    assert_eq!(world.previous_document, Some(part));
+    world.expect_active(part);
+    world.expect_text("Sketch1");
+    let [left, top, right, bottom] = world.viewport_bounds().map(|edge| edge as usize);
+    let width = right - left;
+    let height = bottom - top;
+    // The saved sketch can draw an origin point near the center of the viewport.
+    world.expect_blank_region(
+        [left + width / 4, left + width / 2],
+        [top + height * 2 / 3, top + height * 5 / 6],
+    );
+}
+
 pub(super) fn solid_bounds(world: &mut ApplicationWorld) -> ([usize; 2], [usize; 2]) {
     let capture = super::capture_framebuffer(&mut world.app().window.native);
     let windows = super::diagnostics::window_occlusions();

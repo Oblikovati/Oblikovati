@@ -41,10 +41,17 @@ fn options_closed(_: &mut ApplicationWorld) {
 }
 
 #[given("the Options panel displays its additional commands")]
+#[given("the Options additional command area is open and unpinned")]
 #[when("the user opens the Options additional command area")]
 fn open_options(world: &mut ApplicationWorld) {
     click_expansion_arrow(world, "Options");
     assert!(diagnostics::window_geometry(OPTIONS).is_some());
+}
+
+#[when("the user opens the Highlight New drop-down in the main Options panel")]
+fn open_highlight_new(world: &mut ApplicationWorld) {
+    let control = world.run_in_window("##application-ribbon", "HighlightNew");
+    world.click(diagnostics::pointer_pixels(control.center()));
 }
 
 #[then("it appears beneath the Options panel over the viewport")]

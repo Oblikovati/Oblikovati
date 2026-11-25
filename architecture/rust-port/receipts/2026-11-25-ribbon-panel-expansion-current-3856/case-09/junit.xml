@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:23:45.177533069Z" time="40.397365838"><testcase name="Scenario: Open and cancels Create Block from the expanded Create panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:122:3" time="40.397365838"><system-out><![CDATA[  Scenario: Open and cancels Create Block from the expanded Create panel
+   ✔  Given `fixtures/cad/construction/regular-circle-12mm.opd` is open with Sketch1 being edited
+   ✔  And the Sketch Create panel's additional command area is open
+   ✔  When the user selects Create Block from that area
+   ✔  Then the Create Block dialog opens over the sketch
+   ✔  And the dialog offers geometry and insert-point selectors
+   ✔  And the block name and description fields are visible
+   ✔  When the user cancels the dialog
+   ✔  Then the dialog closes without creating a block
+   ✔  And the sketch remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>

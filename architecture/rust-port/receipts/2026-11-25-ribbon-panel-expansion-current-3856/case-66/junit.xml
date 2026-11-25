@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:30:10.888225633Z" time="21.864449497"><testcase name="Scenario: Inspect Sketch Create commands outside sketch edit: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:941:3" time="21.864449497"><system-out><![CDATA[  Scenario: Inspect Sketch Create commands outside sketch edit
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open and active outside sketch edit
+   ✔  And the full Sketch ribbon is selected outside sketch edit
+   ✔  And the Create additional-command area is closed
+   ✔  When the user presses Alt, then S, then D
+   ✔  Then the Create additional-command area opens
+   ✔  And Create Block and Precise Input are visible but unavailable
+   ✔  And the active part remains visible
+   ✔  And no sketch edit is active
+   ✔  When the user clicks empty viewport space
+   ✔  Then the Create additional-command area closes
+]]></system-out></testcase></testsuite></testsuites>

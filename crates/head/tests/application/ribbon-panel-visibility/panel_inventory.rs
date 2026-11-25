@@ -81,6 +81,7 @@ fn model_docked_active(world: &mut ApplicationWorld) {
 
 #[when("the user opens Show Panels from the ribbon context menu")]
 #[when("the user opens Show Panels in the context menu")]
+#[when("the user opens the \"Show Panels\" submenu")]
 fn open_panel_submenu(world: &mut ApplicationWorld) {
     world.click_text("Show Panels");
     world.pump(Vec::new());
@@ -153,6 +154,11 @@ fn context_menu_opens(world: &mut ApplicationWorld) {
 fn model_panel_states(world: &mut ApplicationWorld) {
     expect_checks(world, &["Primitives"], false);
     expect_checks(world, &["Modify"], true);
+}
+
+#[then("Explore is checked in the submenu")]
+fn explore_is_checked(world: &mut ApplicationWorld) {
+    expect_checks(world, &["Explore"], true);
 }
 
 fn expect_panel_menu_order(world: &ApplicationWorld, panels: &[&str]) {

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:23:51.257304986Z" time="27.780494703"><testcase name="Scenario: Close the Sketch Constrain expansion when switching tabs: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:915:3" time="27.780494703"><system-out><![CDATA[  Scenario: Close the Sketch Constrain expansion when switching tabs
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open and active outside sketch edit
+   ✔  And the full Sketch ribbon is selected
+   ✔  And the Constrain additional-command area is closed
+   ✔  When the user opens the Constrain additional-command area
+   ✔  Then the additional area appears below the Sketch ribbon
+   ✔  And its visible commands are unavailable outside sketch edit
+   ✔  When the user selects the 3D Model ribbon tab
+   ✔  Then the Sketch additional area closes
+   ✔  And the 3D Model ribbon is visible
+   ✔  When the user returns to the Sketch ribbon tab
+   ✔  Then the Sketch ribbon is visible with its Constrain additional area closed
+]]></system-out></testcase></testsuite></testsuites>

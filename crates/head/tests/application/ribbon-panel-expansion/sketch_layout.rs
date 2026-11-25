@@ -4,6 +4,13 @@ use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
 
 #[given("the Sketch ribbon's Layout panel is hidden")]
+fn hidden_layout_in_full_ribbon(world: &mut ApplicationWorld) {
+    world.app().window.native.view.resize([2400, 900]).unwrap();
+    world.pump(Vec::new());
+    world.record_initial_sketch();
+    layout_hidden(world);
+}
+
 #[given("the Layout panel is hidden")]
 #[then("the Layout panel is hidden from the Sketch ribbon")]
 #[then("the Layout panel is hidden again")]
