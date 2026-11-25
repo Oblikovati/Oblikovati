@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Select entities in the 3D model viewport: target/native-scratch.HSqCy5/current-viewport-entity-selection-source/features/application/viewport-entity-selection/viewport-entity-selection.feature" package="testsuite/Feature: Select entities in the 3D model viewport: target/native-scratch.HSqCy5/current-viewport-entity-selection-source/features/application/viewport-entity-selection/viewport-entity-selection.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:09:35.27464159Z" time="35.820117928"><testcase name="Scenario: Open the context menus for a selected solid face: target/native-scratch.HSqCy5/current-viewport-entity-selection-source/features/application/viewport-entity-selection/viewport-entity-selection.feature:40:3" time="35.820117928"><system-out><![CDATA[  Scenario: Open the context menus for a selected solid face
+   ✔  Given the MCAD Software is in the part modeling workspace with no command or modal dialog active
+   ✔  And `fixtures/cad/docking-visible-solid-current.opd` is open with a solid face selected
+   ✔  When the user right-clicks the face
+   ✔  Then a standard context menu appears
+   ✔  And a radial shortcut menu appears near the pointer
+   ✔  And the radial menu includes "Extrude", "Select Other...", "Select Tangencies", and "New Sketch"
+   ✔  And the standard menu includes "Properties" and "Export Face As..."
+]]></system-out></testcase></testsuite></testsuites>

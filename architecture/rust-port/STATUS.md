@@ -326,10 +326,9 @@ using this status; the live scenario directory can change.
   saved Part active. Both Close paths prompted before exiting, and Cancel
   kept the unsaved edit and preserved the working file. See the
   [current run](receipts/2026-11-25-main-window-frame-current-4063/README.md).
-- Viewport entity selection now has executable scenarios and an Inventor part
-  fixture. The fixture step reaches the document host, which rejects the binary
-  file as invalid YAML; native Inventor and 3D-sketch support remain open
-  (#4092). Separate X11 face-selection tests do not count as scenario passes.
+- Viewport Entity Selection (#4055) passed all four current solid-face scenarios and 24 steps.
+  The native spatial fixture opens, but its 3D sketches are absent from the browser and viewport
+  (#4092). See the [current run](receipts/2026-11-25-viewport-entity-selection-current-4055/README.md).
 - Corliss 0.1.0 now reads point and line records from the Inventor fixture's
   two populated 3D sketches, with names and endpoint identities. This is a
   read-only prerequisite, not native document opening or viewport support;
@@ -472,7 +471,7 @@ using this status; the live scenario directory can change.
 ## Work queue
 
 Work dependency-ready application scenarios one at a time, then sketch and modeling.
-1. Verify the solid-face Viewport Entity Selection scenarios against the native Part.
+1. Continue the dependency-ready application scenarios with populated drawing layout cancellation.
    Midpoint Line (#4178) still names a deferred Inventor fixture. Revisit it when
    the scenario owner adopts the supplied native fixture.
    Constraint Settings (#4158) is paused with uncommitted work while its

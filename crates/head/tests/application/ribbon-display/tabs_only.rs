@@ -34,6 +34,14 @@ fn temporary_tools(world: &mut ApplicationWorld) {
 #[when("the user clicks empty viewport space outside the panel")]
 #[when("the user clicks an empty area of the viewport")]
 fn click_empty_viewport(world: &mut ApplicationWorld) {
+    if world.scenario_feature_path.as_ref().is_some_and(|path| {
+        path.ends_with(
+            "features/application/viewport-entity-selection/viewport-entity-selection.feature",
+        )
+    }) {
+        super::super::viewport_entity_selection::click_empty_viewport_space(world);
+        return;
+    }
     let [left, top, right, bottom] = world.viewport_bounds().map(|axis| axis as i32);
     let x = (right - left) / 8;
     let y = (bottom - top) / 8;

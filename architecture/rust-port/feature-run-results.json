@@ -159,6 +159,28 @@
         "environment": "Linux, X11 Xvfb, Vulkan Lavapipe. Face selection, context click and clearing use XTest.",
         "notes": "All three solid-face scenarios passed. Native input also confirmed the three deferred menu entries do not dispatch.",
         "blocker": "Four 3D-sketch scenarios are deferred."
+      },
+      "ad05fe05f389cdd07103f7beb06bef953cac94e068222a7d2a60b084e5d78d99": {
+        "feature_sha256": "ad05fe05f389cdd07103f7beb06bef953cac94e068222a7d2a60b084e5d78d99",
+        "supporting_files": {
+          "features/application/viewport-entity-selection/spatial-line-and-point.opd": "6730c3dda695288052001e7e3314529bc294b6da4c61e2a1a090c20c641555c9",
+          "features/application/viewport-entity-selection/FIXTURES.md": "7f1f6aaada198cd9f902ff3ac4794f2b687aa0099c7ee4a54d8aeef09e901563",
+          "features/application/viewport-entity-selection/FUNCTIONAL.md": "d8517d0d9fb3319511ff857bf224ab553e980a7e467aec342e6493fa25abe1a9",
+          "features/application/viewport-entity-selection/VISUAL.md": "c633080a52ed39d9c0b46f08b8951d1a5d09b8e2cf2a77054eb0af8b1b774697",
+          "features/application/viewport-entity-selection/BLOCKERS.md": "f5b82a3598b7428dc40946e314a98523e76fb4caf6eca8d21f26e843b985534b",
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-25-viewport-entity-selection-current-4055/cucumber.json",
+        "cucumber_sha256": "4c8393a130167454db1b9706deb111e4afaccc035161cffa5f28d3141d0df19f",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-viewport-entity-selection-current-4055/scenario-inventory.json",
+        "scenario_inventory_sha256": "1b3c95311bc6fb8622e7f3afde7b271cc02e2a3fe811d90492df98cac4c5a623",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-viewport-entity-selection-current-4055/scenario-arguments.json",
+        "scenario_arguments_sha256": "4b14f504fa420ee8c27175574a326b77c8b9daa1adcb503895786635d6a437fc",
+        "application_commit": "b126f7c5e792e96103012979177d654cc4cf07e5",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=viewport-entity-selection OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
+        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
+        "notes": "Four solid-face scenarios and 24 steps passed. Strict build and runtime provenance remains open under #3978.",
+        "blocker": "Four spatial-sketch scenarios require desktop display and picking of saved 3D sketch geometry, and active 3D sketch editing for the last two cases (#4092)."
       }
     }
   },

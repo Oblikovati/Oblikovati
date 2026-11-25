@@ -22,7 +22,18 @@ fn viewport_ready(world: &mut ApplicationWorld) {
     assert!(!world.state().transaction_open);
 }
 
+#[given(
+    "the MCAD Software is in the part modeling workspace with no command or modal dialog active"
+)]
+fn ready_part_modeling_workspace(world: &mut ApplicationWorld) {
+    part_modeling_workspace(world);
+    viewport_ready(world);
+}
+
 #[given("`fixtures/cad/docking-visible-solid-current.opd` is open with an unselected front face")]
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is open with an unselected visible front face"
+)]
 fn open_unselected_face(world: &mut ApplicationWorld) {
     viewport_orientation::orientation_part_upright(world);
     assert!(!world.state().model_face_chosen);
@@ -36,6 +47,7 @@ fn open_selected_face(world: &mut ApplicationWorld) {
 }
 
 #[when("the user clicks an unoccupied region of the face")]
+#[when("the user clicks the face")]
 pub(super) fn click_visible_face(world: &mut ApplicationWorld) {
     let point = super::ribbon_keyboard_navigation::visible_face_point(world);
     let line = world.app().window.view_line(point).unwrap();
@@ -60,6 +72,12 @@ fn face_has_selection_colors(world: &mut ApplicationWorld) {
 #[then("the pick cue identifies \"1. Face\"")]
 fn face_pick_cue_visible(world: &mut ApplicationWorld) {
     world.expect_text("1. Face");
+}
+
+#[then("the viewport identifies the selected entity and shows a distinct selected state")]
+fn selected_entity_is_identified(world: &mut ApplicationWorld) {
+    face_pick_cue_visible(world);
+    face_has_selection_colors(world);
 }
 
 #[then("a compact contextual toolbar appears beside the pointer")]
@@ -174,7 +192,7 @@ fn face_menu_disables_deferred_rows_and_opens_properties() {
 }
 
 #[when("the user left-clicks empty viewport space")]
-fn click_empty_viewport_space(world: &mut ApplicationWorld) {
+pub(super) fn click_empty_viewport_space(world: &mut ApplicationWorld) {
     let point = empty_viewport_point(world);
     left_click(world, point);
 }
@@ -189,6 +207,12 @@ fn face_returns_to_neutral(world: &mut ApplicationWorld) {
 fn contextual_feedback_closes(world: &mut ApplicationWorld) {
     world.expect_no_text("1. Face");
     assert!(diagnostics::window_geometry("##selection-toolbar").is_none());
+}
+
+#[then("the selection and its cue are cleared")]
+fn selection_and_cue_are_cleared(world: &mut ApplicationWorld) {
+    face_returns_to_neutral(world);
+    contextual_feedback_closes(world);
 }
 
 #[given(
