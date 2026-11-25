@@ -148,7 +148,7 @@ impl ApplicationWorld {
     }
     pub fn hover(&mut self, position: [i32; 2]) {
         #[cfg(target_os = "linux")]
-        if self.navigation_wheel_scenario() || self.project_dialog_native_input() {
+        if self.navigation_wheel_scenario() || self.project_dialog_x11_input() {
             super::x11_input::move_pointer(position);
             self.pump(Vec::new());
             return;

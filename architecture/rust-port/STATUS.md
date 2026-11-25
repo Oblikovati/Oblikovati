@@ -61,8 +61,9 @@ using this status; the live scenario directory can change.
   [current run](receipts/2026-11-25-document-saving-current-3888/README.md).
   All 23 pinned scenarios and 218 steps passed in the
   [R0 run](receipts/2026-11-21-document-saving-r0-3888/README.md).
-- Project Dialog (#3895) passed six of eight current scenarios and 85 steps.
-  The two workspace-folder cases stopped in the [current X11 run](receipts/2026-11-25-projects-docking-4073/README.md).
+- Project Dialog (#3895) passed all eight current scenarios and 110 steps on
+  Wayland and X11, including workspace folder selection and cancellation.
+  See the [current runs](receipts/2026-11-25-project-workspace-folder-3895/README.md).
   Desktop startup opens native projects and the dialog wraps long paths.
   See `receipts/2026-11-20-native-project-dialog-3895/`. All eight scenarios and
   101 steps also passed on the pinned source under Xvfb. The eight declarations

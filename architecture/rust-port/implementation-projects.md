@@ -46,7 +46,9 @@ Desktop startup loads projects in argument order before opening documents.
 The Projects dialog can inspect another registered project while preserving the
 original active project. The current feature exercises named native startup
 files, chooser state, wizard navigation, and keyboard expansion. All eight
-scenarios passed individually. [Native reports and captures](receipts/2026-11-24-project-dialog-serial-3895/README.md)
+scenarios passed individually on Wayland and X11. In the workspace folder
+browser, Cancel retains the prior path and OK updates the workspace and
+derived project file. [Native reports](receipts/2026-11-25-project-workspace-folder-3895/README.md)
 
 Project wire methods remain pending.
 

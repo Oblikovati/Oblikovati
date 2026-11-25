@@ -681,22 +681,22 @@
           "features/application/project-dialog/BLOCKERS.md": "1dae9e015e5869d6384b8b70a76c8906dde119aade81fe050be3612eece2632f",
           "features/application/project-dialog/FIXTURES.md": "133444142a6b590d88f879a6bdffa8b950b13f5c9415e795493f5ad6e199495c",
           "features/application/project-dialog/FUNCTIONAL.md": "10aa53fcfee1fad6a1fe0d4e0c7a93feddb36c1e73f837a799c92dcf8de7bf98",
-          "features/application/project-dialog/VISUAL.md": "5cc404e8e057f48092d0d1ee701b005361dc72ee63635b003285b75e33b2db2a",
+          "features/application/project-dialog/VISUAL.md": "b8a831676edc04a89d3017f7c1dd3afc10fe5e424beb32612805dd9a425e02ea",
           "features/application/project-dialog/folder-browser-wireframe.svg": "ffa2069cac2d8754727ee67a3bfc47b0595b9163129098f4ece49659b23f623b",
           "features/application/project-dialog/project-dialog-wireframe.svg": "513c7f59121c9359f654f9eed1b2770322469d649ed282d2c77d29bfc271a4aa",
-          "features/application/project-dialog/project-settings-icon.svg": "274b586092248b78e13e56f1861a45cd8d25c633ea5f80214d71ed0e105d3a03",
+          "features/application/project-dialog/project-settings-icon.svg": "9eed1f756a00af46d62f4aa8cea1b293598cbfc18691f2e1be2f737cdb45a147",
           "features/application/project-dialog/project-wizard-wireframe.svg": "a3d3774569ef4435d209077726999eaa6136ce0a456eac81b4c942ed70ffa221",
           "fixtures/cad/project-dialog-native/ActiveProject.opj": "7bea6f1c2f32e6ad4c1fa9f6ca63fb38bc83b55a0af1d378db213b052b9a908d",
           "fixtures/cad/project-dialog-native/AlternateProject.opj": "98327ca2a00d32244033f65b95f2a9997a39deb8a7d5cd630b569b6a97950fa1",
           "fixtures/cad/project-dialog-native/WizardProject.opj": "5b4f31be0a2ff003aa301792364676ea8dfb05069043320bc6b516319b12c39d",
           "fixtures/cad/workspace-layout-native.opd": "d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-25-projects-docking-4073/cucumber.json",
-        "cucumber_sha256": "b860710f55b4c4625a511d946b9097b3d1f9625dd37ac4f36ae0fee8f22a0c56",
-        "application_commit": "2485a0512a07544897fbe5b91279ed761168dd4e",
+        "cucumber": "architecture/rust-port/receipts/2026-11-25-project-workspace-folder-3895/wayland-cucumber.json",
+        "cucumber_sha256": "840f9265d8ad6e35a582600a8b86bbfb07c782a83e1b02e693fc7fde51ff2dd4",
+        "application_commit": "32df309a18fc1a819f0e1f22e23c56042e58ac19",
         "command": "OBK_BDD_ROOT=<snapshot> OBK_BDD_AREA=application OBK_BDD_FEATURE=project-dialog OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
-        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
-        "notes": "Six of eight scenarios and 85 passing-case steps passed separately. Both workspace-folder cases stopped in the folder browser. The receipt records the tested inputs and local GUI and test edits. Strict build and runtime provenance remains open under #3978."
+        "environment": "Linux Wayland with headless Weston, Pixman, application frame-loop input, and Vulkan Lavapipe",
+        "notes": "All eight scenarios and 110 steps passed separately on Wayland and X11. The receipt identifies existing local GUI and test edits. Strict build and runtime provenance remains open under #3978."
       }
     }
   },

@@ -193,14 +193,14 @@ impl ApplicationWorld {
         super::scenario_capture::is_navigation_wheel(self.scenario_feature_path.as_deref())
     }
     #[cfg(target_os = "linux")]
-    pub(super) fn project_dialog_native_input(&self) -> bool {
+    pub(super) fn project_dialog_x11_input(&mut self) -> bool {
         self.scenario_feature_path.as_ref().is_some_and(|path| {
             path.ends_with("features/application/project-dialog/project-dialog.feature")
-        })
+        }) && !self.app().window.native.view.uses_wayland()
     }
     pub fn click(&mut self, position: [i32; 2]) {
         #[cfg(target_os = "linux")]
-        if self.navigation_wheel_scenario() || self.project_dialog_native_input() {
+        if self.navigation_wheel_scenario() || self.project_dialog_x11_input() {
             super::x11_input::click(position);
             self.pump(Vec::new());
             return;
@@ -209,7 +209,7 @@ impl ApplicationWorld {
     }
     pub fn key(&mut self, key: oblikovati_viewport::ViewportPhysicalKey, control: bool) {
         #[cfg(target_os = "linux")]
-        if self.project_dialog_native_input() {
+        if self.project_dialog_x11_input() {
             super::project_dialog::native_input::press_project_key(key, control);
             self.pump(Vec::new());
             return;

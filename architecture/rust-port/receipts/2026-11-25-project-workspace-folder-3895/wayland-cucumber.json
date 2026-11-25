@@ -1,0 +1,1221 @@
+[
+  {
+    "uri": "mnt/vininas-projects/MCAD-Scenarios/features/application/project-dialog/project-dialog.feature",
+    "keyword": "Feature",
+    "name": "Inspect the project dialog",
+    "tags": [
+      {
+        "name": "application",
+        "line": 2
+      },
+      {
+        "name": "projects",
+        "line": 2
+      },
+      {
+        "name": "fixture_variation",
+        "line": 2
+      }
+    ],
+    "elements": [
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 197769256
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2207093708
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "inspect-the-project-dialog/inspect-project-information-from-the-template-chooser",
+        "line": 5,
+        "name": "Inspect project information from the template chooser",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 6,
+            "name": "the MCAD Software starts with `fixtures/cad/project-dialog-native/ActiveProject.opj` as its first project and `fixtures/cad/workspace-layout-native.opd` as its part",
+            "result": {
+              "status": "passed",
+              "duration": 568227036
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 7,
+            "name": "`Sketch1` is visible and the new-document template chooser is open",
+            "result": {
+              "status": "passed",
+              "duration": 263700620
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 8,
+            "name": "`ActiveProject` is the active project",
+            "result": {
+              "status": "passed",
+              "duration": 3679659
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 9,
+            "name": "a template is selected with its details displayed",
+            "result": {
+              "status": "passed",
+              "duration": 532275018
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 10,
+            "name": "the user chooses Projects in the chooser",
+            "result": {
+              "status": "passed",
+              "duration": 780712144
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 11,
+            "name": "a Projects dialog opens above the chooser",
+            "result": {
+              "status": "passed",
+              "duration": 9413910
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 12,
+            "name": "the dialog lists project names and locations",
+            "result": {
+              "status": "passed",
+              "duration": 7982201
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 13,
+            "name": "the active project is marked",
+            "result": {
+              "status": "passed",
+              "duration": 6535063
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 14,
+            "name": "the dialog displays a project settings tree",
+            "result": {
+              "status": "passed",
+              "duration": 9018839
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 15,
+            "name": "New, Browse, Save, Apply and Done controls are displayed",
+            "result": {
+              "status": "passed",
+              "duration": 7812557
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 16,
+            "name": "the user chooses Done without changing the project",
+            "result": {
+              "status": "passed",
+              "duration": 486821969
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 17,
+            "name": "the Projects dialog closes",
+            "result": {
+              "status": "passed",
+              "duration": 6561111
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 18,
+            "name": "the template chooser is displayed again",
+            "result": {
+              "status": "passed",
+              "duration": 8421755
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 19,
+            "name": "the selected template details remain displayed",
+            "result": {
+              "status": "passed",
+              "duration": 11767476
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 164636725
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2223179974
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "inspect-the-project-dialog/inspect-an-inactive-project-without-activating-it",
+        "line": 21,
+        "name": "Inspect an inactive project without activating it",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 22,
+            "name": "the MCAD Software starts with `fixtures/cad/project-dialog-native/ActiveProject.opj` first and `fixtures/cad/project-dialog-native/AlternateProject.opj` second",
+            "result": {
+              "status": "passed",
+              "duration": 167259910
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 23,
+            "name": "the user opens the Projects dialog from the template chooser",
+            "result": {
+              "status": "passed",
+              "duration": 477120266
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 24,
+            "name": "`ActiveProject` and `AlternateProject` are listed",
+            "result": {
+              "status": "passed",
+              "duration": 4309335
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 25,
+            "name": "`ActiveProject` is marked active and `AlternateProject` remains unselected",
+            "result": {
+              "status": "passed",
+              "duration": 118575470
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 26,
+            "name": "the active project is marked in the list",
+            "result": {
+              "status": "passed",
+              "duration": 3728109
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 27,
+            "name": "the user selects the other project with a single click",
+            "result": {
+              "status": "passed",
+              "duration": 676639110
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 28,
+            "name": "the other project row is highlighted",
+            "result": {
+              "status": "passed",
+              "duration": 123564252
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 29,
+            "name": "the settings tree displays information for the selected project",
+            "result": {
+              "status": "passed",
+              "duration": 8911982
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 30,
+            "name": "the active-project mark remains beside the original project",
+            "result": {
+              "status": "passed",
+              "duration": 9143460
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 31,
+            "name": "the user chooses Done",
+            "result": {
+              "status": "passed",
+              "duration": 482262492
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 32,
+            "name": "the Projects dialog closes",
+            "result": {
+              "status": "passed",
+              "duration": 9965531
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 33,
+            "name": "the chooser still displays the original active project",
+            "result": {
+              "status": "passed",
+              "duration": 8993222
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 171293002
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2292977833
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "inspect-the-project-dialog/inspect-and-cancels-the-new-single-user-project-wizard",
+        "line": 35,
+        "name": "Inspect and cancels the new single-user project wizard",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 36,
+            "name": "the MCAD Software starts with `fixtures/cad/project-dialog-native/WizardProject.opj` as its first project",
+            "result": {
+              "status": "passed",
+              "duration": 107247438
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 37,
+            "name": "the user opens the Projects dialog from the template chooser with `WizardProject` active",
+            "result": {
+              "status": "passed",
+              "duration": 526795469
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 38,
+            "name": "the wizard fixture has no entries in either library list",
+            "result": {
+              "status": "passed",
+              "duration": 4689648
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 39,
+            "name": "the user chooses New",
+            "result": {
+              "status": "passed",
+              "duration": 421232638
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 40,
+            "name": "the new-project wizard opens on a project-type page",
+            "result": {
+              "status": "passed",
+              "duration": 10820563
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 41,
+            "name": "New Single User Project is selected",
+            "result": {
+              "status": "passed",
+              "duration": 132136705
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 42,
+            "name": "the Next and cancels controls are available",
+            "result": {
+              "status": "passed",
+              "duration": 9629299
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 43,
+            "name": "the user chooses Next",
+            "result": {
+              "status": "passed",
+              "duration": 428137365
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 44,
+            "name": "the wizard displays a project name, workspace folder and project file to be created",
+            "result": {
+              "status": "passed",
+              "duration": 6275783
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 45,
+            "name": "it provides a folder browsing control",
+            "result": {
+              "status": "passed",
+              "duration": 8169407
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 46,
+            "name": "the user chooses Next",
+            "result": {
+              "status": "passed",
+              "duration": 417265647
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 47,
+            "name": "the wizard displays a Select Libraries page",
+            "result": {
+              "status": "passed",
+              "duration": 5883537
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 48,
+            "name": "the page has All Projects and New Project lists with transfer controls",
+            "result": {
+              "status": "passed",
+              "duration": 6296372
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 49,
+            "name": "both library lists are empty",
+            "result": {
+              "status": "passed",
+              "duration": 6077446
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 50,
+            "name": "a provisional project entry is visible in the project list behind the wizard",
+            "result": {
+              "status": "passed",
+              "duration": 5379264
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 51,
+            "name": "the user chooses Cancel",
+            "result": {
+              "status": "passed",
+              "duration": 147042087
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 52,
+            "name": "the wizard closes and the Projects dialog is displayed",
+            "result": {
+              "status": "passed",
+              "duration": 141302346
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 53,
+            "name": "the provisional project entry is no longer listed",
+            "result": {
+              "status": "passed",
+              "duration": 9942338
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 54,
+            "name": "the original project remains marked active",
+            "result": {
+              "status": "passed",
+              "duration": 9639648
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 157410704
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2342649008
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "inspect-the-project-dialog/navigate-backward-through-the-new-project-wizard",
+        "line": 56,
+        "name": "Navigate backward through the new-project wizard",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 57,
+            "name": "the MCAD Software starts with `fixtures/cad/project-dialog-native/WizardProject.opj` as its first project",
+            "result": {
+              "status": "passed",
+              "duration": 130101809
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 58,
+            "name": "the user opens Projects from the template chooser and chooses New",
+            "result": {
+              "status": "passed",
+              "duration": 1036506943
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 59,
+            "name": "the new single-user project wizard is on its project-type page",
+            "result": {
+              "status": "passed",
+              "duration": 5080501
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 60,
+            "name": "the user chooses Next",
+            "result": {
+              "status": "passed",
+              "duration": 476444516
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 61,
+            "name": "the project-file page displays the project name and workspace folder",
+            "result": {
+              "status": "passed",
+              "duration": 8214290
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 62,
+            "name": "the user chooses Next",
+            "result": {
+              "status": "passed",
+              "duration": 428161058
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 63,
+            "name": "the Select Libraries page is displayed",
+            "result": {
+              "status": "passed",
+              "duration": 9347537
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 64,
+            "name": "the user chooses Back",
+            "result": {
+              "status": "passed",
+              "duration": 146718608
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 65,
+            "name": "the project-file page is displayed",
+            "result": {
+              "status": "passed",
+              "duration": 9871227
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 66,
+            "name": "its project name and workspace folder remain displayed",
+            "result": {
+              "status": "passed",
+              "duration": 9287255
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 67,
+            "name": "the user chooses Back",
+            "result": {
+              "status": "passed",
+              "duration": 161335937
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 68,
+            "name": "the project-type page is displayed",
+            "result": {
+              "status": "passed",
+              "duration": 6282526
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 69,
+            "name": "New Single User Project remains selected",
+            "result": {
+              "status": "passed",
+              "duration": 117591460
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 70,
+            "name": "Back and Finish are unavailable",
+            "result": {
+              "status": "passed",
+              "duration": 9094589
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 71,
+            "name": "the user chooses Cancel",
+            "result": {
+              "status": "passed",
+              "duration": 130386516
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 72,
+            "name": "the wizard closes and the Projects dialog is displayed",
+            "result": {
+              "status": "passed",
+              "duration": 134750151
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 161477319
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2272766814
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "inspect-the-project-dialog/cancel-browsing-for-a-project-workspace-folder",
+        "line": 74,
+        "name": "Cancel browsing for a project workspace folder",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 75,
+            "name": "the MCAD Software starts with `fixtures/cad/project-dialog-native/WizardProject.opj` as its first project",
+            "result": {
+              "status": "passed",
+              "duration": 105672644
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 76,
+            "name": "the user opens Projects from the template chooser, chooses New and advances to the project-file page",
+            "result": {
+              "status": "passed",
+              "duration": 1311760262
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 77,
+            "name": "a workspace folder and project file location are displayed",
+            "result": {
+              "status": "passed",
+              "duration": 4860144
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 78,
+            "name": "the user chooses the workspace folder browse control",
+            "result": {
+              "status": "passed",
+              "duration": 552782256
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 79,
+            "name": "a folder browser opens with a folder tree and a Folder field",
+            "result": {
+              "status": "passed",
+              "duration": 9225762
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 80,
+            "name": "it offers Make New Folder, OK and cancels",
+            "result": {
+              "status": "passed",
+              "duration": 9202670
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 81,
+            "name": "the user selects Documents in the folder tree",
+            "result": {
+              "status": "passed",
+              "duration": 496531636
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 82,
+            "name": "Documents is selected and its child folders are displayed",
+            "result": {
+              "status": "passed",
+              "duration": 139304829
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 83,
+            "name": "the Folder field displays Documents",
+            "result": {
+              "status": "passed",
+              "duration": 9911350
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 84,
+            "name": "the user chooses Cancel in the folder browser",
+            "result": {
+              "status": "passed",
+              "duration": 466376034
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 85,
+            "name": "the folder browser closes",
+            "result": {
+              "status": "passed",
+              "duration": 7294097
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 86,
+            "name": "the wizard still displays the previous workspace folder and project file location",
+            "result": {
+              "status": "passed",
+              "duration": 7093437
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 87,
+            "name": "the user cancels the project wizard",
+            "result": {
+              "status": "passed",
+              "duration": 429138858
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 88,
+            "name": "the Projects dialog is displayed",
+            "result": {
+              "status": "passed",
+              "duration": 8163256
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 182389045
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2165842774
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "inspect-the-project-dialog/choose-the-workspace-folder-for-a-new-project",
+        "line": 90,
+        "name": "Choose the workspace folder for a new project",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 91,
+            "name": "the MCAD Software starts with `fixtures/cad/project-dialog-native/WizardProject.opj` as its first project",
+            "result": {
+              "status": "passed",
+              "duration": 96656270
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 92,
+            "name": "the user opens Projects from the template chooser, chooses New and advances to the project-file page",
+            "result": {
+              "status": "passed",
+              "duration": 1265208138
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 93,
+            "name": "the project has a displayed name",
+            "result": {
+              "status": "passed",
+              "duration": 3022022
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 94,
+            "name": "the user chooses the workspace folder browse control",
+            "result": {
+              "status": "passed",
+              "duration": 438440541
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 95,
+            "name": "the user selects the Documents folder",
+            "result": {
+              "status": "passed",
+              "duration": 433123902
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 96,
+            "name": "the user chooses OK in the folder browser",
+            "result": {
+              "status": "passed",
+              "duration": 413813990
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 97,
+            "name": "the wizard displays Documents as the workspace folder",
+            "result": {
+              "status": "passed",
+              "duration": 9293757
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 98,
+            "name": "the displayed project file location is inside Documents and uses the displayed project name",
+            "result": {
+              "status": "passed",
+              "duration": 5387991
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 99,
+            "name": "the user cancels the project wizard",
+            "result": {
+              "status": "passed",
+              "duration": 385389781
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 100,
+            "name": "the Projects dialog is displayed",
+            "result": {
+              "status": "passed",
+              "duration": 8295350
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 101,
+            "name": "the original project remains marked active",
+            "result": {
+              "status": "passed",
+              "duration": 7987501
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 165885486
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2134979523
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "inspect-the-project-dialog/expand-and-collapse-project-settings-with-the-keyboard",
+        "line": 103,
+        "name": "Expand and collapse project settings with the keyboard",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 104,
+            "name": "the MCAD Software starts with `fixtures/cad/project-dialog-native/ActiveProject.opj` as its first project",
+            "result": {
+              "status": "passed",
+              "duration": 95122851
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 105,
+            "name": "the user opens the Projects dialog from the template chooser with `ActiveProject` active",
+            "result": {
+              "status": "passed",
+              "duration": 528503469
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 106,
+            "name": "`ActiveProject` displays collapsed Folder Options and Options groups",
+            "result": {
+              "status": "passed",
+              "duration": 3867146
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 107,
+            "name": "the user selects the collapsed Folder Options group",
+            "result": {
+              "status": "passed",
+              "duration": 451527247
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 108,
+            "name": "the user presses the Right Arrow key",
+            "result": {
+              "status": "passed",
+              "duration": 149321295
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 109,
+            "name": "the group expands to show folder entries including Templates, Design Data and Presets",
+            "result": {
+              "status": "passed",
+              "duration": 7095240
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 110,
+            "name": "the user presses the Left Arrow key",
+            "result": {
+              "status": "passed",
+              "duration": 160363487
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 111,
+            "name": "the Folder Options children are hidden",
+            "result": {
+              "status": "passed",
+              "duration": 9669213
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 112,
+            "name": "the user selects the collapsed Options group",
+            "result": {
+              "status": "passed",
+              "duration": 459707975
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 113,
+            "name": "the user presses the Right Arrow key",
+            "result": {
+              "status": "passed",
+              "duration": 150592717
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 114,
+            "name": "the group expands to show project options including old versions to keep and unique file names",
+            "result": {
+              "status": "passed",
+              "duration": 6005864
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 115,
+            "name": "the active project remains marked in the project list",
+            "result": {
+              "status": "passed",
+              "duration": 7411195
+            }
+          }
+        ]
+      },
+      {
+        "after": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 238946603
+            }
+          }
+        ],
+        "before": [
+          {
+            "result": {
+              "status": "passed",
+              "duration": 2312060866
+            }
+          }
+        ],
+        "keyword": "Scenario",
+        "type": "scenario",
+        "id": "inspect-the-project-dialog/expand-library-groups-independently-in-the-project-tree",
+        "line": 117,
+        "name": "Expand library groups independently in the project tree",
+        "tags": [],
+        "steps": [
+          {
+            "keyword": "Given ",
+            "line": 118,
+            "name": "the MCAD Software starts with `fixtures/cad/project-dialog-native/ActiveProject.opj` as its first project",
+            "result": {
+              "status": "passed",
+              "duration": 96777343
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 119,
+            "name": "the user opens the Projects dialog from the template chooser and selects `ActiveProject`",
+            "result": {
+              "status": "passed",
+              "duration": 1027348476
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 120,
+            "name": "`ActiveProject` has collapsed Appearance Libraries and Material Libraries groups with entries",
+            "result": {
+              "status": "passed",
+              "duration": 3526976
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 121,
+            "name": "the user selects Appearance Libraries and presses the Right Arrow key",
+            "result": {
+              "status": "passed",
+              "duration": 935986584
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 122,
+            "name": "the appearance library entries are visible beneath their group",
+            "result": {
+              "status": "passed",
+              "duration": 12075986
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 123,
+            "name": "the user selects Material Libraries and presses the Right Arrow key",
+            "result": {
+              "status": "passed",
+              "duration": 894997034
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 124,
+            "name": "the material library entries are visible beneath their group",
+            "result": {
+              "status": "passed",
+              "duration": 8838566
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 125,
+            "name": "the appearance library entries remain visible",
+            "result": {
+              "status": "passed",
+              "duration": 8417656
+            }
+          },
+          {
+            "keyword": "When ",
+            "line": 126,
+            "name": "the user presses the Left Arrow key",
+            "result": {
+              "status": "passed",
+              "duration": 197175086
+            }
+          },
+          {
+            "keyword": "Then ",
+            "line": 127,
+            "name": "the material library entries are hidden",
+            "result": {
+              "status": "passed",
+              "duration": 12547118
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 128,
+            "name": "the appearance library entries remain visible",
+            "result": {
+              "status": "passed",
+              "duration": 4032973
+            }
+          },
+          {
+            "keyword": "And ",
+            "line": 129,
+            "name": "the active project remains marked in the project list",
+            "result": {
+              "status": "passed",
+              "duration": 5289929
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -12,6 +12,8 @@ pub(super) mod native_input;
 mod role_fixtures;
 #[path = "settings_tree.rs"]
 mod settings_tree;
+#[path = "workspace_folder.rs"]
+mod workspace_folder;
 const PROJECT_NAME: &str = "Gearbox";
 #[test]
 fn projects_window_closes_to_the_document_chooser() {
@@ -358,114 +360,4 @@ fn point_home_at_scratch(world: &mut ApplicationWorld) {
     std::fs::create_dir_all(home.join("Documents").join("Drawings")).unwrap();
     // SAFETY: the scenarios run one at a time on this thread, which also owns the window.
     unsafe { std::env::set_var("HOME", home) };
-}
-fn wizard_text(world: &ApplicationWorld) -> String {
-    world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| run.text.contains(".opj") || run.text.contains("Documents"))
-        .map(|run| run.text.as_str())
-        .collect::<Vec<_>>()
-        .join("|")
-}
-#[given("the new single-user project wizard is on its project-file page in the MCAD Software")]
-fn wizard_on_file(world: &mut ApplicationWorld) {
-    point_home_at_scratch(world);
-    open_wizard_on_file_page(world);
-}
-#[given("a workspace folder and project file location are displayed")]
-fn locations_shown(world: &mut ApplicationWorld) {
-    world.expect_text("Project (Workspace) Folder");
-    world.observed_rows = Some(wizard_text(world));
-}
-#[given("the project has a displayed name")]
-fn name_shown(world: &mut ApplicationWorld) {
-    assert!(
-        holds_text(world, "New Project.opj"),
-        "expected a named project file"
-    );
-}
-#[when("I choose the workspace folder browse control")]
-#[when("the user chooses the workspace folder browse control")]
-fn browse_folder(world: &mut ApplicationWorld) {
-    choose_button(world, "...");
-}
-#[then("a folder browser opens with a folder tree and a Folder field")]
-fn folder_browser_open(world: &mut ApplicationWorld) {
-    world.expect_text("Documents");
-    assert!(holds_text(world, "Folder:"), "expected the Folder field");
-}
-#[then("it offers Make New Folder, OK and Cancel")]
-#[then("it offers Make New Folder, OK and cancels")]
-fn folder_controls(world: &mut ApplicationWorld) {
-    for row in ["Make New Folder", "OK", "Cancel"] {
-        world.expect_text(row);
-    }
-}
-#[when("I select Documents in the folder tree")]
-#[when("the user selects Documents in the folder tree")]
-#[when("I select the Documents folder")]
-#[when("the user selects the Documents folder")]
-fn select_documents(world: &mut ApplicationWorld) {
-    choose_button(world, "Documents");
-}
-#[then("Documents is selected and its child folders are displayed")]
-fn documents_open(world: &mut ApplicationWorld) {
-    assert!(
-        world.row_highlighted("Documents"),
-        "expected the row's accent"
-    );
-    world.expect_text("Drawings");
-}
-#[then("the Folder field displays Documents")]
-fn folder_field(world: &mut ApplicationWorld) {
-    world.expect_text("Folder: Documents");
-}
-#[when("I choose Cancel in the folder browser")]
-#[when("the user chooses Cancel in the folder browser")]
-fn cancel_browser(world: &mut ApplicationWorld) {
-    choose_button(world, "Cancel");
-}
-#[then("the folder browser closes")]
-fn browser_closed(world: &mut ApplicationWorld) {
-    world.expect_no_text("Make New Folder");
-}
-#[then("the wizard still displays the previous workspace folder and project file location")]
-fn locations_kept(world: &mut ApplicationWorld) {
-    let earlier = world
-        .observed_rows
-        .clone()
-        .expect("expected remembered locations");
-    assert_eq!(wizard_text(world), earlier);
-}
-#[when("I cancel the project wizard")]
-#[when("the user cancels the project wizard")]
-fn cancel_wizard(world: &mut ApplicationWorld) {
-    choose_button(world, "Cancel");
-}
-#[then("the Projects dialog is displayed")]
-fn projects_shown(world: &mut ApplicationWorld) {
-    expect_projects_dialog(world);
-}
-#[when("I choose OK in the folder browser")]
-#[when("the user chooses OK in the folder browser")]
-fn accept_folder(world: &mut ApplicationWorld) {
-    choose_button(world, "OK");
-}
-#[then("the wizard displays Documents as the workspace folder")]
-fn workspace_is_documents(world: &mut ApplicationWorld) {
-    assert!(
-        holds_text(world, "/Documents"),
-        "expected the folder ending in Documents"
-    );
-}
-#[then(
-    "the displayed project file location is inside Documents and uses the displayed project name"
-)]
-fn file_in_documents(world: &mut ApplicationWorld) {
-    assert!(
-        holds_text(world, "/Documents/New Project.opj"),
-        "expected the derived file"
-    );
 }
