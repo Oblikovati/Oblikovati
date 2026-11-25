@@ -40,6 +40,7 @@ pub enum GuiRecentAction {
     SetPinned { path: String, pinned: bool },
 }
 const SIDE_PANEL_WIDTH: f32 = 240.;
+const RECENT_SCROLL_END_PADDING: f32 = 12.;
 const NOTICE_TITLE: &str = "Information";
 const SORT_POPUP: &str = "##home-sort";
 
@@ -134,6 +135,10 @@ impl HomeWorkspace {
             self.cards(ui, &rows, actions);
         } else {
             self.list(ui, &rows, actions, icons);
+        }
+        if !rows.is_empty() {
+            // Leave breathing room above the document strip when the last row scrolls into view.
+            ui.dummy([0., RECENT_SCROLL_END_PADDING]);
         }
     }
     fn search_controls(&mut self, ui: &Ui, icons: &crate::icons::GuiRibbonIcons) {

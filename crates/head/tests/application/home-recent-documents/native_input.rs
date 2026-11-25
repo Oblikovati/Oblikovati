@@ -5,6 +5,51 @@ use super::{
     ASSEMBLY, ApplicationWorld, HOME, OTHERS, SEARCHED, home_run, home_shows, lists::rows_by_size,
     save_recent_files,
 };
+use oblikovati_model::application_recent::{RecentDocument, RecentDocumentAccess};
+
+#[test]
+fn home_recent_last_row_clears_the_document_strip_in_a_short_window() {
+    let mut world = ApplicationWorld::new();
+    seed_scrollable_recent(&mut world);
+    x11_input::resize_application_window([1454, 540]);
+    world.pump(Vec::new());
+    assert_eq!(world.extent(), [1454, 540]);
+    assert!(!home_shows(&world, "RecentPart00"));
+    for _ in 0..5 {
+        x11_input::scroll([460, 380], -10);
+        world.pump(Vec::new());
+    }
+    let bottom = world.viewport_bounds()[3] as f32;
+    let last = home_run(&world, "RecentPart00").expect("expected the last Recent row");
+    let clearance = bottom - last.maximum[1];
+    println!("Last Recent filename clears the document strip by {clearance} px");
+    world.save_capture("home-recent-at-scroll-end-1454x540");
+    assert!(
+        clearance >= 24.,
+        "expected 24 px between the last filename and document strip, got {clearance}"
+    );
+    world.close();
+}
+
+fn seed_scrollable_recent(world: &mut ApplicationWorld) {
+    world.close();
+    let mut options =
+        crate::native::preferences::load_native_application_options(world.preferences_directory())
+            .unwrap();
+    let recent = (0..24)
+        .map(|index| RecentDocument {
+            path: world
+                .scratch_folder()
+                .join(format!("RecentPart{index:02}.opd"))
+                .to_string_lossy()
+                .into_owned(),
+            last_opened: index,
+            pinned: false,
+        })
+        .collect();
+    options.set_recent_documents(recent).unwrap();
+    world.reopen_application();
+}
 
 #[test]
 fn home_recent_grid_filters_and_restores_with_x11_input() {
