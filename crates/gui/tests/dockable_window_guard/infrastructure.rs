@@ -39,7 +39,7 @@ pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
     ),
     ("application/viewport-orientation/mod.rs", "CONTROL_WINDOW"),
     (
-        "application/viewport-orientation/mod.rs",
+        "application/viewport-orientation/navigation_capsule.rs",
         "NAVIGATION_WINDOW",
     ),
     (
