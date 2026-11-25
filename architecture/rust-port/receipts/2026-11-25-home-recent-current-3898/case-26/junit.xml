@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:29:11.417277247Z" time="17.83866462"><testcase name="Scenario: Search recent documents with a lowercase partial name: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:337:3" time="17.83866462"><system-out><![CDATA[  Scenario: Search recent documents with a lowercase partial name
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And the recent list includes parts named "Part2", "Part23" and "Part26"
+   ✔  When the user enters "part2" in Search recent
+   ✔  And the user activates the Search control
+   ✔  Then the results include "Part2", "Part23" and "Part26"
+   ✔  And the matching portion of each displayed name is highlighted
+]]></system-out></testcase></testsuite></testsuites>

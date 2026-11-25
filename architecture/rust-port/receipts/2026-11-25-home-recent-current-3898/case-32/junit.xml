@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:32:40.0074764Z" time="21.25147998"><testcase name="Scenario: Inspect drawing opening modes and cancels: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:422:3" time="21.25147998"><system-out><![CDATA[  Scenario: Inspect drawing opening modes and cancels
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And a recent drawing is displayed in List View
+   ✔  And no recent-document checkboxes are selected
+   ✔  When the user opens the drawing row's actions menu
+   ✔  Then the menu offers Defer Open
+   ✔  When the user chooses Open with options
+   ✔  Then File Open Options shows Full as the opening mode
+   ✔  And Skip all unresolved files is unchecked
+   ✔  When the user changes the opening mode to Defer
+   ✔  Then the opening mode shows Defer
+   ✔  And Skip all unresolved files is disabled
+   ✔  When the user cancels the dialog
+   ✔  Then the dialog closes and the Recent list is visible
+]]></system-out></testcase></testsuite></testsuites>

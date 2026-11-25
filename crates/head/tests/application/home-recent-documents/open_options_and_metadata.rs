@@ -3,6 +3,9 @@ use super::*;
 
 // Open options
 #[given("a recent part with a Front design view is displayed in List View")]
+#[given(
+    "Part26.opd from the disposable package is displayed in List View with a Front design-view name"
+)]
 fn front_view_part(world: &mut ApplicationWorld) {
     // Native parts already write Front as a standard design view.
     let state = world.state();
@@ -80,12 +83,17 @@ fn dialog_closed(world: &mut ApplicationWorld) {
 }
 #[given("a recent assembly is displayed in List View")]
 fn assembly_listed(world: &mut ApplicationWorld) {
-    assert!(home_shows(world, ASSEMBLY), "expected {ASSEMBLY}");
+    let assembly = assembly_name(world);
+    assert!(
+        recent_name(world, assembly).is_some(),
+        "expected {assembly}"
+    );
 }
 #[when("the user opens the assembly row's actions menu")]
 #[when("I open the assembly row's actions menu")]
 fn assembly_actions(world: &mut ApplicationWorld) {
-    open_actions_of(world, ASSEMBLY);
+    let assembly = assembly_name(world);
+    open_actions_of(world, assembly);
 }
 #[then("the menu offers Open Express")]
 fn offers_express(world: &mut ApplicationWorld) {
@@ -141,18 +149,29 @@ fn save_recent_drawing(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
+fn drawing_name(world: &ApplicationWorld) -> &'static str {
+    if published_profile::uses_published_profile(world) {
+        "RecentDrawing"
+    } else {
+        "Sheet"
+    }
+}
 #[given("a recent drawing is displayed in List View")]
 fn drawing_listed(world: &mut ApplicationWorld) {
-    save_recent_drawing(world);
+    if !published_profile::uses_published_profile(world) {
+        save_recent_drawing(world);
+    }
+    let drawing = drawing_name(world);
     assert!(
-        home_shows(world, "Sheet"),
-        "expected the drawing on the list"
+        recent_name(world, drawing).is_some(),
+        "expected the {drawing} row"
     );
 }
 #[when("the user opens the drawing row's actions menu")]
 #[when("I open the drawing row's actions menu")]
 fn drawing_actions(world: &mut ApplicationWorld) {
-    open_actions_of(world, "Sheet");
+    let drawing = drawing_name(world);
+    open_actions_of(world, drawing);
 }
 #[then("the menu offers Defer Open")]
 fn offers_defer(world: &mut ApplicationWorld) {
@@ -268,6 +287,11 @@ fn default_columns(world: &mut ApplicationWorld) {
 }
 #[given("the recent list contains a part and a drawing")]
 fn part_and_drawing(world: &mut ApplicationWorld) {
+    if published_profile::uses_published_profile(world) {
+        drawing_listed(world);
+        assert!(recent_name(world, SEARCHED).is_some());
+        return;
+    }
     let part_path = world.scratch_folder().join(format!("{SEARCHED}.opd"));
     std::fs::OpenOptions::new()
         .write(true)
@@ -377,7 +401,7 @@ fn different_symbols(world: &mut ApplicationWorld) {
             })
             .map(|run| run.text.clone())
     };
-    let (part, drawing) = (mark(SEARCHED), mark("Sheet"));
+    let (part, drawing) = (mark(SEARCHED), mark(drawing_name(world)));
     assert!(
         part.is_some() && part != drawing,
         "marks {part:?} and {drawing:?}"

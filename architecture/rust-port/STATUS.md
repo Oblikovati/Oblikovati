@@ -53,6 +53,8 @@ using this status; the live scenario directory can change.
   All 38 pinned declarations have R0 baseline records in
   `receipts/2026-11-21-document-tabs-r0-3900/`.
   Strict verification remains blocked by #3978.
+- Home Recent Documents (#3898) passed all 35 current scenarios and 394 steps
+  using the [published profile](receipts/2026-11-25-home-recent-current-3898/README.md).
 - Document Saving (#3888): all 23 pinned scenarios and 218 steps passed
   under Linux X11 with Openbox. The three reusable native Part fixtures
   passed reopen and replacement checks. The current feature names fixture
@@ -471,7 +473,7 @@ using this status; the live scenario directory can change.
 ## Work queue
 
 Work dependency-ready application scenarios one at a time, then sketch and modeling.
-1. Continue the dependency-ready application scenarios with Home Recent Documents.
+1. Continue the dependency-ready application scenarios with Document Opening.
    Midpoint Line (#4178) still names a deferred Inventor fixture. Revisit it when
    the scenario owner adopts the supplied native fixture.
    Constraint Settings (#4158) is paused with uncommitted work while its

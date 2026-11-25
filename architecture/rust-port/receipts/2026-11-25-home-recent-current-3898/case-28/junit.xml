@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:31:03.321510663Z" time="26.291730787"><testcase name="Scenario: Recall an earlier entry without changing the displayed history order: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:361:3" time="26.291730787"><system-out><![CDATA[  Scenario: Recall an earlier entry without changing the displayed history order
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And the user searches for "Part26" and then searches for "part2"
+   ✔  And the user clears the search field
+   ✔  And Search History displays "part2" above "Part26"
+   ✔  And the search field is empty
+   ✔  When the user chooses "Part26" from Search History
+   ✔  Then the search field contains "Part26"
+   ✔  And the matching part is displayed
+   ✔  When the user clears the search field
+   ✔  Then Search History displays "part2" above "Part26"
+]]></system-out></testcase></testsuite></testsuites>
