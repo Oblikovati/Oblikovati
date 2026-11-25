@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:41:06.229813829Z" time="73.74850308"><testcase name="Scenario: Cancel a feature appearance choice: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:731:3" time="73.74850308"><system-out><![CDATA[  Scenario: Cancel a feature appearance choice
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And an extrusion in the MCAD Software has Feature Appearance set to As Body
+   ✔  When the user opens Feature Properties from its browser context menu
+   ✔  And the user opens the Feature Appearance list
+   ✔  Then the list offers As Body and named appearances including Black
+   ✔  When the user chooses Black
+   ✔  Then Feature Appearance shows Black
+   ✔  When the user clicks Cancel and reopens Feature Properties
+   ✔  Then Feature Appearance shows As Body
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the solid remains visible
+]]></system-out></testcase></testsuite></testsuites>

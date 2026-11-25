@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:33:10.765058655Z" time="114.933823887"><testcase name="Scenario: Apply an inserted model-state table row: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:1524:3" time="114.933823887"><system-out><![CDATA[  Scenario: Apply an inserted model-state table row
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And the user creates model states Capture State and Copy State
+   ✔  And the user sets the extrusion to Suppress in Primary and Capture State and Compute in Copy State through the model-state table
+   ✔  And the user activates Copy State
+   ✔  And The MCAD Software has a model-state table with Capture State followed by active Copy State
+   ✔  And the extrusion is suppressed in Capture State and computed in Copy State
+   ✔  When the user inserts a row after Capture State
+   ✔  And accepts the model-state table
+   ✔  Then the generated member appears between Capture State and Copy State in the model browser
+   ✔  And Copy State remains active
+   ✔  When the user activates the generated member
+   ✔  Then the generated member is marked active
+   ✔  And the extrusion row is struck through
+   ✔  And the solid is absent from the viewport
+]]></system-out></testcase></testsuite></testsuites>

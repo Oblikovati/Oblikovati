@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:41:18.221948595Z" time="44.568581912"><testcase name="Scenario: Collapse descendants of the Origin folder: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:450:3" time="44.568581912"><system-out><![CDATA[  Scenario: Collapse descendants of the Origin folder
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is active in the MCAD Software
+   ✔  And an active part with a visible block is open in the MCAD Software
+   ✔  And the Origin folder is expanded with its planes, axes and center point visible as rows
+   ✔  When the user right-clicks the Origin folder
+   ✔  Then its context menu offers Expand All Children and collapses All Children
+   ✔  When the user chooses Collapse All Children
+   ✔  Then the Origin folder remains expanded with its direct reference rows visible
+   ✔  And the block remains visible in the same apparent view
+   ✔  When the user clicks the Origin expansion control
+   ✔  Then the reference rows are hidden and the Origin folder remains visible
+   ✔  When the user clicks the Origin expansion control again
+   ✔  Then the reference rows are visible again
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:42:03.742711013Z" time="63.625637849"><testcase name="Scenario: Cancel a sketch line color change: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:465:3" time="63.625637849"><system-out><![CDATA[  Scenario: Cancel a sketch line color change
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a dimensioned sketch is nested under an extrusion in the MCAD Software
+   ✔  And its line color is Default
+   ✔  When the user opens Properties from the sketch row context menu
+   ✔  And the user opens the Line Color list
+   ✔  Then the list offers Default, Black, Red, Yellow, Green, Cyan, Blue, Magenta and White
+   ✔  And it offers a Select action
+   ✔  When the user chooses Red
+   ✔  Then the Line Color field displays Red and Apply is enabled
+   ✔  When the user clicks Cancel and reopens the sketch properties
+   ✔  Then the Line Color field displays Default and Apply is disabled
+   ✔  When the user clicks Cancel
+   ✔  Then the properties dialog closes
+]]></system-out></testcase></testsuite></testsuites>
