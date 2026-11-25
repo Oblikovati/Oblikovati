@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:20:05.452484285Z" time="37.143458744"><testcase name="Scenario: Open and close the Sketch Constrain panel expansion: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:22:3" time="37.143458744"><system-out><![CDATA[  Scenario: Open and close the Sketch Constrain panel expansion
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with an active editable `Sketch1` in the MCAD Software
+   ✔  And the Sketch ribbon is expanded and the Constrain panel is visible
+   ✔  And the Constrain panel's additional command area is closed
+   ✔  When the user opens the Constrain panel expansion
+   ✔  Then an additional command area opens below the panel over the workspace
+   ✔  And Edit Coordinate System and Constraint Inference Scope are visible
+   ✔  And the sketch and model browser remain visible
+   ✔  When the user presses Escape
+   ✔  Then the Constrain additional command area remains open
+   ✔  When the user clicks empty viewport space
+   ✔  Then the Constrain additional command area closes
+   ✔  And the editable sketch remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>

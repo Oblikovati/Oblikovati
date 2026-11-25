@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:19:50.130797242Z" time="24.006325471"><testcase name="Scenario: Switch between unpinned panel expansions: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:142:3" time="24.006325471"><system-out><![CDATA[  Scenario: Switch between unpinned panel expansions
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the 3D Model Modify panel's unpinned additional command area is open
+   ✔  When the user clicks the Simplification panel expansion arrow
+   ✔  Then the Modify additional command area closes
+   ✔  And the Simplification additional command area opens
+   ✔  And it displays "Remove Details", "Fill Voids", and "Define Envelopes"
+   ✔  When the user clicks an empty area of the viewport
+   ✔  Then the Simplification additional command area closes
+   ✔  And the part and 3D Model ribbon remain visible
+]]></system-out></testcase></testsuite></testsuites>

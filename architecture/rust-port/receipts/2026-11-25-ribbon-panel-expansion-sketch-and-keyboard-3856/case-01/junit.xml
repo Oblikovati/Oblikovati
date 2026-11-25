@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:19:26.70994629Z" time="37.804238963"><testcase name="Scenario: Open the Sketch Create panel expansion: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:6:3" time="37.804238963"><system-out><![CDATA[  Scenario: Open the Sketch Create panel expansion
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with `Sketch1` being edited in the MCAD Software
+   ✔  And the Sketch ribbon is expanded and the Create panel is visible
+   ✔  And the Create panel's additional command area is closed
+   ✔  When the user selects the expansion arrow on the Create panel title
+   ✔  Then an additional command area opens below that panel over the workspace
+   ✔  And the Create Block command is visible
+   ✔  And Precise Input is visible but unavailable in this captured state
+   ✔  And the sketch and model browser remain visible
+   ✔  When the user presses Escape
+   ✔  Then the Create additional command area remains open
+   ✔  When the user clicks empty viewport space
+   ✔  Then the Create additional command area closes
+   ✔  And the editable sketch remains active and unchanged
+]]></system-out></testcase></testsuite></testsuites>

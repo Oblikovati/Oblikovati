@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:20:15.065646943Z" time="27.757649824"><testcase name="Scenario: Switch tabs after selecting the expansion pin: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:154:3" time="27.757649824"><system-out><![CDATA[  Scenario: Switch tabs after selecting the expansion pin
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the 3D Model Modify additional command area is open
+   ✔  When the user clicks its pin control
+   ✔  And the user selects the Tools ribbon tab
+   ✔  Then the Modify additional command area is no longer visible
+   ✔  When the user selects the 3D Model ribbon tab
+   ✔  Then the Modify additional command area is not automatically displayed
+   ✔  When the user opens the Modify additional command area
+   ✔  And the user clicks an empty area of the viewport
+   ✔  Then the additional command area closes
+]]></system-out></testcase></testsuite></testsuites>
