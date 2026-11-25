@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:54:20.82938653Z" time="39.102992744"><testcase name="Scenario: Stage a command in the selected custom panel: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:18:3" time="39.102992744"><system-out><![CDATA[  Scenario: Stage a command in the selected custom panel
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the ribbon customization dialog is open with an empty custom panel for "Part | 3D Model"
+   ✔  When the user selects "2D Sketches" in the available commands
+   ✔  And the user clicks the right transfer button
+   ✔  Then "2D Sketches" appears in the custom panel list
+   ✔  And the target tab selector indicates a pending change
+   ✔  And "OK", "Cancel", and "Apply" are available
+]]></system-out></testcase></testsuite></testsuites>

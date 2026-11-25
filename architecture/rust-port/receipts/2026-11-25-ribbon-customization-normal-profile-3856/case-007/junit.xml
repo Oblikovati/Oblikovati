@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:54:22.336841835Z" time="80.801569906"><testcase name="Scenario: Switch targets while an edit is pending: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:76:3" time="80.801569906"><system-out><![CDATA[  Scenario: Switch targets while an edit is pending
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the ribbon customization dialog has empty custom panel lists for "Part | Sketch" and "Part | Annotate"
+   ✔  When the user selects "Part | Sketch" as the target
+   ✔  And the user adds "2D Sketches" to the custom panel list
+   ✔  And the user selects "Part | Annotate" as the target
+   ✔  Then the custom panel list is empty
+   ✔  And "2D Sketches" is available in the source list
+   ✔  When the user returns to the "Part | Sketch" target
+   ✔  Then "2D Sketches" is still in its custom panel list
+   ✔  And the target selector indicates a pending change
+   ✔  When the user clicks "Cancel"
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>

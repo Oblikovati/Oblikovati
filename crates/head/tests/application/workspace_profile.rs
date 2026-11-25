@@ -6,6 +6,13 @@ use super::{
 use std::path::Path;
 
 impl ApplicationWorld {
+    /// Load a clean temporary profile, for example before a scenario opens its first document.
+    pub(in super::super) fn restart_with_preferences(&mut self, preferences: tempfile::TempDir) {
+        self.close();
+        self._preferences = preferences;
+        self.reopen_application();
+    }
+
     /// Start with a saved layout that has no asset panels, for example before testing docking.
     pub(in super::super) fn with_asset_tools_closed() -> Self {
         let preferences = tempfile::tempdir().unwrap();

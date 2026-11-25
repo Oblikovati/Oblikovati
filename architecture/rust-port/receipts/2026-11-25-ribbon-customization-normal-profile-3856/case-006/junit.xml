@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:54:22.033544807Z" time="68.936703397"><testcase name="Scenario: Apply and remove a custom ribbon panel: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:59:3" time="68.936703397"><system-out><![CDATA[  Scenario: Apply and remove a custom ribbon panel
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the ribbon customization dialog has an empty custom panel for "Part | 3D Model"
+   ✔  And the command category is "Sketch Tab"
+   ✔  When the user adds "Circle (Center Point)" and a separator to the custom panel list
+   ✔  Then the custom panel list contains the circle command followed by a separator
+   ✔  And the separator remains available in the source list
+   ✔  When the user clicks "Apply"
+   ✔  Then the customization dialog remains open
+   ✔  And the target selector no longer indicates a pending change
+   ✔  And the "User Commands" panel appears on the active ribbon
+   ✔  When the user removes the separator and the circle command from the custom panel list
+   ✔  And the user clicks "Apply"
+   ✔  Then the custom panel list is empty
+   ✔  And the "User Commands" panel is no longer visible on the active ribbon
+]]></system-out></testcase></testsuite></testsuites>

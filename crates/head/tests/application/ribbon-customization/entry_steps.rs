@@ -5,15 +5,39 @@ use super::super::transaction_steps::{
 };
 use super::*;
 
+const NORMAL_PROFILE: &str = "fixtures/preferences/ribbon-normal";
+const RIBBON_SETTINGS_FILE: &str = "ribbon-customization.xml";
+
+#[given(
+    "the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory"
+)]
+fn start_with_normal_profile(world: &mut ApplicationWorld) {
+    assert!(world.state().documents.is_empty());
+    let source = super::super::super::scenario_root().join(NORMAL_PROFILE);
+    let preferences = tempfile::tempdir().unwrap();
+    for file in std::fs::read_dir(source).unwrap() {
+        let file = file.unwrap();
+        assert!(file.file_type().unwrap().is_file());
+        let bytes = std::fs::read(file.path()).unwrap();
+        std::fs::write(preferences.path().join(file.file_name()), bytes).unwrap();
+    }
+    assert!(preferences.path().join(RIBBON_SETTINGS_FILE).is_file());
+    world.restart_with_preferences(preferences);
+}
+
 #[given("ribbon customization has not been opened earlier in the captured session")]
 fn first_customization_opening(world: &mut ApplicationWorld) {
     assert!(diagnostics::window_geometry("Customize").is_none());
-    assert!(
-        !world
-            .preferences_directory()
-            .join("ribbon-customization.xml")
-            .exists()
-    );
+    let settings = world.preferences_directory().join(RIBBON_SETTINGS_FILE);
+    if settings.exists() {
+        let seed = super::super::super::scenario_root()
+            .join(NORMAL_PROFILE)
+            .join(RIBBON_SETTINGS_FILE);
+        assert_eq!(
+            std::fs::read(settings).unwrap(),
+            std::fs::read(seed).unwrap()
+        );
+    }
 }
 
 #[when("the user clicks \"Customize\" in the Options panel")]
