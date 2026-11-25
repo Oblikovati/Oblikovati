@@ -374,9 +374,13 @@ fn ribbon_menu_row(
         .menu_bar(true)
         .build(|| {
             ui.menu_bar(|| {
-                owners
-                    .files
-                    .menu(ui, &request.commands, actions, owners.ribbon.tips.tabs());
+                owners.files.menu(
+                    ui,
+                    &request.commands,
+                    actions,
+                    owners.ribbon.tips.tabs(),
+                    owners.icons,
+                );
             });
         });
 }

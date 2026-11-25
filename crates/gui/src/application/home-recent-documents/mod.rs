@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The Home workspace: starting points on the left, recent documents on the right.
+#[path = "home_layout.rs"]
+mod layout;
 #[path = "open_options.rs"]
 mod open_options;
 #[path = "recent_filter.rs"]
@@ -37,7 +39,6 @@ pub enum GuiRecentAction {
     Remove(String),
     SetPinned { path: String, pinned: bool },
 }
-const RAIL_WIDTH: f32 = 150.;
 const SIDE_PANEL_WIDTH: f32 = 240.;
 const NOTICE_TITLE: &str = "Information";
 const SORT_POPUP: &str = "##home-sort";
@@ -84,6 +85,7 @@ pub(crate) struct HomeWorkspace {
 pub(crate) struct HomeRequests {
     pub new_document: bool,
     pub open_document: bool,
+    pub open_projects: bool,
     pub file_properties: Option<String>,
 }
 impl HomeWorkspace {
@@ -108,53 +110,14 @@ impl HomeWorkspace {
             self.open_options.close();
         }
     }
-    /// Draw the workspace over the document area while it is active.
-    pub(crate) fn panel(
+    fn recent_area(
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
-        area: crate::application::document_creation::workspaces::WorkspaceArea,
         actions: &mut Vec<GuiShellAction>,
+        icons: &crate::icons::GuiRibbonIcons,
     ) {
-        self.sync_before_docking();
-        if !self.active {
-            return;
-        }
-        crate::widget_abi::window_geometry(
-            ui,
-            [area.left, area.top],
-            [area.right - area.left, area.bottom - area.top],
-            imgui::Condition::Always,
-        );
-        ui.window("##home-workspace")
-            .flags(
-                imgui::WindowFlags::NO_DECORATION
-                    | imgui::WindowFlags::NO_MOVE
-                    | imgui::WindowFlags::NO_DOCKING
-                    | imgui::WindowFlags::NO_SAVED_SETTINGS
-                    | imgui::WindowFlags::NO_FOCUS_ON_APPEARING
-                    | imgui::WindowFlags::NO_BRING_TO_FRONT_ON_FOCUS,
-            )
-            .build(|| {
-                self.rail(ui, state.document.is_none(), actions);
-                ui.same_line_with_pos(RAIL_WIDTH);
-                ui.group(|| self.recent_area(ui, state, actions));
-                self.open_options.panel(ui, actions);
-                self.properties_notice(ui);
-            });
-        self.side_panel_window(ui, area);
-    }
-    fn rail(&mut self, ui: &Ui, no_document: bool, actions: &mut Vec<GuiShellAction>) {
-        ui.group(|| {
-            ui.text("Home");
-            if no_document && ui.button("New Part##home-new-part") {
-                actions.push(GuiShellAction::NewPart);
-            }
-            self.requests.new_document |= ui.button("New");
-            self.requests.open_document |= ui.button("Open");
-        });
-    }
-    fn recent_area(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+        let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
         ui.text("Recent");
         self.view_controls(ui);
         self.search_controls(ui);
@@ -170,21 +133,8 @@ impl HomeWorkspace {
             self.sort_controls(ui);
             self.cards(ui, &rows, actions);
         } else {
-            self.list(ui, &rows, actions);
+            self.list(ui, &rows, actions, icons);
         }
-    }
-    fn view_controls(&mut self, ui: &Ui) {
-        if ui.button("List View") {
-            self.grid = false;
-        }
-        ui.same_line();
-        if ui.button("Grid View") {
-            self.grid = true;
-        }
-        ui.same_line();
-        self.filter_control(ui);
-        ui.same_line();
-        self.columns_control(ui);
     }
     fn search_controls(&mut self, ui: &Ui) {
         ui.set_next_item_width(260.);
@@ -197,14 +147,14 @@ impl HomeWorkspace {
         if !self.query.is_empty() && ui.is_item_active() {
             self.show_history = false;
         }
-        ui.same_line();
-        if ui.button("Search") {
-            self.apply_search();
-        }
-        ui.same_line();
+        ui.same_line_with_spacing(0., 0.);
         if ui.button("x##clear-search") {
             self.query.clear();
             self.show_history = true;
+        }
+        ui.same_line();
+        if ui.button("Search") {
+            self.apply_search();
         }
     }
     /// Activating Search is what changes the list; clearing the field alone leaves it filtered.

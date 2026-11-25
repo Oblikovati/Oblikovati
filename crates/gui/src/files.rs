@@ -8,8 +8,14 @@ use crate::application::document_saving::{
 };
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::Ui;
+#[path = "files/menu_art.rs"]
+mod menu_art;
 #[path = "files/new_menu.rs"]
 mod new_menu;
+#[path = "files/recent_menu.rs"]
+mod recent_menu;
+use crate::icons::{GuiRibbonIcons, IconGlyph};
+use recent_menu::RecentMenu;
 
 const NOT_AVAILABLE: &str = "This command is not available in this build.";
 const SAVE_AS_COMMANDS: [(&str, &str); 3] = [
@@ -26,7 +32,7 @@ const SAVE_AS_COMMANDS: [(&str, &str); 3] = [
         "Gather this file and what it references into one folder.",
     ),
 ];
-const FILE_MENU_WIDTH: f32 = 440.;
+const FILE_MENU_WIDTH: f32 = 560.;
 #[derive(Default)]
 pub(crate) struct GuiDocumentFiles {
     pub(crate) templates: crate::application::document_creation::TemplateChooser,
@@ -42,73 +48,6 @@ pub(crate) struct GuiDocumentFiles {
     /// Home covers the active document, so commands about that document have nothing to act on.
     pub home_in_front: bool,
 }
-/// How the File menu orders and shows its recent files.
-#[derive(Default)]
-struct RecentMenu {
-    by_date: bool,
-    with_locations: bool,
-}
-impl RecentMenu {
-    fn rows(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
-        self.controls(ui);
-        if state.recent_documents.is_empty() {
-            ui.text_disabled("No recent documents");
-        }
-        let mut rows: Vec<&crate::GuiRecentDocument> = state.recent_documents.iter().collect();
-        if self.by_date {
-            rows.sort_by_key(|row| std::cmp::Reverse(row.modified));
-        }
-        for row in rows.into_iter().take(RECENT_MENU_ROWS) {
-            self.row(ui, row, actions);
-        }
-    }
-    fn controls(&mut self, ui: &Ui) {
-        let ordering = if self.by_date {
-            "By Access Date"
-        } else {
-            "By Ordered List"
-        };
-        if ui.button(ordering) {
-            self.by_date = !self.by_date;
-        }
-        ui.same_line();
-        let display = if self.with_locations {
-            "Name and Location"
-        } else {
-            "Name"
-        };
-        if ui.button(format!("{display}###recent-display")) {
-            self.with_locations = !self.with_locations;
-        }
-    }
-    fn row(&self, ui: &Ui, row: &crate::GuiRecentDocument, actions: &mut Vec<GuiShellAction>) {
-        use crate::application::home_recent_documents::recent_rows::kind_mark;
-        ui.text(kind_mark(row.kind));
-        ui.same_line_with_pos(RECENT_NAME_X);
-        if ui.button(format!("{}###recent-menu-{}", row.name, row.path)) {
-            actions.push(GuiShellAction::OpenDocument(
-                oblikovati_api::wire::OpenDocumentArgs {
-                    full_document_name: row.path.clone(),
-                    ..Default::default()
-                },
-            ));
-        }
-        ui.same_line_with_pos(RECENT_PIN_X);
-        let pin = if row.pinned { "Unpin" } else { "Pin" };
-        if ui.button(format!("{pin}###recent-menu-pin-{}", row.path)) {
-            actions.push(GuiShellAction::Recent(crate::GuiRecentAction::SetPinned {
-                path: row.path.clone(),
-                pinned: !row.pinned,
-            }));
-        }
-        if self.with_locations {
-            ui.text_disabled(&row.location);
-        }
-    }
-}
-const RECENT_MENU_ROWS: usize = 8;
-const RECENT_NAME_X: f32 = 22.;
-const RECENT_PIN_X: f32 = 190.;
 impl GuiDocumentFiles {
     pub(crate) fn register_dockables(
         &mut self,
@@ -141,17 +80,22 @@ impl GuiDocumentFiles {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
         show_key_tip: bool,
+        icons: &GuiRibbonIcons,
     ) {
         if std::mem::take(&mut self.menu_requested) {
             ui.open_popup("File");
         }
-        ui.menu("File", || {
-            // Matching widths keep the first popup frame and its column clips aligned.
+        let accent = ui.style_color(imgui::StyleColor::NavHighlight);
+        let active = ui.push_style_color(imgui::StyleColor::Header, accent);
+        let menu = ui.begin_menu("File");
+        drop(active);
+        if let Some(_menu) = menu {
             ui.columns(2, "file-menu-layout", false);
-            self.file_commands(ui, state, actions);
+            ui.set_column_width(0, 200.);
+            self.file_commands(ui, state, actions, icons);
             ui.next_column();
             ui.text_disabled("Recent documents");
-            self.recent_menu.rows(ui, state, actions);
+            self.recent_menu.rows(ui, state, actions, icons);
             ui.columns(1, "file-menu-layout-end", false);
             ui.separator();
             self.options_item(ui);
@@ -160,7 +104,7 @@ impl GuiDocumentFiles {
             }
             // Columns take their width from the menu, so the menu needs its own.
             crate::widget_abi::dummy(ui, [FILE_MENU_WIDTH, 0.]);
-        });
+        }
         if show_key_tip {
             crate::ribbon_key_tips::badge(ui, "F");
         }
@@ -170,21 +114,54 @@ impl GuiDocumentFiles {
         ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
+        icons: &GuiRibbonIcons,
     ) {
-        self.new_menu_item(ui, state);
-        self.open_menu_item(ui, state);
-        file_save_item(ui, state, actions);
-        self.save_as_menu_item(ui, state);
-        file_close_item(ui, state, actions);
-        unavailable_file_item(ui, "Export", NOT_AVAILABLE);
-        unavailable_file_item(ui, "Share", NOT_AVAILABLE);
-        unavailable_file_item(ui, "Manage", NOT_AVAILABLE);
-        self.document_properties_item(ui, state);
-        unavailable_file_item(ui, "Print", NOT_AVAILABLE);
+        use menu_art::command;
+        let idle = !state.transaction_open;
+        let document = state.document.is_some();
+        let opened = idle && document;
+        command(ui, icons, IconGlyph::NewPart, idle, || {
+            self.new_menu_item(ui, state)
+        });
+        command(ui, icons, IconGlyph::Open, idle, || {
+            self.open_menu_item(ui, state)
+        });
+        command(ui, icons, IconGlyph::Save, opened, || {
+            file_save_item(ui, state, actions)
+        });
+        command(
+            ui,
+            icons,
+            IconGlyph::Save,
+            opened && !self.home_in_front,
+            || self.save_as_menu_item(ui, state),
+        );
+        command(ui, icons, IconGlyph::WindowClose, opened, || {
+            file_close_item(ui, state, actions)
+        });
+        for (label, glyph) in [
+            ("Export", IconGlyph::Save),
+            ("Share", IconGlyph::Copy),
+            ("Manage", IconGlyph::Preferences),
+        ] {
+            command(ui, icons, glyph, false, || {
+                unavailable_file_item(ui, &menu_art::label(label), NOT_AVAILABLE)
+            });
+        }
+        command(
+            ui,
+            icons,
+            IconGlyph::TemplateDocument,
+            document && !self.home_in_front,
+            || self.document_properties_item(ui, state),
+        );
+        command(ui, icons, IconGlyph::Print, false, || {
+            unavailable_file_item(ui, &menu_art::label("Print"), NOT_AVAILABLE)
+        });
     }
     fn document_properties_item(&mut self, ui: &Ui, state: &GuiCommandState) {
         self.properties_requested |= ui
-            .menu_item_config("Document Properties")
+            .menu_item_config(menu_art::label("Document Properties"))
             .enabled(state.document.is_some() && !self.home_in_front)
             .build();
     }
@@ -231,7 +208,7 @@ impl GuiDocumentFiles {
     }
     fn open_menu_item(&mut self, ui: &Ui, state: &GuiCommandState) {
         if ui
-            .menu_item_config("Open...")
+            .menu_item_config(menu_art::label("Open..."))
             .enabled(!state.transaction_open)
             .build()
         {
@@ -241,7 +218,7 @@ impl GuiDocumentFiles {
     /// Save As opens beside the menu with its related commands; only Save As itself is available.
     fn save_as_menu_item(&mut self, ui: &Ui, state: &GuiCommandState) {
         let enabled = state.document.is_some() && !state.transaction_open && !self.home_in_front;
-        ui.menu_with_enabled("Save As", enabled, || {
+        ui.menu_with_enabled(menu_art::label("Save As"), enabled, || {
             let chosen = ui.menu_item("Save As...");
             ui.text_disabled("Save under a new name and keep working on the new file.");
             if let Some(document) = state.document.filter(|_| chosen) {
@@ -354,13 +331,17 @@ fn unavailable_file_item(ui: &Ui, label: &str, reason: &str) {
 }
 fn file_save_item(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
     let can_save = state.document.is_some() && !state.transaction_open;
-    if ui.menu_item_config("Save").enabled(can_save).build() {
+    if ui
+        .menu_item_config(menu_art::label("Save"))
+        .enabled(can_save)
+        .build()
+    {
         actions.push(GuiShellAction::Save);
     }
 }
 fn file_close_item(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
     let chosen = ui
-        .menu_item_config("Close")
+        .menu_item_config(menu_art::label("Close"))
         .enabled(state.document.is_some() && !state.transaction_open)
         .build();
     if let Some(id) = state.document.filter(|_| chosen) {

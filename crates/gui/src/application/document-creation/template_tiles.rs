@@ -4,7 +4,7 @@ use super::{
     DetailsLayout, GuiCommandState, GuiTemplateKind, TEMPLATE_GROUPS, TemplateChoice,
     TemplateChooser, TemplateView,
 };
-use crate::icons::{GuiRibbonIcons, IconGlyph, IconSize};
+use crate::icons::{GuiRibbonIcons, IconSize, document_glyph};
 use imgui::{StyleColor, Ui};
 
 impl TemplateView {
@@ -119,20 +119,11 @@ impl TemplateChooser {
             icon = icon.map(|edge| edge * 1.4);
         }
         crate::widget_abi::IconButtonPresentation {
-            texture: icons.key(template_glyph(kind), style),
+            texture: icons.key(document_glyph(kind), style),
             size: [width, self.view.tile_size(icons.layout_factor())[1]],
             icon,
             large,
             show_caption: true,
         }
-    }
-}
-fn template_glyph(kind: GuiTemplateKind) -> IconGlyph {
-    match kind {
-        GuiTemplateKind::Part => IconGlyph::NewPart,
-        GuiTemplateKind::SheetMetal => IconGlyph::NewSheetMetal,
-        GuiTemplateKind::Assembly => IconGlyph::NewAssembly,
-        GuiTemplateKind::Drawing => IconGlyph::NewDrawing,
-        GuiTemplateKind::Presentation => IconGlyph::TemplateDocument,
     }
 }

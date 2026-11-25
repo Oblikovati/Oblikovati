@@ -15,7 +15,7 @@ mod catalog;
 
 mod cache;
 pub(crate) use cache::{GuiIconCache, GuiRibbonIcons, IconSize};
-pub(crate) use catalog::IconGlyph;
+pub(crate) use catalog::{IconGlyph, document_glyph};
 
 mod buttons;
 pub(crate) use buttons::action_glyph;

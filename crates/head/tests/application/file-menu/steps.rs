@@ -202,28 +202,61 @@ fn recent_row(world: &ApplicationWorld) -> &super::diagnostics::RenderedRun {
 #[then("each visible recent-document row shows a document-type symbol and name on the left")]
 fn row_left(world: &mut ApplicationWorld) {
     let row = recent_row(world);
-    let (left, _) = row.text.split_once(recent_name(world)).unwrap();
-    let symbol = left == "P"
-        || world.frame.runs.iter().any(|run| {
-            run.list == row.list
-                && run.text == "P"
-                && run.maximum[0] < row.minimum[0]
-                && (run.center()[1] - row.center()[1]).abs() < 8.
-        });
+    let [x, y] = super::diagnostics::pointer_pixels([row.minimum[0], row.center()[1]]);
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    let width = capture.extent[0] as usize;
+    let symbol = (y - 9..y + 9).any(|row| {
+        (x - 25..x - 7).any(|column| {
+            let offset = 4 * (row as usize * width + column as usize);
+            let r = capture.rgba[offset];
+            let b = capture.rgba[offset + 2];
+            b > 130 && b > r.saturating_add(15)
+        })
+    });
     assert!(symbol, "expected a type symbol before the name");
 }
 #[then("each visible row shows a pin control on the right")]
 fn row_pin(world: &mut ApplicationWorld) {
-    let row = recent_row(world);
-    let (_, right) = row.text.split_once(recent_name(world)).unwrap();
-    let pin = right == "Pin"
-        || world.frame.runs.iter().any(|run| {
-            run.list == row.list
-                && run.text == "Pin"
-                && run.minimum[0] > row.maximum[0]
-                && (run.center()[1] - row.center()[1]).abs() < 8.
-        });
-    assert!(pin, "expected a pin control after the name");
+    let y = recent_row(world).center()[1];
+    world.hover(recent_pin_position(world, y));
+    world.expect_text("Pin");
+}
+fn recent_pin_position(world: &ApplicationWorld, y: f32) -> [i32; 2] {
+    let x = world.run("Recent documents").minimum[0] + 336.;
+    super::diagnostics::pointer_pixels([x, y])
+}
+
+#[test]
+fn recent_file_names_leave_room_for_the_pin_and_pin_the_original_path() {
+    let mut world = ApplicationWorld::new();
+    let part = world.add_part();
+    let name = "Long-name-for-the-file-menu-with-enough-text-to-require-a-dedicated-pin-lane";
+    world.save_part_to_file(part, &format!("{name}.opd"));
+    world.click_text("File");
+    let menu = world.run("Recent documents").list;
+    let row = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.list == menu && run.text.starts_with("Long-name-for-the-file-menu"))
+        .expect("expected the recent file in the open File menu");
+    assert!(
+        row.text.ends_with("..."),
+        "filename should be ellipsized: {row:?}"
+    );
+    let pin = recent_pin_position(&world, row.center()[1]);
+    world.hover(pin);
+    world.expect_text("Pin");
+    world.click(pin);
+    let state = world.state();
+    let selected = state
+        .recent_documents
+        .iter()
+        .find(|document| document.path.ends_with(&format!("{name}.opd")))
+        .expect("expected original path after pinning");
+    assert!(selected.pinned);
+    world.save_capture("long-name-file-menu");
+    world.close();
 }
 #[then("the active part remains visible around the menu")]
 fn part_around_menu(world: &mut ApplicationWorld) {

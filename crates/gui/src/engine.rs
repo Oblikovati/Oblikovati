@@ -26,7 +26,7 @@ use work_plane::selected_work_plane;
 mod frame_inputs;
 mod inference_dialog;
 mod quick_access;
-use quick_access::apply_quick_access;
+use quick_access::{apply_home_requests, apply_quick_access};
 #[path = "engine/template_selection.rs"]
 mod template_selection;
 #[path = "engine/workspace_layout.rs"]

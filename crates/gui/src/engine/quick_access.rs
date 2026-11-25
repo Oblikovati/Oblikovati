@@ -1,5 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+
+pub(super) fn apply_home_requests(
+    home: &mut crate::application::home_recent_documents::HomeWorkspace,
+    files: &mut crate::files::GuiDocumentFiles,
+) -> Option<String> {
+    let requests = std::mem::take(&mut home.requests);
+    if requests.new_document {
+        files.request_new();
+    }
+    if requests.open_document {
+        files.request_open();
+    }
+    if requests.open_projects {
+        files.request_projects();
+    }
+    requests.file_properties
+}
 /// The toolbar and ribbon ask; the owners that can answer are the engine's other parts.
 pub(super) fn apply_quick_access(
     toolbar: &mut crate::application::quick_access_toolbar::QuickAccessToolbar,

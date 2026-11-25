@@ -8,14 +8,12 @@ use imgui::Ui;
 
 #[path = "recent_cell_text.rs"]
 mod recent_cell_text;
-use recent_cell_text::{
-    fit_recent_cell, fit_recent_timestamp, reveal_full_cell, visible_source_text,
-};
+pub(crate) use recent_cell_text::fit_recent_cell;
+use recent_cell_text::{fit_recent_timestamp, reveal_full_cell, visible_source_text};
 
 const CHECK_COLUMN: f32 = 28.;
-/// The kind mark, wide enough that its letter never reads as part of the name.
+/// Give the type icon space before the filename.
 const KIND_COLUMN: f32 = 22.;
-const NAME_COLUMN: f32 = 170.;
 const ACTION_GAP: f32 = 4.;
 const CARD_SIZE: [f32; 2] = [180., 90.];
 const MAX_CARDS_PER_ROW: usize = 4;
@@ -71,28 +69,31 @@ fn fit_recent_columns(
                 extra + extra_recent_column_width(field, width),
             )
         });
-    // Keep headings and sort marks legible before assigning the space for longer cell values.
+    // Reserve the heading widths, then give filenames first claim on the flexible space.
     let heading_scale = (available / minimum).clamp(0., 1.);
+    let name_minimum = minima[0].1;
+    let name_target = (available * 0.34).max(220.);
+    let name_extra = (name_target - name_minimum).clamp(0., (available - minimum).max(0.));
     let extra_scale = if extra > 0. {
-        ((available - minimum) / extra).clamp(0., 1.)
+        ((available - minimum - name_extra) / extra).clamp(0., 1.)
     } else {
         0.
     };
     minima.map(|(field, width)| {
-        (
-            field,
-            heading_scale * width + extra_scale * extra_recent_column_width(field, width),
-        )
+        let growth = if field == SortField::Name {
+            name_extra
+        } else {
+            extra_scale * extra_recent_column_width(field, width)
+        };
+        (field, heading_scale * width + growth)
     })
 }
 
 fn extra_recent_column_width(field: SortField, minimum: f32) -> f32 {
-    let preferred = if field == SortField::Name {
-        NAME_COLUMN
-    } else {
-        column_width(field)
-    };
-    (preferred - minimum).max(0.)
+    if field == SortField::Name {
+        return 0.;
+    }
+    (column_width(field) - minimum).max(0.)
 }
 
 fn open_action(path: &str) -> GuiShellAction {
@@ -149,12 +150,13 @@ impl HomeWorkspace {
         ui: &Ui,
         rows: &[&GuiRecentDocument],
         actions: &mut Vec<GuiShellAction>,
+        icons: &crate::icons::GuiRibbonIcons,
     ) {
         let layout = RecentListLayout::for_columns(ui, &self.columns.shown);
         self.list_header(ui, rows, layout);
         ui.separator();
         for row in rows {
-            self.list_row(ui, row, layout, actions);
+            self.list_row(ui, row, layout, actions, icons);
         }
     }
     fn list_header(&mut self, ui: &Ui, rows: &[&GuiRecentDocument], layout: RecentListLayout) {
@@ -195,6 +197,7 @@ impl HomeWorkspace {
         row: &GuiRecentDocument,
         layout: RecentListLayout,
         actions: &mut Vec<GuiShellAction>,
+        icons: &crate::icons::GuiRibbonIcons,
     ) {
         let hovered = self.note_row_hover(ui);
         let checked = self.checks.contains(&row.path);
@@ -206,7 +209,9 @@ impl HomeWorkspace {
             self.checks.set(&row.path, box_state);
         }
         ui.same_line_with_pos(CHECK_COLUMN);
-        ui.text(kind_mark(row.kind));
+        let glyph = crate::icons::document_glyph(row.kind);
+        let texture = imgui::TextureId::new(icons.key(glyph, crate::icons::IconSize::Small).raw());
+        imgui::Image::new(texture, [16.; 2]).build(ui);
         ui.same_line_with_pos(CHECK_COLUMN + KIND_COLUMN);
         self.name_cell(ui, row, layout, actions);
         let mut x = CHECK_COLUMN + KIND_COLUMN + layout.width(SortField::Name);
@@ -217,7 +222,7 @@ impl HomeWorkspace {
             metadata_cell(
                 ui,
                 cell_text(row, *column),
-                width - layout.spacing,
+                width - layout.spacing.max(12.),
                 timestamp,
             );
             x += width;
@@ -453,17 +458,6 @@ fn compact_recent_columns_keep_width_for_size_and_its_sort_mark() {
             .iter()
             .filter(|(field, _)| *field == SortField::Name || shown.contains(field));
         assert!((visible.map(|(_, width)| width).sum::<f32>() - width).abs() < 0.01);
-    }
-}
-/// The letter beside a row's name: the same kinds read the same everywhere on the list.
-pub(crate) fn kind_mark(kind: crate::GuiTemplateKind) -> &'static str {
-    use crate::GuiTemplateKind::{Assembly, Drawing, Part, Presentation, SheetMetal};
-    match kind {
-        Part => "P",
-        SheetMetal => "S",
-        Assembly => "A",
-        Drawing => "D",
-        Presentation => "R",
     }
 }
 fn pin_control(ui: &Ui, row: &GuiRecentDocument, actions: &mut Vec<GuiShellAction>) {

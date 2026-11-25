@@ -121,4 +121,18 @@ glyph_catalog! {
     CenterPointArc => "arc",
     SketchFillet => "fillet",
     SketchText => "drawing-note",
+    WindowClose => "view-close",
+    RecentPin => "custom",
+    RecentPinned => "custom",
+}
+
+pub(crate) fn document_glyph(kind: crate::GuiTemplateKind) -> IconGlyph {
+    use crate::GuiTemplateKind;
+    match kind {
+        GuiTemplateKind::Part => IconGlyph::NewPart,
+        GuiTemplateKind::SheetMetal => IconGlyph::NewSheetMetal,
+        GuiTemplateKind::Assembly => IconGlyph::NewAssembly,
+        GuiTemplateKind::Drawing => IconGlyph::NewDrawing,
+        GuiTemplateKind::Presentation => IconGlyph::TemplateDocument,
+    }
 }

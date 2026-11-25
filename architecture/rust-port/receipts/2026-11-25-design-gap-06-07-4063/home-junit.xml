@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T10:08:53.687381645Z" time="15.612408726"><testcase name="Scenario: Inspect metadata in the recent-document list: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature:451:3" time="15.612408726"><system-out><![CDATA[  Scenario: Inspect metadata in the recent-document list
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent documents are displayed in List View
+   ✔  And the default columns are displayed
+   ✔  And the recent list contains a part and a drawing
+   ✔  When the user inspects the recent-document list
+   ✔  Then the list has Name, Location, Date Modified, Last Opened and Size headers
+   ✔  And the part row shows its name, location, dates and size
+   ✔  And the part and drawing rows show different document-type symbols
+]]></system-out></testcase></testsuite></testsuites>

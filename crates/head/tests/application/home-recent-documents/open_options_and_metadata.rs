@@ -387,23 +387,28 @@ fn expect_recent_timestamp(
 }
 #[then("the part and drawing rows show different document-type symbols")]
 fn different_symbols(world: &mut ApplicationWorld) {
-    let mark = |name: &str| {
+    let positions = [SEARCHED, drawing_name(world)].map(|name| {
         let row = row_run(world, name);
-        world
-            .frame
-            .runs
-            .iter()
-            .find(|run| {
-                in_home(run)
-                    && run.text.len() == 1
-                    && run.maximum[0] < row.minimum[0]
-                    && (run.center()[1] - row.center()[1]).abs() < 8.
-            })
-            .map(|run| run.text.clone())
-    };
-    let (part, drawing) = (mark(SEARCHED), mark(drawing_name(world)));
-    assert!(
-        part.is_some() && part != drawing,
-        "marks {part:?} and {drawing:?}"
+        super::super::super::diagnostics::pointer_pixels([
+            row.minimum[0] - 22.,
+            row.center()[1] - 8.,
+        ])
+        .map(|coordinate| coordinate as usize)
+    });
+    let capture = super::super::super::capture_framebuffer(&mut world.app().window.native);
+    let stride = capture.extent[0] as usize * 4;
+    let [part, drawing] = positions.map(|[x, y]| {
+        let rows: Vec<&[u8]> = (y..y + 16)
+            .map(|row| &capture.rgba[row * stride + 4 * x..row * stride + 4 * (x + 16)])
+            .collect();
+        assert!(
+            rows.iter()
+                .any(|line| line.chunks_exact(4).any(|pixel| pixel[2] > 140))
+        );
+        rows
+    });
+    assert_ne!(
+        part, drawing,
+        "expected different Part and Drawing icon pixels"
     );
 }

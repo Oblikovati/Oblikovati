@@ -298,15 +298,14 @@ impl GuiFrameEngine {
             &mut self.blend_dialog,
             &mut self.extrude_dialog,
         );
-        self.home.panel(ui, &request.commands, area, &mut selected);
-        let home_requests = std::mem::take(&mut self.home.requests);
-        if home_requests.new_document {
-            self.document_files.request_new();
-        }
-        if home_requests.open_document {
-            self.document_files.request_open();
-        }
-        if let Some(path) = home_requests.file_properties {
+        self.home.panel(
+            ui,
+            &request.commands,
+            area,
+            &mut selected,
+            &self.icons.presentation,
+        );
+        if let Some(path) = apply_home_requests(&mut self.home, &mut self.document_files) {
             self.document_tabs.menu.properties.request_file(&path);
         }
         let icons = &self.icons.presentation;

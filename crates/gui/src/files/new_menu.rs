@@ -8,7 +8,7 @@ const NEW_MENU: &str = "##file-new-types";
 impl GuiDocumentFiles {
     pub(super) fn new_menu_item(&mut self, ui: &Ui, state: &GuiCommandState) {
         let selected = ui
-            .menu_item_config("New")
+            .menu_item_config(super::menu_art::label("New"))
             .enabled(!state.transaction_open)
             .build();
         let hover = ui.is_item_hovered() && !state.transaction_open;

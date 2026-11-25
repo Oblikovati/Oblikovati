@@ -30,6 +30,21 @@ fn home_recent_grid_filters_and_restores_with_x11_input() {
 }
 
 #[test]
+fn home_recent_view_controls_show_which_layout_is_active() {
+    let mut world = open_native_recent();
+    world.hover([100, 300]);
+    let selected = world.pixel_left_of("List View");
+    let normal = world.pixel_left_of("Grid View");
+    assert_ne!(selected, normal);
+    click_recent_control(&mut world, "Grid View");
+    world.hover([100, 300]);
+    assert_eq!(world.pixel_left_of("Grid View"), selected);
+    assert_eq!(world.pixel_left_of("List View"), normal);
+    world.save_capture("home-recent-active-grid");
+    world.close();
+}
+
+#[test]
 fn home_recent_visible_size_heading_reverses_order_with_x11_input() {
     let mut world = open_native_recent();
     startup_asset_browsers_are_docked(&mut world);

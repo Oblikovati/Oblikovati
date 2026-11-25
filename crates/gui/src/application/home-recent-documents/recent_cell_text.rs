@@ -4,7 +4,7 @@ use std::borrow::Cow;
 
 const ELLIPSIS: &str = "...";
 
-pub(super) fn fit_recent_cell(
+pub(crate) fn fit_recent_cell(
     full: &str,
     width: f32,
     measure: impl Fn(&str) -> f32,
