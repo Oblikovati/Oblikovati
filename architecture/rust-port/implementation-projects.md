@@ -71,6 +71,12 @@ project. Opening the same file again reuses the registered row. The picker
 stays open after a load error so the user can choose another file.
 [Browse checks](receipts/2026-11-25-project-browse-3895/README.md)
 
+Apply activates the inspected project for the current session and refreshes
+its template catalog. The open chooser clears the previous project's
+template selection and shows a folder containing the newly active project's
+templates. Clicking a project row still inspects it, and any open document
+stays active. [Apply checks](receipts/2026-11-25-project-apply-3895/README.md)
+
 Project wire methods remain pending.
 
 ## Projects dock lifecycle

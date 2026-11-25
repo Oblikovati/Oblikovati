@@ -22,6 +22,9 @@ macro_rules! desktop_document_work {
                 GuiProjectAction::Open { request, path } => {
                     (request, self.load_desktop_project(path))
                 }
+                GuiProjectAction::Activate { request, path } => {
+                    (request, self.activate_desktop_project(path))
+                }
             };
             self.project_file_result = Some((*request, result));
             Ok(true)

@@ -31,6 +31,8 @@ pub(crate) struct TemplateChooser {
     /// Kept between openings: reopening after Cancel shows the same choice.
     selected: Option<TemplateChoice>,
     remembered_project_template: Option<std::path::PathBuf>,
+    project_context_seen: bool,
+    active_project_location: Option<String>,
     /// A drawing template offers previews, and one must be accepted before it can be created.
     drawing_layout: Option<DrawingLayout>,
     component: component_dialog::ComponentDialog,
@@ -121,6 +123,7 @@ impl TemplateChooser {
         actions: &mut Vec<GuiShellAction>,
         icons: &crate::icons::GuiRibbonIcons,
     ) {
+        self.sync_active_project(state);
         if ui.io().key_ctrl && ui.is_key_pressed(imgui::Key::N) && !state.transaction_open {
             self.request();
         }
@@ -130,7 +133,7 @@ impl TemplateChooser {
                     GuiDrawingLayoutAction::CaptureSources,
                 ));
             }
-            self.reveal_project_root(state);
+            self.reveal_project_folder(state);
             self.restore_project_selection(state);
             ui.open_popup("New document");
             dialog_geometry(ui);

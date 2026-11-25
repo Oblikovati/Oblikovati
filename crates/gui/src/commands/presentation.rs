@@ -27,6 +27,10 @@ pub enum GuiProjectAction {
         request: u64,
         path: std::path::PathBuf,
     },
+    Activate {
+        request: u64,
+        path: std::path::PathBuf,
+    },
 }
 /// One foldable branch of a project's settings.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

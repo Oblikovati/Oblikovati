@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The Projects dialog the template chooser opens: what is loaded, and which project is active.
 use crate::dockable_window::DockableWindow;
-use crate::{GuiCommandState, GuiProject, GuiProjectGroup, GuiShellAction};
+use crate::{GuiCommandState, GuiProject, GuiProjectAction, GuiProjectGroup, GuiShellAction};
 use imgui::{
     Condition, Key, SelectableFlags, TableColumnFlags, TableColumnSetup, TreeNodeFlags, Ui,
 };
@@ -34,6 +34,8 @@ pub(crate) struct ProjectsDialog {
     open_groups: Vec<String>,
     wizard: new_project_wizard::NewProjectWizard,
     picker: project_picker::ProjectPicker,
+    activation_request: Option<u64>,
+    activation_error: Option<String>,
 }
 impl DockableWindow for ProjectsDialog {}
 impl ProjectsDialog {
@@ -56,6 +58,8 @@ impl ProjectsDialog {
         self.inspection_redraw = false;
         self.wizard.cancel();
         self.picker.cancel();
+        self.activation_request = None;
+        self.activation_error = None;
     }
     /// A frame must follow so the dialog opens without waiting for an event.
     pub(crate) fn needs_frame(&self) -> bool {
@@ -78,6 +82,7 @@ impl ProjectsDialog {
         if !self.open.is_open() {
             return;
         }
+        self.finish_activation(state);
         let title = if self.dock_title.is_empty() {
             TITLE.to_owned()
         } else {
@@ -102,10 +107,10 @@ impl ProjectsDialog {
                 self.picker.request(location.as_deref());
             }
             ui.same_line();
-            for label in ["Save", "Apply"] {
-                muted_button(ui, label);
-                ui.same_line();
-            }
+            muted_button(ui, "Save");
+            ui.same_line();
+            self.apply_button(ui, state, actions);
+            ui.same_line();
             done = crate::widget_abi::button(ui, "Done", [80., 0.])
                 || !crate::widget_abi::any_popup_open(ui)
                     && ui.is_window_focused()
@@ -119,9 +124,42 @@ impl ProjectsDialog {
                 // The project rows were drawn before the picker acknowledged the request.
                 self.inspection_redraw = true;
             }
+            if let Some(error) = &self.activation_error {
+                ui.text_wrapped(error);
+            }
         });
         if !open || done {
             self.close();
+        }
+    }
+    fn finish_activation(&mut self, state: &GuiCommandState) {
+        if let Some((request, result)) = &state.project_file_result
+            && self.activation_request == Some(*request)
+        {
+            self.activation_request = None;
+            self.activation_error = result.as_ref().err().cloned();
+        }
+    }
+    fn apply_button(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let target = self
+            .shown_project(&state.projects)
+            .filter(|row| !row.active);
+        let _disabled = ui.begin_disabled(target.is_none() || self.activation_request.is_some());
+        if crate::widget_abi::button(ui, "Apply", [0.; 2])
+            && let Some(project) = target
+        {
+            let request = next_project_request();
+            actions.push(GuiShellAction::ProjectFile(GuiProjectAction::Activate {
+                request,
+                path: project.location.clone().into(),
+            }));
+            self.activation_request = Some(request);
+            self.activation_error = None;
         }
     }
     fn project_rows(&mut self, ui: &Ui, projects: &[GuiProject]) {
@@ -147,6 +185,8 @@ impl ProjectsDialog {
         for project in projects {
             if project_row(ui, project, shown.as_deref()) {
                 self.inspected = Some(project.location.clone());
+                self.activation_error = None;
+                self.inspection_redraw = true;
             }
         }
     }

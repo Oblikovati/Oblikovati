@@ -52,7 +52,7 @@ fn a_root_only_catalog_opens_at_its_named_templates() {
         ..Default::default()
     };
 
-    chooser.reveal_project_root(&state);
+    chooser.reveal_project_folder(&state);
     assert_eq!(chooser.folder, TemplateFolder::Root);
     assert_eq!(
         chooser.catalog(&state, &[GuiTemplateKind::Assembly]),

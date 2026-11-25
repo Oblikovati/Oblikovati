@@ -3,6 +3,8 @@
 use super::ApplicationWorld;
 use cucumber::{given, then, when};
 
+#[path = "apply_native.rs"]
+mod apply_native;
 #[path = "browse_native.rs"]
 mod browse_native;
 #[path = "cancellation.rs"]

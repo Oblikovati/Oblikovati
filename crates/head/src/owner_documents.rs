@@ -66,13 +66,29 @@ impl<
         })?;
         let location = project.path.display().to_string();
         if first {
-            let root = project.bound.lookup.templates_root().map(ToOwned::to_owned);
-            self.project_template_catalog =
-                document_creation::ProjectTemplateCatalog::load(root.as_deref(), |package| {
-                    document_creation::project_material(&self.files, package)
-                });
+            self.refresh_project_templates();
         }
         Ok(location)
+    }
+    pub(super) fn activate_desktop_project(
+        &mut self,
+        path: &std::path::Path,
+    ) -> Result<String, String> {
+        self.files
+            .select_project(path)
+            .map_err(|cause| cause.to_string())?;
+        self.refresh_project_templates();
+        Ok(path.display().to_string())
+    }
+    fn refresh_project_templates(&mut self) {
+        let root = self
+            .files
+            .active_project()
+            .and_then(|project| project.bound.lookup.templates_root());
+        self.project_template_catalog =
+            document_creation::ProjectTemplateCatalog::load(root, |package| {
+                document_creation::project_material(&self.files, package)
+            });
     }
     /// Report each document's file and whether closing it would lose work.
     /// Example: `owner.gui_document_storage()?` for one GUI snapshot.

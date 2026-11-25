@@ -1,0 +1,9 @@
+GUI Projects and template chooser
+test result: ok. 38 passed; 0 failed; 0 ignored; 0 measured; 795 filtered out; finished in 3.05s
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 826 filtered out; finished in 0.00s
+
+Native Apply on wayland
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1710 filtered out; finished in 6.00s
+
+Native Apply on x11
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1710 filtered out; finished in 6.15s

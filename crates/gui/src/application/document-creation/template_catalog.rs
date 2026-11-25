@@ -68,6 +68,29 @@ impl TemplateChoice {
 }
 
 impl TemplateChooser {
+    pub(super) fn sync_active_project(&mut self, state: &GuiCommandState) {
+        let current = state
+            .projects
+            .iter()
+            .find(|project| project.active)
+            .map(|project| project.location.as_str());
+        if self.project_context_seen && self.active_project_location.as_deref() != current {
+            self.selected = None;
+            self.remembered_project_template = None;
+            self.drawing_layout = None;
+            self.create_requested = false;
+            self.folder = TemplateFolder::default();
+            self.folders_behind.clear();
+            self.folders_ahead.clear();
+            self.clear_gallery_navigation();
+            self.reveal_project_folder(state);
+        }
+        self.project_context_seen = true;
+        if self.active_project_location.as_deref() != current {
+            self.active_project_location = current.map(str::to_owned);
+        }
+    }
+
     pub(crate) fn remember_project_template(&mut self, path: Option<std::path::PathBuf>) {
         self.remembered_project_template = path;
     }
@@ -94,16 +117,24 @@ impl TemplateChooser {
         }
     }
 
-    pub(super) fn reveal_project_root(&mut self, state: &GuiCommandState) {
+    pub(super) fn reveal_project_folder(&mut self, state: &GuiCommandState) {
         let has_entries = |folder| {
             state
                 .project_templates
                 .iter()
                 .any(|entry| entry.folder == folder)
         };
-        if self.selected.is_none() && !has_entries(self.folder) && has_entries(TemplateFolder::Root)
+        if self.selected.is_none()
+            && !has_entries(self.folder)
+            && let Some(folder) = [
+                TemplateFolder::Root,
+                TemplateFolder::Units(GuiTemplateUnits::Metric),
+                TemplateFolder::Units(GuiTemplateUnits::Inch),
+            ]
+            .into_iter()
+            .find(|folder| has_entries(*folder))
         {
-            self.folder = TemplateFolder::Root;
+            self.folder = folder;
         }
     }
 
