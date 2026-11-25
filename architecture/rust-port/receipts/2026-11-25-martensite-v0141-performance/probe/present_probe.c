@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: GPL-2.0-only
 #define _POSIX_C_SOURCE 200809L
 #include <vulkan/vk_layer.h>
 #include <stdio.h>
@@ -14,6 +13,11 @@ static PFN_vkCreateSwapchainKHR next_swapchain;
 static VkInstance instance;
 static VkPhysicalDevice physical;
 static FILE *trace;
+static FILE *phases;
+static PFN_vkAcquireNextImageKHR next_acquire;
+static PFN_vkWaitForFences next_wait_fences;
+static PFN_vkQueueSubmit next_submit;
+static PFN_vkQueueSubmit2 next_submit2;
 
 static VkLayerInstanceCreateInfo *instance_link(const void *node) {
     for (const VkBaseInStructure *item = node; item; item = item->pNext) {
@@ -53,6 +57,12 @@ static VKAPI_ATTR VkResult VKAPI_CALL create_instance(
         setvbuf(trace, NULL, _IOLBF, 0);
         fputs("entry_ns,return_ns,result,swapchains\n", trace);
     }
+    const char *phase_path = getenv("OBK_PHASE_TRACE");
+    if (phase_path) phases = fopen(phase_path, "w");
+    if (phases) {
+        setvbuf(phases, NULL, _IOLBF, 0);
+        fputs("function,entry_ns,return_ns,result\n", phases);
+    }
     return result;
 }
 
@@ -69,6 +79,10 @@ static VKAPI_ATTR VkResult VKAPI_CALL create_device(
     VkResult result = create(gpu, info, allocator, out);
     if (result == VK_SUCCESS) {
         physical = gpu;
+        next_acquire = (PFN_vkAcquireNextImageKHR)next_device_proc(*out, "vkAcquireNextImageKHR");
+        next_wait_fences = (PFN_vkWaitForFences)next_device_proc(*out, "vkWaitForFences");
+        next_submit = (PFN_vkQueueSubmit)next_device_proc(*out, "vkQueueSubmit");
+        next_submit2 = (PFN_vkQueueSubmit2)next_device_proc(*out, "vkQueueSubmit2");
         next_present = (PFN_vkQueuePresentKHR)next_device_proc(*out, "vkQueuePresentKHR");
         next_swapchain = (PFN_vkCreateSwapchainKHR)next_device_proc(*out, "vkCreateSwapchainKHR");
     }
@@ -132,9 +146,45 @@ static VKAPI_ATTR VkResult VKAPI_CALL present(VkQueue queue, const VkPresentInfo
     return result;
 }
 
+static VKAPI_ATTR VkResult VKAPI_CALL acquire(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout, VkSemaphore semaphore, VkFence fence, uint32_t *index) {
+    long long entered = nanoseconds();
+    VkResult result = next_acquire(device, swapchain, timeout, semaphore, fence, index);
+    long long returned = nanoseconds();
+    if (phases) fprintf(phases, "vkAcquireNextImageKHR,%lld,%lld,%d\n", entered, returned, result);
+    return result;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL wait_fences(VkDevice device, uint32_t count, const VkFence *fences, VkBool32 all, uint64_t timeout) {
+    long long entered = nanoseconds();
+    VkResult result = next_wait_fences(device, count, fences, all, timeout);
+    long long returned = nanoseconds();
+    if (phases) fprintf(phases, "vkWaitForFences,%lld,%lld,%d\n", entered, returned, result);
+    return result;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL submit(VkQueue queue, uint32_t count, const VkSubmitInfo *info, VkFence fence) {
+    long long entered = nanoseconds();
+    VkResult result = next_submit(queue, count, info, fence);
+    long long returned = nanoseconds();
+    if (phases) fprintf(phases, "vkQueueSubmit,%lld,%lld,%d\n", entered, returned, result);
+    return result;
+}
+
+static VKAPI_ATTR VkResult VKAPI_CALL submit2(VkQueue queue, uint32_t count, const VkSubmitInfo2 *info, VkFence fence) {
+    long long entered = nanoseconds();
+    VkResult result = next_submit2(queue, count, info, fence);
+    long long returned = nanoseconds();
+    if (phases) fprintf(phases, "vkQueueSubmit2,%lld,%lld,%d\n", entered, returned, result);
+    return result;
+}
+
 static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_device(VkDevice device, const char *name) {
     if (!strcmp(name, "vkGetDeviceProcAddr")) return (PFN_vkVoidFunction)get_device;
     if (!strcmp(name, "vkQueuePresentKHR")) return (PFN_vkVoidFunction)present;
+    if (phases && !strcmp(name, "vkAcquireNextImageKHR") && next_acquire) return (PFN_vkVoidFunction)acquire;
+    if (phases && !strcmp(name, "vkWaitForFences") && next_wait_fences) return (PFN_vkVoidFunction)wait_fences;
+    if (phases && !strcmp(name, "vkQueueSubmit") && next_submit) return (PFN_vkVoidFunction)submit;
+    if (phases && !strcmp(name, "vkQueueSubmit2") && next_submit2) return (PFN_vkVoidFunction)submit2;
     if (!strcmp(name, "vkCreateSwapchainKHR")) return (PFN_vkVoidFunction)create_swapchain;
     return next_device_proc ? next_device_proc(device, name) : NULL;
 }
@@ -145,6 +195,10 @@ static VKAPI_ATTR PFN_vkVoidFunction VKAPI_CALL get_instance(VkInstance handle, 
     if (!strcmp(name, "vkCreateInstance")) return (PFN_vkVoidFunction)create_instance;
     if (!strcmp(name, "vkCreateDevice")) return (PFN_vkVoidFunction)create_device;
     if (!strcmp(name, "vkQueuePresentKHR")) return (PFN_vkVoidFunction)present;
+    if (phases && !strcmp(name, "vkAcquireNextImageKHR") && next_acquire) return (PFN_vkVoidFunction)acquire;
+    if (phases && !strcmp(name, "vkWaitForFences") && next_wait_fences) return (PFN_vkVoidFunction)wait_fences;
+    if (phases && !strcmp(name, "vkQueueSubmit") && next_submit) return (PFN_vkVoidFunction)submit;
+    if (phases && !strcmp(name, "vkQueueSubmit2") && next_submit2) return (PFN_vkVoidFunction)submit2;
     if (!strcmp(name, "vkCreateSwapchainKHR")) return (PFN_vkVoidFunction)create_swapchain;
     return next_instance_proc ? next_instance_proc(handle, name) : NULL;
 }

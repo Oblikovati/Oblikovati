@@ -1,0 +1,25 @@
+{
+  "mode": "select",
+  "app_pid": 2165588,
+  "fixture": "docking-visible-solid-current.opd",
+  "dpi": 144,
+  "validation_checks_disabled": "",
+  "window_size": [
+    1440,
+    900
+  ],
+  "window_origin": [
+    0,
+    0
+  ],
+  "first_row": 3,
+  "intervals": [
+    [
+      152555621934411,
+      152561617863431
+    ]
+  ],
+  "last_row": 39,
+  "perf_exit": 0,
+  "total_rows": 65
+}

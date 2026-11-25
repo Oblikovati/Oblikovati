@@ -14,8 +14,11 @@ parser.add_argument("binary", type=Path)
 parser.add_argument("model", type=Path)
 parser.add_argument("folder", type=Path)
 parser.add_argument("mode", choices=["probe", "continuous", "orbit", "select", "cube", "menu"])
-parser.add_argument("--hover-center", nargs=2, default=(808, 386), type=int)
+parser.add_argument("--hover-center", nargs=2, default=(808, 421), type=int)
 parser.add_argument("--cpu", action="store_true")
+parser.add_argument("--dpi", choices=[96, 144], type=int, default=96)
+parser.add_argument("--frames", type=int, default=1600)
+parser.add_argument("--phases", action="store_true")
 args = parser.parse_args()
 args.folder.mkdir(parents=True, exist_ok=False)
 folder = args.folder.resolve()
@@ -35,7 +38,10 @@ def wait_window(app):
         for line in tree.splitlines():
             candidate = re.search(r'(0x[0-9a-f]+) +"[^"]*Oblikovati[^"]*"', line)
             if candidate:
-                return candidate.group(1)
+                xid = candidate.group(1)
+                state = subprocess.check_output(["xwininfo", "-id", xid], text=True)
+                if "Map State: IsViewable" in state:
+                    return xid
         time.sleep(0.05)
     raise RuntimeError("Oblikovati window never mapped")
 
@@ -88,12 +94,13 @@ def timed(action, seconds=6, hz=240):
     return [start_ns, time.monotonic_ns()]
 
 def orbit():
-    motion((800, 430))
+    x, y = (850, 550)
+    motion((x, y))
     key("Shift_L", True)
     fake_button(display, 2, 1, 0)
     flush(display, 0)
-    timeline = timed(lambda t, _: motion((800 + int(126 * math.sin(t * 6.7)),
-                                          430 + int(76 * math.sin(t * 8.1)))))
+    timeline = timed(lambda t, _: motion((x + int(126 * math.sin(t * 6.7)),
+                                          y + int(76 * math.sin(t * 8.1)))))
     fake_button(display, 2, 0, 0)
     key("Shift_L", False)
     flush(display, 0)
@@ -110,10 +117,19 @@ def selection():
     screenshot(xid, "selection-start")
     def sample(t, index):
         x, y = args.hover_center
-        motion((x + int(117 * math.sin(t * 8.0)), y + int(66 * math.sin(t * 11.0))))
+        motion((x + int(125 * math.sin(t * 8.0)), y + int(27 * math.sin(t * 11.0))))
         if index % 20 == 0:
             click()
-    return timed(sample)
+    interval = timed(sample)
+    # Verify the same path can commit a selection in the fixture.
+    key("Escape", True)
+    key("Escape", False)
+    press_at((844, 420))
+    motion((970, 500))
+    flush(display, 0)
+    time.sleep(0.35)
+    screenshot(xid, "selected-face")
+    return interval
 
 def press_at(position, button=1):
     motion(position)
@@ -126,18 +142,26 @@ def press_at(position, button=1):
     flush(display, 0)
     time.sleep(0.20)
 
+def cube_menu_positions():
+    if args.dpi == 144:
+        return (1287, 541), (1080, 842)
+    return (width - 102, 339), (1203, 540)
+
 def enable_animation():
-    press_at((width - 102, 339), 3)
-    press_at((1203, 540))
-    press_at((414, 361))
+    face, options = cube_menu_positions()
+    animate, okay = ((452, 533), (522, 844)) if args.dpi == 144 else ((414, 361), (350, 564))
+    press_at(face, 3)
+    press_at(options)
+    press_at(animate)
     screenshot(xid, "animation-enabled")
-    press_at((461, 574))
+    press_at(okay)
 
 def cube():
     enable_animation()
     bursts = []
     for index in range(11):
-        target = [width - 102, 267 if index % 2 == 0 else 411]
+        x, up, down = (1287, 432, 650) if args.dpi == 144 else (width - 102, 267, 411)
+        target = [x, up if index % 2 == 0 else down]
         motion(target)
         flush(display, 0)
         time.sleep(0.08)
@@ -156,15 +180,21 @@ env["XDG_CONFIG_HOME"] = str(folder / "config")
 env["XDG_DATA_HOME"] = str(folder / "data")
 env["VK_INSTANCE_LAYERS"] = "VK_LAYER_OBK_present_probe"
 env["VK_ADD_LAYER_PATH"] = str(Path(__file__).parent)
+if args.phases:
+    env["OBK_PHASE_TRACE"] = str(folder / "phases.csv")
 env["OBK_PRESENT_TRACE"] = str(csv_path)
 env["OBK_PRESENT_IMMEDIATE"] = "1"
 env.pop("MESA_VK_WSI_PRESENT_MODE", None)
 command = [str(args.binary.resolve()), str(args.model.resolve())]
 if args.mode == "continuous":
-    command += ["--frames", "1600"]
+    command += ["--frames", str(args.frames)]
 with (folder / "app.log").open("w") as log:
+    load = Path("/proc/loadavg").read_text().strip()
+    cpu_pressure = Path("/proc/pressure/cpu").read_text().strip()
+    io_pressure = Path("/proc/pressure/io").read_text().strip()
     app = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT)
-    metadata = dict(mode=args.mode, app_pid=app.pid, fixture=args.model.name, validation_layers_disabled=os.getenv("VK_LOADER_LAYERS_DISABLE", ""))
+    metadata = dict(mode=args.mode, app_pid=app.pid, fixture=args.model.name, dpi=args.dpi, validation_checks_disabled=os.getenv("VK_LAYER_DISABLES", ""),
+                    load=load, cpu_pressure=cpu_pressure, io_pressure=io_pressure)
     try:
         if args.mode == "continuous":
             if app.wait(timeout=90) != 0:
@@ -191,21 +221,9 @@ with (folder / "app.log").open("w") as log:
             elif args.mode == "select":
                 metadata["intervals"] = [selection()]
             elif args.mode == "menu":
-                motion((width - 102, 339))
-                flush(display, 0)
-                time.sleep(0.15)
-                fake_button(display, 3, 1, 0)
-                flush(display, 0)
-                time.sleep(0.05)
-                fake_button(display, 3, 0, 0)
-                flush(display, 0)
-                time.sleep(0.25)
-                motion((1203, 540))
-                flush(display, 0)
-                time.sleep(0.1)
-                click()
-                flush(display, 0)
-                time.sleep(0.45)
+                face, options = cube_menu_positions()
+                press_at(face, 3)
+                press_at(options)
             elif args.mode == "cube":
                 metadata["intervals"] = cube()
             time.sleep(0.2)

@@ -1,0 +1,11 @@
+{
+  "mode": "continuous",
+  "app_pid": 2189235,
+  "fixture": "docking-visible-solid-current.opd",
+  "dpi": 144,
+  "validation_checks_disabled": "",
+  "load": "31.54 20.66 20.94 27/5298 2189234",
+  "cpu_pressure": "some avg10=11.96 avg60=7.56 avg300=3.37 total=2442076434\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+  "io_pressure": "some avg10=26.91 avg60=20.21 avg300=10.63 total=11272106672\nfull avg10=11.20 avg60=11.02 avg300=6.80 total=9380380546",
+  "total_rows": 800
+}

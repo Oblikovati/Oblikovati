@@ -1,0 +1,24 @@
+{
+  "mode": "orbit",
+  "app_pid": 2155047,
+  "fixture": "docking-visible-solid-current.opd",
+  "dpi": 144,
+  "validation_checks_disabled": "VK_VALIDATION_FEATURE_DISABLE_CORE_CHECKS_EXT,VK_VALIDATION_FEATURE_DISABLE_THREAD_SAFETY_EXT,VK_VALIDATION_FEATURE_DISABLE_API_PARAMETERS_EXT,VK_VALIDATION_FEATURE_DISABLE_OBJECT_LIFETIMES_EXT",
+  "window_size": [
+    1440,
+    900
+  ],
+  "window_origin": [
+    0,
+    0
+  ],
+  "first_row": 20,
+  "intervals": [
+    [
+      152509257990083,
+      152515253919233
+    ]
+  ],
+  "last_row": 74,
+  "total_rows": 87
+}
