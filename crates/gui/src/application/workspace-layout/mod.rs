@@ -157,8 +157,7 @@ impl WorkspaceLayout {
         self.pending_layout |= self.view.needs_frame();
     }
     pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState, home_active: bool) {
-        self.panels
-            .sync_dock_states(home_active && state.document.is_some());
+        self.panels.sync_dock_states(home_active);
         self.view.sync_before_docking(state);
     }
     pub(crate) fn draw_status(

@@ -73,9 +73,8 @@ impl GuiFrameEngine {
         home_active: bool,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        let home_in_front = home_active && state.document.is_some();
-        material.panel(ui, state, home_in_front, actions);
-        appearance.panel(ui, state, home_in_front, actions);
+        material.panel(ui, state, home_active, actions);
+        appearance.panel(ui, state, home_active, actions);
     }
 
     pub(super) fn dock_editor_consumed_escape(&self) -> bool {
@@ -98,13 +97,12 @@ impl GuiFrameEngine {
         self.ribbon.customization.sync_before_docking(state);
         self.create_block.sync_before_docking(state, actions);
         self.sketch_text.synchronize(state);
-        let home_in_front = self.home.active && state.document.is_some();
         self.workspace.sync_before_docking(state, self.home.active);
         self.home.sync_before_docking();
         self.material_browser
-            .sync_before_docking(state, home_in_front);
+            .sync_before_docking(state, self.home.active);
         self.appearance_browser
-            .sync_before_docking(state, home_in_front);
+            .sync_before_docking(state, self.home.active);
         self.document_tabs
             .menu
             .properties

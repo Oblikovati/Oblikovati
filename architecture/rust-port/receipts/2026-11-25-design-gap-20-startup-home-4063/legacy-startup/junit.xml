@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T15:44:20.320023842Z" time="2.592461577"><testcase name="Scenario: Show Home when the software starts without an open document: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature:465:3" time="2.592461577"><failure type="Step Panicked" message="Step panicked. Captured output: expected a window &quot;Model&quot;"/><system-out><![CDATA[  Scenario: Show Home when the software starts without an open document
+   ✔  Given the MCAD Software is launched without opening a document
+   ✔  Then the Get Started tab is selected
+   ✔  And the Home workspace offers a New Part action
+   ✘  And the Model browser reports that no document is open
+      Step failed:
+      Defined: mnt/vininas-projects/MCAD-Scenarios/features/application/home-recent-documents/home-recent-documents.feature:469:5
+      Matched: crates/head/src/../tests/application/home-recent-documents/startup_observation.rs:24:1
+      Step panicked. Captured output: expected a window "Model"
+      ApplicationWorld {
+          text: "NewPart\nNew\nOpen\nRecent\nListView\nGridView\nFilter\nColumnSettings\nSearchrecent\n×\nSearch\nNorecentdocuments\nReady\n...\nOblikovati\nFile\nGetStarted\nTools\nNewPart\nLAUNCH\nHome\nDocuments",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>
