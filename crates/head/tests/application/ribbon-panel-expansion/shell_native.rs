@@ -3,6 +3,44 @@
 use super::{ApplicationWorld, diagnostics};
 
 #[test]
+fn x11_shell_properties_fit_and_cancel_at_minimum_size() {
+    use super::super::x11_input;
+    let mut world = ApplicationWorld::new();
+    super::solid_part(&mut world);
+    let features = world.state().browser.unwrap().features.len();
+    click_label(&mut world, "Shell");
+    x11_input::resize_application_window([640, 480]);
+    for _ in 0..3 {
+        world.pump(Vec::new());
+    }
+    assert_eq!(world.extent(), [640, 480]);
+    world.save_capture("shell-at-minimum-size");
+    assert_shell_properties_fit(&mut world);
+    let cancel = world.run_in_window("Shell", "Cancel").center();
+    x11_input::click(diagnostics::pointer_pixels(cancel));
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("Shell").is_none());
+    assert_eq!(world.state().browser.unwrap().features.len(), features);
+    world.close();
+}
+
+fn assert_shell_properties_fit(world: &mut ApplicationWorld) {
+    let panel = diagnostics::window_pixel_bounds("Shell").expect("visible Shell properties");
+    let viewport = world.viewport_bounds().map(|edge| edge as f32);
+    assert!(panel[0] >= viewport[0] && panel[1] >= viewport[1]);
+    assert!(panel[2] <= viewport[2] && panel[3] <= viewport[3]);
+    let thickness = world.run_in_window("Shell", "Thickness");
+    let value = world.run_in_window("Shell", "1mm");
+    assert!(
+        thickness.maximum[0] < value.minimum[0],
+        "Thickness label must lead the field"
+    );
+    let cancel = world.run_in_window("Shell", "Cancel");
+    assert!(cancel.maximum[1] < panel[3] && panel[3] - cancel.maximum[1] < 40.);
+    assert!(!world.run_is_enabled("OK"));
+}
+
+#[test]
 fn x11_shell_opens_on_a_selected_face_reports_refusal_and_cancels() {
     let mut world = ApplicationWorld::new();
     super::solid_part(&mut world);

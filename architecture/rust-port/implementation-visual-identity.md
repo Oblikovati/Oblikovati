@@ -27,6 +27,8 @@ values come from the same handoff.
   fits the rows and action footer. Offset Plane uses the same property
   layout and grows to fit wrapped validation messages. Move Bodies aligns
   the body selector and all three offsets in the shared value column.
+  Shell fits its face count, outlined Thickness field, and footer to the
+  available viewport.
 - Home Recent leaves 12 logical pixels of scroll-end padding above the
   document tab strip in both List and Grid views.
 - The application bar displays the brand mark. Mapped ribbon commands and

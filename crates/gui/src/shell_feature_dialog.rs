@@ -82,20 +82,31 @@ impl ShellFeatureDialog {
         if self.document.is_none() {
             return;
         }
-        crate::widget_abi::fit_viewport_properties(ui, "Shell", area, [360., 200.]);
+        let height =
+            3. * ui.frame_height_with_spacing() + 2. * ui.clone_style().window_padding[1] + 28.;
+        crate::widget_abi::fit_viewport_properties(ui, "Shell", area, [280., height]);
+        let _border = crate::theme::property_window_border(ui);
         let mut open = true;
         Self::dockable_window(ui, "Shell", &mut open).build(|| {
+            crate::theme::floating_property_shadow(ui);
             ui.text(format!(
                 "{} opening faces selected",
                 state.selected_face_appearances.len()
             ));
-            ui.input_text("Thickness", &mut self.thickness).build();
+            self.thickness_field(ui);
             self.refresh_preview(state, actions);
+            ui.separator();
             self.controls(ui, state, actions);
         });
         if !open {
             self.close(actions);
         }
+    }
+    fn thickness_field(&mut self, ui: &Ui) {
+        crate::theme::property_label(ui, "Thickness");
+        let _numeric = crate::ui_scale::numeric_font(ui);
+        let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
+        ui.input_text("##Thickness", &mut self.thickness).build();
     }
     fn refresh_preview(&mut self, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         let request = self.request(state).filter(|request| {
@@ -112,16 +123,14 @@ impl ShellFeatureDialog {
         let request = self.request(state).filter(|request| {
             GuiShellAction::CreateShellFeature(request.clone()).dispatchable(state)
         });
-        let disabled = ui.begin_disabled(request.is_none());
-        if ui.button("OK")
+        if crate::theme::property_accept(ui, request.is_some())
             && let Some(request) = request
         {
             self.submitted = Some(request.clone());
             actions.push(GuiShellAction::CreateShellFeature(request));
         }
-        drop(disabled);
         ui.same_line();
-        if ui.button("Cancel")
+        if crate::widget_abi::button(ui, "Cancel", [72., 28.])
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape))
         {
             self.close(actions);
