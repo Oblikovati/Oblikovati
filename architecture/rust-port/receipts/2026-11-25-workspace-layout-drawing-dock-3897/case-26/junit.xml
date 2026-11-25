@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:00:58.514762258Z" time="16.767084661"><testcase name="Scenario: Collapse and expands the drawing browser tree: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:286:3" time="16.767084661"><system-out><![CDATA[  Scenario: Collapse and expands the drawing browser tree
+   ✔  Given `fixtures/cad/blank-drawing.odd` is open in the MCAD Software with drawing resources and a sheet
+   ✔  And the browser has expanded branches containing nested entries
+   ✔  When the user opens the drawing browser menu
+   ✔  And the user chooses Collapse All
+   ✔  Then the drawing resources and sheet remain visible as collapsed branches
+   ✔  And their nested entries are hidden
+   ✔  And the drawing sheet remains visible
+   ✔  When the user opens the drawing browser menu
+   ✔  And the user chooses Expand All
+   ✔  Then nested entries under the drawing resources and sheet are displayed
+   ✔  And the drawing sheet remains visible
+]]></system-out></testcase></testsuite></testsuites>

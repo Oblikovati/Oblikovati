@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:00:46.08964497Z" time="28.206636235"><testcase name="Scenario: Search while the drawing browser floats: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:333:3" time="28.206636235"><system-out><![CDATA[  Scenario: Search while the drawing browser floats
+   ✔  Given `fixtures/cad/blank-drawing.odd` is open in the MCAD Software with browser entries
+   ✔  And the drawing browser floats over the drawing sheet
+   ✔  When the user opens the floating browser search field
+   ✔  And the user enters "zzq-nomatch"
+   ✔  Then the floating browser displays a no-results message instead of its tree
+   ✔  And the drawing sheet remains visible behind the browser
+   ✔  When the user clears the search text
+   ✔  Then the unfiltered drawing browser tree is displayed in the floating panel
+   ✔  When the user closes the empty search field
+   ✔  Then the search field is hidden
+   ✔  And the browser remains floating over the sheet
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:01:16.096097344Z" time="28.556242676"><testcase name="Scenario: Filter drawing browser entries while retaining their parent branches: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:299:3" time="28.556242676"><system-out><![CDATA[  Scenario: Filter drawing browser entries while retaining their parent branches
+   ✔  Given `fixtures/cad/blank-drawing.odd` is open in the MCAD Software with border entries in its resources and sheet
+   ✔  And the drawing browser branches are expanded
+   ✔  When the user opens the drawing browser search field
+   ✔  And the user enters "Border"
+   ✔  Then matching border entries are displayed beneath their respective parent branches
+   ✔  And matching text is highlighted
+   ✔  And unrelated browser entries are hidden
+   ✔  And the drawing sheet remains visible
+   ✔  When the user clears the search text
+   ✔  Then the unfiltered drawing browser tree is displayed
+   ✔  When the user closes the empty search field
+   ✔  Then the search field is hidden
+]]></system-out></testcase></testsuite></testsuites>

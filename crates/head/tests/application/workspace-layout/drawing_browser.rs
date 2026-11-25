@@ -195,20 +195,7 @@ fn drawing_browser_floats(world: &mut ApplicationWorld) {
 #[when("I drag the drawing browser header to the right edge of the workspace")]
 #[when("the user drags the drawing browser header to the right edge of the workspace")]
 fn drawing_header_right(world: &mut ApplicationWorld) {
-    let extent = world.extent();
-    let area = world
-        .app()
-        .window
-        .native
-        .gui
-        .as_ref()
-        .unwrap()
-        .document_area(extent)
-        .unwrap();
-    drag_header(
-        world,
-        [area[2] as i32 - 15, ((area[1] + area[3]) / 2) as i32],
-    );
+    drag_right(world);
 }
 #[then("the drawing browser docks on the right")]
 fn drawing_docks_right(world: &mut ApplicationWorld) {

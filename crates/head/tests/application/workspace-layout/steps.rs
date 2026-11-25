@@ -267,7 +267,7 @@ fn drag_left(world: &mut ApplicationWorld) {
 }
 #[when("the user drags its header to the right edge of the workspace")]
 #[when("I drag its header to the right edge of the workspace")]
-fn drag_right(world: &mut ApplicationWorld) {
+pub(super) fn drag_right(world: &mut ApplicationWorld) {
     let extent = world.extent();
     let area = world
         .app()

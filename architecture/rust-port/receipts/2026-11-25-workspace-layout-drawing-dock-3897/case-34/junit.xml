@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:02:21.434834142Z" time="28.252835427"><testcase name="Scenario: Collapse and reopens the part origin branch during sketch editing: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:385:3" time="28.252835427"><system-out><![CDATA[  Scenario: Collapse and reopens the part origin branch during sketch editing
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And Sketch1 is being edited
+   ✔  And the model browser shows an expanded Origin branch and other document entries
+   ✔  When the user selects the expansion control beside Origin
+   ✔  Then the Origin branch collapses and its child entries are hidden
+   ✔  And the other document entries remain visible in the browser
+   ✔  And the sketch remains displayed in the viewport
+   ✔  When the user selects the expansion control beside Origin again
+   ✔  Then the Origin branch expands and its child entries are displayed
+   ✔  And the other document entries remain visible
+   ✔  And the sketch remains displayed in the viewport
+]]></system-out></testcase></testsuite></testsuites>
