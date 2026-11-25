@@ -152,22 +152,30 @@ fn other_drawing_active(world: &mut ApplicationWorld) {
 
 #[given("an assembly document is active in the MCAD Software")]
 fn active_assembly(world: &mut ApplicationWorld) {
+    if published_drawings::staged_folder(world).is_some() {
+        world.open_fixture(&published_entry::fixture("single-occurrence.oad"));
+        world.previous_document = Some(world.active_id());
+        return;
+    }
     world.previous_document = Some(world.add_template(GuiTemplateKind::Assembly));
 }
 #[given("the Open dialog displays two saved drawings in a folder")]
 fn two_drawing_rows(world: &mut ApplicationWorld) {
-    two_closed_drawings(world);
-    let folder = models_folder(world);
+    let folder = published_drawings::staged_folder(world).unwrap_or_else(|| {
+        two_closed_drawings(world);
+        models_folder(world)
+    });
     open_dialog(world);
     look_in(world, &folder);
 }
 #[given("the first drawing is selected")]
 fn first_drawing_selected(world: &mut ApplicationWorld) {
-    select_row(world, DRAWING_FILE);
+    select_row(world, published_drawings::first_drawing_name(world));
 }
 #[given("the second drawing has a sheet, border and saved views and is not already open")]
 fn second_drawing_has_saved_views(world: &mut ApplicationWorld) {
-    let path = models_folder(world).join(SECOND_DRAWING_FILE);
+    let folder = published_drawings::staged_folder(world).unwrap_or_else(|| models_folder(world));
+    let path = folder.join(published_drawings::second_drawing_name(world));
     let package = DocumentPackage::decode(&std::fs::read(path).unwrap()).unwrap();
     let drawing = package.restore_drawing().unwrap().unwrap();
     assert!(drawing.sheets()[0].border);
@@ -182,10 +190,25 @@ fn second_drawing_has_saved_views(world: &mut ApplicationWorld) {
     );
     assert!(world.state().drawing_documents.is_empty());
 }
+#[given(
+    "`fixtures/cad/single-occurrence.oad` is active and `OpenDrawingA.odd` plus `OpenDrawingB.odd` are closed"
+)]
+fn published_assembly_active(world: &mut ApplicationWorld) {
+    let state = world.state();
+    let assembly = published_entry::fixture("single-occurrence.oad");
+    assert_eq!(state.document, world.previous_document);
+    assert_eq!(
+        state.document_storage[&state.document.unwrap()]
+            .path
+            .as_deref(),
+        assembly.to_str()
+    );
+    assert!(state.drawing_documents.is_empty());
+}
 #[when("the user double-clicks the second drawing's row")]
 fn double_click_second_drawing(world: &mut ApplicationWorld) {
     let position = world
-        .run(SECOND_DRAWING_FILE)
+        .run(published_drawings::second_drawing_name(world))
         .center()
         .map(|value| value as i32);
     world.pump(super::super::pointer_click_events(position, 2));
@@ -200,7 +223,7 @@ fn second_drawing_active(world: &mut ApplicationWorld) {
             .path
             .as_deref()
             .unwrap()
-            .ends_with(SECOND_DRAWING_FILE)
+            .ends_with(published_drawings::second_drawing_name(world))
     );
     let title = world.document_name(id);
     world.expect_tab(&title);

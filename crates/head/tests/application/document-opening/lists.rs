@@ -3,6 +3,10 @@
 use super::*;
 
 const CHILD_FOLDER: &str = "brackets";
+const NATIVE_CHILD: &str = "NativeChild";
+const NAVIGATION_PART: &str = "Navigation-Part.opd";
+const NAVIGATION_PATH: &str =
+    "document-opening/folder-navigation/NativeParent/NativeChild/Navigation-Part.opd";
 /// Larger than the fixture's documents, for a row that sorts first by size.
 const LARGE_FILE_BYTES: usize = 500_000;
 const LARGE_FILE: &str = "archive.odd";
@@ -154,14 +158,51 @@ fn child_folder(world: &mut ApplicationWorld) -> PathBuf {
     folder
 }
 fn folder_row(world: &ApplicationWorld) -> String {
+    let child = if navigation_variant(world) {
+        NATIVE_CHILD
+    } else {
+        CHILD_FOLDER
+    };
     world
         .frame
         .runs
         .iter()
-        .find(|run| run.text == format!("{CHILD_FOLDER}/"))
+        .find(|run| run.text == format!("{child}/"))
         .expect("expected the child folder's row")
         .text
         .clone()
+}
+
+fn navigation_variant(world: &ApplicationWorld) -> bool {
+    world
+        .saved_path
+        .as_ref()
+        .is_some_and(|path| path.ends_with(NAVIGATION_PART))
+}
+
+fn navigation_part_name(world: &ApplicationWorld) -> &'static str {
+    if navigation_variant(world) {
+        NAVIGATION_PART
+    } else {
+        PART_FILE
+    }
+}
+
+#[given(
+    "the dialog starts in `fixtures/cad/document-opening/folder-navigation/NativeParent/NativeChild` with `Navigation-Part.opd` selected"
+)]
+fn native_navigation_child(world: &mut ApplicationWorld) {
+    published_preview::select_preview_path(world, published_entry::fixture(NAVIGATION_PATH));
+}
+
+#[given(
+    "`fixtures/cad/document-opening/folder-navigation/NativeParent` contains a `NativeChild` folder with `Navigation-Part.opd`"
+)]
+fn native_navigation_parent(world: &mut ApplicationWorld) {
+    native_navigation_child(world);
+    choose_up(world);
+    parent_lists_child(world);
+    name_retained(world);
 }
 #[given("a saved part with a preview is selected in a child folder")]
 fn part_in_child(world: &mut ApplicationWorld) {
@@ -194,7 +235,8 @@ fn child_highlighted(world: &mut ApplicationWorld) {
 #[then("the file name field retains the part name")]
 fn name_retained(world: &mut ApplicationWorld) {
     let shown = file_name_shown(world);
-    assert!(shown.contains(PART_FILE), "file name {shown:?}");
+    let name = navigation_part_name(world);
+    assert!(shown.contains(name), "file name {shown:?}: expected {name}");
 }
 #[then("the preview area shows a placeholder for the selected folder")]
 fn folder_placeholder(world: &mut ApplicationWorld) {
@@ -208,11 +250,11 @@ fn choose_forward(world: &mut ApplicationWorld) {
 }
 #[then("the child folder contents are displayed again")]
 fn child_shown(world: &mut ApplicationWorld) {
-    world.expect_text(PART_FILE);
+    world.expect_text(navigation_part_name(world));
 }
 #[then("the file name field and preview display the previously selected part")]
 fn previous_part(world: &mut ApplicationWorld) {
-    expect_name_and_preview(world, PART_FILE);
+    expect_name_and_preview(world, navigation_part_name(world));
 }
 #[given("the file name field retains the name of a part in a child folder")]
 fn retained_name(world: &mut ApplicationWorld) {
@@ -234,7 +276,7 @@ fn select_child(world: &mut ApplicationWorld) {
 #[then("the dialog remains open and displays the child folder contents")]
 fn in_child(world: &mut ApplicationWorld) {
     world.expect_text("Look in");
-    world.expect_text(PART_FILE);
+    child_shown(world);
 }
 #[then("the file name field still contains the part name")]
 fn name_kept(world: &mut ApplicationWorld) {
