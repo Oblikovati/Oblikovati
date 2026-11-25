@@ -9,6 +9,7 @@ fn empty_ribbon(world: &mut ApplicationWorld) {
 }
 
 #[when("the user selects the Marking Menu customization tab")]
+#[when("the user selects the \"Marking Menu\" tab")]
 fn select_marking_menu(world: &mut ApplicationWorld) {
     click_in_customize(world, "MarkingMenu");
 }
@@ -35,7 +36,7 @@ fn cancel_staged_dialog(world: &mut ApplicationWorld) {
 
 #[given("the customization dialog is open on the Marking Menu tab with no pending edits")]
 fn marking_menu_open(world: &mut ApplicationWorld) {
-    world.start_empty_sketch();
+    sketch_is_active(world);
     world.record_initial_sketch();
     open_tools_customization(world);
     click_in_customize(world, "MarkingMenu");

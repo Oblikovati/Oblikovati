@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:00:04.769894115Z" time="49.833176402"><testcase name="Scenario: Retain the selected customization tab after reopening: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:236:3" time="49.833176402"><system-out><![CDATA[  Scenario: Retain the selected customization tab after reopening
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open and active in the MCAD Software with Sketch1 being edited
+   ✔  And the customization dialog is open on the Marking Menu tab with no pending edits
+   ✔  And a part with an active sketch is open in the MCAD Software
+   ✔  And this is the same application session in which Marking Menu was previously selected
+   ✔  When the user selects the "Keyboard" tab
+   ✔  And the user closes the customization dialog
+   ✔  And the user opens Customize again from the Tools Options panel
+   ✔  Then the customization dialog opens on the "Keyboard" tab
+   ✔  And no keyboard or ribbon changes are pending
+   ✔  When the user closes the customization dialog
+   ✔  Then the active sketch remains unchanged
+]]></system-out></testcase></testsuite></testsuites>
