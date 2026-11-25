@@ -17,6 +17,8 @@ mod layout_bounds;
 mod lists;
 #[path = "native_input.rs"]
 mod native_input;
+#[path = "published_profile.rs"]
+mod published_profile;
 #[path = "startup_observation.rs"]
 mod startup_observation;
 
@@ -119,7 +121,9 @@ fn expect_filter_count(world: &ApplicationWorld, count: usize) {
 #[given("Home is active in the MCAD Software")]
 #[given("the Home workspace is active in the MCAD Software")]
 fn home_active(world: &mut ApplicationWorld) {
-    save_recent_files(world);
+    if !published_profile::uses_published_profile(world) {
+        save_recent_files(world);
+    }
     open_home(world);
 }
 #[given(regex = r#"^the recent list contains a part named "Part26" and other documents$"#)]
@@ -143,6 +147,11 @@ fn list_contains(world: &mut ApplicationWorld) {
 fn recent_list_filled(world: &mut ApplicationWorld) {
     // Keep the seed files in Recent without adding their tabs to the Part under edit.
     let part = world.active_id();
+    if published_profile::uses_published_profile(world) {
+        published_profile::expect_recent_files(world);
+        world.previous_document = Some(part);
+        return;
+    }
     for id in save_recent_files(world) {
         let request = oblikovati_api::wire::CloseDocumentArgs { id, force: false };
         assert!(world.app().owner.close_document_from_gui(&request).unwrap());

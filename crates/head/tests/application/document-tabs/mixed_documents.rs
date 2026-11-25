@@ -61,7 +61,9 @@ fn part_in_sketch(world: &mut ApplicationWorld) {
         None => world.active_id(),
     };
     world.activate_through_tab(part);
-    world.start_sketch();
+    if world.state().authoring != GuiAuthoringContext::Sketch {
+        world.start_sketch();
+    }
 }
 #[given("the drawing is active with its drawing resources branch collapsed")]
 fn drawing_active_collapsed(world: &mut ApplicationWorld) {
