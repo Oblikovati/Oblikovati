@@ -83,6 +83,7 @@ fn dismiss_selector(world: &mut ApplicationWorld) {
         "Short Menu",
         "Sheet Metal",
         "Constraint Glyphs",
+        "Projected Curves",
     ] {
         world.expect_no_text(choice);
     }

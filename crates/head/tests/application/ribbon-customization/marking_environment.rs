@@ -53,6 +53,39 @@ fn sketch_remains_selected(world: &mut ApplicationWorld) {
     assert!(world.row_accented_beside("2D Sketch", "Part"));
 }
 
+#[when("the user selects \"3D Sketch\" in the Environment selector")]
+fn choose_sketch_3d_environment(world: &mut ApplicationWorld) {
+    open_environment(world);
+    world.click_text("3D Sketch");
+    sketch_3d_remains_selected(world);
+}
+
+#[then("Environment remains \"3D Sketch\"")]
+fn sketch_3d_remains_selected(world: &mut ApplicationWorld) {
+    world.run_in_window("Customize", "3DSketch");
+}
+
+#[then(
+    "the menu-location layout shows \"Bend\", \"Three Point Arc\", \"Undo\", \"Helical Curve\", \"General Dimension\", \"Include Geometry\" and \"Finish 3D Sketch\""
+)]
+fn sketch_3d_locations(world: &mut ApplicationWorld) {
+    let mut previous_y = 0.;
+    for name in [
+        "Line",
+        "ThreePointArc",
+        "HelicalCurve",
+        "IncludeGeometry",
+        "Finish3DSketch",
+        "GeneralDimension",
+        "Undo",
+        "Bend",
+    ] {
+        let y = world.run_in_window("Customize", name).center()[1];
+        assert!(y > previous_y, "expected {name} in clockwise slot order");
+        previous_y = y;
+    }
+}
+
 #[when("the user opens the Sub-Environment selector")]
 fn open_sub_environment(world: &mut ApplicationWorld) {
     click_in_customize(world, "NoneSelected");
@@ -62,18 +95,44 @@ fn open_sub_environment(world: &mut ApplicationWorld) {
     "the available choices include \"Arc\", \"Circle\", \"Dimension\", \"Line\", \"Point\", \"Sketch Block\", \"Sketch Pattern\", \"Spline\" and \"Text\""
 )]
 fn sketch_sub_environment_choices(world: &mut ApplicationWorld) {
-    let list = world.run("Constraint Glyphs").list;
-    for name in [
-        "Arc",
-        "Circle",
-        "Dimension",
-        "Line",
-        "Point",
-        "SketchBlock",
-        "SketchPattern",
-        "Spline",
-        "Text",
-    ] {
+    sub_environment_choices(
+        world,
+        "Constraint Glyphs",
+        &[
+            "Arc",
+            "Circle",
+            "Dimension",
+            "Line",
+            "Point",
+            "SketchBlock",
+            "SketchPattern",
+            "Spline",
+            "Text",
+        ],
+    );
+}
+
+#[then(
+    "the available choices include \"3D Line, 3D Arc\", \"3D Point\", \"Equation Curve\", \"Helical Curve\", \"Projected Curves\" and \"Spline\""
+)]
+fn sketch_3d_sub_environment_choices(world: &mut ApplicationWorld) {
+    sub_environment_choices(
+        world,
+        "Projected Curves",
+        &[
+            "3DLine,3DArc",
+            "3DPoint",
+            "EquationCurve",
+            "HelicalCurve",
+            "ProjectedCurves",
+            "Spline",
+        ],
+    );
+}
+
+fn sub_environment_choices(world: &ApplicationWorld, unique_row: &str, choices: &[&str]) {
+    let list = world.run(unique_row).list;
+    for &name in choices {
         assert!(
             world
                 .frame

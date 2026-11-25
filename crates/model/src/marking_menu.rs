@@ -53,7 +53,7 @@ pub struct MarkingMenus {
 }
 impl Default for MarkingMenus {
     fn default() -> Self {
-        let menus = [base_menu(), sketch_menu()]
+        let menus = [base_menu(), sketch_menu(), sketch_3d_menu()]
             .into_iter()
             .map(|menu| (menu.environment.0, menu))
             .collect();
@@ -135,6 +135,22 @@ fn sketch_menu() -> MarkingMenuView {
             (types::QUADRANT_SOUTH, "Sketch.Rectangle"),
             (types::QUADRANT_WEST, "Sketch.Arc"),
             (types::QUADRANT_NORTH_WEST, "Sketch.Finish"),
+        ],
+    )
+}
+
+fn sketch_3d_menu() -> MarkingMenuView {
+    menu(
+        types::SKETCH3_D_ENVIRONMENT,
+        &[
+            (types::QUADRANT_NORTH, "Sketch3D.Line"),
+            (types::QUADRANT_NORTH_EAST, "Sketch3D.Arc"),
+            (types::QUADRANT_EAST, "Sketch3D.Helix"),
+            (types::QUADRANT_SOUTH_EAST, "Sketch3D.Include"),
+            (types::QUADRANT_SOUTH, "Sketch3D.Finish"),
+            (types::QUADRANT_SOUTH_WEST, "Sketch3D.Dimension"),
+            (types::QUADRANT_WEST, "edit.undo"),
+            (types::QUADRANT_NORTH_WEST, "Sketch3D.Bend"),
         ],
     )
 }

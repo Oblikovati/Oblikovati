@@ -6,7 +6,7 @@ use oblikovati_api::types::{self, Environment};
 
 const CHOICES: [(&str, Option<Environment>); 7] = [
     ("2D Sketch", Some(types::SKETCH_ENVIRONMENT)),
-    ("3D Sketch", None),
+    ("3D Sketch", Some(types::SKETCH3_D_ENVIRONMENT)),
     ("Assembly", None),
     ("Drawing", None),
     ("Part", Some(types::BASE_ENVIRONMENT)),
@@ -30,6 +30,28 @@ const SKETCH_SUB_ENVIRONMENTS: &[&str] = &[
     "Sketch Pattern",
     "Spline",
     "Text",
+];
+
+const SKETCH_3D_COMMANDS: &[(&str, &str)] = &[
+    ("Sketch3D.Line", "Line"),
+    ("Sketch3D.Bend", "Bend"),
+    ("Sketch3D.Arc", "Three Point Arc"),
+    ("edit.undo", "Undo"),
+    ("Sketch3D.Helix", "Helical Curve"),
+    ("Sketch3D.Dimension", "General Dimension"),
+    ("Sketch3D.Include", "Include Geometry"),
+    ("Sketch3D.Finish", "Finish 3D Sketch"),
+];
+
+const SKETCH_3D_SUB_ENVIRONMENTS: &[&str] = &[
+    "3D Line, 3D Arc",
+    "3D Point",
+    "Ctrl + Right Click Menu",
+    "Equation Curve",
+    "Helical Curve",
+    "None Selected",
+    "Projected Curves",
+    "Spline",
 ];
 
 pub(super) fn for_context(context: GuiAuthoringContext) -> Environment {
@@ -68,19 +90,21 @@ pub(super) fn selector(ui: &Ui, selected: &mut Environment) -> bool {
 }
 
 pub(super) fn commands(environment: Environment) -> Vec<(&'static str, &'static str)> {
-    if environment == types::BASE_ENVIRONMENT {
-        crate::part_context_menu::marking_commands().collect()
-    } else {
-        crate::sketch::marking_menu::COMMANDS.to_vec()
+    match environment {
+        types::BASE_ENVIRONMENT => crate::part_context_menu::marking_commands().collect(),
+        types::SKETCH3_D_ENVIRONMENT => SKETCH_3D_COMMANDS.to_vec(),
+        _ => crate::sketch::marking_menu::COMMANDS.to_vec(),
     }
 }
 
 pub(super) fn sub_environment_selector(ui: &Ui, environment: Environment) -> bool {
-    let Some(choices) =
-        (environment == types::SKETCH_ENVIRONMENT).then_some(SKETCH_SUB_ENVIRONMENTS)
-    else {
-        ui.text("Sub-Environment: None Selected");
-        return false;
+    let choices = match environment {
+        types::SKETCH_ENVIRONMENT => SKETCH_SUB_ENVIRONMENTS,
+        types::SKETCH3_D_ENVIRONMENT => SKETCH_3D_SUB_ENVIRONMENTS,
+        _ => {
+            ui.text("Sub-Environment: None Selected");
+            return false;
+        }
     };
     ui.set_next_item_width(190.);
     let Some(_menu) = ui.begin_combo_with_flags(
