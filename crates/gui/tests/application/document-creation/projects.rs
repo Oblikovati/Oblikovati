@@ -6,6 +6,7 @@ fn only_the_active_project_is_marked() {
         name: "Gearbox".into(),
         location: "/work/gearbox.opj".into(),
         active: true,
+        library_roots: Vec::new(),
         settings: Vec::new(),
         groups: Vec::new(),
     };

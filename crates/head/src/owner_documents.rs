@@ -50,6 +50,7 @@ impl<
                 name: project.configuration.name.clone(),
                 location: project.path.display().to_string(),
                 active: active == Some(&project.path),
+                library_roots: project.bound.lookup.library_roots().to_vec(),
                 settings: project_settings(&project.configuration),
                 groups: project_groups(&project.configuration),
             })

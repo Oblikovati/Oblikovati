@@ -42,6 +42,12 @@ impl ProjectFileLookup {
             .map(PathBuf::as_path)
     }
 
+    /// Inspect the configured libraries in reference search order.
+    /// Example: `lookup.library_roots().first()` returns the first library.
+    pub fn library_roots(&self) -> &[PathBuf] {
+        &self.libraries
+    }
+
     /// Return the configured template directory without probing it.
     /// Example: `lookup.templates_root().map(Path::to_path_buf)`.
     pub fn templates_root(&self) -> Option<&Path> {

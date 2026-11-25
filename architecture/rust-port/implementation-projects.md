@@ -64,6 +64,12 @@ The first project becomes active and later creations preserve the active
 project. Creation errors appear in the wizard so the user can change the
 name or workspace and retry. [Finish checks](receipts/2026-11-25-project-finish-3895/README.md)
 
+Select Libraries lists the distinct reference library roots of registered
+projects. The wizard keeps chosen libraries when navigating back and
+writes them in search order. A library configured relative to its source
+project is recorded at its resolved absolute location so the new project
+can find it from a different workspace. [Library transfer checks](receipts/2026-11-25-project-libraries-3895/README.md)
+
 Browse lists native project files and accepts a selected row or typed path.
 The desktop validates and registers the file under its canonical location.
 Projects selects the opened row for inspection and preserves any active

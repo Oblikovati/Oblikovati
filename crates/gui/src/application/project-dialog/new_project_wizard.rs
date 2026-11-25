@@ -7,6 +7,9 @@ use crate::{GuiCommandState, GuiProjectAction, GuiShellAction};
 use imgui::{Key, Ui};
 use std::path::Path;
 
+#[path = "wizard_libraries.rs"]
+mod wizard_libraries;
+
 const TITLE: &str = "New Project";
 const SIZE: [f32; 2] = [620., 300.];
 const BROWSER_TITLE: &str = "Browse for Folder";
@@ -34,6 +37,7 @@ pub(super) struct NewProjectWizard {
     new_folder: Option<NewFolder>,
     creation_request: Option<u64>,
     creation_error: Option<String>,
+    libraries: wizard_libraries::WizardLibraries,
 }
 #[derive(Default)]
 struct NewFolder {
@@ -55,6 +59,7 @@ impl Default for NewProjectWizard {
             new_folder: None,
             creation_request: None,
             creation_error: None,
+            libraries: Default::default(),
         }
     }
 }
@@ -67,6 +72,7 @@ impl NewProjectWizard {
         self.new_folder = None;
         self.creation_request = None;
         self.creation_error = None;
+        self.libraries = Default::default();
     }
     /// Start from the first page, with a name and folder to change; example: on New.
     pub(super) fn request(&mut self) {
@@ -79,6 +85,7 @@ impl NewProjectWizard {
     pub(super) fn needs_frame(&self) -> bool {
         self.opening
             || self.browser_opening
+            || self.libraries.redraw
             || self.new_folder.as_ref().is_some_and(|draft| draft.focus)
     }
     /// The entry the project list shows while the wizard is open.
@@ -103,6 +110,7 @@ impl NewProjectWizard {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) -> Option<String> {
+        self.libraries.redraw = false;
         if std::mem::take(&mut self.opening) {
             ui.open_popup(TITLE);
         }
@@ -112,7 +120,7 @@ impl NewProjectWizard {
             ui.close_current_popup();
             return Some(location);
         }
-        self.wizard_page(ui);
+        self.wizard_page(ui, state);
         self.buttons(ui, actions);
         self.folder_browser(ui);
         None
@@ -134,7 +142,7 @@ impl NewProjectWizard {
             }
         }
     }
-    fn wizard_page(&mut self, ui: &Ui) {
+    fn wizard_page(&mut self, ui: &Ui, state: &GuiCommandState) {
         match self.page {
             WizardPage::ProjectType => {
                 ui.selectable_config("New Single User Project")
@@ -143,7 +151,7 @@ impl NewProjectWizard {
                     .build();
             }
             WizardPage::ProjectFile => self.project_file_page(ui),
-            WizardPage::Libraries => libraries_page(ui),
+            WizardPage::Libraries => self.libraries.panel(ui, &state.projects),
         }
         if let Some(error) = &self.creation_error {
             ui.text_wrapped(error);
@@ -202,6 +210,7 @@ impl NewProjectWizard {
                 request,
                 workspace: self.workspace.clone().into(),
                 name: self.name.clone(),
+                library_roots: self.libraries.roots.clone(),
             }));
         }
     }
@@ -316,24 +325,6 @@ impl NewProjectWizard {
             self.folder_node(ui, &child.name, &path.display().to_string());
         }
     }
-}
-fn libraries_page(ui: &Ui) {
-    ui.text("Select Libraries");
-    ui.group(|| {
-        ui.text("All Projects");
-        ui.text_disabled("(none)");
-    });
-    ui.same_line();
-    ui.group(|| {
-        let _muted = ui.begin_disabled(true);
-        crate::widget_abi::button(ui, ">>", [0.; 2]);
-        crate::widget_abi::button(ui, "<<", [0.; 2]);
-    });
-    ui.same_line();
-    ui.group(|| {
-        ui.text("New Project");
-        ui.text_disabled("(none)");
-    });
 }
 /// A folder reads as its last name, as a row in the tree does.
 fn folder_label(folder: &str) -> &str {

@@ -12,10 +12,11 @@ macro_rules! desktop_document_work {
                     request,
                     workspace,
                     name,
+                    library_roots,
                 } => (
                     request,
                     self.files
-                        .create_project(workspace, name)
+                        .create_project_with_libraries(workspace, name, library_roots)
                         .map(|project| project.path.display().to_string())
                         .map_err(|cause| cause.to_string()),
                 ),

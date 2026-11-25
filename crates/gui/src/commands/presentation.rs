@@ -11,6 +11,8 @@ pub struct GuiProject {
     pub name: String,
     pub location: String,
     pub active: bool,
+    /// Absolute reference library folders registered by this project.
+    pub library_roots: Vec<std::path::PathBuf>,
     pub settings: Vec<(String, String)>,
     /// What the tree folds away until it is asked for; example: `Folder Options` and its rows.
     pub groups: Vec<GuiProjectGroup>,
@@ -22,6 +24,7 @@ pub enum GuiProjectAction {
         request: u64,
         workspace: std::path::PathBuf,
         name: String,
+        library_roots: Vec<std::path::PathBuf>,
     },
     Open {
         request: u64,

@@ -47,6 +47,17 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         workspace: &Path,
         name: &str,
     ) -> Result<&LoadedProject, FileWorkspaceError> {
+        self.create_project_with_libraries(workspace, name, &[])
+    }
+
+    /// Create a project using resolved library roots in the given order.
+    /// Example: `host.create_project_with_libraries(workspace, "Gearbox", &[library])?`.
+    pub fn create_project_with_libraries(
+        &mut self,
+        workspace: &Path,
+        name: &str,
+        libraries: &[PathBuf],
+    ) -> Result<&LoadedProject, FileWorkspaceError> {
         let file = new_project_file_name(name).map_err(FileWorkspaceError::ProjectConfiguration)?;
         let workspace = checked_path(workspace, self.files.canonical_path(workspace))?;
         let path = workspace.join(file);
@@ -61,6 +72,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         let configuration = ProjectConfiguration {
             name: name.trim().to_owned(),
             workspace: ".".into(),
+            libraries: recorded_libraries(libraries)
+                .map_err(FileWorkspaceError::ProjectConfiguration)?,
             ..Default::default()
         };
         let bound = configuration
@@ -143,6 +156,23 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             .map(|project| &project.bound.lookup)
             .ok_or(FileWorkspaceError::MissingProject)
     }
+}
+
+fn recorded_libraries(roots: &[PathBuf]) -> std::io::Result<Vec<String>> {
+    roots
+        .iter()
+        .map(|root| {
+            root.to_str()
+                .filter(|_| root.is_absolute())
+                .map(str::to_owned)
+                .ok_or_else(|| {
+                    std::io::Error::new(
+                        std::io::ErrorKind::InvalidInput,
+                        format!("project library {root:?}: expected an absolute UTF-8 path"),
+                    )
+                })
+        })
+        .collect()
 }
 
 fn new_project_file_name(name: &str) -> std::io::Result<String> {

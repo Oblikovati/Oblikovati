@@ -7,6 +7,9 @@ use super::{
 };
 use cucumber::{given, then, when};
 
+#[path = "libraries_native.rs"]
+mod libraries_native;
+
 fn wizard_text(world: &ApplicationWorld) -> String {
     world
         .frame
