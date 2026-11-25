@@ -44,7 +44,7 @@ impl RibbonAppearance {
     }
     pub(crate) fn single_cell(self) -> [f32; 2] {
         if self == Self::Normal {
-            return [108., 58.];
+            return [108., self.command_height()];
         }
         self.cell(0).1
     }
@@ -56,7 +56,7 @@ impl RibbonAppearance {
     }
     pub(crate) fn command_height(self) -> f32 {
         match self {
-            Self::Normal => 60.,
+            Self::Normal => 64.,
             Self::TextOff => 92.,
             Self::Small => 44.,
             Self::Compact => 20.,
@@ -64,11 +64,14 @@ impl RibbonAppearance {
         }
     }
     pub(crate) fn full_row_height(self) -> f32 {
+        if self == Self::Normal {
+            return 88.;
+        }
         self.command_height() + 28.
     }
     pub(crate) fn cell(self, index: usize) -> ([f32; 2], [f32; 2]) {
         let (rows, size, stride) = match self {
-            Self::Normal => (2, [108., 26.], [116., 30.]),
+            Self::Normal => (2, [108., 30.], [116., 34.]),
             Self::TextOff => (2, [44., 44.], [48., 48.]),
             Self::Small => (2, [20., 20.], [24., 24.]),
             Self::Compact => (1, [20., 20.], [24., 24.]),
@@ -96,9 +99,9 @@ mod tests {
 
     #[test]
     fn normal_cells_preserve_authored_two_row_layout() {
-        assert_eq!(RibbonAppearance::Normal.cell(0), ([0., 0.], [108., 26.]));
-        assert_eq!(RibbonAppearance::Normal.cell(1), ([0., 30.], [108., 26.]));
-        assert_eq!(RibbonAppearance::Normal.cell(2), ([116., 0.], [108., 26.]));
+        assert_eq!(RibbonAppearance::Normal.cell(0), ([0., 0.], [108., 30.]));
+        assert_eq!(RibbonAppearance::Normal.cell(1), ([0., 34.], [108., 30.]));
+        assert_eq!(RibbonAppearance::Normal.cell(2), ([116., 0.], [108., 30.]));
     }
 
     #[test]
@@ -114,7 +117,7 @@ mod tests {
 
     #[test]
     fn single_commands_keep_the_normal_height() {
-        assert_eq!(RibbonAppearance::Normal.single_cell(), [108., 58.]);
+        assert_eq!(RibbonAppearance::Normal.single_cell(), [108., 64.]);
         for appearance in RibbonAppearance::ALL.into_iter().skip(1) {
             assert_eq!(appearance.single_cell(), appearance.cell(0).1);
         }

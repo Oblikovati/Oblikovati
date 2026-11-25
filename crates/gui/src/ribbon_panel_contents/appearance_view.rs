@@ -19,14 +19,14 @@ pub(super) fn windows(
         .workspace
         .switcher
         .menu(ui, size, state, actions, Some(icons));
-    let (position, size) = icons.appearance.cell(2);
+    let (position, _) = icons.appearance.cell(2);
     icons.cursor(ui, origin, position);
     icons.command_button(
         ui,
         "New",
         GuiShellAction::NewDocumentWindow,
         state,
-        size,
+        icons.appearance.single_cell(),
         actions,
     );
 }

@@ -151,10 +151,10 @@ fn model_ribbon_submits_icons_for_work_features_and_patterns() {
         IconGlyph::WorkPoint,
         IconGlyph::RectangularPattern,
         IconGlyph::CircularPattern,
-        IconGlyph::Simplify,
     ] {
         assert_named_icon(&owner, &frame, glyph, IconSize::Small, 18.);
     }
+    assert_named_icon(&owner, &frame, IconGlyph::Simplify, IconSize::Large, 40.);
 }
 
 #[test]

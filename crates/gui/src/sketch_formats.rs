@@ -16,7 +16,7 @@ pub(crate) fn sketch_format_controls(
     let modes = &state.sketch_formats;
     for (format, y, armed) in [
         (Construction, 0., modes.construction),
-        (Centerline, 20., modes.centerline),
+        (Centerline, 22., modes.centerline),
     ] {
         icons.cursor(ui, origin, [0., y]);
         let action = GuiShellAction::ToggleSketchFormat(format);
@@ -28,20 +28,20 @@ pub(crate) fn sketch_format_controls(
         } else {
             crate::icons::IconGlyph::Centerline
         };
-        let clicked = icons.button(ui, format.label(), glyph, [108., 18.]);
+        let clicked = icons.button(ui, format.label(), glyph, [108., 20.]);
         drop(highlight);
         drop(disabled);
         if clicked && action.dispatchable(state) {
             actions.push(action);
         }
     }
-    icons.cursor(ui, origin, [0., 40.]);
+    icons.cursor(ui, origin, [0., 44.]);
     let action = GuiShellAction::ToggleCenterPointFormat;
     let disabled = ui.begin_disabled(!action.dispatchable(state));
     let clicked = widget_abi::toggle_button(
         ui,
         "Center Point",
-        icons.cell([108., 18.]),
+        icons.cell([108., 20.]),
         state.center_point_format,
     );
     drop(disabled);

@@ -17,8 +17,8 @@ pub(crate) fn sketch_tool_flyout_button(
         _ => None,
     };
     let size = match icons.appearance {
-        crate::ribbon_command_layout::RibbonAppearance::Normal if alternate.is_some() => [90., 18.],
-        crate::ribbon_command_layout::RibbonAppearance::Normal => [108., 18.],
+        crate::ribbon_command_layout::RibbonAppearance::Normal if alternate.is_some() => [90., 20.],
+        crate::ribbon_command_layout::RibbonAppearance::Normal => [108., 20.],
         _ => icons.appearance.cell(0).1,
     };
     icons.command_button(
@@ -49,7 +49,7 @@ fn circular_tool_menu(
     let enabled = GuiShellAction::PlaceSketchTool(primary).dispatchable(state);
     let disabled = ui.begin_disabled(!enabled);
     ui.same_line_with_spacing(0., 2. * icons.layout_factor());
-    if widget_abi::button(ui, &format!("v{identity}"), icons.cell([16., 18.])) && enabled {
+    if widget_abi::button(ui, &format!("v{identity}"), icons.cell([16., 20.])) && enabled {
         ui.open_popup(&identity);
     }
     drop(disabled);

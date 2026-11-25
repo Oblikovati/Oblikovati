@@ -12,8 +12,9 @@ pub(crate) fn highlight_new(
 ) -> bool {
     const MENU: &str = "##highlight-new-menu";
     let clicked = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-        icons.cursor(ui, origin, [156., 30.]);
-        crate::widget_abi::button(ui, "Highlight New ▼", icons.cell([108., 26.]))
+        let (position, size) = icons.appearance.cell(3);
+        icons.cursor(ui, origin, [156., position[1]]);
+        crate::widget_abi::button(ui, "Highlight New ▼", icons.cell(size))
     } else {
         let (position, size) = icons.appearance.cell(3);
         icons.cursor(ui, origin, position);
@@ -40,10 +41,17 @@ pub(super) fn options(
     owners: &mut crate::ribbon_panels::RibbonPanelOwners<'_>,
 ) -> bool {
     let icons = owners.icons;
+    let normal = icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal;
     let (position, size) = icons.appearance.cell(0);
+    let options_size = if normal { [150., size[1]] } else { size };
     icons.cursor(ui, origin, position);
     let disabled = ui.begin_disabled(state.ui_scale.is_none());
-    let application = icons.button(ui, "Application Options", IconGlyph::Preferences, size);
+    let application = icons.button(
+        ui,
+        "Application Options",
+        IconGlyph::Preferences,
+        options_size,
+    );
     if owners.tools_application_tip {
         crate::ribbon_key_tips::badge(ui, "OA");
     }
@@ -51,12 +59,17 @@ pub(super) fn options(
     if application {
         owners.preferences.request();
     }
-    let (position, size) = icons.appearance.cell(1);
+    let (position, _) = icons.appearance.cell(1);
     icons.cursor(ui, origin, position);
     let disabled = ui.begin_disabled(
         state.document_units.is_none() || state.transaction_open || owners.home_active,
     );
-    let document = icons.button(ui, "Document Settings", IconGlyph::Preferences, size);
+    let document = icons.button(
+        ui,
+        "Document Settings",
+        IconGlyph::Preferences,
+        options_size,
+    );
     if owners.tools_document_tip {
         crate::ribbon_key_tips::badge(ui, "OD");
     }
@@ -64,7 +77,10 @@ pub(super) fn options(
     if document && let Some(id) = state.document {
         owners.preferences.request_document(id);
     }
-    let (position, size) = icons.appearance.cell(2);
+    let (mut position, size) = icons.appearance.cell(2);
+    if normal {
+        position[0] = 156.;
+    }
     icons.cursor(ui, origin, position);
     let disabled = ui.begin_disabled(
         state.document_type != Some(oblikovati_api::types::DOCUMENT_PART) || owners.home_active,

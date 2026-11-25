@@ -38,16 +38,18 @@ pub(crate) fn draw_panel_content(
                 appearance_sketch::modify(ui, origin, state, owners.icons, actions);
                 return false;
             }
+            let (_, size) = owners.icons.appearance.cell(0);
             let start = GuiShellAction::SketchMove(crate::GuiSketchMoveAction::Start);
             crate::chrome::command_control(ui, "Move", start, state, actions, || {
                 owners
                     .icons
-                    .button(ui, "Move", crate::icons::IconGlyph::Move, [108., 26.])
+                    .button(ui, "Move", crate::icons::IconGlyph::Move, size)
             });
-            owners.icons.cursor(ui, origin, [0., 30.]);
+            let (position, size) = owners.icons.appearance.cell(1);
+            owners.icons.cursor(ui, origin, position);
             let delete = GuiShellAction::DeleteSketchSelection;
             crate::chrome::command_control(ui, "Delete", delete, state, actions, || {
-                crate::widget_abi::button(ui, "Delete", [108., 26.])
+                crate::widget_abi::button(ui, "Delete", owners.icons.cell(size))
             });
         }
         RibbonPanel::SketchPattern => {
@@ -138,7 +140,9 @@ pub(crate) fn draw_panel_content(
             owners.icons.cursor(ui, origin, position);
             let disabled = ui.begin_disabled(state.authoring != crate::GuiAuthoringContext::Sketch);
             if owners.icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-                owners.precise_input.toggle(ui);
+                owners
+                    .precise_input
+                    .toggle(ui, owners.icons.cell([108., 20.]));
             } else {
                 owners.precise_input.toggle_icon(ui, owners.icons);
             }
@@ -152,41 +156,7 @@ pub(crate) fn draw_panel_content(
             return clicked;
         }
         RibbonPanel::ToolOptions => {
-            if owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal {
-                return appearance_tools::options(ui, origin, state, owners);
-            }
-            owners.icons.cursor(ui, origin, [156., 0.]);
-            let disabled = ui.begin_disabled(
-                state.document_type != Some(oblikovati_api::types::DOCUMENT_PART)
-                    || owners.home_active,
-            );
-            let customize = crate::widget_abi::button(ui, "Customize", [108., 26.]);
-            let customization = &mut owners.customization;
-            customization.ribbon_button(ui, owners.active_tab, customize);
-            drop(disabled);
-            crate::widget_abi::cursor_position(ui, origin);
-            let disabled = ui.begin_disabled(state.ui_scale.is_none());
-            let application = crate::widget_abi::button(ui, "Application Options", [150., 26.]);
-            if owners.tools_application_tip {
-                crate::ribbon_key_tips::badge(ui, "OA");
-            }
-            if application {
-                owners.preferences.request();
-            }
-            drop(disabled);
-            crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + 30.]);
-            let disabled = ui.begin_disabled(
-                state.document_units.is_none() || state.transaction_open || owners.home_active,
-            );
-            let document = crate::widget_abi::button(ui, "Document Settings", [150., 26.]);
-            if owners.tools_document_tip {
-                crate::ribbon_key_tips::badge(ui, "OD");
-            }
-            drop(disabled);
-            if document && let Some(id) = state.document {
-                owners.preferences.request_document(id);
-            }
-            return application || document;
+            return appearance_tools::options(ui, origin, state, owners);
         }
         RibbonPanel::ToolAssets => {
             crate::ribbon_part_assets::draw(ui, origin, state, owners.icons, actions)
@@ -197,26 +167,7 @@ pub(crate) fn draw_panel_content(
         // The captured Tutorials panel contains no commands. Its title follows Show Panels.
         RibbonPanel::ToolTutorials => {}
         RibbonPanel::ToolTeamWeb => return owners.team_web.ribbon_button(ui, owners.icons),
-        RibbonPanel::ToolFind => {
-            if owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal {
-                appearance_tools::find(ui, state, owners);
-                return false;
-            }
-            let disabled = ui.begin_disabled(
-                owners.home_active
-                    || state
-                        .browser
-                        .as_ref()
-                        .is_none_or(|browser| browser.kind == crate::GuiBrowserKind::Drawing),
-            );
-            if owners
-                .icons
-                .button(ui, "Find", crate::icons::IconGlyph::Find, [108., 58.])
-            {
-                owners.workspace.request_find();
-            }
-            drop(disabled);
-        }
+        RibbonPanel::ToolFind => appearance_tools::find(ui, state, owners),
         RibbonPanel::Appearance => {
             if owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal {
                 return appearance_view::theme(
@@ -250,12 +201,14 @@ pub(crate) fn draw_panel_content(
             );
         }
         RibbonPanel::PartSimplification => {
-            muted_icon_commands(
+            muted::muted_command(
                 ui,
-                origin,
+                "Simplify",
+                NOT_PORTED,
                 owners.icons,
-                &[("Simplify", Some(crate::icons::IconGlyph::Simplify))],
+                Some(crate::icons::IconGlyph::Simplify),
                 false,
+                owners.icons.appearance.single_cell(),
             );
         }
         RibbonPanel::PartWorkFeatures => {

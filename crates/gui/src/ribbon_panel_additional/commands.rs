@@ -259,7 +259,7 @@ fn create_commands(
     crate::sketch::create_block::ribbon_button(ui, state, create_block, actions, size, icons);
     let disabled = ui.begin_disabled(state.precise_target.is_none() || state.transaction_open);
     if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-        precise_input.toggle(ui);
+        precise_input.toggle(ui, icons.cell([108., 20.]));
     } else {
         icons.cursor(ui, origin, icons.appearance.cell(1).0);
         precise_input.toggle_icon(ui, icons);

@@ -8,15 +8,15 @@ use crate::GuiSketchConstraint::{
 };
 pub(super) const CONSTRAINT_CONTROLS: [(crate::GuiSketchConstraint, [f32; 2]); 10] = [
     (Horizontal, [0.0, 0.0]),
-    (Vertical, [0.0, 20.0]),
-    (Coincident, [0.0, 40.0]),
-    (Fix, [116.0, 40.0]),
+    (Vertical, [0.0, 22.0]),
+    (Coincident, [0.0, 44.0]),
+    (Fix, [116.0, 44.0]),
     (Parallel, [232.0, 0.0]),
-    (Perpendicular, [232.0, 20.0]),
-    (Collinear, [232.0, 40.0]),
+    (Perpendicular, [232.0, 22.0]),
+    (Collinear, [232.0, 44.0]),
     (Equal, [348.0, 0.0]),
-    (Concentric, [348.0, 20.0]),
-    (Tangent, [348.0, 40.0]),
+    (Concentric, [348.0, 22.0]),
+    (Tangent, [348.0, 44.0]),
 ];
 pub(super) fn sketch_constraint_controls(
     ui: &Ui,
@@ -36,7 +36,7 @@ pub(super) fn sketch_constraint_controls(
             choice.label(),
             GuiShellAction::ConstrainSketch(choice),
             state,
-            [108., 18.],
+            [108., 20.],
             actions,
         );
     }
@@ -46,7 +46,7 @@ pub(super) fn sketch_constraint_controls(
         "Dimension",
         GuiShellAction::Dimension(crate::GuiDimensionAction::Start),
         state,
-        [108., 38.],
+        [108., 42.],
         actions,
     );
 }
@@ -68,7 +68,7 @@ pub(super) fn sketch_create_controls(
         rectangle.label(),
         GuiShellAction::PlaceSketchTool(rectangle),
         state,
-        [108., 58.],
+        icons.appearance.single_cell(),
         actions,
     );
     let secondary = crate::sketch_tools::SECONDARY_SKETCH_TOOLS;
@@ -76,7 +76,7 @@ pub(super) fn sketch_create_controls(
         icons.cursor(
             ui,
             origin,
-            [124. + (index % 2) as f32 * 116., (index / 2) as f32 * 20.],
+            [124. + (index % 2) as f32 * 116., (index / 2) as f32 * 22.],
         );
         crate::sketch_flyouts::sketch_tool_flyout_button(ui, state, actions, tool, icons);
     }
@@ -86,19 +86,19 @@ pub(super) fn sketch_create_controls(
         "Fillet",
         GuiShellAction::PlaceSketchTool(crate::GuiSketchTool::Fillet),
         state,
-        [108., 18.],
+        [108., 20.],
         actions,
     );
-    icons.cursor(ui, origin, [356., 20.]);
+    icons.cursor(ui, origin, [356., 22.]);
     icons.command_button(
         ui,
         "Text",
         GuiShellAction::PlaceSketchTool(crate::GuiSketchTool::Text),
         state,
-        [108., 18.],
+        [108., 20.],
         actions,
     );
-    icons.cursor(ui, origin, [356., 40.]);
+    icons.cursor(ui, origin, [356., 44.]);
     crate::sketch_flyouts::sketch_tool_flyout_button(
         ui,
         state,
@@ -112,7 +112,7 @@ pub(super) fn sketch_create_controls(
         ui,
         "Project Geometry",
         crate::icons::IconGlyph::ProjectGeometry,
-        [150., 18.],
+        [150., 20.],
     );
     drop(disabled);
 }
@@ -135,11 +135,7 @@ pub(super) fn visibility_controls(
     } else {
         "Show Sketches"
     };
-    let size = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-        [108., 26.]
-    } else {
-        icons.appearance.single_cell()
-    };
+    let size = icons.appearance.single_cell();
     let pressed = icons.button(ui, label, crate::icons::IconGlyph::SketchVisibility, size);
     drop(disabled);
     let Some(document) = state.document.filter(|_| pressed) else {

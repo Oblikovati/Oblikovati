@@ -104,16 +104,12 @@ pub(crate) fn plane_main_cells(
 }
 fn unavailable_copy(ui: &Ui, icons: &crate::icons::GuiRibbonIcons) {
     let disabled = ui.begin_disabled(true);
-    if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-        crate::widget_abi::button(ui, "Copy", [108., 26.]);
-    } else {
-        icons.button(
-            ui,
-            "Copy",
-            crate::icons::IconGlyph::Copy,
-            icons.appearance.single_cell(),
-        );
-    }
+    icons.button(
+        ui,
+        "Copy",
+        crate::icons::IconGlyph::Copy,
+        icons.appearance.single_cell(),
+    );
     drop(disabled);
     if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
         ui.tooltip_text("This command is not available in this build.");

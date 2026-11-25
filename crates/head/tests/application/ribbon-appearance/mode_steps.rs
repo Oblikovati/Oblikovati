@@ -152,18 +152,14 @@ pub(super) fn compact_single_row(_world: &mut ApplicationWorld) {
 }
 #[then("at least one group is displayed as a compact panel button")]
 fn compact_group_button(world: &mut ApplicationWorld) {
-    let title = world.run("Simplification");
-    assert!(
-        world
-            .frame
-            .runs
-            .iter()
-            .any(|run| matches!(run.text.as_str(), "v" | "▼")
-                && run.center()[1] < title.minimum[1]
-                && run.center()[0] >= title.minimum[0]
-                && run.center()[0] <= title.maximum[0] + 30.),
-        "expected the Simplification group button"
-    );
+    let title = diagnostics::pointer_pixels(world.run("Simplification").center());
+    assert!(!diagnostics::command_popup_open());
+    world.click(title);
+    world.pump(Vec::new());
+    assert!(diagnostics::command_popup_open());
+    world.escape();
+    world.pump(Vec::new());
+    assert!(!diagnostics::command_popup_open());
 }
 #[then("larger command icons appear in two rows without visible command labels")]
 pub(super) fn large_two_rows(world: &mut ApplicationWorld) {

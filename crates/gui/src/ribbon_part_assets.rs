@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Part material and appearance selections call the shared asset operations.
+use crate::ribbon_command_layout::RibbonAppearance;
 use crate::{GuiCommandState, GuiPartAssetKind, GuiShellAction};
-use imgui::Ui;
+use imgui::{StyleVar, Ui};
 
 pub(crate) fn draw(
     ui: &Ui,
@@ -14,14 +15,28 @@ pub(crate) fn draw(
         state.authoring != crate::GuiAuthoringContext::Part || state.transaction_open,
     );
     if let Some(browser) = &state.browser {
-        asset_row(ui, state, browser, GuiPartAssetKind::Material, actions);
+        asset_row(
+            ui,
+            state,
+            browser,
+            GuiPartAssetKind::Material,
+            icons,
+            actions,
+        );
         let position = match icons.appearance {
-            crate::ribbon_command_layout::RibbonAppearance::Compact => [200., 0.],
-            crate::ribbon_command_layout::RibbonAppearance::Small => [0., 24.],
+            RibbonAppearance::Compact => [200., 0.],
+            RibbonAppearance::Normal | RibbonAppearance::Small => icons.appearance.cell(1).0,
             _ => [0., 30.],
         };
         icons.cursor(ui, origin, position);
-        asset_row(ui, state, browser, GuiPartAssetKind::Appearance, actions);
+        asset_row(
+            ui,
+            state,
+            browser,
+            GuiPartAssetKind::Appearance,
+            icons,
+            actions,
+        );
     }
     drop(disabled);
 }
@@ -30,10 +45,28 @@ fn asset_row(
     state: &GuiCommandState,
     browser: &crate::GuiModelBrowser,
     kind: GuiPartAssetKind,
+    icons: &crate::icons::GuiRibbonIcons,
     actions: &mut Vec<GuiShellAction>,
 ) {
     let (label, selected, choices) = row_choices(browser, kind);
-    if let Some(id) = asset_combo(ui, label, selected, choices) {
+    let choice = if icons.appearance == RibbonAppearance::Normal {
+        let factor = icons.layout_factor();
+        let height = icons.cell(icons.appearance.cell(0).1)[1];
+        let [padding_x, _] = ui.clone_style().frame_padding;
+        let _padding = ui.push_style_var(StyleVar::FramePadding([
+            padding_x,
+            ((height - ui.text_line_height()) * 0.5).max(0.),
+        ]));
+        ui.align_text_to_frame_padding();
+        ui.text(label);
+        let label_width = ui.calc_text_size("Appearance")[0] + 12. * factor;
+        ui.same_line_with_spacing(0., label_width - ui.calc_text_size(label)[0]);
+        let _id = ui.push_id(label);
+        asset_combo_at_width(ui, "##asset", selected, choices, 150. * factor, true)
+    } else {
+        asset_combo(ui, label, selected, choices)
+    };
+    if let Some(id) = choice {
         queue_asset(state, kind, &id, actions);
     }
 }
@@ -64,17 +97,29 @@ pub(crate) fn asset_combo(
     selected: Option<&str>,
     choices: &[crate::GuiAssetChoice],
 ) -> Option<String> {
+    asset_combo_at_width(ui, label, selected, choices, 150., false)
+}
+fn asset_combo_at_width(
+    ui: &Ui,
+    label: &str,
+    selected: Option<&str>,
+    choices: &[crate::GuiAssetChoice],
+    width: f32,
+    reserve_swatch: bool,
+) -> Option<String> {
     let preview = asset_preview(choices, selected);
-    if let Some(rgb) = choices
+    let swatch = choices
         .iter()
         .find(|asset| Some(asset.id.as_str()) == selected)
-        .and_then(|asset| asset.swatch)
-    {
+        .and_then(|asset| asset.swatch);
+    if reserve_swatch || swatch.is_some() {
         ui.dummy([16., ui.frame_height()]);
-        paint_swatch(ui, rgb);
+        if let Some(rgb) = swatch {
+            paint_swatch(ui, rgb);
+        }
         ui.same_line();
     }
-    ui.set_next_item_width(150.);
+    ui.set_next_item_width(width);
     let _list = ui.begin_combo(label, preview)?;
     choices
         .iter()

@@ -34,3 +34,40 @@ fn native_tab_strip_aligns_controls_and_separates_the_brand_mark() {
     world.save_capture("ribbon-chrome");
     world.close();
 }
+
+#[test]
+fn native_normal_command_rows_share_the_same_band_across_tabs() {
+    let mut world = ApplicationWorld::new();
+    viewport_orientation::open_block(&mut world);
+    assert_row_pitch(&world, "Extrude", "Revolve", 34.);
+    world.save_capture("normal-model-command-band");
+
+    world.click_text("Tools");
+    world.pump(Vec::new());
+    assert_row_pitch(&world, "Application Options", "Document Settings", 34.);
+    assert_row_pitch(&world, "Material", "Appearance", 34.);
+    world.expect_text("Find");
+    world.save_capture("normal-tools-command-band");
+
+    world.click_text("3D Model");
+    world.pump(Vec::new());
+    world.start_sketch();
+    world.pump(Vec::new());
+    assert_row_pitch(&world, "Circle", "Center Arc", 22.);
+    assert_row_pitch(&world, "Center Arc", "Center Rect.", 22.);
+    world.save_capture("normal-sketch-command-band");
+    world.close();
+}
+
+fn assert_row_pitch(world: &ApplicationWorld, upper: &str, lower: &str, pitch: f32) {
+    let (_, band) = diagnostics::window_geometry("##application-ribbon").unwrap();
+    assert_eq!(band[1], 32. + 1. + 28. + 88.);
+    let upper = world.run_in_window("##application-ribbon", &upper.replace(' ', ""));
+    let lower = world.run_in_window("##application-ribbon", &lower.replace(' ', ""));
+    let actual = lower.center()[1] - upper.center()[1];
+    // The text reader reports ink bounds, which differ with ascenders and descenders.
+    assert!(
+        (actual - pitch).abs() <= 2.,
+        "{upper:?}, {lower:?}: {actual}"
+    );
+}

@@ -122,14 +122,9 @@ impl PreciseInputBar {
     ) -> Result<(), String> {
         registry.register::<Self>("Precise Input", &self.open)
     }
-    /// The ribbon's way in; example: `bar.toggle(ui)` inside the Format panel.
-    pub(crate) fn toggle(&mut self, ui: &Ui) {
-        if crate::widget_abi::toggle_button(
-            ui,
-            "Precise Input",
-            [108., 18.],
-            self.open.is_requested(),
-        ) {
+    /// Toggle the toolbar from the Format panel.
+    pub(crate) fn toggle(&mut self, ui: &Ui, size: [f32; 2]) {
+        if crate::widget_abi::toggle_button(ui, "Precise Input", size, self.open.is_requested()) {
             self.toggle_visibility();
         }
     }
