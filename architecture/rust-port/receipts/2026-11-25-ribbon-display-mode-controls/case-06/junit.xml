@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:35:31.370462589Z" time="16.621742887"><testcase name="Scenario: Inspect a selected minimization policy while the full ribbon is open: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:89:3" time="16.621742887"><system-out><![CDATA[  Scenario: Inspect a selected minimization policy while the full ribbon is open
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✔  And the full Tools ribbon is visible
+   ✔  And Minimize to Tabs is the selected ribbon display policy
+   ✔  When the user opens the ribbon display policy menu
+   ✔  Then Minimize to Tabs is marked as selected
+   ✔  And Minimize to Panel Titles, Minimize to Panel Buttons and Cycle Through All are listed
+   ✔  And the full Tools ribbon remains visible
+   ✔  When the user dismisses the menu with Escape
+   ✔  Then the menu closes without changing the display policy
+   ✔  And the full Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -36,10 +36,7 @@ pub(super) fn activate_display_control(world: &mut ApplicationWorld) {
     world.click_text("Ribbon Display");
 }
 fn open_part_on_view(world: &mut ApplicationWorld) {
-    use crate::HeadWork;
-    world.app().owner.create_part_document().unwrap();
-    world.previous_document = world.app().owner.gui_command_state().unwrap().document;
-    world.pump(Vec::new());
+    super::workspace_layout::part_open(world);
     world.click_text("View");
 }
 fn expect_shorter_band(world: &ApplicationWorld) {

@@ -101,10 +101,13 @@ fn expect_docked_left(world: &mut ApplicationWorld) {
     );
 }
 #[given("a part document is open in the MCAD Software")]
-fn part_open(world: &mut ApplicationWorld) {
-    world.app().owner.create_part_document().unwrap();
-    world.previous_document = world.app().owner.gui_command_state().unwrap().document;
-    world.pump(Vec::new());
+pub(super) fn part_open(world: &mut ApplicationWorld) {
+    let document = if world.state().document_type == Some(oblikovati_api::types::DOCUMENT_PART) {
+        world.active_id()
+    } else {
+        world.add_part()
+    };
+    world.previous_document = Some(document);
 }
 #[given("the 3D Model ribbon is active")]
 #[given("the 3D Model ribbon tab is active")]

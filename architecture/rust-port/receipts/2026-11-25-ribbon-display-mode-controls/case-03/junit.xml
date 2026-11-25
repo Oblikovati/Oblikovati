@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:34:38.88766253Z" time="20.999357019"><testcase name="Scenario: Access a ribbon tab in tabs-only mode: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:44:3" time="20.999357019"><system-out><![CDATA[  Scenario: Access a ribbon tab in tabs-only mode
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part document is open in the MCAD Software
+   ✔  And the ribbon display control is configured to cycle through all modes
+   ✔  And the View ribbon displays its group titles
+   ✔  When the user activates the ribbon display control once
+   ✔  Then the ribbon shows its tabs without the group strip
+   ✔  When the user selects the View tab
+   ✔  Then the View commands appear in a temporary panel below the tabs
+   ✔  When the user activates the ribbon display control
+   ✔  Then the expanded View ribbon is restored
+   ✔  When the user clicks in an empty area of the viewport
+   ✔  Then the expanded View ribbon remains visible
+   ✔  When the user chooses Minimize to Panel Buttons from the ribbon display menu
+   ✔  Then the ribbon displays compact group buttons
+   ✔  When the user activates the ribbon display control once
+   ✔  Then the full ribbon is restored
+]]></system-out></testcase></testsuite></testsuites>

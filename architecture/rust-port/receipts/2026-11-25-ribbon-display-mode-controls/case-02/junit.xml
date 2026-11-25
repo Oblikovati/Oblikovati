@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:34:18.680282817Z" time="19.440896384"><testcase name="Scenario: Open a group from the title-only ribbon: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:23:3" time="19.440896384"><system-out><![CDATA[  Scenario: Open a group from the title-only ribbon
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part document is open in the MCAD Software
+   ✔  And the full View ribbon is visible
+   ✔  When the user opens the ribbon display menu
+   ✔  Then Minimize to Panel Buttons is selected
+   ✔  When the user selects Minimize to Panel Titles
+   ✔  Then the View ribbon displays group titles in a narrow strip
+   ✔  When the user selects the Windows group title
+   ✔  Then a temporary panel displays the Windows commands
+   ✔  When the user activates the ribbon display control
+   ✔  Then the full View ribbon is restored
+   ✔  And the temporary Windows panel closes
+   ✔  When the user opens the ribbon display menu again
+   ✔  Then Minimize to Panel Titles is selected
+   ✔  When the user selects Minimize to Panel Buttons
+   ✔  Then the View ribbon displays compact group buttons
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the full View ribbon is restored
+]]></system-out></testcase></testsuite></testsuites>
