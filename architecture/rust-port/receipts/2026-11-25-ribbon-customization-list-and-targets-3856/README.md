@@ -1,6 +1,6 @@
 # Native Ribbon Customization list and target state
 
-Seven current cases passed 97 steps. They checked the Customize target
+Seven current cases passed 108 steps. They checked the Customize target
 list, current selections, and pending changes across tab, source and
 target transitions.
 
