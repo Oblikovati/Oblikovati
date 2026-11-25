@@ -20,6 +20,7 @@ parser.add_argument("--dpi", choices=[96, 144], type=int, default=96)
 parser.add_argument("--frames", type=int, default=1600)
 parser.add_argument("--phases", action="store_true")
 parser.add_argument("--observe-present-mode", action="store_true")
+parser.add_argument("--hide-selection-toolbar", action="store_true")
 args = parser.parse_args()
 args.folder.mkdir(parents=True, exist_ok=False)
 folder = args.folder.resolve()
@@ -180,6 +181,13 @@ env = dict(os.environ)
 env["XDG_CONFIG_HOME"] = str(folder / "config")
 env["XDG_DATA_HOME"] = str(folder / "data")
 env["OBK_CONFIG_DIR"] = str(folder / "config")
+if args.hide_selection_toolbar:
+    config = folder / "config"
+    config.mkdir()
+    workspace = dict(version=1, imgui_ini="", material_browser=False, appearance_browser=False,
+                     parameters=False, selection_filter=False, history_browser=False,
+                     selection_toolbar_visible=False)
+    (config / "workspace-layout.json").write_text(json.dumps(workspace) + "\n")
 env["VK_INSTANCE_LAYERS"] = "VK_LAYER_OBK_present_probe"
 env["VK_ADD_LAYER_PATH"] = str(Path(__file__).parent)
 if args.phases:
@@ -202,6 +210,7 @@ with (folder / "app.log").open("w") as log:
                     desktop_validation=os.getenv("OBLIKOVATI_VULKAN_VALIDATION"),
                     desktop_vsync=os.getenv("OBLIKOVATI_VSYNC"),
                     present_mode_override=not args.observe_present_mode,
+                    selection_toolbar_hidden=args.hide_selection_toolbar,
                     load=load, cpu_pressure=cpu_pressure, io_pressure=io_pressure)
     try:
         if args.mode == "continuous":

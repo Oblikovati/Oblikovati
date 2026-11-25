@@ -101,8 +101,11 @@ fn open_fixture(runtime: &ViewportRuntime, title: &str) -> Viewport {
 fn native_present_can_defer_capture_without_losing_current_pixels() {
     let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
     let mut view = open_fixture(&runtime, "Oblikovati deferred capture");
+    assert_eq!(view.completed_generations(), None);
     let expected = verify_native(&mut view);
+    let completed = view.completed_generations().unwrap();
     assert!(view.present_without_capture().unwrap());
+    assert_eq!(view.completed_generations(), Some(completed));
     assert_eq!(view.capture().unwrap(), expected);
     await_presented_pixels(&view, &expected);
     view.close();

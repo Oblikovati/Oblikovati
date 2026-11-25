@@ -73,6 +73,28 @@ fn each_window_keeps_its_own_last_picture() {
 }
 
 #[test]
+fn preview_readback_is_reused_only_for_the_same_composition_and_crop() {
+    let mut previews = TabPreviews {
+        showing: Some((PreviewKey::Home, [[0., 0.], [2., 2.]])),
+        ..Default::default()
+    };
+    let generations = Some([1, 2, 3, 4]);
+    assert!(previews.needs_frame_pixels_at(generations));
+    previews.note_frame_at([4, 2], &frame()[..8], generations);
+    assert!(previews.needs_frame_pixels_at(generations));
+    previews.note_frame_at([4, 2], &frame(), generations);
+    assert!(!previews.needs_frame_pixels_at(generations));
+    assert!(previews.needs_frame_pixels_at(None));
+    assert!(previews.needs_frame_pixels_at(Some([1, 3, 3, 4])));
+    previews.showing = Some((PreviewKey::Home, [[2., 0.], [4., 2.]]));
+    assert!(previews.needs_frame_pixels_at(generations));
+    previews.note_frame_at([4, 2], &frame(), generations);
+    assert_eq!(previews.images[&PreviewKey::Home].rgb[0], [0, 0, 200]);
+    previews.showing = Some((PreviewKey::Window(7), [[2., 0.], [4., 2.]]));
+    assert!(previews.needs_frame_pixels_at(generations));
+}
+
+#[test]
 fn visible_preview_is_not_captured_inside_its_own_picture() {
     let mut previews = TabPreviews {
         showing: Some((PreviewKey::Window(7), [[0., 0.], [2., 2.]])),

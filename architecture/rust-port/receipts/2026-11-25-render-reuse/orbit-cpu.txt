@@ -1,0 +1,14 @@
+# Total Lost Samples: 0
+# Samples: 890  of event 'cycles:u'
+14.85% | [.] __memmove_avx512_unaligned_erms | libc.so.6
+6.35% | [.] malloc | libc.so.6
+4.67% | [k] 0xffffffffa1600b90 | [unknown]
+4.31% | [.] _int_free | libc.so.6
+2.60% | [.] _int_malloc | libc.so.6
+1.96% | [.] <oblikovati_viewport::gui_render::GuiFrameCompiler>::layer | oblikovati
+1.68% | [.] __memcmp_evex_movbe | libc.so.6
+1.57% | [.] oblikovati_gui::snapshot::capture_frame | oblikovati
+1.52% | [.] 0x000000000000be65 | libxcb.so.1.1.0
+
+Inclusive X11 window attribute samples
+6.70% | 0.13% | [.] XGetWindowAttributes

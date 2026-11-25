@@ -31,7 +31,15 @@ pub(crate) struct HoveredTab {
 const CELLS: [u32; 2] = [64, 36];
 const CELL_SIZE: f32 = 3.;
 const ASPECT: f32 = CELLS[0] as f32 / CELLS[1] as f32;
-/// One small picture per window, replaced each time that window is presented.
+type PreviewRegion = (PreviewKey, [[f32; 2]; 2]);
+
+#[derive(PartialEq)]
+struct PreviewSample {
+    generations: [u64; 4],
+    region: PreviewRegion,
+}
+
+/// One small picture per window, updated from its presented frames.
 #[derive(Default)]
 pub(crate) struct TabPreviews {
     images: BTreeMap<PreviewKey, GuiPreviewImage>,
@@ -42,28 +50,53 @@ pub(crate) struct TabPreviews {
     /// The last one told: an unchanged picture must not wake the owner on each frame.
     told_picture: Option<(u64, GuiPreviewImage)>,
     /// What is in front, and where, as of the last drawn frame.
-    pub showing: Option<(PreviewKey, [[f32; 2]; 2])>,
+    pub showing: Option<PreviewRegion>,
     preview_visible: bool,
     deferred_preview: bool,
     // #3989: multiple draws can precede presentation; only a captured frame clears the guard.
     captured_front: Option<PreviewKey>,
+    last_sample: Option<PreviewSample>,
 }
 impl TabPreviews {
     pub(crate) fn needs_frame_pixels(&self) -> bool {
         !self.preview_visible && self.showing.is_some()
     }
+    pub(crate) fn needs_frame_pixels_at(&self, generations: Option<[u64; 4]>) -> bool {
+        self.needs_frame_pixels()
+            && generations
+                .zip(self.showing)
+                .is_none_or(|(generations, region)| {
+                    self.last_sample.as_ref()
+                        != Some(&PreviewSample {
+                            generations,
+                            region,
+                        })
+                })
+    }
+
+    pub(crate) fn note_frame(&mut self, extent: [u32; 2], rgba: &[u8]) {
+        self.note_frame_at(extent, rgba, None);
+    }
 
     /// Keep what the workspace shows now; the area is in window pixels.
-    pub(crate) fn note_frame(&mut self, extent: [u32; 2], rgba: &[u8]) {
-        // A preview below the strip is inside the workspace being captured.
-        if self.preview_visible {
+    pub(crate) fn note_frame_at(
+        &mut self,
+        extent: [u32; 2],
+        rgba: &[u8],
+        generations: Option<[u64; 4]>,
+    ) {
+        if !self.needs_frame_pixels() {
             return;
         }
-        let Some((key, [minimum, maximum])) = self.showing else {
+        let Some(region @ (key, [minimum, maximum])) = self.showing else {
             return;
         };
         if let Some(image) = cropped_picture(extent, rgba, minimum, maximum) {
             self.captured_front = Some(key);
+            self.last_sample = generations.map(|generations| PreviewSample {
+                generations,
+                region,
+            });
             if let Some(document) = self.showing_document {
                 self.document_picture = Some((document, key, image.clone()));
             }
@@ -112,6 +145,7 @@ impl TabPreviews {
         if matches!(self.captured_front, Some(PreviewKey::Window(id)) if !has_window(&current, id))
         {
             self.captured_front = None;
+            self.last_sample = None;
         }
         self.forget_closed_picture(&current);
         self.forget_closed_front(&current);

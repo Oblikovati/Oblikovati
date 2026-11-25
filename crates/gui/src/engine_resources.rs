@@ -16,6 +16,29 @@ impl GuiFrameEngine {
         self.document_tabs.previews.needs_frame_pixels()
     }
 
+    /// Report whether the displayed region needs a new sample of the composed frame.
+    /// Example: `engine.needs_frame_pixels_at(view.completed_generations())`.
+    pub fn needs_frame_pixels_at(&self, completed: Option<[u64; 4]>) -> bool {
+        self.document_tabs.previews.needs_frame_pixels_at(completed)
+    }
+
+    /// Publish preview pixels with their native frame identity.
+    /// Example: `engine.note_presented_window_capture(&capture)` after presenting.
+    pub fn note_presented_window_capture(
+        &mut self,
+        capture: &oblikovati_viewport::ViewportCapture,
+    ) {
+        let generations = [
+            capture.scene_generation,
+            capture.camera_generation,
+            capture.surface_generation,
+            capture.overlay_generation,
+        ];
+        self.document_tabs
+            .previews
+            .note_frame_at(capture.extent, &capture.rgba, Some(generations));
+    }
+
     pub(super) fn refresh_chrome(&mut self, request: &GuiFrameRequest) -> bool {
         // Docked tab bars use their windows' colors from the previous frame.
         request.commands.theme.as_ref().is_some_and(|theme| {

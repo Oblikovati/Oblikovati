@@ -76,6 +76,11 @@ impl Viewport {
     fn generations(&self) -> [u64; 4] {
         [self.scene, self.camera, self.surface, self.overlay]
     }
+    /// Return the scene, camera, surface, and overlay generations last presented together.
+    /// Example: `view.completed_generations()` can match a previously captured preview.
+    pub fn completed_generations(&self) -> Option<[u64; 4]> {
+        self.completed
+    }
     /// Apply application colours independently of geometry; example: `viewport.set_background(ViewportBackground::Solid([0, 0, 0]))?`.
     pub fn set_background(
         &mut self,

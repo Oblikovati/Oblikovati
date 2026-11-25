@@ -19,7 +19,7 @@ impl NativeHeadWindow {
             && self
                 .gui
                 .as_ref()
-                .is_none_or(|gui| !gui.needs_frame_pixels())
+                .is_none_or(|gui| !gui.needs_frame_pixels(self.view.completed_generations()))
         {
             let completed = self.view.present_without_capture()?;
             return self.finish_native_presentation(completed);
@@ -29,7 +29,7 @@ impl NativeHeadWindow {
         };
         let completed = self.finish_native_presentation(true)?;
         if let Some(gui) = &mut self.gui {
-            gui.note_presented_frame(capture.extent, &capture.rgba);
+            gui.note_presented_frame(&capture);
         }
         self.publish_window_captures(&capture)?;
         Ok(completed)

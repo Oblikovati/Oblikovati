@@ -19,6 +19,12 @@ from the accepted frame. Explicit screenshots need full RGBA. At 1440×900
 the combined `Vec<u8>` RGBA and `Vec<f32>` depth contain 10,368,000 bytes per
 owned full-plane capture.
 
+The application now reuses a tab image on repeated presents of identical
+composition generations and crop regions. The smaller transfer is still
+needed when the camera, overlay, or source scene changes. The application
+also retains unchanged compiled GUI geometry across changing layers.
+[Application evidence](../2026-11-25-render-reuse/README.md)
+
 Provide a typed color-only capture or borrow against the most recent
 accepted native publication. Add a region-to-thumbnail capture for color
 previews if the color-only route is still significant. Validate generation
@@ -51,3 +57,17 @@ requested immediate mode, and record the selected mode with validation
 on and off. The 120 FPS interval budget is 8.33 ms. Attribute a stage before
 changing cache or synchronization policy so correctness and resource lifetime
 can be verified against the same pixel and resize oracles.
+
+## Attribute X11 window observations
+
+The [post-reuse orbit sample](../2026-11-25-render-reuse/README.md) reports
+6.70% inclusive user-space cycles in `XGetWindowAttributes`. Sample stacks
+reach it through `XwWindow::live_attributes`. The sample neither counts
+round trips nor captures wall time blocked waiting for replies.
+
+Count and time these calls per redraw, separating application extent
+queries from checked GUI attachment, resize checks, and swapchain
+publication. Investigate sharing one versioned observation where its
+lifetime permits it. Verify externally delivered resizes, unmap/remap, and
+surface replacement between acquisition and presentation before changing
+when an observation may be reused.
