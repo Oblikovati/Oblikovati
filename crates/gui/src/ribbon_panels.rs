@@ -12,7 +12,9 @@ pub(crate) mod builtin;
 
 #[path = "ribbon_panel_catalog.rs"]
 mod catalog;
-pub(crate) use catalog::{RibbonPanel, available_panels, panels_for, panels_for_placement};
+pub(crate) use catalog::{
+    RibbonPanel, available_panels, panels_for, panels_for_placement, supports_custom_panel,
+};
 #[path = "ribbon_side_groups.rs"]
 mod side_groups;
 pub(crate) use side_groups::draw_side_groups;

@@ -3,6 +3,8 @@
 use super::*;
 use oblikovati_viewport::ViewportPhysicalKey;
 
+#[path = "assembly_target.rs"]
+mod assembly_target;
 #[path = "entry_steps.rs"]
 mod entry_steps;
 #[path = "target_inventory.rs"]

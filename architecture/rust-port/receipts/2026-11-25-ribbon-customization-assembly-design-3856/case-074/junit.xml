@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T07:16:09.189651693Z" time="53.079892486"><testcase name="Scenario: Stage commands for part and assembly targets from a part document: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1172:3" time="53.079892486"><system-out><![CDATA[  Scenario: Stage commands for part and assembly targets from a part document
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And ribbon customization is open with "All Commands" selected
+   ✔  And the Part | Tools and Assembly | Design custom targets are empty
+   ✔  When the user adds "2D Sketches" to the Part | Tools target without applying
+   ✔  Then the Part | Tools target is marked as changed
+   ✔  When the user selects the Assembly | Design target
+   ✔  Then the assembly target list is empty
+   ✔  And "2D Sketches" is available in the source list
+   ✔  When the user adds "2D Sketches" to the Assembly | Design target
+   ✔  Then "2D Sketches" appears in the assembly target list
+   ✔  And the Assembly | Design target is marked as changed
+   ✔  When the user returns to the Part | Tools target
+   ✔  Then "2D Sketches" remains in the part target list
+   ✔  And the Part | Tools target remains marked as changed
+   ✔  When the user cancels customization
+   ✔  Then the customization dialog closes
+   ✔  And the part document remains active
+   ✔  When the user reopens customization from the Tools ribbon
+   ✔  Then the Part | Tools target is empty
+   ✔  And "2D Sketches" is available in the source list
+   ✔  When the user selects the Assembly | Design target
+   ✔  Then the assembly target is empty
+   ✔  And "2D Sketches" is available in the source list
+   ✔  When the user closes customization
+   ✔  Then the part document remains active
+]]></system-out></testcase></testsuite></testsuites>

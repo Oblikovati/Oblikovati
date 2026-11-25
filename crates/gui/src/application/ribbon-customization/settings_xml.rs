@@ -18,17 +18,20 @@ pub(super) struct SettingsDocument {
 }
 
 pub(super) const MAX_SETTINGS_BYTES: usize = 1024 * 1024;
-const TABS: [(RibbonTab, &str); 6] = [
+const TABS: [(RibbonTab, &str); 7] = [
     (RibbonTab::Model, "model"),
     (RibbonTab::Sketch, "sketch"),
     (RibbonTab::Annotate, "annotate"),
     (RibbonTab::Tools, "tools"),
     (RibbonTab::Manage, "manage"),
     (RibbonTab::View, "view"),
+    (RibbonTab::Assemble, "assembly-design"),
 ];
 
 pub(super) fn encode(settings: &SettingsDocument) -> Result<Vec<u8>, String> {
-    let version = if settings.large_builtins.is_empty() {
+    let version = if settings.commands.contains_key(&RibbonTab::Assemble) {
+        "7"
+    } else if settings.large_builtins.is_empty() {
         "5"
     } else {
         "6"
@@ -48,7 +51,7 @@ pub(super) fn encode(settings: &SettingsDocument) -> Result<Vec<u8>, String> {
             .iter()
             .find(|(known, _)| known == tab)
             .map(|(_, id)| *id)
-            .ok_or_else(|| format!("ribbon tab {tab:?}: expected a part ribbon target"))?;
+            .ok_or_else(|| format!("ribbon tab {tab:?}: expected a known ribbon target"))?;
         writer
             .write(WriteEvent::start_element("tab").attr("id", id))
             .map_err(|error| error.to_string())?;
@@ -193,7 +196,7 @@ impl SettingsDecoder {
             }
             _ => {
                 return Err(format!(
-                    "XML element {tag:?}: expected version 1 through 6 ribbon settings"
+                    "XML element {tag:?}: expected version 1 through 7 ribbon settings"
                 ));
             }
         }
@@ -212,8 +215,9 @@ impl SettingsDecoder {
             Some("4") => 4,
             Some("5") => 5,
             Some("6") => 6,
+            Some("7") => 7,
             _ => {
-                return Err(format!("ribbon version {version:?}: expected 1 through 6"));
+                return Err(format!("ribbon version {version:?}: expected 1 through 7"));
             }
         };
         let count = if self.version >= 4 { 2 } else { 1 };
@@ -240,7 +244,10 @@ impl SettingsDecoder {
             .iter()
             .find(|(_, value)| *value == id)
             .map(|(tab, _)| *tab)
-            .ok_or_else(|| format!("ribbon target {id:?}: expected a known part tab"))?;
+            .ok_or_else(|| format!("ribbon target {id:?}: expected a known ribbon tab"))?;
+        if tab == RibbonTab::Assemble && self.version < 7 {
+            return Err("assembly design ribbon settings require version 7".into());
+        }
         if self.settings.insert(tab, Vec::new()).is_some() {
             return Err(format!("ribbon target {id:?}: expected a single tab entry"));
         }
@@ -411,7 +418,7 @@ mod tests {
     }
     #[test]
     fn supported_versions_load_and_unknown_version_reports_the_expected_set() {
-        for version in 1..=6 {
+        for version in 1..=7 {
             let appearance = if version >= 4 {
                 " appearance=\"normal\""
             } else {
@@ -425,8 +432,30 @@ mod tests {
         }
         assert_eq!(
             decode(b"<ribbon-customization version=\"99\"/>").unwrap_err(),
-            "ribbon version Some(\"99\"): expected 1 through 6"
+            "ribbon version Some(\"99\"): expected 1 through 7"
         );
+    }
+    #[test]
+    fn assembly_design_has_a_separate_versioned_target() {
+        let entry = Entry {
+            command: Command::Sketches,
+            large: false,
+            text: true,
+            expanded: false,
+        };
+        let settings = SettingsDocument {
+            commands: BTreeMap::from([
+                (RibbonTab::Tools, vec![entry.clone()]),
+                (RibbonTab::Assemble, vec![entry]),
+            ]),
+            ..Default::default()
+        };
+        let xml = String::from_utf8(encode(&settings).unwrap()).unwrap();
+        assert!(xml.contains("version=\"7\""));
+        assert!(xml.contains("id=\"assembly-design\""));
+        assert_eq!(decode(xml.as_bytes()).unwrap(), settings);
+        let mislabeled = xml.replacen("version=\"7\"", "version=\"6\"", 1);
+        assert!(decode(mislabeled.as_bytes()).is_err());
     }
     #[test]
     fn rejects_invalid_versions_duplicate_commands_and_dtd() {

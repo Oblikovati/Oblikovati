@@ -104,7 +104,7 @@ pub(crate) fn ribbon_band(
             ui,
             tab,
             &panels,
-            request.commands.document_type == Some(oblikovati_api::types::DOCUMENT_PART),
+            crate::ribbon_panels::supports_custom_panel(tab, &request.commands),
             &mut owners.ribbon.customization,
             (&request.commands, owners.quick_access),
         );

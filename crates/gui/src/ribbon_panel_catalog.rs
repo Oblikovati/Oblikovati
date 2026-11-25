@@ -159,6 +159,16 @@ impl RibbonPanel {
         })
     }
 }
+/// Match a custom panel to its document type, as in `supports_custom_panel(RibbonTab::Assemble, state)`.
+pub(crate) fn supports_custom_panel(tab: RibbonTab, state: &GuiCommandState) -> bool {
+    use oblikovati_api::types::{DOCUMENT_ASSEMBLY, DOCUMENT_PART};
+    if tab == RibbonTab::Assemble {
+        state.document_type == Some(DOCUMENT_ASSEMBLY)
+    } else {
+        state.document_type == Some(DOCUMENT_PART)
+    }
+}
+
 /// Include the user panel in both the ribbon and its visibility controls.
 pub(crate) fn available_panels(
     tab: RibbonTab,
@@ -166,9 +176,7 @@ pub(crate) fn available_panels(
     customization: &crate::application::ribbon_customization::RibbonCustomization,
 ) -> Vec<RibbonPanel> {
     let mut panels = panels_for(tab, state);
-    if state.document_type == Some(oblikovati_api::types::DOCUMENT_PART)
-        && customization.has_panel(tab)
-    {
+    if supports_custom_panel(tab, state) && customization.has_panel(tab) {
         let before_exit = panels
             .iter()
             .position(|panel| *panel == RibbonPanel::Exit)

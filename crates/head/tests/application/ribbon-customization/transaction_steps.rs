@@ -51,7 +51,7 @@ pub(super) fn target_label(world: &ApplicationWorld) -> &str {
         .runs
         .iter()
         .find(|run| {
-            run.text.starts_with("Part|")
+            (run.text.starts_with("Part|") || run.text.starts_with("Assembly|"))
                 && (run.minimum[0] - x).abs() < 18.
                 && (0. ..32.).contains(&(run.center()[1] - y))
         })

@@ -303,7 +303,7 @@ impl RibbonCustomization {
         } else {
             ""
         };
-        let target = format!("Part | {}{suffix}", self.draft.target.label());
+        let target = target_selector::target_caption(self.draft.target, suffix);
         ui.set_next_item_width(size[0]);
         let targets = ui.begin_combo_with_flags(
             "##custom-target",
