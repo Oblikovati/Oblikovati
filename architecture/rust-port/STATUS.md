@@ -47,7 +47,7 @@ using this status; the live scenario directory can change.
   declarations in the older pinned snapshot have R0 baseline records.
   Strict verification still needs a current pin and bounded build and runtime
   inputs under #3978.
-- Document Tabs (#3900): all 39 current scenarios and 343 steps passed
+- Document Tabs (#3900): all 39 scenarios and 343 steps passed on the November 21 published source
   on Linux X11 with Openbox. The pinned snapshot also passed all 38
   scenarios and 334 steps. All 38 pinned declarations have R0 baseline
   records. The native checks include separate drawing windows and independent

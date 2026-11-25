@@ -24,6 +24,8 @@ mod offscreen_selection;
 mod overflow_order;
 #[path = "reordering.rs"]
 mod reordering;
+#[path = "saved_sketch_parts.rs"]
+mod saved_sketch_parts;
 #[path = "second_windows.rs"]
 mod second_windows;
 const TAB_STRIP: &str = "##open-document-tabs";
@@ -48,11 +50,19 @@ fn open_two(world: &mut ApplicationWorld) {
 #[given("the first part contains an empty sketch")]
 fn first_has_sketch(world: &mut ApplicationWorld) {
     world.activate_through_tab(first(world));
+    if saved_sketch_parts::is_saved_sketch_part(world, first(world)) {
+        saved_sketch_parts::expect_sketch_lines(world, 0);
+        return;
+    }
     world.add_finished_sketch();
 }
 #[given("the second part contains a rectangular sketch profile")]
 fn second_has_rectangle(world: &mut ApplicationWorld) {
     world.activate_through_tab(second(world));
+    if saved_sketch_parts::is_saved_sketch_part(world, second(world)) {
+        saved_sketch_parts::expect_sketch_lines(world, 4);
+        return;
+    }
     world.start_sketch();
     world.draw_rectangle();
     world.finish_sketch();
@@ -77,8 +87,13 @@ fn second_is_active(world: &mut ApplicationWorld) {
 }
 #[then("its rectangular profile appears in the viewport")]
 fn rectangle_appears(world: &mut ApplicationWorld) {
+    let visible = if saved_sketch_parts::is_saved_sketch_part(world, second(world)) {
+        saved_sketch_parts::published_rectangle_visible(world)
+    } else {
+        super::rectangle_visibility::current_rectangle_visible(world)
+    };
     assert!(
-        super::rectangle_visibility::current_rectangle_visible(world),
+        visible,
         "expected four rectangle edges in the second part viewport"
     );
 }
@@ -91,8 +106,13 @@ fn browser_second(world: &mut ApplicationWorld) {
 fn first_is_active(world: &mut ApplicationWorld) {
     world.expect_active(first(world));
     world.expect_browser_sketch();
+    let visible = if saved_sketch_parts::is_saved_sketch_part(world, first(world)) {
+        saved_sketch_parts::published_rectangle_visible(world)
+    } else {
+        super::rectangle_visibility::current_rectangle_visible(world)
+    };
     assert!(
-        !super::rectangle_visibility::current_rectangle_visible(world),
+        !visible,
         "the first part viewport must not show the second part rectangle"
     );
 }

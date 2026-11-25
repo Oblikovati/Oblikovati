@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:15:30.792287318Z" time="30.097336847"><testcase name="Scenario: Switch between open parts: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:4:3" time="30.097336847"><system-out><![CDATA[  Scenario: Switch between open parts
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` and `fixtures/cad/revolve/revolve-profile.opd` are open in that order
+   ✔  And the first part contains an empty sketch
+   ✔  And the second part contains a rectangular sketch profile
+   ✔  And the second part's sketch is visible
+   ✔  And the first part is active
+   ✔  When the user selects the second part's document tab
+   ✔  Then the second part becomes active
+   ✔  And its rectangular profile appears in the viewport
+   ✔  And the model browser shows the second part
+   ✔  And the application title identifies the second part
+   ✔  When the user selects the first part's document tab
+   ✔  Then the first part becomes active
+   ✔  And its model browser and viewport are displayed
+   ✔  And the second part remains available as an open tab
+]]></system-out></testcase></testsuite></testsuites>
