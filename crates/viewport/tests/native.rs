@@ -18,6 +18,8 @@ mod navigation;
 mod prism;
 #[path = "native/status_text.rs"]
 mod status_text;
+#[path = "native/wayland.rs"]
+mod wayland;
 #[path = "native/window_events.rs"]
 mod window_events;
 // The native suite shares the authored kernel-consumer corpus without running every fixture helper.

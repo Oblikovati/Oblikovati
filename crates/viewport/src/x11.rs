@@ -86,8 +86,9 @@ impl NativeWindow {
     ) -> Result<Self, String> {
         valid_extent(extent)?;
         validate_title(title)?;
+        // The desktop session can advertise Wayland even when this host owns Xlib windows.
         let display =
-            Handle::new(AspectDisplayConnection::new().map_err(|error| error.to_string())?);
+            Handle::new(AspectDisplayConnection::new_x11().map_err(|error| error.to_string())?);
         Self::create_with_display(x11, display, title, extent, system_frame)
     }
     pub(super) fn create_with_display(

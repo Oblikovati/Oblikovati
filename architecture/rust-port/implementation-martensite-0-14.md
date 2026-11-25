@@ -1,4 +1,38 @@
-# Martensite v0.14.1 integration
+# Martensite v0.14 integration
+
+## v0.14.2
+
+The adapter, viewport, and packaging use the
+[Martensite v0.14.2 release](https://github.com/Oblikovati/Martensite/releases/tag/v0.14.2).
+The annotated tag peels to `d463526642b7bf950ba33c7ab4a4c9bc97caffaf`.
+All 20 locked toolkit versions match the tagged manifests, including
+`martensite-tkservice` 0.5.1 and `martensite-vulkan` 0.8.1.
+
+The X11 host explicitly requests an X11 display. The new automatic
+constructor can return a Wayland display when both display variables are
+set. Oblikovati's Xlib calls require an X11 connection. The Linux
+head and build-tool check passed for all targets and features. All 113
+build-tool unit tests and all three X11 desktop smoke tests passed.
+
+An isolated headless Weston session with Lavapipe presented and captured
+a 160 × 120 frame through the new Wayland Vulkan surface with zero
+validation errors and no X11 connection. The same check is runnable as
+`cargo test --locked -p oblikovati-viewport --test native pinned_martensite_presents_a_native_wayland_frame -- --ignored`
+on a Wayland compositor with the Vulkan validation layer.
+
+Oblikovati's desktop still uses X11. The native Wayland host needs to feed
+the application event loop and handle keyboard, text, clipboard, window
+controls, and scaling. In particular, v0.14.2's owned `WlWindow` clears
+the drawable before notifying its close listener. Oblikovati needs to keep
+the surface alive through the unsaved-changes prompt and a possible Cancel.
+The release also supports wrapping an application-owned Wayland surface.
+
+Release preflight verified the dependency metadata and reached the
+existing missing resource `packaging/resources/icons/oblikovati.png`.
+`cargo audit` reported the same advisory IDs on both lockfiles.
+`cargo deny` reported advisory and license failures.
+
+## v0.14.1
 
 The kernel adapter, viewport, and packaging configuration use the published
 [Martensite v0.14.1 release](https://github.com/Oblikovati/Martensite/releases/tag/v0.14.1).
