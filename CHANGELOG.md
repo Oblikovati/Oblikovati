@@ -20,7 +20,7 @@
 - Added a curvature comb and live density and scale settings for sketch ellipses. (#3995)
 - Added a saved, opt-in set of default multi-character command aliases to Keyboard customization. (#3856)
 - Added Italic to the Sketch Text editor and kept Bold when applying it. (#3907)
-
+- Included applied ribbon, Quick Access, keyboard, marking menu, and mini-toolbar state in Customize exports. (#3856)
 - Opened the editor for existing Sketch Text on a double-click of the glyph. (#3907)
 
 - Added Bold preview and editing for a full Sketch Text selection. (#3907)

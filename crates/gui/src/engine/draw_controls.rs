@@ -340,9 +340,9 @@ impl GuiFrameEngine {
             .panel(ui, &request.commands, &mut selected);
         self.offset_plane
             .panel(ui, &request.commands, &mut selected);
+        let interface = (&self.quick_access, &self.workspace);
         self.ribbon
-            .customization
-            .panel(ui, &request.commands, &mut selected);
+            .customization_panel(ui, commands, &mut selected, interface);
         self.create_block
             .panel(ui, &request.commands, &mut selected);
         self.sketch_pattern

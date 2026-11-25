@@ -12,6 +12,7 @@ use crate::{GuiCommandState, GuiShellAction};
 use imgui::{MouseButton, Ui};
 use oblikovati_api::types::DocumentType;
 use std::collections::BTreeMap;
+mod settings_export;
 
 const CUSTOMIZE_MENU: &str = "##quick-access-customize";
 const SHORTCUT_MENU: &str = "##quick-access-shortcut";
@@ -74,7 +75,7 @@ pub(crate) struct QuickAccessRequests {
 pub(crate) struct QuickAccessToolbar {
     #[cfg(test)]
     pub(crate) test_save_bounds: Option<[[f32; 2]; 2]>,
-    kinds: BTreeMap<String, KindSelection>,
+    kinds: BTreeMap<Option<DocumentType>, KindSelection>,
     pub below_ribbon: bool,
     shortcut_under_menu: Option<String>,
     open_selection: bool,
@@ -83,15 +84,12 @@ pub(crate) struct QuickAccessToolbar {
     /// A right press landed on a command with its own menu, not on the ribbon behind it.
     pub command_took_right_click: bool,
 }
-fn kind_key(document_type: Option<DocumentType>) -> String {
-    format!("{document_type:?}")
-}
 impl QuickAccessToolbar {
     pub(crate) fn take_requests(&mut self) -> QuickAccessRequests {
         std::mem::take(&mut self.requests)
     }
     fn selection(&mut self, state: &GuiCommandState) -> &mut KindSelection {
-        self.kinds.entry(kind_key(state.document_type)).or_default()
+        self.kinds.entry(state.document_type).or_default()
     }
     /// Draw the row, then its control; example: `toolbar.row(ui, state, actions)`.
     pub(crate) fn row(

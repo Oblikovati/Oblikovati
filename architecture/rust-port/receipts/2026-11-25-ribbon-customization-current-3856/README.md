@@ -1,7 +1,7 @@
 # Current native Ribbon Customization
 
-One hundred and one of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 97 of 122 declarations and 1,383
+One hundred and two of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 98 of 122 declarations and 1,393
 passing steps. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
@@ -58,6 +58,9 @@ independent and discarded both on Cancel.
 The [keyboard defaults run](../2026-11-25-ribbon-customization-default-aliases-3856/README.md)
 verified the editor controls and stopped at the final sketch assertion.
 The published Part opens outside sketch edit.
+The interface export case read applied settings from six areas and kept
+Customize open.
+[Interface export](../2026-11-25-ribbon-customization-interface-export-3856/README.md)
 
 The [command list](case-059/cucumber.json),
 [reorder](case-082/cucumber.json), and [remove](case-083/cucumber.json)

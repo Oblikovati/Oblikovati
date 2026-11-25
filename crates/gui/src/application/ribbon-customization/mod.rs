@@ -2,6 +2,7 @@
 //! Ribbon command edits stay in a draft until Apply or OK.
 mod builtin;
 mod category;
+pub(crate) mod interface_export;
 mod keyboard;
 mod keyboard_catalog;
 mod layout;
@@ -163,6 +164,7 @@ impl RibbonCustomization {
         ui: &Ui,
         commands: &crate::GuiCommandState,
         actions: &mut Vec<crate::GuiShellAction>,
+        export: interface_export::InterfaceExport<'_>,
     ) {
         self.escape_consumed = false;
         self.navigation_consumed = false;
@@ -210,21 +212,7 @@ impl RibbonCustomization {
         if !window_open {
             self.open.set_open(false);
         }
-        let document = self.applied_document();
-        match self.settings.panel(ui, &document) {
-            Some(Ok(settings)) => {
-                self.draft.import(settings.commands);
-                self.builtins.import(
-                    settings.expanded_builtins,
-                    settings.ungrouped_builtins,
-                    settings.large_builtins,
-                );
-                self.staged_appearance = settings.appearance;
-                self.settings_error = None;
-            }
-            Some(Err(error)) => self.settings_error = Some(error),
-            None => {}
-        }
+        self.settings_file_picker(ui, || export.sections(commands));
     }
     fn source_list(&mut self, ui: &Ui) {
         let size = layout::list_size(ui, 230., 150.);

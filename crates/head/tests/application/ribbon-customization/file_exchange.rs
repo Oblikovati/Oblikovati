@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Import and export scenarios exercised through the native file chooser.
 use super::*;
+#[path = "interface_export.rs"]
+mod interface_export;
 use xml::reader::XmlEvent;
 
 #[path = "import_drafts.rs"]

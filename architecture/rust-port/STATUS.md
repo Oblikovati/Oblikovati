@@ -55,7 +55,7 @@ using this status; the live scenario directory can change.
 - Ribbon Panel Visibility (#3856) passed [43 of 55 current cases and 508 steps](receipts/2026-11-25-ribbon-panel-visibility-current-3856/README.md). Twelve cases remain open across panel inventory, Shell preview, and the User Commands specification.
 - Ribbon Panel Expansion (#3856) passed [59 of 67 current cases and 668 steps](receipts/2026-11-25-ribbon-panel-expansion-current-3856/README.md). Eight cases require Shell previews or Highlight New.
 - Model Browser (#3896) passed [96 of 100 current cases and 1,305 steps](receipts/2026-11-25-model-browser-current-3896/README.md). Four `d1` cases require the extrusion taper contract in #4127 and Martensite #463.
-- Ribbon Customization (#3856) passed 101 of 126 current executions and 1,383 steps. Independent cases are still in progress. [Native report](receipts/2026-11-25-ribbon-customization-current-3856/README.md)
+- Ribbon Customization (#3856) passed 102 of 126 current executions and 1,393 steps. Independent cases are still in progress. [Native report](receipts/2026-11-25-ribbon-customization-current-3856/README.md)
 - Document Saving (#3888) passed 23 dependency-ready current scenarios and 260
   steps. The generated Part requires Assembly Simplify (#3963). See the
   [current run](receipts/2026-11-25-document-saving-current-3888/README.md).

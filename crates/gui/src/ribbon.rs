@@ -11,6 +11,30 @@ mod reset;
 pub(crate) mod team_web;
 
 impl DocumentRibbon {
+    pub(crate) fn customization_panel(
+        &mut self,
+        ui: &imgui::Ui,
+        commands: &GuiCommandState,
+        actions: &mut Vec<crate::GuiShellAction>,
+        (quick_access, workspace): (
+            &crate::application::quick_access_toolbar::QuickAccessToolbar,
+            &crate::application::workspace_layout::WorkspaceLayout,
+        ),
+    ) {
+        use crate::application::ribbon_customization::interface_export::InterfaceExport;
+        self.customization.panel(
+            ui,
+            commands,
+            actions,
+            InterfaceExport {
+                ribbon: &self.display,
+                quick_access,
+                marking_menu_enabled: workspace.marking_menu_enabled,
+                mini_toolbar_visible: workspace.selection_toolbar_visible,
+            },
+        );
+    }
+
     pub(crate) fn apply_context_actions(&mut self, tab: RibbonTab) {
         if let Some((owner, panel)) = self.display.take_context_relocated() {
             self.panels.close_additional(owner, panel);

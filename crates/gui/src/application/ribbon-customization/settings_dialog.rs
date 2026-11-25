@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exchange applied ribbon settings and stage imports through the shared file browser.
 use super::settings_xml::{self, SettingsDocument};
+use super::{RibbonCustomization, interface_export::Sections};
 use crate::application::document_saving::folder_browser::{
     DialogEnd, DialogEscape, FileFilter, FolderBrowser, center_dialog, dialog_buttons,
     file_name_field_focused, full_path,
@@ -15,6 +16,26 @@ use std::{
 
 const MAX_SETTINGS_BYTES: u64 = settings_xml::MAX_SETTINGS_BYTES as u64;
 const MISSING_FILE: &str = "File Not Found";
+
+impl RibbonCustomization {
+    pub(super) fn settings_file_picker(&mut self, ui: &Ui, export: impl FnOnce() -> Sections) {
+        let document = self.applied_document();
+        match self.settings.panel(ui, &document, export) {
+            Some(Ok(settings)) => {
+                self.draft.import(settings.commands);
+                self.builtins.import(
+                    settings.expanded_builtins,
+                    settings.ungrouped_builtins,
+                    settings.large_builtins,
+                );
+                self.staged_appearance = settings.appearance;
+                self.settings_error = None;
+            }
+            Some(Err(error)) => self.settings_error = Some(error),
+            None => {}
+        }
+    }
+}
 #[derive(Clone, Copy)]
 pub(super) enum Mode {
     Import,
@@ -127,6 +148,7 @@ impl SettingsDialog {
         &mut self,
         ui: &Ui,
         snapshot: &SettingsDocument,
+        export: impl FnOnce() -> Sections,
     ) -> Option<Result<SettingsDocument, String>> {
         let draft = self.draft.as_mut()?;
         if std::mem::take(&mut draft.opening) {
@@ -163,7 +185,14 @@ impl SettingsDialog {
         }
         if end == Some(DialogEnd::Accepted) {
             let path = settings_path(&self.browser.folder, &draft.name, draft.mode);
-            match perform(self.files.as_ref(), draft.mode, &path, snapshot) {
+            let sections = matches!(draft.mode, Mode::Export).then(export);
+            match perform(
+                self.files.as_ref(),
+                draft.mode,
+                &path,
+                snapshot,
+                sections.as_ref(),
+            ) {
                 Ok(imported) => {
                     self.draft = None;
                     ui.close_current_popup();
@@ -216,6 +245,7 @@ fn perform(
     mode: Mode,
     path: &str,
     snapshot: &SettingsDocument,
+    export: Option<&Sections>,
 ) -> Result<Option<SettingsDocument>, SettingsError> {
     match mode {
         Mode::Import => settings_xml::decode(&files.read(path)?)
@@ -224,7 +254,11 @@ fn perform(
                 SettingsError::InvalidImport(format!("Cannot import ribbon customization: {error}"))
             }),
         Mode::Export => {
-            let contents = settings_xml::encode(snapshot).map_err(SettingsError::Other)?;
+            let contents = match export {
+                Some(sections) => settings_xml::encode_with_interface(snapshot, sections),
+                None => settings_xml::encode(snapshot),
+            }
+            .map_err(SettingsError::Other)?;
             if contents.len() as u64 > MAX_SETTINGS_BYTES {
                 return Err(SettingsError::Other(format!(
                     "settings {} bytes: expected at most {MAX_SETTINGS_BYTES} bytes",
@@ -269,11 +303,11 @@ mod tests {
             .expanded_builtins
             .insert("part.tools.clipboard.copy".into());
         assert_eq!(
-            perform(&files, Mode::Export, "settings.xml", &settings).unwrap(),
+            perform(&files, Mode::Export, "settings.xml", &settings, None).unwrap(),
             None
         );
         assert_eq!(
-            perform(&files, Mode::Import, "settings.xml", &settings).unwrap(),
+            perform(&files, Mode::Import, "settings.xml", &settings, None).unwrap(),
             Some(settings)
         );
         assert!(
@@ -281,7 +315,8 @@ mod tests {
                 &files,
                 Mode::Export,
                 "settings.xml",
-                &SettingsDocument::default()
+                &SettingsDocument::default(),
+                None,
             )
             .is_err()
         );
@@ -290,7 +325,8 @@ mod tests {
                 &files,
                 Mode::Import,
                 "missing.xml",
-                &SettingsDocument::default()
+                &SettingsDocument::default(),
+                None,
             )
             .is_err()
         );
@@ -315,7 +351,7 @@ mod tests {
             commands: [(RibbonTab::Tools, vec![entry; 30_000])].into(),
             ..Default::default()
         };
-        assert!(perform(&files, Mode::Export, "large.xml", &settings).is_err());
+        assert!(perform(&files, Mode::Export, "large.xml", &settings, None).is_err());
         assert!(files.0.borrow().is_empty());
     }
     #[test]
@@ -323,11 +359,11 @@ mod tests {
         let files = MemorySettingsFiles::default();
         let empty = SettingsDocument::default();
         assert!(
-            matches!(perform(&files, Mode::Import, "missing.xml", &empty), Err(SettingsError::Missing(path)) if path == "missing.xml")
+            matches!(perform(&files, Mode::Import, "missing.xml", &empty, None), Err(SettingsError::Missing(path)) if path == "missing.xml")
         );
         files.create("invalid.xml", b"<invalid").unwrap();
         assert!(matches!(
-            perform(&files, Mode::Import, "invalid.xml", &empty),
+            perform(&files, Mode::Import, "invalid.xml", &empty, None),
             Err(SettingsError::InvalidImport(_))
         ));
     }
