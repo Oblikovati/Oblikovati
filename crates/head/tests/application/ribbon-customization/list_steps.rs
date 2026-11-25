@@ -222,6 +222,7 @@ fn move_down(world: &mut ApplicationWorld) {
 }
 
 #[then("\"2D Sketches\" remains the only command in the list")]
+#[then("\"2D Sketches\" appears in the target list again")]
 fn only_sketches_staged(world: &mut ApplicationWorld) {
     assert_eq!(target_rows(world), ["2DSketches"]);
 }
