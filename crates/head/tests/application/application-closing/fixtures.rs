@@ -169,6 +169,17 @@ fn discarded_sketch_is_absent(world: &mut ApplicationWorld) {
     assert!(!sketches.contains(world.proposed_name.as_ref().unwrap()));
 }
 
+#[when("the user presses Escape in Save As")]
+fn escape_first_save_dialog(world: &mut ApplicationWorld) {
+    #[cfg(target_os = "linux")]
+    if !world.app().window.native.view.uses_wayland() {
+        super::super::x11_input::press_escape();
+        world.pump(Vec::new());
+        return;
+    }
+    world.escape();
+}
+
 #[then("the MCAD Software remains open with the unsaved part and its sketch")]
 fn first_save_cancellation_preserves_part(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
