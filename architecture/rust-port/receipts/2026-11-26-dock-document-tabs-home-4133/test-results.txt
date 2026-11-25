@@ -1,0 +1,32 @@
+GUI workspace layout and document tabs
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 822 filtered out; finished in 22.00s
+
+Home-to-document baseline on wayland
+assertion `left == right` failed
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1713 filtered out; finished in 12.77s
+
+Home-to-document regression on wayland
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1713 filtered out; finished in 12.84s
+
+Direct document switching on wayland
+13 steps (13 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1713 filtered out; finished in 11.78s
+
+Floating Appearance Browser on wayland
+10 steps (10 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1713 filtered out; finished in 9.92s
+
+Home-to-document baseline on x11
+assertion `left == right` failed
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1713 filtered out; finished in 13.49s
+
+Home-to-document regression on x11
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1713 filtered out; finished in 12.48s
+
+Direct document switching on x11
+13 steps (13 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1713 filtered out; finished in 12.22s
+
+Floating Appearance Browser on x11
+10 steps (10 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1713 filtered out; finished in 10.83s

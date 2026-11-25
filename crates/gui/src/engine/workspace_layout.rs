@@ -7,12 +7,13 @@ impl GuiFrameEngine {
     /// Update the workspace and report whether it needs the fresh profile's asset dock.
     /// Example: `let seed_asset_dock = engine.prepare_workspace_frame(&request.commands)`.
     pub(super) fn prepare_workspace_frame(&mut self, commands: &crate::GuiCommandState) -> bool {
-        self.workspace.pending_layout = false;
-        self.workspace
-            .document_dock_tabs
-            .synchronize(&self.context, commands);
-        self.workspace.part_context_open = self.part_context_open && commands.model_face_chosen;
         let first_home = self.home.observe_document(commands.document);
+        self.workspace.pending_layout = self.workspace.document_dock_tabs.synchronize(
+            &self.context,
+            commands,
+            self.home.active,
+        );
+        self.workspace.part_context_open = self.part_context_open && commands.model_face_chosen;
         let seed_asset_dock = first_home && !self.workspace_layout_restored;
         if seed_asset_dock {
             self.material_browser.open();

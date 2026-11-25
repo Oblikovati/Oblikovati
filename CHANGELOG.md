@@ -194,7 +194,7 @@
 
 - Enabled existing sketch placement tools from the Part ribbon when the part has one planar sketch. (#3956)
 
-- Used native ImGui dock tabs for workspace, material, and appearance panels and added tab bar controls for panel visibility and Model Browser filtering. Restored each document's selected tab in the Model Browser dock. (#4133)
+- Used native ImGui dock tabs for workspace, material, and appearance panels and added tab bar controls for panel visibility and Model Browser filtering. Restored each document's selected tab in the Model Browser dock, including after leaving Home. (#4133)
 
 Fillet and Chamfer validation reuse a current matching part prefix before commit. (#4079)
 

@@ -78,3 +78,33 @@ fn select_dock_tab(world: &mut ApplicationWorld, title: &str) {
     })));
     assert_eq!(diagnostics::window_dock_tab_visible(title), Some(true));
 }
+
+#[test]
+fn document_tabs_restore_the_model_dock_selection_when_leaving_home() {
+    let mut world = ApplicationWorld::new();
+    super::retention_scenario::two_saved_documents(&mut world);
+    model_and_log_share_left_dock(&mut world);
+    select_log_in_part_one(&mut world);
+    select_model_in_solid(&mut world);
+    activate_part_one(&mut world);
+    log_is_active(&mut world);
+
+    open_home(&mut world);
+    switch_to_solid(&mut world);
+    model_is_active(&mut world);
+    shared_left_dock(&mut world);
+
+    open_home(&mut world);
+    activate_part_one(&mut world);
+    log_is_active(&mut world);
+    shared_left_dock(&mut world);
+    part_one_shown(&mut world);
+    world.close();
+}
+
+fn open_home(world: &mut ApplicationWorld) {
+    world.click(diagnostics::pointer_pixels(
+        world.expect_tab("Home").center(),
+    ));
+    assert!(diagnostics::window_geometry("##home-workspace").is_some());
+}

@@ -19,7 +19,7 @@ fn two_open_documents(world: &mut ApplicationWorld) {
 #[given(
     "`fixtures/cad/quick-access-toolbar/PartOne.opd` and `fixtures/cad/docking-visible-solid-current.opd` are open"
 )]
-fn two_saved_documents(world: &mut ApplicationWorld) {
+pub(super) fn two_saved_documents(world: &mut ApplicationWorld) {
     world.restore_layout_without_asset_tools();
     let other = super::super::scenario_root().join("fixtures/cad/quick-access-toolbar/PartOne.opd");
     world.open_fixture(&other);

@@ -304,3 +304,7 @@ document's visible tab and restores the incoming document's selection
 in the shared Model Browser dock. If that tab is no longer available
 in the group, the dock selects Model. The selection is kept for the
 open document's session. [Native dock tab checks](receipts/2026-11-26-dock-document-tabs-4133/README.md)
+
+Opening Home suspends the Model Browser dock. The desktop records the
+selection before suspension and restores it when a document brings the
+dock back. [Home transition checks](receipts/2026-11-26-dock-document-tabs-home-4133/README.md)
