@@ -6,6 +6,27 @@ use cucumber::{given, then, when};
 use imgui::sys;
 use std::ffi::CStr;
 
+#[test]
+fn native_model_menu_and_search_live_in_the_dock_title() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let body = world.window_text("Model");
+    assert!(!body.contains(" Menu "), "{body}");
+    assert!(!body.contains(" Search "), "{body}");
+    world.save_capture("model-dock-title-controls");
+
+    click_model_menu(&mut world);
+    world.expect_text("Autoscroll");
+    world.expect_text("Collapse All");
+    world.escape();
+    world.pump(Vec::new());
+    world.expect_no_text("Collapse All");
+
+    click_model_search(&mut world);
+    empty_filter_is_focused(&mut world);
+    world.close();
+}
+
 #[given("Model and Log occupy one dock tab bar with Log active")]
 fn log_is_active(world: &mut ApplicationWorld) {
     drawing_browser_steps::add_log(world);
@@ -28,6 +49,42 @@ fn open_dock_search(world: &mut ApplicationWorld) {
     click_dock_tab_action(world, dock, c"Log", c"   ##dock-search");
     world.pump(Vec::new());
     world.pump(Vec::new());
+}
+
+pub(in super::super) fn click_model_menu(world: &mut ApplicationWorld) {
+    click_model_control(world, c"   ##dock-model-menu", "Menu");
+}
+
+pub(in super::super) fn click_model_search(world: &mut ApplicationWorld) {
+    click_model_control(world, c"   ##dock-search", "Search");
+}
+
+fn click_model_control(world: &mut ApplicationWorld, item: &CStr, floating_label: &str) {
+    if let Some(dock) = diagnostics::window_dock_id("Model").filter(|id| *id != 0) {
+        click_dock_tab_action(world, dock, c"Model", item);
+    } else {
+        world.click_text(floating_label);
+    }
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+}
+
+pub(in super::super) fn check_inactive_hover(
+    world: &mut ApplicationWorld,
+    panels: [&str; 2],
+    active: &str,
+) {
+    let bounds = panels.map(|tab| diagnostics::window_dock_tab_bounds(tab).unwrap());
+    let (min, max) = bounds[usize::from(active == panels[0])];
+    world.hover(diagnostics::pointer_pixels([
+        max[0] - 8.,
+        (min[1] + max[1]) / 2.,
+    ]));
+    assert_eq!(
+        panels.map(|tab| diagnostics::window_dock_tab_bounds(tab).unwrap()),
+        bounds,
+        "revealing an inactive tab's close button must preserve both tab bounds"
+    );
 }
 
 /// Click a trailing dock item relative to a live window tab in the same bar.

@@ -84,7 +84,7 @@ fn nested_shown(world: &mut ApplicationWorld) {
 #[when("the user opens the floating browser search field")]
 #[given("the drawing browser search field is open")]
 fn open_drawing_search(world: &mut ApplicationWorld) {
-    world.click_text("Search");
+    super::dock_search::click_model_search(world);
     world.click_text("Type Keyword");
 }
 #[then("matching border entries are displayed beneath their respective parent branches")]

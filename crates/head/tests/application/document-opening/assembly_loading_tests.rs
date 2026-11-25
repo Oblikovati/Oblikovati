@@ -227,7 +227,7 @@ fn opening_an_assembly_displays_its_referenced_part() {
             .visible_bodies,
         2
     );
-    world.click_text("Search");
+    super::super::super::workspace_layout::dock_search::click_model_search(&mut world);
     world.pump(Vec::new());
     super::super::super::workspace_layout::browser_tree::type_in_search(&mut world, "Part:2");
     world.expect_text("Nested:1");

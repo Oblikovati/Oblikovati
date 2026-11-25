@@ -129,6 +129,11 @@ impl WorkspaceLayout {
         self.view.open_search();
         self.pending_layout = true;
     }
+    /// Open the tree options from the Model dock tab.
+    pub(crate) fn request_browser_menu(&mut self) {
+        self.view.menu_requested = true;
+        self.pending_layout = true;
+    }
     /// Open the Find criteria dialog; example: `layout.request_find()`.
     pub(crate) fn request_find(&mut self) {
         self.view.find.request();

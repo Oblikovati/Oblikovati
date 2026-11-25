@@ -283,6 +283,7 @@ fn native_dock_indicator_follows_the_active_asset_tab() {
                 "{tab} {color:?}"
             );
         }
+        super::workspace_layout::dock_search::check_inactive_hover(&mut world, panel_names, name);
         world.save_capture(name);
     }
     world.close();

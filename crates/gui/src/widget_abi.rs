@@ -187,6 +187,7 @@ fn decode_dock_action(code: u32) -> Option<DockTabAction> {
         64 => Some(DockTabAction::SelectionFilter),
         128 => Some(DockTabAction::HistoryBrowser),
         256 => Some(DockTabAction::Search),
+        512 => Some(DockTabAction::ModelMenu),
         _ => None,
     }
 }
@@ -202,7 +203,9 @@ pub(crate) enum DockTabAction {
     SelectionFilter,
     HistoryBrowser,
     Search,
+    ModelMenu,
 }
+
 fn dockspace_center(id: u32) -> Option<[f32; 4]> {
     let mut bounds = [0.; 4];
     let [left, top, right, bottom] = &mut bounds;

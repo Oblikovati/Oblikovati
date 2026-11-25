@@ -34,6 +34,7 @@ pub(crate) struct BrowserView {
     #[cfg(test)]
     pub(crate) test_visibility_bounds: Option<[[f32; 2]; 2]>,
     pub(crate) icons: Option<crate::icons::GuiRibbonIcons>,
+    pub(super) menu_requested: bool,
     autoscroll: bool,
     /// Present while the field is open; an empty query still shows the whole tree.
     query: Option<String>,
@@ -96,12 +97,17 @@ impl Default for AutoExpandRepresentations {
 impl BrowserView {
     /// Draw the menu and search controls above the tree; example: `view.header(ui)`.
     pub(crate) fn header(&mut self, ui: &Ui, drawing: bool) {
-        if crate::widget_abi::button(ui, "Menu", [0.; 2]) {
+        if std::mem::take(&mut self.menu_requested) {
             ui.open_popup(BROWSER_MENU);
         }
-        ui.same_line();
-        if crate::widget_abi::button(ui, "Search", [0.; 2]) {
-            self.open_search();
+        if !crate::widget_abi::window_is_docked(ui) {
+            if crate::widget_abi::button(ui, "Menu", [0.; 2]) {
+                ui.open_popup(BROWSER_MENU);
+            }
+            ui.same_line();
+            if crate::widget_abi::button(ui, "Search", [0.; 2]) {
+                self.open_search();
+            }
         }
         self.menu(ui, drawing);
         self.search_field(ui);

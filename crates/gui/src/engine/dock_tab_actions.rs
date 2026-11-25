@@ -43,7 +43,8 @@ pub(super) fn apply(
         DockTabAction::SelectionFilter => owners.selection.open(),
         DockTabAction::HistoryBrowser => owners.history.open(),
         DockTabAction::Search if browser_available => owners.workspace.request_browser_search(),
-        DockTabAction::Search => {}
+        DockTabAction::ModelMenu if browser_available => owners.workspace.request_browser_menu(),
+        DockTabAction::Search | DockTabAction::ModelMenu => {}
     }
 }
 

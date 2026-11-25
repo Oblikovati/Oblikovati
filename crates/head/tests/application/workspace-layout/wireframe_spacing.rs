@@ -62,12 +62,14 @@ fn assert_near(first: u32, second: u32) {
 #[then("controls within each region use a consistent inset from that region's border")]
 fn controls_stay_inside_regions(world: &mut ApplicationWorld) {
     let file = world.run("File").minimum;
-    let menu = world.run("Menu").minimum;
-    let home = world.expect_tab("Home").minimum;
+    let (model, _) = diagnostics::window_dock_tab_bounds("Model").unwrap();
+    let [home_x, home_y] = world.expect_tab("Home").minimum;
+    // The Home control starts with a 14 px glyph and a 5 px gap before its caption.
+    let home = [home_x - 19., home_y];
     let prompt = status_prompt(world);
     let insets = [
         (file, RIBBON),
-        (menu, "Model"),
+        (model, "Model"),
         (home, TABS),
         (prompt, STATUS),
     ]
@@ -130,6 +132,15 @@ fn ribbon_gaps(image: &ViewportCapture, left: u32, end: u32, y: u32) -> Vec<u32>
         .iter()
         .map(|pixel| pixel.as_slice() == background)
         .collect::<Vec<_>>();
+    // The divider can cover two raster pixels between the button backgrounds.
+    let samples: Vec<_> = samples
+        .windows(5)
+        .map(|window| {
+            let left = window[1];
+            let right = window[3];
+            window[2] || (left && right) || (window[0] && right) || (left && window[4])
+        })
+        .collect();
     let Some(first) = samples.iter().position(|&is_background| !is_background) else {
         return Vec::new();
     };

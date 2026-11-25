@@ -83,7 +83,7 @@ fn browser_feature_properties_survives_search_filter() {
     super::browser_feature::right_click_row(&mut world, super::browser_feature::FEATURE);
     super::browser_feature::choose_menu_row(&mut world, "Properties");
     assert!(window_geometry("Feature Properties").is_some());
-    world.click_text("Search");
+    super::dock_search::click_model_search(&mut world);
     world.pump(Vec::new());
     let field = world.run("Type Keyword").center();
     world.click(super::super::diagnostics::pointer_pixels(field));

@@ -15,7 +15,7 @@ fn branches_expanded(world: &mut ApplicationWorld) {
 #[when("I open the model browser menu")]
 #[when("the user opens the model browser menu")]
 pub(in super::super) fn open_browser_menu(world: &mut ApplicationWorld) {
-    world.click_text("Menu");
+    super::dock_search::click_model_menu(world);
     world.pump(Vec::new());
 }
 #[when("I choose Collapse All")]
@@ -78,7 +78,7 @@ fn browser_visible(world: &mut ApplicationWorld) {
 #[when("the user opens browser search")]
 #[given("the model browser search field is open")]
 fn open_search(world: &mut ApplicationWorld) {
-    world.click_text("Search");
+    super::dock_search::click_model_search(world);
     world.click_text("Type Keyword");
 }
 pub(in super::super) fn type_in_search(world: &mut ApplicationWorld, query: &str) {
@@ -298,14 +298,14 @@ fn select_search_control(world: &mut ApplicationWorld) {
 #[then("an empty search field appears beneath the browser header")]
 fn empty_field(world: &mut ApplicationWorld) {
     assert!(close_control_shown(world), "expected the search field");
-    let control = world.run("Menu").center()[1];
+    let (_, tab) = super::super::diagnostics::window_dock_tab_bounds("Model").unwrap();
     let close = world
         .frame
         .runs
         .iter()
         .find(|run| run.text == "x")
         .map_or(0., |run| run.center()[1]);
-    assert!(close > control, "expected the field beneath the header");
+    assert!(close > tab[1], "expected the field beneath the header");
 }
 #[then("the model browser tree and sketch viewport remain visible")]
 #[then("the browser tree and sketch viewport remain visible")]

@@ -13,7 +13,7 @@ fn origin_axes_present(world: &mut ApplicationWorld) {
 
 #[when(regex = r#"^the user opens browser search and enters "(axis|AXIS|origin)"$"#)]
 fn search_for(world: &mut ApplicationWorld, query: String) {
-    world.click_text("Search");
+    super::dock_search::click_model_search(world);
     world.click_text("Type Keyword");
     world.type_text(&query);
 }

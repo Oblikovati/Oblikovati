@@ -33,7 +33,7 @@ fn tools_find_works_with_the_model_browser_hidden() {
 fn browser_menu_find_still_opens_the_shared_dialog() {
     let mut world = ApplicationWorld::new();
     world.add_part();
-    world.click_text("Menu");
+    super::super::super::workspace_layout::dock_search::click_model_menu(&mut world);
     world.click_text("Find");
     world.expect_text("Find: Features");
     world.expect_text("Find Now");

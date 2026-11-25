@@ -351,9 +351,10 @@ std::uint32_t oblikovati_gui_draw_dock_tab_actions() {
         const ImGuiTabItemFlags trailing = ImGuiTabItemFlags_Trailing;
         ImDrawList* draw = ImGui::GetWindowDrawList();
         const ImGuiTabItem* selected = ImGui::TabBarFindTabByID(node->TabBar, node->TabBar->VisibleTabId);
+        const ImGuiWindow* selected_window = selected ? selected->Window : nullptr;
         const ImGuiID text_role_id = ImHashStr("##studio-dock-text-color");
         for (ImGuiWindow* window : node->Windows) {
-            const ImGuiCol role = selected && selected->Window == window
+            const ImGuiCol role = selected_window == window
                 ? ImGuiCol_Text : ImGuiCol_TextDisabled;
             const ImU32 ink = ImGui::GetColorU32(role);
             const int previous = window->StateStorage.GetInt(text_role_id, -1);
@@ -363,8 +364,8 @@ std::uint32_t oblikovati_gui_draw_dock_tab_actions() {
             }
             window->DockStyle.Colors[ImGuiWindowDockStyleCol_Text] = ink;
         }
-        if (selected && selected->Window) {
-            const ImRect tab = selected->Window->DockTabItemRect;
+        if (selected_window) {
+            const ImRect tab = selected_window->DockTabItemRect;
             const ImRect clip = node->TabBar->BarRect;
             const float left = ImMax(tab.Min.x, clip.Min.x);
             const float right = ImMin(tab.Max.x, clip.Max.x);
@@ -388,34 +389,45 @@ std::uint32_t oblikovati_gui_draw_dock_tab_actions() {
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Open dockable windows");
         actions |= dock_panel_menu();
 
-        const bool show_search = !selected || selected->Window != ImGui::FindWindowByName("Model");
-        // Keep the trailing item measured when switching between Model and another panel.
-        if (!show_search) {
-            ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.0f);
-            ImGui::BeginDisabled();
-        }
-        const bool search_pressed = ImGui::TabItemButton("   ##dock-search", trailing);
-        if (!show_search) {
-            ImGui::EndDisabled();
-            ImGui::PopStyleVar();
-        }
-        if (show_search) {
-            if (search_pressed) actions |= 1u << 8;
-            const ImVec2 search_min = ImGui::GetItemRectMin();
-            const ImVec2 search_max = ImGui::GetItemRectMax();
-            const ImVec2 search_center((search_min.x + search_max.x) * 0.5f,
-                                       (search_min.y + search_max.y) * 0.5f);
-            const float lens = ImGui::GetFontSize() * 0.34f;
-            draw->AddCircle(ImVec2(search_center.x - lens * 0.2f, search_center.y - lens * 0.2f),
-                            lens, icon_color, 12, 1.5f);
-            draw->AddLine(ImVec2(search_center.x + lens * 0.45f, search_center.y + lens * 0.45f),
-                          ImVec2(search_center.x + lens * 1.45f, search_center.y + lens * 1.45f), icon_color, 1.5f);
-            if (ImGui::IsItemHovered()) ImGui::SetTooltip("Find in Model Browser");
+        if (ImGui::TabItemButton("   ##dock-search", trailing)) actions |= 1u << 8;
+        const ImVec2 search_min = ImGui::GetItemRectMin();
+        const ImVec2 search_max = ImGui::GetItemRectMax();
+        const ImVec2 search_center((search_min.x + search_max.x) * 0.5f,
+                                   (search_min.y + search_max.y) * 0.5f);
+        const float lens = ImGui::GetFontSize() * 0.34f;
+        draw->AddCircle(ImVec2(search_center.x - lens * 0.2f, search_center.y - lens * 0.2f),
+                        lens, icon_color, 12, 1.5f);
+        draw->AddLine(ImVec2(search_center.x + lens * 0.45f, search_center.y + lens * 0.45f),
+                      ImVec2(search_center.x + lens * 1.45f, search_center.y + lens * 1.45f), icon_color, 1.5f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Find in Model Browser");
+
+        const ImGuiWindow* model = ImGui::FindWindowByName("Model");
+        if (model && model->DockNode == node) {
+            const bool visible = selected_window == model;
+            if (!visible) {
+                // Reserve the same tab width when another browser takes focus.
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.0f);
+                ImGui::BeginDisabled();
+            }
+            if (ImGui::TabItemButton("   ##dock-model-menu", trailing)) actions |= 1u << 9;
+            if (!visible) {
+                ImGui::EndDisabled();
+                ImGui::PopStyleVar();
+            } else {
+                const ImVec2 min = ImGui::GetItemRectMin();
+                const ImVec2 max = ImGui::GetItemRectMax();
+                const ImVec2 center((min.x + max.x) * 0.5f, (min.y + max.y) * 0.5f);
+                const float spacing = ImGui::GetFontSize() * 0.25f;
+                for (int dot = -1; dot <= 1; ++dot)
+                    draw->AddCircleFilled(ImVec2(center.x + dot * spacing, center.y), 1.0f, icon_color, 8);
+                if (ImGui::IsItemHovered()) ImGui::SetTooltip("Model Browser menu");
+            }
         }
         ImGui::PopStyleVar();
         ImGui::DockNodeEndAmendTabBar();
     }
     if (actions & (1u << 8)) actions = 1u << 8;
+    else if (actions & (1u << 9)) actions = 1u << 9;
     if (text_changed) actions |= 1u << 31;
     return actions;
 }

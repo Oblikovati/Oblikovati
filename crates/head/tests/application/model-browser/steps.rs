@@ -304,7 +304,7 @@ fn normal_tree(world: &mut ApplicationWorld) {
 #[when("I open browser search and enter \"Extrusion\"")]
 #[when("the user opens browser search and enters \"Extrusion\"")]
 fn search_extrusion(world: &mut ApplicationWorld) {
-    world.click_text("Search");
+    super::workspace_layout::dock_search::click_model_search(world);
     world.pump(Vec::new());
     type_in_search(world, "Extrusion");
 }
