@@ -131,7 +131,7 @@ impl FolderBrowser {
             let _muted = ui.begin_disabled(true);
             ui.menu_item(listed);
         }
-        if ui.menu_item("Properties") {
+        if self.show_file_properties && ui.menu_item("Properties") {
             self.request = FileRequest::Properties(name);
         }
         Some((origin, size))

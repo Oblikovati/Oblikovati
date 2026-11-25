@@ -1,0 +1,16 @@
+GUI Projects
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 826 filtered out; finished in 0.01s
+
+Shared folder browser
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 815 filtered out; finished in 0.00s
+
+Document Open
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 822 filtered out; finished in 0.01s
+
+Browse and Finish on wayland
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1709 filtered out; finished in 14.57s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1709 filtered out; finished in 15.02s
+
+Browse and Finish on x11
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1709 filtered out; finished in 15.53s
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1709 filtered out; finished in 15.45s

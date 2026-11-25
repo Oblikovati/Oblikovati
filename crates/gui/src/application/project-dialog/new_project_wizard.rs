@@ -3,12 +3,9 @@
 //! its second page. Finish submits the configured workspace to the desktop owner.
 use crate::application::document_saving::folder_browser::center_dialog;
 use crate::application::file_system::{GuiFolders, NativeFolders};
-use crate::{GuiCommandState, GuiShellAction};
+use crate::{GuiCommandState, GuiProjectAction, GuiShellAction};
 use imgui::{Key, Ui};
-use std::{
-    path::Path,
-    sync::atomic::{AtomicU64, Ordering},
-};
+use std::path::Path;
 
 const TITLE: &str = "New Project";
 const SIZE: [f32; 2] = [620., 300.];
@@ -16,7 +13,6 @@ const BROWSER_TITLE: &str = "Browse for Folder";
 const BROWSER_SIZE: [f32; 2] = [460., 420.];
 const FOOTER_HEIGHT: f32 = 64.;
 const DEFAULT_NAME: &str = "New Project";
-static PROJECT_REQUEST: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 enum WizardPage {
@@ -122,7 +118,7 @@ impl NewProjectWizard {
         None
     }
     fn complete_creation(&mut self, state: &GuiCommandState) -> Option<String> {
-        let (request, result) = state.project_creation_result.as_ref()?;
+        let (request, result) = state.project_file_result.as_ref()?;
         if self.creation_request != Some(*request) {
             return None;
         }
@@ -199,14 +195,14 @@ impl NewProjectWizard {
             && !self.name.trim().is_empty();
         let _muted = ui.begin_disabled(!enabled);
         if crate::widget_abi::button(ui, "Finish", [0.; 2]) {
-            let request = PROJECT_REQUEST.fetch_add(1, Ordering::Relaxed);
+            let request = super::next_project_request();
             self.creation_request = Some(request);
             self.creation_error = None;
-            actions.push(GuiShellAction::CreateProject {
+            actions.push(GuiShellAction::ProjectFile(GuiProjectAction::Create {
                 request,
                 workspace: self.workspace.clone().into(),
                 name: self.name.clone(),
-            });
+            }));
         }
     }
     fn page_button(&mut self, ui: &Ui, label: &str, target: Option<WizardPage>) {
@@ -383,18 +379,18 @@ mod tests {
         wizard.request();
         wizard.creation_request = Some(9);
         let mut state = GuiCommandState {
-            project_creation_result: Some((8, Ok("/other.opj".into()))),
+            project_file_result: Some((8, Ok("/other.opj".into()))),
             ..Default::default()
         };
         assert_eq!(wizard.complete_creation(&state), None);
         assert_eq!(wizard.creation_request, Some(9));
-        state.project_creation_result = Some((9, Err("already exists".into())));
+        state.project_file_result = Some((9, Err("already exists".into())));
         assert_eq!(wizard.complete_creation(&state), None);
         assert!(wizard.open);
         assert_eq!(wizard.creation_request, None);
         assert_eq!(wizard.creation_error.as_deref(), Some("already exists"));
         wizard.creation_request = Some(10);
-        state.project_creation_result = Some((10, Ok("/new.opj".into())));
+        state.project_file_result = Some((10, Ok("/new.opj".into())));
         assert_eq!(
             wizard.complete_creation(&state).as_deref(),
             Some("/new.opj")

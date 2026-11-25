@@ -20,7 +20,7 @@ impl GuiShellAction {
     /// Preserve Go empty-stack enablement; example: `GuiShellAction::Undo.enabled(&state)`.
     pub fn enabled(&self, state: &GuiCommandState) -> bool {
         match self {
-            Self::OpenTeamWebInBrowser(_) | Self::CreateProject { .. } => true,
+            Self::OpenTeamWebInBrowser(_) | Self::ProjectFile(_) => true,
             Self::SketchCurvature(action) => action.enabled(state),
             Self::DismissSketchContext { .. } => true,
             Self::SelectContextConstraintGlyph { token, glyph }

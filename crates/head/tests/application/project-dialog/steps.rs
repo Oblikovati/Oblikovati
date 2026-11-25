@@ -3,6 +3,8 @@
 use super::ApplicationWorld;
 use cucumber::{given, then, when};
 
+#[path = "browse_native.rs"]
+mod browse_native;
 #[path = "cancellation.rs"]
 mod cancellation;
 #[cfg(target_os = "linux")]

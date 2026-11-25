@@ -118,7 +118,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::DeleteSketchSelection
         | GuiShellAction::CreateDocument(_)
         | GuiShellAction::CreateProjectTemplate(_)
-        | GuiShellAction::CreateProject { .. }
+        | GuiShellAction::ProjectFile(_)
         | GuiShellAction::DrawingLayout(_)
         | GuiShellAction::NewPart
         | GuiShellAction::ChooseSketchPlane

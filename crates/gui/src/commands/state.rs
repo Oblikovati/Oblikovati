@@ -85,8 +85,8 @@ pub struct GuiCommandState {
     pub drawing_updates_deferred: bool,
     pub prompts: oblikovati_model::application_prompts::PromptPreferences,
     pub projects: Vec<GuiProject>,
-    /// Completion of a specific wizard submission, with the registered location or error.
-    pub project_creation_result: Option<(u64, Result<String, String>)>,
+    /// Completion of a specific project file request, with the registered location or error.
+    pub project_file_result: Option<(u64, Result<String, String>)>,
     /// Native template files in the selected project, if it supplies a catalog.
     pub project_templates: std::sync::Arc<[crate::GuiProjectTemplate]>,
     pub project_template_issue: Option<String>,

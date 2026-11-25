@@ -137,7 +137,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         | GuiShellAction::CreateDocument(_)
         | GuiShellAction::DrawingLayout(_)
         | GuiShellAction::CreateProjectTemplate(_)
-        | GuiShellAction::CreateProject { .. }
+        | GuiShellAction::ProjectFile(_)
         | GuiShellAction::NewPart => document(owner, action),
         _ => sketch::apply(owner, action),
     }
@@ -159,11 +159,7 @@ fn document(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, S
         GuiShellAction::CreateProjectTemplate(template) => {
             owner.create_project_template_document(template)
         }
-        GuiShellAction::CreateProject {
-            request,
-            workspace,
-            name,
-        } => owner.create_project_from_gui(*request, workspace, name),
+        GuiShellAction::ProjectFile(action) => owner.project_file_from_gui(action),
         _ => unsupported(action),
     }
 }

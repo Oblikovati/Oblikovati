@@ -15,6 +15,19 @@ pub struct GuiProject {
     /// What the tree folds away until it is asked for; example: `Folder Options` and its rows.
     pub groups: Vec<GuiProjectGroup>,
 }
+/// One project file request from Projects.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum GuiProjectAction {
+    Create {
+        request: u64,
+        workspace: std::path::PathBuf,
+        name: String,
+    },
+    Open {
+        request: u64,
+        path: std::path::PathBuf,
+    },
+}
 /// One foldable branch of a project's settings.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiProjectGroup {

@@ -39,7 +39,7 @@ impl<
                 theme,
                 color_scheme,
                 projects: self.gui_projects(),
-                project_creation_result: self.project_creation_result.clone(),
+                project_file_result: self.project_file_result.clone(),
                 project_templates: self.project_template_catalog.templates.clone(),
                 project_template_issue: self.project_template_catalog.issue.clone(),
                 layout_warning: self.layout_creation.warning(),
@@ -156,7 +156,7 @@ impl<
                 .map_err(|cause| cause.to_string())?
                 .is_some(),
             projects: self.gui_projects(),
-            project_creation_result: self.project_creation_result.clone(),
+            project_file_result: self.project_file_result.clone(),
             project_templates: self.project_template_catalog.templates.clone(),
             project_template_issue: self.project_template_catalog.issue.clone(),
             layout_warning: self.layout_creation.warning(),

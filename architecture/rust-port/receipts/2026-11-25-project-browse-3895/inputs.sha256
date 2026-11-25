@@ -1,0 +1,4 @@
+f6bf3b4ce9163573bb3cba7f4e5fac068eeebbbf0633a93a471933cb3d3f9fad  features/application/project-dialog/project-dialog.feature
+7bea6f1c2f32e6ad4c1fa9f6ca63fb38bc83b55a0af1d378db213b052b9a908d  fixtures/cad/project-dialog-native/ActiveProject.opj
+98327ca2a00d32244033f65b95f2a9997a39deb8a7d5cd630b569b6a97950fa1  fixtures/cad/project-dialog-native/AlternateProject.opj
+d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac  fixtures/cad/workspace-layout-native.opd

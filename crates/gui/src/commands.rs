@@ -280,12 +280,8 @@ pub enum GuiShellAction {
     NewPart,
     CreateDocument(crate::GuiDocumentTemplate),
     CreateProjectTemplate(crate::GuiProjectTemplate),
-    /// Create a native project from the Projects wizard.
-    CreateProject {
-        request: u64,
-        workspace: std::path::PathBuf,
-        name: String,
-    },
+    /// Load or create a project from the Projects dialog.
+    ProjectFile(GuiProjectAction),
     DrawingLayout(GuiDrawingLayoutAction),
     /// Picture the active window for the Save As preview; the file is not changed.
     CaptureWindowPreview,
@@ -488,7 +484,9 @@ pub use line_style::GuiSketchLineStyle;
 mod browser_choice;
 pub use browser_choice::GuiBrowserChoice;
 mod presentation;
-pub use presentation::{GuiDocumentStorage, GuiPreviewImage, GuiProject, GuiProjectGroup};
+pub use presentation::{
+    GuiDocumentStorage, GuiPreviewImage, GuiProject, GuiProjectAction, GuiProjectGroup,
+};
 mod state;
 pub use state::{GuiAuthoringContext, GuiCommandState};
 #[path = "commands_enabled.rs"]

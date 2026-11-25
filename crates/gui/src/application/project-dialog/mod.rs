@@ -5,13 +5,21 @@ use crate::{GuiCommandState, GuiProject, GuiProjectGroup, GuiShellAction};
 use imgui::{
     Condition, Key, SelectableFlags, TableColumnFlags, TableColumnSetup, TreeNodeFlags, Ui,
 };
+use std::sync::atomic::{AtomicU64, Ordering};
 
 #[path = "new_project_wizard.rs"]
 mod new_project_wizard;
+#[path = "project_picker.rs"]
+mod project_picker;
 
 const TITLE: &str = "Projects";
 const SIZE: [f32; 2] = [760., 520.];
 const NOT_AVAILABLE: &str = "This command is not available in this build.";
+static PROJECT_REQUEST: AtomicU64 = AtomicU64::new(1);
+
+fn next_project_request() -> u64 {
+    PROJECT_REQUEST.fetch_add(1, Ordering::Relaxed)
+}
 
 #[derive(Default)]
 pub(crate) struct ProjectsDialog {
@@ -20,10 +28,12 @@ pub(crate) struct ProjectsDialog {
     dock_title: String,
     /// The row a click chose to inspect; choosing one does not activate it.
     inspected: Option<String>,
+    inspection_redraw: bool,
     /// The settings group the arrow keys open and close.
     selected_group: Option<String>,
     open_groups: Vec<String>,
     wizard: new_project_wizard::NewProjectWizard,
+    picker: project_picker::ProjectPicker,
 }
 impl DockableWindow for ProjectsDialog {}
 impl ProjectsDialog {
@@ -43,11 +53,16 @@ impl ProjectsDialog {
     pub(crate) fn close(&mut self) {
         self.open.set_open(false);
         self.opening = false;
+        self.inspection_redraw = false;
         self.wizard.cancel();
+        self.picker.cancel();
     }
     /// A frame must follow so the dialog opens without waiting for an event.
     pub(crate) fn needs_frame(&self) -> bool {
-        self.opening || self.wizard.needs_frame()
+        self.opening
+            || self.inspection_redraw
+            || self.wizard.needs_frame()
+            || self.picker.needs_frame()
     }
     /// Draw above the chooser, for example `dialog.panel(ui, &state, &mut actions)`.
     pub(crate) fn panel(
@@ -56,6 +71,7 @@ impl ProjectsDialog {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
+        self.inspection_redraw = false;
         if std::mem::take(&mut self.opening) {
             self.open.set_open(true);
         }
@@ -79,7 +95,14 @@ impl ProjectsDialog {
                 self.wizard.request();
             }
             ui.same_line();
-            for label in ["Browse", "Save", "Apply"] {
+            if crate::widget_abi::button(ui, "Browse", [0.; 2]) {
+                let location = self
+                    .shown_project(&state.projects)
+                    .map(|row| row.location.clone());
+                self.picker.request(location.as_deref());
+            }
+            ui.same_line();
+            for label in ["Save", "Apply"] {
                 muted_button(ui, label);
                 ui.same_line();
             }
@@ -89,6 +112,12 @@ impl ProjectsDialog {
                     && ui.is_key_pressed_no_repeat(Key::Escape);
             if let Some(location) = self.wizard.panel(ui, state, actions) {
                 self.inspected = Some(location);
+                self.inspection_redraw = true;
+            }
+            if let Some(location) = self.picker.panel(ui, state, actions) {
+                self.inspected = Some(location);
+                // The project rows were drawn before the picker acknowledged the request.
+                self.inspection_redraw = true;
             }
         });
         if !open || done {

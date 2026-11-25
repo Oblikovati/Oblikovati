@@ -418,14 +418,11 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.create_project_template_document(template)
         }
-        fn create_project_from_gui(
+        fn project_file_from_gui(
             &mut self,
-            request: u64,
-            workspace: &std::path::Path,
-            name: &str,
+            action: &oblikovati_gui::GuiProjectAction,
         ) -> Result<bool, String> {
-            self.$owner
-                .create_project_from_gui(request, workspace, name)
+            self.$owner.project_file_from_gui(action)
         }
         fn drawing_layout_from_gui(
             &mut self,

@@ -40,6 +40,7 @@ pub(crate) struct FolderBrowser {
     pub(crate) selection_redraw: bool,
     /// A click on a folder only chooses it, in a dialog that opens things with its button.
     pub folders_select_first: bool,
+    pub(crate) show_file_properties: bool,
     pub(super) size_order_descending: Option<bool>,
     pub(super) request: super::file_list::FileRequest,
     pub(super) menu_row: Option<String>,
@@ -101,6 +102,7 @@ impl FolderBrowser {
             folder_highlight: None,
             selection_redraw: false,
             folders_select_first: false,
+            show_file_properties: true,
             size_order_descending: None,
             request: Default::default(),
             menu_row: None,
