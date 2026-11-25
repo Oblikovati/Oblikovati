@@ -27,9 +27,10 @@ values come from the same handoff.
   and extent controls. The default floating width is 280 px. The Input
   Geometry and Behavior sections open by default. A new solid uses the
   translucent teal preview color.
-- Default and Presentation use the dark and light studio gradients. High
-  Contrast uses a solid black viewport. Theme selection and viewport colour
-  scheme remain separate preferences.
+- The Default colour scheme follows the studio backdrop of the active theme.
+  Named colour schemes and explicit background modes take precedence.
+  Viewport annotations choose contrasting ink when a scheme overrides the
+  backdrop. The status bar uses the active chrome palette.
 
 The existing theme API names and custom XML snapshots still load. If a saved
 custom theme is already called High Contrast, it keeps its name and the
@@ -46,3 +47,6 @@ icon rasterization across display densities, and theme persistence.
 The [ribbon icon checks](receipts/2026-11-25-identity-ribbon-icons-4063/README.md)
 include the rendered Sketch ribbon and the 3D Model ribbon in all three
 palettes.
+
+The [design-gap audit checks](design-gap-audit.md) track the remaining desktop
+refactor and verification against the designer's Windows audit.

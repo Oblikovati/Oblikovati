@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The bottom status line: the current prompt, and how much an edited sketch still needs.
 use crate::GuiFrameRequest;
-use imgui::{Ui, WindowFlags};
+use imgui::{StyleColor, Ui, WindowFlags};
+use oblikovati_api::types::{TOKEN_CHROME_WINDOW_BG, TOKEN_DIMENSION_DRIVEN};
 
 pub(crate) const STATUS_BAR_HEIGHT: f32 = 22.;
 
@@ -13,6 +14,17 @@ pub(crate) fn status_bar(
     tool_prompt: Option<&str>,
 ) {
     let [width, height] = ui.io().display_size;
+    let _colors = request.commands.theme.as_ref().map(|theme| {
+        let palette = theme.palette();
+        [
+            (StyleColor::WindowBg, TOKEN_CHROME_WINDOW_BG),
+            (StyleColor::Text, TOKEN_DIMENSION_DRIVEN),
+        ]
+        .map(|(style, token)| {
+            let color = &palette[&token];
+            ui.push_style_color(style, [color.r, color.g, color.b, color.a])
+        })
+    });
     // The status line is shorter than ImGui's default minimum window height (#4141).
     let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([1., 1.]));
     ui.window("##status-bar")

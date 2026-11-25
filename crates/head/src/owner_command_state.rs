@@ -14,9 +14,12 @@ impl<
         &mut self,
     ) -> Result<oblikovati_gui::GuiCommandState, String> {
         let theme = self.gui_theme_snapshot();
-        let color_scheme = Some(oblikovati_gui::GuiColorSchemeState::from_registry(
-            &self.color_schemes,
-        )?);
+        let color_scheme = Some(
+            oblikovati_gui::GuiColorSchemeState::from_registry_and_theme(
+                &self.color_schemes,
+                theme.as_ref().map(oblikovati_gui::GuiThemeState::palette),
+            )?,
+        );
         let (template_sizes, template_size_issue) = document_creation::template_size_snapshot();
         let template_materials = document_creation::gui_template_materials(&self.files);
         let Some(document) = self.files.workspace().active_document() else {

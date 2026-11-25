@@ -9,18 +9,8 @@ fn native_visual_identity_uses_three_distinct_palettes_on_the_same_part() {
     let mut surfaces = Vec::new();
     let mut dock_tabs = Vec::new();
 
-    for (theme, scheme) in [
-        ("Dark", "Default"),
-        ("Light", "Presentation"),
-        ("High Contrast", "High Contrast"),
-    ] {
+    for theme in ["Dark", "Light", "High Contrast"] {
         world.app().owner.select_theme_from_gui(theme).unwrap();
-        oblikovati_api::client::Client::new(world.app().owner.document_host())
-            .color_schemes()
-            .set_active(&oblikovati_api::wire::SetColorSchemeArgs {
-                name: scheme.into(),
-            })
-            .unwrap();
         world.pump(Vec::new());
         world.pump(Vec::new());
         assert_eq!(world.state().document, Some(document));
@@ -40,4 +30,38 @@ fn native_visual_identity_uses_three_distinct_palettes_on_the_same_part() {
     assert!(dock_tabs[1][0] > 192);
     assert!(dock_tabs[2][0] < 64);
     world.close();
+}
+
+#[test]
+fn native_light_theme_refreshes_the_default_view_and_keeps_explicit_overrides() {
+    let mut world = ApplicationWorld::new();
+    viewport_orientation::open_block(&mut world);
+    world.click_text("View");
+    world.click_text("Dark");
+    world.click_text("Light");
+    let [left, top, _, _] = world.viewport_bounds().map(|value| value as usize);
+    let sample = [left + 32, top + 48];
+    let status = [140, world.extent()[1] as usize - 8];
+    assert!(world.pixel_at(sample)[0] > 225);
+    assert_eq!(&world.pixel_at(status)[..3], &[246, 247, 249]);
+    world.save_capture("light-studio-default");
+
+    select_scheme(&mut world, "High Contrast");
+    assert_eq!(&world.pixel_at(sample)[..3], &[0; 3]);
+    assert_eq!(&world.pixel_at(status)[..3], &[246, 247, 249]);
+    world.save_capture("light-high-contrast-override");
+    select_scheme(&mut world, "Default");
+    assert!(world.pixel_at(sample)[0] > 225);
+    world.close();
+}
+
+fn select_scheme(world: &mut ApplicationWorld, scheme: &str) {
+    oblikovati_api::client::Client::new(world.app().owner.document_host())
+        .color_schemes()
+        .set_active(&oblikovati_api::wire::SetColorSchemeArgs {
+            name: scheme.into(),
+        })
+        .unwrap();
+    world.pump(Vec::new());
+    world.pump(Vec::new());
 }

@@ -58,7 +58,12 @@ fn label_color(ui: &imgui::Ui, request: &GuiFrameRequest, role: GuiDimensionLabe
         return ui.style_color(imgui::StyleColor::Text);
     };
     let color = &theme.palette()[&token];
-    [color.r, color.g, color.b, color.a]
+    let preferred = [color.r, color.g, color.b, color.a];
+    request
+        .commands
+        .color_scheme
+        .as_ref()
+        .map_or(preferred, |scheme| scheme.contrasting_ink(preferred))
 }
 pub(crate) fn validate_dimension_labels(labels: &[GuiDimensionLabel]) -> Result<(), String> {
     for label in labels {

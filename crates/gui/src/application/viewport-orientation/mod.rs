@@ -306,6 +306,12 @@ impl OrientationControl {
                 } else {
                     self.options.inactive_alpha()
                 };
+                let text = ui.style_color(StyleColor::Text);
+                let ink = state
+                    .color_scheme
+                    .as_ref()
+                    .map_or(text, |scheme| scheme.contrasting_ink(text));
+                let overlay_text = ui.push_style_color(StyleColor::Text, ink);
                 draw_control(ui, &axes, &layout, position, alpha);
                 if self.options.compass_shown() {
                     draw_compass(ui, &layout, position, alpha, self.options.north_angle());
@@ -321,6 +327,7 @@ impl OrientationControl {
                     ui.set_cursor_pos([x - layout.half, y - LOCK_CAPTION_RISE]);
                     ui.text(LOCK_CAPTION);
                 }
+                drop(overlay_text);
                 self.context_menu(ui, state, actions);
             });
         }
