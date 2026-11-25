@@ -7,7 +7,7 @@ use crate::application::document_saving::{
     save_as::SaveAsDialog,
 };
 use crate::{GuiCommandState, GuiShellAction};
-use imgui::Ui;
+use imgui::{StyleColor, Ui};
 #[path = "files/menu_art.rs"]
 mod menu_art;
 #[path = "files/new_menu.rs"]
@@ -85,11 +85,16 @@ impl GuiDocumentFiles {
         if std::mem::take(&mut self.menu_requested) {
             ui.open_popup("File");
         }
-        let accent = ui.style_color(imgui::StyleColor::NavHighlight);
-        let active = ui.push_style_color(imgui::StyleColor::Header, accent);
-        let menu = ui.begin_menu("File");
-        drop(active);
+        let menu = {
+            let [fill, _, _, text] = crate::theme::brand_action_colors(ui);
+            let _selected = ui.push_style_color(StyleColor::Header, fill);
+            let open = crate::widget_abi::popup_is_open(ui, c"File");
+            let _hovered = open.then(|| ui.push_style_color(StyleColor::HeaderHovered, fill));
+            let _text = open.then(|| ui.push_style_color(StyleColor::Text, text));
+            ui.begin_menu("File")
+        };
         if let Some(_menu) = menu {
+            menu_art::shadow(ui);
             ui.columns(2, "file-menu-layout", false);
             ui.set_column_width(0, 200.);
             self.file_commands(ui, state, actions, icons);
@@ -98,10 +103,14 @@ impl GuiDocumentFiles {
             self.recent_menu.rows(ui, state, actions, icons);
             ui.columns(1, "file-menu-layout-end", false);
             ui.separator();
-            self.options_item(ui);
-            if ui.menu_item("Exit") {
-                actions.push(GuiShellAction::Exit);
-            }
+            menu_art::command(ui, icons, IconGlyph::Preferences, true, || {
+                self.options_requested |= ui.menu_item(menu_art::label("Options..."));
+            });
+            menu_art::command(ui, icons, IconGlyph::WindowClose, true, || {
+                if ui.menu_item(menu_art::label("Exit")) {
+                    actions.push(GuiShellAction::Exit);
+                }
+            });
             // Columns take their width from the menu, so the menu needs its own.
             crate::widget_abi::dummy(ui, [FILE_MENU_WIDTH, 0.]);
         }
@@ -164,9 +173,6 @@ impl GuiDocumentFiles {
             .menu_item_config(menu_art::label("Document Properties"))
             .enabled(state.document.is_some() && !self.home_in_front)
             .build();
-    }
-    fn options_item(&mut self, ui: &Ui) {
-        self.options_requested |= ui.menu_item("Options...");
     }
     /// Request the File menu from a keyboard shortcut; example: `files.request_menu()`.
     pub(crate) fn request_menu(&mut self) {

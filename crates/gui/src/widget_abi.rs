@@ -72,7 +72,6 @@ unsafe extern "C" {
         background: bool,
     );
 }
-
 /// Tint display spans in a native multiline widget just drawn in this frame.
 /// For example, shade a projected numeric field in the Format Text Content input.
 pub(crate) fn shade_linked_text(
@@ -100,7 +99,6 @@ pub(crate) fn shade_linked_text(
         }
     }
 }
-
 /// Set the row height for one native multiline input, for example `text_line_advance(ui, 2.)`.
 pub(crate) fn text_line_advance(ui: &Ui, factor: f32) -> Option<TextLineAdvance<'_>> {
     if factor == 1. || !(factor * ui.current_font_size()).is_finite() || factor <= 0. {
@@ -123,7 +121,6 @@ impl Drop for TextLineAdvance<'_> {
         unsafe { oblikovati_gui_pop_text_line_advance(self.original) };
     }
 }
-
 /// Let workspace targets receive pointer input while an ImGui window is dragged.
 /// Example: `moving_window(ui)` when drawing a fixed document-tab strip.
 pub(crate) fn moving_window(_: &Ui) -> bool {
@@ -285,6 +282,11 @@ pub(crate) fn nested_popup_open(_: &Ui) -> bool {
     let flags = imgui::sys::ImGuiPopupFlags_AnyPopupId as i32;
     // A null identity is the documented form with AnyPopupId; no string crosses the ABI.
     unsafe { imgui::sys::igIsPopupOpen_Str(std::ptr::null(), flags) }
+}
+/// Check a named popup at the current menu level, such as `popup_is_open(ui, c"File")`.
+pub(crate) fn popup_is_open(_: &Ui, label: &std::ffi::CStr) -> bool {
+    // The Ui owns the context and the label is already NUL-terminated.
+    unsafe { imgui::sys::igIsPopupOpen_Str(label.as_ptr(), 0) }
 }
 /// Whether any popup at any level is open; application keys wait for it.
 pub(crate) fn any_popup_open(_: &Ui) -> bool {

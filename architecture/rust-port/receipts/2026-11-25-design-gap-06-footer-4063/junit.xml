@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: File menu: mnt/vininas-projects/MCAD-Scenarios/features/application/file-menu/file-menu.feature" package="testsuite/Feature: File menu: mnt/vininas-projects/MCAD-Scenarios/features/application/file-menu/file-menu.feature" tests="8" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T14:31:27.095771477Z" time="34.571903743"><testcase name="Scenario: Open the file menu while a part is active: mnt/vininas-projects/MCAD-Scenarios/features/application/file-menu/file-menu.feature:5:3" time="3.827622639"><system-out><![CDATA[  Scenario: Open the file menu while a part is active
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  When the user selects File
+   ✔  Then a menu opens with New, Open, Save, Save As, Export, Print and Close entries
+   ✔  And the menu also shows Share, Manage and document properties entries
+   ✔  And the command entries form a vertical list on the left
+   ✔  And a recent-documents region is visible to the right of that list
+   ✔  And some commands show disclosure indicators
+   ✔  And application options and an exit control appear at the bottom of the menu
+   ✔  And the model workspace remains visible behind the menu
+]]></system-out></testcase><testcase name="Scenario: Dismiss the file menu with Escape: mnt/vininas-projects/MCAD-Scenarios/features/application/file-menu/file-menu.feature:18:3" time="4.13348036"><system-out><![CDATA[  Scenario: Dismiss the file menu with Escape
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the user selects File
+   ✔  And the File menu is open
+   ✔  When the user presses Escape
+   ✔  Then the File menu and recent-documents region close
+   ✔  And the same part document remains active
+]]></system-out></testcase><testcase name="Scenario: Dismiss the file menu by clicking outside: mnt/vininas-projects/MCAD-Scenarios/features/application/file-menu/file-menu.feature:28:3" time="3.935341518"><system-out><![CDATA[  Scenario: Dismiss the file menu by clicking outside
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active in the MCAD Software
+   ✔  And an empty part document is active in the MCAD Software
+   ✔  And the user selects File
+   ✔  And the File menu is open
+   ✔  When the user clicks an empty area of the viewport outside the menu
+   ✔  Then the File menu and recent-documents region close
+   ✔  And the same part document remains active
+]]></system-out></testcase><testcase name="Scenario: Open and dismiss the file menu in a drawing: mnt/vininas-projects/MCAD-Scenarios/features/application/file-menu/file-menu.feature:38:3" time="3.618325559"><system-out><![CDATA[  Scenario: Open and dismiss the file menu in a drawing
+   ✔  Given `fixtures/cad/blank-drawing.odd` is active in the MCAD Software
+   ✔  When the user selects File
+   ✔  Then the menu shows New, Open, Save, Save As, Export, Share, Manage, document properties, Print and Close entries
+   ✔  And a recent-documents region is visible
+   ✔  And the drawing sheet remains visible around the menu
+   ✔  When the user presses Escape
+   ✔  Then the File menu closes
+   ✔  And the same drawing document remains active
+]]></system-out></testcase><testcase name="Scenario: Inspect controls in the recent-documents region: mnt/vininas-projects/MCAD-Scenarios/features/application/file-menu/file-menu.feature:49:3" time="4.451496109"><system-out><![CDATA[  Scenario: Inspect controls in the recent-documents region
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And that opened part is listed in recent documents
+   ✔  And recent documents are available
+   ✔  When the user selects File
+   ✔  Then the recent-documents region shows an ordering control labeled By Ordered List
+   ✔  And a separate display control is visible beside it
+   ✔  And each visible recent-document row shows a document-type symbol and name on the left
+   ✔  And each visible row shows a pin control on the right
+   ✔  And the active part remains visible around the menu
+   ✔  When the user presses Escape
+   ✔  Then the menu closes and the same part remains active
+]]></system-out></testcase><testcase name="Scenario: Inspect the Save As submenu for a saved part: mnt/vininas-projects/MCAD-Scenarios/features/application/file-menu/file-menu.feature:64:3" time="4.666790131"><system-out><![CDATA[  Scenario: Inspect the Save As submenu for a saved part
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and saved in the MCAD Software
+   ✔  When the user selects File
+   ✔  And the user expands Save As
+   ✔  Then the submenu offers Save As and Save Copy As
+   ✔  And it offers Save Copy As Template and Pack and Go
+   ✔  And the Save Copy As description says the original file remains open
+]]></system-out></testcase><testcase name="Scenario: Open the New submenu from the File menu: mnt/vininas-projects/MCAD-Scenarios/features/application/file-menu/file-menu.feature:73:3" time="4.633378146"><system-out><![CDATA[  Scenario: Open the New submenu from the File menu
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part document is active in the MCAD Software
+   ✔  And the pointer is positioned over the New command location
+   ✔  When the user presses Alt+F to open the File menu
+   ✔  Then the New submenu is displayed
+   ✔  And the submenu describes creating a file from the available templates
+   ✔  And it lists Assembly, Weldment, Drawing, Part, Sheet Metal and Presentation
+   ✔  And Drawing displays a disclosure indicator
+   ✔  And the active part remains visible behind the menu
+   ✔  And no document type has been activated
+]]></system-out></testcase><testcase name="Scenario: Inspect the File menu from Home: mnt/vininas-projects/MCAD-Scenarios/features/application/file-menu/file-menu.feature:86:3" time="5.305469281"><system-out><![CDATA[  Scenario: Inspect the File menu from Home
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` has been opened in the MCAD Software and is listed in recent documents
+   ✔  And Home is active with at least one recent document visible
+   ✔  When the user selects File
+   ✔  Then a vertical list of file commands opens over Home
+   ✔  And a recent-documents region is shown beside the command list
+   ✔  And Save As, document properties and Print appear muted
+   ✔  And the Home recent-documents view remains visible around the menu
+]]></system-out></testcase></testsuite></testsuites>

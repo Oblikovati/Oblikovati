@@ -37,7 +37,7 @@ impl RecentMenu {
         } else {
             "By Ordered List"
         };
-        if ui.button(ordering) {
+        if super::menu_art::current_value_button(ui, &format!("{ordering}###recent-ordering")) {
             self.by_date = !self.by_date;
         }
         ui.same_line();
@@ -46,7 +46,7 @@ impl RecentMenu {
         } else {
             "Name"
         };
-        if ui.button(format!("{display}###recent-display")) {
+        if super::menu_art::current_value_button(ui, &format!("{display}###recent-display")) {
             self.with_locations = !self.with_locations;
         }
     }

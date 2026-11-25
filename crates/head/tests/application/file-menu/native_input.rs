@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native keyboard and mouse checks for File menu dismissal.
-use super::super::{diagnostics, x11_input};
+use super::super::{diagnostics, viewport_orientation, x11_input};
 use super::saved_part::{expect_saved_menu_part_on_home, open_saved_menu_part};
 use super::*;
 use std::path::Path;
@@ -18,6 +18,44 @@ fn open_with_mouse(world: &mut ApplicationWorld) {
     x11_input::click(location);
     settle(world);
     world.expect_text("Recent documents");
+}
+
+#[test]
+fn native_file_menu_footer_matches_commands_and_opens_options() {
+    let mut world = ApplicationWorld::new();
+    viewport_orientation::open_block(&mut world);
+    open_with_mouse(&mut world);
+    world.save_capture("file-menu-footer");
+    let labels = ["New", "Open...", "Options...", "Exit"];
+    let [new, open, options, exit] = labels.map(|name| world.run(name).minimum);
+    assert!(
+        (open[1] - new[1] - 32.).abs() <= 1.,
+        "New {new:?}, Open {open:?}"
+    );
+    assert!(
+        (exit[1] - options[1] - 32.).abs() <= 1.,
+        "Options {options:?}, Exit {exit:?}"
+    );
+    let left_edges = [new, open, options, exit].map(|point| point[0]);
+    assert!((left_edges[1] - left_edges[2]).abs() < 1.);
+    assert!(
+        left_edges
+            .iter()
+            .all(|left| (left - left_edges[0]).abs() <= 2.)
+    );
+
+    for (previous, next) in [
+        ("By Ordered List", "By Access Date"),
+        ("Name", "Name and Location"),
+    ] {
+        world.click(diagnostics::pointer_pixels(world.run(previous).center()));
+        world.expect_text(next);
+    }
+    world.click(diagnostics::pointer_pixels(
+        world.run("Options...").center(),
+    ));
+    world.expect_text("Application Options");
+    world.close();
 }
 
 #[test]

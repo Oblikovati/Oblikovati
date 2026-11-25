@@ -155,7 +155,7 @@ pub(crate) fn property_label(ui: &imgui::Ui, label: &str) {
     ui.set_next_item_width(-1.);
 }
 
-pub(crate) fn primary_button(ui: &imgui::Ui, label: &str, size: [f32; 2]) -> bool {
+pub(crate) fn brand_action_colors(ui: &imgui::Ui) -> [[f32; 4]; 4] {
     let background = ui.style_color(StyleColor::WindowBg);
     let contrast = background[..3].iter().all(|value| *value < 0.01);
     let (fill, hover, active) = if contrast {
@@ -165,13 +165,20 @@ pub(crate) fn primary_button(ui: &imgui::Ui, label: &str, size: [f32; 2]) -> boo
     } else {
         (0x6754e8, 0x7866f2, 0x5845d6)
     };
-    let _fill = ui.push_style_color(StyleColor::Button, hex_rgb(fill));
-    let _hover = ui.push_style_color(StyleColor::ButtonHovered, hex_rgb(hover));
-    let _active = ui.push_style_color(StyleColor::ButtonActive, hex_rgb(active));
-    let _text = ui.push_style_color(
-        StyleColor::Text,
+    [
+        hex_rgb(fill),
+        hex_rgb(hover),
+        hex_rgb(active),
         if contrast { [0., 0., 0., 1.] } else { [1.; 4] },
-    );
+    ]
+}
+
+pub(crate) fn primary_button(ui: &imgui::Ui, label: &str, size: [f32; 2]) -> bool {
+    let [fill, hover, active, text] = brand_action_colors(ui);
+    let _fill = ui.push_style_color(StyleColor::Button, fill);
+    let _hover = ui.push_style_color(StyleColor::ButtonHovered, hover);
+    let _active = ui.push_style_color(StyleColor::ButtonActive, active);
+    let _text = ui.push_style_color(StyleColor::Text, text);
     crate::widget_abi::button(ui, label, size)
 }
 
