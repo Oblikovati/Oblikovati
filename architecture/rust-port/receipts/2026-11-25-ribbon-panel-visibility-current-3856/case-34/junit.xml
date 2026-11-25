@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T03:09:58.474686621Z" time="13.644235713"><testcase name="Scenario: Hide and restore a panel from the minimized ribbon: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:484:3" time="13.644235713"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Hide and restore a panel from the minimized ribbon
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✘  And the Simulation panel is enabled for 3D Model
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:487:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

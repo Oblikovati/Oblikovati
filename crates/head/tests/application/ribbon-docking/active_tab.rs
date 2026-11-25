@@ -15,6 +15,7 @@ fn titles_shown(world: &mut ApplicationWorld) {
     world.expect_text("Modify");
 }
 #[given("the full 3D Model ribbon is docked at the top")]
+#[given("the full 3D Model ribbon is at the top")]
 fn model_ribbon_at_top(world: &mut ApplicationWorld) {
     world.click_text("3D Model");
     world.pump(Vec::new());

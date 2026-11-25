@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:15:35.06575592Z" time="42.884648878"><testcase name="Scenario: Restore a hidden panel in the undocked ribbon: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:109:3" time="42.884648878"><system-out><![CDATA[  Scenario: Restore a hidden panel in the undocked ribbon
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the 3D Model ribbon is docked at the top with Modify visible
+   ✔  When the user hides Modify through Show Panels
+   ✔  And the user undocks the ribbon
+   ✔  Then the floating ribbon does not show the Modify group
+   ✔  When the user opens Show Panels on the floating ribbon
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify
+   ✔  Then the Modify group appears between Create and Explore in the floating ribbon
+   ✔  When the user docks the floating ribbon at the left
+   ✔  Then the Modify group is visible in the side-docked ribbon
+]]></system-out></testcase></testsuite></testsuites>

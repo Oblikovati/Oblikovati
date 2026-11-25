@@ -45,8 +45,7 @@ using this status; the live scenario directory can change.
   MCPBridge. Rule Log and Rule Automation are disabled under #4185.
   See `receipts/2026-11-20-workspace-layout-3897/`. The 44 declarations in
   the older pinned snapshot have R0 baseline records. Strict verification
-  still needs a current pin and bounded build and runtime inputs under
-  Issue #3978.
+  still needs a current pin and bounded build and runtime inputs under Issue #3978.
 - Document Tabs (#3900) passed all 39 current scenarios and 343 steps on Linux X11.
   See the [current run](receipts/2026-11-25-document-tabs-current-3900/README.md).
   The pinned snapshot also passed all 38 scenarios and 334 steps.
@@ -56,6 +55,7 @@ using this status; the live scenario directory can change.
 - Home Recent Documents (#3898) passed all [35 current scenarios and 394 steps](receipts/2026-11-25-home-recent-current-3898/README.md).
 - Document Opening (#3889) passed all [27 current scenarios and 315 steps](receipts/2026-11-25-document-opening-current-3889/README.md).
 - Ribbon Display (#3856) passed [48 dependency-ready scenarios and 556 steps](receipts/2026-11-25-ribbon-display-current-3856/README.md). Two Shell cases require Martensite #554.
+- Ribbon Panel Visibility (#3856) passed [43 of 55 current cases and 508 steps](receipts/2026-11-25-ribbon-panel-visibility-current-3856/README.md). Twelve cases remain open across panel inventory, Shell preview, and the User Commands specification.
 - Document Saving (#3888) passed 23 dependency-ready current scenarios and 260
   steps. The generated Part requires Assembly Simplify (#3963). See the
   [current run](receipts/2026-11-25-document-saving-current-3888/README.md).
@@ -474,7 +474,7 @@ using this status; the live scenario directory can change.
 ## Work queue
 
 Work dependency-ready application scenarios one at a time, then sketch and modeling.
-1. Continue the dependency-ready application scenarios with Ribbon Panel Visibility.
+1. Continue the dependency-ready application scenarios with Ribbon Panel Expansion.
    Midpoint Line (#4178) still names a deferred Inventor fixture. Revisit it when
    the scenario owner adopts the supplied native fixture.
    Constraint Settings (#4158) is paused with uncommitted work while its

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T03:10:32.472442892Z" time="11.273535055"><testcase name="Scenario: Minimize the ribbon while the direct panel list is open: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:388:3" time="11.273535055"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Minimize the ribbon while the direct panel list is open
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible
+   ✘  And the ribbon display control is set to toggle between the full ribbon and tabs only
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:391:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

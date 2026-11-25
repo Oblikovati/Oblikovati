@@ -11,6 +11,8 @@ mod context_visibility;
 mod minimized_context;
 #[path = "modify_expansion.rs"]
 mod modify_expansion;
+#[path = "panel_inventory.rs"]
+mod panel_inventory;
 #[path = "sketch_parameters.rs"]
 mod sketch_parameters;
 #[path = "tools_panels.rs"]
@@ -39,7 +41,6 @@ pub(super) fn ribbon_runs<'a>(
             })
     })
 }
-
 fn expand_show_panels(world: &mut ApplicationWorld) {
     world.hover([700, 500]);
     open_context_menu(world);

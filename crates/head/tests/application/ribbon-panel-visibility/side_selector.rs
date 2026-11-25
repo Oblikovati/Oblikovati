@@ -3,6 +3,8 @@ use super::super::diagnostics::{pointer_pixels, window_geometry};
 use super::*;
 #[path = "selector_help.rs"]
 mod selector_help;
+#[path = "shell_selector.rs"]
+mod shell_selector;
 
 fn click_side_selector(world: &mut ApplicationWorld) {
     let (position, size) = window_geometry("##ribbon-column").expect("expected side ribbon");
@@ -18,7 +20,9 @@ fn click_side_selector(world: &mut ApplicationWorld) {
 #[when("the user clicks the direct panel selector arrow")]
 #[when("the user clicks the direct panel selector")]
 #[when("the user opens the direct panel selector")]
+#[when("the user opens the direct ribbon panel selector")]
 #[given("the direct panel selector is open")]
+#[given("the ribbon panel selector is open")]
 pub(super) fn open_side_selector(world: &mut ApplicationWorld) {
     click_selector(world);
     assert!(selector_popup_open(), "expected panel selector popup");
@@ -108,6 +112,7 @@ pub(super) fn side_group_y(world: &ApplicationWorld, label: &str) -> f32 {
 }
 
 #[then("the Modify group returns to the side-docked ribbon")]
+#[then("the Modify group is visible in the side-docked ribbon")]
 #[then("the Modify panel returns to the 3D Model ribbon")]
 fn side_modify_returns(world: &mut ApplicationWorld) {
     side_group_y(world, "Modify");

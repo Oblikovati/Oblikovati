@@ -15,6 +15,7 @@ fn modify_still_visible(world: &mut ApplicationWorld) {
 #[when("the user opens the ribbon context menu and expand Show Panels")]
 #[when("the user reopens Show Panels from the ribbon context menu")]
 #[when("the user opens Show Panels on the left-docked ribbon")]
+#[when("the user opens Show Panels on the floating ribbon")]
 #[when("the user opens Show Panels on the top ribbon")]
 fn show_context_panels(world: &mut ApplicationWorld) {
     expand_show_panels(world);
@@ -26,6 +27,7 @@ fn hide_modify_in_context(world: &mut ApplicationWorld) {
 }
 
 #[when("the user docks the ribbon on the left")]
+#[when("the user docks the floating ribbon at the left")]
 fn dock_ribbon_left(world: &mut ApplicationWorld) {
     dock_left(world);
 }

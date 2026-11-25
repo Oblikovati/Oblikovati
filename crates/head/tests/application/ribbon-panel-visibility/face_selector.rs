@@ -8,6 +8,9 @@ use super::*;
 #[given(
     "`fixtures/cad/docking-visible-solid-current.opd` is open with a visible solid in the MCAD Software"
 )]
+#[given(
+    "`fixtures/cad/docking-visible-solid-current.opd` is open with its solid block in the MCAD Software"
+)]
 fn visible_named_solid(world: &mut ApplicationWorld) {
     let path = scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
     open_saved_navigation_block(world, &path);
