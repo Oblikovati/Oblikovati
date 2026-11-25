@@ -26,7 +26,7 @@ mod navigation_capsule;
 #[path = "options.rs"]
 mod options;
 use drawing::{draw_compass, draw_control};
-use options::{OrientationOptions, ScreenCorner};
+use options::OrientationOptions;
 
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct ViewControlVisibility {
@@ -261,9 +261,16 @@ impl OrientationControl {
         }
         self.set_suspended(false);
         axis_triad::draw(ui, area, &axes);
-        let side = self.options.side();
-        let position = self.position(area, side);
+        let placement = navigation_capsule::ViewControlPlacement::new(
+            area,
+            self.options.corner(),
+            self.options.side(),
+            visibility,
+        );
+        let position = placement.cube;
+        let side = placement.side;
         if visibility.cube {
+            let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([1., 1.]));
             let window = ui
                 .window(CONTROL_WINDOW)
                 .position(position, imgui::Condition::Always)
@@ -336,7 +343,7 @@ impl OrientationControl {
             self.fading = false;
         }
         if visibility.navigation {
-            self.navigation_bar(ui, icons, request, area, [position, [side, side]], actions);
+            self.navigation_bar(ui, icons, request, placement.bar, actions);
         }
         self.navigation.follow_view(ui, request, actions);
         let center = [(area.left + area.right) / 2., (area.top + area.bottom) / 2.];
@@ -345,20 +352,6 @@ impl OrientationControl {
         self.navigation.rotate_dialog(ui, state, actions);
         self.navigation.wheel_panel(ui, state, actions);
         self.options.panel(ui);
-    }
-    fn position(&self, area: WorkspaceArea, side: f32) -> [f32; 2] {
-        let corner = self.options.corner();
-        let x = if corner.is_left() {
-            area.left + MARGIN
-        } else {
-            area.right - side - MARGIN
-        };
-        let y = if corner == ScreenCorner::BottomLeft || corner == ScreenCorner::BottomRight {
-            area.bottom - side - MARGIN
-        } else {
-            area.top + MARGIN
-        };
-        [x, y]
     }
     /// Available with something to lock to; once locked, it stays to let the lock go.
     fn lock_row(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {

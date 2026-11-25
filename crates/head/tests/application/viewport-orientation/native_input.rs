@@ -13,6 +13,48 @@ fn native_press(world: &mut ApplicationWorld, local: [f32; 2], position: [f32; 2
 }
 
 #[test]
+fn native_view_controls_fit_at_the_minimum_window_size() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    front_displayed(&mut world);
+    x11_input::resize_application_window([640, 480]);
+    for _ in 0..3 {
+        world.pump(Vec::new());
+    }
+    assert_eq!(world.extent(), [640, 480]);
+    let (position, parts) = layout();
+    world.hover(diagnostics::pointer_pixels([
+        position[0] + parts.center[0],
+        position[1] + parts.center[1],
+    ]));
+    world.save_capture("view-controls-at-minimum-size");
+    assert_controls_inside_viewport(&mut world);
+    native_press(&mut world, parts.menu, position);
+    world.expect_text("Orthographic");
+    x11_input::press_escape();
+    world.pump(Vec::new());
+    let orbit = viewport_pan::bar_icon_center(viewport_pan::NavigationControl::Orbit);
+    x11_input::click(diagnostics::pointer_pixels(orbit));
+    world.pump(Vec::new());
+    world.expect_status("Free Rotation");
+    world.close();
+}
+
+fn assert_controls_inside_viewport(world: &mut ApplicationWorld) {
+    let viewport = world.viewport_bounds().map(|edge| edge as f32);
+    for name in ["##orientation-control", "##navigation-bar"] {
+        let panel = diagnostics::window_pixel_bounds(name).unwrap();
+        assert!(
+            panel[0] >= viewport[0]
+                && panel[1] >= viewport[1]
+                && panel[2] <= viewport[2]
+                && panel[3] <= viewport[3],
+            "{name} {panel:?} outside viewport {viewport:?}"
+        );
+    }
+}
+
+#[test]
 fn native_rotation_arrow_turns_and_restores_front_view() {
     let mut world = ApplicationWorld::new();
     open_block(&mut world);
