@@ -1,7 +1,7 @@
 # Current native Ribbon Customization
 
-One hundred and seven of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 103 of 122 declarations and 1,463
+One hundred and eight of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 104 of 122 declarations and 1,475
 passing steps on this retained input snapshot. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
@@ -76,6 +76,8 @@ verified that Up still moves the selected target row. The
 [return after source selection run](../2026-11-25-ribbon-customization-return-after-source-3856/README.md)
 verified removing and adding the same staged command after selecting a
 different source row.
+[Home and End navigation](../2026-11-25-ribbon-customization-target-ends-3856/README.md)
+selected the first and last staged rows and preserved their order and options.
 [Letter navigation](case-071/cucumber.json) also remains open.
 
 One [cancellation case](case-055/cucumber.json) closes Customize and

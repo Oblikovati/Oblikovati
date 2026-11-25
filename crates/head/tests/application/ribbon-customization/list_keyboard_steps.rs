@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Inspect keyboard selection in the two rendered ribbon command lists.
 use super::list_steps::source_rows;
-use super::transaction_steps::{target_row_runs, target_rows};
+use super::transaction_steps::{add_command, target_row_runs, target_rows};
 use super::*;
 use oblikovati_viewport::{ViewportCapture, ViewportPhysicalKey};
 
@@ -82,6 +82,37 @@ fn drawing_remains_available(world: &mut ApplicationWorld) {
             .iter()
             .any(|row| row.text == "2-DDrawing")
     );
+}
+
+const THREE_TARGET_ROWS: [&str; 3] = ["2-DDrawing", "2DSketches", "3DAnnotations"];
+
+#[given("\"2-D Drawing\", \"2D Sketches\" and \"3D Annotations\" are staged in that order")]
+fn stage_three_target_commands(world: &mut ApplicationWorld) {
+    for command in THREE_TARGET_ROWS {
+        add_command(world, command);
+    }
+}
+
+#[given("all three staged rows have Large and Text unchecked")]
+#[then("the three rows remain in their original order with their display options unchecked")]
+fn three_rows_keep_display_options(world: &mut ApplicationWorld) {
+    assert_eq!(target_rows(world), THREE_TARGET_ROWS);
+    for row in THREE_TARGET_ROWS {
+        for option in ["Large", "Text"] {
+            assert!(!row_option_checked(world, row, option), "{option} on {row}");
+        }
+    }
+}
+
+#[when("the user selects \"3D Annotations\" in the target list and presses Home")]
+fn home_from_target_annotations(world: &mut ApplicationWorld) {
+    select_target_annotations(world);
+    world.key(ViewportPhysicalKey::Home, false);
+}
+
+#[then("\"2-D Drawing\" is highlighted")]
+fn staged_drawing_selected(world: &mut ApplicationWorld) {
+    expect_target_selection(world, "2-DDrawing");
 }
 
 #[when("the user clicks the command name in the target row")]

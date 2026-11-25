@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added Home and End navigation to the staged Ribbon Customization list. (#3856)
 - Added named native templates from the active project's root, Metric, and English folders to the desktop chooser. The chooser shows Part template materials, previews drawing sheets, and restores the selected project template after a desktop restart. (#3899)
 - Added Flipped, Symmetric, and Asymmetric directions and To Face and From–To extents for new solid extrusions in the desktop and typed API. Added desktop Icons and Dropdown direction selectors and a Distance A editor menu. (#3893)
 - Expanded the desktop parameter tolerance editor with tolerance formats, precision, evaluated size, and ISO fit classes. (#3893)
@@ -22,7 +23,6 @@
 - Opened the editor for existing Sketch Text on a double-click of the glyph. (#3907)
 - Listed 2-D Drawing as an unavailable command that can be arranged in custom ribbon panels. (#3856)
 - Added Bold preview and editing for a full Sketch Text selection. (#3907)
-
 - Added stacked fractions to Format Text and preserved them in native sketches and named presets. (#3907)
 
 - Added five line-spacing modes to Format Text and retained the selected spacing in native sketch files. (#3907)

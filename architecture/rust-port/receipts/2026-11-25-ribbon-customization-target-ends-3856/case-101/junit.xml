@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T09:13:51.629679952Z" time="39.387608895"><testcase name="Scenario: Navigate to the ends of a staged target list: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1658:3" time="39.387608895"><system-out><![CDATA[  Scenario: Navigate to the ends of a staged target list
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And ribbon customization is open in the MCAD Software for the Part Tools target
+   ✔  And "2-D Drawing", "2D Sketches" and "3D Annotations" are staged in that order
+   ✔  And all three staged rows have Large and Text unchecked
+   ✔  When the user selects "3D Annotations" in the target list and presses Home
+   ✔  Then "2-D Drawing" is highlighted
+   ✔  When the user presses End
+   ✔  Then "3D Annotations" is highlighted
+   ✔  And the three rows remain in their original order with their display options unchecked
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes without applying the staged commands
+]]></system-out></testcase></testsuite></testsuites>

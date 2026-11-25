@@ -15,6 +15,7 @@ use the same viewport navigation handler as the navigation bar.
 The source list includes 2-D Drawing as a configurable entry. The ascending
 source-list scenario also expects an unlabeled row whose command is unidentified.
 The Large and Text headings align with their checkboxes across font widths.
+Home and End select the first or last staged row when the target list has focus.
 The [native edit and import scenarios](receipts/2026-11-24-ribbon-customization-edits-3856/README.md)
 cover reordering, repeated separators, committing with OK, and keeping a
 draft across target and dialog tab switches. Invalid XML closes the picker,

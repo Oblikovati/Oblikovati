@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Keyboard navigation of the available ribbon commands.
+//! Keyboard navigation of the source and target ribbon command lists.
 use super::{Command, ListFocus, RibbonCustomization};
 use imgui::{Key, Ui};
 
@@ -62,7 +62,12 @@ impl RibbonCustomization {
         if ui.io().key_ctrl || ui.io().key_alt || ui.io().key_super {
             return false;
         }
-        let (down, count) = if let Some(down) = pressed_page(ui) {
+        let row_count = self.draft.rows().len();
+        let (down, count) = if ui.is_key_pressed_no_repeat(Key::Home) {
+            (false, row_count)
+        } else if ui.is_key_pressed_no_repeat(Key::End) {
+            (true, row_count)
+        } else if let Some(down) = pressed_page(ui) {
             (down, self.visible_target_rows)
         } else if ui.is_key_pressed_no_repeat(Key::DownArrow) {
             (true, 1)
@@ -71,7 +76,7 @@ impl RibbonCustomization {
         } else {
             return false;
         };
-        if let Some(last) = self.draft.rows().len().checked_sub(1) {
+        if let Some(last) = row_count.checked_sub(1) {
             let current = self.draft.selected.unwrap_or(0);
             let selected = page_row(current, last, count, down);
             self.draft.reset_target_selection(selected);
