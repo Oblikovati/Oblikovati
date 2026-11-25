@@ -8,6 +8,9 @@ impl GuiFrameEngine {
     /// Example: `let seed_asset_dock = engine.prepare_workspace_frame(&request.commands)`.
     pub(super) fn prepare_workspace_frame(&mut self, commands: &crate::GuiCommandState) -> bool {
         self.workspace.pending_layout = false;
+        self.workspace
+            .document_dock_tabs
+            .synchronize(&self.context, commands);
         self.workspace.part_context_open = self.part_context_open && commands.model_face_chosen;
         let first_home = self.home.observe_document(commands.document);
         let seed_asset_dock = first_home && !self.workspace_layout_restored;

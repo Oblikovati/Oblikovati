@@ -296,3 +296,11 @@ Switching between a blank Part and a solid Part updates the Model Browser
 and viewport. The floating Appearance Browser keeps its screen position.
 The [native runs](receipts/2026-11-26-dock-floating-appearance-4133/README.md)
 verify both document switches on Wayland and X11.
+
+## Selected tab in the Model Browser dock
+
+When the active document changes, the desktop remembers the outgoing
+document's visible tab and restores the incoming document's selection
+in the shared Model Browser dock. If that tab is no longer available
+in the group, the dock selects Model. The selection is kept for the
+open document's session. [Native dock tab checks](receipts/2026-11-26-dock-document-tabs-4133/README.md)

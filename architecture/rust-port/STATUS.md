@@ -71,8 +71,8 @@ using this status; the live scenario directory can change.
   Strict verification still requires bounded build and runtime inputs under
   #3978.
 - Docking System (#4133) passed the [11-scenario Studio snapshot](receipts/2026-11-25-docking-system-studio-4133/README.md),
-  including layout retention and a two-process desktop restart. The published
-  [floating Appearance Browser scenario](receipts/2026-11-26-dock-floating-appearance-4133/README.md) passed on Wayland and X11.
+  including a two-process desktop restart. The [floating Appearance Browser](receipts/2026-11-26-dock-floating-appearance-4133/README.md)
+  and [per-document dock selection](receipts/2026-11-26-dock-document-tabs-4133/README.md) passed on Wayland and X11.
   The standalone [dock-menu test](receipts/2026-11-24-dock-menu-repository-fixture-4133/README.md)
   opens the bundled Part without requiring the separate docking scenario fixture.
 - Selected sketch point identity (#4179): the shared placement recipe now

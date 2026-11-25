@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Scalar ABI for workspace dockspace geometry and hit testing.
 use imgui::Ui;
+use std::num::NonZeroU32;
 
 unsafe extern "C" {
     fn oblikovati_gui_workspace_dockspace(width: f32, height: f32) -> u32;
@@ -11,6 +12,7 @@ unsafe extern "C" {
         anchor: *mut u32,
     ) -> u32;
     fn oblikovati_gui_prepare_dock_hit_test(x: f32, y: f32);
+    fn oblikovati_gui_exchange_model_dock_tab(selected: u32) -> u32;
     fn oblikovati_gui_outer_bottom_span(id: u32, left: *mut f32, right: *mut f32) -> bool;
     fn oblikovati_gui_dockspace_center(
         id: u32,
@@ -19,6 +21,17 @@ unsafe extern "C" {
         right: *mut f32,
         bottom: *mut f32,
     ) -> bool;
+}
+
+/// Read the current Model dock tab and queue an optional replacement before the next frame.
+pub(crate) fn exchange_model_dock_tab(
+    _: &imgui::Context,
+    selection: Option<NonZeroU32>,
+) -> Option<NonZeroU32> {
+    // SAFETY: the frame engine owns the current ImGui context and only scalar IDs cross the ABI.
+    NonZeroU32::new(unsafe {
+        oblikovati_gui_exchange_model_dock_tab(selection.map_or(0, NonZeroU32::get))
+    })
 }
 
 /// Route the next drag frame to the outer target when the pointer is over it.

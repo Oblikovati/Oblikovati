@@ -10,6 +10,7 @@ pub(crate) mod browser_feature;
 pub(crate) mod browser_origin;
 #[path = "browser_view.rs"]
 pub(crate) mod browser_view;
+pub(crate) mod document_dock_tabs;
 #[path = "panel_tabs.rs"]
 pub(crate) mod panel_tabs;
 #[path = "status_bar.rs"]
@@ -29,6 +30,7 @@ pub(crate) struct ToolVisibility {
 #[derive(Debug)]
 pub(crate) struct WorkspaceLayout {
     pub panels: panel_tabs::DockPanels,
+    pub document_dock_tabs: document_dock_tabs::DocumentDockTabs,
     pub tool_visibility: ToolVisibility,
     pub tabs_visible: bool,
     pub view_cube_visible: bool,
@@ -56,6 +58,7 @@ impl Default for WorkspaceLayout {
     fn default() -> Self {
         Self {
             panels: Default::default(),
+            document_dock_tabs: Default::default(),
             tool_visibility: Default::default(),
             tabs_visible: true,
             view_cube_visible: true,

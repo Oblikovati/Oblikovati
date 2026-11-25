@@ -2,6 +2,7 @@
 use imgui::{Condition, ImColor32, ImString, SelectableFlags, Ui};
 #[path = "widget_dockspace.rs"]
 mod dockspace;
+pub(crate) use dockspace::exchange_model_dock_tab;
 pub(crate) use dockspace::{outer_dockspace, prepare_dock_hit_test, workspace_dockspace};
 #[path = "widget_text_projection.rs"]
 mod text_projection;

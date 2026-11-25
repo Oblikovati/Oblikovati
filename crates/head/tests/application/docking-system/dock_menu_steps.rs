@@ -18,7 +18,7 @@ fn model_docked_log_closed(world: &mut ApplicationWorld) {
 }
 
 #[when("the user clicks the plus button in the Model dock tab bar")]
-fn open_model_menu(world: &mut ApplicationWorld) {
+pub(super) fn open_model_menu(world: &mut ApplicationWorld) {
     let (min, max) = diagnostics::window_dock_tab_bounds("Model").expect("Model tab");
     let height = max[1] - min[1];
     let point = [max[0] + height, (min[1] + max[1]) * 0.5];
@@ -41,7 +41,7 @@ fn panel_menu_offers_windows(world: &mut ApplicationWorld) {
 }
 
 #[when("the user chooses Log Panel from that menu")]
-fn choose_log(world: &mut ApplicationWorld) {
+pub(super) fn choose_log(world: &mut ApplicationWorld) {
     click_text(world, "Log Panel");
     wait_for_log_tab(world);
 }

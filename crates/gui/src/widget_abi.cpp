@@ -172,6 +172,23 @@ void oblikovati_gui_ensure_tabbed_window(const char* title, const char* group) {
     ImGui::DockBuilderDockWindow(title, group_window->DockNode->ID);
 }
 
+std::uint32_t oblikovati_gui_exchange_model_dock_tab(std::uint32_t selected) {
+    ImGuiWindow* model = ImGui::FindWindowByName("Model");
+    if (!model || !model->Active || !model->DockNode) return 0;
+    ImGuiDockNode* node = model->DockNode;
+    ImGuiTabBar* tabs = node->TabBar;
+    if (!tabs) return model->TabId;
+
+    const ImGuiID outgoing = tabs->VisibleTabId;
+    if (!selected || selected == outgoing) return outgoing;
+    const ImGuiTabItem* target = ImGui::TabBarFindTabByID(tabs, selected);
+    if (!target || !target->Window || !target->Window->Active || target->Window->DockNode != node)
+        selected = model->TabId;
+    // The tab bar consumes this before submitting the docked windows.
+    if (selected != outgoing) tabs->NextSelectedTabId = selected;
+    return outgoing;
+}
+
 bool oblikovati_gui_outer_bottom_span(std::uint32_t id, float* left, float* right) {
     ImGuiDockNode* root = ImGui::DockBuilderGetNode(id);
     ImGuiDockNode* node = ImGui::DockBuilderGetCentralNode(id);
