@@ -12,11 +12,19 @@ impl NativeHeadWindow {
             return Ok(Default::default());
         }
         let extent = self.view.drawable_extent()?;
+        let backing_scale = self.view.backing_scale();
         self.ensure_native_gui()?;
         let now = self.gui_epoch.elapsed();
         let notice = self.native_gui_notice()?;
         let gui = self.gui.as_mut().expect("initialized GUI");
-        let mut update = gui.step(now, extent, event, commands, notice.as_deref())?;
+        let mut update = gui.step_scaled(
+            now,
+            extent,
+            backing_scale,
+            event,
+            commands,
+            notice.as_deref(),
+        )?;
         if gui.dirty {
             publish_gui(&mut self.view, gui, now, &mut update)?;
         }

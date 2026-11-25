@@ -21,6 +21,7 @@ pub struct GuiDetachedDrawing {
     menu: TabMenu,
     context: Option<SuspendedContext>,
     resources: GuiTextureResources,
+    raster_scale: f32,
 }
 
 impl GuiDetachedDrawing {
@@ -31,6 +32,7 @@ impl GuiDetachedDrawing {
         Ok(Self {
             document,
             resources,
+            raster_scale: 1.0,
             menu: TabMenu::default(),
             context: Some(context.suspend()),
         })
@@ -43,6 +45,24 @@ impl GuiDetachedDrawing {
         state: &GuiCommandState,
         events: &[GuiInputEvent],
     ) -> Result<GuiDetachedDrawingFrame, String> {
+        self.frame_scaled(extent, 1.0, state, events)
+    }
+
+    /// Draw a detached window at its monitor's physical pixel density.
+    /// Example: `drawing.frame_scaled([900, 600], 1.5, &state, &[])?`.
+    pub fn frame_scaled(
+        &mut self,
+        extent: [u32; 2],
+        backing_scale: f32,
+        state: &GuiCommandState,
+        events: &[GuiInputEvent],
+    ) -> Result<GuiDetachedDrawingFrame, String> {
+        let scale = backing_scale * state.ui_scale.unwrap_or_default().font();
+        if !scale.is_finite() || scale <= 0.0 || scale * 13.0 > 256.0 {
+            return Err(format!(
+                "detached drawing scale {scale}: expected a positive finite font size at most 256 pixels"
+            ));
+        }
         let row = state
             .documents
             .iter()
@@ -56,7 +76,18 @@ impl GuiDetachedDrawing {
         let mut actions = Vec::new();
         let _restore = RestorePrimaryContext::park();
         let mut context = activate(&mut self.context);
-        prepare(&mut context, extent, state, events);
+        if self.raster_scale != scale {
+            let atlas = crate::ui_scale::rebuild_font_atlas(&mut context, scale);
+            self.resources = match self.resources.with_font(atlas) {
+                Ok(resources) => resources,
+                Err(error) => {
+                    self.context = Some(context.suspend());
+                    return Err(error);
+                }
+            };
+            self.raster_scale = scale;
+        }
+        prepare(&mut context, extent, scale, state, events);
         let result = self.draw_frame(&mut context, extent, state, row, &mut actions);
         self.context = Some(context.suspend());
         result.map(|(draws, needs_frame)| GuiDetachedDrawingFrame {
@@ -74,10 +105,11 @@ impl GuiDetachedDrawing {
         row: &DocumentInfo,
         actions: &mut Vec<GuiShellAction>,
     ) -> Result<(GuiFrame, bool), String> {
+        let logical_size = context.io().display_size;
         let ui = context.frame();
         ui.window("##detached-drawing")
             .position([0.; 2], Condition::Always)
-            .size(extent.map(|value| value as f32), Condition::Always)
+            .size(logical_size, Condition::Always)
             .flags(
                 WindowFlags::NO_DECORATION
                     | WindowFlags::NO_MOVE
@@ -134,7 +166,7 @@ pub fn drawing_preview_frame(
 ) -> Result<GuiFrame, String> {
     let _restore = RestorePrimaryContext::park();
     let (mut context, resources) = drawing_context()?;
-    prepare(&mut context, extent, state, &[]);
+    prepare(&mut context, extent, 1.0, state, &[]);
     let area = WorkspaceArea {
         left: 0.,
         top: 0.,
@@ -171,6 +203,7 @@ impl Drop for GuiDetachedDrawing {
 fn prepare(
     context: &mut Context,
     extent: [u32; 2],
+    scale: f32,
     state: &GuiCommandState,
     events: &[GuiInputEvent],
 ) {
@@ -178,10 +211,11 @@ fn prepare(
         crate::theme::apply_chrome_theme(&mut context.style_mut().colors, theme.palette());
     }
     let io = context.io_mut();
-    io.display_size = extent.map(|value| value as f32);
+    io.display_size = extent.map(|value| value as f32 / scale);
+    io.display_framebuffer_scale = [scale; 2];
     io.delta_time = 1. / 60.;
     for event in events {
-        crate::input::apply_input(io, event, [1.; 2]);
+        crate::input::apply_input(io, event, [scale; 2]);
     }
 }
 
@@ -207,5 +241,30 @@ impl RestorePrimaryContext {
 impl Drop for RestorePrimaryContext {
     fn drop(&mut self) {
         unsafe { sys::igSetCurrentContext(self.0) };
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn detached_drawing_refreshes_fonts_at_monitor_density() {
+        let state = GuiCommandState {
+            documents: vec![DocumentInfo {
+                id: 7,
+                name: "Drawing1".into(),
+                visible: true,
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let mut drawing = GuiDetachedDrawing::new(7).unwrap();
+        let standard = drawing.frame_scaled([900, 600], 1.0, &state, &[]).unwrap();
+        let high_dpi = drawing.frame_scaled([900, 600], 1.5, &state, &[]).unwrap();
+        assert_eq!(high_dpi.draws.extent, [900, 600]);
+        assert_ne!(standard.draws.resources, high_dpi.draws.resources);
+        let restored = drawing.frame_scaled([900, 600], 1.0, &state, &[]).unwrap();
+        assert_eq!(standard.draws.resources, restored.draws.resources);
     }
 }

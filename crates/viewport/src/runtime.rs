@@ -55,6 +55,15 @@ pub struct Viewport {
     projection_cache: RefCell<projection_cache::ProjectionCache>,
 }
 impl Viewport {
+    /// Physical pixels per logical UI unit for this window's current monitor.
+    /// Example: `let density = viewport.backing_scale();`.
+    pub fn backing_scale(&self) -> f32 {
+        #[cfg(target_os = "windows")]
+        if let Some(ViewTarget::Native(native)) = self.target.as_ref() {
+            return native.backing_scale();
+        }
+        1.0
+    }
     /// Read this runtime's view identity; example: `viewport.id()` tags captures.
     pub fn id(&self) -> u64 {
         self.id

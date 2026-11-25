@@ -239,10 +239,11 @@ impl NativeGui {
             clipboard,
         }
     }
-    fn step(
+    fn step_scaled(
         &mut self,
         now: Duration,
         extent: [u32; 2],
+        backing_scale: f32,
         event: Option<&ViewportEvent>,
         commands: &GuiCommandState,
         notice: Option<&str>,
@@ -254,7 +255,7 @@ impl NativeGui {
                 ..Default::default()
             });
         }
-        let request = self.request(now, extent, event, commands, notice)?;
+        let request = self.request(now, extent, backing_scale, event, commands, notice)?;
         let output = self.frame_input(&request)?;
         self.refresh_gui_resources()?;
         self.dirty |= self.draws.as_ref() != Some(&output.draws);
@@ -379,6 +380,7 @@ impl NativeGui {
         &self,
         now: Duration,
         extent: [u32; 2],
+        backing_scale: f32,
         event: Option<&ViewportEvent>,
         commands: &GuiCommandState,
         notice: Option<&str>,
@@ -397,7 +399,7 @@ impl NativeGui {
             commands: commands.clone(),
             status: notice.map(str::to_owned),
             delta_seconds,
-            framebuffer_scale: [1.; 2],
+            framebuffer_scale: [backing_scale; 2],
         })
     }
 }

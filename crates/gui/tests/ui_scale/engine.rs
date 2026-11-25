@@ -46,7 +46,7 @@ fn click(
 }
 #[test]
 fn content_scale_composes_with_real_backing_density_for_draws_and_hit_regions() {
-    for backing in [1., 2.] {
+    for backing in [1., 1.5, 2.] {
         let mut owner = GuiFrameEngine::new().unwrap();
         let mut request = scale_request(2., backing);
         settle(&mut owner, &mut request);

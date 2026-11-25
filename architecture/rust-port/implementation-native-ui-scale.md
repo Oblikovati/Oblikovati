@@ -70,3 +70,12 @@ tests. GUI coverage was 98.37%, head coverage 92.64%, and workspace duplication
 1.02%. The new scale-owner module had 100% line coverage. Cross-target Clippy
 passed for head and GUI on Windows x64 and macOS ARM64. These are compile checks;
 the native runtime acceptance above is X11.
+
+
+## Windows monitor DPI
+
+The Windows viewport requests per-monitor-v2 DPI awareness before its first native window is created. Native windows report their monitor DPI to the GUI as a physical backing scale; the existing user font and icon preferences remain separate. The main and detached drawing windows rasterize fonts at the effective scale, convert pointer coordinates into logical UI units, and re-create drawing texture resources after a scale change. A DPI-change message applies the suggested window bounds and schedules a new frame. Offscreen and non-Windows views retain their existing 1x backing scale.
+
+On Windows at 150% display scaling, the previous application process reported DPI-unaware and 96 DPI. The validation build reported per-monitor awareness and 144 DPI on the same display. The 1x, 1.5x and 2x backing-scale GUI hit-region regression passed with the pinned Windows MSVC toolchain. This measurement does not cover movement between monitors or all Windows display configurations.
+
+The Windows full gate was attempted after merging `17ddaee72`. It did not pass: the BDD tooling reported Windows no-follow/config-environment failures, the workspace formatter reported existing differences in files from the pulled branch, and repository checks could not find npm. Workspace doctests completed. These failures are separate from the focused DPI checks and remain unresolved.

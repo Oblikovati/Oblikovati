@@ -3,6 +3,18 @@ use super::*;
 use crate::native::quick_access_icons;
 use oblikovati_gui::GuiShellAction;
 use oblikovati_viewport::{ViewportButton, ViewportInput};
+impl NativeGui {
+    fn step(
+        &mut self,
+        now: Duration,
+        extent: [u32; 2],
+        event: Option<&ViewportEvent>,
+        commands: &GuiCommandState,
+        notice: Option<&str>,
+    ) -> Result<HeadGuiUpdate, String> {
+        self.step_scaled(now, extent, 1.0, event, commands, notice)
+    }
+}
 fn gui_step(gui: &mut NativeGui, tick: u32, event: Option<&ViewportEvent>) -> HeadGuiUpdate {
     gui.step(
         GUI_TICK * tick,
@@ -28,6 +40,25 @@ fn click_event(position: [i32; 2], pressed: bool) -> ViewportEvent {
         position,
         modifiers: Default::default(),
     })
+}
+#[test]
+fn monitor_density_change_rebuilds_the_gui_font_atlas() {
+    let mut gui = NativeGui::new(None).unwrap();
+    let commands = GuiCommandState::default();
+    gui.step_scaled(Duration::ZERO, [1200, 900], 1.0, None, &commands, None)
+        .unwrap();
+    let original = gui.engine.atlas().clone();
+    gui.step_scaled(
+        GUI_TICK,
+        [1200, 900],
+        1.5,
+        Some(&ViewportEvent::Resized([1200, 900])),
+        &commands,
+        None,
+    )
+    .unwrap();
+    assert_ne!(original, *gui.engine.atlas());
+    assert!(gui.engine.atlas().rgba.len() > original.rgba.len());
 }
 #[test]
 fn fit_area_requires_a_current_nonempty_layout() {

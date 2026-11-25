@@ -13,6 +13,10 @@ use windows_sys::Win32::{
     Foundation::{HWND, LPARAM, LRESULT, RECT, WPARAM},
     Graphics::Gdi::{InvalidateRect, UpdateWindow},
     System::LibraryLoader::GetModuleHandleW,
+    UI::HiDpi::{
+        DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2, GetDpiForSystem, GetDpiForWindow,
+        SetProcessDpiAwarenessContext,
+    },
     UI::WindowsAndMessaging::*,
 };
 mod clipboard;
@@ -61,7 +65,15 @@ impl NativeWindow {
         style: u32,
         setup: impl FnOnce(isize),
     ) -> Result<Self, String> {
-        let [width, height] = valid_extent(extent)?;
+        // This must happen before creating the first top-level window. A host may
+        // already have selected an awareness context, in which case Windows
+        // retains that context and this call returns false.
+        static DPI_AWARENESS: std::sync::Once = std::sync::Once::new();
+        DPI_AWARENESS.call_once(|| unsafe {
+            SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+        });
+        let dpi = unsafe { GetDpiForSystem() }.max(96);
+        let [width, height] = physical_extent(extent, dpi)?;
         let title = wide_title(title)?;
         let class = windows_sys::w!("OblikovatiViewport");
         let instance = unsafe { GetModuleHandleW(ptr::null()) };
@@ -141,6 +153,11 @@ impl NativeWindow {
         {
             self.window.set_size(rect.right, rect.bottom);
         }
+    }
+
+    pub fn backing_scale(&self) -> f32 {
+        let dpi = unsafe { GetDpiForWindow(self.hwnd) };
+        if dpi == 0 { 1.0 } else { dpi as f32 / 96.0 }
     }
 
     pub fn resize(&self, extent: [u32; 2]) -> Result<(), String> {
@@ -292,11 +309,39 @@ fn dispatch(
 ) -> Option<LRESULT> {
     match msg {
         WM_CLOSE => events.push(ViewportEvent::CloseRequested),
+        WM_DPICHANGED => {
+            // Windows supplies a physical-pixel rectangle preserving the window's
+            // logical size on the new monitor. WM_SIZE triggers a fresh GUI frame.
+            if let Some(rect) = unsafe { (lparam as *const RECT).as_ref() } {
+                unsafe {
+                    SetWindowPos(
+                        hwnd,
+                        ptr::null_mut(),
+                        rect.left,
+                        rect.top,
+                        rect.right - rect.left,
+                        rect.bottom - rect.top,
+                        SWP_NOZORDER | SWP_NOACTIVATE,
+                    )
+                };
+            }
+            let mut client = RECT::default();
+            if unsafe { GetClientRect(hwnd, &mut client) } != 0
+                && client.right > 0
+                && client.bottom > 0
+            {
+                events.push(ViewportEvent::Resized([
+                    client.right as u32,
+                    client.bottom as u32,
+                ]));
+            }
+        }
         WM_GETMINMAXINFO => {
             // The application bar must remain usable at the smallest restored size.
             if let Some(info) = unsafe { (lparam as *mut MINMAXINFO).as_mut() } {
-                info.ptMinTrackSize.x = 640;
-                info.ptMinTrackSize.y = 480;
+                let dpi = unsafe { GetDpiForWindow(hwnd) }.max(96);
+                info.ptMinTrackSize.x = ((640 * dpi + 48) / 96) as i32;
+                info.ptMinTrackSize.y = ((480 * dpi + 48) / 96) as i32;
             }
             return Some(0);
         }
@@ -357,6 +402,20 @@ fn window_rect(width: i32, height: i32, style: u32) -> Result<RECT, String> {
     Ok(rect)
 }
 
+fn physical_extent(extent: [u32; 2], dpi: u32) -> Result<[i32; 2], String> {
+    valid_extent(extent)?;
+    let physical = extent.map(|logical| (u64::from(logical) * u64::from(dpi) + 48) / 96);
+    if physical
+        .iter()
+        .any(|value| *value == 0 || *value > i32::MAX as u64)
+    {
+        return Err(format!(
+            "viewport extent {extent:?} at {dpi} DPI: expected positive 31-bit physical dimensions"
+        ));
+    }
+    Ok(physical.map(|value| value as i32))
+}
+
 fn wide_title(title: &str) -> Result<Vec<u16>, String> {
     if title.contains('\0') {
         return Err("viewport title: expected no embedded NUL characters".into());
@@ -371,6 +430,14 @@ fn win_error(operation: &str) -> String {
 #[cfg(test)]
 mod setup_tests {
     use super::*;
+
+    #[test]
+    fn logical_window_extents_scale_without_accepting_overflow() {
+        assert_eq!(physical_extent([640, 480], 144).unwrap(), [960, 720]);
+        assert_eq!(physical_extent([640, 480], 96).unwrap(), [640, 480]);
+        assert!(physical_extent([0, 480], 144).is_err());
+        assert!(physical_extent([i32::MAX as u32, 480], 144).is_err());
+    }
 
     #[test]
     fn native_setup_runs_before_the_window_is_visible() {

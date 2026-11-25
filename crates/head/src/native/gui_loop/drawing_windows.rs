@@ -90,6 +90,7 @@ struct DrawingSnapshot {
     drawing: Option<oblikovati_model::drawing::DrawingDocument>,
     projection: Option<oblikovati_gui::GuiDrawingProjection>,
     theme: Option<oblikovati_gui::GuiThemeState>,
+    ui_scale: Option<oblikovati_model::ui_scale::UiScaleOptions>,
 }
 
 impl DrawingSnapshot {
@@ -98,6 +99,7 @@ impl DrawingSnapshot {
             && self.drawing.as_ref() == state.drawing_documents.get(&row.id)
             && self.projection.as_ref() == state.drawing_projections.get(&row.id)
             && self.theme == state.theme
+            && self.ui_scale == state.ui_scale
     }
     fn read(row: &oblikovati_api::wire::DocumentInfo, state: &GuiCommandState) -> Self {
         Self {
@@ -105,6 +107,7 @@ impl DrawingSnapshot {
             drawing: state.drawing_documents.get(&row.id).cloned(),
             projection: state.drawing_projections.get(&row.id).cloned(),
             theme: state.theme.clone(),
+            ui_scale: state.ui_scale,
         }
     }
 }
@@ -113,6 +116,7 @@ struct DrawingWindow {
     view: Viewport,
     gui: GuiDetachedDrawing,
     compiler: Option<GuiFrameCompiler>,
+    raster_scale: f32,
     snapshot: Option<DrawingSnapshot>,
     last_draws: Option<oblikovati_gui::GuiFrame>,
     mapped: bool,
@@ -133,6 +137,7 @@ impl DrawingWindow {
             gui: GuiDetachedDrawing::new(row.id)?,
             view,
             compiler: None,
+            raster_scale: 1.0,
             snapshot: None,
             last_draws: None,
             mapped: true,
@@ -216,16 +221,27 @@ impl DrawingWindow {
         actions: &mut Vec<GuiShellAction>,
     ) -> Result<GuiDetachedDrawingFrame, String> {
         let extent = self.view.drawable_extent()?;
+        let backing_scale = self.view.backing_scale();
+        let raster_scale = backing_scale * state.ui_scale.unwrap_or_default().font();
+        if self.raster_scale != raster_scale {
+            self.compiler = None;
+            self.raster_scale = raster_scale;
+        }
         let mut frame = None;
         for event in events {
             let copied = copied_gui_events(Some(event));
             if !copied.is_empty() {
-                let mut next = self.gui.frame(extent, state, &copied)?;
+                let mut next = self
+                    .gui
+                    .frame_scaled(extent, backing_scale, state, &copied)?;
                 actions.append(&mut next.actions);
                 frame = Some(next);
             }
         }
-        frame.map_or_else(|| self.gui.frame(extent, state, &[]), Ok)
+        frame.map_or_else(
+            || self.gui.frame_scaled(extent, backing_scale, state, &[]),
+            Ok,
+        )
     }
 
     fn present_frame(&mut self, frame: GuiDetachedDrawingFrame) -> Result<bool, String> {

@@ -291,6 +291,8 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Rendered Windows windows at the monitor DPI and scaled layout, input, and fonts when display density changes. (#3850)
+
 - Matched the default viewport and status bar to the desktop theme while preserving explicit colour schemes and readable viewport labels. (#4063)
 - Kept Extrude actions visible in short panels, made feature drafts exclusive, fitted and labelled the Sketch ribbon groups, and cleared origin-plane paint from the viewport controls. (#4063)
 - Updated the active ribbon underline in the same frame as its commands. (#4063)
