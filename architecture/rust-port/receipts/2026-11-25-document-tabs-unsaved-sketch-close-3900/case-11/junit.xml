@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:25:10.446712705Z" time="18.055994377"><testcase name="Scenario: Cancel the save prompt after leaving sketch editing to close: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:112:3" time="18.055994377"><system-out><![CDATA[  Scenario: Cancel the save prompt after leaving sketch editing to close
+   ✔  Given the user creates a new unsaved metric part and starts a sketch on its XY plane
+   ✔  And the environment-exit message is enabled
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  And the user chooses OK to exit the sketch environment and continue
+   ✔  Then a save-changes prompt identifies the part
+   ✔  And the prompt offers Yes, No and cancels
+   ✔  When the user chooses Cancel at the save-changes prompt
+   ✔  Then the part remains open
+   ✔  And its sketch remains listed in the model browser
+   ✔  And the part modeling environment is active
+]]></system-out></testcase></testsuite></testsuites>

@@ -134,9 +134,11 @@ fn sketch_remains(world: &mut ApplicationWorld) {
     );
 }
 #[given("a new part contains an unsaved sketch in the MCAD Software")]
+#[given("the user creates a new unsaved metric part and starts a sketch on its XY plane")]
 fn part_with_open_sketch(world: &mut ApplicationWorld) {
-    world.add_part();
+    let part = world.add_part();
     world.start_sketch();
+    assert!(world.state().document_storage[&part].path.is_none());
 }
 #[when("I choose OK to exit the sketch environment and continue")]
 #[when("the user chooses OK to exit the sketch environment and continue")]
@@ -167,9 +169,15 @@ fn modeling_active(world: &mut ApplicationWorld) {
     world.expect_text("Start 2D Sketch");
 }
 #[given("a new part with an unsaved sketch is active in the MCAD Software")]
+#[given(
+    "the user creates a new unsaved metric part, starts a sketch on its XY plane and finishes the sketch"
+)]
 fn new_part_with_sketch(world: &mut ApplicationWorld) {
-    world.add_part();
+    let part = world.add_part();
     world.add_finished_sketch();
+    let state = world.state();
+    assert!(state.document_storage[&part].path.is_none());
+    assert!(state.document_storage[&part].unsaved_edits);
 }
 #[given("the part is in the modeling environment")]
 fn in_modeling(world: &mut ApplicationWorld) {
@@ -206,7 +214,33 @@ fn previous_part(world: &mut ApplicationWorld) {
 #[when("I accept the suggested file name in the Save As dialog")]
 #[when("the user accepts the suggested file name in the Save As dialog")]
 fn accept_suggested(world: &mut ApplicationWorld) {
-    world.accept_save_as();
+    let output = disposable_output_folder(world);
+    if !output.is_dir() {
+        world.accept_save_as();
+        return;
+    }
+    let part = world
+        .closed_document
+        .expect("expected the Part being saved");
+    let path = output.join(format!("{}.opd", world.document_name(part)));
+    world.click_text("Save");
+    world.expect_no_text("Save in");
+    assert!(path.is_file(), "expected the suggested file at {path:?}");
+    world.saved_path = Some(path);
+}
+fn disposable_output_folder(world: &ApplicationWorld) -> std::path::PathBuf {
+    world.preferences_directory().join("document-tab-output")
+}
+#[given("an empty disposable output folder is available")]
+fn empty_output_folder(world: &mut ApplicationWorld) {
+    let folder = disposable_output_folder(world);
+    std::fs::create_dir(&folder).unwrap();
+    assert!(std::fs::read_dir(&folder).unwrap().next().is_none());
+}
+#[when("the user navigates to the disposable output folder in Save As")]
+fn navigate_to_output_folder(world: &mut ApplicationWorld) {
+    let folder = disposable_output_folder(world);
+    world.enter_in_field("Save in", folder.to_str().unwrap());
 }
 #[then("the part file exists at the selected location")]
 fn file_exists(world: &mut ApplicationWorld) {

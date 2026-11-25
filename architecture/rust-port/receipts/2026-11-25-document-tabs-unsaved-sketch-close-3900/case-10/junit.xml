@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:24:54.050953091Z" time="15.494412321"><testcase name="Scenario: Cancel closing a part while editing its sketch: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:103:3" time="15.494412321"><system-out><![CDATA[  Scenario: Cancel closing a part while editing its sketch
+   ✔  Given the user creates a new unsaved metric part and starts a sketch on its XY plane
+   ✔  And the environment-exit message is enabled
+   ✔  When the user clicks the close button on the part's document tab
+   ✔  Then a dialog asks whether to exit the sketch environment and continue
+   ✔  And the dialog offers OK and cancels
+   ✔  When the user chooses Cancel
+   ✔  Then the part remains open
+   ✔  And the sketch editing environment remains active
+]]></system-out></testcase></testsuite></testsuites>
