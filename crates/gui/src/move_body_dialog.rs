@@ -101,14 +101,19 @@ impl MoveBodyDialog {
         if self.document.is_none() {
             return;
         }
-        crate::widget_abi::fit_viewport_properties(ui, "Move Bodies", area, [360., 240.]);
+        let height =
+            5. * ui.frame_height_with_spacing() + 2. * ui.clone_style().window_padding[1] + 28.;
+        crate::widget_abi::fit_viewport_properties(ui, "Move Bodies", area, [280., height]);
+        let _border = crate::theme::property_window_border(ui);
         let mut open = true;
         Self::dockable_window(ui, "Move Bodies", &mut open).build(|| {
+            crate::theme::floating_property_shadow(ui);
             self.body_choice(ui, state);
             for (label, value) in ["X", "Y", "Z"].into_iter().zip(&mut self.offset) {
-                ui.input_text(label, value).build();
+                offset_value(ui, label, value);
             }
             self.refresh_preview(state, actions);
+            ui.separator();
             self.controls(ui, state, actions);
         });
         if !open {
@@ -125,7 +130,9 @@ impl MoveBodyDialog {
             .iter()
             .find(|body| Some(&body.key) == self.body.as_ref())
             .map_or("Select body", |body| body.name.as_str());
-        let Some(_combo) = ui.begin_combo("Body", name) else {
+        crate::theme::property_label(ui, "Body");
+        let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
+        let Some(_combo) = ui.begin_combo("##Body", name) else {
             return;
         };
         for body in &browser.bodies {
@@ -153,22 +160,29 @@ impl MoveBodyDialog {
         let request = self
             .request(state)
             .filter(|request| GuiShellAction::CreateMoveBody(request.clone()).dispatchable(state));
-        let disabled = ui.begin_disabled(request.is_none());
-        if ui.button("OK")
+        if crate::theme::property_accept(ui, request.is_some())
             && let Some(request) = request
         {
             self.submitted = Some(request.clone());
             actions.push(GuiShellAction::CreateMoveBody(request));
         }
-        drop(disabled);
         ui.same_line();
-        if ui.button("Cancel")
+        if crate::widget_abi::button(ui, "Cancel", [72., 28.])
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape))
         {
             self.close(actions);
         }
     }
 }
+
+fn offset_value(ui: &Ui, axis: &str, value: &mut String) {
+    crate::theme::property_label(ui, axis);
+    let _id = ui.push_id(axis);
+    let _numeric = crate::ui_scale::numeric_font(ui);
+    let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
+    ui.input_text("##offset", value).build();
+}
+
 pub(crate) fn key_bytes(hex: &str) -> Option<Vec<u8>> {
     if !hex.len().is_multiple_of(2) {
         return None;

@@ -18,7 +18,44 @@ fn native_normal_modify_rows_fill_the_flyout_and_share_one_pitch() {
     let right_side = diagnostics::pointer_pixels([position[0] + size[0] - 18., rows[0][1]]);
     world.click(right_side);
     assert!(diagnostics::window_geometry("Move Bodies").is_some());
+    check_move_bodies_at_minimum_size(&mut world);
     world.close();
+}
+
+fn check_move_bodies_at_minimum_size(world: &mut ApplicationWorld) {
+    let features = world.state().browser.unwrap().features.len();
+    x11_input::resize_application_window([640, 480]);
+    for _ in 0..3 {
+        world.pump(Vec::new());
+    }
+    assert_eq!(world.extent(), [640, 480]);
+    world.save_capture("move-bodies-at-minimum-size");
+    assert_move_body_properties_fit(world);
+    let cancel = world.run_in_window("Move Bodies", "Cancel");
+    x11_input::click(diagnostics::pointer_pixels(cancel.center()));
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry("Move Bodies").is_none());
+    assert_eq!(world.state().browser.unwrap().features.len(), features);
+}
+
+fn assert_move_body_properties_fit(world: &mut ApplicationWorld) {
+    let title = "Move Bodies";
+    let viewport = world.viewport_bounds().map(|edge| edge as f32);
+    let panel = diagnostics::window_pixel_bounds(title).expect("visible Move Bodies properties");
+    assert!(panel[0] >= viewport[0] && panel[1] >= viewport[1]);
+    assert!(panel[2] <= viewport[2] && panel[3] <= viewport[3]);
+    let label = world.run_in_window(title, "Body");
+    let body = world.run_in_window(title, "Solid1");
+    assert!(
+        label.maximum[0] < body.minimum[0],
+        "Body label must lead the selector"
+    );
+    for axis in ["X", "Y", "Z"] {
+        let axis_label = world.run_in_window(title, axis);
+        assert!((axis_label.minimum[0] - label.minimum[0]).abs() < 2.);
+    }
+    let cancel = world.run_in_window(title, "Cancel");
+    assert!(cancel.maximum[1] < panel[3] && panel[3] - cancel.maximum[1] < 40.);
 }
 
 #[test]
