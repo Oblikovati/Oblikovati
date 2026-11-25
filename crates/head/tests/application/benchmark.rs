@@ -199,6 +199,8 @@ mod extrude_resume_native;
 mod file_menu;
 #[path = "home-recent-documents/steps.rs"]
 mod home_recent_documents;
+#[cfg(target_os = "linux")]
+mod linux_dpi;
 #[path = "model-browser/steps.rs"]
 mod model_browser;
 #[cfg(test)]

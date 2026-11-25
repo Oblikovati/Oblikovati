@@ -165,6 +165,13 @@ fn keyboard_modifiers(
 
 impl NativeWindow {
     pub(super) fn copy_event(&self, mut event: xlib::XEvent) -> Result<Vec<ViewportEvent>, String> {
+        if self.display_scale.handles(&event, self.pointer()) {
+            let changed = self.display_scale.refresh(&self.x11.api, self.pointer());
+            return Ok(changed
+                .then_some(ViewportEvent::Expose)
+                .into_iter()
+                .collect());
+        }
         if !self.admit_input_event(&mut event)? {
             return Ok(Vec::new());
         }

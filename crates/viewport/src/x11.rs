@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{ViewportEvent, types::valid_extent};
+mod dpi;
 #[path = "x11/input.rs"]
 mod input;
 mod keyboard;
@@ -73,6 +74,7 @@ pub(crate) struct NativeWindow {
     maximized: Cell<bool>,
     frame_cursor: Cell<u32>,
     state_atom: xlib::Atom,
+    display_scale: dpi::DisplayScale,
 }
 impl NativeWindow {
     pub fn create(
@@ -107,6 +109,7 @@ impl NativeWindow {
                 0,
             )
         };
+        let display_scale = dpi::DisplayScale::watch(&x11.api, &display);
         let result = Self {
             keyboard: keyboard::NativeKeyboard::open(
                 x11.clone(),
@@ -118,6 +121,7 @@ impl NativeWindow {
             maximized: Cell::new(false),
             frame_cursor: Cell::new(0),
             state_atom,
+            display_scale,
             window,
             display,
             x11,
@@ -173,6 +177,9 @@ impl NativeWindow {
                     | xlib::KeyReleaseMask,
             );
         }
+    }
+    pub(crate) fn backing_scale(&self) -> f32 {
+        self.display_scale.get()
     }
     pub fn sync(&self) {
         unsafe {

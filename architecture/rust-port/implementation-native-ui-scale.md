@@ -2,7 +2,7 @@
 
 Issue [#3850](https://github.com/Oblikovati/Oblikovati/issues/3850) tracks the
 Go font/icon preferences and their native Rust controls. Content size is separate
-from framebuffer density. The X11 adapter still uses backing ratio 1.
+from framebuffer density.
 
 ## Preference foundation
 
@@ -73,8 +73,21 @@ the native runtime acceptance above is X11.
 
 ## Windows monitor DPI
 
-The Windows viewport requests per-monitor-v2 DPI awareness before its first native window is created. Native windows report their monitor DPI to the GUI as a physical backing scale; the existing user font and icon preferences remain separate. The main and detached drawing windows rasterize fonts at the effective scale, convert pointer coordinates into logical UI units, and re-create drawing texture resources after a scale change. A DPI-change message applies the suggested window bounds and schedules a new frame. Offscreen and non-Windows views retain their existing 1x backing scale.
+The Windows viewport requests per-monitor-v2 DPI awareness before its first native window is created. Native windows report their monitor DPI to the GUI as a physical backing scale; the existing user font and icon preferences remain separate. The main and detached drawing windows rasterize fonts at the effective scale, convert pointer coordinates into logical UI units, and re-create drawing texture resources after a scale change. A DPI-change message applies the suggested window bounds and schedules a new frame. Offscreen views retain their 1× backing scale.
 
 On Windows at 150% display scaling, the previous application process reported DPI-unaware and 96 DPI. The validation build reported per-monitor awareness and 144 DPI on the same display. The 1x, 1.5x and 2x backing-scale GUI hit-region regression passed with the pinned Windows MSVC toolchain. This measurement does not cover movement between monitors or all Windows display configurations.
 
 The Windows full gate was attempted after merging `17ddaee72`. It did not pass: the BDD tooling reported Windows no-follow/config-environment failures, the workspace formatter reported existing differences in files from the pulled branch, and repository checks could not find npm. Workspace doctests completed. These failures are separate from the focused DPI checks and remain unresolved.
+
+## Linux X11 display DPI
+
+Linux native windows use the display-wide `Xft.dpi` resource from
+`RESOURCE_MANAGER`. A property notification refreshes the scale and schedules
+a new frame for each open window. The GUI uses the same backing-scale path for
+the main window and detached drawings. A missing or invalid DPI falls back
+to 96 DPI. [X.Org resource database documentation](https://www.x.org/docs/man/man.pdf)
+
+The isolated Xvfb regression opened the main window at 144 DPI and clicked
+File through X11. It detached a drawing, switched the display to 192 DPI and
+back to 96 DPI, and verified the main titlebar and detached drawing framebuffer
+scale at 150%, 200%, and 100%.
