@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:36:57.589486321Z" time="99.916718896"><testcase name="Scenario: Switch locked views after showing an origin plane: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:1242:3" time="99.916718896"><system-out><![CDATA[  Scenario: Switch locked views after showing an origin plane
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And the user copies Primary as BrowserView, activates it and enables its Lock option
+   ✔  And The MCAD Software has an empty part with a locked copied view active
+   ✔  And the Primary view is locked
+   ✔  And the YZ origin plane is hidden
+   ✔  When the user chooses Visibility from the YZ origin plane context menu
+   ✔  Then the YZ origin plane is visible
+   ✔  When the user activates the Primary view
+   ✔  Then the YZ origin plane remains visible
+   ✔  When the user activates the locked copied view
+   ✔  Then the YZ origin plane remains visible
+   ✔  And the copied view displays its active and locked indicators
+]]></system-out></testcase></testsuite></testsuites>

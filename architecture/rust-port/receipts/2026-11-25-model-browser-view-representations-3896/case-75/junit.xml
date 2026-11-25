@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:34:55.415944099Z" time="121.098014134"><testcase name="Scenario: Toggle an origin plane while the active view is locked: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:1225:3" time="121.098014134"><system-out><![CDATA[  Scenario: Toggle an origin plane while the active view is locked
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is active in the MCAD Software
+   ✔  And the user copies the Primary view representation as BrowserView and activates BrowserView
+   ✔  And The MCAD Software has an empty part with a copied view active
+   ✔  And the YZ origin plane is hidden
+   ✔  When the user chooses Lock from the active view context menu
+   ✔  Then the active view displays a lock indicator
+   ✔  When the user chooses Visibility from the YZ origin plane context menu
+   ✔  Then the YZ origin plane is visible
+   ✔  And Visibility is checked in the plane context menu
+   ✔  And the active view still displays a lock indicator
+   ✔  When the user chooses Visibility from the YZ origin plane context menu again
+   ✔  Then the YZ origin plane is hidden
+   ✔  When the user chooses Lock from the active view context menu again
+   ✔  Then the active view no longer displays a lock indicator
+]]></system-out></testcase></testsuite></testsuites>
