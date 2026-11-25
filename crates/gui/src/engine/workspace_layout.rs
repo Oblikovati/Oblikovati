@@ -46,6 +46,7 @@ impl GuiFrameEngine {
         self.workspace.status_bar_visible = settings.status_bar_visible;
         self.workspace.marking_menu_enabled = settings.marking_menu_enabled;
         self.workspace.selection_toolbar_visible = settings.selection_toolbar_visible;
+        self.workspace.outer_dock_anchor = settings.outer_dock_anchor.unwrap_or_default();
         self.workspace
             .set_auto_expand_representations(settings.auto_expand_representations);
         if settings.material_browser {
@@ -78,6 +79,8 @@ impl GuiFrameEngine {
         settings.selection_filter = self.selection_filter.is_open();
         settings.history_browser = self.history_browser.is_open();
         settings.browser_panels = Some(self.workspace.panels.settings());
+        settings.outer_dock_anchor =
+            Some(self.workspace.outer_dock_anchor).filter(|anchor| *anchor != 0);
         settings.auto_expand_representations = self.workspace.auto_expand_representations();
         settings.view_cube_visible = self.workspace.view_cube_visible;
         settings.navigation_bar_visible = self.workspace.navigation_bar_visible;

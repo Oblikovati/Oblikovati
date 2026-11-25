@@ -41,9 +41,14 @@ fn draw_inner_workspace(
     band: f32,
     seed_asset_dock: bool,
 ) -> WorkspaceArea {
-    let (bounds, span) = crate::widget_abi::outer_dockspace(ui, size, seed_asset_dock)
-        .and_then(|(bounds, span)| contained_center(outer, bounds).map(|area| (area, span)))
-        .unwrap_or((outer, None));
+    let (bounds, span) = crate::widget_abi::outer_dockspace(
+        ui,
+        size,
+        seed_asset_dock,
+        &mut layout.outer_dock_anchor,
+    )
+    .and_then(|(bounds, span)| contained_center(outer, bounds).map(|area| (area, span)))
+    .unwrap_or((outer, None));
     layout.set_outer_center(bounds, outer);
     layout.outer_bottom_span = span;
     draw_inner_child(ui, outer, layout.document_area(display, band))

@@ -5,6 +5,27 @@ use cucumber::{given, then, when};
 const APPEARANCE: &str = "Appearance Browser";
 const MATERIAL: &str = "Material Browser";
 
+#[test]
+fn capped_appearance_splitter_keeps_the_selected_width_across_restart() {
+    let mut world = ApplicationWorld::with_asset_tools_closed();
+    super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    open_floating(&mut world, APPEARANCE);
+    dock_appearance_right(&mut world);
+    widen_appearance(&mut world);
+    appearance_wider(&mut world);
+    let widened = viewport(&mut world);
+    let extent = world.extent();
+    assert!((widened[2] - widened[0]) * 100 >= extent[0] * 55);
+    world.save_capture("appearance-splitter-widened-at-cap");
+    world.reopen_application();
+    super::super::workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    assert_eq!(viewport(&mut world), widened);
+    restore_appearance_boundary(&mut world);
+    appearance_proportions_restored(&mut world);
+    world.save_capture("appearance-splitter-dragged-back");
+    world.close();
+}
+
 #[given("Appearance Browser is floating over the workspace")]
 fn appearance_floating(world: &mut ApplicationWorld) {
     super::open_docking_fixture(world);
@@ -105,8 +126,13 @@ fn appearance_proportions_restored(world: &mut ApplicationWorld) {
     let (before, width) = world.docking_resize.unwrap();
     let current = viewport(world);
     let (_, size) = diagnostics::window_geometry(APPEARANCE).unwrap();
-    assert!(before[2].abs_diff(current[2]) <= 1);
-    assert!((width - size[0]).abs() <= 1.);
+    assert!(
+        before[0].abs_diff(current[0]) <= 1
+            && before[2].abs_diff(current[2]) <= 1
+            && (width - size[0]).abs() <= 1.,
+        "viewport {before:?} -> {current:?}, Appearance width {width} -> {}",
+        size[0]
+    );
 }
 
 #[given("Material Browser is floating over the workspace")]

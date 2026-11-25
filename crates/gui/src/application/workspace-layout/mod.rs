@@ -39,6 +39,7 @@ pub(crate) struct WorkspaceLayout {
     outer_center: Option<crate::application::document_creation::workspaces::WorkspaceArea>,
     outer_bottom_docked: bool,
     pub(crate) outer_bottom_span: Option<[f32; 2]>,
+    pub(crate) outer_dock_anchor: u32,
     /// GUI frames follow events, and a dropped panel takes its geometry in the next frame.
     pub pending_layout: bool,
     pub switcher: crate::application::document_tabs::WindowSwitcher,
@@ -65,6 +66,7 @@ impl Default for WorkspaceLayout {
             outer_center: None,
             outer_bottom_docked: false,
             outer_bottom_span: None,
+            outer_dock_anchor: 0,
             pending_layout: false,
             switcher: Default::default(),
             view: Default::default(),

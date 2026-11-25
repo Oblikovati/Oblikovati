@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "widget_dock_widths.h"
 #include <cstddef>
 #include <cstdint>
 
@@ -27,73 +28,6 @@ bool is_outer_dock_target(const ImGuiWindow* outer, const ImVec2 mouse) {
         (ImFabs(mouse.x - outer->Pos.x - narrow) <= narrow ||
          ImFabs(mouse.x - outer->Pos.x - size.x + narrow) <= narrow);
     return top_or_bottom || left_or_right;
-}
-
-ImGuiDockNode* horizontal_dock_sibling(ImGuiDockNode* node) {
-    ImGuiDockNode* parent = node->ParentNode;
-    if (parent->SplitAxis != ImGuiAxis_X) return nullptr;
-    ImGuiDockNode* sibling = parent->ChildNodes[parent->ChildNodes[0] == node ? 1 : 0];
-    return sibling && sibling->IsVisible ? sibling : nullptr;
-}
-
-constexpr float minimum_outer_dock_width = 180.0f;
-
-struct OuterDockWidthScale {
-    float minimum;
-    float excess;
-};
-
-OuterDockWidthScale outer_dock_width_scale(ImGuiDockNode* center, float width) {
-    float preferred = 0.0f;
-    float splitters = 0.0f;
-    float minimum_docks = 0.0f;
-    for (auto* node = center; node && node->ParentNode; node = node->ParentNode) {
-        if (const auto* sibling = horizontal_dock_sibling(node)) {
-            const float dock_width = ImMax(0.0f, sibling->SizeRef.x);
-            preferred += dock_width;
-            splitters += 2.0f; // DOCKING_SPLITTER_SIZE in ImGui 1.89.2.
-            minimum_docks += ImMin(minimum_outer_dock_width, dock_width);
-        }
-    }
-    // At narrow widths, viewport space takes precedence over the dock minimums (#4063).
-    const float reserved = ImMax(width * 0.55f, ImMin(520.0f, width - minimum_docks - splitters));
-    const float budget = ImMax(0.0f, ImFloor(width - reserved) - splitters);
-    if (preferred <= budget) return {1.0f, 1.0f};
-    const float remaining = budget - minimum_docks;
-    if (remaining <= 0.0f) return {budget / minimum_docks, 0.0f};
-    return {1.0f, remaining / (preferred - minimum_docks)};
-}
-
-struct CompactDockWidth {
-    ImGuiID node;
-    float preferred;
-    float applied;
-};
-
-void compact_outer_docks(ImGuiDockNode* center, float width, ImVector<CompactDockWidth>& widths) {
-    const auto scale = outer_dock_width_scale(center, width);
-    if (scale.minimum >= 1.0f && scale.excess >= 1.0f) return;
-    for (auto* node = center; node && node->ParentNode; node = node->ParentNode) {
-        auto* sibling = horizontal_dock_sibling(node);
-        if (!sibling || sibling->SizeRef.x <= 0.0f) continue;
-        const float preferred = sibling->SizeRef.x;
-        const float minimum = ImMin(minimum_outer_dock_width, preferred);
-        // Share spare width after each dock has room for its controls.
-        const float allocated = minimum * scale.minimum + (preferred - minimum) * scale.excess;
-        const float applied = ImMax(1.0f, ImFloor(allocated));
-        widths.push_back({sibling->ID, preferred, applied});
-        sibling->SizeRef.x = applied;
-    }
-}
-
-void restore_outer_dock_widths(const ImVector<CompactDockWidth>& widths) {
-    for (const auto& width : widths) {
-        auto* node = ImGui::DockBuilderGetNode(width.node);
-        if (!node) continue;
-        // Keep an intentional splitter change while discarding the temporary cap.
-        const float delta = node->SizeRef.x - width.applied;
-        node->SizeRef.x = ImMax(1.0f, width.preferred + delta);
-    }
 }
 
 void draw_ribbon_icon(const char* label, std::uint32_t texture, ImVec2 icon, bool large, bool show_caption) {
@@ -207,7 +141,8 @@ void oblikovati_gui_prepare_dock_hit_test(float x, float y) {
     }
 }
 
-std::uint32_t oblikovati_gui_outer_dockspace(float width, float height, bool seed_asset_dock) {
+std::uint32_t oblikovati_gui_outer_dockspace(float width, float height, bool seed_asset_dock,
+                                            std::uint32_t* anchor) {
     const ImGuiID id = ImGui::GetID("##outer-dockspace");
     if (!ImGui::DockBuilderGetNode(id)) {
         ImGui::DockBuilderAddNode(id, ImGuiDockNodeFlags_DockSpace);
@@ -226,12 +161,7 @@ std::uint32_t oblikovati_gui_outer_dockspace(float width, float height, bool see
         }
         ImGui::DockBuilderFinish(id);
     }
-    ImVector<CompactDockWidth> compacted;
-    compact_outer_docks(ImGui::DockBuilderGetCentralNode(id), width, compacted);
-    const ImGuiID dockspace = ImGui::DockSpace(id, ImVec2(width, height),
-        ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
-    restore_outer_dock_widths(compacted);
-    return dockspace;
+    return draw_outer_dockspace(id, ImVec2(width, height), *anchor);
 }
 
 void oblikovati_gui_ensure_tabbed_window(const char* title, const char* group) {

@@ -30,6 +30,8 @@ pub(crate) struct WorkspaceDockSettings {
     #[serde(default)]
     pub browser_panels:
         Option<crate::application::workspace_layout::panel_tabs::BrowserPanelSettings>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub outer_dock_anchor: Option<u32>,
 }
 
 fn enabled_by_default() -> bool {

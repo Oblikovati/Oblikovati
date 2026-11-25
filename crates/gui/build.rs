@@ -17,5 +17,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         .file("src/widget_abi.cpp")
         .try_compile("oblikovati_imgui_widgets")?;
     println!("cargo:rerun-if-changed=src/widget_abi.cpp");
+    println!("cargo:rerun-if-changed=src/widget_dock_widths.h");
     Ok(())
 }
