@@ -55,6 +55,11 @@ The published nested-sketch and grouped Find cases use the saved
 Both cases also pass on the pinned fixture. See the
 [native fixture receipt](receipts/2026-11-24-model-browser-named-part-3896/README.md).
 
+The first right-click keeps a settled Sketch row fixed at 100% and 150%
+framebuffer scale. On Wayland and X11, its menu changed Dimension Visibility
+for the clicked sketch while another sketch stayed in edit mode.
+[First-interaction checks](receipts/2026-11-25-browser-first-context-4077/README.md)
+
 The representation and model-state tests retain the named blank metric
 Part on the published source. They locate the actual document captions
 and check the empty workspace within the current viewport bounds. See

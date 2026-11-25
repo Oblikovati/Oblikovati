@@ -285,6 +285,43 @@ fn menu_gone_block_stays(world: &mut ApplicationWorld) {
     expect_solid_visible(world);
 }
 // Dimension Visibility
+#[test]
+fn first_browser_context_click_during_a_sketch_targets_the_visible_row() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    world.start_sketch();
+    world.finish_sketch();
+    world.start_sketch();
+    let sketch = world.state().browser.unwrap().sketches[0].id;
+    assert_ne!(world.state().active_sketch, Some(sketch));
+    let position = world.run_in_window("Model", "Sketch1").center();
+    let at = super::super::diagnostics::pointer_pixels(position);
+    if world.app().window.native.view.uses_wayland() {
+        world.right_click(at);
+    } else {
+        super::super::x11_input::right_click(at);
+        world.pump(Vec::new());
+    }
+    assert_eq!(world.run_in_window("Model", "Sketch1").center(), position);
+    world.expect_text("Dimension Visibility");
+    choose_menu_row(&mut world, "Dimension Visibility");
+    settle(&mut world);
+    let browser = world.state().browser.unwrap();
+    assert!(
+        !browser
+            .sketches
+            .iter()
+            .find(|row| row.id == sketch)
+            .unwrap()
+            .dimensions_shown
+    );
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+    world.close();
+}
+
 fn sketch_menu(world: &mut ApplicationWorld) {
     right_click_row(world, SKETCH);
 }

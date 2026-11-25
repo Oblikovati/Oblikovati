@@ -307,6 +307,63 @@ fn settle_browser_layout(engine: &mut GuiFrameEngine, request: &GuiFrameRequest)
     panic!("browser layout exceeded 32 frames; expected stable ribbon and browser bounds");
 }
 #[test]
+fn the_first_right_click_keeps_a_settled_sketch_row_under_the_pointer() {
+    for scale in [1., 1.5] {
+        for switch_from_part in [false, true] {
+            let mut engine = GuiFrameEngine::new().unwrap();
+            let mut request = browser_request();
+            request.extent = request.extent.map(|length| (length as f32 * scale) as u32);
+            request.framebuffer_scale = [scale; 2];
+            if switch_from_part {
+                settle_browser_layout(&mut engine, &request);
+            }
+            request.commands.authoring = GuiAuthoringContext::Sketch;
+            request.commands.active_sketch = Some(DocumentSketchId(7));
+            expect_first_sketch_context_menu(&mut engine, &mut request, scale);
+        }
+    }
+}
+
+fn expect_first_sketch_context_menu(
+    engine: &mut GuiFrameEngine,
+    request: &mut GuiFrameRequest,
+    scale: f32,
+) {
+    let idle = (0..32).any(|_| {
+        let activity = engine.frame(request).unwrap().activity;
+        !activity.queued_input && !activity.pending_layout && !activity.pending_navigation
+    });
+    assert!(idle, "expected the first layout to settle");
+    let position = sketch_position(engine, 7);
+    request.events = vec![GuiInputEvent::PointerMoved(
+        position.map(|point| point * scale),
+    )];
+    engine.frame(request).unwrap();
+    assert_eq!(sketch_position(engine, 7), position, "first pointer motion");
+    for pressed in [true, false] {
+        request.events = vec![GuiInputEvent::PointerButton {
+            button: GuiPointerButton::Right,
+            pressed,
+        }];
+        assert!(engine.frame(request).unwrap().actions.is_empty());
+        assert_eq!(
+            sketch_position(engine, 7),
+            position,
+            "right button pressed={pressed}"
+        );
+    }
+    let visibility = menu_position(engine, true).map(|point| point * scale);
+    assert_eq!(
+        pointer_gesture(engine, request, visibility, GuiPointerButton::Left),
+        [GuiShellAction::SetSketchVisibility {
+            document: 12,
+            sketch: DocumentSketchId(7),
+            visible: false
+        }]
+    );
+}
+
+#[test]
 fn context_visibility_toggles_the_stored_flag_even_during_sketch_editing() {
     for visible in [false, true] {
         let mut engine = GuiFrameEngine::new().unwrap();
