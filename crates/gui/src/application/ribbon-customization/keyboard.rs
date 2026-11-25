@@ -15,7 +15,7 @@ enum Navigation {
 impl RibbonCustomization {
     pub(super) fn transfer_source(&mut self) {
         self.draft.add();
-        self.scroll_source_to_selection = self.draft.source.is_some();
+        self.source_scroll_ratio = self.draft.source.map(|_| 0.5);
     }
 
     pub(super) fn focus_add_from_source(&mut self, ui: &Ui) {
@@ -37,29 +37,27 @@ impl RibbonCustomization {
             return false;
         }
         let next = if let Some(down) = pressed_page(ui) {
-            let commands = self.draft.available_commands();
-            let current = commands
-                .iter()
-                .position(|command| Some(*command) == self.draft.source)
-                .unwrap_or(0);
-            let last = commands.len().saturating_sub(1);
-            commands
-                .get(page_row(current, last, self.visible_source.len(), down))
-                .copied()
+            source_page(
+                &self.draft.available_commands(),
+                &self.visible_source,
+                self.draft.source,
+                down,
+            )
         } else if let Some(navigation) = pressed_navigation(ui) {
             navigate(
                 &self.draft.available_commands(),
                 self.draft.source,
                 navigation,
             )
+            .map(|command| (command, Some(0.5)))
         } else {
             return false;
         };
-        let Some(command) = next else {
+        let Some((command, scroll_ratio)) = next else {
             return true;
         };
         self.draft.reset_source_selection(command);
-        self.scroll_source_to_selection = true;
+        self.source_scroll_ratio = scroll_ratio;
         true
     }
 
@@ -89,6 +87,26 @@ impl RibbonCustomization {
         }
         true
     }
+}
+
+fn source_page(
+    commands: &[Command],
+    visible: &[Command],
+    current: Option<Command>,
+    down: bool,
+) -> Option<(Command, Option<f32>)> {
+    let edge = *if down {
+        visible.last()
+    } else {
+        visible.first()
+    }?;
+    if current != Some(edge) {
+        return Some((edge, None));
+    }
+    let index = commands.iter().position(|&command| command == edge)?;
+    let target = page_row(index, commands.len() - 1, visible.len(), down);
+    let ratio = (target != index).then_some(if down { 1. } else { 0. });
+    Some((commands[target], ratio))
 }
 
 fn pressed_page(ui: &Ui) -> Option<bool> {
@@ -187,6 +205,45 @@ fn initial_match(commands: &[Command], index: Option<usize>, initial: char) -> O
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn source_paging_hits_the_visible_edge_before_scrolling_to_the_next_page() {
+        use Command::{Annotations, Drawing2D, FinishSketch, Measure, Separator, Sketches};
+        let commands = [
+            Separator,
+            Drawing2D,
+            Sketches,
+            Annotations,
+            Measure,
+            FinishSketch,
+        ];
+        let first = &commands[..4];
+        let last = &commands[2..];
+        assert_eq!(
+            source_page(&commands, first, Some(Sketches), true),
+            Some((Annotations, None))
+        );
+        assert_eq!(
+            source_page(&commands, first, Some(Annotations), true),
+            Some((FinishSketch, Some(1.)))
+        );
+        assert_eq!(
+            source_page(&commands, last, Some(FinishSketch), false),
+            Some((Sketches, None))
+        );
+        assert_eq!(
+            source_page(&commands, last, Some(Sketches), false),
+            Some((Separator, Some(0.)))
+        );
+        assert_eq!(
+            source_page(&commands, first, Some(Separator), false),
+            Some((Separator, None))
+        );
+        assert_eq!(
+            source_page(&commands, last, Some(FinishSketch), true),
+            Some((FinishSketch, None))
+        );
+    }
 
     #[test]
     fn target_pages_use_visible_rows_and_stop_at_either_end() {

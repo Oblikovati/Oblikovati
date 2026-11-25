@@ -48,7 +48,7 @@ pub(crate) struct RibbonCustomization {
     target_cursor: usize,
     visible_source: Vec<Command>,
     visible_target_rows: usize,
-    scroll_source_to_selection: bool,
+    source_scroll_ratio: Option<f32>,
     scroll_target_to_selection: bool,
     focus_add_after_option: bool,
     settings: settings_dialog::SettingsDialog,
@@ -110,7 +110,7 @@ impl RibbonCustomization {
         self.focus_add_after_option = false;
         self.category_open = false;
         self.target_selector_open = false;
-        self.scroll_source_to_selection = false;
+        self.source_scroll_ratio = None;
         self.scroll_target_to_selection = false;
         self.settings_error = None;
         self.open.set_open(true);
@@ -119,7 +119,8 @@ impl RibbonCustomization {
         self.open.is_open()
             && self.ribbon_tab_active
             && (self.focus_add_after_option
-                || self.scroll_source_to_selection && self.draft.source.is_some())
+                || self.navigation_consumed
+                || self.source_scroll_ratio.is_some() && self.draft.source.is_some())
     }
     pub(crate) fn expanded_command_count(&self, tab: RibbonTab) -> usize {
         self.draft
@@ -250,12 +251,17 @@ impl RibbonCustomization {
                         self.draft.reset_source_selection(command);
                         self.list_focus = Some(ListFocus::Source);
                     }
-                    if ui.is_item_visible() {
+                    // The selectable rectangle can overlap the clip at its padding.
+                    let minimum = ui.item_rect_min();
+                    let maximum = ui.item_rect_max();
+                    let center = std::array::from_fn(|axis| minimum[axis].midpoint(maximum[axis]));
+                    if ui.is_rect_visible(center, center.map(|coordinate| coordinate + 1.)) {
                         self.visible_source.push(command);
                     }
-                    if self.scroll_source_to_selection && self.draft.source == Some(command) {
-                        ui.set_scroll_here_y();
-                        self.scroll_source_to_selection = false;
+                    if self.draft.source == Some(command)
+                        && let Some(ratio) = self.source_scroll_ratio.take()
+                    {
+                        ui.set_scroll_here_y_with_ratio(ratio);
                     }
                     if ui.is_item_hovered() && ui.is_mouse_double_clicked(imgui::MouseButton::Left)
                     {

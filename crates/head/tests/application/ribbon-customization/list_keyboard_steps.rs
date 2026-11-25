@@ -5,6 +5,33 @@ use super::transaction_steps::{add_command, target_row_runs, target_rows};
 use super::*;
 use oblikovati_viewport::{ViewportCapture, ViewportPhysicalKey};
 
+#[test]
+fn source_page_keys_select_the_edges_of_the_visible_command_page() {
+    let mut world = ApplicationWorld::new();
+    let path = super::super::scenario_root().join("fixtures/cad/workspace-layout-native.opd");
+    world.open_fixture(&path);
+    empty_tools_customization(&mut world);
+    capture_plain_source_rows(&mut world);
+    let rows: Vec<_> = source_rows(&world)
+        .into_iter()
+        .map(|row| row.text.clone())
+        .collect();
+    assert_eq!(rows.first().unwrap(), "<Separator>");
+    let last = rows.last().expect("expected at least one visible command");
+    assert_ne!(last, "2DSketches");
+    assert!(!rows.iter().any(|label| label == "ZoomWindow"));
+
+    click_in_customize(&mut world, "2DSketches");
+    world.key(ViewportPhysicalKey::PageDown, false);
+    expect_source_selection(&mut world, Some(last), &[last, "<Separator>"]);
+    world.key(ViewportPhysicalKey::PageUp, false);
+    expect_source_selection(&mut world, Some("<Separator>"), &[last, "<Separator>"]);
+    assert!(target_rows(&world).is_empty());
+    assert_ne!(world.run_in_window("Customize", "Apply").alpha, u8::MAX);
+    click_in_customize(&mut world, "Close");
+    world.close();
+}
+
 #[given("ribbon customization is open in the MCAD Software for the Part Tools target")]
 fn open_tools_draft(world: &mut ApplicationWorld) {
     if world.state().document.is_none() {

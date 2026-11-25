@@ -120,7 +120,7 @@
 
 - Added the Macros category to ribbon customization for sessions with no macros. (#3856)
 
-- Added keyboard navigation and scrolling for available ribbon commands. (#3856)
+- Added keyboard navigation and scrolling for available ribbon commands. Page Up and Page Down select the visible edge before advancing to the next page. (#3856)
 
 - Added name sorting to the available ribbon commands while preserving selection. (#3856)
 

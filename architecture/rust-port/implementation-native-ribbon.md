@@ -37,6 +37,9 @@ checks Enter in the source list and Tab followed by Space on Add.
 The [native list navigation runs](receipts/2026-11-24-ribbon-customization-list-navigation-3856/README.md)
 cover paging staged rows, selecting all visible source rows, and keeping a
 staged ribbon edit while viewing Keyboard customization.
+Page Up and Page Down in the available-command list first select the
+visible edge. Pressing the key again from that edge advances the page.
+[Native source paging checks](receipts/2026-11-26-ribbon-visible-page-3856/README.md)
 Reopening Customize clears the Keyboard search and restores both filters
 to All. The selected customization tab is retained.
 [Keyboard initial-state checks](receipts/2026-11-26-keyboard-customization-initial-3856/README.md)
