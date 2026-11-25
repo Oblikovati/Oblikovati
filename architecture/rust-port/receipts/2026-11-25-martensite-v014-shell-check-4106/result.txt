@@ -1,0 +1,3 @@
+source maximum vertex tolerance 1.00000000000000022e-7 mm
+result maximum vertex tolerance 1.99999999999999991e-7 mm
+shell result increased the maximum vertex tolerance
