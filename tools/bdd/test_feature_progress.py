@@ -259,6 +259,36 @@ class FeatureProgressTests(unittest.TestCase):
         row["arguments_recorded"] = False
         self.assertEqual(self.argument_status(row), ("needs_source_review", 0))
 
+    def test_outline_report_counts_table_case_with_matching_capture(self) -> None:
+        row, entry, elements = self.argument_fixture()
+        self.feature.write_text(
+            "Feature: example\n Scenario: case\n  When choose\n   | a | b |\n"
+            " Scenario Outline: Move <axis>\n  When move <axis>\n"
+            "  Examples:\n   | axis |\n   | X |\n"
+        )
+        source_hash = inventory.feature_record(self.feature)["sha256"]
+        self.record["feature_sha256"] = source_hash
+        steps = [{"line": 3, "name": "choose", "table": [["a", "b"]]}]
+        row.update(source_sha256=source_hash, line=2, background_steps=[], scenario_steps=steps)
+        entry.update(line=2, background_steps=[], scenario_steps=steps)
+        success = {"status": "passed"}
+        ordinary_case = dict(elements[1], line=2,
+                             steps=[{"line": 3, "name": "choose", "result": success}])
+        outline = dict(row, id="outline", scenario="Move <axis>", line=5, outline=True,
+                       scenario_steps=[{"line": 6, "name": "move <axis>"}],
+                       examples=[{"line": 9, "columns": ["axis"], "values": ["X"]}])
+        outline_case = dict(ordinary_case, name="Move X", line=9,
+                            steps=[{"line": 6, "name": "move X", "result": success}])
+        self.write_argument_report([ordinary_case, outline_case])
+        with patch.object(progress, "source_inventory", return_value=[row, outline]):
+            self.assertEqual(self.status(), ("incomplete", 1))
+            self.write_argument_capture([entry])
+            self.assertEqual(self.status(), ("green", 2))
+            self.write_argument_capture([dict(entry, scenario_steps=[
+                {"line": 3, "name": "choose", "table": [["a", "changed"]]},
+            ])])
+            self.assertEqual(self.status(), ("incomplete", 1))
+
     def test_changed_table_and_background_are_not_counted(self) -> None:
         row, entry, elements = self.argument_fixture()
         self.write_argument_report(elements)

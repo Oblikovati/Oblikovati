@@ -122,7 +122,7 @@ def compare_inventoried_report(
     ):
         return "needs_outline_review", 0
     results = json.loads(report.read_text(encoding="utf-8"))
-    return count_checked_scenarios(results, rows)
+    return count_checked_scenarios(results, rows, load_capture(ROOT, record))
 
 
 def recorded_inventory(record: dict[str, object]) -> list[dict[str, object]] | None:
@@ -139,11 +139,14 @@ def recorded_inventory(record: dict[str, object]) -> list[dict[str, object]] | N
 
 
 def count_checked_scenarios(
-    report: object, rows: list[dict[str, object]]
+    report: object, rows: list[dict[str, object]],
+    entries: list[dict[str, object]] | None = None,
 ) -> tuple[str, int]:
     """Count declarations with all examples passing; for example, count_checked_scenarios(report, rows)."""
     count = 0
     for row in rows:
+        if entries is not None and not row["outline"] and arguments_match(row, entries):
+            row = plain_steps(row)
         try:
             check_scenario(report, row)
         except ValueError:
