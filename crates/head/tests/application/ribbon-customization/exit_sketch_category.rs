@@ -18,6 +18,9 @@ const TARGET_ORDER: [&str; 3] = ["CancelSketch", "<Separator>", "FinishSketch"];
 #[given("ribbon customization shows an empty Part Tools target")]
 #[given("ribbon customization is open in the MCAD Software for an empty Part Tools custom panel")]
 fn open_empty_tools_draft(world: &mut ApplicationWorld) {
+    if world.state().document.is_none() {
+        world.add_part();
+    }
     empty_tools_customization(world);
 }
 

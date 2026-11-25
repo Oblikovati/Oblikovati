@@ -470,6 +470,7 @@ impl GuiFrameEngine {
             dock_lifecycle_changed || cancelled_pick || self.extrude_dialog.needs_frame();
         activity.pending_layout |= self.orientation.needs_frame();
         activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
+        activity.pending_layout |= self.ribbon.customization.needs_frame();
         activity.pending_layout |= self.workspace.pending_layout
             || self.home.active != home_was_active
             || self.home.hover_changed;

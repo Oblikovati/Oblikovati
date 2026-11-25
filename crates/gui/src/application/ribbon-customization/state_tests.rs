@@ -93,6 +93,20 @@ fn returned_command_reappears_in_its_selected_category() {
 }
 
 #[test]
+fn adding_single_commands_advances_source_in_display_order() {
+    let mut draft = Draft::default();
+    draft.open(RibbonTab::Tools);
+    draft.reset_source_selection(Command::Drawing2D);
+    draft.add();
+    assert_eq!(draft.source, Some(Command::Sketches));
+    draft.set_options(0, true, false);
+    draft.add();
+    assert_eq!(draft.source, Some(Command::Annotations));
+    assert_eq!(draft.rows()[1].command, Command::Sketches);
+    assert!(draft.rows()[0].large);
+}
+
+#[test]
 fn empty_macro_category_retains_separator_and_staged_changes() {
     let mut draft = Draft::default();
     draft.open(RibbonTab::Tools);
@@ -100,7 +114,7 @@ fn empty_macro_category_retains_separator_and_staged_changes() {
     draft.add();
     draft.set_category(Category::Macros);
     assert_eq!(draft.available_commands(), vec![Command::Separator]);
-    assert_eq!(draft.source, None);
+    assert_eq!(draft.source, Some(Command::Separator));
     draft.reset_source_selection(Command::Separator);
     draft.add();
     assert_eq!(draft.available_commands(), vec![Command::Separator]);

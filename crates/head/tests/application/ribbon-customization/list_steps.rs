@@ -104,6 +104,7 @@ fn open_blank_part_customization(world: &mut ApplicationWorld) {
 }
 
 #[given("the available commands are in ascending name order")]
+#[given("the available command category is All Commands in ascending name order")]
 #[then("All Commands is selected and the available commands are in ascending name order")]
 fn all_commands_ascending(world: &mut ApplicationWorld) {
     transaction_steps::all_commands(world);

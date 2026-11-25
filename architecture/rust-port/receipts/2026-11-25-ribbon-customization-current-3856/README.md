@@ -63,6 +63,8 @@ Customize open.
 [Interface export](../2026-11-25-ribbon-customization-interface-export-3856/README.md)
 The staged drawing entry was inserted after the selected target row and
 discarded on Cancel.
+[Space after editing size](../2026-11-25-ribbon-customization-staged-size-space-3856/README.md)
+verified consecutive transfers and rollback.
 [2-D Drawing insertion](../2026-11-25-ribbon-customization-drawing-insertion-3856/README.md)
 
 Case 44 kept both selected rows in place after the Up button.

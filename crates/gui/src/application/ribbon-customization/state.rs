@@ -266,9 +266,10 @@ impl Draft {
         let Some(command) = self.source.filter(|command| self.available(*command)) else {
             return;
         };
-        let mut commands: Vec<_> = self
-            .available_commands()
-            .into_iter()
+        let available = self.available_commands();
+        let mut commands: Vec<_> = available
+            .iter()
+            .copied()
             .filter(|candidate| *candidate == command || self.source_extra.contains(candidate))
             .collect();
         // Ctrl+A retains a focused row as the first entry of the transfer.
@@ -292,10 +293,18 @@ impl Draft {
         self.target_extra = (index + 1..index + commands.len()).collect();
         self.target_extent = Some(index + commands.len() - 1);
         self.mark_changed();
+        let successor = if commands.len() == 1 {
+            available
+                .into_iter()
+                .skip_while(|item| *item != command)
+                .nth(1)
+        } else {
+            None
+        };
         self.source_extra.clear();
         self.source_selection = SourceSelection::Ordinary;
         if command != Command::Separator {
-            self.source = None;
+            self.source = successor;
         }
     }
     pub fn remove(&mut self) {

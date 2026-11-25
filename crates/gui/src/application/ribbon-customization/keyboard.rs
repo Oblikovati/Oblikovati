@@ -13,6 +13,11 @@ enum Navigation {
 }
 
 impl RibbonCustomization {
+    pub(super) fn transfer_source(&mut self) {
+        self.draft.add();
+        self.scroll_source_to_selection = self.draft.source.is_some();
+    }
+
     pub(super) fn focus_add_from_source(&mut self, ui: &Ui) {
         let in_source = matches!(self.list_focus, Some(ListFocus::Source)) && self.source_focused;
         let io = ui.io();

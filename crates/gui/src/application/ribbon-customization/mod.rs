@@ -50,6 +50,7 @@ pub(crate) struct RibbonCustomization {
     visible_target_rows: usize,
     scroll_source_to_selection: bool,
     scroll_target_to_selection: bool,
+    focus_add_after_option: bool,
     settings: settings_dialog::SettingsDialog,
     store: Option<Box<dyn GuiRibbonSettingsStore>>,
     settings_error: Option<String>,
@@ -108,6 +109,7 @@ impl RibbonCustomization {
         self.marking_selector_open = false;
         self.escape = Default::default();
         self.list_focus = None;
+        self.focus_add_after_option = false;
         self.category_open = false;
         self.target_selector_open = false;
         self.scroll_source_to_selection = false;
@@ -120,6 +122,12 @@ impl RibbonCustomization {
             .applied(tab)
             .iter()
             .any(|entry| entry.command != Command::Separator)
+    }
+    pub(crate) fn needs_frame(&self) -> bool {
+        self.open.is_open()
+            && self.ribbon_tab_active
+            && (self.focus_add_after_option
+                || self.scroll_source_to_selection && self.draft.source.is_some())
     }
     pub(crate) fn expanded_command_count(&self, tab: RibbonTab) -> usize {
         self.draft
@@ -265,16 +273,20 @@ impl RibbonCustomization {
                 }
                 if let Some(command) = transfer {
                     self.draft.reset_source_selection(command);
-                    self.draft.add();
+                    self.transfer_source();
                 }
             });
     }
     fn transfer(&mut self, ui: &Ui) {
         ui.dummy([1., 55.]);
         let disabled = ui.begin_disabled(self.draft.source.is_none());
-        self.focus_add_from_source(ui);
+        if std::mem::take(&mut self.focus_add_after_option) && self.draft.source.is_some() {
+            ui.set_keyboard_focus_here();
+        } else {
+            self.focus_add_from_source(ui);
+        }
         if ui.button(">##custom-add") {
-            self.draft.add();
+            self.transfer_source();
         }
         drop(disabled);
         let disabled = ui.begin_disabled(self.draft.selected.is_none());
@@ -354,6 +366,8 @@ impl RibbonCustomization {
                     let changed_text = ui.checkbox(format!("##text-{index}"), &mut text);
                     if changed_large || changed_text {
                         options.push((index, large, text));
+                        self.focus_add_after_option |=
+                            ui.is_mouse_released(imgui::MouseButton::Left);
                     }
                 }
                 self.draft.selected = selected;

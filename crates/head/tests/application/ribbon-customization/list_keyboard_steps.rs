@@ -125,8 +125,59 @@ fn click_only_target_name(world: &mut ApplicationWorld) {
 }
 
 #[when("the user presses Space")]
+#[when("the user presses Space again")]
 fn press_space(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::Space, false);
+}
+
+#[when("the user selects 2-D Drawing and clicks the add button")]
+fn add_drawing_for_size_edit(world: &mut ApplicationWorld) {
+    capture_plain_source_rows(world);
+    add_command(world, "2-DDrawing");
+}
+
+#[then("2-D Drawing is staged and 2D Sketches is selected in the available list")]
+fn drawing_staged_before_size_edit(world: &mut ApplicationWorld) {
+    assert_eq!(target_rows(world), ["2-DDrawing"]);
+    expect_source_selection(world, Some("2DSketches"), &["2DSketches"]);
+}
+
+#[when("the user clicks the staged 2-D Drawing Large checkbox")]
+fn check_staged_drawing_large(world: &mut ApplicationWorld) {
+    toggle_row_option(world, "2-DDrawing", "Large");
+}
+
+#[then("Large is checked and Text is unchecked for 2-D Drawing")]
+#[then("Large remains checked for 2-D Drawing")]
+#[then("2-D Drawing still has Large checked")]
+fn staged_drawing_is_large(world: &mut ApplicationWorld) {
+    assert!(row_option_checked(world, "2-DDrawing", "Large"));
+    assert!(!row_option_checked(world, "2-DDrawing", "Text"));
+}
+
+#[then("2D Sketches is added after 2-D Drawing")]
+fn staged_sketches_follow_drawing(world: &mut ApplicationWorld) {
+    assert_eq!(target_rows(world), ["2-DDrawing", "2DSketches"]);
+}
+
+#[then("3D Annotations is selected in the available list")]
+fn annotations_ready_for_transfer(world: &mut ApplicationWorld) {
+    expect_source_selection(world, Some("3DAnnotations"), &["3DAnnotations"]);
+}
+
+#[then("3D Annotations is added after 2D Sketches")]
+fn staged_annotations_follow_sketches(world: &mut ApplicationWorld) {
+    assert_eq!(
+        target_rows(world),
+        ["2-DDrawing", "2DSketches", "3DAnnotations"]
+    );
+}
+
+#[when("the user cancels customization and reopens it for Part Tools")]
+fn cancel_and_reopen_tools_customization(world: &mut ApplicationWorld) {
+    click_in_customize(world, "Cancel");
+    assert!(diagnostics::window_geometry("Customize").is_none());
+    empty_tools_customization(world);
 }
 
 #[when("the user presses Delete")]
