@@ -76,3 +76,20 @@ fn hover_cube(world: &mut ApplicationWorld, point: [i32; 2]) {
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
+
+#[test]
+fn native_blank_assembly_shows_orientation_navigation_and_world_axes() {
+    let mut world = ApplicationWorld::new();
+    let assembly = world.add_template(oblikovati_gui::GuiTemplateKind::Assembly);
+    crate::HeadWindow::set_view_camera(&mut world.app().window, Default::default()).unwrap();
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry(NAVIGATION).is_some());
+    assert!(diagnostics::window_geometry("##viewport-axis-triad").is_some());
+    let (position, parts) = layout();
+    world.save_capture("blank-assembly-hud");
+    native_press(&mut world, parts.step_right, position);
+    navigation::expect_camera_direction(&mut world, [1., 0., 0.]);
+    expect_control_shows(&world, "Right");
+    assert_eq!(world.active_id(), assembly);
+    world.close();
+}

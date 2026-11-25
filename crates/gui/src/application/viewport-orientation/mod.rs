@@ -255,10 +255,12 @@ impl OrientationControl {
             self.set_suspended(true);
             return;
         };
-        if !matches!(
+        let model_workspace = matches!(
             state.authoring,
             crate::GuiAuthoringContext::Part | crate::GuiAuthoringContext::Sketch
-        ) {
+        ) || state.document_type
+            == Some(oblikovati_api::types::DOCUMENT_ASSEMBLY);
+        if !model_workspace {
             self.set_suspended(true);
             return;
         }
