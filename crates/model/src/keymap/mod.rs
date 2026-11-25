@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Ordered command bindings and validated customization overlays.
 mod chord;
+mod default_aliases;
 mod keyboard;
 pub use chord::{format_chord, parse_chord};
 pub use keyboard::PhysicalKey;
@@ -10,12 +11,30 @@ use oblikovati_api::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
+/// Desktop keyboard preferences, including the separate default alias choice.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct KeymapPreferences {
+    pub delta: KeymapExport,
+    pub default_aliases: bool,
+}
+
 /// Storage for the user's keymap delta.
 pub trait KeymapPreferenceAccess {
     /// Read the loaded delta; example: `store.keymap()`.
     fn keymap(&self) -> KeymapExport;
     /// Store a validated delta; example: `store.set_keymap(&map.export())?`.
     fn set_keymap(&mut self, delta: &KeymapExport) -> Result<(), String>;
+    /// Read the desktop preference; for example, enable aliases when `store.default_aliases()`.
+    fn default_aliases(&self) -> bool {
+        false
+    }
+    /// Save the bindings and desktop preference together, as in `store.set_preferences(&map.preferences())?`.
+    fn set_preferences(&mut self, preferences: &KeymapPreferences) -> Result<(), String> {
+        if self.default_aliases() != preferences.default_aliases {
+            return Err("keymap storage does not support changing default aliases".into());
+        }
+        self.set_keymap(&preferences.delta)
+    }
 }
 
 /// A registered action and its defaults; example: `KeymapAction::builtin("edit.undo", "Undo", "Ctrl+Z", &[])?`.
@@ -70,6 +89,7 @@ pub struct Keymap {
     actions: Vec<KeymapAction>,
     chords: BTreeMap<String, String>,
     aliases: BTreeMap<String, String>,
+    default_aliases: bool,
 }
 impl Keymap {
     /// Create the desktop shortcuts; example: `Keymap::desktop_defaults()`.
@@ -137,6 +157,7 @@ impl Keymap {
                 .collect(),
             chords: BTreeMap::new(),
             aliases: BTreeMap::new(),
+            default_aliases: false,
         }
     }
     /// Construct a catalog with unique actions and default chords.
@@ -155,6 +176,7 @@ impl Keymap {
             actions,
             chords: BTreeMap::new(),
             aliases: BTreeMap::new(),
+            default_aliases: false,
         };
         keymap.check_conflicts()?;
         Ok(keymap)
@@ -209,6 +231,13 @@ impl Keymap {
             .iter()
             .find(|(id, value)| self.has_action(id) && value.eq_ignore_ascii_case(alias))
             .map(|(id, _)| id.as_str())
+            .or_else(|| {
+                if self.default_aliases {
+                    default_aliases::resolve(alias).filter(|id| self.has_action(id))
+                } else {
+                    None
+                }
+            })
     }
     /// Check whether an alias can run at sketch Ready; example: `keymap.supports_sketch_alias("edit.undo")`.
     pub fn supports_sketch_alias(&self, id: &str) -> bool {
@@ -285,9 +314,25 @@ impl Keymap {
             aliases: (!self.aliases.is_empty()).then(|| self.aliases.clone()),
         }
     }
+    /// Copy bindings with desktop settings, as in `store.set_preferences(&keymap.preferences())?`.
+    pub fn preferences(&self) -> KeymapPreferences {
+        KeymapPreferences {
+            delta: self.export(),
+            default_aliases: self.default_aliases,
+        }
+    }
+    /// Read the default alias choice, as in `let enabled = keymap.default_aliases()`.
+    pub fn default_aliases(&self) -> bool {
+        self.default_aliases
+    }
+    /// Enable default aliases without replacing user bindings, as in `keymap.enable_default_aliases(true)`.
+    pub fn enable_default_aliases(&mut self, enabled: bool) {
+        self.default_aliases = enabled;
+    }
     /// Replace the complete delta atomically; example: `keymap.import(&saved)?`.
     pub fn import(&mut self, delta: &KeymapExport) -> Result<(), String> {
         let mut candidate = Self::new(self.actions.clone())?;
+        candidate.default_aliases = self.default_aliases;
         for (id, chord) in delta.chords.iter().flatten() {
             candidate.require_action(id)?;
             let chord = parse_chord(chord)?;

@@ -55,6 +55,10 @@ The Assembly Design case kept the Part Tools and Assembly drafts
 independent and discarded both on Cancel.
 [Assembly Design target](../2026-11-25-ribbon-customization-assembly-design-3856/README.md)
 
+The [keyboard defaults run](../2026-11-25-ribbon-customization-default-aliases-3856/README.md)
+verified the editor controls and stopped at the final sketch assertion.
+The published Part opens outside sketch edit.
+
 The [command list](case-059/cucumber.json),
 [reorder](case-082/cucumber.json), and [remove](case-083/cucumber.json)
 cases reached the Available Commands list, which lacks `2-D Drawing`.

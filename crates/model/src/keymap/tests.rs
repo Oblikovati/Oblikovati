@@ -3,6 +3,23 @@ use super::{Keymap, KeymapAction, format_chord, parse_chord};
 use oblikovati_api::wire::KeymapExport;
 use std::collections::BTreeMap;
 
+#[test]
+fn default_aliases_are_opt_in_and_user_bindings_keep_priority() {
+    let mut map = Keymap::desktop_defaults();
+    assert_eq!(map.resolve_alias("rectang"), None);
+    map.enable_default_aliases(true);
+    assert_eq!(map.resolve_alias("rectang"), Some("sketch-rectangle"));
+    assert_eq!(map.resolve_alias("arc"), Some("sketch-three-point-arc"));
+    map.set_alias("sketch-line", "RECTANG").unwrap();
+    assert_eq!(map.resolve_alias("rectang"), Some("sketch-line"));
+    let delta = map.export();
+    map.import(&delta).unwrap();
+    assert!(map.default_aliases());
+    map.enable_default_aliases(false);
+    assert_eq!(map.resolve_alias("rec"), None);
+    assert_eq!(map.resolve_alias("rectang"), Some("sketch-line"));
+}
+
 fn sample_keymap() -> Keymap {
     Keymap::new(vec![
         KeymapAction::builtin("edit.undo", "Undo", "Ctrl+Z", &[]).unwrap(),

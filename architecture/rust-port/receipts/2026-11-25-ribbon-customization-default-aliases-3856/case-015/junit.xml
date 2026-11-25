@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T07:43:13.915563129Z" time="22.494708794"><testcase name="Scenario: Inspect the keyboard customization initial state: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:181:3" time="22.494708794"><failure type="Step Panicked" message="Step panicked. Captured output: expected a sketch in edit before opening keyboard customization"/><system-out><![CDATA[  Scenario: Inspect the keyboard customization initial state
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Tools ribbon tab is selected
+   ✔  When the user opens Customize from the Options panel
+   ✔  And the user selects the "Keyboard" tab
+   ✔  Then the Categories selector shows "All"
+   ✔  And the command-type selector shows "All"
+   ✔  And the keyword search field is empty
+   ✔  And the command list has Keys, Command Name, Type and Category columns
+   ✔  And the command list is populated
+   ✔  And "Use default multi-character command aliases" is unchecked
+   ✔  And the Reset All Keys and Copy to Clipboard controls are visible
+   ✔  And cancels and Apply are unavailable because no edits are staged
+   ✔  When the user clicks "Close"
+   ✘  Then the customization dialog closes without changing the active sketch
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:196:5
+      Matched: crates/head/src/../tests/application/ribbon-customization/keyboard_initial.rs:86:1
+      Step panicked. Captured output: expected a sketch in edit before opening keyboard customization
+      ApplicationWorld {
+          text: "40\n30\nW\nP\nZ\nv\nO\nv\nFRONT\nModel\nMaterialBrow\u{85}\nAppearanceBr\u{85}\nMenu\nSearch\ndocking-visible-solid-current<Primary>\nRepresentations\nModelState\n<Primary>\n1\nView\n<Primary>\nSolidBodies\nOrigin\nYZPlane\nXZPlane\nXYPlane\nXAxis\nYAxis\nZAxis\nCenterPoint\nParameters\nSketches\nFeatures\nExtrusion1\nSketch1\n[DOF0]\nEndofPart\nABS(Black)\nAppearance\nAssigntopart\nClose\nOpeneddocument1:/git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-ribbon-customization-source/fixtures/cad/workspace-layout-native.opd\nRibbonDisplay\nv\nv\n...\ndocking-visible-solid-current\nFile\n3DModel\nSketch\nTools\nManage\nView\nAnnotate\nMeasure\nMeasure\nDefault\nMaterial\nDefault\nAppearance\nMaterialandAppearance\nCustomize\nApplicationOptions\nDocumentSettings\nOptionsv\nCopy\nClipboard\nFind\nFind\nOpenTeamWeb\nTeamWeb\nHome\ndocking-visible-solid-current<Primary>\nDocuments\nX\nY\nZ",
+          ..
+      }
+]]></system-out></testcase></testsuite></testsuites>

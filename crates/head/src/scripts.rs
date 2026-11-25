@@ -86,9 +86,9 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     }
     fn set_keymap_from_gui(
         &mut self,
-        delta: &oblikovati_api::wire::KeymapExport,
+        preferences: &oblikovati_model::keymap::KeymapPreferences,
     ) -> Result<bool, String> {
-        self.owner.set_keymap_from_gui(delta)
+        self.owner.set_keymap_from_gui(preferences)
     }
     fn resolve_shortcut(
         &mut self,

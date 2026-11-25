@@ -8,14 +8,15 @@ impl RibbonCustomization {
         let Some(current) = &commands.keymap else {
             return;
         };
+        let preferences = current.preferences();
         if self.keyboard_draft.is_none() {
             self.keyboard_draft = Some(current.clone());
-            self.keyboard_base = Some(current.export());
+            self.keyboard_base = Some(preferences);
             return;
         }
         if !self.keyboard_changed() {
             self.keyboard_draft = Some(current.clone());
-            self.keyboard_base = Some(current.export());
+            self.keyboard_base = Some(preferences);
             self.keyboard_conflict = false;
             return;
         }
@@ -23,29 +24,29 @@ impl RibbonCustomization {
             && self
                 .keyboard_draft
                 .as_ref()
-                .is_some_and(|draft| draft.export() == current.export())
+                .is_some_and(|draft| draft.preferences() == preferences)
         {
-            self.keyboard_base = Some(current.export());
+            self.keyboard_base = Some(preferences);
             self.keyboard_conflict = false;
             return;
         }
         self.keyboard_conflict = self
             .keyboard_base
             .as_ref()
-            .is_some_and(|base| *base != current.export());
+            .is_some_and(|base| *base != preferences);
     }
     pub(super) fn keyboard_changed(&self) -> bool {
         self.keyboard_draft
             .as_ref()
             .zip(self.keyboard_base.as_ref())
-            .is_some_and(|(draft, base)| draft.export() != *base)
+            .is_some_and(|(draft, base)| draft.preferences() != *base)
     }
     pub(super) fn submit_keyboard(&self, actions: &mut Vec<crate::GuiShellAction>) -> bool {
         if !self.keyboard_changed() || self.keyboard_conflict {
             return false;
         }
         if let Some(draft) = &self.keyboard_draft {
-            actions.push(crate::GuiShellAction::SetKeymap(draft.export()));
+            actions.push(crate::GuiShellAction::SetKeymap(draft.preferences()));
             return true;
         }
         false
@@ -56,6 +57,7 @@ impl RibbonCustomization {
             return;
         };
         let bindings = draft.catalog();
+        let mut default_aliases = draft.default_aliases();
         ui.text("Keyboard shortcuts");
         ui.set_next_item_width(130.);
         ui.combo_simple_string(
@@ -120,6 +122,14 @@ impl RibbonCustomization {
                 }
                 ui.columns(1, "##keyboard-columns-end", false);
             });
+        if ui.checkbox(
+            "Use default multi-character command aliases",
+            &mut default_aliases,
+        ) && let Some(draft) = &mut self.keyboard_draft
+        {
+            draft.enable_default_aliases(default_aliases);
+            self.close_after_apply = false;
+        }
         if ui.button("Reset All Keys") {
             if let Some(draft) = &mut self.keyboard_draft {
                 draft.reset_all_chords();
@@ -300,11 +310,11 @@ mod tests {
         );
         let mut actions = Vec::new();
         assert!(dialog.submit_keyboard(&mut actions));
-        let crate::GuiShellAction::SetKeymap(delta) = &actions[0] else {
+        let crate::GuiShellAction::SetKeymap(preferences) = &actions[0] else {
             panic!("expected keymap action")
         };
         let mut applied = original;
-        applied.restore_saved(delta).unwrap();
+        applied.restore_saved(&preferences.delta).unwrap();
         state.keymap = Some(applied);
         dialog.close_after_apply = true;
         dialog.sync_keyboard(&state);

@@ -1,6 +1,46 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native checks for keyboard customization.
 use super::*;
+#[path = "keyboard_initial.rs"]
+mod keyboard_initial;
+
+#[test]
+fn default_sketch_aliases_are_staged_and_reload_before_dispatch() {
+    use oblikovati_viewport::ViewportPhysicalKey;
+    let mut world = ApplicationWorld::new();
+    world.start_empty_sketch();
+    let original = world.edited_geometry();
+    open_tools_customization(&mut world);
+    click_in_customize(&mut world, "Keyboard");
+    let label = "Use default multi-character command aliases";
+    assert!(!world.checked(label));
+    assert_eq!(world.state().keymap.unwrap().resolve_alias("rectang"), None);
+    world.click_text(label);
+    assert!(world.checked(label));
+    assert_eq!(world.state().keymap.unwrap().resolve_alias("rectang"), None);
+    click_in_customize(&mut world, "Cancel");
+    assert!(world.edited_geometry().same_recipe(&original));
+    world.click_text("Customize");
+    world.pump(Vec::new());
+    assert!(!world.checked(label));
+    world.click_text(label);
+    click_in_customize(&mut world, "Apply");
+    assert_eq!(
+        world.state().keymap.unwrap().resolve_alias("rectang"),
+        Some("sketch-rectangle")
+    );
+    click_in_customize(&mut world, "Close");
+
+    world.reopen_application();
+    world.start_empty_sketch();
+    assert!(world.state().keymap.unwrap().default_aliases());
+    world.type_text("rectang");
+    world.key(ViewportPhysicalKey::Enter, false);
+    world.sketch_click([760, 380]);
+    world.sketch_click([1060, 560]);
+    assert_eq!(world.edited_geometry().lines().len(), 4);
+    world.close();
+}
 
 #[test]
 fn external_keymap_change_blocks_a_stale_dialog_draft() {

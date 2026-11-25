@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use oblikovati_model::keymap::Keymap;
+use oblikovati_model::keymap::{Keymap, KeymapPreferences};
 use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportKey, ViewportPhysicalKey};
 
 impl<
@@ -84,6 +84,7 @@ impl<O, W, F, G, R, S: super::DispatchWakeup> super::DesktopOwner<O, W, F, G, R,
         store: Box<dyn oblikovati_model::keymap::KeymapPreferenceAccess>,
     ) -> Result<Self, String> {
         self.keymap.restore_saved(&store.keymap())?;
+        self.keymap.enable_default_aliases(store.default_aliases());
         self.keymap_store = Some(store);
         Ok(self)
     }
@@ -276,11 +277,21 @@ impl<
 {
     pub(super) fn set_keymap_action(
         &mut self,
-        delta: &oblikovati_api::wire::KeymapExport,
+        preferences: &KeymapPreferences,
     ) -> Result<bool, String> {
+        if self.keymap.default_aliases() != preferences.default_aliases {
+            let mut candidate = self.keymap.clone();
+            candidate.restore_saved(&preferences.delta)?;
+            candidate.enable_default_aliases(preferences.default_aliases);
+            if let Some(store) = &mut self.keymap_store {
+                store.set_preferences(&candidate.preferences())?;
+            }
+            self.keymap = candidate;
+            return Ok(true);
+        }
         oblikovati_api::client::Client::new(self.document_host())
             .keymap()
-            .import(delta)
+            .import(&preferences.delta)
             .map_err(|cause| cause.to_string())?;
         Ok(true)
     }

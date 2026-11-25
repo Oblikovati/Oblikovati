@@ -77,9 +77,9 @@ impl<
     }
     fn set_keymap_from_gui(
         &mut self,
-        delta: &oblikovati_api::wire::KeymapExport,
+        preferences: &oblikovati_model::keymap::KeymapPreferences,
     ) -> Result<bool, String> {
-        self.set_keymap_action(delta)
+        self.set_keymap_action(preferences)
     }
     fn resolve_shortcut(
         &mut self,

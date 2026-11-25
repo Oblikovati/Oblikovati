@@ -37,12 +37,14 @@ pub trait HeadWork: HeadSketchWork {
     fn take_shortcut_action(&mut self) -> Option<oblikovati_gui::GuiShellAction> {
         None
     }
-    /// Apply a keymap draft; example: `work.set_keymap_from_gui(&delta)?`.
+    /// Apply a keymap draft; example: `work.set_keymap_from_gui(&preferences)?`.
     fn set_keymap_from_gui(
         &mut self,
-        delta: &oblikovati_api::wire::KeymapExport,
+        preferences: &oblikovati_model::keymap::KeymapPreferences,
     ) -> Result<bool, String> {
-        Err(format!("keymap {delta:?}: expected a desktop keymap owner"))
+        Err(format!(
+            "keymap {preferences:?}: expected a desktop keymap owner"
+        ))
     }
     /// Resolve application shortcuts before GUI ownership is decided.
     /// Example: `work.resolve_shortcut(event)` before dispatch.

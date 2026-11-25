@@ -58,7 +58,7 @@ pub(crate) struct RibbonCustomization {
     keyboard_category: usize,
     keyboard_kind: usize,
     keyboard_draft: Option<oblikovati_model::keymap::Keymap>,
-    keyboard_base: Option<oblikovati_api::wire::KeymapExport>,
+    keyboard_base: Option<oblikovati_model::keymap::KeymapPreferences>,
     keyboard_selected: Option<String>,
     keyboard_chord: String,
     keyboard_alias: String,
