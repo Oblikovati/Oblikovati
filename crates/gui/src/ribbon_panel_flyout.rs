@@ -30,7 +30,11 @@ pub(super) fn draw_panel_popup(
     }
     let before = context.actions.len();
     let (measured, local_action) = draw_expanded(context, tab, panel, [0.; 2], layout, None);
-    layout.record_width(tab, panel, measured);
+    // Retain the compact Work Features position after regrouping its Plane choices.
+    // A change in the ribbon width will measure the group again.
+    if panel != RibbonPanel::PartWorkFeatures || measured >= width {
+        layout.record_width(tab, panel, measured);
+    }
     if context.actions.len() != before || local_action {
         ui.close_current_popup();
     }

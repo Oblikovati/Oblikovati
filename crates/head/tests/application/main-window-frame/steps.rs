@@ -66,6 +66,7 @@ fn saved_frame_part(world: &mut ApplicationWorld) -> u64 {
 
 #[when("the user double-clicks an empty region of the application bar")]
 #[when("the user double-clicks an empty region of the application bar again")]
+#[when("the user double-clicks the application title bar to change the window state")]
 fn double_click_bar(world: &mut ApplicationWorld) {
     let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
     let point = [width - 390, 18];

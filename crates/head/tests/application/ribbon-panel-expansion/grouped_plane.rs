@@ -12,10 +12,131 @@ fn plane_in_main_panel(world: &mut ApplicationWorld) {
     world.expect_text("Plane");
 }
 
+#[when("the user right-clicks \"Plane\" and selects \"Ungroup Commands from Drop-Down Menu\"")]
+fn ungroup_plane_choices(world: &mut ApplicationWorld) {
+    let plane = world.run_in_window("##application-ribbon", "Plane");
+    world.right_click(diagnostics::pointer_pixels(plane.center()));
+    world.click_text("Ungroup Commands from Drop-Down Menu");
+    world.pump(Vec::new());
+}
+
+#[when("the user opens the compact Work Features panel")]
+#[when("the user opens the Work Features panel again")]
+fn show_compact_work_features(world: &mut ApplicationWorld) {
+    let arrow = compact_work_features_arrow(world);
+    world.click(diagnostics::pointer_pixels(arrow.center()));
+    assert!(diagnostics::command_popup_open());
+}
+
+fn compact_work_features_arrow(world: &ApplicationWorld) -> &diagnostics::RenderedRun {
+    let group = world.run_in_window("##application-ribbon", "WorkFeatures");
+    let width = group.maximum[0] - group.minimum[0];
+    world
+        .frame
+        .runs
+        .iter()
+        .find(|run| {
+            run.text == "v"
+                && run.list == group.list
+                && (group.minimum[0]..group.minimum[0] + width + 16.).contains(&run.center()[0])
+                && (24. ..70.).contains(&(group.minimum[1] - run.center()[1]))
+        })
+        .expect("expected the Work Features compact panel button")
+}
+
+#[then(
+    "separate plane command buttons are visible including \"Offset from Plane\" and \"Three Points\""
+)]
+fn individual_plane_choices(world: &mut ApplicationWorld) {
+    let plane = world.run("Plane");
+    let offset = world.run("Offset from Plane");
+    let three_points = world.run("Three Points");
+    assert_eq!(offset.list, plane.list);
+    assert_eq!(three_points.list, plane.list);
+    assert_eq!(offset.alpha, u8::MAX);
+    assert_ne!(offset.center(), three_points.center());
+}
+
+#[when("the user right-clicks \"Plane\" and selects \"Group Commands into Drop-Down Menu\"")]
+fn regroup_plane_choices(world: &mut ApplicationWorld) {
+    let plane = world.run("Plane");
+    world.right_click(diagnostics::pointer_pixels(plane.center()));
+    world.click_text("Group Commands into Drop-Down Menu");
+    world.pump(Vec::new());
+}
+
+#[then("the plane choices are represented by a grouped \"Plane\" control")]
+fn grouped_plane_choices(world: &mut ApplicationWorld) {
+    assert!(diagnostics::command_popup_open());
+    world.expect_text("Plane");
+    for name in ["Offset from Plane", "Three Points"] {
+        world.expect_no_text(name);
+    }
+    assert!(world.previous_document.is_some());
+    assert_eq!(world.state().document, world.previous_document);
+}
+
+#[cfg(target_os = "linux")]
+#[given("the 3D Model ribbon is compact after regrouping the Plane choices")]
+fn compact_after_regrouping(world: &mut ApplicationWorld) {
+    let view = &mut world.app().window.native.view;
+    assert!(!view.window_maximized().unwrap());
+    view.resize([1240, 850]).unwrap();
+    world.pump(Vec::new());
+    ungroup_plane_choices(world);
+    show_compact_work_features(world);
+    regroup_plane_choices(world);
+    world.escape();
+    compact_work_features_arrow(world);
+    assert!(!diagnostics::command_popup_open());
+    world.observed_counts = vec![model_ribbon_caption_count(world)];
+}
+
+#[cfg(target_os = "linux")]
+#[then("the ribbon reflows to show more command labels and panels")]
+fn expanded_after_maximize(world: &mut ApplicationWorld) {
+    super::super::main_window_frame_native::pump_until(world, true);
+    assert!(
+        model_ribbon_caption_count(world) > world.observed_counts[0],
+        "expected more command captions after maximizing"
+    );
+    for text in ["Plane", "Axis", "Point"] {
+        world.run_in_window("##application-ribbon", text);
+    }
+}
+
+#[cfg(target_os = "linux")]
+fn model_ribbon_caption_count(world: &ApplicationWorld) -> usize {
+    let title = world.run_in_window("##application-ribbon", "WorkFeatures");
+    world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| {
+            run.list == title.list && run.text != "v" && run.maximum[1] < title.minimum[1]
+        })
+        .count()
+}
+
+#[then("the Plane choices remain grouped")]
+fn grouped_after_reflow(world: &mut ApplicationWorld) {
+    plane_menu_arrow(world);
+    world.expect_no_text("Three Points");
+    world.expect_no_text("Offset from Plane");
+    assert_eq!(world.state().document, world.previous_document);
+}
+
 #[when("the user clicks the Plane drop-down arrow")]
 fn open_plane_variants(world: &mut ApplicationWorld) {
+    let arrow = plane_menu_arrow(world);
+    world.click(diagnostics::pointer_pixels(arrow.center()));
+    assert!(diagnostics::command_popup_open());
+    world.expect_text("Three Points");
+}
+
+fn plane_menu_arrow(world: &ApplicationWorld) -> &diagnostics::RenderedRun {
     let plane = world.run_in_window("##application-ribbon", "Plane");
-    let arrow = world
+    world
         .frame
         .runs
         .iter()
@@ -24,10 +145,7 @@ fn open_plane_variants(world: &mut ApplicationWorld) {
             run.minimum[0] > plane.maximum[0] && (run.center()[1] - plane.center()[1]).abs() < 18.
         })
         .min_by(|left, right| left.minimum[0].total_cmp(&right.minimum[0]))
-        .expect("expected the arrow beside Plane");
-    world.click(diagnostics::pointer_pixels(arrow.center()));
-    assert!(diagnostics::command_popup_open());
-    world.expect_text("Three Points");
+        .expect("expected the arrow beside Plane")
 }
 
 #[then("a vertical menu opens beneath the control")]

@@ -42,6 +42,9 @@ The grouped Plane menu opens the native Offset Plane dialog from its
 Offset from Plane entry. The entry uses the same availability check and
 action as the main Plane button. The menu presents the construction choices
 with icons and dividers between the offset, reference, and orientation groups.
+Ungrouping shows Offset from Plane as its own button. When Work Features
+has collapsed to fit the ribbon, regrouping keeps the panel compact
+until a ribbon width change triggers a new measurement.
 Both command lists resize with the floating Customize window without
 losing staged edits. Reopening restores its default size and keeps its
 position within the visible workspace.

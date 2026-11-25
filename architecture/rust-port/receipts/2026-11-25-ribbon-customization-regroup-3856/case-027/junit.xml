@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T05:01:33.991693699Z" time="33.723258189"><testcase name="Scenario: Reflow the ribbon after changing the application window state: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:367:3" time="33.723258189"><system-out><![CDATA[  Scenario: Reflow the ribbon after changing the application window state
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the 3D Model ribbon is compact after regrouping the Plane choices
+   ✔  When the user double-clicks the application title bar to change the window state
+   ✔  Then the ribbon reflows to show more command labels and panels
+   ✔  And the Plane choices remain grouped
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

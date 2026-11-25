@@ -20,6 +20,7 @@ pub(crate) use side_groups::draw_side_groups;
 #[derive(Default)]
 pub(crate) struct RibbonPanelLayout {
     widths: BTreeMap<(RibbonTab, RibbonPanel), f32>,
+    full_row_available: Option<f32>,
     scrollbar_shown: bool,
     measured_appearance: Option<crate::ribbon_command_layout::RibbonAppearance>,
     popup_press: crate::popup_press::PopupPress<(RibbonTab, RibbonPanel)>,
@@ -146,6 +147,7 @@ pub(crate) fn draw_panels(
 fn full_row(context: &mut PanelDrawContext<'_>, tab: RibbonTab, layout: &mut RibbonPanelLayout) {
     let ui = context.ui;
     let available = ui.content_region_avail()[0].max(1.);
+    layout.use_available_width(available);
     let height = (20. + context.owners.icons.appearance.command_height())
         * context.owners.icons.layout_factor()
         + layout.scrollbar_height(ui);

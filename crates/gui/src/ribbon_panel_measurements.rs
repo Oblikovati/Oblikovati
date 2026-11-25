@@ -24,6 +24,13 @@ impl RibbonPanelLayout {
         let old = self.widths.insert((tab, panel), width);
         self.pending_layout |= old != Some(width);
     }
+    pub(super) fn use_available_width(&mut self, available: f32) {
+        let previous = self.full_row_available.replace(available);
+        if previous.is_some_and(|width| width != available) {
+            self.widths
+                .retain(|(_, panel), _| *panel != RibbonPanel::PartWorkFeatures);
+        }
+    }
     pub(super) fn expanded_count(
         &self,
         tab: RibbonTab,

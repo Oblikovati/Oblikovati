@@ -22,7 +22,7 @@ const ORIENTATION_VARIANTS: [&str; 6] = [
     "Normal to Axis",
     "Torus Midplane",
 ];
-pub(super) const COMMAND_COUNT: usize = REFERENCE_VARIANTS.len() + ORIENTATION_VARIANTS.len() + 1;
+pub(super) const COMMAND_COUNT: usize = REFERENCE_VARIANTS.len() + ORIENTATION_VARIANTS.len() + 2;
 
 pub(super) fn draw(
     ui: &Ui,
@@ -34,19 +34,33 @@ pub(super) fn draw(
 ) {
     let origin = ui.cursor_pos();
     let (_, size) = icons.appearance.cell(0);
-    crate::chrome::command_control(
-        ui,
-        "Plane",
-        GuiShellAction::OpenOffsetPlane,
-        state,
-        actions,
-        || icons.button(ui, "Plane", IconGlyph::WorkPlane, size),
-    );
+    draw_offset_button(ui, state, icons, actions, "Plane", size);
     if ungrouped {
+        let (position, size) = variant_cell(icons, 1, expanded);
+        icons.cursor(ui, origin, position);
+        draw_offset_button(ui, state, icons, actions, "Offset from Plane", size);
         draw_individual_variants(ui, icons, origin, expanded);
     } else {
         draw_variants_popup(ui, state, icons, actions);
     }
+}
+
+fn draw_offset_button(
+    ui: &Ui,
+    state: &GuiCommandState,
+    icons: &GuiRibbonIcons,
+    actions: &mut Vec<GuiShellAction>,
+    label: &str,
+    size: [f32; 2],
+) {
+    crate::chrome::command_control(
+        ui,
+        label,
+        GuiShellAction::OpenOffsetPlane,
+        state,
+        actions,
+        || icons.button(ui, label, IconGlyph::WorkPlane, size),
+    );
 }
 fn draw_variants_popup(
     ui: &Ui,
@@ -103,16 +117,19 @@ fn draw_individual_variants(ui: &Ui, icons: &GuiRibbonIcons, origin: [f32; 2], e
         .chain(ORIENTATION_VARIANTS)
         .enumerate()
     {
-        let (position, size) = if expanded {
-            ([0., (index as f32 + 1.) * 30.], [170., 26.])
-        } else {
-            icons.appearance.cell(index + 1)
-        };
+        let (position, size) = variant_cell(icons, index + 2, expanded);
         icons.cursor(ui, origin, position);
         let disabled = ui.begin_disabled(true);
         icons.button(ui, name, IconGlyph::WorkPlane, size);
         drop(disabled);
         unavailable_reason(ui);
+    }
+}
+fn variant_cell(icons: &GuiRibbonIcons, index: usize, expanded: bool) -> ([f32; 2], [f32; 2]) {
+    if expanded {
+        ([0., index as f32 * 30.], [170., 26.])
+    } else {
+        icons.appearance.cell(index)
     }
 }
 fn unavailable_reason(ui: &Ui) {
