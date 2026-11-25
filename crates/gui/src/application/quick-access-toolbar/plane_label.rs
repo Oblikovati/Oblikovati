@@ -44,29 +44,33 @@ impl PlaneLabel {
         opacity: f32,
         area: WorkspaceArea,
     ) -> Option<Self> {
+        let at_center = |center: [f32; 2]| {
+            let footprint = [
+                [-half_u, -half_v],
+                [half_u, -half_v],
+                [half_u, half_v],
+                [-half_u, half_v],
+            ]
+            .map(|[x, y]| map.point([center[0] + x, center[1] + y]));
+            footprint
+                .iter()
+                .all(|&[x, y]| {
+                    (area.left..=area.right).contains(&x) && (area.top..=area.bottom).contains(&y)
+                })
+                .then_some(Self {
+                    map,
+                    center,
+                    scale,
+                    opacity,
+                    footprint,
+                })
+        };
         [[1. - u, 1. - v], [u, 1. - v], [1. - u, v], [u, v]]
             .into_iter()
-            .find_map(|center| {
-                let footprint = [
-                    [-half_u, -half_v],
-                    [half_u, -half_v],
-                    [half_u, half_v],
-                    [-half_u, half_v],
-                ]
-                .map(|[x, y]| map.point([center[0] + x, center[1] + y]));
-                footprint
-                    .iter()
-                    .all(|&[x, y]| {
-                        (area.left..=area.right).contains(&x)
-                            && (area.top..=area.bottom).contains(&y)
-                    })
-                    .then_some(Self {
-                        map,
-                        center,
-                        scale,
-                        opacity,
-                        footprint,
-                    })
+            .find_map(at_center)
+            .or_else(|| {
+                map.visible_center([u, v], [half_u, half_v], area)
+                    .and_then(at_center)
             })
     }
 
@@ -130,6 +134,67 @@ impl QuadProjection {
             (self.offset[i] + self.horizontal[i] * u + self.vertical[i] * v) / w
         })
     }
+
+    fn visible_center(
+        self,
+        [u, v]: [f32; 2],
+        half: [f32; 2],
+        area: WorkspaceArea,
+    ) -> Option<[f32; 2]> {
+        const VIEW_MARGIN: f32 = 8.;
+        let limits = [
+            CenterBound([1., 0.], -u),
+            CenterBound([-1., 0.], 1. - u),
+            CenterBound([0., 1.], -v),
+            CenterBound([0., -1.], 1. - v),
+            self.screen_limit(0, area.left + VIEW_MARGIN, 1., half),
+            self.screen_limit(0, area.right - VIEW_MARGIN, -1., half),
+            self.screen_limit(1, area.top + VIEW_MARGIN, 1., half),
+            self.screen_limit(1, area.bottom - VIEW_MARGIN, -1., half),
+        ];
+        // A preferred corner of the feasible polygon lies at two boundary lines.
+        limits
+            .iter()
+            .enumerate()
+            .flat_map(|(index, first)| {
+                limits[index + 1..]
+                    .iter()
+                    .filter_map(|second| first.crossing(*second))
+            })
+            .filter(|&center| limits.iter().all(|limit| limit.includes(center)))
+            .max_by(|a, b| (a[0] + a[1]).total_cmp(&(b[0] + b[1])))
+    }
+
+    fn screen_limit(self, axis: usize, edge: f32, sign: f32, half: [f32; 2]) -> CenterBound {
+        // The homogeneous denominator stays positive on the plane. Reserve enough
+        // space on each side for the most extreme corner of the label footprint.
+        let u = sign * (self.horizontal[axis] - edge * self.perspective[0]);
+        let v = sign * (self.vertical[axis] - edge * self.perspective[1]);
+        let offset = sign * (self.offset[axis] - edge) - u.abs() * half[0] - v.abs() * half[1];
+        CenterBound([u, v], offset)
+    }
+}
+
+#[derive(Clone, Copy)]
+struct CenterBound([f32; 2], f32);
+
+impl CenterBound {
+    fn crossing(self, other: Self) -> Option<[f32; 2]> {
+        let denominator = cross(self.0, other.0);
+        if denominator.abs() < 1e-6 {
+            return None;
+        }
+        let [a, b] = self.0;
+        let [c, d] = other.0;
+        Some([
+            (b * other.1 - d * self.1) / denominator,
+            (c * self.1 - a * other.1) / denominator,
+        ])
+    }
+
+    fn includes(self, center: [f32; 2]) -> bool {
+        center[0] * self.0[0] + center[1] * self.0[1] + self.1 >= -0.001
+    }
 }
 
 fn delta(from: [f32; 2], to: [f32; 2]) -> [f32; 2] {
@@ -177,6 +242,28 @@ mod tests {
         assert!(center[0] < 120.);
         assert!(label.contains(center));
         assert!(!label.contains([0., 0.]));
+    }
+
+    #[test]
+    fn a_cropped_perspective_plane_keeps_the_label_inside_the_visible_region() {
+        let quad = [[-260., -190.], [670., -72.], [650., 600.], [-180., 700.]];
+        let label = PlaneLabel::place(quad, [65., 13.], 0.8, VIEW).unwrap();
+        let center = label.point([0., 0.]);
+        assert!(center[0] > 300. && center[1] > 300., "{center:?}");
+        assert!(label.contains(center));
+        assert!(
+            label
+                .footprint
+                .into_iter()
+                .flatten()
+                .all(|p| (7.9..=392.1).contains(&p))
+        );
+    }
+
+    #[test]
+    fn a_plane_entirely_outside_the_viewport_places_no_label() {
+        let quad = [[420., 0.], [560., 30.], [600., 240.], [450., 200.]];
+        assert!(PlaneLabel::place(quad, [65., 13.], 0.8, VIEW).is_none());
     }
 
     #[test]

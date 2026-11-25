@@ -137,6 +137,38 @@ fn native_origin_picker_keeps_edge_on_planes_reachable_from_the_browser() {
 }
 
 #[test]
+fn native_origin_picker_keeps_a_face_label_visible_after_zoom() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    front_displayed(&mut world);
+    let mut camera = viewport_pan::camera(&mut world);
+    let [minimum, maximum] = crate::HeadWindow::presentation_bounds(&world.app().window).unwrap();
+    for axis in 0..2 {
+        let center = (minimum[axis] + maximum[axis]) * 0.5;
+        camera.eye[axis] += center - camera.target[axis];
+        camera.target[axis] = center;
+    }
+    camera.scale *= 0.1;
+    crate::HeadWindow::set_view_camera(&mut world.app().window, camera).unwrap();
+    world.pump(Vec::new());
+    world.click_text("Start 2D Sketch");
+    world.pump(Vec::new());
+    world.save_capture("zoomed-origin-plane-picker");
+
+    let label = diagnostics::plane_choice_center(&world.frame, "XY Plane")
+        .expect("expected the face-on label inside the cropped plane");
+    assert!(diagnostics::plane_choice_center(&world.frame, "YZ Plane").is_none());
+    assert!(diagnostics::plane_choice_center(&world.frame, "XZ Plane").is_none());
+    x11_input::click(diagnostics::pointer_pixels(label));
+    world.pump(Vec::new());
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+    world.close();
+}
+
+#[test]
 fn native_origin_planes_composite_through_the_viewcube_margin() {
     let mut world = ApplicationWorld::new();
     open_block(&mut world);

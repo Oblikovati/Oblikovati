@@ -23,7 +23,8 @@ values come from the same handoff.
   and the dashed rollback marker uses the theme’s strong border color.
 - The camera projects into the live document area as the window and docks
   resize. Layout changes preserve the current camera and Previous View
-  restores its saved camera in the current layout.
+  restores its saved camera in the current layout. A cropped origin plane
+  keeps its projected label inside the visible part of the same surface.
 - Hole uses the shared left-aligned property labels and outlined numeric
   fields. An empty Depth field displays Through all. The floating panel
   fits the rows and action footer. Offset Plane uses the same property
