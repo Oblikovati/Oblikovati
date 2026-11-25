@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Staged edits for the active sketch marking menu.
-use super::RibbonCustomization;
+use super::{RibbonCustomization, marking_environment};
 use imgui::Ui;
 use oblikovati_api::{
-    types::{self, ScreenQuadrant},
+    types::ScreenQuadrant,
     wire::{MarkingMenuItem, MarkingMenuView, SetMarkingMenuArgs},
 };
-use oblikovati_model::marking_menu::{MarkingMenuDisplay, MarkingMenuOverflow, MarkingMenuStyle};
+use oblikovati_model::marking_menu::{
+    MarkingMenuDisplay, MarkingMenuOverflow, MarkingMenuStyle, MarkingMenus,
+};
 
 const STYLES: [(MarkingMenuStyle, &str); 3] = [
     (MarkingMenuStyle::IconAndText, "Show Icon and Text"),
@@ -24,27 +26,28 @@ impl RibbonCustomization {
         let Some(menus) = &state.marking_menus else {
             return;
         };
-        let current = menus.get(types::SKETCH_ENVIRONMENT);
+        self.marking_environment
+            .get_or_insert_with(|| marking_environment::for_context(state.authoring));
         let display = MarkingMenuDisplay {
             classic: state.sketch_classic_menu,
             ..state.marking_menu_display
         };
         if self.marking_draft.is_none() || !self.marking_changed() {
-            self.marking_draft = Some(current.clone());
-            self.marking_base = Some(current);
+            self.marking_draft = Some(menus.clone());
+            self.marking_base = Some(menus.clone());
             self.marking_display_draft = display;
             self.marking_display_base = display;
             self.marking_conflict = false;
             return;
         }
-        if self.marking_draft.as_ref() == Some(&current) && self.marking_display_draft == display {
-            self.marking_base = Some(current);
+        if self.marking_draft.as_ref() == Some(menus) && self.marking_display_draft == display {
+            self.marking_base = Some(menus.clone());
             self.marking_display_base = display;
             self.marking_conflict = false;
             return;
         }
         self.marking_conflict =
-            self.marking_base.as_ref() != Some(&current) || self.marking_display_base != display;
+            self.marking_base.as_ref() != Some(menus) || self.marking_display_base != display;
     }
     pub(super) fn marking_changed(&self) -> bool {
         self.marking_draft
@@ -58,20 +61,24 @@ impl RibbonCustomization {
         if !self.marking_changed() || self.marking_conflict {
             return false;
         }
-        if let Some(menu) = &self.marking_draft {
-            let action = if self.marking_display_draft == self.marking_display_base {
+        let Some((draft, base)) = self.marking_draft.as_ref().zip(self.marking_base.as_ref())
+        else {
+            return false;
+        };
+        let changed: Vec<_> = draft
+            .all()
+            .into_iter()
+            .filter(|menu| base.get(menu.environment) != *menu)
+            .collect();
+        let display = self.marking_display_draft;
+        let action = match (changed.as_slice(), display == self.marking_display_base) {
+            ([menu], true) => {
                 crate::GuiShellAction::SetMarkingMenu(SetMarkingMenuArgs { menu: menu.clone() })
-            } else {
-                let menu_changed = self.marking_base.as_ref() != Some(menu);
-                crate::GuiShellAction::SetMarkingMenuPreferences(
-                    menu_changed.then(|| menu.clone()),
-                    self.marking_display_draft,
-                )
-            };
-            actions.push(action);
-            return true;
-        }
-        false
+            }
+            _ => crate::GuiShellAction::SetMarkingMenuPreferences(changed, display),
+        };
+        actions.push(action);
+        true
     }
     pub(super) fn finish_apply(&mut self) {
         if self.close_after_apply && !self.keyboard_changed() && !self.marking_changed() {
@@ -80,12 +87,17 @@ impl RibbonCustomization {
         }
     }
     pub(super) fn marking_editor(&mut self, ui: &Ui) {
-        let Some(menu) = &mut self.marking_draft else {
+        let (Some(menus), Some(environment)) =
+            (&mut self.marking_draft, &mut self.marking_environment)
+        else {
             ui.text("Marking menu is unavailable.");
             return;
         };
-        ui.text("Environment: 2D Sketch");
+        self.marking_selector_open |= marking_environment::selector(ui, environment);
         ui.text("Sub-Environment: None Selected");
+        let commands = marking_environment::commands(*environment);
+        let original = menus.get(*environment);
+        let mut menu = original.clone();
         ui.group(|| {
             for (slot, label) in [
                 (0, "North"),
@@ -97,14 +109,18 @@ impl RibbonCustomization {
                 (6, "West"),
                 (7, "North West"),
             ] {
-                slot_editor(ui, menu, slot, label);
+                slot_editor(ui, &mut menu, slot, label, &commands);
             }
         });
         ui.same_line();
-        ui.group(|| super::marking_overflow::editor(ui, menu));
+        ui.group(|| super::marking_overflow::editor(ui, &mut menu, &commands));
         if ui.button("Restore Default") {
-            *menu = oblikovati_model::marking_menu::MarkingMenus::default()
-                .get(types::SKETCH_ENVIRONMENT);
+            menu = MarkingMenus::default().get(*environment);
+        }
+        if menu != original {
+            menus
+                .set(menu)
+                .expect("the editor supplies unique marking-menu locations");
         }
         ui.same_line();
         ui.checkbox(
@@ -150,7 +166,13 @@ fn marking_selector<T: Copy + Eq>(
     }
     true
 }
-fn slot_editor(ui: &Ui, menu: &mut MarkingMenuView, slot: u8, label: &str) {
+fn slot_editor(
+    ui: &Ui,
+    menu: &mut MarkingMenuView,
+    slot: u8,
+    label: &str,
+    commands: &[(&str, &str)],
+) {
     let current = menu
         .quadrants
         .iter()
@@ -158,10 +180,11 @@ fn slot_editor(ui: &Ui, menu: &mut MarkingMenuView, slot: u8, label: &str) {
         .find(|item| item.quadrant.0 == slot)
         .map(|item| item.command_id.as_str())
         .unwrap_or("");
-    let preview = crate::sketch::marking_menu::action(current).map_or_else(
-        || if current.is_empty() { "None" } else { current },
-        |(label, _)| label,
-    );
+    let preview = if current.is_empty() {
+        "None"
+    } else {
+        command_label(current, commands)
+    };
     ui.set_next_item_width(200.);
     let Some(_combo) = ui.begin_combo(format!("{label}##marking-slot-{slot}"), preview) else {
         return;
@@ -169,11 +192,17 @@ fn slot_editor(ui: &Ui, menu: &mut MarkingMenuView, slot: u8, label: &str) {
     if ui.selectable("None") {
         replace_slot(menu, slot, "");
     }
-    for (id, name) in crate::sketch::marking_menu::COMMANDS {
+    for &(id, name) in commands {
         if ui.selectable(name) {
             replace_slot(menu, slot, id);
         }
     }
+}
+pub(super) fn command_label<'a>(id: &'a str, commands: &[(&'a str, &'a str)]) -> &'a str {
+    commands
+        .iter()
+        .find_map(|&(key, name)| (id == key).then_some(name))
+        .unwrap_or(id)
 }
 fn replace_slot(menu: &mut MarkingMenuView, slot: u8, command: &str) {
     let slots = menu.quadrants.get_or_insert_default();
@@ -190,6 +219,7 @@ fn replace_slot(menu: &mut MarkingMenuView, slot: u8, command: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use oblikovati_api::types;
     #[test]
     fn slot_edit_preserves_other_slots_and_stages_a_valid_menu() {
         let mut menu =

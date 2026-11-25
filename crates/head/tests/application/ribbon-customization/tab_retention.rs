@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Session tab retention through the Tools customization entry point.
 use super::*;
+#[path = "marking_environment.rs"]
+mod marking_environment;
 #[path = "marking_presentation.rs"]
 mod marking_presentation;
+pub(super) use marking_environment::choose_sketch_environment;
 
 #[given("the customization dialog is open on Ribbon for an empty Part Tools custom panel")]
 fn empty_ribbon(world: &mut ApplicationWorld) {
@@ -113,11 +116,7 @@ fn sketch_is_active(world: &mut ApplicationWorld) {
 }
 #[given("this is the same application session in which Marking Menu was previously selected")]
 fn same_session(world: &mut ApplicationWorld) {
-    assert!(
-        world
-            .window_text("Customize")
-            .contains("Environment:2DSketch")
-    );
+    marking_visible(world);
 }
 #[when("the user selects the \"Keyboard\" tab")]
 fn select_keyboard(world: &mut ApplicationWorld) {
@@ -140,11 +139,7 @@ fn keyboard_visible(world: &mut ApplicationWorld) {
 }
 #[then("the customization dialog opens on the Marking Menu tab")]
 fn marking_visible(world: &mut ApplicationWorld) {
-    assert!(
-        world
-            .window_text("Customize")
-            .contains("Environment:2DSketch")
-    );
+    world.run_in_window("Customize", "2DSketch");
 }
 #[then("Environment remains \"2D Sketch\"")]
 fn environment_unchanged(world: &mut ApplicationWorld) {

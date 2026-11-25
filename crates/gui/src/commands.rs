@@ -5,7 +5,7 @@ use oblikovati_model::marking_menu::MarkingMenuDisplay;
 pub enum GuiShellAction {
     OpenTeamWebInBrowser(&'static str),
     SetMarkingMenu(oblikovati_api::wire::SetMarkingMenuArgs),
-    SetMarkingMenuPreferences(Option<MarkingMenuView>, MarkingMenuDisplay),
+    SetMarkingMenuPreferences(Vec<MarkingMenuView>, MarkingMenuDisplay),
     SetKeymap(oblikovati_api::wire::KeymapExport),
     PlaceSketchBlock(String),
     /// Enter or leave the Create Block geometry selection mode.

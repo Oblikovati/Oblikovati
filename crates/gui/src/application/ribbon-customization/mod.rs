@@ -6,6 +6,7 @@ mod keyboard;
 mod keyboard_catalog;
 mod layout;
 mod locations;
+mod marking_environment;
 mod marking_menu;
 mod marking_overflow;
 mod panel;
@@ -63,8 +64,9 @@ pub(crate) struct RibbonCustomization {
     keyboard_error: Option<String>,
     close_after_apply: bool,
     keyboard_conflict: bool,
-    marking_draft: Option<oblikovati_api::wire::MarkingMenuView>,
-    marking_base: Option<oblikovati_api::wire::MarkingMenuView>,
+    marking_draft: Option<oblikovati_model::marking_menu::MarkingMenus>,
+    marking_base: Option<oblikovati_model::marking_menu::MarkingMenus>,
+    marking_environment: Option<oblikovati_api::types::Environment>,
     marking_display_draft: oblikovati_model::marking_menu::MarkingMenuDisplay,
     marking_display_base: oblikovati_model::marking_menu::MarkingMenuDisplay,
     marking_selector_open: bool,
@@ -99,6 +101,7 @@ impl RibbonCustomization {
         self.keyboard_conflict = false;
         self.marking_draft = None;
         self.marking_base = None;
+        self.marking_environment = None;
         self.marking_conflict = false;
         self.marking_selector_open = false;
         self.escape = Default::default();

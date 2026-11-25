@@ -22,14 +22,14 @@ pub trait HeadWork: HeadSketchWork {
     fn update_part_from_gui(&mut self) -> Result<bool, String> {
         Err("part update: expected a part evaluation owner".into())
     }
-    /// Apply marking menu settings; example: `work.set_marking_menu_from_gui(Some(&menu), None)?`.
+    /// Apply marking menu settings; example: `work.set_marking_menu_from_gui(&[menu], None)?`.
     fn set_marking_menu_from_gui(
         &mut self,
-        menu: Option<&oblikovati_api::wire::MarkingMenuView>,
+        menus: &[oblikovati_api::wire::MarkingMenuView],
         display: Option<oblikovati_model::marking_menu::MarkingMenuDisplay>,
     ) -> Result<bool, String> {
         Err(format!(
-            "marking menu {menu:?}, display {display:?}: expected a desktop menu owner"
+            "marking menus {menus:?}, display {display:?}: expected a desktop menu owner"
         ))
     }
     /// Take a resolved command shortcut after GUI input ownership is known.

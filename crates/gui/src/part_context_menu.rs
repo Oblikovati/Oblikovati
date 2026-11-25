@@ -284,15 +284,28 @@ fn selected_face_command(id: &str) -> Option<MarkingEntry> {
 fn part_entry(id: &str) -> Option<MarkingEntry> {
     command(id).map(MarkingEntry::command)
 }
+const MARKING_COMMANDS: [(&str, &str, GuiShellAction); 5] = [
+    ("Create.Extrude", "Extrude", GuiShellAction::OpenExtrude),
+    ("Modify.Fillet", "Fillet", GuiShellAction::OpenFillet),
+    ("Modify.Chamfer", "Chamfer", GuiShellAction::OpenChamfer),
+    (
+        "Sketch.Create2D",
+        "Start 2D Sketch",
+        GuiShellAction::ChooseSketchPlane,
+    ),
+    (
+        "WorkPlane.Offset",
+        "Offset Plane",
+        GuiShellAction::OpenOffsetPlane,
+    ),
+];
+pub(crate) fn marking_commands() -> impl Iterator<Item = (&'static str, &'static str)> {
+    MARKING_COMMANDS.iter().map(|&(id, label, _)| (id, label))
+}
 fn command(id: &str) -> Option<(&'static str, GuiShellAction)> {
-    match id {
-        "Create.Extrude" => Some(("Extrude", GuiShellAction::OpenExtrude)),
-        "Modify.Fillet" => Some(("Fillet", GuiShellAction::OpenFillet)),
-        "Modify.Chamfer" => Some(("Chamfer", GuiShellAction::OpenChamfer)),
-        "Sketch.Create2D" => Some(("Start 2D Sketch", GuiShellAction::ChooseSketchPlane)),
-        "WorkPlane.Offset" => Some(("Offset Plane", GuiShellAction::OpenOffsetPlane)),
-        _ => None,
-    }
+    MARKING_COMMANDS
+        .iter()
+        .find_map(|(key, label, action)| (*key == id).then(|| (*label, action.clone())))
 }
 #[cfg(test)]
 mod tests {

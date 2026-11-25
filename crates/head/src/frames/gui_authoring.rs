@@ -20,10 +20,10 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
             owner.jump_history_from_gui(*document, *position)
         }
         GuiShellAction::SetMarkingMenu(args) => {
-            owner.set_marking_menu_from_gui(Some(&args.menu), None)
+            owner.set_marking_menu_from_gui(std::slice::from_ref(&args.menu), None)
         }
-        GuiShellAction::SetMarkingMenuPreferences(menu, display) => {
-            owner.set_marking_menu_from_gui(menu.as_ref(), Some(*display))
+        GuiShellAction::SetMarkingMenuPreferences(menus, display) => {
+            owner.set_marking_menu_from_gui(menus, Some(*display))
         }
         GuiShellAction::SetKeymap(delta) => owner.set_keymap_from_gui(delta),
         GuiShellAction::PlaceSketchBlock(name) => owner.place_sketch_block_from_gui(name),

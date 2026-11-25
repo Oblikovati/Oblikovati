@@ -309,7 +309,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Resized both Customize command lists with the dialog and restored its default size on reopening. (#3856)
 - Added a saved Standard or Large button size for Shell in the Modify panel. (#3856)
 - Added Shell to the commands that can be pinned to Quick Access. (#3856)
-- Added staged Classic Context Menu, style, and overflow preferences to Marking Menu customization. (#3856)
+- Added Part and 2D Sketch profiles plus staged style, overflow, and classic context preferences to Marking Menu customization. (#3856)
 - Kept the entire Add Separator label visible in the Quick Access context menu and displayed icons for the Extrude and Print shortcuts. (#3955)
 - Preserved available ribbon command selections when switching targets and selected the separator when a source filter hid the selected command. (#3856)
 - Returned to Ribbon Customization with an error when importing invalid XML, preserving staged edits. (#3856)

@@ -3,11 +3,11 @@
 use imgui::Ui;
 use oblikovati_api::wire::MarkingMenuView;
 
-pub(super) fn editor(ui: &Ui, menu: &mut MarkingMenuView) {
+pub(super) fn editor(ui: &Ui, menu: &mut MarkingMenuView, available: &[(&str, &str)]) {
     ui.text("Overflow commands");
     ui.set_next_item_width(190.);
     if let Some(_combo) = ui.begin_combo("##add-marking-overflow", "Add command") {
-        for (id, name) in crate::sketch::marking_menu::COMMANDS {
+        for &(id, name) in available {
             if ui.selectable(name) {
                 menu.overflow.get_or_insert_default().push(id.into());
             }
@@ -23,7 +23,7 @@ pub(super) fn editor(ui: &Ui, menu: &mut MarkingMenuView) {
         .build(|| {
             let mut remove = None;
             for (index, command) in commands.iter_mut().enumerate() {
-                if overflow_row(ui, index, command) {
+                if overflow_row(ui, index, command, available) {
                     remove = Some(index);
                 }
             }
@@ -36,12 +36,11 @@ pub(super) fn editor(ui: &Ui, menu: &mut MarkingMenuView) {
         menu.overflow = None;
     }
 }
-fn overflow_row(ui: &Ui, index: usize, command: &mut String) -> bool {
-    let preview =
-        crate::sketch::marking_menu::action(command).map_or(command.as_str(), |(label, _)| label);
+fn overflow_row(ui: &Ui, index: usize, command: &mut String, available: &[(&str, &str)]) -> bool {
+    let preview = super::marking_menu::command_label(command, available);
     ui.set_next_item_width(160.);
     if let Some(_combo) = ui.begin_combo(format!("##marking-overflow-{index}"), preview) {
-        for (id, name) in crate::sketch::marking_menu::COMMANDS {
+        for &(id, name) in available {
             if ui.selectable(name) {
                 *command = id.into();
             }

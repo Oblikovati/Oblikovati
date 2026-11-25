@@ -25,11 +25,15 @@ impl<
 {
     pub(super) fn set_marking_menu_action(
         &mut self,
-        menu: Option<&oblikovati_api::wire::MarkingMenuView>,
+        assignments: &[oblikovati_api::wire::MarkingMenuView],
         display: Option<oblikovati_model::marking_menu::MarkingMenuDisplay>,
     ) -> Result<bool, String> {
         let Some(display) = display else {
-            let Some(menu) = menu else { return Ok(false) };
+            let [menu] = assignments else {
+                return Err(
+                    "marking menu action: expected one menu without display changes".into(),
+                );
+            };
             oblikovati_api::client::Client::new(self.document_host())
                 .ui()
                 .set_marking_menu(&oblikovati_api::wire::SetMarkingMenuArgs { menu: menu.clone() })
@@ -37,7 +41,7 @@ impl<
             return Ok(true);
         };
         let mut menus = self.marking_menus.clone();
-        if let Some(menu) = menu {
+        for menu in assignments {
             menus.set(menu.clone())?;
         }
         if let Some(store) = &mut self.marking_store {

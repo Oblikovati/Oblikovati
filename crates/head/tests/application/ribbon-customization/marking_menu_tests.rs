@@ -50,19 +50,11 @@ fn customization_remembers_marking_and_keyboard_tabs_in_the_session() {
     let before = world.edited_geometry();
     open_tools_customization(&mut world);
     click_in_customize(&mut world, "MarkingMenu");
-    assert!(
-        world
-            .window_text("Customize")
-            .contains("Environment:2DSketch")
-    );
+    world.run_in_window("Customize", "2DSketch");
     click_in_customize(&mut world, "Close");
     world.click_text("Customize");
     world.pump(Vec::new());
-    assert!(
-        world
-            .window_text("Customize")
-            .contains("Environment:2DSketch")
-    );
+    world.run_in_window("Customize", "2DSketch");
     click_in_customize(&mut world, "Keyboard");
     assert!(world.window_text("Customize").contains("Searchcommands"));
     click_in_customize(&mut world, "Close");

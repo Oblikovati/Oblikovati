@@ -44,6 +44,7 @@ fn marking_menu_editor_applies_and_restores_a_slot() {
     world.add_part();
     open_tools_customization(&mut world);
     click_in_customize(&mut world, "MarkingMenu");
+    super::super::tab_retention::choose_sketch_environment(&mut world);
     let north = world.run_in_window("Customize", "North").clone();
     world.click([(north.minimum[0] - 70.) as i32, north.center()[1] as i32]);
     world.pump(Vec::new());

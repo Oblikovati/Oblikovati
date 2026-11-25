@@ -1,7 +1,7 @@
 # Current native Ribbon Customization
 
-Ninety-three of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 89 of 122 declarations and 1,265
+Ninety-four of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 90 of 122 declarations and 1,275
 passing steps. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
@@ -30,6 +30,9 @@ reopened at the saved value. [Classic menu](../2026-11-25-ribbon-customization-c
 The presentation case opened and dismissed both Marking Menu selectors
 without editing their saved values.
 [Marking Menu presentation](../2026-11-25-ribbon-customization-marking-display-3856/README.md)
+The environment case checked seven labels and dismissed the selector
+without changing the active profile.
+[Marking Menu environments](../2026-11-25-ribbon-customization-environments-3856/README.md)
 
 The [command list](case-059/cucumber.json),
 [reorder](case-082/cucumber.json), and [remove](case-083/cucumber.json)
