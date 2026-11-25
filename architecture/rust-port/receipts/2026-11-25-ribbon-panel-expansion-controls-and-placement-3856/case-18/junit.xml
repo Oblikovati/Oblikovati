@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:19:39.275908264Z" time="31.506926771"><testcase name="Scenario: Minimize the ribbon while an expanded panel is pinned: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:232:3" time="31.506926771"><system-out><![CDATA[  Scenario: Minimize the ribbon while an expanded panel is pinned
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full Tools ribbon uses the Cycle Through All display policy
+   ✔  And the Options additional command area is open and pinned
+   ✔  And clicking outside the panel leaves the additional area open
+   ✔  When the user activates the ribbon display control
+   ✔  Then the ribbon shows compact panel buttons
+   ✔  And the Options additional command area is no longer visible
+   ✔  When the user continues the display cycle to restore the full ribbon
+   ✔  Then the full Tools ribbon is visible
+   ✔  And the Options additional command area is not automatically reopened
+   ✔  When the user opens the Options additional command area and clicks outside it
+   ✔  Then the additional area closes
+]]></system-out></testcase></testsuite></testsuites>

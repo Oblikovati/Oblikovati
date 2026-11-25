@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:22:28.055989561Z" time="29.390833872"><testcase name="Scenario: Dismiss a keyboard-opened panel after Escape: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:207:3" time="29.390833872"><system-out><![CDATA[  Scenario: Dismiss a keyboard-opened panel after Escape
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the 3D Model Modify additional command area is open using Alt, "M", and "Y"
+   ✔  And its command key tips are visible
+   ✔  When the user presses Escape twice
+   ✔  Then the additional command area and its key tips remain visible
+   ✔  When the user clicks the Modify title at the bottom of the additional area
+   ✔  Then the additional command area and key tips close
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

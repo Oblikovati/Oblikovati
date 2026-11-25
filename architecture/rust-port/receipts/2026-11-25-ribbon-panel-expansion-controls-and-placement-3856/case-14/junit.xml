@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:21:21.984868368Z" time="35.46837411"><testcase name="Scenario: Move a grouped control into and out of an expanded panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:180:3" time="35.46837411"><system-out><![CDATA[  Scenario: Move a grouped control into and out of an expanded panel
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the grouped "Plane" control is in the 3D Model Work Features main panel
+   ✔  When the user right-clicks "Plane" and selects "Move to Expanded Panel"
+   ✔  Then "Plane" is no longer visible in the main panel
+   ✔  When the user opens the Work Features expansion
+   ✔  Then a "Plane" control appears in the expanded area
+   ✔  And its context menu offers "Ungroup Commands from Drop-Down Menu"
+   ✔  When the user selects "Move to Main Panel" from that context menu
+   ✔  Then "Plane" returns to the main panel
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

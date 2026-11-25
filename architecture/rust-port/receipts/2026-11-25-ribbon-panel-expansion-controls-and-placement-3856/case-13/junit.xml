@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:20:43.775094258Z" time="37.262084388"><testcase name="Scenario: Move a command between the main and expanded areas: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:167:3" time="37.262084388"><system-out><![CDATA[  Scenario: Move a command between the main and expanded areas
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And "Shell" appears in the main area of the 3D Model "Modify" panel
+   ✔  When the user right-clicks "Shell" and selects "Move to Expanded Panel"
+   ✔  Then "Shell" is no longer visible in the main area
+   ✔  When the user opens the "Modify" panel expansion
+   ✔  Then "Shell" appears in the expanded area
+   ✔  When the user right-clicks "Shell" in the expanded area
+   ✔  And the user selects "Move to Main Panel"
+   ✔  Then the expansion closes
+   ✔  And "Shell" appears again in the main area of the "Modify" panel
+]]></system-out></testcase></testsuite></testsuites>

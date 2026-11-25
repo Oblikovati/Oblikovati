@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:21:46.102046693Z" time="26.823368926"><testcase name="Scenario: Cancel a command launched from a pinned expansion: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:285:3" time="26.823368926"><system-out><![CDATA[  Scenario: Cancel a command launched from a pinned expansion
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is open and pinned
+   ✔  When the user selects "Move Bodies" from the additional command area
+   ✔  Then the Move Bodies dialog opens
+   ✔  When the user cancels the Move Bodies dialog
+   ✔  Then the dialog closes without applying the move
+   ✔  And the pinned Modify additional command area remains visible
+]]></system-out></testcase></testsuite></testsuites>

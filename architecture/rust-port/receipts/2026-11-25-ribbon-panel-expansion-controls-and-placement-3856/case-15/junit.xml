@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:21:58.406387101Z" time="28.71476939"><testcase name="Scenario: Launch a command in a panel expansion by keyboard: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:193:3" time="28.71476939"><system-out><![CDATA[  Scenario: Launch a command in a panel expansion by keyboard
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full ribbon is displayed
+   ✔  When the user presses Alt and then "M"
+   ✔  Then the 3D Model ribbon displays command key tips
+   ✔  When the user presses "Y"
+   ✔  Then the Modify additional command area opens with key tips for its commands
+   ✔  When the user enters "OD"
+   ✔  Then the Move Bodies dialog opens
+   ✔  And the additional command area closes
+   ✔  When the user cancels the dialog
+   ✔  Then the part remains visible without applying the preview
+]]></system-out></testcase></testsuite></testsuites>
