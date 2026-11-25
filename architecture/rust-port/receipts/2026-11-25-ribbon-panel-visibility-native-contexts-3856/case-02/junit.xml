@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:05:41.155666994Z" time="45.196620552"><testcase name="Scenario: Retain panel visibility while switching tabs and parts: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:22:3" time="45.196620552"><system-out><![CDATA[  Scenario: Retain panel visibility while switching tabs and parts
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd` and `fixtures/cad/quick-access-toolbar/PartTwo.opd` are open in that order
+   ✔  And the first part is active with the 3D Model ribbon expanded
+   ✔  And the Parameters panel is visible
+   ✔  When the user selects the View ribbon tab
+   ✔  And the user returns to the 3D Model ribbon tab
+   ✔  Then the Parameters panel is still visible
+   ✔  When the user activates the second part document
+   ✔  Then its 3D Model ribbon also shows the Parameters panel
+   ✔  When the user returns to the first part document
+   ✔  Then its Parameters panel remains visible
+]]></system-out></testcase></testsuite></testsuites>
