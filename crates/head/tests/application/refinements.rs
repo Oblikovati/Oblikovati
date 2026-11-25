@@ -384,12 +384,6 @@ fn drawing_menu(world: &mut ApplicationWorld) {
     }
 }
 // Home wording
-#[given(regex = r#"^no other visible recent document matches "Part26"$"#)]
-fn nothing_else_matches(_: &mut ApplicationWorld) {}
-#[given(
-    regex = r#"^a recent part named "Part26" is the only visible document matching that term$"#
-)]
-fn only_match(_: &mut ApplicationWorld) {}
 #[given("Sort by is set to Last Opened in descending order")]
 fn sort_opened_down(world: &mut ApplicationWorld) {
     world.expect_text("Sort by Last Opened");
@@ -399,15 +393,6 @@ fn sort_opened_down(world: &mut ApplicationWorld) {
 #[when("I inspect the recent-document list")]
 fn inspect_list(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
-}
-#[then(regex = r#"^it includes "Part26" preceded by a history symbol$"#)]
-fn history_symbol(world: &mut ApplicationWorld) {
-    let term = world
-        .frame
-        .runs
-        .iter()
-        .find(|run| run.text.ends_with("Part26") && run.text.len() > 6);
-    assert!(term.is_some(), "expected a history mark before the term");
 }
 #[given("one recent-document row is checked and no other rows are checked")]
 fn one_only(world: &mut ApplicationWorld) {

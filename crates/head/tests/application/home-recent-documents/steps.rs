@@ -19,6 +19,7 @@ mod lists;
 mod native_input;
 #[path = "published_profile.rs"]
 mod published_profile;
+use published_profile::{assembly_name, other_recent_names, recent_name};
 #[path = "startup_observation.rs"]
 mod startup_observation;
 
@@ -129,19 +130,12 @@ fn home_active(world: &mut ApplicationWorld) {
 #[given(regex = r#"^the recent list contains a part named "Part26" and other documents$"#)]
 #[given(regex = r#"^the recent list includes a part named "Part26" and other document types$"#)]
 fn list_contains(world: &mut ApplicationWorld) {
-    assert!(
-        home_shows(world, SEARCHED),
-        "expected {SEARCHED} on the list"
-    );
-    assert!(
-        home_shows(world, OTHERS[0]),
-        "expected {} on the list",
-        OTHERS[0]
-    );
-    assert!(
-        home_shows(world, ASSEMBLY),
-        "expected {ASSEMBLY} on the list"
-    );
+    for name in std::iter::once(SEARCHED).chain(other_recent_names(world).iter().copied()) {
+        assert!(
+            recent_name(world, name).is_some(),
+            "expected {name} on the list"
+        );
+    }
 }
 #[given("the recent list contains documents")]
 fn recent_list_filled(world: &mut ApplicationWorld) {
@@ -232,7 +226,9 @@ fn shows_match(world: &mut ApplicationWorld) {
 }
 #[then("the other previously visible documents are not displayed")]
 fn others_hidden(world: &mut ApplicationWorld) {
-    assert!(!home_shows(world, OTHERS[0]), "expected no {}", OTHERS[0]);
+    for name in other_recent_names(world) {
+        assert!(recent_name(world, name).is_none(), "expected no {name}");
+    }
 }
 #[when("the user clears the search field with its clear control")]
 #[when("I clear the search field with its clear control")]
@@ -257,13 +253,14 @@ fn field_empty(world: &mut ApplicationWorld) {
 }
 #[then("the filtered result remains displayed")]
 fn filtered_remains(world: &mut ApplicationWorld) {
-    assert!(!home_shows(world, OTHERS[0]), "expected no {}", OTHERS[0]);
+    shows_match(world);
+    others_hidden(world);
 }
 #[then("the other recent documents are displayed again")]
 #[then("the broader recent-document list is displayed again")]
 #[then("the broader recent list is displayed")]
 fn others_back(world: &mut ApplicationWorld) {
-    assert!(home_shows(world, OTHERS[0]), "expected {}", OTHERS[0]);
+    list_contains(world);
 }
 #[given("the user has searched recent documents for \"Part26\"")]
 #[given(regex = r#"^I have searched recent documents for "Part26"$"#)]
@@ -284,6 +281,7 @@ fn history_panel(world: &mut ApplicationWorld) {
     );
 }
 #[then(regex = r#"^it includes "Part26"$"#)]
+#[then("it includes \"Part26\" preceded by a history symbol")]
 fn history_includes(world: &mut ApplicationWorld) {
     let panel = home_run(world, "Search History")
         .expect("expected the panel")
@@ -292,7 +290,7 @@ fn history_includes(world: &mut ApplicationWorld) {
         .frame
         .runs
         .iter()
-        .any(|run| in_home(run) && run.text.ends_with(SEARCHED) && run.center()[1] > panel);
+        .any(|run| in_home(run) && run.text == "(h)Part26" && run.center()[1] > panel);
     assert!(term, "expected {SEARCHED} under the panel title");
 }
 #[when("the user selects Grid View")]
@@ -305,11 +303,14 @@ fn select_grid(world: &mut ApplicationWorld) {
 #[then("recent documents appear as a grid of thumbnail cards")]
 fn grid_cards(world: &mut ApplicationWorld) {
     assert!(!home_shows(world, "Location"), "expected no list columns");
-    let cards = [SEARCHED, OTHERS[0], OTHERS[1], ASSEMBLY].map(|name| {
-        home_run(world, name)
-            .unwrap_or_else(|| panic!("expected the {name:?} card"))
-            .center()
-    });
+    let cards: Vec<_> = std::iter::once(SEARCHED)
+        .chain(other_recent_names(world).iter().copied())
+        .map(|name| {
+            recent_name(world, name)
+                .unwrap_or_else(|| panic!("expected the {name:?} card"))
+                .center()
+        })
+        .collect();
     assert!(
         cards
             .iter()
@@ -323,9 +324,28 @@ fn grid_cards(world: &mut ApplicationWorld) {
 }
 #[then("each visible card shows a document name and date")]
 fn card_facts(world: &mut ApplicationWorld) {
-    let name = home_run(world, SEARCHED).expect("expected a card").center();
-    let date = home_run(world, "UTC").expect("expected a date").center();
-    assert!(date[1] > name[1], "expected a date under the card's name");
+    let rows = world.state().recent_documents;
+    for name in std::iter::once(SEARCHED).chain(other_recent_names(world).iter().copied()) {
+        let card = recent_name(world, name).unwrap_or_else(|| panic!("expected {name:?} card"));
+        let modified = &rows
+            .iter()
+            .find(|row| row.name == name)
+            .unwrap()
+            .modified_text;
+        let day = modified
+            .split_whitespace()
+            .next()
+            .expect("expected the file modification date");
+        let date = world.frame.runs.iter().any(|row| {
+            let below = row.center()[1] - card.center()[1];
+            in_home(row)
+                && row.text.starts_with(day)
+                && (row.minimum[0] - card.minimum[0]).abs() < ROW_REACH
+                && below > 0.
+                && below < 32.
+        });
+        assert!(date, "expected a date under {name:?}");
+    }
 }
 #[then("a Sort by control is displayed")]
 fn sort_shown(world: &mut ApplicationWorld) {
@@ -347,7 +367,11 @@ fn list_rows(world: &mut ApplicationWorld) {
 #[given("recent parts and assemblies are available")]
 #[given("recent parts and an assembly modified today are available")]
 fn parts_and_assemblies(world: &mut ApplicationWorld) {
-    assert!(home_shows(world, ASSEMBLY), "expected {ASSEMBLY}");
+    let assembly = assembly_name(world);
+    assert!(
+        recent_name(world, assembly).is_some(),
+        "expected {assembly}"
+    );
     assert!(home_shows(world, SEARCHED), "expected {SEARCHED}");
 }
 #[given("no other rows are checked and no recent-document filters are active")]
@@ -362,8 +386,18 @@ fn filter_assembly(world: &mut ApplicationWorld) {
 }
 #[then("the recent list displays assembly documents")]
 fn assemblies_shown(world: &mut ApplicationWorld) {
-    assert!(home_shows(world, ASSEMBLY), "expected {ASSEMBLY}");
+    let assembly = assembly_name(world);
+    assert!(
+        recent_name(world, assembly).is_some(),
+        "expected {assembly}"
+    );
     assert!(!home_shows(world, SEARCHED), "expected no {SEARCHED}");
+    for name in other_recent_names(world)
+        .iter()
+        .filter(|&&name| name != assembly)
+    {
+        assert!(recent_name(world, name).is_none(), "expected no {name}");
+    }
 }
 #[then("the filter control indicates one active filter")]
 fn one_filter(world: &mut ApplicationWorld) {
@@ -386,7 +420,11 @@ fn assembly_unchecked(world: &mut ApplicationWorld) {
 #[then("recent parts and assemblies are displayed again")]
 #[then("the broader recent list includes parts and assemblies")]
 fn both_again(world: &mut ApplicationWorld) {
-    assert!(home_shows(world, ASSEMBLY), "expected {ASSEMBLY}");
+    let assembly = assembly_name(world);
+    assert!(
+        recent_name(world, assembly).is_some(),
+        "expected {assembly}"
+    );
     assert!(home_shows(world, SEARCHED), "expected {SEARCHED}");
 }
 #[when("the user opens Filter and chooses Today under Date Modified")]
@@ -400,7 +438,11 @@ fn filter_today(world: &mut ApplicationWorld) {
 #[then("the list displays the parts and assembly modified today")]
 fn today_list(world: &mut ApplicationWorld) {
     assert!(home_shows(world, SEARCHED), "expected {SEARCHED}");
-    assert!(home_shows(world, ASSEMBLY), "expected {ASSEMBLY}");
+    let assembly = assembly_name(world);
+    assert!(
+        recent_name(world, assembly).is_some(),
+        "expected {assembly}"
+    );
 }
 #[when("the user selects Part under File Types")]
 #[when("I select Part under File Types")]
@@ -418,7 +460,11 @@ fn parts_today(world: &mut ApplicationWorld) {
 }
 #[then("the assembly is not displayed")]
 fn assembly_hidden(world: &mut ApplicationWorld) {
-    assert!(!home_shows(world, ASSEMBLY), "expected no {ASSEMBLY}");
+    let assembly = assembly_name(world);
+    assert!(
+        recent_name(world, assembly).is_none(),
+        "expected no {assembly}"
+    );
 }
 #[when("the user also selects Assembly")]
 #[when("I also select Assembly")]

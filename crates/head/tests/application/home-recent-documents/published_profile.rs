@@ -76,6 +76,55 @@ pub(super) fn uses_published_profile(world: &ApplicationWorld) -> bool {
     published_profile_folder(world).is_some_and(|folder| folder.is_dir())
 }
 
+pub(super) fn other_recent_names(world: &ApplicationWorld) -> &'static [&'static str] {
+    if uses_published_profile(world) {
+        &["Part2", "Part23", "RecentAssembly", "RecentDrawing"]
+    } else {
+        &[OTHERS[0], OTHERS[1], ASSEMBLY]
+    }
+}
+
+pub(super) fn assembly_name(world: &ApplicationWorld) -> &'static str {
+    if uses_published_profile(world) {
+        "RecentAssembly"
+    } else {
+        ASSEMBLY
+    }
+}
+
+pub(super) fn recent_name(world: &ApplicationWorld, name: &str) -> Option<RenderedRun> {
+    let wanted = super::super::world::squeezed(name);
+    home_run(world, name)
+        .filter(|run| run.text == wanted)
+        .or_else(|| clipped_recent_name(world, &wanted))
+}
+
+fn clipped_recent_name(world: &ApplicationWorld, name: &str) -> Option<RenderedRun> {
+    let mark = match name {
+        "RecentAssembly" => "A",
+        "RecentDrawing" => "D",
+        _ => return None,
+    };
+    world
+        .frame
+        .runs
+        .iter()
+        .find(|run| {
+            run.text
+                .strip_suffix("...")
+                .is_some_and(|prefix| !prefix.is_empty() && name.starts_with(prefix))
+                && in_home(run)
+                && world.frame.runs.iter().any(|kind| {
+                    let [x, y] = kind.center();
+                    kind.text == mark
+                        && in_home(kind)
+                        && (y - run.center()[1]).abs() < ROW_REACH
+                        && (0. ..32.).contains(&(run.minimum[0] - x))
+                })
+        })
+        .cloned()
+}
+
 pub(super) fn expect_recent_files(world: &mut ApplicationWorld) {
     let folder = published_profile_folder(world).unwrap();
     let mut paths: Vec<_> = world
@@ -108,4 +157,16 @@ fn edit_part23(world: &mut ApplicationWorld) {
         oblikovati_gui::GuiAuthoringContext::Sketch
     );
     world.previous_document = Some(part);
+}
+
+#[given("no other visible recent document matches \"Part26\"")]
+#[given("a recent part named \"Part26\" is the only visible document matching that term")]
+fn no_other_matches(world: &mut ApplicationWorld) {
+    let matches = world
+        .state()
+        .recent_documents
+        .into_iter()
+        .filter(|row| row.name.contains(SEARCHED) && recent_name(world, &row.name).is_some())
+        .count();
+    assert_eq!(matches, 1, "expected only {SEARCHED} to match");
 }

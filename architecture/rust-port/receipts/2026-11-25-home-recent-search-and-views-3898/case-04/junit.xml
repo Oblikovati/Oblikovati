@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:10:24.500692859Z" time="14.582641582"><testcase name="Scenario: Switch between list and grid views of recent documents: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:41:3" time="14.582641582"><system-out><![CDATA[  Scenario: Switch between list and grid views of recent documents
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent documents are displayed in List View
+   ✔  When the user selects Grid View
+   ✔  Then recent documents appear as a grid of thumbnail cards
+   ✔  And each visible card shows a document name and date
+   ✔  And a Sort by control is displayed
+   ✔  When the user selects List View
+   ✔  Then recent documents appear as rows with metadata columns
+]]></system-out></testcase></testsuite></testsuites>
