@@ -84,6 +84,10 @@ impl PlaneLabel {
     pub(super) fn contains(&self, pointer: [f32; 2]) -> bool {
         inside(&self.footprint, pointer)
     }
+
+    pub(super) fn footprint(&self) -> [[f32; 2]; 4] {
+        self.footprint
+    }
 }
 
 fn orient(corners: &mut [[f32; 2]; 4]) {

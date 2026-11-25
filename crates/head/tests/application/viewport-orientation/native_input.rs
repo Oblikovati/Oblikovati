@@ -2,6 +2,7 @@
 //! Native pointer checks for viewport orientation.
 use super::super::{diagnostics, viewport_pan, x11_input};
 use super::*;
+use crate::HeadWork;
 
 fn native_press(world: &mut ApplicationWorld, local: [f32; 2], position: [f32; 2]) {
     let point = [position[0] + local[0], position[1] + local[1]];
@@ -141,22 +142,16 @@ fn native_origin_picker_keeps_a_face_label_visible_after_zoom() {
     let mut world = ApplicationWorld::new();
     open_block(&mut world);
     front_displayed(&mut world);
-    let mut camera = viewport_pan::camera(&mut world);
-    let [minimum, maximum] = crate::HeadWindow::presentation_bounds(&world.app().window).unwrap();
-    for axis in 0..2 {
-        let center = (minimum[axis] + maximum[axis]) * 0.5;
-        camera.eye[axis] += center - camera.target[axis];
-        camera.target[axis] = center;
-    }
-    camera.scale *= 0.1;
-    crate::HeadWindow::set_view_camera(&mut world.app().window, camera).unwrap();
-    world.pump(Vec::new());
+    zoomed_front_view(&mut world);
     world.click_text("Start 2D Sketch");
     world.pump(Vec::new());
     world.save_capture("zoomed-origin-plane-picker");
 
-    let label = diagnostics::plane_choice_center(&world.frame, "XY Plane")
-        .expect("expected the face-on label inside the cropped plane");
+    assert_plane_label_contrast(&mut world);
+    world.app().owner.select_theme_from_gui("Light").unwrap();
+    world.pump(Vec::new());
+    world.save_capture("zoomed-origin-plane-picker-light");
+    let label = assert_plane_label_contrast(&mut world);
     assert!(diagnostics::plane_choice_center(&world.frame, "YZ Plane").is_none());
     assert!(diagnostics::plane_choice_center(&world.frame, "XZ Plane").is_none());
     x11_input::click(diagnostics::pointer_pixels(label));
@@ -166,6 +161,56 @@ fn native_origin_picker_keeps_a_face_label_visible_after_zoom() {
         oblikovati_gui::GuiAuthoringContext::Sketch
     );
     world.close();
+}
+
+fn zoomed_front_view(world: &mut ApplicationWorld) {
+    let mut camera = viewport_pan::camera(world);
+    let [minimum, maximum] = crate::HeadWindow::presentation_bounds(&world.app().window).unwrap();
+    for axis in 0..2 {
+        let center = (minimum[axis] + maximum[axis]) * 0.5;
+        camera.eye[axis] += center - camera.target[axis];
+        camera.target[axis] = center;
+    }
+    camera.scale *= 0.1;
+    crate::HeadWindow::set_view_camera(&mut world.app().window, camera).unwrap();
+    world.pump(Vec::new());
+}
+
+fn assert_plane_label_contrast(world: &mut ApplicationWorld) -> [f32; 2] {
+    let center = diagnostics::plane_choice_center(&world.frame, "XY Plane")
+        .expect("expected the face-on label inside the cropped plane");
+    let label = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.center() == center)
+        .unwrap();
+    let ink = relative_luminance(label.color);
+    let position = diagnostics::pointer_pixels([label.minimum[0] - 2., center[1]]);
+    let [r, g, b, _] = world.pixel_at(position.map(|axis| axis as usize));
+    let backing = relative_luminance([r, g, b]);
+    let contrast = (ink.max(backing) + 0.05) / (ink.min(backing) + 0.05);
+    assert!(
+        contrast >= 4.5,
+        "plane label contrast {contrast:.2} on {:?}",
+        [r, g, b]
+    );
+    center
+}
+
+fn relative_luminance(rgb: [u8; 3]) -> f32 {
+    rgb.into_iter()
+        .zip([0.2126, 0.7152, 0.0722])
+        .map(|(channel, weight)| {
+            let value = f32::from(channel) / 255.;
+            let linear = if value <= 0.04045 {
+                value / 12.92
+            } else {
+                ((value + 0.055) / 1.055).powf(2.4)
+            };
+            linear * weight
+        })
+        .sum()
 }
 
 #[test]

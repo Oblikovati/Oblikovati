@@ -25,6 +25,7 @@ values come from the same handoff.
   resize. Layout changes preserve the current camera and Previous View
   restores its saved camera in the current layout. A cropped origin plane
   keeps its projected label inside the visible part of the same surface.
+  The label backing follows that projection and fades with the text.
 - Hole uses the shared left-aligned property labels and outlined numeric
   fields. An empty Depth field displays Through all. The floating panel
   fits the rows and action footer. Offset Plane uses the same property

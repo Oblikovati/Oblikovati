@@ -144,7 +144,8 @@ impl PickerPlane {
             GuiOriginPlaneKind::Xz => axes.toward[1],
             GuiOriginPlaneKind::Yz => axes.toward[0],
         });
-        let label = PlaneLabel::place(corners, ui.calc_text_size(plane.kind.label()), facing, area);
+        let [width, height] = ui.calc_text_size(plane.kind.label());
+        let label = PlaneLabel::place(corners, [width + 8., height + 4.], facing, area);
         Self {
             corners,
             kind: plane.kind,
@@ -165,11 +166,6 @@ fn draw_planes(ui: &Ui, planes: &[PickerPlane], workspace: WorkspaceArea, state:
         .count()
         .max(1);
     fill[3] = 1. - (1. - fill[3]).powf(1. / sheets as f32);
-    let text = ui.style_color(imgui::StyleColor::Text);
-    let ink = state
-        .color_scheme
-        .as_ref()
-        .map_or(text, |scheme| scheme.contrasting_ink(text));
     let source = [
         (workspace.left + workspace.right) / 2.,
         (workspace.top + workspace.bottom) / 2.,
@@ -183,19 +179,30 @@ fn draw_planes(ui: &Ui, planes: &[PickerPlane], workspace: WorkspaceArea, state:
             }
             for plane in planes {
                 if let Some(label) = &plane.label {
-                    let color = [ink[0], ink[1], ink[2], ink[3] * label.opacity];
-                    crate::widget_abi::projected_background_text(
-                        ui,
-                        &draw,
-                        source,
-                        color,
-                        plane.kind.label(),
-                        |point| label.point(point),
-                    );
+                    draw_label(ui, &draw, source, plane.kind.label(), label);
                 }
             }
         },
     );
+}
+
+fn draw_label(
+    ui: &Ui,
+    draw: &imgui::DrawListMut<'_>,
+    source: [f32; 2],
+    text: &str,
+    label: &PlaneLabel,
+) {
+    let mut backing = ui.style_color(imgui::StyleColor::PopupBg);
+    backing[3] = label.opacity;
+    draw.add_polyline(label.footprint().to_vec(), backing)
+        .filled(true)
+        .build();
+    let mut ink = ui.style_color(imgui::StyleColor::Text);
+    ink[3] *= label.opacity;
+    crate::widget_abi::projected_background_text(ui, draw, source, ink, text, |point| {
+        label.point(point)
+    });
 }
 
 fn plane_colors(state: &GuiCommandState, light: bool) -> [[f32; 4]; 2] {
