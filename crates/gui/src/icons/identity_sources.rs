@@ -102,6 +102,8 @@ pub(super) fn source(glyph: IconGlyph, light: bool) -> Option<&'static str> {
         }
         IconGlyph::Chamfer => include_str!("../../assets/identity/cmd-model-chamfer-32.svg"),
         IconGlyph::MoveBodies => include_str!("../../assets/identity/cmd-model-move-bodies-32.svg"),
+        IconGlyph::BendPart => include_str!("../../assets/identity/cmd-model-bend-part-32.svg"),
+        IconGlyph::CopyObject => include_str!("../../assets/identity/cmd-model-copy-object-32.svg"),
         IconGlyph::CircularPattern => {
             include_str!("../../assets/identity/cmd-model-circular-pattern-32.svg")
         }

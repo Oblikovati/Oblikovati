@@ -131,6 +131,7 @@ glyph_catalog! {
     SketchVisibility => "show-constraints",
     RibbonDensity => "layout-single",
     BrandWordmark => "view-cube",
+    CopyObject => "copy-object",
 }
 
 pub(crate) fn document_glyph(kind: crate::GuiTemplateKind) -> IconGlyph {

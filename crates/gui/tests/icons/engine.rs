@@ -59,8 +59,17 @@ fn modeling_and_sketch_ribbons_submit_the_extrude_and_move_icons() {
     let model = settled_frame(&mut owner, &request);
     assert_named_icon(&owner, &model, IconGlyph::Extrude, IconSize::Small, 18.);
     request.commands.authoring = crate::GuiAuthoringContext::Sketch;
+    request.commands.sketch_pattern_available = true;
     let sketch = settled_frame(&mut owner, &request);
-    assert_named_icon(&owner, &sketch, IconGlyph::Move, IconSize::Small, 18.);
+    for glyph in [
+        IconGlyph::Move,
+        IconGlyph::Delete,
+        IconGlyph::RectangularPattern,
+        IconGlyph::CircularPattern,
+        IconGlyph::CenterPoint,
+    ] {
+        assert_named_icon(&owner, &sketch, glyph, IconSize::Small, 18.);
+    }
 }
 
 #[test]
@@ -78,6 +87,7 @@ fn tools_ribbon_submits_the_go_measure_icon() {
     }
     let frame = settled_frame(&mut owner, &request);
     assert_named_icon(&owner, &frame, IconGlyph::Measure, IconSize::Large, 40.);
+    assert_named_icon(&owner, &frame, IconGlyph::TeamWeb, IconSize::Large, 40.);
 }
 
 #[test]
@@ -155,6 +165,26 @@ fn model_ribbon_submits_icons_for_work_features_and_patterns() {
         assert_named_icon(&owner, &frame, glyph, IconSize::Small, 18.);
     }
     assert_named_icon(&owner, &frame, IconGlyph::Simplify, IconSize::Large, 40.);
+
+    let light = oblikovati_model::theme::ThemeLibrary::new(Vec::new(), "Light").unwrap();
+    request.commands.theme = Some(crate::GuiThemeState::from_library(&light));
+    let light_frame = settled_frame(&mut owner, &request);
+    let axis = owner
+        .icons
+        .presentation
+        .key(IconGlyph::WorkAxis, IconSize::Small);
+    assert_ne!(
+        frame.resources.source(axis).unwrap().pixels(),
+        light_frame.resources.source(axis).unwrap().pixels()
+    );
+    for rendered in [&frame, &light_frame] {
+        let batch = rendered
+            .batches
+            .iter()
+            .find(|batch| batch.texture == axis)
+            .unwrap();
+        assert!(batch.vertices.iter().all(|vertex| vertex.srgb[3] == 115));
+    }
 }
 
 #[test]

@@ -49,7 +49,9 @@ pub(crate) fn draw_panel_content(
             owners.icons.cursor(ui, origin, position);
             let delete = GuiShellAction::DeleteSketchSelection;
             crate::chrome::command_control(ui, "Delete", delete, state, actions, || {
-                crate::widget_abi::button(ui, "Delete", owners.icons.cell(size))
+                owners
+                    .icons
+                    .button(ui, "Delete", crate::icons::IconGlyph::Delete, size)
             });
         }
         RibbonPanel::SketchPattern => {
@@ -62,16 +64,12 @@ pub(crate) fn draw_panel_content(
             let (position, size) = owners.icons.appearance.cell(1);
             owners.icons.cursor(ui, origin, position);
             let unavailable = ui.begin_disabled(true);
-            if owners.icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-                crate::widget_abi::button(ui, "Circular", size);
-            } else {
-                owners.icons.button(
-                    ui,
-                    "Circular",
-                    crate::icons::IconGlyph::CircularPattern,
-                    size,
-                );
-            }
+            owners.icons.button(
+                ui,
+                "Circular",
+                crate::icons::IconGlyph::CircularPattern,
+                size,
+            );
             drop(unavailable);
             return opened;
         }
@@ -179,7 +177,7 @@ pub(crate) fn draw_panel_content(
                     actions,
                 );
             }
-            return appearance_controls(ui, state, owners.editor, actions);
+            return appearance_controls(ui, state, owners.editor, owners.icons, actions);
         }
         RibbonPanel::Visibility => sketch::visibility_controls(ui, state, owners.icons, actions),
         RibbonPanel::Windows => appearance_view::windows(ui, origin, state, owners, actions),
@@ -322,6 +320,7 @@ fn appearance_controls(
     ui: &Ui,
     state: &GuiCommandState,
     editor: &mut crate::theme_editor::GuiThemeEditor,
+    icons: &crate::icons::GuiRibbonIcons,
     actions: &mut Vec<GuiShellAction>,
 ) -> bool {
     if let Some(theme) = &state.theme {
@@ -330,5 +329,5 @@ fn appearance_controls(
     if let Some(palette) = &state.color_scheme {
         palette.controls(ui, actions);
     }
-    state.theme.is_some() && crate::theme_editor::launcher(ui, editor)
+    state.theme.is_some() && crate::theme_editor::launcher(ui, editor, icons)
 }

@@ -22,11 +22,13 @@ impl GuiThemeEditor {
 }
 const THEME_EDITOR_POPUP: &str = "Theme editor";
 
-pub(crate) fn launcher(ui: &Ui, editor: &mut GuiThemeEditor) -> bool {
+pub(crate) fn launcher(
+    ui: &Ui,
+    editor: &mut GuiThemeEditor,
+    icons: &crate::icons::GuiRibbonIcons,
+) -> bool {
     ui.same_line();
-    let clicked = crate::widget_abi::button(ui, "Edit Theme", [100., 19.]);
-    editor.requested |= clicked;
-    clicked
+    launcher_icon(ui, editor, icons, [108., 20.])
 }
 pub(crate) fn launcher_icon(
     ui: &Ui,

@@ -92,8 +92,14 @@ void draw_ribbon_icon(const char* label, std::uint32_t texture, ImVec2 icon, boo
                          large ? hi.y - text.y - 2.0f : (lo.y + hi.y - text.y) * 0.5f);
     ImDrawList* draw = ImGui::GetWindowDrawList();
     draw->PushClipRect(lo, hi, true);
+    const auto& context = *ImGui::GetCurrentContext();
+    const float disabled_alpha = context.Style.DisabledAlpha;
+    // BeginDisabled has already dimmed text and frames. Set the glyph's final opacity separately.
+    const float glyph_alpha = (context.CurrentItemFlags & ImGuiItemFlags_Disabled) && disabled_alpha > 0.0f
+        ? 0.45f / disabled_alpha : 1.0f;
     draw->AddImage(reinterpret_cast<ImTextureID>(static_cast<std::uintptr_t>(texture)), at,
-                   ImVec2(at.x + icon.x, at.y + icon.y), ImVec2(0,0), ImVec2(1,1), ImGui::GetColorU32(ImVec4(1,1,1,1)));
+                   ImVec2(at.x + icon.x, at.y + icon.y), ImVec2(0,0), ImVec2(1,1),
+                   ImGui::GetColorU32(ImVec4(1,1,1,glyph_alpha)));
     if (show_caption) draw->AddText(caption, ImGui::GetColorU32(ImGuiCol_Text), label, end);
     draw->PopClipRect();
 }

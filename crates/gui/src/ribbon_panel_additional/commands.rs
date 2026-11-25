@@ -192,7 +192,7 @@ fn additional_icon_entries(
         RibbonPanel::PartModify => &[
             ("Move Bodies", Glyph::MoveBodies),
             ("Bend Part", Glyph::BendPart),
-            ("Copy Object", Glyph::Copy),
+            ("Copy Object", Glyph::CopyObject),
             ("Shell", Glyph::Shell),
         ],
         RibbonPanel::PartSimplification => &[

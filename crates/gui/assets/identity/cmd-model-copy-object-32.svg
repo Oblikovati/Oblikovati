@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Copy Object</title>
+  <desc id="d">Duplicate a neutral solid into an associative Indigo-Violet body or surface copy.</desc>
+  <g id="layer-body">
+    <polygon points="11,8.8 17.5,12 11,15.2 4.5,12" fill="var(--icon-body-top, #D2D7E2)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.1" stroke-linejoin="round"/>
+    <polygon points="4.5,12 11,15.2 11,22.7 4.5,19.5" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.1" stroke-linejoin="round"/>
+    <polygon points="17.5,12 11,15.2 11,22.7 17.5,19.5" fill="var(--icon-body-side, #677084)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.1" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-accent">
+    <polygon points="20.5,12.3 27,15.5 20.5,18.7 14,15.5" fill="var(--icon-mod-top, #B4AAFF)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon points="14,15.5 20.5,18.7 20.5,26.2 14,23" fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.15" stroke-linejoin="round"/>
+    <polygon points="27,15.5 20.5,18.7 20.5,26.2 27,23" fill="var(--icon-mod-side, #5948D4)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.15" stroke-linejoin="round"/>
+  </g>
+  <g id="layer-badge">
+    <circle cx="25" cy="7" r="5.6" fill="var(--icon-cutout, #121317)"/>
+    <circle cx="25" cy="7" r="4.5" fill="var(--status-success, #22C55E)" stroke="#0B2E18" stroke-width="0.9"/><path d="M25,4.7 L25,9.3 M22.7,7 L27.3,7" stroke="#FFF" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+</svg>

@@ -14,16 +14,12 @@ pub(crate) fn ribbon_button(
     let disabled = ui.begin_disabled(
         !state.sketch_pattern_available || !state.sketch_at_ready || state.transaction_open,
     );
-    let clicked = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-        crate::widget_abi::button(ui, "Rectangular", [108., 26.])
-    } else {
-        icons.button(
-            ui,
-            "Rectangular",
-            crate::icons::IconGlyph::RectangularPattern,
-            icons.appearance.cell(0).1,
-        )
-    };
+    let clicked = icons.button(
+        ui,
+        "Rectangular",
+        crate::icons::IconGlyph::RectangularPattern,
+        icons.appearance.cell(0).1,
+    );
     if clicked {
         dialog.open(state);
     }

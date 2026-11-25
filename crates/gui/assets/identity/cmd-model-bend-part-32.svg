@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Bend Part</title>
+  <desc id="d">Solid bar bent cleanly around a Warm Amber dashed bend axis.</desc>
+  <g id="layer-body">
+    <path d="M4,15 L15,15 L15,21 L4,21 Z" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.15"/>
+  </g>
+  <g id="layer-accent">
+    <path d="M15,15 C20,15 23,18 23,23 L23,27 L17,27 L17,23 C17,21.5 16.2,21 15,21 Z" fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.15"/><line x1="15" y1="6" x2="15" y2="26" stroke="var(--accent-work, #F59E0B)" stroke-width="1.5" stroke-dasharray="3 1.5"/>
+  </g>
+</svg>

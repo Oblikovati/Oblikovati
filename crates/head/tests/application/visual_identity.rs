@@ -406,7 +406,8 @@ fn native_command_artwork_is_visible_across_document_workspaces() {
     );
     world.save_capture("manage-command-icons");
     world.click_text("View");
-    assert_command_art(&world, &["UserInterface", "Switch", "New"]);
+    assert_command_art(&world, &["UserInterface", "Switch"]);
+    ribbon_chrome::assert_stacked_command_art(&world, "New");
     world.add_template(oblikovati_gui::GuiTemplateKind::Assembly);
     world.click_text("Assemble");
     assert_command_art(&world, &["Place", "Create"]);

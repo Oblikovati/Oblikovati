@@ -31,6 +31,11 @@ fn native_tab_strip_aligns_controls_and_separates_the_brand_mark() {
     assert!(icons.len() >= 2);
     assert_eq!(icons[0].1[0] - icons[0].0[0], 16.);
     assert!(icons[1].0[0] - icons[0].1[0] >= 8.);
+    let x = (band[0] * 0.9) as usize;
+    let border = [x, band[1] as usize - 1];
+    let initial = world.pixel_at(border);
+    world.click([x as i32, border[1] as i32 - 5]);
+    assert_eq!(world.pixel_at(border), initial);
     world.save_capture("ribbon-chrome");
     world.close();
 }
@@ -69,5 +74,40 @@ fn assert_row_pitch(world: &ApplicationWorld, upper: &str, lower: &str, pitch: f
     assert!(
         (actual - pitch).abs() <= 2.,
         "{upper:?}, {lower:?}: {actual}"
+    );
+}
+
+#[test]
+fn native_light_ribbon_shows_work_and_tools_artwork() {
+    let mut world = ApplicationWorld::new();
+    viewport_orientation::open_block(&mut world);
+    world.app().owner.select_theme_from_gui("Light").unwrap();
+    world.pump(Vec::new());
+    world.save_capture("light-model-commands");
+
+    world.click_text("Tools");
+    world.pump(Vec::new());
+    world.expect_text("Measure");
+    world.expect_text("Open Team Web");
+    world.save_capture("light-tools-commands");
+
+    world.click_text("View");
+    world.pump(Vec::new());
+    world.click_text("Edit Theme");
+    assert!(diagnostics::window_geometry("Theme editor").is_some());
+    world.close();
+}
+
+pub(super) fn assert_stacked_command_art(world: &ApplicationWorld, label: &str) {
+    let text = world.run(label);
+    let center = text.center()[0];
+    let top = text.minimum[1];
+    let icons = ribbon_appearance::icon_quads::icon_quads_inside((
+        [center - 24., top - 56.],
+        [center + 24., top],
+    ));
+    assert!(
+        icons.iter().any(|(min, max)| max[0] - min[0] >= 39.),
+        "expected command artwork above {label}"
     );
 }
