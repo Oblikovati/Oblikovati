@@ -10,7 +10,7 @@ mod rotate_dialog;
 use rotate_dialog::DEFAULT_INCREMENT;
 
 pub(super) const NAVIGATION_WINDOW: &str = "##navigation-bar";
-pub(super) const NAVIGATION_SIZE: [f32; 2] = [28., 176.];
+pub(super) const NAVIGATION_SIZE: [f32; 2] = [30., 176.];
 const ZOOM_MENU: &str = "##zoom-menu";
 const ORBIT_MENU: &str = "##orbit-menu";
 const VIEW_MENU: &str = "##navigation-menu";

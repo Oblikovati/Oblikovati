@@ -158,6 +158,13 @@ pub(crate) fn oriented(camera: &ViewportCamera, command: GuiOrientCommand) -> Vi
             }));
             looking(camera, corner, up)
         }
+        GuiOrientCommand::Bevel(normal) => {
+            let direction = normal.map(|axis| f64::from(axis.signum()));
+            if direction.iter().filter(|axis| **axis != 0.).count() < 2 {
+                return *camera;
+            }
+            looking(camera, unit(direction), [0., 1., 0.])
+        }
         GuiOrientCommand::Step(GuiViewStep::Right) => looking(camera, right, up),
         GuiOrientCommand::Step(GuiViewStep::Left) => looking(camera, negated(right), up),
         GuiOrientCommand::Step(GuiViewStep::Up) => looking(camera, up, negated(toward)),
@@ -176,6 +183,16 @@ mod tests {
     }
     fn close(a: Vector, b: Vector) -> bool {
         (0..3).all(|axis| (a[axis] - b[axis]).abs() < 1e-9)
+    }
+    #[test]
+    fn bevel_commands_snap_to_model_space_normals() {
+        let front = front();
+        let edge = oriented(&front, GuiOrientCommand::Bevel([1, 0, 1]));
+        let corner = oriented(&front, GuiOrientCommand::Bevel([-1, 1, 1]));
+        assert!(close(frame(&edge).2, unit([1., 0., 1.])));
+        assert!(close(frame(&corner).2, unit([-1., 1., 1.])));
+        assert_eq!(edge.target, front.target);
+        assert_eq!(corner.scale, front.scale);
     }
     #[test]
     fn selection_pivot_applies_to_face_and_step_but_not_roll() {

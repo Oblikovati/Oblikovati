@@ -25,6 +25,8 @@ fn uppercase_front(world: &mut ApplicationWorld) {
 
 #[then("no diagonal stroke crosses the face")]
 fn no_diagonal(world: &mut ApplicationWorld) {
+    // Sample the face paint without a hotspot outline crossing the probes.
+    world.hover(AWAY);
     let (position, parts) = layout();
     let center = [position[0] + parts.center[0], position[1] + parts.center[1]];
     let image = super::super::capture_framebuffer(&mut world.app().window.native);

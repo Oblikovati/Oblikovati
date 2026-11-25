@@ -16,10 +16,7 @@ fn shows_on_new(world: &mut ApplicationWorld) {
 #[given("Only in Current View is selected")]
 #[then("Only in Current View remains selected")]
 fn current_selected(world: &mut ApplicationWorld) {
-    assert!(
-        world.radio_selected(CURRENT_VIEW),
-        "expected {CURRENT_VIEW}"
-    );
+    assert!(world.checked(CURRENT_VIEW), "expected {CURRENT_VIEW}");
 }
 #[when("I clear the show-on-window-creation option")]
 #[when("the user clears the show-on-window-creation option")]
@@ -51,9 +48,9 @@ fn select_all(world: &mut ApplicationWorld) {
 }
 #[then("All 3D Views is selected and Only in Current View is cleared")]
 fn all_selected(world: &mut ApplicationWorld) {
-    assert!(world.radio_selected(ALL_VIEWS), "expected {ALL_VIEWS}");
+    assert!(world.checked(ALL_VIEWS), "expected {ALL_VIEWS}");
     assert!(
-        !world.radio_selected(CURRENT_VIEW),
+        !world.checked(CURRENT_VIEW),
         "expected {CURRENT_VIEW} clear"
     );
 }
@@ -64,14 +61,8 @@ fn select_current(world: &mut ApplicationWorld) {
 }
 #[then("Only in Current View is selected and All 3D Views is cleared")]
 fn current_only(world: &mut ApplicationWorld) {
-    assert!(
-        world.radio_selected(CURRENT_VIEW),
-        "expected {CURRENT_VIEW}"
-    );
-    assert!(
-        !world.radio_selected(ALL_VIEWS),
-        "expected {ALL_VIEWS} clear"
-    );
+    assert!(world.checked(CURRENT_VIEW), "expected {CURRENT_VIEW}");
+    assert!(!world.checked(ALL_VIEWS), "expected {ALL_VIEWS} clear");
 }
 #[when("I cancel the options")]
 #[when("the user cancels the options")]

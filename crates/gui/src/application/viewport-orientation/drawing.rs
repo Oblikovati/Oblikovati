@@ -35,15 +35,16 @@ pub(super) fn draw_control(
     axes: &GuiViewAxes,
     layout: &GuiOrientationLayout,
     origin: [f32; 2],
-    alpha: f32,
+    faces: &[ShownFace],
+    hit: Option<&hotspots::CubeHit>,
+    [alpha, chrome]: [f32; 2],
 ) {
     let list = ui.get_window_draw_list();
     let background = ui.style_color(StyleColor::WindowBg);
     let paint = cube_paint(background);
-    let mut faces = shown_faces(axes, layout, origin);
-    faces.reverse();
+    draw_contact_shadow(&list, faces, layout.half, alpha);
     let at = |point: [f32; 2]| [origin[0] + point[0], origin[1] + point[1]];
-    for shown in &faces {
+    for shown in faces.iter().rev() {
         let fill = faded(paint.fill(shown.face), alpha);
         list.add_polyline(shown.corners.to_vec(), fill)
             .filled(true)
@@ -54,10 +55,27 @@ pub(super) fn draw_control(
                 .build();
         }
     }
-    let accent = faded(ui.style_color(StyleColor::Text), alpha);
-    draw_home(&list, at(layout.home), accent);
-    if is_face_on(axes) {
-        draw_arrows(&list, layout, origin, accent);
+    if let Some(hit) = hit {
+        let accent = ui.style_color(StyleColor::NavHighlight);
+        list.add_polyline(hit.polygon.to_vec(), faded(accent, 0.32 * chrome))
+            .filled(true)
+            .build();
+        let mut border = hit.polygon.to_vec();
+        border.push(hit.polygon[0]);
+        list.add_polyline(border, faded(accent, chrome))
+            .thickness(1.5)
+            .build();
+    }
+    if chrome > 0. {
+        let ink = faded(ui.style_color(StyleColor::Text), chrome);
+        draw_home(&list, at(layout.home), ink);
+        let [x, y] = at(layout.menu);
+        list.add_triangle([x - 4., y - 2.], [x + 4., y - 2.], [x, y + 2.], ink)
+            .filled(true)
+            .build();
+        if is_face_on(axes) {
+            draw_arrows(&list, layout, origin, ink);
+        }
     }
     drop(list);
     // Keep dark ink readable over the Light face while it fades. Zero still hides the control.
@@ -112,14 +130,52 @@ fn cube_paint(background: [f32; 4]) -> CubePaint {
         label,
     }
 }
-fn draw_home(list: &imgui::DrawListMut, [x, y]: [f32; 2], color: [f32; 4]) {
-    list.add_triangle([x - 6., y], [x + 6., y], [x, y - 6.], color)
-        .filled(true)
-        .build();
-    list.add_rect([x - 4., y], [x + 4., y + 5.], color)
-        .filled(true)
-        .build();
+fn draw_contact_shadow(list: &imgui::DrawListMut, faces: &[ShownFace], half: f32, alpha: f32) {
+    let Some(first) = faces.first() else {
+        return;
+    };
+    let mut left = first.corners[0][0];
+    let mut right = left;
+    let mut bottom = first.corners[0][1];
+    for &[x, y] in faces.iter().flat_map(|face| &face.corners) {
+        left = left.min(x);
+        right = right.max(x);
+        bottom = bottom.max(y);
+    }
+    let center = (left + right) / 2.;
+    for (width, height) in [(1.2, 0.14), (1., 0.10), (0.8, 0.06)] {
+        let outline = (0..24)
+            .map(|index| {
+                let (sin, cos) = (index as f32 * std::f32::consts::TAU / 24.).sin_cos();
+                [
+                    center + half * width * cos,
+                    bottom + 2. + half * height * sin,
+                ]
+            })
+            .collect();
+        list.add_polyline(outline, [0., 0., 0., 0.08 * alpha])
+            .filled(true)
+            .build();
+    }
 }
+
+fn draw_home(list: &imgui::DrawListMut, [x, y]: [f32; 2], color: [f32; 4]) {
+    list.add_polyline(vec![[x - 7., y], [x, y - 6.], [x + 7., y]], color)
+        .thickness(1.4)
+        .build();
+    list.add_polyline(
+        vec![
+            [x - 5., y - 1.],
+            [x - 5., y + 6.],
+            [x + 5., y + 6.],
+            [x + 5., y - 1.],
+        ],
+        color,
+    )
+    .thickness(1.4)
+    .build();
+}
+
 fn draw_arrows(
     list: &imgui::DrawListMut,
     layout: &GuiOrientationLayout,
@@ -147,9 +203,30 @@ fn draw_arrows(
     triangle([x, y - R], [x, y + R / 2.]);
     let [x, y] = at(layout.step_down);
     triangle([x, y + R], [x, y - R / 2.]);
-    for (center, tip) in [(layout.roll_upper, R), (layout.roll_lower, -R)] {
-        let [x, y] = at(center);
-        list.add_circle([x, y], R, color).num_segments(10).build();
-        triangle([x + R + 2., y + tip], [x + R - 3., y]);
-    }
+    draw_roll_arc(list, at(layout.roll_upper), 1., color);
+    draw_roll_arc(list, at(layout.roll_lower), -1., color);
+}
+
+fn draw_roll_arc(list: &imgui::DrawListMut, center: [f32; 2], direction: f32, color: [f32; 4]) {
+    let arc: Vec<_> = (0..=12)
+        .map(|step| {
+            let angle = 0.8 + step as f32 * 3.8 / 12.;
+            [
+                center[0] + direction * 5. * angle.cos(),
+                center[1] + 5. * angle.sin(),
+            ]
+        })
+        .collect();
+    list.add_polyline(arc.clone(), color).thickness(1.4).build();
+    let [tip_x, tip_y] = arc[12];
+    list.add_polyline(
+        vec![
+            [tip_x - direction * 4., tip_y - 3.],
+            [tip_x, tip_y],
+            [tip_x - direction * 4., tip_y + 3.],
+        ],
+        color,
+    )
+    .thickness(1.4)
+    .build();
 }

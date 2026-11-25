@@ -16,11 +16,8 @@ impl OrientationControl {
         actions: &mut Vec<GuiShellAction>,
     ) {
         let corner = self.options.corner();
-        let x = if corner.is_left() {
-            area.left + MARGIN
-        } else {
-            area.right - NAVIGATION_SIZE[0] - MARGIN
-        };
+        let x = (control[0] + (control_size[0] - NAVIGATION_SIZE[0]) / 2.)
+            .clamp(area.left, (area.right - NAVIGATION_SIZE[0]).max(area.left));
         let below = corner == ScreenCorner::TopLeft || corner == ScreenCorner::TopRight;
         let y = if below {
             control[1] + control_size[1] + MARGIN
@@ -30,6 +27,7 @@ impl OrientationControl {
         let _surface =
             ui.push_style_color(StyleColor::WindowBg, ui.style_color(StyleColor::PopupBg));
         let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([4., 8.]));
+        let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([NAVIGATION_SIZE[0], 32.]));
         let _rounding = ui.push_style_var(imgui::StyleVar::WindowRounding(4.));
         ui.window(NAVIGATION_WINDOW)
             .position([x, y], imgui::Condition::Always)

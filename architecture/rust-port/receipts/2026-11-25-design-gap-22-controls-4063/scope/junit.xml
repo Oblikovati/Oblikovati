@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Orient a model using the viewport control: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature" package="testsuite/Feature: Orient a model using the viewport control: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T15:03:31.869333521Z" time="16.708595496"><testcase name="Scenario: Enable and select the orientation control visibility scope: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orientation/viewport-orientation.feature:162:3" time="16.708595496"><system-out><![CDATA[  Scenario: Enable and select the orientation control visibility scope
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the orientation control options are open
+   ✔  And showing the orientation control on window creation is enabled
+   ✔  And Only in Current View is selected
+   ✔  When the user clears the show-on-window-creation option
+   ✔  Then the All 3D Views and Only in Current View choices are unavailable
+   ✔  And the position, size and inactive opacity controls remain available
+   ✔  When the user enables the show-on-window-creation option
+   ✔  Then both visibility scope choices are available
+   ✔  And Only in Current View remains selected
+   ✔  When the user selects All 3D Views
+   ✔  Then All 3D Views is selected and Only in Current View is cleared
+   ✔  When the user selects Only in Current View
+   ✔  Then Only in Current View is selected and All 3D Views is cleared
+   ✔  When the user cancels the options
+   ✔  Then the options close and the part view remains displayed
+]]></system-out></testcase></testsuite></testsuites>

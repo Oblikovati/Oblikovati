@@ -6,13 +6,15 @@ use imgui::{MouseButton, StyleColor, Ui, WindowFlags};
 
 #[path = "axis_triad.rs"]
 mod axis_triad;
+mod hotspots;
 mod pick_arrows;
+use hotspots::cube_hit;
 use pick_arrows::{arrow_at, is_face_on, near};
 #[path = "cube.rs"]
 mod cube;
 #[path = "drawing.rs"]
 mod drawing;
-use cube::{ShownFace, inside, shown_faces};
+use cube::{ShownFace, shown_faces};
 #[path = "navigation_bar.rs"]
 mod navigation_bar;
 #[path = "navigation_wheel.rs"]
@@ -36,9 +38,7 @@ const CONTROL_WINDOW: &str = "##orientation-control";
 const CONTROL_MENU: &str = "##orientation-menu";
 const MARGIN: f32 = 8.;
 /// The cube's half width, as a share of the control's side; the arrows use the rest.
-const CUBE_SHARE: f32 = 0.3;
-/// How much of a face-on square's half width, from its edge, picks an edge or a corner.
-const EDGE_BAND: f32 = 0.6;
+const CUBE_SHARE: f32 = 64. / 240.;
 const LABEL_SHOWS_FROM: f32 = 0.3;
 const FACING_VIEWER: f32 = 0.02;
 const FACE_ON: f32 = 0.999;
@@ -102,6 +102,8 @@ pub enum GuiOrientCommand {
         right: bool,
         up: bool,
     },
+    /// Model-space normal of an edge or corner picked from an oblique view.
+    Bevel([i8; 3]),
     Step(GuiViewStep),
     Roll {
         clockwise: bool,
@@ -182,6 +184,7 @@ pub struct GuiOrientationLayout {
     pub center: [f32; 2],
     pub half: f32,
     pub home: [f32; 2],
+    pub menu: [f32; 2],
     pub step_right: [f32; 2],
     pub step_left: [f32; 2],
     pub step_up: [f32; 2],
@@ -198,6 +201,7 @@ impl GuiOrientationLayout {
             center: [middle, middle],
             half,
             home: [ARROW_REACH, ARROW_REACH],
+            menu: [side - ARROW_REACH, side - ARROW_REACH],
             step_right: [middle + beyond, middle],
             step_left: [middle - beyond, middle],
             step_up: [middle, middle - beyond],
@@ -207,49 +211,13 @@ impl GuiOrientationLayout {
         }
     }
 }
-/// What a press at this point of the cube picks. Face-on, its rim picks an edge or a corner.
-fn cube_pick(
-    point: [f32; 2],
-    axes: &GuiViewAxes,
-    layout: &GuiOrientationLayout,
-    origin: [f32; 2],
-) -> Option<GuiOrientCommand> {
-    let faces = shown_faces(axes, layout, origin);
-    let front = faces.first()?;
-    if front.facing < FACE_ON {
-        let hit = faces.iter().find(|shown| inside(point, &shown.corners))?;
-        return Some(GuiOrientCommand::Face(hit.face));
-    }
-    let across = (point[0] - origin[0] - layout.center[0]) / layout.half;
-    let down = (point[1] - origin[1] - layout.center[1]) / layout.half;
-    if across.abs() > 1. || down.abs() > 1. {
-        return None;
-    }
-    Some(rim_pick(across, down, axes, front.face))
-}
-fn rim_pick(across: f32, down: f32, axes: &GuiViewAxes, face: GuiCubeFace) -> GuiOrientCommand {
-    match (across.abs() > EDGE_BAND, down.abs() > EDGE_BAND) {
-        (true, true) => GuiOrientCommand::Corner {
-            right: across > 0.,
-            up: down < 0.,
-        },
-        (false, false) => GuiOrientCommand::Face(face),
-        // An edge picks the face beyond it, as the recorded top edge did.
-        (true, false) => {
-            let side = if across > 0. { 1. } else { -1. };
-            GuiOrientCommand::Face(GuiCubeFace::nearest(axes.right.map(|value| value * side)))
-        }
-        (false, true) => {
-            let side = if down < 0. { 1. } else { -1. };
-            GuiOrientCommand::Face(GuiCubeFace::nearest(axes.up.map(|value| value * side)))
-        }
-    }
-}
 #[derive(Default)]
 pub(crate) struct OrientationControl {
     options: OrientationOptions,
     projection: GuiViewProjection,
     navigation: NavigationBar,
+    chrome_alpha: f32,
+    fading: bool,
 }
 impl OrientationControl {
     pub(crate) fn cube_bounds(&self, area: WorkspaceArea) -> [f32; 4] {
@@ -264,7 +232,11 @@ impl OrientationControl {
         self.options.register_dockable(registry)?;
         self.navigation.register_dockable(registry)
     }
-    pub(crate) fn set_suspended(&self, suspended: bool) {
+    pub(crate) fn set_suspended(&mut self, suspended: bool) {
+        if suspended {
+            self.chrome_alpha = 0.;
+            self.fading = false;
+        }
         self.options.set_suspended(suspended);
         self.navigation.set_suspended(suspended);
     }
@@ -303,23 +275,53 @@ impl OrientationControl {
             window.build(|| {
                 ui.invisible_button("##orientation-area", [side, side]);
                 let layout = GuiOrientationLayout::for_side(side);
-                let alpha = if ui.is_item_hovered() {
-                    1.
+                let hovered = ui.is_item_hovered();
+                let step = ui.io().delta_time / 0.08;
+                self.chrome_alpha = if hovered {
+                    (self.chrome_alpha + step).min(1.)
                 } else {
-                    self.options.inactive_alpha()
+                    (self.chrome_alpha - step).max(0.)
                 };
+                self.fading = self.chrome_alpha != if hovered { 1. } else { 0. };
+                let idle = self.options.inactive_alpha();
+                let alpha = idle + (1. - idle) * self.chrome_alpha;
+                let point = ui.io().mouse_pos;
+                let local = [point[0] - position[0], point[1] - position[1]];
+                let faces = shown_faces(&axes, &layout, position);
+                let hit = hovered
+                    .then(|| cube_hit(point, &axes, &layout, &faces))
+                    .flatten();
                 let text = ui.style_color(StyleColor::Text);
                 let ink = state
                     .color_scheme
                     .as_ref()
                     .map_or(text, |scheme| scheme.contrasting_ink(text));
                 let overlay_text = ui.push_style_color(StyleColor::Text, ink);
-                draw_control(ui, &axes, &layout, position, alpha);
+                draw_control(
+                    ui,
+                    &axes,
+                    &layout,
+                    position,
+                    &faces,
+                    hit.as_ref(),
+                    [alpha, self.chrome_alpha],
+                );
                 if self.options.compass_shown() {
                     draw_compass(ui, &layout, position, alpha, self.options.north_angle());
                 }
                 if ui.is_item_clicked_with_button(MouseButton::Left) {
-                    press(ui, &axes, &layout, position, &self.options, actions);
+                    if near(local, layout.menu) {
+                        ui.open_popup(CONTROL_MENU);
+                    } else {
+                        press(
+                            local,
+                            &axes,
+                            &layout,
+                            hit.map(|hit| hit.command),
+                            &self.options,
+                            actions,
+                        );
+                    }
                 }
                 if ui.is_item_clicked_with_button(MouseButton::Right) {
                     ui.open_popup(CONTROL_MENU);
@@ -332,6 +334,9 @@ impl OrientationControl {
                 drop(overlay_text);
                 self.context_menu(ui, state, actions);
             });
+        } else {
+            self.chrome_alpha = 0.;
+            self.fading = false;
         }
         if visibility.navigation {
             self.navigation_bar(ui, icons, request, area, [position, [side, side]], actions);
@@ -422,7 +427,7 @@ impl OrientationControl {
         self.navigation.repeat_wheel();
     }
     pub(crate) fn needs_frame(&self) -> bool {
-        self.options.needs_frame() || self.navigation.needs_frame()
+        self.fading || self.options.needs_frame() || self.navigation.needs_frame()
     }
     /// A navigation command is running, so a click on the view belongs to it.
     pub(crate) fn owns_view_clicks(&self) -> bool {
@@ -443,20 +448,18 @@ fn control_flags() -> WindowFlags {
         | WindowFlags::NO_BRING_TO_FRONT_ON_FOCUS
 }
 fn press(
-    ui: &Ui,
+    local: [f32; 2],
     axes: &GuiViewAxes,
     layout: &GuiOrientationLayout,
-    origin: [f32; 2],
+    picked: Option<GuiOrientCommand>,
     options: &OrientationOptions,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    let point = ui.io().mouse_pos;
-    let local = [point[0] - origin[0], point[1] - origin[1]];
     if near(local, layout.home) {
         actions.push(GuiShellAction::Home);
         return;
     }
-    let command = arrow_at(local, axes, layout).or_else(|| cube_pick(point, axes, layout, origin));
+    let command = arrow_at(local, axes, layout).or(picked);
     if let Some(command) = command {
         actions.push(GuiShellAction::OrientView {
             command,

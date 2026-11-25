@@ -22,7 +22,7 @@ fn an_iso_view_shows_three_faces_and_a_press_picks_the_one_under_it() {
     names.sort_unstable();
     assert_eq!(names, ["Front", "Right", "Top"]);
     let above = [layout.center[0], layout.center[1] - layout.half * 0.9];
-    let picked = cube_pick(above, &isometric(), &layout, [0., 0.]);
+    let picked = cube_hit(above, &isometric(), &layout, &faces).map(|hit| hit.command);
     assert_eq!(picked, Some(GuiOrientCommand::Face(GuiCubeFace::Top)));
 }
 #[test]
@@ -53,7 +53,8 @@ fn a_face_on_rim_picks_corners_and_the_face_beyond_an_edge() {
             layout.center[1] + down * layout.half,
         ]
     };
-    let pick = |point| cube_pick(point, &FRONT_ON, &layout, [0., 0.]);
+    let faces = shown_faces(&FRONT_ON, &layout, [0., 0.]);
+    let pick = |point| cube_hit(point, &FRONT_ON, &layout, &faces).map(|hit| hit.command);
     assert_eq!(
         pick(at(0., 0.)),
         Some(GuiOrientCommand::Face(GuiCubeFace::Front))
@@ -79,4 +80,28 @@ fn the_arrows_answer_only_face_on() {
         Some(GuiOrientCommand::Step(GuiViewStep::Right))
     );
     assert_eq!(arrow_at(layout.step_right, &isometric(), &layout), None);
+}
+
+#[test]
+fn oblique_face_strips_route_to_model_space_edges_and_corners() {
+    let axes = isometric();
+    let layout = GuiOrientationLayout::for_side(120.);
+    assert_eq!(layout.half, 32.);
+    let faces = shown_faces(&axes, &layout, [0., 0.]);
+    let face = faces
+        .iter()
+        .find(|face| face.face == GuiCubeFace::Front)
+        .unwrap();
+    let [a, b, _, d] = face.corners;
+    let sample =
+        |u: f32, v: f32| std::array::from_fn(|i| a[i] + u * (b[i] - a[i]) + v * (d[i] - a[i]));
+    for (point, command) in [
+        (sample(0.5, 0.5), GuiOrientCommand::Face(GuiCubeFace::Front)),
+        (sample(0.97, 0.5), GuiOrientCommand::Bevel([1, 0, 1])),
+        (sample(0.97, 0.97), GuiOrientCommand::Bevel([1, 1, 1])),
+    ] {
+        let hit = cube_hit(point, &axes, &layout, &faces).unwrap();
+        assert_eq!(hit.command, command);
+        assert!(cube::inside(point, &hit.polygon));
+    }
 }
