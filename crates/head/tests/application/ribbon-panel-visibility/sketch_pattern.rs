@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::super::super::workspace_layout::browser_feature::{SKETCH, right_click_row};
+use super::super::super::workspace_layout::{
+    browser_feature::right_click_row, native_part::fixture_sketch,
+};
 use super::*;
 
 #[given("the full Sketch ribbon displays the Pattern panel and the Finish action")]
@@ -96,9 +98,14 @@ fn finish_without_editing(world: &mut ApplicationWorld) {
 
 #[when("the user reopens the same sketch from the model browser")]
 fn reopen_same_sketch(world: &mut ApplicationWorld) {
-    right_click_row(world, SKETCH);
+    let sketch = fixture_sketch(world);
+    right_click_row(world, &sketch.name);
     world.click_text("Edit Sketch");
     assert_eq!(Some(world.active_id()), world.previous_document);
+    assert_eq!(
+        world.app().owner.active_sketch_edit().unwrap().sketch,
+        sketch.id
+    );
     world.expect_text("Finish Sketch");
     sketch_unchanged(world);
 }

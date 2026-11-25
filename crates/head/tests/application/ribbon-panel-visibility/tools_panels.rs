@@ -29,6 +29,7 @@ fn initial_find(world: &mut ApplicationWorld) {
 }
 
 #[given("the Tutorials panel is visible after Team Web")]
+#[given("the Tutorials panel is visible")]
 fn enable_tutorials(world: &mut ApplicationWorld) {
     if caption(world, "Tutorials").is_none() {
         tools_tab_show_panels(world);
@@ -40,6 +41,7 @@ fn enable_tutorials(world: &mut ApplicationWorld) {
 
 #[when("the user opens Show Panels from the Options panel title menu")]
 #[when("the user opens Show Panels from the Options panel title context menu")]
+#[when("the user opens Show Panels from a ribbon panel title context menu")]
 #[when("the user reopens Show Panels from the Options panel title menu")]
 #[when("the user opens Show Panels again")]
 fn options_show_panels(world: &mut ApplicationWorld) {
@@ -58,7 +60,7 @@ fn panel_check(world: &mut ApplicationWorld, name: String, expected: String) {
     assert_eq!(world.checked(&name), expected == "checked", "{name}");
 }
 
-#[when(regex = r"^the user selects (Team Web|Tutorials|Find)$")]
+#[when(regex = r"^the user selects (Team Web|Tutorials|Find)(?: again)?$")]
 fn choose_panel(world: &mut ApplicationWorld, panel: String) {
     click_panel_row(world, &panel);
 }
@@ -75,6 +77,20 @@ fn click_panel_row(world: &mut ApplicationWorld, panel: &str) {
 #[then(regex = r"^the (Team Web|Tutorials|Find) panel disappears from the (?:Tools )?ribbon$")]
 fn panel_hidden(world: &mut ApplicationWorld, panel: String) {
     assert!(caption(world, &panel).is_none(), "{panel} remains visible");
+}
+
+#[then("Tutorials is checked in the panel list")]
+fn tutorials_checked_in_list(world: &mut ApplicationWorld) {
+    if side_selector::popup_depth() < 2 {
+        options_show_panels(world);
+    }
+    assert!(world.checked("Tutorials"));
+}
+
+#[then("Tutorials is unchecked in the panel list")]
+fn tutorials_unchecked_in_list(world: &mut ApplicationWorld) {
+    options_show_panels(world);
+    assert!(!world.checked("Tutorials"));
 }
 
 #[then("the other visible Tools panels remain available")]
@@ -200,7 +216,7 @@ fn open_current_panel_menu(world: &mut ApplicationWorld) {
     world.click_text("Show Panels");
 }
 
-const TOOLS_PANELS: [&str; 7] = [
+pub(super) const TOOLS_PANELS: [&str; 7] = [
     "Measure",
     "Material and Appearance",
     "Options",

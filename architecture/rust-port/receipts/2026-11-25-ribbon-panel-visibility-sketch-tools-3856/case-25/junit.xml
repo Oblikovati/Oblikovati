@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:12:13.047324741Z" time="60.175685191"><testcase name="Scenario: Retain a hidden sketch panel after reopening the sketch: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:359:3" time="60.175685191"><system-out><![CDATA[  Scenario: Retain a hidden sketch panel after reopening the sketch
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open with Sketch1 being edited
+   ✔  And the full Sketch ribbon displays the Pattern panel
+   ✔  When the user hides Pattern using Show Panels in the Sketch tab context menu
+   ✔  And the user finishes the sketch without changing geometry
+   ✔  And the user reopens the same sketch from the model browser
+   ✔  Then the Sketch ribbon is visible without the Pattern panel
+   ✔  When the user opens Show Panels from the Sketch tab context menu
+   ✔  Then Pattern is unchecked
+   ✔  When the user selects Pattern
+   ✔  Then the Pattern panel returns to the Sketch ribbon
+]]></system-out></testcase></testsuite></testsuites>
