@@ -26,6 +26,25 @@ fn an_iso_view_shows_three_faces_and_a_press_picks_the_one_under_it() {
     assert_eq!(picked, Some(GuiOrientCommand::Face(GuiCubeFace::Top)));
 }
 #[test]
+fn face_labels_follow_the_projected_horizontal_and_vertical_edges() {
+    let layout = GuiOrientationLayout::for_side(120.);
+    let front = shown_faces(&FRONT_ON, &layout, [0., 0.]).remove(0);
+    assert_eq!(front.label_basis(layout.half), [[1., 0.], [0., 1.]]);
+    let faces = shown_faces(&isometric(), &layout, [0., 0.]);
+    for side in faces.iter().filter(|shown| shown.face != GuiCubeFace::Top) {
+        let [right, down] = side.label_basis(layout.half);
+        assert!(right[0] > 0.7 && right[1].abs() > 0.4);
+        assert!(down[0].abs() < 0.00001 && down[1] > 0.8);
+    }
+    let top = faces
+        .iter()
+        .find(|shown| shown.face == GuiCubeFace::Top)
+        .unwrap();
+    let [right, down] = top.label_basis(layout.half);
+    assert!(right[0] > 0.7 && right[1] > 0.4);
+    assert!(down[0] < -0.7 && down[1] > 0.4);
+}
+#[test]
 fn a_face_on_rim_picks_corners_and_the_face_beyond_an_edge() {
     let layout = GuiOrientationLayout::for_side(120.);
     let at = |across: f32, down: f32| {

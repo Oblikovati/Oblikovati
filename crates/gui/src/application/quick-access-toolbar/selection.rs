@@ -18,6 +18,7 @@ pub(super) fn button(
         ui.open_popup(MENU);
     }
     drop(disabled);
+    let _padding = ui.push_style_var(imgui::StyleVar::WindowPadding([8., 4.]));
     if let Some(_menu) = ui.begin_popup(MENU) {
         choices(ui, state, actions);
         ui.dummy([0., 2.]);

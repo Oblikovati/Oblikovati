@@ -22,7 +22,12 @@ pub(super) fn draw_compass(
     for (letter, quarter) in [("N", 0.), ("E", 90.), ("S", 180.), ("W", 270.)] {
         let (sin, cos) = (north_degrees + quarter).to_radians().sin_cos();
         let at = [center[0] + sin * radius, center[1] - cos * radius];
-        crate::widget_abi::rotated_text(ui, at, color, letter, 0.);
+        let [width, height] = ui.calc_text_size(letter);
+        ui.get_window_draw_list().add_text(
+            [at[0] - width / 2., at[1] - height / 2.],
+            color,
+            letter,
+        );
     }
 }
 pub(super) fn draw_control(
@@ -62,21 +67,19 @@ pub(super) fn draw_control(
         alpha
     };
     for shown in faces.iter().filter(|shown| shown.facing > LABEL_SHOWS_FROM) {
-        draw_face_label(ui, shown, axes, faded(paint.label, label_alpha));
+        draw_face_label(ui, shown, layout.half, faded(paint.label, label_alpha));
     }
 }
-fn draw_face_label(ui: &Ui, shown: &ShownFace, axes: &GuiViewAxes, color: [f32; 4]) {
+fn draw_face_label(ui: &Ui, shown: &ShownFace, half: f32, color: [f32; 4]) {
     let center: [f32; 2] = std::array::from_fn(|axis| {
         shown.corners.iter().map(|corner| corner[axis]).sum::<f32>() / 4.
     });
-    let reading = shown.face.reading();
-    let angle = (-dot(reading, axes.up)).atan2(dot(reading, axes.right));
-    crate::widget_abi::rotated_text(
+    crate::widget_abi::projected_text(
         ui,
         center,
         color,
         &shown.face.label().to_ascii_uppercase(),
-        angle,
+        shown.label_basis(half),
     );
 }
 
@@ -100,7 +103,7 @@ fn cube_paint(background: [f32; 4]) -> CubePaint {
     } else if background[..3].iter().all(|channel| *channel < 0.01) {
         [0x212734, 0x0a0a0d, 0x141820, 0xa7aebd, 0xffffff]
     } else {
-        [0x323744, 0x252934, 0x1c1f28, 0x4b5368, 0xeceef2]
+        [0x3b4152, 0x2b303e, 0x1e222d, 0x4b5368, 0xeceef2]
     }
     .map(crate::theme::hex_rgb);
     CubePaint {

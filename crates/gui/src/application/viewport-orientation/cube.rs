@@ -7,6 +7,16 @@ pub(super) struct ShownFace {
     pub(super) facing: f32,
     pub(super) corners: [[f32; 2]; 4],
 }
+impl ShownFace {
+    pub(super) fn label_basis(&self, half: f32) -> [[f32; 2]; 2] {
+        let [bottom_left, bottom_right, _, top_left] = self.corners;
+        let edge = 2. * half;
+        [
+            std::array::from_fn(|axis| (bottom_right[axis] - bottom_left[axis]) / edge),
+            std::array::from_fn(|axis| (bottom_left[axis] - top_left[axis]) / edge),
+        ]
+    }
+}
 pub(super) fn shown_faces(
     axes: &GuiViewAxes,
     layout: &GuiOrientationLayout,
