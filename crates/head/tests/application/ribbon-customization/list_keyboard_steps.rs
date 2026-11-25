@@ -49,6 +49,23 @@ fn staged_sketches_selected(world: &mut ApplicationWorld) {
     expect_target_selection(world, "2DSketches");
 }
 
+#[when("the user selects \"2-D Drawing\" and extends the selection down to \"2D Sketches\"")]
+fn select_first_target_pair(world: &mut ApplicationWorld) {
+    let rows = target_row_runs(world);
+    let [first, second, ..] = rows.as_slice() else {
+        panic!("expected at least two staged rows");
+    };
+    assert_eq!(first.text, "2-DDrawing");
+    assert_eq!(second.text, "2DSketches");
+    world.click(diagnostics::pointer_pixels(first.center()));
+    super::row_selection::shift_down(world);
+}
+
+#[then("the first two rows remain selected")]
+fn first_target_pair_remains_selected(world: &mut ApplicationWorld) {
+    expect_target_selections(world, &["2-DDrawing", "2DSketches"]);
+}
+
 #[when("the user clicks the command name in the target row")]
 fn click_only_target_name(world: &mut ApplicationWorld) {
     let rows = target_row_runs(world);
