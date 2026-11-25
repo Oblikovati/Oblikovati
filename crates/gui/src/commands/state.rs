@@ -88,6 +88,8 @@ pub struct GuiCommandState {
     /// Native template files in the selected project, if it supplies a catalog.
     pub project_templates: std::sync::Arc<[crate::GuiProjectTemplate]>,
     pub project_template_issue: Option<String>,
+    /// The component awaiting acknowledgement before a populated drawing is created.
+    pub layout_warning: Option<String>,
     /// What a new document from each template measures as a file, in bytes.
     pub template_sizes: Vec<(crate::GuiTemplateKind, u64)>,
     /// Error retained for the chooser when template sizes cannot be inspected.

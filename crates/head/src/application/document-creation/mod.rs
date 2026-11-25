@@ -5,6 +5,8 @@ use oblikovati_api::{
     wire::{ActivateDocumentArgs, CloseDocumentArgs, CreateDocumentArgs, SetDocumentUnitsArgs},
 };
 use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind};
+mod layout_creation;
+pub(super) use layout_creation::LayoutCreation;
 mod project_catalog;
 pub(super) use project_catalog::ProjectTemplateCatalog;
 pub(super) use template_material::project_material;
@@ -24,6 +26,7 @@ impl<
         &mut self,
         template: GuiDocumentTemplate,
     ) -> Result<bool, String> {
+        self.clear_layout_request()?;
         let state = self.gui_command_state()?;
         if state.transaction_open || state.authoring == oblikovati_gui::GuiAuthoringContext::Sketch
         {

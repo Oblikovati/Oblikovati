@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: GPL-2.0-only
 macro_rules! drawing_work_methods {
     () => {
+        /// Drive a populated drawing request; example: `work.drawing_layout_from_gui(&request)?`.
+        fn drawing_layout_from_gui(
+            &mut self,
+            request: &oblikovati_gui::GuiDrawingLayoutAction,
+        ) -> Result<bool, String> {
+            Err(format!(
+                "Drawing layout {request:?}: expected a desktop document owner"
+            ))
+        }
         /// Show or clear a drawing preview; example: `work.base_view_preview_from_gui(None)?`.
         fn base_view_preview_from_gui(
             &mut self,

@@ -12,7 +12,7 @@ mod template_tiles;
 pub(crate) mod templates;
 #[path = "workspaces.rs"]
 pub(crate) mod workspaces;
-use crate::{GuiCommandState, GuiShellAction};
+use crate::{GuiCommandState, GuiDrawingLayoutAction, GuiShellAction};
 use imgui::{Condition, Ui};
 use template_catalog::TemplateChoice;
 use template_sort::{TemplateSort, size_heading};
@@ -125,6 +125,11 @@ impl TemplateChooser {
             self.request();
         }
         if std::mem::take(&mut self.requested) {
+            if has_layout_sources(state) {
+                actions.push(GuiShellAction::DrawingLayout(
+                    GuiDrawingLayoutAction::CaptureSources,
+                ));
+            }
             self.reveal_project_root(state);
             self.restore_project_selection(state);
             ui.open_popup("New document");
@@ -138,7 +143,7 @@ impl TemplateChooser {
             self.projects.close();
             self.clear_gallery_navigation();
         }
-        self.component.panel(ui);
+        self.component.panel(ui, state, actions);
     }
     /// A frame must follow so a nested dialog opens without waiting for an event.
     pub(crate) fn needs_frame(&self) -> bool {
@@ -405,7 +410,12 @@ impl TemplateChooser {
             if self.drawing_layout == Some(DrawingLayout::Assembly)
                 && template.kind() == GuiTemplateKind::Drawing
             {
-                self.component.request(active_document_name(state));
+                let project = match template {
+                    TemplateChoice::Project(template) => Some(template.clone()),
+                    TemplateChoice::BuiltIn(_) => None,
+                };
+                self.component
+                    .request_layout(active_document_name(state), state.document, project);
             } else {
                 actions.push(template.create_action());
             }
@@ -415,6 +425,11 @@ impl TemplateChooser {
         let cancelled = crate::widget_abi::button(ui, "Cancel", [0.; 2])
             || (keys_are_ours && ui.is_key_pressed(imgui::Key::Escape));
         if cancelled {
+            if has_layout_sources(state) {
+                actions.push(GuiShellAction::DrawingLayout(
+                    GuiDrawingLayoutAction::Cancel,
+                ));
+            }
             ui.close_current_popup();
         }
         ui.same_line();
@@ -427,6 +442,13 @@ impl TemplateChooser {
         }
     }
 }
+fn has_layout_sources(state: &GuiCommandState) -> bool {
+    state
+        .documents
+        .iter()
+        .any(|document| document.type_ == "part")
+}
+
 fn active_document_name(state: &GuiCommandState) -> &str {
     state
         .documents

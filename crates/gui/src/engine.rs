@@ -439,7 +439,6 @@ fn validate_logical_inputs(request: &GuiFrameRequest) -> Result<(), String> {
     }
     Ok(())
 }
-
 /// What the workspace shows, and where in window pixels, for the picture kept for its tab.
 fn workspace_front(
     request: &GuiFrameRequest,
@@ -480,6 +479,10 @@ fn home_follows_actions(
             | GuiShellAction::OpenDeferredDrawing(_)
             | GuiShellAction::CreateDocument(_)
             | GuiShellAction::CreateProjectTemplate(_)
+            | GuiShellAction::DrawingLayout(
+                crate::GuiDrawingLayoutAction::Confirm { .. }
+                | crate::GuiDrawingLayoutAction::Acknowledge { .. },
+            )
             | GuiShellAction::NewPart => home.active = false,
             _ => {}
         }

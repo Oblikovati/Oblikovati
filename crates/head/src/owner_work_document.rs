@@ -2,6 +2,12 @@
 //! Document lifecycle methods on the desktop work boundary.
 macro_rules! desktop_document_work {
     () => {
+        fn drawing_layout_from_gui(
+            &mut self,
+            request: &oblikovati_gui::GuiDrawingLayoutAction,
+        ) -> Result<bool, String> {
+            self.drawing_layout_action(request)
+        }
         fn load_full_from_gui(&mut self, id: u64) -> Result<bool, String> {
             oblikovati_api::client::Client::new(self.document_host())
                 .documents()

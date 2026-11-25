@@ -249,7 +249,8 @@ impl GuiShellAction {
             Self::OpenDocument(_)
             | Self::OpenDeferredDrawing(_)
             | Self::CreateDocument(_)
-            | Self::CreateProjectTemplate(_) => !state.transaction_open,
+            | Self::CreateProjectTemplate(_)
+            | Self::DrawingLayout(_) => !state.transaction_open,
             Self::LoadFullDocument(id) => {
                 state.document == Some(*id) && state.active_express() && !state.transaction_open
             }

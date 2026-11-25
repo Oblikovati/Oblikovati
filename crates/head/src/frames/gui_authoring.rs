@@ -135,6 +135,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         | GuiShellAction::CloseDocument(_)
         | GuiShellAction::SaveDocumentAs(_)
         | GuiShellAction::CreateDocument(_)
+        | GuiShellAction::DrawingLayout(_)
         | GuiShellAction::CreateProjectTemplate(_)
         | GuiShellAction::NewPart => document(owner, action),
         _ => sketch::apply(owner, action),
@@ -151,6 +152,7 @@ fn document(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result<bool, S
             request.document,
             Some(std::path::Path::new(&request.new_full_document_name)),
         ),
+        GuiShellAction::DrawingLayout(request) => owner.drawing_layout_from_gui(request),
         GuiShellAction::NewPart => owner.create_part_document(),
         GuiShellAction::CreateDocument(template) => owner.create_document_template(*template),
         GuiShellAction::CreateProjectTemplate(template) => {

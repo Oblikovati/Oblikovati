@@ -187,6 +187,16 @@ impl<
         &mut self,
         selected: &GuiProjectTemplate,
     ) -> Result<bool, String> {
+        self.clear_layout_request()?;
+        let package = self.project_template_package(selected)?;
+        self.create_project_recipe(selected.kind, package)
+            .map(|_| true)
+    }
+
+    pub(super) fn project_template_package(
+        &mut self,
+        selected: &GuiProjectTemplate,
+    ) -> Result<DocumentPackage, String> {
         let state = self.gui_command_state()?;
         if state.transaction_open || state.authoring == oblikovati_gui::GuiAuthoringContext::Sketch
         {
@@ -209,14 +219,14 @@ impl<
                 selected.path
             ));
         }
-        self.create_project_recipe(current.kind, package)
+        Ok(package)
     }
 
-    fn create_project_recipe(
+    pub(super) fn create_project_recipe(
         &mut self,
         kind: GuiTemplateKind,
         package: DocumentPackage,
-    ) -> Result<bool, String> {
+    ) -> Result<u64, String> {
         let template = GuiDocumentTemplate {
             kind,
             ..Default::default()
@@ -227,10 +237,10 @@ impl<
             ..Default::default()
         });
         let observer = self.factory.create()?;
-        let _created = self
+        let created = self
             .files
             .create_unbound(package, observer, &self.version, &mut self.guids)
             .map_err(|cause| cause.to_string())?;
-        Ok(true)
+        Ok(created.session_id)
     }
 }

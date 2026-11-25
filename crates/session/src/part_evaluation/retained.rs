@@ -38,6 +38,24 @@ pub(super) fn lease_is_active(lease: &AtomicBool) -> bool {
 }
 
 impl<Body, Failure> super::PartEvaluationSlot<Body, Failure> {
+    /// Capture the last evaluated recipe from this session for isolated display replay.
+    /// Example: `slot.replay_snapshot(&session)?` never lends superseded kernel bodies.
+    pub fn replay_snapshot<O: super::TransactionObserver>(
+        &self,
+        session: &super::DocumentSession<O>,
+    ) -> Result<
+        Option<std::sync::Arc<oblikovati_model::history::DocumentSnapshot>>,
+        super::PartEvaluationError,
+    > {
+        let published = self
+            .published
+            .as_ref()
+            .ok_or(super::PartEvaluationError::Unavailable {
+                document: session.document,
+            })?;
+        published.validate_owner(session)?;
+        Ok(published.evaluation.replay_snapshot().cloned())
+    }
     /// Retire the retained output; example: `slot.clear()` before closing its owner.
     pub fn clear(&mut self) {
         if let Some(previous) = self.published.take() {

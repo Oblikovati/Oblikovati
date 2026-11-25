@@ -11,11 +11,16 @@ pub(crate) fn drawing_tree(drawing: Option<&DrawingDocument>) -> Vec<DrawingBran
         resources.map(String::from).into(),
     )];
     if let Some(drawing) = drawing {
-        branches.extend(drawing.sheets().iter().map(sheet_branch));
+        branches.extend(
+            drawing
+                .sheets()
+                .iter()
+                .map(|sheet| sheet_branch(sheet, drawing.model_reference())),
+        );
     }
     branches
 }
-fn sheet_branch(sheet: &DrawingSheetRecipe) -> DrawingBranch {
+fn sheet_branch(sheet: &DrawingSheetRecipe, reference: &str) -> DrawingBranch {
     let mut rows = Vec::new();
     if sheet.border {
         rows.push("Default Border".into());
@@ -23,7 +28,13 @@ fn sheet_branch(sheet: &DrawingSheetRecipe) -> DrawingBranch {
     if !sheet.title_block.is_empty() {
         rows.push("Title Block".into());
     }
-    rows.extend(sheet.views.iter().map(|view| view.name.clone()));
+    let model = std::path::Path::new(reference)
+        .file_name()
+        .and_then(std::ffi::OsStr::to_str);
+    rows.extend(sheet.views.iter().map(|view| match model {
+        Some(model) if !sheet.annotations.is_empty() => format!("{} ({model})", view.name),
+        _ => view.name.clone(),
+    }));
     rows.extend(
         sheet
             .annotations

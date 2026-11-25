@@ -91,3 +91,34 @@ pub struct GuiDrawingLine {
     pub hidden: bool,
     pub preview: bool,
 }
+
+/// Owner validation for one extrusion expression and active document.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiExtrudeDistanceValidation {
+    pub generation: u64,
+    pub document: u64,
+    pub distance: String,
+    pub second_distance: Option<String>,
+    pub error: Option<String>,
+}
+
+/// A component selection retains the open document ID until its text is changed.
+#[derive(Clone, Debug, PartialEq)]
+pub enum GuiLayoutComponent {
+    Open(u64),
+    Named(String),
+}
+
+/// Owner actions for choosing and confirming a populated drawing layout.
+#[derive(Clone, Debug, PartialEq)]
+pub enum GuiDrawingLayoutAction {
+    CaptureSources,
+    Confirm {
+        template: Box<crate::GuiProjectTemplate>,
+        component: GuiLayoutComponent,
+    },
+    Acknowledge {
+        suppress: bool,
+    },
+    Cancel,
+}

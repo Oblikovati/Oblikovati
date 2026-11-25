@@ -280,6 +280,7 @@ pub enum GuiShellAction {
     NewPart,
     CreateDocument(crate::GuiDocumentTemplate),
     CreateProjectTemplate(crate::GuiProjectTemplate),
+    DrawingLayout(GuiDrawingLayoutAction),
     /// Picture the active window for the Save As preview; the file is not changed.
     CaptureWindowPreview,
     /// Render the active part from an isometric view for Save As.
@@ -463,19 +464,11 @@ pub enum GuiSelectionMode {
 }
 mod feature_requests;
 pub use feature_requests::{
-    GuiBaseViewRequest, GuiDrawingLine, GuiDrawingProjection, GuiExtrudeEditRequest,
-    GuiExtrudePreview, GuiExtrudeReferenceExtent, GuiFilletEditRequest, GuiFilletRequest,
-    GuiHoleRequest, GuiMoveBodyRequest, GuiShellFeatureRequest,
+    GuiBaseViewRequest, GuiDrawingLayoutAction, GuiDrawingLine, GuiDrawingProjection,
+    GuiExtrudeDistanceValidation, GuiExtrudeEditRequest, GuiExtrudePreview,
+    GuiExtrudeReferenceExtent, GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest,
+    GuiLayoutComponent, GuiMoveBodyRequest, GuiShellFeatureRequest,
 };
-/// Owner validation for one extrusion expression and active document.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct GuiExtrudeDistanceValidation {
-    pub generation: u64,
-    pub document: u64,
-    pub distance: String,
-    pub second_distance: Option<String>,
-    pub error: Option<String>,
-}
 mod parameter_mutation;
 pub use parameter_mutation::GuiParameterMutation;
 /// A bounded owner snapshot; the GUI holds no document history or transaction token.

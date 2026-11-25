@@ -2322,17 +2322,16 @@
           "fixtures/cad/document-creation-layout-candidate/English/layout-data/suppression-two-occurrences.oad": "a7140e0b9162cf26a635ccb686a4309a501074df5aca04ca638f8feb7d0470fe",
           "fixtures/cad/document-opening/OpenPart.opd": "d55a0cce8c436ece286dd96d1ebf8aa7a9e58058e5f059a528bd4f38e6ae8ea4"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-25-layout-confirmation-repro-3899/wayland-cucumber.json",
-        "cucumber_sha256": "94cb3cd43dbe94e0dcf82717a3133ec4376fdfd8d291531f7bf64099d80e7491",
+        "cucumber": "architecture/rust-port/receipts/2026-11-25-layout-confirmation-3899/wayland-cucumber.json",
+        "cucumber_sha256": "62cf9b7b027c98986ecf3a791c4b7a6f91e4fef10b2419a588143acd5665eafa",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-document-creation-populated-layout-current-3899/scenario-inventory.json",
         "scenario_inventory_sha256": "26b95d7430a1d9f645860155584b0d42d03923d859626db0c9941e9d731b24f3",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-layout-confirmation-repro-3899/wayland-arguments.json",
-        "scenario_arguments_sha256": "519365fb96b3eb249fd2a6965230db6247e86bd0ad3e6b7f43d20f5da44ff457",
-        "application_commit": "02b158f4a3ae75a5106344f1f05dfe6072a4be7c",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-layout-confirmation-3899/wayland-arguments.json",
+        "scenario_arguments_sha256": "450f7cb1d0a3295ec0590af4671c7f36be016fd70fc852bf0be12736b3179311",
+        "application_commit": "0d533413f48622b03c08caa361cfe4eaa0ad54f5",
         "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=document-creation <head-test-binary> application_scenarios_use_the_native_window --nocapture",
         "environment": "Linux Wayland, headless Weston and Vulkan Lavapipe",
-        "notes": "The two cancellation scenarios passed on Wayland. Both confirmation scenarios now exercise component selection. Strict build and runtime provenance remains open under #3978.",
-        "blocker": "Select Component disables OK and has no drawing creation or source update warning. The active Part also becomes current during chooser frames (#3899)."
+        "notes": "All four current scenarios and 65 steps passed on Wayland and X11. The frozen Front view retained its original 40 mm width after the working Part was edited to 60 mm. Strict build and runtime provenance remains open under #3978."
       }
     }
   },

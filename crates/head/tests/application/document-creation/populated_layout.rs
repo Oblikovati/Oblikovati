@@ -85,21 +85,34 @@ fn alternate_layout_part_exists(world: &mut ApplicationWorld) {
 
 #[given("the active part has been updated and then edited so that it needs updating again")]
 fn mark_part_update_needed(world: &mut ApplicationWorld) {
+    let document = world.active_id();
+    let changes_width = world.document_name(document) == "extrusion-rect-8mm";
     let client = Client::new(world.app().owner.document_host());
     let update = client
         .documents()
         .update(&UpdateDocumentArgs::default())
         .unwrap();
     assert!(!update.requires_update && update.errors.is_none());
-    client
-        .parameters()
-        .add(&ParameterSetArgs {
-            name: "layout_probe".into(),
-            expression: "10 mm".into(),
-            value_type: "numeric".into(),
-            ..Default::default()
-        })
-        .unwrap();
+    if changes_width {
+        client
+            .parameters()
+            .set(&ParameterSetArgs {
+                name: "width".into(),
+                expression: "60 mm".into(),
+                ..Default::default()
+            })
+            .unwrap();
+    } else {
+        client
+            .parameters()
+            .add(&ParameterSetArgs {
+                name: "layout_probe".into(),
+                expression: "10 mm".into(),
+                value_type: "numeric".into(),
+                ..Default::default()
+            })
+            .unwrap();
+    }
     // The next native frame can evaluate the edit, so check the update status here.
     assert!(
         client
@@ -222,6 +235,76 @@ fn expect_warning_component(world: &ApplicationWorld, name: &str) {
             .any(|run| run.list == warning.list && run.text.contains(name)),
         "expected the update warning to identify {name:?}"
     );
+}
+
+#[then("the message says the drawing reflects the model's non-updated state")]
+fn stale_layout_message(world: &mut ApplicationWorld) {
+    world.expect_text("The drawing reflects the model's non-updated state.");
+}
+
+#[then("the message includes a display preference and an OK control")]
+fn stale_layout_controls(world: &mut ApplicationWorld) {
+    world.expect_text("Do not show again this session");
+    world.run_in_window("Component Needs Updating", "OK");
+    assert_eq!(world.state().documents.len(), world.parts.len());
+}
+
+#[then("its sheet displays a border, title block and parts list")]
+fn populated_sheet(world: &mut ApplicationWorld) {
+    world.expect_text("Default Border");
+    world.expect_text("Title Block");
+    world.expect_text("PART NUMBER");
+    let state = world.state();
+    let id = state.document.unwrap();
+    let drawing = &state.drawing_documents[&id];
+    let sheet = &drawing.sheets()[drawing.active_sheet()];
+    let projection = &state.drawing_projections[&id];
+    assert!(sheet.border && !sheet.title_block.is_empty());
+    assert!(state.drawing_updates_deferred);
+    assert!(projection.error.is_none() && !projection.lines.is_empty());
+    let xs = projection
+        .lines
+        .iter()
+        .flat_map(|line| line.points.iter().map(|point| point[0]));
+    let (min, max) = xs.fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), x| {
+        (lo.min(x), hi.max(x))
+    });
+    assert!(
+        (max - min - 40.).abs() < 1e-6,
+        "expected the original 40 mm width, got {} mm",
+        max - min
+    );
+    assert_eq!(projection.parts_lists[0].row_count, 1);
+}
+
+#[then("the drawing browser lists a parts list and a view referencing the component")]
+fn browser_shows_proposed_component(world: &mut ApplicationWorld) {
+    world.expect_text("Parts List1");
+    world.expect_text("Front (extrusion-rect-8mm.opd)");
+}
+
+#[then("a new drawing becomes active")]
+fn alternate_drawing_active(world: &mut ApplicationWorld) {
+    assert_eq!(
+        world.state().document_type,
+        Some(oblikovati_api::types::DOCUMENT_DRAWING)
+    );
+    let drawing = world.active_id();
+    assert!(!world.parts.contains(&drawing));
+}
+
+#[then("its parts list identifies the selected component")]
+fn parts_list_names_alternate(world: &mut ApplicationWorld) {
+    let source = *world.parts.last().unwrap();
+    let display = world.document_name(source);
+    expect_part_row(world, &display);
+    world.expect_text(&display);
+}
+
+#[then("its browser contains a view referencing the selected component")]
+fn browser_shows_alternate_component(world: &mut ApplicationWorld) {
+    world.expect_text("Front (alternate-component.opd)");
+    world.expect_text("Parts List1");
 }
 
 pub(super) fn expect_sheet_previews(world: &mut ApplicationWorld) {

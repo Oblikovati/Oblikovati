@@ -180,6 +180,10 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             source: self.source,
         })
     }
+    /// Borrow the evaluated recipe for independent presentation replay; example: `evaluation.replay_snapshot()`.
+    pub fn replay_snapshot(&self) -> Option<&std::sync::Arc<DocumentSnapshot>> {
+        self.source.as_ref()
+    }
     /// Find a possible dirty tail since this result's source recipe.
     /// Example: `evaluation.replay_change(&candidate)` before planning a replay.
     pub fn replay_change(&self, candidate: &DocumentSnapshot) -> Option<FeatureReplayRange> {

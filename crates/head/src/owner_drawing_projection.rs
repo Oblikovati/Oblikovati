@@ -133,10 +133,18 @@ impl<
     ) -> GuiDrawingProjection {
         match self.files.deferred_drawing_views(drawing_id) {
             Ok(Some(views)) => {
-                return saved_sheet_projection(
-                    views,
-                    &drawing.sheets()[drawing.active_sheet()].name,
-                );
+                let mut frozen =
+                    saved_sheet_projection(views, &drawing.sheets()[drawing.active_sheet()].name);
+                if let Some(source) = self
+                    .files
+                    .drawing_reference(drawing_id, drawing.model_reference())
+                {
+                    match self.drawing_parts_lists(source, drawing) {
+                        Ok(tables) => frozen.parts_lists = tables,
+                        Err(error) => frozen.error = Some(error),
+                    }
+                }
+                return frozen;
             }
             Ok(None) => {}
             Err(cause) => {

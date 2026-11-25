@@ -113,11 +113,12 @@ mod widget_abi;
 pub use application::ribbon_customization::GuiRibbonSettingsStore;
 pub use commands::{
     GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
-    GuiDrawingLine, GuiDrawingProjection, GuiExtrudeDistanceValidation, GuiExtrudeEditRequest,
-    GuiExtrudePreview, GuiExtrudeReferenceExtent, GuiFeatureCondition, GuiFeatureEdit,
-    GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest, GuiMoveBodyRequest, GuiOffsetPlaneBase,
-    GuiOffsetPlaneValidation, GuiParameterMutation, GuiPartAssetKind, GuiPreviewImage, GuiProject,
-    GuiProjectGroup, GuiSelectionMode, GuiShellAction, GuiShellFeatureRequest, GuiSketchLineStyle,
+    GuiDrawingLayoutAction, GuiDrawingLine, GuiDrawingProjection, GuiExtrudeDistanceValidation,
+    GuiExtrudeEditRequest, GuiExtrudePreview, GuiExtrudeReferenceExtent, GuiFeatureCondition,
+    GuiFeatureEdit, GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest, GuiLayoutComponent,
+    GuiMoveBodyRequest, GuiOffsetPlaneBase, GuiOffsetPlaneValidation, GuiParameterMutation,
+    GuiPartAssetKind, GuiPreviewImage, GuiProject, GuiProjectGroup, GuiSelectionMode,
+    GuiShellAction, GuiShellFeatureRequest, GuiSketchLineStyle,
 };
 pub use engine::{
     GuiFrameEngine, GuiFrameOutput, GuiFrameRequest, GuiWindowAction, GuiWindowControls,

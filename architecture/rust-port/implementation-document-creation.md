@@ -62,6 +62,19 @@ the authored table beside the sheet's views. The live drawing presentation
 is keyed to the drawing and source revisions, so metadata edits refresh the
 table. [Native checks and screenshot](receipts/2026-11-25-part-backed-parts-list-3899/README.md)
 
+## Populated drawing layouts
+
+The chooser preserves the proposed Part's document ID and resolves a browsed
+file to its existing owner when possible. It binds the drawing recipe to
+that Part and validates its views before creating an unsaved drawing.
+
+The chooser captures the retained evaluated recipes of Parts that need
+updates when it opens. The requested layout replays the selected recipe in
+an isolated history and freezes those projected curves. The update warning
+names the selected component and waits for acknowledgement before adding
+the drawing tab. Its checkbox suppresses later warnings for the session.
+The parts list reads the linked Part's metadata. [Native confirmation runs](receipts/2026-11-25-layout-confirmation-3899/README.md)
+
 ## Remaining creation work
 
 Port subtype registration and flavor setup;

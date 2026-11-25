@@ -5,11 +5,15 @@ use crate::application::document_saving::folder_browser::{
     dialog_buttons, file_name_field, file_type_field, full_path,
 };
 use crate::application::file_system::NativeFolders;
+use crate::{
+    GuiCommandState, GuiDrawingLayoutAction, GuiLayoutComponent, GuiProjectTemplate, GuiShellAction,
+};
 use imgui::Ui;
 use std::rc::Rc;
 
 const TITLE: &str = "Select Component";
 const FILE_CHOOSER: &str = "Select Component File";
+const WARNING: &str = "Component Needs Updating";
 const NOT_AVAILABLE: &str = "Placing a drawing view is not available in this build.";
 
 pub(crate) struct ComponentDialog {
@@ -22,6 +26,10 @@ pub(crate) struct ComponentDialog {
     file_escape: DialogEscape,
     opening: bool,
     escape: DialogEscape,
+    template: Option<GuiProjectTemplate>,
+    proposed: Option<(u64, String)>,
+    warning_open: bool,
+    suppress_warning: bool,
 }
 impl Default for ComponentDialog {
     fn default() -> Self {
@@ -33,6 +41,10 @@ impl Default for ComponentDialog {
             file_escape: DialogEscape::default(),
             opening: false,
             escape: DialogEscape::default(),
+            template: None,
+            proposed: None,
+            warning_open: false,
+            suppress_warning: false,
         }
     }
 }
@@ -46,8 +58,28 @@ impl ComponentDialog {
     pub(crate) fn needs_frame(&self) -> bool {
         self.opening
     }
-    /// Draw the dialog; example: `dialog.panel(ui)` once the chooser has closed.
-    pub(crate) fn panel(&mut self, ui: &Ui) {
+    pub(super) fn request_layout(
+        &mut self,
+        name: &str,
+        id: Option<u64>,
+        template: Option<GuiProjectTemplate>,
+    ) {
+        self.request(name);
+        self.template = template;
+        self.proposed = id.map(|id| (id, name.to_owned()));
+    }
+
+    pub(super) fn panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        self.component_panel(ui, actions);
+        self.warning_panel(ui, state, actions);
+    }
+
+    fn component_panel(&mut self, ui: &Ui, actions: &mut Vec<GuiShellAction>) {
         if std::mem::take(&mut self.opening) {
             ui.open_popup(TITLE);
         }
@@ -68,7 +100,7 @@ impl ComponentDialog {
         }
         self.file_chooser(ui);
         ui.separator();
-        self.buttons(ui);
+        self.buttons(ui, actions);
     }
     /// A nested chooser: Open replaces the document name, and Cancel leaves it as it was.
     fn file_chooser(&mut self, ui: &Ui) {
@@ -99,18 +131,71 @@ impl ComponentDialog {
             ui.close_current_popup();
         }
     }
-    /// Placing the view needs a drawing engine, so OK stays muted and says why.
-    fn buttons(&mut self, ui: &Ui) {
+    fn buttons(&mut self, ui: &Ui, actions: &mut Vec<GuiShellAction>) {
+        let disabled = ui.begin_disabled(self.template.is_none() || self.name.trim().is_empty());
+        let confirm = crate::widget_abi::button(ui, "OK", [80., 0.]);
+        drop(disabled);
+        if self.template.is_none()
+            && ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED)
         {
-            let _muted = ui.begin_disabled(true);
-            crate::widget_abi::button(ui, "OK", [80., 0.]);
-        }
-        if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
             ui.tooltip_text(NOT_AVAILABLE);
+        }
+        if confirm && let Some(template) = self.template.take() {
+            let component = match &self.proposed {
+                Some((id, name)) if *name == self.name => GuiLayoutComponent::Open(*id),
+                _ => GuiLayoutComponent::Named(self.name.trim().to_owned()),
+            };
+            actions.push(GuiShellAction::DrawingLayout(
+                GuiDrawingLayoutAction::Confirm {
+                    template: Box::new(template),
+                    component,
+                },
+            ));
+            ui.close_current_popup();
+        } else if ui.is_key_pressed_no_repeat(imgui::Key::Escape) {
+            actions.push(GuiShellAction::DrawingLayout(
+                GuiDrawingLayoutAction::Cancel,
+            ));
+            ui.close_current_popup();
         }
         ui.same_line();
         let escaped = self.escape.pressed(ui);
         if crate::widget_abi::button(ui, "Cancel", [80., 0.]) || escaped {
+            actions.push(GuiShellAction::DrawingLayout(
+                GuiDrawingLayoutAction::Cancel,
+            ));
+            ui.close_current_popup();
+        }
+    }
+
+    fn warning_panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let Some(component) = state.layout_warning.as_ref() else {
+            self.warning_open = false;
+            return;
+        };
+        if !self.warning_open {
+            self.warning_open = true;
+            self.suppress_warning = false;
+            ui.open_popup(WARNING);
+        }
+        center_dialog(ui, [510., 160.]);
+        let Some(_warning) = ui.begin_modal_popup(WARNING) else {
+            return;
+        };
+        ui.text_wrapped(format!("{component} needs updating."));
+        ui.text_wrapped("The drawing reflects the model's non-updated state.");
+        ui.checkbox("Do not show again this session", &mut self.suppress_warning);
+        if crate::widget_abi::button(ui, "OK", [80., 0.]) {
+            actions.push(GuiShellAction::DrawingLayout(
+                GuiDrawingLayoutAction::Acknowledge {
+                    suppress: self.suppress_warning,
+                },
+            ));
             ui.close_current_popup();
         }
     }
