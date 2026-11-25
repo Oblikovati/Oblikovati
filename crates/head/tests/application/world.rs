@@ -50,6 +50,7 @@ pub(super) struct ApplicationWorld {
     /// The empty editor before entering content that the scenario will cancel.
     pub text_defaults_before_cancel: Option<oblikovati_gui::GuiSketchTextDraft>,
     pub observed_row_gap: Option<f32>,
+    pub open_dialog_restore_bounds: Option<([f32; 2], [f32; 2])>,
     pub observed_row_plain: Option<[u8; 4]>,
     pub observed_view: Option<[i32; 2]>,
     pub last_capture: Option<oblikovati_viewport::ViewportCapture>,
@@ -136,6 +137,7 @@ impl ApplicationWorld {
             text_creation_baseline: None,
             text_defaults_before_cancel: None,
             observed_row_gap: None,
+            open_dialog_restore_bounds: None,
             observed_row_plain: None,
             observed_view: None,
             last_capture: None,

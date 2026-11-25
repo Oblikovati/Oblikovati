@@ -57,10 +57,11 @@ pub(super) fn published_part_details(world: &ApplicationWorld) {
 
 #[given("`fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected with its name and preview")]
 #[given("`fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected in the detailed file list")]
+#[given("`fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected in Details view")]
 #[given(
     "`fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected with saved document properties and a thumbnail"
 )]
-fn preview_target_selected(world: &mut ApplicationWorld) {
+pub(super) fn preview_target_selected(world: &mut ApplicationWorld) {
     select_preview_path(world, fixture(EXTRUSION));
 }
 

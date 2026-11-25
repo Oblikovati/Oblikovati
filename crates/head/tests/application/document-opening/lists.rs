@@ -2,6 +2,9 @@
 //! Document-opening scenarios on the panes around the list: its views, order and folders.
 use super::*;
 
+#[path = "folder_reopening.rs"]
+mod folder_reopening;
+
 const CHILD_FOLDER: &str = "brackets";
 const NATIVE_CHILD: &str = "NativeChild";
 const NAVIGATION_PART: &str = "Navigation-Part.opd";
@@ -174,10 +177,9 @@ fn folder_row(world: &ApplicationWorld) -> String {
 }
 
 fn navigation_variant(world: &ApplicationWorld) -> bool {
-    world
-        .saved_path
-        .as_ref()
-        .is_some_and(|path| path.ends_with(NAVIGATION_PART))
+    world.saved_path.as_ref().is_some_and(|path| {
+        path.ends_with(NAVIGATION_PART) || path.ends_with(folder_reopening::NAVIGATION_DRAWING)
+    })
 }
 
 fn navigation_part_name(world: &ApplicationWorld) -> &'static str {
@@ -286,46 +288,6 @@ fn name_kept(world: &mut ApplicationWorld) {
 fn part_preview(world: &mut ApplicationWorld) {
     world.expect_no_text("No preview image");
 }
-// Reopening
-#[given("a drawing was opened from a child folder in the MCAD Software")]
-fn opened_from_child(world: &mut ApplicationWorld) {
-    let folder = child_folder(world);
-    let saved = saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
-    world.previous_document = Some(saved);
-    open_dialog(world);
-    look_in(world, &folder);
-    select_row(world, DRAWING_FILE);
-    choose_open(world);
-}
-#[given("that drawing remains active")]
-fn drawing_active(world: &mut ApplicationWorld) {
-    let name = world.state().document;
-    assert!(name.is_some(), "expected a document active");
-    world.expect_no_text("Look in");
-}
-#[given("the Open dialog is showing the same child folder")]
-fn showing_child(world: &mut ApplicationWorld) {
-    open_dialog(world);
-    world.expect_text(DRAWING_FILE);
-}
-#[when("I reopen the Open dialog in the same session")]
-#[when("the user reopens the Open dialog in the same session")]
-fn reopen(world: &mut ApplicationWorld) {
-    open_dialog(world);
-}
-#[then("it displays the original child folder")]
-fn original_folder(world: &mut ApplicationWorld) {
-    world.expect_text(DRAWING_FILE);
-}
-#[then("the file name field identifies the previously opened drawing")]
-fn name_previous(world: &mut ApplicationWorld) {
-    let shown = file_name_shown(world);
-    assert!(shown.contains(DRAWING_FILE), "file name {shown:?}");
-}
-#[then("the drawing preview is displayed")]
-fn drawing_preview(world: &mut ApplicationWorld) {
-    world.expect_no_text("No preview image");
-}
 // Maximize
 #[given("the Open dialog is open in the MCAD Software as a restored window")]
 fn restored_window(world: &mut ApplicationWorld) {
@@ -337,7 +299,7 @@ fn dialog_geometry() -> ([f32; 2], [f32; 2]) {
 #[when("I maximize the Open dialog")]
 #[when("the user maximizes the Open dialog")]
 fn maximize(world: &mut ApplicationWorld) {
-    world.observed_row_gap = Some(dialog_geometry().1[0]);
+    world.open_dialog_restore_bounds = Some(dialog_geometry());
     world.click_text("Maximize");
     settle(world);
     world.pump(Vec::new());
@@ -346,7 +308,7 @@ fn maximize(world: &mut ApplicationWorld) {
 fn fills_screen(_: &mut ApplicationWorld) {
     let (position, size) = dialog_geometry();
     assert!(
-        position == [0., 0.] && size[0] >= 1400.,
+        position == [0., 0.] && size[0] >= 1400. && size[1] >= 780.,
         "dialog {position:?} {size:?}"
     );
 }
@@ -366,10 +328,24 @@ fn restore(world: &mut ApplicationWorld) {
 }
 #[then("it returns to its previous window size and position")]
 fn restored_size(world: &mut ApplicationWorld) {
-    let earlier = world.observed_row_gap.expect("expected the earlier width");
-    assert_eq!(dialog_geometry().1[0], earlier, "width");
+    let earlier = world
+        .open_dialog_restore_bounds
+        .expect("expected the restored bounds");
+    assert_eq!(
+        dialog_geometry(),
+        earlier,
+        "expected the original position and size"
+    );
 }
 // File types
+#[given(
+    "`fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected with the native document filter active"
+)]
+fn native_filter_selected(world: &mut ApplicationWorld) {
+    published_preview::preview_target_selected(world);
+    assert!(holds_text(world, "All Documents (*.opd;*.oad;*.odd;*.ord)"));
+}
+
 #[when("I open the file-type filter list")]
 #[when("the user opens the file-type filter list")]
 fn open_type_list(world: &mut ApplicationWorld) {
@@ -413,7 +389,7 @@ fn filter_kept(world: &mut ApplicationWorld) {
 #[then("the part name and preview remain displayed")]
 #[then("the part name and preview remain displayed behind the menu")]
 fn part_name_kept(world: &mut ApplicationWorld) {
-    expect_name_and_preview(world, PART_FILE);
+    super::part_stays_selected(world);
 }
 // The display menu
 #[given("files are displayed in Details view")]

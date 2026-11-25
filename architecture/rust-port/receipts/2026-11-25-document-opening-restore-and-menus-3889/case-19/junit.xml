@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:57:02.417604579Z" time="79.493464317"><testcase name="Scenario: Maximize and restores the Open dialog: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:270:3" time="79.493464317"><system-out><![CDATA[  Scenario: Maximize and restores the Open dialog
+   ✔  Given the Open dialog is open in the MCAD Software as a restored window
+   ✔  And a saved part with a preview is selected
+   ✔  And `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected with its name and preview
+   ✔  When the user maximizes the Open dialog
+   ✔  Then the dialog expands to fill the available screen
+   ✔  And the file list, navigation pane, preview and bottom actions remain visible
+   ✔  And the selected part, file name and preview remain displayed
+   ✔  When the user restores the Open dialog
+   ✔  Then it returns to its previous window size and position
+   ✔  And the selected part, file name and preview remain displayed
+]]></system-out></testcase></testsuite></testsuites>

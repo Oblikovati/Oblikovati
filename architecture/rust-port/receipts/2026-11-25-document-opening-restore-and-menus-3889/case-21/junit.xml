@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:59:37.911107694Z" time="79.057941055"><testcase name="Scenario: Inspect and dismisses the file display menu: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:296:3" time="79.057941055"><system-out><![CDATA[  Scenario: Inspect and dismisses the file display menu
+   ✔  Given the Open dialog is open in the MCAD Software
+   ✔  And files are displayed in Details view
+   ✔  And a part name and preview are displayed
+   ✔  And `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected in Details view
+   ✔  When the user opens the file display menu
+   ✔  Then the menu offers extra large, large, medium and small icon sizes
+   ✔  And it offers List, Details, Tiles and Content views
+   ✔  And Details is indicated as the current view
+   ✔  When the user dismisses the menu without choosing another view
+   ✔  Then the file list remains in Details view
+   ✔  And the part name and preview remain displayed
+]]></system-out></testcase></testsuite></testsuites>

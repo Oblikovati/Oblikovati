@@ -94,7 +94,7 @@ fn save_drawing_previews(world: &mut ApplicationWorld) {
     assert!(world.state().drawing_documents.is_empty());
 }
 
-fn save_preview(world: &mut ApplicationWorld, path: &Path) {
+pub(super) fn save_preview(world: &mut ApplicationWorld, path: &Path) {
     world.click_text("File");
     let position = world.run("Save As").center();
     world.hover(position.map(|coordinate| coordinate as i32));
