@@ -14,6 +14,8 @@ mod cancellation;
 pub(super) mod native_input;
 #[path = "role_fixtures.rs"]
 mod role_fixtures;
+#[path = "save_native.rs"]
+mod save_native;
 #[path = "settings_tree.rs"]
 mod settings_tree;
 #[path = "workspace_folder.rs"]
@@ -118,12 +120,7 @@ fn project_tree(world: &mut ApplicationWorld) {
         .iter()
         .find(|project| project.active)
         .expect("expected the active project");
-    let (_, workspace) = project
-        .settings
-        .iter()
-        .find(|(name, _)| name == "Workspace")
-        .expect("expected the project's workspace setting");
-    world.expect_text(&format!("Workspace: {workspace}"));
+    world.expect_text(&format!("Workspace: {}", project.settings.workspace));
     world.expect_text("Folder Options");
 }
 #[when("I choose Done without changing the project")]

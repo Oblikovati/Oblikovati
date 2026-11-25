@@ -13,9 +13,17 @@ pub struct GuiProject {
     pub active: bool,
     /// Absolute reference library folders registered by this project.
     pub library_roots: Vec<std::path::PathBuf>,
-    pub settings: Vec<(String, String)>,
+    pub settings: GuiProjectSettings,
     /// What the tree folds away until it is asked for; example: `Folder Options` and its rows.
     pub groups: Vec<GuiProjectGroup>,
+}
+/// The recorded paths editable in a project's settings draft.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct GuiProjectSettings {
+    pub workspace: String,
+    pub libraries: Vec<String>,
+    pub templates: String,
+    pub design_data: String,
 }
 /// One project file request from Projects.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,6 +41,12 @@ pub enum GuiProjectAction {
     Activate {
         request: u64,
         path: std::path::PathBuf,
+    },
+    Save {
+        request: u64,
+        path: std::path::PathBuf,
+        name: String,
+        settings: GuiProjectSettings,
     },
 }
 /// One foldable branch of a project's settings.

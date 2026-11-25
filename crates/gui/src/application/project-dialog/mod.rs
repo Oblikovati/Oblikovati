@@ -9,12 +9,12 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 #[path = "new_project_wizard.rs"]
 mod new_project_wizard;
+mod project_editor;
 #[path = "project_picker.rs"]
 mod project_picker;
 
 const TITLE: &str = "Projects";
 const SIZE: [f32; 2] = [760., 520.];
-const NOT_AVAILABLE: &str = "This command is not available in this build.";
 static PROJECT_REQUEST: AtomicU64 = AtomicU64::new(1);
 
 fn next_project_request() -> u64 {
@@ -34,6 +34,7 @@ pub(crate) struct ProjectsDialog {
     open_groups: Vec<String>,
     wizard: new_project_wizard::NewProjectWizard,
     picker: project_picker::ProjectPicker,
+    editor: project_editor::ProjectEditor,
     activation_request: Option<u64>,
     activation_error: Option<String>,
 }
@@ -58,6 +59,7 @@ impl ProjectsDialog {
         self.inspection_redraw = false;
         self.wizard.cancel();
         self.picker.cancel();
+        self.editor.cancel();
         self.activation_request = None;
         self.activation_error = None;
     }
@@ -83,6 +85,7 @@ impl ProjectsDialog {
             return;
         }
         self.finish_activation(state);
+        self.editor.finish(state);
         let title = if self.dock_title.is_empty() {
             TITLE.to_owned()
         } else {
@@ -92,22 +95,19 @@ impl ProjectsDialog {
         let mut open = true;
         let mut done = false;
         Self::dockable_window(ui, &title, &mut open).build(|| {
-            self.project_rows(ui, &state.projects);
+            {
+                let _disabled = ui.begin_disabled(self.editor.is_open());
+                self.project_rows(ui, &state.projects);
+            }
             ui.separator();
-            self.settings_tree(ui, &state.projects);
+            self.settings_contents(ui, &state.projects);
             ui.separator();
-            if crate::widget_abi::button(ui, "New", [0.; 2]) {
-                self.wizard.request();
+            {
+                let _disabled = ui.begin_disabled(self.editor.is_open());
+                self.new_and_browse(ui, &state.projects);
             }
             ui.same_line();
-            if crate::widget_abi::button(ui, "Browse", [0.; 2]) {
-                let location = self
-                    .shown_project(&state.projects)
-                    .map(|row| row.location.clone());
-                self.picker.request(location.as_deref());
-            }
-            ui.same_line();
-            muted_button(ui, "Save");
+            self.editor.save_button(ui, actions);
             ui.same_line();
             self.apply_button(ui, state, actions);
             ui.same_line();
@@ -132,6 +132,16 @@ impl ProjectsDialog {
             self.close();
         }
     }
+    fn new_and_browse(&mut self, ui: &Ui, projects: &[GuiProject]) {
+        if crate::widget_abi::button(ui, "New", [0.; 2]) {
+            self.wizard.request();
+        }
+        ui.same_line();
+        if crate::widget_abi::button(ui, "Browse", [0.; 2]) {
+            let location = self.shown_project(projects).map(|row| row.location.clone());
+            self.picker.request(location.as_deref());
+        }
+    }
     fn finish_activation(&mut self, state: &GuiCommandState) {
         if let Some((request, result)) = &state.project_file_result
             && self.activation_request == Some(*request)
@@ -149,7 +159,9 @@ impl ProjectsDialog {
         let target = self
             .shown_project(&state.projects)
             .filter(|row| !row.active);
-        let _disabled = ui.begin_disabled(target.is_none() || self.activation_request.is_some());
+        let _disabled = ui.begin_disabled(
+            target.is_none() || self.activation_request.is_some() || self.editor.is_open(),
+        );
         if crate::widget_abi::button(ui, "Apply", [0.; 2])
             && let Some(project) = target
         {
@@ -160,6 +172,22 @@ impl ProjectsDialog {
             }));
             self.activation_request = Some(request);
             self.activation_error = None;
+        }
+    }
+    fn settings_contents(&mut self, ui: &Ui, projects: &[GuiProject]) {
+        if self.editor.is_open() {
+            if self.editor.panel(ui) {
+                self.editor.cancel();
+                self.inspection_redraw = true;
+            }
+            return;
+        }
+        self.settings_tree(ui, projects);
+        if let Some(project) = self.shown_project(projects)
+            && crate::widget_abi::button(ui, "Edit Settings", [0.; 2])
+        {
+            self.editor.request(project);
+            self.inspection_redraw = true;
         }
     }
     fn project_rows(&mut self, ui: &Ui, projects: &[GuiProject]) {
@@ -211,9 +239,11 @@ impl ProjectsDialog {
         };
         ui.bullet();
         ui.text_wrapped(format!("Location: {}", project.location));
-        for (label, value) in &project.settings {
-            ui.bullet_text(format!("{label}: {value}"));
-        }
+        ui.bullet_text(format!("Workspace: {}", project.settings.workspace));
+        ui.bullet_text(format!(
+            "Libraries: {}",
+            project.settings.libraries.join(", ")
+        ));
         for group in &project.groups {
             self.settings_group(ui, group);
         }
@@ -287,15 +317,6 @@ fn choose_project_name(ui: &Ui, label: &str, selected: bool) -> bool {
 fn project_row_name(project: &GuiProject) -> String {
     let mark = if project.active { "(active) " } else { "" };
     format!("{mark}{}", project.name)
-}
-fn muted_button(ui: &Ui, label: &str) {
-    {
-        let _muted = ui.begin_disabled(true);
-        crate::widget_abi::button(ui, label, [0.; 2]);
-    }
-    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
-        ui.tooltip_text(NOT_AVAILABLE);
-    }
 }
 #[cfg(test)]
 #[path = "../../../tests/application/document-creation/projects.rs"]

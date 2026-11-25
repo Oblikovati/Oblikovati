@@ -7,7 +7,7 @@ fn only_the_active_project_is_marked() {
         location: "/work/gearbox.opj".into(),
         active: true,
         library_roots: Vec::new(),
-        settings: Vec::new(),
+        settings: crate::GuiProjectSettings::default(),
         groups: Vec::new(),
     };
     assert_eq!(project_row_name(&project), "(active) Gearbox");

@@ -74,7 +74,10 @@ impl TemplateChooser {
             .iter()
             .find(|project| project.active)
             .map(|project| project.location.as_str());
-        if self.project_context_seen && self.active_project_location.as_deref() != current {
+        if self.project_context_seen
+            && (self.active_project_location.as_deref() != current
+                || self.project_template_revision != state.project_template_revision)
+        {
             self.selected = None;
             self.remembered_project_template = None;
             self.drawing_layout = None;
@@ -86,6 +89,7 @@ impl TemplateChooser {
             self.reveal_project_folder(state);
         }
         self.project_context_seen = true;
+        self.project_template_revision = state.project_template_revision;
         if self.active_project_location.as_deref() != current {
             self.active_project_location = current.map(str::to_owned);
         }

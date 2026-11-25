@@ -26,6 +26,12 @@ macro_rules! desktop_document_work {
                 GuiProjectAction::Activate { request, path } => {
                     (request, self.activate_desktop_project(path))
                 }
+                GuiProjectAction::Save {
+                    request,
+                    path,
+                    name,
+                    settings,
+                } => (request, self.save_desktop_project(path, name, settings)),
             };
             self.project_file_result = Some((*request, result));
             Ok(true)

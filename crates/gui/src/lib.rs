@@ -118,7 +118,8 @@ pub use commands::{
     GuiFeatureEdit, GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest, GuiLayoutComponent,
     GuiMoveBodyRequest, GuiOffsetPlaneBase, GuiOffsetPlaneValidation, GuiParameterMutation,
     GuiPartAssetKind, GuiPreviewImage, GuiProject, GuiProjectAction, GuiProjectGroup,
-    GuiSelectionMode, GuiShellAction, GuiShellFeatureRequest, GuiSketchLineStyle,
+    GuiProjectSettings, GuiSelectionMode, GuiShellAction, GuiShellFeatureRequest,
+    GuiSketchLineStyle,
 };
 pub use engine::{
     GuiFrameEngine, GuiFrameOutput, GuiFrameRequest, GuiWindowAction, GuiWindowControls,

@@ -51,7 +51,12 @@ impl<
                 location: project.path.display().to_string(),
                 active: active == Some(&project.path),
                 library_roots: project.bound.lookup.library_roots().to_vec(),
-                settings: project_settings(&project.configuration),
+                settings: oblikovati_gui::GuiProjectSettings {
+                    workspace: project.configuration.workspace.clone(),
+                    libraries: project.configuration.libraries.clone(),
+                    templates: project.configuration.templates.clone(),
+                    design_data: project.configuration.design_data.clone(),
+                },
                 groups: project_groups(&project.configuration),
             })
             .collect()
@@ -81,7 +86,36 @@ impl<
         self.refresh_project_templates();
         Ok(path.display().to_string())
     }
+    pub(super) fn save_desktop_project(
+        &mut self,
+        path: &std::path::Path,
+        name: &str,
+        settings: &oblikovati_gui::GuiProjectSettings,
+    ) -> Result<String, String> {
+        let configuration = oblikovati_persistence::project_file::ProjectConfiguration {
+            name: name.trim().to_owned(),
+            workspace: settings.workspace.clone(),
+            libraries: settings.libraries.clone(),
+            templates: settings.templates.clone(),
+            design_data: settings.design_data.clone(),
+        };
+        let refresh = self.files.active_project().is_some_and(|project| {
+            project.path == path
+                && (project.configuration.workspace != configuration.workspace
+                    || project.configuration.libraries != configuration.libraries
+                    || project.configuration.templates != configuration.templates
+                    || project.configuration.design_data != configuration.design_data)
+        });
+        self.files
+            .save_project(path, configuration)
+            .map_err(|cause| cause.to_string())?;
+        if refresh {
+            self.refresh_project_templates();
+        }
+        Ok(path.display().to_string())
+    }
     fn refresh_project_templates(&mut self) {
+        self.project_template_revision = self.project_template_revision.wrapping_add(1);
         let root = self
             .files
             .active_project()
@@ -220,14 +254,6 @@ impl<
     }
 }
 
-fn project_settings(
-    configuration: &oblikovati_persistence::project_file::ProjectConfiguration,
-) -> Vec<(String, String)> {
-    vec![
-        ("Workspace".to_string(), configuration.workspace.clone()),
-        ("Libraries".to_string(), configuration.libraries.join(", ")),
-    ]
-}
 /// A project file holds these folders; this build keeps no other per-project options, so the
 /// rows it cannot read say what the application does for every project.
 fn project_groups(

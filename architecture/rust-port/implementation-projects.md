@@ -83,6 +83,13 @@ template selection and shows a folder containing the newly active project's
 templates. Clicking a project row still inspects it, and any open document
 stays active. [Apply checks](receipts/2026-11-25-project-apply-3895/README.md)
 
+Edit Settings stages the inspected project's name, workspace, templates,
+design data, and reference library folders. Save validates the settings
+and atomically updates the existing project file. A configuration changed
+on disk since loading is refused and the draft remains open. Saving
+changes to the active project's paths refreshes its catalog and bound
+resources. [Project settings checks](receipts/2026-11-25-project-save-settings-3895/README.md)
+
 Project wire methods remain pending.
 
 ## Projects dock lifecycle

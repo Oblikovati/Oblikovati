@@ -3,7 +3,10 @@
 use super::*;
 use oblikovati_persistence::{
     project::{ProjectFileLookup, ProjectFileProbe},
-    project_file::{BoundProject, ProjectConfiguration, create_project_file, read_project_file},
+    project_file::{
+        BoundProject, ProjectConfiguration, create_project_file, read_project_file,
+        write_project_file,
+    },
 };
 
 /// Validated project ownership; its canonical path is its session identity.
@@ -106,6 +109,14 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     ) -> Result<LoadedProject, FileWorkspaceError> {
         let configuration = read_project_file(&canonical, &mut self.files)
             .map_err(FileWorkspaceError::ProjectConfiguration)?;
+        self.bind_project_candidate(canonical, configuration)
+    }
+
+    fn bind_project_candidate(
+        &mut self,
+        canonical: PathBuf,
+        configuration: ProjectConfiguration,
+    ) -> Result<LoadedProject, FileWorkspaceError> {
         let bound = configuration
             .bind(&canonical)
             .map_err(FileWorkspaceError::ProjectConfiguration)?;
@@ -122,14 +133,40 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
         })
     }
 
+    /// Save edited settings for a loaded project. Example: `host.save_project(path, settings)?`.
+    pub fn save_project(
+        &mut self,
+        path: &Path,
+        configuration: ProjectConfiguration,
+    ) -> Result<(), FileWorkspaceError> {
+        let index = self.project_index(path)?;
+        let candidate = self.bind_project_candidate(path.to_owned(), configuration)?;
+        let stored = read_project_file(path, &mut self.files)
+            .map_err(FileWorkspaceError::ProjectConfiguration)?;
+        if stored != self.projects[index].configuration {
+            return Err(FileWorkspaceError::ProjectConfiguration(
+                std::io::Error::other(format!(
+                    "project {path:?} changed on disk since it was loaded"
+                )),
+            ));
+        }
+        write_project_file(path, &candidate.configuration, &mut self.files)
+            .map_err(FileWorkspaceError::ProjectConfiguration)?;
+        self.projects[index] = candidate;
+        Ok(())
+    }
+
+    fn project_index(&self, canonical: &Path) -> Result<usize, FileWorkspaceError> {
+        self.projects
+            .iter()
+            .position(|project| project.path == canonical)
+            .ok_or_else(|| FileWorkspaceError::UnknownProject(canonical.into()))
+    }
+
     /// Select an already loaded canonical project without I/O or document mutation.
     /// Example: `host.select_project(&canonical)?;`.
     pub fn select_project(&mut self, canonical: &Path) -> Result<(), FileWorkspaceError> {
-        let index = self
-            .projects
-            .iter()
-            .position(|project| project.path == canonical)
-            .ok_or_else(|| FileWorkspaceError::UnknownProject(canonical.into()))?;
+        let index = self.project_index(canonical)?;
         self.active_project = Some(index);
         Ok(())
     }
@@ -137,11 +174,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
     /// Reload a registered project's libraries without changing selection or documents.
     /// Example: `host.reload_project_assets(&canonical)?;` after an external library edit.
     pub fn reload_project_assets(&mut self, canonical: &Path) -> Result<(), FileWorkspaceError> {
-        let index = self
-            .projects
-            .iter()
-            .position(|project| project.path == canonical)
-            .ok_or_else(|| FileWorkspaceError::UnknownProject(canonical.into()))?;
+        let index = self.project_index(canonical)?;
         let candidate = oblikovati_persistence::assets::load_project_asset_library(
             self.projects[index].bound.design_data.as_deref(),
             &mut self.files,

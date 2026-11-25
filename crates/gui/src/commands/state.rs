@@ -89,6 +89,8 @@ pub struct GuiCommandState {
     pub project_file_result: Option<(u64, Result<String, String>)>,
     /// Native template files in the selected project, if it supplies a catalog.
     pub project_templates: std::sync::Arc<[crate::GuiProjectTemplate]>,
+    /// Changes when the active project's catalog is rebuilt.
+    pub project_template_revision: u64,
     pub project_template_issue: Option<String>,
     /// The component awaiting acknowledgement before a populated drawing is created.
     pub layout_warning: Option<String>,

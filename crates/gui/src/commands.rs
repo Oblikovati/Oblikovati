@@ -486,6 +486,7 @@ pub use browser_choice::GuiBrowserChoice;
 mod presentation;
 pub use presentation::{
     GuiDocumentStorage, GuiPreviewImage, GuiProject, GuiProjectAction, GuiProjectGroup,
+    GuiProjectSettings,
 };
 mod state;
 pub use state::{GuiAuthoringContext, GuiCommandState};

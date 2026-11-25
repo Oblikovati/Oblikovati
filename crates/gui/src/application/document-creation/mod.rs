@@ -33,6 +33,7 @@ pub(crate) struct TemplateChooser {
     remembered_project_template: Option<std::path::PathBuf>,
     project_context_seen: bool,
     active_project_location: Option<String>,
+    project_template_revision: u64,
     /// A drawing template offers previews, and one must be accepted before it can be created.
     drawing_layout: Option<DrawingLayout>,
     component: component_dialog::ComponentDialog,
