@@ -380,10 +380,12 @@ fn different_part_file(world: &mut ApplicationWorld) {
     std::fs::write(path, b"listed by this scenario, never opened").unwrap();
 }
 #[when("I select the different part file and choose Open")]
+#[when("the user selects the different part file and choose Open")]
 fn select_different_file(world: &mut ApplicationWorld) {
     let folder = world.scratch_folder();
     world.enter_in_field("Look in", folder.to_str().unwrap());
-    world.click_text(LAYOUT_FILE);
+    let file = selected_component_file(world).to_owned();
+    world.click_text(&file);
     world.click_text("Open");
     world.pump(Vec::new());
 }
@@ -391,7 +393,25 @@ fn select_different_file(world: &mut ApplicationWorld) {
 fn component_shows_file(world: &mut ApplicationWorld) {
     world.expect_no_text("Look in");
     world.expect_text("Select Component");
-    world.expect_text(LAYOUT_FILE);
+    let file = selected_component_file(world);
+    let label = world.run("Document name");
+    assert!(
+        world
+            .frame
+            .runs
+            .iter()
+            .any(|run| run.list == label.list && run.text.ends_with(file)),
+        "expected the component field to end in {file:?}"
+    );
+}
+
+fn selected_component_file(world: &ApplicationWorld) -> &str {
+    world
+        .saved_path
+        .as_deref()
+        .and_then(std::path::Path::file_name)
+        .and_then(std::ffi::OsStr::to_str)
+        .unwrap_or(LAYOUT_FILE)
 }
 
 #[then("it displays a file list, a file name field and Open and Cancel controls")]

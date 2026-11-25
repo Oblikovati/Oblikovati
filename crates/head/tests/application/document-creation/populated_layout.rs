@@ -3,7 +3,7 @@
 use super::*;
 use oblikovati_api::{
     client::Client,
-    wire::{ParameterSetArgs, UpdateDocumentArgs},
+    wire::{ActivateDocumentArgs, ParameterSetArgs, UpdateDocumentArgs},
 };
 use oblikovati_gui::{GuiTemplateFolder, GuiTemplateKind, GuiTemplateUnits};
 use oblikovati_model::drawing::DrawingAnnotationDefinition;
@@ -13,6 +13,8 @@ const PROJECT: &str = "fixtures/cad/document-creation-layout-candidate.opj";
 const PART: &str = "fixtures/cad/document-opening/OpenPart.opd";
 const LAYOUT: &str = "fixtures/cad/document-creation-layout-candidate/English/Populated Layout.odd";
 const UPDATED_PART: &str = "fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd";
+const ALTERNATE_PART: &str =
+    "fixtures/cad/document-creation-layout-candidate/English/layout-data/alternate-component.opd";
 pub(super) const TITLE: &str = "Populated Layout";
 
 #[given(
@@ -43,10 +45,42 @@ fn open_layout_part(world: &mut ApplicationWorld, path: &std::path::Path) {
     "a disposable copy of `fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd` is active"
 )]
 fn open_disposable_layout_part(world: &mut ApplicationWorld) {
-    let source = super::super::super::scenario_root().join(UPDATED_PART);
+    open_disposable_part(world, UPDATED_PART);
+}
+
+fn open_disposable_part(world: &mut ApplicationWorld, relative: &str) {
+    let source = super::super::super::scenario_root().join(relative);
     let copy = world.scratch_folder().join(source.file_name().unwrap());
     std::fs::copy(source, &copy).unwrap();
     open_layout_part(world, &copy);
+}
+
+#[given(
+    "disposable copies of `fixtures/cad/document-creation-layout-candidate/English/layout-data/extrusion/extrusion-rect-8mm.opd` and `fixtures/cad/document-creation-layout-candidate/English/layout-data/alternate-component.opd` are open in the same session"
+)]
+fn open_both_layout_parts(world: &mut ApplicationWorld) {
+    open_disposable_part(world, UPDATED_PART);
+    open_disposable_part(world, ALTERNATE_PART);
+    assert_ne!(world.parts[0], world.parts[1]);
+    world.previous_document = Some(world.parts[0]);
+}
+
+#[given("each part has been updated and then edited so that it needs updating again")]
+fn mark_both_layout_parts(world: &mut ApplicationWorld) {
+    mark_part_update_needed(world);
+    let first = world.parts[0];
+    Client::new(world.app().owner.document_host())
+        .documents()
+        .activate(&ActivateDocumentArgs { id: first })
+        .unwrap();
+    mark_part_update_needed(world);
+}
+
+#[given("the file-selection dialog can access the alternate part")]
+fn alternate_layout_part_exists(world: &mut ApplicationWorld) {
+    let path = world.scratch_folder().join("alternate-component.opd");
+    assert!(path.is_file(), "expected the alternate Part at {path:?}");
+    world.saved_path = Some(path);
 }
 
 #[given("the active part has been updated and then edited so that it needs updating again")]
@@ -114,16 +148,22 @@ fn saved_layout_is_available(world: &mut ApplicationWorld) {
 
 #[given("the user selects the assembly layout and opens its component-selection dialog")]
 fn open_layout_component_dialog(world: &mut ApplicationWorld) {
-    open_chooser(world);
-    world.click_text("English");
-    world.click_text(TITLE);
-    world.click_text("Assembly Layout");
+    select_populated_layout(world);
     create_part(world);
     world.pump(Vec::new());
     world.expect_text("Select Component");
 }
 
+#[when("the user selects the drawing template and populated layout")]
+fn select_populated_layout(world: &mut ApplicationWorld) {
+    open_chooser(world);
+    world.click_text("English");
+    world.click_text(TITLE);
+    world.click_text("Assembly Layout");
+}
+
 #[given("the dialog displays the active part")]
+#[then("the component-selection dialog displays the proposed component")]
 pub(super) fn expect_active_component_name(world: &mut ApplicationWorld) {
     let id = world.active_id();
     let expected = world.document_name(id).replace(' ', "");
@@ -140,6 +180,47 @@ pub(super) fn expect_active_component_name(world: &mut ApplicationWorld) {
             }),
         "expected the component field to display {expected:?}: {}",
         world.text()
+    );
+}
+
+#[when("the user confirms that component in the component-selection dialog")]
+#[when("the user confirms the selected component")]
+fn confirm_component(world: &mut ApplicationWorld) {
+    let button = world.run_in_window("Select Component", "OK");
+    let point = super::super::super::diagnostics::pointer_pixels(button.center());
+    world.click(point);
+    world.pump(Vec::new());
+}
+
+#[then("a message identifies the component as needing an update")]
+fn component_needs_update(world: &mut ApplicationWorld) {
+    let part = world.previous_document.expect("expected the proposed Part");
+    let name = world.document_name(part).replace(' ', "");
+    if !world.shows("needs updating") {
+        let freshness = Client::new(world.app().owner.document_host())
+            .documents()
+            .requires_update();
+        panic!(
+            "expected an update warning for {name:?}; active document update status: {freshness:?}"
+        );
+    }
+    expect_warning_component(world, &name);
+}
+
+#[then("a message identifies the selected component as needing an update")]
+fn selected_component_needs_update(world: &mut ApplicationWorld) {
+    expect_warning_component(world, "alternate-component");
+}
+
+fn expect_warning_component(world: &ApplicationWorld, name: &str) {
+    let warning = world.run("needs updating");
+    assert!(
+        world
+            .frame
+            .runs
+            .iter()
+            .any(|run| run.list == warning.list && run.text.contains(name)),
+        "expected the update warning to identify {name:?}"
     );
 }
 
