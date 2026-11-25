@@ -124,6 +124,7 @@ fn run_desktop_restart_check(world: &ApplicationWorld) {
         super::super::scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
     let output = super::super::world::reports_folder().join("docking-process-restart");
     let layout = saved_restart_layout(world);
+    let (area, _) = world.docking_resize.expect("saved dock layout bounds");
     let result = std::process::Command::new("python3")
         .args([
             script.path(),
@@ -133,6 +134,8 @@ fn run_desktop_restart_check(world: &ApplicationWorld) {
         ])
         .arg("--layout")
         .arg(layout.path())
+        .arg("--area")
+        .args(area.map(|edge| edge.to_string()))
         .output()
         .expect("docking restart: expected python3 and the native desktop test");
     assert!(

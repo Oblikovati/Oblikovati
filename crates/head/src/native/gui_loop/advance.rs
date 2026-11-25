@@ -31,6 +31,7 @@ impl NativeHeadWindow {
         let now = self.gui_epoch.elapsed();
         let notice = self.native_gui_notice()?;
         let gui = self.gui.as_mut().expect("initialized GUI");
+        let previous_area = gui.document_area;
         let mut update = gui.step_scaled(
             now,
             extent,
@@ -39,7 +40,17 @@ impl NativeHeadWindow {
             commands,
             notice.as_deref(),
         )?;
-        if gui.dirty {
+        if previous_area != gui.document_area
+            && let Some((layout_extent, Some(area))) = gui.document_area
+            && self.view.set_document_projection(layout_extent, area)?
+        {
+            // Annotation coordinates were prepared from the previous projection.
+            gui.dirty = true;
+            gui.deadline = Some(now);
+            update.changed = true;
+            update.deferred = true;
+            update.wake_after = Some(Duration::ZERO);
+        } else if gui.dirty {
             publish_gui(&mut self.view, gui, now, &mut update)?;
         }
         let drawing = self.drawing_windows.advance(

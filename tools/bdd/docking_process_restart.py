@@ -13,10 +13,11 @@ import tempfile
 import time
 from typing import TypedDict
 
-# These crops sample the front face and adjacent background of the native Part
-# fixture after the two browsers occupy the right dock on the 1440 × 900 display.
-FIXTURE_FACE_CROP = "120x80+747+343"
-VIEW_BACKGROUND_CROP = "120x80+550+343"
+# Sample the same points on the fixture and background relative to the live
+# document center, which depends on the saved dock arrangement.
+FIXTURE_FACE_OFFSET = (27, -107)
+VIEW_BACKGROUND_OFFSET = (-170, -107)
+ViewportArea = tuple[int, int, int, int]
 
 
 class WorkspaceSettings(TypedDict):
@@ -143,7 +144,7 @@ def compare_panel(before: Path, after: Path) -> None:
 
 
 def bright_pixel_fraction(image: Path, crop: str) -> float:
-    """Measure the bright area in a crop, for example bright_pixel_fraction(image, FIXTURE_FACE_CROP)."""
+    """Measure the fraction of bright pixels in one image crop."""
     result = subprocess.run(
         ["convert", str(image), "-crop", crop, "+repage", "-colorspace", "gray",
          "-threshold", "48%", "-format", "%[fx:mean]", "info:"],
@@ -161,10 +162,20 @@ def bright_pixel_fraction(image: Path, crop: str) -> float:
     return fraction
 
 
-def check_visible_part(image: Path) -> ViewportSamples:
-    """Require face and background contrast, for example check_visible_part(Path('after.png'))."""
-    face = bright_pixel_fraction(image, FIXTURE_FACE_CROP)
-    background = bright_pixel_fraction(image, VIEW_BACKGROUND_CROP)
+def viewport_crop(area: ViewportArea, offset: tuple[int, int]) -> str:
+    """Locate a fixture sample in the live document rectangle."""
+    left, top, right, bottom = area
+    x = (left + right) // 2 + offset[0]
+    y = (top + bottom) // 2 + offset[1]
+    if not (left <= x and x + 120 <= right and top <= y and y + 80 <= bottom):
+        raise ValueError(f"sample at {x}, {y}: expected 120×80 pixels inside document area {area}")
+    return f"120x80+{x}+{y}"
+
+
+def check_visible_part(image: Path, area: ViewportArea) -> ViewportSamples:
+    """Require front-face and background contrast in the document area."""
+    face = bright_pixel_fraction(image, viewport_crop(area, FIXTURE_FACE_OFFSET))
+    background = bright_pixel_fraction(image, viewport_crop(area, VIEW_BACKGROUND_OFFSET))
     if face < 0.95 or background > 0.05:
         raise AssertionError(
             f"viewport capture {image}: face fraction {face}, background fraction {background}; "
@@ -249,7 +260,9 @@ def restart_in_same_profile(
     return panels
 
 
-def exercise(binary: Path, fixture: Path, output: Path, layout: Path) -> RestartResult:
+def exercise(
+    binary: Path, fixture: Path, output: Path, layout: Path, area: ViewportArea
+) -> RestartResult:
     """Test a full restart with the workspace saved by the native scenario."""
     output.mkdir(parents=True, exist_ok=True)
     fixture_hash = file_hash(fixture)
@@ -260,8 +273,8 @@ def exercise(binary: Path, fixture: Path, output: Path, layout: Path) -> Restart
         "fixture_sha256": fixture_hash,
         "binary_sha256": file_hash(binary),
         "panels": panels,
-        "viewport_before": check_visible_part(output / "before.png"),
-        "viewport_after": check_visible_part(output / "after.png"),
+        "viewport_before": check_visible_part(output / "before.png", area),
+        "viewport_after": check_visible_part(output / "after.png", area),
     }
 
 
@@ -272,9 +285,11 @@ def main() -> None:
     parser.add_argument("fixture", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--layout", type=Path, required=True)
+    parser.add_argument("--area", type=int, nargs=4, required=True)
     args = parser.parse_args()
     result = exercise(
-        args.binary.resolve(), args.fixture.resolve(), args.output.resolve(), args.layout.resolve()
+        args.binary.resolve(), args.fixture.resolve(), args.output.resolve(), args.layout.resolve(),
+        tuple(args.area),
     )
     (args.output / "restart-summary.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))

@@ -2,6 +2,39 @@
 use super::*;
 
 impl Viewport {
+    /// Recenter the current projection within the desktop layout while retaining the view.
+    /// Example: `viewport.set_document_projection([1000, 720], [200, 120, 900, 680])?`.
+    pub fn set_document_projection(
+        &mut self,
+        extent: [u32; 2],
+        region: [u32; 4],
+    ) -> Result<bool, String> {
+        self.live()?;
+        self.refresh_extent()?;
+        // A native resize can supersede the GUI frame while its draws are being prepared.
+        if self.extent != extent {
+            return Ok(false);
+        }
+        let framing = crate::fit_region::fit_region(extent, region)?;
+        if self.layout_framing == Some(framing) {
+            return Ok(false);
+        }
+        let next = next_generation(self.camera)?;
+        let changed = self.live()?.set_layout_projection(framing);
+        self.layout_framing = Some(framing);
+        if changed {
+            self.camera = next;
+            self.completed = None;
+            self.projection_cache.get_mut().clear();
+        }
+        Ok(changed)
+    }
+
+    pub(crate) fn current_layout_framing(&self) -> Option<crate::fit_region::FitFraming> {
+        self.layout_framing
+            .filter(|layout| layout.extent == self.extent)
+    }
+
     /// Read the displayed Fit bounds for camera framing only, not model decisions.
     /// Example: `view.fit_visible_bounds()?` before centering a view on its selection.
     pub fn fit_visible_bounds(&self) -> Result<[[f64; 3]; 2], String> {

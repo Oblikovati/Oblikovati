@@ -7,6 +7,8 @@ from unittest.mock import call, patch
 
 import docking_process_restart as restart
 
+DOCUMENT_AREA = (248, 149, 1041, 850)
+
 
 def settings(material: str = "0x00000004,0", appearance: str = "0x00000004,1") -> restart.WorkspaceSettings:
     return {
@@ -49,21 +51,21 @@ class ViewportVisibilityTests(unittest.TestCase):
             ):
                 if expected is None:
                     with self.assertRaisesRegex(ValueError, "expected a pixel fraction"):
-                        restart.bright_pixel_fraction(Path("after.png"), restart.FIXTURE_FACE_CROP)
+                        restart.bright_pixel_fraction(Path("after.png"), "120x80+671+392")
                 else:
                     self.assertEqual(
-                        restart.bright_pixel_fraction(Path("after.png"), restart.FIXTURE_FACE_CROP),
+                        restart.bright_pixel_fraction(Path("after.png"), "120x80+671+392"),
                         expected,
                     )
 
     def test_checks_face_contrast_against_the_viewport_background(self) -> None:
         image = Path("after.png")
         with patch.object(restart, "bright_pixel_fraction", side_effect=[1.0, 0.0]) as sample:
-            result = restart.check_visible_part(image)
+            result = restart.check_visible_part(image, DOCUMENT_AREA)
         self.assertEqual(result, {"face_bright_fraction": 1.0, "background_bright_fraction": 0.0})
         self.assertEqual(sample.call_args_list, [
-            call(image, restart.FIXTURE_FACE_CROP),
-            call(image, restart.VIEW_BACKGROUND_CROP),
+            call(image, "120x80+671+392"),
+            call(image, "120x80+474+392"),
         ])
 
     def test_rejects_blank_frames_and_bright_overlays(self) -> None:
@@ -71,7 +73,11 @@ class ViewportVisibilityTests(unittest.TestCase):
             with self.subTest(samples=samples):
                 with patch.object(restart, "bright_pixel_fraction", side_effect=samples):
                     with self.assertRaisesRegex(AssertionError, "bright face"):
-                        restart.check_visible_part(Path("after.png"))
+                        restart.check_visible_part(Path("after.png"), DOCUMENT_AREA)
+
+    def test_rejects_a_probe_outside_the_document_area(self) -> None:
+        with self.assertRaisesRegex(ValueError, "inside document area"):
+            restart.viewport_crop((0, 0, 120, 80), restart.FIXTURE_FACE_OFFSET)
 
 
 if __name__ == "__main__":

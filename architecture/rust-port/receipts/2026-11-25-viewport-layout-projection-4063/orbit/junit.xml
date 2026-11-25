@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Viewport orbit: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orbit/viewport-orbit.feature" package="testsuite/Feature: Viewport orbit: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orbit/viewport-orbit.feature" tests="10" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T17:55:19.914767504Z" time="65.504091879"><testcase name="Scenario: Open and exit the free-rotation mode: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orbit/viewport-orbit.feature:5:3" time="7.731328915"><system-out><![CDATA[  Scenario: Open and exit the free-rotation mode
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid visible in the active part in the MCAD Software
+   ✔  And the viewport navigation bar is visible
+   ✔  When the user selects the orbit control on the navigation bar
+   ✔  Then the status area indicates free rotation
+   ✔  And the active part remains visible
+   ✔  When the user moves through the viewport using a drag gesture
+   ✔  Then a circular guide with a central cross and radial marks is visible over the viewport
+   ✔  When the user opens the context menu in the viewport
+   ✔  Then it offers Done, OK, Home View, Pan, Zoom and Previous View
+   ✔  When the user chooses Done
+   ✔  Then the circular guide disappears
+   ✔  And the status area displays Ready
+   ✔  And the same part remains active
+]]></system-out></testcase><testcase name="Scenario: Select and exit constrained orbit: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orbit/viewport-orbit.feature:20:3" time="5.662117512"><system-out><![CDATA[  Scenario: Select and exit constrained orbit
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid visible in the active part in the MCAD Software
+   ✔  When the user opens the orbit menu on the navigation bar
+   ✔  Then the menu offers Orbit, Constrained Orbit and Rotate at Angle
+   ✔  When the user chooses Constrained Orbit
+   ✔  Then a circular rotation guide appears over the viewport
+   ✔  And the active part remains visible
+   ✔  When the user presses Escape
+   ✔  Then the guide disappears
+   ✔  And the status area displays Ready
+   ✔  When the user reopens the orbit menu
+   ✔  Then Constrained Orbit is marked as the selected action
+]]></system-out></testcase><testcase name="Scenario: Preview and reset an incremental view rotation: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orbit/viewport-orbit.feature:33:3" time="6.638844723"><system-out><![CDATA[  Scenario: Preview and reset an incremental view rotation
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with a rectangular face oriented toward the viewer in the active part in the MCAD Software
+   ✔  When the user chooses Rotate at Angle from the orbit menu
+   ✔  Then an incremental view rotation dialog opens
+   ✔  And it contains an increment field, six direction buttons, Reset, OK and Cancel
+   ✔  And the increment field displays 10
+   ✔  When the user clicks the first direction button
+   ✔  Then the visible view changes while the dialog remains open
+   ✔  When the user clicks Reset
+   ✔  Then the original face-on view is restored
+   ✔  When the user clicks the first direction button again
+   ✔  And the user clicks Cancel
+   ✔  Then the dialog closes
+   ✔  And the original face-on view is restored
+   ✔  And the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Accept an incremental view rotation: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orbit/viewport-orbit.feature:50:3" time="5.725905705"><system-out><![CDATA[  Scenario: Accept an incremental view rotation
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with a rectangular face oriented toward the viewer in the active part in the MCAD Software
+   ✔  When the user chooses Rotate at Angle from the orbit menu
+   ✔  And the increment field displays 10
+   ✔  And the user clicks the first direction button
+   ✔  Then the visible view changes while the dialog remains open
+   ✔  When the user clicks OK
+   ✔  Then the dialog closes
+   ✔  And the changed view remains visible
+   ✔  And the same part remains active
+   ✔  And the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Reverse an incremental rotation with the adjacent control: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orbit/viewport-orbit.feature:62:3" time="8.355424473"><system-out><![CDATA[  Scenario: Reverse an incremental rotation with the adjacent control
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its solid at an inclined orientation in the MCAD Software
+   ✔  And the incremental view rotation dialog is open with increment 10
+   ✔  When the user clicks the second direction button
+   ✔  Then the block view changes
+   ✔  When the user clicks the first direction button once
+   ✔  Then the block returns to its initial apparent orientation
+   ✔  And the dialog remains open
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Reverse a rotation using the remaining adjacent pairs: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orbit/viewport-orbit.feature:86:5" time="8.335977599"><system-out><![CDATA[  Scenario Outline: Reverse a rotation using the remaining adjacent pairs
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its solid at an inclined orientation in the MCAD Software
+   ✔  And the incremental view rotation dialog is open with increment 10
+   ✔  When the user clicks direction button 3 once
+   ✔  Then the block view changes
+   ✔  When the user clicks direction button 4 once
+   ✔  Then the block returns to its initial apparent orientation
+   ✔  And the dialog remains open
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Reverse a rotation using the remaining adjacent pairs: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orbit/viewport-orbit.feature:87:5" time="8.241657505"><system-out><![CDATA[  Scenario Outline: Reverse a rotation using the remaining adjacent pairs
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its solid at an inclined orientation in the MCAD Software
+   ✔  And the incremental view rotation dialog is open with increment 10
+   ✔  When the user clicks direction button 5 once
+   ✔  Then the block view changes
+   ✔  When the user clicks direction button 6 once
+   ✔  Then the block returns to its initial apparent orientation
+   ✔  And the dialog remains open
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the status area displays Ready
+]]></system-out></testcase><testcase name="Scenario: Exit free orbit with Escape: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orbit/viewport-orbit.feature:89:3" time="4.238230928"><system-out><![CDATA[  Scenario: Exit free orbit with Escape
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid visible in the active part in the MCAD Software
+   ✔  When the user selects Orbit on the navigation bar
+   ✔  Then the status area indicates free rotation
+   ✔  When the user presses Escape
+   ✔  Then the status area displays Ready
+   ✔  And the block remains visible in the same apparent orientation
+]]></system-out></testcase><testcase name="Scenario: Leave free orbit using the Pan control: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orbit/viewport-orbit.feature:97:3" time="4.842192321"><system-out><![CDATA[  Scenario: Leave free orbit using the Pan control
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid visible in the active part in the MCAD Software
+   ✔  And Orbit is active with its circular guide visible
+   ✔  When the user clicks Pan on the navigation bar
+   ✔  Then the circular orbit guide disappears
+   ✔  And the status area displays Ready
+   ✔  And the block remains visible in the same apparent orientation
+]]></system-out></testcase><testcase name="Scenario: Exit orbit with the context menu OK action: mnt/vininas-projects/MCAD-Scenarios/features/application/viewport-orbit/viewport-orbit.feature:105:3" time="5.7324121980000005"><system-out><![CDATA[  Scenario: Exit orbit with the context menu OK action
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its rectangular solid visible in the active part in the MCAD Software
+   ✔  And Orbit is active with its circular guide visible
+   ✔  When the user opens the orbit context menu
+   ✔  And the user chooses OK
+   ✔  Then the circular guide disappears
+   ✔  And the status area displays Ready
+   ✔  And the block remains visible in the same apparent orientation
+]]></system-out></testcase></testsuite></testsuites>

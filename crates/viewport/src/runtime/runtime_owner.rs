@@ -92,6 +92,7 @@ impl ViewportRuntime {
             overlay: 0,
             gui_surface: None,
             view_history: VecDeque::new(),
+            layout_framing: None,
             projection_cache: RefCell::new(projection_cache::ProjectionCache::default()),
             #[cfg(target_os = "linux")]
             preview_rgb: Default::default(),

@@ -54,6 +54,7 @@ pub struct Viewport {
     overlay: u64,
     gui_surface: Option<u64>,
     view_history: VecDeque<crate::renderer::SavedViewCamera>,
+    layout_framing: Option<crate::fit_region::FitFraming>,
     projection_cache: RefCell<projection_cache::ProjectionCache>,
     #[cfg(target_os = "linux")]
     preview_rgb: martensite_tkservice::image::ImagePixMap,
@@ -139,7 +140,13 @@ impl Viewport {
             return Ok(false);
         }
         let next = next_generation(self.camera)?;
-        if !self.apply_camera_navigation(command, None)? {
+        let framing = match command {
+            crate::ViewportNavigation::Fit { .. } | crate::ViewportNavigation::Home { .. } => {
+                self.current_layout_framing()
+            }
+            _ => None,
+        };
+        if !self.apply_camera_navigation(command, framing)? {
             return Ok(false);
         }
         self.camera = next;

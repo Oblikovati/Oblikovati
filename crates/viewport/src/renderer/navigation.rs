@@ -88,14 +88,7 @@ impl RenderView {
         }
         let camera = self.view.camera();
         camera.set_scale(camera.scale() * framing.scale);
-        let [width, height] = framing.extent.map(|side| side as i32);
-        let [x, y] = framing.offset;
-        camera.set_tile(&martensite_tkservice::graphic3d::Graphic3dCameraTile {
-            total_size: martensite_tkernel::ncollection::Vec2::new(width, height),
-            tile_size: martensite_tkernel::ncollection::Vec2::new(width, height),
-            offset: martensite_tkernel::ncollection::Vec2::new(-x, y),
-            is_top_down: false,
-        });
+        camera.set_tile(&framing.tile());
         self.view.z_fit_all(1.).map_err(|cause| cause.to_string())
     }
     fn apply_navigation(&self, command: ViewportNavigation) -> Result<(), String> {

@@ -127,13 +127,26 @@ impl RenderView {
         &self,
         saved: &SavedViewCamera,
         extent: [u32; 2],
+        layout: Option<crate::fit_region::FitFraming>,
     ) -> Result<(), String> {
         saved.state.validate()?;
         let camera = Handle::new(saved.members.copy_members());
         camera.set_aspect(f64::from(extent[0]) / f64::from(extent[1]));
+        if let Some(layout) = layout {
+            camera.set_tile(&layout.tile());
+        }
         self.view
             .set_camera(&camera)
             .map_err(|cause| cause.to_string())
+    }
+    pub(crate) fn set_layout_projection(&self, framing: crate::fit_region::FitFraming) -> bool {
+        let camera = self.view.camera();
+        let tile = framing.tile();
+        if camera.tile() == tile {
+            return false;
+        }
+        camera.set_tile(&tile);
+        true
     }
     pub fn resized(&self, extent: [u32; 2]) {
         self.view

@@ -19,6 +19,9 @@ values come from the same handoff.
   viewport width limit also applies while the user holds a splitter.
   The asset selectors shrink inside narrow docks to keep their captions
   and dropdown arrows visible beside the swatches.
+- The camera projects into the live document area as the window and docks
+  resize. Layout changes preserve the current camera and Previous View
+  restores its saved camera in the current layout.
 - Home Recent leaves 12 logical pixels of scroll-end padding above the
   document tab strip in both List and Grid views.
 - The application bar displays the brand mark. Mapped ribbon commands and

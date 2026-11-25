@@ -59,7 +59,8 @@ impl Viewport {
     }
     fn restore_previous_camera(&self, previous: &SavedViewCamera) -> Result<u64, String> {
         let next = super::next_generation(self.camera)?;
-        self.live()?.restore_camera(previous, self.extent)?;
+        self.live()?
+            .restore_camera(previous, self.extent, self.current_layout_framing())?;
         Ok(next)
     }
 }

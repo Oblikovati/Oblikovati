@@ -8,6 +8,20 @@ pub(crate) struct FitFraming {
     pub offset: [i32; 2],
     pub extent: [u32; 2],
 }
+
+impl FitFraming {
+    pub(crate) fn tile(self) -> martensite_tkservice::graphic3d::Graphic3dCameraTile {
+        use martensite_tkernel::ncollection::Vec2;
+        let [width, height] = self.extent.map(|side| side as i32);
+        let [x, y] = self.offset;
+        martensite_tkservice::graphic3d::Graphic3dCameraTile {
+            total_size: Vec2::new(width, height),
+            tile_size: Vec2::new(width, height),
+            offset: Vec2::new(-x, y),
+            is_top_down: false,
+        }
+    }
+}
 /// Map a full frame into a document region; for example, `fit_region([640, 480], [160, 80, 640, 480])`.
 pub(crate) fn fit_region(extent: [u32; 2], region: [u32; 4]) -> Result<FitFraming, String> {
     validate_region(extent, region)?;
