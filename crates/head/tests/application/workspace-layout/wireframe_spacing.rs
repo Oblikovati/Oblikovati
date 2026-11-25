@@ -150,7 +150,8 @@ fn align_bottom_rows(world: &mut ApplicationWorld) {
     assert_near(bounds(TABS)[0], viewport[0]);
     assert_near(bounds("##document-list-control")[2], viewport[2]);
     assert_near(bounds(STATUS)[0], bounds("Model")[0]);
-    assert_near(bounds(STATUS)[2], viewport[2]);
+    assert_near(bounds(STATUS)[2], world.extent()[0]);
+    super::wireframe_tabs::viewport_fills_width(world);
 }
 
 #[then("no region has an unexplained extra margin or padding")]

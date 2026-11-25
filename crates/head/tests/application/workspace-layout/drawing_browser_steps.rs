@@ -119,6 +119,12 @@ fn select_model_browser(world: &mut ApplicationWorld) {
 #[then("the model browser returns to the left")]
 fn browser_back(world: &mut ApplicationWorld) {
     expect_docked_left(world);
+    world.pump(Vec::new());
+    assert_eq!(
+        super::super::diagnostics::window_dock_tab_visible(BROWSER),
+        Some(true),
+        "model browser should be the active tab in the left dock"
+    );
 }
 #[then("it displays the drawing resources and sheet tree")]
 #[then("the drawing resources and sheet tree are displayed")]

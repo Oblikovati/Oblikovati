@@ -250,9 +250,30 @@ fn browser_starts_at_ribbon_edge(_: &mut ApplicationWorld) {
 }
 
 #[then("the viewport fills the remaining content width")]
-fn viewport_fills_width(world: &mut ApplicationWorld) {
+pub(super) fn viewport_fills_width(world: &mut ApplicationWorld) {
+    use super::super::diagnostics::{pointer_pixels, window_dock_tab_visible};
+
     let area = viewport_area(world);
-    assert_eq!(area[2], world.extent()[0], "viewport {area:?}");
+    let right = world.extent()[0] as i32;
+    if area[2] as i32 == right {
+        return;
+    }
+    let joined_dock = ["Appearance Browser", "Material Browser"]
+        .into_iter()
+        .any(|title| {
+            let Some((position, size)) = window_geometry(title) else {
+                return false;
+            };
+            let left = pointer_pixels(position)[0];
+            let outer = pointer_pixels([position[0] + size[0], 0.])[0];
+            window_dock_tab_visible(title) == Some(true)
+                && outer == right
+                && super::dock_splitter::right_splitter(title, area[2] as i32, left).is_some()
+        });
+    assert!(
+        joined_dock,
+        "viewport {area:?}: expected the frame edge or its right dock splitter"
+    );
 }
 
 #[then("the ribbon, browser, viewport and status area use aligned outer edges")]

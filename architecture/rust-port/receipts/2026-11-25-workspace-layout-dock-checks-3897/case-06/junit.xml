@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:58:21.001565497Z" time="30.856516336"><testcase name="Scenario: Align the document tabs with the viewport instead of the browser: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:62:3" time="30.856516336"><system-out><![CDATA[  Scenario: Align the document tabs with the viewport instead of the browser
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And the model browser is docked at the left
+   ✔  When the user inspects the bottom workspace rows
+   ✔  Then the browser extends to the status area above the bottom row
+   ✔  And the document tab strip begins at the viewport's left edge
+   ✔  And the document tab strip ends at the viewport's right edge
+   ✔  And no document tabs appear below the model browser
+   ✔  And the status area spans the full application width
+]]></system-out></testcase></testsuite></testsuites>
