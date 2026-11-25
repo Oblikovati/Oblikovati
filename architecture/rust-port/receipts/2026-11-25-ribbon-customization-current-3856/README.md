@@ -1,7 +1,7 @@
 # Current native Ribbon Customization
 
-Ninety-nine of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 95 of 122 declarations and 1,343
+One hundred of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 96 of 122 declarations and 1,356
 passing steps. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
@@ -48,12 +48,15 @@ kept the separator available for reuse.
 The target arrow-key case selected a staged separator and its adjacent
 commands without reordering the draft.
 [Target navigation](../2026-11-25-ribbon-customization-target-arrows-3856/README.md)
+The target inventory case checked the Part and Assembly labels and
+closed the clean selector with Escape.
+[Target selector inventory](../2026-11-25-ribbon-customization-target-inventory-3856/README.md)
 
 The [command list](case-059/cucumber.json),
 [reorder](case-082/cucumber.json), and [remove](case-083/cucumber.json)
 cases reached the Available Commands list, which lacks `2-D Drawing`.
-The [target selector](case-021/cucumber.json) and
-[letter navigation](case-071/cucumber.json) cases also remain open.
+Assembly target staging and
+[letter navigation](case-071/cucumber.json) also remain open.
 
 One [cancellation case](case-055/cucumber.json) closes Customize and
 then expects a Measure panel that the scenario never opens. Another

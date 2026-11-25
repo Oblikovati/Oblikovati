@@ -12,6 +12,26 @@ const TARGETS: [RibbonTab; 6] = [
     RibbonTab::View,
 ];
 
+const UNAVAILABLE_PART_TABS: &[&str] = &[
+    "Environments",
+    "Collaborate",
+    "Fusion",
+    "3D Sketch",
+    "Construction",
+    "Edit Base Solid",
+    "Repair",
+    "Route",
+    "Render",
+    "Analysis",
+    "3D Print",
+    "Freeform",
+    "Hidden Tab",
+    "BIM Content",
+];
+
+const UNAVAILABLE_ASSEMBLY_TABS: &[&str] =
+    &["Mold Layout", "Core/Cavity", "Mold Assembly", "Assemble"];
+
 pub(super) fn target_index(target: RibbonTab) -> usize {
     TARGETS.iter().position(|tab| *tab == target).unwrap_or(0)
 }
@@ -30,6 +50,19 @@ impl RibbonCustomization {
                 self.scroll_target_to_selection = false;
                 self.scroll_source_to_selection = self.draft.source.is_some();
                 ui.close_current_popup();
+            }
+        }
+        for (environment, tabs) in [
+            ("Part", UNAVAILABLE_PART_TABS),
+            ("Assembly", UNAVAILABLE_ASSEMBLY_TABS),
+        ] {
+            for tab in tabs {
+                ui.selectable_config(format!("{environment} | {tab}"))
+                    .disabled(true)
+                    .build();
+                if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+                    ui.tooltip_text("This ribbon target is unavailable in this build.");
+                }
             }
         }
     }

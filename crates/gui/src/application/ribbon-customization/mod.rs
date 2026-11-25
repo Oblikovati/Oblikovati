@@ -199,7 +199,8 @@ impl RibbonCustomization {
                 let selector_was_open = category_was_open || target_was_open;
                 let close_dialog = self.escape.pressed(ui)
                     || (selector_was_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape));
-                if close_dialog && marking_selector_was_open {
+                let dismiss_selector = marking_selector_was_open || target_was_open && !self.has_pending_changes();
+                if close_dialog && dismiss_selector {
                     self.escape_consumed = true;
                 } else if close_dialog && (focused || selector_was_open) {
                     self.open.set_open(false);
@@ -304,7 +305,11 @@ impl RibbonCustomization {
         };
         let target = format!("Part | {}{suffix}", self.draft.target.label());
         ui.set_next_item_width(size[0]);
-        let targets = ui.begin_combo("##custom-target", &target);
+        let targets = ui.begin_combo_with_flags(
+            "##custom-target",
+            &target,
+            imgui::ComboBoxFlags::HEIGHT_LARGEST,
+        );
         if targets.is_some() && !self.target_selector_open {
             self.target_cursor = target_selector::target_index(self.draft.target);
         }
@@ -430,13 +435,16 @@ impl RibbonCustomization {
         }
         self.navigation_consumed = true;
     }
-    fn buttons(&mut self, ui: &Ui, actions: &mut Vec<crate::GuiShellAction>) {
-        ui.separator();
-        let changed = self.draft.changed()
+    fn has_pending_changes(&self) -> bool {
+        self.draft.changed()
             || self.builtins.changed()
             || self.staged_appearance != self.appearance
             || self.keyboard_changed()
-            || self.marking_changed();
+            || self.marking_changed()
+    }
+    fn buttons(&mut self, ui: &Ui, actions: &mut Vec<crate::GuiShellAction>) {
+        ui.separator();
+        let changed = self.has_pending_changes();
         let conflict = self.keyboard_conflict || self.marking_conflict;
         let disabled = ui.begin_disabled(!changed || conflict);
         if ui.button("OK") {

@@ -16,7 +16,7 @@
 - Added the Standard overview and Units tab to Document Settings. (#3856)
 - Added the Exit 2D Sketch Tab category and source paging. Transfers after Ctrl+A put the focused command first. Up and Down select staged rows without reordering them. (#3856)
 - Added a Tools Options expansion with a ribbon layout reset confirmation. (#3856)
-
+- Listed unavailable Part and Assembly ribbon targets in Customize and kept a clean draft open when Escape dismissed its target selector. (#3856)
 - Added a curvature comb and live density and scale settings for sketch ellipses. (#3995)
 
 - Added Italic to the Sketch Text editor and kept Bold when applying it. (#3907)

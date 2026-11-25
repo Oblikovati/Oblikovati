@@ -5,6 +5,8 @@ use oblikovati_viewport::ViewportPhysicalKey;
 
 #[path = "entry_steps.rs"]
 mod entry_steps;
+#[path = "target_inventory.rs"]
+mod target_inventory;
 
 #[given("the Part Manage target is empty")]
 fn manage_is_empty(world: &mut ApplicationWorld) {
@@ -17,6 +19,7 @@ fn manage_is_empty(world: &mut ApplicationWorld) {
 
 #[when("the user opens the custom panel target selector")]
 #[when("the user opens the target selector")]
+#[when("the user opens the target tab selector")]
 #[when("the user clicks the target selector")]
 #[when("the user clicks the target selector again")]
 fn open_target_selector(world: &mut ApplicationWorld) {
