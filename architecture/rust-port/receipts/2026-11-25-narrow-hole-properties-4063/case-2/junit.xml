@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Navigate the ribbon using key tips: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" package="testsuite/Feature: Navigate the ribbon using key tips: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T18:02:39.478957151Z" time="4.920044063"><testcase name="Scenario: Launch a command by key tip from the minimized ribbon: mnt/vininas-projects/MCAD-Scenarios/features/application/ribbon-keyboard-navigation/ribbon-keyboard-navigation.feature:147:3" time="4.920044063"><system-out><![CDATA[  Scenario: Launch a command by key tip from the minimized ribbon
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And the top-docked ribbon is minimized to tabs with 3D Model active
+   ✔  When the user presses Alt
+   ✔  Then top-level key tips appear
+   ✔  When the user presses "M"
+   ✔  Then the temporary 3D Model command area opens with command key tips
+   ✔  And the Hole command displays the key tip "HO"
+   ✔  When the user presses "H"
+   ✔  Then the visible command key tips narrow to H-prefixed choices
+   ✔  When the user presses "O"
+   ✔  Then the Hole properties panel opens
+   ✔  And the key tips disappear
+   ✔  When the user clicks Cancel in the Hole properties panel
+   ✔  Then the properties panel closes
+   ✔  And the temporary command area closes leaving the ribbon minimized to tabs
+   ✔  When the user double-clicks the 3D Model tab
+   ✔  Then the full 3D Model ribbon is visible
+]]></system-out></testcase></testsuite></testsuites>

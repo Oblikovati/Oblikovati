@@ -81,23 +81,30 @@ impl HoleDialog {
         if self.document.is_none() {
             return;
         }
-        crate::widget_abi::fit_viewport_properties(ui, "Hole", area, [360., 220.]);
+        let height =
+            4. * ui.frame_height_with_spacing() + 2. * ui.clone_style().window_padding[1] + 28.;
+        crate::widget_abi::fit_viewport_properties(ui, "Hole", area, [280., height]);
+        let _border = crate::theme::property_window_border(ui);
         let mut open = true;
         Self::dockable_window(ui, "Hole", &mut open).build(|| {
-            ui.text(if self.request(state).is_some() {
-                "1 Face"
-            } else {
-                "Select a planar face"
-            });
-            ui.input_text("Diameter", &mut self.diameter).build();
-            ui.input_text("Depth (empty: through all)", &mut self.depth)
-                .build();
+            crate::theme::floating_property_shadow(ui);
+            self.draw_properties(ui, state);
             self.refresh_preview(state, actions);
+            ui.separator();
             self.controls(ui, state, actions);
         });
         if !open {
             self.close(actions);
         }
+    }
+    fn draw_properties(&mut self, ui: &Ui, state: &GuiCommandState) {
+        ui.text(if self.request(state).is_some() {
+            "1 Face"
+        } else {
+            "Select a planar face"
+        });
+        hole_value(ui, "Diameter", &mut self.diameter, "");
+        hole_value(ui, "Depth", &mut self.depth, "Through all");
     }
     fn refresh_preview(&mut self, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         let request = self.request(state).filter(|request| {
@@ -114,21 +121,27 @@ impl HoleDialog {
         let request = self
             .request(state)
             .filter(|request| GuiShellAction::CreateHole(request.clone()).dispatchable(state));
-        let disabled = ui.begin_disabled(request.is_none());
-        if ui.button("OK")
+        if crate::theme::property_accept(ui, request.is_some())
             && let Some(request) = request
         {
             self.submitted = Some(request.clone());
             actions.push(GuiShellAction::CreateHole(request));
         }
-        drop(disabled);
         ui.same_line();
-        if ui.button("Cancel")
+        if crate::widget_abi::button(ui, "Cancel", [72., 28.])
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape))
         {
             self.close(actions);
         }
     }
+}
+
+fn hole_value(ui: &Ui, label: &str, value: &mut String, hint: &str) {
+    crate::theme::property_label(ui, label);
+    let _id = ui.push_id(label);
+    let _numeric = crate::ui_scale::numeric_font(ui);
+    let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
+    ui.input_text("##value", value).hint(hint).build();
 }
 
 #[cfg(test)]

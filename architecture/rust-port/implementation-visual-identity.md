@@ -22,6 +22,9 @@ values come from the same handoff.
 - The camera projects into the live document area as the window and docks
   resize. Layout changes preserve the current camera and Previous View
   restores its saved camera in the current layout.
+- Hole uses the shared left-aligned property labels and outlined numeric
+  fields. An empty Depth field displays Through all. The floating panel
+  fits the rows and action footer.
 - Home Recent leaves 12 logical pixels of scroll-end padding above the
   document tab strip in both List and Grid views.
 - The application bar displays the brand mark. Mapped ribbon commands and
