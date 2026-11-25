@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:20:36.949067521Z" time="28.31282953"><testcase name="Scenario: Inspect properties of an inactive document from its tab: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:72:3" time="28.31282953"><system-out><![CDATA[  Scenario: Inspect properties of an inactive document from its tab
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd` and `fixtures/cad/quick-access-toolbar/PartTwo.opd` are open in that order
+   ✔  And the first part is active
+   ✔  And the second part has been saved
+   ✔  When the user opens the second part's document tab context menu
+   ✔  Then the first part remains active in the workspace
+   ✔  When the user chooses Properties from the context menu
+   ✔  Then the properties dialog identifies the second part
+   ✔  And its General page displays the file name, location, size and timestamps
+   ✔  When the user closes the properties dialog without making changes
+   ✔  Then the first part remains active in the workspace
+   ✔  And the second part remains open
+]]></system-out></testcase></testsuite></testsuites>

@@ -33,6 +33,11 @@ below the rendered thumbnail caption. The 2× placement test gives the Part tab
 room in a saved workspace with the asset panels closed. See the
 [native tab preview checks](receipts/2026-11-24-document-tab-previews-4078/README.md).
 
+The [current saved-tab cases](receipts/2026-11-25-document-tabs-saved-parts-3900/README.md)
+use disposable copies of PartOne and PartTwo. Inactive Properties reads
+the actual file name, location and size, and both tab close controls
+preserve the saved bytes.
+
 Remaining Go parity includes per-document camera restoration, document-close
 confirmation choices, docking and a dedicated content-area viewport layout.
 These tabs do not complete the Extrude or cube journey.

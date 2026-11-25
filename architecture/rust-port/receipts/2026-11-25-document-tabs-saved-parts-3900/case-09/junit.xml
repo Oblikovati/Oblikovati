@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T00:23:10.280305187Z" time="28.075850771"><testcase name="Scenario: Close a newly created empty active part: target/native-scratch.HSqCy5/current-document-tabs-source/features/application/document-tabs/document-tabs.feature:94:3" time="28.075850771"><system-out><![CDATA[  Scenario: Close a newly created empty active part
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd` and `fixtures/cad/quick-access-toolbar/PartTwo.opd` are open
+   ✔  And PartOne is active
+   ✔  When the user creates a new empty part from a standard metric template
+   ✔  Then the new part becomes active and has its own document tab
+   ✔  When the user clicks the close button on the new part's tab without editing it
+   ✔  Then the new part's tab disappears without a save prompt
+   ✔  And the previously active part is displayed again
+   ✔  And its model browser and viewport are restored
+]]></system-out></testcase></testsuite></testsuites>

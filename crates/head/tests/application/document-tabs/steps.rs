@@ -26,6 +26,8 @@ mod overflow_order;
 mod reordering;
 #[path = "saved_sketch_parts.rs"]
 mod saved_sketch_parts;
+#[path = "saved_tabs.rs"]
+mod saved_tabs;
 #[path = "second_windows.rs"]
 mod second_windows;
 const TAB_STRIP: &str = "##open-document-tabs";
@@ -271,7 +273,11 @@ fn control_tab(world: &mut ApplicationWorld) {
 #[given("the second part is saved and has no unsaved changes")]
 fn second_saved(world: &mut ApplicationWorld) {
     let id = second(world);
-    let path = world.save_part_to_file(id, "second part.opd");
+    let path = world.state().document_storage[&id]
+        .path
+        .as_deref()
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| world.save_part_to_file(id, "second part.opd"));
     world.bytes_before_save = Some(std::fs::read(&path).unwrap());
     world.saved_path = Some(path);
     world.activate_through_tab(first(world));
@@ -299,12 +305,12 @@ fn properties_title(world: &mut ApplicationWorld) {
 #[then("its General page displays the file name, location, size and timestamps")]
 fn general_page(world: &mut ApplicationWorld) {
     world.expect_text("General");
-    let folder = world.scratch_folder();
-    world.expect_text("File name: second part.opd");
+    let path = world.saved_path.as_ref().expect("expected the saved Part");
+    let folder = path.parent().expect("expected the saved Part folder");
+    let name = path.file_name().unwrap().to_string_lossy();
+    world.expect_text(&format!("File name: {name}"));
     world.expect_text(&format!("Location: {}", folder.display()));
-    let size = std::fs::metadata(folder.join("second part.opd"))
-        .unwrap()
-        .len();
+    let size = std::fs::metadata(path).unwrap().len();
     world.expect_text(&format!("Size: {size} bytes"));
     for stamp in ["Created:", "Modified:", "Accessed:"] {
         world.expect_text(stamp);

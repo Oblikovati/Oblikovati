@@ -81,6 +81,7 @@ fn previous_again(world: &mut ApplicationWorld) {
 fn restored(world: &mut ApplicationWorld) {
     let id = world.active_id();
     world.expect_browser_of(id);
+    world.expect_blank_region([400, 600], [250, 300]);
 }
 #[given("a new part is open in the MCAD Software")]
 fn new_part_open(world: &mut ApplicationWorld) {
