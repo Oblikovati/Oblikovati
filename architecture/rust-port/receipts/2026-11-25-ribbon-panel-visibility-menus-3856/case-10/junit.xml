@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:10:23.883570265Z" time="49.002712742"><testcase name="Scenario: Set visibility of two ribbon panels independently: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:136:3" time="49.002712742"><system-out><![CDATA[  Scenario: Set visibility of two ribbon panels independently
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Find and Tutorials panels are both visible
+   ✔  When the user opens Show Panels from the Options panel title context menu
+   ✔  And the user selects Find
+   ✔  Then the Find panel disappears from the ribbon
+   ✔  And Tutorials remains visible
+   ✔  And Find is unchecked while Tutorials remains checked
+   ✔  When the user opens Show Panels again
+   ✔  And the user selects Find
+   ✔  Then the Find panel reappears before Team Web
+   ✔  And Tutorials remains visible
+   ✔  And Find and Tutorials are both checked
+]]></system-out></testcase></testsuite></testsuites>

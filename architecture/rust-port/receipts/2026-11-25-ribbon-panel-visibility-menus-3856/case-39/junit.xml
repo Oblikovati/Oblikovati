@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:10:25.358437494Z" time="21.699361772"><testcase name="Scenario: Reflow an expanded panel when an adjacent panel is hidden: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:566:3" time="21.699361772"><system-out><![CDATA[  Scenario: Reflow an expanded panel when an adjacent panel is hidden
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full 3D Model ribbon is docked at the top
+   ✔  And the Create and Modify panels are visible, with Create before Modify
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user opens the panel selector and clears Create
+   ✔  Then Create is unchecked and its panel is hidden
+   ✔  And the Modify panel shifts left while its additional commands remain open
+   ✔  And the panel selector remains open
+   ✔  When the user selects Create in the panel selector
+   ✔  Then Create is checked and returns before Modify
+   ✔  And the Modify panel and its open additional commands return to their earlier position
+   ✔  And the panel selector remains open
+]]></system-out></testcase></testsuite></testsuites>

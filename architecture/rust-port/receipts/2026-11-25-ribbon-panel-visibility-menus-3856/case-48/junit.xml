@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:09:51.551831987Z" time="37.134940886"><testcase name="Scenario: Hide and restore Team Web from Show Panels: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:718:3" time="37.134940886"><system-out><![CDATA[  Scenario: Hide and restore Team Web from Show Panels
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Team Web panel is visible
+   ✔  When the user opens Show Panels from the Options panel title menu
+   ✔  Then Team Web is checked
+   ✔  When the user selects Team Web
+   ✔  Then the Team Web panel disappears from the Tools ribbon
+   ✔  And the other visible Tools panels remain available
+   ✔  When the user reopens Show Panels from the Options panel title menu
+   ✔  Then Team Web is unchecked
+   ✔  When the user selects Team Web
+   ✔  Then the Team Web panel appears on the Tools ribbon
+   ✔  And Show Panels marks Team Web as visible
+]]></system-out></testcase></testsuite></testsuites>

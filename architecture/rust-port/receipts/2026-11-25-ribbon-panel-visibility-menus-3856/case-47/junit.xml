@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:09:22.826689772Z" time="27.780871034"><testcase name="Scenario: List active Tools panels from an inactive tab menu: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:705:3" time="27.780871034"><system-out><![CDATA[  Scenario: List active Tools panels from an inactive tab menu
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full Tools ribbon is active
+   ✔  When the user right-clicks the inactive 3D Model tab
+   ✔  Then the Tools ribbon remains active
+   ✔  And the ribbon context menu is visible
+   ✔  When the user opens Show Panels from that menu
+   ✔  Then the submenu lists Measure, Material and Appearance, Options, Clipboard, Find, Team Web and Tutorials
+   ✔  And each listed Tools panel is checked
+   ✔  And the 3D Model tab remains inactive
+]]></system-out></testcase></testsuite></testsuites>

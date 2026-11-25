@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:09:35.139236629Z" time="39.40759281"><testcase name="Scenario: Toggle Modify from Show Panels while its additional commands are open: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:798:3" time="39.40759281"><system-out><![CDATA[  Scenario: Toggle Modify from Show Panels while its additional commands are open
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full 3D Model ribbon is docked at the top
+   ✔  And the Modify additional command area is open
+   ✔  When the user opens Show Panels from the active tab context menu
+   ✔  Then Modify is checked in the panel list
+   ✔  When the user selects Modify
+   ✔  Then the menu closes
+   ✔  And the Modify panel and its additional command area are hidden
+   ✔  When the user reopens Show Panels from the active tab context menu
+   ✔  Then Modify is unchecked
+   ✔  When the user selects Modify
+   ✔  Then the menu closes
+   ✔  And the main Modify panel is visible
+   ✔  And the additional command area remains closed
+]]></system-out></testcase></testsuite></testsuites>

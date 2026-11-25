@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:11:46.859840801Z" time="29.182882558"><testcase name="Scenario: Dismiss the panel list without changing visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:167:3" time="29.182882558"><system-out><![CDATA[  Scenario: Dismiss the panel list without changing visibility
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the 3D Model ribbon is expanded and docked at the top
+   ✔  And Modify is visible while Parameters is hidden
+   ✔  When the user opens the ribbon context menu and expand Show Panels
+   ✔  Then Modify is checked and Parameters is unchecked
+   ✔  When the user presses Escape
+   ✔  Then the Show Panels submenu closes
+   ✔  And the ribbon context menu remains open
+   ✔  When the user presses Escape again
+   ✔  Then the ribbon context menu closes
+   ✔  And Modify remains visible
+   ✔  And Parameters remains hidden
+]]></system-out></testcase></testsuite></testsuites>

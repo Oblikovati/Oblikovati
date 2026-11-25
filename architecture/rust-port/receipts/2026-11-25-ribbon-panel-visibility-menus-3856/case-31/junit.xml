@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:09:01.417762963Z" time="18.536255551"><testcase name="Scenario: Switch between panel visibility and ribbon display menus: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:446:3" time="18.536255551"><system-out><![CDATA[  Scenario: Switch between panel visibility and ribbon display menus
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full Tools ribbon is visible
+   ✔  And the direct panel selector is open
+   ✔  When the user opens the ribbon display policy menu
+   ✔  Then the panel selector closes
+   ✔  And the display policy menu opens with Minimize to Tabs selected
+   ✔  When the user opens the direct panel selector
+   ✔  Then the display policy menu closes
+   ✔  And the panel selector opens
+   ✔  When the user closes the panel selector
+   ✔  Then the full Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

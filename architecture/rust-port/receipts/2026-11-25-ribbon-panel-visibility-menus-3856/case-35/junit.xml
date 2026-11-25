@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:08:47.248235166Z" time="27.222571122"><testcase name="Scenario: Toggle a panel from the left-docked ribbon selector: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:504:3" time="27.222571122"><system-out><![CDATA[  Scenario: Toggle a panel from the left-docked ribbon selector
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the 3D Model ribbon is docked on the left with Modify visible
+   ✔  When the user clicks the direct panel selector at the bottom of the ribbon
+   ✔  Then the panel checklist opens with Modify checked
+   ✔  When the user clicks Modify in the checklist
+   ✔  Then Modify is unchecked and its panel is absent from the ribbon
+   ✔  And the checklist remains open
+   ✔  When the user clicks Modify in the checklist again
+   ✔  Then Modify is checked and its panel is visible on the left-docked ribbon
+   ✔  And the checklist remains open
+]]></system-out></testcase></testsuite></testsuites>

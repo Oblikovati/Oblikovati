@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" package="testsuite/Feature: Ribbon panel visibility: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:09:20.873643178Z" time="20.890803841"><testcase name="Scenario: Open a ribbon context menu while the panel selector is open: target/native-scratch.HSqCy5/current-ribbon-panel-visibility-source/features/application/ribbon-panel-visibility/ribbon-panel-visibility.feature:460:3" time="20.890803841"><system-out><![CDATA[  Scenario: Open a ribbon context menu while the panel selector is open
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and active
+   ✔  And the full Tools ribbon is visible
+   ✔  And the direct panel selector is open
+   ✔  When the user right-clicks the Options panel title
+   ✔  Then the panel selector closes
+   ✔  And the ribbon context menu opens
+   ✔  And the context menu offers Ribbon Appearance, Show Panels, Customize User Commands, Undock Ribbon and Docking Positions
+   ✔  And Show Panel Titles is checked
+   ✔  When the user presses Escape
+   ✔  Then the ribbon context menu closes
+   ✔  And the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>
