@@ -71,7 +71,7 @@ using this status; the live scenario directory can change.
   #3978.
 - Docking System (#4133) passed all 11 current scenarios and 111 steps,
   including layout retention and a two-process desktop restart.
-  See the [current run](receipts/2026-11-25-docking-system-current-4133/README.md).
+  See the [Studio desktop run](receipts/2026-11-25-docking-system-studio-4133/README.md).
   The standalone [dock-menu test](receipts/2026-11-24-dock-menu-repository-fixture-4133/README.md)
   opens the bundled Part without requiring the separate docking scenario fixture.
 - Selected sketch point identity (#4179): the shared placement recipe now

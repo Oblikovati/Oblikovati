@@ -93,23 +93,12 @@ class NativePointer:
         self.x11.XFlush(self.display)
 
     def click(self, point: tuple[int, int]) -> None:
-        """Click a screen point; for example, `pointer.click((307, 15))`."""
+        """Click a screen point; for example, `pointer.click((1416, 16))`."""
         self.move(point)
         self.button(True)
         time.sleep(0.12)
         self.button(False)
         time.sleep(1)
-
-    def drag(self, start: tuple[int, int], end: tuple[int, int]) -> None:
-        """Drag between screen points; for example, `pointer.drag((1, 1), (10, 10))`."""
-        self.move(start)
-        self.button(True)
-        for step in range(1, 21):
-            point = tuple(start[i] + (end[i] - start[i]) * step // 20 for i in range(2))
-            self.move(point)
-        time.sleep(0.5)
-        self.button(False)
-        time.sleep(2)
 
 
 def panel_record(settings: WorkspaceSettings, name: str) -> PanelRecord:
@@ -206,16 +195,6 @@ def close_process(process: subprocess.Popen[bytes], pointer: NativePointer) -> N
         raise RuntimeError(f"desktop exit {code}: expected zero; {error}")
 
 
-def arrange(pointer: NativePointer) -> None:
-    """Dock two browser panels; for example, `arrange(pointer)`."""
-    pointer.click((307, 15))
-    pointer.drag((1150, 210), (1420, 480))
-    pointer.click((371, 15))
-    pointer.drag((1150, 210), (1200, 168))
-    pointer.move((500, 140))
-    time.sleep(2)
-
-
 def file_hash(path: Path) -> str:
     """Hash evidence input bytes; for example, `file_hash(Path('fixture.opd'))`."""
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -237,8 +216,6 @@ def run_phase(
     process = launch(binary, fixture, environment)
     try:
         wait_for_window(process)
-        if first:
-            arrange(pointer)
         pointer.move((500, 140))
         capture(output / ("before.png" if first else "after.png"))
         close_process(process, pointer)
@@ -250,13 +227,20 @@ def run_phase(
             process.wait()
 
 
-def restart_in_same_profile(binary: Path, fixture: Path, output: Path) -> list[PanelRecord]:
-    """Check the two runs sharing one profile, for example restart_in_same_profile(binary, fixture, output)."""
+def restart_in_same_profile(
+    binary: Path, fixture: Path, output: Path, layout: Path
+) -> list[PanelRecord]:
+    """Restore the native scenario's saved layout across two desktop processes."""
+    seed = layout.read_bytes()
+    expected = check_group(json.loads(seed))
     pointer = NativePointer()
     with tempfile.TemporaryDirectory(prefix="obk-dock-process-") as config:
         environment = dict(os.environ, OBK_CONFIG_DIR=config, OBK_ADDINS_DIR=config)
+        (Path(config) / "workspace-layout.json").write_bytes(seed)
         saved = run_phase(binary, fixture, environment, pointer, output, True)
         panels = check_group(saved)
+        if panels != expected:
+            raise AssertionError("first desktop launch changed the saved panel positions, sizes, or tabs")
         (output / "saved-layout.json").write_text(json.dumps(saved, indent=2) + "\n")
         restored = run_phase(binary, fixture, environment, pointer, output, False)
         compare_panel(output / "before.png", output / "after.png")
@@ -265,11 +249,11 @@ def restart_in_same_profile(binary: Path, fixture: Path, output: Path) -> list[P
     return panels
 
 
-def exercise(binary: Path, fixture: Path, output: Path) -> RestartResult:
-    """Test a full restart; for example, `exercise(binary, fixture, receipt_dir)`."""
+def exercise(binary: Path, fixture: Path, output: Path, layout: Path) -> RestartResult:
+    """Test a full restart with the workspace saved by the native scenario."""
     output.mkdir(parents=True, exist_ok=True)
     fixture_hash = file_hash(fixture)
-    panels = restart_in_same_profile(binary, fixture, output)
+    panels = restart_in_same_profile(binary, fixture, output, layout)
     if file_hash(fixture) != fixture_hash:
         raise AssertionError("fixture hash changed during the restart test")
     return {
@@ -282,13 +266,16 @@ def exercise(binary: Path, fixture: Path, output: Path) -> RestartResult:
 
 
 def main() -> None:
-    """Run the isolated process test; for example, `python3 docking_process_restart.py ...`."""
+    """Run the isolated process test with a saved layout."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("binary", type=Path)
     parser.add_argument("fixture", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--layout", type=Path, required=True)
     args = parser.parse_args()
-    result = exercise(args.binary.resolve(), args.fixture.resolve(), args.output.resolve())
+    result = exercise(
+        args.binary.resolve(), args.fixture.resolve(), args.output.resolve(), args.layout.resolve()
+    )
     (args.output / "restart-summary.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
 

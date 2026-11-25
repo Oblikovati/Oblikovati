@@ -57,7 +57,7 @@ fn workspace_is_saveable(world: &mut ApplicationWorld) {
 #[when("the user closes and restarts the MCAD Software")]
 fn restart_application(world: &mut ApplicationWorld) {
     world.close();
-    run_desktop_restart_check();
+    run_desktop_restart_check(world);
     world.reopen_application();
     if world.saved_path.is_none() {
         super::open_docking_part(world);
@@ -110,7 +110,7 @@ fn desktop_executable() -> std::path::PathBuf {
         })
 }
 
-fn run_desktop_restart_check() {
+fn run_desktop_restart_check(world: &ApplicationWorld) {
     let script = tempfile::NamedTempFile::new().expect("restart driver: expected a temporary file");
     std::fs::write(
         script.path(),
@@ -123,6 +123,7 @@ fn run_desktop_restart_check() {
     let fixture =
         super::super::scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
     let output = super::super::world::reports_folder().join("docking-process-restart");
+    let layout = saved_restart_layout(world);
     let result = std::process::Command::new("python3")
         .args([
             script.path(),
@@ -130,6 +131,8 @@ fn run_desktop_restart_check() {
             fixture.as_path(),
             output.as_path(),
         ])
+        .arg("--layout")
+        .arg(layout.path())
         .output()
         .expect("docking restart: expected python3 and the native desktop test");
     assert!(
@@ -137,4 +140,16 @@ fn run_desktop_restart_check() {
         "desktop restart failed: {}",
         String::from_utf8_lossy(&result.stderr)
     );
+}
+
+fn saved_restart_layout(world: &ApplicationWorld) -> tempfile::NamedTempFile {
+    let store =
+        crate::native::preferences::NativeWorkspaceLayout::new(world.preferences_directory());
+    let bytes = store
+        .load()
+        .expect("read the saved workspace layout")
+        .expect("scenario saved a workspace layout before closing");
+    let staged = tempfile::NamedTempFile::new().expect("restart layout: expected a temporary file");
+    std::fs::write(staged.path(), bytes).expect("stage the saved layout for desktop restart");
+    staged
 }
