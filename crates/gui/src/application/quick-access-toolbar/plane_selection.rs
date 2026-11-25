@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Choosing an origin plane to sketch on: Start 2D Sketch, or Extrude with nothing to extrude.
+#[path = "plane_label.rs"]
+mod plane_label;
 use crate::application::document_creation::workspaces::WorkspaceArea;
 use crate::{GuiCommandState, GuiShellAction};
 use imgui::{MouseButton, Ui};
 use oblikovati_api::types::{TOKEN_PLANE_FAINT, TOKEN_PLANE_FILL};
+use plane_label::PlaneLabel;
 
 /// One origin plane; each is a sketch plane the owner can start on.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -29,9 +32,11 @@ pub struct GuiOriginPlane {
     pub corners: [[i32; 2]; 4],
     /// Scene-sized outline for an automatically resized browser datum.
     pub automatic_corners: [[i32; 2]; 4],
+    /// Scene-sized outline used while choosing a sketch plane.
+    pub picker_corners: [[i32; 2]; 4],
 }
 /// Translucent and warm, so the planes read over a dark view without hiding it.
-const PLANE_FILL: [f32; 4] = [245. / 255., 158. / 255., 11. / 255., 0.16];
+const PLANE_FILL: [f32; 4] = [245. / 255., 158. / 255., 11. / 255., 0.14];
 const PLANE_EDGE: [f32; 4] = [245. / 255., 158. / 255., 11. / 255., 1.];
 
 /// Whether the display is up; while it is, Start 2D Sketch stays highlighted on the ribbon.
@@ -40,14 +45,26 @@ pub(crate) struct PlaneSelection {
     pub active: bool,
 }
 impl PlaneSelection {
+    pub(crate) fn take_browser_choice(
+        &mut self,
+        workspace: &mut crate::application::workspace_layout::WorkspaceLayout,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        if self.active
+            && let Some(plane) = workspace.take_selected_origin_plane()
+        {
+            self.active = false;
+            actions.push(GuiShellAction::StartSketchOn(plane));
+        }
+    }
+
     /// Draw the planes and take a choice; Escape closes without starting anything.
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
         scale: [f32; 2],
-        area: crate::application::document_creation::workspaces::WorkspaceArea,
-        cube: Option<[f32; 4]>,
+        area: WorkspaceArea,
         actions: &mut Vec<GuiShellAction>,
     ) {
         if !self.active {
@@ -60,12 +77,12 @@ impl PlaneSelection {
             self.active = false;
             return;
         }
-        let planes: Vec<([[f32; 2]; 4], GuiOriginPlaneKind)> = state
+        let planes: Vec<PickerPlane> = state
             .origin_planes
             .iter()
-            .map(|plane| (logical_corners(plane.corners, scale), plane.kind))
+            .map(|plane| PickerPlane::projected(ui, plane, scale, area, state))
             .collect();
-        draw_planes(ui, &planes, area, cube, state);
+        draw_planes(ui, &planes, area, state);
         if ui.is_key_pressed_no_repeat(imgui::Key::Escape) {
             self.active = false;
             return;
@@ -82,7 +99,7 @@ impl PlaneSelection {
 /// A clear window over the document area owns the click, so the view never reads it as well.
 fn plane_chosen_over_workspace(
     ui: &Ui,
-    planes: &[([[f32; 2]; 4], GuiOriginPlaneKind)],
+    planes: &[PickerPlane],
     area: WorkspaceArea,
 ) -> Option<([f32; 2], Option<GuiOriginPlaneKind>)> {
     crate::widget_abi::window_geometry(
@@ -101,79 +118,98 @@ fn plane_chosen_over_workspace(
         )
         .build(|| {
             (ui.is_window_hovered() && ui.is_mouse_clicked(MouseButton::Left))
-                .then(|| (ui.io().mouse_pos, chosen_plane(ui, planes, area)))
+                .then(|| (ui.io().mouse_pos, chosen_plane(planes, ui.io().mouse_pos)))
         })
         .flatten()
 }
-fn logical_corners(corners: [[i32; 2]; 4], scale: [f32; 2]) -> [[f32; 2]; 4] {
-    corners.map(|corner| [corner[0] as f32 / scale[0], corner[1] as f32 / scale[1]])
+struct PickerPlane {
+    corners: [[f32; 2]; 4],
+    kind: GuiOriginPlaneKind,
+    label: Option<PlaneLabel>,
 }
-fn draw_planes(
-    ui: &Ui,
-    planes: &[([[f32; 2]; 4], GuiOriginPlaneKind)],
-    area: WorkspaceArea,
-    cube: Option<[f32; 4]>,
-    state: &GuiCommandState,
-) {
-    // The viewport controls and dialogs draw above the model overlays.
+
+impl PickerPlane {
+    fn projected(
+        ui: &Ui,
+        plane: &GuiOriginPlane,
+        scale: [f32; 2],
+        area: WorkspaceArea,
+        state: &GuiCommandState,
+    ) -> Self {
+        let corners = plane
+            .picker_corners
+            .map(|corner| [corner[0] as f32 / scale[0], corner[1] as f32 / scale[1]]);
+        let facing = state.view_axes.map_or(1., |axes| match plane.kind {
+            GuiOriginPlaneKind::Xy => axes.toward[2],
+            GuiOriginPlaneKind::Xz => axes.toward[1],
+            GuiOriginPlaneKind::Yz => axes.toward[0],
+        });
+        let label = PlaneLabel::place(corners, ui.calc_text_size(plane.kind.label()), facing, area);
+        Self {
+            corners,
+            kind: plane.kind,
+            label,
+        }
+    }
+}
+
+fn draw_planes(ui: &Ui, planes: &[PickerPlane], workspace: WorkspaceArea, state: &GuiCommandState) {
+    // The background list clips at the viewport perimeter and also runs beneath the HUD.
     let draw = ui.get_background_draw_list();
-    let [mut fill, edge] = plane_colors(state);
-    // The overlapping picker planes share the theme's opacity budget.
-    fill[3] /= planes.len().max(1) as f32;
+    let [mut fill, edge] =
+        plane_colors(state, ui.style_color(imgui::StyleColor::WindowBg)[0] > 0.5);
+    // Fully overlapping planes share a single opacity budget.
+    let sheets = planes
+        .iter()
+        .filter(|plane| area(&plane.corners) > 1.)
+        .count()
+        .max(1);
+    fill[3] = 1. - (1. - fill[3]).powf(1. / sheets as f32);
     let text = ui.style_color(imgui::StyleColor::Text);
     let ink = state
         .color_scheme
         .as_ref()
         .map_or(text, |scheme| scheme.contrasting_ink(text));
-    for [left, top, right, bottom] in plane_regions(area, cube) {
-        draw.with_clip_rect([left, top], [right, bottom], || {
-            for (corners, kind) in planes {
-                draw_quad(&draw, *corners, fill, edge);
-                draw.add_text(
-                    label_position(corners, ui.calc_text_size(kind.label()), area),
-                    ink,
-                    kind.label(),
-                );
+    let source = [
+        (workspace.left + workspace.right) / 2.,
+        (workspace.top + workspace.bottom) / 2.,
+    ];
+    draw.with_clip_rect(
+        [workspace.left, workspace.top],
+        [workspace.right, workspace.bottom],
+        || {
+            for plane in planes {
+                draw_quad(&draw, plane.corners, fill, edge);
             }
+            for plane in planes {
+                if let Some(label) = &plane.label {
+                    let color = [ink[0], ink[1], ink[2], ink[3] * label.opacity];
+                    crate::widget_abi::projected_background_text(
+                        ui,
+                        &draw,
+                        source,
+                        color,
+                        plane.kind.label(),
+                        |point| label.point(point),
+                    );
+                }
+            }
+        },
+    );
+}
+
+fn plane_colors(state: &GuiCommandState, light: bool) -> [[f32; 4]; 2] {
+    let [mut fill, edge] = state
+        .theme
+        .as_ref()
+        .map_or([PLANE_FILL, PLANE_EDGE], |theme| {
+            [TOKEN_PLANE_FILL, TOKEN_PLANE_FAINT].map(|token| {
+                let color = &theme.palette()[&token];
+                [color.r, color.g, color.b, color.a]
+            })
         });
-    }
-}
-fn plane_regions(area: WorkspaceArea, cube: Option<[f32; 4]>) -> Vec<[f32; 4]> {
-    let WorkspaceArea {
-        left,
-        top,
-        right,
-        bottom,
-    } = area;
-    if left >= right || top >= bottom {
-        return Vec::new();
-    }
-    let Some([cube_left, cube_top, cube_right, cube_bottom]) = cube else {
-        return vec![[left, top, right, bottom]];
-    };
-    let cube_left = cube_left.clamp(left, right);
-    let cube_right = cube_right.clamp(left, right);
-    let cube_top = cube_top.clamp(top, bottom);
-    let cube_bottom = cube_bottom.clamp(top, bottom);
-    // The faded cube and its controls still need a clean backdrop.
-    [
-        [left, top, right, cube_top],
-        [left, cube_top, cube_left, cube_bottom],
-        [cube_right, cube_top, right, cube_bottom],
-        [left, cube_bottom, right, bottom],
-    ]
-    .into_iter()
-    .filter(|rect| rect[0] < rect[2] && rect[1] < rect[3])
-    .collect()
-}
-fn plane_colors(state: &GuiCommandState) -> [[f32; 4]; 2] {
-    let Some(theme) = &state.theme else {
-        return [PLANE_FILL, PLANE_EDGE];
-    };
-    [TOKEN_PLANE_FILL, TOKEN_PLANE_FAINT].map(|token| {
-        let color = &theme.palette()[&token];
-        [color.r, color.g, color.b, color.a]
-    })
+    fill[3] = if light { 0.12 } else { 0.14 };
+    [fill, edge]
 }
 fn draw_quad(
     draw: &imgui::DrawListMut<'_>,
@@ -195,41 +231,21 @@ fn draw_quad(
     .thickness(1.25)
     .build();
 }
-pub(crate) fn label_position(
-    corners: &[[f32; 2]; 4],
-    size: [f32; 2],
-    area: WorkspaceArea,
-) -> [f32; 2] {
-    let projected = [
-        corners[2][0] * 0.8 + corners[0][0] * 0.2,
-        corners[2][1] * 0.8 + corners[0][1] * 0.2,
-    ];
-    [
-        projected[0].clamp(area.left, (area.right - size[0]).max(area.left)),
-        projected[1].clamp(area.top, (area.bottom - size[1]).max(area.top)),
-    ]
-}
-/// A label is always unambiguous; inside overlapping planes the most face-on one wins.
-fn chosen_plane(
-    ui: &Ui,
-    planes: &[([[f32; 2]; 4], GuiOriginPlaneKind)],
-    workspace: WorkspaceArea,
-) -> Option<GuiOriginPlaneKind> {
-    let pointer = ui.io().mouse_pos;
-    for (corners, kind) in planes {
-        let size = ui.calc_text_size(kind.label());
-        let at = label_position(corners, size, workspace);
-        if (at[0]..=at[0] + size[0]).contains(&pointer[0])
-            && (at[1]..=at[1] + size[1]).contains(&pointer[1])
-        {
-            return Some(*kind);
-        }
+/// Prefer the rendered label among overlaps, then pick the most face-on surface.
+fn chosen_plane(planes: &[PickerPlane], pointer: [f32; 2]) -> Option<GuiOriginPlaneKind> {
+    if let Some(plane) = planes
+        .iter()
+        .find(|plane| plane.label.is_some_and(|label| label.contains(pointer)))
+    {
+        return Some(plane.kind);
     }
     planes
         .iter()
-        .filter(|(corners, _)| inside(corners, pointer))
-        .max_by(|(first, _), (second, _)| area(first).total_cmp(&area(second)))
-        .map(|(_, kind)| *kind)
+        .filter(|plane| inside(&plane.corners, pointer))
+        .map(|plane| (plane.kind, area(&plane.corners)))
+        .filter(|&(_, area)| area > 1.)
+        .max_by(|(_, a), (_, b)| a.total_cmp(b))
+        .map(|(kind, _)| kind)
 }
 fn signed_edge(from: [f32; 2], to: [f32; 2], at: [f32; 2]) -> f32 {
     (to[0] - from[0]) * (at[1] - from[1]) - (to[1] - from[1]) * (at[0] - from[0])

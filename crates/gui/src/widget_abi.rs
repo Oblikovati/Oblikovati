@@ -2,7 +2,7 @@
 use imgui::{Condition, ImColor32, ImString, SelectableFlags, Ui};
 #[path = "widget_text_projection.rs"]
 mod text_projection;
-pub(crate) use text_projection::projected_text;
+pub(crate) use text_projection::{projected_background_text, projected_text};
 #[cfg(test)]
 #[path = "widget_text_line_advance_tests.rs"]
 mod text_line_advance_tests;

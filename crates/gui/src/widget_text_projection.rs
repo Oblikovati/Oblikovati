@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use imgui::Ui;
+use imgui::{DrawListMut, Ui, sys};
 
 /// Map a centered label onto the given screen-space basis vectors.
 pub(crate) fn projected_text(
@@ -9,28 +9,54 @@ pub(crate) fn projected_text(
     text: &str,
     [right, down]: [[f32; 2]; 2],
 ) {
-    let [width, height] = ui.calc_text_size(text);
-    // Build the unprojected glyphs away from the window edge to keep them from clipping early.
     let position = ui.window_pos();
     let size = ui.window_size();
-    let source: [f32; 2] = std::array::from_fn(|axis| position[axis] + size[axis] / 2.);
+    let source = std::array::from_fn(|axis| position[axis] + size[axis] / 2.);
     let list = ui.get_window_draw_list();
-    // SAFETY: the current window's list is live for this frame, and these reads and writes stay
-    // inside the vertices this call appended; nothing else draws between the two reads.
+    // The live Ui backs both handles for the same draw list.
+    let raw = unsafe { sys::igGetWindowDrawList() };
+    transform_label(ui, &list, raw, source, color, text, |[x, y]| {
+        std::array::from_fn(|axis| center[axis] + x * right[axis] + y * down[axis])
+    });
+}
+
+/// Project a label on the background list, using a source point inside its current clip.
+pub(crate) fn projected_background_text(
+    ui: &Ui,
+    draw: &DrawListMut<'_>,
+    source: [f32; 2],
+    color: [f32; 4],
+    text: &str,
+    project: impl Fn([f32; 2]) -> [f32; 2],
+) {
+    // Callers pass the current frame's background list, which owns the clipping rectangle.
+    let raw = unsafe { sys::igGetBackgroundDrawList_Nil() };
+    transform_label(ui, draw, raw, source, color, text, project);
+}
+
+fn transform_label(
+    ui: &Ui,
+    draw: &DrawListMut<'_>,
+    raw: *mut sys::ImDrawList,
+    source: [f32; 2],
+    color: [f32; 4],
+    text: &str,
+    project: impl Fn([f32; 2]) -> [f32; 2],
+) {
+    let [width, height] = ui.calc_text_size(text);
+    // SAFETY: the paired handles name a live draw list. Only this call's appended vertices change.
     unsafe {
-        let raw = imgui::sys::igGetWindowDrawList();
         let first = (*raw).VtxBuffer.Size;
-        list.add_text(
+        draw.add_text(
             [source[0] - width / 2., source[1] - height / 2.],
             color,
             text,
         );
-        let last = (*raw).VtxBuffer.Size;
-        for index in first..last {
+        for index in first..(*raw).VtxBuffer.Size {
             let vertex = &mut *(*raw).VtxBuffer.Data.add(index as usize);
-            let (x, y) = (vertex.pos.x - source[0], vertex.pos.y - source[1]);
-            vertex.pos.x = center[0] + x * right[0] + y * down[0];
-            vertex.pos.y = center[1] + x * right[1] + y * down[1];
+            let point = project([vertex.pos.x - source[0], vertex.pos.y - source[1]]);
+            vertex.pos.x = point[0];
+            vertex.pos.y = point[1];
         }
     }
 }

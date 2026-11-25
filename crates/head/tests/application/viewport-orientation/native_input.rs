@@ -93,3 +93,68 @@ fn native_blank_assembly_shows_orientation_navigation_and_world_axes() {
     assert_eq!(world.active_id(), assembly);
     world.close();
 }
+
+#[test]
+fn native_origin_picker_keeps_edge_on_planes_reachable_from_the_browser() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    front_displayed(&mut world);
+    world.click_text("Start 2D Sketch");
+    world.pump(Vec::new());
+    for (name, expected) in [("XYPlane", 2), ("YZPlane", 1), ("XZPlane", 1)] {
+        let rendered = world
+            .frame
+            .runs
+            .iter()
+            .filter(|run| run.text == name)
+            .count();
+        assert_eq!(rendered, expected, "rendered copies of {name}");
+    }
+    world.save_capture("front-origin-picker");
+    let viewport_label = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.text == "XYPlane")
+        .max_by(|a, b| a.minimum[0].total_cmp(&b.minimum[0]))
+        .unwrap()
+        .center();
+    world.click(diagnostics::pointer_pixels(viewport_label));
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+    world.finish_sketch();
+    front_displayed(&mut world);
+    world.click_text("Start 2D Sketch");
+    let row = world.run_in_window("Model", "YZPlane").center();
+    world.click(diagnostics::pointer_pixels(row));
+    assert_eq!(
+        world.state().authoring,
+        oblikovati_gui::GuiAuthoringContext::Sketch
+    );
+    world.close();
+}
+
+#[test]
+fn native_origin_planes_composite_through_the_viewcube_margin() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    front_displayed(&mut world);
+    let mut camera = viewport_pan::camera(&mut world);
+    camera.scale *= 0.06;
+    crate::HeadWindow::set_view_camera(&mut world.app().window, camera).unwrap();
+    world.pump(Vec::new());
+    let (position, _) = layout();
+    // This point is inside the overlay window and outside the rendered cube and arrows.
+    let pixel = diagnostics::pointer_pixels([position[0] + 12., position[1] + 32.])
+        .map(|axis| axis as usize);
+    let before = world.pixel_at(pixel);
+    world.click_text("Start 2D Sketch");
+    assert!(
+        world.pixel_at(pixel)[0] > before[0],
+        "the plane fill should continue through the transparent cube margin"
+    );
+    world.save_capture("origin-through-viewcube-margin");
+    world.close();
+}

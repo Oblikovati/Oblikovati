@@ -232,13 +232,13 @@ impl GuiFrameEngine {
         let detached = self.document_tabs.is_detached(request.commands.document);
         self.workspaces
             .panel(ui, &request.commands, area, detached, &mut selected);
+        self.plane_selection
+            .take_browser_choice(&mut self.workspace, &mut selected);
         self.plane_selection.panel(
             ui,
             &request.commands,
             request.layout_scale(),
             area,
-            (self.workspace.view_cube_visible && !self.home.active)
-                .then(|| self.orientation.cube_bounds(area)),
             &mut selected,
         );
         self.document_tabs.previews.showing = workspace_front(request, area, self.home.active);

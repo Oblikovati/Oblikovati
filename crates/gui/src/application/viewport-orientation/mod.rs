@@ -220,11 +220,6 @@ pub(crate) struct OrientationControl {
     fading: bool,
 }
 impl OrientationControl {
-    pub(crate) fn cube_bounds(&self, area: WorkspaceArea) -> [f32; 4] {
-        let side = self.options.side();
-        let [left, top] = self.position(area, side);
-        [left, top, left + side, top + side]
-    }
     pub(crate) fn register_dockables(
         &self,
         registry: &mut crate::dockable_lifecycle::DockRegistry,

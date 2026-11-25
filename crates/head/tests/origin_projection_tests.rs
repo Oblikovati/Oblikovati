@@ -44,9 +44,23 @@ fn automatic_extent_tracks_scene_and_keeps_fixed_projection_separate() {
     let planes = origin_plane_outlines(&window, &state);
     assert_eq!(planes[0].corners[0], [-6, -6]);
     assert_eq!(planes[0].automatic_corners[0], [-33, -33]);
+    assert_eq!(
+        planes[0].picker_corners,
+        [[-26, -6], [36, -6], [36, 9], [-26, 9]]
+    );
     let axes = origin_axis_lines(&window, &state);
     assert_eq!(axes[0].ends, [[-6, 0], [6, 0]]);
     assert_eq!(axes[0].automatic_ends, [[-33, 0], [33, 0]]);
+}
+
+#[test]
+fn picker_has_no_fixed_minimum_for_a_small_model() {
+    let bounds = Some([[0.; 3], [2., 3., 4.]]);
+    assert_eq!(
+        picker_extent(SketchPlane::xz(), bounds),
+        Some([[-0.25, -0.5], [2.25, 4.5]])
+    );
+    assert!(picker_extent(SketchPlane::xz(), None).is_none());
 }
 
 #[test]

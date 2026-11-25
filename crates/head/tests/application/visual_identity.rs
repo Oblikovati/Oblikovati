@@ -118,15 +118,9 @@ fn native_origin_plane_picker_draws_behind_navigation_and_enters_the_sketch() {
     world.pump(Vec::new());
     assert_eq!(world.pixel_at(nav), icon);
     assert_eq!(world.pixel_at(cube), face);
-    let shown = world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| run.text == "XYPlane")
-        .count();
-    assert_eq!(shown, 2, "expected viewport label and browser row");
     world.save_capture("origin-plane-picker");
-    world.click_text("XY Plane");
+    let row = world.run_in_window("Model", "XYPlane").center();
+    world.click(diagnostics::pointer_pixels(row));
     assert_eq!(
         world.state().authoring,
         oblikovati_gui::GuiAuthoringContext::Sketch

@@ -195,6 +195,7 @@ fn automatic_origin_reach(bounds: Option<[[f64; 3]; 2]>) -> f64 {
         ORIGIN_PLANE_REACH
     }
 }
+
 /// Project the origin axes at fixed and scene-sized reaches.
 pub(super) fn origin_axis_lines(
     window: &dyn HeadWindow,
@@ -246,7 +247,8 @@ pub(super) fn origin_plane_outlines(
     {
         return Vec::new();
     }
-    let automatic = automatic_origin_reach(window.presentation_bounds());
+    let bounds = window.presentation_bounds();
+    let automatic = automatic_origin_reach(bounds);
     [
         (Xy, SketchPlane::xy()),
         (Xz, SketchPlane::xz()),
@@ -264,6 +266,9 @@ pub(super) fn origin_plane_outlines(
             kind,
             corners,
             automatic_corners,
+            picker_corners: picker_extent(plane, bounds)
+                .and_then(|extent| project_plane_extent(window, plane, extent))
+                .unwrap_or(corners),
         })
     })
     .collect()
@@ -273,9 +278,37 @@ fn project_origin_plane(
     plane: oblikovati_model::sketch::SketchPlane,
     reach: f64,
 ) -> Option<[[i32; 2]; 4]> {
-    let [a, b, c, d] = [[-1., -1.], [1., -1.], [1., 1.], [-1., 1.]]
-        .map(|[u, v]| window.sketch_pixel(plane, [u * reach, v * reach]));
-    Some([a.ok()?, b.ok()?, c.ok()?, d.ok()?])
+    project_plane_extent(window, plane, [[-reach; 2], [reach; 2]])
+}
+
+fn project_plane_extent(
+    window: &dyn HeadWindow,
+    plane: oblikovati_model::sketch::SketchPlane,
+    [[left, bottom], [right, top]]: [[f64; 2]; 2],
+) -> Option<[[i32; 2]; 4]> {
+    let outline = [[left, bottom], [right, bottom], [right, top], [left, top]];
+    window.sketch_pixels(plane, &outline).ok()?.try_into().ok()
+}
+
+fn picker_extent(
+    plane: oblikovati_model::sketch::SketchPlane,
+    bounds: Option<[[f64; 3]; 2]>,
+) -> Option<[[f64; 2]; 2]> {
+    let [low, high] = bounds?;
+    // The three named origin planes use positive model axes for their local coordinates.
+    let minimum = plane.to_sketch(low).ok()?;
+    let maximum = plane.to_sketch(high).ok()?;
+    let span: [f64; 2] = std::array::from_fn(|i| maximum[i] - minimum[i]);
+    let longest = span[0].max(span[1]);
+    if longest <= 0. || span.iter().any(|s| !s.is_finite() || *s < 0.) {
+        return None;
+    }
+    let center: [f64; 2] = std::array::from_fn(|i| minimum[i] + span[i] * 0.5);
+    let half = span.map(|width| width.max(longest * 0.15) * 0.625);
+    Some([
+        std::array::from_fn(|i| center[i] - half[i]),
+        std::array::from_fn(|i| center[i] + half[i]),
+    ])
 }
 
 #[cfg(test)]

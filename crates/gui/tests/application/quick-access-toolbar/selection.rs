@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::plane_selection::{area, inside, label_position};
+use super::plane_selection::{area, inside};
 use super::*;
 
 #[test]
@@ -87,21 +87,6 @@ fn a_plane_outline_holds_its_centre_and_reports_its_area() {
     assert!(inside(&square, [2., 2.]));
     assert!(!inside(&square, [5., 2.]));
     assert_eq!(area(&square), 16.);
-}
-
-#[test]
-fn plane_label_stays_inside_the_clickable_workspace() {
-    use crate::application::document_creation::workspaces::WorkspaceArea;
-    let workspace = WorkspaceArea {
-        left: 100.,
-        top: 200.,
-        right: 500.,
-        bottom: 400.,
-    };
-    let above = [[200., 100.], [300., 100.], [300., 150.], [200., 150.]];
-    let right = [[490., 300.], [600., 300.], [600., 450.], [490., 450.]];
-    assert_eq!(label_position(&above, [60., 16.], workspace), [280., 200.]);
-    assert_eq!(label_position(&right, [60., 16.], workspace), [440., 384.]);
 }
 
 #[test]
