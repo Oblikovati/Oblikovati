@@ -49,7 +49,7 @@ fn dot_glyph(rgba: ColorRgba) -> Result<Handle<Graphic3dMarkerImage>, String> {
             }
         }
     }
-    Graphic3dMarkerImage::from_images(Handle::new(image), Handle::default())
+    Graphic3dMarkerImage::from_images(Handle::new(image).into_upcast(), Handle::default())
         .map(Handle::new)
         .map_err(|cause| cause.to_string())
 }
@@ -64,7 +64,7 @@ fn colored_glyph(rgba: ColorRgba) -> Result<Handle<Graphic3dMarkerImage>, String
     .map_err(|cause| cause.to_string())?;
     let mask = glyph.get_image();
     let image = tinted_mask(&mask, rgba)?;
-    Graphic3dMarkerImage::from_images(Handle::new(image), Handle::default())
+    Graphic3dMarkerImage::from_images(Handle::new(image).into_upcast(), Handle::default())
         .map(Handle::new)
         .map_err(|cause| cause.to_string())
 }

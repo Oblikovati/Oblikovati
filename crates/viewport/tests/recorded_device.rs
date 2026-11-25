@@ -57,19 +57,19 @@ impl RecordedDevice {
             resize.window.set_size(resize.extent[0], resize.extent[1]);
         }
         if let Some(target) = self.revision_once.take() {
-            target.observe().resized();
+            target.upgrade().resized();
         }
     }
     fn deliver_recorded_gui_change(&mut self) {
         if let Some(replacement) = self.replace_gui_once.take() {
             replacement
                 .target
-                .observe()
+                .upgrade()
                 .attach_gui_layer(replacement.extent, replacement.layer)
                 .unwrap();
         }
         if let Some(target) = self.clear_gui_once.take() {
-            target.observe().clear_gui_layer().unwrap();
+            target.upgrade().clear_gui_layer().unwrap();
         }
     }
     fn recorded_capture(&self, frame: &RenderFrame) -> FrameCapture {

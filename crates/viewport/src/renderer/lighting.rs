@@ -4,7 +4,7 @@ use martensite_tkernel::{
     standard::Handle,
 };
 use martensite_tkmath::gp::Direction3;
-use martensite_tkservice::graphic3d::Graphic3dCLight;
+use martensite_tkservice::graphic3d::Graphic3dCLightSource;
 use martensite_tkv3d::v3d::{V3dAmbientLight, V3dDirectionalLight, V3dViewer};
 
 pub(super) fn configure(viewer: &V3dViewer) -> Result<(), String> {
@@ -18,8 +18,8 @@ pub(super) fn configure(viewer: &V3dViewer) -> Result<(), String> {
         .set_intensity(0.18)
         .map_err(|error| error.to_string())?;
     for light in [
-        Handle::new(directional).cast::<Graphic3dCLight>(),
-        Handle::new(ambient).cast(),
+        Handle::new(directional).into_upcast::<dyn Graphic3dCLightSource>(),
+        Handle::new(ambient).into_upcast(),
     ] {
         viewer.add_light(&light);
         viewer

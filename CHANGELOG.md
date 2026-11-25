@@ -32,7 +32,6 @@
 - Added a saved Mini-Toolbar visibility option to the View ribbon. (#3897)
 - Add an exact best-fit certificate for explicit affine equations; sketch drag integration remains open. (#4171)
 - Draw midpoint lines with pointer or typed length and angle, including explicit point selection. (#4178)
-
 - Choose and select one relation when sketch constraint glyphs overlap. (#4169)
 
 - Added individual sketch constraint glyph hiding and Show All through the viewport and typed API. (#4166)
@@ -176,6 +175,7 @@
 
 ### Changed
 
+- Updated the geometry kernel and Vulkan renderer to Martensite v0.14.1. (#3563)
 - Adopted the new desktop visual identity across Dark, Light, and High Contrast themes, including studio viewport palettes, bundled fonts, vector navigation and ribbon icons, and the Extrude panel. Added active asset dock indicators and swatches, increased ViewCube contrast, and applied neutral drawing paper. Added document tab artwork and live viewport status readouts. Updated Home wordmarks, ribbon captions, density controls, and command artwork. Extrude now fits its contents, toggles preview, and offers Apply & Create New. Updated Model Browser rows and search, and added Studio selection colors and dimension units and extension lines. (#4063)
 - Reused part checkpoints during Undo and Redo when a clean feature prefix remains. (#4079)
 - Reused part checkpoints when deleting bodies through the typed API. (#4079)
