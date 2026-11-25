@@ -16,3 +16,7 @@ They also measured the direction icon pitch and checked that OK and
 Cancel stay visible at a native window size of 1100 × 390.
 [Extrude](extrude-properties.png) · [Chamfer](chamfer-properties.png) ·
 [Short viewport](extrude-short-properties.png) · [Preview and Apply](extrude-profile-and-actions.png)
+
+A later X11 check verified the fitted Chamfer panel and measured the
+remaining space below Cancel at under 20 px.
+[Fitted Chamfer](chamfer-fitted.png)

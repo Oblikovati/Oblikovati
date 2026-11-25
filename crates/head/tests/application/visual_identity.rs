@@ -178,7 +178,8 @@ fn native_feature_properties_align_blend_fields_and_keep_extrude_directions_in_o
     let value = world.run_in_window("Chamfer", "1mm").center();
     assert!(label[0] < position[0] + size[0] * 0.4);
     assert!(value[0] > position[0] + size[0] * 0.4);
-    assert!((label[1] - value[1]).abs() < 2.);
+    let cancel = world.run_in_window("Chamfer", "Cancel").maximum[1];
+    assert!((label[1] - value[1]).abs() < 2. && position[1] + size[1] - cancel < 20.);
     world.save_capture("chamfer-properties");
 
     world.click_text("Extrude");

@@ -15,7 +15,10 @@ impl BlendDialog {
             return;
         }
         let title = if self.chamfer { "Chamfer" } else { "Fillet" };
-        crate::widget_abi::fit_viewport_properties(ui, title, area, [280., 138.]);
+        let style = ui.clone_style();
+        // The title bar and property rows each take one frame, followed by the footer.
+        let height = 3. * ui.frame_height_with_spacing() + 2. * style.window_padding[1] + 28.;
+        crate::widget_abi::fit_viewport_properties(ui, title, area, [280., height]);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;
         Self::dockable_window(ui, title, &mut open).build(|| {
