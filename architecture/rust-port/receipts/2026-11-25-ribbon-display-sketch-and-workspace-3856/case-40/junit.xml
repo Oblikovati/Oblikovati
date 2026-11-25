@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:45:14.177648427Z" time="15.035232959"><testcase name="Scenario: Switch between an open part and the Home workspace: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:577:3" time="15.035232959"><system-out><![CDATA[  Scenario: Switch between an open part and the Home workspace
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the full Tools ribbon is displayed
+   ✔  And the Home workspace is available as a document tab
+   ✔  When the user selects the Home document tab
+   ✔  Then the Home workspace is displayed
+   ✔  And the full Tools ribbon remains displayed with Home-context commands
+   ✔  And Document Settings is unavailable
+   ✔  When the user selects the open part document tab
+   ✔  Then the part workspace and its model browser are displayed
+   ✔  And the full Tools ribbon is displayed with part-context commands
+   ✔  And Document Settings is available
+]]></system-out></testcase></testsuite></testsuites>

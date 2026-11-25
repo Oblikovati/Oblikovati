@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:42:54.184525808Z" time="23.378023408"><testcase name="Scenario: Repeat the active compact panel button: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:497:3" time="23.378023408"><system-out><![CDATA[  Scenario: Repeat the active compact panel button
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Tools ribbon is minimized to panel buttons
+   ✔  When the user clicks the Options panel button
+   ✔  Then the temporary Options command panel appears below the button strip
+   ✔  And the Options panel button is highlighted
+   ✔  When the user clicks the Options panel button again
+   ✔  Then the temporary Options command panel remains visible
+   ✔  And the Options panel button remains highlighted
+   ✔  When the user opens the ribbon display-mode menu
+   ✔  Then the menu shows "Minimize to Panel Buttons" as selected
+   ✔  And the temporary Options command panel remains visible
+   ✔  When the user selects "Minimize to Tabs"
+   ✔  Then the temporary Options command panel closes
+   ✔  And the ribbon displays tabs without a permanent panel-button strip
+]]></system-out></testcase></testsuite></testsuites>

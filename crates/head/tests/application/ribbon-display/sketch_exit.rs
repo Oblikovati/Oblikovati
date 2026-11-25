@@ -106,11 +106,31 @@ fn native_display_toggle_keeps_sketch_editing() {
 
 #[given("a part containing an existing extrusion and sketch is active in the MCAD Software")]
 fn part_with_existing_sketch(world: &mut ApplicationWorld) {
-    open_visible_extruded_part(world);
-    if world.shows(SKETCH) {
-        click_branch_arrow(world, FEATURE);
+    if !active_fixture_is(world, "workspace-layout-native.opd") {
+        open_visible_extruded_part(world);
     }
-    world.expect_no_text(SKETCH);
+    let [feature, sketch] = extrusion_and_sketch_rows(world);
+    if world.shows(sketch) {
+        click_branch_arrow(world, feature);
+    }
+    world.expect_no_text(sketch);
+}
+
+fn active_fixture_is(world: &mut ApplicationWorld, basename: &str) -> bool {
+    let state = world.state();
+    state
+        .document
+        .and_then(|document| state.document_storage.get(&document))
+        .and_then(|storage| storage.path.as_deref())
+        .is_some_and(|path| std::path::Path::new(path).ends_with(basename))
+}
+
+fn extrusion_and_sketch_rows(world: &mut ApplicationWorld) -> [&'static str; 2] {
+    if active_fixture_is(world, "workspace-layout-native.opd") {
+        ["Extrusion1", "Sketch1"]
+    } else {
+        [FEATURE, SKETCH]
+    }
 }
 #[given("the ribbon is minimized to tabs with Tools selected")]
 fn minimized_tools_ribbon(world: &mut ApplicationWorld) {
@@ -120,12 +140,14 @@ fn minimized_tools_ribbon(world: &mut ApplicationWorld) {
 }
 #[when("the user expands the extrusion in the model browser")]
 fn expand_existing_extrusion(world: &mut ApplicationWorld) {
-    click_branch_arrow(world, FEATURE);
-    world.expect_text(SKETCH);
+    let [feature, sketch] = extrusion_and_sketch_rows(world);
+    click_branch_arrow(world, feature);
+    world.expect_text(sketch);
 }
 #[when("the user double-clicks its sketch")]
 fn edit_existing_sketch_by_double_click(world: &mut ApplicationWorld) {
-    let at = super::super::diagnostics::pointer_pixels(world.run(SKETCH).center());
+    let [_, sketch] = extrusion_and_sketch_rows(world);
+    let at = super::super::diagnostics::pointer_pixels(world.run(sketch).center());
     world.pump(crate::native::gui_loop_tests::pointer_click_events(at, 2));
     world.pump(Vec::new());
     assert_eq!(
@@ -162,10 +184,12 @@ fn minimized_tools_selected(world: &mut ApplicationWorld) {
 
 #[given("an existing sketch is being edited in the MCAD Software")]
 fn existing_sketch_under_edit(world: &mut ApplicationWorld) {
-    open_visible_extruded_part(world);
-    right_click_row(world, SKETCH);
-    world.click_text("Edit Sketch");
-    world.pump(Vec::new());
+    if world.state().authoring != oblikovati_gui::GuiAuthoringContext::Sketch {
+        open_visible_extruded_part(world);
+        right_click_row(world, SKETCH);
+        world.click_text("Edit Sketch");
+        world.pump(Vec::new());
+    }
     assert_eq!(
         world.state().authoring,
         oblikovati_gui::GuiAuthoringContext::Sketch
@@ -201,5 +225,11 @@ fn finished_model_visible(world: &mut ApplicationWorld) {
         world.state().authoring,
         oblikovati_gui::GuiAuthoringContext::Part
     );
-    expect_solid_visible(world);
+    let document = world.previous_document.unwrap();
+    world.expect_active(document);
+    if active_fixture_is(world, "planar-sketch-empty-xy.opd") {
+        world.expect_text("Sketch1");
+    } else {
+        expect_solid_visible(world);
+    }
 }
