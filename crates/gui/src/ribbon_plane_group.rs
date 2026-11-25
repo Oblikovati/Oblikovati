@@ -42,10 +42,10 @@ pub(super) fn draw(
     if ungrouped {
         draw_individual_variants(ui, icons, origin, expanded);
     } else {
-        draw_variants_popup(ui);
+        draw_variants_popup(ui, state, actions);
     }
 }
-fn draw_variants_popup(ui: &Ui) {
+fn draw_variants_popup(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
     ui.same_line();
     if ui.small_button("v##plane-variants") {
         ui.open_popup("##plane-variant-menu");
@@ -53,6 +53,15 @@ fn draw_variants_popup(ui: &Ui) {
     let Some(_popup) = ui.begin_popup("##plane-variant-menu") else {
         return;
     };
+    let action = GuiShellAction::OpenOffsetPlane;
+    if ui
+        .menu_item_config("Offset from Plane")
+        .enabled(action.dispatchable(state))
+        .build()
+    {
+        actions.push(action);
+    }
+    ui.separator();
     let disabled = ui.begin_disabled(true);
     for name in VARIANTS {
         ui.menu_item(name);

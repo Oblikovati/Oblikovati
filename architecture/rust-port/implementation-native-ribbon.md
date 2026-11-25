@@ -38,6 +38,9 @@ writes the applied ribbon settings and leaves the draft open in Customize.
 The [native import runs](receipts/2026-11-24-ribbon-customization-import-drafts-3856/README.md)
 check that a file replaces pending edits on Tools and Manage while
 preserving the selected target. Cancel restores the applied settings.
+The grouped Plane menu opens the native Offset Plane dialog from its
+Offset from Plane entry. The entry uses the same availability check and
+action as the main Plane button.
 
 The Rust shell uses a fixed ribbon band across the window instead of the temporary
 floating command palette. The File menu and quick-access controls remain available.

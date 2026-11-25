@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:17:07.326381916Z" time="18.581087884"><testcase name="Scenario: Launch a choice from a grouped command menu: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:423:3" time="18.581087884"><system-out><![CDATA[  Scenario: Launch a choice from a grouped command menu
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the 3D Model Work Features panel contains a grouped "Plane" command
+   ✔  When the user opens the Plane drop-down and selects "Offset from Plane"
+   ✔  Then the menu closes
+   ✔  And the software prompts the user to select a planar face
+   ✔  When the user presses Escape without selecting a face
+   ✔  Then the software returns to the ready state
+   ✔  And the grouped Plane control and the part remain visible
+   ✔  And no new work plane is created
+]]></system-out></testcase></testsuite></testsuites>
