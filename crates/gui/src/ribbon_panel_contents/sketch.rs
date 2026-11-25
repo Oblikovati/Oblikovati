@@ -108,7 +108,12 @@ pub(super) fn sketch_create_controls(
     );
     icons.cursor(ui, origin, [240., 60.]);
     let disabled = ui.begin_disabled(true);
-    crate::widget_abi::button(ui, "Project Geometry", icons.cell([150., 18.]));
+    icons.button(
+        ui,
+        "Project Geometry",
+        crate::icons::IconGlyph::ProjectGeometry,
+        [150., 18.],
+    );
     drop(disabled);
 }
 
@@ -130,16 +135,12 @@ pub(super) fn visibility_controls(
     } else {
         "Show Sketches"
     };
-    let pressed = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
-        crate::widget_abi::button(ui, label, [108., 26.])
+    let size = if icons.appearance == crate::ribbon_command_layout::RibbonAppearance::Normal {
+        [108., 26.]
     } else {
-        icons.button(
-            ui,
-            label,
-            crate::icons::IconGlyph::CreateSketch,
-            icons.appearance.single_cell(),
-        )
+        icons.appearance.single_cell()
     };
+    let pressed = icons.button(ui, label, crate::icons::IconGlyph::SketchVisibility, size);
     drop(disabled);
     let Some(document) = state.document.filter(|_| pressed) else {
         return;

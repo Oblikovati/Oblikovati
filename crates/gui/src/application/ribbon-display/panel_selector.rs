@@ -100,7 +100,15 @@ impl RibbonDisplayState {
 
     fn selector_button(&mut self, ui: &Ui, position: [f32; 2]) -> (bool, bool) {
         crate::widget_abi::cursor_position(ui, position);
-        let clicked = crate::widget_abi::button(ui, "v##ribbon-panel-selector", [22., 24.]);
+        let clicked = crate::widget_abi::button(ui, "##ribbon-panel-selector", [22., 24.]);
+        let [left, top] = ui.item_rect_min();
+        let draw = ui.get_window_draw_list();
+        let color = ui.style_color(imgui::StyleColor::Text);
+        for offset in [7., 11., 15.] {
+            draw.add_line([left + 5., top + offset], [left + 16., top + offset], color)
+                .build();
+        }
+        drop(draw);
         let activate = if self.selector_open {
             // The outside press closes this popup. Do not replay it as a new open.
             self.selector_press.finish_frame(ui);

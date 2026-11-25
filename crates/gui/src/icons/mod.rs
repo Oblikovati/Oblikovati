@@ -11,6 +11,10 @@ mod compose;
 #[path = "../../tests/icons/roles.rs"]
 mod tests;
 
+#[cfg(test)]
+#[path = "../../tests/icons/design_catalog.rs"]
+mod design_catalog;
+
 mod catalog;
 
 mod cache;

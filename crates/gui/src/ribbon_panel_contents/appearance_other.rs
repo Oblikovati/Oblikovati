@@ -9,9 +9,10 @@ pub(super) fn draw(
     origin: [f32; 2],
     state: &GuiCommandState,
     owners: &mut crate::ribbon_panels::RibbonPanelOwners<'_>,
+    actions: &mut Vec<GuiShellAction>,
 ) -> bool {
     match panel {
-        RibbonPanel::Component => component(ui, origin, state, owners),
+        RibbonPanel::Component => component(ui, origin, state, owners, actions),
         RibbonPanel::DrawingViews => drawing_views(ui, origin, state, owners),
         RibbonPanel::PresentationModel => {
             let size = owners.icons.appearance.single_cell();
@@ -31,8 +32,29 @@ fn component(
     origin: [f32; 2],
     state: &GuiCommandState,
     owners: &mut crate::ribbon_panels::RibbonPanelOwners<'_>,
+    actions: &mut Vec<GuiShellAction>,
 ) {
     let icons = owners.icons;
+    if state.active_express() {
+        if let Some(id) = state.document {
+            crate::chrome::command_control(
+                ui,
+                "Load Full",
+                GuiShellAction::LoadFullDocument(id),
+                state,
+                actions,
+                || {
+                    icons.button(
+                        ui,
+                        "Load Full",
+                        Glyph::InsertModel,
+                        icons.appearance.single_cell(),
+                    )
+                },
+            );
+        }
+        return;
+    }
     let (position, size) = icons.appearance.cell(0);
     icons.cursor(ui, origin, position);
     let disabled = ui.begin_disabled(owners.home_active || state.transaction_open);
@@ -44,6 +66,7 @@ fn component(
     icons.cursor(ui, origin, position);
     let disabled = ui.begin_disabled(true);
     icons.button(ui, "Create", Glyph::NewAssembly, size);
+    unavailable_tooltip(ui);
     drop(disabled);
 }
 fn drawing_views(
@@ -64,6 +87,7 @@ fn drawing_views(
     icons.cursor(ui, origin, position);
     let disabled = ui.begin_disabled(true);
     icons.button(ui, "Projected View", Glyph::DrawingProjected, size);
+    unavailable_tooltip(ui);
     drop(disabled);
 }
 fn unavailable(
@@ -100,4 +124,10 @@ fn unavailable(
     };
     muted_icon_commands(ui, origin, icons, entries, false);
     true
+}
+
+fn unavailable_tooltip(ui: &Ui) {
+    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+        ui.tooltip_text(NOT_PORTED);
+    }
 }

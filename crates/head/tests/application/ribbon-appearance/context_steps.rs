@@ -33,13 +33,13 @@ fn tools_compact(world: &mut ApplicationWorld) {
     "the user cycles the ribbon through panel buttons, panel titles, and tabs only back to the full ribbon"
 )]
 fn cycle_to_full(world: &mut ApplicationWorld) {
-    world.click_text("Ribbon Display");
+    super::super::ribbon_display::click_display_control(world);
     world.expect_text("Options");
-    world.click_text("Ribbon Display");
+    super::super::ribbon_display::click_display_control(world);
     world.expect_text("Options");
-    world.click_text("Ribbon Display");
+    super::super::ribbon_display::click_display_control(world);
     world.expect_no_text("Options");
-    world.click_text("Ribbon Display");
+    super::super::ribbon_display::click_display_control(world);
     world.expect_text("Options");
 }
 #[then("the Ribbon Appearance submenu marks \"Compact\" as selected")]

@@ -13,7 +13,7 @@ pub(crate) use muted::{
     floating_notes,
 };
 mod sketch;
-use muted::{muted_commands, muted_icon_commands, part_modify_controls};
+use muted::{muted_icon_commands, part_modify_controls};
 
 /// Beside the format toggles, which fill the panel's height.
 const PRECISE_INPUT_COLUMN: f32 = 116.;
@@ -28,9 +28,7 @@ pub(crate) fn draw_panel_content(
     additional_allowed: bool,
 ) -> bool {
     crate::widget_abi::cursor_position(ui, origin);
-    if owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal
-        && appearance_other::draw(ui, panel, origin, state, owners)
-    {
+    if appearance_other::draw(ui, panel, origin, state, owners, actions) {
         return false;
     }
     match panel {
@@ -229,86 +227,7 @@ pub(crate) fn draw_panel_content(
             return appearance_controls(ui, state, owners.editor, actions);
         }
         RibbonPanel::Visibility => sketch::visibility_controls(ui, state, owners.icons, actions),
-        RibbonPanel::Windows => windows_controls(ui, origin, state, owners, actions),
-        RibbonPanel::Component => {
-            owners.icons.cursor(ui, origin, [0., 0.]);
-            if state.active_express() {
-                if let Some(id) = state.document {
-                    crate::chrome::command_control(
-                        ui,
-                        "Load Full",
-                        GuiShellAction::LoadFullDocument(id),
-                        state,
-                        actions,
-                        || {
-                            crate::widget_abi::button(
-                                ui,
-                                "Load Full",
-                                owners.icons.cell([108., 58.]),
-                            )
-                        },
-                    );
-                }
-                return false;
-            }
-            let disabled = ui.begin_disabled(owners.home_active || state.transaction_open);
-            if crate::widget_abi::button(ui, "Place", owners.icons.cell([108., 26.])) {
-                owners.workspaces.request_assembly_place();
-            }
-            drop(disabled);
-            owners.icons.cursor(ui, origin, [0., 30.]);
-            let disabled = ui.begin_disabled(true);
-            crate::widget_abi::button(ui, "Create", owners.icons.cell([108., 26.]));
-            drop(disabled);
-        }
-        RibbonPanel::SheetMetalTools => {
-            muted_commands(
-                ui,
-                origin,
-                owners.icons,
-                &["Flange", "Flat Pattern"],
-                NOT_PORTED,
-            );
-        }
-        RibbonPanel::DrawingViews => {
-            let _disabled =
-                ui.begin_disabled(state.transaction_open || state.drawing_updates_deferred);
-            if crate::widget_abi::button(ui, "Base View", owners.icons.cell([108., 26.])) {
-                owners.workspaces.request_base_view();
-            }
-            drop(_disabled);
-            muted_commands(
-                ui,
-                [origin[0], origin[1] + owners.icons.cell([0., 30.])[1]],
-                owners.icons,
-                &["Projected View"],
-                NOT_PORTED,
-            );
-        }
-        RibbonPanel::DrawingModify => {
-            muted_commands(ui, origin, owners.icons, &["Break", "Crop"], NOT_PORTED)
-        }
-        RibbonPanel::DrawingSketch => {
-            muted_commands(ui, origin, owners.icons, &["Start Sketch"], NOT_PORTED)
-        }
-        RibbonPanel::DrawingSheets => {
-            muted_commands(ui, origin, owners.icons, &["New Sheet"], NOT_PORTED)
-        }
-        RibbonPanel::AnnotateDimension => {
-            muted_commands(
-                ui,
-                origin,
-                owners.icons,
-                &["General", "Baseline"],
-                NOT_PORTED,
-            );
-        }
-        RibbonPanel::AnnotateText => {
-            muted_commands(ui, origin, owners.icons, &["Leader"], NOT_PORTED)
-        }
-        RibbonPanel::AnnotateSymbols => {
-            muted_commands(ui, origin, owners.icons, &["Surface", "Weld"], NOT_PORTED);
-        }
+        RibbonPanel::Windows => appearance_view::windows(ui, origin, state, owners, actions),
         RibbonPanel::PartCreate => part_create_controls(ui, origin, state, owners, actions),
         RibbonPanel::PartModify => {
             part_modify_controls(ui, origin, state, actions, owners);
@@ -335,15 +254,6 @@ pub(crate) fn draw_panel_content(
                 false,
             );
         }
-        RibbonPanel::PartNotes => {
-            muted_commands(
-                ui,
-                origin,
-                owners.icons,
-                &["General Note", "Leader Note"],
-                NOT_PORTED,
-            );
-        }
         RibbonPanel::PartWorkFeatures => {
             use crate::icons::IconGlyph;
             let (position, _) = owners.icons.appearance.cell(0);
@@ -362,11 +272,6 @@ pub(crate) fn draw_panel_content(
                 let (position, size) = owners.icons.appearance.cell(index + plane_cells);
                 owners.icons.cursor(ui, origin, position);
                 muted::muted_command(ui, label, NOT_PORTED, owners.icons, Some(icon), false, size);
-            }
-        }
-        RibbonPanel::PresentationModel => {
-            if crate::widget_abi::button(ui, "Insert Model", [108., 58.]) {
-                owners.workspaces.request_insert();
             }
         }
         RibbonPanel::Sketch => start_sketch_command(ui, state, owners, actions),
@@ -455,33 +360,6 @@ fn single_command(
             actions,
         );
     }
-}
-fn windows_controls(
-    ui: &Ui,
-    origin: [f32; 2],
-    state: &GuiCommandState,
-    owners: &mut crate::ribbon_panels::RibbonPanelOwners<'_>,
-    actions: &mut Vec<GuiShellAction>,
-) {
-    if owners.icons.appearance != crate::ribbon_command_layout::RibbonAppearance::Normal {
-        appearance_view::windows(ui, origin, state, owners, actions);
-        return;
-    }
-    owners.workspace.user_interface_menu(ui, [108., 26.], None);
-    crate::widget_abi::cursor_position(ui, [origin[0], origin[1] + 30.]);
-    owners
-        .workspace
-        .switcher
-        .menu(ui, [108., 26.], state, actions, None);
-    crate::widget_abi::cursor_position(ui, [origin[0] + 116., origin[1]]);
-    crate::chrome::command_button(
-        ui,
-        "New",
-        GuiShellAction::NewDocumentWindow,
-        state,
-        [108., 26.],
-        actions,
-    );
 }
 fn appearance_controls(
     ui: &Ui,

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Content Center Feature</title>
+  <desc id="d">Standardized library solid block paired with a catalog table badge.</desc>
+  <g id="layer-body">
+    <defs><linearGradient id="ccC" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="var(--icon-body-front, #9EA6B8)"/><stop offset="28%" stop-color="var(--icon-body-top, #D2D7E2)"/><stop offset="68%" stop-color="var(--icon-body-front, #9EA6B8)"/><stop offset="100%" stop-color="var(--icon-body-side, #677084)"/></linearGradient></defs>
+    <path d="M7.5,8.5 L7.5,22 A7.5,3.4 0 0,0 22.5,22 L22.5,8.5 Z" fill="url(#ccC)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.15" stroke-linejoin="round"/>
+    <ellipse cx="15" cy="8.5" rx="7.5" ry="3.4" fill="var(--icon-body-top, #D2D7E2)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.15"/>
+  </g>
+  <g id="layer-accent">
+    <ellipse cx="15" cy="8.5" rx="7.5" ry="3.4" fill="var(--icon-mod-top, #B4AAFF)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.1"/>
+  </g>
+  <g id="layer-badge">
+    <circle cx="25" cy="25" r="5.6" fill="var(--icon-cutout, #121317)"/>
+    <rect x="20.5" y="20.8" width="9" height="8.4" rx="1.2" fill="var(--bg-surface-elevated, #181A20)" stroke="var(--icon-mod-front, #8172FA)" stroke-width="1"/><line x1="20.7" y1="23.6" x2="29.3" y2="23.6" stroke="var(--icon-mod-front, #8172FA)" stroke-width="0.9"/><line x1="20.7" y1="26.4" x2="29.3" y2="26.4" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="0.8"/><line x1="25" y1="21" x2="25" y2="29" stroke="var(--icon-line-general, #D2D7E2)" stroke-width="0.8"/>
+  </g>
+</svg>

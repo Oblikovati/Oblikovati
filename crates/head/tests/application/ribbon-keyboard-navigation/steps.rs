@@ -410,7 +410,8 @@ fn side_docked_group_tips_start_sketch_and_close_the_group() {
 fn compact_group_tips_open_the_sketch_command() {
     let mut world = ApplicationWorld::new();
     world.add_part();
-    world.click_text("Ribbon Display");
+    super::ribbon_display::cycling(&mut world);
+    super::ribbon_display::click_display_control(&mut world);
     show_model_tips(&mut world);
     assert!(exact_tip(&world, "K"));
     world.key(ViewportPhysicalKey::K, false);
@@ -432,7 +433,8 @@ fn compact_create_group_tips_open_extrude() {
     world.start_empty_sketch();
     world.draw_rectangle();
     world.finish_sketch();
-    world.click_text("Ribbon Display");
+    super::ribbon_display::cycling(&mut world);
+    super::ribbon_display::click_display_control(&mut world);
     show_model_tips(&mut world);
     assert!(exact_tip(&world, "C"));
     world.key(ViewportPhysicalKey::C, false);

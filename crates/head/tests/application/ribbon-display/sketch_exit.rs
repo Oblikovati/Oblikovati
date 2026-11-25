@@ -86,7 +86,7 @@ fn native_display_toggle_keeps_sketch_editing() {
     editable_sketch_active(&mut world);
     choose_tabs_mode(&mut world);
     prepare_full_sketch_ribbon(&mut world);
-    let at = super::super::diagnostics::pointer_pixels(world.run("Ribbon Display").center());
+    let at = super::display_control_point(&world);
     super::super::x11_input::focus_window();
     for show_commands in [false, true, false, true] {
         super::super::x11_input::click(at);

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Fit ribbon tabs before the display controls and offer the rest in a menu.
+use crate::application::ribbon_display::{DENSITY_CONTROL_WIDTH, PANEL_SELECTOR_WIDTH};
+pub(super) const RIBBON_CONTROL_WIDTH: f32 = DENSITY_CONTROL_WIDTH + PANEL_SELECTOR_WIDTH;
 use super::*;
 use crate::ribbon::RibbonTab;
 use imgui::TabItemFlags;
@@ -10,10 +12,9 @@ const MINIMUM_OVERFLOW_WIDTH: f32 = 28.;
 pub(super) fn draw(ui: &Ui, ribbon: &mut DocumentRibbon, frame: &RibbonFrame) {
     let style = ui.clone_style();
     let spacing = style.item_spacing[0];
-    let control_width = 160. + crate::application::ribbon_display::PANEL_SELECTOR_WIDTH;
     let overflow_width =
         (ui.calc_text_size(">>")[0] + 2. * style.frame_padding[0]).max(MINIMUM_OVERFLOW_WIDTH);
-    let room = (ui.window_size()[0] - control_width - ui.cursor_pos()[0]).max(1.);
+    let room = (ui.window_size()[0] - RIBBON_CONTROL_WIDTH - ui.cursor_pos()[0]).max(1.);
     let widths = tab_widths(ui, &frame.tabs);
     let count = fitting_tabs(&widths, room, overflow_width + spacing);
     let hidden = &frame.tabs[count..];

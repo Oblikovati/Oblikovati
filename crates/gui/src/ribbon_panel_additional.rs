@@ -100,7 +100,7 @@ pub(super) fn trigger(
     let title_bounds = [ui.item_rect_min(), ui.item_rect_max()];
     ui.same_line_with_spacing(0., 4.);
     let _panel_id = ui.push_id(format!("{panel:?}"));
-    let clicked = ui.small_button("v##additional-commands");
+    let clicked = ui.small_button("▼##additional-commands");
     let arrow_bounds = [ui.item_rect_min(), ui.item_rect_max()];
     let trigger = [
         [

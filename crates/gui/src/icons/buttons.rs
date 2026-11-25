@@ -11,6 +11,13 @@ impl GuiRibbonIcons {
         ui.same_line();
     }
 
+    pub(crate) fn brand_wordmark(&self, ui: &Ui, available: f32) {
+        let width = available.min(216.);
+        let texture =
+            imgui::TextureId::new(self.key(IconGlyph::BrandWordmark, IconSize::Large).raw());
+        imgui::Image::new(texture, [width, width * 40. / 216.]).build(ui);
+    }
+
     pub(crate) fn navigation_button(
         &self,
         ui: &Ui,

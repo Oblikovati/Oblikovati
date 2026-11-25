@@ -305,12 +305,12 @@ pub(super) fn assert_no_ribbon_labels(world: &ApplicationWorld, labels: &[&str])
                 "SheetMetal",
             ]
             .iter()
-            .any(|label| run.text.contains(label))
+            .any(|label| diagnostics::panel_caption_matches(&run.text, label))
                 && run.minimum[1] >= 58.
         })
         .map(|run| run.minimum[1])
         .min_by(f32::total_cmp)
-        .expect("expected a ribbon panel title");
+        .unwrap_or_else(|| panic!("expected a ribbon panel title in {}", world.text()));
     for &label in labels {
         assert!(
             !world.frame.runs.iter().any(|run| run.minimum[1] >= 58.

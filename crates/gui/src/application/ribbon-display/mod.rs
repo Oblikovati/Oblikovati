@@ -8,6 +8,7 @@ mod appearance_menu;
 mod context_bounds;
 mod display_control;
 use context_bounds::submenu_row_pressed;
+pub(crate) use display_control::DENSITY_CONTROL_WIDTH;
 mod docking_menu;
 mod panel_selector;
 pub(crate) use panel_selector::PANEL_SELECTOR_WIDTH;

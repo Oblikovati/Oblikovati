@@ -20,7 +20,7 @@ fn context_menu_visible(world: &mut ApplicationWorld) {
 #[when("the user clicks the ribbon display control")]
 #[when("the user clicks the ribbon display control again")]
 fn native_display_click(world: &mut ApplicationWorld) {
-    let at = super::super::diagnostics::pointer_pixels(world.run("Ribbon Display").center());
+    let at = super::display_control_point(&world);
     super::super::x11_input::click(at);
     world.pump(Vec::new());
 }
@@ -48,7 +48,7 @@ fn dragging_off_display_control_after_menu_dismissal_cancels_toggle() {
     super::super::x11_input::right_click(title);
     world.pump(Vec::new());
     context_menu_visible(&mut world);
-    let control = super::super::diagnostics::pointer_pixels(world.run("Ribbon Display").center());
+    let control = super::display_control_point(&world);
     super::super::x11_input::left_button(control, true);
     world.pump(Vec::new());
     super::super::x11_input::move_pointer([1000, 600]);

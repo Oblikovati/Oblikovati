@@ -4,6 +4,23 @@ use super::IconGlyph;
 
 pub(super) fn source(glyph: IconGlyph) -> Option<&'static str> {
     Some(match glyph {
+        IconGlyph::PlaceComponent => {
+            include_str!("../../assets/identity/cmd-asm-assembly-component-placement-32.svg")
+        }
+        IconGlyph::Derive => include_str!("../../assets/identity/cmd-model-derive-32.svg"),
+        IconGlyph::Feature => {
+            include_str!("../../assets/identity/cmd-model-content-center-feature-32.svg")
+        }
+        IconGlyph::InsertIFeature => {
+            include_str!("../../assets/identity/cmd-model-insert-ifeature-32.svg")
+        }
+        IconGlyph::Import => include_str!("../../assets/identity/cmd-model-import-32.svg"),
+        IconGlyph::SketchVisibility => {
+            include_str!("../../assets/identity/cmd-sketch-sketch-visibility-32.svg")
+        }
+        IconGlyph::RibbonDensity => {
+            include_str!("../../assets/identity/cmd-app-ribbon-density-32.svg")
+        }
         IconGlyph::NewPart => include_str!("../../assets/identity/doc-part-16.svg"),
         IconGlyph::NewAssembly => include_str!("../../assets/identity/doc-assembly-16.svg"),
         IconGlyph::NewDrawing => include_str!("../../assets/identity/doc-drawing-16.svg"),

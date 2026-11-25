@@ -247,10 +247,7 @@ impl ApplicationWorld {
     }
     pub fn shows(&self, text: &str) -> bool {
         let wanted = squeezed(text);
-        self.frame
-            .runs
-            .iter()
-            .any(|run| squeezed(&run.text).contains(&wanted))
+        diagnostics::shows_run(&self.frame, &wanted)
     }
     pub fn expect_text(&self, text: &str) {
         assert!(
@@ -276,6 +273,7 @@ impl ApplicationWorld {
             .rev()
             .find(|r| squeezed(&r.text) == wanted);
         exact
+            .or_else(|| diagnostics::panel_caption_run(&self.frame, &wanted))
             .or_else(|| {
                 self.frame
                     .runs

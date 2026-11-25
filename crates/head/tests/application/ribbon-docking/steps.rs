@@ -57,7 +57,7 @@ pub(super) fn undock_ribbon(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 fn expect_top_dock(world: &mut ApplicationWorld) {
-    world.expect_text("Ribbon Display");
+    assert!(super::ribbon_display::display_control_point(world)[0] > 0);
     world.expect_text("Start 2D Sketch");
     assert!(window_geometry(COLUMN).is_none(), "expected no side column");
     assert!(

@@ -31,7 +31,7 @@ impl IconSize {
         }
     }
 }
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub(crate) struct GuiRibbonIcons {
     keys: Arc<[[GuiTextureKey; 2]]>,
     pub logical: [[f32; 2]; 2],
@@ -137,6 +137,18 @@ impl GuiIconCache {
         edge: u32,
         preparation: &IconPreparation,
     ) -> Result<GuiAtlas, String> {
+        if glyph == IconGlyph::BrandWordmark {
+            let svg = if preparation.identity_mode == 1 {
+                include_str!("../../assets/identity/oblikovati-wordmark-light.svg")
+            } else {
+                include_str!("../../assets/identity/oblikovati-wordmark-dark.svg")
+            };
+            return super::raster::rasterize_identity_at_size(
+                svg,
+                [edge * 216 / 40, edge],
+                preparation.identity_mode,
+            );
+        }
         if let Some(svg) = super::identity_sources::source(glyph) {
             return super::raster::rasterize_identity(svg, edge, preparation.identity_mode)
                 .map_err(|cause| format!("identity icon {:?}: {cause}", glyph.name()));

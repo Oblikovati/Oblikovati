@@ -3,35 +3,24 @@
 use super::NOT_PORTED;
 use imgui::Ui;
 
-pub(super) fn muted_commands(
-    ui: &Ui,
-    origin: [f32; 2],
-    icons: &crate::icons::GuiRibbonIcons,
-    labels: &[&str],
-    reason: &str,
-) {
-    for (index, label) in labels.iter().enumerate() {
-        let size = muted_command_position(ui, origin, icons, index);
-        muted_command(ui, label, reason, icons, None, false, size);
-    }
-}
 pub(super) fn manage_insert_commands(
     ui: &Ui,
     origin: [f32; 2],
     icons: &crate::icons::GuiRibbonIcons,
 ) {
-    muted_commands(
+    use crate::icons::IconGlyph;
+    muted_icon_commands(
         ui,
         origin,
         icons,
         &[
-            "Derive",
-            "Feature",
-            "Insert iFeature",
-            "Insert Object",
-            "Import",
+            ("Derive", Some(IconGlyph::Derive)),
+            ("Feature", Some(IconGlyph::Feature)),
+            ("Insert iFeature", Some(IconGlyph::InsertIFeature)),
+            ("Insert Object", Some(IconGlyph::InsertModel)),
+            ("Import", Some(IconGlyph::Import)),
         ],
-        NOT_PORTED,
+        false,
     );
 }
 pub(super) fn part_modify_controls(

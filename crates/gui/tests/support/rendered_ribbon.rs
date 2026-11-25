@@ -73,7 +73,7 @@ pub(super) fn open_tool_choices(
     let frame = settled_frame(engine, request);
     let caption = caption_run(&frame, label, false);
     let [x, y] = caption.center();
-    let position = if caption.text.ends_with('v') {
+    let position = if caption.text.ends_with(['v', '▼']) {
         // Adjacent text can form one run. Its last glyph is the separate arrow button.
         [caption.maximum[0] - 2., y]
     } else {
@@ -90,7 +90,7 @@ fn arrow_in_region(
 ) -> Option<[f32; 2]> {
     frame.runs.iter().find_map(|run| {
         let [x, y] = run.center();
-        (run.list == caption.list && run.text == "v" && columns.contains(&x) && rows.contains(&y))
+        (run.list == caption.list && matches!(run.text.as_str(), "v" | "▼") && columns.contains(&x) && rows.contains(&y))
             .then_some([x, y])
     })
 }
@@ -121,5 +121,6 @@ fn visible_words(label: &str) -> String {
 
 fn matches_caption(text: &str, requested: &str) -> bool {
     let visible = visible_words(text);
-    visible == requested || visible.strip_suffix('v') == Some(requested)
+    let label = visible.strip_suffix(['v', '▼']).unwrap_or(&visible);
+    visible == requested || label.eq_ignore_ascii_case(requested)
 }

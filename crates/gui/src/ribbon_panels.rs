@@ -325,6 +325,9 @@ fn draw_row(
     let mut x = 0.;
     let mut activated = false;
     for (index, panel) in panels.into_iter().enumerate() {
+        if index > 0 {
+            draw_divider(context, tab, x - 4.);
+        }
         let force_compact = context.owners.icons.appearance
             == crate::ribbon_command_layout::RibbonAppearance::Compact
             && panel == RibbonPanel::PartSimplification;
@@ -344,6 +347,23 @@ fn draw_row(
     layout.title_press.finish_frame(context.ui);
     activated
 }
+fn draw_divider(context: &PanelDrawContext<'_>, tab: RibbonTab, x: f32) {
+    let ui = context.ui;
+    let origin = ui.window_pos();
+    let x = (origin[0] + x - ui.scroll_x()).floor() + 0.5;
+    let bottom = context.owners.icons.cell([
+        0.,
+        context.owners.icons.appearance.tab_command_height(tab) + 12.,
+    ])[1];
+    ui.get_window_draw_list()
+        .add_line(
+            [x, origin[1] + 8.],
+            [x, origin[1] + bottom],
+            ui.style_color(imgui::StyleColor::Border),
+        )
+        .build();
+}
+
 fn draw_expanded(
     context: &mut PanelDrawContext<'_>,
     tab: RibbonTab,
@@ -357,12 +377,23 @@ fn draw_expanded(
     let anchor = ui.cursor_screen_pos();
     let mut local_action = false;
     ui.group(|| {
-        local_action = context.content(panel, origin);
         let combines_options = compact_options.is_some();
-        if let Some(display) = compact_options {
-            context.owners.icons.cursor(ui, origin, [270., 0.]);
-            local_action |= additional::tool_options(ui, display);
-        }
+        ui.group(|| {
+            local_action = context.content(panel, origin);
+            if let Some(display) = compact_options {
+                context.owners.icons.cursor(ui, origin, [270., 0.]);
+                local_action |= additional::tool_options(ui, display);
+            }
+            if panel == RibbonPanel::Create
+                && context.owners.icons.appearance
+                    == crate::ribbon_command_layout::RibbonAppearance::Normal
+            {
+                // Keep the existing Create grid's trailing space.
+                crate::widget_abi::cursor_position(ui, origin);
+                crate::widget_abi::dummy(ui, context.owners.icons.cell([364., 0.]));
+            }
+        });
+        let content_width = ui.item_rect_size()[0];
         let title_y = context.owners.icons.appearance.tab_command_height(tab) + 6.;
         context.owners.icons.cursor(ui, origin, [0., title_y]);
         let expandable = !combines_options
@@ -372,7 +403,7 @@ fn draw_expanded(
                 || (panel == RibbonPanel::UserCommands
                     && context.owners.customization.has_expanded(tab)));
         if context.show_panel_titles {
-            ui.text(panel.label());
+            let caption_width = place_group_caption(ui, panel, content_width, expandable, true);
             if ui.is_item_clicked_with_button(imgui::MouseButton::Right) {
                 layout.context_title = Some(panel);
             }
@@ -386,17 +417,12 @@ fn draw_expanded(
                     group_key_tip(ui, panel, &context.owners);
                 }
             }
+            retain_caption_width(ui, origin, content_width, caption_width);
         } else if expandable {
+            let caption_width = place_group_caption(ui, panel, content_width, expandable, false);
             crate::widget_abi::dummy(ui, [0., ui.text_line_height()]);
             additional::trigger(ui, tab, panel, anchor, false, layout);
-        }
-        if panel == RibbonPanel::Create
-            && context.owners.icons.appearance
-                == crate::ribbon_command_layout::RibbonAppearance::Normal
-        {
-            // Preserve the existing Create grid's trailing space and wide-window command positions.
-            crate::widget_abi::cursor_position(ui, origin);
-            crate::widget_abi::dummy(ui, context.owners.icons.cell([364., 0.]));
+            retain_caption_width(ui, origin, content_width, caption_width);
         }
     });
     (ui.item_rect_size()[0], local_action)
@@ -425,9 +451,34 @@ fn draw_collapsed(
         let title_y = context.owners.icons.appearance.tab_command_height(tab) + 6.;
         context.owners.icons.cursor(ui, origin, [0., title_y]);
         // Collapsed buttons need their label even when expanded panel captions are hidden.
-        ui.text(panel.label());
+        place_group_caption(ui, panel, width, false, true);
     }
     draw_panel_popup(context, tab, panel, &identity, anchor, layout);
+}
+
+fn place_group_caption(
+    ui: &Ui,
+    panel: RibbonPanel,
+    width: f32,
+    expandable: bool,
+    shown: bool,
+) -> f32 {
+    let _font = crate::ui_scale::group_caption_font(ui);
+    let caption = panel.label().to_uppercase();
+    let advance = ui.calc_text_size(&caption)[0] + if expandable { 16. } else { 0. };
+    let width = width.max(advance + 16.);
+    let [x, y] = ui.cursor_pos();
+    crate::widget_abi::cursor_position(ui, [x + (width - advance) * 0.5, y]);
+    if shown {
+        ui.text_colored(ui.style_color(imgui::StyleColor::TextDisabled), caption);
+    }
+    width
+}
+fn retain_caption_width(ui: &Ui, origin: [f32; 2], content_width: f32, caption_width: f32) {
+    if caption_width > content_width {
+        crate::widget_abi::cursor_position(ui, origin);
+        crate::widget_abi::dummy(ui, [caption_width, 0.]);
+    }
 }
 
 #[path = "ribbon_collapsed.rs"]

@@ -45,7 +45,7 @@ fn band_height() -> f32 {
 }
 pub(super) fn activate_display_control(world: &mut ApplicationWorld) {
     world.ribbon_height = band_height();
-    world.click_text("Ribbon Display");
+    click_display_control(world);
 }
 fn open_part_on_view(world: &mut ApplicationWorld) {
     super::workspace_layout::part_open(world);
@@ -69,22 +69,24 @@ pub(super) fn compact_panel_point(world: &ApplicationWorld, name: &str) -> [i32;
     let label = world.run(name).center();
     super::diagnostics::pointer_pixels([label[0], label[1] - 35.])
 }
+pub(super) fn display_control_point(world: &ApplicationWorld) -> [i32; 2] {
+    let (position, size) = window_geometry("##application-ribbon").unwrap();
+    let expected_x = position[0] + size[0] - 72.;
+    let expected_y = world.run("File").center()[1];
+    let bounds = (
+        [expected_x - 12., expected_y - 13.],
+        [expected_x + 12., expected_y + 13.],
+    );
+    let icons = super::ribbon_appearance::icon_quads::icon_quads_inside(bounds);
+    let (min, max) = icons.first().expect("the Ribbon Display icon is visible");
+    super::diagnostics::pointer_pixels(std::array::from_fn(|axis| (min[axis] + max[axis]) / 2.))
+}
+pub(super) fn click_display_control(world: &mut ApplicationWorld) {
+    world.click(display_control_point(world));
+}
 pub(super) fn click_display_menu(world: &mut ApplicationWorld) {
-    let control = world.run("Ribbon Display");
-    let center = control.center();
-    let arrow = world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| {
-            run.text == "v"
-                && run.center()[0] > control.maximum[0]
-                && (run.center()[1] - center[1]).abs() < 5.
-        })
-        .min_by(|left, right| left.center()[0].total_cmp(&right.center()[0]))
-        .expect("expected the menu arrow beside Ribbon Display")
-        .center();
-    world.click(super::diagnostics::pointer_pixels(arrow));
+    let [x, y] = display_control_point(world);
+    world.click([x + 22, y]);
 }
 #[given("the ribbon display control is configured to cycle through all modes")]
 #[given("the ribbon display control is set to cycle through all modes")]
@@ -383,10 +385,7 @@ fn tabs_only_mode(world: &mut ApplicationWorld) {
 }
 #[when("the pointer rests over the ribbon display control")]
 fn rest_on_control(world: &mut ApplicationWorld) {
-    let at = world
-        .run("Ribbon Display")
-        .center()
-        .map(|value| value as i32);
+    let at = display_control_point(world);
     world.hover(at);
     world.pump(Vec::new());
     world.pump(Vec::new());

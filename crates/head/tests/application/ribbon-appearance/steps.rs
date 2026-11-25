@@ -242,7 +242,7 @@ fn hidden_modify_arrow(world: &ApplicationWorld) -> [i32; 2] {
         .runs
         .iter()
         .find(|run| {
-            run.text == "v"
+            matches!(run.text.as_str(), "v" | "▼")
                 && (run.minimum[0] - anchor[0]).abs() < 15.
                 && (run.center()[1] - anchor[1]).abs() < 8.
         })

@@ -45,7 +45,7 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
             size_pixels: config.size_pixels,
             config: Some(FontConfig {
                 glyph_ranges: FontGlyphRanges::from_slice(&[
-                    0x20, 0xff, 0x2014, 0x2014, 0x203a, 0x203a, 0,
+                    0x20, 0xff, 0x2014, 0x2014, 0x203a, 0x203a, 0x25bc, 0x25bc, 0,
                 ]),
                 ..config.clone()
             }),
@@ -75,6 +75,14 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
         },
         sketch_symbols(symbols),
     ]);
+    context.fonts().add_font(&[FontSource::TtfData {
+        data: include_bytes!("../assets/fonts/Inter-Regular.ttf"),
+        size_pixels: 10. * scale,
+        config: Some(FontConfig {
+            size_pixels: 10. * scale,
+            ..FontConfig::default()
+        }),
+    }]);
 }
 
 fn sketch_symbols(config: FontConfig) -> FontSource<'static> {
@@ -94,6 +102,10 @@ pub(crate) fn sketch_content_font(ui: &Ui, bold: bool, italic: bool) -> Option<F
 
 pub(crate) fn numeric_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
     ui.fonts().fonts().get(5).map(|font| ui.push_font(*font))
+}
+
+pub(crate) fn group_caption_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
+    ui.fonts().fonts().get(6).map(|font| ui.push_font(*font))
 }
 
 #[derive(Default)]

@@ -22,9 +22,9 @@ fn copy_hidden(world: &mut ApplicationWorld) {
 fn clipboard_arrow(world: &mut ApplicationWorld) {
     let title = world.run("Clipboard");
     assert!(
-        title.text.ends_with('v')
+        title.text.ends_with(['v', '▼'])
             || world.frame.runs.iter().any(|run| {
-                run.text == "v"
+                matches!(run.text.as_str(), "v" | "▼")
                     && run.minimum[0] > title.maximum[0]
                     && (run.center()[1] - title.center()[1]).abs() < 8.
             })
@@ -108,7 +108,7 @@ fn x11_plane_group_can_ungroup_and_regroup() {
         .runs
         .iter()
         .filter(|run| {
-            run.text == "v"
+            matches!(run.text.as_str(), "v" | "▼")
                 && run.minimum[0] > plane.maximum[0]
                 && (run.center()[1] - plane.center()[1]).abs() < 18.
         })

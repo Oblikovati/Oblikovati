@@ -248,3 +248,27 @@ pub(super) fn plane_choice_center(frame: &RenderedFrame, text: &str) -> Option<[
         (on_plane_picker && squeezed(&run.text) == wanted).then_some(center)
     })
 }
+
+/// Group captions use uppercase lettering with an optional separate arrow glyph.
+pub(super) fn panel_caption_matches(rendered: &str, expected: &str) -> bool {
+    let caption = rendered.strip_suffix(['v', '▼']).unwrap_or(rendered);
+    let expected = squeezed(expected);
+    caption == expected || caption == expected.to_ascii_uppercase()
+}
+
+pub(super) fn panel_caption_run<'a>(
+    frame: &'a RenderedFrame,
+    expected: &str,
+) -> Option<&'a RenderedRun> {
+    frame
+        .runs
+        .iter()
+        .rev()
+        .find(|run| panel_caption_matches(&run.text, expected))
+}
+
+pub(super) fn shows_run(frame: &RenderedFrame, expected: &str) -> bool {
+    frame.runs.iter().any(|run| {
+        squeezed(&run.text).contains(expected) || panel_caption_matches(&run.text, expected)
+    })
+}

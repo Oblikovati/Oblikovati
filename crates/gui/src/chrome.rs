@@ -262,13 +262,16 @@ fn ribbon_contents(
         ui.same_line();
         tab_overflow::draw(ui, owners.ribbon, frame);
         let control = [
-            ui.window_size()[0] - 160. - crate::application::ribbon_display::PANEL_SELECTOR_WIDTH,
+            ui.window_size()[0] - tab_overflow::RIBBON_CONTROL_WIDTH,
             tab_top,
         ];
-        owners
-            .ribbon
-            .display
-            .control(ui, control, &owners.ribbon.tips, open_display_menu);
+        owners.ribbon.display.control(
+            ui,
+            control,
+            owners.icons,
+            &owners.ribbon.tips,
+            open_display_menu,
+        );
         // #3856: adopt selector changes before the row takes its visibility snapshot.
         let panels = crate::ribbon_panels::available_panels(
             owners.ribbon.active,

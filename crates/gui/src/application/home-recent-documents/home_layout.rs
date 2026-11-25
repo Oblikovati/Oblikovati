@@ -52,8 +52,7 @@ impl HomeWorkspace {
         width: f32,
     ) {
         ui.group(|| {
-            icons.brand_mark(ui);
-            ui.text("Oblikovati");
+            icons.brand_wordmark(ui, width);
             ui.dummy([0., 6.]);
             if state.document.is_none() {
                 if crate::theme::primary_button(ui, "New Part##home-new-part", [width, 30.]) {

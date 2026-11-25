@@ -229,12 +229,12 @@ fn display_control_dismisses_selector_and_minimizes_on_the_same_click() {
     world.add_part();
     super::super::ribbon_display::click_display_menu(&mut world);
     world.click_text("Minimize to Tabs");
-    world.click_text("Ribbon Display");
+    super::super::ribbon_display::click_display_control(&mut world);
     world.expect_text("Start 2D Sketch");
     open_selector(&mut world);
     assert!(world.checked("Modify"));
     assert!(!world.checked(PARAMETERS));
-    world.click_text("Ribbon Display");
+    super::super::ribbon_display::click_display_control(&mut world);
     assert!(!selector_is_open(&world));
     world.expect_no_text("Start 2D Sketch");
     world.click_text("3D Model");
@@ -248,7 +248,7 @@ fn display_control_dismisses_selector_and_minimizes_on_the_same_click() {
     world.click_text(PARAMETERS);
     assert!(!world.checked(PARAMETERS));
     world.expect_text("Start 2D Sketch");
-    world.click_text("Ribbon Display");
+    super::super::ribbon_display::click_display_control(&mut world);
     world.expect_text("Start 2D Sketch");
     assert!(!selector_is_open(&world));
     open_selector(&mut world);

@@ -89,7 +89,7 @@ fn open_modify(world: &mut ApplicationWorld) {
 }
 pub(in super::super) fn click_expansion_arrow(world: &mut ApplicationWorld, label: &str) {
     let title = world.run(label);
-    if title.text.ends_with('v') {
+    if title.text.ends_with(['v', '▼']) {
         let at = [title.maximum[0] - 2., title.center()[1]];
         world.click(diagnostics::pointer_pixels(at));
         return;
@@ -99,7 +99,7 @@ pub(in super::super) fn click_expansion_arrow(world: &mut ApplicationWorld, labe
         .runs
         .iter()
         .filter(|run| {
-            run.text == "v"
+            matches!(run.text.as_str(), "v" | "▼")
                 && run.center()[0] > title.maximum[0]
                 && (run.center()[1] - title.center()[1]).abs() < 6.
         })

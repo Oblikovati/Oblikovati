@@ -13,8 +13,16 @@ pub(super) fn rasterize_identity(
     edge: u32,
     mode: usize,
 ) -> Result<crate::GuiAtlas, String> {
+    rasterize_identity_at_size(source, [edge; 2], mode)
+}
+
+pub(super) fn rasterize_identity_at_size(
+    source: &str,
+    extent: [u32; 2],
+    mode: usize,
+) -> Result<crate::GuiAtlas, String> {
     let resolved = resolve_identity_paints(source, mode)?;
-    let pixels = render(resolved.as_bytes(), edge)?;
+    let pixels = render_at_size(resolved.as_bytes(), extent)?;
     let rgba = pixels
         .pixels()
         .iter()
@@ -24,7 +32,7 @@ pub(super) fn rasterize_identity(
         })
         .collect();
     Ok(crate::GuiAtlas {
-        extent: [edge; 2],
+        extent,
         rgba: Arc::new(rgba),
     })
 }
@@ -72,6 +80,10 @@ pub(crate) fn rasterize_roles(source: &[u8], edge: u32) -> Result<IconRoleMasks,
     Ok(IconRoleMasks { edge, cover })
 }
 fn render(source: &[u8], edge: u32) -> Result<tiny_skia::Pixmap, String> {
+    render_at_size(source, [edge; 2])
+}
+
+fn render_at_size(source: &[u8], [width, height]: [u32; 2]) -> Result<tiny_skia::Pixmap, String> {
     let options = usvg::Options {
         image_href_resolver: usvg::ImageHrefResolver {
             resolve_data: Box::new(|_, _, _| None),
@@ -81,11 +93,11 @@ fn render(source: &[u8], edge: u32) -> Result<tiny_skia::Pixmap, String> {
     };
     let tree = usvg::Tree::from_data(source, &options)
         .map_err(|cause| format!("icon SVG: expected a renderable role document: {cause}"))?;
-    let mut pixmap = tiny_skia::Pixmap::new(edge, edge)
-        .ok_or_else(|| format!("icon raster {edge}: expected an allocatable square"))?;
+    let mut pixmap = tiny_skia::Pixmap::new(width, height)
+        .ok_or_else(|| format!("icon raster {width} × {height}: expected allocatable pixels"))?;
     let transform = tiny_skia::Transform::from_scale(
-        edge as f32 / tree.size().width(),
-        edge as f32 / tree.size().height(),
+        width as f32 / tree.size().width(),
+        height as f32 / tree.size().height(),
     );
     resvg::render(&tree, transform, &mut pixmap.as_mut());
     Ok(pixmap)

@@ -53,12 +53,12 @@ fn part_with_minimized_tools(world: &mut ApplicationWorld) {
 }
 
 fn view_in_tab_row(world: &ApplicationWorld) -> bool {
-    let control = world.run("Ribbon Display");
+    let [_, y] = super::display_control_point(world);
     world
         .frame
         .runs
         .iter()
-        .any(|run| run.text == "View" && (run.center()[1] - control.center()[1]).abs() < 12.)
+        .any(|run| run.text == "View" && (run.center()[1] - y as f32).abs() < 12.)
 }
 
 #[when("the user clicks the ribbon tab overflow control")]

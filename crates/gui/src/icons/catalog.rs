@@ -124,6 +124,13 @@ glyph_catalog! {
     WindowClose => "view-close",
     RecentPin => "custom",
     RecentPinned => "custom",
+    Derive => "derive",
+    Feature => "custom",
+    InsertIFeature => "insert",
+    Import => "point-cloud-import",
+    SketchVisibility => "show-constraints",
+    RibbonDensity => "layout-single",
+    BrandWordmark => "view-cube",
 }
 
 pub(crate) fn document_glyph(kind: crate::GuiTemplateKind) -> IconGlyph {

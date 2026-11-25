@@ -17,7 +17,6 @@ mod panel_inventory;
 mod sketch_parameters;
 #[path = "tools_panels.rs"]
 mod tools_panels;
-
 fn open_show_panels_at(world: &mut ApplicationWorld, anchor: &str) {
     let run = ribbon_runs(world, anchor)
         .next()
@@ -35,7 +34,7 @@ pub(super) fn ribbon_runs<'a>(
     let label = super::world::squeezed(label);
     world.frame.runs.iter().filter(move |run| {
         let center = run.center();
-        (run.text == label || run.text.strip_suffix('v') == Some(&label))
+        super::diagnostics::panel_caption_matches(&run.text, &label)
             && (0..2).all(|axis| {
                 center[axis] >= position[axis] && center[axis] < position[axis] + size[axis]
             })
@@ -198,7 +197,7 @@ fn return_expanded(world: &mut ApplicationWorld) {
         if world.shows("Start 2D Sketch") {
             break;
         }
-        world.click_text("Ribbon Display");
+        super::ribbon_display::click_display_control(world);
         world.pump(Vec::new());
     }
     world.expect_text("Start 2D Sketch");
@@ -416,7 +415,7 @@ fn model_ribbon_at_top(world: &mut ApplicationWorld) {
     world.click_text("3D Model");
     world.pump(Vec::new());
     world.expect_text("Start 2D Sketch");
-    world.expect_text("Ribbon Display");
+    assert!(super::ribbon_display::display_control_point(world)[0] > 0);
 }
 #[given("it shows Create and Modify while Parameters is hidden")]
 fn create_modify_without_parameters(world: &mut ApplicationWorld) {
