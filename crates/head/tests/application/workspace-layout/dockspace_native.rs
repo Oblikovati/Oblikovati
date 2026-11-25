@@ -7,6 +7,37 @@ pub(in super::super) fn viewport(world: &mut ApplicationWorld) -> [u32; 4] {
 }
 
 #[test]
+fn resized_workspace_keeps_both_side_docks_readable_when_they_fit() {
+    let mut world = ApplicationWorld::new();
+    super::browser_feature::open_visible_extruded_part(&mut world);
+    let full = resize_dock_test_window(&mut world, [1800, 900]);
+    resize_boundary(&mut world, full, -260);
+    let preferred = viewport(&mut world);
+    assert!(full[2] - preferred[2] >= 240);
+    let compact = resize_dock_test_window(&mut world, [940, 680]);
+    world.save_capture("asymmetric-docks-940x680");
+    let model_width = window_geometry("Model").unwrap().1[0];
+    let asset_width = window_geometry("Appearance Browser").unwrap().1[0];
+    println!("Model {model_width} px, Appearance {asset_width} px, viewport {compact:?}");
+    assert!(model_width >= 180. && asset_width >= 180.);
+    assert!(compact[2] - compact[0] >= 520, "{compact:?}");
+    super::browser_feature::expect_solid_visible(&mut world);
+    let narrow = resize_dock_test_window(&mut world, [780, 580]);
+    assert!(narrow[2] - narrow[0] >= 429, "{narrow:?}");
+    assert_eq!(resize_dock_test_window(&mut world, [1800, 900]), preferred);
+    world.close();
+}
+
+fn resize_dock_test_window(world: &mut ApplicationWorld, extent: [u32; 2]) -> [u32; 4] {
+    super::super::x11_input::resize_application_window(extent);
+    for _ in 0..3 {
+        world.pump(Vec::new());
+    }
+    assert_eq!(world.extent(), extent);
+    viewport(world)
+}
+
+#[test]
 fn manage_parameters_button_and_view_menu_share_visibility() {
     let mut world = ApplicationWorld::new();
     super::browser_feature::open_visible_extruded_part(&mut world);

@@ -36,21 +36,32 @@ ImGuiDockNode* horizontal_dock_sibling(ImGuiDockNode* node) {
     return sibling && sibling->IsVisible ? sibling : nullptr;
 }
 
-float outer_dock_width_scale(ImGuiDockNode* center, float width) {
+constexpr float minimum_outer_dock_width = 180.0f;
+
+struct OuterDockWidthScale {
+    float minimum;
+    float excess;
+};
+
+OuterDockWidthScale outer_dock_width_scale(ImGuiDockNode* center, float width) {
     float preferred = 0.0f;
     float splitters = 0.0f;
     float minimum_docks = 0.0f;
     for (auto* node = center; node && node->ParentNode; node = node->ParentNode) {
         if (const auto* sibling = horizontal_dock_sibling(node)) {
-            preferred += sibling->SizeRef.x;
+            const float dock_width = ImMax(0.0f, sibling->SizeRef.x);
+            preferred += dock_width;
             splitters += 2.0f; // DOCKING_SPLITTER_SIZE in ImGui 1.89.2.
-            minimum_docks += 180.0f;
+            minimum_docks += ImMin(minimum_outer_dock_width, dock_width);
         }
     }
     // At narrow widths, viewport space takes precedence over the dock minimums (#4063).
     const float reserved = ImMax(width * 0.55f, ImMin(520.0f, width - minimum_docks - splitters));
     const float budget = ImMax(0.0f, ImFloor(width - reserved) - splitters);
-    return preferred > budget ? budget / preferred : 1.0f;
+    if (preferred <= budget) return {1.0f, 1.0f};
+    const float remaining = budget - minimum_docks;
+    if (remaining <= 0.0f) return {budget / minimum_docks, 0.0f};
+    return {1.0f, remaining / (preferred - minimum_docks)};
 }
 
 struct CompactDockWidth {
@@ -60,13 +71,17 @@ struct CompactDockWidth {
 };
 
 void compact_outer_docks(ImGuiDockNode* center, float width, ImVector<CompactDockWidth>& widths) {
-    const float scale = outer_dock_width_scale(center, width);
-    if (scale >= 1.0f) return;
+    const auto scale = outer_dock_width_scale(center, width);
+    if (scale.minimum >= 1.0f && scale.excess >= 1.0f) return;
     for (auto* node = center; node && node->ParentNode; node = node->ParentNode) {
         auto* sibling = horizontal_dock_sibling(node);
         if (!sibling || sibling->SizeRef.x <= 0.0f) continue;
-        const float applied = ImMax(1.0f, ImFloor(sibling->SizeRef.x * scale));
-        widths.push_back({sibling->ID, sibling->SizeRef.x, applied});
+        const float preferred = sibling->SizeRef.x;
+        const float minimum = ImMin(minimum_outer_dock_width, preferred);
+        // Share spare width after each dock has room for its controls.
+        const float allocated = minimum * scale.minimum + (preferred - minimum) * scale.excess;
+        const float applied = ImMax(1.0f, ImFloor(allocated));
+        widths.push_back({sibling->ID, preferred, applied});
         sibling->SizeRef.x = applied;
     }
 }

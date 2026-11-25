@@ -12,6 +12,9 @@ values come from the same handoff.
   Selected ribbon and document tabs have an indigo underline.
 - The Model, Material Browser, and Appearance Browser use the same chrome when
   docked. Theme changes schedule the frame needed to refresh native dock tabs.
+  When the Part workspace narrows, side docks preserve their 180 logical px
+  minimum where it fits alongside the reserved viewport width. Widening the
+  workspace restores the user's preferred dock sizes.
 - Home Recent leaves 12 logical pixels of scroll-end padding above the
   document tab strip in both List and Grid views.
 - The application bar displays the brand mark. Mapped ribbon commands and
