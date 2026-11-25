@@ -154,7 +154,12 @@ fn active_panel_in_dock(world: &mut ApplicationWorld) {
 
 #[when("the user closes the panel")]
 fn close_docked_panel(world: &mut ApplicationWorld) {
-    let (min, max) = diagnostics::window_dock_tab_bounds(PANEL).expect("panel tab");
+    close_workspace_tab(world, PANEL);
+}
+
+fn close_workspace_tab(world: &mut ApplicationWorld, panel: &str) {
+    let (min, max) = diagnostics::window_dock_tab_bounds(panel)
+        .unwrap_or_else(|| panic!("expected {panel} in the dock tab bar"));
     let close = [max[0] - (max[1] - min[1]) * 0.5, (min[1] + max[1]) * 0.5];
     world.click(diagnostics::pointer_pixels(close));
     world.pump(Vec::new());

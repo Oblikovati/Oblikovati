@@ -261,10 +261,7 @@ fn material_contents(world: &mut ApplicationWorld) {
 #[when("the user selects Appearance Browser and closes it from its panel controls")]
 fn close_appearance(world: &mut ApplicationWorld) {
     select_tab(world, APPEARANCE);
-    let close = world.run_in_window(APPEARANCE, "Close").center();
-    super::super::x11_input::click(diagnostics::pointer_pixels(close));
-    world.pump(Vec::new());
-    world.pump(Vec::new());
+    super::close_workspace_tab(world, APPEARANCE);
 }
 
 #[then("Appearance Browser is removed from the tab group")]
@@ -275,6 +272,7 @@ fn appearance_closed(_: &mut ApplicationWorld) {
 fn material_remains(world: &mut ApplicationWorld) {
     assert_eq!(diagnostics::window_dock_tab_visible(MATERIAL), Some(true));
     world.run_in_window(MATERIAL, "Assigntopart");
+    world.save_capture("material-tab-after-closing-appearance");
 }
 
 #[when("the user opens View and then User Interface")]
