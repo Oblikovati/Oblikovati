@@ -22,7 +22,19 @@ pub(crate) fn root_row(
     view: &mut BrowserView,
     actions: &mut Vec<GuiShellAction>,
 ) {
+    use crate::GuiBrowserKind;
+    let kind = match browser.kind {
+        GuiBrowserKind::Part => crate::GuiTemplateKind::Part,
+        GuiBrowserKind::SheetMetal => crate::GuiTemplateKind::SheetMetal,
+        GuiBrowserKind::Assembly => crate::GuiTemplateKind::Assembly,
+        GuiBrowserKind::Drawing => crate::GuiTemplateKind::Drawing,
+        GuiBrowserKind::Presentation => crate::GuiTemplateKind::Presentation,
+    };
+    let glyph = crate::icons::document_glyph(kind);
     if !browser.has_origin {
+        crate::browser::browser_art::prefix(ui, view, glyph, ui.cursor_screen_pos());
+        ui.dummy([16., ui.text_line_height()]);
+        ui.same_line_with_spacing(0., 4.);
         ui.text(&browser.name);
         return;
     }
@@ -40,9 +52,10 @@ pub(crate) fn root_row(
     let position = ui.cursor_screen_pos();
     let chosen =
         crate::widget_abi::selectable(ui, "##browser-root-row", browser.root_selected, false);
+    crate::browser::browser_art::prefix(ui, view, glyph, position);
     crate::widget_abi::literal_text(
         ui,
-        position,
+        [position[0] + 20., position[1]],
         ui.style_color(imgui::StyleColor::Text),
         &caption,
     );

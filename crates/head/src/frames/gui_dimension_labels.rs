@@ -52,6 +52,8 @@ pub(super) fn projected_dimension_labels(
                 labels.push(GuiDimensionLabel {
                     pixel,
                     line,
+                    witnesses: projection.witnesses,
+                    unit: annotation.unit.map(str::to_owned),
                     text: annotation.text,
                     role: annotation.role,
                     edit: annotation.edit,

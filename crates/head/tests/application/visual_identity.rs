@@ -378,3 +378,55 @@ fn assert_command_art(world: &ApplicationWorld, labels: &[&str]) {
         assert!(!quads.is_empty(), "expected command artwork beside {label}");
     }
 }
+
+#[test]
+fn native_model_browser_and_dimensions_use_studio_geometry_styles() {
+    use workspace_layout::browser_feature::{FEATURE, colored_pixels, open_visible_extruded_part};
+    let mut world = ApplicationWorld::new();
+    open_visible_extruded_part(&mut world);
+    let rule = world.run_in_window("Model", "EndofPart").clone();
+    let [left, _] = diagnostics::window_geometry("Model").unwrap().0;
+    let [x, y] = diagnostics::pointer_pixels([left + 12., rule.minimum[1]]);
+    let capture = capture_framebuffer(&mut world.app().window.native);
+    let width = capture.extent[0] as usize;
+    let has_dashes = (6..19).any(|offset| {
+        let start = ((y - offset) as usize * width + x as usize) * 4;
+        capture.rgba[start..start + 35 * 4]
+            .as_chunks::<4>()
+            .0
+            .windows(2)
+            .filter(|pair| pair[0] != pair[1])
+            .count()
+            >= 4
+    });
+    assert!(
+        has_dashes,
+        "expected a dashed rollback rule above End of Part"
+    );
+    world.right_click(diagnostics::pointer_pixels(world.run(FEATURE).center()));
+    world.click_text("Show Dimensions");
+    let labels: Vec<_> = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| {
+            run.text.ends_with("mm") && run.text.starts_with(|ch: char| ch.is_ascii_digit())
+        })
+        .collect();
+    assert!(
+        labels.len() >= 2,
+        "expected annotated model lengths with units"
+    );
+    assert!(
+        labels
+            .windows(2)
+            .all(|pair| pair[0].maximum[0] <= pair[1].minimum[0]
+                || pair[1].maximum[0] <= pair[0].minimum[0]
+                || pair[0].maximum[1] <= pair[1].minimum[1]
+                || pair[1].maximum[1] <= pair[0].minimum[1]),
+        "model length annotations must have distinct text bounds"
+    );
+    assert!(colored_pixels(&mut world, [45, 212, 191]) > 0);
+    world.save_capture("model-browser-and-dimensions");
+    world.close();
+}

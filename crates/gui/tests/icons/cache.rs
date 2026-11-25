@@ -83,7 +83,7 @@ fn theme_changes_recompose_without_rasterizing_the_svg_again() {
 fn legacy_mask_count() -> usize {
     catalog::GLYPHS
         .iter()
-        .filter(|glyph| crate::icons::identity_sources::source(**glyph).is_none())
+        .filter(|glyph| crate::icons::identity_sources::source(**glyph, false).is_none())
         .count()
         * 2
 }
@@ -91,11 +91,11 @@ fn legacy_mask_count() -> usize {
 #[test]
 fn design_assets_draw_visible_vectors_at_native_and_double_density() {
     for glyph in catalog::GLYPHS {
-        let Some(svg) = crate::icons::identity_sources::source(*glyph) else {
-            continue;
-        };
         for edge in [18, 27, 36, 40, 60, 80] {
             for mode in 0..3 {
+                let Some(svg) = crate::icons::identity_sources::source(*glyph, mode == 1) else {
+                    continue;
+                };
                 let image = crate::icons::raster::rasterize_identity(svg, edge, mode).unwrap();
                 assert_eq!(image.extent, [edge; 2]);
                 assert!(

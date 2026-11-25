@@ -154,10 +154,14 @@ pub(super) fn compact_single_row(_world: &mut ApplicationWorld) {
 fn compact_group_button(world: &mut ApplicationWorld) {
     let title = world.run("Simplification");
     assert!(
-        world.frame.runs.iter().any(|run| matches!(run.text.as_str(), "v" | "▼")
-            && run.center()[1] < title.minimum[1]
-            && run.center()[0] >= title.minimum[0]
-            && run.center()[0] <= title.maximum[0] + 30.),
+        world
+            .frame
+            .runs
+            .iter()
+            .any(|run| matches!(run.text.as_str(), "v" | "▼")
+                && run.center()[1] < title.minimum[1]
+                && run.center()[0] >= title.minimum[0]
+                && run.center()[0] <= title.maximum[0] + 30.),
         "expected the Simplification group button"
     );
 }

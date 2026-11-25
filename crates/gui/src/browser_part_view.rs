@@ -40,7 +40,7 @@ impl BrowserTree<'_> {
         };
         if let Some(active) = views.active() {
             self.ui.same_line_with_spacing(0., 16.);
-            self.ui.text(format!("<{}>", active.name()));
+            browser_model_state::checked_representation(self.ui, &format!("<{}>", active.name()));
         }
         let Some(_view) = node else {
             return;

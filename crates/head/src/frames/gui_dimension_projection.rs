@@ -6,6 +6,7 @@ type Pixel = Result<[i32; 2], String>;
 pub(super) struct AnnotationPixels {
     pub(super) position: Pixel,
     pub(super) line: Option<Result<[[i32; 2]; 2], String>>,
+    pub(super) witnesses: Option<[[i32; 2]; 2]>,
 }
 
 /// Project against one stable drawable; example: `project_consistent(window, &annotations)?`.
@@ -56,12 +57,15 @@ fn project_group(
         .iter()
         .map(|annotation| {
             let position = next_pixel(&mut pixels);
-            let line = annotation.line.map(|_| {
-                let from = next_pixel(&mut pixels);
-                let to = next_pixel(&mut pixels);
-                from.and_then(|from| to.map(|to| [from, to]))
-            });
-            AnnotationPixels { position, line }
+            let line = annotation.line.map(|_| next_segment(&mut pixels));
+            let witnesses = annotation
+                .witnesses
+                .and_then(|_| next_segment(&mut pixels).ok());
+            AnnotationPixels {
+                position,
+                line,
+                witnesses,
+            }
         })
         .collect()
 }
@@ -69,7 +73,9 @@ fn annotation_points(group: &[HeadDimensionAnnotation]) -> Vec<[f64; 2]> {
     group
         .iter()
         .flat_map(|annotation| {
-            std::iter::once(annotation.position).chain(annotation.line.into_iter().flatten())
+            std::iter::once(annotation.position)
+                .chain(annotation.line.into_iter().flatten())
+                .chain(annotation.witnesses.into_iter().flatten())
         })
         .collect()
 }
@@ -89,6 +95,12 @@ fn project_points(
         Err(cause) => format!("dimension projections for {} points: {cause}", points.len()),
     };
     points.iter().map(|_| Err(failure.clone())).collect()
+}
+
+fn next_segment(pixels: &mut impl Iterator<Item = Pixel>) -> Result<[[i32; 2]; 2], String> {
+    let from = next_pixel(pixels);
+    let to = next_pixel(pixels);
+    from.and_then(|from| to.map(|to| [from, to]))
 }
 
 fn next_pixel(pixels: &mut impl Iterator<Item = Pixel>) -> Pixel {

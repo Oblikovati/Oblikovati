@@ -116,9 +116,9 @@ fn outer_bottom_dock_keeps_document_tabs_below_the_panel() {
         root,
     );
     assert!(layout.pending_layout);
-    assert_eq!(layout.outer_area([1000., 900.], 100.).bottom, 852.);
+    assert_eq!(layout.outer_area([1000., 900.], 100.).bottom, 850.);
     assert_eq!(layout.document_area([1000., 900.], 100.).bottom, 600.);
-    assert_eq!(layout.tab_top(900.), 852.);
+    assert_eq!(layout.tab_top(900.), 850.);
 }
 
 #[test]

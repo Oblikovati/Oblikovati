@@ -115,6 +115,8 @@ fn annotation(
         plane,
         position,
         line,
+        witnesses: None,
+        unit: None,
         text: "distance".into(),
         role: oblikovati_gui::GuiDimensionLabelRole::Driving,
         edit: None,
@@ -222,6 +224,7 @@ fn individual_projection(
         .iter()
         .map(|annotation| AnnotationPixels {
             position: window.sketch_pixel(annotation.plane, annotation.position),
+            witnesses: None,
             line: annotation.line.map(|[from, to]| {
                 window
                     .sketch_pixel(annotation.plane, from)

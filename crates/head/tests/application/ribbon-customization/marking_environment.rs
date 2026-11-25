@@ -5,7 +5,7 @@ use super::open_marking_menu_tab;
 use oblikovati_api::types::{self, Environment};
 
 #[given("Environment is \"2D Sketch\"")]
-pub(in super::super) fn choose_sketch_environment(world: &mut ApplicationWorld) {
+pub(in super::super::super) fn choose_sketch_environment(world: &mut ApplicationWorld) {
     if !world
         .window_text("Customize")
         .split_whitespace()

@@ -496,4 +496,4 @@ mod marking_menu_tests;
 #[path = "native_tests.rs"]
 mod native_tests;
 #[path = "tab_retention.rs"]
-mod tab_retention;
+pub(super) mod tab_retention;

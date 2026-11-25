@@ -16,8 +16,8 @@ mod states;
 const FEATURE_MENU: &str = "##feature-menu";
 const BODIES_MENU: &str = "##bodies-menu";
 const BODY_MENU: &str = "##body-menu";
-const EDGE_COLOR: [f32; 4] = [0.25, 0.6, 1., 1.];
-const EDGE_HOVER_COLOR: [f32; 4] = [0.2, 1., 0.2, 1.];
+const EDGE_COLOR: [f32; 4] = [45. / 255., 212. / 255., 191. / 255., 1.];
+const EDGE_HOVER_COLOR: [f32; 4] = [94. / 255., 234. / 255., 212. / 255., 1.];
 const EDGE_HOVER_REACH: f32 = 8.;
 const EDGE_THICKNESS: f32 = 2.;
 const SELECTION_TOOLBAR: &str = "##selection-toolbar";
@@ -52,9 +52,14 @@ pub(crate) fn feature_row<'ui>(
     if browser.selected_feature == Some(feature.id) {
         flags |= TreeNodeFlags::SELECTED;
     }
+    let glyph = crate::browser::browser_art::feature_glyph(feature.kind);
+    let icon_inset = if glyph.is_some() { "      " } else { "" };
     let node = ui
         .tree_node_config("feature-row")
-        .label::<String, String>(feature_label(feature, view.show_extended_names))
+        .label::<String, String>(format!(
+            "{icon_inset}{}",
+            feature_label(feature, view.show_extended_names)
+        ))
         .flags(flags)
         .default_open(true);
     let opened = view.take_opened_branch(BrowserBranch::Feature(feature.id));
@@ -71,8 +76,16 @@ pub(crate) fn feature_row<'ui>(
     });
     let token = node.push();
     drop(muted);
+    let label = crate::browser::browser_art::tree_label_anchor(ui);
+    if let Some(glyph) = glyph {
+        crate::browser::browser_art::prefix(ui, view, glyph, label);
+    }
     if feature.suppressed {
-        strike_feature_name(ui, &feature.name);
+        crate::browser::browser_art::strike_feature_name(
+            ui,
+            &feature.name,
+            label[0] + ui.calc_text_size(icon_inset)[0],
+        );
     }
     let row_hovered = ui.is_item_hovered();
     let row_left = ui.item_rect_min()[0];
@@ -88,21 +101,6 @@ pub(crate) fn feature_row<'ui>(
     );
     feature_menu(ui, state, browser, feature, view, actions);
     token
-}
-fn strike_feature_name(ui: &Ui, name: &str) {
-    let [left, top] = ui.item_rect_min();
-    let bottom = ui.item_rect_max()[1];
-    let start = left + ui.current_font_size() + 2. * ui.clone_style().frame_padding[0];
-    let end = start + ui.calc_text_size(name)[0];
-    let height = (top + bottom) * 0.5;
-    ui.get_window_draw_list()
-        .add_line(
-            [start, height],
-            [end, height],
-            ui.style_color(imgui::StyleColor::TextDisabled),
-        )
-        .thickness((ui.current_font_size() / 13.).max(1.))
-        .build();
 }
 /// The arrow only folds the branch; the rest of the row chooses the feature.
 fn choose_on_press(
@@ -197,7 +195,10 @@ pub(crate) fn body_row<'ui>(
     if state.selected_body_keys.contains(&body.key) {
         flags |= TreeNodeFlags::SELECTED;
     }
-    let node = ui.tree_node_config(&body.name).flags(flags);
+    let node = ui
+        .tree_node_config(&body.name)
+        .label::<String, String>(format!("      {}", body.name))
+        .flags(flags);
     let node = match expansion {
         Some(open) => node.opened(open, Condition::Always),
         None => node,
@@ -210,6 +211,8 @@ pub(crate) fn body_row<'ui>(
     });
     let token = node.push();
     drop(muted);
+    let label = crate::browser::browser_art::tree_label_anchor(ui);
+    crate::browser::browser_art::prefix(ui, view, crate::icons::IconGlyph::NewPart, label);
     let hovered = ui.is_item_hovered();
     let asks_menu = hovered && ui.is_mouse_clicked(MouseButton::Right);
     if asks_menu {
@@ -430,11 +433,7 @@ pub(crate) fn draw_feature_edges(ui: &Ui, request: &GuiFrameRequest) {
     if !request.commands.selected_edge_outlines.is_empty() {
         let pointer = std::array::from_fn(|axis| ui.io().mouse_pos[axis] * scale[axis]);
         for group in &request.commands.selected_edge_outlines {
-            let color = if edge_group_hovered(pointer, group) {
-                EDGE_HOVER_COLOR
-            } else {
-                EDGE_COLOR
-            };
+            let color = edge_color(&request.commands, edge_group_hovered(pointer, group));
             for [from, to] in group {
                 list.add_line(logical(*from), logical(*to), color)
                     .thickness(EDGE_THICKNESS)
@@ -451,10 +450,20 @@ pub(crate) fn draw_feature_edges(ui: &Ui, request: &GuiFrameRequest) {
     }
 }
 fn feature_outline_color(commands: &GuiCommandState) -> [f32; 4] {
-    if commands.model_face_chosen && commands.selected_body_keys.is_empty() {
-        return EDGE_HOVER_COLOR;
-    }
-    EDGE_COLOR
+    edge_color(
+        commands,
+        commands.model_face_chosen && commands.selected_body_keys.is_empty(),
+    )
+}
+fn edge_color(commands: &GuiCommandState, hovered: bool) -> [f32; 4] {
+    commands.color_scheme.as_ref().map_or(
+        if hovered {
+            EDGE_HOVER_COLOR
+        } else {
+            EDGE_COLOR
+        },
+        |scheme| scheme.geometry_selection(hovered),
+    )
 }
 fn edge_group_hovered(pointer: [f32; 2], segments: &[[[i32; 2]; 2]]) -> bool {
     pointer.iter().all(|value| value.is_finite())

@@ -177,6 +177,8 @@ mod tests {
         GuiDimensionLabel {
             pixel: [100, 100],
             line,
+            witnesses: None,
+            unit: None,
             text: id.to_string(),
             role: GuiDimensionLabelRole::Driving,
             edit: Some(GuiDimensionEdit {

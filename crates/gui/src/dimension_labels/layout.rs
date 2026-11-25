@@ -101,6 +101,7 @@ pub(crate) fn dimension_label_layout(
     request: &GuiFrameRequest,
     viewport: crate::application::document_creation::workspaces::WorkspaceArea,
 ) -> Vec<Option<LabelPosition>> {
+    let _numeric = crate::ui_scale::numeric_font(ui);
     let scale = request.layout_scale();
     let origin = [viewport.left, viewport.top];
     let area = [
@@ -148,13 +149,23 @@ fn layout_label(
         return None;
     }
     let anchor = std::array::from_fn(|axis| label.pixel[axis] as f32 / scale[axis]);
-    let size = ui.calc_text_size(&label.text);
+    let size = ui.calc_text_size(label.caption());
     if !label_reaches_viewport(label, anchor, size, scale, origin, area) {
         return None;
     }
     let collision_size = std::array::from_fn(|axis| size[axis].min(area[axis]));
     let local_anchor = std::array::from_fn(|axis| anchor[axis] - origin[axis]);
-    let local_center = choose_center(local_anchor, collision_size, area, occupancy);
+    let preferred = label.line.map_or(local_anchor, |[from, to]| {
+        let dx = (to[0] as f64 - from[0] as f64) as f32 / scale[0];
+        let dy = (to[1] as f64 - from[1] as f64) as f32 / scale[1];
+        // Prefer the right of a vertical measure and above a horizontal measure.
+        if dy.abs() > dx.abs() {
+            [local_anchor[0] + size[0] / 2. + 4., local_anchor[1]]
+        } else {
+            [local_anchor[0], local_anchor[1] - size[1] / 2. - 4.]
+        }
+    });
+    let local_center = choose_center(preferred, collision_size, area, occupancy);
     occupancy.insert(Box2::around(local_center, collision_size));
     let center = std::array::from_fn(|axis| local_center[axis] + origin[axis]);
     Some(LabelPosition {
@@ -277,6 +288,8 @@ mod tests {
         let mut label = GuiDimensionLabel {
             pixel: [90, 150],
             line: None,
+            witnesses: None,
+            unit: None,
             text: "10".into(),
             role: crate::GuiDimensionLabelRole::Driving,
             edit: None,

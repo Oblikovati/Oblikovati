@@ -9,6 +9,9 @@ pub struct HeadDimensionAnnotation {
     pub position: [f64; 2],
     /// A distance dimension's measured line in sketch coordinates.
     pub line: Option<[[f64; 2]; 2]>,
+    /// Measured endpoints corresponding to the two ends of the dimension line.
+    pub witnesses: Option<[[f64; 2]; 2]>,
+    pub unit: Option<&'static str>,
     pub text: String,
     pub role: GuiDimensionLabelRole,
     pub edit: Option<oblikovati_gui::GuiDimensionEdit>,

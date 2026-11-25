@@ -71,7 +71,6 @@ tests. GUI coverage was 98.37%, head coverage 92.64%, and workspace duplication
 passed for head and GUI on Windows x64 and macOS ARM64. These are compile checks;
 the native runtime acceptance above is X11.
 
-
 ## Windows monitor DPI
 
 The Windows viewport requests per-monitor-v2 DPI awareness before its first native window is created. Native windows report their monitor DPI to the GUI as a physical backing scale; the existing user font and icon preferences remain separate. The main and detached drawing windows rasterize fonts at the effective scale, convert pointer coordinates into logical UI units, and re-create drawing texture resources after a scale change. A DPI-change message applies the suggested window bounds and schedules a new frame. Offscreen and non-Windows views retain their existing 1x backing scale.

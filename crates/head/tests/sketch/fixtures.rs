@@ -335,13 +335,12 @@ impl ApplicationWorld {
             .runs
             .iter()
             .rev()
-            .find(|run| run.text == text)
+            .find(|run| diagnostics::annotation_run_matches(&run.text, text))
             .unwrap_or_else(|| panic!("expected a run {text:?} in {:?}", self.text()));
         diagnostics::pointer_pixels(run.center())
     }
-    /// An annotation is its own run reading exactly this; a ribbon word never matches.
     pub fn annotation_shown(&self, text: &str) -> bool {
-        self.frame.runs.iter().any(|run| run.text == text)
+        diagnostics::annotation_shown(&self.frame, text)
     }
     pub fn expect_annotation(&self, text: &str) {
         assert!(

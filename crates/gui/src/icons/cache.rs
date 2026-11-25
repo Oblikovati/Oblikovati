@@ -137,21 +137,17 @@ impl GuiIconCache {
         edge: u32,
         preparation: &IconPreparation,
     ) -> Result<GuiAtlas, String> {
-        if glyph == IconGlyph::BrandWordmark {
-            let svg = if preparation.identity_mode == 1 {
-                include_str!("../../assets/identity/oblikovati-wordmark-light.svg")
+        if let Some(svg) = super::identity_sources::source(glyph, preparation.identity_mode == 1) {
+            let result = if glyph == IconGlyph::BrandWordmark {
+                super::raster::rasterize_identity_at_size(
+                    svg,
+                    [edge * 216 / 40, edge],
+                    preparation.identity_mode,
+                )
             } else {
-                include_str!("../../assets/identity/oblikovati-wordmark-dark.svg")
+                super::raster::rasterize_identity(svg, edge, preparation.identity_mode)
             };
-            return super::raster::rasterize_identity_at_size(
-                svg,
-                [edge * 216 / 40, edge],
-                preparation.identity_mode,
-            );
-        }
-        if let Some(svg) = super::identity_sources::source(glyph) {
-            return super::raster::rasterize_identity(svg, edge, preparation.identity_mode)
-                .map_err(|cause| format!("identity icon {:?}: {cause}", glyph.name()));
+            return result.map_err(|cause| format!("identity icon {:?}: {cause}", glyph.name()));
         }
         self.masks_for(glyph, edge)?.compose(preparation.colors)
     }

@@ -176,11 +176,9 @@
 
 ### Changed
 
-- Adopted the new desktop visual identity across Dark, Light, and High Contrast themes, including studio viewport palettes, bundled fonts, vector navigation and ribbon icons, and the Extrude panel. Added active asset dock indicators and swatches, increased ViewCube contrast, and applied neutral drawing paper. Added document tab artwork and live viewport status readouts. Updated Home wordmarks, ribbon captions, density controls, and command artwork. Extrude now fits its contents, toggles preview, and offers Apply & Create New. (#4063)
+- Adopted the new desktop visual identity across Dark, Light, and High Contrast themes, including studio viewport palettes, bundled fonts, vector navigation and ribbon icons, and the Extrude panel. Added active asset dock indicators and swatches, increased ViewCube contrast, and applied neutral drawing paper. Added document tab artwork and live viewport status readouts. Updated Home wordmarks, ribbon captions, density controls, and command artwork. Extrude now fits its contents, toggles preview, and offers Apply & Create New. Updated Model Browser rows and search, and added Studio selection colors and dimension units and extension lines. (#4063)
 - Reused part checkpoints during Undo and Redo when a clean feature prefix remains. (#4079)
-
 - Reused part checkpoints when deleting bodies through the typed API. (#4079)
-
 - Reused part checkpoints when renaming features through the typed API. (#4079)
 
 - Reused part checkpoints when the typed suppression command reports feature health. (#4079)

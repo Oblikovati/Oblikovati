@@ -140,7 +140,7 @@ pub(super) fn open_empty_xy_fixture(world: &mut ApplicationWorld) {
 
 pub(super) fn open_named_sketch_fixture(world: &mut ApplicationWorld, name: &str) {
     let path = super::super::scenario_root().join(name);
-    world.reopen_through_dialog(&path);
+    world.open_fixture(&path);
     world.pump(Vec::new());
     let row = world
         .frame

@@ -8,10 +8,10 @@ mod drawn_text;
 #[path = "support/rendered_ribbon.rs"]
 mod rendered_ribbon;
 use rendered_ribbon::{expect_caption, open_collapsed_panel, open_tool_choices, ribbon_caption};
-#[path = "support/view_tab.rs"]
-mod view_tab;
 #[path = "ribbon_click/tab_underline.rs"]
 mod tab_underline;
+#[path = "support/view_tab.rs"]
+mod view_tab;
 
 fn ribbon_request() -> GuiFrameRequest {
     GuiFrameRequest {
@@ -347,6 +347,8 @@ fn dimension_labels_follow_theme_colours_and_physical_projection_at_both_scales(
             request.commands.dimension_labels.push(GuiDimensionLabel {
                 pixel: [800 * scale as i32, y * scale as i32],
                 line: None,
+                witnesses: None,
+                unit: None,
                 text: "d0 = 10 mm".into(),
                 role,
                 edit: None,

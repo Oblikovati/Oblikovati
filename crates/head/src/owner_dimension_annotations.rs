@@ -106,6 +106,13 @@ fn collect_feature_annotations(
         output.labels.push(HeadDimensionAnnotation {
             position: [last.position[0] + DEPTH_LABEL_STEP, last.position[1]],
             line: None,
+            witnesses: None,
+            unit: Some(
+                snapshot
+                    .parameters
+                    .units()
+                    .preferred_name(oblikovati_model::quantity::Dimension::Length),
+            ),
             text,
             edit: None,
             ..last
@@ -237,10 +244,21 @@ pub(super) fn dimension_annotation(
         },
         driven: role == GuiDimensionLabelRole::Driven,
     });
+    let measurement = dimension_line::distance_line(geometry, id, position);
+    let unit = if quantity.dimension == oblikovati_model::quantity::Dimension::Angle {
+        "°"
+    } else {
+        snapshot
+            .parameters
+            .units()
+            .preferred_name(quantity.dimension)
+    };
     Ok(Some(HeadDimensionAnnotation {
         plane,
         position,
-        line: dimension_line::distance_line(geometry, id, position),
+        line: measurement.as_ref().map(|shape| shape.line),
+        witnesses: measurement.map(|shape| shape.witnesses),
+        unit: (!unit.is_empty()).then_some(unit),
         text,
         role,
         edit,

@@ -403,7 +403,7 @@ fn different_symbols(world: &mut ApplicationWorld) {
             .collect();
         assert!(
             rows.iter()
-                .any(|line| line.chunks_exact(4).any(|pixel| pixel[2] > 140))
+                .any(|line| line.as_chunks::<4>().0.iter().any(|pixel| pixel[2] > 140))
         );
         rows
     });

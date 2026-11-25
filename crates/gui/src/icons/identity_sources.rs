@@ -2,8 +2,14 @@
 //! Vector artwork from the Oblikovati design handoff.
 use super::IconGlyph;
 
-pub(super) fn source(glyph: IconGlyph) -> Option<&'static str> {
+pub(super) fn source(glyph: IconGlyph, light: bool) -> Option<&'static str> {
     Some(match glyph {
+        IconGlyph::BrandWordmark if light => {
+            include_str!("../../assets/identity/oblikovati-wordmark-light.svg")
+        }
+        IconGlyph::BrandWordmark => {
+            include_str!("../../assets/identity/oblikovati-wordmark-dark.svg")
+        }
         IconGlyph::PlaceComponent => {
             include_str!("../../assets/identity/cmd-asm-assembly-component-placement-32.svg")
         }

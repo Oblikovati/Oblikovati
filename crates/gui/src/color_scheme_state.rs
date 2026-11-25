@@ -12,6 +12,7 @@ pub struct GuiColorSchemeState {
     active: String,
     names: Vec<String>,
     background: ViewportBackground,
+    geometry_selection: [[f32; 4]; 2],
 }
 impl GuiColorSchemeState {
     /// Copy authored colours for a GUI frame; example: `GuiColorSchemeState::from_registry(&registry)?`.
@@ -33,11 +34,15 @@ impl GuiColorSchemeState {
                 .collect(),
             background: studio_background(registry, theme)
                 .map_or_else(|| registry_background(registry), Ok)?,
+            geometry_selection: geometry_selection(registry, theme),
         })
     }
     /// Read the view's application colours; example: `viewport.set_background(state.background())?`.
     pub fn background(&self) -> ViewportBackground {
         self.background
+    }
+    pub(crate) fn geometry_selection(&self, hovered: bool) -> [f32; 4] {
+        self.geometry_selection[usize::from(hovered)]
     }
     pub(crate) fn contrasting_ink(&self, preferred: [f32; 4]) -> [f32; 4] {
         let samples = match self.background {
@@ -72,6 +77,33 @@ impl GuiColorSchemeState {
             }));
         }
     }
+}
+fn geometry_selection(
+    registry: &ColorSchemeRegistry,
+    theme: Option<&ThemePalette>,
+) -> [[f32; 4]; 2] {
+    let active = registry.active();
+    if active.name == "Default" {
+        let surface = theme.map(|theme| &theme[&TOKEN_VIEWPORT_BG]);
+        return match surface {
+            Some(base) if luminance([base.r, base.g, base.b]) > 0.5 => [
+                crate::theme::hex_rgb(0x0D9488),
+                crate::theme::hex_rgb(0x0F766E),
+            ],
+            _ => [
+                crate::theme::hex_rgb(0x2DD4BF),
+                crate::theme::hex_rgb(0x5EEAD4),
+            ],
+        };
+    }
+    [&active.primary_select, &active.secondary_select].map(|color| {
+        [
+            f32::from(color.r) / 255.,
+            f32::from(color.g) / 255.,
+            f32::from(color.b) / 255.,
+            color.opacity as f32,
+        ]
+    })
 }
 fn studio_background(
     registry: &ColorSchemeRegistry,

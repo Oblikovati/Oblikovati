@@ -2,11 +2,15 @@
 //! Geometry for a linear dimension's displayed measurement line.
 use oblikovati_model::sketch::{DistanceMeasure, PlanarConstraint, Sketch2D, SketchConstraintId};
 
+pub(super) struct MeasurementLine {
+    pub line: [[f64; 2]; 2],
+    pub witnesses: [[f64; 2]; 2],
+}
 pub(super) fn distance_line(
     geometry: &Sketch2D,
     id: SketchConstraintId,
     label: [f64; 2],
-) -> Option<[[f64; 2]; 2]> {
+) -> Option<MeasurementLine> {
     let relation = &geometry
         .constraints()
         .iter()
@@ -19,7 +23,11 @@ pub(super) fn distance_line(
         return None;
     };
     let [a, b] = points.map(|id| geometry.point(id).ok().map(|point| point.position));
-    line_at_label(a?, b?, *measure, label)
+    let [a, b] = [a?, b?];
+    Some(MeasurementLine {
+        line: line_at_label(a, b, *measure, label)?,
+        witnesses: [a, b],
+    })
 }
 fn line_at_label(
     a: [f64; 2],

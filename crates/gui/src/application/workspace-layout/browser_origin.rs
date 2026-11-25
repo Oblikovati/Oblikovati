@@ -48,8 +48,15 @@ pub(crate) fn origin_row(
     actions: &mut Vec<GuiShellAction>,
 ) {
     let _row = ui.push_id(label);
-    ui.bullet();
-    ui.same_line();
+    use crate::icons::IconGlyph;
+    let glyph = match row {
+        0..=2 => IconGlyph::WorkPlane,
+        3..=5 => IconGlyph::WorkAxis,
+        _ => IconGlyph::WorkPoint,
+    };
+    crate::browser::browser_art::prefix(ui, view, glyph, ui.cursor_screen_pos());
+    ui.dummy([16., ui.text_line_height()]);
+    ui.same_line_with_spacing(0., 4.);
     let selected = view.selected_origin_row == Some(row);
     if ui.selectable_config(label).selected(selected).build() {
         choose_origin_row(state, view, row, actions);

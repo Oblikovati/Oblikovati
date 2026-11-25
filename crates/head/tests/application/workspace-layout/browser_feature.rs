@@ -19,7 +19,7 @@ pub(in super::super) const FEATURE: &str = "Extrude1";
 /// 20 mm in working units.
 const DEPTH: f64 = 2.;
 /// The outline's accent, as drawn.
-const EDGE_COLOR: [u8; 3] = [64, 153, 255];
+const EDGE_COLOR: [u8; 3] = [45, 212, 191];
 const DIMENSION_LABEL_STEP: f64 = 1.5;
 /// How far from a row its menu's first command opens.
 const MENU_REACH: f32 = 40.;

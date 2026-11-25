@@ -5,7 +5,7 @@ use super::*;
 mod marking_environment;
 #[path = "marking_presentation.rs"]
 mod marking_presentation;
-pub(super) use marking_environment::choose_sketch_environment;
+pub(in super::super) use marking_environment::choose_sketch_environment;
 
 #[given("the customization dialog is open on Ribbon for an empty Part Tools custom panel")]
 fn empty_ribbon(world: &mut ApplicationWorld) {

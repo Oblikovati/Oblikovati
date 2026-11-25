@@ -17,6 +17,7 @@ pub(super) fn sketch_row(
     if sketch_selectable(
         ui,
         row,
+        view,
         state
             .browser
             .as_ref()
@@ -159,15 +160,25 @@ fn sketch_activation(
         actions.push(edit.clone());
     }
 }
-fn sketch_selectable(ui: &Ui, row: &GuiBrowserSketch, selected: bool) -> bool {
-    let position = ui.cursor_screen_pos();
+fn sketch_selectable(ui: &Ui, row: &GuiBrowserSketch, view: &BrowserView, selected: bool) -> bool {
+    let [x, y] = ui.cursor_screen_pos();
     let activated = crate::widget_abi::selectable(ui, "##sketch-row", selected, true);
     // Literal labels are drawn separately so imported names containing ## remain visible.
+    crate::browser::browser_art::prefix(ui, view, crate::icons::IconGlyph::CreateSketch, [x, y]);
+    let caption_x = x + 20.;
     crate::widget_abi::literal_text(
         ui,
-        position,
+        [caption_x, y],
         ui.style_color(StyleColor::Text),
-        &sketch_caption(row),
+        &row.name,
+    );
+    let metadata_x = caption_x + ui.calc_text_size(&row.name)[0] + 14.;
+    let _mono = crate::ui_scale::numeric_font(ui);
+    crate::widget_abi::literal_text(
+        ui,
+        [metadata_x, y],
+        ui.style_color(StyleColor::TextDisabled),
+        &sketch_metadata(row),
     );
     if ui.is_item_hovered() {
         ui.tooltip_text(sketch_tooltip(row));
@@ -282,15 +293,18 @@ fn sketch_visibility_menu(
         actions.push(visibility);
     }
 }
+#[cfg(test)]
 fn sketch_caption(row: &GuiBrowserSketch) -> String {
+    format!("{}  {}", row.name, sketch_metadata(row))
+}
+fn sketch_metadata(row: &GuiBrowserSketch) -> String {
     match &row.inspection {
         Ok(summary) => format!(
-            "{}  [DOF {}{}]",
-            row.name,
+            "[DOF {}{}]",
             summary.dof,
             if summary.healthy { "" } else { ", sick" }
         ),
-        Err(_) => format!("{}  [unavailable]", row.name),
+        Err(_) => "[unavailable]".into(),
     }
 }
 fn sketch_tooltip(row: &GuiBrowserSketch) -> String {

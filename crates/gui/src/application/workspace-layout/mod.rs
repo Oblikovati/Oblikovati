@@ -179,7 +179,10 @@ impl WorkspaceLayout {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
-        document_area: crate::application::document_creation::workspaces::WorkspaceArea,
+        presentation: (
+            crate::application::document_creation::workspaces::WorkspaceArea,
+            &crate::icons::GuiRibbonIcons,
+        ),
         part_context_open: bool,
         selector_context_gesture: bool,
         actions: &mut Vec<GuiShellAction>,
@@ -187,7 +190,8 @@ impl WorkspaceLayout {
         self.pending_layout |= self.panels.visibility_changed_since_layout();
         self.view.arrow_consumed = false;
         self.view.feature_keyboard_focus = false;
-        self.view.document_area = Some(document_area);
+        self.view.document_area = Some(presentation.0);
+        self.view.icons = Some(presentation.1.clone());
         self.view.view_clicks_taken = self.view_clicks_taken;
         browser_origin::follow_view_click(
             ui,

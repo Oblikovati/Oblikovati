@@ -20,7 +20,7 @@ fn context_menu_visible(world: &mut ApplicationWorld) {
 #[when("the user clicks the ribbon display control")]
 #[when("the user clicks the ribbon display control again")]
 fn native_display_click(world: &mut ApplicationWorld) {
-    let at = super::display_control_point(&world);
+    let at = super::display_control_point(world);
     super::super::x11_input::click(at);
     world.pump(Vec::new());
 }

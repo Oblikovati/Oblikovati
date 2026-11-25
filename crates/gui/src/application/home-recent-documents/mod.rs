@@ -137,7 +137,12 @@ impl HomeWorkspace {
         }
     }
     fn search_controls(&mut self, ui: &Ui) {
-        ui.set_next_item_width(260.);
+        let width = ui.content_region_avail()[0].min(320.);
+        let height = ui.frame_height();
+        let clear_width = 22.;
+        let search_width = ui.calc_text_size("Search")[0] + 16.;
+        let _rounding = ui.push_style_var(imgui::StyleVar::FrameRounding(0.));
+        ui.set_next_item_width((width - clear_width - search_width).max(1.));
         ui.input_text("##search-recent", &mut self.query)
             .hint("Search recent")
             .build();
@@ -147,13 +152,15 @@ impl HomeWorkspace {
         if !self.query.is_empty() && ui.is_item_active() {
             self.show_history = false;
         }
+        let field = ui.style_color(imgui::StyleColor::FrameBg);
+        let _background = ui.push_style_color(imgui::StyleColor::Button, field);
         ui.same_line_with_spacing(0., 0.);
-        if ui.button("x##clear-search") {
+        if ui.button_with_size("x##clear-search", [clear_width, height]) {
             self.query.clear();
             self.show_history = true;
         }
-        ui.same_line();
-        if ui.button("Search") {
+        ui.same_line_with_spacing(0., 0.);
+        if ui.button_with_size("Search", [search_width, height]) {
             self.apply_search();
         }
     }

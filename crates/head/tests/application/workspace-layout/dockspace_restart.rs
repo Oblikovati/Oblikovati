@@ -363,6 +363,7 @@ fn native_open_customize(world: &mut ApplicationWorld) {
 
 #[test]
 fn customize_async_ok_selects_next_tab_and_reopens_in_same_dock() {
+    use super::super::ribbon_customization::tab_retention::choose_sketch_environment;
     let mut world = ApplicationWorld::with_asset_tools_closed();
     super::browser_feature::open_visible_extruded_part(&mut world);
     let area = viewport(&mut world);
@@ -378,6 +379,7 @@ fn customize_async_ok_selects_next_tab_and_reopens_in_same_dock() {
     );
     native_open_customize(&mut world);
     native_click_label(&mut world, "Marking Menu");
+    choose_sketch_environment(&mut world);
     let north = world.run_in_window("Customize", "North").clone();
     let combo = [north.minimum[0] - 70., north.center()[1]];
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(combo));
@@ -427,7 +429,8 @@ fn customize_async_ok_selects_next_tab_and_reopens_in_same_dock() {
         Some(node)
     );
     select_dock_tab(&mut world, "Customize");
-    world.run_in_window("Customize", "Environment:2DSketch");
+    choose_sketch_environment(&mut world);
+    world.run_in_window("Customize", "Rectangle");
     world.save_capture("customize-async-restored-to-shared-dock");
     world.close();
 }

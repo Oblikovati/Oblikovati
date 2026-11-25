@@ -90,8 +90,11 @@ fn arrow_in_region(
 ) -> Option<[f32; 2]> {
     frame.runs.iter().find_map(|run| {
         let [x, y] = run.center();
-        (run.list == caption.list && matches!(run.text.as_str(), "v" | "▼") && columns.contains(&x) && rows.contains(&y))
-            .then_some([x, y])
+        (run.list == caption.list
+            && matches!(run.text.as_str(), "v" | "▼")
+            && columns.contains(&x)
+            && rows.contains(&y))
+        .then_some([x, y])
     })
 }
 

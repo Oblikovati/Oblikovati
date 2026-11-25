@@ -173,7 +173,7 @@ impl GuiFrameEngine {
         self.workspace.browser_panel(
             ui,
             &request.commands,
-            area,
+            (area, &self.icons.presentation),
             self.part_context_open,
             selector_context_gesture,
             &mut selected,

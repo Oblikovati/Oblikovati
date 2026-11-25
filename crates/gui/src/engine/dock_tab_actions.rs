@@ -18,7 +18,8 @@ pub(super) fn draw(
     workspace_area: Option<crate::application::document_creation::workspaces::WorkspaceArea>,
     owners: DockTabOwners<'_>,
 ) {
-    let tab_action = crate::widget_abi::dock_tab_action(ui);
+    let (tab_action, ink_changed) = crate::widget_abi::dock_tab_action(ui);
+    owners.workspace.pending_layout |= ink_changed;
     let launcher_action = workspace_area
         .filter(|_| browser_available)
         .and_then(|area| owners.workspace.empty_browser_menu(ui, area));

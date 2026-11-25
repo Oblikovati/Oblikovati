@@ -101,7 +101,7 @@ impl BrowserTree<'_> {
         }
         if let Some(active) = states.active() {
             self.ui.same_line_with_spacing(0., 16.);
-            self.ui.text(format!("<{}>", active.name));
+            checked_representation(self.ui, &format!("<{}>", active.name));
         }
         self.ui.same_line_with_spacing(0., 8.);
         let all =
@@ -238,4 +238,11 @@ pub(super) fn active_state_mark(ui: &Ui, position: [f32; 2]) {
     )
     .thickness(2. * scale)
     .build();
+}
+
+pub(super) fn checked_representation(ui: &Ui, label: &str) {
+    active_state_mark(ui, ui.cursor_screen_pos());
+    ui.dummy([16., ui.text_line_height()]);
+    ui.same_line_with_spacing(0., 2.);
+    ui.text(label);
 }

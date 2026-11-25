@@ -95,6 +95,8 @@ impl<
             plane: tool.edit.plane,
             position,
             line: None,
+            witnesses: None,
+            unit: None,
             text: format!("{} = {}", request.kind, request.expression),
             edit: None,
             role: oblikovati_gui::GuiDimensionLabelRole::Preview,

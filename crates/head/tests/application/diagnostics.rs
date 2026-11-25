@@ -272,3 +272,17 @@ pub(super) fn shows_run(frame: &RenderedFrame, expected: &str) -> bool {
         squeezed(&run.text).contains(expected) || panel_caption_matches(&run.text, expected)
     })
 }
+
+pub(super) fn annotation_run_matches(rendered: &str, expected: &str) -> bool {
+    rendered == expected
+        || rendered
+            .strip_prefix(expected)
+            .is_some_and(|unit| matches!(unit, "mm" | "cm" | "in" | "ft" | "m" | "µm" | "km" | "°"))
+}
+
+pub(super) fn annotation_shown(frame: &RenderedFrame, expected: &str) -> bool {
+    frame
+        .runs
+        .iter()
+        .any(|run| annotation_run_matches(&run.text, expected))
+}

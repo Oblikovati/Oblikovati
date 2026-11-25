@@ -33,6 +33,7 @@ pub(crate) struct BrowserView {
     pub(crate) test_edit_bounds: Option<[[f32; 2]; 2]>,
     #[cfg(test)]
     pub(crate) test_visibility_bounds: Option<[[f32; 2]; 2]>,
+    pub(crate) icons: Option<crate::icons::GuiRibbonIcons>,
     autoscroll: bool,
     /// Present while the field is open; an empty query still shows the whole tree.
     query: Option<String>,
@@ -269,15 +270,30 @@ impl BrowserView {
         let Some(query) = &mut self.query else {
             return;
         };
-        ui.set_next_item_width(-32.);
+        use imgui::StyleColor;
+        let clear_width = 24.;
+        ui.set_next_item_width((ui.content_region_avail()[0] - clear_width).max(1.));
+        let hint = ui.push_style_color(StyleColor::TextDisabled, ui.style_color(StyleColor::Text));
         if std::mem::take(&mut self.focus_search) {
             ui.set_keyboard_focus_here();
         }
         ui.input_text("##browser-search", query)
             .hint(SEARCH_HINT)
             .build();
-        ui.same_line();
-        if crate::widget_abi::button(ui, "x##browser-search-close", [0.; 2]) {
+        drop(hint);
+        ui.same_line_with_spacing(0., 0.);
+        let background =
+            ui.push_style_color(StyleColor::Button, ui.style_color(StyleColor::FrameBg));
+        let clear = crate::widget_abi::button(
+            ui,
+            "x##browser-search-close",
+            [clear_width, ui.frame_height()],
+        );
+        drop(background);
+        if ui.is_item_hovered() {
+            ui.tooltip_text("Clear search");
+        }
+        if clear {
             self.close_or_clear();
         }
     }

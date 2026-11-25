@@ -17,6 +17,8 @@ fn request(count: usize, overlap: bool) -> GuiFrameRequest {
                 ]
             },
             line: None,
+            witnesses: None,
+            unit: None,
             text: format!("{} mm", index + 1),
             role: GuiDimensionLabelRole::Driving,
             edit: Some(GuiDimensionEdit {

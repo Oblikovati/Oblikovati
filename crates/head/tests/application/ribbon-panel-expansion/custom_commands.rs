@@ -75,9 +75,13 @@ fn expansion_control(world: &mut ApplicationWorld) {
     let title = world.run("User Commands");
     assert!(
         title.text.ends_with(['v', '▼'])
-            || world.frame.runs.iter().any(|run| matches!(run.text.as_str(), "v" | "▼")
-                && run.minimum[0] > title.maximum[0]
-                && (run.center()[1] - title.center()[1]).abs() < 8.)
+            || world
+                .frame
+                .runs
+                .iter()
+                .any(|run| matches!(run.text.as_str(), "v" | "▼")
+                    && run.minimum[0] > title.maximum[0]
+                    && (run.center()[1] - title.center()[1]).abs() < 8.)
     );
 }
 #[when("the user opens the User Commands expansion")]

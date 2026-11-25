@@ -155,8 +155,13 @@ pub(crate) fn ensure_tabbed_window(_: &Ui, title: &str, group: &str) {
     }
 }
 /// Read the action selected from native ImGui dock-tab buttons after all windows are submitted.
-pub(crate) fn dock_tab_action(_: &Ui) -> Option<DockTabAction> {
-    decode_dock_action(unsafe { oblikovati_gui_draw_dock_tab_actions() })
+pub(crate) fn dock_tab_action(_: &Ui) -> (Option<DockTabAction>, bool) {
+    const DRAW_AGAIN: u32 = 1 << 31;
+    let result = unsafe { oblikovati_gui_draw_dock_tab_actions() };
+    (
+        decode_dock_action(result & !DRAW_AGAIN),
+        result & DRAW_AGAIN != 0,
+    )
 }
 /// Draw the same panel menu when the workspace has no browser tabs.
 /// Example: `workspace_panel_menu(ui)` inside the panel launcher overlay.

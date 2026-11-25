@@ -27,6 +27,8 @@ use crate::application::workspace_layout::{
     browser_feature, browser_origin, browser_view::BrowserBranch,
 };
 use sketch_rows::sketch_row;
+#[path = "browser_art.rs"]
+pub(crate) mod browser_art;
 /// Draw the browser tree, or the rows a search leaves; example: inside the Model window.
 pub(crate) fn browser_contents(
     ui: &Ui,
@@ -111,7 +113,7 @@ impl BrowserTree<'_> {
         }
         // The marker closes a modelled document's history; a document without an origin has none.
         if self.browser.has_origin {
-            self.ui.text(end_marker);
+            browser_art::rollback_marker(self.ui, end_marker);
         }
     }
     fn folded_model(&self, view: &mut BrowserView, actions: &mut Vec<GuiShellAction>) {
