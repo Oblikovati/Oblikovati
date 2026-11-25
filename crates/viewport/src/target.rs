@@ -22,10 +22,8 @@ impl ViewTarget {
     }
     pub fn extent(&self) -> [u32; 2] {
         let window = self.window();
+        #[cfg(target_os = "windows")]
         if let Self::Native(native) = self {
-            #[cfg(target_os = "linux")]
-            native.window.do_resize();
-            #[cfg(target_os = "windows")]
             native.refresh_extent();
         }
         let (width, height) = window.size();

@@ -65,6 +65,12 @@ The [post-reuse orbit sample](../2026-11-25-render-reuse/README.md) reports
 reach it through `XwWindow::live_attributes`. The sample neither counts
 round trips nor captures wall time blocked waiting for replies.
 
+The subsequent [window-observation audit](../2026-11-25-x11-window-observations/README.md)
+verified an application-side reduction. The updated build still made
+approximately 64 attribute calls per unchanged present and 206–208 per
+orbit present in the measured runs. These are whole-process counts and
+include work in the application, renderer, and Vulkan driver.
+
 Count and time these calls per redraw, separating application extent
 queries from checked GUI attachment, resize checks, and swapchain
 publication. Investigate sharing one versioned observation where its

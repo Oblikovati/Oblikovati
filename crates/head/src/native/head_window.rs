@@ -192,8 +192,7 @@ impl HeadWindow for NativeHeadWindow {
         let selection_changed = self.synchronize_sketch_highlights(commands)?;
         let mut window_commands = commands.clone();
         window_commands.window_maximized = self.view.window_maximized()?;
-        self.publish_status_telemetry(event, &mut window_commands);
-        let mut update = self.advance_native_gui(event, &window_commands)?;
+        let mut update = self.advance_native_gui(event, &mut window_commands)?;
         self.update_accessibility(event, &window_commands, &mut update)?;
         if let Some(hover) = &update.constraint_hover {
             update.changed |= self.update_glyph_hover(hover.as_ref(), commands.document)?;

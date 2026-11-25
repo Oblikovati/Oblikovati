@@ -73,6 +73,7 @@ pub(crate) struct NativeWindow {
     capture: RefCell<Option<pixels::NativePixelReader>>,
     maximized: Cell<bool>,
     frame_cursor: Cell<u32>,
+    frame_extent: Cell<[i32; 2]>,
     state_atom: xlib::Atom,
     display_scale: dpi::DisplayScale,
 }
@@ -120,6 +121,7 @@ impl NativeWindow {
             capture: RefCell::new(None),
             maximized: Cell::new(false),
             frame_cursor: Cell::new(0),
+            frame_extent: Cell::new([width, height]),
             state_atom,
             display_scale,
             window,
@@ -136,6 +138,8 @@ impl NativeWindow {
         self.configure_events()?;
         self.mapped(true)?;
         self.window.do_resize();
+        let (width, height) = self.window.size();
+        self.frame_extent.set([width, height]);
         Ok(())
     }
     pub(super) fn text_input_issue(&self) -> Option<String> {
@@ -274,7 +278,7 @@ impl NativeWindow {
             xlib::FocusIn | xlib::FocusOut => {
                 Some(ViewportEvent::Focus(event.get_type() == xlib::FocusIn))
             }
-            xlib::ConfigureNotify => Some(self.resize_event()),
+            xlib::ConfigureNotify => self.resize_event(unsafe { event.configure }),
             xlib::MapNotify | xlib::UnmapNotify => {
                 Some(ViewportEvent::Mapped(event.get_type() == xlib::MapNotify))
             }
@@ -282,10 +286,17 @@ impl NativeWindow {
             _ => input::translate_native_pointer(self.pointer(), event).map(ViewportEvent::Input),
         }
     }
-    fn resize_event(&self) -> ViewportEvent {
+    fn resize_event(&self, event: xlib::XConfigureEvent) -> Option<ViewportEvent> {
+        if event.window != self.window.native_handle() || event.width <= 0 || event.height <= 0 {
+            return None;
+        }
+        // Keep the kernel's fallback rectangle current at actual configure boundaries.
         self.window.do_resize();
-        let (width, height) = self.window.size();
-        ViewportEvent::Resized([width as u32, height as u32])
+        self.frame_extent.set([event.width, event.height]);
+        Some(ViewportEvent::Resized([
+            event.width as u32,
+            event.height as u32,
+        ]))
     }
     fn close_event(&self, event: xlib::XEvent) -> Option<ViewportEvent> {
         let atom = self.display.get_atom(AspectXAtom::DeleteWindow).ok()?;

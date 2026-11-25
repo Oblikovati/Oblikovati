@@ -9,6 +9,7 @@ impl NativeHeadWindow {
     pub(super) fn publish_status_telemetry(
         &mut self,
         event: Option<&ViewportEvent>,
+        extent: [u32; 2],
         commands: &mut GuiCommandState,
     ) {
         match event {
@@ -36,16 +37,12 @@ impl NativeHeadWindow {
                 commands.viewport_zoom_percent = Some(percent.round().max(1.) as u64);
             }
         }
-        commands.viewport_coordinates = self.status_coordinates(commands);
+        commands.viewport_coordinates = self.status_coordinates(extent, commands);
     }
 
-    fn status_coordinates(&mut self, commands: &GuiCommandState) -> Option<[f64; 2]> {
+    fn status_coordinates(&self, extent: [u32; 2], commands: &GuiCommandState) -> Option<[f64; 2]> {
         let [x, y] = self.status_pointer?;
-        let [left, top, right, bottom] = self
-            .gui
-            .as_ref()?
-            .document_area(self.view.drawable_extent().ok()?)
-            .ok()?;
+        let [left, top, right, bottom] = self.gui.as_ref()?.document_area(extent).ok()?;
         if !(left..right).contains(&u32::try_from(x).ok()?)
             || !(top..bottom).contains(&u32::try_from(y).ok()?)
         {

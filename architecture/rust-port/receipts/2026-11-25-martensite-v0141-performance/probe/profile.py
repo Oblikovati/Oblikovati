@@ -180,6 +180,9 @@ def cube():
 env = dict(os.environ)
 env["XDG_CONFIG_HOME"] = str(folder / "config")
 env["XDG_DATA_HOME"] = str(folder / "data")
+if audit := os.getenv("OBK_X11_AUDIT"):
+    env["LD_AUDIT"] = audit
+    env["OBK_X11_AUDIT_LOG"] = str(folder / "attributes.csv")
 env["OBK_CONFIG_DIR"] = str(folder / "config")
 if args.hide_selection_toolbar:
     config = folder / "config"

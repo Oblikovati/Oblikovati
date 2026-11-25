@@ -57,14 +57,16 @@ fn native_event_translation_checks_target_and_window_protocol_shape() {
     verify_target_and_close(&fixture);
 }
 fn verify_configure_event(fixture: &NativeEventFixture) {
-    let resize = fixture
-        .window
-        .translate(fixture.event(xlib::ConfigureNotify));
-    let (width, height) = fixture.window.window.size();
-    assert_eq!(
-        resize,
-        Some(ViewportEvent::Resized([width as u32, height as u32]))
-    );
+    let mut event = fixture.event(xlib::ConfigureNotify);
+    event.configure.window = fixture.window.window.native_handle();
+    event.configure.width = 96;
+    event.configure.height = 72;
+    let resize = fixture.window.translate(event);
+    assert_eq!(resize, Some(ViewportEvent::Resized([96, 72])));
+    assert_eq!(fixture.window.frame_extent.get(), [96, 72]);
+    event.configure.width = 0;
+    assert_eq!(fixture.window.translate(event), None);
+    assert_eq!(fixture.window.frame_extent.get(), [96, 72]);
 }
 fn verify_target_and_close(fixture: &NativeEventFixture) {
     assert_eq!(

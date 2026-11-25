@@ -6,12 +6,13 @@ impl NativeHeadWindow {
     pub(in crate::native) fn advance_native_gui(
         &mut self,
         event: Option<&ViewportEvent>,
-        commands: &GuiCommandState,
+        commands: &mut GuiCommandState,
     ) -> Result<HeadGuiUpdate, String> {
         if self.gui.is_none() && event == Some(&ViewportEvent::CloseRequested) {
             return Ok(Default::default());
         }
         let extent = self.view.drawable_extent()?;
+        self.publish_status_telemetry(event, extent, commands);
         let backing_scale = desktop_gui_scale(self.view.backing_scale(), commands.ui_scale);
         self.ensure_native_gui()?;
         let now = self.gui_epoch.elapsed();

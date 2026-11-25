@@ -220,9 +220,8 @@ impl NativeWindow {
             let press = unsafe { event.button };
             ([press.x, press.y], Some(press.button))
         };
-        let (width, height) = self.window.size();
         let edge = (!self.maximized.get())
-            .then(|| resize_edge(position, [width, height]))
+            .then(|| resize_edge(position, self.frame_extent.get()))
             .flatten();
         self.set_frame_cursor(edge.map_or(0, |(_, cursor)| cursor));
         if button != Some(1) {
