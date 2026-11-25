@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:46:34.798198072Z" time="23.298430251"><testcase name="Scenario: Minimize while a panel context menu is open: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:644:3" time="23.298430251"><system-out><![CDATA[  Scenario: Minimize while a panel context menu is open
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the display control is configured to toggle between the full ribbon and compact group buttons
+   ✔  When the user right-clicks the Modify panel title
+   ✔  Then the panel context menu opens
+   ✔  When the user clicks the ribbon display control
+   ✔  Then the context menu closes
+   ✔  And the 3D Model ribbon shows compact group buttons
+   ✔  And the part remains visible
+   ✔  When the user clicks the ribbon display control again
+   ✔  Then the full 3D Model ribbon returns
+   ✔  And the context menu remains closed
+]]></system-out></testcase></testsuite></testsuites>

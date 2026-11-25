@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T02:43:06.549811387Z" time="4.917625591"><testcase name="Scenario: Minimize and restore the ribbon during a modeling preview: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:674:3" time="4.917625591"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Minimize and restore the ribbon during a modeling preview
+   ✘  Given `fixtures/cad/docking-visible-solid-current.opd` with its solid block is active in the MCAD Software
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:675:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

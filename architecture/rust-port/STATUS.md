@@ -53,9 +53,9 @@ using this status; the live scenario directory can change.
   All 38 pinned declarations have R0 baseline records in
   `receipts/2026-11-21-document-tabs-r0-3900/`.
   Strict verification remains blocked by #3978.
-- Home Recent Documents (#3898) passed all 35 current scenarios and 394 steps
-  using the [published profile](receipts/2026-11-25-home-recent-current-3898/README.md).
+- Home Recent Documents (#3898) passed all [35 current scenarios and 394 steps](receipts/2026-11-25-home-recent-current-3898/README.md).
 - Document Opening (#3889) passed all [27 current scenarios and 315 steps](receipts/2026-11-25-document-opening-current-3889/README.md).
+- Ribbon Display (#3856) passed [48 dependency-ready scenarios and 556 steps](receipts/2026-11-25-ribbon-display-current-3856/README.md). Two Shell cases require Martensite #554.
 - Document Saving (#3888) passed 23 dependency-ready current scenarios and 260
   steps. The generated Part requires Assembly Simplify (#3963). See the
   [current run](receipts/2026-11-25-document-saving-current-3888/README.md).
@@ -474,7 +474,7 @@ using this status; the live scenario directory can change.
 ## Work queue
 
 Work dependency-ready application scenarios one at a time, then sketch and modeling.
-1. Continue the dependency-ready application scenarios with Ribbon Display.
+1. Continue the dependency-ready application scenarios with Workspace Layout.
    Midpoint Line (#4178) still names a deferred Inventor fixture. Revisit it when
    the scenario owner adopts the supplied native fixture.
    Constraint Settings (#4158) is paused with uncommitted work while its
