@@ -1,7 +1,7 @@
 # Current native Ribbon Customization
 
-Seventy-eight of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 74 of 122 declarations and 1,068
+Eighty of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 76 of 122 declarations and 1,091
 passing steps. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
@@ -10,6 +10,8 @@ opening Offset Plane from the grouped Plane menu. The
 verified reopening at the moved position and preserving one selected face.
 The [source order case](../2026-11-25-ribbon-customization-source-order-3856/README.md)
 verified sort order across category changes and reopen.
+The [resize cases](../2026-11-25-ribbon-customization-resize-3856/README.md)
+verified resizing both lists, retaining staged edits, and restoring the default size.
 
 The [Button Size case](case-025/cucumber.json) reached the main-panel
 command menu. The [grouped menu case](case-028/cucumber.json) needs

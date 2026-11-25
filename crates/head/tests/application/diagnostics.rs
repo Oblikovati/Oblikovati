@@ -10,8 +10,28 @@ pub(super) use drawn_text::{
     RenderedFrame, RenderedRun, has_strike, rendered_frame, run_is_checked,
 };
 
+/// Locate the draw list belonging to the named active window.
+pub(super) fn window_draw_list(title: &str) -> Option<usize> {
+    let title = CString::new(title).unwrap();
+    // The live frame owns the window and its draw list.
+    let window = unsafe { sys::igFindWindowByName(title.as_ptr()).as_ref() }?;
+    window
+        .Active
+        .then(|| rendered_draw_list_index(window.DrawList))?
+}
+
 /// Find the draw list of the active child at a point inside its bounds.
 pub(super) fn child_draw_list_at(parent: &str, point: [f32; 2]) -> Option<usize> {
+    let (draw_list, _) = active_child_at(parent, point);
+    rendered_draw_list_index(draw_list)
+}
+
+/// Size of an active rendered child, measured from its actual outer bounds.
+pub(super) fn child_size_at(parent: &str, point: [f32; 2]) -> [f32; 2] {
+    active_child_at(parent, point).1
+}
+
+fn active_child_at(parent: &str, point: [f32; 2]) -> (*mut sys::ImDrawList, [f32; 2]) {
     let name = CString::new(parent).unwrap();
     // The window and draw-list pointers belong to the live context until the next frame.
     let owner = unsafe { sys::igFindWindowByName(name.as_ptr()).as_ref() }
@@ -19,7 +39,7 @@ pub(super) fn child_draw_list_at(parent: &str, point: [f32; 2]) -> Option<usize>
     let children = &owner.DC.ChildWindows;
     assert!(children.Size > 0, "expected child windows in {parent:?}");
     let children = unsafe { std::slice::from_raw_parts(children.Data, children.Size as usize) };
-    let target = children
+    children
         .iter()
         .find_map(|window| {
             let window = unsafe { window.as_ref() }?;
@@ -27,10 +47,9 @@ pub(super) fn child_draw_list_at(parent: &str, point: [f32; 2]) -> Option<usize>
             (window.Active
                 && (bounds.Min.x..bounds.Max.x).contains(&point[0])
                 && (bounds.Min.y..bounds.Max.y).contains(&point[1]))
-            .then_some(window.DrawList)
+            .then_some((window.DrawList, [window.Size.x, window.Size.y]))
         })
-        .unwrap_or_else(|| panic!("expected active child at {point:?} in {parent:?}"));
-    rendered_draw_list_index(target)
+        .unwrap_or_else(|| panic!("expected active child at {point:?} in {parent:?}"))
 }
 
 fn rendered_draw_list_index(target: *mut sys::ImDrawList) -> Option<usize> {

@@ -16,6 +16,7 @@ mod category_steps;
 mod custom_panel_title;
 #[path = "dialog_placement.rs"]
 mod dialog_placement;
+use dialog_placement::close_customization_button;
 #[path = "file_exchange.rs"]
 mod file_exchange;
 #[path = "list_keyboard_steps.rs"]
@@ -312,11 +313,6 @@ fn close_customization_title(world: &mut ApplicationWorld) {
     ]));
     world.pump(Vec::new());
 }
-#[when("the user clicks Close")]
-#[when("the user clicks \"Close\"")]
-fn close_customization_button(world: &mut ApplicationWorld) {
-    click_in_customize(world, "Close");
-}
 #[then("\"2D Sketches\" is available in the source list")]
 fn available_again(world: &mut ApplicationWorld) {
     sketches_in_available_commands(world);
@@ -490,10 +486,9 @@ fn row_option_checked(world: &ApplicationWorld, row: &str, option: &str) -> bool
             && (mark.position[1] - height).abs() < 10.
     })
 }
-#[path = "native_tests.rs"]
-mod native_tests;
 #[path = "marking_menu_tests.rs"]
 mod marking_menu_tests;
-
+#[path = "native_tests.rs"]
+mod native_tests;
 #[path = "tab_retention.rs"]
 mod tab_retention;

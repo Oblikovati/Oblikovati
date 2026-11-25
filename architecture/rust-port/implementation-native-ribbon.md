@@ -41,6 +41,9 @@ preserving the selected target. Cancel restores the applied settings.
 The grouped Plane menu opens the native Offset Plane dialog from its
 Offset from Plane entry. The entry uses the same availability check and
 action as the main Plane button.
+Both command lists resize with the floating Customize window without
+losing staged edits. Reopening restores its default size and keeps its
+position within the visible workspace.
 
 The Rust shell uses a fixed ribbon band across the window instead of the temporary
 floating command palette. The File menu and quick-access controls remain available.

@@ -2,6 +2,23 @@
 //! Moving the floating Customize window without replacing the active Part.
 use super::*;
 
+#[path = "dialog_resize.rs"]
+mod dialog_resize;
+
+#[when("the user clicks Close")]
+#[when("the user clicks \"Close\"")]
+pub(super) fn close_customization_button(world: &mut ApplicationWorld) {
+    let list = diagnostics::window_draw_list("Customize").expect("expected Customize draw list");
+    let close = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.list == list && run.text == "Close")
+        .expect("expected Close in Customize");
+    world.click(diagnostics::pointer_pixels(close.center()));
+    world.pump(Vec::new());
+}
+
 #[given("ribbon customization is open without pending edits")]
 fn open_clean_dialog(world: &mut ApplicationWorld) {
     world.previous_document = world.state().document;

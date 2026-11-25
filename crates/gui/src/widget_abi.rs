@@ -38,7 +38,14 @@ unsafe extern "C" {
         large: bool,
         show_caption: bool,
     ) -> bool;
-    fn oblikovati_gui_fit_dialog(title: *const u8, x: f32, y: f32, width: f32, height: f32);
+    fn oblikovati_gui_fit_dialog(
+        title: *const u8,
+        x: f32,
+        y: f32,
+        width: f32,
+        height: f32,
+        reset_size_on_reopen: bool,
+    );
     fn oblikovati_gui_begin_scroll_region(identity: *const u8, width: f32, height: f32) -> bool;
     fn oblikovati_gui_dummy(width: f32, height: f32);
     fn oblikovati_gui_window_position(x: f32, y: f32, condition: i32);
@@ -342,6 +349,15 @@ pub(crate) fn dummy(_: &Ui, size: [f32; 2]) {
 /// Keep a floating dialog inside the current content viewport while preserving valid user placement.
 /// Example: `fit_dialog(ui, "Parameters", [320.,8.], [540.,360.])` before opening that window.
 pub(crate) fn fit_dialog(_: &Ui, title: &str, origin: [f32; 2], size: [f32; 2]) {
+    fit_floating_dialog(title, origin, size, false);
+}
+
+/// Fit a floating dialog that remembers placement and restores its default size on reopen.
+pub(crate) fn fit_dialog_with_default_size(_: &Ui, title: &str, origin: [f32; 2], size: [f32; 2]) {
+    fit_floating_dialog(title, origin, size, true);
+}
+
+fn fit_floating_dialog(title: &str, origin: [f32; 2], size: [f32; 2], reset_size_on_reopen: bool) {
     let title = ImString::new(title);
     // SAFETY: the frame owns the current context; the live ID and scalar values are copied by C++ (#3803, #3850).
     unsafe {
@@ -351,6 +367,7 @@ pub(crate) fn fit_dialog(_: &Ui, title: &str, origin: [f32; 2], size: [f32; 2]) 
             origin[1],
             size[0],
             size[1],
+            reset_size_on_reopen,
         )
     };
 }

@@ -256,7 +256,8 @@ bool oblikovati_gui_icon_button(const unsigned char* bytes, std::uint32_t textur
     return clicked;
 }
 
-void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, float width, float height) {
+void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, float width, float height,
+                              bool reset_size_on_reopen) {
     const char* name = reinterpret_cast<const char*>(title);
     const ImGuiWindow* previous = ImGui::FindWindowByName(name);
     // ImGui applies saved docking and placement when the window is first created (#4069).
@@ -266,7 +267,8 @@ void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, flo
     if (previous && previous->DockId != 0)
         return;
     const ImVec2 position = previous ? previous->Pos : ImVec2(x, y);
-    const ImVec2 size = previous ? previous->SizeFull : ImVec2(width, height);
+    const bool keep_previous_size = previous && (!reset_size_on_reopen || previous->WasActive);
+    const ImVec2 size = keep_previous_size ? previous->SizeFull : ImVec2(width, height);
     const ImVec2 display = ImGui::GetIO().DisplaySize;
     const ImVec2 fitted_size(ImClamp(size.x, 1.0f, ImMax(1.0f, display.x - 32.0f)),
                              ImClamp(size.y, 1.0f, ImMax(1.0f, display.y - 32.0f)));
@@ -274,7 +276,7 @@ void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, flo
                                  ImClamp(position.y, 0.0f, ImMax(0.0f, display.y - fitted_size.y - 16.0f)));
     if (!previous || position.x != fitted_position.x || position.y != fitted_position.y)
         ImGui::SetNextWindowPos(fitted_position, ImGuiCond_Always);
-    if (!previous || size.x != fitted_size.x || size.y != fitted_size.y)
+    if (!previous || previous->SizeFull.x != fitted_size.x || previous->SizeFull.y != fitted_size.y)
         ImGui::SetNextWindowSize(fitted_size, ImGuiCond_Always);
 }
 

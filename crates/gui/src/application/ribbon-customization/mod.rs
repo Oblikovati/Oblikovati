@@ -4,6 +4,7 @@ mod builtin;
 mod category;
 mod keyboard;
 mod keyboard_catalog;
+mod layout;
 mod locations;
 mod marking_menu;
 mod marking_overflow;
@@ -165,7 +166,7 @@ impl RibbonCustomization {
         if !self.open.is_open() {
             return;
         }
-        crate::widget_abi::fit_dialog(ui, "Customize", [340., 185.], [760., 540.]);
+        layout::fit_window(ui);
         let mut window_open = self.open.is_open();
         let category_was_open = self.category_open;
         let target_was_open = self.target_selector_open;
@@ -210,34 +211,10 @@ impl RibbonCustomization {
             None => {}
         }
     }
-    fn tabs(&mut self, ui: &Ui) {
-        self.ribbon_tab_active = false;
-        if let Some(_tabs) = ui.tab_bar("##customize-tabs") {
-            if let Some(_ribbon) = ui.tab_item("Ribbon") {
-                self.ribbon_tab_active = true;
-                ui.text("Customize user commands");
-                self.lists(ui);
-            }
-            if let Some(_keyboard) = ui.tab_item("Keyboard") {
-                self.keyboard_catalog(ui);
-            }
-            if let Some(_marking) = ui.tab_item("Marking Menu") {
-                self.marking_editor(ui);
-            }
-        }
-    }
-    fn lists(&mut self, ui: &Ui) {
-        ui.group(|| self.source_list(ui));
-        ui.same_line();
-        ui.group(|| self.transfer(ui));
-        ui.same_line();
-        ui.group(|| self.target_list(ui));
-        ui.same_line();
-        ui.group(|| self.reorder(ui));
-    }
     fn source_list(&mut self, ui: &Ui) {
+        let size = layout::list_size(ui, 230., 150.);
         ui.text("Available commands");
-        ui.set_next_item_width(230.);
+        ui.set_next_item_width(size[0]);
         let category = ui.begin_combo("##command-category", self.draft.category.label());
         if category.is_some() && !self.category_open {
             self.category_cursor = category::category_index(self.draft.category);
@@ -250,7 +227,7 @@ impl RibbonCustomization {
             self.draft.reverse_source_order();
         }
         ui.child_window("##custom-available")
-            .size([230., 200.])
+            .size(size)
             .border(true)
             .build(|| {
                 self.source_focused = ui.is_window_focused();
@@ -304,6 +281,7 @@ impl RibbonCustomization {
         drop(disabled);
     }
     fn target_list(&mut self, ui: &Ui) {
+        let size = layout::list_size(ui, 245., 210.);
         ui.text("Custom panel");
         let suffix = if self.draft.target_changed() {
             " *"
@@ -311,7 +289,7 @@ impl RibbonCustomization {
             ""
         };
         let target = format!("Part | {}{suffix}", self.draft.target.label());
-        ui.set_next_item_width(245.);
+        ui.set_next_item_width(size[0]);
         let targets = ui.begin_combo("##custom-target", &target);
         if targets.is_some() && !self.target_selector_open {
             self.target_cursor = target_selector::target_index(self.draft.target);
@@ -326,7 +304,7 @@ impl RibbonCustomization {
         ui.same_line_with_spacing(0., 12.);
         ui.text("Text");
         ui.child_window("##custom-selected")
-            .size([245., 200.])
+            .size(size)
             .border(true)
             .build(|| {
                 self.target_focused = ui.is_window_focused();

@@ -36,10 +36,7 @@ pub(super) fn target_row_runs(world: &ApplicationWorld) -> Vec<&diagnostics::Ren
         .frame
         .runs
         .iter()
-        .filter(|run| {
-            let [left, y] = [run.minimum[0], run.center()[1]];
-            run.list == list && x.contains(&left) && y > top && y < top + 200.
-        })
+        .filter(|run| run.list == list && x.contains(&run.minimum[0]))
         .collect();
     rows.sort_by(|a, b| a.center()[1].total_cmp(&b.center()[1]));
     rows
@@ -105,7 +102,7 @@ fn apply(world: &mut ApplicationWorld) {
 #[when("the user closes customization")]
 #[when("the user closes customization without editing any commands")]
 fn close(world: &mut ApplicationWorld) {
-    click_in_customize(world, "Close");
+    close_customization_button(world);
 }
 
 #[when("the user reopens ribbon customization")]

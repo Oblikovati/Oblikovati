@@ -26,11 +26,7 @@ pub(super) fn source_rows(world: &ApplicationWorld) -> Vec<&diagnostics::Rendere
         .frame
         .runs
         .iter()
-        .filter(|run| {
-            run.list == list
-                && x.contains(&run.minimum[0])
-                && (top..top + 200.).contains(&run.center()[1])
-        })
+        .filter(|run| run.list == list && x.contains(&run.minimum[0]))
         .collect();
     rows.sort_by(|a, b| a.center()[1].total_cmp(&b.center()[1]));
     rows

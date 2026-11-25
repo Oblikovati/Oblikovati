@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:42:24.627123657Z" time="26.56290009"><testcase name="Scenario: Reopen ribbon customization at its default size after resizing: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1771:3" time="26.56290009"><system-out><![CDATA[  Scenario: Reopen ribbon customization at its default size after resizing
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open and ribbon customization is open with no pending edits
+   ✔  When the user drags the lower-right dialog corner outward
+   ✔  Then the dialog and its command lists become wider and taller
+   ✔  When the user closes customization
+   ✔  And the user reopens customization from the Tools ribbon in the same session
+   ✔  Then the dialog reopens at its default size
+   ✔  And the available-command and custom-panel lists remain visible
+]]></system-out></testcase></testsuite></testsuites>

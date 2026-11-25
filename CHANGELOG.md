@@ -306,10 +306,10 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Moved keyboard focus to Add when pressing Tab from a selected available ribbon command. (#3856)
 - Drew the 3D Annotations icon at its configured size in custom ribbon panels. (#3856)
 - Enabled Offset from Plane in the grouped Plane menu. (#3856)
+- Resized both Customize command lists with the dialog and restored its default size on reopening. (#3856)
 - Kept the entire Add Separator label visible in the Quick Access context menu and displayed icons for the Extrude and Print shortcuts. (#3955)
 - Preserved available ribbon command selections when switching targets and selected the separator when a source filter hid the selected command. (#3856)
 - Returned to Ribbon Customization with an error when importing invalid XML, preserving staged edits. (#3856)
-
 - Selected command rows on secondary click in both Ribbon Customization lists. (#3856)
 
 - Stored literal Extrude distances as built-in feature parameters so the model-state table could edit them per member. (#4119)
