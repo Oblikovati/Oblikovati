@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:23:17.259222876Z" time="27.573657576"><testcase name="Scenario: Inspect an additional command context menu: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:700:3" time="27.573657576"><system-out><![CDATA[  Scenario: Inspect an additional command context menu
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks "Move Bodies" in the additional area
+   ✔  Then a context menu offers "Move to Main Panel"
+   ✔  And the menu offers "Add to Quick Access Toolbar"
+   ✔  And the Modify additional command area remains visible
+   ✔  When the user presses Escape
+   ✔  Then the command context menu closes
+   ✔  And the Modify additional command area remains visible
+   ✔  When the user clicks the lower Modify title
+   ✔  Then the additional command area closes
+   ✔  And the full 3D Model ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:19:46.261469596Z" time="29.605368236"><testcase name="Scenario: Switch ribbon tabs with an expanded command context menu open: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:747:3" time="29.605368236"><system-out><![CDATA[  Scenario: Switch ribbon tabs with an expanded command context menu open
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user right-clicks Move Bodies in the additional area
+   ✔  Then its command context menu is visible
+   ✔  And the Modify additional command area remains visible
+   ✔  When the user clicks the Tools tab
+   ✔  Then the command context menu and Modify additional command area close
+   ✔  And the full Tools ribbon is visible
+   ✔  When the user clicks the 3D Model tab
+   ✔  Then the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area remains closed
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:19:52.875048537Z" time="21.476306402"><testcase name="Scenario: Switch ribbon tabs while an unpinned panel expansion is open: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:593:3" time="21.476306402"><system-out><![CDATA[  Scenario: Switch ribbon tabs while an unpinned panel expansion is open
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Modify additional command area is open and unpinned
+   ✔  When the user selects the Sketch ribbon tab
+   ✔  Then the Modify additional command area closes
+   ✔  And the full Sketch ribbon is displayed
+   ✔  And the part remains visible
+   ✔  And the part remains active
+]]></system-out></testcase></testsuite></testsuites>

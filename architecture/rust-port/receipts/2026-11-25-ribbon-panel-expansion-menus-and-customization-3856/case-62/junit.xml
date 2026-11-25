@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:19:24.804745898Z" time="53.042755076"><testcase name="Scenario: Move a custom command into and out of the expanded panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:873:3" time="53.042755076"><system-out><![CDATA[  Scenario: Move a custom command into and out of the expanded panel
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open and active
+   ✔  And the full Tools ribbon is visible
+   ✔  And the Part Tools custom panel target is initially empty
+   ✔  When the user opens Customize from Tools
+   ✔  And the user adds 2D Sketches to the Part Tools target
+   ✔  And the user confirms the customization
+   ✔  Then the 2D Sketches icon appears in the User Commands main panel
+   ✔  When the user right-clicks that icon
+   ✔  Then its context menu offers Move to Expanded Panel
+   ✔  When the user selects Move to Expanded Panel
+   ✔  Then the icon is absent from the main panel
+   ✔  And the User Commands title offers an expansion control
+   ✔  When the user opens the User Commands expansion
+   ✔  Then the 2D Sketches icon appears in the expanded area
+   ✔  When the user right-clicks the expanded icon
+   ✔  And the user selects Move to Main Panel
+   ✔  Then the expansion closes
+   ✔  And the 2D Sketches icon returns to the main panel
+   ✔  When the user reopens Customize from Tools
+   ✔  And the user removes 2D Sketches from the Part Tools target
+   ✔  And the user confirms the customization
+   ✔  Then the User Commands panel is removed
+]]></system-out></testcase></testsuite></testsuites>

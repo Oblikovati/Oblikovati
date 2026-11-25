@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" package="testsuite/Feature: Expand a ribbon panel: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:20:57.949326042Z" time="65.287145619"><testcase name="Scenario: Keep a pinned constraint expansion across sketch edit: target/native-scratch.HSqCy5/current-ribbon-panel-expansion-source/features/application/ribbon-panel-expansion/ribbon-panel-expansion.feature:777:3" time="65.287145619"><system-out><![CDATA[  Scenario: Keep a pinned constraint expansion across sketch edit
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open with an existing sketch in the MCAD Software
+   ✔  And the full Sketch ribbon is visible outside sketch edit
+   ✔  When the user opens the Constrain panel additional area
+   ✔  Then Edit Coordinate System and Constraint Inference Scope are unavailable
+   ✔  When the user clicks the unavailable Edit Coordinate System command
+   ✔  Then the additional area remains open and no command starts
+   ✔  When the user pins the additional area
+   ✔  And the user opens the existing sketch for editing
+   ✔  Then the Constrain additional area remains open and pinned
+   ✔  And Edit Coordinate System and Constraint Inference Scope are available
+   ✔  When the user finishes the sketch without editing it
+   ✔  Then the Constrain additional area remains open and pinned
+   ✔  And Edit Coordinate System and Constraint Inference Scope are unavailable
+]]></system-out></testcase></testsuite></testsuites>
