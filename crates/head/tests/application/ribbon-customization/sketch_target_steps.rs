@@ -55,4 +55,11 @@ fn sketch_still_editable(world: &mut ApplicationWorld) {
         world.state().authoring,
         oblikovati_gui::GuiAuthoringContext::Sketch
     );
+    if let Some(document) = world.previous_document {
+        world.expect_active(document);
+    }
+    if let Some(before) = &world.observed_sketch {
+        let original = before.geometry.clone();
+        assert!(world.edited_geometry().same_recipe(&original));
+    }
 }

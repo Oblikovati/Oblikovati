@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:45:07.834991911Z" time="36.400746841"><testcase name="Scenario: Select a source command without staging it from the Sketch panel: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1907:3" time="36.400746841"><system-out><![CDATA[  Scenario: Select a source command without staging it from the Sketch panel
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/planar-sketch-empty-xy.opd` is open and active in the MCAD Software with Sketch1 being edited
+   ✔  And a part document is in sketch edit in the MCAD Software
+   ✔  And the ribbon shows the Sketch tab
+   ✔  When the user opens the Create panel title context menu
+   ✔  And the user chooses "Customize User Commands"
+   ✔  Then the customization dialog opens on the "Ribbon" tab
+   ✔  And the selected target is "Part | Sketch"
+   ✔  And the source category is "All Commands"
+   ✔  And the custom panel list is empty
+   ✔  When the user selects "2D Sketches" in the available commands
+   ✔  Then the "2D Sketches" row is highlighted
+   ✔  And the right transfer button is enabled
+   ✔  And the custom panel list remains empty
+   ✔  And Apply and cancels remain disabled
+   ✔  When the user clicks "Close"
+   ✔  Then the customization dialog closes
+   ✔  And no command is added to the custom panel
+   ✔  And the sketch remains in edit mode
+]]></system-out></testcase></testsuite></testsuites>

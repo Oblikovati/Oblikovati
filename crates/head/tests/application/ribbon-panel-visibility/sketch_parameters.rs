@@ -8,7 +8,9 @@ mod sketch_pattern;
 
 #[given("a part document is in sketch edit in the MCAD Software")]
 fn start_sketch_edit(world: &mut ApplicationWorld) {
-    world.start_empty_sketch();
+    if world.state().authoring != oblikovati_gui::GuiAuthoringContext::Sketch {
+        world.start_empty_sketch();
+    }
 }
 
 #[given("the Sketch tab is active")]
