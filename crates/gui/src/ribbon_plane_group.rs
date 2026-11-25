@@ -2,16 +2,19 @@
 //! Work Plane's offset action and reference constructor group (#4105).
 use crate::{
     GuiCommandState, GuiShellAction,
-    icons::{GuiRibbonIcons, IconGlyph},
+    icons::{GuiRibbonIcons, IconGlyph, IconSize},
+    widget_abi::{self, IconButtonPresentation},
 };
-use imgui::Ui;
+use imgui::{StyleColor, Ui};
 
-const VARIANTS: [&str; 11] = [
+const REFERENCE_VARIANTS: [&str; 5] = [
     "Midplane",
     "Three Points",
     "Parallel through Point",
     "Through Axis and Point",
     "Through Two Axes",
+];
+const ORIENTATION_VARIANTS: [&str; 6] = [
     "At Angle to Plane",
     "Tangent to Face",
     "Tangent through Point",
@@ -19,7 +22,7 @@ const VARIANTS: [&str; 11] = [
     "Normal to Axis",
     "Torus Midplane",
 ];
-pub(super) const COMMAND_COUNT: usize = VARIANTS.len() + 1;
+pub(super) const COMMAND_COUNT: usize = REFERENCE_VARIANTS.len() + ORIENTATION_VARIANTS.len() + 1;
 
 pub(super) fn draw(
     ui: &Ui,
@@ -42,10 +45,15 @@ pub(super) fn draw(
     if ungrouped {
         draw_individual_variants(ui, icons, origin, expanded);
     } else {
-        draw_variants_popup(ui, state, actions);
+        draw_variants_popup(ui, state, icons, actions);
     }
 }
-fn draw_variants_popup(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+fn draw_variants_popup(
+    ui: &Ui,
+    state: &GuiCommandState,
+    icons: &GuiRibbonIcons,
+    actions: &mut Vec<GuiShellAction>,
+) {
     ui.same_line();
     if ui.small_button("v##plane-variants") {
         ui.open_popup("##plane-variant-menu");
@@ -53,24 +61,48 @@ fn draw_variants_popup(ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiSh
     let Some(_popup) = ui.begin_popup("##plane-variant-menu") else {
         return;
     };
+    ui.text("Plane");
+    let _button_color =
+        ui.push_style_color(StyleColor::Button, ui.style_color(StyleColor::PopupBg));
     let action = GuiShellAction::OpenOffsetPlane;
-    if ui
-        .menu_item_config("Offset from Plane")
-        .enabled(action.dispatchable(state))
-        .build()
-    {
+    let offset_enabled = ui.begin_disabled(!action.dispatchable(state));
+    if popup_choice(ui, icons, "Offset from Plane") {
         actions.push(action);
+        ui.close_current_popup();
     }
-    ui.separator();
+    drop(offset_enabled);
     let disabled = ui.begin_disabled(true);
-    for name in VARIANTS {
-        ui.menu_item(name);
-        unavailable_reason(ui);
+    for group in [
+        REFERENCE_VARIANTS.as_slice(),
+        ORIENTATION_VARIANTS.as_slice(),
+    ] {
+        ui.separator();
+        for &name in group {
+            popup_choice(ui, icons, name);
+            unavailable_reason(ui);
+        }
     }
     drop(disabled);
 }
+fn popup_choice(ui: &Ui, icons: &GuiRibbonIcons, name: &str) -> bool {
+    widget_abi::icon_button(
+        ui,
+        name,
+        IconButtonPresentation {
+            texture: icons.key(IconGlyph::WorkPlane, IconSize::Small),
+            size: icons.cell([215., 22.]),
+            icon: icons.logical[IconSize::Small.index()],
+            large: false,
+            show_caption: true,
+        },
+    )
+}
 fn draw_individual_variants(ui: &Ui, icons: &GuiRibbonIcons, origin: [f32; 2], expanded: bool) {
-    for (index, name) in VARIANTS.iter().enumerate() {
+    for (index, name) in REFERENCE_VARIANTS
+        .into_iter()
+        .chain(ORIENTATION_VARIANTS)
+        .enumerate()
+    {
         let (position, size) = if expanded {
             ([0., (index as f32 + 1.) * 30.], [170., 26.])
         } else {

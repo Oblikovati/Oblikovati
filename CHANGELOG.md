@@ -305,7 +305,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Enabled Page Up and Page Down in the staged ribbon command list. (#3856)
 - Moved keyboard focus to Add when pressing Tab from a selected available ribbon command. (#3856)
 - Drew the 3D Annotations icon at its configured size in custom ribbon panels. (#3856)
-- Enabled Offset from Plane in the grouped Plane menu. (#3856)
+- Enabled Offset from Plane and added icons and dividers to the grouped Plane menu. (#3856)
 - Resized both Customize command lists with the dialog and restored its default size on reopening. (#3856)
 - Kept the entire Add Separator label visible in the Quick Access context menu and displayed icons for the Extrude and Print shortcuts. (#3955)
 - Preserved available ribbon command selections when switching targets and selected the separator when a source filter hid the selected command. (#3856)

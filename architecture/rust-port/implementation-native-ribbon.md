@@ -40,7 +40,8 @@ check that a file replaces pending edits on Tools and Manage while
 preserving the selected target. Cancel restores the applied settings.
 The grouped Plane menu opens the native Offset Plane dialog from its
 Offset from Plane entry. The entry uses the same availability check and
-action as the main Plane button.
+action as the main Plane button. The menu presents the construction choices
+with icons and dividers between the offset, reference, and orientation groups.
 Both command lists resize with the floating Customize window without
 losing staged edits. Reopening restores its default size and keeps its
 position within the visible workspace.

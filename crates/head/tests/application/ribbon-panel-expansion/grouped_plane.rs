@@ -30,6 +30,82 @@ fn open_plane_variants(world: &mut ApplicationWorld) {
     world.expect_text("Three Points");
 }
 
+#[then("a vertical menu opens beneath the control")]
+fn menu_beneath_plane(world: &mut ApplicationWorld) {
+    let control = world.run_in_window("##application-ribbon", "Plane");
+    let rows = menu_rows(world);
+    assert_ne!(rows[0].list, control.list);
+    assert!(rows[0].minimum[1] > control.center()[1]);
+    assert!(
+        rows.windows(2)
+            .all(|pair| pair[0].maximum[1] < pair[1].minimum[1])
+    );
+}
+
+#[then("the menu contains \"Plane\", \"Offset from Plane\", and \"Three Points\"")]
+fn menu_contains_plane_choices(world: &mut ApplicationWorld) {
+    let rows = menu_rows(world);
+    assert_eq!(
+        rows.map(|row| row.text.as_str()),
+        ["Plane", "OffsetfromPlane", "ThreePoints"]
+    );
+}
+
+fn menu_rows(world: &ApplicationWorld) -> [&diagnostics::RenderedRun; 3] {
+    let list = world.run("Offset from Plane").list;
+    ["Plane", "OffsetfromPlane", "ThreePoints"].map(|label| {
+        world
+            .frame
+            .runs
+            .iter()
+            .find(|run| run.list == list && run.text == label)
+            .unwrap_or_else(|| panic!("expected {label:?} in the Plane menu"))
+    })
+}
+
+#[then("the menu presents icons and dividers between groups of choices")]
+fn icons_and_rules(world: &mut ApplicationWorld) {
+    let [_, offset, three_points] = menu_rows(world);
+    #[cfg(target_os = "linux")]
+    for choice in [offset, three_points] {
+        assert!(
+            diagnostics::has_caption_icon(choice),
+            "expected an icon beside {}",
+            choice.text
+        );
+    }
+    let left = offset.maximum[0].max(three_points.maximum[0]) + 4.;
+    let first_group = [offset.maximum[1], world.run("Midplane").minimum[1]];
+    let second_group = [
+        world.run("Through Two Axes").maximum[1],
+        world.run("At Angle to Plane").minimum[1],
+    ];
+    let frame = super::super::capture_framebuffer(&mut world.app().window.native);
+    let pixel = |x: usize, y: usize| {
+        let at = (y * frame.extent[0] as usize + x) * 4;
+        &frame.rgba[at..at + 4]
+    };
+    for [top, bottom] in [first_group, second_group] {
+        let [x, start] = diagnostics::pointer_pixels([left, top]).map(|value| value as usize);
+        let end = diagnostics::pointer_pixels([left, bottom])[1] as usize;
+        assert!(
+            (start + 2..end - 1).any(|y| {
+                (x..x + 36)
+                    .all(|x| pixel(x, y - 2) == pixel(x, y + 2) && pixel(x, y) != pixel(x, y - 2))
+            }),
+            "expected a horizontal menu divider between y={start} and y={end}"
+        );
+    }
+}
+
+#[then("the part remains visible without a plane command being started")]
+fn dismissed_without_action(world: &mut ApplicationWorld) {
+    assert!(!diagnostics::command_popup_open());
+    offset_command_closes(world);
+    plane_and_part_remain_visible(world);
+    no_work_plane_created(world);
+}
+
 #[when("the user opens the Plane drop-down and selects \"Offset from Plane\"")]
 fn select_offset_from_plane(world: &mut ApplicationWorld) {
     open_plane_variants(world);
