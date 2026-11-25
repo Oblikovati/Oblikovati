@@ -11,6 +11,8 @@ use std::{
     rc::Rc,
 };
 mod fit;
+#[cfg(target_os = "linux")]
+mod preview_capture;
 mod projection_cache;
 #[path = "view_history.rs"]
 mod view_history;
@@ -53,6 +55,8 @@ pub struct Viewport {
     gui_surface: Option<u64>,
     view_history: VecDeque<crate::renderer::SavedViewCamera>,
     projection_cache: RefCell<projection_cache::ProjectionCache>,
+    #[cfg(target_os = "linux")]
+    preview_rgb: martensite_tkservice::image::ImagePixMap,
 }
 impl Viewport {
     /// Physical pixels per logical UI unit reported by the window system.

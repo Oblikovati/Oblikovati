@@ -111,6 +111,45 @@ fn native_present_can_defer_capture_without_losing_current_pixels() {
     view.close();
     assert!(runtime.validation_errors().unwrap().is_empty());
 }
+
+#[test]
+fn packed_native_preview_matches_full_capture_after_resize() {
+    use oblikovati_viewport::ViewportPreviewPixels;
+
+    let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
+    let mut view = open_fixture(&runtime, "Oblikovati packed preview");
+    for extent in [[320, 240], [319, 233]] {
+        assert_eq!(view.resize(extent).unwrap(), extent);
+        let expected = verify_native(&mut view);
+        assert!(
+            view.present_with_preview(|size, generations, pixels| {
+                assert_eq!(size, extent);
+                assert_eq!(
+                    generations,
+                    [
+                        expected.scene_generation,
+                        expected.camera_generation,
+                        expected.surface_generation,
+                        expected.overlay_generation
+                    ]
+                );
+                let ViewportPreviewPixels::Rgb(rgb) = pixels else {
+                    panic!("expected the packed RGB path");
+                };
+                assert_eq!(rgb.len(), expected.rgba.len() / 4);
+                assert!(
+                    rgb.iter()
+                        .zip(expected.rgba.as_chunks::<4>().0)
+                        .all(|(rgb, rgba)| rgb.as_slice() == &rgba[..3])
+                );
+            })
+            .unwrap()
+        );
+        assert_eq!(view.capture().unwrap(), expected);
+    }
+    view.close();
+    assert!(runtime.validation_errors().unwrap().is_empty());
+}
 #[test]
 fn application_owned_linux_windows_present_resize_capture_and_remove() {
     let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();

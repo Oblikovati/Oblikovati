@@ -13,11 +13,12 @@ covers the renderer boundary. The results and instrumentation are in the
 rather than returning the checked GUI publication outcome.
 
 Oblikovati's normal X11 present now avoids readback when no UI consumer is
-waiting for pixels. A visible document still has a live tab preview and save
-thumbnail. Those paths need 64×36 color samples of the workspace rectangle
-from the accepted frame. Explicit screenshots need full RGBA. At 1440×900
-the combined `Vec<u8>` RGBA and `Vec<f32>` depth contain 10,368,000 bytes per
-owned full-plane capture.
+waiting for pixels. For a changed live tab preview and save thumbnail, it
+uses the existing packed RGB dump and reuses the destination pixel map. At
+1440×900 this holds 3,888,000 bytes, compared with 10,368,000 bytes for the
+full RGBA and depth planes. Each 64×36 thumbnail needs 6,912 bytes of RGB
+samples from the workspace rectangle. Explicit screenshots need full RGBA.
+[Packed RGB measurements](../2026-11-25-interactive-preview-rgb/README.md)
 
 The application now reuses a tab image on repeated presents of identical
 composition generations and crop regions. The smaller transfer is still
@@ -25,13 +26,13 @@ needed when the camera, overlay, or source scene changes. The application
 also retains unchanged compiled GUI geometry across changing layers.
 [Application evidence](../2026-11-25-render-reuse/README.md)
 
-Provide a typed color-only capture or borrow against the most recent
-accepted native publication. Add a region-to-thumbnail capture for color
-previews if the color-only route is still significant. Validate generation
-and resize before and after the transfer, preserve device-loss errors, and
-match the current top-left sRGB pixel ordering. Prove the pixel result
-against the existing full capture with non-square extents, several crops,
-resize, and two concurrently open views.
+Expose a typed outcome for the packed RGB route so callers can distinguish
+resize, generation mismatches, and renderer faults without attempting full
+capture. Add a region-to-thumbnail capture that samples the accepted native
+publication under the same ownership checks. Validate generation and resize
+before and after the transfer, preserve device-loss errors, and match the
+current top-left sRGB ordering. Compare pixels against full capture with
+non-square extents, several crops, resize, and two concurrently open views.
 
 ## Measure native frame preparation and completion
 
@@ -57,6 +58,8 @@ requested immediate mode, and record the selected mode with validation
 on and off. The 120 FPS interval budget is 8.33 ms. Attribute a stage before
 changing cache or synchronization policy so correctness and resource lifetime
 can be verified against the same pixel and resize oracles.
+With packed RGB in use, face hover and selection still show p95 intervals
+of 16.52–23.51 ms. Include this workload in the phase comparison.
 
 ## Attribute X11 window observations
 

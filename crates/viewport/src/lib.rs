@@ -27,7 +27,7 @@ pub use datum_plane::ViewportDatumPlane;
 mod types;
 pub use types::{
     ViewportCamera, ViewportCapture, ViewportEvent, ViewportGuiSubmission, ViewportOptions,
-    ViewportPresentation, ViewportScene, ViewportTriangle,
+    ViewportPresentation, ViewportPreviewPixels, ViewportScene, ViewportTriangle,
 };
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod renderer;

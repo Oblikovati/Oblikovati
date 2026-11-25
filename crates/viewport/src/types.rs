@@ -175,6 +175,12 @@ pub enum ViewportPresentation {
     Completed(ViewportCapture),
     SurfaceChanged([u32; 2]),
 }
+/// Borrowed color pixels from an accepted viewport frame, in top-left row order.
+#[derive(Clone, Copy)]
+pub enum ViewportPreviewPixels<'a> {
+    Rgb(&'a [[u8; 3]]),
+    Rgba(&'a [[u8; 4]]),
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ViewportEvent {
     Input(crate::ViewportInput),

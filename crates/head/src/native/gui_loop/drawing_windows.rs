@@ -4,9 +4,11 @@ use super::{GUI_TICK, input::copied_gui_events};
 use oblikovati_gui::{
     GuiCommandState, GuiDetachedDrawing, GuiDetachedDrawingFrame, GuiShellAction,
 };
+#[cfg(target_os = "windows")]
+use oblikovati_viewport::ViewportPresentation;
 use oblikovati_viewport::{
-    GuiFrameCompiler, Viewport, ViewportEvent, ViewportGuiSubmission, ViewportPresentation,
-    ViewportRuntime, ViewportScene,
+    GuiFrameCompiler, Viewport, ViewportEvent, ViewportGuiSubmission, ViewportRuntime,
+    ViewportScene,
 };
 use std::{collections::BTreeMap, time::Duration};
 
@@ -256,6 +258,9 @@ impl DrawingWindow {
             self.last_draws = None;
             return Ok(false);
         }
+        #[cfg(target_os = "linux")]
+        let complete = self.view.present_without_capture()?;
+        #[cfg(target_os = "windows")]
         let complete = matches!(self.view.present()?, ViewportPresentation::Completed(_));
         self.last_draws = complete.then_some(frame.draws);
         Ok(complete)

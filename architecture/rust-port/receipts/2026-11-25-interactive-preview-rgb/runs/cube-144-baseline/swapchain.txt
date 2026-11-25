@@ -1,0 +1,14 @@
+present probe: swapchain 1440x900 requested=0 used=0 result=0
+present probe: swapchain 1440x900 requested=0 used=0 result=0
+present probe: swapchain 1440x900 requested=0 used=0 result=0
+present probe: swapchain 1440x900 requested=0 used=0 result=0
+present probe: swapchain 1440x900 requested=0 used=0 result=0
+present probe: swapchain 1440x900 requested=0 used=0 result=0
+present probe: swapchain 1440x900 requested=0 used=0 result=0
+present probe: swapchain 1440x900 requested=0 used=0 result=0
+present probe: swapchain 1440x900 requested=0 used=0 result=0
+present probe: swapchain 1440x900 requested=0 used=0 result=0
+present probe: swapchain 1440x900 requested=0 used=0 result=0
+present probe: swapchain 1440x900 requested=0 used=0 result=0
+present probe: swapchain 1440x900 requested=0 used=0 result=0
+present probe: swapchain 1440x900 requested=0 used=0 result=0

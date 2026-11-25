@@ -15,13 +15,16 @@ impl NativeHeadWindow {
 impl NativeHeadWindow {
     pub(super) fn present_native_frame(&mut self) -> Result<HeadPresentation, String> {
         #[cfg(target_os = "linux")]
-        if self.capture_requests.is_empty()
-            && self
-                .gui
-                .as_ref()
-                .is_none_or(|gui| !gui.needs_frame_pixels(self.view.completed_generations()))
-        {
-            let completed = self.view.present_without_capture()?;
+        if self.capture_requests.is_empty() {
+            let last = self.view.completed_generations();
+            let completed = match self.gui.as_mut().filter(|gui| gui.needs_frame_pixels(last)) {
+                Some(gui) => self
+                    .view
+                    .present_with_preview(|extent, generations, pixels| {
+                        gui.note_window_preview_pixels(extent, generations, pixels);
+                    }),
+                None => self.view.present_without_capture(),
+            }?;
             return self.finish_native_presentation(completed);
         }
         let ViewportPresentation::Completed(capture) = self.view.present()? else {

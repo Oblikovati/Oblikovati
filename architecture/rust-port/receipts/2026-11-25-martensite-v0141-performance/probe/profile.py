@@ -21,6 +21,8 @@ parser.add_argument("--frames", type=int, default=1600)
 parser.add_argument("--phases", action="store_true")
 parser.add_argument("--observe-present-mode", action="store_true")
 parser.add_argument("--hide-selection-toolbar", action="store_true")
+parser.add_argument("--cube-ui-scale", type=int, choices=[125],
+                    help="use ViewCube coordinates for the 125%% automatic UI layout")
 args = parser.parse_args()
 args.folder.mkdir(parents=True, exist_ok=False)
 folder = args.folder.resolve()
@@ -145,6 +147,8 @@ def press_at(position, button=1):
     time.sleep(0.20)
 
 def cube_menu_positions():
+    if args.cube_ui_scale == 125:
+        return (1355, 286), (1245, 453)
     if args.dpi == 144:
         return (1287, 541), (1080, 842)
     return (width - 102, 339), (1203, 540)
@@ -152,8 +156,16 @@ def cube_menu_positions():
 def enable_animation():
     face, options = cube_menu_positions()
     animate, okay = ((452, 533), (522, 844)) if args.dpi == 144 else ((414, 361), (350, 564))
+    if args.cube_ui_scale == 125:
+        animate, okay = (466, 377), (505, 555)
     press_at(face, 3)
+    if args.cube_ui_scale == 125:
+        motion(options)
+        flush(display, 0)
+        time.sleep(0.4)
     press_at(options)
+    if args.cube_ui_scale == 125:
+        time.sleep(1.2)
     press_at(animate)
     screenshot(xid, "animation-enabled")
     press_at(okay)
@@ -161,8 +173,10 @@ def enable_animation():
 def cube():
     enable_animation()
     bursts = []
+    x, up, down = (1287, 432, 650) if args.dpi == 144 else (width - 102, 267, 411)
+    if args.cube_ui_scale == 125:
+        x, up, down = 1355, 226, 345
     for index in range(11):
-        x, up, down = (1287, 432, 650) if args.dpi == 144 else (width - 102, 267, 411)
         target = [x, up if index % 2 == 0 else down]
         motion(target)
         flush(display, 0)

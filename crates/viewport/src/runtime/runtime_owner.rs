@@ -93,6 +93,8 @@ impl ViewportRuntime {
             gui_surface: None,
             view_history: VecDeque::new(),
             projection_cache: RefCell::new(projection_cache::ProjectionCache::default()),
+            #[cfg(target_os = "linux")]
+            preview_rgb: Default::default(),
         })
     }
     /// Name the selected device; example: `runtime.device_name()` for diagnostics.

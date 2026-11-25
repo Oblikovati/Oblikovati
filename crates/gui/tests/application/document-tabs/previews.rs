@@ -48,14 +48,44 @@ fn impossible_viewport_omits_the_preview_instead_of_covering_the_tab() {
 }
 #[test]
 fn a_picture_comes_only_from_the_given_area() {
-    let image = cropped_picture([4, 2], &frame(), [2., 0.], [4., 2.]).unwrap();
+    let rgba = frame();
+    let pixels = ViewportPreviewPixels::Rgba(rgba.as_chunks::<4>().0);
+    let image = cropped_picture([4, 2], pixels, [2., 0.], [4., 2.]).unwrap();
+    let rgb: Vec<_> = rgba
+        .as_chunks::<4>()
+        .0
+        .iter()
+        .map(|&[r, g, b, _]| [r, g, b])
+        .collect();
+    assert_eq!(
+        cropped_picture([4, 2], ViewportPreviewPixels::Rgb(&rgb), [2., 0.], [4., 2.]),
+        Some(image.clone())
+    );
     assert!(image.rgb.iter().all(|cell| *cell == [0, 0, 200]));
     assert_eq!(image.rgb.len(), (CELLS[0] * CELLS[1]) as usize);
 }
 #[test]
 fn an_empty_area_or_a_short_frame_gives_no_picture() {
-    assert!(cropped_picture([4, 2], &frame(), [3., 0.], [3., 2.]).is_none());
-    assert!(cropped_picture([4, 2], &frame()[..8], [0., 0.], [4., 2.]).is_none());
+    let rgba = frame();
+    let rgba = rgba.as_chunks::<4>().0;
+    assert!(
+        cropped_picture(
+            [4, 2],
+            ViewportPreviewPixels::Rgba(rgba),
+            [3., 0.],
+            [3., 2.]
+        )
+        .is_none()
+    );
+    assert!(
+        cropped_picture(
+            [4, 2],
+            ViewportPreviewPixels::Rgba(&rgba[..2]),
+            [0., 0.],
+            [4., 2.]
+        )
+        .is_none()
+    );
 }
 #[test]
 fn each_window_keeps_its_own_last_picture() {

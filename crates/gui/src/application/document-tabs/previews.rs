@@ -3,6 +3,7 @@
 use super::preview_placement::preview_placement;
 use crate::GuiPreviewImage;
 use imgui::Ui;
+use oblikovati_viewport::ViewportPreviewPixels;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// What a hovered tab shows: the Home workspace, or one window of a document.
@@ -85,13 +86,26 @@ impl TabPreviews {
         rgba: &[u8],
         generations: Option<[u64; 4]>,
     ) {
+        self.note_pixels_at(
+            extent,
+            ViewportPreviewPixels::Rgba(rgba.as_chunks::<4>().0),
+            generations,
+        );
+    }
+
+    pub(crate) fn note_pixels_at(
+        &mut self,
+        extent: [u32; 2],
+        pixels: ViewportPreviewPixels<'_>,
+        generations: Option<[u64; 4]>,
+    ) {
         if !self.needs_frame_pixels() {
             return;
         }
         let Some(region @ (key, [minimum, maximum])) = self.showing else {
             return;
         };
-        if let Some(image) = cropped_picture(extent, rgba, minimum, maximum) {
+        if let Some(image) = cropped_picture(extent, pixels, minimum, maximum) {
             self.captured_front = Some(key);
             self.last_sample = generations.map(|generations| PreviewSample {
                 generations,
@@ -335,7 +349,7 @@ fn picture_window_open(
 /// Nearest cell centres inside the area: a tab preview shows a window's look, not its detail.
 fn cropped_picture(
     extent: [u32; 2],
-    rgba: &[u8],
+    pixels: ViewportPreviewPixels<'_>,
     minimum: [f32; 2],
     maximum: [f32; 2],
 ) -> Option<GuiPreviewImage> {
@@ -344,7 +358,11 @@ fn cropped_picture(
     let top = minimum[1].max(0.) as usize;
     let right = (maximum[0] as usize).min(width);
     let bottom = (maximum[1] as usize).min(height);
-    if right <= left || bottom <= top || rgba.len() < width * height * 4 {
+    let pixel_count = match pixels {
+        ViewportPreviewPixels::Rgb(rgb) => rgb.len(),
+        ViewportPreviewPixels::Rgba(rgba) => rgba.len(),
+    };
+    if right <= left || bottom <= top || pixel_count < width * height {
         return None;
     }
     let mut cells = Vec::with_capacity((CELLS[0] * CELLS[1]) as usize);
@@ -352,8 +370,14 @@ fn cropped_picture(
         for column in 0..CELLS[0] as usize {
             let x = left + (2 * column + 1) * (right - left) / (2 * CELLS[0] as usize);
             let y = top + (2 * row + 1) * (bottom - top) / (2 * CELLS[1] as usize);
-            let at = (y * width + x) * 4;
-            cells.push([rgba[at], rgba[at + 1], rgba[at + 2]]);
+            let at = y * width + x;
+            cells.push(match pixels {
+                ViewportPreviewPixels::Rgb(rgb) => rgb[at],
+                ViewportPreviewPixels::Rgba(rgba) => {
+                    let [r, g, b, _] = rgba[at];
+                    [r, g, b]
+                }
+            });
         }
     }
     Some(GuiPreviewImage {

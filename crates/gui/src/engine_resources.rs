@@ -39,6 +39,19 @@ impl GuiFrameEngine {
             .note_frame_at(capture.extent, &capture.rgba, Some(generations));
     }
 
+    /// Publish borrowed preview pixels from an accepted viewport frame.
+    /// Example: `engine.note_presented_window_preview(extent, generations, pixels)`.
+    pub fn note_presented_window_preview(
+        &mut self,
+        extent: [u32; 2],
+        generations: [u64; 4],
+        pixels: oblikovati_viewport::ViewportPreviewPixels<'_>,
+    ) {
+        self.document_tabs
+            .previews
+            .note_pixels_at(extent, pixels, Some(generations));
+    }
+
     pub(super) fn refresh_chrome(&mut self, request: &GuiFrameRequest) -> bool {
         // Docked tab bars use their windows' colors from the previous frame.
         request.commands.theme.as_ref().is_some_and(|theme| {

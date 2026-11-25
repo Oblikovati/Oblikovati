@@ -2,6 +2,19 @@
 //! Present the main GUI and any detached document windows on the desktop thread.
 use super::*;
 
+#[cfg(target_os = "linux")]
+impl NativeGui {
+    pub(in crate::native) fn note_window_preview_pixels(
+        &mut self,
+        extent: [u32; 2],
+        generations: [u64; 4],
+        pixels: oblikovati_viewport::ViewportPreviewPixels<'_>,
+    ) {
+        self.engine
+            .note_presented_window_preview(extent, generations, pixels);
+    }
+}
+
 impl NativeHeadWindow {
     pub(in crate::native) fn advance_native_gui(
         &mut self,
