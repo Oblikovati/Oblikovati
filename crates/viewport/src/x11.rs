@@ -2,10 +2,10 @@
 use crate::{ViewportEvent, types::valid_extent};
 mod dpi;
 #[path = "x11/input.rs"]
-mod input;
+pub(crate) mod input;
 mod keyboard;
 mod keyboard_map;
-mod layout;
+pub(crate) mod layout;
 mod pixels;
 mod text;
 mod text_channel;
@@ -375,7 +375,7 @@ fn validate_masks(masks: [u64; 3]) -> Result<(), String> {
     Ok(())
 }
 
-fn validate_title(title: &str) -> Result<(), String> {
+pub(crate) fn validate_title(title: &str) -> Result<(), String> {
     if title.is_empty() || title.contains('\0') {
         return Err(format!(
             "viewport title {title:?}: expected nonempty NUL-free text"

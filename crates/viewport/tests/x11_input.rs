@@ -216,7 +216,6 @@ fn native_save_chord_requires_control_without_shift_or_alt() {
         (xlib::ControlMask | xlib::Mod1Mask, false),
     ];
     for (state, accepted) in cases {
-        assert_eq!(control_only_chord(state), accepted);
         check_native_save_key(&fixture, state, accepted);
     }
 }

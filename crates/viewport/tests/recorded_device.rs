@@ -100,7 +100,7 @@ pub(super) fn runtime_with_gui_policy(
             state: Rc::new(RuntimeState {
                 driver,
                 #[cfg(target_os = "linux")]
-                x11: None,
+                linux: None,
                 next_view: Cell::new(1),
             }),
         },

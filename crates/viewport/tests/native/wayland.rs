@@ -9,6 +9,7 @@ use martensite_tkv3d::v3d::V3dViewer;
 use martensite_vulkan::{
     Graphic3dRenderDriver, Graphic3dRenderView, RenderGuiSurfacePolicy, VulkanOptions,
 };
+use oblikovati_viewport::{ViewportOptions, ViewportRuntime};
 
 #[test]
 #[ignore = "requires a Wayland compositor and Vulkan validation layers"]
@@ -44,4 +45,28 @@ fn mapped_wayland_window() -> Handle<WlWindow> {
     );
     window.map();
     window
+}
+
+#[test]
+#[ignore = "requires a Wayland compositor and Vulkan validation layers"]
+fn desktop_runtime_selects_wayland_and_presents_main_and_detached_windows() {
+    let runtime = ViewportRuntime::new(ViewportOptions {
+        validation: true,
+        ..ViewportOptions::default()
+    })
+    .unwrap();
+    let main = runtime.open_window("Wayland main", [640, 480]).unwrap();
+    let detached = runtime
+        .open_document_window("Wayland drawing", [480, 360])
+        .unwrap();
+    for mut view in [main, detached] {
+        assert!(view.uses_wayland());
+        view.submit(&super::scene()).unwrap();
+        let capture = super::complete_surface_frame(&mut view);
+        assert_eq!(capture.extent, view.drawable_extent().unwrap());
+        assert!(capture.rgba.as_chunks::<4>().0.contains(&[0, 0, 255, 255]));
+        view.close();
+    }
+    let errors = runtime.validation_errors().unwrap();
+    assert!(errors.is_empty(), "Vulkan validation errors: {errors:?}");
 }

@@ -20,12 +20,10 @@ validation errors and no X11 connection. The same check is runnable as
 `cargo test --locked -p oblikovati-viewport --test native pinned_martensite_presents_a_native_wayland_frame -- --ignored`
 on a Wayland compositor with the Vulkan validation layer.
 
-Oblikovati's desktop still uses X11. The native Wayland host needs to feed
-the application event loop and handle keyboard, text, clipboard, window
-controls, and scaling. In particular, v0.14.2's owned `WlWindow` clears
-the drawable before notifying its close listener. Oblikovati needs to keep
-the surface alive through the unsaved-changes prompt and a possible Cancel.
-The release also supports wrapping an application-owned Wayland surface.
+The [native Wayland host](implementation-wayland.md) wraps an application-owned
+surface through this release. The owned Martensite `WlWindow` clears the
+drawable before notifying its close listener. Oblikovati keeps its surface
+alive through the unsaved-changes prompt and a possible Cancel.
 
 Release preflight verified the dependency metadata and reached the
 existing missing resource `packaging/resources/icons/oblikovati.png`.

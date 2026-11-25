@@ -62,7 +62,7 @@ impl NativeHeadWindow {
             triangles: Vec::new(),
         })?;
         #[cfg(target_os = "linux")]
-        let clipboard = clipboard::NativeClipboardChannel::open();
+        let clipboard = clipboard::NativeClipboardChannel::open(&view);
         #[cfg(target_os = "windows")]
         let clipboard = clipboard::NativeClipboardChannel::open(view.native_clipboard()?);
         #[cfg(target_os = "linux")]

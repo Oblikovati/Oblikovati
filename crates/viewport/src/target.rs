@@ -16,6 +16,9 @@ impl ViewTarget {
     }
     pub fn window(&self) -> Handle<dyn AspectWindow> {
         match self {
+            #[cfg(target_os = "linux")]
+            Self::Native(native) => native.window(),
+            #[cfg(target_os = "windows")]
             Self::Native(native) => native.window.cast(),
             Self::Offscreen(window) => window.cast(),
         }

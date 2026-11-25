@@ -17,11 +17,11 @@ mod projection_cache;
 #[path = "view_history.rs"]
 mod view_history;
 #[cfg(target_os = "linux")]
-use crate::x11::NativeX11;
+use crate::linux::NativeLinux;
 struct RuntimeState {
     driver: Handle<Graphic3dRenderDriver>,
     #[cfg(target_os = "linux")]
-    x11: Option<Rc<NativeX11>>,
+    linux: Option<NativeLinux>,
     next_view: Cell<u64>,
 }
 /// One owner's renderer runtime. Vulkan resources stay in Martensite; this type cannot be sent to a worker.
@@ -60,6 +60,25 @@ pub struct Viewport {
     preview_rgb: martensite_tkservice::image::ImagePixMap,
 }
 impl Viewport {
+    /// Report whether the drawable belongs to Wayland, for example when opening its clipboard.
+    #[cfg(target_os = "linux")]
+    pub fn uses_wayland(&self) -> bool {
+        matches!(
+            &self.target,
+            Some(ViewTarget::Native(window)) if matches!(window.as_ref(), NativeWindow::Wayland(_))
+        )
+    }
+    /// Bind a clipboard to a live Wayland window, for example with a 1 MiB text limit.
+    #[cfg(target_os = "linux")]
+    pub fn wayland_clipboard(&self, byte_limit: usize) -> Option<crate::WaylandClipboard> {
+        let Some(ViewTarget::Native(window)) = &self.target else {
+            return None;
+        };
+        match window.as_ref() {
+            NativeWindow::Wayland(window) => Some(window.clipboard(byte_limit)),
+            NativeWindow::X11(_) => None,
+        }
+    }
     /// Physical pixels per logical UI unit reported by the window system.
     /// Example: `let density = viewport.backing_scale();`.
     pub fn backing_scale(&self) -> f32 {

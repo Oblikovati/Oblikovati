@@ -69,7 +69,7 @@ const KEYPAD_POSITIONS: &[ViewportPhysicalKey] = &[
     KeypadEnter,
     KeypadEqual,
 ];
-pub(super) fn named_layout_key(
+pub(crate) fn named_layout_key(
     position: ViewportPhysicalKey,
     symbol: std::ffi::c_ulong,
 ) -> ViewportPhysicalKey {

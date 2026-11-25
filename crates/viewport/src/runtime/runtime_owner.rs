@@ -3,7 +3,7 @@
 use super::*;
 
 impl ViewportRuntime {
-    /// Set Vulkan swapchain synchronization for native X11 windows.
+    /// Set Vulkan swapchain synchronization for native Linux windows.
     /// Example: `runtime.set_vertical_sync(false);` before opening a window.
     #[cfg(target_os = "linux")]
     pub fn set_vertical_sync(&self, enabled: bool) {
@@ -14,13 +14,13 @@ impl ViewportRuntime {
     /// Initialize the owner-thread runtime; example: `ViewportRuntime::new(ViewportOptions::default())?`.
     pub fn new(options: ViewportOptions) -> Result<Self, String> {
         #[cfg(target_os = "linux")]
-        let x11 = NativeX11::open()?;
+        let linux = NativeLinux::open()?;
         let driver = gui_outcomes::native_gui_driver(options)?;
         Ok(Self {
             state: Rc::new(RuntimeState {
                 driver,
                 #[cfg(target_os = "linux")]
-                x11: Some(x11),
+                linux: Some(linux),
                 next_view: Cell::new(1),
             }),
         })
@@ -41,16 +41,12 @@ impl ViewportRuntime {
         system_frame: bool,
     ) -> Result<Viewport, String> {
         #[cfg(target_os = "linux")]
-        let window = NativeWindow::create(
-            self.state
-                .x11
-                .as_ref()
-                .ok_or("viewport runtime: expected native X11 support")?
-                .clone(),
-            title,
-            extent,
-            system_frame,
-        )?;
+        let window = self
+            .state
+            .linux
+            .as_ref()
+            .ok_or("viewport runtime: expected a native Linux window backend")?
+            .create(title, extent, system_frame)?;
         #[cfg(target_os = "windows")]
         let window = NativeWindow::create(title, extent, system_frame)?;
         self.create(ViewTarget::Native(Box::new(window)))

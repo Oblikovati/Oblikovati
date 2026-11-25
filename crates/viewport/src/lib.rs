@@ -29,6 +29,8 @@ pub use types::{
     ViewportCamera, ViewportCapture, ViewportEvent, ViewportGuiSubmission, ViewportOptions,
     ViewportPresentation, ViewportPreviewPixels, ViewportScene, ViewportTriangle,
 };
+#[cfg(target_os = "linux")]
+mod linux;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod renderer;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
@@ -37,18 +39,22 @@ mod runtime;
 mod scene;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod target;
+#[cfg(target_os = "linux")]
+mod wayland;
+#[cfg(target_os = "linux")]
+pub use wayland::clipboard::WaylandClipboard;
 #[cfg(target_os = "windows")]
 #[allow(unsafe_code)]
 mod win32;
 #[cfg(target_os = "linux")]
 #[allow(unsafe_code)]
 mod x11;
+#[cfg(target_os = "linux")]
+use linux as native;
 #[cfg(target_os = "windows")]
 use win32 as native;
 #[cfg(target_os = "windows")]
 pub use win32::WindowsClipboard;
-#[cfg(target_os = "linux")]
-use x11 as native;
 #[cfg(target_os = "windows")]
 #[path = "win32/wake.rs"]
 #[allow(unsafe_code)]

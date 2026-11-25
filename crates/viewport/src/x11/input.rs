@@ -57,23 +57,20 @@ fn button_input(pointer: xlib::XButtonEvent) -> Option<ViewportInput> {
 #[path = "../../tests/x11_input.rs"]
 mod tests;
 
-fn control_only_chord(state: u32) -> bool {
-    state & xlib::ControlMask != 0
-        && state & (xlib::ShiftMask | xlib::Mod1Mask | xlib::Mod4Mask | xlib::Mod5Mask) == 0
-}
-
-fn redo_shift_chord(state: u32) -> bool {
-    state & (xlib::ControlMask | xlib::ShiftMask) == xlib::ControlMask | xlib::ShiftMask
-        && state & (xlib::Mod1Mask | xlib::Mod4Mask | xlib::Mod5Mask) == 0
-}
-
 pub(super) fn copied_key(symbol: u32, state: u32) -> Option<ViewportKey> {
+    xkb_command(symbol, copied_modifiers(state))
+}
+
+/// Match shortcuts from a decoded XKB symbol, including on a Wayland seat.
+pub(crate) fn xkb_command(symbol: u32, modifiers: ViewportModifiers) -> Option<ViewportKey> {
     use x11_dl::keysym;
+    let control = modifiers.control && !modifiers.alt && !modifiers.super_key;
+    let control_only = control && !modifiers.shift;
     let key = match symbol {
-        keysym::XK_s | keysym::XK_S if control_only_chord(state) => ViewportKey::Save,
-        keysym::XK_z | keysym::XK_Z if control_only_chord(state) => ViewportKey::Undo,
-        keysym::XK_y | keysym::XK_Y if control_only_chord(state) => ViewportKey::Redo,
-        keysym::XK_z | keysym::XK_Z if redo_shift_chord(state) => ViewportKey::Redo,
+        keysym::XK_s | keysym::XK_S if control_only => ViewportKey::Save,
+        keysym::XK_z | keysym::XK_Z if control_only => ViewportKey::Undo,
+        keysym::XK_y | keysym::XK_Y if control_only => ViewportKey::Redo,
+        keysym::XK_z | keysym::XK_Z if control && modifiers.shift => ViewportKey::Redo,
         keysym::XK_F2 => ViewportKey::Pan,
         keysym::XK_F3 => ViewportKey::Zoom,
         keysym::XK_F4 => ViewportKey::Orbit,

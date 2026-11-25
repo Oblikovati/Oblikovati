@@ -1,14 +1,27 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use oblikovati_viewport::{NativeClipboardEndpoint, NativeClipboardOptions, ViewportClipboard};
+use oblikovati_viewport::{
+    NativeClipboardEndpoint, NativeClipboardOptions, Viewport, ViewportClipboard, WaylandClipboard,
+};
 use std::{cell::RefCell, rc::Rc, time::Duration};
 // Owner policy bounds UI callback memory, pending clients, and external waits independently.
 pub(super) const CLIPBOARD_BYTES: usize = 1024 * 1024;
 pub(super) struct NativeClipboardChannel {
-    endpoint: Result<NativeClipboardEndpoint, String>,
+    backend: ClipboardBackend,
     issue: RefCell<Option<String>>,
 }
+enum ClipboardBackend {
+    X11(Result<NativeClipboardEndpoint, String>),
+    Wayland(WaylandClipboard),
+}
+
 impl NativeClipboardChannel {
-    pub(super) fn open() -> Rc<Self> {
+    pub(super) fn open(view: &Viewport) -> Rc<Self> {
+        if let Some(clipboard) = view.wayland_clipboard(CLIPBOARD_BYTES) {
+            return Rc::new(Self {
+                backend: ClipboardBackend::Wayland(clipboard),
+                issue: RefCell::new(None),
+            });
+        }
         Self::with_endpoint(NativeClipboardEndpoint::connect(
             None,
             NativeClipboardOptions {
@@ -23,11 +36,14 @@ impl NativeClipboardChannel {
     pub(super) fn with_endpoint(endpoint: Result<NativeClipboardEndpoint, String>) -> Rc<Self> {
         Rc::new(Self {
             issue: RefCell::new(endpoint.as_ref().err().cloned()),
-            endpoint,
+            backend: ClipboardBackend::X11(endpoint),
         })
     }
     pub(super) fn endpoint(&self) -> Option<&NativeClipboardEndpoint> {
-        self.endpoint.as_ref().ok()
+        match &self.backend {
+            ClipboardBackend::X11(endpoint) => endpoint.as_ref().ok(),
+            ClipboardBackend::Wayland(_) => None,
+        }
     }
     pub(super) fn issue(&self) -> Option<String> {
         self.issue.borrow().clone()
@@ -51,20 +67,22 @@ impl NativeClipboardChannel {
     }
     fn operation<T>(
         &self,
-        perform: impl FnOnce(&NativeClipboardEndpoint) -> Result<T, String>,
+        perform: impl FnOnce(&dyn ViewportClipboard) -> Result<T, String>,
     ) -> Result<T, String> {
-        let result = self
-            .endpoint
-            .as_ref()
-            .map_err(Clone::clone)
-            .and_then(perform);
+        let result = match &self.backend {
+            ClipboardBackend::X11(endpoint) => endpoint
+                .as_ref()
+                .map_err(Clone::clone)
+                .and_then(|clipboard| perform(clipboard)),
+            ClipboardBackend::Wayland(clipboard) => perform(clipboard),
+        };
         *self.issue.borrow_mut() = result.as_ref().err().cloned();
         result
     }
 }
 impl ViewportClipboard for NativeClipboardChannel {
     fn read_text(&self) -> Result<Option<String>, String> {
-        self.operation(ViewportClipboard::read_text)
+        self.operation(|clipboard| clipboard.read_text())
     }
     fn write_text(&self, text: &str) -> Result<(), String> {
         self.operation(|endpoint| endpoint.write_text(text))

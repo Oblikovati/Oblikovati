@@ -25,10 +25,12 @@ martensite-tkv3d = { git = "https://github.com/Oblikovati/Martensite", rev = "d4
 windows-sys = { version = "=0.61.2", features = ["Win32_Graphics_Gdi", "Win32_System_LibraryLoader", "Win32_System_Threading", "Win32_Security", "Win32_UI_HiDpi", "Win32_UI_WindowsAndMessaging", "Win32_UI_Input_KeyboardAndMouse", "Win32_System_DataExchange", "Win32_System_Memory", "Win32_System_Ole"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
+smithay-client-toolkit = { version = "=0.20.0", default-features = false, features = ["xkbcommon"] }
+wayland-client = { version = "=0.31.14", features = ["system", "dlopen"] }
 x11-dl = "=2.21.0"
 x11rb = "=0.14.0"
 libc = "=0.2.190"
-rustix = { version = "=1.1.6", features = ["event"] }
+rustix = { version = "=1.1.6", features = ["event", "fs", "pipe"] }
 
 [lints.rust]
 unsafe_code = "deny"

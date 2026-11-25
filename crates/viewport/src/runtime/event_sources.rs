@@ -99,23 +99,29 @@ impl Viewport {
 }
 
 #[cfg(target_os = "linux")]
-pub(crate) fn wait_for_native_sources(
-    main: &NativeWindow,
-    additional: &[&NativeWindow],
+pub(crate) fn wait_for_native_sources<W: crate::linux::LinuxEventSource>(
+    main: &W,
+    additional: &[&W],
     wake: &ViewportWake,
     timeout: Option<Duration>,
     clipboard: Option<&crate::NativeClipboardEndpoint>,
 ) -> Result<ViewportReady, String> {
     let windows = std::iter::once(main).chain(additional.iter().copied());
-    if windows.clone().any(NativeWindow::has_pending_input) {
+    for window in windows.clone() {
+        if !window.pending()? {
+            continue;
+        }
         return Ok(ViewportReady {
             native_events: true,
             worker_wake: wake.consume()?,
         });
     }
-    let sources = windows
-        .map(NativeWindow::connection_descriptor)
-        .collect::<Result<Vec<_>, _>>()?;
+    let timeout = windows
+        .clone()
+        .filter_map(W::next_input_timeout)
+        .chain(timeout)
+        .min();
+    let sources = windows.map(W::descriptor).collect::<Result<Vec<_>, _>>()?;
     match clipboard {
         Some(clipboard) => clipboard.wait_with_sources(wake, &sources, timeout),
         None => wake.wait_sources(&sources, timeout),

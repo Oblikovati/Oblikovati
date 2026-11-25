@@ -5,7 +5,10 @@ fn invoke(arguments: &[&str], display: Option<&str>) -> Output {
     let mut command = Command::new(env!("CARGO_BIN_EXE_oblikovati"));
     command.args(arguments);
     if let Some(display) = display {
-        command.env("DISPLAY", display);
+        command
+            .env("DISPLAY", display)
+            .env_remove("WAYLAND_DISPLAY")
+            .env_remove("WAYLAND_SOCKET");
     }
     command.output().unwrap()
 }
