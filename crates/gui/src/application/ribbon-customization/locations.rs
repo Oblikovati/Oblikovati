@@ -11,8 +11,15 @@ fn ribbon_locations(command: Command) -> &'static [&'static str] {
 }
 
 pub(super) fn show(ui: &Ui, command: Command) {
+    if !crate::widget_abi::item_mouse_hovered(ui) {
+        return;
+    }
+    if command == Command::Drawing2D {
+        ui.tooltip_text("2-D Drawing is unavailable in this build.");
+        return;
+    }
     let locations = ribbon_locations(command);
-    if locations.is_empty() || !crate::widget_abi::item_mouse_hovered(ui) {
+    if locations.is_empty() {
         return;
     }
     ui.tooltip(|| {

@@ -54,6 +54,15 @@ fn select_drawing_source(world: &mut ApplicationWorld) {
     world.click(diagnostics::pointer_pixels(drawing.center()));
 }
 
+#[then("\"2-D Drawing\" is no longer shown in the available list")]
+fn drawing_removed_from_source(world: &mut ApplicationWorld) {
+    assert!(
+        !source_rows(world)
+            .iter()
+            .any(|row| row.text == "2-DDrawing")
+    );
+}
+
 #[given(
     "the Ribbon customization dialog shows All Commands in ascending order for an empty Part Tools custom panel"
 )]

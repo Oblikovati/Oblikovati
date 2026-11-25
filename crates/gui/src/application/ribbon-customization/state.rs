@@ -8,6 +8,7 @@ use std::collections::{BTreeMap, BTreeSet};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Command {
     Separator,
+    Drawing2D,
     Sketches,
     Annotations,
     Tool(GuiSketchTool),
@@ -22,6 +23,7 @@ impl Command {
     pub(super) fn id(self) -> &'static str {
         match self {
             Self::Separator => "separator",
+            Self::Drawing2D => "drawing-2d",
             Self::Sketches => "sketch-visibility",
             Self::Annotations => "annotations-visibility",
             Self::Measure => "measure",
@@ -65,6 +67,7 @@ impl Command {
     pub(super) fn label(self) -> &'static str {
         match self {
             Self::Separator => "<Separator>",
+            Self::Drawing2D => "2-D Drawing",
             Self::Sketches => "2D Sketches",
             Self::Annotations => "3D Annotations",
             Self::Tool(GuiSketchTool::Circle) => "Circle (Center Point)",
@@ -78,8 +81,9 @@ impl Command {
         }
     }
 }
-pub(super) const COMMANDS: [Command; 35] = [
+pub(super) const COMMANDS: [Command; 36] = [
     Command::Separator,
+    Command::Drawing2D,
     Command::Tool(GuiSketchTool::Line),
     Command::Tool(GuiSketchTool::MidpointLine),
     Command::Sketches,

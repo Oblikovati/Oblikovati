@@ -103,6 +103,13 @@ impl RibbonCustomization {
                     let _disabled = ui.begin_disabled(true);
                     icons.button(ui, label, IconGlyph::Annotation, size);
                 }
+                Command::Drawing2D => {
+                    let _disabled = ui.begin_disabled(true);
+                    icons.button(ui, label, IconGlyph::NewDrawing, size);
+                    if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
+                        ui.tooltip_text("2-D Drawing is unavailable in this build.");
+                    }
+                }
                 Command::Separator => separator(ui, if normal { [8., 58.] } else { size }),
             }
             if entry.command != Command::Separator {

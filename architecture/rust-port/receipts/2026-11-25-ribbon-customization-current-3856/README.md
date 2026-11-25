@@ -1,7 +1,7 @@
 # Current native Ribbon Customization
 
-One hundred and two of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 98 of 122 declarations and 1,393
+One hundred and three of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 99 of 122 declarations and 1,406
 passing steps. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
@@ -61,10 +61,13 @@ The published Part opens outside sketch edit.
 The interface export case read applied settings from six areas and kept
 Customize open.
 [Interface export](../2026-11-25-ribbon-customization-interface-export-3856/README.md)
+The staged drawing entry was inserted after the selected target row and
+discarded on Cancel.
+[2-D Drawing insertion](../2026-11-25-ribbon-customization-drawing-insertion-3856/README.md)
 
-The [command list](case-059/cucumber.json),
-[reorder](case-082/cucumber.json), and [remove](case-083/cucumber.json)
-cases reached the Available Commands list, which lacks `2-D Drawing`.
+The earlier [reorder](case-082/cucumber.json) and
+[remove](case-083/cucumber.json) runs stopped at the missing 2-D Drawing
+entry. Both cases are queued for current runs.
 [Letter navigation](case-071/cucumber.json) also remains open.
 
 One [cancellation case](case-055/cucumber.json) closes Customize and
