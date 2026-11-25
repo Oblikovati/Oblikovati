@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:52:15.285495066Z" time="23.434556828"><testcase name="Scenario: Open and closes an empty browser search while editing a sketch: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:398:3" time="23.434556828"><system-out><![CDATA[  Scenario: Open and closes an empty browser search while editing a sketch
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And Sketch1 is being edited
+   ✔  And the model browser is visible with its search field closed
+   ✔  When the user selects the browser search control
+   ✔  Then an empty search field appears beneath the browser header
+   ✔  And the model browser tree and sketch viewport remain visible
+   ✔  When the user selects the close control on the empty search field
+   ✔  Then the search field is hidden
+   ✔  And the browser tree and sketch viewport remain visible
+]]></system-out></testcase></testsuite></testsuites>

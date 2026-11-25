@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:55:08.737288717Z" time="35.835909048"><testcase name="Scenario: Inspect the context menu for a browser feature: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:471:3" time="35.835909048"><system-out><![CDATA[  Scenario: Inspect the context menu for a browser feature
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software with a solid extrusion
+   ✔  And its extrusion feature is visible in the model browser
+   ✔  When the user right-clicks the extrusion feature in the browser
+   ✔  Then a context menu opens beside the feature row
+   ✔  And the menu offers Edit Sketch, Edit Feature and Show Dimensions
+   ✔  And it offers Copy, Delete, Measure and Properties
+   ✔  And it offers Expand All Children and Collapse All Children
+   ✔  And the extrusion row and the solid edges are highlighted
+   ✔  When the user clicks an empty area of the viewport outside the menu
+   ✔  Then the context menu closes
+   ✔  And the extrusion row and solid edges remain highlighted
+]]></system-out></testcase></testsuite></testsuites>
