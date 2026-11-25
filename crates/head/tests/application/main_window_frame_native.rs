@@ -15,9 +15,19 @@ pub(super) fn pump_until(world: &mut ApplicationWorld, expected: bool) {
     }
 }
 pub(super) fn press_maximize(world: &mut ApplicationWorld) {
-    let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
-    x11_input::click([width - 72, 16]);
+    x11_input::click(frame_control_center(1));
     world.pump(Vec::new());
+}
+
+/// Native center of the drawn control, with index 0 for Minimize and 2 for Close.
+pub(super) fn frame_control_center(index: usize) -> [i32; 2] {
+    let [left, top, right, bottom] =
+        super::diagnostics::window_pixel_bounds("##application-window-controls")
+            .expect("expected rendered window controls");
+    [
+        (left + (right - left) * (index as f32 + 0.5) / 3.) as i32,
+        ((top + bottom) / 2.) as i32,
+    ]
 }
 
 #[test]
@@ -272,8 +282,7 @@ pub(super) fn wait_for_hidden(hidden: bool) {
 }
 pub(super) fn pump_minimize_button(world: &mut ApplicationWorld) {
     use crate::HeadWindow;
-    let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
-    x11_input::click([width - 120, 17]);
+    x11_input::click(frame_control_center(0));
     let deadline = Instant::now() + Duration::from_secs(5);
     while !x11_input::window_has_state(b"_NET_WM_STATE_HIDDEN") {
         let app = world.app();

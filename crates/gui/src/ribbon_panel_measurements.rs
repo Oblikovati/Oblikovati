@@ -51,10 +51,11 @@ impl RibbonPanelLayout {
         factor: f32,
     ) -> Option<f32> {
         use crate::ribbon_command_layout::RibbonAppearance;
-        if tab == RibbonTab::Sketch && self.measured_appearance == Some(RibbonAppearance::Normal) {
-            if let Some(width) = sketch_normal_width(panel) {
-                return Some(width * factor);
-            }
+        if tab == RibbonTab::Sketch
+            && self.measured_appearance == Some(RibbonAppearance::Normal)
+            && let Some(width) = sketch_normal_width(panel)
+        {
+            return Some(width * factor);
         }
         self.widths.get(&(tab, panel)).copied()
     }

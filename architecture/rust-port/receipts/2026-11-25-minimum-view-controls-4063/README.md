@@ -14,10 +14,12 @@ Four published scenarios passed all 50 steps.
 [Upper corners](case-0.json) · [Lower corners](case-1.json)
 · [Control size](case-2.json) · [Pan](case-4.json)
 
-The window-frame scenario reached 640 × 480 under Openbox and tint2.
-It failed to maximize from the title bar on both the updated and
-baseline viewport layouts.
-[Updated layout](window-frame.json) · [Baseline](window-frame-baseline.json)
+The two initial window-frame runs reached 640 × 480. Their temporary tint2
+configuration placed a taskbar across the title bar, where it intercepted
+the Maximize click. The scenario passed all six steps with the repository’s
+private-desktop launcher, which positions the taskbar at the bottom.
+[Initial updated layout](window-frame.json) · [Initial baseline](window-frame-baseline.json)
+· [Rerun](../2026-11-25-orientation-options-4063/README.md)
 
 Verification used Linux X11, Xvfb and Vulkan Lavapipe. The build used
 `239996a37` with the control placement changes and pending local

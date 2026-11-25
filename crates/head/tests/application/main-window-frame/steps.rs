@@ -87,8 +87,10 @@ fn maximize_tooltip(world: &mut ApplicationWorld) {
     control_tooltip(world, "Maximize");
 }
 fn control_tooltip(world: &mut ApplicationWorld, label: &str) {
-    let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
-    super::x11_input::move_pointer([width - 94, 17]);
+    hover_control(world, 1, label);
+}
+fn hover_control(world: &mut ApplicationWorld, index: usize, label: &str) {
+    super::x11_input::move_pointer(super::main_window_frame_native::frame_control_center(index));
     world.pump(Vec::new());
     std::thread::sleep(std::time::Duration::from_millis(700));
     world.pump(Vec::new());
@@ -399,28 +401,23 @@ fn quick_access_leads_bar(world: &mut ApplicationWorld) {
 }
 #[then("the application or active document title occupies the same bar")]
 fn title_shares_bar(world: &mut ApplicationWorld) {
-    let title = match world.parts.last().copied() {
-        Some(document) => world.document_name(document),
-        None => "Oblikovati".to_owned(),
-    };
+    if world.parts.last().is_some() {
+        super::wireframe_ribbon::assert_document_context_above_tabs(world);
+        return;
+    }
     let file = world.run("File");
     assert!(
         world
             .frame
             .runs
             .iter()
-            .any(|run| run.text == title && run.center()[1] < file.minimum[1])
+            .any(|run| run.text == "Oblikovati" && run.center()[1] < file.minimum[1])
     );
 }
 #[then("Minimize, Maximize and Close sit at the trailing edge in that order")]
 fn controls_at_trailing_edge(world: &mut ApplicationWorld) {
     controls_remain_in_bar(world);
-    for (offset, name) in [(120, "Minimize"), (72, "Maximize"), (24, "Close")] {
-        let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
-        super::x11_input::move_pointer([width - offset, 17]);
-        world.pump(Vec::new());
-        std::thread::sleep(std::time::Duration::from_millis(700));
-        world.pump(Vec::new());
-        world.expect_text(name);
+    for (index, name) in ["Minimize", "Maximize", "Close"].into_iter().enumerate() {
+        hover_control(world, index, name);
     }
 }

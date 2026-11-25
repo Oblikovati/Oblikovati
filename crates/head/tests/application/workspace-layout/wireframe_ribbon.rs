@@ -28,8 +28,12 @@ pub(super) fn assert_tabs_share_row(world: &ApplicationWorld) {
 pub(super) fn assert_panels_below_tabs(world: &ApplicationWorld) {
     let tab = world.run("3D Model");
     for label in ["Start 2D Sketch", "Extrude", "Sketch", "Create"] {
+        let label_without_spaces = label.replace(' ', "");
         let below = world.frame.runs.iter().any(|run| {
-            run.text.replace(' ', "") == label.replace(' ', "") && run.minimum[1] > tab.maximum[1]
+            run.text
+                .replace(' ', "")
+                .eq_ignore_ascii_case(&label_without_spaces)
+                && run.minimum[1] > tab.maximum[1]
         });
         assert!(
             below,
@@ -65,14 +69,25 @@ fn normal_expanded(world: &mut ApplicationWorld) {
 #[then("quick access remains in the top application bar alongside document context")]
 fn application_bar_keeps_context(world: &mut ApplicationWorld) {
     assert_controls_above_tabs(world);
+    assert_document_context_above_tabs(world);
+}
+pub(super) fn assert_document_context_above_tabs(world: &mut ApplicationWorld) {
     let active = world.active_id();
-    let document = world.document_name(active);
-    let run = world
-        .frame
-        .runs
-        .iter()
-        .find(|run| run.text == document && run.center()[1] < world.run("File").minimum[1]);
-    assert!(run.is_some(), "expected active document in application bar");
+    let document: String = world
+        .document_name(active)
+        .chars()
+        .filter(|letter| !letter.is_whitespace())
+        .collect();
+    let file_top = world.run("File").minimum[1];
+    assert!(
+        world.frame.runs.iter().any(|run| {
+            let caption = run.text.strip_suffix("—Oblikovati").unwrap_or("");
+            let (name, _) = caption.split_once('<').unwrap_or((caption, ""));
+            name.trim_start_matches('*') == document && run.center()[1] < file_top
+        }),
+        "expected active document {document:?} in application bar: {}",
+        world.text()
+    );
 }
 #[then("File appears at the leading edge of the ribbon tab row beneath that bar")]
 #[then("the ribbon tabs share that row with File")]

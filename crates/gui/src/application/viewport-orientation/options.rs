@@ -6,6 +6,11 @@ use imgui::Ui;
 const TITLE: &str = "Orientation Options";
 const SIZE: [f32; 2] = [440., 560.];
 const OPACITY_STEPS: [u8; 5] = [0, 25, 50, 75, 100];
+const POSITION: &str = "On-screen Position";
+const OPACITY: &str = "Inactive Opacity";
+const FRONT_PLANE: &str = "Front View Plane";
+const TOP_PLANE: &str = "Top View Plane";
+const NORTH_ANGLE: &str = "Angle of North";
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub(super) enum ScreenCorner {
@@ -192,11 +197,7 @@ impl OrientationOptions {
         let mut open = true;
         let mut close = false;
         Self::dockable_window(ui, TITLE, &mut open).build(|| {
-            self.visibility_rows(ui);
-            self.placement_rows(ui);
-            self.behavior_rows(ui);
-            self.view_plane_rows(ui);
-            self.compass_rows(ui);
+            self.settings(ui);
             ui.separator();
             if crate::widget_abi::button(ui, "OK", [80., 0.]) {
                 self.applied = self.editing;
@@ -204,9 +205,30 @@ impl OrientationOptions {
             }
             ui.same_line();
             close |= crate::widget_abi::button(ui, "Cancel", [80., 0.])
-                || ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
+                || ui.is_window_focused_with_flags(imgui::WindowFocusedFlags::CHILD_WINDOWS)
+                    && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
         });
         self.open.set_open(open && !close);
+    }
+    fn settings(&mut self, ui: &Ui) {
+        let style = ui.clone_style();
+        let footer_height = ui.frame_height_with_spacing() + style.item_spacing[1];
+        let height = (ui.content_region_avail()[1] - footer_height).max(1.);
+        let region = crate::widget_abi::scroll_region(ui, "##orientation-settings", [0., height]);
+        if !region.visible {
+            return;
+        }
+        let caption = [POSITION, OPACITY, FRONT_PLANE, TOP_PLANE, NORTH_ANGLE]
+            .into_iter()
+            .map(|label| ui.calc_text_size(label)[0])
+            .fold(0., f32::max);
+        let width = (ui.content_region_avail()[0] - caption - style.item_inner_spacing[0]).max(1.);
+        let _field_width = ui.push_item_width(width);
+        self.visibility_rows(ui);
+        self.placement_rows(ui);
+        self.behavior_rows(ui);
+        self.view_plane_rows(ui);
+        self.compass_rows(ui);
     }
     fn visibility_rows(&mut self, ui: &Ui) {
         ui.checkbox(
@@ -226,7 +248,7 @@ impl OrientationOptions {
         let (front, top) = (self.editing.front_plane, self.editing.top_plane);
         choice_list(
             ui,
-            "Front View Plane",
+            FRONT_PLANE,
             &ViewPlane::ALL,
             ViewPlane::label,
             &mut self.editing.front_plane,
@@ -237,7 +259,7 @@ impl OrientationOptions {
         let (front, top) = (self.editing.front_plane, self.editing.top_plane);
         choice_list(
             ui,
-            "Top View Plane",
+            TOP_PLANE,
             &ViewPlane::ALL,
             ViewPlane::label,
             &mut self.editing.top_plane,
@@ -249,7 +271,7 @@ impl OrientationOptions {
     fn placement_rows(&mut self, ui: &Ui) {
         choice_list(
             ui,
-            "On-screen Position",
+            POSITION,
             &ScreenCorner::ALL,
             ScreenCorner::label,
             &mut self.editing.corner,
@@ -265,7 +287,7 @@ impl OrientationOptions {
     }
     fn opacity_list(&mut self, ui: &Ui) {
         let shown = format!("{}%", self.editing.inactive_opacity);
-        let Some(_list) = ui.begin_combo("Inactive Opacity", shown) else {
+        let Some(_list) = ui.begin_combo(OPACITY, shown) else {
             return;
         };
         for percent in OPACITY_STEPS {
@@ -290,7 +312,7 @@ impl OrientationOptions {
     fn compass_rows(&mut self, ui: &Ui) {
         ui.checkbox("Show the compass", &mut self.editing.compass);
         let _off = ui.begin_disabled(!self.editing.compass);
-        ui.input_float("Angle of North", &mut self.editing.north_angle)
+        ui.input_float(NORTH_ANGLE, &mut self.editing.north_angle)
             .build();
     }
 }

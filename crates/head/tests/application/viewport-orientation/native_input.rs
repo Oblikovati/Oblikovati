@@ -55,6 +55,37 @@ fn assert_controls_inside_viewport(world: &mut ApplicationWorld) {
 }
 
 #[test]
+fn native_orientation_options_keep_actions_visible_at_large_text_scale() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_options(&mut world);
+    x11_input::resize_application_window([640, 480]);
+    let scale = oblikovati_model::ui_scale::UiScaleOptions::new(2., 1.).unwrap();
+    world.app().owner.set_ui_scale_from_gui(scale).unwrap();
+    for _ in 0..3 {
+        world.pump(Vec::new());
+    }
+    assert_eq!(world.extent(), [640, 480]);
+    world.save_capture("orientation-options-minimum-at-200-percent");
+    assert_orientation_actions_stay_visible(&mut world);
+    world.close();
+}
+
+fn assert_orientation_actions_stay_visible(world: &mut ApplicationWorld) {
+    world.expect_text("OK");
+    world.expect_text("Cancel");
+    let ok = world.run("OK").center();
+    let position = world.run("On-screen Position").center();
+    x11_input::scroll(diagnostics::pointer_pixels(position), -12);
+    world.pump(Vec::new());
+    world.expect_text("Angle of North");
+    assert_eq!(world.run("OK").center(), ok);
+    x11_input::click(diagnostics::pointer_pixels(ok));
+    world.pump(Vec::new());
+    assert!(diagnostics::window_geometry(OPTIONS_TITLE).is_none());
+}
+
+#[test]
 fn native_rotation_arrow_turns_and_restores_front_view() {
     let mut world = ApplicationWorld::new();
     open_block(&mut world);

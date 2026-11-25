@@ -17,6 +17,7 @@ pub(super) fn toolbar_images() -> Vec<ToolbarImage> {
     let scale = unsafe { sys::igGetIO().as_ref() }
         .expect("expected a live GUI context")
         .DisplayFramebufferScale;
+    let brand = icon_texture(|glyph, _| glyph == "BrandMark");
     let mut images = Vec::new();
     for list in draws.draw_lists() {
         for command in list.commands() {
@@ -33,7 +34,8 @@ pub(super) fn toolbar_images() -> Vec<ToolbarImage> {
             let b = vertices[indices[2] as usize].pos;
             let side = [b[0] - a[0], b[1] - a[1]];
             let center = [(a[0] + b[0]) / 2., (a[1] + b[1]) / 2.];
-            if on_toolbar(center)
+            if Some(cmd_params.texture_id.id()) != brand
+                && on_toolbar(center)
                 && (14. ..=22.).contains(&(side[0] * scale.x))
                 && (14. ..=22.).contains(&(side[1] * scale.y))
             {
@@ -84,14 +86,16 @@ pub(super) fn standard_icon(label: &str) -> Option<ToolbarImage> {
         "Extrude" => "extrude",
         _ => return None,
     };
-    let catalog = include_str!("../../crates/gui/src/icons/catalog.rs");
-    let index = catalog
-        .lines()
-        .filter_map(|line| line.trim().split_once(" => \""))
-        .map(|(_, value)| value.trim_end_matches([',', '"']))
-        .position(|value| value == name)?;
-    let texture = 2 + index * 2;
+    let texture = icon_texture(|_, asset| asset == name)?;
     toolbar_images()
         .into_iter()
         .find(|image| image.texture == texture)
+}
+
+fn icon_texture(matches: impl Fn(&str, &str) -> bool) -> Option<usize> {
+    include_str!("../../crates/gui/src/icons/catalog.rs")
+        .lines()
+        .filter_map(|line| line.trim().split_once(" => \""))
+        .position(|(glyph, asset)| matches(glyph, asset.trim_end_matches([',', '"'])))
+        .map(|index| 2 + index * 2)
 }
