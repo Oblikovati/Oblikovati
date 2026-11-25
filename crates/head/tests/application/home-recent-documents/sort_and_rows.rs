@@ -107,21 +107,20 @@ fn menu_selected(world: &mut ApplicationWorld) {
 #[when("the user checks a second recent-document row")]
 #[when("I check a second recent-document row")]
 fn check_second(world: &mut ApplicationWorld) {
-    toggle_row(world, OTHERS[0]);
+    let second = other_recent_names(world)[0];
+    toggle_row(world, second);
 }
 #[then("both rows are checked and highlighted")]
 #[then("both parts' rows are checked and highlighted")]
 fn both_checked(world: &mut ApplicationWorld) {
-    assert!(row_checked(world, SEARCHED), "expected {SEARCHED} checked");
-    assert!(
-        row_checked(world, OTHERS[0]),
-        "expected {} checked",
-        OTHERS[0]
-    );
-    assert!(
-        world.row_accented_beside(SEARCHED, OTHERS[1]),
-        "expected a highlighted row"
-    );
+    let other = other_recent_names(world);
+    for name in [SEARCHED, other[0]] {
+        assert!(row_checked(world, name), "expected {name} checked");
+        assert!(
+            world.row_accented_beside(name, other[1]),
+            "expected {name} highlighted"
+        );
+    }
 }
 #[then("Open Selected and Remove Selected appear above the list")]
 #[then("the selected-item actions remain visible")]
@@ -133,16 +132,14 @@ fn selected_shown(world: &mut ApplicationWorld) {
 #[when("the user clears the second row's checkbox")]
 #[when("I clear the second row's checkbox")]
 fn clear_second(world: &mut ApplicationWorld) {
-    toggle_row(world, OTHERS[0]);
+    let second = other_recent_names(world)[0];
+    toggle_row(world, second);
 }
 #[then("the first row remains checked")]
 fn first_checked(world: &mut ApplicationWorld) {
     assert!(row_checked(world, SEARCHED), "expected {SEARCHED} checked");
-    assert!(
-        !row_checked(world, OTHERS[0]),
-        "expected {} clear",
-        OTHERS[0]
-    );
+    let second = other_recent_names(world)[0];
+    assert!(!row_checked(world, second), "expected {second} clear");
 }
 #[when("the user clears the first row's checkbox")]
 #[when("I clear the first row's checkbox")]
@@ -176,6 +173,7 @@ fn hover_card(world: &mut ApplicationWorld) {
 #[then("the control offers Pin again")]
 fn pin_offered(world: &mut ApplicationWorld) {
     assert!(home_shows(world, "Pin"), "expected Pin");
+    expect_pin_state(world, false);
 }
 #[when("the user activates Pin")]
 #[when("I activate Pin")]
@@ -185,6 +183,12 @@ fn activate_pin(world: &mut ApplicationWorld) {
 #[then("the control offers Unpin")]
 fn unpin_offered(world: &mut ApplicationWorld) {
     assert!(home_shows(world, "Unpin"), "expected Unpin");
+    expect_pin_state(world, true);
+}
+fn expect_pin_state(world: &mut ApplicationWorld, pinned: bool) {
+    let rows = world.state().recent_documents;
+    let row = rows.iter().find(|row| row.name == SEARCHED).unwrap();
+    assert_eq!(row.pinned, pinned);
 }
 #[then("the part remains in the recent grid")]
 fn stays_in_grid(world: &mut ApplicationWorld) {

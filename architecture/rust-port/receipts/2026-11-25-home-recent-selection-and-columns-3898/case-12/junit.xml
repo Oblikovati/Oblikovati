@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:17:49.209634965Z" time="26.904922087"><testcase name="Scenario: Hide, restore and reorder a recent-document column: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:144:3" time="26.904922087"><system-out><![CDATA[  Scenario: Hide, restore and reorder a recent-document column
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent documents are in List View
+   ✔  And Location is displayed immediately after Name
+   ✔  When the user opens Column Settings and clears Location
+   ✔  Then the Location header and values disappear from the list
+   ✔  And Location is unchecked in Available Columns
+   ✔  When the user selects Location again
+   ✔  Then Location appears after the other adjustable columns
+   ✔  When the user drags Location above Date Modified in Displayed Columns
+   ✔  Then Location appears immediately after Name in the list
+]]></system-out></testcase></testsuite></testsuites>

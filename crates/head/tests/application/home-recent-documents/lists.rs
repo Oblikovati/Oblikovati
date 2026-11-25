@@ -7,7 +7,12 @@ const CHECK_REACH: f32 = 52.;
 const ROW_BUCKET: f32 = 20.;
 const CARD_CHECK_ABOVE_NAME: i32 = 58;
 fn row_run(world: &ApplicationWorld, name: &str) -> RenderedRun {
-    home_run(world, name).unwrap_or_else(|| panic!("expected a row {name}"))
+    let row = if published_profile::uses_published_profile(world) {
+        recent_name(world, name)
+    } else {
+        home_run(world, name)
+    };
+    row.unwrap_or_else(|| panic!("expected a row {name}"))
 }
 /// The row's box sits at the row's start, left of everything else on it.
 fn row_check_at(world: &ApplicationWorld, name: &str) -> [i32; 2] {

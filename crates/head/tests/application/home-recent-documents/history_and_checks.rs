@@ -2,12 +2,31 @@
 use super::*;
 
 // History recall
+#[given(
+    "the user searches for \"Part26\", clears the field and activates Search to restore the broader list"
+)]
+fn search_and_restore(world: &mut ApplicationWorld) {
+    search_for(world, SEARCHED);
+    clear_field(world);
+    click_home(world, "Search");
+    list_contains(world);
+}
 #[given(regex = r#"^the recent search history contains "Part26"$"#)]
 fn history_contains(world: &mut ApplicationWorld) {
-    search_for(world, SEARCHED);
+    if published_profile::uses_published_profile(world) {
+        focus_search(world);
+        history_includes(world);
+    } else {
+        search_for(world, SEARCHED);
+    }
 }
 #[given("the search field is empty and the broader recent list is displayed")]
 fn empty_field_broad(world: &mut ApplicationWorld) {
+    if published_profile::uses_published_profile(world) {
+        field_empty(world);
+        list_contains(world);
+        return;
+    }
     let run = world
         .frame
         .runs
@@ -76,7 +95,7 @@ fn header_box(world: &mut ApplicationWorld) {
 #[then("all visible recent-document rows are checked and highlighted")]
 #[then("all visible recent-document rows are checked again")]
 fn all_checked(world: &mut ApplicationWorld) {
-    for name in NAMES {
+    for name in std::iter::once(SEARCHED).chain(other_recent_names(world).iter().copied()) {
         assert!(row_checked(world, name), "expected {name} checked");
     }
 }
@@ -88,11 +107,9 @@ fn clear_one(world: &mut ApplicationWorld) {
 #[then("that row is unchecked while the other visible rows remain checked")]
 fn others_checked(world: &mut ApplicationWorld) {
     assert!(!row_checked(world, SEARCHED), "expected {SEARCHED} clear");
-    assert!(
-        row_checked(world, OTHERS[0]),
-        "expected {} checked",
-        OTHERS[0]
-    );
+    for name in other_recent_names(world) {
+        assert!(row_checked(world, name), "expected {name} checked");
+    }
 }
 #[then("the header checkbox shows a partial selection")]
 fn header_partial(world: &mut ApplicationWorld) {
@@ -106,7 +123,7 @@ fn header_partial(world: &mut ApplicationWorld) {
 }
 #[then("the visible recent-document rows are unchecked")]
 fn rows_unchecked(world: &mut ApplicationWorld) {
-    for name in NAMES {
+    for name in std::iter::once(SEARCHED).chain(other_recent_names(world).iter().copied()) {
         assert!(!row_checked(world, name), "expected {name} clear");
     }
 }

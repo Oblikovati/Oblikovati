@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:17:28.696233004Z" time="19.450594464"><testcase name="Scenario: Pin and unpin a recent document card: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:131:3" time="19.450594464"><system-out><![CDATA[  Scenario: Pin and unpin a recent document card
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And an unpinned recent part is displayed in Grid View
+   ✔  When the user hovers over the part's card
+   ✔  Then a Pin control appears on the card
+   ✔  When the user activates Pin
+   ✔  Then the control offers Unpin
+   ✔  And the part remains in the recent grid
+   ✔  When the user activates Unpin
+   ✔  Then the control offers Pin again
+   ✔  And the part remains in the recent grid
+]]></system-out></testcase></testsuite></testsuites>

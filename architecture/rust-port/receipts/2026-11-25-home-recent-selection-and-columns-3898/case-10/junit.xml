@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:17:06.684241471Z" time="21.185940505"><testcase name="Scenario: Select and clears multiple recent-document rows: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:116:3" time="21.185940505"><system-out><![CDATA[  Scenario: Select and clears multiple recent-document rows
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent documents are displayed in List View
+   ✔  And one recent-document row is checked and no other rows are checked
+   ✔  When the user checks a second recent-document row
+   ✔  Then both rows are checked and highlighted
+   ✔  And Open Selected and Remove Selected appear above the list
+   ✔  When the user clears the second row's checkbox
+   ✔  Then the first row remains checked
+   ✔  And the selected-item actions remain visible
+   ✔  When the user clears the first row's checkbox
+   ✔  Then no recent-document rows are checked
+   ✔  And Open Selected and Remove Selected are no longer displayed above the list
+]]></system-out></testcase></testsuite></testsuites>

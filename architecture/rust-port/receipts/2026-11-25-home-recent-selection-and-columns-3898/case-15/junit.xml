@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:19:07.347387137Z" time="18.277195242"><testcase name="Scenario: Sort recent rows by name and carry the order into Grid View: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:187:3" time="18.277195242"><system-out><![CDATA[  Scenario: Sort recent rows by name and carry the order into Grid View
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent documents with different names are displayed in List View
+   ✔  And Last Opened is the active descending sort
+   ✔  When the user selects the Name column header
+   ✔  Then the visible rows are ordered by name in descending order
+   ✔  And a downward sort indicator appears in the Name header
+   ✔  When the user selects the Name column header again
+   ✔  Then the visible rows are ordered by name in ascending order
+   ✔  And the Name header shows an upward sort indicator
+   ✔  When the user switches to Grid View
+   ✔  Then Sort by shows Name with an upward direction indicator
+   ✔  And the visible cards follow the ascending name order
+]]></system-out></testcase></testsuite></testsuites>
