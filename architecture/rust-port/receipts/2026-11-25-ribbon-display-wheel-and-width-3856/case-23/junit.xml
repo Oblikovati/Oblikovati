@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:38:55.023557474Z" time="22.594696479"><testcase name="Scenario: Switch an open temporary ribbon with the mouse wheel: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:344:3" time="22.594696479"><system-out><![CDATA[  Scenario: Switch an open temporary ribbon with the mouse wheel
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And Tools is the active tab in tabs-only ribbon display
+   ✔  And the temporary Tools command groups are open
+   ✔  When the user scrolls down over the Tools tab
+   ✔  Then Manage becomes the active tab
+   ✔  And temporary Manage command groups replace the Tools command groups
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary command groups close
+   ✔  And Manage remains active in tabs-only display
+]]></system-out></testcase></testsuite></testsuites>

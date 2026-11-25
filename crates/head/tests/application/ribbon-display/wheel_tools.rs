@@ -4,10 +4,7 @@ use super::*;
 
 #[given("a part is active in the MCAD Software with the full ribbon visible")]
 fn part_with_full_ribbon(world: &mut ApplicationWorld) {
-    use crate::HeadWork;
-    world.app().owner.create_part_document().unwrap();
-    world.previous_document = world.app().owner.gui_command_state().unwrap().document;
-    world.pump(Vec::new());
+    super::super::workspace_layout::part_open(world);
     world.expect_text("Extrude");
 }
 #[given("the 3D Model tab is the first visible command tab and is active")]

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:38:17.328648222Z" time="15.785713883"><testcase name="Scenario: Stop wheel navigation at the visible ends of the part ribbon: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:314:3" time="15.785713883"><system-out><![CDATA[  Scenario: Stop wheel navigation at the visible ends of the part ribbon
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the full ribbon visible
+   ✔  And the 3D Model tab is the first visible command tab and is active
+   ✔  When the user scrolls up over the 3D Model tab
+   ✔  Then the 3D Model tab remains active
+   ✔  And its command groups remain visible
+   ✔  When the user selects the last visible command tab
+   ✔  And the user scrolls down over the last visible command tab
+   ✔  Then the last visible command tab remains active
+   ✔  And its command groups remain visible
+   ✔  And the part remains visible
+]]></system-out></testcase></testsuite></testsuites>

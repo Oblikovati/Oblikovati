@@ -12,7 +12,7 @@ const INSERT_COMMANDS: [&str; 5] = [
 
 #[given("a part is active in the MCAD Software with the full Manage ribbon displayed")]
 fn part_on_manage(world: &mut ApplicationWorld) {
-    world.previous_document = Some(world.add_part());
+    super::super::workspace_layout::part_open(world);
     use crate::HeadWork;
     let scale = oblikovati_model::ui_scale::UiScaleOptions::new(1., 1.75).unwrap();
     world.app().owner.set_ui_scale_from_gui(scale).unwrap();
