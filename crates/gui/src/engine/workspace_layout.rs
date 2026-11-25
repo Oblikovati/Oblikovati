@@ -20,8 +20,8 @@ impl GuiFrameEngine {
 
     pub(super) fn sync_tool_visibility(&mut self) {
         self.workspace.tool_visibility = crate::application::workspace_layout::ToolVisibility {
-            material: self.material_browser.is_open(),
-            appearance: self.appearance_browser.is_open(),
+            material: self.material_browser.is_requested(),
+            appearance: self.appearance_browser.is_requested(),
             parameters: self.parameter_editor.is_open(),
             selection_filter: self.selection_filter.is_open(),
             history: self.history_browser.is_open(),
@@ -115,6 +115,65 @@ mod tests {
         assert!(engine.home.active);
         assert!(!engine.material_browser.is_open());
         assert!(!engine.appearance_browser.is_open());
+    }
+
+    #[test]
+    fn side_docks_keep_the_viewport_wide_and_recover_their_preferred_widths() {
+        let mut engine = GuiFrameEngine::new().unwrap();
+        let mut request = GuiFrameRequest {
+            extent: [1440, 900],
+            events: Vec::new(),
+            commands: Default::default(),
+            status: None,
+            delta_seconds: 1. / 60.,
+            framebuffer_scale: [1.; 2],
+        };
+        engine.frame(&request).unwrap();
+        request.commands.document = Some(1);
+        request.commands.authoring = crate::GuiAuthoringContext::Part;
+        for width in [1440, 1100, 780, 1440] {
+            request.extent[0] = width;
+            let mut frame = engine.frame(&request).unwrap();
+            for _ in 0..3 {
+                frame = engine.frame(&request).unwrap();
+            }
+            let [left, _, right, _] = frame.document_area.unwrap();
+            assert!(
+                right - left >= (width as f32 * 0.55) as u32,
+                "{width}: {left}..{right}"
+            );
+            if width == 1440 {
+                assert!((259..=263).contains(&left), "{left}");
+                assert!((259..=263).contains(&(width - right)), "{right}");
+            }
+        }
+    }
+
+    #[test]
+    fn home_in_front_of_a_part_releases_and_restores_its_dock_space() {
+        let mut engine = GuiFrameEngine::new().unwrap();
+        let mut request = GuiFrameRequest {
+            extent: [1100, 760],
+            events: Vec::new(),
+            commands: Default::default(),
+            status: None,
+            delta_seconds: 1. / 60.,
+            framebuffer_scale: [1.; 2],
+        };
+        engine.frame(&request).unwrap();
+        request.commands.document = Some(1);
+        request.commands.authoring = crate::GuiAuthoringContext::Part;
+        let mut bounds = Vec::new();
+        for home in [false, true, false] {
+            engine.home.active = home;
+            let area = (0..4).map(|_| engine.frame(&request).unwrap().document_area);
+            bounds.push(area.last().unwrap().unwrap());
+            assert_eq!(engine.workspace.panels.model_visible(), !home);
+            assert_eq!(engine.appearance_browser.is_open(), !home);
+        }
+        assert_eq!(bounds[0], bounds[2]);
+        assert_eq!([bounds[1][0], bounds[1][2]], [0, 1100]);
+        assert!(bounds[1][1] < bounds[0][1]);
     }
 
     #[test]

@@ -54,14 +54,13 @@ impl HomeWorkspace {
         ui.group(|| {
             icons.brand_wordmark(ui, width);
             ui.dummy([0., 6.]);
-            if state.document.is_none() {
+            {
+                let _disabled = ui.begin_disabled(state.transaction_open);
                 if crate::theme::primary_button(ui, "New Part##home-new-part", [width, 30.]) {
                     actions.push(GuiShellAction::NewPart);
                 }
-                self.requests.new_document |= ui.button_with_size("New", [width, 30.]);
-            } else {
-                self.requests.new_document |= crate::theme::primary_button(ui, "New", [width, 30.]);
             }
+            self.requests.new_document |= ui.button_with_size("New", [width, 30.]);
             self.requests.open_document |= ui.button_with_size("Open", [width, 30.]);
             if let Some(project) = state.projects.iter().find(|project| project.active) {
                 self.project_card(ui, project, width);

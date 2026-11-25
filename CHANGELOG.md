@@ -296,7 +296,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Updated the active ribbon underline in the same frame as its commands. (#4063)
 - Aligned Fillet and Chamfer properties and put Extrude distance tools and direction choices inline. (#4063)
 - Centered the active document and model state in the titlebar and restyled its window controls. (#4063)
-- Restyled the File and Home recent lists with type icons, dedicated pin space, clearer selection controls, and more room for filenames. (#4063)
+- Restyled the File and Home recent lists with type icons, dedicated pin space, clearer selection controls, and more room for filenames. Preserved viewport space and active document tabs on resize, labelled the compact 3D Model groups with icons, and hid the Part ribbon and docks while Home was in front. (#4063)
 - Aligned the Large and Text headings with their Ribbon Customization checkboxes. (#3856)
 - Kept long tab labels readable when the ribbon is docked on either side. (#3860)
 - Allowed the only attached drawing to open in its own window, with Home in the main window. (#3900)

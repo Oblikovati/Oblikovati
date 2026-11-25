@@ -89,6 +89,28 @@ fn external_activation_and_idle_frames_do_not_send_activation_commands() {
     }
 }
 #[test]
+fn shrinking_reveals_the_active_long_tab_and_keeps_its_close_control_inside_the_strip() {
+    let mut engine = GuiFrameEngine::new().unwrap();
+    let mut request = tab_request();
+    request.commands.document = Some(2);
+    request.commands.documents[0].active = false;
+    request.commands.documents[1].active = true;
+    request.commands.documents[1].name = "An unusually long saved Part name ".repeat(5);
+    for width in [1440, 780, 1440] {
+        request.extent[0] = width;
+        engine.document_tabs.test_tab_bounds.clear();
+        let mut area = None;
+        for _ in 0..3 {
+            area = engine.frame(&request).unwrap().document_area;
+        }
+        let [left, _, right, _] = area.unwrap();
+        let (bounds, close) = engine.document_tabs.test_tab_bounds[&2];
+        assert!(bounds[0][0] >= left as f32);
+        assert!(bounds[1][0] + 92. <= right as f32);
+        assert!(close[0] > bounds[0][0] && close[0] < bounds[1][0]);
+    }
+}
+#[test]
 fn activation_requires_a_visible_current_row_and_no_edit_group() {
     let mut request = tab_request();
     let action = GuiShellAction::ActivateDocument(ActivateDocumentArgs { id: 2 });

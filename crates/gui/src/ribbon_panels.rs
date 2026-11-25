@@ -319,7 +319,7 @@ fn draw_row(
         &context.hidden,
         context.owners.customization,
     );
-    let minimum = if tab == RibbonTab::Sketch { 64. } else { 108. };
+    let minimum = collapsed::minimum_width(tab);
     let collapsed = panels
         .iter()
         .map(|panel| (context.ui.calc_text_size(panel.label())[0] + 12.).max(minimum))
@@ -452,7 +452,7 @@ fn draw_collapsed(
     if ui.is_item_hovered() {
         ui.tooltip_text(format!("Show {} commands", panel.label()));
     }
-    if tab != RibbonTab::Sketch {
+    if !matches!(tab, RibbonTab::Model | RibbonTab::Sketch) {
         let title_y = context.owners.icons.appearance.tab_command_height(tab) + 6.;
         context.owners.icons.cursor(ui, origin, [0., title_y]);
         // Collapsed buttons need their label even when expanded panel captions are hidden.

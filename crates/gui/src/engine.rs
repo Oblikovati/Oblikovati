@@ -463,12 +463,11 @@ impl GuiFrameEngine {
         self.document_tabs.previews.note_frame(extent, rgba);
     }
 }
-/// Home is left by anything that puts a document in front of it; true when that changed.
+/// Home is left by actions that put a document in front of it.
 fn home_follows_actions(
     home: &mut crate::application::home_recent_documents::HomeWorkspace,
     selected: &[GuiShellAction],
-) -> bool {
-    let before = home.active;
+) {
     for action in selected {
         match action {
             GuiShellAction::ShowHome => home.active = true,
@@ -485,7 +484,6 @@ fn home_follows_actions(
             _ => {}
         }
     }
-    home.active != before
 }
 #[cfg(test)]
 #[path = "../tests/parameter_journey/platform.rs"]

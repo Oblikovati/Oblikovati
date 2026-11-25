@@ -26,9 +26,7 @@ impl MaterialBrowser {
         registry.register::<Self>(title, &self.open)
     }
     pub(crate) fn set_open(&mut self, open: bool) {
-        if open && !self.open.is_open() {
-            self.open();
-        } else {
+        if open != self.open.is_requested() {
             self.open.set_open(open);
         }
     }
@@ -49,28 +47,29 @@ impl MaterialBrowser {
     pub(crate) fn open(&mut self) {
         self.open.set_open(true);
     }
-    pub(crate) fn sync_before_docking(&self, state: &GuiCommandState) {
+    pub(crate) fn sync_before_docking(&self, state: &GuiCommandState, home_in_front: bool) {
         use oblikovati_api::types::{DOCUMENT_ASSEMBLY, DOCUMENT_DRAWING};
         let unavailable = state
             .document_type
             .as_ref()
             .is_some_and(|kind| *kind == DOCUMENT_DRAWING || *kind == DOCUMENT_ASSEMBLY);
-        self.open.set_suspended(unavailable);
+        self.open.set_suspended(unavailable || home_in_front);
     }
     /// Draw the current part's asset choices and queue explicit assignments.
-    /// Example: `browser.panel(ui, state, actions)` once per frame.
+    /// Example: `browser.panel(ui, state, false, actions)` in a Part workspace.
     pub(crate) fn panel(
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
+        home_in_front: bool,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        self.sync_before_docking(state);
-        if !self.open.is_open() {
+        self.sync_before_docking(state, home_in_front);
+        if !self.is_open() {
             return;
         }
         self.sync_document(state);
-        let mut open = self.open.is_open();
+        let mut open = true;
         let title = if self.appearance_browser {
             "Appearance Browser"
         } else {

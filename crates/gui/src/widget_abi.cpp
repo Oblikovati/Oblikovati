@@ -39,15 +39,16 @@ ImGuiDockNode* horizontal_dock_sibling(ImGuiDockNode* node) {
 float outer_dock_width_scale(ImGuiDockNode* center, float width) {
     float preferred = 0.0f;
     float splitters = 0.0f;
+    float minimum_docks = 0.0f;
     for (auto* node = center; node && node->ParentNode; node = node->ParentNode) {
         if (const auto* sibling = horizontal_dock_sibling(node)) {
             preferred += sibling->SizeRef.x;
             splitters += 2.0f; // DOCKING_SPLITTER_SIZE in ImGui 1.89.2.
+            minimum_docks += 180.0f;
         }
     }
-    // Leave 256 logical pixels for the Part at the minimum desktop width.
-    // Smaller dock hosts may still reserve two fifths of their width (#4063).
-    const float reserved = ImMin(256.0f, width * 0.4f);
+    // At narrow widths, viewport space takes precedence over the dock minimums (#4063).
+    const float reserved = ImMax(width * 0.55f, ImMin(520.0f, width - minimum_docks - splitters));
     const float budget = ImMax(0.0f, ImFloor(width - reserved) - splitters);
     return preferred > budget ? budget / preferred : 1.0f;
 }
@@ -191,12 +192,14 @@ std::uint32_t oblikovati_gui_outer_dockspace(float width, float height, bool see
         ImGui::DockBuilderAddNode(id, ImGuiDockNodeFlags_DockSpace);
         ImGui::DockBuilderSetNodeSize(id, ImVec2(width, height));
         ImGuiID center = id;
-        const ImGuiID left = ImGui::DockBuilderSplitNode(center, ImGuiDir_Left, 0.25f, nullptr, &center);
+        const float initial_side = ImMin(260.0f, width * (seed_asset_dock ? 0.225f : 0.45f));
+        const ImGuiID left = ImGui::DockBuilderSplitNode(center, ImGuiDir_Left, initial_side / width, nullptr, &center);
         ImGui::DockBuilderDockWindow("Model", left);
         ImGui::DockBuilderDockWindow("Log", left);
         ImGui::DockBuilderDockWindow("Favorites", left);
         if (seed_asset_dock) {
-            const ImGuiID right = ImGui::DockBuilderSplitNode(center, ImGuiDir_Right, 0.30f, nullptr, &center);
+            const ImGuiID right = ImGui::DockBuilderSplitNode(center, ImGuiDir_Right,
+                initial_side / ImMax(1.0f, width - initial_side - 2.0f), nullptr, &center);
             ImGui::DockBuilderDockWindow("Material Browser", right);
             ImGui::DockBuilderDockWindow("Appearance Browser", right);
         }

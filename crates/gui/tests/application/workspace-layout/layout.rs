@@ -153,7 +153,7 @@ fn hiding_all_model_panels_closes_the_dock_before_layout() {
     let mut registry = crate::dockable_lifecycle::DockRegistry::default();
     layout.register_dockables(&mut registry).unwrap();
     let state = GuiCommandState::default();
-    layout.sync_before_docking(&state);
+    layout.sync_before_docking(&state, false);
     registry.reconcile(|_| {}).unwrap();
     layout.panels.set_open(
         crate::application::workspace_layout::panel_tabs::DockPanel::Model,
@@ -167,7 +167,7 @@ fn hiding_all_model_panels_closes_the_dock_before_layout() {
         crate::application::workspace_layout::panel_tabs::DockPanel::Favorites,
         false,
     );
-    layout.sync_before_docking(&state);
+    layout.sync_before_docking(&state, false);
     let mut titles = Vec::new();
     assert!(
         registry

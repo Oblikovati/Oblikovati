@@ -37,6 +37,18 @@ fn a_collapsed_format_and_constrain_panel_dispatch_the_same_actions_at_both_scal
         );
     }
 }
+
+#[test]
+fn the_narrow_model_ribbon_shows_and_opens_its_last_group_without_scrolling() {
+    let mut engine = GuiFrameEngine::new().unwrap();
+    let mut request = ribbon_request();
+    request.extent = [780, 580];
+    enter_part(&mut request);
+    settle_ribbon(&mut engine, &mut request);
+    open_collapsed_panel(&mut engine, &mut request, "Simplification");
+    assert!(ribbon_caption(&mut engine, &mut request, "Simplify", true)[0] < 780.);
+}
+
 use GuiSketchTool::*;
 const PRIMARY_TOOLS: [GuiSketchTool; 8] = [
     Line,

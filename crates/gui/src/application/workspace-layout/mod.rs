@@ -151,9 +151,20 @@ impl WorkspaceLayout {
         self.view.dialogs(ui, state, browser, actions);
         self.pending_layout |= self.view.needs_frame();
     }
-    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState) {
-        self.panels.sync_dock_states();
+    pub(crate) fn sync_before_docking(&mut self, state: &GuiCommandState, home_active: bool) {
+        self.panels
+            .sync_dock_states(home_active && state.document.is_some());
         self.view.sync_before_docking(state);
+    }
+    pub(crate) fn draw_status(
+        &self,
+        ui: &Ui,
+        request: &crate::GuiFrameRequest,
+        (alias, distance): (Option<&str>, Option<&str>),
+    ) {
+        if self.status_bar_visible {
+            status_bar::status_bar(ui, request, alias, distance);
+        }
     }
     pub(crate) fn browser_consumed_arrow(&self) -> bool {
         self.view.arrow_consumed
@@ -202,7 +213,7 @@ impl WorkspaceLayout {
             actions,
         );
         let focus = self.panels.take_tab_focus();
-        if self.panels.model_open {
+        if self.panels.model_visible() {
             let mut open = true;
             panel_tabs::ModelBrowserWindow::tabbed_dockable_window(ui, "Model", "Model", &mut open)
                 .flags(WindowFlags::NO_FOCUS_ON_APPEARING)

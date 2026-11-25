@@ -105,6 +105,7 @@ pub(super) fn document_tab(
     tab: &TabRow<'_>,
     owner: &mut StripOwner<'_>,
     actions: &mut Vec<GuiShellAction>,
+    room: f32,
 ) {
     let state = &request.commands;
     let behind = owner.home.active
@@ -112,7 +113,7 @@ pub(super) fn document_tab(
             .document
             .is_some_and(|id| owner.detached.contains(&id));
     let selected = !behind && is_active_window(state, tab);
-    let keep = draw_document_tab(ui, owner.icons, tab, selected);
+    let keep = draw_document_tab(ui, owner.icons, tab, selected, room);
     if selected {
         crate::theme::active_tab_underline(ui);
     }
@@ -171,6 +172,7 @@ fn draw_document_tab(
     icons: &crate::icons::GuiRibbonIcons,
     tab: &TabRow<'_>,
     selected: bool,
+    room: f32,
 ) -> bool {
     let flags = if selected {
         TabItemFlags::SET_SELECTED
@@ -178,7 +180,8 @@ fn draw_document_tab(
         TabItemFlags::empty()
     };
     let label = tab_label(tab);
-    ui.set_next_item_width(ui.calc_text_size(&label)[0] + TAB_ROOM);
+    let width = room - ui.clone_style().item_inner_spacing[0];
+    ui.set_next_item_width((ui.calc_text_size(&label)[0] + TAB_ROOM).min(width).max(1.));
     let mut keep = true;
     let contents = ui.tab_item_with_flags(
         format!("###open-document-{}", tab.window),
@@ -191,9 +194,46 @@ fn draw_document_tab(
         "presentation" => IconGlyph::TemplateDocument,
         _ => IconGlyph::NewPart,
     };
-    draw_tab_label(ui, icons, glyph, &label);
+    let [left, _] = ui.item_rect_min();
+    let [right, _] = ui.item_rect_max();
+    let shown = fit_tab_label(&label, right - left - TAB_ROOM, |text| {
+        ui.calc_text_size(text)[0]
+    });
+    draw_tab_label(ui, icons, glyph, &shown);
     drop(contents);
     keep
+}
+
+fn fit_tab_label(
+    label: &str,
+    width: f32,
+    measure: impl Fn(&str) -> f32,
+) -> std::borrow::Cow<'_, str> {
+    if measure(label) <= width {
+        return label.into();
+    }
+    const ELLIPSIS: &str = "...";
+    if measure(ELLIPSIS) > width {
+        return "".into();
+    }
+    let offsets: Vec<_> = label.char_indices().map(|(offset, _)| offset).collect();
+    let shortened = |count: usize| {
+        let head = &label[..offsets[count.div_ceil(2)]];
+        let tail = offsets
+            .get(offsets.len() - count / 2)
+            .map_or("", |&at| &label[at..]);
+        format!("{head}{ELLIPSIS}{tail}")
+    };
+    let (mut lower, mut upper) = (0, offsets.len() - 1);
+    while lower < upper {
+        let probe = lower + (upper - lower).div_ceil(2);
+        if measure(&shortened(probe)) <= width {
+            lower = probe;
+        } else {
+            upper = probe - 1;
+        }
+    }
+    shortened(lower).into()
 }
 fn draw_tab_label(ui: &Ui, icons: &crate::icons::GuiRibbonIcons, glyph: IconGlyph, label: &str) {
     let [left, top] = ui.item_rect_min();
@@ -228,4 +268,16 @@ fn record_test_tab_bounds(ui: &Ui, id: u64, bounds: &mut TestTabBounds) {
         (min[1] + max[1]) / 2.,
     ];
     bounds.insert(id, ([min, max], close));
+}
+
+#[cfg(test)]
+#[test]
+fn narrow_labels_keep_the_start_and_end_without_splitting_unicode() {
+    let width = |text: &str| text.chars().count() as f32;
+    assert_eq!(
+        fit_tab_label("Peça extensa.opd *", 11., width),
+        "Peça...pd *"
+    );
+    assert_eq!(fit_tab_label("Peça", 4., width), "Peça");
+    assert_eq!(fit_tab_label("Peça", 2., width), "");
 }

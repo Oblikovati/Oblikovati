@@ -63,6 +63,21 @@ pub(crate) fn owner_instance_counts(
 }
 
 impl GuiFrameEngine {
+    pub(super) fn draw_asset_docks(
+        (material, appearance): (
+            &mut crate::material_browser::MaterialBrowser,
+            &mut crate::material_browser::MaterialBrowser,
+        ),
+        ui: &imgui::Ui,
+        state: &GuiCommandState,
+        home_active: bool,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let home_in_front = home_active && state.document.is_some();
+        material.panel(ui, state, home_in_front, actions);
+        appearance.panel(ui, state, home_in_front, actions);
+    }
+
     pub(super) fn dock_editor_consumed_escape(&self) -> bool {
         self.sketch_text.escape_consumed() || self.dimension_value_editor.had_keyboard()
     }
@@ -83,10 +98,13 @@ impl GuiFrameEngine {
         self.ribbon.customization.sync_before_docking(state);
         self.create_block.sync_before_docking(state, actions);
         self.sketch_text.synchronize(state);
-        self.workspace.sync_before_docking(state);
+        let home_in_front = self.home.active && state.document.is_some();
+        self.workspace.sync_before_docking(state, self.home.active);
         self.home.sync_before_docking();
-        self.material_browser.sync_before_docking(state);
-        self.appearance_browser.sync_before_docking(state);
+        self.material_browser
+            .sync_before_docking(state, home_in_front);
+        self.appearance_browser
+            .sync_before_docking(state, home_in_front);
         self.document_tabs
             .menu
             .properties

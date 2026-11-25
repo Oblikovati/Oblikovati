@@ -27,7 +27,7 @@ pub(crate) const TAB_STRIP_HEIGHT: f32 = 26.;
 pub(crate) struct DocumentTabs {
     #[cfg(test)]
     pub(crate) test_tab_bounds: TestTabBounds,
-    previous: Option<u64>,
+    previous: Option<(Option<u64>, bool, f32)>,
     /// The first tab shown; earlier ones wait behind the left arrow.
     first_tab: usize,
     order: TabOrder,
@@ -59,8 +59,6 @@ impl DocumentTabs {
         self.track_labels(&request.commands);
         self.forget_closed_detached(&request.commands);
         self.settle_after_right_button(ui);
-        let reveal_active = self.previous != request.commands.document;
-        self.previous = request.commands.document;
         let any_document = request.commands.documents.iter().any(|row| row.visible);
         if !layout.tabs_visible || !(any_document || home.active) {
             self.order.cancel_input();
@@ -74,6 +72,8 @@ impl DocumentTabs {
         let (area, icons) = presentation;
         let span = layout.document_tab_span(width, area);
         let strip = (span.0, (span.1 - DOCUMENT_LIST_WIDTH).max(1.));
+        let current = (request.commands.document, home.active, strip.1);
+        let reveal_active = self.previous.replace(current) != Some(current);
         let mut strip_owner = StripOwner {
             #[cfg(test)]
             test_tab_bounds: &mut self.test_tab_bounds,
@@ -251,7 +251,8 @@ fn document_strip(
         available
     };
     let active = active_tab_index(state, &tabs, owner.home.active);
-    let (first, count) = visible_tabs(&widths, room, *owner.first_tab, active, owner.reveal_active);
+    let start = if overflow { *owner.first_tab } else { 0 };
+    let (first, count) = visible_tabs(&widths, room, start, active, owner.reveal_active);
     // A tab reappearing in the strip lays out on its second frame, as a new one does.
     let shown = &tabs[first..first + count];
     let keys: Vec<_> = shown.iter().map(StripTab::key).collect();
@@ -270,7 +271,7 @@ fn document_strip(
         for tab in shown {
             match tab {
                 StripTab::Home => home_tab(ui, owner, state, actions),
-                StripTab::Document(tab) => document_tab(ui, request, tab, owner, actions),
+                StripTab::Document(tab) => document_tab(ui, request, tab, owner, actions, room),
             }
         }
     }

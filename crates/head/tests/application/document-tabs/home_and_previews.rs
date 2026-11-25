@@ -224,7 +224,13 @@ fn part_sketch_and_browser(world: &mut ApplicationWorld) {
     let part = world.previous_document.expect("expected a remembered part");
     world.expect_browser_of(part);
     expect_sketch_environment(world);
-    world.expect_blank_region([400, 600], [250, 300]);
+    // The sketch origin moves with the viewport. Sample away from the axes and right-side HUD.
+    let [left, top, right, bottom] = world.viewport_bounds().map(|edge| edge as usize);
+    let (width, height) = (right - left, bottom - top);
+    world.expect_blank_region(
+        [left + width / 8, left + width / 3],
+        [top + height / 12, top + height / 6],
+    );
 }
 // Previews
 #[given("the first part is active and the second has an empty sketch visible")]

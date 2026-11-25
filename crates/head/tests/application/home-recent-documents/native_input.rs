@@ -3,7 +3,7 @@
 use super::super::{diagnostics::pointer_pixels, toolbar_icon_center, x11_input};
 use super::{
     ASSEMBLY, ApplicationWorld, HOME, OTHERS, SEARCHED, home_run, home_shows, lists::rows_by_size,
-    save_recent_files, startup_observation::startup_asset_browsers_are_docked,
+    save_recent_files,
 };
 
 #[test]
@@ -47,7 +47,9 @@ fn home_recent_view_controls_show_which_layout_is_active() {
 #[test]
 fn home_recent_visible_size_heading_reverses_order_with_x11_input() {
     let mut world = open_native_recent();
-    startup_asset_browsers_are_docked(&mut world);
+    assert!(world.state().document.is_some());
+    assert!(super::super::diagnostics::window_dock_id("Material Browser").is_none());
+    assert!(super::super::diagnostics::window_dock_id("Appearance Browser").is_none());
     click_recent_control(&mut world, "Size");
     wait_for_home_label(&mut world, "Size v", true);
     let descending: Vec<u64> = rows_by_size(&mut world)

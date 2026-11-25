@@ -43,6 +43,9 @@ pub(crate) fn ribbon_band(
 ) -> f32 {
     owners.ribbon.display.appearance = owners.ribbon.customization.appearance();
     let width = request.extent[0] as f32 / request.layout_scale()[0];
+    if owners.home_active && request.commands.document.is_some() {
+        return home_band(ui, request, &mut owners, width, actions);
+    }
     let height_total = request.extent[1] as f32 / request.layout_scale()[1];
     let scrollbar = owners.ribbon.panels.scrollbar_height(ui);
     let placement = owners.ribbon.display.placement;
@@ -124,6 +127,35 @@ pub(crate) fn ribbon_band(
         actions,
     );
     reserve_ribbon_margins(&mut owners, width);
+    if !owners.quick_access.below_ribbon {
+        return height;
+    }
+    owners.quick_access.band_below(
+        ui,
+        ([0., height], width),
+        owners.icons,
+        &request.commands,
+        actions,
+        &owners.ribbon.tips,
+    );
+    height + owners.quick_access.below_height(owners.icons)
+}
+
+fn home_band(
+    ui: &Ui,
+    request: &GuiFrameRequest,
+    owners: &mut RibbonDrawOwners<'_>,
+    width: f32,
+    actions: &mut Vec<GuiShellAction>,
+) -> f32 {
+    owners.workspace.reserve_for_ribbon(0., 0.);
+    let top = application_bar_height(owners.icons) + 1.;
+    let height = top + tab_row_height(ui);
+    if let Some(_band) = begin_ribbon_band(ui, width, height) {
+        application_controls_row(ui, request, owners, actions);
+        crate::widget_abi::cursor_position(ui, [0., top]);
+        ribbon_menu_row(ui, request, owners, actions);
+    }
     if !owners.quick_access.below_ribbon {
         return height;
     }

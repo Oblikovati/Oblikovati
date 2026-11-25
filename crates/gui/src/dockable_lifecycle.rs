@@ -80,6 +80,10 @@ pub(crate) struct DockRegistry {
     windows: Vec<DockRegistryEntry>,
 }
 impl DockRegistry {
+    pub(crate) fn reconcile_native_tabs(&mut self, ui: &imgui::Ui) -> Result<bool, String> {
+        self.reconcile(|title| crate::widget_abi::close_dock_tab(ui, title))
+    }
+
     pub(crate) fn register<T: crate::dockable_window::TabbedDockableWindow + 'static>(
         &mut self,
         title: &str,

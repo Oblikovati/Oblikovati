@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The rows and cards of the recent list, with their checks, menus and pins.
-use super::recent_view::{HeaderCheck, SortField, cell_text, column_width};
+use super::recent_view::{HeaderCheck, SortField, cell_text};
 use super::{GuiRecentAction, GuiRecentDocument, HomeWorkspace};
 use crate::GuiShellAction;
 use crate::application::workspace_layout::browser_view::match_start;
@@ -8,8 +8,11 @@ use imgui::Ui;
 
 #[path = "recent_cell_text.rs"]
 mod recent_cell_text;
+#[path = "recent_list_layout.rs"]
+mod recent_list_layout;
 pub(crate) use recent_cell_text::fit_recent_cell;
 use recent_cell_text::{fit_recent_timestamp, reveal_full_cell, visible_source_text};
+use recent_list_layout::RecentListLayout;
 
 const CHECK_COLUMN: f32 = 28.;
 /// Give the type icon space before the filename.
@@ -18,84 +21,6 @@ const ACTION_GAP: f32 = 4.;
 const CARD_SIZE: [f32; 2] = [180., 90.];
 const MAX_CARDS_PER_ROW: usize = 4;
 const NOT_AVAILABLE: &str = "This command is not available in this build.";
-type RecentColumnWidths = [(SortField, f32); SortField::MENU.len()];
-
-#[derive(Clone, Copy)]
-struct RecentListLayout {
-    widths: RecentColumnWidths,
-    spacing: f32,
-    frame_padding: f32,
-}
-
-impl RecentListLayout {
-    fn for_columns(ui: &Ui, columns: &[SortField]) -> Self {
-        let style = ui.clone_style();
-        let spacing = style.item_spacing[0];
-        let frame_padding = 2. * style.frame_padding[0];
-        let actions = ui.calc_text_size("...")[0] + frame_padding + spacing + ACTION_GAP;
-        let available = ui.content_region_avail()[0] - CHECK_COLUMN - KIND_COLUMN - actions;
-        let marks = ui.calc_text_size(" v")[0].max(ui.calc_text_size(" ^")[0]);
-        let minimum = SortField::MENU.map(|field| {
-            let width = ui.calc_text_size(field.label())[0] + marks + spacing + frame_padding;
-            (field, width)
-        });
-        Self {
-            widths: fit_recent_columns(minimum, columns, available),
-            spacing,
-            frame_padding,
-        }
-    }
-
-    fn width(self, column: SortField) -> f32 {
-        self.widths
-            .iter()
-            .find(|(field, _)| *field == column)
-            .unwrap_or_else(|| panic!("recent column {column:?}: expected a measured width"))
-            .1
-    }
-}
-
-fn fit_recent_columns(
-    minima: RecentColumnWidths,
-    shown: &[SortField],
-    available: f32,
-) -> RecentColumnWidths {
-    let (minimum, extra) = minima
-        .iter()
-        .filter(|(field, _)| *field == SortField::Name || shown.contains(field))
-        .fold((0., 0.), |(minimum, extra), &(field, width)| {
-            (
-                minimum + width,
-                extra + extra_recent_column_width(field, width),
-            )
-        });
-    // Reserve the heading widths, then give filenames first claim on the flexible space.
-    let heading_scale = (available / minimum).clamp(0., 1.);
-    let name_minimum = minima[0].1;
-    let name_target = (available * 0.34).max(220.);
-    let name_extra = (name_target - name_minimum).clamp(0., (available - minimum).max(0.));
-    let extra_scale = if extra > 0. {
-        ((available - minimum - name_extra) / extra).clamp(0., 1.)
-    } else {
-        0.
-    };
-    minima.map(|(field, width)| {
-        let growth = if field == SortField::Name {
-            name_extra
-        } else {
-            extra_scale * extra_recent_column_width(field, width)
-        };
-        (field, heading_scale * width + growth)
-    })
-}
-
-fn extra_recent_column_width(field: SortField, minimum: f32) -> f32 {
-    if field == SortField::Name {
-        return 0.;
-    }
-    (column_width(field) - minimum).max(0.)
-}
-
 fn open_action(path: &str) -> GuiShellAction {
     GuiShellAction::OpenDocument(oblikovati_api::wire::OpenDocumentArgs {
         full_document_name: path.to_owned(),
@@ -171,8 +96,12 @@ impl HomeWorkspace {
         self.header_cell(ui, SortField::Name, CHECK_COLUMN + KIND_COLUMN, layout);
         let mut x = CHECK_COLUMN + KIND_COLUMN + layout.width(SortField::Name);
         for column in self.columns.shown.clone() {
+            let width = layout.width(column);
+            if width == 0. {
+                continue;
+            }
             self.header_cell(ui, column, x, layout);
-            x += layout.width(column);
+            x += width;
         }
     }
     /// A header chooses the sort; the active one carries the direction at its right edge.
@@ -216,8 +145,11 @@ impl HomeWorkspace {
         self.name_cell(ui, row, layout, actions);
         let mut x = CHECK_COLUMN + KIND_COLUMN + layout.width(SortField::Name);
         for column in &self.columns.shown {
-            ui.same_line_with_pos(x);
             let width = layout.width(*column);
+            if width == 0. {
+                continue;
+            }
+            ui.same_line_with_pos(x);
             let timestamp = matches!(column, SortField::Modified | SortField::Opened);
             metadata_cell(
                 ui,
@@ -439,27 +371,6 @@ fn recent_cards_wrap_at_the_available_width() {
     assert_eq!(recent_card_grid(140., 8.), (140., 1));
 }
 
-#[cfg(test)]
-#[test]
-fn compact_recent_columns_keep_width_for_size_and_its_sort_mark() {
-    let shown = &super::recent_view::ADJUSTABLE;
-    let minimum =
-        SortField::MENU.map(|field| (field, if field == SortField::Size { 62. } else { 108. }));
-    let widths = fit_recent_columns(minimum, shown, 560.);
-    let size = widths
-        .into_iter()
-        .find(|(field, _)| *field == SortField::Size)
-        .unwrap()
-        .1;
-    assert!(size >= 62.);
-    for width in [560., 320.] {
-        let widths = fit_recent_columns(minimum, shown, width);
-        let visible = widths
-            .iter()
-            .filter(|(field, _)| *field == SortField::Name || shown.contains(field));
-        assert!((visible.map(|(_, width)| width).sum::<f32>() - width).abs() < 0.01);
-    }
-}
 fn pin_control(ui: &Ui, row: &GuiRecentDocument, actions: &mut Vec<GuiShellAction>) {
     let label = if row.pinned { "Unpin" } else { "Pin" };
     if ui.button(format!("{label}###pin-{}", row.path)) {

@@ -19,14 +19,13 @@ impl GuiFrameEngine {
             request,
         ));
         let ui = self.context.frame();
-        self.dock_lifecycle.reconcile(|title| {
-            crate::widget_abi::close_dock_tab(ui, title);
-        })?;
+        self.dock_lifecycle.reconcile_native_tabs(ui)?;
         self.workspace
             .sync_origin_document(request.commands.document);
         crate::application::workspace_layout::browser_feature::draw_feature_edges(ui, request);
         self.workspace.draw_selected_origin(ui, request);
         self.document_files.home_in_front = self.home.active;
+        let home_was_active = self.home.active;
         // The selector can close before the same gesture releases over the viewport.
         let right = imgui::MouseButton::Right;
         if ui.is_mouse_clicked(right) {
@@ -90,18 +89,17 @@ impl GuiFrameEngine {
         if !self.ribbon.tips.active() && !self.ribbon.tips.consumed {
             self.command_alias.panel(ui, &request.commands, &keys.typed);
         }
-        if self.workspace.status_bar_visible {
-            crate::application::workspace_layout::status_bar::status_bar(
-                ui,
-                request,
+        self.workspace.draw_status(
+            ui,
+            request,
+            (
                 self.command_alias.text(),
                 self.extrude_dialog.distance_prompt(),
-            );
-        }
-        self.workspace.sync_before_docking(&request.commands);
-        self.dock_lifecycle.reconcile(|title| {
-            crate::widget_abi::close_dock_tab(ui, title);
-        })?;
+            ),
+        );
+        self.workspace
+            .sync_before_docking(&request.commands, home_was_active);
+        self.dock_lifecycle.reconcile_native_tabs(ui)?;
         let logical =
             std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
         let outer = self.workspace.outer_area(logical, band_height);
@@ -314,10 +312,13 @@ impl GuiFrameEngine {
             .panel(ui, commands, &mut selected, icons);
         self.preferences
             .panel(ui, commands, &mut selected, self.home.active, icons);
-        self.material_browser
-            .panel(ui, &request.commands, &mut selected);
-        self.appearance_browser
-            .panel(ui, &request.commands, &mut selected);
+        Self::draw_asset_docks(
+            (&mut self.material_browser, &mut self.appearance_browser),
+            ui,
+            commands,
+            self.home.active,
+            &mut selected,
+        );
         let properties_origin = [area.left + 14., area.top + 14.];
         self.extrude_dialog.panel(
             ui,
@@ -414,7 +415,7 @@ impl GuiFrameEngine {
             request.layout_scale(),
         );
         let cancelled_pick = self.ribbon.cancel_unrouted_model_pick(&selected);
-        let home_changed = home_follows_actions(&mut self.home, &selected);
+        home_follows_actions(&mut self.home, &selected);
         self.known_documents.clone_from(&request.commands.documents);
         self.known_document_type = request.commands.document_type;
         self.workspaces.note_created(&selected);
@@ -428,9 +429,7 @@ impl GuiFrameEngine {
         let constraint_hover =
             crate::sketch::constraint_glyphs::unobstructed_hover(ui, constraint_hover);
         self.external_docks.observe_actions(&selected);
-        let dock_lifecycle_changed = self.dock_lifecycle.reconcile(|title| {
-            crate::widget_abi::close_dock_tab(ui, title);
-        })?;
+        let dock_lifecycle_changed = self.dock_lifecycle.reconcile_native_tabs(ui)?;
         let snapshot = capture_frame(self.context.render(), request.extent, &self.resources)?;
         let mut activity = frame_activity()?;
         let mut capture = input_capture(self.context.io());
@@ -473,8 +472,9 @@ impl GuiFrameEngine {
             dock_lifecycle_changed || cancelled_pick || self.extrude_dialog.needs_frame();
         activity.pending_layout |= self.orientation.needs_frame();
         activity.pending_layout |= self.ribbon.panels.pending_layout || self.ribbon.needs_frame();
-        activity.pending_layout |=
-            self.workspace.pending_layout || home_changed || self.home.hover_changed;
+        activity.pending_layout |= self.workspace.pending_layout
+            || self.home.active != home_was_active
+            || self.home.hover_changed;
         activity.pending_layout |= self.document_files.needs_frame()
             || self.document_tabs.needs_frame()
             || self.workspaces.needs_frame()

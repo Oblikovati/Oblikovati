@@ -89,7 +89,7 @@ impl DockPanels {
         self.log_open = settings.log;
         self.favorites_open = settings.favorites;
         let _active_tab_is_restored_from_imgui_ini = settings.active;
-        self.sync_dock_states();
+        self.sync_dock_states(false);
     }
 
     pub(crate) fn register_dockables(
@@ -101,10 +101,17 @@ impl DockPanels {
         registry.register::<FavoritesPanelWindow>("Favorites", &self.favorites_dock)
     }
 
-    pub(crate) fn sync_dock_states(&self) {
-        self.model_dock.set_open(self.model_open);
+    pub(crate) fn sync_dock_states(&self, home_in_front: bool) {
+        if self.model_open != self.model_dock.is_requested() {
+            self.model_dock.set_open(self.model_open);
+        }
+        self.model_dock.set_suspended(home_in_front);
         self.log_dock.set_open(self.log_open);
         self.favorites_dock.set_open(self.favorites_open);
+    }
+
+    pub(crate) fn model_visible(&self) -> bool {
+        self.model_dock.is_open()
     }
 
     pub(crate) fn open_panel(&mut self, panel: DockPanel) {
