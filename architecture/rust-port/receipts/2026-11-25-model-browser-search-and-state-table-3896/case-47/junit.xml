@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:39:57.952480786Z" time="67.163661834"><testcase name="Scenario: Cancel adaptive feature options: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:716:3" time="67.163661834"><system-out><![CDATA[  Scenario: Cancel adaptive feature options
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And an extrusion in the MCAD Software has Feature Properties open
+   ✔  And the Adaptive Sketch and Parameters options are unchecked
+   ✔  And From/To Planes is disabled for this extrusion
+   ✔  When the user checks Sketch and Parameters
+   ✔  Then both options are checked
+   ✔  And From/To Planes remains disabled
+   ✔  When the user clicks Cancel and reopens Feature Properties
+   ✔  Then Sketch and Parameters are unchecked
+   ✔  And From/To Planes remains disabled
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the solid remains visible
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:38:57.53977617Z" time="59.312381216"><testcase name="Scenario: Switch between unconditional and conditional suppression: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:698:3" time="59.312381216"><system-out><![CDATA[  Scenario: Switch between unconditional and conditional suppression
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And an unsuppressed extrusion in the MCAD Software has Feature Properties open
+   ✔  And Always and If are unchecked
+   ✔  When the user checks Always
+   ✔  Then Always is checked and If is unchecked
+   ✔  And the conditional controls are disabled
+   ✔  When the user checks If
+   ✔  Then If is checked and Always is unchecked
+   ✔  And the conditional controls are enabled
+   ✔  And OK is disabled while the comparison value is empty
+   ✔  When the user checks Always again
+   ✔  Then Always is checked and If is unchecked
+   ✔  And the conditional controls are disabled and OK is enabled
+   ✔  When the user clicks Cancel
+   ✔  Then the dialog closes and the solid remains visible
+]]></system-out></testcase></testsuite></testsuites>

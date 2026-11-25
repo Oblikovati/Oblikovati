@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" package="testsuite/Feature: Model browser: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:38:55.15870355Z" time="64.411152526"><testcase name="Scenario: Inspect sketch parameter search criteria: target/native-scratch.HSqCy5/current-model-browser-source/features/application/model-browser/model-browser.feature:345:3" time="64.411152526"><system-out><![CDATA[  Scenario: Inspect sketch parameter search criteria
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open in the MCAD Software
+   ✔  And a part is open in the MCAD Software with its model browser visible
+   ✔  When the user chooses Find from the model browser menu
+   ✔  And the user chooses Sketches in the object type list
+   ✔  And the user opens the Property list
+   ✔  Then the list offers Name, Note contents, Note title and Sketch Parameter Name
+   ✔  When the user chooses Sketch Parameter Name
+   ✔  Then the Condition field displays contains
+   ✔  And the Value field is empty and adds to list is disabled
+   ✔  When the user opens the Condition list
+   ✔  Then it offers contains and does not contain
+   ✔  When the user dismisses the list and closes the dialog
+   ✔  Then the model browser and part are visible
+]]></system-out></testcase></testsuite></testsuites>
