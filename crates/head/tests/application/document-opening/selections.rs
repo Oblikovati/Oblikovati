@@ -58,7 +58,7 @@ pub(super) fn rectangle_over_drawings(world: &mut ApplicationWorld) {
     settle(world);
 }
 
-fn drawing_names(world: &ApplicationWorld) -> [&'static str; 2] {
+pub(super) fn drawing_names(world: &ApplicationWorld) -> [&'static str; 2] {
     [
         published_drawings::first_drawing_name(world),
         published_drawings::second_drawing_name(world),
@@ -386,82 +386,5 @@ fn its_options(world: &mut ApplicationWorld) {
     world.expect_no_text("No preview image");
     world.expect_text(DEFER);
 }
-// Reopening several
-#[given("two saved drawings are already open in separate tabs in the MCAD Software")]
-fn two_open(world: &mut ApplicationWorld) {
-    let folder = models_folder(world);
-    saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
-    saved_document(
-        world,
-        GuiTemplateKind::Drawing,
-        &folder,
-        SECOND_DRAWING_FILE,
-    );
-    world.observed_counts = vec![documents(world)];
-}
-#[given("one of those drawings is active")]
-fn one_active(world: &mut ApplicationWorld) {
-    assert!(world.state().document.is_some(), "expected one active");
-}
-#[given("the Open dialog displays their exact saved files")]
-fn dialog_shows_files(world: &mut ApplicationWorld) {
-    let folder = models_folder(world);
-    open_dialog(world);
-    look_in(world, &folder);
-    switch_to_tiles(world);
-}
-#[when("I select both drawings and choose Open")]
-#[when("the user selects both drawings and chooses Open")]
-fn select_both_open(world: &mut ApplicationWorld) {
-    rectangle_over_drawings(world);
-    choose_open(world);
-}
-#[then("both existing drawing tabs remain available")]
-#[then("no duplicate tab is created for either drawing")]
-fn tabs_kept(world: &mut ApplicationWorld) {
-    assert_eq!(documents(world), world.observed_counts[0], "documents");
-}
-#[then("one of those drawing tabs becomes active")]
-fn one_tab_active(world: &mut ApplicationWorld) {
-    assert!(world.state().document.is_some(), "expected one active");
-}
-#[given("a saved drawing is already open in a tab in the MCAD Software")]
-fn one_open(world: &mut ApplicationWorld) {
-    let folder = models_folder(world);
-    saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
-}
-#[given("a second saved drawing with available references is not open")]
-fn second_closed(world: &mut ApplicationWorld) {
-    let folder = models_folder(world);
-    saved_document(
-        world,
-        GuiTemplateKind::Drawing,
-        &folder,
-        SECOND_DRAWING_FILE,
-    );
-    close_active(world);
-    world.observed_counts = vec![documents(world)];
-}
-#[given("the Open dialog displays the exact files for both drawings")]
-fn dialog_both_files(world: &mut ApplicationWorld) {
-    dialog_shows_files(world);
-}
-#[then("the previously open drawing retains its existing tab without a duplicate")]
-fn no_duplicate(world: &mut ApplicationWorld) {
-    assert_eq!(documents(world), world.observed_counts[0] + 1, "documents");
-}
-#[then("the second drawing opens in a new tab")]
-fn second_new_tab(world: &mut ApplicationWorld) {
-    assert_eq!(documents(world), world.observed_counts[0] + 1, "documents");
-}
-#[then("the second drawing is active with its sheet displayed")]
-fn second_active(world: &mut ApplicationWorld) {
-    let state = world.state();
-    let active = state.document.expect("expected an active document");
-    let path = state.document_storage[&active]
-        .path
-        .clone()
-        .unwrap_or_default();
-    assert!(path.ends_with(SECOND_DRAWING_FILE), "active file {path:?}");
-    world.expect_text("Sheet 1 of 1");
-}
+#[path = "multi_reopen.rs"]
+mod multi_reopen;

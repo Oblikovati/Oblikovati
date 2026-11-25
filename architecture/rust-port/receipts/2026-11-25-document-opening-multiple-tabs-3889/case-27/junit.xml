@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" package="testsuite/Feature: Inspect files before opening a document: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:10:00.017307517Z" time="130.660778834"><testcase name="Scenario: Open a selection containing an open and a closed drawing: target/native-scratch.HSqCy5/current-document-opening-source/features/application/document-opening/document-opening.feature:389:3" time="130.660778834"><system-out><![CDATA[  Scenario: Open a selection containing an open and a closed drawing
+   ✔  Given writable copies of `fixtures/cad/document-opening/OpenDrawingA.odd`, `OpenDrawingB.odd` and `OpenPart.opd` are staged in the same working folder
+   ✔  And the user opens each drawing, inserts a base view referencing the staged OpenPart.opd, saves it and closes it
+   ✔  And the user opens only the staged OpenDrawingA.odd
+   ✔  Given a saved drawing is already open in a tab in the MCAD Software
+   ✔  And a second saved drawing with available references is not open
+   ✔  And the Open dialog displays the exact files for both drawings
+   ✔  And `OpenDrawingA.odd` is open and `OpenDrawingB.odd` is closed
+   ✔  When the user selects both drawings and chooses Open
+   ✔  Then the Open dialog closes
+   ✔  And the previously open drawing retains its existing tab without a duplicate
+   ✔  And the second drawing opens in a new tab
+   ✔  And the second drawing is active with its sheet displayed
+]]></system-out></testcase></testsuite></testsuites>

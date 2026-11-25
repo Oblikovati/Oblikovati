@@ -84,12 +84,20 @@ pub(super) fn drawing_available(world: &mut ApplicationWorld) {
 
 #[given("the MCAD Software has an existing document open")]
 fn existing_document(world: &mut ApplicationWorld) {
+    if published_drawings::staged_folder(world).is_some() {
+        world.previous_document = Some(world.active_id());
+        return;
+    }
     world.previous_document = Some(world.add_part());
 }
 #[given(
     "two saved drawings with available references and visible saved view geometry are not already open"
 )]
 fn two_closed_drawings(world: &mut ApplicationWorld) {
+    if let Some(folder) = published_drawings::staged_folder(world) {
+        expect_saved_staged_views(world, &folder);
+        return;
+    }
     let folder = models_folder(world);
     let source = folder.parent().unwrap().join("source.opd");
     write_source_model(&source);
@@ -97,9 +105,30 @@ fn two_closed_drawings(world: &mut ApplicationWorld) {
         write_drawing(&folder.join(name), &source);
     }
 }
+fn expect_saved_staged_views(world: &mut ApplicationWorld, folder: &Path) {
+    for name in super::selections::drawing_names(world) {
+        assert!(published_drawings::staged_drawing_id(world, name).is_none());
+        let package = DocumentPackage::decode(&std::fs::read(folder.join(name)).unwrap()).unwrap();
+        let views = package.restore_saved_drawing_views().unwrap().unwrap();
+        assert_eq!(views.views.len(), 1);
+        assert!(!views.views[0].lines.is_empty());
+    }
+}
+
+#[given("`OpenPart.opd` is open and `OpenDrawingA.odd` and `OpenDrawingB.odd` are closed")]
+fn staged_tab_baseline(world: &mut ApplicationWorld) {
+    let folder = published_drawings::staged_folder(world).unwrap();
+    expect_saved_staged_views(world, &folder);
+    let part = world.previous_document.unwrap();
+    let state = world.state();
+    assert_eq!(
+        state.document_storage[&part].path.as_deref(),
+        folder.join(published_drawings::part_name(world)).to_str()
+    );
+}
 #[given("the Open dialog displays both drawings as thumbnails")]
 fn two_drawing_thumbnails(world: &mut ApplicationWorld) {
-    let folder = models_folder(world);
+    let folder = published_drawings::staged_folder(world).unwrap_or_else(|| models_folder(world));
     open_dialog(world);
     look_in(world, &folder);
     super::selections::switch_to_tiles(world);
@@ -107,7 +136,7 @@ fn two_drawing_thumbnails(world: &mut ApplicationWorld) {
 #[then("both drawings are available in separate document tabs")]
 fn both_drawing_tabs(world: &mut ApplicationWorld) {
     let state = world.state();
-    for name in [DRAWING_FILE, SECOND_DRAWING_FILE] {
+    for name in super::selections::drawing_names(world) {
         let row = state
             .document_storage
             .iter()

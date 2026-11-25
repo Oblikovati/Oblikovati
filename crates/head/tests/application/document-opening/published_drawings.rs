@@ -56,6 +56,47 @@ pub(super) fn second_drawing_name(world: &ApplicationWorld) -> &'static str {
     staged_folder(world).map_or(SECOND_DRAWING_FILE, |_| SECOND)
 }
 
+pub(super) fn staged_drawing_id(world: &mut ApplicationWorld, name: &str) -> Option<u64> {
+    let path = staged_folder(world)?.join(name);
+    let state = world.state();
+    state
+        .drawing_documents
+        .keys()
+        .copied()
+        .find(|id| state.document_storage[id].path.as_deref() == path.to_str())
+}
+
+#[given("the user opens both staged drawings in separate tabs")]
+fn open_both_staged(world: &mut ApplicationWorld) {
+    let folder = staged_folder(world).unwrap();
+    world.open_fixture(&folder.join(FIRST));
+    world.open_fixture(&folder.join(SECOND));
+    staged_tabs_open(world);
+}
+
+#[given("the user opens only the staged OpenDrawingA.odd")]
+fn open_only_first(world: &mut ApplicationWorld) {
+    let folder = staged_folder(world).unwrap();
+    world.open_fixture(&folder.join(FIRST));
+    staged_first_only(world);
+}
+
+#[given("`OpenDrawingA.odd` and `OpenDrawingB.odd` are open from their package paths")]
+fn staged_tabs_open(world: &mut ApplicationWorld) {
+    let first = staged_drawing_id(world, FIRST).expect("expected staged Drawing A to be open");
+    let second = staged_drawing_id(world, SECOND).expect("expected staged Drawing B to be open");
+    assert_ne!(first, second);
+    world.previous_document = Some(first);
+    world.other_document = Some(second);
+}
+
+#[given("`OpenDrawingA.odd` is open and `OpenDrawingB.odd` is closed")]
+fn staged_first_only(world: &mut ApplicationWorld) {
+    world.previous_document =
+        Some(staged_drawing_id(world, FIRST).expect("expected staged Drawing A"));
+    assert!(staged_drawing_id(world, SECOND).is_none());
+}
+
 pub(super) fn show_staged_drawings(world: &mut ApplicationWorld) -> bool {
     let Some(folder) = staged_folder(world) else {
         return false;
