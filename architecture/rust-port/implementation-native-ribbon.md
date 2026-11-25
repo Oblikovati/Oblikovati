@@ -20,6 +20,9 @@ The [native edit and import scenarios](receipts/2026-11-24-ribbon-customization-
 cover reordering, repeated separators, committing with OK, and keeping a
 draft across target and dialog tab switches. Invalid XML closes the picker,
 shows the error in Customize, and preserves the draft.
+If the file is missing, acknowledging the warning returns focus to the
+selected filename. Cancelling the picker leaves Customize open with Apply
+disabled. [Native missing-file scenario](receipts/2026-11-26-ribbon-missing-import-3856/README.md)
 The [native selection scenarios](receipts/2026-11-24-ribbon-customization-selection-3856/README.md)
 cover source selection across target and category changes, separator-only
 drafts, and per-target display options.
