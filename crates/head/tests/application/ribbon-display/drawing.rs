@@ -67,8 +67,26 @@ pub(super) fn drawing_remains(world: &mut ApplicationWorld) {
 }
 #[given("a drawing and a part are open in the MCAD Software")]
 fn drawing_and_part(world: &mut ApplicationWorld) {
-    world.other_document = Some(world.add_part());
-    world.previous_document = Some(world.add_drawing());
+    if world.other_document.is_none() {
+        world.other_document = Some(world.add_part());
+    }
+    super::super::file_menu::drawing_active(world);
+}
+
+#[given(
+    "`fixtures/cad/workspace-layout-native.opd` and `fixtures/cad/blank-drawing.odd` are open in the MCAD Software"
+)]
+fn named_part_and_drawing(world: &mut ApplicationWorld) {
+    super::super::workspace_layout::native_part::open_named_extrusion(world);
+    world.other_document = Some(world.active_id());
+    let path = super::super::scenario_root().join("fixtures/cad/blank-drawing.odd");
+    world.open_fixture(&path);
+    let drawing = world.active_id();
+    assert_eq!(
+        world.state().document_storage[&drawing].path.as_deref(),
+        path.to_str()
+    );
+    world.previous_document = Some(drawing);
 }
 #[given("the drawing is active with its ribbon in compact group-button mode")]
 #[given("the Place Views ribbon shows compact group buttons")]
@@ -142,7 +160,7 @@ fn compact_remains(world: &mut ApplicationWorld) {
 }
 #[given("a drawing is active in the MCAD Software")]
 fn a_drawing_active(world: &mut ApplicationWorld) {
-    world.previous_document = Some(world.add_drawing());
+    super::super::file_menu::drawing_active(world);
 }
 #[given("the temporary Create group panel is open")]
 fn create_group_open(world: &mut ApplicationWorld) {

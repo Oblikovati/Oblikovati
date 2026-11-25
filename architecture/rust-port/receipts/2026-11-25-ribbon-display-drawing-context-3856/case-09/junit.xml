@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:36:59.308324317Z" time="14.128565806"><testcase name="Scenario: Switch between temporary compact ribbon groups: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:130:3" time="14.128565806"><system-out><![CDATA[  Scenario: Switch between temporary compact ribbon groups
+   ✔  Given `fixtures/cad/blank-drawing.odd` is open and active in the MCAD Software
+   ✔  And a drawing document is active in the MCAD Software
+   ✔  And the Place Views ribbon shows compact group buttons
+   ✔  When the user selects the Create group button
+   ✔  Then a temporary Create panel displays drawing-view commands
+   ✔  When the user selects the Modify group button
+   ✔  Then the Create panel closes
+   ✔  And a temporary Modify panel displays modification commands
+   ✔  When the user clicks an empty area of the drawing outside the panel
+   ✔  Then the temporary Modify panel closes
+   ✔  And the compact group buttons remain visible
+]]></system-out></testcase></testsuite></testsuites>

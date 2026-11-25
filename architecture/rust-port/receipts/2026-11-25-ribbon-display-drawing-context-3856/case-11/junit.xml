@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:36:43.889234978Z" time="18.320843299"><testcase name="Scenario: Choose panel titles as the ribbon minimization mode: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:157:3" time="18.320843299"><system-out><![CDATA[  Scenario: Choose panel titles as the ribbon minimization mode
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Tools ribbon is expanded
+   ✔  When the user opens the ribbon display control menu
+   ✔  And the user chooses Minimize to Panel Titles
+   ✔  Then the Tools command groups are reduced to a narrow strip of titles
+   ✔  When the user activates the ribbon display control
+   ✔  Then the full Tools command groups are visible
+   ✔  When the user activates the ribbon display control again
+   ✔  Then the Tools ribbon displays the group-title strip
+   ✔  When the user opens the ribbon display control menu
+   ✔  Then Minimize to Panel Titles is checked
+   ✔  When the user presses Escape
+   ✔  Then the display menu closes and the group-title strip remains
+   ✔  When the user activates the ribbon display control
+   ✔  Then the full Tools command groups are visible
+]]></system-out></testcase></testsuite></testsuites>

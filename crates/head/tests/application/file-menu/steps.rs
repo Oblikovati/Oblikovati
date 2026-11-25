@@ -102,8 +102,13 @@ fn same_document(world: &mut ApplicationWorld) {
     assert_eq!(active_document(world), id);
 }
 #[given("a drawing document is active in the MCAD Software")]
-fn drawing_active(world: &mut ApplicationWorld) {
-    world.previous_document = Some(world.add_drawing());
+pub(super) fn drawing_active(world: &mut ApplicationWorld) {
+    let document = if world.state().document_type == Some(oblikovati_api::types::DOCUMENT_DRAWING) {
+        world.active_id()
+    } else {
+        world.add_drawing()
+    };
+    world.previous_document = Some(document);
 }
 #[then(
     "the menu shows New, Open, Save, Save As, Export, Share, Manage, document properties, Print and Close entries"
