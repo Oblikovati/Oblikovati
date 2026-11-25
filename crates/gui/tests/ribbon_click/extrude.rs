@@ -42,7 +42,7 @@ fn extrusion_dialog_accepts_keyboard_distance_and_emits_owner_action() {
     let mut request = request_with_profile();
     settle_ribbon(&mut engine, &mut request);
     click_ribbon(&mut engine, &mut request, [160., 70.]);
-    click_ribbon(&mut engine, &mut request, [650., 379.]);
+    click_distance_field(&mut engine, &mut request);
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
     validate_size(&mut engine, &mut request);
@@ -74,7 +74,7 @@ fn extrusion_preview_button_and_escape_send_transient_actions() {
     let mut request = request_with_profile();
     settle_ribbon(&mut engine, &mut request);
     click_ribbon(&mut engine, &mut request, [160., 70.]);
-    click_ribbon(&mut engine, &mut request, [650., 379.]);
+    click_distance_field(&mut engine, &mut request);
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
     validate_size(&mut engine, &mut request);
@@ -104,13 +104,13 @@ fn changing_distance_clears_the_existing_preview() {
     let mut request = request_with_profile();
     settle_ribbon(&mut engine, &mut request);
     click_ribbon(&mut engine, &mut request, [160., 70.]);
-    click_ribbon(&mut engine, &mut request, [650., 379.]);
+    click_distance_field(&mut engine, &mut request);
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
     validate_size(&mut engine, &mut request);
     let preview = ribbon_caption(&mut engine, &mut request, "Preview", false);
     click_ribbon(&mut engine, &mut request, preview);
-    click_ribbon(&mut engine, &mut request, [650., 379.]);
+    click_distance_field(&mut engine, &mut request);
     request.events = vec![GuiInputEvent::Text("2".into())];
     let actions = engine.frame(&request).unwrap().actions;
     assert!(actions.contains(&GuiShellAction::PreviewExtrude(None)));
@@ -121,7 +121,7 @@ fn reopening_extrusion_clears_the_previous_preview() {
     let mut request = request_with_profile();
     settle_ribbon(&mut engine, &mut request);
     click_ribbon(&mut engine, &mut request, [160., 70.]);
-    click_ribbon(&mut engine, &mut request, [650., 379.]);
+    click_distance_field(&mut engine, &mut request);
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
     validate_size(&mut engine, &mut request);
@@ -134,6 +134,12 @@ fn reopening_extrusion_clears_the_previous_preview() {
             GuiShellAction::PreviewExtrude(None)
         ]
     );
+}
+
+fn click_distance_field(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
+    let [label_x, y] = ribbon_caption(engine, request, "Distance A", false);
+    let value_x = label_x + 110. * request.framebuffer_scale[0];
+    click_ribbon(engine, request, [value_x, y]);
 }
 
 fn validate_size(engine: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {

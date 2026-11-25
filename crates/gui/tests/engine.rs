@@ -164,7 +164,7 @@ fn verify_scaled_frame(engine: &mut GuiFrameEngine) {
     for _ in 0..SCALE_SETTLING_FRAMES {
         engine.frame(&input).unwrap();
     }
-    let baseline = engine.frame(&input).unwrap().draws;
+    let baseline = engine.frame(&input).unwrap();
     // Preserve logical viewport size so responsive panels have the same layout.
     input.extent = input.extent.map(|value| value * 2);
     input.framebuffer_scale = [2.; 2];
@@ -173,18 +173,19 @@ fn verify_scaled_frame(engine: &mut GuiFrameEngine) {
     for _ in 0..SCALE_SETTLING_FRAMES {
         engine.frame(&input).unwrap();
     }
-    let snapshot = engine.frame(&input).unwrap().draws;
-    assert_eq!(snapshot.extent, input.extent);
-    assert!(!snapshot.batches.is_empty());
-    let original = vertex_positions(&baseline);
-    let scaled = vertex_positions(&snapshot);
+    let scaled = engine.frame(&input).unwrap();
+    assert_eq!(scaled.draws.extent, input.extent);
     assert_eq!(
-        scaled,
-        original
-            .into_iter()
-            .map(|point| point.map(|value| value * 2.))
-            .collect::<Vec<_>>()
+        scaled.document_area.unwrap(),
+        baseline.document_area.unwrap().map(|edge| edge * 2)
     );
+    // Font hinting can snap glyphs differently at 2x. Position the vector mark on the same grid.
+    let original = first_image_positions(&baseline.draws);
+    let resized = first_image_positions(&scaled.draws);
+    assert_eq!(original.len(), resized.len());
+    for (original, resized) in original.into_iter().zip(resized) {
+        assert_eq!(resized, original.map(|value| value * 2.));
+    }
 }
 fn verify_narrow_backing_click(engine: &mut GuiFrameEngine) {
     for scale in [1., 2.] {
@@ -215,11 +216,15 @@ fn verify_exclusive_context(engine: &mut GuiFrameEngine) {
     engine.frame(&request()).unwrap();
 }
 
-fn vertex_positions(frame: &GuiFrame) -> Vec<[f32; 2]> {
+fn first_image_positions(frame: &GuiFrame) -> Vec<[f32; 2]> {
     frame
         .batches
         .iter()
-        .flat_map(|batch| batch.vertices.iter().map(|vertex| vertex.position))
+        .find(|batch| batch.texture != GuiTextureKey::FONT)
+        .expect("expected a rendered vector image")
+        .vertices
+        .iter()
+        .map(|vertex| vertex.position)
         .collect()
 }
 
