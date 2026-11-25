@@ -24,6 +24,7 @@ impl<
                 window_maximized: false,
                 orientation_selection_locked: self.orientation_lock,
                 marking_menus: Some(self.marking_menus.clone()),
+                sketch_classic_menu: self.classic_marking_menu,
                 keymap: Some(self.keymap.clone()),
                 keymap_bindings: self.keymap.catalog(),
                 ui_scale: self.gui_ui_scale(),

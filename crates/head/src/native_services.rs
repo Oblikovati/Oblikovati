@@ -148,9 +148,10 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
 {
     fn set_marking_menu_from_gui(
         &mut self,
-        args: &oblikovati_api::wire::SetMarkingMenuArgs,
+        menu: Option<&oblikovati_api::wire::MarkingMenuView>,
+        classic: Option<bool>,
     ) -> Result<bool, String> {
-        self.owner.set_marking_menu_from_gui(args)
+        self.owner.set_marking_menu_from_gui(menu, classic)
     }
     fn take_shortcut_action(&mut self) -> Option<oblikovati_gui::GuiShellAction> {
         self.owner.take_shortcut_action()

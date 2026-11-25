@@ -65,6 +65,8 @@ pub(crate) struct RibbonCustomization {
     keyboard_conflict: bool,
     marking_draft: Option<oblikovati_api::wire::MarkingMenuView>,
     marking_base: Option<oblikovati_api::wire::MarkingMenuView>,
+    marking_classic_draft: bool,
+    marking_classic_base: bool,
     marking_conflict: bool,
     ribbon_tab_active: bool,
     pub(crate) pending_zoom: Option<crate::application::viewport_orientation::ZoomAction>,

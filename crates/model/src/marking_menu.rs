@@ -14,6 +14,13 @@ pub trait MarkingMenuPreferenceAccess {
     fn menus(&self) -> Vec<MarkingMenuView>;
     /// Save validated menus; example: `store.save(&menus)?`.
     fn save(&mut self, menus: &MarkingMenus) -> Result<(), String>;
+    /// Save assignments and the classic-menu choice together.
+    fn save_with_classic(&mut self, menus: &MarkingMenus, classic: bool) -> Result<(), String> {
+        if classic != self.classic() {
+            return Err("marking menu storage does not support changing the classic choice".into());
+        }
+        self.save(menus)
+    }
 }
 
 /// Per-environment radial command assignments.

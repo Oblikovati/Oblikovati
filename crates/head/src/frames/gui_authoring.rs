@@ -19,7 +19,12 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::JumpHistoryTo { document, position } => {
             owner.jump_history_from_gui(*document, *position)
         }
-        GuiShellAction::SetMarkingMenu(args) => owner.set_marking_menu_from_gui(args),
+        GuiShellAction::SetMarkingMenu(args) => {
+            owner.set_marking_menu_from_gui(Some(&args.menu), None)
+        }
+        GuiShellAction::SetMarkingMenuPreferences(menu, classic) => {
+            owner.set_marking_menu_from_gui(menu.as_ref(), Some(*classic))
+        }
         GuiShellAction::SetKeymap(delta) => owner.set_keymap_from_gui(delta),
         GuiShellAction::PlaceSketchBlock(name) => owner.place_sketch_block_from_gui(name),
         GuiShellAction::UpdatePart => owner.update_part_from_gui(),

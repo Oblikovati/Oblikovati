@@ -25,12 +25,26 @@ impl<
 {
     pub(super) fn set_marking_menu_action(
         &mut self,
-        args: &oblikovati_api::wire::SetMarkingMenuArgs,
+        menu: Option<&oblikovati_api::wire::MarkingMenuView>,
+        classic: Option<bool>,
     ) -> Result<bool, String> {
-        oblikovati_api::client::Client::new(self.document_host())
-            .ui()
-            .set_marking_menu(args)
-            .map_err(|cause| cause.to_string())?;
+        let Some(classic) = classic else {
+            let Some(menu) = menu else { return Ok(false) };
+            oblikovati_api::client::Client::new(self.document_host())
+                .ui()
+                .set_marking_menu(&oblikovati_api::wire::SetMarkingMenuArgs { menu: menu.clone() })
+                .map_err(|cause| cause.to_string())?;
+            return Ok(true);
+        };
+        let mut menus = self.marking_menus.clone();
+        if let Some(menu) = menu {
+            menus.set(menu.clone())?;
+        }
+        if let Some(store) = &mut self.marking_store {
+            store.save_with_classic(&menus, classic)?;
+        }
+        self.marking_menus = menus;
+        self.classic_marking_menu = classic;
         Ok(true)
     }
 }

@@ -63,9 +63,10 @@ impl<
     }
     fn set_marking_menu_from_gui(
         &mut self,
-        args: &oblikovati_api::wire::SetMarkingMenuArgs,
+        menu: Option<&oblikovati_api::wire::MarkingMenuView>,
+        classic: Option<bool>,
     ) -> Result<bool, String> {
-        self.set_marking_menu_action(args)
+        self.set_marking_menu_action(menu, classic)
     }
     fn take_shortcut_action(&mut self) -> Option<oblikovati_gui::GuiShellAction> {
         let action = self.shortcut_keys.take_action();

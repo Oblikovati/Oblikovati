@@ -73,8 +73,12 @@ impl<Files: PackageFileReader + AtomicFiles> MarkingMenuPreferenceAccess
         self.document.menus.iter().map(to_view).collect()
     }
     fn save(&mut self, menus: &MarkingMenus) -> Result<(), String> {
+        self.save_with_classic(menus, self.classic())
+    }
+    fn save_with_classic(&mut self, menus: &MarkingMenus, classic: bool) -> Result<(), String> {
         let mut candidate = self.document.clone();
         candidate.menus = menus.all().iter().map(to_stored).collect();
+        candidate.classic = classic;
         let bytes = crate::preference_yaml_guard::encode(&candidate)
             .map_err(|error| failure(&self.path, error).to_string())?;
         self.revision

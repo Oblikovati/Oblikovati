@@ -14,6 +14,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
             return None;
         }
         GuiShellAction::SetMarkingMenu(_)
+        | GuiShellAction::SetMarkingMenuPreferences(..)
         | GuiShellAction::SetKeymap(_)
         | GuiShellAction::SetUiScale(_)
         | GuiShellAction::SetDocumentUnits { .. }

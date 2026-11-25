@@ -53,8 +53,21 @@ fn go_yaml_classic_and_unknown_fields_survive_atomic_save_and_reload() {
         view.quadrants
     );
     disk.borrow_mut().fail_at = Some("stage");
-    assert!(store.save(&MarkingMenus::default()).is_err());
-    assert_eq!(load().menus(), reopened.menus());
+    assert!(
+        store
+            .save_with_classic(&MarkingMenus::default(), false)
+            .is_err()
+    );
+    assert!(store.classic());
+    let after_failed_save = load();
+    assert!(after_failed_save.classic());
+    assert_eq!(after_failed_save.menus(), reopened.menus());
+
+    disk.borrow_mut().fail_at = None;
+    store.save_with_classic(&menus, false).unwrap();
+    let after_successful_save = load();
+    assert!(!after_successful_save.classic());
+    assert_eq!(after_successful_save.menus(), reopened.menus());
 }
 
 #[test]

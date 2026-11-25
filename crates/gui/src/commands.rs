@@ -2,8 +2,8 @@
 #[derive(Clone, Debug, PartialEq)]
 pub enum GuiShellAction {
     OpenTeamWebInBrowser(&'static str),
-    /// Apply one staged marking menu.
     SetMarkingMenu(oblikovati_api::wire::SetMarkingMenuArgs),
+    SetMarkingMenuPreferences(Option<oblikovati_api::wire::MarkingMenuView>, bool),
     /// Apply a staged keyboard customization.
     SetKeymap(oblikovati_api::wire::KeymapExport),
     /// Place instances of a sketch block definition.

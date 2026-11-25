@@ -13,33 +13,47 @@ impl RibbonCustomization {
             return;
         };
         let current = menus.get(types::SKETCH_ENVIRONMENT);
+        let classic = state.sketch_classic_menu;
         if self.marking_draft.is_none() || !self.marking_changed() {
             self.marking_draft = Some(current.clone());
             self.marking_base = Some(current);
+            self.marking_classic_draft = classic;
+            self.marking_classic_base = classic;
             self.marking_conflict = false;
             return;
         }
-        if self.marking_draft.as_ref() == Some(&current) {
+        if self.marking_draft.as_ref() == Some(&current) && self.marking_classic_draft == classic {
             self.marking_base = Some(current);
+            self.marking_classic_base = classic;
             self.marking_conflict = false;
             return;
         }
-        self.marking_conflict = self.marking_base.as_ref() != Some(&current);
+        self.marking_conflict =
+            self.marking_base.as_ref() != Some(&current) || self.marking_classic_base != classic;
     }
     pub(super) fn marking_changed(&self) -> bool {
         self.marking_draft
             .as_ref()
             .zip(self.marking_base.as_ref())
-            .is_some_and(|(draft, base)| draft != base)
+            .is_some_and(|(draft, base)| {
+                draft != base || self.marking_classic_draft != self.marking_classic_base
+            })
     }
     pub(super) fn submit_marking(&self, actions: &mut Vec<crate::GuiShellAction>) -> bool {
         if !self.marking_changed() || self.marking_conflict {
             return false;
         }
         if let Some(menu) = &self.marking_draft {
-            actions.push(crate::GuiShellAction::SetMarkingMenu(SetMarkingMenuArgs {
-                menu: menu.clone(),
-            }));
+            let action = if self.marking_classic_draft == self.marking_classic_base {
+                crate::GuiShellAction::SetMarkingMenu(SetMarkingMenuArgs { menu: menu.clone() })
+            } else {
+                let menu_changed = self.marking_base.as_ref() != Some(menu);
+                crate::GuiShellAction::SetMarkingMenuPreferences(
+                    menu_changed.then(|| menu.clone()),
+                    self.marking_classic_draft,
+                )
+            };
+            actions.push(action);
             return true;
         }
         false
@@ -77,6 +91,8 @@ impl RibbonCustomization {
             *menu = oblikovati_model::marking_menu::MarkingMenus::default()
                 .get(types::SKETCH_ENVIRONMENT);
         }
+        ui.same_line();
+        ui.checkbox("Use Classic Context Menu", &mut self.marking_classic_draft);
     }
 }
 fn slot_editor(ui: &Ui, menu: &mut MarkingMenuView, slot: u8, label: &str) {

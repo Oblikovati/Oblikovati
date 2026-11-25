@@ -480,7 +480,11 @@ impl GuiShellAction {
             | Self::FinishSketch => {
                 state.authoring == GuiAuthoringContext::Sketch && !state.transaction_open
             }
-            Self::SetMarkingMenu(_) | Self::SetKeymap(_) | Self::NewPart | Self::Home => true,
+            Self::SetMarkingMenu(_)
+            | Self::SetMarkingMenuPreferences(..)
+            | Self::SetKeymap(_)
+            | Self::NewPart
+            | Self::Home => true,
         }
     }
 }

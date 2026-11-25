@@ -42,6 +42,60 @@ fn marking_menu_open(world: &mut ApplicationWorld) {
     click_in_customize(world, "MarkingMenu");
     no_pending(world);
 }
+
+#[given("the customization dialog is open on the Marking Menu tab in the MCAD Software")]
+#[when("the user reopens customization on the Marking Menu tab")]
+fn open_marking_menu_tab(world: &mut ApplicationWorld) {
+    world.click_text("Tools");
+    world.click_text("Customize");
+    world.pump(Vec::new());
+    click_in_customize(world, "MarkingMenu");
+    world.run_in_window("Customize", "RestoreDefault");
+}
+
+#[given("\"Use Classic Context Menu\" is unchecked")]
+#[then("\"Use Classic Context Menu\" is unchecked")]
+fn classic_unchecked(world: &mut ApplicationWorld) {
+    let checkbox = world.run_in_window("Customize", "UseClassicContextMenu");
+    assert!(!world.checked_run(checkbox));
+    assert!(!world.state().sketch_classic_menu);
+}
+
+#[when("the user checks \"Use Classic Context Menu\"")]
+fn stage_classic_menu(world: &mut ApplicationWorld) {
+    click_in_customize(world, "UseClassicContextMenu");
+}
+
+#[then("the option is checked")]
+fn staged_classic_checked(world: &mut ApplicationWorld) {
+    let checkbox = world.run_in_window("Customize", "UseClassicContextMenu");
+    assert!(world.checked_run(checkbox));
+    assert!(!world.state().sketch_classic_menu);
+}
+
+#[then("\"OK\", \"Cancel\" and \"Apply\" are available")]
+fn marking_actions_enabled(world: &mut ApplicationWorld) {
+    for label in ["OK", "Cancel", "Apply"] {
+        assert_eq!(world.run_in_window("Customize", label).alpha, u8::MAX);
+    }
+}
+
+#[test]
+fn applying_classic_menu_persists_through_native_restart() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_marking_menu_tab(&mut world);
+    classic_unchecked(&mut world);
+    stage_classic_menu(&mut world);
+    staged_classic_checked(&mut world);
+    click_in_customize(&mut world, "Apply");
+    assert!(world.state().sketch_classic_menu);
+    world.reopen_application();
+    assert!(world.state().sketch_classic_menu);
+    world.add_part();
+    assert!(world.state().sketch_classic_menu);
+    world.close();
+}
 #[given("a part with an active sketch is open in The MCAD Software")]
 #[given("a part with an active sketch is open in the MCAD Software")]
 #[given("a part with an active sketch is displayed in the MCAD Software")]
@@ -104,6 +158,7 @@ fn sub_environment_unchanged(world: &mut ApplicationWorld) {
 }
 #[then("no keyboard or ribbon changes are pending")]
 #[then("no customization change is pending")]
+#[given("no customization change is pending")]
 fn no_pending(world: &mut ApplicationWorld) {
     for label in ["Cancel", "Apply"] {
         assert!(world.run_in_window("Customize", label).alpha < u8::MAX);
