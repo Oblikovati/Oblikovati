@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+#[path = "visual_identity_light.rs"]
+mod light;
 
 #[test]
 fn native_visual_identity_uses_three_distinct_palettes_on_the_same_part() {
@@ -186,6 +188,56 @@ fn native_feature_properties_align_blend_fields_and_keep_extrude_directions_in_o
     );
     world.save_capture("extrude-properties");
     world.close();
+}
+
+#[test]
+fn native_floating_properties_follow_the_live_viewport_after_resize() {
+    let mut world = ApplicationWorld::new();
+    viewport_orientation::open_block(&mut world);
+    resize_properties_window(&mut world, [1440, 900]);
+
+    for title in ["Extrude", "Chamfer"] {
+        world.click_text(title);
+        let full = assert_properties_within_viewport(&mut world, title);
+        resize_properties_window(&mut world, [980, 540]);
+        let short = assert_properties_within_viewport(&mut world, title);
+        if title == "Extrude" {
+            assert!(short < full, "extrusion properties should shrink on resize");
+        }
+        world.save_capture(&format!("{title}-980x540"));
+        resize_properties_window(&mut world, [1440, 900]);
+        assert_eq!(assert_properties_within_viewport(&mut world, title), full);
+        resize_properties_window(&mut world, [980, 540]);
+        let cancel = world.run_in_window(title, "Cancel").center();
+        world.click(diagnostics::pointer_pixels(cancel));
+        assert!(diagnostics::window_geometry(title).is_none());
+        resize_properties_window(&mut world, [1440, 900]);
+    }
+    world.close();
+}
+
+fn resize_properties_window(world: &mut ApplicationWorld, extent: [u32; 2]) {
+    x11_input::resize_application_window(extent);
+    for _ in 0..4 {
+        world.pump(Vec::new());
+    }
+    assert_eq!(world.extent(), extent);
+}
+
+fn assert_properties_within_viewport(world: &mut ApplicationWorld, title: &str) -> f32 {
+    let [left, top, right, bottom] = world.viewport_bounds().map(|edge| edge as f32);
+    let bounds = diagnostics::window_pixel_bounds(title).unwrap();
+    assert!(bounds[0] >= left && bounds[1] >= top, "{title}: {bounds:?}");
+    assert!(
+        bounds[2] <= right && bounds[3] <= bottom,
+        "{title}: {bounds:?}"
+    );
+    for label in ["OK", "Cancel"] {
+        let run = world.run_in_window(title, label);
+        let y = diagnostics::pointer_pixels(run.maximum)[1] as f32;
+        assert!(y < bounds[3], "{title} {label} at {y}: {bounds:?}");
+    }
+    bounds[3] - bounds[1]
 }
 
 #[test]

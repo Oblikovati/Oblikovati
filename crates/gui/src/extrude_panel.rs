@@ -14,12 +14,14 @@ pub(super) struct PropertiesSize {
     pending: bool,
 }
 impl PropertiesSize {
-    pub(super) fn fit(&mut self, ui: &Ui, origin: [f32; 2]) {
+    pub(super) fn fit(
+        &mut self,
+        ui: &Ui,
+        area: crate::application::document_creation::workspaces::WorkspaceArea,
+    ) {
         let height = self.content.unwrap_or(DEFAULT_HEIGHT);
-        crate::widget_abi::fit_dialog(ui, "Extrude", origin, [WIDTH, height]);
-        if std::mem::take(&mut self.pending) {
-            crate::widget_abi::fit_floating_panel_height(ui, "Extrude", height);
-        }
+        crate::widget_abi::fit_viewport_properties(ui, "Extrude", area, [WIDTH, height]);
+        self.pending = false;
     }
 
     pub(super) fn measure(&mut self, chrome: f32, properties: f32) {
@@ -72,10 +74,8 @@ impl ExtrudeDialog {
             .is_some_and(|request| self.creation_action(request).dispatchable(state));
         let request = preview.as_ref().filter(|_| enabled);
         ui.separator();
-        let disabled = ui.begin_disabled(!enabled);
-        let commit = crate::theme::primary_button(ui, "OK", [72., 28.])
+        let commit = crate::theme::property_accept(ui, enabled)
             || (shortcuts && ui.is_key_pressed_no_repeat(Key::Enter));
-        drop(disabled);
         if commit && self.commit_request(request, actions) {
             return;
         }

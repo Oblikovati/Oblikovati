@@ -94,19 +94,14 @@ impl MoveBodyDialog {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
+        area: crate::application::document_creation::workspaces::WorkspaceArea,
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.sync_before_docking(state, actions);
         if self.document.is_none() {
             return;
         }
-        let display = ui.io().display_size;
-        Self::fit_dockable(
-            ui,
-            "Move Bodies",
-            [(display[0] - 380.).max(0.), 170.],
-            [360., 240.],
-        );
+        crate::widget_abi::fit_viewport_properties(ui, "Move Bodies", area, [360., 240.]);
         let mut open = true;
         Self::dockable_window(ui, "Move Bodies", &mut open).build(|| {
             self.body_choice(ui, state);

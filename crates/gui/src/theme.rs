@@ -174,6 +174,19 @@ pub(crate) fn primary_button(ui: &imgui::Ui, label: &str, size: [f32; 2]) -> boo
     );
     crate::widget_abi::button(ui, label, size)
 }
+
+pub(crate) fn property_accept(ui: &imgui::Ui, enabled: bool) -> bool {
+    let alpha = ui.clone_style().alpha;
+    let _disabled = ui.begin_disabled(!enabled);
+    if enabled || ui.style_color(StyleColor::WindowBg)[0] <= 0.5 {
+        return primary_button(ui, "OK", [72., 28.]);
+    }
+    let _alpha = ui.push_style_var(imgui::StyleVar::Alpha(alpha));
+    let _fill = ui.push_style_color(StyleColor::Button, hex_rgb(0xE2E5EC));
+    let _ink = ui.push_style_color(StyleColor::Text, hex_rgb(0x6B7280));
+    crate::widget_abi::button(ui, "OK", [72., 28.])
+}
+
 pub(crate) fn hex_rgb(hex: u32) -> [f32; 4] {
     let channel = |shift| ((hex >> shift) & 0xff_u32) as f32 / 255.;
     [channel(16), channel(8), channel(0), 1.]

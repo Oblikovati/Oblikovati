@@ -163,13 +163,12 @@ impl ExtrudeDialog {
         let Some(document) = self.document else {
             return;
         };
-        self.size.fit(ui, controls.origin);
+        self.size.fit(ui, controls.area);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;
         Self::dockable_window(ui, "Extrude", &mut open)
             .scroll_bar(false)
             .scrollable(false)
-            .size_constraints([280., 104.], [f32::MAX; 2])
             .build(|| {
                 crate::theme::floating_property_shadow(ui);
                 let style = ui.clone_style();

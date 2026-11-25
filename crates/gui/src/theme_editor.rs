@@ -4,7 +4,7 @@ use crate::{
     dockable_window::DockableWindow,
     theme_editor_rows::{THEME_COLOR_ROWS, ThemeColorRow},
 };
-use imgui::Ui;
+use imgui::{StyleColor, StyleVar, Ui};
 #[derive(Default)]
 pub(crate) struct GuiThemeEditor {
     pub(crate) new_name: String,
@@ -53,9 +53,11 @@ pub(crate) fn panel(
         return;
     };
     popup_geometry(ui);
+    let _border = crate::theme::property_window_border(ui);
     let mut open = true;
     let mut close = false;
     GuiThemeEditor::dockable_window(ui, THEME_EDITOR_POPUP, &mut open).build(|| {
+        crate::theme::floating_property_shadow(ui);
         ui.text(format!("Theme: {}", theme.active_name()));
         close = editor_actions(ui, theme, actions)
             || ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
@@ -102,8 +104,11 @@ fn duplicate_controls(
     editor: &mut GuiThemeEditor,
     actions: &mut Vec<GuiShellAction>,
 ) {
-    ui.set_next_item_width(230.);
-    ui.input_text("New name", &mut editor.new_name).build();
+    ui.align_text_to_frame_padding();
+    ui.text("New name");
+    ui.same_line();
+    ui.set_next_item_width((ui.content_region_avail()[0] - 108.).clamp(1., 230.));
+    ui.input_text("##theme-name", &mut editor.new_name).build();
     ui.same_line();
     let _disabled = ui.begin_disabled(!theme.creation_available());
     if crate::widget_abi::button(ui, "Duplicate", [100., 19.]) {
@@ -114,7 +119,13 @@ fn duplicate_controls(
     }
 }
 fn color_rows(ui: &Ui, theme: &GuiThemeState, actions: &mut Vec<GuiShellAction>) {
+    let alpha = ui.clone_style().alpha;
+    let light_read_only = !theme.editable() && ui.style_color(StyleColor::WindowBg)[0] > 0.5;
     let _disabled = ui.begin_disabled(!theme.editable());
+    let _readable = light_read_only.then(|| ui.push_style_var(StyleVar::Alpha(alpha)));
+    let _ink = light_read_only
+        .then(|| ui.push_style_color(StyleColor::Text, crate::theme::hex_rgb(0x4B5263)));
+    let _outline = ui.push_style_var(StyleVar::FrameBorderSize(1.));
     let mut group = "";
     for row in THEME_COLOR_ROWS {
         if row.group != group {

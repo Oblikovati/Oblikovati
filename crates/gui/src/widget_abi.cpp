@@ -285,11 +285,21 @@ void oblikovati_gui_fit_dialog(const unsigned char* title, float x, float y, flo
 
 bool oblikovati_gui_window_is_docked() { return ImGui::IsWindowDocked(); }
 
-void oblikovati_gui_fit_floating_panel_height(const unsigned char* title, float height) {
-    const ImGuiWindow* window = ImGui::FindWindowByName(reinterpret_cast<const char*>(title));
-    if (!window || window->DockId != 0) return;
-    const float maximum = ImMax(104.0f, ImGui::GetIO().DisplaySize.y - window->Pos.y - 32.0f);
-    ImGui::SetNextWindowSize(ImVec2(window->SizeFull.x, ImClamp(height, 104.0f, maximum)), ImGuiCond_Always);
+void oblikovati_gui_fit_viewport_properties(const unsigned char* title, float left, float top,
+                                           float right, float bottom, float width, float height) {
+    const char* name = reinterpret_cast<const char*>(title);
+    const ImGuiWindow* window = ImGui::FindWindowByName(name);
+    const auto* saved = window ? nullptr : ImGui::FindWindowSettings(ImHashStr(name));
+    // Dock nodes own their bounds, including for windows restored from a saved layout.
+    if ((window && window->DockId != 0) || (saved && saved->DockId != 0)) return;
+    ImVec2 position(left, top);
+    if (window) position = window->Pos;
+    else if (saved) position = ImVec2(saved->Pos.x + saved->ViewportPos.x, saved->Pos.y + saved->ViewportPos.y);
+    const ImVec2 size(ImClamp(width, 1.0f, ImMax(1.0f, right - left)),
+                      ImClamp(height, 1.0f, ImMax(1.0f, bottom - top)));
+    ImGui::SetNextWindowPos(ImVec2(ImClamp(position.x, left, ImMax(left, right - size.x)),
+                                  ImClamp(position.y, top, ImMax(top, bottom - size.y))), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(size, ImGuiCond_Always);
 }
 
 void oblikovati_gui_window_position(float x, float y, int condition) {

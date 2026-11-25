@@ -219,7 +219,7 @@ fn verify_lifecycle_controls(
         click(engine, request, [670., 196.]).is_empty(),
         "built-in Delete must be disabled"
     );
-    assert!(click(engine, request, [500., 222.]).is_empty());
+    assert!(click(engine, request, [550., 222.]).is_empty());
     deliver(
         engine,
         request,

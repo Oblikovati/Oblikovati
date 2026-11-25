@@ -203,15 +203,13 @@ impl BlendDialog {
         let request = self
             .request(state)
             .filter(|request| self.create_action(request.clone()).dispatchable(state));
-        let disabled = ui.begin_disabled(request.is_none());
-        if (crate::theme::primary_button(ui, "OK", [72., 28.])
+        if (crate::theme::property_accept(ui, request.is_some())
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Enter)))
             && let Some(request) = request
         {
             self.submitted = Some(request.clone());
             actions.push(self.create_action(request));
         }
-        drop(disabled);
         ui.same_line();
         let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
         if crate::widget_abi::button(ui, "Cancel", [68., 28.])
@@ -259,15 +257,13 @@ impl BlendDialog {
         let request = self
             .edit_request()
             .filter(|request| self.commit_edit_action(request.clone()).dispatchable(state));
-        let disabled = ui.begin_disabled(request.is_none());
-        if (crate::theme::primary_button(ui, "OK", [72., 28.])
+        if (crate::theme::property_accept(ui, request.is_some())
             || (ui.is_window_focused() && ui.is_key_pressed_no_repeat(imgui::Key::Enter)))
             && let Some(request) = request
         {
             self.submitted_edit = Some(request.clone());
             actions.push(self.commit_edit_action(request));
         }
-        drop(disabled);
         ui.same_line();
         let _outline = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
         if crate::widget_abi::button(ui, "Cancel", [68., 28.])

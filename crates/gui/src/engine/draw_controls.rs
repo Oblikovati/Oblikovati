@@ -319,7 +319,6 @@ impl GuiFrameEngine {
             self.home.active,
             &mut selected,
         );
-        let properties_origin = [area.left + 14., area.top + 14.];
         self.extrude_dialog.panel(
             ui,
             commands,
@@ -329,17 +328,16 @@ impl GuiFrameEngine {
                 icons,
                 parameters: &mut self.parameter_editor,
                 popup_was_open: self.popup_was_open,
-                origin: properties_origin,
+                area,
             },
         );
-        self.blend_dialog
-            .panel(ui, commands, &mut selected, properties_origin);
-        self.hole_dialog.panel(ui, &request.commands, &mut selected);
-        self.shell_feature_dialog.panel(ui, commands, &mut selected);
+        self.blend_dialog.panel(ui, commands, &mut selected, area);
+        self.hole_dialog.panel(ui, commands, area, &mut selected);
+        self.shell_feature_dialog
+            .panel(ui, commands, area, &mut selected);
         self.move_body_dialog
-            .panel(ui, &request.commands, &mut selected);
-        self.offset_plane
-            .panel(ui, &request.commands, &mut selected);
+            .panel(ui, commands, area, &mut selected);
+        self.offset_plane.panel(ui, commands, area, &mut selected);
         let interface = (&self.quick_access, &self.workspace);
         self.ribbon
             .customization_panel(ui, commands, &mut selected, interface);

@@ -8,14 +8,14 @@ impl BlendDialog {
         ui: &Ui,
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
-        origin: [f32; 2],
+        area: crate::application::document_creation::workspaces::WorkspaceArea,
     ) {
         self.sync_before_docking(state, actions);
         if self.document.is_none() {
             return;
         }
         let title = if self.chamfer { "Chamfer" } else { "Fillet" };
-        Self::fit_dockable(ui, title, origin, [280., 138.]);
+        crate::widget_abi::fit_viewport_properties(ui, title, area, [280., 138.]);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;
         Self::dockable_window(ui, title, &mut open).build(|| {

@@ -49,7 +49,15 @@ unsafe extern "C" {
     fn oblikovati_gui_begin_scroll_region(identity: *const u8, width: f32, height: f32) -> bool;
     fn oblikovati_gui_dummy(width: f32, height: f32);
     fn oblikovati_gui_window_is_docked() -> bool;
-    fn oblikovati_gui_fit_floating_panel_height(title: *const u8, height: f32);
+    fn oblikovati_gui_fit_viewport_properties(
+        title: *const u8,
+        left: f32,
+        top: f32,
+        right: f32,
+        bottom: f32,
+        width: f32,
+        height: f32,
+    );
     fn oblikovati_gui_window_position(x: f32, y: f32, condition: i32);
     fn oblikovati_gui_window_size(width: f32, height: f32, condition: i32);
     fn oblikovati_gui_cursor_position(x: f32, y: f32);
@@ -359,10 +367,29 @@ pub(crate) fn window_is_docked(_: &Ui) -> bool {
     unsafe { oblikovati_gui_window_is_docked() }
 }
 
-pub(crate) fn fit_floating_panel_height(_: &Ui, title: &str, height: f32) {
+/// Keep floating properties inside the live viewport. Docked properties follow their dock.
+/// Example: `fit_viewport_properties(ui, "Extrude", area, [280., 340.])`.
+pub(crate) fn fit_viewport_properties(
+    _: &Ui,
+    title: &str,
+    area: crate::application::document_creation::workspaces::WorkspaceArea,
+    size: [f32; 2],
+) {
+    let horizontal = ((area.right - area.left - 1.) * 0.5).clamp(0., 14.);
+    let vertical = ((area.bottom - area.top - 1.) * 0.5).clamp(0., 14.);
     let title = ImString::new(title);
-    // Dear ImGui consumes the optional height before drawing the next window.
-    unsafe { oblikovati_gui_fit_floating_panel_height(title.as_ptr().cast(), height) };
+    // SAFETY: ImGui consumes the scalar geometry for its next window in this frame.
+    unsafe {
+        oblikovati_gui_fit_viewport_properties(
+            title.as_ptr().cast(),
+            area.left + horizontal,
+            area.top + vertical,
+            area.right - horizontal,
+            area.bottom - vertical,
+            size[0],
+            size[1],
+        )
+    };
 }
 
 /// Example: `fit_dialog(ui, "Parameters", [320.,8.], [540.,360.])` before opening that window.

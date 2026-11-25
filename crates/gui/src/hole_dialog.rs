@@ -74,19 +74,14 @@ impl HoleDialog {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
+        area: crate::application::document_creation::workspaces::WorkspaceArea,
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.sync_before_docking(state, actions);
         if self.document.is_none() {
             return;
         }
-        let display = ui.io().display_size;
-        Self::fit_dockable(
-            ui,
-            "Hole",
-            [(display[0] - 380.).max(0.), 170.],
-            [360., 220.],
-        );
+        crate::widget_abi::fit_viewport_properties(ui, "Hole", area, [360., 220.]);
         let mut open = true;
         Self::dockable_window(ui, "Hole", &mut open).build(|| {
             ui.text(if self.request(state).is_some() {

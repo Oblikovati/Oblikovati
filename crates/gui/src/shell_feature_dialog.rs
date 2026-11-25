@@ -75,19 +75,14 @@ impl ShellFeatureDialog {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
+        area: crate::application::document_creation::workspaces::WorkspaceArea,
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.sync_before_docking(state, actions);
         if self.document.is_none() {
             return;
         }
-        let display = ui.io().display_size;
-        Self::fit_dockable(
-            ui,
-            "Shell",
-            [(display[0] - 380.).max(0.), 170.],
-            [360., 200.],
-        );
+        crate::widget_abi::fit_viewport_properties(ui, "Shell", area, [360., 200.]);
         let mut open = true;
         Self::dockable_window(ui, "Shell", &mut open).build(|| {
             ui.text(format!(

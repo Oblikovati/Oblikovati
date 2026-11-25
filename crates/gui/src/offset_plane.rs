@@ -63,16 +63,17 @@ impl OffsetPlaneDialog {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
+        area: crate::application::document_creation::workspaces::WorkspaceArea,
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.sync_before_docking(state);
         let Some(document) = self.document else {
             return;
         };
+        crate::widget_abi::fit_viewport_properties(ui, "Offset Plane", area, [340., 210.]);
         let mut open = true;
         let mut done = false;
         Self::dockable_window(ui, "Offset Plane", &mut open)
-            .size([340., 210.], imgui::Condition::FirstUseEver)
             .build(|| done = self.controls(ui, state, actions, document));
         if !open || done {
             self.set_document(None);

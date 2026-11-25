@@ -221,7 +221,7 @@ pub(crate) struct ExtrudePanelControls<'a> {
     pub icons: &'a crate::icons::GuiRibbonIcons,
     pub parameters: &'a mut crate::parameters::GuiParameterEditor,
     pub popup_was_open: bool,
-    pub origin: [f32; 2],
+    pub area: crate::application::document_creation::workspaces::WorkspaceArea,
 }
 
 impl super::ExtrudeDialog {

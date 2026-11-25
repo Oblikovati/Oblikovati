@@ -294,7 +294,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Matched the default viewport and status bar to the desktop theme while preserving explicit colour schemes and readable viewport labels. (#4063)
 - Kept Extrude actions visible in short panels, made feature drafts exclusive, fitted and labelled the Sketch ribbon groups, and cleared origin-plane paint from the viewport controls. (#4063)
 - Updated the active ribbon underline in the same frame as its commands. (#4063)
-- Aligned Fillet and Chamfer properties and put Extrude distance tools and direction choices inline. (#4063)
+- Aligned Fillet and Chamfer properties and put Extrude distance tools and direction choices inline. Kept floating modeling properties inside the viewport during resize and improved Light theme contrast for disabled property actions and read-only Theme Editor values. (#4063)
 - Centered the active document and model state in the titlebar and restyled its window controls. (#4063)
 - Restyled the File and Home recent lists with type icons, dedicated pin space, clearer selection controls, and more room for filenames. Preserved viewport space and active document tabs on resize, labelled the compact 3D Model groups with icons, and hid the Part ribbon and docks while Home was in front. (#4063)
 - Aligned the Large and Text headings with their Ribbon Customization checkboxes. (#3856)

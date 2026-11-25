@@ -56,6 +56,32 @@ fn fitting_a_restored_window_leaves_saved_placement_to_imgui() {
     assert_eq!(current.NextWindowData.Flags, 0);
     context.render();
 }
+
+#[test]
+fn viewport_properties_clamp_saved_floating_geometry_and_leave_saved_docks_owned() {
+    use crate::application::document_creation::workspaces::WorkspaceArea;
+    let mut context = probe_context();
+    context.load_ini_settings(
+        "[Window][Floating]\nPos=620,440\nSize=360,380\n\n[Window][Docked]\nPos=100,120\nSize=300,200\nDockId=0x00000002,0\n",
+    );
+    let area = WorkspaceArea {
+        left: 200.,
+        top: 120.,
+        right: 600.,
+        bottom: 420.,
+    };
+    let ui = context.frame();
+    fit_viewport_properties(ui, "Docked", area, [280., 350.]);
+    // Read the pending settings before Begin consumes them.
+    let current = unsafe { imgui::sys::igGetCurrentContext().as_ref() }.unwrap();
+    assert_eq!(current.NextWindowData.Flags, 0);
+    fit_viewport_properties(ui, "Floating", area, [280., 350.]);
+    ui.window("Floating").build(|| {
+        assert_eq!(ui.window_pos(), [306., 134.]);
+        assert_eq!(ui.window_size(), [280., 272.]);
+    });
+    context.render();
+}
 #[test]
 fn scalar_widgets_retain_cursor_dimensions_and_literal_draw_color() {
     let mut context = probe_context();
