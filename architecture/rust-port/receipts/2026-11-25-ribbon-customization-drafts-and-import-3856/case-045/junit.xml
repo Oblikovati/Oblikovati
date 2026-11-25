@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:56:27.795540117Z" time="47.27638782"><testcase name="Scenario: Change one command display option with two rows selected: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:665:3" time="47.27638782"><system-out><![CDATA[  Scenario: Change one command display option with two rows selected
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the Tools ribbon visible
+   ✔  And the Ribbon customization dialog has an initially empty Part Tools custom panel
+   ✔  And the user has staged "2D Sketches" followed by "3D Annotations"
+   ✔  And the Large option is clear for both commands
+   ✔  When the user selects "2D Sketches" and presses Shift+Down
+   ✔  And the user checks Large on the "2D Sketches" row
+   ✔  Then Large is checked for "2D Sketches"
+   ✔  And Large remains clear for "3D Annotations"
+   ✔  And both rows remain selected
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+   ✔  And no User Commands panel is displayed on the Tools ribbon
+]]></system-out></testcase></testsuite></testsuites>

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:55:40.655805562Z" time="61.259928293"><testcase name="Scenario: Stage the same command on two ribbon targets: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:579:3" time="61.259928293"><system-out><![CDATA[  Scenario: Stage the same command on two ribbon targets
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the Tools ribbon visible
+   ✔  And the Part Tools and Part Manage custom panel lists are initially empty
+   ✔  And the Ribbon customization dialog shows Part Tools and All Commands
+   ✔  When the user adds "2D Sketches" to the Part Tools custom panel
+   ✔  Then "2D Sketches" appears in the Part Tools custom panel list
+   ✔  And "2D Sketches" is absent from the visible available commands list
+   ✔  When the user selects the Part Manage target
+   ✔  Then its custom panel list is empty
+   ✔  And "2D Sketches" is available in the source list
+   ✔  When the user adds "2D Sketches" to the Part Manage custom panel
+   ✔  Then "2D Sketches" appears in the Part Manage custom panel list
+   ✔  And the target indicates a pending change
+   ✔  When the user returns to the Part Tools target
+   ✔  Then "2D Sketches" remains in its custom panel list
+   ✔  And the target indicates a pending change
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+   ✔  And no User Commands panel is displayed on the Tools ribbon
+]]></system-out></testcase></testsuite></testsuites>

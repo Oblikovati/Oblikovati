@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:55:44.727392554Z" time="59.343233825"><testcase name="Scenario: Apply staged commands for two ribbon targets together: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:562:3" time="59.343233825"><system-out><![CDATA[  Scenario: Apply staged commands for two ribbon targets together
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software with the Tools ribbon visible
+   ✔  And the Part Tools and Part Manage custom panel lists are initially empty
+   ✔  And the Ribbon customization dialog shows the Part Tools target and All Commands
+   ✔  When the user adds "2D Sketches" to the Part Tools custom panel
+   ✔  And the user selects the Part Manage target
+   ✔  And the user adds "3D Annotations" to its custom panel
+   ✔  And the user clicks Apply
+   ✔  Then the customization dialog remains open on the Part Manage target
+   ✔  And its list contains "3D Annotations" without a pending-change marker
+   ✔  And Apply and cancels are disabled
+   ✔  And the Tools ribbon displays a User Commands panel
+   ✔  When the user selects the Part Tools target
+   ✔  Then its list contains "2D Sketches" without a pending-change marker
+]]></system-out></testcase></testsuite></testsuites>
