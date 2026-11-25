@@ -4,12 +4,15 @@
 /// Validated user scale factors; document edits and undo do not change them.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct UiScaleOptions {
-    font: f32,
+    font: Option<f32>,
     icon: f32,
 }
 impl Default for UiScaleOptions {
     fn default() -> Self {
-        Self { font: 1., icon: 1. }
+        Self {
+            font: None,
+            icon: 1.,
+        }
     }
 }
 impl UiScaleOptions {
@@ -21,28 +24,35 @@ impl UiScaleOptions {
             ));
         }
         Ok(Self {
-            font: font.clamp(0.5, 2.),
+            font: Some(font.clamp(0.5, 2.)),
             icon: icon.clamp(0.5, 2.5),
         })
     }
     /// Keep Go's missing/non-positive stored-value default; example: `UiScaleOptions::from_stored(0., 1.5)?`.
     pub fn from_stored(font: f32, icon: f32) -> Result<Self, String> {
-        Self::new(
-            if font.is_finite() && font <= 0. {
-                1.
-            } else {
-                font
-            },
-            if icon.is_finite() && icon <= 0. {
-                1.
-            } else {
-                icon
-            },
-        )
+        let icon = if icon.is_finite() && icon <= 0. {
+            1.
+        } else {
+            icon
+        };
+        if font.is_finite() && font <= 0. {
+            Self::new(1., icon).map(Self::with_automatic_font)
+        } else {
+            Self::new(font, icon)
+        }
     }
     /// Read text size independently of framebuffer density; example: `options.font()`.
     pub fn font(self) -> f32 {
+        self.font.unwrap_or(1.)
+    }
+    /// Read an explicit text multiplier. Example: `UiScaleOptions::default().saved_font() == None`.
+    pub fn saved_font(self) -> Option<f32> {
         self.font
+    }
+    /// Restore automatic text sizing and retain the icon preference.
+    /// Example: `options.with_automatic_font()` when the user selects Automatic.
+    pub fn with_automatic_font(self) -> Self {
+        Self { font: None, ..self }
     }
     /// Read vector-icon size independently of text size; example: `options.icon()`.
     pub fn icon(self) -> f32 {

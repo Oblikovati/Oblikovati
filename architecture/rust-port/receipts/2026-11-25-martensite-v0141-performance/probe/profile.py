@@ -179,6 +179,7 @@ def cube():
 env = dict(os.environ)
 env["XDG_CONFIG_HOME"] = str(folder / "config")
 env["XDG_DATA_HOME"] = str(folder / "data")
+env["OBK_CONFIG_DIR"] = str(folder / "config")
 env["VK_INSTANCE_LAYERS"] = "VK_LAYER_OBK_present_probe"
 env["VK_ADD_LAYER_PATH"] = str(Path(__file__).parent)
 if args.phases:

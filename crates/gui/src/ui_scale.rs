@@ -222,9 +222,13 @@ fn scale_choices(
     actions: &mut Vec<GuiShellAction>,
     #[cfg(test)] scale_200_bounds: &mut Option<[[f32; 2]; 2]>,
 ) {
+    if ui.radio_button_bool("Automatic", options.saved_font().is_none()) {
+        actions.push(GuiShellAction::SetUiScale(options.with_automatic_font()));
+    }
     for percent in [75_u16, 100, 125, 150, 175, 200] {
         let scale = f32::from(percent) / 100.;
-        let selected = ui.radio_button_bool(format!("{percent}%"), options.font() == scale);
+        let selected =
+            ui.radio_button_bool(format!("{percent}%"), options.saved_font() == Some(scale));
         #[cfg(test)]
         if percent == 200 {
             *scale_200_bounds = Some([ui.item_rect_min(), ui.item_rect_max()]);

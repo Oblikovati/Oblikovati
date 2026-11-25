@@ -3,10 +3,12 @@ use super::UiScaleOptions;
 
 #[test]
 fn defaults_and_independent_factors_match_go_preferences() {
-    assert_eq!(
-        UiScaleOptions::default(),
-        UiScaleOptions::new(1., 1.).unwrap()
-    );
+    let automatic = UiScaleOptions::default();
+    assert_eq!((automatic.font(), automatic.icon()), (1., 1.));
+    assert_eq!(automatic.saved_font(), None);
+    let explicit = UiScaleOptions::new(1., 1.).unwrap();
+    assert_eq!(explicit.saved_font(), Some(1.));
+    assert_eq!(explicit.with_automatic_font(), automatic);
     let options = UiScaleOptions::new(1.5, 2.).unwrap();
     assert_eq!(options.font(), 1.5);
     assert_eq!(options.icon(), 2.);

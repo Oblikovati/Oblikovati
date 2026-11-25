@@ -79,7 +79,7 @@ impl<Files: PackageFileReader + AtomicFiles> ApplicationPreferenceFile<Files> {
     pub fn save_ui_scale(&mut self, options: UiScaleOptions) -> io::Result<()> {
         let mut candidate = read_preferences(&self.path, &mut self.files)?;
         let ui = candidate.ui.get_or_insert_default();
-        ui.font_scale = Some(options.font());
+        ui.font_scale = options.saved_font();
         ui.icon_scale = Some(options.icon());
         self.publish(candidate)
     }
@@ -244,7 +244,7 @@ struct PartPreferenceRecipe {
 }
 impl UiPreferenceRecipe {
     fn options(&self) -> Result<UiScaleOptions, String> {
-        UiScaleOptions::from_stored(self.font_scale.unwrap_or(1.), self.icon_scale.unwrap_or(1.))
+        UiScaleOptions::from_stored(self.font_scale.unwrap_or(0.), self.icon_scale.unwrap_or(1.))
     }
 }
 

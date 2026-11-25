@@ -12,7 +12,7 @@ impl NativeHeadWindow {
             return Ok(Default::default());
         }
         let extent = self.view.drawable_extent()?;
-        let backing_scale = self.view.backing_scale();
+        let backing_scale = desktop_gui_scale(self.view.backing_scale(), commands.ui_scale);
         self.ensure_native_gui()?;
         let now = self.gui_epoch.elapsed();
         let notice = self.native_gui_notice()?;
@@ -50,5 +50,35 @@ impl NativeHeadWindow {
             .chain(drawing.wake_after)
             .min();
         Ok(update)
+    }
+}
+
+pub(super) fn desktop_gui_scale(
+    backing_scale: f32,
+    options: Option<oblikovati_model::ui_scale::UiScaleOptions>,
+) -> f32 {
+    if cfg!(target_os = "linux")
+        && backing_scale > 1.
+        && options.is_some_and(|options| options.saved_font().is_none())
+    {
+        return 1. + (backing_scale - 1.) * 0.5;
+    }
+    backing_scale
+}
+
+#[cfg(all(test, target_os = "linux"))]
+mod tests {
+    use super::desktop_gui_scale;
+    use oblikovati_model::ui_scale::UiScaleOptions;
+
+    #[test]
+    fn automatic_layout_softens_only_x11_upscaling() {
+        let automatic = Some(UiScaleOptions::default());
+        let explicit = Some(UiScaleOptions::new(1., 1.).unwrap());
+        for (backing, layout) in [(0.75, 0.75), (1., 1.), (1.5, 1.25), (2., 1.5)] {
+            assert_eq!(desktop_gui_scale(backing, automatic), layout);
+            assert_eq!(desktop_gui_scale(backing, explicit), backing);
+            assert_eq!(desktop_gui_scale(backing, None), backing);
+        }
     }
 }

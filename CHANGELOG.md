@@ -175,6 +175,7 @@
 
 ### Changed
 
+- Made the automatic X11 UI size more compact on high-DPI displays and added an Automatic text-size choice. (#3850)
 - Reduced desktop GUI render preparation costs and raised the ViewCube animation cadence. Linux release builds made Vulkan validation opt-in and added an X11 VSync override. (#3630)
 - Updated the geometry kernel and Vulkan renderer to Martensite v0.14.1. (#3563)
 - Adopted the new desktop visual identity across Dark, Light, and High Contrast themes, including studio viewport palettes, bundled fonts, vector navigation and ribbon icons, and the Extrude panel. Added active asset dock indicators and swatches, increased ViewCube contrast, and applied neutral drawing paper. Added document tab artwork and live viewport status readouts. Updated Home wordmarks, ribbon captions, density controls, and command artwork. Extrude now fits its contents, toggles preview, and offers Apply & Create New. Updated Model Browser rows and search, and added Studio selection colors and dimension units and extension lines. (#4063)
@@ -184,7 +185,6 @@
 - Reused part checkpoints when the typed suppression command reports feature health. (#4079)
 
 - Reused current part checkpoints when applying Feature Properties. (#4079)
-
 - Avoided replaying a part when inspecting an independent sketch. (#4079)
 
 - Reused current part results for the sketch dimension count. (#4079)

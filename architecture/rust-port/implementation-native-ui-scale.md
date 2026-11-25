@@ -97,3 +97,17 @@ click through X11, and a detached drawing. It checks live XSETTINGS changes,
 X resource precedence, fallback after removing the resource, and the default
 after the settings manager exits. Both windows are checked at 150%, 200%, and
 100%.
+
+## Automatic X11 layout size
+
+The X11 window still reports the configured backing density and renders at
+the full drawable extent. With **File → Options → UI → Text size → Automatic**,
+the application uses half of the desktop's scale increase above 100% for
+layout and font rasterization. A 150% desktop uses 125% UI sizing, and a
+200% desktop uses 150%. Explicit text multipliers, including 100%, use the
+full desktop density. Automatic is represented by an absent font override
+in `options.yaml`. Switching back to Automatic preserves the icon factor.
+
+Main and detached windows share the same automatic sizing calculation.
+The 4K arrangement and comparison are recorded in the
+[visual receipt](receipts/2026-11-25-x11-4k-ui-scale/README.md).

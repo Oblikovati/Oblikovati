@@ -221,7 +221,8 @@ impl DrawingWindow {
         actions: &mut Vec<GuiShellAction>,
     ) -> Result<GuiDetachedDrawingFrame, String> {
         let extent = self.view.drawable_extent()?;
-        let backing_scale = self.view.backing_scale();
+        let backing_scale =
+            super::advance::desktop_gui_scale(self.view.backing_scale(), state.ui_scale);
         let raster_scale = backing_scale * state.ui_scale.unwrap_or_default().font();
         if self.raster_scale != raster_scale {
             self.compiler = None;

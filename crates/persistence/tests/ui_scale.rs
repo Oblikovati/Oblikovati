@@ -48,6 +48,20 @@ fn scale_save_reopens_and_retains_unknown_ui_and_other_groups() {
     assert_eq!(saved["future"]["value"], "text");
 }
 #[test]
+fn automatic_text_size_removes_the_override_and_preserves_icon_size() {
+    let disk = options_disk("ui: {fontScale: 1.0, iconScale: 1.5, showMenuBar: false}\n");
+    let mut owner = load(&disk).unwrap();
+    let explicit = owner.ui_scale();
+    assert_eq!(explicit.saved_font(), Some(1.));
+    owner.set_ui_scale(explicit.with_automatic_font()).unwrap();
+    let reopened = load(&disk).unwrap().ui_scale();
+    assert_eq!(reopened.saved_font(), None);
+    assert_eq!(reopened.icon(), 1.5);
+    let saved: serde_yaml_ng::Value = serde_yaml_ng::from_slice(&disk.borrow().committed).unwrap();
+    assert!(saved["ui"].get("fontScale").is_none());
+    assert_eq!(saved["ui"]["showMenuBar"], false);
+}
+#[test]
 fn separate_group_owners_retain_each_others_latest_saved_values() {
     let disk = options_disk("ui: {showStatusBar: false}\nsketch: {}\n");
     let mut first = load(&disk).unwrap();

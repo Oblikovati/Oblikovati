@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exercise live X11 display scaling through the native desktop and detached drawing.
 use super::{ApplicationWorld, diagnostics, x11_input};
+use crate::HeadWork;
 use x11rb::connection::Connection;
 use x11rb::protocol::xproto::{
     AtomEnum, ConnectionExt as _, CreateWindowAux, PropMode, WindowClass,
@@ -55,7 +56,7 @@ fn x11_display_dpi_scales_main_and_detached_windows_live() {
     write_xsettings_dpi(&connection, manager, property, 144);
     let mut world = ApplicationWorld::new();
     world.add_part();
-    expect_main_scale(&mut world, 1.5);
+    expect_main_scale(&mut world, 1.5, 1.25);
     let file = diagnostics::pointer_pixels(world.run("File").center());
     x11_input::click(file);
     world.pump(Vec::new());
@@ -72,18 +73,29 @@ fn x11_display_dpi_scales_main_and_detached_windows_live() {
         [((left + right) / 2) as i32, ((top + bottom) / 2) as i32],
     );
     world.pump(Vec::new());
-    expect_detached_scale(&mut world, drawing, 1.5);
+    expect_detached_scale(&mut world, drawing, 1.5, 1.25);
+
+    let explicit = oblikovati_model::ui_scale::UiScaleOptions::new(1., 1.).unwrap();
+    world.app().owner.set_ui_scale_from_gui(explicit).unwrap();
+    world.pump(Vec::new());
+    expect_main_scale(&mut world, 1.5, 1.5);
+    expect_detached_scale(&mut world, drawing, 1.5, 1.5);
+    world
+        .app()
+        .owner
+        .set_ui_scale_from_gui(explicit.with_automatic_font())
+        .unwrap();
 
     write_xsettings_dpi(&connection, manager, property, 192);
     world.pump(Vec::new());
-    expect_main_scale(&mut world, 2.);
-    expect_detached_scale(&mut world, drawing, 2.);
+    expect_main_scale(&mut world, 2., 1.5);
+    expect_detached_scale(&mut world, drawing, 2., 1.5);
 
-    for (dpi, scale) in [(144, 1.5), (192, 2.), (96, 1.)] {
+    for (dpi, backing, layout) in [(144, 1.5, 1.25), (192, 2., 1.5), (96, 1., 1.)] {
         set_dpi(dpi);
         world.pump(Vec::new());
-        expect_main_scale(&mut world, scale);
-        expect_detached_scale(&mut world, drawing, scale);
+        expect_main_scale(&mut world, backing, layout);
+        expect_detached_scale(&mut world, drawing, backing, layout);
     }
     connection
         .delete_property(root, AtomEnum::RESOURCE_MANAGER.into())
@@ -91,13 +103,13 @@ fn x11_display_dpi_scales_main_and_detached_windows_live() {
         .check()
         .unwrap();
     world.pump(Vec::new());
-    expect_main_scale(&mut world, 2.);
-    expect_detached_scale(&mut world, drawing, 2.);
+    expect_main_scale(&mut world, 2., 1.5);
+    expect_detached_scale(&mut world, drawing, 2., 1.5);
 
     connection.destroy_window(manager).unwrap().check().unwrap();
     world.pump(Vec::new());
-    expect_main_scale(&mut world, 1.);
-    expect_detached_scale(&mut world, drawing, 1.);
+    expect_main_scale(&mut world, 1., 1.);
+    expect_detached_scale(&mut world, drawing, 1., 1.);
     world.close();
 }
 
@@ -120,26 +132,26 @@ fn write_xsettings_dpi(connection: &impl Connection, manager: u32, property: u32
         .unwrap();
 }
 
-fn expect_main_scale(world: &mut ApplicationWorld, scale: f32) {
-    assert_eq!(world.app().window.native.view.backing_scale(), scale);
+fn expect_main_scale(world: &mut ApplicationWorld, backing: f32, layout: f32) {
+    assert_eq!(world.app().window.native.view.backing_scale(), backing);
     let [left, top, right, bottom] =
         diagnostics::window_pixel_bounds("##application-window-controls").unwrap();
-    assert_eq!(bottom - top, 32. * scale);
-    assert!((right - left - 3. * 46. * scale).abs() <= scale);
+    assert_eq!(bottom - top, 32. * layout);
+    assert!((right - left - 3. * 46. * layout).abs() <= layout);
 }
 
-fn expect_detached_scale(world: &mut ApplicationWorld, document: u64, scale: f32) {
+fn expect_detached_scale(world: &mut ApplicationWorld, document: u64, backing: f32, layout: f32) {
     world
         .app()
         .window
         .native
         .drawing_windows
         .inspect(document, |view| {
-            assert_eq!(view.backing_scale(), scale);
+            assert_eq!(view.backing_scale(), backing);
             // SAFETY: inspect retains the active detached drawing UI context.
             let io = unsafe { imgui::sys::igGetIO().as_ref() }.unwrap();
-            assert_eq!(io.DisplayFramebufferScale.x, scale);
-            assert_eq!(io.DisplayFramebufferScale.y, scale);
+            assert_eq!(io.DisplayFramebufferScale.x, layout);
+            assert_eq!(io.DisplayFramebufferScale.y, layout);
         })
         .expect("expected a detached drawing window");
 }

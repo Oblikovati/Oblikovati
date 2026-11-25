@@ -58,6 +58,10 @@ Use **Colour scheme** to control the viewport backdrop independently. Default
 uses the dark studio gradient, Presentation uses the light studio gradient,
 and High Contrast uses a solid black background.
 
+Use **File → Options → UI → Text size** to adjust the desktop controls.
+On X11, **Automatic** uses 125% UI sizing on a 150% desktop. Selecting
+**100%** uses the full desktop scale.
+
 ## Learn more
 
 - [Project website](https://oblikovati.org)
