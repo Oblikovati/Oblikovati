@@ -72,6 +72,7 @@ pub(super) struct ApplicationWorld {
     pub docking_node: Option<u32>,
     pub docking_active_tab: Option<bool>,
     pub docking_selected_tab: Option<String>,
+    pub floating_appearance_position: Option<[f32; 2]>,
     /// The latest drag, for a step that checks the preview it left.
     pub last_drag: Option<[[i32; 2]; 2]>,
     /// The dimension value last opened, for a step that reopens "the annotation".
@@ -159,6 +160,7 @@ impl ApplicationWorld {
             docking_node: None,
             docking_active_tab: None,
             docking_selected_tab: None,
+            floating_appearance_position: None,
             last_drag: None,
             opened_value: None,
         };

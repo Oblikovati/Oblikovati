@@ -289,3 +289,10 @@ unknown kinds, type mismatch, probe failure, and native Linux project-template
 create/save/reopen. The native test checks the new document's clean saved state,
 restored parameters, and unchanged template bytes. Project selection/configuration
 ownership, built-in content factories, and remote/UI dispatch remain pending.
+
+## Floating panel during document switching
+
+Switching between a blank Part and a solid Part updates the Model Browser
+and viewport. The floating Appearance Browser keeps its screen position.
+The [native runs](receipts/2026-11-26-dock-floating-appearance-4133/README.md)
+verify both document switches on Wayland and X11.

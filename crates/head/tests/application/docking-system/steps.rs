@@ -15,6 +15,8 @@ mod edges_scenario;
 mod fixture_native;
 #[path = "float_scenario.rs"]
 mod float_scenario;
+#[path = "floating_appearance_scenario.rs"]
+mod floating_appearance_scenario;
 #[path = "preview_scenario.rs"]
 mod preview_scenario;
 #[path = "restart_scenario.rs"]
