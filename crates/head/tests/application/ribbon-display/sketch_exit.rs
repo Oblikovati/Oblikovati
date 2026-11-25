@@ -50,7 +50,9 @@ use cucumber::{given, then, when};
 
 #[given("a part with an editable sketch is active in the MCAD Software")]
 fn editable_sketch_active(world: &mut ApplicationWorld) {
-    world.start_empty_sketch();
+    if world.state().authoring != oblikovati_gui::GuiAuthoringContext::Sketch {
+        world.start_empty_sketch();
+    }
     assert_eq!(
         world.state().authoring,
         oblikovati_gui::GuiAuthoringContext::Sketch

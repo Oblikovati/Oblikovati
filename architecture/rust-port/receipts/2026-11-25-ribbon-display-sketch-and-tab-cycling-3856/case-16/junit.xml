@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:38:36.91668967Z" time="18.158604344"><testcase name="Scenario: Keep a temporary ribbon open when repeating its tab click: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:241:3" time="18.158604344"><system-out><![CDATA[  Scenario: Keep a temporary ribbon open when repeating its tab click
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Tools tab is selected in tabs-only ribbon display
+   ✔  When the user clicks the Tools tab
+   ✔  Then the Tools command groups appear temporarily below the tabs
+   ✔  When the user clicks the Tools tab again
+   ✔  Then the temporary Tools command groups remain visible
+   ✔  When the user presses Escape
+   ✔  Then the temporary Tools command groups remain visible
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary command groups close
+   ✔  And the Tools tab remains visible
+]]></system-out></testcase></testsuite></testsuites>

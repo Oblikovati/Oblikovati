@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" package="testsuite/Feature: Ribbon display modes: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:39:24.088605186Z" time="24.911115648"><testcase name="Scenario: Double-click an inactive tab in tabs-only display: target/native-scratch.HSqCy5/current-ribbon-display-source/features/application/ribbon-display/ribbon-display.feature:270:3" time="24.911115648"><system-out><![CDATA[  Scenario: Double-click an inactive tab in tabs-only display
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the ribbon display control is set to cycle through all modes
+   ✔  And Tools is the active tab in tabs-only ribbon display
+   ✔  When the user double-clicks the inactive View tab
+   ✔  Then View becomes the active tab
+   ✔  And its command groups appear in a temporary panel
+   ✔  When the user clicks empty viewport space
+   ✔  Then the temporary command groups close
+   ✔  And View remains the active tab in tabs-only display
+   ✔  When the user double-clicks the active View tab
+   ✔  Then the full View command groups are visible
+]]></system-out></testcase></testsuite></testsuites>
