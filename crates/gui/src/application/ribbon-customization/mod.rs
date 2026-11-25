@@ -17,8 +17,9 @@ mod store;
 mod target_selector;
 use crate::dockable_window::DockableWindow;
 use crate::ribbon::RibbonTab;
+use category::Category;
 use imgui::{FocusedWidget, Ui};
-use state::{Category, Command, Draft};
+use state::{Command, Draft};
 pub use store::GuiRibbonSettingsStore;
 
 #[derive(Clone, Copy)]

@@ -87,21 +87,26 @@ fn customization_closed_without_apply(world: &mut ApplicationWorld) {
 
 #[when("the user selects 2D Sketches in the available command list")]
 fn select_sketches_after_capturing_plain_rows(world: &mut ApplicationWorld) {
+    capture_plain_source_rows(world);
+    click_in_customize(world, "2DSketches");
+}
+
+pub(super) fn capture_plain_source_rows(world: &mut ApplicationWorld) {
     world.hover([800, 900]);
     world.last_capture = Some(super::super::capture_framebuffer(
         &mut world.app().window.native,
     ));
-    click_in_customize(world, "2DSketches");
 }
 
 #[when("the user presses Ctrl+A while the available command list has focus")]
+#[when("the user presses Ctrl+A while the source list has focus")]
 fn select_all_visible_source_rows(world: &mut ApplicationWorld) {
     world.key(ViewportPhysicalKey::A, true);
 }
 
 #[then("every currently visible available-command row is highlighted")]
 fn all_visible_source_rows_highlighted(world: &mut ApplicationWorld) {
-    expect_source_selection(world, None);
+    expect_source_selection(world, None, &["<Separator>", "3DAnnotations"]);
 }
 
 #[when("the user clicks 3D Annotations in the available command list")]
@@ -112,15 +117,24 @@ fn select_annotations_in_source(world: &mut ApplicationWorld) {
 #[then("3D Annotations is highlighted")]
 #[then("the other currently visible available-command rows are not highlighted")]
 fn only_annotations_is_highlighted_in_source(world: &mut ApplicationWorld) {
-    expect_source_selection(world, Some("3DAnnotations"));
+    expect_source_selection(
+        world,
+        Some("3DAnnotations"),
+        &["<Separator>", "3DAnnotations"],
+    );
 }
 
-fn expect_source_selection(world: &mut ApplicationWorld, only: Option<&str>) {
+pub(super) fn expect_source_selection(
+    world: &mut ApplicationWorld,
+    only: Option<&str>,
+    required: &[&str],
+) {
     world.hover([800, 900]);
     let x = world.run_in_window("Customize", ">").minimum[0] - 45.;
     let rows = sample_rows(source_rows(world), x);
-    assert!(rows.iter().any(|(label, _)| label == "<Separator>"));
-    assert!(rows.iter().any(|(label, _)| label == "3DAnnotations"));
+    for expected in required {
+        assert!(rows.iter().any(|(label, _)| label == expected));
+    }
     let current = super::super::capture_framebuffer(&mut world.app().window.native);
     let baseline = world
         .last_capture

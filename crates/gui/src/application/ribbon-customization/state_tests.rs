@@ -295,13 +295,29 @@ fn removed_command_restores_its_options_on_its_own_target() {
 fn select_all_uses_visible_source_and_all_target_rows() {
     let mut draft = Draft::default();
     draft.open(RibbonTab::Tools);
-    draft.reset_source_selection(Command::Sketches);
-    draft.select_visible_source(&[Command::Sketches, Command::Annotations]);
+    draft.set_category(Category::ExitSketch);
+    draft.reset_source_selection(Command::CancelSketch);
+    draft.select_visible_source(&[
+        Command::Separator,
+        Command::CancelSketch,
+        Command::FinishSketch,
+    ]);
     draft.add();
-    assert_eq!(draft.rows().len(), 2);
+    assert_eq!(
+        draft
+            .rows()
+            .iter()
+            .map(|row| row.command)
+            .collect::<Vec<_>>(),
+        [
+            Command::CancelSketch,
+            Command::Separator,
+            Command::FinishSketch
+        ]
+    );
     draft.reset_target_selection(1);
     draft.select_all_target();
-    assert_eq!(draft.target_extra, [0].into_iter().collect());
+    assert_eq!(draft.target_extra, [0, 2].into_iter().collect());
     draft.remove();
     assert!(draft.rows().is_empty());
 }

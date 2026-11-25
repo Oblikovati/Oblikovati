@@ -1,7 +1,7 @@
 # Current native Ribbon Customization
 
-Ninety-seven of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 93 of 122 declarations and 1,313
+Ninety-eight of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 94 of 122 declarations and 1,329
 passing steps. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
@@ -42,6 +42,9 @@ sub-environment selector without creating a pending edit.
 The filtered sketch-exit list case verified Page Up and Page Down and
 left the custom panel empty.
 [Source paging](../2026-11-25-ribbon-customization-source-paging-3856/README.md)
+The Ctrl+A transfer placed the focused sketch-exit command first and
+kept the separator available for reuse.
+[Sketch-exit transfer](../2026-11-25-ribbon-customization-exit-transfer-3856/README.md)
 
 The [command list](case-059/cucumber.json),
 [reorder](case-082/cucumber.json), and [remove](case-083/cucumber.json)

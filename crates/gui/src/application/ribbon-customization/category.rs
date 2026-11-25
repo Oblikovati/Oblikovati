@@ -1,7 +1,46 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Keyboard and mouse selection in the command category list.
-use super::{Category, RibbonCustomization};
+use super::{Command, RibbonCustomization};
 use imgui::{Key, Ui};
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(super) enum Category {
+    #[default]
+    All,
+    Macros,
+    Sketch,
+    View,
+    ExitSketch,
+}
+impl Category {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::All => "All Commands",
+            Self::Macros => "Macros",
+            Self::Sketch => "Sketch Tab",
+            Self::View => "View Tab",
+            Self::ExitSketch => "Exit 2D Sketch Tab",
+        }
+    }
+    pub(super) fn contains(self, command: Command) -> bool {
+        match self {
+            Self::All => true,
+            Self::Macros => command == Command::Separator,
+            Self::Sketch => matches!(
+                command,
+                Command::Separator | Command::Tool(_) | Command::Constraint(_) | Command::Dimension
+            ),
+            Self::View => matches!(
+                command,
+                Command::Separator | Command::Sketches | Command::Zoom(_)
+            ),
+            Self::ExitSketch => matches!(
+                command,
+                Command::Separator | Command::CancelSketch | Command::FinishSketch
+            ),
+        }
+    }
+}
 
 const CATEGORIES: [Category; 5] = [
     Category::All,

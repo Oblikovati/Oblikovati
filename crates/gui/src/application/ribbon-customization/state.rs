@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Session-local applied commands and a separate editable draft per ribbon tab.
+use super::Category;
 use crate::{GuiSketchConstraint, GuiSketchTool};
 use crate::{application::viewport_orientation::ZoomAction, ribbon::RibbonTab};
 use std::collections::{BTreeMap, BTreeSet};
@@ -114,44 +115,6 @@ pub(super) const COMMANDS: [Command; 35] = [
     Command::Zoom(ZoomAction::Window),
     Command::Zoom(ZoomAction::Selected),
 ];
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub(super) enum Category {
-    #[default]
-    All,
-    Macros,
-    Sketch,
-    View,
-    ExitSketch,
-}
-impl Category {
-    pub fn label(self) -> &'static str {
-        match self {
-            Self::All => "All Commands",
-            Self::Macros => "Macros",
-            Self::Sketch => "Sketch Tab",
-            Self::View => "View Tab",
-            Self::ExitSketch => "Exit 2D Sketch Tab",
-        }
-    }
-    fn contains(self, command: Command) -> bool {
-        match self {
-            Self::All => true,
-            Self::Macros => command == Command::Separator,
-            Self::Sketch => matches!(
-                command,
-                Command::Separator | Command::Tool(_) | Command::Constraint(_) | Command::Dimension
-            ),
-            Self::View => matches!(
-                command,
-                Command::Separator | Command::Sketches | Command::Zoom(_)
-            ),
-            Self::ExitSketch => matches!(
-                command,
-                Command::Separator | Command::CancelSketch | Command::FinishSketch
-            ),
-        }
-    }
-}
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct Entry {
     pub command: Command,
@@ -159,6 +122,14 @@ pub(super) struct Entry {
     pub text: bool,
     pub expanded: bool,
 }
+#[derive(Clone, Copy, Default)]
+enum SourceSelection {
+    #[default]
+    Ordinary,
+    Range(usize),
+    Visible,
+}
+
 #[derive(Default)]
 pub(super) struct Draft {
     applied: BTreeMap<RibbonTab, Vec<Entry>>,
@@ -168,7 +139,7 @@ pub(super) struct Draft {
     pub target: RibbonTab,
     pub source: Option<Command>,
     pub source_extra: Vec<Command>,
-    source_extent: Option<usize>,
+    source_selection: SourceSelection,
     pub selected: Option<usize>,
     pub target_extra: BTreeSet<usize>,
     target_extent: Option<usize>,
@@ -187,7 +158,7 @@ impl Draft {
         self.target = target;
         self.source = None;
         self.source_extra.clear();
-        self.source_extent = None;
+        self.source_selection = SourceSelection::Ordinary;
         self.selected = None;
         self.target_extra.clear();
         self.target_extent = None;
@@ -227,7 +198,7 @@ impl Draft {
         self.target_extent = None;
         self.source = None;
         self.source_extra.clear();
-        self.source_extent = None;
+        self.source_selection = SourceSelection::Ordinary;
         self.normalize();
     }
     pub fn changed(&self) -> bool {
@@ -248,7 +219,7 @@ impl Draft {
             self.source = Some(additional.remove(0));
         }
         self.source_extra = additional;
-        self.source_extent = None;
+        self.source_selection = SourceSelection::Ordinary;
     }
     pub fn available(&self, command: Command) -> bool {
         (command == Command::Separator || !self.rows().iter().any(|row| row.command == command))
@@ -264,7 +235,7 @@ impl Draft {
             }
         });
         self.source_extra.clear();
-        self.source_extent = None;
+        self.source_selection = SourceSelection::Ordinary;
     }
     pub fn available_commands(&self) -> Vec<Command> {
         let mut commands: Vec<_> = COMMANDS
@@ -283,20 +254,25 @@ impl Draft {
     }
     pub fn reverse_source_order(&mut self) {
         self.source_descending = !self.source_descending;
-        self.source_extent = None;
+        if let SourceSelection::Range(_) = self.source_selection {
+            self.source_selection = SourceSelection::Ordinary;
+        }
     }
     pub fn add(&mut self) {
         let Some(command) = self.source.filter(|command| self.available(*command)) else {
             return;
         };
-        let commands: Vec<_> = self
+        let mut commands: Vec<_> = self
             .available_commands()
             .into_iter()
-            .filter(|candidate| {
-                (*candidate == command || self.source_extra.contains(candidate))
-                    && self.available(*candidate)
-            })
+            .filter(|candidate| *candidate == command || self.source_extra.contains(candidate))
             .collect();
+        // Ctrl+A retains a focused row as the first entry of the transfer.
+        if let SourceSelection::Visible = self.source_selection
+            && let Some(anchor) = commands.iter().position(|candidate| *candidate == command)
+        {
+            commands[..=anchor].rotate_right(1);
+        }
         let index = self.selected.map_or(self.rows().len(), |index| {
             (index + 1).min(self.rows().len())
         });
@@ -313,7 +289,7 @@ impl Draft {
         self.target_extent = Some(index + commands.len() - 1);
         self.mark_changed();
         self.source_extra.clear();
-        self.source_extent = None;
+        self.source_selection = SourceSelection::Ordinary;
         if command != Command::Separator {
             self.source = None;
         }
@@ -341,7 +317,7 @@ impl Draft {
         self.removed.entry(self.target).or_default().extend(removed);
         self.source = first.filter(|command| self.available(*command));
         self.source_extra.clear();
-        self.source_extent = None;
+        self.source_selection = SourceSelection::Ordinary;
         self.mark_changed();
         self.normalize();
     }
@@ -392,7 +368,7 @@ impl Draft {
     pub fn reset_source_selection(&mut self, command: Command) {
         self.source = Some(command);
         self.source_extra.clear();
-        self.source_extent = None;
+        self.source_selection = SourceSelection::Ordinary;
     }
     pub fn reset_target_selection(&mut self, index: usize) {
         self.selected = Some(index);
@@ -413,7 +389,7 @@ impl Draft {
             .copied()
             .filter(|command| *command != anchor)
             .collect();
-        self.source_extent = None;
+        self.source_selection = SourceSelection::Visible;
     }
     pub fn select_all_target(&mut self) {
         let count = self.rows().len();
@@ -433,15 +409,17 @@ impl Draft {
         let Some(index) = available.iter().position(|command| *command == anchor) else {
             return;
         };
-        let Some(next) = self
-            .source_extent
-            .unwrap_or(index)
+        let extent = match self.source_selection {
+            SourceSelection::Range(extent) => extent,
+            _ => index,
+        };
+        let Some(next) = extent
             .checked_add_signed(direction)
             .filter(|next| *next < available.len())
         else {
             return;
         };
-        self.source_extent = Some(next);
+        self.source_selection = SourceSelection::Range(next);
         self.source_extra = (index.min(next)..=index.max(next))
             .filter(|item| *item != index)
             .map(|item| available[item])

@@ -2407,15 +2407,15 @@
           "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
         },
         "cucumber": "architecture/rust-port/receipts/2026-11-25-ribbon-customization-current-3856/cucumber.json",
-        "cucumber_sha256": "e4ac5638b3fc3e6aecb546f8daa7e5f9542f76c304b6efb0a91722902e0e32a6",
+        "cucumber_sha256": "1ec5b27bda3cf7ab59691f5126b07d404a24c71cee64449d93be1b4e01e19f1e",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-ribbon-customization-current-3856/scenario-inventory.json",
         "scenario_inventory_sha256": "f5ffc92a1596db2741aa0edaa272a340c62c06d16219090977ee0a0bceb4302c",
         "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-ribbon-customization-current-3856/scenario-arguments.json",
-        "scenario_arguments_sha256": "ea442321f75ac6bb7ac492cae2f065d4a676463c49fb83e1f8d7b65c2440adb5",
-        "application_commit": "5ee3da885f4aa4b9aafbf698688b9595a3257fdb",
+        "scenario_arguments_sha256": "9a6b2689628fac2f715e1b92f25060db0bb8fdda1ecfc6929db7c79637950a62",
+        "application_commit": "4d35f6551096df5868558d5d09bd7a7c4f4f212f",
         "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-customization OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
         "environment": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe",
-        "notes": "Current diagnostic checkpoint. 97 native executions and 1313 steps in passing cases. 93 of 122 declarations passed, counting each outline only after every example passed. Individual receipts identify the builds and existing local GUI changes. Strict provenance remains open under #3978."
+        "notes": "Current diagnostic checkpoint. 98 native executions and 1329 steps in passing cases. 94 of 122 declarations passed, counting each outline only after every example passed. Individual receipts identify the builds and existing local GUI changes. Strict provenance remains open under #3978."
       }
     }
   }
