@@ -23,9 +23,10 @@ without scrolling.
 
 The published “Visit Home without leaving an active sketch” scenario passed
 all seven steps. The viewport sample follows the live dock bounds and
-avoids the sketch axes. The six-step no-document startup scenario also
-passed, including the empty Model and asset browsers.
+avoids the sketch axes. The six-step startup observation in this run
+included the empty browsers. The later startup fix suspends them.
 [Sketch scenario](cucumber.json) · [Startup scenario](startup/cucumber.json)
+· [Current startup](../2026-11-25-design-gap-20-startup-home-4063/README.md)
 
 The native Recent test verified both sort directions through the Size
 heading with Home in front of the open documents and the asset docks hidden.

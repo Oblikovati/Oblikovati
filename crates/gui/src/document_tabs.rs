@@ -103,7 +103,7 @@ impl DocumentTabs {
         self.detach_on_release(ui, request, strip_top, actions);
         crate::application::document_tabs::document_list_control(
             ui,
-            [span.0 + strip.1, strip_top + 2.],
+            [span.0 + strip.1, strip_top],
             DOCUMENT_LIST_WIDTH,
             &request.commands,
             actions,

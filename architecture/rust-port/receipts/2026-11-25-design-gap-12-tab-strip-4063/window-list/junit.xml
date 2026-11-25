@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Open document tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature" package="testsuite/Feature: Open document tabs: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T16:02:56.996411218Z" time="5.439311609"><testcase name="Scenario: Activate a document from the tab-strip window list: mnt/vininas-projects/MCAD-Scenarios/features/application/document-tabs/document-tabs.feature:175:3" time="5.439311609"><system-out><![CDATA[  Scenario: Activate a document from the tab-strip window list
+   ✔  Given `fixtures/cad/blank-drawing.odd` and `fixtures/cad/quick-access-toolbar/PartOne.opd` are open
+   ✔  And the part is active
+   ✔  And document tabs are visible
+   ✔  When the user opens the document list at the end of the tab strip
+   ✔  Then the list contains the open part and drawing
+   ✔  And the active part is marked in the list
+   ✔  And the menu offers Arrange, Horizontal Tile, Vertical Tile and Restore All
+   ✔  And the menu offers separate Close Tabs and Close All items
+   ✔  When the user selects the drawing from the list
+   ✔  Then the drawing becomes active
+   ✔  And its sheet and drawing browser are displayed
+   ✔  And the part remains open
+]]></system-out></testcase></testsuite></testsuites>

@@ -111,3 +111,32 @@ pub(super) fn assert_stacked_command_art(world: &ApplicationWorld, label: &str) 
         "expected command artwork above {label}"
     );
 }
+
+#[test]
+fn native_document_list_is_centered_and_active_caption_clears_underline() {
+    let mut world = ApplicationWorld::new();
+    workspace_layout::browser_feature::open_visible_extruded_part(&mut world);
+    let strip = diagnostics::window_pixel_bounds("##open-document-tabs").unwrap();
+    let control = diagnostics::window_pixel_bounds("##document-list-control").unwrap();
+    assert_eq!([control[1], control[3]], [strip[1], strip[3]]);
+
+    let button = world
+        .run_in_window("##document-list-control", "Documents")
+        .clone();
+    assert!((button.center()[1] - (strip[1] + strip[3]) * 0.5).abs() <= 2.);
+
+    let caption = world.expect_tab("extruded");
+    let [x, ink_bottom] = diagnostics::pointer_pixels(caption.maximum).map(|point| point as usize);
+    let underline = (ink_bottom..strip[3] as usize)
+        .find(|&y| world.pixel_at([x, y])[..3] == [129, 114, 250])
+        .expect("expected the active document underline");
+    assert!(
+        underline >= ink_bottom + 5,
+        "ink ends at {ink_bottom}, underline starts at {underline}"
+    );
+    world.save_capture("document-list-and-caption");
+
+    world.click(diagnostics::pointer_pixels(button.center()));
+    world.expect_text("Close Tabs");
+    world.close();
+}

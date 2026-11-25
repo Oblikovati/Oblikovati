@@ -56,8 +56,14 @@ pub(crate) fn document_list_control(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
 ) {
+    let strip_height = crate::document_tabs::TAB_STRIP_HEIGHT;
     let _minimum = ui.push_style_var(imgui::StyleVar::WindowMinSize([1., 1.]));
-    crate::widget_abi::window_geometry(ui, position, [width, 24.], imgui::Condition::Always);
+    crate::widget_abi::window_geometry(
+        ui,
+        position,
+        [width, strip_height],
+        imgui::Condition::Always,
+    );
     let moving = if crate::widget_abi::moving_window(ui) {
         imgui::WindowFlags::NO_INPUTS
     } else {
@@ -73,9 +79,13 @@ pub(crate) fn document_list_control(
                 | imgui::WindowFlags::NO_FOCUS_ON_APPEARING,
         )
         .build(|| {
-            if crate::widget_abi::button(ui, "Documents", [0.; 2]) {
+            let height = ui.frame_height().min(strip_height - 4.);
+            crate::widget_abi::cursor_position(ui, [6., (strip_height - height) * 0.5]);
+            let border = ui.push_style_var(imgui::StyleVar::FrameBorderSize(1.));
+            if crate::widget_abi::button(ui, "Documents", [(width - 12.).max(1.), height]) {
                 ui.open_popup(DOCUMENT_LIST_MENU);
             }
+            drop(border);
             if let Some(_menu) = ui.begin_popup(DOCUMENT_LIST_MENU) {
                 arrangement_rows(ui);
                 ui.separator();

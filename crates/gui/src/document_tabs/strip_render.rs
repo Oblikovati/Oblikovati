@@ -43,7 +43,7 @@ pub(super) fn home_tab(
     let shown = ui.tab_item_with_flags("###home-workspace-tab", None, flags);
     draw_tab_label(ui, owner.icons, IconGlyph::Home, "Home");
     if owner.home.active {
-        crate::theme::active_tab_underline(ui);
+        underline_document_tab(ui);
     }
     owner.order.note(
         TabKey::Home,
@@ -115,7 +115,7 @@ pub(super) fn document_tab(
     let selected = !behind && is_active_window(state, tab);
     let keep = draw_document_tab(ui, owner.icons, tab, selected, room);
     if selected {
-        crate::theme::active_tab_underline(ui);
+        underline_document_tab(ui);
     }
     #[cfg(test)]
     record_test_tab_bounds(ui, tab.row.id, owner.test_tab_bounds);
@@ -236,9 +236,8 @@ fn fit_tab_label(
     shortened(lower).into()
 }
 fn draw_tab_label(ui: &Ui, icons: &crate::icons::GuiRibbonIcons, glyph: IconGlyph, label: &str) {
-    let [left, top] = ui.item_rect_min();
-    let bottom = ui.item_rect_max()[1].min(crate::widget_abi::window_draw_clip_bottom(ui)) - 2.;
-    let center = (top + bottom) / 2.;
+    let [left, _] = ui.item_rect_min();
+    let center = ui.window_pos()[1] + (TAB_STRIP_HEIGHT - 5.) * 0.5;
     let texture = imgui::TextureId::new(icons.key(glyph, IconSize::Small).raw());
     ui.get_window_draw_list()
         .add_image(
@@ -256,6 +255,25 @@ fn draw_tab_label(ui: &Ui, icons: &crate::icons::GuiRibbonIcons, glyph: IconGlyp
         ui.style_color(imgui::StyleColor::Text),
         label,
     );
+}
+
+fn underline_document_tab(ui: &Ui) {
+    let [left, _] = ui.item_rect_min();
+    let [right, _] = ui.item_rect_max();
+    let [x, y] = ui.window_pos();
+    let [width, height] = ui.window_size();
+    let bottom = y + height - 1.;
+    let draw = ui.get_window_draw_list();
+    // Reserve the end of the strip for the accent even when ImGui's tab row is shorter.
+    draw.with_clip_rect([x, y], [x + width, bottom], || {
+        draw.add_rect(
+            [left, bottom - 2.],
+            [right, bottom],
+            ui.style_color(imgui::StyleColor::NavHighlight),
+        )
+        .filled(true)
+        .build();
+    });
 }
 
 #[cfg(test)]
