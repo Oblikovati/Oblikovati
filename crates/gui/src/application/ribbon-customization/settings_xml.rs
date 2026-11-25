@@ -13,6 +13,7 @@ pub(super) struct SettingsDocument {
     pub commands: RibbonSettings,
     pub expanded_builtins: BTreeSet<String>,
     pub ungrouped_builtins: BTreeSet<String>,
+    pub large_builtins: BTreeSet<String>,
     pub appearance: RibbonAppearance,
 }
 
@@ -27,13 +28,18 @@ const TABS: [(RibbonTab, &str); 6] = [
 ];
 
 pub(super) fn encode(settings: &SettingsDocument) -> Result<Vec<u8>, String> {
+    let version = if settings.large_builtins.is_empty() {
+        "5"
+    } else {
+        "6"
+    };
     let mut writer = EmitterConfig::new()
         .perform_indent(true)
         .create_writer(Vec::new());
     writer
         .write(
             WriteEvent::start_element("ribbon-customization")
-                .attr("version", "5")
+                .attr("version", version)
                 .attr("appearance", settings.appearance.id()),
         )
         .map_err(|error| format!("XML root: expected writable settings: {error}"))?;
@@ -64,23 +70,20 @@ pub(super) fn encode(settings: &SettingsDocument) -> Result<Vec<u8>, String> {
             .write(WriteEvent::end_element())
             .map_err(|error| error.to_string())?;
     }
-    for id in &settings.expanded_builtins {
-        validate_builtin_id(id)?;
-        writer
-            .write(WriteEvent::start_element("expanded-builtin").attr("id", id))
-            .map_err(|error| error.to_string())?;
-        writer
-            .write(WriteEvent::end_element())
-            .map_err(|error| error.to_string())?;
-    }
-    for id in &settings.ungrouped_builtins {
-        validate_builtin_id(id)?;
-        writer
-            .write(WriteEvent::start_element("ungrouped-builtin").attr("id", id))
-            .map_err(|error| error.to_string())?;
-        writer
-            .write(WriteEvent::end_element())
-            .map_err(|error| error.to_string())?;
+    for (element, ids) in [
+        ("expanded-builtin", &settings.expanded_builtins),
+        ("ungrouped-builtin", &settings.ungrouped_builtins),
+        ("large-builtin", &settings.large_builtins),
+    ] {
+        for id in ids {
+            validate_builtin_id(id)?;
+            writer
+                .write(WriteEvent::start_element(element).attr("id", id))
+                .map_err(|error| error.to_string())?;
+            writer
+                .write(WriteEvent::end_element())
+                .map_err(|error| error.to_string())?;
+        }
     }
     writer
         .write(WriteEvent::end_element())
@@ -106,6 +109,7 @@ pub(super) fn decode(bytes: &[u8]) -> Result<SettingsDocument, String> {
         commands: decoder.settings,
         expanded_builtins: decoder.expanded_builtins,
         ungrouped_builtins: decoder.ungrouped_builtins,
+        large_builtins: decoder.large_builtins,
         appearance: decoder.appearance,
     })
 }
@@ -114,6 +118,7 @@ struct SettingsDecoder {
     settings: RibbonSettings,
     expanded_builtins: BTreeSet<String>,
     ungrouped_builtins: BTreeSet<String>,
+    large_builtins: BTreeSet<String>,
     path: Vec<String>,
     current: Option<RibbonTab>,
     root: bool,
@@ -174,12 +179,21 @@ impl SettingsDecoder {
                     ));
                 }
             }
+            ([parent], "large-builtin")
+                if parent == "ribbon-customization" && self.version >= 6 =>
+            {
+                let id = attribute(attrs, "id", 1)?;
+                validate_builtin_id(id)?;
+                if !self.large_builtins.insert(id.to_owned()) {
+                    return Err(format!("built-in size {id:?}: expected a unique size"));
+                }
+            }
             ([root, tab], "command") if root == "ribbon-customization" && tab == "tab" => {
                 self.command(attrs)?
             }
             _ => {
                 return Err(format!(
-                    "XML element {tag:?}: expected version 1, 2, 3, 4 or 5 ribbon settings"
+                    "XML element {tag:?}: expected version 1 through 6 ribbon settings"
                 ));
             }
         }
@@ -197,10 +211,9 @@ impl SettingsDecoder {
             Some("3") => 3,
             Some("4") => 4,
             Some("5") => 5,
+            Some("6") => 6,
             _ => {
-                return Err(format!(
-                    "ribbon version {version:?}: expected 1, 2, 3, 4 or 5"
-                ));
+                return Err(format!("ribbon version {version:?}: expected 1 through 6"));
             }
         };
         let count = if self.version >= 4 { 2 } else { 1 };
@@ -337,6 +350,7 @@ mod tests {
             commands,
             expanded_builtins: BTreeSet::from(["part.tools.clipboard.copy".into()]),
             ungrouped_builtins: BTreeSet::from(["part.model.work-features.plane".into()]),
+            large_builtins: BTreeSet::from([crate::shell_ribbon::ID.into()]),
             appearance: RibbonAppearance::Compact,
         };
         assert_eq!(decode(&encode(&settings).unwrap()).unwrap(), settings);
@@ -397,18 +411,21 @@ mod tests {
     }
     #[test]
     fn supported_versions_load_and_unknown_version_reports_the_expected_set() {
-        for version in 1..=5 {
+        for version in 1..=6 {
             let appearance = if version >= 4 {
                 " appearance=\"normal\""
             } else {
                 ""
             };
             let xml = format!("<ribbon-customization version=\"{version}\"{appearance}/>");
-            assert!(decode(xml.as_bytes()).is_ok(), "version {version}");
+            assert!(
+                decode(xml.as_bytes()).unwrap().large_builtins.is_empty(),
+                "version {version} should default to standard button sizes"
+            );
         }
         assert_eq!(
             decode(b"<ribbon-customization version=\"99\"/>").unwrap_err(),
-            "ribbon version Some(\"99\"): expected 1, 2, 3, 4 or 5"
+            "ribbon version Some(\"99\"): expected 1 through 6"
         );
     }
     #[test]

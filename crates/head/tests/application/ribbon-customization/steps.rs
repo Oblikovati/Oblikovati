@@ -7,6 +7,8 @@ mod row_selection;
 #[path = "source_continuity.rs"]
 mod source_continuity;
 use row_selection::shift_down;
+#[path = "button_size.rs"]
+mod button_size;
 #[path = "cancel_dialog.rs"]
 mod cancel_dialog;
 use cancel_dialog::cancel_customization;

@@ -1,7 +1,7 @@
 # Current native Ribbon Customization
 
-Eighty-seven of 126 executions passed on Linux X11 with Xvfb, Openbox,
-and Vulkan Lavapipe. They covered 83 of 122 declarations and 1,186
+Ninety of 126 executions passed on Linux X11 with Xvfb, Openbox,
+and Vulkan Lavapipe. They covered 86 of 122 declarations and 1,223
 passing steps. Each case started with a writable copy of the published
 Normal ribbon profile. The passing cases cover tab retention, staged
 commands, keyboard input, target switching, export and import, and
@@ -20,9 +20,11 @@ The grouped Plane menu case verified its icons and dividers, then
 dismissed it with Escape. [Plane menu run](../2026-11-25-ribbon-customization-plane-menu-3856/README.md)
 Two more cases verified separate Plane choices, regrouping, and native
 window resizing. [Plane grouping and reflow](../2026-11-25-ribbon-customization-regroup-3856/README.md)
+Three cases verified Shell's Button Size menu, adjacent command reflow,
+and retention across tab and appearance changes.
+[Shell button size](../2026-11-25-ribbon-customization-button-size-3856/README.md)
 
-The [Button Size case](case-025/cucumber.json) reached the main-panel
-command menu. The [command list](case-059/cucumber.json),
+The [command list](case-059/cucumber.json),
 [reorder](case-082/cucumber.json), and [remove](case-083/cucumber.json)
 cases reached the Available Commands list, which lacks `2-D Drawing`.
 The [target selector](case-021/cucumber.json) and

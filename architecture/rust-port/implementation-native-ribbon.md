@@ -45,6 +45,9 @@ with icons and dividers between the offset, reference, and orientation groups.
 Ungrouping shows Offset from Plane as its own button. When Work Features
 has collapsed to fit the ribbon, regrouping keeps the panel compact
 until a ribbon width change triggers a new measurement.
+Shell's Button Size menu switches the main-panel command between
+Standard and Large. Its setting follows the ribbon profile, including
+XML import and export. Global Text Off still hides its caption.
 Both command lists resize with the floating Customize window without
 losing staged edits. Reopening restores its default size and keeps its
 position within the visible workspace.

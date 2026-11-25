@@ -64,8 +64,9 @@ pub(super) fn temporary_geometry(
     display: &RibbonDisplayState,
     shown: TemporaryPanel,
     top: f32,
-    factor: f32,
+    owners: &RibbonPanelOwners<'_>,
 ) -> ([f32; 2], [f32; 2]) {
+    let factor = owners.icons.layout_factor();
     let floating_notes = display.placement
         == crate::application::ribbon_display::RibbonPlacement::Floating
         && shown == TemporaryPanel::Group(RibbonPanel::PartNotes);
@@ -77,7 +78,10 @@ pub(super) fn temporary_geometry(
     };
     let measured = layout.widths.get(&(tab, panel)).copied().unwrap_or(108.);
     let compact_width = if display.side_anchor.is_some() && panel == RibbonPanel::PartModify {
-        crate::ribbon_panel_contents::compact_modify_width(display.appearance) * factor
+        crate::ribbon_panel_contents::compact_modify_width(
+            display.appearance,
+            crate::shell_ribbon::large_in_main(owners.customization),
+        ) * factor
     } else if floating_notes {
         crate::ribbon_panel_contents::FLOATING_NOTES_WIDTH * factor
     } else {

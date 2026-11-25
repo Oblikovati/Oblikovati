@@ -9,6 +9,13 @@ pub(in super::super) fn ribbon_icon_quads(band_bottom: f32) -> Vec<Rectangle> {
 }
 
 pub(in super::super) fn icon_quads_inside(bounds: Rectangle) -> Vec<Rectangle> {
+    icon_images_inside(bounds)
+        .into_iter()
+        .map(|(rectangle, _)| rectangle)
+        .collect()
+}
+
+pub(in super::super) fn icon_images_inside(bounds: Rectangle) -> Vec<(Rectangle, usize)> {
     // ImGui owns the completed draw packet until the next frame begins.
     let raw = unsafe { sys::igGetDrawData().as_ref() }.expect("expected a completed GUI frame");
     let draws = unsafe { DrawData::from_raw(raw) };
@@ -29,7 +36,7 @@ pub(in super::super) fn icon_quads_inside(bounds: Rectangle) -> Vec<Rectangle> {
                     vertices[quad[2] as usize].pos,
                 );
                 if is_icon_inside(rectangle, bounds) {
-                    images.push(rectangle);
+                    images.push((rectangle, cmd_params.texture_id.id()));
                 }
             }
         }

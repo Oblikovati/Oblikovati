@@ -42,6 +42,7 @@ pub(super) fn part_modify_controls(
     owners: &mut crate::ribbon_panels::RibbonPanelOwners<'_>,
 ) {
     let icons = owners.icons;
+    let large_shell = crate::shell_ribbon::large_in_main(owners.customization);
     use crate::icons::IconGlyph;
     let size = muted_command_position(ui, origin, icons, 0);
     let action = crate::GuiShellAction::OpenHole;
@@ -60,7 +61,7 @@ pub(super) fn part_modify_controls(
         actions.push(action);
     }
     drop(disabled);
-    let size = muted_command_position(ui, origin, icons, 2);
+    let size = muted_command_position(ui, origin, icons, if large_shell { 4 } else { 2 });
     let action = crate::GuiShellAction::OpenChamfer;
     let disabled = ui.begin_disabled(!action.dispatchable(state));
     if icons.button(ui, "Chamfer", IconGlyph::Chamfer, size) {
@@ -68,7 +69,13 @@ pub(super) fn part_modify_controls(
     }
     drop(disabled);
     if !crate::shell_ribbon::is_expanded(owners.customization) {
-        let size = muted_command_position(ui, origin, icons, 3);
+        let size = if large_shell {
+            let (position, _) = icons.appearance.cell(2);
+            icons.cursor(ui, origin, position);
+            icons.appearance.single_cell()
+        } else {
+            muted_command_position(ui, origin, icons, 3)
+        };
         let right = owners
             .customization
             .builtin_draw(ui, crate::shell_ribbon::ID, false, || {
@@ -84,7 +91,7 @@ pub(super) fn part_modify_controls(
         owners.quick_access.command_took_right_click |= right;
     }
     if crate::move_body_ribbon::is_main(owners.customization) {
-        let size = muted_command_position(ui, origin, icons, 4);
+        let size = muted_command_position(ui, origin, icons, 4 + usize::from(large_shell));
         crate::move_body_ribbon::main_button(
             ui,
             size,
@@ -105,9 +112,10 @@ pub(crate) fn compact_modify_commands(
     ui: &Ui,
     origin: [f32; 2],
     icons: &crate::icons::GuiRibbonIcons,
+    large_shell: bool,
 ) {
     for (slot, label) in COMPACT_MODIFY_COMMANDS {
-        let size = muted_command_position(ui, origin, icons, slot);
+        let size = muted_command_position(ui, origin, icons, slot + usize::from(large_shell));
         muted_command(ui, label, NOT_PORTED, icons, None, false, size);
     }
 }
@@ -116,11 +124,12 @@ pub(crate) fn compact_modify_commands(
 /// For example, Normal appearance reserves all four columns of the side pane.
 pub(crate) fn compact_modify_width(
     appearance: crate::ribbon_command_layout::RibbonAppearance,
+    large_shell: bool,
 ) -> f32 {
     COMPACT_MODIFY_COMMANDS
         .iter()
         .map(|&(slot, _)| {
-            let (position, size) = appearance.cell(slot);
+            let (position, size) = appearance.cell(slot + usize::from(large_shell));
             position[0] + size[0]
         })
         .fold(0., f32::max)

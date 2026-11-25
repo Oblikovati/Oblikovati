@@ -202,8 +202,11 @@ impl RibbonCustomization {
         match self.settings.panel(ui, &document) {
             Some(Ok(settings)) => {
                 self.draft.import(settings.commands);
-                self.builtins
-                    .import(settings.expanded_builtins, settings.ungrouped_builtins);
+                self.builtins.import(
+                    settings.expanded_builtins,
+                    settings.ungrouped_builtins,
+                    settings.large_builtins,
+                );
                 self.staged_appearance = settings.appearance;
                 self.settings_error = None;
             }

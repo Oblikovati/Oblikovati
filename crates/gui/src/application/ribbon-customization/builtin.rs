@@ -13,27 +13,45 @@ pub(super) struct BuiltinLayout {
     staged: BTreeSet<String>,
     ungrouped: BTreeSet<String>,
     staged_ungrouped: BTreeSet<String>,
+    large: BTreeSet<String>,
+    staged_large: BTreeSet<String>,
 }
 impl BuiltinLayout {
-    pub(super) fn load(&mut self, locations: BTreeSet<String>, groups: BTreeSet<String>) {
+    pub(super) fn load(
+        &mut self,
+        locations: BTreeSet<String>,
+        groups: BTreeSet<String>,
+        large: BTreeSet<String>,
+    ) {
         self.applied = locations;
         self.ungrouped = groups;
+        self.large = large;
         self.open();
     }
     pub(super) fn open(&mut self) {
         self.staged = self.applied.clone();
         self.staged_ungrouped = self.ungrouped.clone();
+        self.staged_large = self.large.clone();
     }
     pub(super) fn apply(&mut self) {
         self.applied = self.staged.clone();
         self.ungrouped = self.staged_ungrouped.clone();
+        self.large = self.staged_large.clone();
     }
-    pub(super) fn import(&mut self, locations: BTreeSet<String>, groups: BTreeSet<String>) {
+    pub(super) fn import(
+        &mut self,
+        locations: BTreeSet<String>,
+        groups: BTreeSet<String>,
+        large: BTreeSet<String>,
+    ) {
         self.staged = locations;
         self.staged_ungrouped = groups;
+        self.staged_large = large;
     }
     pub(super) fn changed(&self) -> bool {
-        self.applied != self.staged || self.ungrouped != self.staged_ungrouped
+        self.applied != self.staged
+            || self.ungrouped != self.staged_ungrouped
+            || self.large != self.staged_large
     }
 }
 impl RibbonCustomization {
@@ -42,6 +60,7 @@ impl RibbonCustomization {
             commands: self.draft.snapshot().clone(),
             expanded_builtins: self.builtins.staged.clone(),
             ungrouped_builtins: self.builtins.staged_ungrouped.clone(),
+            large_builtins: self.builtins.staged_large.clone(),
             appearance: self.staged_appearance,
         }
     }
@@ -50,6 +69,7 @@ impl RibbonCustomization {
             commands: self.draft.applied_snapshot().clone(),
             expanded_builtins: self.builtins.applied.clone(),
             ungrouped_builtins: self.builtins.ungrouped.clone(),
+            large_builtins: self.builtins.large.clone(),
             appearance: self.appearance,
         }
     }
@@ -69,8 +89,11 @@ impl RibbonCustomization {
                 ));
             }
             let document = settings_xml::decode(&bytes)?;
-            self.builtins
-                .load(document.expanded_builtins, document.ungrouped_builtins);
+            self.builtins.load(
+                document.expanded_builtins,
+                document.ungrouped_builtins,
+                document.large_builtins,
+            );
             self.appearance = document.appearance;
             self.staged_appearance = document.appearance;
             self.draft.load_applied(document.commands);
@@ -117,8 +140,11 @@ impl RibbonCustomization {
         let defaults = settings_xml::SettingsDocument::default();
         Self::save_settings(&mut self.store, &defaults)?;
         self.draft.load_applied(defaults.commands);
-        self.builtins
-            .load(defaults.expanded_builtins, defaults.ungrouped_builtins);
+        self.builtins.load(
+            defaults.expanded_builtins,
+            defaults.ungrouped_builtins,
+            defaults.large_builtins,
+        );
         self.appearance = defaults.appearance;
         self.staged_appearance = defaults.appearance;
         Ok(())
@@ -171,6 +197,27 @@ impl RibbonCustomization {
     }
     pub(crate) fn builtin_ungrouped(&self, id: &str) -> bool {
         self.builtins.ungrouped.contains(id)
+    }
+    pub(crate) fn builtin_large(&self, id: &str) -> bool {
+        self.builtins.large.contains(id)
+    }
+    pub(super) fn set_builtin_large(&mut self, id: &str, large: bool) -> Result<(), String> {
+        let mut document = self.applied_document();
+        if large {
+            document.large_builtins.insert(id.to_owned());
+        } else {
+            document.large_builtins.remove(id);
+        }
+        Self::save_settings(&mut self.store, &document)?;
+        if self.builtins.staged_large.contains(id) == self.builtin_large(id) {
+            if large {
+                self.builtins.staged_large.insert(id.to_owned());
+            } else {
+                self.builtins.staged_large.remove(id);
+            }
+        }
+        self.builtins.large = document.large_builtins;
+        Ok(())
     }
     pub(super) fn set_builtin_ungrouped(
         &mut self,
@@ -297,6 +344,21 @@ impl RibbonCustomization {
                 && let Err(error) = self.set_builtin_ungrouped(id, !ungrouped)
             {
                 self.report_command_error(error);
+            }
+        }
+        if id == crate::shell_ribbon::ID
+            && !expanded
+            && let Some(_size) = ui.begin_menu("Button Size")
+        {
+            for (label, large) in [("Standard", false), ("Large", true)] {
+                if ui
+                    .menu_item_config(label)
+                    .selected(self.builtin_large(id) == large)
+                    .build()
+                    && let Err(error) = self.set_builtin_large(id, large)
+                {
+                    self.report_command_error(error);
+                }
             }
         }
         let disabled = ui.begin_disabled(true);

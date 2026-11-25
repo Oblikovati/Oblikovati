@@ -91,6 +91,7 @@ impl PanelDrawContext<'_> {
                 self.ui,
                 origin,
                 self.owners.icons,
+                crate::shell_ribbon::large_in_main(self.owners.customization),
             );
         }
         acted
@@ -207,15 +208,8 @@ fn temporary_panel(
     };
     let ui = context.ui;
     let top = ui.window_size()[1];
-    let (position, size) = temporary_geometry(
-        ui,
-        tab,
-        layout,
-        display,
-        shown,
-        top,
-        context.owners.icons.layout_factor(),
-    );
+    let (position, size) =
+        temporary_geometry(ui, tab, layout, display, shown, top, &context.owners);
     context.ribbon_bottom = position[1] + size[1];
     crate::widget_abi::window_geometry(ui, position, size, imgui::Condition::Always);
     let before = context.actions.len();

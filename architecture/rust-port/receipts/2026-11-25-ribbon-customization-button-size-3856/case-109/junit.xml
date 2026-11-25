@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T05:13:49.406898465Z" time="37.707970209"><testcase name="Scenario: Retain an individual large button when ribbon text is turned off: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1781:3" time="37.707970209"><system-out><![CDATA[  Scenario: Retain an individual large button when ribbon text is turned off
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open with the full 3D Model ribbon in Normal appearance
+   ✔  And Shell is displayed at Standard button size in the Modify panel
+   ✔  When the user changes the Shell button size to Large
+   ✔  Then Shell appears as a large labeled button
+   ✔  When the user selects Text Off from Ribbon Appearance
+   ✔  Then command labels are hidden and the Modify panel title remains visible
+   ✔  And Shell appears as a large icon without its label
+   ✔  When the user opens the Shell button size submenu
+   ✔  Then Large is checked
+   ✔  When the user selects Standard for Shell
+   ✔  And the user restores Normal ribbon appearance
+   ✔  Then Shell returns to its standard labeled presentation
+]]></system-out></testcase></testsuite></testsuites>

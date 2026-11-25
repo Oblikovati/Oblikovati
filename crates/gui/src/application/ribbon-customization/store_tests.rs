@@ -46,6 +46,31 @@ fn plane_group_and_placement_persist_independently_and_roll_back_failed_saves() 
     assert!(!restored.builtin_ungrouped(id));
 }
 #[test]
+fn shell_button_size_keeps_its_saved_value_through_appearance_and_failed_save() {
+    let store = FakeRibbonStore::default();
+    let id = crate::shell_ribbon::ID;
+    let mut customization = RibbonCustomization::default();
+    customization.set_store(Box::new(store.clone())).unwrap();
+    assert!(!customization.builtin_large(id));
+    customization.set_builtin_large(id, true).unwrap();
+    customization.select_appearance(crate::ribbon_command_layout::RibbonAppearance::TextOff);
+    store.0.borrow_mut().fail_save = true;
+    assert!(customization.set_builtin_large(id, false).is_err());
+    assert!(customization.builtin_large(id));
+    store.0.borrow_mut().fail_save = false;
+    let mut reopened = RibbonCustomization::default();
+    reopened.set_store(Box::new(store.clone())).unwrap();
+    assert!(reopened.builtin_large(id));
+    assert_eq!(
+        reopened.appearance(),
+        crate::ribbon_command_layout::RibbonAppearance::TextOff
+    );
+    reopened.reset().unwrap();
+    let mut restored = RibbonCustomization::default();
+    restored.set_store(Box::new(store)).unwrap();
+    assert!(!restored.builtin_large(id));
+}
+#[test]
 fn applied_settings_reload_and_failed_saves_leave_the_draft_pending() {
     let store = FakeRibbonStore::default();
     let mut customization = RibbonCustomization::default();
