@@ -4,7 +4,19 @@ use super::*;
 
 #[given("an unsaved part containing a visible rectangular solid is active in the MCAD Software")]
 fn unsaved_solid(world: &mut ApplicationWorld) {
-    let document = world.add_part();
+    world.add_part();
+    rectangular_profile(world, ["10 mm", "10 mm"]);
+    extrude_profile(world, "10 mm");
+    preview_baseline(world);
+}
+
+#[given("the user sketches a 40 by 25 mm rectangle on the XY datum plane and extrudes it 20 mm")]
+fn published_solid_dimensions(world: &mut ApplicationWorld) {
+    rectangular_profile(world, ["40 mm", "25 mm"]);
+    extrude_profile(world, "20 mm");
+}
+
+fn rectangular_profile(world: &mut ApplicationWorld, dimensions: [&str; 2]) {
     world.start_sketch();
     world.click_text("Rectangle");
     let edit = world.app().owner.active_sketch_edit().unwrap();
@@ -22,29 +34,43 @@ fn unsaved_solid(world: &mut ApplicationWorld) {
             modifiers: Default::default(),
         },
     )]);
-    for key in [
+    let advance = [
         oblikovati_viewport::ViewportPhysicalKey::Tab,
         oblikovati_viewport::ViewportPhysicalKey::Enter,
-    ] {
-        world.type_text("10 mm");
+    ];
+    for (dimension, key) in dimensions.into_iter().zip(advance) {
+        world.type_text(dimension);
         world.key(key, false);
     }
     world.finish_sketch();
+}
+
+fn extrude_profile(world: &mut ApplicationWorld, distance: &str) {
     world.click_text("Extrude");
     let label = world.run("Distance A").clone();
     world.click([label.minimum[0] as i32 - 100, label.center()[1] as i32]);
-    world.type_text("10 mm");
+    world.type_text(distance);
     let validation = world
         .state()
         .extrude_distance_validation
         .expect("expected owner validation");
-    assert_eq!(validation.distance, "10 mm");
+    assert_eq!(validation.distance, distance);
     assert!(
         validation.error.is_none(),
         "distance must resolve as a positive length"
     );
     world.click_text("OK");
     world.pump(Vec::new());
+}
+
+#[given("the unsaved part containing that visible rectangular solid is active")]
+fn exact_solid_visible(world: &mut ApplicationWorld) {
+    preview_baseline(world);
+    native_fixtures::expect_40_by_25_by_20_solid(world);
+}
+
+fn preview_baseline(world: &mut ApplicationWorld) {
+    let document = world.active_id();
     assert!(world.state().document_storage[&document].path.is_none());
     super::super::workspace_layout::browser_feature::expect_solid_visible(world);
     world.observed_view_camera = Some(super::super::viewport_pan::camera(world));

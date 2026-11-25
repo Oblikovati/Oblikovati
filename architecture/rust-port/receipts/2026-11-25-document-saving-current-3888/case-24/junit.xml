@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T02:31:13.104473322Z" time="4.64160999"><testcase name="Scenario: Save a generated part at its assigned output location: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature:327:3" time="4.64160999"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Save a generated part at its assigned output location
+   ✘  Given a writable copy of `fixtures/cad/single-occurrence.oad` is staged in an isolated working folder
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature:328:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

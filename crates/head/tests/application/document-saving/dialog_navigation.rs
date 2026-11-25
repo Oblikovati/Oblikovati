@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::native_fixtures::{
+    EXISTING_NAME, SOLID_NAME, native_save_as_folder, published_save_as_parts,
+};
 use super::*;
+
 #[given("the user presses Control+S to open Save As")]
 fn save_with_workspace_preview_baseline(world: &mut ApplicationWorld) {
     world.workspace_color = Some(world.pixel_at(VIEWPORT_CENTRE));
@@ -67,13 +71,15 @@ fn folder_with_part(world: &mut ApplicationWorld) {
 }
 
 fn folder_pixel(world: &mut ApplicationWorld) -> [u8; 4] {
-    let folder = world.run("archive/").clone();
+    let folder = world.run(selectable_folder()).clone();
     world.pixel_at([folder.maximum[0] as usize + 10, folder.center()[1] as usize])
 }
 #[when("I select that part file in the file list")]
 #[when("the user selects that part file in the file list")]
+#[when("the user selects `ExistingPart.opd` in the file list")]
 fn select_existing(world: &mut ApplicationWorld) {
-    world.click_text(EXISTING_PART);
+    world.click_text(existing_part());
+    move_pointer_off_dialog(world);
 }
 #[then("the selected file row is highlighted")]
 fn row_highlighted(world: &mut ApplicationWorld) {
@@ -82,7 +88,7 @@ fn row_highlighted(world: &mut ApplicationWorld) {
         .frame
         .runs
         .iter()
-        .filter(|run| run.text == EXISTING_PART.replace(' ', ""))
+        .filter(|run| run.text == existing_part().replace(' ', ""))
         .min_by(|left, right| left.minimum[1].total_cmp(&right.minimum[1]))
         .expect("expected the listed file row")
         .clone();
@@ -100,7 +106,7 @@ fn name_follows(world: &mut ApplicationWorld) {
         .frame
         .runs
         .iter()
-        .filter(|run| run.text == EXISTING_PART.replace(' ', ""))
+        .filter(|run| run.text == existing_part().replace(' ', ""))
         .count();
     assert_eq!(rows, 2, "expected the name in the row and the field");
 }
@@ -114,6 +120,24 @@ fn initial_subfolder(world: &mut ApplicationWorld) {
     world.expect_text(SUBFOLDER);
     world.initial_breadcrumb = Some(world.breadcrumb_text());
 }
+pub(super) fn observe_native_save_folder(world: &mut ApplicationWorld) {
+    assert!(world.breadcrumb_text().ends_with("SaveAsNativeFolder"));
+    world.expect_text("Subfolder/");
+    world.initial_breadcrumb = Some(world.breadcrumb_text());
+    world.observed_counts = folder_pixel(world).into_iter().map(usize::from).collect();
+}
+
+fn existing_part() -> &'static str {
+    native_save_as_folder().map_or(EXISTING_PART, |_| EXISTING_NAME)
+}
+
+fn navigable_folder() -> &'static str {
+    native_save_as_folder().map_or(SUBFOLDER, |_| "Subfolder/")
+}
+
+fn selectable_folder() -> &'static str {
+    native_save_as_folder().map_or("archive/", |_| "Subfolder/")
+}
 #[given("the dialog displays a proposed file name")]
 fn proposal_shown(world: &mut ApplicationWorld) {
     let id = world.active_id();
@@ -122,9 +146,12 @@ fn proposal_shown(world: &mut ApplicationWorld) {
     world.proposed_name = Some(name);
 }
 fn open_subfolder_row(world: &mut ApplicationWorld) {
-    let at = world.run(SUBFOLDER).center().map(|value| value as i32);
+    let at = world
+        .run(navigable_folder())
+        .center()
+        .map(|value| value as i32);
     world.double_click(at);
-    world.expect_text(NESTED_FOLDER);
+    subfolder_shown(world);
 }
 #[when("I open the subfolder")]
 #[when("the user opens the subfolder")]
@@ -134,11 +161,17 @@ fn open_subfolder(world: &mut ApplicationWorld) {
 #[then("the location breadcrumb and file list show the subfolder")]
 fn subfolder_shown(world: &mut ApplicationWorld) {
     let crumb = world.breadcrumb_text();
+    let child = navigable_folder().trim_end_matches('/');
     assert!(
-        crumb.ends_with(">src"),
+        crumb.ends_with(&format!(">{child}")),
         "breadcrumb {crumb:?}: expected the subfolder last"
     );
-    world.expect_text(NESTED_FOLDER);
+    if native_save_as_folder().is_some() {
+        world.expect_no_text(EXISTING_NAME);
+        world.expect_no_text(SOLID_NAME);
+    } else {
+        world.expect_text(NESTED_FOLDER);
+    }
 }
 #[then("the proposed file name remains in the file name field")]
 fn proposal_remains(world: &mut ApplicationWorld) {
@@ -157,7 +190,11 @@ fn choose_back(world: &mut ApplicationWorld) {
 fn initial_folder(world: &mut ApplicationWorld) {
     let crumb = world.breadcrumb_text();
     assert_eq!(Some(crumb), world.initial_breadcrumb);
-    world.expect_text(SUBFOLDER);
+    world.expect_text(navigable_folder());
+    if native_save_as_folder().is_some() {
+        world.expect_text(EXISTING_NAME);
+        world.expect_text(SOLID_NAME);
+    }
 }
 #[given("I have navigated from the initial folder into a subfolder")]
 #[given("the user has navigated from the initial folder into a subfolder")]
@@ -286,8 +323,7 @@ fn folder_with_entries(world: &mut ApplicationWorld) {
 
 #[when("the user selects the part file in the file list")]
 fn choose_listed_part(world: &mut ApplicationWorld) {
-    world.click_text(EXISTING_PART);
-    move_pointer_off_dialog(world);
+    select_existing(world);
 }
 #[then("the file is highlighted and its name appears in the file name field")]
 fn listed_part_selected(world: &mut ApplicationWorld) {
@@ -296,7 +332,7 @@ fn listed_part_selected(world: &mut ApplicationWorld) {
 }
 #[when("the user selects the subfolder with a single click")]
 fn select_folder_once(world: &mut ApplicationWorld) {
-    world.click_text("archive/");
+    world.click_text(selectable_folder());
     move_pointer_off_dialog(world);
 }
 fn move_pointer_off_dialog(world: &mut ApplicationWorld) {
@@ -309,26 +345,26 @@ fn move_pointer_off_dialog(world: &mut ApplicationWorld) {
 }
 #[then("the subfolder is highlighted without opening")]
 fn folder_selected_without_opening(world: &mut ApplicationWorld) {
-    world.expect_text(EXISTING_PART);
-    assert!(world.shows("archive/"), "expected the folder row");
+    world.expect_text(existing_part());
+    assert!(world.shows(selectable_folder()), "expected the folder row");
     let baseline: Vec<usize> = folder_pixel(world).into_iter().map(usize::from).collect();
     assert_ne!(baseline, world.observed_counts, "expected selected folder");
 }
 #[then("the file name field still displays the selected part file name")]
 #[then("the file name field still displays the part file name")]
 fn selected_name_retained(world: &mut ApplicationWorld) {
-    world.expect_text(EXISTING_PART);
+    world.expect_text(existing_part());
     let shown = world
         .frame
         .runs
         .iter()
-        .filter(|run| run.text == EXISTING_PART.replace(' ', ""))
+        .filter(|run| run.text == existing_part().replace(' ', ""))
         .count();
     assert!(shown >= 2, "expected file name in the list and field");
 }
 #[when("the user clicks empty space in the file list")]
 fn clear_list_selection(world: &mut ApplicationWorld) {
-    let row = world.run("archive/").clone();
+    let row = world.run(selectable_folder()).clone();
     world.click([row.center()[0] as i32 + 80, row.center()[1] as i32 + 100]);
 }
 #[then("no file or folder is highlighted")]
@@ -355,8 +391,16 @@ fn activate_view(world: &mut ApplicationWorld) {
 #[then("the file list displays thumbnail tiles with names and file information")]
 fn tiles_shown(world: &mut ApplicationWorld) {
     world.expect_no_text("Date modified");
-    world.expect_text(EXISTING_PART);
-    world.expect_text("Folder 4096 B");
+    world.expect_text(existing_part());
+    if let Some(folder) = native_save_as_folder() {
+        for name in [EXISTING_NAME, SOLID_NAME] {
+            world.expect_text(name);
+            let size = folder.join(name).metadata().unwrap().len();
+            world.expect_text(&format!("Part {size} B"));
+        }
+    } else {
+        world.expect_text("Folder 4096 B");
+    }
 }
 #[then("the proposed file name and preview settings remain displayed")]
 fn name_and_preview_remain(world: &mut ApplicationWorld) {
@@ -382,8 +426,9 @@ fn name_remains(world: &mut ApplicationWorld) {
 }
 #[when("I select the existing part file")]
 #[when("the user selects the existing part file")]
+#[when("the user selects `ExistingPart.opd`")]
 fn select_existing_part(world: &mut ApplicationWorld) {
-    world.click_text(EXISTING_PART);
+    select_existing(world);
 }
 #[when("I choose Save")]
 #[when("the user chooses Save")]
@@ -394,7 +439,7 @@ fn choose_save(world: &mut ApplicationWorld) {
 #[then("a confirmation identifies the existing file and asks whether to replace it")]
 fn replace_asked(world: &mut ApplicationWorld) {
     world.expect_text("already exists");
-    world.expect_text(EXISTING_PART);
+    world.expect_text(existing_part());
     world.expect_text("replace it");
 }
 #[then("the confirmation offers Yes and No")]
@@ -421,7 +466,18 @@ fn replace_closed(world: &mut ApplicationWorld) {
 #[then("Save As remains open with the existing file name displayed")]
 fn save_as_remains(world: &mut ApplicationWorld) {
     world.expect_text(SAVE_IN);
-    world.expect_text(EXISTING_PART);
+    world.expect_text(existing_part());
+    if let Some(folder) = native_save_as_folder() {
+        for name in [EXISTING_NAME, SOLID_NAME] {
+            let actual = std::fs::read(folder.join(name)).unwrap();
+            let expected = std::fs::read(published_save_as_parts().join(name)).unwrap();
+            assert_eq!(
+                actual, expected,
+                "expected {name} to survive declining replacement"
+            );
+        }
+        return;
+    }
     let folder = world.scratch_folder();
     let bytes = std::fs::read(folder.join(EXISTING_PART)).unwrap();
     assert_eq!(
@@ -433,42 +489,6 @@ fn save_as_remains(world: &mut ApplicationWorld) {
 fn new_unsaved_remains(world: &mut ApplicationWorld) {
     unsaved_remains(world);
 }
-#[given("a saved part is active in the MCAD Software")]
-fn saved_part_active(world: &mut ApplicationWorld) {
-    let id = world.add_part();
-    world.previous_document = Some(id);
-    world.saved_path = Some(world.save_part_to_file(id, "saved part.opd"));
-}
-#[when("I open the application menu")]
-#[when("the user opens the application menu")]
-fn open_app_menu(world: &mut ApplicationWorld) {
-    world.click_text("File");
-    world.pump(Vec::new());
-}
-#[when("I expand Save As")]
-#[when("the user expands Save As")]
-fn expand_save_as(world: &mut ApplicationWorld) {
-    let center = world.run("Save As").center().map(|value| value as i32);
-    world.hover(center);
-    world.pump(Vec::new());
-    world.pump(Vec::new());
-}
-#[then("the menu offers Save As and Save Copy As")]
-fn offers_save_as(world: &mut ApplicationWorld) {
-    world.expect_text("Save As...");
-    world.expect_text("Save Copy As");
-}
-#[then("the submenu offers Save As and Save Copy As")]
-fn save_as_rows(world: &mut ApplicationWorld) {
-    world.expect_text("Save As");
-    world.expect_text("Save Copy As");
-}
-#[then("it offers Save Copy As Template and Pack and Go")]
-fn offers_template(world: &mut ApplicationWorld) {
-    world.expect_text("Save Copy As Template");
-    world.expect_text("Pack and Go");
-}
-#[then("the Save Copy As description says the original file remains open")]
-fn copy_description(world: &mut ApplicationWorld) {
-    world.expect_text("the original file remains open");
-}
+
+#[path = "save_as_commands.rs"]
+mod save_as_commands;

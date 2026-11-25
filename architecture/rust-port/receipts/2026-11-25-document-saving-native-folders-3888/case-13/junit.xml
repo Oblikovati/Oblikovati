@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Save and reopen part documents: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" package="testsuite/Feature: Save and reopen part documents: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T02:26:37.59430326Z" time="12.493553498"><testcase name="Scenario: Navigate to a subfolder and back while choosing a save location: git/oblikovati-workspace/oblikovati-rust/target/native-scratch.HSqCy5/current-document-saving-source/features/application/document-saving/document-saving.feature:172:3" time="12.493553498"><system-out><![CDATA[  Scenario: Navigate to a subfolder and back while choosing a save location
+   ✔  Given the user creates a new unsaved metric part in the MCAD Software
+   ✔  And the user presses Control+S to open Save As
+   ✔  And the Save As dialog is open for a new part in the MCAD Software
+   ✔  And the initial folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder` with its `Subfolder` child
+   ✔  And the dialog displays a proposed file name
+   ✔  When the user opens the subfolder
+   ✔  Then the location breadcrumb and file list show the subfolder
+   ✔  And the proposed file name remains in the file name field
+   ✔  When the user chooses Back
+   ✔  Then the initial folder and its file list are displayed
+   ✔  And the proposed file name remains in the file name field
+]]></system-out></testcase></testsuite></testsuites>

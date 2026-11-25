@@ -5,7 +5,10 @@ use oblikovati_api::{
     client::{Caller, Client},
     wire::BodyPhysicalPropertiesArgs,
 };
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
 const SAVED_EMPTY: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
@@ -19,9 +22,51 @@ const EXISTING_SOLID: &[u8] = include_bytes!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/../../test-utilities/fixtures/document-saving/SaveAsFolder/ExistingSolidPart.opd"
 ));
-const EXISTING_NAME: &str = "ExistingPart.opd";
-const SOLID_NAME: &str = "ExistingSolidPart.opd";
+pub(super) const EXISTING_NAME: &str = "ExistingPart.opd";
+pub(super) const SOLID_NAME: &str = "ExistingSolidPart.opd";
 const SUBFOLDER_NAME: &str = "Subfolder";
+const SAVE_AS_PACKAGE: &str = "fixtures/cad/document-saving/SaveAsNativeFolder";
+
+pub(super) fn native_save_as_folder() -> Option<PathBuf> {
+    let folder = std::env::current_dir().ok()?;
+    (folder.ends_with("SaveAsNativeFolder") && folder.join(EXISTING_NAME).is_file())
+        .then_some(folder)
+}
+
+pub(super) fn published_save_as_parts() -> PathBuf {
+    super::super::scenario_root().join(SAVE_AS_PACKAGE)
+}
+
+#[given(
+    "the current folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder` with its existing part files"
+)]
+#[given(
+    "the initial folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder` with its `Subfolder` child"
+)]
+#[given(
+    "the current folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder`"
+)]
+#[given(
+    "the current folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder` with its part files and subfolder"
+)]
+#[given(
+    "the current folder is a writable copy of `fixtures/cad/document-saving/SaveAsNativeFolder` with its part file and subfolder"
+)]
+fn published_save_as_folder(world: &mut ApplicationWorld) {
+    let folder = native_save_as_folder()
+        .expect("expected the test process in its disposable SaveAsNativeFolder");
+    for name in [EXISTING_NAME, SOLID_NAME] {
+        let path = folder.join(name);
+        assert_eq!(
+            fs::read(&path).unwrap(),
+            fs::read(published_save_as_parts().join(name)).unwrap()
+        );
+        assert!(!path.metadata().unwrap().permissions().readonly());
+        world.expect_text(name);
+    }
+    assert!(folder.join(SUBFOLDER_NAME).is_dir());
+    dialog_navigation::observe_native_save_folder(world);
+}
 
 #[given(
     "a writable copy of `fixtures/cad/blank-metric-part.opd` is open as a saved empty part in the MCAD Software"
@@ -112,6 +157,10 @@ fn verify_solid_part(world: &mut ApplicationWorld, path: &Path) {
     let document = world.active_id();
     assert_eq!(world.document_name(document), "ExistingSolidPart");
     super::super::workspace_layout::browser_feature::expect_solid_visible(world);
+    expect_40_by_25_by_20_solid(world);
+}
+
+pub(super) fn expect_40_by_25_by_20_solid(world: &mut ApplicationWorld) {
     let client = Client::new(world.app().owner.document_host());
     let bodies = client.body().list(&Default::default()).unwrap();
     let bodies = bodies.bodies.unwrap();

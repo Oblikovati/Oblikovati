@@ -56,11 +56,11 @@ using this status; the live scenario directory can change.
 - Home Recent Documents (#3898) passed all 35 current scenarios and 394 steps
   using the [published profile](receipts/2026-11-25-home-recent-current-3898/README.md).
 - Document Opening (#3889) passed all [27 current scenarios and 315 steps](receipts/2026-11-25-document-opening-current-3889/README.md).
-- Document Saving (#3888): all 23 pinned scenarios and 218 steps passed
-  under Linux X11 with Openbox. The three reusable native Part fixtures
-  passed reopen and replacement checks. The current feature names fixture
-  inputs in nine scenarios and adds an assembly-dependent case. See
-  `receipts/2026-11-21-document-saving-r0-3888/`.
+- Document Saving (#3888) passed 23 dependency-ready current scenarios and 260
+  steps. The generated Part requires Assembly Simplify (#3963). See the
+  [current run](receipts/2026-11-25-document-saving-current-3888/README.md).
+  All 23 pinned scenarios and 218 steps passed in the
+  [R0 run](receipts/2026-11-21-document-saving-r0-3888/README.md).
 - Project Dialog (#3895): all eight scenarios and 100 steps passed locally
   with X11 mouse and keyboard input on the current Part and project fixtures.
   Desktop startup opens native projects and the dialog wraps long paths.
@@ -474,7 +474,7 @@ using this status; the live scenario directory can change.
 ## Work queue
 
 Work dependency-ready application scenarios one at a time, then sketch and modeling.
-1. Continue the dependency-ready application scenarios with Document Saving.
+1. Continue the dependency-ready application scenarios with Ribbon Display.
    Midpoint Line (#4178) still names a deferred Inventor fixture. Revisit it when
    the scenario owner adopts the supplied native fixture.
    Constraint Settings (#4158) is paused with uncommitted work while its
