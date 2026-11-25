@@ -1,13 +1,32 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use oblikovati_persistence::{
-    atomic::{AtomicFiles, StagedFile},
+    atomic::{AtomicFiles, NativeAtomicFiles, StagedFile},
     load::PackageFileReader,
-    project_file::{ProjectConfiguration, read_project_file, write_project_file},
+    project_file::{
+        ProjectConfiguration, create_project_file, read_project_file, write_project_file,
+    },
 };
 #[path = "support/project_paths.rs"]
 mod project_paths;
 use project_paths::native_project_fixture_root as root;
 use std::{cell::RefCell, io, path::Path, rc::Rc};
+
+#[test]
+fn new_project_publication_keeps_existing_contents() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("project.opj");
+    let first = sample();
+    create_project_file(&path, &first, &mut NativeAtomicFiles).unwrap();
+    let another = ProjectConfiguration {
+        name: "Another".into(),
+        ..first.clone()
+    };
+    let error = create_project_file(&path, &another, &mut NativeAtomicFiles).unwrap_err();
+    assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
+    let saved = ProjectConfiguration::decode(&std::fs::read(&path).unwrap()).unwrap();
+    assert_eq!(saved, first);
+    assert_eq!(std::fs::read_dir(directory.path()).unwrap().count(), 1);
+}
 
 #[derive(Default)]
 struct ProjectDisk {

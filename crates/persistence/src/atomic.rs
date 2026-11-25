@@ -18,6 +18,18 @@ pub trait StagedFile {
     /// Replace the destination atomically. Example: `stage.commit(path)?`.
     /// An error must leave the old destination intact.
     fn commit(self, destination: &Path) -> io::Result<()>;
+    /// Publish at an unused destination, for example `stage.commit_new(path)?`.
+    fn commit_new(self, destination: &Path) -> io::Result<()>
+    where
+        Self: Sized,
+    {
+        Err(io::Error::new(
+            io::ErrorKind::Unsupported,
+            format!(
+                "destination {destination:?}: expected a filesystem that supports atomic creation"
+            ),
+        ))
+    }
 }
 
 /// Project-owned filesystem boundary for same-directory atomic replacement.
@@ -49,6 +61,31 @@ pub fn replace_file<Files: AtomicFiles>(
     contents: &[u8],
     files: &mut Files,
 ) -> Result<(), AtomicWriteError> {
+    let staged = prepare_file(destination, contents, files)?;
+    staged
+        .commit(destination)
+        .map_err(|cause| AtomicWriteError {
+            destination: destination.to_owned(),
+            phase: "commit",
+            cause,
+        })
+}
+
+/// Publish complete bytes at a new path, for example `create_file(path, bytes, &mut NativeAtomicFiles)?`.
+pub(crate) fn create_file<Files: AtomicFiles>(
+    destination: &Path,
+    contents: &[u8],
+    files: &mut Files,
+) -> io::Result<()> {
+    let staged = prepare_file(destination, contents, files).map_err(io::Error::other)?;
+    staged.commit_new(destination)
+}
+
+fn prepare_file<Files: AtomicFiles>(
+    destination: &Path,
+    contents: &[u8],
+    files: &mut Files,
+) -> Result<Files::Stage, AtomicWriteError> {
     let failure = |phase, cause| AtomicWriteError {
         destination: destination.to_owned(),
         phase,
@@ -63,9 +100,7 @@ pub fn replace_file<Files: AtomicFiles>(
     staged
         .synchronize()
         .map_err(|error| failure("sync", error))?;
-    staged
-        .commit(destination)
-        .map_err(|error| failure("commit", error))
+    Ok(staged)
 }
 
 impl fmt::Display for AtomicWriteError {

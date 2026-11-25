@@ -50,6 +50,13 @@ impl StagedFile for NativeStagedFile {
             .map(|_file| ())
             .map_err(|failure| failure.error)
     }
+
+    fn commit_new(self, destination: &Path) -> io::Result<()> {
+        self.0
+            .persist_noclobber(destination)
+            .map(|_file| ())
+            .map_err(|failure| failure.error)
+    }
 }
 
 fn apply_document_permissions(file: &std::fs::File) -> io::Result<()> {

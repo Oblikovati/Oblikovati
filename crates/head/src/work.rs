@@ -400,16 +400,7 @@ pub trait HeadWork: HeadSketchWork {
             "document template {template:?}: expected a document owner with template creation support"
         ))
     }
-    /// Create a document from the catalog file, as in `work.create_project_template_document(&entry)?`.
-    fn create_project_template_document(
-        &mut self,
-        template: &oblikovati_gui::GuiProjectTemplate,
-    ) -> Result<bool, String> {
-        Err(format!(
-            "Project template {:?}: expected a document owner",
-            template.path
-        ))
-    }
+    crate::work_project::project_work_methods!();
     /// Count bounded frames only after startup is complete; example: `work.startup_ready()` before smoke accounting.
     fn startup_ready(&self) -> bool {
         true

@@ -2,6 +2,20 @@
 //! Document lifecycle methods on the desktop work boundary.
 macro_rules! desktop_document_work {
     () => {
+        fn create_project_from_gui(
+            &mut self,
+            request: u64,
+            workspace: &std::path::Path,
+            name: &str,
+        ) -> Result<bool, String> {
+            let result = self
+                .files
+                .create_project(workspace, name)
+                .map(|project| project.path.display().to_string())
+                .map_err(|cause| cause.to_string());
+            self.project_creation_result = Some((request, result));
+            Ok(true)
+        }
         fn drawing_layout_from_gui(
             &mut self,
             request: &oblikovati_gui::GuiDrawingLayoutAction,

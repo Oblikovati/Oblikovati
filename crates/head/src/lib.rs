@@ -67,6 +67,7 @@ mod work_inference_scope;
 mod work_move_body;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_part_view;
+mod work_project;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_shell_feature;
 #[cfg(any(target_os = "linux", target_os = "windows"))]

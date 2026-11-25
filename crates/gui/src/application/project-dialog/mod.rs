@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The Projects dialog the template chooser opens: what is loaded, and which project is active.
 use crate::dockable_window::DockableWindow;
-use crate::{GuiCommandState, GuiProject, GuiProjectGroup};
+use crate::{GuiCommandState, GuiProject, GuiProjectGroup, GuiShellAction};
 use imgui::{
     Condition, Key, SelectableFlags, TableColumnFlags, TableColumnSetup, TreeNodeFlags, Ui,
 };
@@ -49,8 +49,13 @@ impl ProjectsDialog {
     pub(crate) fn needs_frame(&self) -> bool {
         self.opening || self.wizard.needs_frame()
     }
-    /// Draw inside the chooser, so it stacks above it; example: `dialog.panel(ui, &state)`.
-    pub(crate) fn panel(&mut self, ui: &Ui, state: &GuiCommandState) {
+    /// Draw above the chooser, for example `dialog.panel(ui, &state, &mut actions)`.
+    pub(crate) fn panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
         if std::mem::take(&mut self.opening) {
             self.open.set_open(true);
         }
@@ -82,7 +87,9 @@ impl ProjectsDialog {
                 || !crate::widget_abi::any_popup_open(ui)
                     && ui.is_window_focused()
                     && ui.is_key_pressed_no_repeat(Key::Escape);
-            self.wizard.panel(ui);
+            if let Some(location) = self.wizard.panel(ui, state, actions) {
+                self.inspected = Some(location);
+            }
         });
         if !open || done {
             self.close();

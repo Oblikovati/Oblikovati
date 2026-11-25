@@ -4,7 +4,7 @@
 
 ### Added
 
-- Enabled Make New Folder in the project wizard and selected the created folder for workspace confirmation. (#3895)
+- Enabled Make New Folder in the project wizard and selected the created folder for workspace confirmation. Enabled Finish to save a new single-user project file and add it to Projects. (#3895)
 - Added Home and End navigation to the staged Ribbon Customization list. Advanced the available command selection after a single transfer and kept Space on Add after a mouse edit to Large or Text. (#3856)
 - Added named native templates from the active project's root, Metric, and English folders to the desktop chooser. The chooser shows Part materials, previews drawing sheets, and restores the selected template after restart. Populated drawing layouts accept a Part, warn when its previous evaluated geometry is used, and show its authored parts list. (#3899)
 - Added Flipped, Symmetric, and Asymmetric directions and To Face and From–To extents for new solid extrusions in the desktop and typed API. Added desktop Icons and Dropdown direction selectors and a Distance A editor menu. (#3893)

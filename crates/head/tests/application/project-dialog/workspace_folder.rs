@@ -196,3 +196,61 @@ fn make_new_folder_changes_workspace_only_after_accepting_it() {
     assert!(!documents.join("Workspace/New Project.opj").exists());
     world.close();
 }
+
+#[test]
+fn finish_creates_a_project_and_preserves_an_existing_file() {
+    let mut world = ApplicationWorld::new();
+    point_home_at_scratch(&mut world);
+    open_wizard_on_file_page(&mut world);
+    browse_folder(&mut world);
+    select_documents(&mut world);
+    accept_folder(&mut world);
+    let documents = world.scratch_folder().join("Documents");
+    let occupied = documents.join("New Project.opj");
+    std::fs::write(&occupied, b"existing project").unwrap();
+    choose_button(&mut world, "Next");
+    assert!(world.run_is_enabled("Finish"));
+    choose_button(&mut world, "Finish");
+    world.expect_text("Select Libraries");
+    assert!(holds_text(&world, "create project"), "{}", world.text());
+    assert_eq!(std::fs::read(&occupied).unwrap(), b"existing project");
+    assert_eq!(world.state().projects.len(), 1);
+
+    choose_button(&mut world, "Back");
+    set_project_name(&mut world, "Design Office");
+    choose_button(&mut world, "Next");
+    choose_button(&mut world, "Finish");
+    world.expect_no_text("Select Libraries");
+    expect_projects_dialog(&mut world);
+    assert_project_saved(&mut world, &documents.join("Design Office.opj"));
+    world.close();
+}
+
+fn set_project_name(world: &mut ApplicationWorld, name: &str) {
+    let label = world.run_in_window("New Project", "Name");
+    let input = [label.minimum[0] - 45., label.center()[1]];
+    world.click(diagnostics::pointer_pixels(input));
+    world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
+    world.type_text(name);
+}
+
+fn assert_project_saved(world: &mut ApplicationWorld, path: &std::path::Path) {
+    let projects = world.state().projects;
+    assert_eq!(projects.len(), 2);
+    assert!(
+        projects
+            .iter()
+            .any(|project| project.name == super::PROJECT_NAME && project.active)
+    );
+    assert!(projects.iter().any(|project| {
+        project.name == "Design Office"
+            && !project.active
+            && project.location == path.display().to_string()
+    }));
+    world.reopen_application();
+    world.app().owner.load_desktop_project(path).unwrap();
+    let projects = world.state().projects;
+    assert_eq!(projects.len(), 1);
+    assert_eq!(projects[0].name, "Design Office");
+    assert!(projects[0].active);
+}

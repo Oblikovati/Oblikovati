@@ -138,7 +138,7 @@ impl TemplateChooser {
         if let Some(_dialog) = ui.begin_modal_popup("New document") {
             self.contents(ui, state, icons);
             self.buttons(ui, state, actions);
-            self.projects.panel(ui, state);
+            self.projects.panel(ui, state, actions);
         } else {
             self.projects.close();
             self.clear_gallery_navigation();

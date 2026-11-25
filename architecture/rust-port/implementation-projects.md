@@ -56,6 +56,14 @@ the user chooses OK. Cancelling the name editor leaves the filesystem
 untouched. Cancelling the folder browser retains the created directory
 and the wizard's previous workspace. [Folder creation checks](receipts/2026-11-25-project-create-folder-3895/README.md)
 
+Finish on Select Libraries writes a new schema-1 project in the selected
+workspace. The saved workspace is relative to the project file. Publishing
+uses a synchronized sibling file and refuses an occupied destination.
+The wizard closes and selects the new row for inspection after registration.
+The first project becomes active and later creations preserve the active
+project. Creation errors appear in the wizard so the user can change the
+name or workspace and retry. [Finish checks](receipts/2026-11-25-project-finish-3895/README.md)
+
 Project wire methods remain pending.
 
 ## Projects dock lifecycle

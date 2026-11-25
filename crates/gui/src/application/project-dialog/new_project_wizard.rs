@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! The new-project wizard: a type, a name and folder, then libraries. A folder browser hangs off
-//! its second page. Finishing is not offered yet: this build cannot write a project file.
+//! its second page. Finish submits the configured workspace to the desktop owner.
 use crate::application::document_saving::folder_browser::center_dialog;
 use crate::application::file_system::{GuiFolders, NativeFolders};
+use crate::{GuiCommandState, GuiShellAction};
 use imgui::{Key, Ui};
-use std::path::Path;
+use std::{
+    path::Path,
+    sync::atomic::{AtomicU64, Ordering},
+};
 
 const TITLE: &str = "New Project";
 const SIZE: [f32; 2] = [620., 300.];
@@ -12,7 +16,7 @@ const BROWSER_TITLE: &str = "Browse for Folder";
 const BROWSER_SIZE: [f32; 2] = [460., 420.];
 const FOOTER_HEIGHT: f32 = 64.;
 const DEFAULT_NAME: &str = "New Project";
-const PROJECT_EXTENSION: &str = "opj";
+static PROJECT_REQUEST: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 enum WizardPage {
@@ -32,6 +36,8 @@ pub(super) struct NewProjectWizard {
     /// The folder the browser has chosen, before OK hands it to the wizard.
     browsed: String,
     new_folder: Option<NewFolder>,
+    creation_request: Option<u64>,
+    creation_error: Option<String>,
 }
 #[derive(Default)]
 struct NewFolder {
@@ -51,6 +57,8 @@ impl Default for NewProjectWizard {
             browser_opening: false,
             browsed: String::new(),
             new_folder: None,
+            creation_request: None,
+            creation_error: None,
         }
     }
 }
@@ -61,6 +69,8 @@ impl NewProjectWizard {
         self.opening = false;
         self.browser_opening = false;
         self.new_folder = None;
+        self.creation_request = None;
+        self.creation_error = None;
     }
     /// Start from the first page, with a name and folder to change; example: on New.
     pub(super) fn request(&mut self) {
@@ -80,21 +90,55 @@ impl NewProjectWizard {
         self.open.then_some(self.name.as_str())
     }
     fn project_file(&self) -> String {
-        let file = format!("{}.{PROJECT_EXTENSION}", self.name);
+        let file = format!(
+            "{}{}",
+            self.name.trim(),
+            oblikovati_api::types::PROJECT_FILE_EXTENSION
+        );
         std::path::Path::new(&self.workspace)
             .join(file)
             .display()
             .to_string()
     }
-    /// Draw above the Projects dialog; example: `wizard.panel(ui)`.
-    pub(super) fn panel(&mut self, ui: &Ui) {
+    /// Draw above Projects, for example `wizard.panel(ui, state, &mut actions)`.
+    pub(super) fn panel(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) -> Option<String> {
         if std::mem::take(&mut self.opening) {
             ui.open_popup(TITLE);
         }
         center_dialog(ui, SIZE);
-        let Some(_wizard) = ui.begin_modal_popup(TITLE) else {
-            return;
-        };
+        let _wizard = ui.begin_modal_popup(TITLE)?;
+        if let Some(location) = self.complete_creation(state) {
+            ui.close_current_popup();
+            return Some(location);
+        }
+        self.wizard_page(ui);
+        self.buttons(ui, actions);
+        self.folder_browser(ui);
+        None
+    }
+    fn complete_creation(&mut self, state: &GuiCommandState) -> Option<String> {
+        let (request, result) = state.project_creation_result.as_ref()?;
+        if self.creation_request != Some(*request) {
+            return None;
+        }
+        self.creation_request = None;
+        match result {
+            Ok(location) => {
+                self.cancel();
+                Some(location.clone())
+            }
+            Err(error) => {
+                self.creation_error = Some(error.clone());
+                None
+            }
+        }
+    }
+    fn wizard_page(&mut self, ui: &Ui) {
         match self.page {
             WizardPage::ProjectType => {
                 ui.selectable_config("New Single User Project")
@@ -105,12 +149,15 @@ impl NewProjectWizard {
             WizardPage::ProjectFile => self.project_file_page(ui),
             WizardPage::Libraries => libraries_page(ui),
         }
+        if let Some(error) = &self.creation_error {
+            ui.text_wrapped(error);
+        }
         ui.separator();
-        self.buttons(ui);
-        self.folder_browser(ui);
     }
     fn project_file_page(&mut self, ui: &Ui) {
-        ui.input_text("Name", &mut self.name).build();
+        if ui.input_text("Name", &mut self.name).build() {
+            self.creation_error = None;
+        }
         ui.text("Project (Workspace) Folder");
         // Before the path, which can run past the dialog's edge and wrap.
         if crate::widget_abi::button(ui, "...##browse-workspace", [0.; 2]) {
@@ -122,7 +169,7 @@ impl NewProjectWizard {
         ui.text("Project File to be Created");
         ui.text_wrapped(self.project_file());
     }
-    fn buttons(&mut self, ui: &Ui) {
+    fn buttons(&mut self, ui: &Ui, actions: &mut Vec<GuiShellAction>) {
         let back = match self.page {
             WizardPage::ProjectType => None,
             WizardPage::ProjectFile => Some(WizardPage::ProjectType),
@@ -137,16 +184,29 @@ impl NewProjectWizard {
         ui.same_line();
         self.page_button(ui, "Next", next);
         ui.same_line();
-        {
-            let _muted = ui.begin_disabled(true);
-            crate::widget_abi::button(ui, "Finish", [0.; 2]);
-        }
+        self.finish_button(ui, actions);
         ui.same_line();
         if crate::widget_abi::button(ui, "Cancel##wizard", [0.; 2])
             || ui.is_window_focused() && ui.is_key_pressed_no_repeat(Key::Escape)
         {
-            self.open = false;
+            self.cancel();
             ui.close_current_popup();
+        }
+    }
+    fn finish_button(&mut self, ui: &Ui, actions: &mut Vec<GuiShellAction>) {
+        let enabled = self.page == WizardPage::Libraries
+            && self.creation_request.is_none()
+            && !self.name.trim().is_empty();
+        let _muted = ui.begin_disabled(!enabled);
+        if crate::widget_abi::button(ui, "Finish", [0.; 2]) {
+            let request = PROJECT_REQUEST.fetch_add(1, Ordering::Relaxed);
+            self.creation_request = Some(request);
+            self.creation_error = None;
+            actions.push(GuiShellAction::CreateProject {
+                request,
+                workspace: self.workspace.clone().into(),
+                name: self.name.clone(),
+            });
         }
     }
     fn page_button(&mut self, ui: &Ui, label: &str, target: Option<WizardPage>) {
@@ -196,6 +256,7 @@ impl NewProjectWizard {
         ui.same_line();
         if crate::widget_abi::button(ui, "OK##folder", [0.; 2]) {
             self.workspace.clone_from(&self.browsed);
+            self.creation_error = None;
             ui.close_current_popup();
         }
         ui.same_line();
@@ -314,6 +375,31 @@ mod tests {
         wizard.request();
         assert_eq!(wizard.page, WizardPage::ProjectType);
         assert_eq!(wizard.provisional_name(), Some(DEFAULT_NAME));
+    }
+
+    #[test]
+    fn finish_waits_for_its_own_result_and_allows_retry_after_failure() {
+        let mut wizard = NewProjectWizard::default();
+        wizard.request();
+        wizard.creation_request = Some(9);
+        let mut state = GuiCommandState {
+            project_creation_result: Some((8, Ok("/other.opj".into()))),
+            ..Default::default()
+        };
+        assert_eq!(wizard.complete_creation(&state), None);
+        assert_eq!(wizard.creation_request, Some(9));
+        state.project_creation_result = Some((9, Err("already exists".into())));
+        assert_eq!(wizard.complete_creation(&state), None);
+        assert!(wizard.open);
+        assert_eq!(wizard.creation_request, None);
+        assert_eq!(wizard.creation_error.as_deref(), Some("already exists"));
+        wizard.creation_request = Some(10);
+        state.project_creation_result = Some((10, Ok("/new.opj".into())));
+        assert_eq!(
+            wizard.complete_creation(&state).as_deref(),
+            Some("/new.opj")
+        );
+        assert!(!wizard.open);
     }
 
     #[test]

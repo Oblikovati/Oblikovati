@@ -250,7 +250,7 @@ impl GuiDocumentFiles {
     ) {
         self.templates.panel(ui, state, actions, icons);
         self.open.panel(ui, state, actions);
-        self.projects.panel(ui, state);
+        self.projects.panel(ui, state, actions);
     }
     pub(crate) fn answer_close_prompt(&mut self, choice: crate::GuiClosePromptChoice) {
         self.close_prompt.answer_accessibly(choice);

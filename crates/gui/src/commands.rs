@@ -280,6 +280,12 @@ pub enum GuiShellAction {
     NewPart,
     CreateDocument(crate::GuiDocumentTemplate),
     CreateProjectTemplate(crate::GuiProjectTemplate),
+    /// Create a native project from the Projects wizard.
+    CreateProject {
+        request: u64,
+        workspace: std::path::PathBuf,
+        name: String,
+    },
     DrawingLayout(GuiDrawingLayoutAction),
     /// Picture the active window for the Save As preview; the file is not changed.
     CaptureWindowPreview,

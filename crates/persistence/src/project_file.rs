@@ -2,7 +2,7 @@
 
 //! Portable schema-1 project configuration, separate from document identity.
 use crate::{
-    atomic::{AtomicFiles, replace_file},
+    atomic::{AtomicFiles, create_file, replace_file},
     load::PackageFileReader,
     project::ProjectFileLookup,
 };
@@ -139,6 +139,16 @@ pub fn write_project_file<F: AtomicFiles>(
 ) -> io::Result<()> {
     require_extension(path)?;
     replace_file(path, &project.encode()?, files).map_err(io::Error::other)
+}
+
+/// Publish a new schema-1 project at an unused path, as in `create_project_file(path, &project, &mut files)?`.
+pub fn create_project_file<F: AtomicFiles>(
+    path: &Path,
+    project: &ProjectConfiguration,
+    files: &mut F,
+) -> io::Result<()> {
+    require_extension(path)?;
+    create_file(path, &project.encode()?, files)
 }
 
 fn location(parent: &Path, recorded: &str) -> Option<PathBuf> {

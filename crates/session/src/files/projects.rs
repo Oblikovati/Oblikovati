@@ -3,7 +3,7 @@
 use super::*;
 use oblikovati_persistence::{
     project::{ProjectFileLookup, ProjectFileProbe},
-    project_file::{BoundProject, ProjectConfiguration, read_project_file},
+    project_file::{BoundProject, ProjectConfiguration, create_project_file, read_project_file},
 };
 
 /// Validated project ownership; its canonical path is its session identity.
@@ -38,10 +38,53 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             return Ok(&self.projects[index]);
         }
         let candidate = self.read_project_candidate(canonical)?;
+        Ok(self.register_project(candidate))
+    }
+
+    /// Create a project in an existing directory, for example `host.create_project(workspace, "Gearbox")?`.
+    pub fn create_project(
+        &mut self,
+        workspace: &Path,
+        name: &str,
+    ) -> Result<&LoadedProject, FileWorkspaceError> {
+        let file = new_project_file_name(name).map_err(FileWorkspaceError::ProjectConfiguration)?;
+        let workspace = checked_path(workspace, self.files.canonical_path(workspace))?;
+        let path = workspace.join(file);
+        if self.projects.iter().any(|project| project.path == path) {
+            return Err(FileWorkspaceError::ProjectConfiguration(
+                std::io::Error::new(
+                    std::io::ErrorKind::AlreadyExists,
+                    format!("project {path:?}: already registered"),
+                ),
+            ));
+        }
+        let configuration = ProjectConfiguration {
+            name: name.trim().to_owned(),
+            workspace: ".".into(),
+            ..Default::default()
+        };
+        let bound = configuration
+            .bind(&path)
+            .map_err(FileWorkspaceError::ProjectConfiguration)?;
+        create_project_file(&path, &configuration, &mut self.files).map_err(|cause| {
+            FileWorkspaceError::ProjectConfiguration(std::io::Error::new(
+                cause.kind(),
+                format!("create project {path:?}: {cause}"),
+            ))
+        })?;
+        Ok(self.register_project(LoadedProject {
+            path,
+            configuration,
+            bound,
+            assets: Default::default(),
+        }))
+    }
+
+    fn register_project(&mut self, candidate: LoadedProject) -> &LoadedProject {
         let index = self.projects.len();
         self.projects.push(candidate);
         self.active_project.get_or_insert(index);
-        Ok(&self.projects[index])
+        &self.projects[index]
     }
 
     fn read_project_candidate(
@@ -100,6 +143,24 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileWorkspa
             .map(|project| &project.bound.lookup)
             .ok_or(FileWorkspaceError::MissingProject)
     }
+}
+
+fn new_project_file_name(name: &str) -> std::io::Result<String> {
+    let name = name.trim();
+    if name.is_empty()
+        || name.ends_with('.')
+        || name.contains(['/', '\\', ':', '*', '?', '"', '<', '>', '|'])
+        || name.chars().any(char::is_control)
+    {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("project name {name:?}: expected a single file name"),
+        ));
+    }
+    Ok(format!(
+        "{name}{}",
+        oblikovati_api::types::PROJECT_FILE_EXTENSION
+    ))
 }
 
 impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles + ProjectFileProbe>
