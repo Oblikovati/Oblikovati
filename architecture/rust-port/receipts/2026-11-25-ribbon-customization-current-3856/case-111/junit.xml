@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="1" hostname="localhost" timestamp="2026-11-25T04:16:10.812594209Z" time="18.717382382"><testcase name="Scenario: Apply a ribbon customization during a modeling command: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1820:3" time="18.717382382"><failure type="Step Panicked" message="Step doesn&apos;t match any function"/><system-out><![CDATA[  Scenario: Apply a ribbon customization during a modeling command
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open with its solid block in the MCAD Software
+   ✔  And the full 3D Model ribbon is visible
+   ✔  And the Part Tools custom panel target is initially empty
+   ✔  When the user starts Shell from Modify
+   ✔  And the user selects the Tools ribbon tab
+   ✘  And the user opens the Options panel title context menu
+      Step failed:
+      Defined: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1826:5
+      Step doesn't match any function
+]]></system-out></testcase></testsuite></testsuites>

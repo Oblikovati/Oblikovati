@@ -42,8 +42,7 @@ using this status; the live scenario directory can change.
   The 52 declarations include two examples in one outline. The older
   foreground X11 check captured the View checklist and Mini-Toolbar with
   MCPBridge. Rule Log and Rule Automation are disabled under #4185.
-  See `receipts/2026-11-20-workspace-layout-3897/`. The 44 declarations in
-  the older pinned snapshot have R0 baseline records. Strict verification
+  The [older pinned run](receipts/2026-11-20-workspace-layout-3897/) has 44 R0 baseline records. Strict verification
   still needs a current pin and bounded build and runtime inputs under Issue #3978.
 - Document Tabs (#3900) passed all 39 current scenarios and 343 steps on Linux X11.
   See the [current run](receipts/2026-11-25-document-tabs-current-3900/README.md).
@@ -56,6 +55,7 @@ using this status; the live scenario directory can change.
 - Ribbon Panel Visibility (#3856) passed [43 of 55 current cases and 508 steps](receipts/2026-11-25-ribbon-panel-visibility-current-3856/README.md). Twelve cases remain open across panel inventory, Shell preview, and the User Commands specification.
 - Ribbon Panel Expansion (#3856) passed [58 of 67 current cases and 651 steps](receipts/2026-11-25-ribbon-panel-expansion-current-3856/README.md). Nine cases require Shell previews, Highlight New, or Explore.
 - Model Browser (#3896) passed [96 of 100 current cases and 1,305 steps](receipts/2026-11-25-model-browser-current-3896/README.md). Four `d1` cases require the extrusion taper contract in #4127 and Martensite #463.
+- Ribbon Customization (#3856) passed [75 of 126 current executions and 1,033 steps](receipts/2026-11-25-ribbon-customization-current-3856/README.md). Independent cases are still in progress.
 - Document Saving (#3888) passed 23 dependency-ready current scenarios and 260
   steps. The generated Part requires Assembly Simplify (#3963). See the
   [current run](receipts/2026-11-25-document-saving-current-3888/README.md).

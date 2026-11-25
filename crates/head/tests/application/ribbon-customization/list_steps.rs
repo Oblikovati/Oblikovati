@@ -40,6 +40,16 @@ fn expect_source_prefix(world: &ApplicationWorld, expected: &[&str]) {
     );
 }
 
+#[when("the user selects \"2-D Drawing\" in the available list")]
+#[when("the user selects \"2-D Drawing\" in the available commands list")]
+fn select_drawing_source(world: &mut ApplicationWorld) {
+    let drawing = source_rows(world)
+        .into_iter()
+        .find(|row| row.text == "2-DDrawing")
+        .expect("expected 2-D Drawing in the available commands");
+    world.click(diagnostics::pointer_pixels(drawing.center()));
+}
+
 #[given(
     "the Ribbon customization dialog shows All Commands in ascending order for an empty Part Tools custom panel"
 )]
