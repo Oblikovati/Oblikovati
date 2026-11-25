@@ -5,7 +5,9 @@ use imgui::{StyleColor, Ui, WindowFlags};
 use oblikovati_api::types::{TOKEN_CHROME_WINDOW_BG, TOKEN_DIMENSION_DRIVEN};
 
 pub(crate) const STATUS_BAR_HEIGHT: f32 = 24.;
-const STATUS_INSET: f32 = 12.;
+const STATUS_LEFT_INSET: f32 = 10.;
+const STATUS_RIGHT_INSET: f32 = 12.;
+const DOT_RADIUS: f32 = 3.;
 const CELL_GAP: f32 = 9.;
 
 /// Draw the status line across the window's foot; example: `Ready` and `4 dimensions needed`.
@@ -39,13 +41,16 @@ pub(crate) fn status_bar(
             let y = ((STATUS_BAR_HEIGHT - ui.current_font_size()) * 0.5).floor();
             ui.get_window_draw_list()
                 .add_circle(
-                    [origin[0] + STATUS_INSET, origin[1] + STATUS_BAR_HEIGHT / 2.],
-                    3.,
+                    [
+                        origin[0] + STATUS_LEFT_INSET + DOT_RADIUS,
+                        origin[1] + STATUS_BAR_HEIGHT / 2.,
+                    ],
+                    DOT_RADIUS,
                     ui.style_color(StyleColor::NavHighlight),
                 )
                 .filled(true)
                 .build();
-            let prompt_x = STATUS_INSET + 10.;
+            let prompt_x = STATUS_LEFT_INSET + 2. * DOT_RADIUS + 7.;
             crate::widget_abi::cursor_position(ui, [prompt_x, y]);
             ui.text(&prompt);
             let prompt_right = prompt_x + ui.calc_text_size(&prompt)[0] + CELL_GAP;
@@ -53,7 +58,7 @@ pub(crate) fn status_bar(
         });
 }
 fn telemetry(ui: &Ui, commands: &crate::GuiCommandState, width: f32, prompt_right: f32) {
-    let _numeric = crate::ui_scale::numeric_font(ui);
+    let _numeric = crate::ui_scale::telemetry_font(ui);
     let units = commands.document_units.as_ref();
     let coordinates = commands
         .viewport_coordinates
@@ -78,34 +83,67 @@ fn telemetry(ui: &Ui, commands: &crate::GuiCommandState, width: f32, prompt_righ
         .dimensions_needed
         .map(|needed| format!("DOF {needed}"));
     let cells = [
-        coordinates.as_deref(),
-        dof.as_deref(),
-        selection_or_constraint.as_deref(),
-        units.map(|units| units.length_unit.as_str()),
-        zoom.as_deref(),
+        (coordinates.as_deref(), false),
+        (dof.as_deref(), false),
+        (
+            selection_or_constraint.as_deref(),
+            commands.dimensions_needed == Some(0),
+        ),
+        (units.map(|units| units.length_unit.as_str()), false),
+        (zoom.as_deref(), false),
     ];
-    let mut right = width - STATUS_INSET;
+    draw_telemetry(ui, cells, width - STATUS_RIGHT_INSET, prompt_right);
+}
+
+fn draw_telemetry(
+    ui: &Ui,
+    cells: [(Option<&str>, bool); 5],
+    trailing_edge: f32,
+    prompt_right: f32,
+) {
+    let mut right = trailing_edge;
     let y = ((STATUS_BAR_HEIGHT - ui.current_font_size()) * 0.5).floor();
-    let origin = ui.window_pos();
-    for cell in cells.into_iter().flatten().rev() {
+    for (cell, successful) in cells.into_iter().rev() {
+        let Some(cell) = cell else { continue };
         let left = right - ui.calc_text_size(cell)[0];
         if left < prompt_right {
             continue;
         }
-        if right < width - STATUS_INSET {
-            let x = origin[0] + right + CELL_GAP;
-            ui.get_window_draw_list()
-                .add_line(
-                    [x, origin[1] + 5.],
-                    [x, origin[1] + STATUS_BAR_HEIGHT - 5.],
-                    ui.style_color(StyleColor::Border),
-                )
-                .build();
+        if right < trailing_edge {
+            telemetry_separator(ui, right + CELL_GAP);
         }
         crate::widget_abi::cursor_position(ui, [left, y]);
-        ui.text(cell);
+        if successful {
+            ui.text_colored(constraint_success_color(ui), cell);
+        } else {
+            ui.text(cell);
+        }
         right = left - 2. * CELL_GAP;
     }
+}
+
+fn telemetry_separator(ui: &Ui, offset: f32) {
+    let [left, top] = ui.window_pos();
+    let x = left + offset;
+    ui.get_window_draw_list()
+        .add_line(
+            [x, top + 5.],
+            [x, top + STATUS_BAR_HEIGHT - 5.],
+            ui.style_color(StyleColor::Border),
+        )
+        .build();
+}
+
+fn constraint_success_color(ui: &Ui) -> [f32; 4] {
+    let [r, g, b, _] = ui.style_color(StyleColor::WindowBg);
+    let surface = r.max(g).max(b);
+    crate::theme::hex_rgb(if surface < 0.01 {
+        0x4ade80
+    } else if surface > 0.5 {
+        0x16a34a
+    } else {
+        0x22c55e
+    })
 }
 
 fn selected_entities_text(faces: usize, edges: usize) -> Option<String> {

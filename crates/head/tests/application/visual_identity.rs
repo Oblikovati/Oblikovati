@@ -4,6 +4,8 @@ use super::*;
 mod light;
 #[path = "visual_identity_ribbon.rs"]
 mod ribbon_chrome;
+#[path = "visual_identity_status.rs"]
+mod status;
 
 #[test]
 fn native_visual_identity_uses_three_distinct_palettes_on_the_same_part() {

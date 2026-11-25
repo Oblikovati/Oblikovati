@@ -7,6 +7,7 @@ use oblikovati_model::ui_scale::UiScaleOptions;
 // ImGui's default font is 13 pixels. Refuse unbounded atlas allocations at the input boundary.
 const DEFAULT_FONT_PIXELS: f32 = 13.;
 const MAX_FONT_PIXELS: f32 = 256.;
+const NUMERIC_FACE: &[u8] = include_bytes!("../assets/fonts/JetBrainsMono-Regular.ttf");
 pub(crate) fn font_raster_scale(request: &GuiFrameRequest) -> Result<f32, String> {
     let scale = request.layout_scale().into_iter().fold(0., f32::max);
     let pixels = DEFAULT_FONT_PIXELS * scale;
@@ -69,7 +70,7 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
     }
     context.fonts().add_font(&[
         FontSource::TtfData {
-            data: include_bytes!("../assets/fonts/JetBrainsMono-Regular.ttf"),
+            data: NUMERIC_FACE,
             size_pixels: config.size_pixels,
             config: Some(config),
         },
@@ -80,6 +81,17 @@ fn install_editor_fonts(context: &mut Context, scale: f32) {
         size_pixels: 10. * scale,
         config: Some(FontConfig {
             size_pixels: 10. * scale,
+            ..FontConfig::default()
+        }),
+    }]);
+    context.fonts().add_font(&[FontSource::TtfData {
+        data: NUMERIC_FACE,
+        size_pixels: 10. * scale,
+        config: Some(FontConfig {
+            size_pixels: 10. * scale,
+            oversample_h: 1,
+            oversample_v: 1,
+            pixel_snap_h: true,
             ..FontConfig::default()
         }),
     }]);
@@ -106,6 +118,10 @@ pub(crate) fn numeric_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
 
 pub(crate) fn group_caption_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
     ui.fonts().fonts().get(6).map(|font| ui.push_font(*font))
+}
+
+pub(crate) fn telemetry_font(ui: &Ui) -> Option<imgui::FontStackToken<'_>> {
+    ui.fonts().fonts().get(7).map(|font| ui.push_font(*font))
 }
 
 #[derive(Default)]

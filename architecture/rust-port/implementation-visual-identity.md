@@ -40,8 +40,9 @@ values come from the same handoff.
   arc variants use their own artwork, and sketch fillets use a different
   glyph from solid fillets. The Precise Input icon draws its lettering as
   vector paths so it renders without system fonts.
-- Inter is the default UI font. Numeric fields in Extrude and status readouts
-  use JetBrains Mono. Sketch Text keeps its existing authored text faces.
+- Inter is the default UI font. Numeric fields in Extrude use JetBrains Mono,
+  and status telemetry uses it at 10 px. Fully Constrained uses the active
+  theme’s success color. Sketch Text keeps its existing authored text faces.
 - Extrude uses 40/60 field alignment for the sketch, profile, primary distance,
   and extent controls. The default floating width is 280 px. The Input
   Geometry and Behavior sections open by default. A new solid uses the
