@@ -1,16 +1,30 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Reduce unseen idle sketch pointer positions while preserving input boundaries (#4035).
+//! Reduce GUI work for unseen pointer positions while preserving input boundaries.
 use super::*;
 use oblikovati_viewport::ViewportInput;
 
 pub(super) fn owner_is_ready(owner: &mut dyn HeadWork) -> Result<bool, String> {
     let state = owner.gui_command_state()?;
-    Ok(
-        state.authoring == oblikovati_gui::GuiAuthoringContext::Sketch
-            && state.active_sketch.is_some()
-            && state.sketch_at_ready
-            && !state.transaction_open,
-    )
+    use oblikovati_gui::GuiAuthoringContext::{Part, Sketch};
+    Ok(!state.transaction_open
+        && match state.authoring {
+            Part => state.document.is_some(),
+            Sketch => state.active_sketch.is_some() && state.sketch_at_ready,
+            _ => false,
+        })
+}
+
+pub(super) fn navigate_unseen(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    events: &[ViewportEvent],
+) -> Result<bool, String> {
+    let mut changed = false;
+    for event in events {
+        // Apply every camera delta in order. Only the newest point needs a GUI frame.
+        changed |= gui::dispatch_frame_input(window, owner, event)?;
+    }
+    Ok(changed)
 }
 
 pub(super) fn tail(

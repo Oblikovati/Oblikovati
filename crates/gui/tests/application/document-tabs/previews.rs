@@ -60,9 +60,11 @@ fn an_empty_area_or_a_short_frame_gives_no_picture() {
 #[test]
 fn each_window_keeps_its_own_last_picture() {
     let mut previews = TabPreviews::default();
+    assert!(!previews.needs_frame_pixels());
     previews.note_frame([4, 2], &frame());
     assert!(previews.images.is_empty(), "nothing is in front yet");
     previews.showing = Some((PreviewKey::Window(7), [[0., 0.], [2., 2.]]));
+    assert!(previews.needs_frame_pixels());
     previews.note_frame([4, 2], &frame());
     previews.showing = Some((PreviewKey::Home, [[2., 0.], [4., 2.]]));
     previews.note_frame([4, 2], &frame());
@@ -80,6 +82,7 @@ fn visible_preview_is_not_captured_inside_its_own_picture() {
     previews.note_frame([2, 2], &[9; 16]);
     let original = previews.images[&PreviewKey::Window(7)].clone();
     previews.preview_visible = true;
+    assert!(!previews.needs_frame_pixels());
     previews.note_frame([2, 2], &[200; 16]);
     assert_eq!(previews.images[&PreviewKey::Window(7)], original);
     previews.synchronize(&crate::GuiCommandState {

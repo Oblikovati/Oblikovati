@@ -20,6 +20,8 @@ struct FakeGuiWindow {
     parameter_issues: Vec<String>,
     permit_idle_motion: bool,
     pointer_down: bool,
+    camera_drag: bool,
+    gui_inputs: Vec<ViewportEvent>,
     projection_resize: bool,
 }
 #[test]
@@ -115,11 +117,15 @@ impl HeadWindow for FakeGuiWindow {
         if let Some(ViewportEvent::Input(ViewportInput::Button { pressed, .. })) = event {
             self.pointer_down = *pressed;
         }
+        self.gui_inputs.extend(event.copied());
         self.states.push(state.clone());
         Ok(self.packets.pop_front().unwrap_or_default())
     }
     fn allows_ready_sketch_motion(&self, _: [i32; 2]) -> bool {
         self.permit_idle_motion && !self.pointer_down
+    }
+    fn batches_navigation_motion(&self) -> bool {
+        self.camera_drag
     }
     fn previous_view(&mut self) -> Result<bool, String> {
         self.previous_views += 1;
@@ -194,6 +200,7 @@ struct FakeGuiOwner {
     parameter_failure: bool,
     parameter_view_failure: bool,
     ready_sketch: bool,
+    ready_part: bool,
     transaction_open: bool,
     settings_document: Option<u64>,
     settings_rejected: bool,
@@ -265,6 +272,8 @@ impl HeadWork for FakeGuiOwner {
             undo_label: Some("Dimension".into()),
             authoring: if self.ready_sketch {
                 oblikovati_gui::GuiAuthoringContext::Sketch
+            } else if self.ready_part {
+                oblikovati_gui::GuiAuthoringContext::Part
             } else {
                 Default::default()
             },
@@ -273,7 +282,7 @@ impl HeadWork for FakeGuiOwner {
                 .then_some(oblikovati_model::document_sketch::DocumentSketchId(1)),
             sketch_at_ready: self.ready_sketch,
             transaction_open: self.transaction_open,
-            document: self.settings_document,
+            document: self.settings_document.or(self.ready_part.then_some(1)),
             ..Default::default()
         })
     }

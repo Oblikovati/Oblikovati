@@ -135,6 +135,10 @@ impl NativeGui {
     pub(super) fn note_presented_frame(&mut self, extent: [u32; 2], rgba: &[u8]) {
         self.engine.note_presented_frame(extent, rgba);
     }
+    #[cfg(target_os = "linux")]
+    pub(super) fn needs_frame_pixels(&self) -> bool {
+        self.engine.needs_frame_pixels()
+    }
     pub(super) fn receive_window_preview(&mut self, image: oblikovati_gui::GuiPreviewImage) {
         self.engine.receive_window_preview(image);
         self.deadline = Some(Duration::ZERO);

@@ -4,9 +4,9 @@ use super::NativeHeadWindow;
 use oblikovati_viewport::{ViewportCamera, ViewportCameraTransition, ViewportNavigation};
 use std::time::{Duration, Instant};
 
-// Match viewCubeSnapSecs and the frame cadence in the Go desktop.
+// Keep the original swing duration and leave room for high-refresh presentation.
 const SWING_TIME: Duration = Duration::from_millis(350);
-const SWING_TICK: Duration = Duration::from_nanos(1_000_000_000 / 60);
+const SWING_TICK: Duration = Duration::from_nanos(1_000_000_000 / 240);
 
 pub(super) struct OrientationTransition {
     cameras: ViewportCameraTransition,
@@ -55,8 +55,7 @@ impl NativeHeadWindow {
             self.orientation_transition = Some(motion);
             return Ok((false, Some(wake_after)));
         }
-        // Skip extra work at 60 Hz, but never jump past all intermediate frames if a
-        // software renderer or window resize stalls the desktop thread.
+        // Keep intermediate frames even if a software renderer or resize stalls the owner.
         let step = (now - motion.last_sample).min(SWING_TIME / 4);
         motion.elapsed = (motion.elapsed + step).min(SWING_TIME);
         motion.last_sample = now;

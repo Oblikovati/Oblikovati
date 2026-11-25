@@ -104,6 +104,9 @@ macro_rules! native_view_inputs {
         fn navigation_active(&self) -> bool {
             self.navigation.captures_pointer()
         }
+        fn batches_navigation_motion(&self) -> bool {
+            self.navigation.dragging()
+        }
         fn allows_ready_sketch_motion(&self, pixel: [i32; 2]) -> bool {
             !self.navigation.captures_pointer()
                 && self

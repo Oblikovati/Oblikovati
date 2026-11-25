@@ -20,6 +20,10 @@ pub(crate) struct DesktopNavigation {
     drag: Option<NavigationDrag>,
 }
 impl DesktopNavigation {
+    pub(crate) fn dragging(&self) -> bool {
+        self.drag.is_some()
+    }
+
     pub(crate) fn captures_pointer(&self) -> bool {
         self.drag.is_some() || self.held_modes.contains(&true)
     }

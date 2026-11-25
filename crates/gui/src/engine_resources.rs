@@ -10,6 +10,12 @@ impl GuiFrameRequest {
     }
 }
 impl GuiFrameEngine {
+    /// Report whether the tab preview can use the next frame.
+    /// Example: `engine.needs_frame_pixels()` before reading the composed surface.
+    pub fn needs_frame_pixels(&self) -> bool {
+        self.document_tabs.previews.needs_frame_pixels()
+    }
+
     pub(super) fn refresh_chrome(&mut self, request: &GuiFrameRequest) -> bool {
         // Docked tab bars use their windows' colors from the previous frame.
         request.commands.theme.as_ref().is_some_and(|theme| {

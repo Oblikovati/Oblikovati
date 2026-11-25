@@ -19,6 +19,7 @@ parser.add_argument("--cpu", action="store_true")
 parser.add_argument("--dpi", choices=[96, 144], type=int, default=96)
 parser.add_argument("--frames", type=int, default=1600)
 parser.add_argument("--phases", action="store_true")
+parser.add_argument("--observe-present-mode", action="store_true")
 args = parser.parse_args()
 args.folder.mkdir(parents=True, exist_ok=False)
 folder = args.folder.resolve()
@@ -183,7 +184,10 @@ env["VK_ADD_LAYER_PATH"] = str(Path(__file__).parent)
 if args.phases:
     env["OBK_PHASE_TRACE"] = str(folder / "phases.csv")
 env["OBK_PRESENT_TRACE"] = str(csv_path)
-env["OBK_PRESENT_IMMEDIATE"] = "1"
+if args.observe_present_mode:
+    env.pop("OBK_PRESENT_IMMEDIATE", None)
+else:
+    env["OBK_PRESENT_IMMEDIATE"] = "1"
 env.pop("MESA_VK_WSI_PRESENT_MODE", None)
 command = [str(args.binary.resolve()), str(args.model.resolve())]
 if args.mode == "continuous":
@@ -194,6 +198,9 @@ with (folder / "app.log").open("w") as log:
     io_pressure = Path("/proc/pressure/io").read_text().strip()
     app = subprocess.Popen(command, env=env, stdout=log, stderr=subprocess.STDOUT)
     metadata = dict(mode=args.mode, app_pid=app.pid, fixture=args.model.name, dpi=args.dpi, validation_checks_disabled=os.getenv("VK_LAYER_DISABLES", ""),
+                    desktop_validation=os.getenv("OBLIKOVATI_VULKAN_VALIDATION"),
+                    desktop_vsync=os.getenv("OBLIKOVATI_VSYNC"),
+                    present_mode_override=not args.observe_present_mode,
                     load=load, cpu_pressure=cpu_pressure, io_pressure=io_pressure)
     try:
         if args.mode == "continuous":

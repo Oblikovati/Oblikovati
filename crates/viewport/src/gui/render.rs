@@ -5,6 +5,10 @@ use martensite_vulkan::{
     TexturedStyle, identity_clip,
 };
 use std::collections::BTreeMap;
+use std::sync::LazyLock;
+
+static SRGB_CHANNELS: LazyLock<[f32; 256]> =
+    LazyLock::new(|| std::array::from_fn(|byte| srgb_channel(byte as u8)));
 /// Resource pixels are converted once and shared by immutable kernel submissions.
 pub struct GuiFrameCompiler {
     resources: GuiTextureResources,
@@ -109,10 +113,11 @@ fn batch_texture(batch: &GuiBatch, image: RasterImage) -> Result<TexturedStyle, 
     TexturedStyle::new(image, uv, 0.).map_err(|cause| cause.to_string())
 }
 fn vertex_color([red, green, blue, alpha]: [u8; 4]) -> [f32; 4] {
+    let channels = &*SRGB_CHANNELS;
     [
-        srgb_channel(red),
-        srgb_channel(green),
-        srgb_channel(blue),
+        channels[usize::from(red)],
+        channels[usize::from(green)],
+        channels[usize::from(blue)],
         f32::from(alpha) / 255.,
     ]
 }

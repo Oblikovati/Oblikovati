@@ -96,6 +96,18 @@ fn open_fixture(runtime: &ViewportRuntime, title: &str) -> Viewport {
     view.submit(&scene()).unwrap();
     view
 }
+
+#[test]
+fn native_present_can_defer_capture_without_losing_current_pixels() {
+    let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
+    let mut view = open_fixture(&runtime, "Oblikovati deferred capture");
+    let expected = verify_native(&mut view);
+    assert!(view.present_without_capture().unwrap());
+    assert_eq!(view.capture().unwrap(), expected);
+    await_presented_pixels(&view, &expected);
+    view.close();
+    assert!(runtime.validation_errors().unwrap().is_empty());
+}
 #[test]
 fn application_owned_linux_windows_present_resize_capture_and_remove() {
     let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();

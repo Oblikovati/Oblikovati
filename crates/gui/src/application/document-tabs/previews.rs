@@ -49,6 +49,10 @@ pub(crate) struct TabPreviews {
     captured_front: Option<PreviewKey>,
 }
 impl TabPreviews {
+    pub(crate) fn needs_frame_pixels(&self) -> bool {
+        !self.preview_visible && self.showing.is_some()
+    }
+
     /// Keep what the workspace shows now; the area is in window pixels.
     pub(crate) fn note_frame(&mut self, extent: [u32; 2], rgba: &[u8]) {
         // A preview below the strip is inside the workspace being captured.

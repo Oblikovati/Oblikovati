@@ -28,12 +28,16 @@ impl NativeHeadWindow {
         let context_lease = crate::test_context::acquire();
         validate_window_extent(extent)?;
         let options = ViewportOptions {
-            #[cfg(target_os = "windows")]
-            validation: std::env::var_os("OBLIKOVATI_VULKAN_VALIDATION")
-                .is_some_and(|value| value == "1"),
+            validation: native_validation(
+                std::env::var_os("OBLIKOVATI_VULKAN_VALIDATION").as_deref(),
+            ),
             ..ViewportOptions::default()
         };
         let runtime = ViewportRuntime::new(options)?;
+        #[cfg(target_os = "linux")]
+        if std::env::var_os("OBLIKOVATI_VSYNC").is_some_and(|value| value == "0") {
+            runtime.set_vertical_sync(false);
+        }
         let wake = ViewportWake::new()?;
         #[cfg(target_os = "linux")]
         let mut view = runtime.open_window("Oblikovati", extent)?;
@@ -114,5 +118,29 @@ impl NativeHeadWindow {
             #[cfg(test)]
             _context_lease: context_lease,
         })
+    }
+}
+
+fn native_validation(setting: Option<&std::ffi::OsStr>) -> bool {
+    match setting.and_then(std::ffi::OsStr::to_str) {
+        Some("1") => true,
+        Some("0") => false,
+        _ => cfg!(all(target_os = "linux", debug_assertions)),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::native_validation;
+    use std::ffi::OsStr;
+
+    #[test]
+    fn native_validation_can_be_overridden_in_both_build_profiles() {
+        assert!(native_validation(Some(OsStr::new("1"))));
+        assert!(!native_validation(Some(OsStr::new("0"))));
+        assert_eq!(
+            native_validation(None),
+            cfg!(all(target_os = "linux", debug_assertions))
+        );
     }
 }

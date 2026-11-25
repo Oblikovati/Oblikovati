@@ -1,0 +1,14 @@
+{
+  "mode": "continuous",
+  "app_pid": 2333540,
+  "fixture": "docking-visible-solid-current.opd",
+  "dpi": 144,
+  "validation_checks_disabled": "",
+  "desktop_validation": null,
+  "desktop_vsync": null,
+  "present_mode_override": true,
+  "load": "17.38 23.48 33.20 10/5366 2333539",
+  "cpu_pressure": "some avg10=1.58 avg60=2.65 avg300=3.17 total=2515435931\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+  "io_pressure": "some avg10=16.35 avg60=7.67 avg300=12.19 total=11694923899\nfull avg10=10.47 avg60=5.05 avg300=6.86 total=9603991251",
+  "total_rows": 600
+}

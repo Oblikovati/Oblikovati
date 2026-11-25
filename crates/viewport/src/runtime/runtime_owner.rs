@@ -3,6 +3,14 @@
 use super::*;
 
 impl ViewportRuntime {
+    /// Set Vulkan swapchain synchronization for native X11 windows.
+    /// Example: `runtime.set_vertical_sync(false);` before opening a window.
+    #[cfg(target_os = "linux")]
+    pub fn set_vertical_sync(&self, enabled: bool) {
+        use martensite_tkservice::graphic3d::Graphic3dGraphicDriver;
+        self.state.driver.set_vertical_sync(enabled);
+    }
+
     /// Initialize the owner-thread runtime; example: `ViewportRuntime::new(ViewportOptions::default())?`.
     pub fn new(options: ViewportOptions) -> Result<Self, String> {
         #[cfg(target_os = "linux")]

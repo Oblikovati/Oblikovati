@@ -314,9 +314,15 @@ pub trait HeadWindow {
         false
     }
 
-    /// Permit discarding an unseen idle sketch motion at this physical pixel.
+    /// Permit discarding an unseen idle model or sketch motion at this physical pixel.
     /// Example: `window.allows_ready_sketch_motion([400, 300])` rejects active gestures.
     fn allows_ready_sketch_motion(&self, _pixel: [i32; 2]) -> bool {
+        false
+    }
+
+    /// Permit batching GUI input when the viewport owns a camera drag.
+    /// Example: `window.batches_navigation_motion()` remains false for a held navigation key alone.
+    fn batches_navigation_motion(&self) -> bool {
         false
     }
 

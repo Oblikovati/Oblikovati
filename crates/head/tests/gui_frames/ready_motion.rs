@@ -3,6 +3,37 @@
 use super::*;
 
 #[test]
+fn part_hover_and_camera_drag_batch_only_unseen_gui_input() {
+    let motions = [1, 2, 3].map(|x| {
+        ViewportEvent::Input(ViewportInput::Motion {
+            position: [x, 40],
+            modifiers: Default::default(),
+        })
+    });
+    let mut window = FakeGuiWindow {
+        permit_idle_motion: true,
+        ..Default::default()
+    };
+    let mut owner = FakeGuiOwner {
+        ready_part: true,
+        ..Default::default()
+    };
+    crate::frames::process_frame_inputs(&mut window, &mut owner, &motions).unwrap();
+    assert_eq!(window.gui_inputs, motions[2..]);
+    assert_eq!(window.inputs, motions[2..]);
+    assert_eq!(owner.inputs, motions[2..]);
+
+    window.camera_drag = true;
+    window.gui_inputs.clear();
+    window.inputs.clear();
+    owner.inputs.clear();
+    crate::frames::process_frame_inputs(&mut window, &mut owner, &motions).unwrap();
+    assert_eq!(window.gui_inputs, motions[2..]);
+    assert_eq!(window.inputs, motions);
+    assert_eq!(owner.inputs, motions);
+}
+
+#[test]
 fn ready_motion_bursts_keep_last_position_without_skipping_drags_or_modifier_changes() {
     use oblikovati_viewport::{ViewportButton, ViewportModifiers};
     let motion = |x, shift| {

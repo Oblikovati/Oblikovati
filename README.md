@@ -47,6 +47,10 @@ The desktop executable is `oblikovati` (`oblikovati.exe` on Windows). The
 command-line executable is `oblikovati-cli`. See [Build and run](BUILDING.md)
 for prerequisites, platform details, and other build commands.
 
+On Linux, set `OBLIKOVATI_VSYNC=0` before launching the desktop to prefer
+immediate Vulkan presentation on X11. Set `OBLIKOVATI_VULKAN_VALIDATION=1`
+to collect Vulkan diagnostics in a release build.
+
 ## Desktop appearance
 
 Choose Dark, Light, or High Contrast under **View → Appearance → Theme**.

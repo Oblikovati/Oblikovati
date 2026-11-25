@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use crate::{GuiBatch, GuiFrame, GuiTextureResources, GuiVertex};
 use imgui::{DrawCmd, DrawCmdParams, DrawData, DrawList};
-use std::collections::BTreeMap;
 pub(crate) const FONT_TEXTURE_ID: usize = crate::GuiTextureKey::FONT.raw();
 pub(crate) fn capture_frame(
     draws: &DrawData,
@@ -9,9 +8,15 @@ pub(crate) fn capture_frame(
     resources: &GuiTextureResources,
 ) -> Result<GuiFrame, String> {
     let mut batches = Vec::new();
+    let mut remapping = Vec::new();
     for list in draws.draw_lists() {
+        let addressable = list
+            .vtx_buffer()
+            .len()
+            .min(usize::from(imgui::DrawIdx::MAX) + 1);
+        remapping.resize(addressable, u32::MAX);
         for command in list.commands() {
-            if let Some(batch) = capture_command(list, command, draws, resources)? {
+            if let Some(batch) = capture_command(list, command, draws, resources, &mut remapping)? {
                 batches.push(batch);
             }
         }
@@ -27,6 +32,7 @@ fn capture_command(
     command: DrawCmd,
     frame: &DrawData,
     resources: &GuiTextureResources,
+    remapping: &mut [u32],
 ) -> Result<Option<GuiBatch>, String> {
     match command {
         DrawCmd::ResetRenderState => Ok(None),
@@ -34,7 +40,7 @@ fn capture_command(
             Err("GUI raw callback: expected an owned declarative draw command".into())
         }
         DrawCmd::Elements { count, cmd_params } => {
-            capture_elements(list, count, cmd_params, frame, resources).map(Some)
+            capture_elements(list, count, cmd_params, frame, resources, remapping).map(Some)
         }
     }
 }
@@ -44,28 +50,24 @@ fn capture_elements(
     params: DrawCmdParams,
     frame: &DrawData,
     resources: &GuiTextureResources,
+    remapping: &mut [u32],
 ) -> Result<GuiBatch, String> {
     let texture = resources.binding(params.texture_id.id())?;
     let span = command_index_span(params.idx_offset, count, list.idx_buffer().len())?;
     let selected = &list.idx_buffer()[span];
-    let indices = capture_indices(selected, params.vtx_offset, list.vtx_buffer().len())?;
-    let (vertices, indices) = compact_vertices(list, &indices, frame);
+    let (vertices, indices) = compact_vertices(
+        list.vtx_buffer(),
+        selected,
+        params.vtx_offset,
+        frame,
+        remapping,
+    )?;
     Ok(GuiBatch {
         texture,
         vertices,
         indices,
         clip_rect: scaled_clip(params.clip_rect, frame),
     })
-}
-fn capture_indices(
-    indices: &[imgui::DrawIdx],
-    base: usize,
-    vertex_count: usize,
-) -> Result<Vec<u32>, String> {
-    indices
-        .iter()
-        .map(|index| checked_vertex_reference(*index, base, vertex_count))
-        .collect()
 }
 fn checked_vertex_reference(
     index: imgui::DrawIdx,
@@ -91,23 +93,28 @@ fn scaled_clip(rect: [f32; 4], frame: &DrawData) -> [f32; 4] {
 }
 
 fn compact_vertices(
-    list: &DrawList,
-    source: &[u32],
+    source_vertices: &[imgui::DrawVert],
+    source: &[imgui::DrawIdx],
+    base: usize,
     frame: &DrawData,
-) -> (Vec<GuiVertex>, Vec<u32>) {
-    let mut remapping = BTreeMap::new();
+    remapping: &mut [u32],
+) -> Result<(Vec<GuiVertex>, Vec<u32>), String> {
     let mut vertices = Vec::new();
-    let mut indices = Vec::new();
-    for index in source {
-        let mapped = *remapping.entry(*index).or_insert_with(|| {
-            let vertex = &list.vtx_buffer()[*index as usize];
-            let mapped = vertices.len() as u32;
-            vertices.push(captured_vertex(vertex, frame));
-            mapped
-        });
-        indices.push(mapped);
+    let mut indices = Vec::with_capacity(source.len());
+    for &index in source {
+        let vertex = checked_vertex_reference(index, base, source_vertices.len())? as usize;
+        let slot = &mut remapping[usize::from(index)];
+        if *slot == u32::MAX {
+            *slot = vertices.len() as u32;
+            vertices.push(captured_vertex(&source_vertices[vertex], frame));
+        }
+        indices.push(*slot);
     }
-    (vertices, indices)
+    // Adjacent draw commands may share indices but own independent vertex arrays.
+    for &index in source {
+        remapping[usize::from(index)] = u32::MAX;
+    }
+    Ok((vertices, indices))
 }
 
 fn command_index_span(
@@ -134,11 +141,50 @@ mod tests {
     use super::*;
     #[test]
     fn index_offsets_refuse_overflow_and_invalid_vertex_references() {
-        assert_eq!(capture_indices(&[0, 1, 2], 3, 6).unwrap(), [3, 4, 5]);
+        assert_eq!(checked_vertex_reference(2, 3, 6).unwrap(), 5);
         assert_eq!(command_index_span(2, 3, 5).unwrap(), 2..5);
         assert!(command_index_span(2, 4, 5).is_err());
         assert!(command_index_span(usize::MAX, 1, usize::MAX).is_err());
-        assert!(capture_indices(&[1], usize::MAX, usize::MAX).is_err());
-        assert!(capture_indices(&[2], 3, 5).is_err());
+        assert!(checked_vertex_reference(1, usize::MAX, usize::MAX).is_err());
+        assert!(checked_vertex_reference(2, 3, 5).is_err());
+    }
+
+    #[test]
+    fn adjacent_commands_remap_repeated_indices_independently() {
+        let mut context = crate::test_context::create();
+        context.set_ini_filename(None);
+        context.io_mut().display_size = [64., 64.];
+        context.io_mut().display_framebuffer_scale = [2., 2.];
+        context.fonts().build_rgba32_texture();
+        context.frame();
+        let frame = context.render();
+        let source = [1., 2., 3., 4.].map(|x| imgui::DrawVert {
+            pos: [x, 4.],
+            uv: [x / 4., 0.],
+            col: [0, 10, 20, 30],
+        });
+        let mut remapping = [u32::MAX; 4];
+        let (first, first_indices) =
+            compact_vertices(&source, &[1, 0, 1], 0, frame, &mut remapping).unwrap();
+        let (second, second_indices) =
+            compact_vertices(&source, &[0, 1, 0], 2, frame, &mut remapping).unwrap();
+        assert_eq!(first_indices, [0, 1, 0]);
+        assert_eq!(second_indices, [0, 1, 0]);
+        assert_eq!(
+            first
+                .iter()
+                .map(|vertex| vertex.position)
+                .collect::<Vec<_>>(),
+            [[4., 8.], [2., 8.]]
+        );
+        assert_eq!(
+            second
+                .iter()
+                .map(|vertex| vertex.position)
+                .collect::<Vec<_>>(),
+            [[6., 8.], [8., 8.]]
+        );
+        assert_eq!(second[0].uv, [0.75, 0.]);
+        assert_eq!(second[0].srgb, [0, 10, 20, 30]);
     }
 }

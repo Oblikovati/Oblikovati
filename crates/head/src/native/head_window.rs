@@ -429,24 +429,7 @@ impl HeadWindow for NativeHeadWindow {
         Ok(true)
     }
     fn present(&mut self) -> Result<HeadPresentation, String> {
-        let presentation = self.view.present()?;
-        self.refresh_title()?;
-        Ok(match presentation {
-            ViewportPresentation::Completed(capture) => {
-                self.note_orientation_presented();
-                if let Some(gui) = &mut self.gui {
-                    gui.note_presented_frame(capture.extent, &capture.rgba);
-                }
-                self.publish_window_captures(&capture)?;
-                HeadPresentation::Completed
-            }
-            ViewportPresentation::SurfaceChanged(_) => {
-                if let Some(gui) = &mut self.gui {
-                    gui.require_publication();
-                }
-                HeadPresentation::SurfaceChanged
-            }
-        })
+        self.present_native_frame()
     }
     fn wait(&mut self, timeout: Option<std::time::Duration>) -> Result<bool, String> {
         let windows = self.drawing_windows.targets();

@@ -245,13 +245,23 @@ impl Viewport {
     /// Present once and distinguish an observed resize from a renderer fault.
     /// Example: schedule a new frame after `ViewportPresentation::SurfaceChanged(extent)`.
     pub fn present(&mut self) -> Result<ViewportPresentation, String> {
-        if !self.draw_current_surface()? {
+        if !self.draw_current_frame()? {
             return Ok(ViewportPresentation::SurfaceChanged(self.extent));
         }
-        if let Some(extent) = self.observe_draw_extent()? {
-            return Ok(ViewportPresentation::SurfaceChanged(extent));
-        }
         self.capture_completed_surface()
+    }
+    /// Present on X11 and defer reading pixels until requested.
+    /// Example: `view.present_without_capture()?` returns false when the surface changed.
+    #[cfg(target_os = "linux")]
+    pub fn present_without_capture(&mut self) -> Result<bool, String> {
+        if !self.draw_current_frame()? {
+            return Ok(false);
+        }
+        self.completed = Some(self.generations());
+        Ok(true)
+    }
+    fn draw_current_frame(&mut self) -> Result<bool, String> {
+        Ok(self.draw_current_surface()? && self.observe_draw_extent()?.is_none())
     }
     fn capture_completed_surface(&mut self) -> Result<ViewportPresentation, String> {
         let result = self.live()?.renderer.capture();
