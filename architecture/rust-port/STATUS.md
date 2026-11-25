@@ -39,14 +39,14 @@ using this status; the live scenario directory can change.
   `receipts/2026-11-20-orientation-transition-3961/`. Strict verification
   remains open under #3978. All 20 declarations in the older pinned snapshot
   have R0 records. See `receipts/2026-11-20-viewport-orientation-r0-3961/`.
-- Workspace Layout (#3897) passed all 53 native desktop cases and 523 steps.
-  The current feature hash covers 52 declarations, including both examples
-  in one outline. The foreground X11 check captured the View checklist and
-  Mini-Toolbar with MCPBridge. Rule Log and Rule Automation are disabled
-  under #4185. See `receipts/2026-11-20-workspace-layout-3897/`. The 44
-  declarations in the older pinned snapshot have R0 baseline records.
-  Strict verification still needs a current pin and bounded build and runtime
-  inputs under #3978.
+- Workspace Layout (#3897) passed all [53 current cases and 523 steps](receipts/2026-11-25-workspace-layout-current-3897/README.md).
+  The 52 declarations include two examples in one outline. The older
+  foreground X11 check captured the View checklist and Mini-Toolbar with
+  MCPBridge. Rule Log and Rule Automation are disabled under #4185.
+  See `receipts/2026-11-20-workspace-layout-3897/`. The 44 declarations in
+  the older pinned snapshot have R0 baseline records. Strict verification
+  still needs a current pin and bounded build and runtime inputs under
+  Issue #3978.
 - Document Tabs (#3900) passed all 39 current scenarios and 343 steps on Linux X11.
   See the [current run](receipts/2026-11-25-document-tabs-current-3900/README.md).
   The pinned snapshot also passed all 38 scenarios and 334 steps.
@@ -474,7 +474,7 @@ using this status; the live scenario directory can change.
 ## Work queue
 
 Work dependency-ready application scenarios one at a time, then sketch and modeling.
-1. Continue the dependency-ready application scenarios with Workspace Layout.
+1. Continue the dependency-ready application scenarios with Ribbon Panel Visibility.
    Midpoint Line (#4178) still names a deferred Inventor fixture. Revisit it when
    the scenario owner adopts the supplied native fixture.
    Constraint Settings (#4158) is paused with uncommitted work while its

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" package="testsuite/Feature: Workspace layout and panel visibility: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature" tests="2" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T03:01:39.99037804Z" time="86.265171963"><testcase name="Scenario: Find origin axes with different query capitalization: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:624:5" time="43.882822573"><system-out><![CDATA[  Scenario Outline: Find origin axes with different query capitalization
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And its model browser contains X Axis, Y Axis and Z Axis under Origin
+   ✔  When the user opens browser search and enters "axis"
+   ✔  Then the browser displays X Axis, Y Axis and Z Axis under Origin
+   ✔  And the matching text is highlighted
+   ✔  When the user clears the search and closes the empty search field
+   ✔  Then the unfiltered browser tree is displayed
+]]></system-out></testcase><testcase name="Scenario: Find origin axes with different query capitalization: target/native-scratch.HSqCy5/current-workspace-layout-source/features/application/workspace-layout/workspace-layout.feature:625:5" time="42.38234939"><system-out><![CDATA[  Scenario Outline: Find origin axes with different query capitalization
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is active in the MCAD Software
+   ✔  And its model browser contains X Axis, Y Axis and Z Axis under Origin
+   ✔  When the user opens browser search and enters "AXIS"
+   ✔  Then the browser displays X Axis, Y Axis and Z Axis under Origin
+   ✔  And the matching text is highlighted
+   ✔  When the user clears the search and closes the empty search field
+   ✔  Then the unfiltered browser tree is displayed
+]]></system-out></testcase></testsuite></testsuites>
