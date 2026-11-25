@@ -39,38 +39,40 @@ fn card_check_at(world: &ApplicationWorld, name: &str) -> [i32; 2] {
         card.center()[1] as i32 - CARD_CHECK_ABOVE_NAME,
     ]
 }
-fn order_of(world: &ApplicationWorld, names: [&str; 3]) -> Vec<String> {
+fn order_of<'a>(world: &ApplicationWorld, names: &[&'a str]) -> Vec<&'a str> {
     // Glyphs differ in height, so a row's position is bucketed before comparing across it.
-    let mut found: Vec<(f32, f32, String)> = names
+    let mut found = names
         .iter()
-        .map(|name| {
-            let center = row_run(world, name).center();
-            (
-                (center[1] / ROW_BUCKET).floor(),
-                center[0],
-                (*name).to_owned(),
-            )
+        .map(|&name| {
+            let center = recent_name(world, name)
+                .unwrap_or_else(|| panic!("expected {name:?} in the recent list"))
+                .center();
+            ((center[1] / ROW_BUCKET).floor(), center[0], name)
         })
-        .collect();
+        .collect::<Vec<_>>();
     found.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.total_cmp(&b.1)));
     found.into_iter().map(|row| row.2).collect()
 }
 const NAMES: [&str; 3] = [OTHERS[0], OTHERS[1], SEARCHED];
 fn expect_descending_names(world: &ApplicationWorld) {
-    let order = order_of(world, NAMES);
-    assert_eq!(
-        order,
-        [SEARCHED, OTHERS[1], OTHERS[0]],
-        "descending, found {order:?}"
-    );
+    expect_name_order(world, true);
 }
 fn expect_ascending_names(world: &ApplicationWorld) {
-    let order = order_of(world, NAMES);
-    assert_eq!(
-        order,
-        [OTHERS[0], OTHERS[1], SEARCHED],
-        "ascending, found {order:?}"
-    );
+    expect_name_order(world, false);
+}
+fn expect_name_order(world: &ApplicationWorld, descending: bool) {
+    let mut expected = if published_profile::uses_published_profile(world) {
+        std::iter::once(SEARCHED)
+            .chain(other_recent_names(world).iter().copied())
+            .collect()
+    } else {
+        NAMES.to_vec()
+    };
+    expected.sort_unstable();
+    if descending {
+        expected.reverse();
+    }
+    assert_eq!(order_of(world, &expected), expected);
 }
 fn expect_selected_actions(world: &ApplicationWorld) {
     for action in SELECTED_ACTIONS {

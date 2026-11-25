@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:14:24.423670282Z" time="15.298745457"><testcase name="Scenario: Inspect actions for one recent document: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:97:3" time="15.298745457"><system-out><![CDATA[  Scenario: Inspect actions for one recent document
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent documents are shown in List View
+   ✔  And no recent-document checkboxes are selected
+   ✔  When the user opens the actions menu on a recent part row
+   ✔  Then the menu offers Open and opens with options
+   ✔  And the menu offers Remove from Recent
+   ✔  And the menu offers commands to open or explore the containing folder
+   ✔  And the menu offers document properties
+]]></system-out></testcase></testsuite></testsuites>

@@ -68,7 +68,16 @@ fn open_actions(world: &mut ApplicationWorld) {
 #[then("the menu offers Open and opens with options")]
 #[then("the menu offers Open and Open with options")]
 fn menu_open(world: &mut ApplicationWorld) {
-    world.expect_text("Open with options");
+    for label in ["Open", "Openwithoptions"] {
+        assert!(
+            world
+                .frame
+                .runs
+                .iter()
+                .any(|row| row.text == label && world.frame.is_popup_row(row)),
+            "expected {label:?} in the actions menu"
+        );
+    }
 }
 #[then("the menu offers Remove from Recent")]
 fn menu_remove(world: &mut ApplicationWorld) {

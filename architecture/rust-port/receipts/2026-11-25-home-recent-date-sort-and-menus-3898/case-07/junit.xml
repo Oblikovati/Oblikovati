@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:14:05.76990816Z" time="17.869607857"><testcase name="Scenario: Sort recent thumbnail cards by name and reverse the order: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:84:3" time="17.869607857"><system-out><![CDATA[  Scenario: Sort recent thumbnail cards by name and reverse the order
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent documents with different names are shown in Grid View
+   ✔  And Sort by is set to Last Opened in descending order
+   ✔  When the user opens the Sort by menu
+   ✔  Then it offers Name, Location, Date Modified, Last Opened, Size and Area
+   ✔  When the user chooses Name
+   ✔  Then the sort field shows Name
+   ✔  And the visible cards are ordered by name in descending order
+   ✔  When the user activates the sort direction control
+   ✔  Then the visible cards are ordered by name in ascending order
+]]></system-out></testcase></testsuite></testsuites>

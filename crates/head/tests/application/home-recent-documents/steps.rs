@@ -11,6 +11,8 @@ const ASSEMBLY: &str = "Frame";
 const NO_MATCH: &str = "zzq_no_match_7319";
 const SELECTED_ACTIONS: [&str; 2] = ["Open Selected", "Remove Selected"];
 const ROW_REACH: f32 = 4.;
+#[path = "date_filter.rs"]
+mod date_filter;
 #[path = "layout_bounds.rs"]
 mod layout_bounds;
 #[path = "lists.rs"]
@@ -365,7 +367,6 @@ fn list_rows(world: &mut ApplicationWorld) {
     }
 }
 #[given("recent parts and assemblies are available")]
-#[given("recent parts and an assembly modified today are available")]
 fn parts_and_assemblies(world: &mut ApplicationWorld) {
     let assembly = assembly_name(world);
     assert!(
@@ -426,64 +427,4 @@ fn both_again(world: &mut ApplicationWorld) {
         "expected {assembly}"
     );
     assert!(home_shows(world, SEARCHED), "expected {SEARCHED}");
-}
-#[when("the user opens Filter and chooses Today under Date Modified")]
-#[when("I open Filter and choose Today under Date Modified")]
-fn filter_today(world: &mut ApplicationWorld) {
-    open_filter(world);
-    world.click_text("Today");
-    world.pump(Vec::new());
-}
-#[then("the recent list includes the parts and assembly modified today")]
-#[then("the list displays the parts and assembly modified today")]
-fn today_list(world: &mut ApplicationWorld) {
-    assert!(home_shows(world, SEARCHED), "expected {SEARCHED}");
-    let assembly = assembly_name(world);
-    assert!(
-        recent_name(world, assembly).is_some(),
-        "expected {assembly}"
-    );
-}
-#[when("the user selects Part under File Types")]
-#[when("I select Part under File Types")]
-fn select_part_type(world: &mut ApplicationWorld) {
-    world.click_text("Part");
-    world.pump(Vec::new());
-}
-#[then("the filter control indicates two active filters")]
-fn two_filters(world: &mut ApplicationWorld) {
-    expect_filter_count(world, 2);
-}
-#[then("the list displays the parts modified today")]
-fn parts_today(world: &mut ApplicationWorld) {
-    assert!(home_shows(world, SEARCHED), "expected {SEARCHED}");
-}
-#[then("the assembly is not displayed")]
-fn assembly_hidden(world: &mut ApplicationWorld) {
-    let assembly = assembly_name(world);
-    assert!(
-        recent_name(world, assembly).is_none(),
-        "expected no {assembly}"
-    );
-}
-#[when("the user also selects Assembly")]
-#[when("I also select Assembly")]
-fn also_assembly(world: &mut ApplicationWorld) {
-    world.click_text("Assembly");
-    world.pump(Vec::new());
-}
-#[then("the filter control indicates three active filters")]
-fn three_filters(world: &mut ApplicationWorld) {
-    expect_filter_count(world, 3);
-}
-#[then("All is selected for Date Modified")]
-#[then("All is selected under Date Modified")]
-fn all_selected(world: &mut ApplicationWorld) {
-    assert!(world.radio_selected("All"), "expected All selected");
-}
-#[then("the file-type checkboxes are clear")]
-fn types_clear(world: &mut ApplicationWorld) {
-    for choice in ["Part", "Assembly", "Drawing"] {
-        assert!(!world.checked(choice), "expected {choice} clear");
-    }
 }

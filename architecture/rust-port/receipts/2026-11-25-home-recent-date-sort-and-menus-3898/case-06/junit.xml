@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" package="testsuite/Feature: Recent documents on Home: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T01:13:44.896101016Z" time="20.074460959"><testcase name="Scenario: Combine modification date and file types: target/native-scratch.HSqCy5/current-home-recent-documents-source/features/application/home-recent-documents/home-recent-documents.feature:64:3" time="20.074460959"><system-out><![CDATA[  Scenario: Combine modification date and file types
+   ✔  Given the MCAD Software starts with an isolated Recent profile prepared from a disposable copy of `fixtures/cad/home-recent-native`
+   ✔  And the Home workspace is active in the MCAD Software
+   ✔  And recent parts and an assembly modified today are available
+   ✔  And no recent-document filters are active
+   ✔  When the user opens Filter and chooses Today under Date Modified
+   ✔  Then the filter control indicates one active filter
+   ✔  And the recent list includes the parts and assembly modified today
+   ✔  When the user selects Part under File Types
+   ✔  Then the filter control indicates two active filters
+   ✔  And the list displays the parts modified today
+   ✔  And the assembly is not displayed
+   ✔  When the user also selects Assembly
+   ✔  Then the filter control indicates three active filters
+   ✔  And the list displays the parts and assembly modified today
+   ✔  When the user chooses Clear filters
+   ✔  Then All is selected for Date Modified
+   ✔  And the file-type checkboxes are clear
+   ✔  And the broader recent list is displayed
+]]></system-out></testcase></testsuite></testsuites>
