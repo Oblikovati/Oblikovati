@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:06:45.10355512Z" time="37.548432673"><testcase name="Scenario: Press Escape while the command category list is open: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:805:3" time="37.548432673"><system-out><![CDATA[  Scenario: Press Escape while the command category list is open
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Ribbon customization dialog shows All Commands and an empty Part Tools target
+   ✔  And there are no pending customization changes
+   ✔  When the user opens the command category list
+   ✔  Then All Commands and other categories are visible in the list
+   ✔  When the user presses Down
+   ✔  Then Macros has the keyboard focus in the open list
+   ✔  When the user presses Escape
+   ✔  Then the customization dialog and category list close
+   ✔  And the Tools ribbon and part remain visible
+   ✔  When the user reopens customization from the Tools ribbon
+   ✔  Then the category shows All Commands
+   ✔  And the Part Tools target list is empty
+   ✔  When the user clicks Close
+   ✔  Then the dialog closes
+]]></system-out></testcase></testsuite></testsuites>

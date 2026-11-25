@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:07:14.094127061Z" time="32.674464373"><testcase name="Scenario: Return a staged command to a different source category: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:1022:3" time="32.674464373"><system-out><![CDATA[  Scenario: Return a staged command to a different source category
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the ribbon customization dialog has an empty Part Tools target
+   ✔  And the command source is All Commands
+   ✔  When the user double-clicks 2D Sketches in the source list
+   ✔  Then 2D Sketches appears in the target and is absent from the visible source list
+   ✔  And the target is marked as changed
+   ✔  When the user selects View Tab as the command source
+   ✔  Then 2D Sketches remains in the target and is absent from the visible View Tab source list
+   ✔  When the user double-clicks 2D Sketches in the target
+   ✔  Then the target is empty
+   ✔  And 2D Sketches appears in the View Tab source list
+   ✔  And the target remains marked as changed
+   ✔  When the user cancels customization
+   ✔  Then the customization dialog closes
+]]></system-out></testcase></testsuite></testsuites>

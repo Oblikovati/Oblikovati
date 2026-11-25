@@ -77,8 +77,27 @@ fn tools_target_is_clean(world: &mut ApplicationWorld) {
     expect_target_pending(world, false);
 }
 
+#[then(
+    "the Part | Tools custom panel list is empty beneath the \"Large\", \"Text\" and \"Name\" columns"
+)]
+fn empty_tools_columns(world: &mut ApplicationWorld) {
+    tools_target_is_clean(world);
+    for label in ["Large", "Text", "Name"] {
+        world.run_in_window("Customize", label);
+    }
+}
+
+#[then("\"Import\", \"Export\" and \"Close\" are available")]
+fn clean_file_controls(world: &mut ApplicationWorld) {
+    for label in ["Import", "Export", "Close"] {
+        assert_eq!(world.run_in_window("Customize", label).alpha, u8::MAX);
+    }
+}
+
 #[then("Close is available while Cancel and Apply are unavailable")]
 #[then("Close is available while Cancel and Apply are disabled")]
+#[then("\"Cancel\" and \"Apply\" are unavailable")]
+#[then("cancels and Apply are unavailable because no edits are staged")]
 fn clean_dialog_controls(world: &mut ApplicationWorld) {
     let title = if diagnostics::window_geometry("Customize").is_some() {
         "Customize"

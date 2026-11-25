@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:05:51.027521757Z" time="24.043031796"><testcase name="Scenario: Open ribbon customization from the Tools tab in its first captured state: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:165:3" time="24.043031796"><system-out><![CDATA[  Scenario: Open ribbon customization from the Tools tab in its first captured state
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/blank-metric-part.opd` is open in the MCAD Software
+   ✔  And the Tools ribbon tab is selected
+   ✔  And ribbon customization has not been opened earlier in the captured session
+   ✔  When the user clicks "Customize" in the Options panel
+   ✔  Then the customization dialog opens on the "Ribbon" tab
+   ✔  And the target selector shows "Part | Tools"
+   ✔  And the available-command category is "All Commands"
+   ✔  And the Part | Tools custom panel list is empty beneath the "Large", "Text" and "Name" columns
+   ✔  And "Import", "Export" and "Close" are available
+   ✔  And "Cancel" and "Apply" are unavailable
+   ✔  And no customization change is pending
+   ✔  When the user clicks "Close"
+   ✔  Then the dialog closes and the Tools ribbon remains visible
+]]></system-out></testcase></testsuite></testsuites>

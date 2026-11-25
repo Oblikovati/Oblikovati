@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:06:46.229798358Z" time="36.733671504"><testcase name="Scenario: Discard a staged command using the dialog close control: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:754:3" time="36.733671504"><system-out><![CDATA[  Scenario: Discard a staged command using the dialog close control
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the ribbon customization dialog shows an empty Part Tools custom panel
+   ✔  And "2D Sketches" is available in the source list
+   ✔  When the user adds "2D Sketches" to the custom panel without applying
+   ✔  Then the target is marked as changed
+   ✔  And the dialog offers OK, Cancel, and Apply
+   ✔  When the user clicks the title-bar close control
+   ✔  Then the customization dialog closes
+   ✔  And no User Commands panel is visible on the Tools ribbon
+   ✔  When the user reopens customization from the Tools ribbon
+   ✔  Then the Part Tools custom panel list is empty
+   ✔  And "2D Sketches" is available in the source list
+   ✔  And the target is not marked as changed
+   ✔  When the user clicks Close
+   ✔  Then the dialog closes
+]]></system-out></testcase></testsuite></testsuites>

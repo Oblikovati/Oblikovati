@@ -28,13 +28,17 @@ pub(super) fn target_row_runs(world: &ApplicationWorld) -> Vec<&diagnostics::Ren
     let large = world.run_in_window("Customize", "Large");
     let x = panel.minimum[0]..large.minimum[0];
     let top = large.maximum[1];
+    let inside_target = [large.center()[0], top + 2. * (top - large.minimum[1])];
+    let Some(list) = diagnostics::child_draw_list_at("Customize", inside_target) else {
+        return Vec::new();
+    };
     let mut rows: Vec<_> = world
         .frame
         .runs
         .iter()
         .filter(|run| {
             let [left, y] = [run.minimum[0], run.center()[1]];
-            x.contains(&left) && y > top && y < top + 200.
+            run.list == list && x.contains(&left) && y > top && y < top + 200.
         })
         .collect();
     rows.sort_by(|a, b| a.center()[1].total_cmp(&b.center()[1]));
@@ -61,6 +65,11 @@ pub(super) fn target_label(world: &ApplicationWorld) -> &str {
 pub(super) fn expect_target_pending(world: &ApplicationWorld, pending: bool) {
     let label = target_label(world);
     assert_eq!(label.ends_with('*'), pending, "target selector {label:?}");
+}
+
+#[then("the target has a pending-change marker")]
+fn target_remains_pending(world: &mut ApplicationWorld) {
+    expect_target_pending(world, true);
 }
 
 #[then("Apply and cancels are enabled")]

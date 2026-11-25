@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:06:45.567472689Z" time="27.651688304"><testcase name="Scenario: Stage a separator from a category with no macro commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:850:3" time="27.651688304"><system-out><![CDATA[  Scenario: Stage a separator from a category with no macro commands
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the Ribbon customization dialog shows an empty Part Tools target
+   ✔  And the Macros category has no macro commands available in this session
+   ✔  When the user selects the Macros command category
+   ✔  Then the available list shows only "<Separator>"
+   ✔  And the custom panel list remains empty
+   ✔  When the user double-clicks "<Separator>" in the available list
+   ✔  Then a separator appears in the custom panel list
+   ✔  And "<Separator>" remains in the available list
+   ✔  And the target is marked as changed
+   ✔  When the user clicks Cancel
+   ✔  Then the customization dialog closes
+   ✔  And no User Commands panel appears on the Tools ribbon
+]]></system-out></testcase></testsuite></testsuites>

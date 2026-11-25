@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" package="testsuite/Feature: Customize ribbon user commands: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-25T04:06:45.328223739Z" time="35.849514714"><testcase name="Scenario: Retain a staged ribbon edit while viewing marking menu customization: target/native-scratch.HSqCy5/current-ribbon-customization-source/features/application/ribbon-customization/ribbon-customization.feature:503:3" time="35.849514714"><system-out><![CDATA[  Scenario: Retain a staged ribbon edit while viewing marking menu customization
+   ✔> Given the MCAD Software starts with a writable copy of `fixtures/preferences/ribbon-normal` as its configuration directory
+   ✔  Given `fixtures/cad/workspace-layout-native.opd` is open and active in the MCAD Software
+   ✔  And a part is active in the MCAD Software
+   ✔  And the customization dialog is open on Ribbon for an empty Part Tools custom panel
+   ✔  When the user adds "2D Sketches" to the custom panel without applying
+   ✔  And the user selects the Marking Menu customization tab
+   ✔  Then the marking menu customization controls are displayed
+   ✔  And Apply and cancels remain available
+   ✔  When the user returns to the Ribbon customization tab
+   ✔  Then "2D Sketches" remains in the Part Tools target list
+   ✔  And the target is marked as changed
+   ✔  When the user cancels the customization dialog
+   ✔  Then the dialog closes
+   ✔  And no User Commands panel appears on the Tools ribbon
+]]></system-out></testcase></testsuite></testsuites>

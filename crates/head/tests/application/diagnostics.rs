@@ -10,6 +10,39 @@ pub(super) use drawn_text::{
     RenderedFrame, RenderedRun, has_strike, rendered_frame, run_is_checked,
 };
 
+/// Find the draw list of the active child at a point inside its bounds.
+pub(super) fn child_draw_list_at(parent: &str, point: [f32; 2]) -> Option<usize> {
+    let name = CString::new(parent).unwrap();
+    // The window and draw-list pointers belong to the live context until the next frame.
+    let owner = unsafe { sys::igFindWindowByName(name.as_ptr()).as_ref() }
+        .unwrap_or_else(|| panic!("expected GUI window {parent:?}"));
+    let children = &owner.DC.ChildWindows;
+    assert!(children.Size > 0, "expected child windows in {parent:?}");
+    let children = unsafe { std::slice::from_raw_parts(children.Data, children.Size as usize) };
+    let target = children
+        .iter()
+        .find_map(|window| {
+            let window = unsafe { window.as_ref() }?;
+            let bounds = window.OuterRectClipped;
+            (window.Active
+                && (bounds.Min.x..bounds.Max.x).contains(&point[0])
+                && (bounds.Min.y..bounds.Max.y).contains(&point[1]))
+            .then_some(window.DrawList)
+        })
+        .unwrap_or_else(|| panic!("expected active child at {point:?} in {parent:?}"));
+    rendered_draw_list_index(target)
+}
+
+fn rendered_draw_list_index(target: *mut sys::ImDrawList) -> Option<usize> {
+    let frame = unsafe { sys::igGetDrawData().as_ref() }?;
+    if frame.CmdListsCount < 1 {
+        return None;
+    }
+    let lists = unsafe { std::slice::from_raw_parts(frame.CmdLists, frame.CmdListsCount as usize) };
+    // ImGui can omit an empty child list when the parent draws its border.
+    lists.iter().position(|&list| list == target)
+}
+
 /// Check for a visible image beside a caption in the same draw list.
 #[cfg(target_os = "linux")]
 pub(super) fn has_caption_icon(run: &RenderedRun) -> bool {
