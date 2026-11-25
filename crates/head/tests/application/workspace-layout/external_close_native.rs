@@ -99,33 +99,175 @@ fn browser_feature_properties_survives_search_filter() {
 
 #[test]
 fn restored_project_dock_survives_parent_closure() {
-    let mut world = ApplicationWorld::new();
-    super::browser_feature::open_visible_extruded_part(&mut world);
-    let area = viewport(&mut world);
-    open_toolbar_tool(&mut world, "Material Browser");
-    drag_title(
-        &mut world,
-        "Material Browser",
-        [area[2] as i32 - 15, ((area[1] + area[3]) / 2) as i32],
-    );
+    let mut world = ApplicationWorld::with_asset_tools_closed();
+    world.add_part();
+    let node = dock_material_browser(&mut world);
+    open_template_projects(&mut world);
+    restore_template_project_dock(&mut world, node);
+    select_dock_tab(&mut world, TEMPLATE_PROJECTS);
+    close_template_chooser(&mut world);
+    world.save_capture("chooser-close-reveals-material");
+    world.close();
+}
+
+fn open_template_projects(world: &mut ApplicationWorld) {
     world.key(oblikovati_viewport::ViewportPhysicalKey::N, true);
-    world.click_text("Projects");
-    world.pump(Vec::new());
-    let title = "Projects###template-projects";
-    assert!(window_geometry(title).is_some());
-    let node = super::super::diagnostics::window_dock_id("Material Browser").unwrap();
-    let title_c = std::ffi::CString::new(title).unwrap();
+    super::super::project_dialog::choose_projects(world);
+    assert!(window_geometry(TEMPLATE_PROJECTS).is_some());
+}
+
+fn restore_template_project_dock(world: &mut ApplicationWorld, node: u32) {
+    let title = std::ffi::CString::new(TEMPLATE_PROJECTS).unwrap();
+    // Seed the saved child placement without requiring a drag out of a modal.
     unsafe {
-        imgui::sys::igDockBuilderDockWindow(title_c.as_ptr(), node);
+        imgui::sys::igDockBuilderDockWindow(title.as_ptr(), node);
         imgui::sys::igDockBuilderFinish(node);
     }
     world.pump(Vec::new());
-    assert_eq!(super::super::diagnostics::window_dock_id(title), Some(node));
-    select_dock_tab(&mut world, title);
-    let cancel = world.run_in_window("New document", "Cancel").center();
-    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(cancel));
-    assert_closed_with_visible_tab(&mut world, title, "Material Browser");
+    assert_eq!(
+        super::super::diagnostics::window_dock_id(TEMPLATE_PROJECTS),
+        Some(node)
+    );
+}
+
+fn close_template_chooser(world: &mut ApplicationWorld) {
+    click_before_dock_frame(world, "New document", "Cancel");
+    assert_closed_with_visible_tab(world, TEMPLATE_PROJECTS, MATERIAL_BROWSER);
+    assert!(window_geometry("New document").is_none());
+}
+
+fn click_before_dock_frame(world: &mut ApplicationWorld, dialog: &str, label: &str) {
+    let center = world.run_in_window(dialog, label).center();
+    let point = super::super::diagnostics::pointer_pixels(center);
+    if world.app().window.native.view.uses_wayland() {
+        world.app().window.scripted = super::super::pointer_click_events(point, 1);
+    } else {
+        super::super::x11_input::click(point);
+    }
+}
+
+#[test]
+fn docked_projects_reveals_the_other_tab_and_restores_its_dock() {
+    let mut world = ApplicationWorld::with_asset_tools_closed();
+    let part = world.add_part();
+    let path = world.scratch_folder().join("dock-project.opj");
+    std::fs::write(
+        &path,
+        "schemaVersion: 1\nname: Dock Project\nworkspace: work\n",
+    )
+    .unwrap();
+    world.app().owner.load_desktop_project(&path).unwrap();
+    world.pump(Vec::new());
+
+    let node = dock_standalone_projects(&mut world);
+    for close in ["Done", "Escape"] {
+        close_and_reopen_projects(&mut world, node, close);
+    }
+    world.expect_active(part);
+    world.save_capture("projects-restored-to-shared-dock");
+    select_dock_tab(&mut world, PROJECTS);
+    click_before_dock_frame(&mut world, PROJECTS, "Done");
+    assert_closed_with_visible_tab(&mut world, PROJECTS, MATERIAL_BROWSER);
+    check_projects_after_restart(&mut world, &path, node);
     world.close();
+}
+
+fn check_projects_after_restart(world: &mut ApplicationWorld, path: &std::path::Path, node: u32) {
+    world.reopen_application();
+    let part = world.add_part();
+    world.app().owner.load_desktop_project(path).unwrap();
+    world.pump(Vec::new());
+    assert_eq!(material_node(), node);
+    open_toolbar_tool(world, "Projects");
+    assert_eq!(
+        super::super::diagnostics::window_dock_id(PROJECTS),
+        Some(node)
+    );
+    assert_eq!(
+        super::super::diagnostics::window_dock_tab_visible(PROJECTS),
+        Some(true),
+        "opening standalone Projects should reveal its restored dock tab"
+    );
+    world.run_in_window(PROJECTS, "ProjectSettings");
+    click_before_dock_frame(world, PROJECTS, "Done");
+    assert_closed_with_visible_tab(world, PROJECTS, MATERIAL_BROWSER);
+    world.expect_active(part);
+}
+
+const PROJECTS: &str = "Projects###file-projects";
+const TEMPLATE_PROJECTS: &str = "Projects###template-projects";
+const MATERIAL_BROWSER: &str = "Material Browser";
+
+fn dock_standalone_projects(world: &mut ApplicationWorld) -> u32 {
+    let node = dock_material_browser(world);
+    open_toolbar_tool(world, "Projects");
+    let (position, size) = window_geometry(MATERIAL_BROWSER).unwrap();
+    drag_title(
+        world,
+        PROJECTS,
+        [
+            (position[0] + size[0] * 0.5) as i32,
+            (position[1] + 10.) as i32,
+        ],
+    );
+    assert_eq!(
+        super::super::diagnostics::window_dock_id(PROJECTS),
+        Some(node)
+    );
+    node
+}
+
+fn dock_material_browser(world: &mut ApplicationWorld) -> u32 {
+    let area = viewport(world);
+    open_toolbar_tool(world, MATERIAL_BROWSER);
+    drag_title(
+        world,
+        MATERIAL_BROWSER,
+        [area[2] as i32 - 15, ((area[1] + area[3]) / 2) as i32],
+    );
+    material_node()
+}
+
+fn material_node() -> u32 {
+    let node = super::super::diagnostics::window_dock_id(MATERIAL_BROWSER).unwrap();
+    assert_ne!(node, 0);
+    node
+}
+
+fn close_and_reopen_projects(world: &mut ApplicationWorld, node: u32, close: &str) {
+    select_dock_tab(world, PROJECTS);
+    world.run_in_window(PROJECTS, "ProjectSettings");
+    if close == "Done" {
+        click_before_dock_frame(world, PROJECTS, "Done");
+    } else {
+        escape_before_dock_frame(world);
+    }
+    assert_closed_with_visible_tab(world, PROJECTS, MATERIAL_BROWSER);
+    open_toolbar_tool(world, "Projects");
+    assert_eq!(
+        super::super::diagnostics::window_dock_id(PROJECTS),
+        Some(node)
+    );
+}
+
+fn escape_before_dock_frame(world: &mut ApplicationWorld) {
+    use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportKey, ViewportPhysicalKey};
+    if !world.app().window.native.view.uses_wayland() {
+        super::super::x11_input::press_escape();
+        return;
+    }
+    world.app().window.scripted = [true, false]
+        .into_iter()
+        .map(|pressed| {
+            ViewportEvent::Input(ViewportInput::PhysicalKey {
+                key: ViewportPhysicalKey::Escape,
+                layout_key: ViewportPhysicalKey::Escape,
+                pressed,
+                command: Some(ViewportKey::Cancel),
+                modifiers: Default::default(),
+            })
+        })
+        .collect();
 }
 
 #[test]

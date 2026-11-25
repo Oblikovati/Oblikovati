@@ -61,8 +61,8 @@ using this status; the live scenario directory can change.
   [current run](receipts/2026-11-25-document-saving-current-3888/README.md).
   All 23 pinned scenarios and 218 steps passed in the
   [R0 run](receipts/2026-11-21-document-saving-r0-3888/README.md).
-- Project Dialog (#3895): all eight scenarios and 100 steps passed locally
-  with X11 mouse and keyboard input on the current Part and project fixtures.
+- Project Dialog (#3895) passed six of eight current scenarios and 85 steps.
+  The two workspace-folder cases stopped in the [current X11 run](receipts/2026-11-25-projects-docking-4073/README.md).
   Desktop startup opens native projects and the dialog wraps long paths.
   See `receipts/2026-11-20-native-project-dialog-3895/`. All eight scenarios and
   101 steps also passed on the pinned source under Xvfb. The eight declarations
@@ -450,9 +450,9 @@ using this status; the live scenario directory can change.
 - A newly appended feature may add parameters without dirtying an unchanged
   prefix when no earlier feature reads them. Other parameter changes remain
   conservative (#4079).
-- The dock lifecycle inventory and representative first-frame native tests pass.
-  Projects pointer docking, modal-child saved-layout restart, and File Properties
-  native docking remain open in #4073.
+- Standalone Projects passed [pointer docking, close, and saved-layout restart](receipts/2026-11-25-projects-docking-4073/README.md).
+  Restored modal-child input and native File Properties docking remain open
+  under #4073.
 - The 60 fps sketch target remains unproven. The recorded 1440 × 900 probe
   measured 20.738 ms median and 24.861 ms p95 against a 16.67 ms frame budget.
   See `receipts/2026-11-16-sketch-frame-baseline-4031/` and #4032.

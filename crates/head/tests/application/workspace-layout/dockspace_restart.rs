@@ -234,8 +234,13 @@ fn assert_remaining_tab_without_blank_frame(world: &mut ApplicationWorld) {
 pub(super) fn select_dock_tab(world: &mut ApplicationWorld, title: &str) {
     let (min, max) = super::super::diagnostics::window_dock_tab_bounds(title).unwrap();
     let center = [(min[0] + max[0]) * 0.5, (min[1] + max[1]) * 0.5];
-    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(center));
-    world.pump(Vec::new());
+    let point = super::super::diagnostics::pointer_pixels(center);
+    if world.app().window.native.view.uses_wayland() {
+        world.click(point);
+    } else {
+        super::super::x11_input::click(point);
+        world.pump(Vec::new());
+    }
     assert_eq!(
         super::super::diagnostics::window_dock_tab_visible(title),
         Some(true)

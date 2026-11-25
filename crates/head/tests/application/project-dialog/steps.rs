@@ -36,8 +36,17 @@ fn project_active(world: &mut ApplicationWorld) {
 }
 #[when("I choose Projects in the chooser")]
 #[when("the user chooses Projects in the chooser")]
-fn choose_projects(world: &mut ApplicationWorld) {
-    world.click_text("Projects");
+pub(super) fn choose_projects(world: &mut ApplicationWorld) {
+    let cancel = world.run_in_window("New document", "Cancel");
+    let button = world
+        .frame
+        .runs
+        .iter()
+        .find(|run| run.list == cancel.list && run.text.starts_with("Projects"))
+        .expect("expected Projects beside Cancel in the template chooser");
+    // The active-project caption may share the rendered text run with the button.
+    let first_glyph = [button.minimum[0] + 4., button.center()[1]];
+    world.click(super::diagnostics::pointer_pixels(first_glyph));
     world.pump(Vec::new());
     world.pump(Vec::new());
 }

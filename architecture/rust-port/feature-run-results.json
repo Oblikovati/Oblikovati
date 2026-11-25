@@ -689,14 +689,14 @@
           "fixtures/cad/project-dialog-native/ActiveProject.opj": "7bea6f1c2f32e6ad4c1fa9f6ca63fb38bc83b55a0af1d378db213b052b9a908d",
           "fixtures/cad/project-dialog-native/AlternateProject.opj": "98327ca2a00d32244033f65b95f2a9997a39deb8a7d5cd630b569b6a97950fa1",
           "fixtures/cad/project-dialog-native/WizardProject.opj": "5b4f31be0a2ff003aa301792364676ea8dfb05069043320bc6b516319b12c39d",
-          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+          "fixtures/cad/workspace-layout-native.opd": "d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-24-project-dialog-serial-3895/current-cucumber.json",
-        "cucumber_sha256": "5782132409f43f1693368a0464245b904617b66afd73712753e52207c672ab01",
-        "application_commit": "4f2e9ac69b56ec75528a8a70ff10c458b4d23ed0",
+        "cucumber": "architecture/rust-port/receipts/2026-11-25-projects-docking-4073/cucumber.json",
+        "cucumber_sha256": "b860710f55b4c4625a511d946b9097b3d1f9625dd37ac4f36ae0fee8f22a0c56",
+        "application_commit": "2485a0512a07544897fbe5b91279ed761168dd4e",
         "command": "OBK_BDD_ROOT=<snapshot> OBK_BDD_AREA=application OBK_BDD_FEATURE=project-dialog OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
         "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
-        "notes": "All eight current scenarios and 110 steps passed in separate native runs. The build includes the updated scenario bindings and existing local GUI edits. Strict build and runtime provenance remains open under #3978."
+        "notes": "Six of eight scenarios and 85 passing-case steps passed separately. Both workspace-folder cases stopped in the folder browser. The receipt records the tested inputs and local GUI and test edits. Strict build and runtime provenance remains open under #3978."
       }
     }
   },

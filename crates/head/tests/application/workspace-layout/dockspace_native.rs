@@ -218,6 +218,11 @@ fn check_workspace_edge(edge: &str) {
 }
 
 pub(in super::super) fn native_drag(world: &mut ApplicationWorld, start: [i32; 2], end: [i32; 2]) {
+    if world.app().window.native.view.uses_wayland() {
+        world.drag(start, end);
+        world.pump(Vec::new());
+        return;
+    }
     super::super::x11_input::move_pointer(start);
     world.pump(Vec::new());
     super::super::x11_input::left_button(start, true);

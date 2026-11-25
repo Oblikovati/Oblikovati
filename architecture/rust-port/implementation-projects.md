@@ -50,6 +50,16 @@ scenarios passed individually. [Native reports and captures](receipts/2026-11-24
 
 Project wire methods remain pending.
 
+## Projects dock lifecycle
+
+Projects opened from Quick Access can share a dock with Material Browser.
+Done and Escape reveal the remaining tab on the first frame after Projects
+closes. Reopening Projects restores the dock, including after a native
+window and owner restart from the saved layout. Closing New document also
+reveals the remaining tab when its Projects child has a restored dock.
+The restored modal child still needs separate input support.
+[Native checks](receipts/2026-11-25-projects-docking-4073/README.md)
+
 ## Native project templates in the desktop chooser
 
 The desktop reads native packages in the active project's root, Metric, and
