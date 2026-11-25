@@ -142,9 +142,7 @@ pub(super) fn click_text_native(world: &mut ApplicationWorld, text: &str) {
 }
 
 pub(super) fn replace_distance_native(world: &mut ApplicationWorld, distance: &str) {
-    let label = world.run_in_window("Extrude", "DistanceA").clone();
-    let position = [label.minimum[0] as i32 - 30, label.center()[1] as i32];
-    super::super::x11_input::click(position);
+    super::super::x11_input::click(distance_a_input(world));
     world.pump(Vec::new());
     super::super::x11_input::press_control_a();
     super::super::x11_input::type_digits(distance);

@@ -11,17 +11,36 @@ fn numeric_preview(world: &mut ApplicationWorld) {
     assert!(world.run_is_enabled("OK"));
 }
 
+#[given(
+    "a copy of `fixtures/cad/revolve/revolve-profile.opd` is open with a selected profile in an active Extrude preview"
+)]
+#[given(
+    "a copy of `fixtures/cad/revolve/revolve-profile.opd` is open with a selected profile and numeric Distance A preview"
+)]
+fn native_fixture_preview(world: &mut ApplicationWorld) {
+    let scratch = tempfile::tempdir().unwrap();
+    let copy = scratch.path().join("revolve-profile.opd");
+    let source = super::super::scenario_root().join("fixtures/cad/revolve/revolve-profile.opd");
+    std::fs::copy(source, &copy).unwrap();
+    world.open_fixture(&copy);
+    world.scratch = Some(scratch);
+    world.click_text("Extrude");
+    world.pump(Vec::new());
+    waiting_extrusion_shows_profile(world);
+    waiting_extrusion_shows_default_preview(world);
+}
+
 #[when("the From reference control is activated")]
 fn activate_from(world: &mut ApplicationWorld) {
-    click_in_extrude(world, "SketchPlane");
+    choose_extent(world, "SketchPlane", "From/To");
 }
 
 #[then("missing From and To references show Select Face")]
 fn both_faces_required(world: &mut ApplicationWorld) {
     let rows = request_rows(world);
-    assert_eq!(rows.len(), 2);
-    assert!(rows[0][1] < rows[1][1]);
     world.save_capture("from-to-required");
+    assert_eq!(rows.len(), 2, "{}", world.window_text("Extrude"));
+    assert!(rows[0][1] < rows[1][1]);
 }
 
 #[then("OK is disabled without a shaded solid preview")]
@@ -35,7 +54,7 @@ fn missing_faces_disable_extrusion(world: &mut ApplicationWorld) {
 
 #[when("the reference control is restored")]
 fn restore_numeric(world: &mut ApplicationWorld) {
-    click_in_extrude(world, "From/To");
+    choose_extent(world, "From/To", "SketchPlane");
 }
 
 #[then("Sketch Plane and the numeric distance preview return")]
@@ -48,7 +67,7 @@ fn numeric_preview_returns(world: &mut ApplicationWorld) {
 
 #[when("the user activates the termination control")]
 fn activate_to(world: &mut ApplicationWorld) {
-    click_in_extrude(world, "Distance");
+    choose_extent(world, "Distance", "ToFace");
 }
 
 #[then("a To reference selector appears")]
@@ -68,6 +87,34 @@ fn request_rows(world: &ApplicationWorld) -> Vec<[f32; 2]> {
         .collect()
 }
 
+fn choose_extent(world: &mut ApplicationWorld, shown: &str, choice: &str) {
+    click_in_extrude(world, shown);
+    let row = world
+        .frame
+        .runs
+        .iter()
+        .find(|row| row.text == choice && world.frame.is_popup_row(row))
+        .unwrap_or_else(|| panic!("expected {choice} in the extent popup"));
+    let point = super::super::diagnostics::pointer_pixels(row.center());
+    world.save_capture(&format!("extent-choose-{choice}"));
+    super::super::x11_input::click(point);
+    world.pump(Vec::new());
+    world.pump(Vec::new());
+}
+
+#[test]
+fn from_dropdown_restores_the_numeric_preview() {
+    let mut world = ApplicationWorld::new();
+    numeric_preview(&mut world);
+    activate_from(&mut world);
+    both_faces_required(&mut world);
+    missing_faces_disable_extrusion(&mut world);
+    restore_numeric(&mut world);
+    numeric_preview_returns(&mut world);
+    world.save_capture("extrude-extent-dropdowns");
+    world.close();
+}
+
 fn click_in_extrude(world: &mut ApplicationWorld, label: &str) {
     let point = world.run_in_window("Extrude", label).center();
     super::super::x11_input::click(super::super::diagnostics::pointer_pixels(point));
@@ -83,7 +130,6 @@ fn viewport_face_pick_previews_and_commits_reference_extent() {
     replace_distance_native(&mut world, "5");
     activate_to(&mut world);
     assert!(!world.run_is_enabled("OK"));
-    move_extrude_aside(&mut world);
     click_in_extrude(&mut world, "SelectFace");
     pick_top_face(&mut world);
     assert_eq!(world.state().selected_face_appearances.len(), 1);
@@ -94,12 +140,6 @@ fn viewport_face_pick_previews_and_commits_reference_extent() {
     assert_eq!(feature_count(&mut world), 2);
     assert_committed_extent(&mut world);
     world.close();
-}
-
-fn move_extrude_aside(world: &mut ApplicationWorld) {
-    let (position, _) = super::super::diagnostics::window_geometry("Extrude").unwrap();
-    let from = super::super::diagnostics::pointer_pixels([position[0] + 120., position[1] + 8.]);
-    world.drag(from, [from[0] + 340, from[1] - 150]);
 }
 
 fn pick_top_face(world: &mut ApplicationWorld) {

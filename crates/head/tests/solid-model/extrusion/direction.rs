@@ -28,19 +28,29 @@ fn choose_flipped(world: &mut ApplicationWorld) {
 
 #[when("Symmetric is selected in Direction")]
 fn choose_symmetric(world: &mut ApplicationWorld) {
-    click_text_native(world, "Symmetric");
-    world.pump(Vec::new());
+    choose_direction_icon(world, 2);
 }
 
 #[when("Asymmetric is selected in Direction")]
 fn choose_asymmetric(world: &mut ApplicationWorld) {
-    click_text_native(world, "Asymmetric");
+    choose_direction_icon(world, 3);
+}
+
+fn choose_direction_icon(world: &mut ApplicationWorld, index: usize) {
+    use super::super::{diagnostics, ribbon_appearance::icon_quads, x11_input};
+    let ([left, _], [width, _]) = diagnostics::window_geometry("Extrude").unwrap();
+    let y = world.run_in_window("Extrude", "Default").center()[1];
+    let icons = icon_quads::icon_quads_inside(([left, y - 28.], [left + width, y - 4.]));
+    assert_eq!(icons.len(), 4);
+    let (low, high) = icons[index];
+    let center = std::array::from_fn(|axis| (low[axis] + high[axis]) / 2.);
+    x11_input::click(diagnostics::pointer_pixels(center));
     world.pump(Vec::new());
 }
 
 #[then("Distance B and Taper B controls appear")]
 fn asymmetric_controls_appear(world: &mut ApplicationWorld) {
-    world.run_in_window("Extrude", "DistanceB");
+    assert!(world.window_text("Extrude").contains("DistanceB"));
     world.run_in_window("Extrude", "TaperB");
     assert_eq!(preview_depth(world), [-0.5, 1.], "5 mm on B and 10 mm on A");
 }
@@ -89,7 +99,9 @@ fn native_asymmetric_flip_changes_both_distances_and_one_history_step() {
     assert!(!world.run_is_enabled("OK"));
     replace_second_distance(&mut world, "6");
     assert_eq!(preview_depth(&mut world), [-0.6, 1.]);
-    click_text_native(&mut world, "Flip A/B");
+    let row = second_distance_row(&world);
+    let flip = [row.maximum[0] - 14., row.center()[1]];
+    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(flip));
     world.pump(Vec::new());
     assert_eq!(preview_depth(&mut world), [-1., 0.6]);
     click_text_native(&mut world, "OK");
@@ -110,8 +122,8 @@ fn native_asymmetric_flip_changes_both_distances_and_one_history_step() {
 
 fn replace_second_distance(world: &mut ApplicationWorld, value: &str) {
     use super::super::x11_input;
-    let label = world.run_in_window("Extrude", "DistanceB");
-    let position = [label.minimum[0] as i32 - 30, label.center()[1] as i32];
+    let row = second_distance_row(world);
+    let position = [row.minimum[0] as i32 - 30, row.center()[1] as i32];
     x11_input::click(position);
     world.pump(Vec::new());
     x11_input::press_control_a();
@@ -119,11 +131,16 @@ fn replace_second_distance(world: &mut ApplicationWorld, value: &str) {
     world.pump(Vec::new());
 }
 
+fn second_distance_row(world: &ApplicationWorld) -> &super::super::diagnostics::RenderedRun {
+    // The native text reader groups the label and the adjacent Flip A/B caption.
+    world.run_in_window("Extrude", "DistanceBFlipA/B")
+}
+
 #[then("the preview changes its side or extent relative to Default direction")]
 fn preview_is_flipped(world: &mut ApplicationWorld) {
     assert!(world.state().extrude_preview_active);
     assert_eq!(feature_count(world), 0);
-    world.expect_text("10 mm");
+    world.expect_text("10.00 mm");
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);
     let windows = super::super::diagnostics::window_occlusions();
     assert!(preview_changed_outside_windows(

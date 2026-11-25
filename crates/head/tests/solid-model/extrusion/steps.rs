@@ -77,7 +77,7 @@ fn waiting_extrusion_shows_profile(world: &mut ApplicationWorld) {
 #[then("a solid preview displays Distance A of 10 mm")]
 fn waiting_extrusion_shows_default_preview(world: &mut ApplicationWorld) {
     world.expect_text("Distance A");
-    world.expect_text("10 mm");
+    world.expect_text("10.00 mm");
     assert!(
         !world.app().window.scene_colors.is_empty(),
         "expected preview triangles submitted to the native viewport"
@@ -112,8 +112,7 @@ fn selected_rectangle_preview(world: &mut ApplicationWorld) {
 }
 
 fn replace_extrusion_distance(world: &mut ApplicationWorld, value: &str) {
-    let label = world.run_in_window("Extrude", "DistanceA").clone();
-    world.click([label.minimum[0] as i32 - 30, label.center()[1] as i32]);
+    world.click(distance_a_input(world));
     world.key(ViewportPhysicalKey::A, true);
     world.type_text(value);
     world.pump(Vec::new());
@@ -122,10 +121,16 @@ fn replace_extrusion_distance(world: &mut ApplicationWorld, value: &str) {
         world.frame.runs.iter().any(|run| {
             run.text == value
                 && (run.center()[1] - label.center()[1]).abs() < 4.
-                && run.maximum[0] <= label.minimum[0]
+                && run.minimum[0] > label.maximum[0]
         }),
         "Distance A: expected {value:?} in the input field"
     );
+}
+
+fn distance_a_input(world: &ApplicationWorld) -> [i32; 2] {
+    let (position, size) = super::diagnostics::window_geometry("Extrude").unwrap();
+    let label = world.run_in_window("Extrude", "DistanceA");
+    super::diagnostics::pointer_pixels([position[0] + size[0] * 0.55, label.center()[1]])
 }
 
 #[when("Distance A is replaced with 0")]

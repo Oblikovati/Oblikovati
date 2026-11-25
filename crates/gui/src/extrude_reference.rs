@@ -72,31 +72,24 @@ impl ReferenceDraft {
 
     fn draw_extent_modes(&mut self, ui: &Ui) {
         crate::theme::property_label(ui, "From");
-        let from = if self.mode == ExtentMode::FromTo {
-            "From / To"
-        } else {
-            "Sketch Plane"
-        };
-        if ui.button_with_size(from, [ui.content_region_avail()[0], 0.]) {
-            self.toggle(ExtentMode::FromTo);
+        let from = usize::from(self.mode == ExtentMode::FromTo);
+        match extent_combo(ui, "##extrude-start", from, ["Sketch Plane", "From / To"]) {
+            Some(0) => self.set_mode(ExtentMode::Distance),
+            Some(1) => self.set_mode(ExtentMode::FromTo),
+            _ => {}
         }
+
         crate::theme::property_label(ui, "Termination");
-        let to = if self.numeric() {
-            "Distance"
-        } else {
-            "To Face"
-        };
-        if ui.button_with_size(to, [ui.content_region_avail()[0], 0.]) {
-            self.toggle(ExtentMode::ToFace);
+        let to = usize::from(!self.numeric());
+        match extent_combo(ui, "##extrude-termination", to, ["Distance", "To Face"]) {
+            Some(0) => self.set_mode(ExtentMode::Distance),
+            Some(1) => self.set_mode(ExtentMode::ToFace),
+            _ => {}
         }
     }
 
-    fn toggle(&mut self, mode: ExtentMode) {
-        self.mode = if self.mode == mode {
-            ExtentMode::Distance
-        } else {
-            mode
-        };
+    fn set_mode(&mut self, mode: ExtentMode) {
+        self.mode = mode;
         self.active = None;
     }
 
@@ -105,8 +98,7 @@ impl ReferenceDraft {
             Slot::From => ("From", &self.from, "extrude-from-face"),
             Slot::To => ("To", &self.to, "extrude-to-face"),
         };
-        ui.text(label);
-        ui.same_line();
+        crate::theme::property_label(ui, label);
         let caption = if face.is_some() {
             "Face"
         } else {
@@ -119,4 +111,16 @@ impl ReferenceDraft {
             self.active = Some(slot);
         }
     }
+}
+
+// Selecting the already active row only dismisses the popup.
+fn extent_combo(ui: &Ui, id: &str, selected: usize, labels: [&str; 2]) -> Option<usize> {
+    let _combo = ui.begin_combo(id, labels[selected])?;
+    labels.into_iter().enumerate().find_map(|(index, label)| {
+        (ui.selectable_config(label)
+            .selected(index == selected)
+            .build()
+            && index != selected)
+            .then_some(index)
+    })
 }
