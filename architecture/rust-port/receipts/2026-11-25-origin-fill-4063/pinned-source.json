@@ -1,0 +1,13 @@
+{
+  "after": {
+    "commit": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+    "dirty": false,
+    "root": "/tmp/oblikovati-bdd-H8vsqH/checkout"
+  },
+  "before": {
+    "commit": "b576445b98cffd686dcc05aa8c017de2a591c8c8",
+    "dirty": false,
+    "root": "/tmp/oblikovati-bdd-H8vsqH/checkout"
+  },
+  "source_changed": false
+}

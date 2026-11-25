@@ -157,8 +157,9 @@ impl PickerPlane {
 fn draw_planes(ui: &Ui, planes: &[PickerPlane], workspace: WorkspaceArea, state: &GuiCommandState) {
     // The background list clips at the viewport perimeter and also runs beneath the HUD.
     let draw = ui.get_background_draw_list();
-    let [mut fill, edge] =
-        plane_colors(state, ui.style_color(imgui::StyleColor::WindowBg)[0] > 0.5);
+    let surface = ui.style_color(imgui::StyleColor::WindowBg);
+    let [mut fill, edge] = plane_colors(state, surface[0] > 0.5);
+    fill[3] = display_fill_alpha(fill, reference_backdrop(state, surface));
     // Fully overlapping planes share a single opacity budget.
     let sheets = planes
         .iter()
@@ -184,6 +185,40 @@ fn draw_planes(ui: &Ui, planes: &[PickerPlane], workspace: WorkspaceArea, state:
             }
         },
     );
+}
+
+fn reference_backdrop(state: &GuiCommandState, [r, g, b, _]: [f32; 4]) -> [f32; 3] {
+    use oblikovati_viewport::ViewportBackground;
+    match state
+        .color_scheme
+        .as_ref()
+        .map(|scheme| scheme.background())
+    {
+        Some(ViewportBackground::Solid(rgb)) => rgb.map(|channel| f32::from(channel) / 255.),
+        Some(ViewportBackground::VerticalGradient { top, bottom }) => {
+            std::array::from_fn(|axis| (f32::from(top[axis]) + f32::from(bottom[axis])) / 510.)
+        }
+        None => [r, g, b],
+    }
+}
+
+fn display_fill_alpha([r, g, b, opacity]: [f32; 4], backdrop: [f32; 3]) -> f32 {
+    use crate::color_scheme_state::linear_channel;
+    // The design opacity is authored in display RGB. Calibrate its dominant
+    // channel against the backdrop before the renderer blends in linear light.
+    let Some((base, ink)) = backdrop
+        .into_iter()
+        .zip([r, g, b])
+        .max_by(|(a, b), (c, d)| (b - a).abs().total_cmp(&(d - c).abs()))
+    else {
+        return opacity;
+    };
+    let range = linear_channel(ink) - linear_channel(base);
+    if range.abs() < f32::EPSILON {
+        return opacity;
+    }
+    let display_mix = base + (ink - base) * opacity;
+    ((linear_channel(display_mix) - linear_channel(base)) / range).clamp(0., 1.)
 }
 
 fn draw_label(

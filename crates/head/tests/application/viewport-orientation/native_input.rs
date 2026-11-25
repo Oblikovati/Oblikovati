@@ -214,6 +214,34 @@ fn relative_luminance(rgb: [u8; 3]) -> f32 {
 }
 
 #[test]
+fn native_origin_plane_fill_matches_studio_opacity_on_the_viewport() {
+    let mut world = ApplicationWorld::new();
+    open_block(&mut world);
+    front_displayed(&mut world);
+    let mut camera = viewport_pan::camera(&mut world);
+    camera.scale *= 0.15;
+    crate::HeadWindow::set_view_camera(&mut world.app().window, camera).unwrap();
+    let probe = [600, 300];
+    for (theme, channel, amber, opacity) in [("Dark", 0, 245., 0.14), ("Light", 2, 6., 0.12)] {
+        world.app().owner.select_theme_from_gui(theme).unwrap();
+        world.pump(Vec::new());
+        let clear = f32::from(world.pixel_at(probe)[channel]);
+        world.click_text("Start 2D Sketch");
+        world.pump(Vec::new());
+        let tinted = f32::from(world.pixel_at(probe)[channel]);
+        world.save_capture(&format!("plane-opacity-{theme}"));
+        let apparent = (tinted - clear) / (amber - clear);
+        assert!(
+            (apparent - opacity).abs() < 0.025,
+            "{theme} fill opacity {apparent:.3}, expected {opacity:.3} ({clear} to {tinted})"
+        );
+        world.escape();
+        world.pump(Vec::new());
+    }
+    world.close();
+}
+
+#[test]
 fn native_origin_planes_composite_through_the_viewcube_margin() {
     let mut world = ApplicationWorld::new();
     open_block(&mut world);

@@ -127,14 +127,15 @@ fn studio_background(
     })
 }
 fn luminance(rgb: [f32; 3]) -> f32 {
-    let linear = rgb.map(|value| {
-        if value <= 0.04045 {
-            value / 12.92
-        } else {
-            ((value + 0.055) / 1.055).powf(2.4)
-        }
-    });
+    let linear = rgb.map(linear_channel);
     linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722
+}
+pub(crate) fn linear_channel(value: f32) -> f32 {
+    if value <= 0.04045 {
+        value / 12.92
+    } else {
+        ((value + 0.055) / 1.055).powf(2.4)
+    }
 }
 fn minimum_contrast(rgb: [f32; 3], backdrops: [f32; 2]) -> f32 {
     let ink = luminance(rgb);
