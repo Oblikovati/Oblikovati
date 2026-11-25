@@ -26,6 +26,12 @@ pub(super) fn switch_to_tiles(world: &mut ApplicationWorld) {
     settle(world);
 }
 fn drawings_in_tiles(world: &mut ApplicationWorld) -> PathBuf {
+    if let Some(folder) = published_drawings::staged_folder(world) {
+        open_dialog(world);
+        look_in(world, &folder);
+        switch_to_tiles(world);
+        return folder;
+    }
     let folder = models_folder(world);
     saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
     saved_document(
@@ -40,15 +46,23 @@ fn drawings_in_tiles(world: &mut ApplicationWorld) -> PathBuf {
     folder
 }
 pub(super) fn rectangle_over_drawings(world: &mut ApplicationWorld) {
-    let first = world.run(DRAWING_FILE).clone();
-    let second = world.run(SECOND_DRAWING_FILE).clone();
-    let top = first.center()[1].min(second.center()[1]) as i32;
-    let bottom = first.center()[1].max(second.center()[1]) as i32;
-    let left = first.minimum[0].min(second.minimum[0]) as i32;
-    let right = first.maximum[0].max(second.maximum[0]) as i32;
-    // From the empty space under the last tile, up across both.
-    world.drag([left, bottom + 80], [right, top]);
+    let [first, second] = drawing_names(world).map(|name| world.run(name).clone());
+    let stride = second.minimum[0] - first.minimum[0];
+    assert!(stride > 0. && (first.center()[1] - second.center()[1]).abs() < 4.);
+    // Start beside the row so a Part underneath the first drawing is outside the rectangle.
+    let start = [second.minimum[0] + stride - 34., second.center()[1] + 14.];
+    world.drag(
+        start.map(|coordinate| coordinate as i32),
+        first.center().map(|coordinate| coordinate as i32),
+    );
     settle(world);
+}
+
+fn drawing_names(world: &ApplicationWorld) -> [&'static str; 2] {
+    [
+        published_drawings::first_drawing_name(world),
+        published_drawings::second_drawing_name(world),
+    ]
 }
 // Assembly options
 #[given("a saved assembly with a preview is selected")]
@@ -126,14 +140,6 @@ pub(super) fn location_known(world: &mut ApplicationWorld) {
         "expected the saved part"
     );
 }
-#[when("I press Control+O and choose the already open part at that location")]
-#[when("the user presses Control+O and chooses the already open part at that location")]
-fn choose_open_part(world: &mut ApplicationWorld) {
-    let folder = models_folder(world);
-    open_dialog(world);
-    look_in(world, &folder);
-    select_row(world, PART_FILE);
-}
 #[when("I choose Open")]
 #[when("the user chooses Open")]
 fn press_open(world: &mut ApplicationWorld) {
@@ -168,6 +174,12 @@ pub(super) fn drawing_tab_kept(world: &mut ApplicationWorld) {
     "the Open dialog in the MCAD Software displays a saved drawing and a saved part as thumbnails"
 )]
 fn drawing_and_part_tiles(world: &mut ApplicationWorld) {
+    if let Some(folder) = published_drawings::staged_folder(world) {
+        open_dialog(world);
+        look_in(world, &folder);
+        switch_to_tiles(world);
+        return;
+    }
     let folder = models_folder(world);
     saved_document(world, GuiTemplateKind::Drawing, &folder, DRAWING_FILE);
     saved_document(world, GuiTemplateKind::Part, &folder, PART_FILE);
@@ -177,8 +189,9 @@ fn drawing_and_part_tiles(world: &mut ApplicationWorld) {
 }
 #[given("the drawing thumbnail is selected with its sheet preview displayed")]
 fn drawing_tile_selected(world: &mut ApplicationWorld) {
-    select_row(world, DRAWING_FILE);
-    expect_name_and_preview(world, DRAWING_FILE);
+    let name = published_drawings::first_drawing_name(world);
+    select_row(world, name);
+    expect_name_and_preview(world, name);
 }
 #[given("the Options pane shows the drawing loading choices")]
 fn drawing_choices(world: &mut ApplicationWorld) {
@@ -187,16 +200,27 @@ fn drawing_choices(world: &mut ApplicationWorld) {
 #[when("I select the part thumbnail")]
 #[when("the user selects the part thumbnail")]
 fn select_part_tile(world: &mut ApplicationWorld) {
-    select_row(world, PART_FILE);
+    select_row(world, published_drawings::part_name(world));
 }
 #[then("the part thumbnail is highlighted")]
 fn part_tile_lit(world: &mut ApplicationWorld) {
-    assert!(row_lit(world, PART_FILE), "expected the tile's accent");
+    assert!(
+        row_lit(world, published_drawings::part_name(world)),
+        "expected the tile's accent"
+    );
 }
 #[then("the file name field identifies the part")]
 fn name_is_part(world: &mut ApplicationWorld) {
     let shown = file_name_shown(world);
-    assert!(shown.contains(PART_FILE), "file name {shown:?}");
+    let name = published_drawings::part_name(world);
+    assert!(shown.contains(name), "file name {shown:?}: expected {name}");
+}
+
+#[given("the working folder contains `OpenDrawingA.odd` and `OpenPart.opd` as thumbnails")]
+fn staged_part_and_drawing_tiles(world: &mut ApplicationWorld) {
+    world.expect_no_text("Date modified");
+    world.expect_text(published_drawings::first_drawing_name(world));
+    world.expect_text(published_drawings::part_name(world));
 }
 #[then("the separate preview displays the part geometry")]
 fn separate_preview(world: &mut ApplicationWorld) {
@@ -216,10 +240,25 @@ fn part_tile_selected(world: &mut ApplicationWorld) {
     select_row(world, PART_FILE);
     expect_name_and_preview(world, PART_FILE);
 }
+
+#[given("`fixtures/cad/extrusion/extrusion-rect-8mm.opd` is selected as a thumbnail")]
+fn published_part_tile(world: &mut ApplicationWorld) {
+    published_preview::preview_target_selected(world);
+    world.expect_no_text("Date modified");
+}
+
+fn context_part(world: &ApplicationWorld) -> &str {
+    published_preview::inspection_path(world)
+        .and_then(|path| path.file_name()?.to_str())
+        .unwrap_or(PART_FILE)
+}
 #[when("I right-click the part thumbnail")]
 #[when("the user right-clicks the part thumbnail")]
 fn right_click_tile(world: &mut ApplicationWorld) {
-    let at = world.run(PART_FILE).center().map(|value| value as i32);
+    let at = world
+        .run(context_part(world))
+        .center()
+        .map(|value| value as i32);
     world.right_click(at);
     settle(world);
 }
@@ -232,7 +271,7 @@ fn tile_menu(world: &mut ApplicationWorld) {
 #[when("I click an empty area of the file list")]
 #[when("the user clicks an empty area of the file list")]
 fn click_empty_list(world: &mut ApplicationWorld) {
-    let tile = world.run(PART_FILE).clone();
+    let tile = world.run(context_part(world)).clone();
     world.click([tile.center()[0] as i32 + 120, tile.center()[1] as i32 + 90]);
     settle(world);
 }
@@ -242,15 +281,14 @@ fn no_selected_items(world: &mut ApplicationWorld) {
         !holds_text(world, "1 item selected"),
         "selection count remains"
     );
-    assert!(
-        !row_lit(world, PART_FILE),
-        "part thumbnail remains selected"
-    );
+    let name = context_part(world).to_owned();
+    assert!(!row_lit(world, &name), "part thumbnail remains selected");
 }
 #[then("the dialog remains open with the part name and preview displayed")]
 fn open_with_part(world: &mut ApplicationWorld) {
     world.expect_text("Look in");
-    expect_name_and_preview(world, PART_FILE);
+    let name = context_part(world).to_owned();
+    expect_name_and_preview(world, &name);
 }
 #[test]
 fn file_row_context_menu_properties_remains_clickable() {
@@ -273,10 +311,17 @@ fn adjacent_tiles(world: &mut ApplicationWorld) {
 }
 #[given("each drawing has a saved sheet preview")]
 fn each_preview(world: &mut ApplicationWorld) {
-    select_row(world, DRAWING_FILE);
-    expect_name_and_preview(world, DRAWING_FILE);
-    select_row(world, SECOND_DRAWING_FILE);
-    expect_name_and_preview(world, SECOND_DRAWING_FILE);
+    for name in drawing_names(world) {
+        select_row(world, name);
+        expect_name_and_preview(world, name);
+    }
+}
+
+#[given("the dialog folder contains adjacent `OpenDrawingA.odd` and `OpenDrawingB.odd` thumbnails")]
+fn staged_adjacent_drawings(world: &mut ApplicationWorld) {
+    let [first, second] = drawing_names(world).map(|name| world.run(name).center());
+    assert!((first[1] - second[1]).abs() < 4. && first[0] < second[0]);
+    world.expect_no_text("Date modified");
 }
 #[when("I drag a selection rectangle from empty list space across both thumbnails")]
 #[when("the user drags a selection rectangle from empty list space across both thumbnails")]
@@ -285,11 +330,13 @@ fn each_preview(world: &mut ApplicationWorld) {
 fn drag_rectangle(world: &mut ApplicationWorld) {
     rectangle_over_drawings(world);
     both_lit(world);
+    two_selected(world);
 }
 #[then("both drawing thumbnails are selected")]
 fn both_lit(world: &mut ApplicationWorld) {
-    assert!(row_lit(world, DRAWING_FILE), "first tile");
-    assert!(row_lit(world, SECOND_DRAWING_FILE), "second tile");
+    for name in drawing_names(world) {
+        assert!(row_lit(world, name), "expected selected tile {name}");
+    }
 }
 #[then("the status area reports two selected items")]
 fn two_selected(world: &mut ApplicationWorld) {
@@ -298,7 +345,7 @@ fn two_selected(world: &mut ApplicationWorld) {
 #[then("the file name field contains both drawing names in quotes")]
 fn quoted(world: &mut ApplicationWorld) {
     let shown = file_name_shown(world);
-    for name in [DRAWING_FILE, SECOND_DRAWING_FILE] {
+    for name in drawing_names(world) {
         assert!(
             shown.contains(&format!("\"{name}\"")),
             "file name {shown:?}"
@@ -316,18 +363,21 @@ fn no_options(world: &mut ApplicationWorld) {
 #[when("I select one of the drawing thumbnails")]
 #[when("the user selects one of the drawing thumbnails")]
 fn select_one(world: &mut ApplicationWorld) {
-    select_row(world, DRAWING_FILE);
+    let [first, _] = drawing_names(world);
+    select_row(world, first);
 }
 #[then("only that drawing is selected")]
 fn only_one(world: &mut ApplicationWorld) {
-    assert!(row_lit(world, DRAWING_FILE), "the chosen tile");
-    assert!(!row_lit(world, SECOND_DRAWING_FILE), "the other tile");
+    let [first, second] = drawing_names(world);
+    assert!(row_lit(world, first), "the chosen tile");
+    assert!(!row_lit(world, second), "the other tile");
 }
 #[then("the file name field identifies that drawing")]
 fn name_that(world: &mut ApplicationWorld) {
     let shown = file_name_shown(world);
+    let [first, _] = drawing_names(world);
     assert!(
-        shown.contains(DRAWING_FILE) && !shown.contains('"'),
+        shown.contains(first) && !shown.contains('"'),
         "file name {shown:?}"
     );
 }
