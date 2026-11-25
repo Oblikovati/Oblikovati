@@ -26,6 +26,9 @@ disabled. [Native missing-file scenario](receipts/2026-11-26-ribbon-missing-impo
 The [native selection scenarios](receipts/2026-11-24-ribbon-customization-selection-3856/README.md)
 cover source selection across target and category changes, separator-only
 drafts, and per-target display options.
+Escape from the open category list discards the staged edit. The pinned
+and published scenarios continue into an unrelated Measure sequence.
+[Source defect and native results](scenario-defects/ribbon-category-escape-measure.md)
 The [native command presentation scenarios](receipts/2026-11-24-ribbon-customization-presentation-3856/README.md)
 check small and large captions, large icon-only buttons, and a divider
 between two small command icons.
