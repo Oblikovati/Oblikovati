@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::super::main_window_frame::wayland;
 use super::reordering::tab_x;
 use super::*;
 #[given("the drawing is active in the main document tab strip")]
@@ -11,9 +12,16 @@ fn drawing_in_main_strip(world: &mut ApplicationWorld) {
 #[when("the user drags the drawing tab from the strip into the workspace")]
 fn drag_drawing_out(world: &mut ApplicationWorld) {
     let name = world.document_name(drawing_of(world));
-    let from = world.expect_tab(&name).center().map(|value| value as i32);
+    let from = super::super::diagnostics::pointer_pixels(world.expect_tab(&name).center());
     let target = [800, 500];
-    drag_tab_with_x11(world, from, target);
+    if world.app().window.native.view.uses_wayland() {
+        let [x, y, _, _] = main_wayland_bounds(world);
+        let start = [x + from[0], y + from[1]];
+        let motion = [[start[0], y + target[1]], [x + target[0], y + target[1]]];
+        wayland::drag_fullscreen_pointer(world, start, &motion);
+    } else {
+        drag_tab_with_x11(world, from, target);
+    }
     world.pump(Vec::new());
     world.pump(Vec::new());
 }
@@ -73,8 +81,18 @@ fn part_in_main(world: &mut ApplicationWorld) {
 fn select_main_part_tab(world: &mut ApplicationWorld) {
     let name = world.document_name(part_of(world));
     let at = super::super::diagnostics::pointer_pixels(world.expect_tab(&name).center());
-    super::super::x11_input::click(at);
+    if world.app().window.native.view.uses_wayland() {
+        let [x, y, _, _] = main_wayland_bounds(world);
+        wayland::click_compositor_point(world, [x + at[0], y + at[1]]);
+    } else {
+        super::super::x11_input::click(at);
+    }
     world.pump(Vec::new());
+}
+
+fn main_wayland_bounds(world: &mut ApplicationWorld) -> [i32; 4] {
+    let title = world.app().window.native.view.native_title().unwrap();
+    wayland::compositor_toplevel_bounds(&title)
 }
 #[then("that part becomes active in the main workspace")]
 fn that_part_active(world: &mut ApplicationWorld) {
@@ -103,7 +121,14 @@ fn assert_native_drawing(world: &mut ApplicationWorld, name: &str) {
         })
         .expect("expected a drawing viewport");
     assert_eq!(title, name);
-    assert!(super::super::x11_input::window_is_separate(name));
+    if world.app().window.native.view.uses_wayland() {
+        let main_title = world.app().window.native.view.native_title().unwrap();
+        assert_ne!(name, main_title);
+        wayland::compositor_toplevel_bounds(&main_title);
+        wayland::compositor_toplevel_bounds(name);
+    } else {
+        assert!(super::super::x11_input::window_is_separate(name));
+    }
 }
 
 fn detached_frame(world: &mut ApplicationWorld) -> super::super::diagnostics::RenderedFrame {

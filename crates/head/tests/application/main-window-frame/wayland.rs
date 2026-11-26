@@ -39,13 +39,16 @@ pub(in super::super) fn click_frame_control(world: &mut ApplicationWorld, index:
 }
 
 pub(in super::super) fn click_window_point(world: &mut ApplicationWorld, [px, py]: [i32; 2]) {
+    let [x, y, _, _] = compositor_frame_bounds().unwrap();
+    click_compositor_point(world, [x + px, y + py]);
+}
+
+pub(in super::super) fn click_compositor_point(world: &mut ApplicationWorld, target: [i32; 2]) {
     use super::super::x11_input::window_targets::{
         fullscreen_left_button, move_fullscreen_pointer,
     };
 
     require_nested_input();
-    let [x, y, _, _] = compositor_frame_bounds().unwrap();
-    let target = [x + px, y + py];
     move_fullscreen_pointer(target);
     world.pump(Vec::new());
     fullscreen_left_button(target, true);
@@ -144,11 +147,16 @@ pub(in super::super) fn expect_resize_cursor([x, y]: [i32; 2]) {
     );
 }
 
-fn drag_fullscreen_pointer(world: &mut ApplicationWorld, start: [i32; 2], motion: &[[i32; 2]]) {
+pub(in super::super) fn drag_fullscreen_pointer(
+    world: &mut ApplicationWorld,
+    start: [i32; 2],
+    motion: &[[i32; 2]],
+) {
     use super::super::x11_input::window_targets::{
         fullscreen_left_button, move_fullscreen_pointer,
     };
 
+    require_nested_input();
     move_fullscreen_pointer(start);
     world.pump(Vec::new());
     fullscreen_left_button(start, true);
@@ -187,6 +195,20 @@ fn scene_frame_bounds(graph: &str, pid: u32) -> Option<[i32; 4]> {
     let mut lines = graph.lines();
     lines.find(|line| is_application_toplevel(line, &pid))?;
     scene_bounds(lines.next()?)
+}
+
+/// Find the application's mapped toplevel by its title when more than one is open.
+pub(in super::super) fn compositor_toplevel_bounds(title: &str) -> [i32; 4] {
+    require_nested_input();
+    let graph = compositor_scene_graph().expect("set OBK_BDD_WESTON_DEBUG for Wayland bounds");
+    let pid = format!(", PID {}, ", std::process::id());
+    let caption = format!("top-level window '{title}' of ");
+    let mut lines = graph.lines();
+    lines.find(|line| is_application_toplevel(line, &pid) && line.contains(&caption));
+    lines
+        .next()
+        .and_then(scene_bounds)
+        .unwrap_or_else(|| panic!("expected mapped toplevel {title:?} in the Weston scene graph"))
 }
 
 fn is_application_toplevel(line: &str, pid: &str) -> bool {

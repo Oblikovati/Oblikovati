@@ -46,6 +46,8 @@ verify the shortcut in both directions.
 Dragging a drawing out of the strip opens a native window. The main
 window activates another attached document when one is available and
 shows Home when the detached drawing was the only attached document.
+The [native Wayland detachment](receipts/2026-11-26-document-tabs-wayland-detach-3900/README.md)
+keeps the drawing toplevel mapped while the main window switches between Parts.
 Detached drawing and sheet preview tests take the same ImGui context
 lease as the main frame owner. [Parallel test results](receipts/2026-11-26-gui-context-lease-4078/README.md)
 
