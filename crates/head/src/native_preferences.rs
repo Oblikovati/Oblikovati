@@ -121,6 +121,25 @@ impl oblikovati_gui::GuiRibbonSettingsStore for NativeRibbonSettings {
     }
 }
 
+pub(super) struct NativeSweepPresets {
+    path: PathBuf,
+}
+impl NativeSweepPresets {
+    pub(super) fn new(directory: &Path) -> Self {
+        Self {
+            path: directory.join("sweep-presets.json"),
+        }
+    }
+}
+impl oblikovati_gui::GuiSweepPresetStore for NativeSweepPresets {
+    fn load(&mut self) -> Result<Option<Vec<u8>>, String> {
+        read_settings_file(&self.path, "Sweep presets")
+    }
+    fn save(&mut self, bytes: &[u8]) -> Result<(), String> {
+        save_settings_file(&self.path, bytes)
+    }
+}
+
 /// The desktop's atomically replaced workspace docking arrangement.
 pub(super) struct NativeWorkspaceLayout {
     path: PathBuf,

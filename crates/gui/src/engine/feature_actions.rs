@@ -2,6 +2,17 @@
 //! Keep exclusive part feature drafts consistent with the dock lifecycle.
 use super::*;
 
+impl GuiFrameEngine {
+    /// Attach Sweep presets to the active desktop preference profile.
+    /// Example: `engine.set_sweep_preset_store(store)?`.
+    pub fn set_sweep_preset_store(
+        &mut self,
+        store: Box<dyn crate::GuiSweepPresetStore>,
+    ) -> Result<(), String> {
+        self.sweep_dialog.set_preset_store(store)
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Draft {
     Extrude,

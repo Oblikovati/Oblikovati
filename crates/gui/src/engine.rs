@@ -316,7 +316,7 @@ impl GuiFrameEngine {
         let restyled = self.refresh_chrome(request);
         self.external_docks.synchronize(&request.commands);
         let mut frame = self.draw_controls(request)?;
-        frame.activity.pending_layout |= restyled;
+        frame.activity.pending_layout |= restyled || self.sweep_dialog.needs_frame();
         Ok(frame)
     }
     /// Focus an accessible control; example: `engine.focus_accessible(GuiAccessibleFocus::Frame(0))`.

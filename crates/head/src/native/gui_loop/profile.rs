@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::NativeGui;
 use crate::native::preferences::{
-    NativeRibbonSettings, NativeTemplateSelection, NativeWorkspaceLayout,
+    NativeRibbonSettings, NativeSweepPresets, NativeTemplateSelection, NativeWorkspaceLayout,
 };
 use std::path::Path;
 
@@ -9,6 +9,8 @@ impl NativeGui {
     pub(in crate::native) fn load_profile(&mut self, directory: &Path) -> Result<(), String> {
         self.engine
             .set_ribbon_settings_store(Box::new(NativeRibbonSettings::new(directory)))?;
+        self.engine
+            .set_sweep_preset_store(Box::new(NativeSweepPresets::new(directory)))?;
         if let Some(bytes) = NativeWorkspaceLayout::new(directory).load()? {
             self.engine.load_workspace_layout(&bytes)?;
         }

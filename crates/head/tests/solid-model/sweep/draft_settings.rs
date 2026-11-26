@@ -43,3 +43,75 @@ fn reveal_advanced(world: &mut ApplicationWorld) {
         show_advanced(world);
     }
 }
+
+const PRESET: &str = "FollowPath_0deg_90deg";
+
+#[given(
+    "the preset name Follow Path_0 deg_90 deg is available for creation in an isolated preference profile"
+)]
+fn preset_name_is_available(world: &mut ApplicationWorld) {
+    assert!(!preset_file(world).exists());
+}
+
+#[given(
+    "Sweep1 is open for editing with Follow Path, taper 0 degrees and twist 90 degrees entered"
+)]
+fn edit_sweep_for_preset(world: &mut ApplicationWorld) {
+    open_valid_sweep(world);
+    replace_angle(world, "Taper", "0");
+    replace_angle(world, "Twist", "90");
+    assert!(world.run_is_enabled("OK"));
+}
+
+#[when("the preset plus control is clicked")]
+fn save_sweep_preset(world: &mut ApplicationWorld) {
+    click_panel(world, "+");
+}
+
+#[then("a preset named Follow Path_0 deg_90 deg is shown")]
+fn sweep_preset_is_saved(world: &mut ApplicationWorld) {
+    let file = preset_file(world);
+    let bytes = std::fs::read(&file).unwrap_or_else(|cause| {
+        panic!("expected the preset plus control to save {file:?}: {cause}")
+    });
+    let settings: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(
+        settings["entries"]["Follow Path_0 deg_90 deg"],
+        serde_json::json!({"orientation":"follow_path","taper":"0 deg","twist":"90 deg"})
+    );
+    world.run_in_window("Sweep", PRESET);
+}
+
+#[when("No Preset is selected and Twist is changed to 0")]
+fn no_preset_and_zero_twist(world: &mut ApplicationWorld) {
+    click_panel(world, PRESET);
+    click_orientation_option(world, "NoPreset");
+    replace_angle(world, "Twist", "0");
+    assert_eq!(world.state().sweep_preview.unwrap().request.twist, "0");
+}
+
+#[when("the saved preset is selected")]
+fn select_saved_preset(world: &mut ApplicationWorld) {
+    click_panel(world, "NoPreset");
+    click_orientation_option(world, PRESET);
+}
+
+#[then("the profile and path remain selected")]
+fn preset_keeps_sources(world: &mut ApplicationWorld) {
+    chosen_sources(world);
+    let draft = world.state().sweep_preview.unwrap().request;
+    assert_eq!(draft.taper, "0 deg");
+    assert!(!draft.path_cleared);
+    assert_eq!(draft.profile, oblikovati_gui::GuiSweepProfile::Saved);
+}
+
+fn preset_file(world: &mut ApplicationWorld) -> std::path::PathBuf {
+    world
+        .app()
+        .window
+        .native
+        .ribbon_settings_directory
+        .as_ref()
+        .unwrap()
+        .join("sweep-presets.json")
+}

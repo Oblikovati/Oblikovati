@@ -170,3 +170,12 @@ inside a certified bounded region on that sketch supplies the directed
 boundary. The preview and OK return after the new draft is evaluated. Empty
 space, edge-on views, and ambiguous hits leave the selection open.
 See the [native receipt](receipts/2026-11-26-sweep-profile-pick-3917/README.md).
+
+### Sweep presets
+
+The preset control saves certified orientation and angle settings to the
+desktop preference profile. Bare numeric angles are saved with their
+current angular unit. Choosing a preset reapplies those settings to the
+current draft without changing its profile or path. The preset file is
+independent of the Part and its Undo history.
+See the [native receipt](receipts/2026-11-26-sweep-presets-3917/README.md).

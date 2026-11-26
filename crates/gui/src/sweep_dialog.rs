@@ -6,11 +6,15 @@ use crate::{
 use imgui::Ui;
 #[path = "sweep_orientation.rs"]
 mod orientation;
+#[path = "sweep_presets.rs"]
+mod presets;
 use crate::icons::GuiRibbonIcons;
 use oblikovati_model::feature::{FeatureId, sketch_prism::SketchPrismSelection};
+pub use presets::GuiSweepPresetStore;
 
 /// Sweep orientation choices available in Properties.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum GuiSweepOrientation {
     #[default]
     FollowPath,
@@ -28,7 +32,8 @@ pub enum GuiSweepProfile {
 }
 
 /// Authored Sweep options shown when editing an existing feature.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GuiSweepEditSeed {
     pub taper: String,
     pub twist: String,
@@ -121,6 +126,7 @@ pub(crate) struct SweepDialog {
     path_cleared: bool,
     orientation: GuiSweepOrientation,
     selector: orientation::OrientationSelector,
+    presets: presets::SweepPresets,
     taper: String,
     twist: String,
     optimize_single_selection: bool,
@@ -128,6 +134,17 @@ pub(crate) struct SweepDialog {
 }
 impl DockableWindow for SweepDialog {}
 impl SweepDialog {
+    pub(crate) fn needs_frame(&self) -> bool {
+        self.document.is_some() && self.presets.needs_frame
+    }
+
+    pub(crate) fn set_preset_store(
+        &mut self,
+        store: Box<dyn GuiSweepPresetStore>,
+    ) -> Result<(), String> {
+        self.presets.set_store(store)
+    }
+
     pub(crate) fn register_dockable(
         &self,
         registry: &mut crate::dockable_lifecycle::DockRegistry,
@@ -159,6 +176,7 @@ impl SweepDialog {
         self.taper = seed.taper;
         self.twist = seed.twist;
         self.optimize_single_selection = false;
+        self.presets.reset();
         self.orientation = seed.orientation;
         self.document = state.document;
         self.dock.set_open(self.document.is_some());
@@ -204,7 +222,7 @@ impl SweepDialog {
         let (Some(document), Some(generation)) = (self.document, state.document_generation) else {
             return;
         };
-        let height = if self.show_help { 393. } else { 319. };
+        let height = if self.show_help { 423. } else { 349. };
         crate::widget_abi::fit_viewport_properties(ui, "Sweep", area, [300., height]);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;
@@ -266,24 +284,16 @@ impl SweepDialog {
             crate::theme::property_label(ui, "Twist");
             ui.input_text("##sweep-twist", &mut self.twist).build();
         }
-        let request = GuiSweepRequest {
-            document,
-            generation,
-            feature: self.feature,
-            profile: self.profile.clone(),
-            path_cleared: self.path_cleared,
-            orientation: self.orientation,
-            taper: if follows_path {
-                self.taper.clone()
-            } else {
-                String::new()
-            },
-            twist: if follows_path {
-                self.twist.clone()
-            } else {
-                String::new()
-            },
-        };
+        let mut request = self.request(document, generation);
+        if !tip {
+            let certified = Self::certified_preset(state, &request);
+            if let Some(fields) = self.presets.draw(ui, certified) {
+                self.orientation = fields.orientation;
+                self.taper = fields.taper;
+                self.twist = fields.twist;
+                request = self.request(document, generation);
+            }
+        }
         if self.attempted.as_ref() != Some(&request) {
             self.attempted = Some(request.clone());
             actions.push(GuiShellAction::Sweep(GuiSweepAction::Preview(
@@ -346,6 +356,45 @@ impl SweepDialog {
         }
     }
 
+    fn request(&self, document: u64, generation: u64) -> GuiSweepRequest {
+        let follows_path = self.orientation == GuiSweepOrientation::FollowPath;
+        GuiSweepRequest {
+            document,
+            generation,
+            feature: self.feature,
+            profile: self.profile.clone(),
+            path_cleared: self.path_cleared,
+            orientation: self.orientation,
+            taper: if follows_path {
+                self.taper.clone()
+            } else {
+                String::new()
+            },
+            twist: if follows_path {
+                self.twist.clone()
+            } else {
+                String::new()
+            },
+        }
+    }
+
+    fn certified_preset(
+        state: &GuiCommandState,
+        request: &GuiSweepRequest,
+    ) -> Option<GuiSweepEditSeed> {
+        state
+            .sweep_preview
+            .as_ref()
+            .filter(|preview| {
+                &preview.request == request && preview.result == GuiSweepPreview::Ready
+            })
+            .map(|_| GuiSweepEditSeed {
+                taper: preset_angle(state, &request.taper),
+                twist: preset_angle(state, &request.twist),
+                orientation: request.orientation,
+            })
+    }
+
     fn adopt_profile_pick(&mut self, preview: Option<&GuiSweepPreviewState>) {
         let Some(preview) = preview.filter(|_| self.profile == GuiSweepProfile::Empty) else {
             return;
@@ -358,4 +407,14 @@ impl SweepDialog {
             self.attempted = Some(preview.request.clone());
         }
     }
+}
+
+fn preset_angle(state: &GuiCommandState, expression: &str) -> String {
+    let expression = expression.trim();
+    if let Some(units) = &state.document_units
+        && expression.parse::<f64>().is_ok()
+    {
+        return format!("{expression} {}", units.angle_unit);
+    }
+    expression.into()
 }
