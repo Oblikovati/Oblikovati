@@ -51,7 +51,8 @@ pub use appearance::AppearanceAsset;
 pub use assignment::{AssetAssignments, AssignmentReference};
 pub use catalog::{BuiltinAssetCatalog, DEFAULT_APPEARANCE_ID};
 pub use document::{
-    AppearanceAssignmentTarget, AppearanceMetadata, DocumentAssets, MaterialAssignmentTarget,
+    AppearanceAssignmentTarget, AppearanceMetadata, AppearanceReflectivity, DocumentAssets,
+    MaterialAssignmentTarget,
 };
 pub use material::MaterialAsset;
 pub use project::ProjectAssetLibrary;

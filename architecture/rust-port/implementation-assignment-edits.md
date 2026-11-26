@@ -91,3 +91,9 @@ appearance identity and travels with the Part. Older Parts read with
 blank values. Saving an empty description and keywords removes the
 metadata entry. See the
 [native Information receipt](receipts/2026-11-26-appearance-information-3563/README.md).
+
+Reflectivity has separate disclosure and enable controls. Direct and
+Oblique affect the apparent reflection in the editor preview and, after
+Apply, in the browser thumbnail. The document recipe keeps both
+percentages when the effect is disabled. See the
+[native Reflectivity receipt](receipts/2026-11-26-appearance-reflectivity-3563/README.md).

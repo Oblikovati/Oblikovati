@@ -72,12 +72,25 @@ pub(crate) fn paint_preview(
         .map(|v| f32::from(v) / 255.);
     let metalness = f32::from(finish.metalness) / 255.;
     let roughness = f32::from(finish.roughness) / 255.;
+    let reflectivity = asset
+        .appearance_metadata
+        .as_ref()
+        .and_then(|metadata| metadata.reflectivity)
+        .filter(|effect| effect.enabled);
     let layers = if radius > 40. { 24 } else { 10 };
     for step in 0..=layers {
         let fraction = step as f32 / layers as f32;
         let offset = radius * fraction * 0.38;
         let shade = 0.26 + fraction * (0.81 + metalness * 0.22);
-        let [r, g, b] = base.map(|channel| (channel * shade + 0.025).min(1.));
+        let reflection = reflectivity.map_or(0., |effect| {
+            let direct = f32::from(effect.direct) / 100.;
+            let oblique = f32::from(effect.oblique) / 100.;
+            0.50 * direct * fraction + 0.75 * oblique * (1. - fraction).powi(5)
+        });
+        let [r, g, b] = std::array::from_fn(|index| {
+            let surface = (base[index] * shade + 0.025).min(1.);
+            surface + ([0.75, 0.83, 0.93][index] - surface) * reflection
+        });
         draw.add_circle(
             [center[0] - offset, center[1] - offset],
             radius * (1. - 0.82 * fraction),

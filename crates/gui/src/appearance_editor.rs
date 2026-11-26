@@ -243,6 +243,10 @@ fn available_identity(assets: &[GuiAssetChoice]) -> (String, String) {
 fn draw_preview(ui: &Ui, asset: &GuiAssetChoice, draft: &AppearanceDraft) {
     let mut preview = asset.clone();
     preview.swatch = Some(draft.color);
+    preview
+        .appearance_metadata
+        .get_or_insert_with(Default::default)
+        .reflectivity = draft.metadata.reflectivity;
     if let Some(finish) = &mut preview.appearance_preview {
         finish.roughness = draft.roughness;
         finish.highlights = draft.highlights;
@@ -283,6 +287,28 @@ fn draw_properties(ui: &Ui, draft: &mut AppearanceDraft, color_dialog: &mut Colo
         ui.slider("Glossiness", 0, 255, &mut gloss);
         draft.roughness = 255 - gloss;
         ui.slider("Highlights", 0, 255, &mut draft.highlights);
+    }
+    draw_reflectivity(ui, &mut draft.metadata);
+}
+
+fn draw_reflectivity(ui: &Ui, metadata: &mut AppearanceMetadata) {
+    let _id = ui.push_id("reflectivity");
+    let original = metadata.reflectivity.unwrap_or_default();
+    let mut effect = original;
+    let expanded = ui.tree_node_config("Reflectivity").push();
+    ui.same_line();
+    ui.checkbox("Enabled", &mut effect.enabled);
+    if expanded.is_some() {
+        let _disabled = ui.begin_disabled(!effect.enabled);
+        ui.slider_config("Direct", 0, 100)
+            .display_format("%d%%")
+            .build(&mut effect.direct);
+        ui.slider_config("Oblique", 0, 100)
+            .display_format("%d%%")
+            .build(&mut effect.oblique);
+    }
+    if effect != original {
+        metadata.reflectivity = (effect != Default::default()).then_some(effect);
     }
 }
 

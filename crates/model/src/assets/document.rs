@@ -12,6 +12,27 @@ use oblikovati_api::{
 pub struct AppearanceMetadata {
     pub description: String,
     pub keywords: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reflectivity: Option<AppearanceReflectivity>,
+}
+
+/// Generic appearance reflection strengths as percentages.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[serde(default)]
+pub struct AppearanceReflectivity {
+    pub enabled: bool,
+    pub direct: u8,
+    pub oblique: u8,
+}
+
+impl Default for AppearanceReflectivity {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            direct: 50,
+            oblique: 50,
+        }
+    }
 }
 
 /// A portable document owns asset snapshots and assignment intent together.
@@ -77,6 +98,13 @@ impl DocumentAssets {
         if metadata.description.contains('\0') || metadata.keywords.contains('\0') {
             return Err(format!(
                 "appearance {id:?}: expected description and keywords without NUL characters"
+            ));
+        }
+        if let Some(reflectivity) = metadata.reflectivity
+            && (reflectivity.direct > 100 || reflectivity.oblique > 100)
+        {
+            return Err(format!(
+                "appearance {id:?} reflectivity {reflectivity:?}: expected percentages from 0 to 100"
             ));
         }
         if metadata == AppearanceMetadata::default() {
