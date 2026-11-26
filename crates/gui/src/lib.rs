@@ -153,7 +153,7 @@ mod move_body_dialog;
 mod move_body_ribbon;
 mod shell_feature_dialog;
 mod sweep_dialog;
-pub use sweep_dialog::{GuiSweepAction, GuiSweepPreview, GuiSweepRequest};
+pub use sweep_dialog::{GuiSweepAction, GuiSweepPreview, GuiSweepPreviewState, GuiSweepRequest};
 mod shell_ribbon;
 pub use face_properties::GuiFaceProperties;
 mod marking_menu;

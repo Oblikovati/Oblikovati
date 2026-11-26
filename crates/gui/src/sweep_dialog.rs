@@ -4,12 +4,15 @@ use crate::{
     GuiAuthoringContext, GuiCommandState, GuiShellAction, dockable_window::DockableWindow,
 };
 use imgui::Ui;
+use oblikovati_model::feature::FeatureId;
 
 /// Document and generation whose Sweep inputs may be previewed or accepted.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiSweepRequest {
     pub document: u64,
     pub generation: u64,
+    pub feature: Option<FeatureId>,
+    pub taper: String,
 }
 
 /// The geometry owner's response to a Sweep preview request.
@@ -20,32 +23,50 @@ pub enum GuiSweepPreview {
     Failed(String),
 }
 
+/// The exact draft and its validation result.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GuiSweepPreviewState {
+    pub request: GuiSweepRequest,
+    pub result: GuiSweepPreview,
+}
+
 /// Actions emitted by the Sweep ribbon and Properties window.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GuiSweepAction {
     Open,
+    OpenEdit(FeatureId),
     Preview(GuiSweepRequest),
     Clear,
     Commit(GuiSweepRequest),
 }
 
 impl GuiSweepAction {
-    pub(crate) fn enabled(self, state: &GuiCommandState) -> bool {
+    pub(crate) fn enabled(&self, state: &GuiCommandState) -> bool {
         let can_start = state.document.is_some()
             && state.certified_part_feature_available
             && state.authoring == GuiAuthoringContext::Part
             && !state.transaction_open;
-        let current = |request: GuiSweepRequest| {
+        let current = |request: &GuiSweepRequest| {
             can_start
                 && state.document == Some(request.document)
                 && state.document_generation == Some(request.generation)
         };
         match self {
             Self::Open => can_start,
+            Self::OpenEdit(feature) => {
+                can_start
+                    && state
+                        .browser
+                        .as_ref()
+                        .is_some_and(|browser| browser.sweep_edits.contains_key(feature))
+            }
             Self::Preview(request) => current(request),
             Self::Clear => true,
             Self::Commit(request) => {
-                current(request) && state.sweep_preview == Some(GuiSweepPreview::Ready)
+                current(request)
+                    && state.sweep_preview.as_ref().is_some_and(|preview| {
+                        preview.request == *request && preview.result == GuiSweepPreview::Ready
+                    })
             }
         }
     }
@@ -59,6 +80,8 @@ pub(crate) struct SweepDialog {
     document: Option<u64>,
     attempted: Option<GuiSweepRequest>,
     submitted: Option<GuiSweepRequest>,
+    feature: Option<FeatureId>,
+    taper: String,
     show_help: bool,
 }
 impl DockableWindow for SweepDialog {}
@@ -70,7 +93,22 @@ impl SweepDialog {
         registry.register::<Self>("Sweep", &self.dock)
     }
 
-    pub(super) fn open(&mut self, state: &GuiCommandState) {
+    pub(super) fn open(&mut self, state: &GuiCommandState, feature: Option<FeatureId>) {
+        let taper = match feature {
+            Some(id) => {
+                let Some(taper) = state
+                    .browser
+                    .as_ref()
+                    .and_then(|browser| browser.sweep_edits.get(&id))
+                else {
+                    return;
+                };
+                taper.clone()
+            }
+            None => "0 deg".into(),
+        };
+        self.feature = feature;
+        self.taper = taper;
         self.document = state.document;
         self.dock.set_open(self.document.is_some());
         self.attempted = None;
@@ -95,6 +133,7 @@ impl SweepDialog {
                 || !GuiSweepAction::Open.enabled(state)
                 || self
                     .submitted
+                    .as_ref()
                     .is_some_and(|request| Some(request.generation) != state.document_generation))
         {
             self.close(actions);
@@ -111,21 +150,13 @@ impl SweepDialog {
         let (Some(document), Some(generation)) = (self.document, state.document_generation) else {
             return;
         };
-        let request = GuiSweepRequest {
-            document,
-            generation,
-        };
-        if self.attempted != Some(request) {
-            self.attempted = Some(request);
-            actions.push(GuiShellAction::Sweep(GuiSweepAction::Preview(request)));
-        }
-        let height = if self.show_help { 244. } else { 174. };
+        let height = if self.show_help { 296. } else { 222. };
         crate::widget_abi::fit_viewport_properties(ui, "Sweep", area, [300., height]);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;
         Self::dockable_window(ui, "Sweep", &mut open).build(|| {
             crate::theme::floating_property_shadow(ui);
-            self.contents(ui, state, request, actions);
+            self.contents(ui, state, (document, generation), actions);
         });
         if !open {
             self.close(actions);
@@ -136,33 +167,63 @@ impl SweepDialog {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
-        request: GuiSweepRequest,
+        (document, generation): (u64, u64),
         actions: &mut Vec<GuiShellAction>,
     ) {
-        let ready = GuiSweepAction::Commit(request).enabled(state);
         let tip = state
             .browser
             .as_ref()
             .is_some_and(|browser| browser.sketches.is_empty());
-        if ready {
+        let preview = state.sweep_preview.as_ref();
+        if self.feature.is_some()
+            || preview.is_some_and(|state| {
+                matches!(
+                    state.result,
+                    GuiSweepPreview::Ready | GuiSweepPreview::Failed(_)
+                )
+            })
+        {
             crate::theme::property_label(ui, "Profiles");
             ui.text("1 Profile");
             crate::theme::property_label(ui, "Path");
             ui.text("1 Curve");
-        } else {
-            if let Some(GuiSweepPreview::Failed(cause)) = &state.sweep_preview {
-                ui.text_wrapped(cause);
-            } else {
-                ui.text_wrapped(TIP);
-            }
+            crate::theme::property_label(ui, "Orientation");
+            ui.text("Follow Path");
         }
+        if !tip {
+            crate::theme::property_label(ui, "Taper");
+            let _width = ui.push_item_width(-1.);
+            ui.input_text("##sweep-taper", &mut self.taper).build();
+        }
+        let request = GuiSweepRequest {
+            document,
+            generation,
+            feature: self.feature,
+            taper: self.taper.clone(),
+        };
+        if self.attempted.as_ref() != Some(&request) {
+            self.attempted = Some(request.clone());
+            actions.push(GuiShellAction::Sweep(GuiSweepAction::Preview(
+                request.clone(),
+            )));
+        }
+        match preview
+            .filter(|preview| preview.request == request)
+            .map(|preview| &preview.result)
+        {
+            Some(GuiSweepPreview::MissingInputs) => ui.text_wrapped(TIP),
+            Some(GuiSweepPreview::Failed(cause)) => ui.text_wrapped(cause),
+            None if tip => ui.text_wrapped(TIP),
+            _ => {}
+        }
+        let ready = GuiSweepAction::Commit(request.clone()).enabled(state);
         if self.show_help {
             ui.text_wrapped("Create a closed section in one sketch and a straight path in another. Start the path on the profile plane and keep both sketches visible.");
         }
         ui.separator();
         if crate::theme::property_accept(ui, tip || ready) {
             if ready {
-                self.submitted = Some(request);
+                self.submitted = Some(request.clone());
                 actions.push(GuiShellAction::Sweep(GuiSweepAction::Commit(request)));
             } else {
                 self.close(actions);

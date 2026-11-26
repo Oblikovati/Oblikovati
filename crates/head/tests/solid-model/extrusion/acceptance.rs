@@ -272,7 +272,7 @@ pub(super) fn open_extrusion_editor(world: &mut ApplicationWorld) {
     world.expect_text("Distance A");
 }
 
-pub(super) fn edit_menu_position(world: &ApplicationWorld) -> [i32; 2] {
+pub(in super::super) fn edit_menu_position(world: &ApplicationWorld) -> [i32; 2] {
     let anchor = world.run("Show Dimensions").center();
     let center = world
         .frame
@@ -285,9 +285,8 @@ pub(super) fn edit_menu_position(world: &ApplicationWorld) -> [i32; 2] {
                 .eq("EditFeature".chars())
         })
         .min_by(|a, b| {
-            (a.center()[1] - anchor[1])
-                .abs()
-                .total_cmp(&(b.center()[1] - anchor[1]).abs())
+            let distance = |point: [f32; 2]| (point[0] - anchor[0]).hypot(point[1] - anchor[1]);
+            distance(a.center()).total_cmp(&distance(b.center()))
         })
         .expect("expected Edit Feature in the context menu")
         .center();

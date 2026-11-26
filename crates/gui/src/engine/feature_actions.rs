@@ -14,7 +14,9 @@ enum Draft {
 
 fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
     Some(match action {
-        GuiShellAction::Sweep(crate::GuiSweepAction::Open) => Draft::Sweep,
+        GuiShellAction::Sweep(crate::GuiSweepAction::Open | crate::GuiSweepAction::OpenEdit(_)) => {
+            Draft::Sweep
+        }
         GuiShellAction::OpenExtrude | GuiShellAction::OpenExtrudeEdit(_) => Draft::Extrude,
         GuiShellAction::OpenFillet
         | GuiShellAction::OpenChamfer
@@ -72,7 +74,10 @@ pub(super) fn open_drafts(
         blend.close(actions);
     }
     match action {
-        GuiShellAction::Sweep(crate::GuiSweepAction::Open) => sweep.open(state),
+        GuiShellAction::Sweep(crate::GuiSweepAction::Open) => sweep.open(state, None),
+        GuiShellAction::Sweep(crate::GuiSweepAction::OpenEdit(feature)) => {
+            sweep.open(state, Some(feature))
+        }
         GuiShellAction::OpenExtrude => extrude.requested = true,
         GuiShellAction::OpenExtrudeEdit(feature) => extrude.open_edit(state, feature),
         GuiShellAction::OpenFillet => blend.open(state),

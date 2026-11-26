@@ -92,8 +92,8 @@ SVGs for Extrude, Revolve, Sweep, Derive, and Import. The drawing code applies
 the named paint classes in Dark, Light, and High Contrast.
 
 The [desktop receipt](receipts/2026-11-26-sweep-entry-history-3917/README.md)
-covers `sweep-01` and `sweep-02` on Wayland and X11. Sweep input selection and
-editing, twist, guides, Boolean and surface operations remain open.
+covers `sweep-01` and `sweep-02` on Wayland and X11. Profile and path repicking, additional orientations, twist, guides,
+Boolean and surface operations remain open.
 Loft still requires authored section identities and host integration.
 Revolve has a persisted definition type and a geometry probe, and still
 needs desktop authoring and replay.
@@ -112,5 +112,13 @@ edit invalidates the Sweep. The
 [history tests](../../crates/martensite/tests/release_probe/sweep_sources/replay.rs)
 verify stable body, face, edge, and vertex keys through package reopen and
 after changing the taper to zero. Part program version 29 stores the taper
-driver. Existing untapered documents still use version 28. The Sweep
-Properties editor still needs the taper field and Edit command.
+driver. Existing untapered documents still use version 28.
+
+Sweep Properties uses the same taper parser for creation and feature edits.
+Edit Feature reopens the saved profile, path, and taper. Each input revision
+gets a new preview, and OK requires certification of that revision.
+
+The [desktop taper receipt](receipts/2026-11-26-sweep-taper-edit-3917/README.md)
+covers all eight steps of `sweep-03` on Wayland and X11, including the
+change from the tapered preview to straight sides and the saved zero angle
+on the same Sweep.

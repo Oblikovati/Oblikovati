@@ -154,14 +154,23 @@ pub fn prepare_sweep(
     let definition = if input.taper.trim().is_empty() {
         definition
     } else {
-        let taper = crate::move_body::angle(snapshot, &input.taper, "sweep taper")?;
-        definition.with_taper(taper).map_err(api_error)?
+        prepare_sweep_taper(snapshot, definition, &input.taper)?
     };
     definition.resolve(snapshot, datums).map_err(api_error)?;
     Ok(PreparedSweep {
         name: crate::fillet::next_name(snapshot, "Sweep")?,
         definition,
     })
+}
+
+/// Resolve a taper expression for a Sweep draft. Example: `prepare_sweep_taper(snapshot, definition, "5 deg")?`.
+pub fn prepare_sweep_taper(
+    snapshot: &DocumentSnapshot,
+    definition: SketchSweepDefinition,
+    expression: &str,
+) -> Result<SketchSweepDefinition, Error> {
+    let taper = crate::move_body::angle(snapshot, expression, "sweep taper")?;
+    definition.with_taper(taper).map_err(api_error)
 }
 
 fn validate_options(input: &Sweep) -> Result<(), Error> {

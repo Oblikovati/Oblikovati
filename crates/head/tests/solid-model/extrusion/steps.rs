@@ -3,7 +3,7 @@
 use super::ApplicationWorld;
 use cucumber::{given, then, when};
 use oblikovati_viewport::ViewportPhysicalKey;
-mod acceptance;
+pub(super) mod acceptance;
 #[cfg(target_os = "linux")]
 mod direction;
 #[cfg(target_os = "linux")]

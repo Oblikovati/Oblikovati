@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" package="testsuite/Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T20:55:21.002847478Z" time="9.878042599"><testcase name="Scenario: sweep-03 Change the accepted taper to zero: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature:29:3" time="9.878042599"><system-out><![CDATA[  Scenario: sweep-03 Change the accepted taper to zero
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/sweep/circle-straight-path.opd" is open
+   ✔  And the user creates Sweep1 from its circle profile and straight path with Follow Path orientation and 5 degrees taper
+   ✔  When Sweep1 is reopened for editing
+   ✔  Then 1 Profile 1 Curve and taper 5 deg are retained
+   ✔  When taper is replaced with 0
+   ✔  Then the preview changes to straight sides and OK is enabled
+   ✔  When OK is clicked
+   ✔  Then Sweep1 remains with one solid body
+]]></system-out></testcase></testsuite></testsuites>

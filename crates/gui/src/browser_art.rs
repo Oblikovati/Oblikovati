@@ -53,6 +53,7 @@ pub(crate) fn strike_feature_name(ui: &Ui, name: &str, start: f32) {
 pub(crate) fn feature_glyph(kind: &str) -> Option<IconGlyph> {
     Some(match kind {
         "Extrusion" => IconGlyph::Extrude,
+        "Sweep" => IconGlyph::Sweep,
         "Revolution" | "Revolve" => IconGlyph::Revolve,
         "Hole" => IconGlyph::Hole,
         "Fillet" => IconGlyph::Fillet,

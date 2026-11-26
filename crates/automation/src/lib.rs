@@ -38,7 +38,7 @@ pub use fillet::{
 };
 pub use hole::{PreparedHole, prepare_hole};
 pub use shell::{PreparedShell, prepare_shell};
-pub use sweep::{PreparedSweep, automatic_sweep, prepare_sweep};
+pub use sweep::{PreparedSweep, automatic_sweep, prepare_sweep, prepare_sweep_taper};
 mod interests;
 pub use file_host::{
     APPLICATION_PREFERENCE_METHODS, ASSEMBLY_COMMAND_METHODS, AssemblyReferenceFailure,
