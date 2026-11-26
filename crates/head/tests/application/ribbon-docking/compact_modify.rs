@@ -27,31 +27,34 @@ fn compact_group_closed(_: &mut ApplicationWorld) {
     );
 }
 
-fn expect_blue_group(world: &mut ApplicationWorld, group: &str) {
+pub(super) fn expect_selected_group(world: &mut ApplicationWorld, group: &str) {
     let ribbon = if window_geometry(FLOATING).is_some() {
         FLOATING
     } else {
         COLUMN
     };
     let run = world.run_in_window(ribbon, &group.replace(' ', ""));
-    let point = [run.center()[0] as usize, run.minimum[1] as usize - 5];
-    let [red, green, blue, _] = world.pixel_at(point);
-    assert!(
-        blue > green && green > red,
-        "{group} color {:?}: expected blue",
-        [red, green, blue]
+    let point = super::super::diagnostics::pointer_pixels([run.center()[0], run.minimum[1] - 5.])
+        .map(|value| value as usize);
+    let accent =
+        unsafe { imgui::sys::igGetColorU32_Col(imgui::sys::ImGuiCol_NavHighlight as i32, 1.) }
+            .to_le_bytes();
+    assert_eq!(
+        world.pixel_at(point)[..3],
+        accent[..3],
+        "{group} selection accent"
     );
 }
 
 #[then("the Modify button is highlighted blue")]
 #[then("Modify is highlighted blue")]
 fn modify_is_blue(world: &mut ApplicationWorld) {
-    expect_blue_group(world, "Modify");
+    expect_selected_group(world, "Modify");
 }
 
 #[then("Work Features is highlighted blue")]
 fn work_features_is_blue(world: &mut ApplicationWorld) {
-    expect_blue_group(world, "Work Features");
+    expect_selected_group(world, "Work Features");
 }
 
 fn expect_commands_beside(world: &ApplicationWorld, labels: &[&str]) {
@@ -131,7 +134,7 @@ fn face_is_deselected(world: &mut ApplicationWorld) {
 
 fn click_native(world: &mut ApplicationWorld, at: [i32; 2]) {
     #[cfg(target_os = "linux")]
-    super::super::x11_input::click(at);
+    super::super::desktop_input::click(world, at);
     #[cfg(not(target_os = "linux"))]
     world.click(at);
     world.pump(Vec::new());

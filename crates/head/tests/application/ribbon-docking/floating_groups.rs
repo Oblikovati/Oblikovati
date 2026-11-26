@@ -29,7 +29,7 @@ fn floating_group(world: &ApplicationWorld, label: &str) -> [i32; 2] {
 fn click_floating_label(world: &mut ApplicationWorld, label: &str) {
     let at = floating_label(world, label);
     #[cfg(target_os = "linux")]
-    super::super::x11_input::click(at);
+    super::super::desktop_input::click(world, at);
     #[cfg(not(target_os = "linux"))]
     world.click(at);
     world.pump(Vec::new());
@@ -49,7 +49,7 @@ fn floating_starts_with_sketch(world: &mut ApplicationWorld) {
 fn scroll_floating_groups(world: &mut ApplicationWorld) {
     let at = floating_label(world, "Modify");
     #[cfg(target_os = "linux")]
-    super::super::x11_input::scroll(at, -2);
+    super::super::desktop_input::scroll(world, at, -2);
     #[cfg(not(target_os = "linux"))]
     world.pump(vec![oblikovati_viewport::ViewportEvent::Input(
         oblikovati_viewport::ViewportInput::Wheel {
@@ -130,9 +130,7 @@ fn note_entries(world: &mut ApplicationWorld) {
             "{label}: expected an unavailable command"
         );
     }
-    let notes = floating_label(world, "Notes");
-    let [red, green, blue, _] = world.pixel_at([notes[0] as usize, (notes[1] - 12) as usize]);
-    assert!(blue > green && green > red, "expected a blue Notes button");
+    super::compact_modify::expect_selected_group(world, "Notes");
 }
 
 #[when("the user selects 3D Model")]

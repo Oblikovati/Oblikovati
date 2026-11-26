@@ -82,7 +82,7 @@ fn document_list_point(world: &mut ApplicationWorld, name: &str) -> [i32; 2] {
 
 fn click_document_control(world: &mut ApplicationWorld, point: [i32; 2]) {
     #[cfg(target_os = "linux")]
-    super::super::x11_input::click(point);
+    super::super::desktop_input::click(world, point);
     #[cfg(not(target_os = "linux"))]
     world.click(point);
     world.pump(Vec::new());

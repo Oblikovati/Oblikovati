@@ -4,6 +4,10 @@ Side-docked tabs reserve enough width for their full labels. The command
 groups start beside that measured tab column, within the existing ribbon
 bounds.
 
+The floating ribbon uses the available panel height for its scrollable
+group list. Scrolling past Start 2D Sketch can show Shape Generator through
+Create Freeform together.
+
 In the Normal ribbon appearance, the tab strip and command row keep
 their vertical geometry when switching between the six Part tabs.
 Resizing to a narrow window uses labeled compact groups with icons and

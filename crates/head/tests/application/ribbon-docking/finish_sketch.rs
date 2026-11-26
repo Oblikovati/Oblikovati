@@ -48,7 +48,7 @@ fn sketch_groups_stack(world: &mut ApplicationWorld) {
 fn finish_is_direct(world: &mut ApplicationWorld) {
     let finish = world.run_in_window(COLUMN, "FinishSketch");
     let format = world.run_in_window(COLUMN, "Format");
-    let exit = world.run_in_window(COLUMN, "Exit");
+    let exit = world.run_in_window(COLUMN, "EXIT");
     assert!(finish.center()[1] > format.center()[1]);
     assert!(exit.center()[1] > finish.center()[1]);
     assert!(world.run_is_enabled("Finish Sketch"));

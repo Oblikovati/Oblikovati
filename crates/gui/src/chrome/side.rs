@@ -142,8 +142,13 @@ fn side_groups(
     let mut icons = owners.icons.clone();
     icons.appearance = ribbon.display.appearance;
     let _tab = ui.push_id(ribbon.active.label());
+    let group_height = if ribbon.display.placement == RibbonPlacement::Floating {
+        0.
+    } else {
+        -32.
+    };
     ui.child_window("##ribbon-groups")
-        .size([0., -32.])
+        .size([0., group_height])
         .build(|| {
             crate::ribbon_panels::draw_side_groups(
                 ui,
