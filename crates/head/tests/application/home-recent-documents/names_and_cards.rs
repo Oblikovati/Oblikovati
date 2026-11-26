@@ -140,7 +140,6 @@ fn field_empty_given(world: &mut ApplicationWorld) {
     );
 }
 #[when("the user clears the search field")]
-#[when("I clear the search field")]
 #[given("the user clears the search field")]
 fn clear_search_field(world: &mut ApplicationWorld) {
     clear_field(world);

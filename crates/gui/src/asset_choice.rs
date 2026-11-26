@@ -6,4 +6,15 @@ pub struct GuiAssetChoice {
     pub id: String,
     pub name: String,
     pub swatch: Option<[u8; 3]>,
+    pub category: Option<&'static str>,
+    pub document: bool,
+    pub used: bool,
+    pub library: Option<GuiAssetLibrary>,
+}
+
+/// Asset source shown in the browser's library region.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum GuiAssetLibrary {
+    Shipped,
+    Project,
 }

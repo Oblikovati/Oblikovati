@@ -6,7 +6,9 @@ mod embedded;
 mod legacy;
 mod project;
 mod project_write;
-use oblikovati_model::assets::{AppearanceAsset, BuiltinAssetCatalog, MaterialAsset};
+use oblikovati_model::assets::{
+    AppearanceAsset, AssetIdentity, BuiltinAssetCatalog, MaterialAsset,
+};
 pub use project::load_project_asset_library;
 pub use project_write::{ProjectAssetFamily, persist_project_asset_family};
 use serde::Deserialize;
@@ -33,10 +35,41 @@ pub fn decode_catalog_sources(
 ) -> Result<BuiltinAssetCatalog, String> {
     let mut materials = Vec::new();
     let mut appearances = Vec::new();
+    let mut material_categories = std::collections::BTreeMap::new();
+    let mut appearance_categories = std::collections::BTreeMap::new();
     for source in sources {
+        let first_material = materials.len();
+        let first_appearance = appearances.len();
         append_catalog_source(*source, &mut materials, &mut appearances)?;
+        if let Some(category) = embedded_category(source.name) {
+            material_categories.extend(
+                materials[first_material..]
+                    .iter()
+                    .map(|asset| (asset.asset_id().to_owned(), category)),
+            );
+            appearance_categories.extend(
+                appearances[first_appearance..]
+                    .iter()
+                    .map(|asset| (asset.asset_id().to_owned(), category)),
+            );
+        }
     }
-    BuiltinAssetCatalog::from_records(materials, appearances)
+    Ok(BuiltinAssetCatalog::from_records(materials, appearances)?
+        .with_categories(material_categories, appearance_categories))
+}
+
+fn embedded_category(name: &str) -> Option<&'static str> {
+    match name.split('-').nth(1)?.split('.').next()? {
+        "default" => Some("General"),
+        "metals" => Some("Metals"),
+        "steels" => Some("Steels"),
+        "aluminum" => Some("Aluminum"),
+        "plastics" => Some("Plastics"),
+        "woods" => Some("Woods"),
+        "composites" => Some("Composites"),
+        "magnetic" => Some("Magnetic"),
+        _ => None,
+    }
 }
 fn append_catalog_source(
     source: CatalogSource<'_>,

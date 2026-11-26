@@ -30,6 +30,12 @@ impl<
         let project = self.files.active_project();
         let catalog = self.files.builtin_catalog()?;
         let document = &session.snapshot().assets;
+        let used: std::collections::BTreeSet<_> = document
+            .assignments
+            .part_material_id()
+            .into_iter()
+            .chain(document.assignments.body_materials().map(|(_, id)| id))
+            .collect();
         let look_up = |id: &str| {
             document
                 .appearances()
@@ -47,10 +53,21 @@ impl<
                 .ordered()
                 .chain(project_materials)
                 .chain(catalog.materials().ordered()),
-            |asset: &MaterialAsset| GuiMaterialChoice {
-                id: asset.id(),
-                name: asset.display_name(),
-                swatch: look_up(&asset.appearance_id()),
+            |asset: &MaterialAsset| {
+                let id = asset.id();
+                let library = asset_library(
+                    project.is_some_and(|p| p.assets.materials().get(&id).is_some()),
+                    catalog.materials().get(&id).is_some(),
+                );
+                GuiMaterialChoice {
+                    category: catalog.material_category(&id),
+                    document: document.materials().get(&id).is_some() || used.contains(id.as_str()),
+                    used: used.contains(id.as_str()),
+                    library,
+                    id,
+                    name: asset.display_name(),
+                    swatch: look_up(&asset.appearance_id()),
+                }
             },
         ))
     }
@@ -88,6 +105,18 @@ impl<
     }
 }
 
+pub(super) fn asset_library(
+    project: bool,
+    shipped: bool,
+) -> Option<oblikovati_gui::GuiAssetLibrary> {
+    use oblikovati_gui::GuiAssetLibrary;
+    if project {
+        Some(GuiAssetLibrary::Project)
+    } else {
+        shipped.then_some(GuiAssetLibrary::Shipped)
+    }
+}
+
 pub(super) fn appearance_swatch(asset: &oblikovati_model::assets::AppearanceAsset) -> [u8; 3] {
     let color = asset.base().color;
     [color.r, color.g, color.b].map(|channel| (channel * 255.).round() as u8)
@@ -120,6 +149,7 @@ mod tests {
                 id: (*id).into(),
                 name: (*name).into(),
                 swatch: None,
+                ..Default::default()
             }
         });
         assert_eq!(

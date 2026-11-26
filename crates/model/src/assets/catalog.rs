@@ -8,6 +8,7 @@ pub const DEFAULT_APPEARANCE_ID: &str = "default";
 pub struct BuiltinAssetCatalog {
     materials: AssetCollection<MaterialAsset>,
     appearances: AssetCollection<AppearanceAsset>,
+    categories: [std::collections::BTreeMap<String, &'static str>; 2],
 }
 impl BuiltinAssetCatalog {
     /// Admit one complete catalog or refuse it; example: `BuiltinAssetCatalog::from_records(materials, appearances)?`.
@@ -24,6 +25,7 @@ impl BuiltinAssetCatalog {
         let result = Self {
             materials: AssetCollection::from_unique(materials)?,
             appearances: AssetCollection::from_unique(appearances)?,
+            categories: Default::default(),
         };
         result.require_catalog_links()?;
         Ok(result)
@@ -35,6 +37,23 @@ impl BuiltinAssetCatalog {
     /// Borrow visual snapshots for resolution; example: `catalog.appearances().get("default")`.
     pub fn appearances(&self) -> &AssetCollection<AppearanceAsset> {
         &self.appearances
+    }
+    /// Retain browse categories from the shipped source groups.
+    pub fn with_categories(
+        mut self,
+        materials: std::collections::BTreeMap<String, &'static str>,
+        appearances: std::collections::BTreeMap<String, &'static str>,
+    ) -> Self {
+        self.categories = [materials, appearances];
+        self
+    }
+    /// Look up a material's shipped catalog group.
+    pub fn material_category(&self, id: &str) -> Option<&'static str> {
+        self.categories[0].get(id).copied()
+    }
+    /// Look up an appearance's shipped catalog group.
+    pub fn appearance_category(&self, id: &str) -> Option<&'static str> {
+        self.categories[1].get(id).copied()
     }
     fn require_catalog_links(&self) -> Result<(), String> {
         if self.appearances.get(DEFAULT_APPEARANCE_ID).is_none() {

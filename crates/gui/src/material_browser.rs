@@ -11,6 +11,7 @@ pub(crate) struct MaterialBrowser {
     document: Option<u64>,
     material: Option<String>,
     appearance: Option<String>,
+    browser_view: crate::asset_browser_view::AssetBrowserView,
 }
 impl DockableWindow for MaterialBrowser {}
 impl MaterialBrowser {
@@ -79,7 +80,7 @@ impl MaterialBrowser {
             ui,
             title,
             [ui.io().display_size[0] - 460., 200.],
-            [440., 200.],
+            [440., 430.],
         );
         Self::dockable_window(ui, title, &mut open).build(|| self.content(ui, state, actions));
         self.open.set_open(open);
@@ -91,6 +92,7 @@ impl MaterialBrowser {
         self.document = state.document;
         self.material = None;
         self.appearance = None;
+        self.browser_view = Default::default();
     }
     fn content(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         let Some(browser) = state
@@ -102,6 +104,8 @@ impl MaterialBrowser {
             return;
         };
         if self.appearance_browser {
+            self.browser_view
+                .draw(ui, &browser.appearances, &mut self.appearance);
             asset_tab(
                 ui,
                 state,
@@ -112,6 +116,8 @@ impl MaterialBrowser {
                 actions,
             );
         } else {
+            self.browser_view
+                .draw(ui, &browser.materials, &mut self.material);
             asset_tab(
                 ui,
                 state,
@@ -192,6 +198,7 @@ mod tests {
             id: "steel".into(),
             name: "Steel".into(),
             swatch: None,
+            ..Default::default()
         }];
         let mut chosen = None;
         initialize_selection(&mut chosen, Some("assigned"), &choices);

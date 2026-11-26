@@ -163,19 +163,40 @@ impl<
             .workspace()
             .session(document)
             .map_err(|cause| cause.to_string())?;
-        let project = self
-            .files
-            .active_project()
+        let project = self.files.active_project();
+        let catalog = self.files.builtin_catalog()?;
+        let assets = &session.snapshot().assets;
+        let assignments = &assets.assignments;
+        let used: std::collections::BTreeSet<_> = assignments
+            .part_appearance_id()
             .into_iter()
-            .flat_map(|project| project.assets.appearances().ordered());
-        let catalog = self.files.builtin_catalog()?.appearances().ordered();
-        let document = session.snapshot().assets.appearances().ordered();
+            .chain(assignments.body_appearances().map(|(_, id)| id))
+            .chain(assignments.face_appearances().map(|(_, id)| id))
+            .collect();
+        let library = project
+            .into_iter()
+            .flat_map(|p| p.assets.appearances().ordered());
         Ok(super::part_assets::collect_choices(
-            document.chain(project).chain(catalog),
-            |asset: &AppearanceAsset| GuiAppearanceChoice {
-                id: asset.id(),
-                name: asset.display_name(),
-                swatch: Some(super::part_assets::appearance_swatch(asset)),
+            assets
+                .appearances()
+                .ordered()
+                .chain(library)
+                .chain(catalog.appearances().ordered()),
+            |asset: &AppearanceAsset| {
+                let id = asset.id();
+                let library = super::part_assets::asset_library(
+                    project.is_some_and(|p| p.assets.appearances().get(&id).is_some()),
+                    catalog.appearances().get(&id).is_some(),
+                );
+                GuiAppearanceChoice {
+                    category: catalog.appearance_category(&id),
+                    document: assets.appearances().get(&id).is_some() || used.contains(id.as_str()),
+                    used: used.contains(id.as_str()),
+                    library,
+                    id,
+                    name: asset.display_name(),
+                    swatch: Some(super::part_assets::appearance_swatch(asset)),
+                }
             },
         ))
     }

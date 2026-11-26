@@ -4,6 +4,7 @@
 
 ### Added
 
+- Added separate document and library regions to the Material and Appearance Browsers, with search, category browsing, and independent display options. (#3563)
 - Added the View ribbon Object Visibility checklist with independent category switches and the All Workfeatures control. Connected origin, user work plane, 2D sketch, and sketch dimension overlays to the checklist. (#3897)
 - Enabled Open File Location for a saved Model Browser document, opening its containing folder in the system file manager. (#4116)
 - Enabled Make New Folder in the project wizard and selected the created folder for workspace confirmation. Finish saved the new project with the chosen reference libraries. Enabled Browse to load a project, Apply to activate it and refresh the template chooser, and Save to commit edited project settings. (#3895)
@@ -36,7 +37,6 @@
 - Add an exact best-fit certificate for explicit affine equations; sketch drag integration remains open. (#4171)
 - Draw midpoint lines with pointer or typed length and angle, including explicit point selection. (#4178)
 - Choose and select one relation when sketch constraint glyphs overlap. (#4169)
-
 - Added individual sketch constraint glyph hiding and Show All through the viewport and typed API. (#4166)
 
 - Enabled the Rust desktop application on Windows through a native Win32 window and Martensite Vulkan rendering.

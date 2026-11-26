@@ -186,6 +186,7 @@ pub(super) fn rendered_sketch_row_center() -> [i32; 2] {
 }
 #[path = "application-closing/steps.rs"]
 mod application_closing;
+mod asset_browser_shared;
 #[path = "body-properties/steps.rs"]
 mod body_properties;
 #[path = "document-creation/steps.rs"]

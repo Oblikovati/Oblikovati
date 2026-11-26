@@ -151,21 +151,21 @@ fn material_browser_assigns_and_undoes_a_catalog_material() {
 }
 
 #[test]
-fn material_browser_assigns_appearance_without_leaking_to_another_part() {
-    let mut world = ApplicationWorld::new();
+fn appearance_browser_assignment_stays_with_its_document() {
+    let mut world = ApplicationWorld::with_asset_tools_closed();
     part_active(&mut world);
-    tools_selected(&mut world);
-    open_browser(&mut world);
-    world.click_text("Appearances");
+    world.click(row_center(&world, "AppearanceBrowser"));
     let appearance = world.state().browser.unwrap().appearances[0].id.clone();
-    world.click_text("Assign to part");
+    let assign = world
+        .run_in_window("Appearance Browser", "Assigntopart")
+        .center();
+    world.click(super::super::diagnostics::pointer_pixels(assign));
     assert_eq!(
         world.state().browser.unwrap().part_appearance.as_deref(),
         Some(appearance.as_str())
     );
     world.add_part();
     assert_eq!(world.state().browser.unwrap().part_appearance, None);
-    assert!(window_geometry("Material Browser").is_some());
-    close_browser(&mut world);
+    assert!(window_geometry("Appearance Browser").is_some());
     world.close();
 }

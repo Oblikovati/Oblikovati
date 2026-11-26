@@ -251,6 +251,7 @@ mod tests {
             id: "steel".into(),
             name: "Steel".into(),
             swatch: None,
+            ..Default::default()
         }];
         assert_eq!(asset_preview(&choices, Some("steel")), "Steel");
         assert_eq!(asset_preview(&choices, Some("missing")), "missing");
