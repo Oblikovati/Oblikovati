@@ -7,6 +7,8 @@ mod fixture;
 #[cfg(target_os = "linux")]
 pub(super) use fixture::{bundled_frame_fixture, open_dirty_frame_part_from};
 pub(super) use fixture::{open_dirty_frame_part, open_frame_part};
+#[path = "wayland.rs"]
+mod wayland;
 
 #[when("the user invokes the desktop window Close shortcut")]
 #[when("the user presses Alt+F4")]
@@ -52,7 +54,9 @@ fn unsaved_part_remains_open(world: &mut ApplicationWorld) {
 #[given("the MCAD Software is open in a restored window")]
 fn restored_window(world: &mut ApplicationWorld) {
     assert!(!world.app().window.native.view.window_maximized().unwrap());
-    if !world.app().window.native.view.uses_wayland() {
+    if world.app().window.native.view.uses_wayland() {
+        world.window_frame_before = wayland::compositor_frame_bounds();
+    } else {
         world.window_frame_before = Some(super::x11_input::application_bounds());
         super::x11_input::focus_window();
     }
@@ -77,6 +81,13 @@ fn saved_frame_part(world: &mut ApplicationWorld) -> u64 {
 #[when("the user double-clicks an empty region of the application bar again")]
 #[when("the user double-clicks the application title bar to change the window state")]
 fn double_click_bar(world: &mut ApplicationWorld) {
+    if world.app().window.native.view.uses_wayland() {
+        let (controls, size) =
+            super::window_geometry("##application-window-controls").expect("window controls");
+        let point = super::pointer_pixels([controls[0] - 260., size[1] * 0.5]);
+        world.pump(super::pointer_click_events(point, 2));
+        return;
+    }
     let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
     let point = [width - 390, 18];
     super::x11_input::click(point);
@@ -110,10 +121,13 @@ fn hover_control(world: &mut ApplicationWorld, index: usize, label: &str) {
 #[then("the main window returns to its previous size and position")]
 fn restored_bounds(world: &mut ApplicationWorld) {
     super::main_window_frame_native::pump_until(world, false);
-    assert_eq!(
-        super::x11_input::application_bounds(),
-        world.window_frame_before.unwrap()
-    );
+    let actual = if world.app().window.native.view.uses_wayland() {
+        wayland::compositor_frame_bounds()
+            .expect("set OBK_BDD_WESTON_DEBUG for global Wayland bounds")
+    } else {
+        super::x11_input::application_bounds()
+    };
+    assert_eq!(actual, world.window_frame_before.unwrap());
 }
 
 #[given("the main window of the MCAD Software is maximized")]
@@ -181,44 +195,6 @@ fn enlarged_window_layout(world: &mut ApplicationWorld) {
 #[then("the window returns to its previous size and position")]
 fn prior_window_bounds(world: &mut ApplicationWorld) {
     restored_bounds(world);
-}
-
-#[test]
-#[ignore = "requires a Wayland desktop compositor with room to maximize"]
-fn wayland_frame_maximizes_and_restores_the_saved_part() {
-    use super::main_window_frame_native::{press_maximize, pump_until};
-
-    let mut world = ApplicationWorld::new();
-    assert!(world.app().window.native.view.uses_wayland());
-    let document = open_frame_part(&mut world);
-    let restored = world.extent();
-    maximize_tooltip(&mut world);
-    press_maximize(&mut world);
-    pump_until(&mut world, true);
-    let maximized = world.extent();
-    assert!(
-        (0..2).all(|axis| maximized[axis] > restored[axis]),
-        "expected growth from {restored:?} to {maximized:?}"
-    );
-    expect_wayland_frame_layout(&mut world, maximized, document);
-    restore_tooltip(&mut world);
-    press_maximize(&mut world);
-    pump_until(&mut world, false);
-    assert_eq!(world.extent(), restored);
-    expect_wayland_frame_layout(&mut world, restored, document);
-    maximize_tooltip(&mut world);
-    world.close();
-}
-
-fn expect_wayland_frame_layout(world: &mut ApplicationWorld, extent: [u32; 2], document: u64) {
-    let [left, top, right, bottom] = world.viewport_bounds();
-    assert!(left < right && right <= extent[0] && top < bottom && bottom <= extent[1]);
-    let [left, top, right, bottom] =
-        super::diagnostics::window_pixel_bounds("##application-ribbon").unwrap();
-    assert!(0. <= left && right <= extent[0] as f32 && 0. <= top && bottom <= extent[1] as f32);
-    controls_remain_in_bar(world);
-    world.expect_active(document);
-    super::workspace_layout::browser_feature::expect_solid_visible(world);
 }
 
 #[given("the main window is restored")]

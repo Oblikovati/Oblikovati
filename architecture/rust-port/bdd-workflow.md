@@ -207,6 +207,12 @@ Part examples on that compositor with a private accessibility bus. The
 AT-SPI client checks window-relative bounds on Wayland and screen bounds
 on X11.
 
+For the double-click maximize and restore scenario, start a private Weston
+desktop compositor with `--debug`, set `OBK_BDD_WESTON_DEBUG` to the
+`weston-debug` executable, and select the scenario with `OBK_BDD_SCENARIO`.
+The test compares the application view's global bounds in Weston's scene
+graph.
+
 The Linux docking-system restart scenario also starts the desktop executable
 twice. Build `oblikovati` from the same source as the test, and set
 `OBK_BDD_DESKTOP_BINARY` to its absolute path. Run with an X11 window manager,

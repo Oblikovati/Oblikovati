@@ -329,7 +329,7 @@ using this status; the live scenario directory can change.
   with X11, Openbox, tint2, and AT-SPI. The minimum-size check kept the
   saved Part active. Both Close paths prompted before exiting, and Cancel
   kept the unsaved edit and preserved the working file. [X11 suite](receipts/2026-11-25-main-window-frame-current-4063/README.md)
-  [Home and Part accessible controls](receipts/2026-11-26-wayland-frame-atspi-4064/README.md) passed on Wayland and X11. [Wayland maximize and restore](receipts/2026-11-26-wayland-maximize-restore-4063/README.md) kept the saved Part active.
+  [Accessible controls](receipts/2026-11-26-wayland-frame-atspi-4064/README.md), [Wayland maximize buttons](receipts/2026-11-26-wayland-maximize-restore-4063/README.md), and [application-bar double-click](receipts/2026-11-26-wayland-double-click-4063/README.md) have native coverage.
 - Viewport Entity Selection (#4055) passed all four current solid-face scenarios and 24 steps.
   The native spatial fixture opens, but its 3D sketches are absent from the browser and viewport
   (#4092). See the [current run](receipts/2026-11-25-viewport-entity-selection-current-4055/README.md).
