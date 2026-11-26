@@ -99,6 +99,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::ViewCommand(_)
         | GuiShellAction::UpdateBodyProperties { .. }
         | GuiShellAction::AssignPartAsset { .. }
+        | GuiShellAction::EditDocumentAppearance(_)
         | GuiShellAction::SetBodyAppearance { .. }
         | GuiShellAction::ClearSelectedFaceAppearance { .. }
         | GuiShellAction::ClearSelectedMixedAppearance { .. }

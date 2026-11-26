@@ -4,6 +4,7 @@ use crate::{GuiAssetChoice, GuiAssetLibrary};
 use imgui::Ui;
 
 mod thumbnail;
+pub(crate) use thumbnail::paint_preview as paint_appearance_preview;
 const THUMBNAIL_SIZES: [f32; 5] = [16., 24., 32., 64., 256.];
 
 #[derive(Default)]
@@ -140,7 +141,9 @@ impl AssetBrowserView {
             .copied()
             .filter(|row| self.source.is_none() || row.library == self.source)
             .collect();
-        let height = (ui.content_region_avail()[1] - ui.frame_height_with_spacing() * 2.).max(64.);
+        let footer_rows = if self.library.appearance { 3. } else { 2. };
+        let height =
+            (ui.content_region_avail()[1] - ui.frame_height_with_spacing() * footer_rows).max(64.);
         let width = ui.content_region_avail()[0];
         let stack_results = searching && width < 310.;
         let (tree_width, tree_height) = if stack_results {
@@ -343,9 +346,17 @@ impl DisplayOptions {
             asset_column(ui, "Library", "Built-in");
         }
         if self.appearance {
-            asset_column(ui, "Type", "OpenPBR");
+            asset_column(ui, "Type", "Generic");
         }
-        asset_column(ui, "Category", "Category");
+        asset_column(
+            ui,
+            "Category",
+            if self.appearance {
+                "Uncategorized"
+            } else {
+                "Category"
+            },
+        );
         ui.table_headers_row();
         for index in imgui::ListClipper::new(rows.len() as i32).begin(ui).iter() {
             let asset = rows[index as usize];
@@ -362,7 +373,7 @@ impl DisplayOptions {
             }
             if self.appearance {
                 ui.table_next_column();
-                ui.text("OpenPBR");
+                ui.text("Generic");
             }
             ui.table_next_column();
             ui.text(asset_category(asset));

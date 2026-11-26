@@ -16,7 +16,9 @@ pub use application::document_creation::templates::{
 mod appearance_choice;
 mod asset_choice;
 pub use asset_choice::{GuiAppearancePreview, GuiAssetChoice, GuiAssetLibrary};
+mod appearance_editor;
 mod asset_browser_view;
+pub use appearance_editor::{GuiAppearanceChange, GuiAppearanceEdit};
 mod browser;
 pub use browser::{
     GuiBrowserBlockInstance, GuiBrowserBody, GuiBrowserFeature, GuiBrowserKind,

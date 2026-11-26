@@ -57,7 +57,12 @@ fn tile(ui: &Ui, asset: &GuiAssetChoice, selection: &mut AssetRows<'_>, size: f3
     }
 }
 
-fn paint_preview(draw: &DrawListMut<'_>, center: [f32; 2], radius: f32, asset: &GuiAssetChoice) {
+pub(crate) fn paint_preview(
+    draw: &DrawListMut<'_>,
+    center: [f32; 2],
+    radius: f32,
+    asset: &GuiAssetChoice,
+) {
     let Some(finish) = asset.appearance_preview else {
         return;
     };
@@ -67,8 +72,9 @@ fn paint_preview(draw: &DrawListMut<'_>, center: [f32; 2], radius: f32, asset: &
         .map(|v| f32::from(v) / 255.);
     let metalness = f32::from(finish.metalness) / 255.;
     let roughness = f32::from(finish.roughness) / 255.;
-    for step in 0..=10 {
-        let fraction = step as f32 / 10.;
+    let layers = if radius > 40. { 24 } else { 10 };
+    for step in 0..=layers {
+        let fraction = step as f32 / layers as f32;
         let offset = radius * fraction * 0.38;
         let shade = 0.26 + fraction * (0.81 + metalness * 0.22);
         let [r, g, b] = base.map(|channel| (channel * shade + 0.025).min(1.));
@@ -86,6 +92,7 @@ fn paint_preview(draw: &DrawListMut<'_>, center: [f32; 2], radius: f32, asset: &
         radius,
         roughness,
         f32::from(finish.anisotropy) / 255.,
+        f32::from(finish.highlights) / 255.,
     );
     if finish.fuzz_weight > 0 {
         paint_fibers(draw, center, radius, finish);
@@ -98,9 +105,10 @@ fn paint_reflection(
     radius: f32,
     roughness: f32,
     anisotropy: f32,
+    highlights: f32,
 ) {
     let light = [center[0] - radius * 0.32, center[1] - radius * 0.36];
-    let intensity = 0.18 + 0.55 * (1. - roughness);
+    let intensity = (0.18 + 0.55 * (1. - roughness)) * highlights;
     for layer in (1..=4).rev() {
         let diffuse = radius * (0.11 + roughness * 0.25) * layer as f32 / 4.;
         draw.add_circle(light, diffuse, [1., 1., 1., intensity / 4.])

@@ -210,7 +210,9 @@ fn browser_finish(asset: &AppearanceAsset) -> oblikovati_gui::GuiAppearancePrevi
     let fuzz = asset.fuzz();
     let uniform = |value: f32| (value.clamp(0., 1.) * 255.).round() as u8;
     oblikovati_gui::GuiAppearancePreview {
+        document_owned: asset.source() == oblikovati_api::types::ASSET_DOCUMENT,
         roughness: uniform(specular.roughness),
+        highlights: uniform(specular.weight),
         metalness: uniform(asset.base().metalness),
         anisotropy: uniform(specular.roughness_anisotropy),
         fuzz_weight: uniform(fuzz.weight),

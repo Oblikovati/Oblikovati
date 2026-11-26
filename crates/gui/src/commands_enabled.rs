@@ -278,7 +278,8 @@ impl GuiShellAction {
             Self::ClickModel { document, .. }
             | Self::ContextClickModel { document, .. }
             | Self::UpdateBodyProperties { document, .. } => state.document == Some(*document),
-            Self::AssignPartAsset { document, .. } => {
+            Self::AssignPartAsset { document, .. }
+            | Self::EditDocumentAppearance(crate::GuiAppearanceEdit { document, .. }) => {
                 state.document == Some(*document)
                     && state.authoring == GuiAuthoringContext::Part
                     && !state.transaction_open

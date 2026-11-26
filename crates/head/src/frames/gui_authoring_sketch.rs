@@ -39,6 +39,9 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         GuiShellAction::AssignPartAsset { document, kind, id } => {
             owner.assign_part_asset_from_gui(*document, *kind, id)
         }
+        GuiShellAction::EditDocumentAppearance(edit) => {
+            owner.edit_document_appearance_from_gui(edit)
+        }
         GuiShellAction::OpenClearBodyAppearance { .. } => Ok(false),
         GuiShellAction::ClearSelectedFaceAppearance { document, keys } => {
             owner.clear_selected_face_appearances_from_gui(*document, keys)

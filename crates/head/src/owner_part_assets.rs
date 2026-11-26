@@ -9,6 +9,26 @@ use oblikovati_api::{
 use oblikovati_gui::{GuiMaterialChoice, GuiPartAssetKind};
 use oblikovati_model::assets::{DocumentAssets, MaterialAsset, ScopedAssets};
 
+macro_rules! owned_part_asset_work_methods {
+    () => {
+        fn edit_document_appearance_from_gui(
+            &mut self,
+            edit: &oblikovati_gui::GuiAppearanceEdit,
+        ) -> Result<bool, String> {
+            self.edit_document_appearance(edit)
+        }
+        fn assign_part_asset_from_gui(
+            &mut self,
+            document: u64,
+            kind: oblikovati_gui::GuiPartAssetKind,
+            id: &str,
+        ) -> Result<bool, String> {
+            self.assign_part_asset(document, kind, id)
+        }
+    };
+}
+pub(super) use owned_part_asset_work_methods;
+
 impl<
     O: TransactionObserver,
     W: WorkspaceObserver,
@@ -97,6 +117,66 @@ impl<
             .filter(|id| !id.is_empty()))
     }
 
+    pub(super) fn edit_document_appearance(
+        &mut self,
+        edit: &oblikovati_gui::GuiAppearanceEdit,
+    ) -> Result<bool, String> {
+        let document = edit.document;
+        self.require_browser_document(document)?;
+        if self
+            .files
+            .document_type(document)
+            .map_err(|err| err.to_string())?
+            != oblikovati_api::types::DOCUMENT_PART
+        {
+            return Err(format!(
+                "appearance edit in document {document}: expected an active Part"
+            ));
+        }
+        let name = match &edit.change {
+            oblikovati_gui::GuiAppearanceChange::Create { name, .. }
+            | oblikovati_gui::GuiAppearanceChange::Apply { name, .. } => name,
+        };
+        if name.trim().is_empty() {
+            return Err(format!(
+                "appearance name {name:?}: expected a non-empty name"
+            ));
+        }
+        let created = match &edit.change {
+            oblikovati_gui::GuiAppearanceChange::Create { id, name } => {
+                if self
+                    .gui_appearance_choices(document, None)?
+                    .iter()
+                    .any(|asset| asset.id == *id)
+                {
+                    return Err(format!("appearance {id:?}: expected a new asset identity"));
+                }
+                let catalog = self.files.builtin_catalog()?;
+                let base = catalog
+                    .appearances()
+                    .get(oblikovati_model::assets::DEFAULT_APPEARANCE_ID)
+                    .ok_or_else(|| {
+                        "appearance: expected the neutral built-in definition".to_owned()
+                    })?;
+                Some(base.duplicate(id, name, oblikovati_api::types::ASSET_DOCUMENT)?)
+            }
+            oblikovati_gui::GuiAppearanceChange::Apply { .. } => None,
+        };
+        let label = if created.is_some() {
+            "Create document appearance"
+        } else {
+            "Edit document appearance"
+        };
+        self.files
+            .commands(document)
+            .map_err(|err| err.to_string())?
+            .run(label, |snapshot, _| {
+                commit_appearance_edit(&mut snapshot.assets, &edit.change, created.as_ref())
+            })
+            .map_err(|err| err.to_string())?;
+        Ok(true)
+    }
+
     pub(super) fn assign_part_asset(
         &mut self,
         document: u64,
@@ -128,6 +208,48 @@ impl<
         .map_err(|cause| cause.to_string())?;
         Ok(true)
     }
+}
+
+fn commit_appearance_edit(
+    assets: &mut DocumentAssets,
+    edit: &oblikovati_gui::GuiAppearanceChange,
+    created: Option<&oblikovati_model::assets::AppearanceAsset>,
+) -> Result<bool, String> {
+    use oblikovati_gui::GuiAppearanceChange;
+    let GuiAppearanceChange::Apply {
+        id,
+        name,
+        color,
+        roughness,
+        highlights,
+    } = edit
+    else {
+        let created =
+            created.ok_or_else(|| "appearance: expected a new document definition".to_owned())?;
+        return assets.embed_appearance(created);
+    };
+    let mut asset = assets
+        .appearances()
+        .get(id)
+        .cloned()
+        .ok_or_else(|| format!("appearance {id:?}: expected a document-owned definition"))?;
+    let mut record = asset.info();
+    record.display_name = name.clone();
+    if let Some(color) = color {
+        [
+            record.base.color.r,
+            record.base.color.g,
+            record.base.color.b,
+        ] = color.map(|value| f32::from(value) / 255.);
+    }
+    if let Some(value) = roughness {
+        record.specular.roughness = f32::from(*value) / 255.;
+    }
+    if let Some(value) = highlights {
+        record.specular.weight = f32::from(*value) / 255.;
+    }
+    asset.edit(record)?;
+    assets.embed_appearance(&asset)
 }
 
 pub(super) fn asset_library(

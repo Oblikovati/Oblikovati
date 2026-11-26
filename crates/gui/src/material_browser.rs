@@ -12,6 +12,7 @@ pub(crate) struct MaterialBrowser {
     material: Option<String>,
     appearance: Option<String>,
     browser_view: crate::asset_browser_view::AssetBrowserView,
+    editor: crate::appearance_editor::AppearanceEditor,
 }
 impl DockableWindow for MaterialBrowser {}
 impl MaterialBrowser {
@@ -66,6 +67,9 @@ impl MaterialBrowser {
         actions: &mut Vec<GuiShellAction>,
     ) {
         self.sync_before_docking(state, home_in_front);
+        if !home_in_front && self.appearance_browser {
+            self.editor.panel(ui, state, actions);
+        }
         if !self.is_open() {
             return;
         }
@@ -131,6 +135,8 @@ impl MaterialBrowser {
                 GuiPartAssetKind::Appearance,
                 actions,
             );
+            self.editor
+                .create_menu(ui, state, &mut self.appearance, actions);
         } else {
             if let Some(id) =
                 self.browser_view

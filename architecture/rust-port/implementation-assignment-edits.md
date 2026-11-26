@@ -75,3 +75,12 @@ Activating Assign to Selection in the library menu stores an explicit
 appearance override on the selected Part. The Material selector continues
 to display its physical assignment. See the
 [native Appearance Browser receipt](receipts/2026-11-26-appearance-browser-3563/README.md).
+
+## Generic Appearance Editor
+
+The Appearance Browser creates document-owned Generic assets and opens
+the selected asset in a separate editor. Creation and Apply record
+document history edits. Pending color, name, glossiness, and highlight
+changes are available in the live preview. The editor can reopen a
+selected document appearance from the browser. See the
+[native editor receipt](receipts/2026-11-26-appearance-editor-generic-3563/README.md).

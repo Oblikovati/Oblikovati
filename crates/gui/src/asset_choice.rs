@@ -23,7 +23,9 @@ pub enum GuiAssetLibrary {
 /// Quantized authored finish properties used for small browser previews.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GuiAppearancePreview {
+    pub document_owned: bool,
     pub roughness: u8,
+    pub highlights: u8,
     pub metalness: u8,
     pub anisotropy: u8,
     pub fuzz_weight: u8,

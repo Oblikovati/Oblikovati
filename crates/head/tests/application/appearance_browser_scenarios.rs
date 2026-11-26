@@ -85,7 +85,7 @@ fn document_previews(world: &mut ApplicationWorld) {
     let heading = label(world, "Alllibraries").center()[1];
     assert!(label(world, "BlueGloss").center()[1] < heading);
     assert!(label(world, "RedFuzz").center()[1] < heading);
-    assert!(!world.window_text(TITLE).contains("OpenPBR"));
+    assert!(!world.window_text(TITLE).contains("Generic"));
     library_previews(world);
 }
 
@@ -164,7 +164,7 @@ fn brass_thumbnails(world: &mut ApplicationWorld) {
     let heading = label(world, "Alllibraries").center()[1];
     assert!(label(world, BRASS_CAPTION).center()[1] > heading);
     assert!(label(world, "BrassSatin").center()[1] > heading);
-    assert!(!world.window_text(TITLE).contains("OpenPBR"));
+    assert!(!world.window_text(TITLE).contains("Generic"));
 }
 
 #[then("the result tree groups matches by library and category")]
@@ -185,7 +185,7 @@ fn list_view(world: &mut ApplicationWorld) {
 #[then("document appearances appear in rows with Name, Type and Category columns")]
 fn document_columns(world: &mut ApplicationWorld) {
     let boundary = label(world, "Alllibraries").center()[1];
-    for heading in ["Name", "Type", "Category", "OpenPBR"] {
+    for heading in ["Name", "Type", "Category", "Generic"] {
         assert!(label(world, heading).center()[1] < boundary);
     }
 }

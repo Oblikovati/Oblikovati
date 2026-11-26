@@ -390,14 +390,7 @@ impl<
     ) -> Result<bool, String> {
         self.update_body_physical(document, body)
     }
-    fn assign_part_asset_from_gui(
-        &mut self,
-        document: u64,
-        kind: oblikovati_gui::GuiPartAssetKind,
-        id: &str,
-    ) -> Result<bool, String> {
-        self.assign_part_asset(document, kind, id)
-    }
+    super::part_assets::owned_part_asset_work_methods!();
     fn set_body_appearance_from_gui(
         &mut self,
         document: u64,

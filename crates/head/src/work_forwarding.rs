@@ -297,6 +297,12 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.update_body_properties_from_gui(document, body)
         }
+        fn edit_document_appearance_from_gui(
+            &mut self,
+            edit: &oblikovati_gui::GuiAppearanceEdit,
+        ) -> Result<bool, String> {
+            self.$owner.edit_document_appearance_from_gui(edit)
+        }
         fn assign_part_asset_from_gui(
             &mut self,
             document: u64,

@@ -171,7 +171,6 @@ pub enum GuiShellAction {
         document: u64,
         choice: GuiBrowserChoice,
     },
-    /// Calculate one solid's physical values, for the Body Properties dialog.
     UpdateBodyProperties {
         document: u64,
         body: i64,
@@ -182,6 +181,7 @@ pub enum GuiShellAction {
         kind: GuiPartAssetKind,
         id: String,
     },
+    EditDocumentAppearance(crate::GuiAppearanceEdit),
     /// Open the clear tool for the active document.
     OpenClearBodyAppearance {
         document: u64,
