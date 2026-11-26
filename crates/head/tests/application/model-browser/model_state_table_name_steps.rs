@@ -9,6 +9,7 @@ use super::model_state_table_extra::{click, open, row_run};
 use super::model_state_table_parameter_steps::three_state_prism;
 use super::*;
 use oblikovati_api::{client::Client, wire::CreateModelStateArgs};
+use oblikovati_viewport::ViewportPhysicalKey;
 
 fn setup(world: &mut ApplicationWorld, name: &str, open_table: bool) {
     if has_named_states(world) {
@@ -78,17 +79,16 @@ fn no_variant(world: &mut ApplicationWorld) {
 }
 fn edit_name(world: &mut ApplicationWorld, existing: &str, name: &str, enter: bool) {
     let point = [world.run("Member").center()[0], row_run(world, existing)[1]];
-    super::super::x11_input::click(diagnostics::pointer_pixels(point));
+    world.desktop_click(diagnostics::pointer_pixels(point));
     world.pump(Vec::new());
-    super::super::x11_input::press_control_a();
+    world.key(ViewportPhysicalKey::A, true);
     if name.is_empty() {
-        super::super::x11_input::press_keysym(0xff08);
-    }
-    for character in name.chars() {
-        super::super::x11_input::press_path_character(character);
+        world.key(ViewportPhysicalKey::Backspace, false);
+    } else {
+        world.type_text(name);
     }
     if enter {
-        super::super::x11_input::press_keysym(0xff0d);
+        world.key(ViewportPhysicalKey::Enter, false);
     }
     world.pump(Vec::new());
 }
@@ -104,11 +104,9 @@ fn rename(world: &mut ApplicationWorld) {
 fn clear_name(world: &mut ApplicationWorld) {
     edit_name(world, "Table Variant", "", true);
 }
-fn yellow_row(world: &mut ApplicationWorld, row: &str, offset: f32) {
-    let cell = [
-        world.run("Member").center()[0] + 45.,
-        row_run(world, row)[1] + offset,
-    ];
+fn expect_yellow_member_cell(world: &mut ApplicationWorld, y: f32) {
+    // Sample the right half of the input, clear of the member label.
+    let cell = [world.run("Member").minimum[0] + 110., y];
     let at = diagnostics::pointer_pixels(cell);
     let pixel = world.pixel_at([at[0] as usize, at[1] as usize]);
     assert!(
@@ -132,17 +130,13 @@ fn duplicate_highlights(world: &mut ApplicationWorld) {
         .collect();
     assert_eq!(runs.len(), 2, "expected two duplicate member cells");
     for y in runs {
-        let at = diagnostics::pointer_pixels([world.run("Member").center()[0] + 45., y]);
-        let pixel = world.pixel_at([at[0] as usize, at[1] as usize]);
-        assert!(
-            pixel[0] > pixel[1] && pixel[1] > pixel[2],
-            "expected yellow member cell, got {pixel:?}"
-        );
+        expect_yellow_member_cell(world, y);
     }
 }
 #[then("the empty member cell is highlighted yellow")]
 fn empty_highlight(world: &mut ApplicationWorld) {
-    yellow_row(world, "Copy State", 23.);
+    let y = row_run(world, "Copy State")[1] + 23.;
+    expect_yellow_member_cell(world, y);
 }
 #[then(
     "a warning identifies the duplicate name and says duplicates will be removed if the user continues"
@@ -178,7 +172,7 @@ fn cancel_warning(world: &mut ApplicationWorld) {
         .find(|run| run.text.trim() == "Cancel")
         .unwrap()
         .center();
-    super::super::x11_input::click(diagnostics::pointer_pixels(button));
+    world.desktop_click(diagnostics::pointer_pixels(button));
     world.pump(Vec::new());
 }
 #[when("the user accepts the table")]
