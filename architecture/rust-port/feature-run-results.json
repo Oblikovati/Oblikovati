@@ -538,20 +538,24 @@
       "2c5cd3650dc5a2e2aa77e5378dae69a4ab29c2786c1fb3f261934f67bb6e212d": {
         "feature_sha256": "2c5cd3650dc5a2e2aa77e5378dae69a4ab29c2786c1fb3f261934f67bb6e212d",
         "supporting_files": {
-          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9",
+          "features/application/file-menu/BLOCKERS.md": "680e3226911f42341e4e380aab7e183a524babe8e77381ff6d84515312feedef",
+          "features/application/file-menu/FIXTURES.md": "710f5d75fe89dc277f346acb6fb506fd3cbba7dd4b2175d52f599f7c1a3c7454",
+          "features/application/file-menu/FUNCTIONAL.md": "76c106ccc2274f38d03b1a992a742a8e24f5fdb67f7a1989b9accd15d95e23dd",
+          "features/application/file-menu/VISUAL.md": "b0f2cd1d580756e1c5c7d094ad6fe76fe7019294430286050eebb915357c3af7",
+          "fixtures/cad/blank-drawing.odd": "74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e",
           "fixtures/cad/blank-metric-part.opd": "9d7241298fc443d96557325cfea9ad6b6d8ad6f1f49dd80d910346c1952c2e5c",
-          "fixtures/cad/blank-drawing.odd": "74b8b10e7f9550589703559ddc320b9a293643a757efefccf871d6ef220da01e"
+          "fixtures/cad/workspace-layout-native.opd": "d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-24-file-menu-current-3894/cucumber.json",
-        "cucumber_sha256": "e885d5227e152ccf0121dabef3d2bf433949a24e8165666cdfdc1ff662ce51f5",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-file-menu-wayland-3894/cucumber.json",
+        "cucumber_sha256": "f85bfb48f7f102a6a8eed87ef0dbb66e704dfd63223985f14d4debd31984c2f4",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-24-file-menu-current-3894/scenario-inventory.json",
         "scenario_inventory_sha256": "6729b958d0df5186bcebe7da3e9f6722ba5d8c80798699546a8cbb4a942d3faa",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-file-menu-current-3894/scenario-arguments.json",
-        "scenario_arguments_sha256": "f7f8edefb22fe31d198cf43c87f46d07382b2fcbce19af17b88a00fd7a38d7d9",
-        "application_commit": "81e1e4a614ae99f24f5d1e18677b92dfae030606",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-file-menu-wayland-3894/scenario-arguments.json",
+        "scenario_arguments_sha256": "ddd78832167f8c5d91c4318501be43e8a31f9d5f23bc56c47116a6ef1bc54f70",
+        "application_commit": "95515bee5a47a2a2fb3306047cc4115fdb10b0b2",
         "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=file-menu OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
-        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
-        "notes": "All eight current scenarios passed with the published native Parts and Drawing. Strict build and runtime provenance remains open under #3978."
+        "environment": "Linux Wayland with isolated headless Weston, Pixman, and Vulkan Lavapipe",
+        "notes": "All 8 current scenarios and 67 steps passed separately. Strict build and runtime provenance remains open under #3978."
       }
     }
   },

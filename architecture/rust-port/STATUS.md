@@ -19,10 +19,10 @@ using this status; the live scenario directory can change.
   the published native Part, including both opposite-direction examples.
   See the [current run](receipts/2026-11-24-viewport-orbit-current-3872/README.md)
   and the [pinned run](receipts/2026-11-21-viewport-orbit-r0-3872/README.md).
-- File Menu (#3894) passed all eight current scenarios and 67 steps.
+- File Menu (#3894) passed all eight current scenarios and 67 steps on Wayland.
   The published Part and Drawing fixtures cover menu dismissal, the recent
   row, Save As, New, and Home. See the
-  [current run](receipts/2026-11-24-file-menu-current-3894/README.md)
+  [current run](receipts/2026-11-26-file-menu-wayland-3894/README.md)
   and the [pinned run](receipts/2026-11-21-file-menu-r0-3894/README.md).
 - Body Properties (#3954) passed all six current scenarios and 69 steps.
   The published Part verified calculated values, appearance changes, and
