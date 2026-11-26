@@ -123,6 +123,7 @@ pub(crate) struct SweepDialog {
     selector: orientation::OrientationSelector,
     taper: String,
     twist: String,
+    optimize_single_selection: bool,
     show_help: bool,
 }
 impl DockableWindow for SweepDialog {}
@@ -157,6 +158,7 @@ impl SweepDialog {
         self.path_cleared = false;
         self.taper = seed.taper;
         self.twist = seed.twist;
+        self.optimize_single_selection = false;
         self.orientation = seed.orientation;
         self.document = state.document;
         self.dock.set_open(self.document.is_some());
@@ -180,10 +182,10 @@ impl SweepDialog {
         if self.document.is_some()
             && (self.document != state.document
                 || !GuiSweepAction::Open.enabled(state)
-                || self
-                    .submitted
-                    .as_ref()
-                    .is_some_and(|request| Some(request.generation) != state.document_generation))
+                || self.submitted.as_ref().is_some_and(|request| {
+                    Some(request.generation) != state.document_generation
+                        || state.sweep_preview.is_none()
+                }))
         {
             self.close(actions);
         }
@@ -303,8 +305,10 @@ impl SweepDialog {
         }
         let ready = GuiSweepAction::Commit(request.clone()).enabled(state);
         if !tip && ui.collapsing_header("Advanced Properties", imgui::TreeNodeFlags::empty()) {
-            let _disabled = ui.begin_disabled(true);
-            ui.checkbox("Optimize for Single Selection", &mut false);
+            ui.checkbox(
+                "Optimize for Single Selection",
+                &mut self.optimize_single_selection,
+            );
         }
         if self.show_help {
             ui.text_wrapped("Create a closed section in one sketch and a straight path in another. Start the path on the profile plane and keep both sketches visible.");

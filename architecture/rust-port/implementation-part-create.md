@@ -134,8 +134,9 @@ Part program. Its saved sources and body reference keys survive reopen.
 
 The [orientation receipt](receipts/2026-11-26-sweep-orientation-3917/README.md)
 covers the Guide validation and Fixed edit on both Linux backends. Guide
-reference picking and guided geometry remain open. Advanced Properties
-shows the unchecked single-selection option as read-only pending repicking.
+reference picking and guided geometry remain open. The single-selection
+checkbox is editable for the current draft and resets when the Sweep is
+reopened. See the [checkbox receipt](receipts/2026-11-26-sweep-draft-option-3917/README.md).
 
 ### Clear a saved Sweep path
 

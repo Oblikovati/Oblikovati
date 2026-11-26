@@ -4,6 +4,8 @@ use super::*;
 use cucumber::{given, then, when};
 use oblikovati_gui::GuiSweepPreview;
 use oblikovati_viewport::{ViewportNavigation, ViewportPhysicalKey};
+#[path = "draft_settings.rs"]
+mod draft_settings;
 
 #[given(expr = "a disposable copy of the native fixture {string} is open")]
 fn open_sweep_fixture(world: &mut ApplicationWorld, relative: String) {
@@ -458,17 +460,6 @@ fn fixed_hides_angle_fields(world: &mut ApplicationWorld) {
         !panel.contains("Taper") && !panel.contains("Twist"),
         "{panel}"
     );
-}
-
-#[when("Advanced Properties is expanded")]
-fn show_advanced(world: &mut ApplicationWorld) {
-    click_panel(world, "AdvancedProperties");
-}
-
-#[then("Optimize for Single Selection is shown unchecked")]
-fn optimization_defaults_unchecked(world: &mut ApplicationWorld) {
-    world.run_in_window("Sweep", "OptimizeforSingleSelection");
-    assert!(!world.checked("Optimize for Single Selection"));
 }
 
 #[then("Sweep1 and one solid body remain")]
