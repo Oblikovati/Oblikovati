@@ -1667,6 +1667,26 @@
         "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=docking-system OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
         "environment": "Linux Wayland with isolated headless Weston (1440x900), Pixman and Vulkan Lavapipe",
         "notes": "All 13 current scenarios and 134 steps passed. The three affected scenarios were run with the Wayland verifier changes. Strict build and runtime provenance remains open under #3978."
+      },
+      "ae4ac292ed0f4357f9bf38b3d6f364cfa94c0c5daaf11307cf53b3b385c7b54f": {
+        "feature_sha256": "ae4ac292ed0f4357f9bf38b3d6f364cfa94c0c5daaf11307cf53b3b385c7b54f",
+        "supporting_files": {
+          "features/application/docking-system/BLOCKERS.md": "6bd8f9bbece6767cb871c0f6cf22847ab9d155a816f5361d96db6f72a3325d45",
+          "features/application/docking-system/FIXTURES.md": "f53e330504c7933d3d0232d54b4059e32cdfa13f3fefcb5115546581b0912bcd",
+          "features/application/docking-system/FUNCTIONAL.md": "a5010dcb19b24906fa61f3ba69cdee4b7368b6f11c96a41d8df08d1b3ce2b93a",
+          "features/application/docking-system/VISUAL.md": "cc8f318c54d61906cf8f96cb366edbadb674394f6ff571b36fb8bce4849899ea",
+          "features/application/docking-system/right-dock-tabs.svg": "f07847f1b581581045032a3cf5d17d8d67de6f3a3ac82c4f035b5b692982ca55",
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+          "fixtures/cad/quick-access-toolbar/PartOne.opd": "09fedf5c0e865867a3088067f3f8378dc01b6e226924a5c64210102e10227993"
+        },
+        "application_commit": "8c298fe648b6dd2eb5835fcd1f4da22b05affabe",
+        "command": "OBK_BDD_ROOT=<published-scenarios> OBK_BDD_AREA=application OBK_BDD_FEATURE=docking-system OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
+        "environment": "Linux Wayland under nested Weston 13 and X11 under Openbox, with Xvfb and Vulkan Lavapipe.",
+        "notes": "All 14 amended cases and 140 steps passed on each backend. Native resize verified proportional width allocation above the dock minimums, viewport space, selector ellipsis, and tab and swatch contrast. Strict provenance remains open under #3978.",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-docking-system-resize-4133/wayland.json",
+        "cucumber_sha256": "16f3e5a690687e391fa5f6e7ba866dc267f7b3b38b56c6bf4b38cc61d5590117",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-docking-system-resize-4133/wayland-arguments.json",
+        "scenario_arguments_sha256": "3e38e25598185823a0e07e9464a485a70baea146e1e575feb71732802ad808eb"
       }
     }
   },
