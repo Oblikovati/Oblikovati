@@ -20,6 +20,8 @@ mod behaviour;
 mod compass_observation;
 #[path = "fixture.rs"]
 mod fixture;
+#[path = "hover.rs"]
+pub(super) mod hover;
 pub(super) use behaviour::whole_block_visible;
 pub(super) use fixture::{open_saved_navigation_block, orientation_part_upright};
 #[path = "native_input.rs"]
@@ -54,7 +56,7 @@ fn press_at(world: &mut ApplicationWorld, position: [f32; 2], local: [f32; 2]) {
         (position[1] + local[1]) as i32,
     ];
     if world.app().window.orientation_trace.is_some() {
-        super::x11_input::click(point);
+        super::desktop_input::click(world, point);
     } else {
         world.click(point);
     }

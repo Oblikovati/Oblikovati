@@ -1,5 +1,23 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use imgui::{Condition, ImColor32, ImString, SelectableFlags, Ui};
+
+/// Fill adjacent quads without feathering their shared edges. The caller draws the outer stroke.
+pub(crate) fn fill_joined_quads(_: &Ui, quads: &[[[f32; 2]; 4]], color: [f32; 4]) {
+    use imgui::sys;
+
+    let color = ImColor32::from(color).to_bits();
+    // The active UI frame owns the draw list, and each call consumes its points synchronously.
+    unsafe {
+        let list = sys::igGetWindowDrawList();
+        let flags = (*list).Flags;
+        (*list).Flags &= !(sys::ImDrawListFlags_AntiAliasedFill as sys::ImDrawListFlags);
+        for quad in quads {
+            let points = quad.map(|[x, y]| sys::ImVec2 { x, y });
+            sys::ImDrawList_AddConvexPolyFilled(list, points.as_ptr(), 4, color);
+        }
+        (*list).Flags = flags;
+    }
+}
 #[path = "widget_dockspace.rs"]
 mod dockspace;
 pub(crate) use dockspace::exchange_model_dock_tab;

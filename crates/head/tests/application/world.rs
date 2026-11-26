@@ -17,6 +17,7 @@ pub(super) struct ApplicationWorld {
     #[cfg(target_os = "linux")]
     pub window_frame_handle: Option<String>,
     pub observed_view_camera: Option<oblikovati_viewport::ViewportCamera>,
+    pub orientation_hover: Option<super::viewport_orientation::hover::HoverObservation>,
     /// The picked face boundary before a Zoom Selected operation.
     pub observed_zoom_face_edges: Vec<[[f64; 3]; 2]>,
     pub ribbon_height: f32,
@@ -134,6 +135,7 @@ impl ApplicationWorld {
             dragged_tab_x: None,
             sketch_baseline: None,
             observed_counts: Vec::new(),
+            orientation_hover: None,
             observed_document_windows: Vec::new(),
             observed_sketch: None,
             ellipse_fixture_points: None,

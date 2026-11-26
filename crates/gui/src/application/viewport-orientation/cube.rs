@@ -27,17 +27,25 @@ pub(super) fn shown_faces(
         .map(|face| ShownFace {
             face,
             facing: dot(face.normal(), axes.toward),
-            corners: face.corners().map(|corner| {
-                [
-                    origin[0] + layout.center[0] + dot(corner, axes.right) * layout.half,
-                    origin[1] + layout.center[1] - dot(corner, axes.up) * layout.half,
-                ]
-            }),
+            corners: face
+                .corners()
+                .map(|corner| project(corner, axes, layout, origin)),
         })
         .filter(|shown| shown.facing > FACING_VIEWER)
         .collect();
     faces.sort_by(|first, second| second.facing.total_cmp(&first.facing));
     faces
+}
+pub(super) fn project(
+    point: [f32; 3],
+    axes: &GuiViewAxes,
+    layout: &GuiOrientationLayout,
+    origin: [f32; 2],
+) -> [f32; 2] {
+    [
+        origin[0] + layout.center[0] + dot(point, axes.right) * layout.half,
+        origin[1] + layout.center[1] - dot(point, axes.up) * layout.half,
+    ]
 }
 pub(super) fn inside([x, y]: [f32; 2], corners: &[[f32; 2]; 4]) -> bool {
     let side = |index: usize| {

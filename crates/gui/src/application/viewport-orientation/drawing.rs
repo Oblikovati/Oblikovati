@@ -57,12 +57,8 @@ pub(super) fn draw_control(
     }
     if let Some(hit) = hit {
         let accent = ui.style_color(StyleColor::NavHighlight);
-        list.add_polyline(hit.polygon.to_vec(), faded(accent, 0.32 * chrome))
-            .filled(true)
-            .build();
-        let mut border = hit.polygon.to_vec();
-        border.push(hit.polygon[0]);
-        list.add_polyline(border, faded(accent, chrome))
+        crate::widget_abi::fill_joined_quads(ui, &hit.regions, faded(accent, 0.32 * chrome));
+        list.add_polyline(hit.outline(), faded(accent, chrome))
             .thickness(1.5)
             .build();
     }

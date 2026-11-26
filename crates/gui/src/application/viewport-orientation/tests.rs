@@ -22,7 +22,7 @@ fn an_iso_view_shows_three_faces_and_a_press_picks_the_one_under_it() {
     names.sort_unstable();
     assert_eq!(names, ["Front", "Right", "Top"]);
     let above = [layout.center[0], layout.center[1] - layout.half * 0.9];
-    let picked = cube_hit(above, &isometric(), &layout, &faces).map(|hit| hit.command);
+    let picked = cube_hit(above, &isometric(), &layout, &faces, [0., 0.]).map(|hit| hit.command);
     assert_eq!(picked, Some(GuiOrientCommand::Face(GuiCubeFace::Top)));
 }
 #[test]
@@ -54,7 +54,7 @@ fn a_face_on_rim_picks_corners_and_the_face_beyond_an_edge() {
         ]
     };
     let faces = shown_faces(&FRONT_ON, &layout, [0., 0.]);
-    let pick = |point| cube_hit(point, &FRONT_ON, &layout, &faces).map(|hit| hit.command);
+    let pick = |point| cube_hit(point, &FRONT_ON, &layout, &faces, [0., 0.]).map(|hit| hit.command);
     assert_eq!(
         pick(at(0., 0.)),
         Some(GuiOrientCommand::Face(GuiCubeFace::Front))
@@ -100,8 +100,41 @@ fn oblique_face_strips_route_to_model_space_edges_and_corners() {
         (sample(0.97, 0.5), GuiOrientCommand::Bevel([1, 0, 1])),
         (sample(0.97, 0.97), GuiOrientCommand::Bevel([1, 1, 1])),
     ] {
-        let hit = cube_hit(point, &axes, &layout, &faces).unwrap();
+        let hit = cube_hit(point, &axes, &layout, &faces, [0., 0.]).unwrap();
         assert_eq!(hit.command, command);
-        assert!(cube::inside(point, &hit.polygon));
+        assert!(hit.regions.iter().any(|region| cube::inside(point, region)));
+    }
+}
+
+#[test]
+fn every_side_of_a_bevel_highlights_the_same_region_with_only_an_outer_border() {
+    let axes = isometric();
+    let layout = GuiOrientationLayout::for_side(120.);
+    let origin = [1370., 130.];
+    let faces = shown_faces(&axes, &layout, origin);
+    for (samples, pieces, vertices) in [
+        (&[[0., 1., 0.94], [0., 0.94, 1.]][..], 2, 7),
+        (
+            &[[0.94, 1., 0.94], [0.94, 0.94, 1.], [1., 0.94, 0.94]][..],
+            3,
+            7,
+        ),
+    ] {
+        let hits: Vec<_> = samples
+            .iter()
+            .map(|&sample| {
+                let point = cube::project(sample, &axes, &layout, origin);
+                cube_hit(point, &axes, &layout, &faces, origin).unwrap()
+            })
+            .collect();
+        let hit = &hits[0];
+        assert_eq!(hit.regions.len(), pieces);
+        for other in &hits[1..] {
+            assert_eq!(other.command, hit.command);
+            assert_eq!(other.regions, hit.regions);
+        }
+        let outline = hit.outline();
+        assert_eq!(outline.len(), vertices);
+        assert_eq!(outline.first(), outline.last());
     }
 }

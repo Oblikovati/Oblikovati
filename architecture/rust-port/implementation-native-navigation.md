@@ -163,6 +163,11 @@ renderer can extend the turn so that it can present intermediate frames.
 Direct navigation and document changes end the active turn. See the
 [desktop acceptance receipt](receipts/2026-11-20-orientation-transition-3961/README.md).
 
+The ViewCube highlights a face center on its own. An oblique edge or corner
+uses the same target on every visible side it touches. Moving the pointer
+across a shared seam preserves the whole highlight until the pointer moves
+to another target or leaves the cube. Hover keeps the part and camera still.
+
 ## Workspace browser panel menu
 
 When the last browser tab closes, the document uses the freed viewport area.

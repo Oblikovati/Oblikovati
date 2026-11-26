@@ -293,7 +293,7 @@ impl OrientationControl {
                 let local = [point[0] - position[0], point[1] - position[1]];
                 let faces = shown_faces(&axes, &layout, position);
                 let hit = hovered
-                    .then(|| cube_hit(point, &axes, &layout, &faces))
+                    .then(|| cube_hit(point, &axes, &layout, &faces, position))
                     .flatten();
                 let text = ui.style_color(StyleColor::Text);
                 let ink = state

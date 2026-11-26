@@ -97,7 +97,7 @@ pub(in super::super) fn orientation_part_upright(world: &mut ApplicationWorld) {
 #[given(
     "`fixtures/cad/docking-visible-solid-current.opd` is active with the block visible in an oblique view"
 )]
-fn orientation_part_oblique(world: &mut ApplicationWorld) {
+pub(super) fn orientation_part_oblique(world: &mut ApplicationWorld) {
     open_orientation_part(world);
     press_part(world, |parts| parts.home);
     expect_control_shows(world, "TopFrontRight");
