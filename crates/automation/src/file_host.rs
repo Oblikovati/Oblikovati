@@ -452,6 +452,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         }
         FileQueryHost::new(self.files)
             .with_sketch_edit(self.sketch_edit.clone())
+            .with_profile_policy(self.extrusion.and_then(|backend| backend.replay_policy()))
             .call(method, request)
     }
 }

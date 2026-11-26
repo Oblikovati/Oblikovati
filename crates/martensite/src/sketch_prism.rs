@@ -2,7 +2,8 @@
 mod boundary;
 mod regions;
 pub use regions::{
-    SketchRegionBoundary, SketchRegionCurveUse, certified_sketch_regions,
+    SketchRegionBoundary, SketchRegionCurveUse, SketchRegionMeasure,
+    certified_sketch_region_measures, certified_sketch_regions,
     certified_sketch_regions_with_policy,
 };
 pub(crate) mod certified;

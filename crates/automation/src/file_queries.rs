@@ -6,7 +6,7 @@ use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
 /// Additional queries that require a file owner, rather than bare recipe sessions.
-pub const FILE_QUERY_METHODS: [&str; 17] = [
+pub const FILE_QUERY_METHODS: [&str; 18] = [
     METHOD_ASSEMBLY_OCCURRENCES,
     METHOD_SKETCH_LIST,
     METHOD_SKETCH_GET,
@@ -19,6 +19,7 @@ pub const FILE_QUERY_METHODS: [&str; 17] = [
     METHOD_SKETCH_CONSTRAINT_GLYPH_VISIBILITY,
     METHOD_SKETCH_DIMENSIONS,
     METHOD_SKETCH_ENTITIES,
+    METHOD_SKETCH_PROFILES,
     METHOD_SKETCH_REFERENCE_KEY,
     METHOD_SKETCH_RESOLVE_REFERENCE,
     METHOD_WORK_AXES_LIST,
@@ -32,6 +33,7 @@ pub(crate) mod derived;
 pub struct FileQueryHost<'a, O, W, F> {
     files: &'a FileWorkspace<O, W, F>,
     sketch_edit: Option<crate::SketchInspectionEdit>,
+    profile_policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
     part_sketch_continuity: Option<crate::PartSketchContinuity>,
     sketch_datums: std::cell::OnceCell<
         Result<oblikovati_model::feature::work_geometry::WorkGeometryEvaluation, String>,
@@ -45,6 +47,7 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>
         Self {
             files,
             sketch_edit: None,
+            profile_policy: None,
             part_sketch_continuity: None,
             sketch_datums: std::cell::OnceCell::new(),
         }
@@ -52,6 +55,15 @@ impl<'a, O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>
     /// Supply the live desktop edit guards; example: `host.with_sketch_edit(Some(edit.clone()))`.
     pub fn with_sketch_edit(mut self, edit: Option<crate::SketchInspectionEdit>) -> Self {
         self.sketch_edit = edit;
+        self
+    }
+    /// Supply the owning extrusion policy used for profile indices and areas.
+    /// Example: `host.with_profile_policy(Some(policy))`.
+    pub fn with_profile_policy(
+        mut self,
+        policy: Option<oblikovati_martensite::PrismResolutionPolicy>,
+    ) -> Self {
+        self.profile_policy = policy;
         self
     }
     /// Replay the current part for sketch queries; example: `host.with_part_sketch_continuity(resolver)`.
@@ -81,6 +93,13 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> Caller
         }
         if crate::DATUM_QUERY_METHODS.contains(&method) {
             return crate::datums::query(self.files, method, request);
+        }
+        if method == METHOD_SKETCH_PROFILES {
+            return crate::sketches::profiles::query(
+                self.files,
+                crate::decode(method, request)?,
+                self.profile_policy,
+            );
         }
         if crate::SKETCH_QUERY_METHODS.contains(&method) {
             let editing = self

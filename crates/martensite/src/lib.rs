@@ -131,9 +131,10 @@ mod stored_prism;
 pub use sketch_prism::{
     ConditionalProfileLine, ConditionalProfileMapping, ConditionalProfileVertex,
     SketchDirectedCurve, SketchPrismSelection, SketchProfileExtent, SketchRegionBoundary,
-    SketchRegionCurveUse, certified_sketch_regions, certified_sketch_regions_with_policy,
-    conditional_profile_mapping, retain_certified_sketch_prism, retain_resolved_sketch_prism,
-    retain_selected_sketch_prism, retain_sketch_prism_definition, sketch_profile_extent,
+    SketchRegionCurveUse, SketchRegionMeasure, certified_sketch_region_measures,
+    certified_sketch_regions, certified_sketch_regions_with_policy, conditional_profile_mapping,
+    retain_certified_sketch_prism, retain_resolved_sketch_prism, retain_selected_sketch_prism,
+    retain_sketch_prism_definition, sketch_profile_extent,
 };
 pub use stored_prism::retain_stored_sketch_prism;
 

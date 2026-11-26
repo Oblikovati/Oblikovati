@@ -119,3 +119,76 @@ fn stale_extrusion_request_does_not_replace_the_current_preview() {
     assert!(!owner.extrusion_preview_from_gui(Some(&preview)).unwrap());
     assert!(owner.gui_command_state().unwrap().extrude_preview_active);
 }
+
+#[test]
+fn api_rectangle_and_profiles_share_certified_extrusion_indices() {
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let document = open_sketch(&mut owner);
+    let client = Client::new(owner.document_host());
+    let sketch_index = client
+        .sketch()
+        .create(&CreateSketchArgs::default())
+        .unwrap()
+        .sketch_index;
+    let args = SketchArgs { sketch_index };
+    assert_eq!(
+        client.sketch().profiles(&args).unwrap().profiles,
+        Some(Vec::new())
+    );
+    let rectangle = SketchRectangleArgs {
+        sketch_index,
+        width: "width * 3".into(),
+        height: "20 mm".into(),
+    };
+    let reply = client.sketch().rectangle(&rectangle).unwrap();
+    assert_eq!(reply.sketch_index, sketch_index);
+    assert_eq!(reply.profiles, 1);
+    for (center, radius) in [([1.0, 1.0], "5 mm"), ([8.0, 8.0], "1 cm")] {
+        client
+            .sketch()
+            .add_entity(&AddSketchEntityArgs {
+                sketch_index,
+                kind: "circle".into(),
+                points: Some(vec![Some(center.to_vec())]),
+                radius: radius.into(),
+                ..Default::default()
+            })
+            .unwrap();
+    }
+    let profiles = client.sketch().profiles(&args).unwrap().profiles.unwrap();
+    assert_eq!(profiles.len(), 3, "{profiles:?}");
+    for (profile, index, holes, area) in [
+        (&profiles[0], 0, 1, 6.0 - std::f64::consts::PI / 4.0),
+        (&profiles[1], 1, 0, std::f64::consts::PI / 4.0),
+        (&profiles[2], 2, 0, std::f64::consts::PI),
+    ] {
+        assert_eq!(profile.index, index);
+        assert_eq!(profile.holes, holes);
+        assert!(profile.closed);
+        assert!((profile.area - area).abs() < 1e-8);
+    }
+    assert!(client.sketch().rectangle(&rectangle).is_err());
+    assert_eq!(
+        client.sketch().profiles(&args).unwrap().profiles.unwrap(),
+        profiles
+    );
+    let reply = client
+        .features()
+        .add_feature(&Extrude {
+            sketch_index,
+            profile_index: profiles[2].index,
+            ..request()
+        })
+        .unwrap()
+        .0
+        .unwrap();
+    assert_eq!(reply["bodies"], 1);
+    assert_eq!(
+        owner.take_scene().unwrap().unwrap().status.visible_bodies,
+        1
+    );
+    assert!(owner.documents().workspace().session(document).is_ok());
+}

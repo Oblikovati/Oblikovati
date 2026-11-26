@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Certified sketch regions reported with source curve identities rather than native handles.
 use super::*;
-use martensite_tkbo::profile_extrusion::{ProfileLoop, build_planar_regions};
+use martensite_tkbo::profile_extrusion::{PlanarRegion, ProfileLoop, build_planar_regions};
 use oblikovati_model::sketch::SketchEntityId;
 #[path = "region_input.rs"]
 pub(super) mod input;
@@ -87,6 +87,38 @@ pub fn certified_sketch_regions_with_policy(
     sketch_id: DocumentSketchId,
     policy: crate::PrismResolutionPolicy,
 ) -> Result<Vec<SketchRegionBoundary>, EvaluationFailure> {
+    map_regions(document, sketch_id, policy, |region| SketchRegionBoundary {
+        outer: boundary(region.outer()),
+        holes: region.holes().iter().map(boundary).collect(),
+    })
+}
+
+/// Area in database square centimetres and hole count of a certified bounded region.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SketchRegionMeasure {
+    pub area: f64,
+    pub holes: usize,
+}
+
+/// Measure the regions in the order used by certified extrusion selection.
+/// Example: `certified_sketch_region_measures(&document, sketch_id, policy)?`.
+pub fn certified_sketch_region_measures(
+    document: &DocumentSnapshot,
+    sketch_id: DocumentSketchId,
+    policy: crate::PrismResolutionPolicy,
+) -> Result<Vec<SketchRegionMeasure>, EvaluationFailure> {
+    map_regions(document, sketch_id, policy, |region| SketchRegionMeasure {
+        area: region.area().value,
+        holes: region.holes().len(),
+    })
+}
+
+fn map_regions<T>(
+    document: &DocumentSnapshot,
+    sketch_id: DocumentSketchId,
+    policy: crate::PrismResolutionPolicy,
+    project: impl FnMut(&PlanarRegion) -> T,
+) -> Result<Vec<T>, EvaluationFailure> {
     let sketch = document
         .require_converged_resolved_sketch(sketch_id)
         .map_err(|cause| {
@@ -110,14 +142,7 @@ pub fn certified_sketch_regions_with_policy(
             .operation(Entity::Body, cause)
             .with_sketch_identity(sketch_id)
     })?;
-    Ok(regions
-        .regions()
-        .iter()
-        .map(|region| SketchRegionBoundary {
-            outer: boundary(region.outer()),
-            holes: region.holes().iter().map(boundary).collect(),
-        })
-        .collect())
+    Ok(regions.regions().iter().map(project).collect())
 }
 fn boundary(loop_: &ProfileLoop) -> Vec<SketchRegionCurveUse> {
     loop_

@@ -23,6 +23,7 @@ pub(crate) mod inspection;
 mod move_dimension;
 pub(crate) mod owner;
 mod pattern;
+pub(crate) mod profiles;
 mod properties;
 mod references;
 mod spline_handle;
@@ -44,7 +45,7 @@ use oblikovati_solve::{
 };
 
 /// Geometry commands require a part or assembly; inference preferences use the workspace owner.
-pub const SKETCH_COMMAND_METHODS: [&str; 28] = [
+pub const SKETCH_COMMAND_METHODS: [&str; 29] = [
     METHOD_SKETCH_ADD_ASSOCIATIVE_ENTITY,
     METHOD_SKETCH_ADD_BLOCK_INSTANCE,
     METHOD_SKETCH_EXPLODE_BLOCK_INSTANCE,
@@ -62,6 +63,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 28] = [
     METHOD_SKETCH_TRANSFORM,
     METHOD_SKETCH_ADD_PATTERN,
     METHOD_SKETCH_ADD_ENTITY,
+    METHOD_SKETCH_RECTANGLE,
     METHOD_SKETCH_ADD_TEXT,
     METHOD_SKETCH_EDIT_TEXT,
     METHOD_SKETCH_ADD_CONSTRAINT,
@@ -75,7 +77,7 @@ pub const SKETCH_COMMAND_METHODS: [&str; 28] = [
     METHOD_SKETCH_SET_SPLINE_HANDLE,
 ];
 /// Read-only sketch queries use one current owner and the canonical API DTOs.
-pub const SKETCH_QUERY_METHODS: [&str; 14] = [
+pub const SKETCH_QUERY_METHODS: [&str; 15] = [
     METHOD_SKETCH_GET_INFERENCE_SCOPE,
     METHOD_SKETCH_GET_ENTITY_FORMAT,
     METHOD_SKETCH_BLOCK_DEFINITION_LIST,
@@ -87,6 +89,7 @@ pub const SKETCH_QUERY_METHODS: [&str; 14] = [
     METHOD_SKETCH_DIMENSIONS,
     METHOD_SKETCH_CONSTRAINT_STATUS,
     METHOD_SKETCH_ENTITIES,
+    METHOD_SKETCH_PROFILES,
     METHOD_SKETCH_GET_TEXT,
     METHOD_SKETCH_REFERENCE_KEY,
     METHOD_SKETCH_RESOLVE_REFERENCE,
