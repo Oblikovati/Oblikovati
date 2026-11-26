@@ -281,6 +281,42 @@ fn sweep_geometry_is_available(world: &mut ApplicationWorld) {
     straight_path_extends_upward(world);
 }
 
+#[given("the user opens Sweep and selects the circular profile and straight path")]
+fn select_surface_sources_in_the_viewport(world: &mut ApplicationWorld) {
+    invoke_sweep(world);
+    crate::HeadWindow::navigate_view(
+        &mut world.app().window.native,
+        ViewportNavigation::Home { margin: 0.25 },
+    )
+    .unwrap();
+    click_panel(world, "ClearProfile");
+    assert_eq!(
+        world.state().sweep_preview.unwrap().result,
+        GuiSweepPreview::MissingProfile
+    );
+    click_sweep_point(world, [-2., -1.25, 2.]);
+    let draft = world.state().sweep_preview.unwrap();
+    let oblikovati_gui::GuiSweepProfile::Picked(profile) = draft.request.profile else {
+        panic!("expected the closed circle to be selected in the viewport");
+    };
+    assert_eq!(profile.outer[0].curve, SketchEntityId(36));
+
+    click_panel(world, "ClearPath");
+    assert_eq!(
+        world.state().sweep_preview.unwrap().result,
+        GuiSweepPreview::MissingPath
+    );
+    click_sweep_point(world, [-2., -1.25, 3.5]);
+    chosen_sources(world);
+    assert!(!world.state().sweep_preview.unwrap().request.path_cleared);
+}
+
+fn click_sweep_point(world: &mut ApplicationWorld, point: [f64; 3]) {
+    let pixel = crate::HeadWindow::model_pixel(&mut world.app().window.native, point).unwrap();
+    world.click(pixel);
+    world.pump(Vec::new());
+}
+
 #[when("the Sweep is switched to surface output")]
 fn select_surface_output(world: &mut ApplicationWorld) {
     click_panel(world, "Surface");
@@ -326,4 +362,72 @@ fn the_original_solid_is_retained(world: &mut ApplicationWorld) {
     let browser = world.state().browser.unwrap();
     assert_eq!(browser.bodies.len(), 1);
     assert_eq!(browser.bodies[0].faces, 6);
+}
+
+#[given("a surface Sweep is started with Guide orientation and no path or guide selected")]
+fn start_incomplete_guided_sweep(world: &mut ApplicationWorld) {
+    invoke_sweep(world);
+    select_surface_output(world);
+    select_guide(world);
+    click_panel(world, "ClearPath");
+    click_panel(world, "ClearProfile");
+    let draft = world.state().sweep_preview.unwrap();
+    assert_eq!(
+        draft.request.orientation,
+        oblikovati_gui::GuiSweepOrientation::Guide
+    );
+    assert!(draft.request.path_cleared);
+    assert_eq!(draft.result, GuiSweepPreview::MissingProfile);
+}
+
+#[when("the circular profile curve is selected")]
+fn pick_the_guided_sweep_profile(world: &mut ApplicationWorld) {
+    crate::HeadWindow::navigate_view(
+        &mut world.app().window.native,
+        ViewportNavigation::Home { margin: 0.25 },
+    )
+    .unwrap();
+    click_sweep_point(world, [-2., -1.25, 2.]);
+}
+
+#[then("Profiles shows 1 Curve")]
+fn guided_surface_profile_is_retained(world: &mut ApplicationWorld) {
+    let text = super::super::world::squeezed(&world.window_text("Sweep"));
+    assert!(text.contains("Profiles1Curve"), "{text}");
+    assert!(matches!(
+        world.state().sweep_preview.unwrap().request.profile,
+        oblikovati_gui::GuiSweepProfile::Picked(_)
+    ));
+}
+
+#[then("Path and Guide still request geometry")]
+fn both_guided_inputs_remain_empty(world: &mut ApplicationWorld) {
+    path_needs_a_viewport_hit(world);
+    world.run_in_window("Sweep", "Guide");
+    let text = super::super::world::squeezed(&world.window_text("Sweep"));
+    assert!(text.contains("SelectRailorSurfaces"), "{text}");
+}
+
+#[when("the path sketch is clicked in the browser")]
+fn click_path_sketch_row(world: &mut ApplicationWorld) {
+    world.click_text("Sketch3");
+    world.pump(Vec::new());
+}
+
+#[then("Path still requests a curve or edge")]
+fn path_needs_a_viewport_hit(world: &mut ApplicationWorld) {
+    let draft = world.state().sweep_preview.unwrap();
+    assert!(draft.request.path_cleared);
+    assert_eq!(draft.result, GuiSweepPreview::MissingPath);
+    let text = super::super::world::squeezed(&world.window_text("Sweep"));
+    assert!(text.contains("PathSelectCurveorEdge"), "{text}");
+    assert!(!world.run_is_enabled("OK"));
+}
+
+#[then("the incomplete command closes")]
+fn guided_draft_is_cancelled(world: &mut ApplicationWorld) {
+    assert!(super::diagnostics::window_geometry("Sweep").is_none());
+    assert!(world.state().sweep_preview.is_none());
+    assert_eq!(world.state().browser.unwrap().bodies.len(), 1);
+    assert!(world.state().browser.unwrap().surface_bodies.is_empty());
 }

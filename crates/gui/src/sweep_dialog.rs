@@ -267,12 +267,15 @@ impl SweepDialog {
             .is_some_and(|browser| browser.sketches.is_empty());
         let preview = state.sweep_preview.as_ref();
         self.adopt_profile_pick(preview);
+        self.adopt_path_pick(preview);
         if self.feature.is_some()
             || preview.is_some_and(|state| {
                 matches!(
                     state.result,
                     GuiSweepPreview::Ready
                         | GuiSweepPreview::MissingGuide
+                        | GuiSweepPreview::MissingProfile
+                        | GuiSweepPreview::MissingPath
                         | GuiSweepPreview::Failed(_)
                 )
             })
@@ -286,13 +289,17 @@ impl SweepDialog {
                 }
             } else {
                 ui.text("1 Curve");
-                if self.feature.is_some() && crate::widget_abi::button(ui, "Clear Path", [0., 0.]) {
+                if crate::widget_abi::button(ui, "Clear Path", [0., 0.]) {
                     self.path_cleared = true;
                 }
             }
         }
         if !tip {
             self.selector.draw(ui, &mut self.orientation, icons);
+        }
+        if self.orientation == GuiSweepOrientation::Guide {
+            crate::theme::property_label(ui, "Guide");
+            ui.text_wrapped("Select Rail or Surfaces");
         }
         let follows_path = self.orientation == GuiSweepOrientation::FollowPath;
         if !tip && follows_path {
@@ -325,7 +332,6 @@ impl SweepDialog {
             .map(|preview| &preview.result)
         {
             Some(GuiSweepPreview::MissingInputs) => ui.text_wrapped(TIP),
-            Some(GuiSweepPreview::MissingGuide) => ui.text_wrapped("Select Rail or Surfaces"),
             Some(GuiSweepPreview::Failed(cause)) => {
                 let _error = ui.push_style_color(imgui::StyleColor::Text, [1., 0.25, 0.25, 1.]);
                 ui.text_wrapped(cause);
@@ -381,7 +387,7 @@ impl SweepDialog {
         } else {
             "1 Profile"
         });
-        if self.feature.is_some() && crate::widget_abi::button(ui, "Clear Profile", [0., 0.]) {
+        if crate::widget_abi::button(ui, "Clear Profile", [0., 0.]) {
             self.profile = GuiSweepProfile::Empty;
         }
     }

@@ -38,6 +38,9 @@ impl<
         if let Some(changed) = self.pick_sweep_profile(document, line)? {
             return Ok(changed);
         }
+        if let Some(changed) = self.pick_sweep_path(document, line, depth_window)? {
+            return Ok(changed);
+        }
         if self
             .files
             .workspace()

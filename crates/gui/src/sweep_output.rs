@@ -26,6 +26,20 @@ pub(super) fn cut_warning<'a>(
 }
 
 impl SweepDialog {
+    pub(super) fn adopt_path_pick(&mut self, preview: Option<&GuiSweepPreviewState>) {
+        let Some(preview) =
+            preview.filter(|draft| self.path_cleared && !draft.request.path_cleared)
+        else {
+            return;
+        };
+        let mut prior = preview.request.clone();
+        prior.path_cleared = true;
+        if self.attempted.as_ref() == Some(&prior) {
+            self.path_cleared = false;
+            self.attempted = Some(preview.request.clone());
+        }
+    }
+
     pub(super) fn draw_cut_warning(ui: &Ui, cause: Option<&str>) -> bool {
         let Some(_popup) = ui
             .modal_popup_config(EDIT_WARNING)

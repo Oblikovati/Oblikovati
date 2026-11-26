@@ -23,6 +23,9 @@ use oblikovati_model::{
 };
 use std::collections::BTreeMap;
 
+#[path = "owner_sweep/picking.rs"]
+mod picking;
+
 #[derive(Clone)]
 enum SweepCommit {
     Create(Box<Sweep>),
@@ -181,68 +184,6 @@ impl<
             return Err("sweep: expected the current document generation".into());
         }
         Ok(())
-    }
-
-    pub(in crate::owner) fn sweep_profile_pick_sketch(&self) -> Option<DocumentSketchId> {
-        self.sweep_profile_target(self.files.workspace().active_document()?)
-            .map(|(_, sketch)| sketch)
-    }
-
-    pub(in crate::owner) fn pick_sweep_profile(
-        &mut self,
-        document: u64,
-        line: [[f64; 3]; 2],
-    ) -> Result<Option<bool>, String> {
-        let Some((request, sketch)) = self.sweep_profile_target(document) else {
-            return Ok(None);
-        };
-        let mut request = request.clone();
-        let Some(boundary) = self.profile_on_view_line(document, sketch, line)? else {
-            return Ok(Some(false));
-        };
-        request.profile = GuiSweepProfile::Picked(boundary);
-        self.sweep_command(GuiSweepAction::Preview(request))
-            .map(Some)
-    }
-
-    fn sweep_profile_target(&self, document: u64) -> Option<(&GuiSweepRequest, DocumentSketchId)> {
-        let request = &self.sweep_preview.as_ref()?.request;
-        let session = self.files.workspace().session(document).ok()?;
-        if request.profile != GuiSweepProfile::Empty
-            || request.document != document
-            || request.generation != session.generation()
-        {
-            return None;
-        }
-        let sweep = sweep_definition(session.snapshot(), request.feature?).ok()?;
-        Some((request, sweep.recipe().profile_sketch))
-    }
-
-    fn profile_on_view_line(
-        &mut self,
-        document: u64,
-        sketch: DocumentSketchId,
-        line: [[f64; 3]; 2],
-    ) -> Result<Option<oblikovati_model::feature::sketch_prism::SketchPrismSelection>, String> {
-        let policy =
-            <crate::part_scene::DesktopPartScenes as PartUpdateAccess<O, W, F>>::resolution_policy(
-                &self.part_scenes,
-            )
-            .ok_or("sweep profile: expected a certified resolution policy")?;
-        let datums = self
-            .part_scenes
-            .datum_evaluation(&mut self.files, document)?;
-        let session = self
-            .files
-            .workspace()
-            .session(document)
-            .map_err(|cause| cause.to_string())?;
-        let source = session
-            .snapshot()
-            .require_converged_resolved_sketch_with_datums(sketch, &datums)
-            .map_err(|cause| cause.to_string())?;
-        oblikovati_martensite::pick_sketch_region(source, policy, line)
-            .map_err(|cause| cause.to_string())
     }
 
     fn preview_sweep(&mut self, request: &GuiSweepRequest) -> Result<Option<SweepOutcome>, String> {
