@@ -37,17 +37,21 @@ pub(super) fn open_browser(world: &mut ApplicationWorld) {
         )
         .unwrap();
     world.pump(Vec::new());
-    if let Some((minimum, maximum)) = diagnostics::window_dock_tab_bounds(TITLE) {
+    open_tool(world, TITLE);
+}
+
+pub(super) fn open_tool(world: &mut ApplicationWorld, title: &str) {
+    if let Some((minimum, maximum)) = diagnostics::window_dock_tab_bounds(title) {
         world.click(diagnostics::pointer_pixels([
             (minimum[0] + maximum[0]) * 0.5,
             (minimum[1] + maximum[1]) * 0.5,
         ]));
-    } else if diagnostics::window_geometry(TITLE).is_none() {
-        let button = super::quick_access_icons::standard_icon_center(TITLE).unwrap();
+    } else if diagnostics::window_geometry(title).is_none() {
+        let button = super::quick_access_icons::standard_icon_center(title).unwrap();
         world.click(diagnostics::pointer_pixels(button));
     }
     world.pump(Vec::new());
-    assert!(diagnostics::window_geometry(TITLE).is_some());
+    assert!(diagnostics::window_geometry(title).is_some());
 }
 
 #[then("the browser has a title, close control and search field")]

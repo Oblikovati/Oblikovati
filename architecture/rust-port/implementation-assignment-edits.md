@@ -67,3 +67,11 @@ through the existing document assignment command. The Material selector
 shows the assigned asset and the Appearance selector displays the
 material's appearance until the user sets an explicit override.
 See the [native Material Browser receipt](receipts/2026-11-26-material-browser-3563/README.md).
+
+## Appearance Browser
+
+Document and library appearance previews use authored colors and finishes.
+Activating Assign to Selection in the library menu stores an explicit
+appearance override on the selected Part. The Material selector continues
+to display its physical assignment. See the
+[native Appearance Browser receipt](receipts/2026-11-26-appearance-browser-3563/README.md).

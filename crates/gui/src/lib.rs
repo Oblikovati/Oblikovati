@@ -15,7 +15,7 @@ pub use application::document_creation::templates::{
 };
 mod appearance_choice;
 mod asset_choice;
-pub use asset_choice::{GuiAssetChoice, GuiAssetLibrary};
+pub use asset_choice::{GuiAppearancePreview, GuiAssetChoice, GuiAssetLibrary};
 mod asset_browser_view;
 mod browser;
 pub use browser::{

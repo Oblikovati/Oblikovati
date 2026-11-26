@@ -67,6 +67,7 @@ impl<
                     id,
                     name: asset.display_name(),
                     swatch: look_up(&asset.appearance_id()),
+                    appearance_preview: None,
                 }
             },
         ))

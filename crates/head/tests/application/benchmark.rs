@@ -184,6 +184,7 @@ pub(super) fn rendered_sketch_row_center() -> [i32; 2] {
     };
     diagnostics::pointer_pixels(row.center())
 }
+mod appearance_browser_scenarios;
 #[path = "application-closing/steps.rs"]
 mod application_closing;
 mod asset_browser_shared;

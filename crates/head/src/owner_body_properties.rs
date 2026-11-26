@@ -157,6 +157,7 @@ impl<
     pub(super) fn gui_appearance_choices(
         &self,
         document: u64,
+        implied: Option<&str>,
     ) -> Result<Vec<GuiAppearanceChoice>, String> {
         let session = self
             .files
@@ -169,6 +170,7 @@ impl<
         let assignments = &assets.assignments;
         let used: std::collections::BTreeSet<_> = assignments
             .part_appearance_id()
+            .or(implied)
             .into_iter()
             .chain(assignments.body_appearances().map(|(_, id)| id))
             .chain(assignments.face_appearances().map(|(_, id)| id))
@@ -196,8 +198,22 @@ impl<
                     id,
                     name: asset.display_name(),
                     swatch: Some(super::part_assets::appearance_swatch(asset)),
+                    appearance_preview: Some(browser_finish(asset)),
                 }
             },
         ))
+    }
+}
+
+fn browser_finish(asset: &AppearanceAsset) -> oblikovati_gui::GuiAppearancePreview {
+    let specular = asset.specular();
+    let fuzz = asset.fuzz();
+    let uniform = |value: f32| (value.clamp(0., 1.) * 255.).round() as u8;
+    oblikovati_gui::GuiAppearancePreview {
+        roughness: uniform(specular.roughness),
+        metalness: uniform(asset.base().metalness),
+        anisotropy: uniform(specular.roughness_anisotropy),
+        fuzz_weight: uniform(fuzz.weight),
+        fuzz_color: [fuzz.color.r, fuzz.color.g, fuzz.color.b].map(uniform),
     }
 }

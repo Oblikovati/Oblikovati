@@ -85,7 +85,6 @@ impl<
             browser.kind,
             oblikovati_gui::GuiBrowserKind::Part | oblikovati_gui::GuiBrowserKind::SheetMetal
         ) {
-            browser.appearances = self.gui_appearance_choices(document)?;
             browser.materials = self.gui_material_choices(document)?;
             browser.part_material = snapshot
                 .assets
@@ -94,13 +93,15 @@ impl<
                 .map(str::to_owned);
             browser.part_material_appearance =
                 self.gui_part_material_appearance(&snapshot.assets)?;
+            browser.appearances =
+                self.gui_appearance_choices(document, browser.part_material_appearance.as_deref())?;
             browser.part_appearance = snapshot
                 .assets
                 .assignments
                 .part_appearance_id()
                 .map(str::to_owned);
         } else if !browser.bodies.is_empty() {
-            browser.appearances = self.gui_appearance_choices(document)?;
+            browser.appearances = self.gui_appearance_choices(document, None)?;
         }
         browser.selected_feature = self
             .files

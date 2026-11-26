@@ -51,15 +51,19 @@ fn aluminum_in_library(world: &mut ApplicationWorld) {
 
 #[when(expr = "I search for {string}")]
 fn search(world: &mut ApplicationWorld, query: String) {
-    let at = shared::label(world, "Searchassets").center();
+    search_in_browser(world, scenario_browser_title(world), &query);
+}
+
+pub(super) fn search_in_browser(world: &mut ApplicationWorld, title: &str, query: &str) {
+    let at = world.run_in_window(title, "Searchassets").center();
     world.click(diagnostics::pointer_pixels(at));
-    world.type_text(&query);
+    world.type_text(query);
     world.pump(Vec::new());
 }
 
 #[then("the document region reports no document match")]
 fn no_results(world: &mut ApplicationWorld) {
-    shared::label(world, "Nomatchingdocumentassets");
+    world.run_in_window(scenario_browser_title(world), "Nomatchingdocumentassets");
 }
 
 #[then("the library region lists matching materials with Name, Library and Category columns")]
@@ -156,8 +160,21 @@ fn top_appearance_and_solid(world: &mut ApplicationWorld) {
 }
 
 #[then("the browser remains open")]
-fn remains_open(_: &mut ApplicationWorld) {
-    assert!(diagnostics::window_geometry(TITLE).is_some());
+fn remains_open(world: &mut ApplicationWorld) {
+    assert!(diagnostics::window_geometry(scenario_browser_title(world)).is_some());
+}
+
+fn scenario_browser_title(world: &ApplicationWorld) -> &'static str {
+    if world
+        .scenario_feature_path
+        .as_deref()
+        .and_then(std::path::Path::file_stem)
+        .is_some_and(|stem| stem == "appearance-browser")
+    {
+        "Appearance Browser"
+    } else {
+        TITLE
+    }
 }
 
 #[when("I open the document materials display menu")]
@@ -172,9 +189,14 @@ fn material_sort_choices(world: &mut ApplicationWorld) {
 
 #[then("it offers thumbnail sizes 16, 24, 32, 64 and 256 pixels")]
 fn thumbnail_sizes(world: &mut ApplicationWorld) {
+    let default = if scenario_browser_title(world) == TITLE {
+        "16 px"
+    } else {
+        "64 px"
+    };
     shared::inspect_options(
         world,
-        "16 px",
+        default,
         &["16 px", "24 px", "32 px", "64 px", "256 px"],
     );
 }

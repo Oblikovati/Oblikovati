@@ -92,7 +92,11 @@ impl MaterialBrowser {
         self.document = state.document;
         self.material = None;
         self.appearance = None;
-        self.browser_view = Default::default();
+        self.browser_view = if self.appearance_browser {
+            crate::asset_browser_view::AssetBrowserView::appearances()
+        } else {
+            Default::default()
+        };
     }
     fn content(&mut self, ui: &Ui, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
         let Some(browser) = state
@@ -103,9 +107,21 @@ impl MaterialBrowser {
             ui.text("Select a part to browse its assets.");
             return;
         };
+        let can_assign = browser.root_selected && !state.transaction_open;
         if self.appearance_browser {
-            self.browser_view
-                .draw(ui, &browser.appearances, &mut self.appearance, None);
+            if let Some(id) = self.browser_view.draw(
+                ui,
+                &browser.appearances,
+                &mut self.appearance,
+                Some(can_assign),
+            ) {
+                crate::ribbon_part_assets::queue_asset(
+                    state,
+                    GuiPartAssetKind::Appearance,
+                    &id,
+                    actions,
+                );
+            }
             asset_tab(
                 ui,
                 state,
@@ -116,7 +132,6 @@ impl MaterialBrowser {
                 actions,
             );
         } else {
-            let can_assign = browser.root_selected && !state.transaction_open;
             if let Some(id) =
                 self.browser_view
                     .draw(ui, &browser.materials, &mut self.material, Some(can_assign))

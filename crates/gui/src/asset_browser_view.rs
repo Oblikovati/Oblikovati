@@ -3,6 +3,9 @@
 use crate::{GuiAssetChoice, GuiAssetLibrary};
 use imgui::Ui;
 
+mod thumbnail;
+const THUMBNAIL_SIZES: [f32; 5] = [16., 24., 32., 64., 256.];
+
 #[derive(Default)]
 pub(crate) struct AssetBrowserView {
     query: String,
@@ -14,6 +17,7 @@ pub(crate) struct AssetBrowserView {
 
 #[derive(Default)]
 struct DisplayOptions {
+    appearance: bool,
     usage: usize,
     presentation: usize,
     sort: usize,
@@ -27,6 +31,20 @@ struct AssetRows<'a> {
 }
 
 impl AssetBrowserView {
+    pub(crate) fn appearances() -> Self {
+        let display = || DisplayOptions {
+            appearance: true,
+            presentation: 1,
+            thumbnail: 3,
+            ..Default::default()
+        };
+        Self {
+            document: display(),
+            library: display(),
+            ..Default::default()
+        }
+    }
+
     pub(crate) fn draw(
         &mut self,
         ui: &Ui,
@@ -254,7 +272,11 @@ impl DisplayOptions {
         ui.combo_simple_string(
             "Sort by",
             &mut self.sort,
-            &["Name", "Material Color", "Category"],
+            if self.appearance {
+                &["Name", "Type", "Material Color", "Category"]
+            } else {
+                &["Name", "Material Color", "Category"]
+            },
         );
         ui.set_next_item_width(136.);
         ui.combo_simple_string(
@@ -280,9 +302,13 @@ impl DisplayOptions {
         show_library: bool,
     ) {
         rows.sort_by(|a, b| {
-            match self.sort {
-                1 => a.swatch.cmp(&b.swatch),
-                2 => a.category.cmp(&b.category),
+            match (self.appearance, self.sort) {
+                (false, 1) | (true, 2) => a.swatch.cmp(&b.swatch),
+                (false, 2) | (true, 3) => a.category.cmp(&b.category),
+                (true, 1) => a
+                    .appearance_preview
+                    .is_some()
+                    .cmp(&b.appearance_preview.is_some()),
                 _ => std::cmp::Ordering::Equal,
             }
             .then_with(|| a.name.cmp(&b.name))
@@ -290,6 +316,8 @@ impl DisplayOptions {
         });
         if self.presentation == 0 {
             self.table(ui, &rows, selection, show_library);
+        } else if self.appearance && self.presentation == 1 {
+            thumbnail::grid(ui, &rows, selection, THUMBNAIL_SIZES[self.thumbnail]);
         } else {
             for row in imgui::ListClipper::new(rows.len() as i32).begin(ui).iter() {
                 self.asset_row(ui, rows[row as usize], selection);
@@ -304,7 +332,8 @@ impl DisplayOptions {
         selection: &mut AssetRows<'_>,
         show_library: bool,
     ) {
-        let Some(_table) = ui.begin_table("##asset-list", if show_library { 3 } else { 2 }) else {
+        let columns = 2 + usize::from(show_library) + usize::from(self.appearance);
+        let Some(_table) = ui.begin_table("##asset-list", columns) else {
             return;
         };
         let mut name = imgui::TableColumnSetup::new("Name");
@@ -312,6 +341,9 @@ impl DisplayOptions {
         ui.table_setup_column_with(name);
         if show_library {
             asset_column(ui, "Library", "Built-in");
+        }
+        if self.appearance {
+            asset_column(ui, "Type", "OpenPBR");
         }
         asset_column(ui, "Category", "Category");
         ui.table_headers_row();
@@ -328,6 +360,10 @@ impl DisplayOptions {
                     "Built-in"
                 });
             }
+            if self.appearance {
+                ui.table_next_column();
+                ui.text("OpenPBR");
+            }
             ui.table_next_column();
             ui.text(asset_category(asset));
         }
@@ -338,8 +374,7 @@ impl DisplayOptions {
         if self.presentation == 1
             && let Some([r, g, b]) = asset.swatch
         {
-            let size = [16_f32, 24., 32., 64., 256.][self.thumbnail]
-                .min(ui.content_region_avail()[0].max(16.));
+            let size = THUMBNAIL_SIZES[self.thumbnail].min(ui.content_region_avail()[0].max(16.));
             if ui
                 .color_button_config(
                     "##swatch",
@@ -386,8 +421,12 @@ impl AssetRows<'_> {
             *self.selected = Some(asset.id.clone());
             self.assignment = Some(asset.id.clone());
         }
-        for name in ["Rename", "Delete", "Add to"] {
+        for name in ["Rename", "Delete"] {
             ui.menu_item_config(name).enabled(false).build();
         }
+        if asset.appearance_preview.is_some() {
+            ui.menu_item_config("Where Used").enabled(false).build();
+        }
+        ui.menu_item_config("Add to").enabled(false).build();
     }
 }
