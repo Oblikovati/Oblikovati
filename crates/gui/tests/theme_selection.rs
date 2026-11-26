@@ -22,9 +22,10 @@ fn theme_request(library: &ThemeLibrary) -> GuiFrameRequest {
 fn click_theme_control(
     engine: &mut GuiFrameEngine,
     request: &mut GuiFrameRequest,
-    point: [f32; 2],
+    row_y: f32,
 ) -> Vec<GuiShellAction> {
-    request.events = vec![GuiInputEvent::PointerMoved(point)];
+    // The View ribbon places the Appearance selectors after the visibility commands.
+    request.events = vec![GuiInputEvent::PointerMoved([300., row_y])];
     engine.frame(request).unwrap();
     let mut actions = Vec::new();
     for pressed in [true, false] {
@@ -46,8 +47,8 @@ fn view_theme_picker_emits_owner_action_and_next_snapshot_restyles_draws() {
     view_tab::select_view_tab(&mut engine, &mut request);
     request.events.clear();
     let dark = engine.frame(&request).unwrap().draws;
-    assert!(click_theme_control(&mut engine, &mut request, [180., 68.]).is_empty());
-    let actions = click_theme_control(&mut engine, &mut request, [160., 109.]);
+    assert!(click_theme_control(&mut engine, &mut request, 68.).is_empty());
+    let actions = click_theme_control(&mut engine, &mut request, 109.);
     assert_eq!(actions, [GuiShellAction::SetTheme("Light".into())]);
     assert_eq!(library.active().name(), "Dark");
     library.set_active("Light");
@@ -72,8 +73,8 @@ fn verify_colour_picker(engine: &mut GuiFrameEngine, request: &mut GuiFrameReque
     let mut registry = oblikovati_model::color_scheme::ColorSchemeRegistry::default();
     request.commands.color_scheme = Some(GuiColorSchemeState::from_registry(&registry).unwrap());
     engine.frame(request).unwrap();
-    assert!(click_theme_control(engine, request, [180., 91.]).is_empty());
-    let actions = click_theme_control(engine, request, [160., 150.]);
+    assert!(click_theme_control(engine, request, 91.).is_empty());
+    let actions = click_theme_control(engine, request, 150.);
     let selection = oblikovati_api::wire::SetColorSchemeArgs {
         name: "High Contrast".into(),
     };
@@ -96,8 +97,8 @@ fn verify_palette_picker_without_a_theme_library(
 ) {
     request.commands.theme = None;
     engine.frame(request).unwrap();
-    assert!(click_theme_control(engine, request, [180., 68.]).is_empty());
-    let actions = click_theme_control(engine, request, [160., 145.]);
+    assert!(click_theme_control(engine, request, 68.).is_empty());
+    let actions = click_theme_control(engine, request, 145.);
     assert_eq!(
         actions,
         [GuiShellAction::SetColorScheme(

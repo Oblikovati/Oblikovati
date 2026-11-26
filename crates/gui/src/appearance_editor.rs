@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Edit a document appearance draft and apply it through the owning Part.
 use crate::application::model_browser::color_dialog::{self, ColorAnswer, ColorDialog};
+use crate::dockable_lifecycle::{DockRegistry, DockableState};
+use crate::dockable_window::DockableWindow;
 use crate::{GuiAssetChoice, GuiCommandState, GuiShellAction};
-use imgui::{Condition, Ui, WindowFlags};
+use imgui::{Condition, Ui};
 use oblikovati_model::assets::AppearanceMetadata;
 
 mod ceramic;
@@ -97,6 +99,7 @@ impl AppearanceTemplate {
 
 #[derive(Default)]
 pub(crate) struct AppearanceEditor {
+    dock: DockableState,
     target: Option<(u64, String)>,
     draft: Option<AppearanceDraft>,
     color_dialog: ColorDialog,
@@ -104,9 +107,11 @@ pub(crate) struct AppearanceEditor {
     preview_options: preview_options::PreviewOptions,
     confirm_close: bool,
     texture_open: bool,
+    texture_window: texture::TextureWindow,
     close_after_apply: bool,
     pending_creation: Option<String>,
 }
+impl DockableWindow for AppearanceEditor {}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct AppearanceDraft {
@@ -142,6 +147,20 @@ impl AppearanceDraft {
 }
 
 impl AppearanceEditor {
+    pub(crate) fn register_dockables(&self, registry: &mut DockRegistry) -> Result<(), String> {
+        registry.register::<Self>("###appearance-editor", &self.dock)?;
+        self.texture_window.register_dockable(registry)
+    }
+
+    pub(crate) fn sync_docking(&self, state: &GuiCommandState, home_in_front: bool) {
+        let visible = !home_in_front
+            && self.target.as_ref().is_some_and(|(document, _)| {
+                state.document == Some(*document)
+                    && state.authoring == crate::GuiAuthoringContext::Part
+            });
+        self.dock.set_open(visible);
+        self.texture_window.set_open(visible && self.texture_open);
+    }
     pub(crate) fn create_menu(
         &mut self,
         ui: &Ui,
@@ -219,7 +238,7 @@ impl AppearanceEditor {
             self.close();
             return;
         }
-        if let Some(action) = self.window(
+        if let Some(action) = self.show_editor(
             ui,
             asset,
             &original,
@@ -231,7 +250,7 @@ impl AppearanceEditor {
         }
     }
 
-    fn window(
+    fn show_editor(
         &mut self,
         ui: &Ui,
         asset: &GuiAssetChoice,
@@ -244,14 +263,12 @@ impl AppearanceEditor {
         let title = format!("Appearance Editor — {}###appearance-editor", original.name);
         let mut open = true;
         let mut exit = EditorExit::KeepOpen;
-        ui.window(&title)
+        Self::dockable_window(ui, &title, &mut open)
             .size([405., 410.], Condition::FirstUseEver)
             .position(
                 [ui.io().display_size[0] * 0.34, 173.],
                 Condition::FirstUseEver,
             )
-            .flags(WindowFlags::NO_DOCKING)
-            .opened(&mut open)
             .build(|| {
                 self.preview_options.draw(ui, &preview_asset(asset, draft));
                 ui.input_text("Name", &mut draft.name).build();
@@ -279,7 +296,8 @@ impl AppearanceEditor {
                     exit = confirm_exit(ui, editable);
                 }
             });
-        texture::window(ui, &mut draft.metadata.checker, &mut self.texture_open);
+        self.texture_window
+            .draw(ui, &mut draft.metadata.checker, &mut self.texture_open);
         if !open {
             if draft == original {
                 exit = EditorExit::Discard;
@@ -306,6 +324,8 @@ impl AppearanceEditor {
     }
 
     fn close(&mut self) {
+        self.dock.set_open(false);
+        self.texture_window.set_open(false);
         self.target = None;
         self.draft = None;
         self.confirm_close = false;

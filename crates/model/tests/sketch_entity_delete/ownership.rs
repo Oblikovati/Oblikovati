@@ -87,7 +87,10 @@ fn older_schemas_cannot_silently_acquire_hidden_point_ownership() {
     }
     let mut missing = recipe;
     missing.defining_points = None;
-    assert_point_schema_error(&missing, "explicit list in versions 12-21");
+    assert_point_schema_error(
+        &missing,
+        "point ownership recipe (12, None): expected no defining-point field in versions 1-11 or an explicit list in versions 12 or later",
+    );
 }
 fn assert_point_schema_error(recipe: &SketchRecipe, expected: &str) {
     let error = Sketch2D::from_recipe(recipe).unwrap_err();

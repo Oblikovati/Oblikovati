@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Generic Image menu and separate Checker texture editor.
-use imgui::{Condition, Ui, WindowFlags};
+use crate::dockable_lifecycle::{DockRegistry, DockableState};
+use crate::dockable_window::DockableWindow;
+use imgui::{Condition, Ui};
 use oblikovati_model::assets::{AppearanceChecker, TextureRepeat};
 
 mod sample;
@@ -54,27 +56,41 @@ pub(super) fn slot(ui: &Ui, checker: &mut Option<AppearanceChecker>, open: &mut 
     }
 }
 
-pub(super) fn window(ui: &Ui, checker: &mut Option<AppearanceChecker>, open: &mut bool) {
-    let Some(checker) = checker.as_mut().filter(|_| *open) else {
-        return;
-    };
-    ui.window("Texture Editor — Checker###texture-editor")
-        .size([370., 600.], Condition::FirstUseEver)
-        .position(
-            [ui.io().display_size[0] * 0.055, 170.],
-            Condition::FirstUseEver,
-        )
-        .flags(WindowFlags::NO_DOCKING)
-        .opened(open)
-        .build(|| {
-            preview(ui, *checker);
-            color(ui, "Color 1", &mut checker.colors[0]);
-            color(ui, "Color 2", &mut checker.colors[1]);
-            ui.slider_config("Soften", 0, 100)
-                .display_format("%d%%")
-                .build(&mut checker.soften);
-            transforms(ui, checker);
-        });
+const TITLE: &str = "Texture Editor — Checker###texture-editor";
+
+#[derive(Default)]
+pub(super) struct TextureWindow(DockableState);
+impl DockableWindow for TextureWindow {}
+
+impl TextureWindow {
+    pub(super) fn register_dockable(&self, registry: &mut DockRegistry) -> Result<(), String> {
+        registry.register::<Self>(TITLE, &self.0)
+    }
+    pub(super) fn set_open(&self, open: bool) {
+        self.0.set_open(open);
+    }
+    pub(super) fn draw(&self, ui: &Ui, checker: &mut Option<AppearanceChecker>, open: &mut bool) {
+        self.set_open(checker.is_some() && *open);
+        let Some(checker) = checker.as_mut().filter(|_| *open) else {
+            return;
+        };
+        Self::dockable_window(ui, TITLE, open)
+            .size([370., 600.], Condition::FirstUseEver)
+            .position(
+                [ui.io().display_size[0] * 0.055, 170.],
+                Condition::FirstUseEver,
+            )
+            .build(|| {
+                preview(ui, *checker);
+                color(ui, "Color 1", &mut checker.colors[0]);
+                color(ui, "Color 2", &mut checker.colors[1]);
+                ui.slider_config("Soften", 0, 100)
+                    .display_format("%d%%")
+                    .build(&mut checker.soften);
+                transforms(ui, checker);
+            });
+        self.set_open(*open);
+    }
 }
 
 fn preview(ui: &Ui, checker: AppearanceChecker) {

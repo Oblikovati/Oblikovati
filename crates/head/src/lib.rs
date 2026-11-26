@@ -27,6 +27,7 @@ pub use arguments::{HeadCommand, HeadOptions, parse_arguments};
 mod camera_automation;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod frames;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod viewport_automation;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod window_caller;
@@ -68,6 +69,7 @@ mod work_inference_scope;
 mod work_move_body;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_part_view;
+#[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_project;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod work_shell_feature;

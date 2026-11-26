@@ -117,7 +117,7 @@ fn cross_version_order_shapes_are_declined_before_restore() {
         Sketch2D::from_recipe(&missing)
             .unwrap_err()
             .to_string()
-            .contains("version 2")
+            .contains("sketch entity order (2, None): expected no order in version 1 or an exact permutation in later versions")
     );
 }
 #[test]

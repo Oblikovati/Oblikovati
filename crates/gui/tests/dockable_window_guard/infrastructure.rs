@@ -3,6 +3,8 @@
 // Fixed chrome and transient modal file pickers, wizards, confirmations, and help
 // have a separate owner. Every entry is exact, so another window fails the guard.
 pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
+    ("appearance_editor.rs", "modal:Save Edits"),
+    ("appearance_editor/image_chooser.rs", "modal:TITLE"),
     (
         "application/document-creation/assembly_place_dialog.rs",
         "modal:FILE_CHOOSER",

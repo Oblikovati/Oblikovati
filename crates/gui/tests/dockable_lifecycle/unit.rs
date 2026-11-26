@@ -240,6 +240,8 @@ fn engine_registers_each_multi_instance_and_multi_title_owner() {
     let engine = crate::GuiFrameEngine::new().unwrap();
     let counts = crate::engine::dock_registration::owner_instance_counts(&engine);
     assert_eq!(counts.get("MaterialBrowser"), Some(&2));
+    assert_eq!(counts.get("AppearanceEditor"), Some(&1));
+    assert_eq!(counts.get("TextureWindow"), Some(&1));
     assert_eq!(counts.get("ProjectsDialog"), Some(&2));
     assert_eq!(counts.get("BlendDialog"), Some(&2));
     assert_eq!(counts.get("GuiDimensionValueEditor"), Some(&2));

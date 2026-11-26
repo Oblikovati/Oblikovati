@@ -31,13 +31,14 @@ fn native_sketch_preview_draws_clears_and_keeps_model_generation() {
             .as_chunks::<4>()
             .0
             .iter()
-            .filter(|p| p[0] > 200 && p[1] > 200 && p[2] > 200)
+            .zip(baseline.rgba.as_chunks::<4>().0)
+            .filter(|(pixel, background)| pixel != background)
             .count()
             > 50
     );
     assert!(!view.set_sketch_preview(Some(&packet)).unwrap());
     assert_eq!(view.capture().unwrap(), drawn);
-    verify_line_styles(&view, &drawn);
+    verify_line_styles(&view, &drawn, &baseline);
     verify_invalid_and_resize(&mut view, &packet);
     assert!(view.set_sketch_preview(None).unwrap());
     assert!(!view.set_sketch_preview(None).unwrap());
@@ -61,16 +62,11 @@ fn verify_invalid_and_resize(view: &mut Viewport, packet: &ViewportSketchPreview
     view.redraw().unwrap();
 }
 
-fn verify_line_styles(view: &Viewport, capture: &ViewportCapture) {
+fn verify_line_styles(view: &Viewport, capture: &ViewportCapture, baseline: &ViewportCapture) {
     let [left, y] = view.sketch_pixel(SketchPlane::xy(), [-4., 0.]).unwrap();
     let [right, _] = view.sketch_pixel(SketchPlane::xy(), [4., 0.]).unwrap();
     let lit: Vec<_> = (left..right)
-        .map(|x| {
-            (-1..=1).any(|dy| {
-                let offset = ((y + dy) as usize * capture.extent[0] as usize + x as usize) * 4;
-                capture.rgba[offset] > 200
-            })
-        })
+        .map(|x| (-1..=1).any(|dy| pixel_changed(capture, baseline, x, y + dy)))
         .collect();
     assert!(lit.iter().any(|lit| *lit), "construction line absent");
     assert!(
@@ -79,11 +75,14 @@ fn verify_line_styles(view: &Viewport, capture: &ViewportCapture) {
     );
     let [_, y] = view.sketch_pixel(SketchPlane::xy(), [0., 2.]).unwrap();
     assert!(
-        (left..right).all(|x| (-1..=1).any(|dy| capture.rgba
-            [((y + dy) as usize * capture.extent[0] as usize + x as usize) * 4]
-            > 200)),
+        (left..right).all(|x| (-1..=1).any(|dy| pixel_changed(capture, baseline, x, y + dy))),
         "boundary line has gaps"
     );
+}
+
+fn pixel_changed(capture: &ViewportCapture, baseline: &ViewportCapture, x: i32, y: i32) -> bool {
+    let offset = (y as usize * capture.extent[0] as usize + x as usize) * 4;
+    capture.rgba[offset..offset + 4] != baseline.rgba[offset..offset + 4]
 }
 
 #[test]

@@ -25,7 +25,11 @@ impl MaterialBrowser {
         } else {
             "Material Browser"
         };
-        registry.register::<Self>(title, &self.open)
+        registry.register::<Self>(title, &self.open)?;
+        if self.appearance_browser {
+            self.editor.register_dockables(registry)?;
+        }
+        Ok(())
     }
     pub(crate) fn set_open(&mut self, open: bool) {
         if open != self.open.is_requested() {
@@ -56,6 +60,9 @@ impl MaterialBrowser {
             .as_ref()
             .is_some_and(|kind| *kind == DOCUMENT_DRAWING || *kind == DOCUMENT_ASSEMBLY);
         self.open.set_suspended(unavailable || home_in_front);
+        if self.appearance_browser {
+            self.editor.sync_docking(state, home_in_front);
+        }
     }
     /// Draw the current part's asset choices and queue explicit assignments.
     /// Example: `browser.panel(ui, state, false, actions)` in a Part workspace.
