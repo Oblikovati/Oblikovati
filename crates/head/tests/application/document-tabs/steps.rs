@@ -326,7 +326,14 @@ fn general_page(world: &mut ApplicationWorld) {
 #[when("the user closes the properties dialog without making changes")]
 fn close_properties(world: &mut ApplicationWorld) {
     world.click_text("Close");
-    world.expect_no_text("General");
+    assert!(window_geometry(&properties_window_title(world)).is_none());
+}
+
+fn properties_window_title(world: &mut ApplicationWorld) -> String {
+    format!(
+        "{} Properties###document-properties",
+        world.document_name(second(world))
+    )
 }
 
 #[test]
@@ -339,10 +346,7 @@ fn document_properties_title_close_preserves_the_active_part() {
     open_second_menu(&mut world);
     choose_properties(&mut world);
     properties_title(&mut world);
-    let title = format!(
-        "{} Properties###document-properties",
-        world.document_name(second)
-    );
+    let title = properties_window_title(&mut world);
     let (position, size) = window_geometry(&title).unwrap();
     let close =
         super::diagnostics::pointer_pixels([position[0] + size[0] - 13., position[1] + 10.]);

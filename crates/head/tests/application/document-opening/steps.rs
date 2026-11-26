@@ -39,7 +39,7 @@ mod selections;
 
 pub(super) const PART_FILE: &str = "bracket.opd";
 pub(super) const DRAWING_FILE: &str = "sheet.odd";
-pub(super) const SECOND_DRAWING_FILE: &str = "layout.odd";
+pub(super) const SECOND_DRAWING_FILE: &str = "sheet2.odd";
 pub(super) const ASSEMBLY_FILE: &str = "gearbox.oad";
 const ROW_READ_OFFSET: usize = 20;
 const EMPTY_LIST_BELOW: usize = 100;
