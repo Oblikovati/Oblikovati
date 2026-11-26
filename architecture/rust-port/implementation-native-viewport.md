@@ -155,3 +155,11 @@ The [native Wayland and X11 runs](receipts/2026-11-26-viewport-zoom-wayland-3940
 verify wheel magnification on the saved Part. The projected solid shrank
 when zooming out and grew when scrolling in the other direction. The
 active document and camera orientation stayed the same.
+
+## Pan and Orbit desktop input
+
+The [native Wayland and X11 runs](receipts/2026-11-26-viewport-pan-orbit-wayland-3881/README.md)
+exercise dragging, right-click, and Escape through each desktop. Pan
+translated the view and restored the Part context menu when the tool
+closed. Orbit rotated the view, then Escape removed the guide while
+keeping the saved Part active.

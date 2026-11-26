@@ -15,10 +15,9 @@ using this status; the live scenario directory can change.
 ## Current evidence
 
 - All 12 current [Viewport Navigation Wheel scenarios](receipts/2026-11-24-navigation-wheel-current-3881/README.md) passed individually with the named native Part.
-- Viewport Orbit (#3872) passed all ten current cases and 94 steps with
-  the published native Part, including both opposite-direction examples.
-  See the [current run](receipts/2026-11-24-viewport-orbit-current-3872/README.md)
-  and the [pinned run](receipts/2026-11-21-viewport-orbit-r0-3872/README.md).
+- Viewport Orbit (#3872) passed all ten current cases and 94 steps on
+  [Wayland and X11](receipts/2026-11-26-viewport-pan-orbit-wayland-3881/README.md),
+  including both adjacent-pair examples. Direct drag and Escape tests passed on both backends.
 - File Menu (#3894) passed all eight current scenarios and 67 steps on Wayland.
   The published Part and Drawing fixtures cover menu dismissal, the recent
   row, Save As, New, and Home. See the
@@ -306,9 +305,9 @@ using this status; the live scenario directory can change.
 - Application Closing (#4030) passed all seven current scenarios and 51 steps
   on [Wayland and X11](receipts/2026-11-25-application-closing-current-4030/README.md).
   Strict build and runtime provenance remains open under #3978.
-- Viewport Pan (#3881) passed all four current scenarios and 32 steps with the native Part.
-  See the [current run](receipts/2026-11-24-viewport-pan-current-3881/README.md).
-  Separate X11 mouse tests previously passed for Pan dragging and context-menu actions.
+- Viewport Pan (#3881) passed all four current scenarios and 32 steps on
+  [Wayland and X11](receipts/2026-11-26-viewport-pan-orbit-wayland-3881/README.md).
+  Direct dragging and context-menu tests passed on both backends.
 - Viewport Zoom (#3940) passed all seven current scenarios and 74 steps on Wayland and X11.
   The [current runs](receipts/2026-11-26-viewport-zoom-wayland-3940/README.md) include native wheel input on both backends.
   Other actions used window frame-loop input.

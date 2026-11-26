@@ -8,6 +8,10 @@ use super::viewport_orientation::{
 use cucumber::{given, then, when};
 use oblikovati_viewport::ViewportCamera;
 
+#[cfg(target_os = "linux")]
+#[path = "native_input.rs"]
+pub(super) mod native_input;
+
 const NAVIGATION: &str = "##navigation-bar";
 pub(super) const EMPTY_VIEW: [i32; 2] = [420, 300];
 const ON_THE_STATUS: &str = "Escape cancels";
@@ -208,22 +212,6 @@ fn native_pan_drag_moves_the_view_and_keeps_pan_active() {
     world.close();
 }
 
-#[cfg(target_os = "linux")]
-#[test]
-fn x11_pan_drag_moves_the_view_and_keeps_the_tool_active() {
-    let mut world = ApplicationWorld::new();
-    open_block(&mut world);
-    start_pan_with_x11(&mut world);
-    let before = camera(&mut world);
-    drag_pan_with_x11(&mut world);
-    assert_pan_translation(before, camera(&mut world));
-    world.expect_status("Pan:");
-    super::x11_input::press_escape();
-    world.pump(Vec::new());
-    world.expect_ready();
-    world.close();
-}
-
 fn assert_pan_translation(before: ViewportCamera, after: ViewportCamera) {
     assert_ne!(after.target, before.target, "pan must move the target");
     assert_ne!(after.eye, before.eye, "pan must move the camera");
@@ -234,92 +222,4 @@ fn assert_pan_translation(before: ViewportCamera, after: ViewportCamera) {
     }
     assert_eq!(after.up, before.up, "pan must retain orientation");
     assert_eq!(after.scale, before.scale, "pan must retain scale");
-}
-
-#[cfg(target_os = "linux")]
-fn start_pan_with_x11(world: &mut ApplicationWorld) {
-    super::x11_input::focus_window();
-    world.pump(Vec::new());
-    let button = bar_icon_center(NavigationControl::Pan);
-    let button = diagnostics::pointer_pixels(button);
-    super::x11_input::move_pointer(button);
-    world.pump(Vec::new());
-    super::x11_input::click(button);
-    world.pump(Vec::new());
-    world.expect_status("Pan:");
-}
-
-#[cfg(target_os = "linux")]
-fn drag_pan_with_x11(world: &mut ApplicationWorld) {
-    super::x11_input::move_pointer(EMPTY_VIEW);
-    world.pump(Vec::new());
-    super::x11_input::left_button(EMPTY_VIEW, true);
-    world.pump(Vec::new());
-    let destination = [EMPTY_VIEW[0] + 80, EMPTY_VIEW[1] + 40];
-    super::x11_input::move_pointer(destination);
-    world.pump(Vec::new());
-    super::x11_input::left_button(destination, false);
-    world.pump(Vec::new());
-}
-
-#[cfg(target_os = "linux")]
-#[test]
-fn x11_pan_context_menu_owns_right_click_and_restores_part_menu() {
-    let mut world = ApplicationWorld::new();
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../test-utilities/fixtures/main-window-frame-start.opd")
-        .canonicalize()
-        .unwrap();
-    open_saved_navigation_block(&mut world, &path);
-    let before = camera(&mut world);
-    let document = world.state().document;
-    exercise_pan_menu_with_x11(&mut world, before);
-    assert_eq!(camera(&mut world), before);
-    assert_eq!(world.state().document, document);
-    assert!(!world.state().document_storage[&world.active_id()].unsaved_edits);
-    expect_part_menu_after_pan(&mut world);
-    world.close();
-}
-
-#[cfg(target_os = "linux")]
-fn exercise_pan_menu_with_x11(world: &mut ApplicationWorld, before: ViewportCamera) {
-    start_pan_with_x11(world);
-    open_pan_menu_with_x11(world);
-    pan_menu(world);
-    world.save_capture("pan-context-4059");
-    choose_pan_menu_with_x11(world, "Done");
-    world.expect_ready();
-    assert_eq!(camera(world), before);
-    start_pan_with_x11(world);
-    open_pan_menu_with_x11(world);
-    choose_pan_menu_with_x11(world, "Zoom");
-    world.expect_status("Zoom:");
-    super::x11_input::press_escape();
-    world.pump(Vec::new());
-    world.expect_ready();
-}
-
-#[cfg(target_os = "linux")]
-fn expect_part_menu_after_pan(world: &mut ApplicationWorld) {
-    super::x11_input::right_click(EMPTY_VIEW);
-    world.pump(Vec::new());
-    world.expect_text("Look At");
-    super::x11_input::press_escape();
-    world.pump(Vec::new());
-}
-
-#[cfg(target_os = "linux")]
-fn open_pan_menu_with_x11(world: &mut ApplicationWorld) {
-    super::x11_input::right_click(EMPTY_VIEW);
-    world.pump(Vec::new());
-    world.pump(Vec::new());
-    world.expect_status("Pan:");
-}
-
-#[cfg(target_os = "linux")]
-fn choose_pan_menu_with_x11(world: &mut ApplicationWorld, label: &str) {
-    let position = super::rendered_label_center(label);
-    super::x11_input::click(position);
-    world.pump(Vec::new());
-    world.pump(Vec::new());
 }

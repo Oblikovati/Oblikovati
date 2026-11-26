@@ -1,0 +1,29 @@
+viewport-pan-wayland
+4 scenarios (4 passed)
+32 steps (32 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 20.11s
+
+viewport-pan-x11
+4 scenarios (4 passed)
+32 steps (32 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 19.22s
+
+viewport-orbit-wayland
+10 scenarios (10 passed)
+94 steps (94 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 69.29s
+
+viewport-orbit-x11
+10 scenarios (10 passed)
+94 steps (94 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 70.06s
+
+gestures-wayland
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1731 filtered out; finished in 13.70s
+
+gestures-x11
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1731 filtered out; finished in 13.74s
+
+Head Clippy
+cargo clippy --locked --offline -j2 -p oblikovati-head --all-targets --all-features -- -D warnings
+Finished in 13.33s. Cargo formatting also passed.

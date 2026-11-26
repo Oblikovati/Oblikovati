@@ -71,16 +71,20 @@ fn incline_block(world: &mut ApplicationWorld) {
 
 #[cfg(target_os = "linux")]
 #[test]
-fn x11_orbit_drag_and_escape_keep_the_saved_block_active() {
+fn desktop_orbit_drag_and_escape_keep_the_saved_block_active() {
+    use super::super::viewport_pan::native_input;
+
     let mut world = ApplicationWorld::new();
     open_saved_navigation_block(&mut world, &bundled_orbit_block());
     let before = camera(&mut world);
-    start_orbit_with_x11(&mut world);
-    drag_orbit_with_x11(&mut world);
+    let control = diagnostics::pointer_pixels(bar_icon_center(NavigationControl::Orbit));
+    native_input::click(&mut world, control);
+    free_rotation(&mut world);
+    expect_guide(&mut world, true);
+    native_input::drag(&mut world, DRAG[0], DRAG[1]);
     assert_ne!(camera(&mut world).eye, before.eye);
     world.save_capture("saved-block-orbit-guide");
-    super::super::x11_input::press_escape();
-    world.pump(Vec::new());
+    native_input::escape(&mut world);
     world.expect_ready();
     expect_guide(&mut world, false);
     super::super::viewport_pan::expect_part_and_solid(&mut world);
@@ -106,33 +110,4 @@ fn bundled_orbit_block() -> std::path::PathBuf {
         .join("../../test-utilities/fixtures/document-saving/SaveAsFolder/ExistingSolidPart.opd")
         .canonicalize()
         .unwrap()
-}
-
-#[cfg(target_os = "linux")]
-fn start_orbit_with_x11(world: &mut ApplicationWorld) {
-    use super::super::x11_input::{click, focus_window, move_pointer};
-    focus_window();
-    world.pump(Vec::new());
-    let control = bar_icon_center(NavigationControl::Orbit);
-    let control = diagnostics::pointer_pixels(control);
-    move_pointer(control);
-    world.pump(Vec::new());
-    click(control);
-    world.pump(Vec::new());
-    free_rotation(world);
-    expect_guide(world, true);
-}
-
-#[cfg(target_os = "linux")]
-fn drag_orbit_with_x11(world: &mut ApplicationWorld) {
-    use super::super::x11_input::{left_button, move_pointer};
-    let [start, end] = DRAG;
-    move_pointer(start);
-    world.pump(Vec::new());
-    left_button(start, true);
-    world.pump(Vec::new());
-    move_pointer(end);
-    world.pump(Vec::new());
-    left_button(end, false);
-    world.pump(Vec::new());
 }
