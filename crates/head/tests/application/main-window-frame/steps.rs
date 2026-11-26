@@ -52,8 +52,10 @@ fn unsaved_part_remains_open(world: &mut ApplicationWorld) {
 #[given("the MCAD Software is open in a restored window")]
 fn restored_window(world: &mut ApplicationWorld) {
     assert!(!world.app().window.native.view.window_maximized().unwrap());
-    world.window_frame_before = Some(super::x11_input::application_bounds());
-    super::x11_input::focus_window();
+    if !world.app().window.native.view.uses_wayland() {
+        world.window_frame_before = Some(super::x11_input::application_bounds());
+        super::x11_input::focus_window();
+    }
 }
 
 #[given("Home is active with no model, drawing or presentation document open")]
@@ -97,8 +99,10 @@ fn control_tooltip(world: &mut ApplicationWorld, label: &str) {
     hover_control(world, 1, label);
 }
 fn hover_control(world: &mut ApplicationWorld, index: usize, label: &str) {
-    super::x11_input::move_pointer(super::main_window_frame_native::frame_control_center(index));
-    world.pump(Vec::new());
+    super::main_window_frame_accessibility::hover_frame_point(
+        world,
+        super::main_window_frame_native::frame_control_center(index),
+    );
     std::thread::sleep(std::time::Duration::from_millis(700));
     world.pump(Vec::new());
     world.expect_text(label);
@@ -384,8 +388,10 @@ fn restored_window_in_context(world: &mut ApplicationWorld, context: String) {
     restored_window(world);
 }
 #[then("the application bar forms the top of the window with no separate system title bar")]
-fn application_bar_is_window_top(_: &mut ApplicationWorld) {
-    assert_eq!(super::x11_input::frame_extents(), [0, 0, 0, 0]);
+fn application_bar_is_window_top(world: &mut ApplicationWorld) {
+    if !world.app().window.native.view.uses_wayland() {
+        assert_eq!(super::x11_input::frame_extents(), [0, 0, 0, 0]);
+    }
     let (position, _) = super::window_geometry("##application-ribbon").unwrap();
     assert_eq!(position, [0., 0.]);
 }

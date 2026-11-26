@@ -328,8 +328,8 @@ using this status; the live scenario directory can change.
 - Main Window Frame (#4063) passed all 20 current cases and 169 steps
   with X11, Openbox, tint2, and AT-SPI. The minimum-size check kept the
   saved Part active. Both Close paths prompted before exiting, and Cancel
-  kept the unsaved edit and preserved the working file. See the
-  [current run](receipts/2026-11-25-main-window-frame-current-4063/README.md).
+  kept the unsaved edit and preserved the working file. [X11 suite](receipts/2026-11-25-main-window-frame-current-4063/README.md)
+  [Home and Part window controls](receipts/2026-11-26-wayland-frame-atspi-4064/README.md) passed on Wayland and X11.
 - Viewport Entity Selection (#4055) passed all four current solid-face scenarios and 24 steps.
   The native spatial fixture opens, but its 3D sketches are absent from the browser and viewport
   (#4092). See the [current run](receipts/2026-11-25-viewport-entity-selection-current-4055/README.md).

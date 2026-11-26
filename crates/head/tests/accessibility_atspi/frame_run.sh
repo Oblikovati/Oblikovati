@@ -10,8 +10,16 @@ if [[ "${1-}" != --private-session ]]; then
     cd "$script_dir/../../../.."
     # Keep the accessibility setting in the private session, away from user preferences.
     export GSETTINGS_BACKEND=memory
-    exec tools/with-xvfb.sh dbus-run-session -- "$script" --private-session
+    case "${1-}" in
+        --wayland)
+            : "${WAYLAND_DISPLAY:?expected a Wayland compositor socket}"
+            exec env -u DISPLAY dbus-run-session -- "$script" --private-session wayland
+            ;;
+        "") exec tools/with-xvfb.sh dbus-run-session -- "$script" --private-session x11 ;;
+        *) printf 'Usage: %s [--wayland]\n' "$0" >&2; exit 2 ;;
+    esac
 fi
+backend=$2
 
 find_registry() {
     local registry
@@ -51,13 +59,17 @@ accessibility_bus --method org.freedesktop.DBus.Properties.Set org.a11y.Status I
 accessibility_bus --method org.freedesktop.DBus.Properties.Get org.a11y.Status IsEnabled | grep '<true>' >/dev/null
 
 "$registry" --use-gnome-session &
-registry_pid=$!
-openbox &
-manager_pid=$!
-tint2 -c "$script_dir/frame_tint2rc" &
-taskbar_pid=$!
-trap 'kill "$taskbar_pid" "$manager_pid" "$registry_pid" 2>/dev/null || true; wait "$taskbar_pid" "$manager_pid" "$registry_pid" 2>/dev/null || true' EXIT
-wait_for_desktop
+children=("$!")
+trap 'kill "${children[@]}" 2>/dev/null || true; wait "${children[@]}" 2>/dev/null || true' EXIT
+if [[ "$backend" == x11 ]]; then
+    openbox &
+    children+=("$!")
+    tint2 -c "$script_dir/frame_tint2rc" &
+    children+=("$!")
+    wait_for_desktop
+else
+    export OBK_BDD_SCENARIO="${OBK_BDD_SCENARIO:-Display the application bar as the top of the main window}"
+fi
 
 export OBK_BDD_FEATURE=main-window-frame
 cargo test --locked --offline -p oblikovati-head --lib application_scenarios_use_the_native_window -- --nocapture --test-threads=1

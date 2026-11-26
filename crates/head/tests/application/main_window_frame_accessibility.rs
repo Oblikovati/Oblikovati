@@ -12,8 +12,7 @@ fn frame_icons_and_native_names(world: &mut ApplicationWorld) {
 /// Verify the three rendered frame controls, for example at the minimum window size.
 pub(super) fn assert_drawn_frame_controls(world: &mut ApplicationWorld) -> ([f32; 2], [f32; 2]) {
     let height = world.app().window.native.drawable_extent().unwrap()[1] as i32;
-    super::x11_input::move_pointer([5, height - 30]);
-    world.pump(Vec::new());
+    hover_frame_point(world, [5, height - 30]);
     let (position, size) = super::window_geometry("##application-window-controls")
         .expect("expected the frame controls");
     let masks = icon_masks(world, position, size);
@@ -26,6 +25,15 @@ pub(super) fn assert_drawn_frame_controls(world: &mut ApplicationWorld) -> ([f32
         "frame icons must differ"
     );
     (position, size)
+}
+
+pub(super) fn hover_frame_point(world: &mut ApplicationWorld, point: [i32; 2]) {
+    if world.app().window.native.view.uses_wayland() {
+        world.hover(point);
+    } else {
+        super::x11_input::move_pointer(point);
+        world.pump(Vec::new());
+    }
 }
 
 fn icon_masks(world: &mut ApplicationWorld, position: [f32; 2], size: [f32; 2]) -> Vec<Vec<bool>> {
@@ -73,20 +81,22 @@ fn pixel(capture: &oblikovati_viewport::ViewportCapture, point: [i32; 2]) -> [u8
     ]
 }
 fn assert_platform_names(world: &mut ApplicationWorld, position: [f32; 2], size: [f32; 2]) {
-    let origin = world
-        .app()
-        .window
-        .native
-        .view
-        .window_screen_bounds()
-        .expect("native screen bounds");
+    let view = &world.app().window.native.view;
+    let (space, origin) = if view.uses_wayland() {
+        ("window", [0; 4])
+    } else {
+        (
+            "screen",
+            view.window_screen_bounds().expect("native screen bounds"),
+        )
+    };
     let width = size[0] / 3.;
     let mut command = std::process::Command::new("/usr/bin/python3");
     command.arg(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/tests/accessibility_atspi/assert_names.py"
     ));
-    command.arg(std::process::id().to_string());
+    command.arg(space).arg(std::process::id().to_string());
     for index in 0..3 {
         let min = super::pointer_pixels([position[0] + index as f32 * width, position[1]]);
         let max = super::pointer_pixels([

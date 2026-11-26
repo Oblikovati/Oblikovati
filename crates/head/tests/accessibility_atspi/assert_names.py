@@ -7,8 +7,9 @@ import gi
 gi.require_version('Atspi', '2.0')
 from gi.repository import Atspi
 
-process_id = int(sys.argv[1])
-expected = [tuple(map(int, sys.argv[2 + i * 4:6 + i * 4])) for i in range(3)]
+coordinates = {'screen': Atspi.CoordType.SCREEN, 'window': Atspi.CoordType.WINDOW}[sys.argv[1]]
+process_id = int(sys.argv[2])
+expected = [tuple(map(int, sys.argv[3 + i * 4:7 + i * 4])) for i in range(3)]
 Atspi.init()
 for _ in range(100):
     desktop = Atspi.get_desktop(0)
@@ -24,7 +25,7 @@ for _ in range(100):
                 continue
             for button, bounds in zip(buttons[:3], expected):
                 assert button.get_role_name() == 'button', button.get_name()
-                rect = button.get_component_iface().get_extents(Atspi.CoordType.SCREEN)
+                rect = button.get_component_iface().get_extents(coordinates)
                 actual = (rect.x, rect.y, rect.width, rect.height)
                 assert all(abs(a - b) <= 2 for a, b in zip(actual, bounds)), (button.get_name(), actual, bounds)
             sys.exit(0)

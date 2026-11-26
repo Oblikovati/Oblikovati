@@ -201,6 +201,12 @@ XMODIFIERS=@im=none \
   crates/head/tests/accessibility_atspi/frame_run.sh
 ```
 
+For the Main Window Frame application-bar cases, pass `--wayland` with
+`WAYLAND_DISPLAY` set to the compositor socket. This runs the Home and
+Part examples on that compositor with a private accessibility bus. The
+AT-SPI client checks window-relative bounds on Wayland and screen bounds
+on X11.
+
 The Linux docking-system restart scenario also starts the desktop executable
 twice. Build `oblikovati` from the same source as the test, and set
 `OBK_BDD_DESKTOP_BINARY` to its absolute path. Run with an X11 window manager,
