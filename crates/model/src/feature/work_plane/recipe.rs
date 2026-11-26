@@ -21,6 +21,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Hole(crate::feature::hole::HoleRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
+    CircularPattern(crate::feature::circular_pattern::CircularPatternRecipe),
     RectangularPattern(crate::feature::rectangular_pattern::RectangularPatternRecipe),
     SketchPrism(crate::feature::sketch_prism::SketchPrismRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
@@ -62,6 +63,7 @@ impl WorkPlaneDefinition {
             Self::Hole(definition) => Source::Hole(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
+            Self::CircularPattern(pattern) => Source::CircularPattern(pattern.recipe().clone()),
             Self::RectangularPattern(pattern) => {
                 Source::RectangularPattern(pattern.recipe().clone())
             }
@@ -96,6 +98,11 @@ fn restore_definition(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     use WorkPlaneDefinitionRecipe::*;
     match definition {
+        CircularPattern(recipe) => {
+            crate::feature::circular_pattern::CircularPatternDefinition::new(recipe)
+                .map(|definition| WorkPlaneDefinition::CircularPattern(Box::new(definition)))
+                .map_err(WorkPlaneError::BodyReference)
+        }
         RectangularPattern(recipe) => {
             crate::feature::rectangular_pattern::RectangularPatternDefinition::new(recipe)
                 .map(|definition| WorkPlaneDefinition::RectangularPattern(Box::new(definition)))
@@ -180,6 +187,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 17,
             Self::MoveBody(_) => 18,
             Self::Shell(_) => 19,
+            Self::CircularPattern(_) => 21,
             Self::RectangularPattern(_) => 20,
             Self::Fillet(_) => 15,
             Self::DeleteBody(_) => 12,
@@ -208,6 +216,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 22,
             Self::MoveBody(_) => 23,
             Self::Shell(_) => 24,
+            Self::CircularPattern(_) => 26,
             Self::RectangularPattern(_) => 25,
             Self::Fillet(_) => 20,
             Self::DeleteBody(_) => 17,

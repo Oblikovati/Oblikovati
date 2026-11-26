@@ -194,3 +194,25 @@ undo, redo, resize, and reopen.
 Count expressions, boundary clipping, other placement modes, and source
 features outside Join and Cut extrusions remain open. The report's
 unsupported-method totals still reflect its original sweep.
+
+## Circular patterns of extrusion features
+
+The typed `patternCircular` request rotates certified Join and Cut tools
+about an authored axis and uses the same batched replay as rectangular
+patterns. It stores a numeric count and an angle in radians or a
+reference to an angular parameter. It supports full-sweep spacing,
+explicit increments, fitted angles, mid-plane placement, and occurrence
+suppression. The desktop regression checks an off-origin axis and
+preserves the original body key and remaining holes after resize and
+reopen.
+
+The bolt flange Wayland MCP workflow passed. Its six-hole flange matched
+4.410796 cm³ at 40 mm diameter and 7.238229 cm³ after the diameter grew
+to 50 mm. Count expressions, clipping, and source features outside
+Join and Cut extrusions remain open for circular patterns.
+
+PCB mount, faceplate, and veroboard passed again on the shared pattern
+implementation. The wheel's cut still stops at the source sketch on a
+face-offset work plane. The typed extrusion returns `expected an
+available current plane` before it creates the seed for the wheel's
+circular pattern.

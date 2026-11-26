@@ -88,13 +88,13 @@ pub trait PartFeatureEvaluator {
         )))
     }
     /// Apply the resolved extrusion tools at each grid occurrence.
-    /// Example: `backend.evaluate_rectangular_pattern(id, body, &sources, &occurrences)`.
-    fn evaluate_rectangular_pattern(
+    /// Example: `backend.evaluate_extrusion_pattern(id, body, &sources, &occurrences)`.
+    fn evaluate_extrusion_pattern(
         &mut self,
         _feature: FeatureId,
         _body: &Self::Body,
-        _sources: &[crate::feature::rectangular_pattern::PatternPrismSource<'_>],
-        _occurrences: &[crate::feature::rectangular_pattern::RectangularPatternOccurrence],
+        _sources: &[crate::feature::extrusion_pattern::PatternPrismSource<'_>],
+        _occurrences: &[crate::feature::extrusion_pattern::ExtrusionPatternOccurrence],
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
         Err(PartFeatureFailure::Unsupported(
             "rectangular pattern: expected a named tool replay backend".into(),

@@ -29,7 +29,7 @@ impl CertifiedNamedSolidEvaluator<'_> {
     }
 }
 
-fn to_rigid_motion(motion: &ResolvedBodyMotion) -> crate::RigidMotion {
+pub(super) fn to_rigid_motion(motion: &ResolvedBodyMotion) -> crate::RigidMotion {
     match motion {
         ResolvedBodyMotion::Translation(vector) => crate::RigidMotion::Translation(*vector),
         ResolvedBodyMotion::Rotation {

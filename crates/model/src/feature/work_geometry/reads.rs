@@ -12,6 +12,7 @@ impl WorkGeometryDefinition {
             Self::Fillet(definition) => return definition.reads(),
             Self::Hole(definition) => return definition.reads(),
             Self::Shell(definition) => return definition.reads(),
+            Self::CircularPattern(definition) => return definition.reads(),
             Self::RectangularPattern(definition) => return definition.reads(),
             Self::MoveBody(definition) => return definition.reads(),
             Self::SketchPrism(definition) => {

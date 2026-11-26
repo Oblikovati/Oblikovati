@@ -410,3 +410,66 @@ fn rectangular_pattern_replays_joined_bosses_on_the_same_body() {
         primary
     );
 }
+
+#[test]
+fn circular_pattern_replays_unsuppressed_through_cuts_after_reopen() {
+    use oblikovati_api::wire::featureargs::{PatternCircular, PatternPlacement};
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let document = open_sketch(&mut owner);
+    let client = Client::new(owner.document_host());
+    client.features().add_feature(&request()).unwrap();
+    let sketch_index = client
+        .sketch()
+        .create(&Default::default())
+        .unwrap()
+        .sketch_index;
+    client
+        .sketch()
+        .add_entity(&AddSketchEntityArgs {
+            sketch_index,
+            kind: "rectangle".into(),
+            points: Some(vec![Some(vec![0.6875, 0.4375]), Some(vec![0.8125, 0.5625])]),
+            ..Default::default()
+        })
+        .unwrap();
+    let cut = client
+        .features()
+        .add_feature(&Extrude {
+            sketch_index,
+            operation: "cut".into(),
+            extent: "through-all".into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .0
+        .unwrap();
+    let seed = cut["name"].as_str().unwrap().to_owned();
+    let result = client
+        .features()
+        .add_feature(&PatternCircular {
+            source_features: Some(vec![seed]),
+            count: 4,
+            angle: "360 deg".into(),
+            axis_point: Some(vec![0.5, 0.5, 0.]),
+            pattern_placement: PatternPlacement {
+                suppressed_elements: Some(vec![2]),
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .unwrap()
+        .0
+        .unwrap();
+    assert_eq!(result["kind"], "circular-pattern");
+    let hole_area = 0.125_f64.powi(2);
+    let key = check_boolean_body(&mut owner, document, 1. - 3. * hole_area);
+    set_size(&mut owner, "12 mm");
+    let reopened = reopen_boolean_part(&mut owner, document);
+    assert_eq!(
+        check_boolean_body(&mut owner, reopened, 1.728 - 3. * hole_area * 1.2),
+        key
+    );
+}

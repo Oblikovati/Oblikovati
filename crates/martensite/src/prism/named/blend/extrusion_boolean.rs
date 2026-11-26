@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 pub(in crate::prism::named) use super::solid_boolean::BooleanTool;
 use super::*;
-use martensite_tkmath::gp::Transform3;
 use martensite_tktopalgo::brep_builder_api::BRepBuilderAPITransform;
 use oblikovati_model::feature::sketch_prism::PrismBoolean;
 
@@ -79,18 +78,18 @@ impl NamedPrismSnapshot {
         })
     }
 
-    pub(in crate::prism::named) fn translated_boolean_tool(
+    pub(in crate::prism::named) fn transformed_boolean_tool(
         &self,
         history: &DocumentEditHistory,
         document: DocumentGuid,
-        translation: [f64; 3],
+        motion: crate::RigidMotion,
         marker: &[u8],
     ) -> Result<BooleanTool, String> {
         let mut tool = self.boolean_tool(history, document)?;
         distinguish_pattern_tool(&mut tool.sources, document, marker)?;
         let mut moved = BRepBuilderAPITransform::with_shape(
             &tool.shape,
-            Transform3::translation(translation),
+            super::rigid_motion::compose(&[motion])?,
             false,
             false,
         )

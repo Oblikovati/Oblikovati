@@ -13,13 +13,13 @@ pub use evaluation::{
 mod datum_delete;
 mod datum_metadata;
 mod derived_ids;
+mod extrusion_pattern_create;
 mod feature_ids;
 mod fillet_create;
 mod hole_create;
 mod move_body_create;
 mod occurrence_ids;
 mod prism_create;
-mod rectangular_pattern_create;
 mod scalar_ownership;
 mod shell_create;
 mod sketch_block_create;

@@ -3,7 +3,8 @@ use super::*;
 use crate::prism::named::blend::extrusion_boolean::BooleanTool;
 use oblikovati_model::{
     feature::{
-        rectangular_pattern::{PatternPrismSource, RectangularPatternOccurrence},
+        extrusion_pattern::{ExtrusionPatternOccurrence, PatternPrismSource},
+        move_body::ResolvedBodyMotion,
         sketch_prism::PrismBoolean,
     },
     history::ResolvedDocumentSketch,
@@ -11,12 +12,12 @@ use oblikovati_model::{
 };
 
 impl CertifiedNamedSolidEvaluator<'_> {
-    pub(super) fn evaluate_named_rectangular_pattern(
+    pub(super) fn evaluate_named_extrusion_pattern(
         &mut self,
         feature: FeatureId,
         body: &NamedSolid,
         sources: &[PatternPrismSource<'_>],
-        occurrences: &[RectangularPatternOccurrence],
+        occurrences: &[ExtrusionPatternOccurrence],
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         if occurrences.is_empty() {
             return Ok(body.clone());
@@ -66,14 +67,13 @@ impl CertifiedNamedSolidEvaluator<'_> {
                     )?;
                     operation = source.operation;
                 }
-                let marker =
-                    occurrence_name(self.document, feature, source.source, occurrence.offset)
-                        .map_err(failure)?;
+                let marker = occurrence_name(self.document, feature, source.source, *occurrence)
+                    .map_err(failure)?;
                 let tool = seed
-                    .translated_boolean_tool(
+                    .transformed_boolean_tool(
                         self.history,
                         self.document,
-                        occurrence.translation,
+                        super::move_body_evaluation::to_rigid_motion(&occurrence.motion),
                         &marker,
                     )
                     .map_err(|cause| {
@@ -121,7 +121,7 @@ fn pattern_failure(feature: FeatureId, cause: String) -> PartFeatureFailure<Eval
             .refused(
                 Kind::InvalidResult,
                 Entity::Body,
-                format!("rectangular pattern: {cause}"),
+                format!("extrusion pattern: {cause}"),
             )
             .for_feature(feature),
     )
@@ -131,14 +131,19 @@ fn occurrence_name(
     document: DocumentGuid,
     feature: FeatureId,
     source: FeatureId,
-    cell: [i64; 2],
+    occurrence: ExtrusionPatternOccurrence,
 ) -> Result<Vec<u8>, String> {
-    let [column, row] = cell.map(|offset| (offset + i64::from(u32::MAX) + 1) as u64);
+    let [column, row] = occurrence
+        .offset
+        .map(|offset| (offset + i64::from(u32::MAX) + 1) as u64);
     SemanticReferenceName::new(
         document,
         feature.0,
         4,
-        "rectangular-pattern",
+        match occurrence.motion {
+            ResolvedBodyMotion::Translation(_) => "rectangular-pattern",
+            ResolvedBodyMotion::Rotation { .. } => "circular-pattern",
+        },
         "occurrence",
         &[source.0, column, row],
     )?

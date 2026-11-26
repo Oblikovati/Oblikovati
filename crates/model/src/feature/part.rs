@@ -27,10 +27,10 @@ pub use evaluate::{
     unavailable_planar_face,
 };
 pub use evaluator::PartFeatureEvaluator;
+mod extrusion_pattern;
 mod prefix_replay;
 mod prism_replacement;
 mod reads;
-mod rectangular_pattern;
 mod resolver;
 mod transfer;
 pub use prefix_replay::BorrowedPartReplay;
@@ -54,6 +54,7 @@ pub enum PartFeatureDefinition {
     Hole(Box<super::hole::HoleDefinition>),
     MoveBody(Box<super::move_body::MoveBodyDefinition>),
     Shell(Box<super::shell::ShellDefinition>),
+    CircularPattern(Box<super::circular_pattern::CircularPatternDefinition>),
     RectangularPattern(Box<super::rectangular_pattern::RectangularPatternDefinition>),
     SketchPrism(Box<super::sketch_prism::SketchPrismDefinition>),
     Fixed(SketchPlane),
@@ -83,6 +84,7 @@ impl PartFeatureDefinition {
             Self::Hole(_) => "hole",
             Self::MoveBody(_) => "move-body",
             Self::Shell(_) => "shell",
+            Self::CircularPattern(_) => "circular-pattern",
             Self::RectangularPattern(_) => "rectangular-pattern",
             Self::Axis(_) | Self::AxisThroughPoints(_) => "work-axis",
             Self::Point(_) | Self::PointAtReference(_) => "work-point",

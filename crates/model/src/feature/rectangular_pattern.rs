@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Authored feature grid whose occurrence identities survive replay.
-use super::{FeatureId, FeatureReadFootprint, FeatureReadKey};
+use super::extrusion_pattern::ExtrusionPatternOccurrence;
+use super::{FeatureId, FeatureReadFootprint, FeatureReadKey, move_body::ResolvedBodyMotion};
 use std::collections::BTreeSet;
 
 /// Authored grid and source feature identities stored in the part.
@@ -18,20 +19,6 @@ pub struct RectangularPatternRecipe {
 /// Validated grid recipe.
 #[derive(Clone, Debug, PartialEq)]
 pub struct RectangularPatternDefinition(RectangularPatternRecipe);
-
-/// Model-space placement addressed by signed offsets from the authored seed cell.
-#[derive(Clone, Copy, Debug)]
-pub struct RectangularPatternOccurrence {
-    pub offset: [i64; 2],
-    pub translation: [f64; 3],
-}
-
-/// A resolved extrusion tool and its operation, borrowed from the authored source feature.
-pub struct PatternPrismSource<'a> {
-    pub source: FeatureId,
-    pub prism: super::sketch_prism::ResolvedSketchPrism<'a>,
-    pub operation: super::sketch_prism::PrismBoolean,
-}
 
 impl RectangularPatternDefinition {
     /// Validate a saved grid. Example: `RectangularPatternDefinition::new(recipe)?`.
@@ -57,7 +44,7 @@ impl RectangularPatternDefinition {
         )
     }
     /// Compute the current translations in authored grid order. Example: `definition.occurrences()?`.
-    pub fn occurrences(&self) -> Result<Vec<RectangularPatternOccurrence>, String> {
+    pub fn occurrences(&self) -> Result<Vec<ExtrusionPatternOccurrence>, String> {
         let [columns, rows] = self.0.counts.map(i64::from);
         let [sx, sy] = std::array::from_fn(|axis| {
             if self.0.mid_plane[axis] {
@@ -89,7 +76,7 @@ impl RectangularPatternDefinition {
         Ok(occurrences)
     }
 
-    fn occurrence(&self, offset: [i64; 2]) -> Result<RectangularPatternOccurrence, String> {
+    fn occurrence(&self, offset: [i64; 2]) -> Result<ExtrusionPatternOccurrence, String> {
         let scale = std::array::from_fn::<_, 2, _>(|axis| {
             if self.0.fitted && self.0.counts[axis] > 1 {
                 offset[axis] as f64 / f64::from(self.0.counts[axis] - 1)
@@ -105,21 +92,15 @@ impl RectangularPatternDefinition {
                 "rectangular pattern cell {offset:?}: expected a finite translation"
             ));
         }
-        Ok(RectangularPatternOccurrence {
+        Ok(ExtrusionPatternOccurrence {
             offset,
-            translation,
+            motion: ResolvedBodyMotion::Translation(translation),
         })
     }
 }
 
 fn validate_recipe(recipe: &RectangularPatternRecipe) -> Result<(), String> {
-    let unique: BTreeSet<_> = recipe.sources.iter().copied().collect();
-    if unique.is_empty() || unique.len() != recipe.sources.len() || unique.contains(&FeatureId(0)) {
-        return Err(format!(
-            "rectangular pattern sources {:?}: expected distinct feature identities",
-            recipe.sources
-        ));
-    }
+    super::extrusion_pattern::validate_sources(&recipe.sources)?;
     if recipe.counts.contains(&0) || recipe.suppressed.contains(&0) {
         return Err(
             "rectangular pattern: expected positive counts and suppression outside the seed".into(),
@@ -154,16 +135,16 @@ mod tests {
             .occurrences()
             .unwrap()
             .into_iter()
-            .map(|item| (item.offset, item.translation))
+            .map(|item| (item.offset, item.motion))
             .collect();
         assert_eq!(
             positions,
             vec![
-                ([-1, 0], [-2., 0., 0.]),
-                ([2, 0], [4., 0., 0.]),
-                ([-1, 1], [-2., 2., 0.]),
-                ([0, 1], [0., 2., 0.]),
-                ([2, 1], [4., 2., 0.]),
+                ([-1, 0], ResolvedBodyMotion::Translation([-2., 0., 0.])),
+                ([2, 0], ResolvedBodyMotion::Translation([4., 0., 0.])),
+                ([-1, 1], ResolvedBodyMotion::Translation([-2., 2., 0.])),
+                ([0, 1], ResolvedBodyMotion::Translation([0., 2., 0.])),
+                ([2, 1], ResolvedBodyMotion::Translation([4., 2., 0.])),
             ]
         );
     }

@@ -43,7 +43,7 @@ fn operation(snapshot: &DocumentSnapshot, input: &MoveBodyOp) -> Result<MoveBody
         "rotateAboutLine" => Ok(MoveBodyOperation::Rotation {
             origin: vector(&input.point, "rotateAboutLine point")?.map(DatumLength::Constant),
             direction: vector(&input.dir, "rotateAboutLine dir")?,
-            angle: angle(snapshot, &input.angle)?,
+            angle: angle(snapshot, &input.angle, "moveBody angle")?,
         }),
         other => Err(Error(format!(
             "moveBody operation type {other:?}: expected freeDrag, alongRay or rotateAboutLine"
@@ -77,7 +77,11 @@ fn optional_length(
     }
     crate::extrusion::finite_length(snapshot, source, label)
 }
-fn angle(snapshot: &DocumentSnapshot, source: &str) -> Result<DatumAngle, Error> {
+pub(crate) fn angle(
+    snapshot: &DocumentSnapshot,
+    source: &str,
+    label: &str,
+) -> Result<DatumAngle, Error> {
     let parameters = &snapshot.parameters;
     let text = source.trim();
     if let Some(id) = parameters.find(text) {
@@ -88,7 +92,7 @@ fn angle(snapshot: &DocumentSnapshot, source: &str) -> Result<DatumAngle, Error>
     let expression = Expression::parse(text, parameters.units()).map_err(api_error)?;
     if !expression.references().is_empty() {
         return Err(Error(format!(
-            "moveBody angle {source:?}: expected a parameter name or a reference-free angle expression"
+            "{label} {source:?}: expected a parameter name or a reference-free angle expression"
         )));
     }
     let mut quantity = expression.evaluate().map_err(api_error)?;
@@ -99,7 +103,7 @@ fn angle(snapshot: &DocumentSnapshot, source: &str) -> Result<DatumAngle, Error>
     }
     if quantity.dimension != Dimension::Angle || !quantity.value.is_finite() {
         return Err(Error(format!(
-            "moveBody angle {source:?}: expected a finite angle"
+            "{label} {source:?}: expected a finite angle"
         )));
     }
     DatumAngle::constant(quantity.value).map_err(api_error)

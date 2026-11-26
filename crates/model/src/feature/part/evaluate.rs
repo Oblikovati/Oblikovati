@@ -373,6 +373,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 | PartFeatureDefinition::Hole(_)
                 | PartFeatureDefinition::Shell(_)
                 | PartFeatureDefinition::MoveBody(_)
+                | PartFeatureDefinition::CircularPattern(_)
                 | PartFeatureDefinition::RectangularPattern(_)
         ) {
             feature
@@ -398,8 +399,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::Hole(definition) => {
                 self.evaluate_hole(snapshot, backend, id, definition)
             }
-            PartFeatureDefinition::RectangularPattern(definition) => {
-                self.evaluate_rectangular_pattern(snapshot, backend, id, definition)
+            definition @ (PartFeatureDefinition::CircularPattern(_)
+            | PartFeatureDefinition::RectangularPattern(_)) => {
+                self.evaluate_extrusion_pattern(snapshot, backend, id, definition)
             }
             PartFeatureDefinition::Shell(definition) => {
                 self.evaluate_shell(snapshot, backend, id, definition)
@@ -442,7 +444,6 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         self.deleted.insert(feature, definition.key().to_vec());
         Ok(())
     }
-
     fn evaluate_prism<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
         snapshot: &DocumentSnapshot,

@@ -3,11 +3,11 @@
 //! Typed owner-thread queries and transactional edits; native transport is a separate boundary.
 pub mod conditional_prism;
 mod datums;
+mod extrusion_pattern;
 pub mod legacy_profile;
 mod move_body;
 mod part_feature_transaction;
 mod part_owner;
-mod rectangular_pattern;
 pub use move_body::{PreparedMoveBody, prepare_move_body};
 mod reference_bytes;
 pub use datums::{

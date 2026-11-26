@@ -5,24 +5,37 @@ use super::{
 };
 use crate::{
     feature::{
-        FeatureId,
-        rectangular_pattern::{PatternPrismSource, RectangularPatternDefinition},
-        work_geometry::DatumFaceResolver,
+        FeatureId, extrusion_pattern::PatternPrismSource, work_geometry::DatumFaceResolver,
         work_plane::WorkPlaneFaceReference,
     },
     history::DocumentSnapshot,
 };
 
 impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
-    pub(super) fn evaluate_rectangular_pattern<
+    pub(super) fn evaluate_extrusion_pattern<
         B: PartFeatureEvaluator<Body = Body, Failure = Failure>,
     >(
         &mut self,
         snapshot: &DocumentSnapshot,
         backend: &mut B,
         feature: FeatureId,
-        definition: &RectangularPatternDefinition,
+        definition: &PartFeatureDefinition,
     ) -> Result<(), PartFeatureFailure<Failure>> {
+        let (source_ids, occurrences) = match definition {
+            PartFeatureDefinition::RectangularPattern(pattern) => {
+                (&pattern.recipe().sources, pattern.occurrences())
+            }
+            PartFeatureDefinition::CircularPattern(pattern) => (
+                &pattern.recipe().sources,
+                pattern.occurrences(&snapshot.parameters),
+            ),
+            _ => {
+                return Err(PartFeatureFailure::Unsupported(
+                    "expected an extrusion pattern".into(),
+                ));
+            }
+        };
+        let occurrences = occurrences.map_err(PartFeatureFailure::Unsupported)?;
         let mut slot = None;
         let mut sources = Vec::new();
         let mut target_keys = Vec::new();
@@ -32,19 +45,19 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 resolve_body_face(&self.bodies, &self.body_lineage, backend, reference)
             },
         };
-        for source in &definition.recipe().sources {
+        for source in source_ids {
             let authored = snapshot
                 .work_geometry
                 .get(*source)
                 .map_err(|cause| PartFeatureFailure::Unsupported(cause.to_string()))?;
             let PartFeatureDefinition::SketchPrism(prism) = authored.definition() else {
                 return Err(PartFeatureFailure::Unsupported(format!(
-                    "rectangular pattern source {source:?}: expected an extrusion"
+                    "extrusion pattern source {source:?}: expected an extrusion"
                 )));
             };
             let target = prism.boolean_target().ok_or_else(|| {
                 PartFeatureFailure::Unsupported(format!(
-                    "rectangular pattern source {source:?}: expected a Join or Cut extrusion"
+                    "extrusion pattern source {source:?}: expected a Join or Cut extrusion"
                 ))
             })?;
             let current = resolve_body_slot(
@@ -62,7 +75,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                     .any(|id| id == current)
             {
                 return Err(PartFeatureFailure::BodyReference(format!(
-                    "rectangular pattern source {source:?}: expected a healthy source on the common current body"
+                    "extrusion pattern source {source:?}: expected a healthy source on the common current body"
                 )));
             }
             let body = &self.bodies[&current];
@@ -80,12 +93,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             slot = Some(current);
         }
         let slot = slot.ok_or_else(|| {
-            PartFeatureFailure::BodyReference("rectangular pattern: expected a source body".into())
+            PartFeatureFailure::BodyReference("extrusion pattern: expected a source body".into())
         })?;
-        let occurrences = definition
-            .occurrences()
-            .map_err(PartFeatureFailure::Unsupported)?;
-        let result = backend.evaluate_rectangular_pattern(
+        let result = backend.evaluate_extrusion_pattern(
             feature,
             &self.bodies[&slot],
             &sources,

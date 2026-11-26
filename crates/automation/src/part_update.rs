@@ -401,6 +401,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
         Chamfer(_) => "chamfer",
         Hole(_) => "hole",
         Shell(_) => "shell",
+        CircularPattern(_) => "circular-pattern",
         RectangularPattern(_) => "rectangular-pattern",
         MoveBody(_) => "move-body",
         Fixed(_) => "fixed-frame",

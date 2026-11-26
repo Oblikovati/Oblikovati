@@ -106,15 +106,15 @@ where
             .evaluate_prism_boolean(feature, body.get(), input, operation)
             .map(PrefixBody::Created)
     }
-    fn evaluate_rectangular_pattern(
+    fn evaluate_extrusion_pattern(
         &mut self,
         feature: FeatureId,
         body: &Self::Body,
-        sources: &[crate::feature::rectangular_pattern::PatternPrismSource<'_>],
-        occurrences: &[crate::feature::rectangular_pattern::RectangularPatternOccurrence],
+        sources: &[crate::feature::extrusion_pattern::PatternPrismSource<'_>],
+        occurrences: &[crate::feature::extrusion_pattern::ExtrusionPatternOccurrence],
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
         self.0
-            .evaluate_rectangular_pattern(feature, body.get(), sources, occurrences)
+            .evaluate_extrusion_pattern(feature, body.get(), sources, occurrences)
             .map(PrefixBody::Created)
     }
     fn evaluate_prism(

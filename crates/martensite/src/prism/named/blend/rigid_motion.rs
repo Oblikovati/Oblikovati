@@ -44,7 +44,7 @@ impl NamedSolid {
         }
     }
 }
-fn compose(moves: &[RigidMotion]) -> Result<Transform3, String> {
+pub(super) fn compose(moves: &[RigidMotion]) -> Result<Transform3, String> {
     if moves.is_empty() {
         return Err("rigid motions []: expected at least one operation".into());
     }

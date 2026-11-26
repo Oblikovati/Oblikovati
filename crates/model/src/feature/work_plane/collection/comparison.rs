@@ -12,6 +12,7 @@ impl WorkPlaneDefinition {
             (Chamfer(first), Chamfer(second)) => first == second,
             (Hole(first), Hole(second)) => first.same_recipe(second),
             (Shell(first), Shell(second)) => first == second,
+            (CircularPattern(first), CircularPattern(second)) => first.same_recipe(second),
             (RectangularPattern(first), RectangularPattern(second)) => first.same_recipe(second),
             (MoveBody(first), MoveBody(second)) => first.same_recipe(second),
             (SketchPrism(first), SketchPrism(second)) => first.same_recipe(second),
