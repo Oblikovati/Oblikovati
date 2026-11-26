@@ -19,6 +19,19 @@ pub(in super::super) fn press_window_key(title: &str, keysym: u32) {
     press_target_key(&connection, root, keysym);
 }
 
+/// Click a fullscreen nested Wayland compositor at its X11 output coordinates.
+pub(in super::super) fn click_fullscreen_output([x, y]: [i32; 2]) {
+    let (connection, screen) = x11rb::connect(None).expect("X11: expected a display");
+    let root = connection.setup().roots[screen].root;
+    send_click(
+        &connection,
+        root,
+        x.try_into().unwrap(),
+        y.try_into().unwrap(),
+        1,
+    );
+}
+
 pub(super) fn application_window(connection: &RustConnection, root: Window) -> Window {
     let windows = application_descendants(connection, root);
     let [window] = windows.as_slice() else {

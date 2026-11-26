@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Native checks for keyboard customization.
 use super::*;
+#[cfg(target_os = "linux")]
+#[path = "keyboard_clipboard_native.rs"]
+mod keyboard_clipboard_native;
 #[path = "keyboard_initial.rs"]
 mod keyboard_initial;
 

@@ -261,7 +261,7 @@ fn filtered<'a>(
 }
 fn clipboard_table(bindings: &[BindingInfo]) -> String {
     let mut rows = vec!["Keys\tCommand Name\tType\tCategory".to_owned()];
-    rows.extend(bindings.iter().map(|binding| {
+    rows.extend(filtered(bindings, "", 0, 0).into_iter().map(|binding| {
         format!(
             "{}\t{}\t{}\t{}",
             binding.chord,
@@ -312,7 +312,20 @@ mod tests {
         assert_eq!(filtered(&bindings, "home", 2, 1).len(), 1);
         assert!(filtered(&bindings, "home", 1, 1).is_empty());
         assert_eq!(filtered(&bindings, "rectangle", 3, 2).len(), 4);
-        assert!(clipboard_table(&bindings).contains("Ctrl+Z\tUndo\tbuiltin\tApplication"));
+        let table = clipboard_table(&bindings);
+        assert!(table.contains("Ctrl+Z\tUndo\tbuiltin\tApplication"));
+        let names: Vec<_> = table
+            .lines()
+            .skip(1)
+            .map(|row| row.split('\t').nth(1).unwrap())
+            .collect();
+        assert_eq!(
+            names,
+            filtered(&bindings, "", 0, 0)
+                .iter()
+                .map(|row| row.display_name.as_str())
+                .collect::<Vec<_>>()
+        );
     }
     #[test]
     fn binding_edits_are_staged_and_acknowledged_by_owner_state() {

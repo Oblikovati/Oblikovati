@@ -43,6 +43,9 @@ visible edge. Pressing the key again from that edge advances the page.
 Reopening Customize clears the Keyboard search and restores both filters
 to All. The selected customization tab is retained.
 [Keyboard initial-state checks](receipts/2026-11-26-keyboard-customization-initial-3856/README.md)
+Copy to Clipboard exports the full Keyboard draft in the command list's
+alphabetical order, even with a search active.
+[Native clipboard checks](receipts/2026-11-26-keyboard-copy-3856/README.md)
 The [native entry-point runs](receipts/2026-11-24-ribbon-customization-entry-points-3856/README.md)
 cover Tools Options and the View and Sketch title menus. They also check
 that opening and closing Customize preserves a selected solid face.

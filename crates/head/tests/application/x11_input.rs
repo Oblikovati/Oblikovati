@@ -2,7 +2,7 @@
 //! Send the window manager close protocol through the real X11 connection.
 
 mod cursor;
-mod window_targets;
+pub(super) mod window_targets;
 pub(super) use cursor::{cursor_sprite, reference_cursor};
 use window_targets::application_window;
 pub(super) use window_targets::{press_window_key, request_named_window_close, window_is_separate};
