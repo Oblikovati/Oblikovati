@@ -365,3 +365,6 @@ mod file_color_schemes;
 
 #[path = "file_assembly_cache.rs"]
 mod assembly_cache;
+
+#[path = "file_definition_placement.rs"]
+mod definition_placement;

@@ -9,6 +9,7 @@ use oblikovati_model::{attachment::ExternalAttachmentFiles, identity::GuidSource
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 use std::cell::RefCell;
+mod assembly_definition_placement;
 mod assembly_occurrence_edits;
 mod assembly_placement;
 mod assembly_references;
@@ -55,7 +56,12 @@ pub const FILE_COMMAND_METHODS: [&str; 13] = [
     METHOD_DOCUMENTS_CLOSE_ALL,
 ];
 /// Assembly mutations currently owned by the file host.
-pub const ASSEMBLY_COMMAND_METHODS: [&str; 2] = [METHOD_ASSEMBLY_SUPPRESS, METHOD_ASSEMBLY_PLACE];
+pub const ASSEMBLY_COMMAND_METHODS: [&str; 4] = [
+    METHOD_ASSEMBLY_SUPPRESS,
+    METHOD_ASSEMBLY_PLACE,
+    METHOD_ASSEMBLY_PLACE_BY_DEFINITION,
+    METHOD_ASSEMBLY_PLACE_BY_DEFINITION_BATCH,
+];
 /// Application preferences that require the injected persistent preference owner.
 pub const APPLICATION_PREFERENCE_METHODS: [&str; 2] = [
     METHOD_APPLICATION_GET_HUD_OPTIONS,
@@ -314,6 +320,15 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         }
         if method == METHOD_ASSEMBLY_PLACE {
             return assembly_placement::place(self.files, decode(method, request)?);
+        }
+        if method == METHOD_ASSEMBLY_PLACE_BY_DEFINITION {
+            return assembly_definition_placement::place_one(self.files, decode(method, request)?);
+        }
+        if method == METHOD_ASSEMBLY_PLACE_BY_DEFINITION_BATCH {
+            return assembly_definition_placement::place_batch(
+                self.files,
+                decode(method, request)?,
+            );
         }
         if method == METHOD_ASSEMBLY_SUPPRESS {
             return assembly_occurrence_edits::suppress_wire(self.files, decode(method, request)?);
