@@ -389,7 +389,7 @@ fn select_chosen_parameter(world: &mut ApplicationWorld) {
         })
         .expect("expected d0 in chosen parameters")
         .center();
-    super::super::x11_input::click(diagnostics::pointer_pixels(point));
+    world.desktop_click(diagnostics::pointer_pixels(point));
     world.pump(Vec::new());
 }
 #[when("transfers it out of the chosen parameters")]

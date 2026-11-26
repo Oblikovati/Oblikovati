@@ -30,6 +30,8 @@ duplicate warning and both responses, and cancellation of an empty name.
 Switching to Primary refreshes the parameter tree to that member's value
 while the table retains distinct values for the other members.
 [Model State parameter values](receipts/2026-11-26-model-state-distinct-parameters-3896/README.md)
+Cancelling removal restores the parameter column and its per-member values.
+[Model State parameter removal checks](receipts/2026-11-26-model-state-parameter-removal-3896/README.md)
 
 A double-click sends the document and sketch IDs to the existing owner edit
 operation. The same operation remains available through script and add-in owner
