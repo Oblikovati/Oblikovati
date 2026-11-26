@@ -11351,8 +11351,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/commands_standard_test.go and app/sketch_env_test.go.",
+      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow.",
+      "go_test_premise": "TestExecuteFinishSketchExits exercises Sketch.Finish. TestFinishSketchLeavesEnvironmentAndRecomputes checks that the sketch remains in the Part. The pinned native case adds switching from Sketch to Tools before Finish.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Render the fixture Part with a visible extruded solid.",
+      "platforms": "Linux X11 under Xvfb and Openbox with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop leaves Sketch in the active Part and displays its extrusion.",
+      "rust_tests": "crates/head/tests/application/ribbon-display/sketch_exit.rs drives the browser, Tools ribbon, and Finish command in the native window.",
+      "oracle": "Inspect the rendered Sketch and Tools controls, the authoring context, the active document identity, and the visible Part. See receipts/2026-11-27-pinned-ci-ribbon-finish-4184/finish-tools-cucumber.json.",
+      "expected_result": "Finish is enabled in temporary Tools commands. Clicking Finish leaves Sketch and displays the same Part with Tools selected and the ribbon minimized.",
+      "baseline_source_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e"
     },
     {
       "id": "scenario:ee4c0099a918aec716b4ceea136738f777dd2b9226a8cae3fb7bb96c0194ce7e",
@@ -11368,8 +11378,18 @@
       ],
       "state": "inventoried",
       "last_receipt": null,
-      "go_reference": "../Oblikovati/head/ui/chrome_ribbon.go; ../Oblikovati/head/ui/ribbon_collapse.go",
-      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow."
+      "go_reference": "Go aa8297d1b0ac33c024f19e54821536d76e8a447a app/commands_standard_test.go and app/sketch_env_test.go.",
+      "mapping_reason": "Desktop ribbon minimization, temporary panels, or overflow.",
+      "go_test_premise": "TestExecuteFinishSketchExits exercises Sketch.Finish. TestFinishSketchLeavesEnvironmentAndRecomputes checks that the sketch remains in the Part. The pinned native case opens temporary Sketch commands before Finish.",
+      "api_revision": "c8200b2da97c9a7dde43afb25debc977ff23b2fd",
+      "kernel_revision": "d463526642b7bf950ba33c7ab4a4c9bc97caffaf",
+      "kernel_capabilities": "Render the fixture Part with a visible extruded solid.",
+      "platforms": "Linux X11 under Xvfb and Openbox with Vulkan Lavapipe.",
+      "kernel_integration": "The desktop leaves Sketch in the active Part and displays its extrusion.",
+      "rust_tests": "crates/head/tests/application/ribbon-display/sketch_exit.rs drives the temporary Sketch ribbon and Finish command in the native window.",
+      "oracle": "Inspect the rendered temporary Sketch commands, the authoring context, the active document identity, and the visible Part. See receipts/2026-11-27-pinned-ci-ribbon-finish-4184/finish-sketch-cucumber.json.",
+      "expected_result": "Finish is enabled in temporary Sketch commands. Clicking Finish leaves Sketch and displays the same Part with the ribbon minimized.",
+      "baseline_source_sha256": "82542b170cbae71ede004fcb11be64a14bedbb10fdaf9b40df7b2eec462f636e"
     },
     {
       "id": "scenario:7fb05980dad3834b02105802398d411272682c34cb69427ef8e9969916559f33",
