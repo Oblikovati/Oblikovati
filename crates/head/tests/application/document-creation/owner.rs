@@ -484,3 +484,6 @@ mod drawing_border;
 
 #[path = "drawing_sheet_format.rs"]
 mod drawing_sheet_format;
+
+#[path = "drawing_styles.rs"]
+mod drawing_styles;

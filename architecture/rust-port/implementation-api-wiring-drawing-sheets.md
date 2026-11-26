@@ -46,7 +46,7 @@ title text.
 
 ## Verification
 
-The twelve drawing owner tests cover sheet and view edits. The sheet lifecycle test checks
+The thirteen drawing owner tests cover sheet and view edits. The sheet lifecycle test checks
 standard and custom paper, invalid input, the displayed projection on the
 active sheet, last-sheet refusal, undo and redo, and native-format save and
 reopen.
@@ -136,6 +136,34 @@ title block. Stamping the saved format after reopen reproduced that
 layout, with pixel changes confined to the sheet-number caption. The
 package tests also verified that saving an empty registry clears the
 old format key and retains unrelated model fields.
+
+## Drafting style presets
+
+`drawingStyles.listStandards`, `drawingStyles.getActiveStyle`, and
+`drawingStyles.setStandard` use the drawing's ISO or ANSI preset. The API
+uses lowercase names and existing recipes keep the uppercase spellings.
+The standard is an undoable document setting. The canvas converts the
+preset's sheet-millimetre line weight into a screen width with a one-logical-pixel
+minimum. The dimension and text settings are available through the API.
+
+On native Wayland, the MCP run switched a drawing with two projected
+views from ISO 0.5 mm to ANSI 0.6 mm lines. The change affected 2,854
+pixels in the drawing crop and was confined to the view area. Undo
+reproduced the ISO crop. Redo and reopening reproduced the ANSI crop
+pixel for pixel. The API also confirmed the standard's dimension units
+and precision across these transitions.
+
+## Drawing DXF export dependency
+
+`drawing.exportDXF` needs a released Martensite writer. The current pin is
+Martensite v0.14.2 at `d463526642b7bf950ba33c7ab4a4c9bc97caffaf`.
+It has exchange toolkits for STEP, IGES, OBJ, PLY, and STL, but no DXF
+writer or acadrust dependency. ADR-0018 assigns the writer to Martensite.
+The sheet export needs an input contract for paper-space lines and text
+in millimetres, visible and hidden edge layers, border and title block
+layers, the requested DXF version, and an entity count or diagnostics.
+Martensite's open exchange result work is tracked in
+[Martensite #57](https://github.com/Oblikovati/Martensite/issues/57).
 
 ## Drawing curve gap
 

@@ -9,7 +9,9 @@ pub(super) fn draw(
     minimum: [f32; 2],
     maximum: [f32; 2],
     dimensions: [f64; 2],
+    weight_mm: f64,
 ) {
+    let thickness = projected_line_width(weight_mm, minimum, maximum, dimensions);
     list.with_clip_rect_intersect(minimum, maximum, || {
         for line in &projection.lines {
             for segment in line.points.windows(2) {
@@ -24,9 +26,9 @@ pub(super) fn draw(
                     [0.1, 0.1, 0.12, 1.]
                 };
                 if line.hidden {
-                    dashed(list, a, b, color);
+                    dashed(list, a, b, color, thickness);
                 } else {
-                    list.add_line(a, b, color).build();
+                    list.add_line(a, b, color).thickness(thickness).build();
                 }
             }
         }
@@ -41,6 +43,17 @@ pub(super) fn draw(
             );
         }
     });
+}
+fn projected_line_width(
+    weight_mm: f64,
+    minimum: [f32; 2],
+    maximum: [f32; 2],
+    dimensions: [f64; 2],
+) -> f32 {
+    let [width, height] = std::array::from_fn(|axis| f64::from(maximum[axis] - minimum[axis]));
+    let scale = (width / dimensions[0]).min(height / dimensions[1]);
+    // The view remains readable when zoomed out, and tiny custom paper cannot overflow the draw list.
+    (weight_mm * scale).clamp(1., width.min(height).max(1.)) as f32
 }
 fn draw_parts_list(
     ui: &imgui::Ui,
@@ -118,7 +131,13 @@ fn clip_segment(a: [f64; 2], b: [f64; 2], dimensions: [f64; 2]) -> Option<[[f64;
     }
     Some(range.map(|t| [a[0] + t * delta[0], a[1] + t * delta[1]]))
 }
-fn dashed(list: &imgui::DrawListMut<'_>, a: [f32; 2], b: [f32; 2], color: [f32; 4]) {
+fn dashed(
+    list: &imgui::DrawListMut<'_>,
+    a: [f32; 2],
+    b: [f32; 2],
+    color: [f32; 4],
+    thickness: f32,
+) {
     let delta = [b[0] - a[0], b[1] - a[1]];
     let length = delta[0].hypot(delta[1]);
     if length == 0. {
@@ -128,13 +147,22 @@ fn dashed(list: &imgui::DrawListMut<'_>, a: [f32; 2], b: [f32; 2], color: [f32; 
     while start < length {
         let end = (start + 5.).min(length);
         let point = |t: f32| [a[0] + delta[0] * t / length, a[1] + delta[1] * t / length];
-        list.add_line(point(start), point(end), color).build();
+        list.add_line(point(start), point(end), color)
+            .thickness(thickness)
+            .build();
         start += 8.;
     }
 }
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn sheet_weights_scale_in_millimetres_with_a_readable_minimum() {
+        let project = |weight, extent| projected_line_width(weight, [0., 0.], extent, [100., 100.]);
+        assert_eq!(project(0.5, [400., 400.]), 2.);
+        assert_eq!(project(0.6, [400., 400.]), 2.4);
+        assert_eq!(project(0.5, [50., 50.]), 1.);
+    }
     #[test]
     fn sheet_clips_projection_before_screen_conversion() {
         assert_eq!(

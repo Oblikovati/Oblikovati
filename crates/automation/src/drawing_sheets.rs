@@ -60,7 +60,7 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     edit_sheets(files, owner, drawing.clone(), method, request)
 }
 
-fn active_drawing<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+pub(super) fn active_drawing<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
 ) -> Result<(u64, &DrawingDocument), Error> {
     let workspace = files.workspace();

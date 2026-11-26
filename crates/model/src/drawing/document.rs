@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
-    DrawingAnnotationDefinition, DrawingBaseViewDefinition, DrawingError, DrawingRecipe,
-    DrawingSheetFormat, DrawingSheetRecipe,
+    DRAWING_STANDARD_PRESETS, DrawingAnnotationDefinition, DrawingBaseViewDefinition, DrawingError,
+    DrawingRecipe, DrawingSheetFormat, DrawingSheetRecipe, DrawingStandardPreset,
     validation::{validate_drawing, validate_sheet},
 };
 /// One owner of the sheet and view definitions; workspace resolvers never enter history snapshots.
@@ -36,6 +36,22 @@ impl DrawingDocument {
     /// Read the complete immutable recipe; example: `drawing.recipe()` before persistence.
     pub fn recipe(&self) -> &DrawingRecipe {
         &self.recipe
+    }
+    /// Read the active built-in preset. Example: `drawing.standard_style().visible_line_mm`.
+    pub fn standard_style(&self) -> &'static DrawingStandardPreset {
+        &DRAWING_STANDARD_PRESETS
+            [usize::from(self.recipe.standard == oblikovati_api::types::DRAFTING_ANSI)]
+    }
+    /// Change the active drafting preset. Example: `drawing.set_drafting_standard("ansi")?`.
+    pub fn set_drafting_standard(&mut self, name: &str) -> Result<(), DrawingError> {
+        let preset = DRAWING_STANDARD_PRESETS
+            .iter()
+            .find(|preset| preset.wire_name == name)
+            .ok_or_else(|| {
+                DrawingError(format!("drafting standard {name:?}: expected iso or ansi"))
+            })?;
+        self.recipe.standard = preset.standard;
+        Ok(())
     }
     /// Read ordered sheets; example: `drawing.sheets()[0].name`.
     pub fn sheets(&self) -> &[DrawingSheetRecipe] {

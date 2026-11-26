@@ -247,7 +247,15 @@ fn sheet_on_list(
         );
     }
     if let Some(projection) = projection {
-        drawing_lines::draw(ui, list, projection, minimum, maximum, dimensions);
+        drawing_lines::draw(
+            ui,
+            list,
+            projection,
+            minimum,
+            maximum,
+            dimensions,
+            drawing.standard_style().visible_line_mm,
+        );
     }
     if sheet.border {
         list.add_rect(border_minimum, border_maximum, LINE_COLOR)
