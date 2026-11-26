@@ -112,6 +112,8 @@ impl FileProperties {
         });
         if closed || !open {
             self.close();
+            // The Properties window has ended, so the current window is its Open dialog.
+            crate::widget_abi::focus_current_window(ui);
         }
     }
 }

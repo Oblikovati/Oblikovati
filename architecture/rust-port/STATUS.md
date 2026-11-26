@@ -452,8 +452,8 @@ using this status; the live scenario directory can change.
   prefix when no earlier feature reads them. Other parameter changes remain
   conservative (#4079).
 - Standalone Projects passed [pointer docking, close, and saved-layout restart](receipts/2026-11-25-projects-docking-4073/README.md).
-  Restored modal-child input and native File Properties docking remain open
-  under #4073.
+  [Escape returns from floating File Properties to Open](receipts/2026-11-26-file-properties-escape-3889/README.md) on Wayland and X11.
+  Restored modal-child input and native File Properties docking remain open under #4073.
 - The 60 fps sketch target remains unproven. The recorded 1440 × 900 probe
   measured 20.738 ms median and 24.861 ms p95 against a 16.67 ms frame budget.
   See `receipts/2026-11-16-sketch-frame-baseline-4031/` and #4032.

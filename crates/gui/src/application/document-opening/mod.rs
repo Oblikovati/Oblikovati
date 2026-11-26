@@ -3,7 +3,7 @@
 use crate::application::document_saving::file_list::FileRequest;
 use crate::application::document_saving::folder_browser::{
     BROWSER_COLUMN_WIDTH, DialogEnd, DialogEscape, FileTypeList, FolderBrowser, center_dialog,
-    dialog_buttons, file_name_field, file_type_field, full_path,
+    dialog_button_clicks, file_name_field, file_type_field, full_path,
 };
 use crate::application::file_system::{GuiFolders, NativeFolders};
 use crate::{GuiCommandState, GuiShellAction};
@@ -386,7 +386,10 @@ fn accept(
                 draft.choices.express_for(&draft.name),
             )
             .dispatchable(state));
-    match dialog_buttons(ui, "Open", can_open, entered, &mut draft.escape)? {
+    let clicked = dialog_button_clicks(ui, "Open", can_open, entered);
+    let escaped = draft.escape.pressed(ui)
+        && ui.is_window_focused_with_flags(imgui::WindowFocusedFlags::CHILD_WINDOWS);
+    match clicked.or(escaped.then_some(DialogEnd::Cancelled))? {
         DialogEnd::Cancelled => Some(DialogOutcome::Cancelled),
         DialogEnd::Accepted => opened(browser, draft, &several, state, actions),
     }

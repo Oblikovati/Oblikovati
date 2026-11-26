@@ -428,6 +428,16 @@ pub(crate) fn dialog_buttons(
     entered: bool,
     escape: &mut DialogEscape,
 ) -> Option<DialogEnd> {
+    dialog_button_clicks(ui, accept, can_accept, entered)
+        .or_else(|| escape.pressed(ui).then_some(DialogEnd::Cancelled))
+}
+/// Draw the footer when a caller routes Escape separately.
+pub(crate) fn dialog_button_clicks(
+    ui: &Ui,
+    accept: &str,
+    can_accept: bool,
+    entered: bool,
+) -> Option<DialogEnd> {
     let disabled = ui.begin_disabled(!can_accept);
     let accepted = (crate::widget_abi::button(ui, accept, [80., 0.]) || entered) && can_accept;
     drop(disabled);
@@ -436,7 +446,7 @@ pub(crate) fn dialog_buttons(
     if accepted {
         return Some(DialogEnd::Accepted);
     }
-    (escape.pressed(ui) || cancelled).then_some(DialogEnd::Cancelled)
+    cancelled.then_some(DialogEnd::Cancelled)
 }
 #[cfg(test)]
 #[path = "../../../tests/application/document-saving/folder_browser.rs"]

@@ -23,6 +23,8 @@ mod lists;
 #[cfg(target_os = "linux")]
 #[path = "native_existing.rs"]
 mod native_existing;
+#[path = "properties_escape.rs"]
+mod properties_escape;
 #[path = "published_drawings.rs"]
 mod published_drawings;
 #[path = "published_entry.rs"]
