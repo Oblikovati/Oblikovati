@@ -26,6 +26,7 @@ impl NamedPrismSnapshot {
                 body_parent: body.clone(),
                 primary_body: body,
                 inherited_deleted: Vec::new(),
+                inherited_splits: Default::default(),
                 resolution: self.certification.as_ref().map(|value| value.resolution),
             },
             history,
@@ -77,6 +78,7 @@ pub(super) fn build_shell_candidate(
         body_parent: input.body_parent,
         primary_body: input.primary_body,
         inherited_deleted: input.inherited_deleted,
+        inherited_splits: input.inherited_splits,
         document,
         scope: history.evaluation_scope(),
     })

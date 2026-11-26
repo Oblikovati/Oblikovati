@@ -35,6 +35,7 @@ impl NamedSolid {
                     body_parent: body.clone(),
                     primary_body: body,
                     inherited_deleted: Vec::new(),
+                    inherited_splits: Default::default(),
                     resolution: prism.certification.as_ref().map(|value| value.resolution),
                 };
                 build_rigid(input, history, document, transform, achieved)
@@ -142,6 +143,7 @@ pub(super) fn build_rigid(
         body_parent: input.body_parent,
         primary_body: input.primary_body,
         inherited_deleted: input.inherited_deleted,
+        inherited_splits: input.inherited_splits,
         document,
         scope: history.evaluation_scope(),
     })

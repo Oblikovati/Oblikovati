@@ -242,3 +242,84 @@ fn disconnected_join_leaves_the_target_and_tool_sketch_unchanged() {
     assert_eq!(snapshot.work_geometry.features().len(), 2);
     assert!(snapshot.sketches.sketches()[1].visible());
 }
+
+#[test]
+fn overlapping_join_replays_split_face_names_without_rebinding_the_parent() {
+    use oblikovati_model::{
+        feature::FeatureId,
+        identity::{SketchPrismReferenceRole, sketch_prism_reference_name},
+    };
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let document = open_sketch(&mut owner);
+    let guid = owner
+        .documents()
+        .workspace()
+        .identity(document)
+        .unwrap()
+        .internal_name;
+    let parent = sketch_prism_reference_name(
+        guid,
+        FeatureId(1),
+        crate::scene_fixture::SKETCH,
+        SketchPrismReferenceRole::StartCap,
+    )
+    .unwrap();
+    let client = Client::new(owner.document_host());
+    client.features().add_feature(&request()).unwrap();
+    let sketch_index = client
+        .sketch()
+        .create(&Default::default())
+        .unwrap()
+        .sketch_index;
+    client
+        .sketch()
+        .add_entity(&AddSketchEntityArgs {
+            sketch_index,
+            kind: "circle".into(),
+            points: Some(vec![Some(vec![0.5, 0.5])]),
+            radius: "2 mm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    client
+        .features()
+        .add_feature(&Extrude {
+            sketch_index,
+            operation: "join".into(),
+            distance: "20 mm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let area = std::f64::consts::PI * 0.04;
+    check_boolean_body(&mut owner, document, 1. + area);
+    let first = split_cap_keys(&owner, document, &parent);
+    set_size(&mut owner, "12 mm");
+    check_boolean_body(&mut owner, document, 1.728 + area * 0.8);
+    let reopened = reopen_boolean_part(&mut owner, document);
+    check_boolean_body(&mut owner, reopened, 1.728 + area * 0.8);
+    assert_eq!(split_cap_keys(&owner, reopened, &parent), first);
+}
+
+fn split_cap_keys(owner: &TestOwner, document: u64, parent: &[u8]) -> Vec<Vec<u8>> {
+    let workspace = owner.documents().workspace();
+    let session = workspace.session(document).unwrap();
+    let guid = workspace.identity(document).unwrap().internal_name;
+    let replay = owner.part_scenes.current(session).unwrap();
+    let body = replay
+        .body_from_source(oblikovati_model::feature::FeatureId(1))
+        .unwrap();
+    let oblikovati_martensite::NamedSolid::Derived(body) = body else {
+        panic!("expected joined body")
+    };
+    let descendants = body.split_keys().get(parent).unwrap();
+    assert_eq!(descendants.len(), 2);
+    assert!(body.contains(session.history(), guid, parent, 1).is_err());
+    assert!(!body.deleted_keys().iter().any(|key| key == parent));
+    for key in descendants {
+        assert!(body.contains(session.history(), guid, key, 1).unwrap());
+    }
+    descendants.clone()
+}

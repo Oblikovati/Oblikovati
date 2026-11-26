@@ -30,6 +30,7 @@ impl NamedPrismSnapshot {
                 body_parent: body.clone(),
                 primary_body: body,
                 inherited_deleted: Vec::new(),
+                inherited_splits: Default::default(),
                 resolution: self.certification.as_ref().map(|value| value.resolution),
             },
             history,

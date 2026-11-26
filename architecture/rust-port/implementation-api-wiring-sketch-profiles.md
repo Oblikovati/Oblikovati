@@ -140,3 +140,17 @@ is the only persistent contributor and binds to exactly one result entity.
 The surface-mount resistor then passed. After that change, 12 workflows
 still reached a split-name refusal, five produced two solids, two added
 no volume, and one required a parameter formula for extrusion depth.
+
+## Split topology names
+
+Boolean replay records each split input and its immediate descendants.
+Each descendant's identity combines the original name with exact history
+from the result entity and its incident boundaries. The naming check
+requires distinct identities across the result. The old key remains in
+the split history and does not bind to an arbitrary descendant.
+
+Split records survive retained replay checkpoints and carry forward into
+later body features. The ordering test reverses the candidate topology
+and checks identical bindings. The desktop regression uses an overlapping
+Join, checks both descendants of the original cap, and verifies their
+names and analytic volume after resize and reopen.

@@ -6,13 +6,14 @@ use martensite_tkg3d::top_abs::ShapeEnum;
 use oblikovati_model::identity::{DerivedReferenceName, ExactReferenceBindings};
 use std::collections::{BTreeMap, BTreeSet};
 
-/// Exact live and deleted names for a validated candidate result.
+/// Exact live, split and deleted names for a validated candidate result.
 #[derive(Clone)]
 pub struct BlendNamedTopology {
     resolution: Option<PrismResolution>,
     achieved_tolerance: Option<PrismAchievedTolerance>,
     live: Vec<Vec<u8>>,
     deleted: Vec<Vec<u8>>,
+    splits: SplitTopologyNames,
     pub(super) bindings: ExactReferenceBindings<Shape>,
     active_body: Vec<u8>,
     primary_body: Vec<u8>,
@@ -22,6 +23,7 @@ pub struct BlendNamedTopology {
 mod capture;
 mod extrusion_boolean;
 mod hole;
+mod result_names;
 mod rigid_motion;
 mod shell;
 mod source;
@@ -41,6 +43,7 @@ impl BlendNamedTopology {
             achieved_tolerance: self.achieved_tolerance,
             live: self.live.clone(),
             deleted: self.deleted.clone(),
+            splits: self.splits.clone(),
             bindings: self.bindings.clone_current(history, document)?,
             active_body: self.active_body.clone(),
             primary_body: self.primary_body.clone(),
@@ -119,6 +122,11 @@ impl BlendNamedTopology {
     pub fn deleted_keys(&self) -> &[Vec<u8>] {
         &self.deleted
     }
+    /// Read split input names and their immediate descendants.
+    /// Example: `named.split_keys().get(&old_key)` after an overlapping Join.
+    pub fn split_keys(&self) -> &BTreeMap<Vec<u8>, Vec<Vec<u8>>> {
+        &self.splits
+    }
     /// Check an exact live name in the owning evaluation; example: `named.contains(&history, doc, &key, 1)?`.
     pub fn contains(
         &self,
@@ -196,6 +204,7 @@ impl BlendNamedTopology {
                 body_parent: self.active_body.clone(),
                 primary_body: self.primary_body.clone(),
                 inherited_deleted: self.deleted.clone(),
+                inherited_splits: self.splits.clone(),
                 resolution: self.resolution,
             },
             history,
@@ -221,46 +230,8 @@ impl BlendCandidate {
                 self.document
             ));
         }
-        let faces = self.named_faces(document, feature)?;
-        let edges = self.named_lower(document, feature, ShapeEnum::Edge, &faces)?;
-        let vertices = self.named_lower(document, feature, ShapeEnum::Vertex, &edges)?;
-        self.bind_topology(history, document, feature, faces, edges, vertices)
-    }
-
-    fn named_faces(
-        &self,
-        document: DocumentGuid,
-        feature: FeatureId,
-    ) -> Result<Vec<(Vec<u8>, Shape)>, String> {
-        let mut names = Vec::new();
-        for face in shapes(&self.shape, ShapeEnum::Face)? {
-            let key = direct_name(&self.history, &face, 1, document, feature)?
-                .ok_or("blend face: expected kernel history")?;
-            names.push((key, face));
-        }
-        require_unique(&names)?;
-        Ok(names)
-    }
-
-    fn named_lower(
-        &self,
-        document: DocumentGuid,
-        feature: FeatureId,
-        kind: ShapeEnum,
-        upper: &[(Vec<u8>, Shape)],
-    ) -> Result<Vec<(Vec<u8>, Shape)>, String> {
-        let target_kind = if kind == ShapeEnum::Edge { 2 } else { 3 };
-        let mut names = Vec::new();
-        for shape in shapes(&self.shape, kind)? {
-            let direct = direct_name(&self.history, &shape, target_kind, document, feature)?;
-            let key = match direct {
-                Some(key) => key,
-                None => incident_name(document, feature, target_kind, kind, &shape, upper)?,
-            };
-            names.push((key, shape));
-        }
-        require_unique(&names)?;
-        Ok(names)
+        let names = self.result_names(document, feature)?;
+        self.bind_topology(history, document, feature, names)
     }
 
     fn bind_topology(
@@ -268,9 +239,7 @@ impl BlendCandidate {
         history: &DocumentEditHistory,
         document: DocumentGuid,
         feature: FeatureId,
-        faces: Vec<(Vec<u8>, Shape)>,
-        edges: Vec<(Vec<u8>, Shape)>,
-        vertices: Vec<(Vec<u8>, Shape)>,
+        names: result_names::ResultNames,
     ) -> Result<BlendNamedTopology, String> {
         let body = DerivedReferenceName::new(
             document,
@@ -286,11 +255,11 @@ impl BlendCandidate {
             .map(|key| (key.clone(), self.shape.clone()))
             .collect();
         entries.push((body.clone(), self.shape.clone()));
-        entries.extend(faces);
-        entries.extend(edges);
-        entries.extend(vertices);
+        entries.extend(names.entries);
         let live: Vec<_> = entries.iter().map(|(key, _)| key.clone()).collect();
-        let deleted = self.deleted_inputs(&live)?;
+        let deleted = self.deleted_inputs(&live, &names.splits)?;
+        let mut splits = self.inherited_splits.clone();
+        splits.extend(names.splits);
         let expected = entries.clone();
         let bindings = ExactReferenceBindings::from_entries(document, self.scope.clone(), entries)?;
         verify_round_trip(&bindings, history, document, &expected)?;
@@ -303,6 +272,7 @@ impl BlendCandidate {
             achieved_tolerance: self.achieved_tolerance,
             live,
             deleted,
+            splits,
             bindings,
             active_body: body,
             primary_body: self.primary_body.clone(),
@@ -310,19 +280,23 @@ impl BlendCandidate {
         })
     }
 
-    fn deleted_inputs(&self, live: &[Vec<u8>]) -> Result<Vec<Vec<u8>>, String> {
+    fn deleted_inputs(
+        &self,
+        live: &[Vec<u8>],
+        splits: &SplitTopologyNames,
+    ) -> Result<Vec<Vec<u8>>, String> {
         let live: BTreeSet<_> = live.iter().collect();
         let mut deleted: BTreeSet<_> = self.inherited_deleted.iter().cloned().collect();
         for record in &self.history {
             if record.transient {
                 continue;
             }
-            if live.contains(&record.name) {
+            if live.contains(&record.name) || splits.contains_key(&record.name) {
                 continue;
             }
             if !record.deleted {
                 return Err(format!(
-                    "blend input {:?}: expected a preserved name or kernel deletion",
+                    "blend input {:?}: expected a preserved name, a split, or kernel deletion",
                     record.name
                 ));
             }
@@ -390,41 +364,6 @@ fn direct_name(
             generated.len()
         )),
     }
-}
-
-fn incident_name(
-    document: DocumentGuid,
-    feature: FeatureId,
-    target_kind: u32,
-    kind: ShapeEnum,
-    shape: &Shape,
-    upper: &[(Vec<u8>, Shape)],
-) -> Result<Vec<u8>, String> {
-    let mut parents = Vec::new();
-    for (name, entity) in upper {
-        if shapes(entity, kind)?
-            .iter()
-            .any(|candidate| candidate.is_same(shape))
-        {
-            parents.push(name.clone());
-        }
-    }
-    if parents.is_empty() {
-        return Err(format!(
-            "blend result kind {target_kind}: expected named incident entities"
-        ));
-    }
-    DerivedReferenceName::new(document, feature.0, target_kind, "incidence", &parents)?.encode()
-}
-
-fn require_unique(names: &[(Vec<u8>, Shape)]) -> Result<(), String> {
-    let mut seen = BTreeMap::new();
-    for (name, shape) in names {
-        if seen.insert(name, shape).is_some() {
-            return Err(format!("blend name {name:?}: expected one result entity"));
-        }
-    }
-    Ok(())
 }
 
 fn verify_round_trip(

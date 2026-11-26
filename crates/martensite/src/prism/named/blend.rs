@@ -19,6 +19,7 @@ pub(super) use hole::HoleRequest;
 mod queries;
 pub use naming::BlendNamedTopology;
 pub(super) use naming::CapturedBlendTopology;
+type SplitTopologyNames = std::collections::BTreeMap<Vec<u8>, Vec<Vec<u8>>>;
 
 /// A validated detached result and its input history, before assigning result names.
 pub struct BlendCandidate {
@@ -30,6 +31,7 @@ pub struct BlendCandidate {
     body_parent: Vec<u8>,
     primary_body: Vec<u8>,
     inherited_deleted: Vec<Vec<u8>>,
+    inherited_splits: SplitTopologyNames,
     document: DocumentGuid,
     scope: EvaluationScope,
 }
@@ -119,6 +121,7 @@ impl NamedPrismSnapshot {
                 body_parent: source_body.clone(),
                 primary_body: source_body,
                 inherited_deleted: Vec::new(),
+                inherited_splits: Default::default(),
                 resolution: self.certification.as_ref().map(|value| value.resolution),
             },
             history,
@@ -195,6 +198,7 @@ struct BlendInputTopology<'a> {
     body_parent: Vec<u8>,
     primary_body: Vec<u8>,
     inherited_deleted: Vec<Vec<u8>>,
+    inherited_splits: SplitTopologyNames,
 }
 
 #[derive(Clone, Copy)]
@@ -234,6 +238,7 @@ fn build_candidate(
         body_parent: input.body_parent,
         primary_body: input.primary_body,
         inherited_deleted: input.inherited_deleted,
+        inherited_splits: input.inherited_splits,
         document,
         scope: history.evaluation_scope(),
     })

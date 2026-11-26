@@ -20,6 +20,7 @@ impl BlendNamedTopology {
                 body_parent: self.active_body.clone(),
                 primary_body: self.primary_body.clone(),
                 inherited_deleted: self.deleted.clone(),
+                inherited_splits: self.splits.clone(),
                 resolution: self.resolution,
             },
             history,

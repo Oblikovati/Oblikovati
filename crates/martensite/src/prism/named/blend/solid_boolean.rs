@@ -48,6 +48,7 @@ pub(super) fn build_boolean_candidate(
         body_parent: input.body_parent,
         primary_body: input.primary_body,
         inherited_deleted: input.inherited_deleted,
+        inherited_splits: input.inherited_splits,
         document,
         scope: history.evaluation_scope(),
     })

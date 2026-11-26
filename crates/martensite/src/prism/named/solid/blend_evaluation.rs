@@ -58,11 +58,23 @@ impl CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<(), String> {
         let (prior_live, prior_deleted) = before.names(self.history, self.document)?;
         let (live, deleted) = after.names(self.history, self.document)?;
-        let accounted: BTreeSet<_> = live.iter().chain(&deleted).collect();
+        let prior_splits = match before {
+            NamedSolid::Derived(body) => Some(body.split_keys()),
+            NamedSolid::Prism(_) => None,
+        };
+        let splits = match after {
+            NamedSolid::Derived(body) => Some(body.split_keys()),
+            NamedSolid::Prism(_) => None,
+        };
+        let accounted: BTreeSet<_> = live
+            .iter()
+            .chain(&deleted)
+            .chain(splits.into_iter().flat_map(|names| names.keys()))
+            .collect();
         for key in &prior_live {
             if !accounted.contains(key) {
                 return Err(format!(
-                    "input name {key:?}: expected a live or deleted result record"
+                    "input name {key:?}: expected a live, split, or deleted result record"
                 ));
             }
         }
@@ -70,6 +82,13 @@ impl CertifiedNamedSolidEvaluator<'_> {
             if !deleted.contains(key) {
                 return Err(format!(
                     "deleted name {key:?}: expected a retained deletion record"
+                ));
+            }
+        }
+        for (parent, children) in prior_splits.into_iter().flatten() {
+            if splits.and_then(|names| names.get(parent)) != Some(children) {
+                return Err(format!(
+                    "split name {parent:?}: expected retained descendant names"
                 ));
             }
         }
