@@ -70,6 +70,10 @@ when the new endpoint falls beyond the visible commands.
 Reopening Customize clears the Keyboard search and restores both filters
 to All. The selected customization tab is retained.
 [Keyboard initial-state checks](receipts/2026-11-26-keyboard-customization-initial-3856/README.md)
+The native keyword filter and Clear pass on Wayland and X11. The published
+Pattern search requires shortcut catalog entries across multiple command
+categories. Its Keyboard tab setup step also needs a binding.
+[Keyboard filter runs](receipts/2026-11-26-ribbon-keyboard-pattern-filter-3856/README.md)
 Copy to Clipboard exports the full Keyboard draft in the command list's
 alphabetical order, even with a search active.
 [Native clipboard checks](receipts/2026-11-26-keyboard-copy-3856/README.md)
