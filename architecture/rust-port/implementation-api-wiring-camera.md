@@ -37,3 +37,14 @@ through the installed Bridge. It completed 113 camera commands with
 no transport or host errors. It achieved 22.6 updates per second at
 43.841 ms median and 54.234 ms p95 round-trip latency. Host trace data
 was unavailable. These are MCP request measurements.
+
+## Bridge schema follow-up
+
+The Bridge branch
+[fix/camera-view-tool-schema](https://github.com/Oblikovati/Oblikovati.AddIns.MCPBridge/tree/fix/camera-view-tool-schema)
+contains the generator and schema fix at `77db6bc`. Its build against the
+published branch's pinned API 0.158.0 passed the live camera driver
+against this API 0.166.0 Rust host on Wayland. The live checks covered
+explicit document addressing, background changes, projection retention,
+activation, and invalid input. The Bridge's focused forwarding tests
+also passed.
