@@ -48,7 +48,7 @@ using this status; the live scenario directory can change.
   `receipts/2026-11-21-document-tabs-r0-3900/`.
   Strict verification remains blocked by #3978.
 - Home Recent Documents (#3898) passed [all 37 amended scenarios on Wayland](receipts/2026-11-26-home-recent-resize-3898/README.md). The resize and both Home chrome scenarios also passed on X11.
-- Document Opening (#3889) passed all [27 scenarios and 315 steps in the full shared fixture tree on Wayland](receipts/2026-11-26-document-opening-wayland-3889/README.md). The [earlier isolated-fixture run](receipts/2026-11-25-document-opening-current-3889/README.md) covered all cases on X11.
+- Document Opening (#3889) passed all [27 scenarios and 315 steps on Wayland and X11](receipts/2026-11-26-document-opening-current-fixtures-3889/README.md) with the current shared fixtures. Native pointer tests verified the Open thumbnail context menu on both desktops.
 - Ribbon Display (#3856) passed [50 of 52 amended scenarios on Wayland and X11](receipts/2026-11-26-ribbon-command-geometry-3856/README.md), including split controls and the 170% text-size case. Two scenarios require Shell previews.
 - Ribbon Panel Visibility (#3856) passed [53 of 55 cases and 626 steps in passing cases on Wayland](receipts/2026-11-26-side-model-panel-inventory-3856/README.md). The side-docked 3D Model inventory also passed on X11. Two cases still require Shell previews.
 - Ribbon Panel Expansion (#3856) passed [59 of 67 cases and 668 steps](receipts/2026-11-25-ribbon-panel-expansion-current-3856/README.md) in the previous full run. [Highlight New](receipts/2026-11-25-highlight-new-3856/README.md) passed separately. Seven cases in the full run required Shell previews.
