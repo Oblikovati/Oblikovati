@@ -1191,14 +1191,14 @@
           "fixtures/cad/planar-sketch-empty-xy.opd": "d936ef6b165b4bcbe14e04ac1b08bb5b16c81fddb597e70acb781e753c07e9a8",
           "fixtures/cad/workspace-layout-native.opd": "d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-26-ribbon-tab-navigation-3856/wayland.json",
-        "cucumber_sha256": "7339560d54cdf9db103d6b2527b0c6b2873518a0cd3d2b9ff4ebfd3416f2d390",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-ribbon-tab-navigation-3856/wayland-arguments.json",
-        "scenario_arguments_sha256": "0a3b5b1bd52c6ac26975928543b018527a2bbb5aa0d028cbc70595f6f3e98021",
-        "application_commit": "09b7669bbc2e0f5757a78e7dff4c0bb3126112b9",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-ribbon-options-title-3856/wayland.json",
+        "cucumber_sha256": "44fcdbfab8247aa02313f26ea06cecc2687546d25c55f001ac26e0a7e1b781fe",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-ribbon-options-title-3856/wayland-arguments.json",
+        "scenario_arguments_sha256": "16b9881b0a3baf1ef9ec781f35b65654dc910f7ee6720a7af0b291b3dde82985",
+        "application_commit": "2351cd2bce5c3596e3ec1ef05d6dcbbdecdd0441",
         "command": "OBK_BDD_ROOT=<published-scenarios> OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-display OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
         "environment": "Linux Wayland with nested Weston 13, Xvfb, and Vulkan Lavapipe.",
-        "notes": "43 of 52 amended scenarios passed on Wayland with 488 steps in passing cases. Eight focused ribbon tab navigation scenarios passed on Wayland and X11, with 89 steps on each backend. The previous receipt also records nine passing resize and overflow cases on both backends."
+        "notes": "44 of 52 amended scenarios passed on Wayland with 496 steps in passing cases. The four compact Options cases passed 42 steps on Wayland and X11."
       }
     }
   },

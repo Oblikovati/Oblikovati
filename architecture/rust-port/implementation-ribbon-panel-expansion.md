@@ -14,6 +14,8 @@ title. The expansion uses the shared pin control and follows the ribbon
 display cycle. Clicking outside an unpinned expansion dismisses it.
 In compact panel-button mode, the Options pop-up shows the main and
 additional commands together. Clicking its lower title dismisses it.
+The [native dismissal checks](receipts/2026-11-26-ribbon-options-title-3856/README.md)
+verified the caption, the selected tab, and the panel button on both backends.
 
 Reset UI Layout uses the existing ribbon reset confirmation. The reset
 restores ribbon placement, appearance, and command customization. Selecting
