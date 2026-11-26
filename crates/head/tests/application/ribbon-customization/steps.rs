@@ -2,6 +2,9 @@
 //! Native tests for staged user commands and their applied ribbon actions.
 use super::{ApplicationWorld, diagnostics};
 use cucumber::{given, then, when};
+#[path = "repeated_transfer.rs"]
+mod repeated_transfer;
+use repeated_transfer::transfer_to_target;
 #[path = "row_selection.rs"]
 mod row_selection;
 #[path = "source_continuity.rs"]
@@ -96,11 +99,6 @@ fn empty_model_customization(world: &mut ApplicationWorld) {
 #[when("the user selects \"2D Sketches\" in the available list")]
 fn select_available_sketches(world: &mut ApplicationWorld) {
     click_in_customize(world, "2DSketches");
-}
-#[when("the user clicks the right transfer button")]
-#[when("the user clicks the add command button")]
-fn transfer_to_target(world: &mut ApplicationWorld) {
-    click_in_customize(world, ">");
 }
 #[then("\"2D Sketches\" appears in the custom panel list")]
 #[then("\"2D Sketches\" remains in the Part Tools custom panel list")]

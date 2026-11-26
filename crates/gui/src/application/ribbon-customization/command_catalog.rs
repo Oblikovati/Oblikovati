@@ -3,13 +3,15 @@
 use super::Command;
 use crate::{GuiSketchConstraint, GuiSketchTool, application::viewport_orientation::ZoomAction};
 
-pub(super) const COMMANDS: [Command; 37] = [
+pub(super) const COMMANDS: [Command; 39] = [
     Command::Separator,
     Command::Drawing2D,
     Command::Tool(GuiSketchTool::Line),
     Command::Tool(GuiSketchTool::MidpointLine),
     Command::Sketches,
     Command::Annotations,
+    Command::Pdf3D,
+    Command::ExportPdf3D,
     Command::Tool(GuiSketchTool::Circle),
     Command::Measure,
     Command::Tool(GuiSketchTool::Rectangle),

@@ -38,6 +38,10 @@ command list. Ctrl+A then selects rows in that list.
 Removing a staged range preserves the next surviving command's
 selection, so repeated Remove clicks continue in order.
 [Native removal checks](receipts/2026-11-26-ribbon-removal-next-3856/README.md)
+All Commands lists 3D PDF and 3D PDF Export as two configurable entries
+with disabled ribbon buttons. Repeated Add clicks advance from the staged
+3D PDF command to 3D PDF Export in the available list.
+[Native consecutive-transfer scenario](receipts/2026-11-26-ribbon-pdf-transfer-3856/README.md)
 Escape from the open category list discards the staged edit. The pinned
 and published scenarios continue into an unrelated Measure sequence.
 [Source defect and native results](scenario-defects/ribbon-category-escape-measure.md)

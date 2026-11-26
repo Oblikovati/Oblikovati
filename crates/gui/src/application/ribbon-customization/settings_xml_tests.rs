@@ -32,6 +32,18 @@ fn round_trip_preserves_tabs_commands_and_options() {
                 text: true,
                 expanded: false,
             },
+            Entry {
+                command: Command::Pdf3D,
+                large: false,
+                text: true,
+                expanded: false,
+            },
+            Entry {
+                command: Command::ExportPdf3D,
+                large: true,
+                text: false,
+                expanded: true,
+            },
         ],
     )]);
     let settings = SettingsDocument {

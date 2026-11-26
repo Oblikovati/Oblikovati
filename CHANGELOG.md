@@ -24,7 +24,7 @@
 - Added Italic to the Sketch Text editor and kept Bold when applying it. (#3907)
 - Included applied ribbon, Quick Access, keyboard, marking menu, and mini-toolbar state in Customize exports. (#3856)
 - Opened the editor for existing Sketch Text on a double-click of the glyph. (#3907)
-- Listed 2-D Drawing and Z Parallel as unavailable commands that can be arranged in custom ribbon panels. (#3856)
+- Listed 2-D Drawing, 3D PDF, 3D PDF Export, and Z Parallel as unavailable commands that can be arranged in custom ribbon panels. (#3856)
 - Added Bold preview and editing for a full Sketch Text selection. (#3907)
 - Added stacked fractions to Format Text and preserved them in native sketches and named presets. (#3907)
 - Added five line-spacing modes to Format Text and retained the selected spacing in native sketch files. (#3907)

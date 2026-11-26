@@ -113,12 +113,12 @@ impl RibbonCustomization {
                     let _disabled = ui.begin_disabled(true);
                     icons.button(ui, label, IconGlyph::Annotation, size);
                 }
-                Command::Drawing2D | Command::ZParallel => {
+                Command::Drawing2D | Command::Pdf3D | Command::ExportPdf3D | Command::ZParallel => {
                     let _disabled = ui.begin_disabled(true);
-                    let glyph = if entry.command == Command::Drawing2D {
-                        IconGlyph::NewDrawing
-                    } else {
+                    let glyph = if entry.command == Command::ZParallel {
                         IconGlyph::Parallel
+                    } else {
+                        IconGlyph::NewDrawing
                     };
                     icons.button(ui, label, glyph, size);
                     if ui.is_item_hovered_with_flags(imgui::ItemHoveredFlags::ALLOW_WHEN_DISABLED) {

@@ -10,6 +10,8 @@ use std::collections::{BTreeMap, BTreeSet};
 pub(super) enum Command {
     Separator,
     Drawing2D,
+    Pdf3D,
+    ExportPdf3D,
     ZParallel,
     Sketches,
     Annotations,
@@ -26,6 +28,8 @@ impl Command {
         match self {
             Self::Separator => "separator",
             Self::Drawing2D => "drawing-2d",
+            Self::Pdf3D => "pdf-3d",
+            Self::ExportPdf3D => "export-pdf-3d",
             Self::ZParallel => "constraint-z-parallel",
             Self::Sketches => "sketch-visibility",
             Self::Annotations => "annotations-visibility",
@@ -71,6 +75,8 @@ impl Command {
         match self {
             Self::Separator => "<Separator>",
             Self::Drawing2D => "2-D Drawing",
+            Self::Pdf3D => "3D PDF",
+            Self::ExportPdf3D => "3D PDF Export",
             Self::ZParallel => "Z Parallel",
             Self::Sketches => "2D Sketches",
             Self::Annotations => "3D Annotations",

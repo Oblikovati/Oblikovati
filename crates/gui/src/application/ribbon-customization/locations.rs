@@ -14,7 +14,10 @@ pub(super) fn show(ui: &Ui, command: Command) {
     if !crate::widget_abi::item_mouse_hovered(ui) {
         return;
     }
-    if matches!(command, Command::Drawing2D | Command::ZParallel) {
+    if matches!(
+        command,
+        Command::Drawing2D | Command::Pdf3D | Command::ExportPdf3D | Command::ZParallel
+    ) {
         show_unavailable(ui, command);
         return;
     }
