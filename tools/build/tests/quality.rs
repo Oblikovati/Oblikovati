@@ -191,6 +191,20 @@ fn gate_test_command_requires_pinned_scenarios() {
 }
 
 #[test]
+fn native_tests_stream_serial_results_and_return_failures() {
+    let mut runner = gate_fixture();
+    runner
+        .failing_commands
+        .push(("cargo test", "native test failed"));
+    let result = execute_tests(&runner, runner.tree.root(), &["cargo", "test"]);
+    assert_eq!(result.unwrap_err(), "native test failed");
+    assert_eq!(*runner.calls.borrow(), ["cargo test -- --test-threads=1"]);
+    let environments = runner.environments.borrow();
+    assert_eq!(environments.len(), 1);
+    assert!(environments[0].is_empty());
+}
+
+#[test]
 fn gate_reports_ledger_and_workspace_failures_and_still_checks_repository() {
     let mut runner = gate_fixture();
     runner.failing_commands = vec![

@@ -117,20 +117,29 @@ fn serial_test_arguments<'a>(command: &[&'a str]) -> Vec<&'a str> {
     args
 }
 fn execute_tests(runner: &dyn Runner, workspace: &Path, command: &[&str]) -> BuildResult<()> {
-    execute(runner, workspace, &serial_test_arguments(command))
+    stream_tests(runner, workspace, command, &[])
 }
 
 // Gate evidence must use the same pinned scenario source as the ledger.
 fn execute_gate_tests(runner: &dyn Runner, workspace: &Path, command: &[&str]) -> BuildResult<()> {
-    let args = serial_test_arguments(command);
-    println!("+ {}", args.join(" "));
-    // Keep test progress visible during long coverage runs (#3860).
-    runner.stream_env(
+    stream_tests(
+        runner,
         workspace,
-        args[0],
-        &args[1..],
+        command,
         &[("OBK_BDD_REQUIRE_PINNED", "1")],
     )
+}
+
+// Keep native test progress and coverage diagnostics available during long runs (#3860).
+fn stream_tests(
+    runner: &dyn Runner,
+    workspace: &Path,
+    command: &[&str],
+    environment: &[(&str, &str)],
+) -> BuildResult<()> {
+    let args = serial_test_arguments(command);
+    println!("+ {}", args.join(" "));
+    runner.stream_env(workspace, args[0], &args[1..], environment)
 }
 
 fn doctests(runner: &dyn Runner, workspace: &Path) -> BuildResult<()> {
