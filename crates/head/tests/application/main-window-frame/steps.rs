@@ -7,6 +7,8 @@ mod fixture;
 #[cfg(target_os = "linux")]
 pub(super) use fixture::{bundled_frame_fixture, open_dirty_frame_part_from};
 pub(super) use fixture::{open_dirty_frame_part, open_frame_part};
+#[path = "maximized_edge.rs"]
+mod maximized_edge;
 #[path = "wayland.rs"]
 pub(super) mod wayland;
 
@@ -128,32 +130,6 @@ fn restored_bounds(world: &mut ApplicationWorld) {
         super::x11_input::application_bounds()
     };
     assert_eq!(actual, world.window_frame_before.unwrap());
-}
-
-#[given("the main window of the MCAD Software is maximized")]
-fn maximize_main_window(world: &mut ApplicationWorld) {
-    open_frame_part(world);
-    super::x11_input::focus_window();
-    super::main_window_frame_native::press_maximize(world);
-    super::main_window_frame_native::pump_until(world, true);
-    world.window_frame_before = Some(super::x11_input::application_bounds());
-}
-#[when("the user attempts to resize it from the left boundary")]
-fn drag_maximized_edge(world: &mut ApplicationWorld) {
-    let height = super::x11_input::application_bounds()[3];
-    super::main_window_frame_native::drag_resize_handle(world, [1, height / 2], [40, height / 2]);
-}
-#[then("the window retains its maximized bounds")]
-fn maximized_bounds_unchanged(world: &mut ApplicationWorld) {
-    assert_eq!(
-        super::x11_input::application_bounds(),
-        world.window_frame_before.unwrap()
-    );
-    assert!(world.app().window.native.view.window_maximized().unwrap());
-}
-#[then("Restore remains available in the application bar")]
-fn restore_remains_available(world: &mut ApplicationWorld) {
-    control_tooltip(world, "Restore");
 }
 
 #[given("the restored main window occupies a known size and position within the desktop work area")]

@@ -221,6 +221,9 @@ benchmark directly, with `OBK_BDD_WESTON_DEBUG` and
 `OBK_BDD_WESTON_NESTED_X11=1` set. XTest sends the drag to the compositor,
 which delivers native Wayland pointer events to the application.
 
+Use that nested setup for the maximized-edge case. The test compares the
+global frame bounds before and after the left-edge drag and checks Restore.
+
 The same nested setup runs the perimeter-resize outline. Give the Weston
 output room for a 30-pixel drag on every edge. Run
 `python3 crates/head/tests/application/main-window-frame/cursor_theme.py "$XCURSOR_PATH"`

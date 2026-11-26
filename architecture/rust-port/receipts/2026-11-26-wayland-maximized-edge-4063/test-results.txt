@@ -1,0 +1,31 @@
+Wayland baseline
+      Step panicked. Captured output: X11 application windows []: expected exactly one Oblikovati window
+
+Wayland maximize and native left-edge drag
+[04:15:53.907835] wl_pointer#18.motion(370224179, 1371.00000000, 16.00000000)
+[04:15:54.075886] wl_pointer#18.button(11, 370224301, 272, 1)
+[04:15:54.176171] wl_pointer#18.button(13, 370224448, 272, 0)
+[04:15:54.184579]  -> xdg_toplevel#8.set_maximized()
+[04:15:54.228290] xdg_toplevel#8.configure(2048, 1168, array[8])
+[04:15:54.375305] wl_pointer#18.motion(370224647, 1.00000000, 584.00000000)
+[04:15:54.562135] wl_pointer#18.button(22, 370224787, 272, 1)
+[04:15:54.680711] wl_pointer#18.motion(370224952, 40.00000000, 584.00000000)
+[04:15:54.856915] wl_pointer#18.button(24, 370225128, 272, 0)
+xdg_toplevel.resize requests: 0
+Layer 5 (pos 0x50000000):
+		position: (0, 32) -> (2048, 1200)
+Layer 5 (pos 0x50000000):
+		position: (0, 32) -> (2048, 1200)
+
+wayland
+1 scenario (1 passed)
+4 steps (4 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 5.92s
+
+x11
+1 scenario (1 passed)
+4 steps (4 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 6.20s
+
+Workspace Clippy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 55.27s
