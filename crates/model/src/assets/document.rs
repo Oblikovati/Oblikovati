@@ -2,6 +2,7 @@
 mod assign;
 mod ceramic;
 mod effects;
+mod height_map;
 mod texture;
 use super::{AppearanceAsset, AssetAssignments, AssetCollection, MaterialAsset};
 pub use assign::{AppearanceAssignmentTarget, MaterialAssignmentTarget};
@@ -9,6 +10,7 @@ pub use ceramic::{CeramicAppearance, CeramicFinish, CeramicKind};
 pub use effects::{
     AppearanceBump, AppearanceIllumination, AppearanceTint, GenericAppearanceEffects,
 };
+pub use height_map::AppearanceHeightMap;
 use oblikovati_api::{
     contract::{Appearance, Material},
     types::{ASSET_BUILTIN, ASSET_DOCUMENT},
@@ -195,7 +197,7 @@ impl DocumentAssets {
                 .validate()
                 .map_err(|cause| format!("appearance {id:?}: {cause}"))?;
         }
-        if let Some(ceramic) = metadata.ceramic {
+        if let Some(ceramic) = &metadata.ceramic {
             ceramic
                 .validate()
                 .map_err(|cause| format!("appearance {id:?}: {cause}"))?;

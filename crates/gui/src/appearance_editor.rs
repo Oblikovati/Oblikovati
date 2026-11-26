@@ -6,6 +6,7 @@ use imgui::{Condition, Ui, WindowFlags};
 use oblikovati_model::assets::AppearanceMetadata;
 
 mod ceramic;
+mod image_chooser;
 mod optional_effects;
 mod preview_options;
 mod texture;
@@ -33,7 +34,7 @@ pub enum GuiAppearanceChange {
         color: Option<[u8; 3]>,
         roughness: Option<u8>,
         highlights: Option<u8>,
-        metadata: Option<AppearanceMetadata>,
+        metadata: Option<Box<AppearanceMetadata>>,
     },
 }
 
@@ -65,6 +66,7 @@ pub(crate) struct AppearanceEditor {
     target: Option<(u64, String)>,
     draft: Option<AppearanceDraft>,
     color_dialog: ColorDialog,
+    image_chooser: image_chooser::ImageChooser,
     preview_options: preview_options::PreviewOptions,
     confirm_close: bool,
     texture_open: bool,
@@ -99,7 +101,7 @@ impl AppearanceDraft {
             color: (self.color != original.color).then_some(self.color),
             roughness: (self.roughness != original.roughness).then_some(self.roughness),
             highlights: (self.highlights != original.highlights).then_some(self.highlights),
-            metadata: (self.metadata != original.metadata).then(|| self.metadata.clone()),
+            metadata: (self.metadata != original.metadata).then(|| Box::new(self.metadata.clone())),
         }
     }
 }
@@ -220,8 +222,17 @@ impl AppearanceEditor {
                 ui.child_window("##appearance-properties")
                     .size([0., height])
                     .build(|| {
-                        draw_properties(ui, draft, &mut self.color_dialog, &mut self.texture_open)
+                        draw_properties(
+                            ui,
+                            draft,
+                            &mut self.color_dialog,
+                            &mut self.texture_open,
+                            &mut self.image_chooser,
+                        )
                     });
+                if let Some(ceramic) = &mut draft.metadata.ceramic {
+                    self.image_chooser.draw(ui, ceramic);
+                }
                 let changed = draft != original;
                 let editable = changed && !draft.name.trim().is_empty() && !read_only;
                 exit = editor_buttons(ui, editable);
@@ -258,6 +269,7 @@ impl AppearanceEditor {
         self.draft = None;
         self.confirm_close = false;
         self.texture_open = false;
+        self.image_chooser = Default::default();
         self.preview_options = Default::default();
         self.close_after_apply = false;
     }
@@ -299,6 +311,7 @@ fn draw_properties(
     draft: &mut AppearanceDraft,
     color_dialog: &mut ColorDialog,
     texture_open: &mut bool,
+    image_chooser: &mut image_chooser::ImageChooser,
 ) {
     let template = if draft.metadata.ceramic.is_some() {
         AppearanceTemplate::Ceramic
@@ -307,7 +320,7 @@ fn draw_properties(
     };
     draw_information(ui, draft, template);
     if template == AppearanceTemplate::Ceramic {
-        ceramic::draw(ui, draft, color_dialog);
+        ceramic::draw(ui, draft, color_dialog, image_chooser);
         return;
     }
     if let Some(_generic) = ui.tree_node_config("Generic").default_open(true).push() {

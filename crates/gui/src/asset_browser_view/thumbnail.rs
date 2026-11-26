@@ -5,6 +5,7 @@ use imgui::{DrawListMut, StyleColor, Ui};
 use oblikovati_model::assets::AppearanceReflectivity;
 
 mod cube;
+mod height_shading;
 mod sampled_surface;
 pub(crate) use cube::paint_cube_preview;
 

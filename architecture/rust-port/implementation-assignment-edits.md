@@ -128,3 +128,9 @@ Porcelain types, the base color, and Glazed, Satin, and Matte finishes.
 Type and finish are stored in the Part recipe alongside the common
 surface parameters. Ceramic also has independent Finish Bumps, Relief
 Pattern, and Tint sections. See the [native Ceramic receipt](receipts/2026-11-26-appearance-ceramic-3563/README.md).
+
+Ceramic Finish Bumps accepts Wavy or a custom height image. Relief Pattern
+uses the same image chooser. The editor samples PNG, JPEG, or BMP images
+into 32×32 grayscale maps for the preview and embeds the maps in the Part
+when Apply commits the draft. Cancel preserves the previously selected
+type and map. See the [native ceramic map receipt](receipts/2026-11-26-appearance-ceramic-maps-3563/README.md).

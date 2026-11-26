@@ -6,7 +6,6 @@ use oblikovati_viewport::{ViewportCapture, ViewportPhysicalKey};
 
 const BROWSER: &str = "Appearance Browser";
 const EDITOR: &str = "###appearance-editor";
-const INITIAL: &str = "Default Generic";
 const ID: &str = "default-generic";
 const BLUE: [u8; 3] = [0, 128, 192];
 
@@ -262,7 +261,7 @@ fn keep_editing(world: &mut ApplicationWorld) {
 
 #[then("the Appearance Editor remains open")]
 fn editor_stays_open(world: &mut ApplicationWorld) {
-    separate_window(world, INITIAL.into());
+    world.run_in_window(EDITOR, "Name");
 }
 
 #[then("its pending edits remain visible")]

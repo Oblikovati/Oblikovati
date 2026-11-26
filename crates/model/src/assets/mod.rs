@@ -51,10 +51,10 @@ pub use appearance::AppearanceAsset;
 pub use assignment::{AssetAssignments, AssignmentReference};
 pub use catalog::{BuiltinAssetCatalog, DEFAULT_APPEARANCE_ID};
 pub use document::{
-    AppearanceAssignmentTarget, AppearanceBump, AppearanceChecker, AppearanceIllumination,
-    AppearanceMetadata, AppearanceReflectivity, AppearanceTint, AppearanceTransparency,
-    CeramicAppearance, CeramicFinish, CeramicKind, DocumentAssets, GenericAppearanceEffects,
-    MaterialAssignmentTarget, RefractionPreset, TextureRepeat,
+    AppearanceAssignmentTarget, AppearanceBump, AppearanceChecker, AppearanceHeightMap,
+    AppearanceIllumination, AppearanceMetadata, AppearanceReflectivity, AppearanceTint,
+    AppearanceTransparency, CeramicAppearance, CeramicFinish, CeramicKind, DocumentAssets,
+    GenericAppearanceEffects, MaterialAssignmentTarget, RefractionPreset, TextureRepeat,
 };
 pub use material::MaterialAsset;
 pub use project::ProjectAssetLibrary;

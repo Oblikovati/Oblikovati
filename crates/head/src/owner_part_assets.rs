@@ -281,7 +281,7 @@ fn commit_appearance_edit(
     }
     asset.edit(record)?;
     let embedded = assets.embed_appearance(&asset)?;
-    if let Some(metadata) = metadata {
+    if let Some(metadata) = metadata.as_deref() {
         assets.set_appearance_metadata(id, metadata.clone())?;
     }
     Ok(embedded)

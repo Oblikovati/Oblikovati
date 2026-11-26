@@ -117,6 +117,15 @@ impl FileTypeList {
             rows: vec![(ALL_FILES, FileFilter::Everything)],
         }
     }
+    /// Image formats accepted by the appearance image chooser.
+    pub(crate) fn appearance_images() -> Self {
+        Self {
+            rows: vec![(
+                "Image Files (*.png;*.jpg;*.jpeg;*.bmp)",
+                FileFilter::Extensions(&["png", "jpg", "jpeg", "bmp"]),
+            )],
+        }
+    }
     /// What a row keeps; a row that is gone keeps everything.
     pub(crate) fn filter(&self, row: usize) -> FileFilter {
         self.rows

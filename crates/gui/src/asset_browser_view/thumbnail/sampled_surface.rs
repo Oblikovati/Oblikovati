@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Sample textured and transmissive surfaces for the browser and editor previews.
 use super::PreviewLight;
+use super::height_shading::HeightShading;
 use crate::GuiAssetChoice;
 use crate::appearance_editor::CheckerSampler;
 use imgui::DrawListMut;
@@ -35,7 +36,7 @@ pub(super) struct PreviewSurface<'a> {
     bend: f32,
     checker: Option<(CheckerSampler, f32)>,
     effects: Option<&'a GenericAppearanceEffects>,
-    wavy_amount: f32,
+    height_shading: HeightShading<'a>,
     ceramic_scatter: f32,
 }
 
@@ -46,7 +47,7 @@ impl<'a> PreviewSurface<'a> {
             .unwrap_or([128; 3])
             .map(|v| f32::from(v) / 255.);
         let metadata = asset.appearance_metadata.as_ref();
-        let ceramic = metadata.and_then(|metadata| metadata.ceramic);
+        let ceramic = metadata.and_then(|metadata| metadata.ceramic.as_ref());
         let base = ceramic
             .filter(|value| value.tint.enabled)
             .map_or(base, |value| {
@@ -65,9 +66,7 @@ impl<'a> PreviewSurface<'a> {
         Self {
             base,
             effects,
-            wavy_amount: ceramic
-                .filter(|value| value.finish_bumps.enabled)
-                .map_or(0., |value| f32::from(value.finish_bumps.amount) / 100.),
+            height_shading: HeightShading::new(ceramic),
             ceramic_scatter: ceramic
                 .and(asset.appearance_preview)
                 .map_or(0., |finish| 0.48 * f32::from(finish.roughness) / 255.),
@@ -83,7 +82,7 @@ impl<'a> PreviewSurface<'a> {
     }
 
     pub(super) fn needs_samples(&self) -> bool {
-        self.transmission > 0. || self.checker.is_some() || self.wavy_amount > 0.
+        self.transmission > 0. || self.checker.is_some() || self.height_shading.enabled()
     }
 
     fn sphere(&self, [x, y]: [f32; 2], light: PreviewLight) -> [f32; 4] {
@@ -115,11 +114,7 @@ impl<'a> PreviewSurface<'a> {
         let base = self
             .effects
             .map_or(base, |effects| super::preview_effect_color(base, effects));
-        let diffuse = if self.wavy_amount > 0. {
-            (diffuse + (y * 18. + 1.8 * (x * 7.).sin()).cos() * 0.25 * self.wavy_amount).max(0.)
-        } else {
-            diffuse
-        };
+        let diffuse = self.height_shading.apply([x, y], diffuse);
         // Matte ceramic scatters the directional light into a broader, softer lobe.
         let diffuse = diffuse + (0.65 - diffuse) * self.ceramic_scatter;
         let surface = super::surface_color(base, diffuse, facing, self.reflectivity);

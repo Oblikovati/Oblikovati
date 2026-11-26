@@ -161,6 +161,7 @@ fn ceramic_finish_and_wavy_bumps_are_saved_with_the_part() {
         .appearance_metadata(CERAMIC_ID)
         .unwrap()
         .ceramic
+        .as_ref()
         .unwrap();
     assert_eq!(ceramic.kind, CeramicKind::Ceramic);
     assert_eq!(ceramic.finish, CeramicFinish::Matte);
@@ -222,3 +223,5 @@ fn menu_item<'a>(world: &'a ApplicationWorld, name: &str) -> &'a diagnostics::Re
         .find(|row| world.frame.is_popup_row(row) && row.text == name)
         .unwrap_or_else(|| panic!("expected {name} in the appearance menu: {}", world.text()))
 }
+
+mod height_maps;
