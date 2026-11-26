@@ -259,6 +259,7 @@ fn temporary_finish(world: &mut ApplicationWorld) {
 }
 #[when("the user selects Finish")]
 fn finish_from_ribbon(world: &mut ApplicationWorld) {
+    world.previous_document = Some(world.active_id());
     world.click_text("Finish Sketch");
     world.pump(Vec::new());
 }
