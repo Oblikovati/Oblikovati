@@ -97,9 +97,11 @@ fn open_plus(world: &mut ApplicationWorld) {
 pub(super) fn click_panel_action(world: &mut ApplicationWorld, center: [f32; 2]) {
     let point = super::super::diagnostics::pointer_pixels(center);
     #[cfg(target_os = "linux")]
-    {
+    if !world.app().window.native.view.uses_wayland() {
         super::super::x11_input::focus_window();
         super::super::x11_input::click(point);
+    } else {
+        world.click(point);
     }
     #[cfg(not(target_os = "linux"))]
     world.click(point);

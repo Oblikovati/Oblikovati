@@ -6,28 +6,40 @@ use super::find::{
 };
 use super::*;
 use crate::work::HeadWork;
+use oblikovati_viewport::ViewportPhysicalKey;
 
 fn click(world: &mut ApplicationWorld, label: &str) {
     let center = diagnostics::pointer_pixels(world.run(label).center());
-    super::super::x11_input::click(center);
+    click_at(world, center);
+}
+
+fn click_at(world: &mut ApplicationWorld, center: [i32; 2]) {
+    if world.app().window.native.view.uses_wayland() {
+        world.click(center);
+    } else {
+        super::super::x11_input::click(center);
+    }
     settle(world);
 }
 
 fn choose(world: &mut ApplicationWorld, label: &str, choice: &str) {
     let field = world.run(label);
     let point = [field.minimum[0] - 40., field.center()[1]];
-    super::super::x11_input::click(diagnostics::pointer_pixels(point));
-    settle(world);
+    click_at(world, diagnostics::pointer_pixels(point));
     click(world, choice);
 }
 
 fn open_native_find(world: &mut ApplicationWorld) {
-    click(world, "Menu");
+    open_browser_menu(world);
     click(world, "Find");
     world.expect_text("Find Now");
 }
 
 fn native_text(world: &mut ApplicationWorld, text: &str) {
+    if world.app().window.native.view.uses_wayland() {
+        world.type_text(text);
+        return;
+    }
     for character in text.chars() {
         super::super::x11_input::press_path_character(character);
         world.pump(Vec::new());
@@ -89,20 +101,28 @@ fn native_find_property_remains_readable_at_larger_text_scale() {
 fn change_and_clear_value(world: &mut ApplicationWorld) {
     let value = world.run("Value");
     let point = [value.minimum[0] - 40., value.center()[1]];
-    super::super::x11_input::click(diagnostics::pointer_pixels(point));
-    settle(world);
+    click_at(world, diagnostics::pointer_pixels(point));
     native_text(world, "probe");
     expect_control(world, "Value", "probe");
     assert_eq!(input_value(world, "Value"), "probe");
     assert!(add_is_enabled(world));
-    super::super::x11_input::press_control_a();
-    super::super::x11_input::press_keysym(0xff08);
-    settle(world);
+    clear_native_input(world);
     expect_empty_input(world, "Value");
     assert!(
         !add_is_enabled(world),
         "cleared criterion must not be added"
     );
+}
+
+fn clear_native_input(world: &mut ApplicationWorld) {
+    if world.app().window.native.view.uses_wayland() {
+        world.key(ViewportPhysicalKey::A, true);
+        world.key(ViewportPhysicalKey::Backspace, false);
+    } else {
+        super::super::x11_input::press_control_a();
+        super::super::x11_input::press_keysym(0xff08);
+    }
+    settle(world);
 }
 
 fn add_native_type(world: &mut ApplicationWorld, name: &str, grouped: bool) {

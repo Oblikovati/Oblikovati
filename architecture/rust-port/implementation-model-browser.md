@@ -55,6 +55,11 @@ The published nested-sketch and grouped Find cases use the saved
 Both cases also pass on the pinned fixture. See the
 [native fixture receipt](receipts/2026-11-24-model-browser-named-part-3896/README.md).
 
+Ten Find dialog scenarios and three related dock-control scenarios passed
+on Wayland. The tests open the visible dock-title controls and verify
+criteria grouping, selection, focus, and cancel behavior.
+[Wayland browser checks](receipts/2026-11-26-wayland-browser-find-3896/README.md)
+
 The first right-click keeps a settled Sketch row fixed at 100% and 150%
 framebuffer scale. On Wayland and X11, its menu changed Dimension Visibility
 for the clicked sketch while another sketch stayed in edit mode.

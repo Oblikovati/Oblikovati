@@ -144,9 +144,11 @@ pub(in super::super) fn click_dock_tab_action(
 fn hover_dock_action(world: &mut ApplicationWorld, center: [f32; 2], id: u32) -> bool {
     let point = diagnostics::pointer_pixels(center);
     #[cfg(target_os = "linux")]
-    {
+    if !world.app().window.native.view.uses_wayland() {
         super::super::x11_input::move_pointer(point);
         world.pump(Vec::new());
+    } else {
+        world.hover(point);
     }
     #[cfg(not(target_os = "linux"))]
     world.hover(point);
@@ -213,11 +215,13 @@ fn criteria_dialog_closed(_: &mut ApplicationWorld) {
 #[when(expr = "the user types {string} without clicking another control")]
 fn type_using_current_focus(world: &mut ApplicationWorld, text: String) {
     #[cfg(target_os = "linux")]
-    for character in text.chars() {
-        super::super::x11_input::press_path_character(character);
-        world.pump(Vec::new());
+    if !world.app().window.native.view.uses_wayland() {
+        for character in text.chars() {
+            super::super::x11_input::press_path_character(character);
+            world.pump(Vec::new());
+        }
+        return;
     }
-    #[cfg(not(target_os = "linux"))]
     world.type_text(&text);
 }
 
