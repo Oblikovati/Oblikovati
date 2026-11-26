@@ -45,12 +45,15 @@ fn hide_copy_bodies(world: &mut ApplicationWorld) {
         .scene_status()
         .is_some_and(|scene| scene.visible_bodies > 0)
     {
-        let point = super::super::ribbon_keyboard_navigation::visible_face_point(world);
-        let pixel = world.pixel_at(point.map(|coordinate| coordinate as usize));
-        assert!(super::super::solid_visibility::neutral_fixture_hue(&pixel));
-        world.observed_view = Some(point);
+        remember_visible_face(world);
     }
     choose_copy_action(world, "All Hidden");
+}
+pub(super) fn remember_visible_face(world: &mut ApplicationWorld) {
+    let point = super::super::ribbon_keyboard_navigation::visible_face_point(world);
+    let pixel = world.pixel_at(point.map(|coordinate| coordinate as usize));
+    assert!(super::super::solid_visibility::neutral_fixture_hue(&pixel));
+    world.observed_view = Some(point);
 }
 fn choose_copy_action(world: &mut ApplicationWorld, label: &str) {
     right_click_copy(world);
@@ -60,6 +63,10 @@ fn choose_copy_action(world: &mut ApplicationWorld, label: &str) {
 #[then("the solid body is hidden in the viewport")]
 #[then("the solid body is not displayed in the viewport")]
 fn prism_hidden(world: &mut ApplicationWorld) {
+    expect_sampled_solid_hidden(world);
+}
+
+pub(super) fn expect_sampled_solid_hidden(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     let status = world
         .app()

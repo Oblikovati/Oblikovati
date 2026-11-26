@@ -113,7 +113,7 @@ fn open_capture_row_menu(world: &mut ApplicationWorld) {
         world.run("#").center()[0],
         row_run(world, "Capture State")[1],
     ];
-    super::super::x11_input::right_click(diagnostics::pointer_pixels(point));
+    world.desktop_right_click(diagnostics::pointer_pixels(point));
     world.pump(Vec::new());
 }
 #[then("Insert Row and Delete Row are available")]
@@ -204,10 +204,8 @@ fn copy_stays_active(world: &mut ApplicationWorld) {
 }
 #[when("the user activates the generated member")]
 fn activate_generated(world: &mut ApplicationWorld) {
-    let point = diagnostics::pointer_pixels(world.run("Model State1").center());
-    super::super::x11_input::click(point);
-    super::super::x11_input::click(point);
-    world.pump(Vec::new());
+    super::view_visibility::remember_visible_face(world);
+    super::model_state_suppression::activate_state_row(world, "Model State1");
 }
 #[then("the generated member is marked active")]
 fn generated_is_active(world: &mut ApplicationWorld) {
@@ -222,16 +220,5 @@ fn generated_extrusion_suppressed(world: &mut ApplicationWorld) {
 }
 #[then("the solid is absent from the viewport")]
 fn generated_solid_absent(world: &mut ApplicationWorld) {
-    let status = world
-        .app()
-        .window
-        .native
-        .scene_status()
-        .expect("expected scene status");
-    assert_eq!(status.visible_bodies, 0);
-    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
-    assert!(!super::super::solid_visibility::visible_solid_fill(
-        &capture,
-        &diagnostics::window_occlusions()
-    ));
+    super::view_visibility::expect_sampled_solid_hidden(world);
 }

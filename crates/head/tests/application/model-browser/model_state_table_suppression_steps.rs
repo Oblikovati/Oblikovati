@@ -97,7 +97,7 @@ fn open_primary_cell(world: &mut ApplicationWorld) {
 fn open_suppression_cell(world: &mut ApplicationWorld, row: &str) {
     let name = current_state_extrusion(world).name;
     let point = [grid_run(world, &name)[0], row_run(world, row)[1]];
-    super::super::x11_input::click(diagnostics::pointer_pixels(point));
+    world.desktop_click(diagnostics::pointer_pixels(point));
     world.pump(Vec::new());
 }
 pub(super) fn select_suppression_cell(world: &mut ApplicationWorld, row: &str, label: &str) {
@@ -129,7 +129,7 @@ fn click_suppression_choice(world: &mut ApplicationWorld, label: &str) {
         .find(|run| run.text == label)
         .unwrap()
         .center();
-    super::super::x11_input::click(diagnostics::pointer_pixels(point));
+    world.desktop_click(diagnostics::pointer_pixels(point));
     world.pump(Vec::new());
 }
 #[then("the Primary cell displays Compute")]
@@ -164,10 +164,8 @@ fn change_primary_to_compute(world: &mut ApplicationWorld) {
 }
 #[when("activates the Primary model state")]
 fn activate_primary(world: &mut ApplicationWorld) {
-    let point = diagnostics::pointer_pixels(world.run("Primary").center());
-    super::super::x11_input::click(point);
-    super::super::x11_input::click(point);
-    world.pump(Vec::new());
+    super::view_visibility::remember_visible_face(world);
+    super::model_state_suppression::activate_state_row(world, "Primary");
 }
 #[then("the solid produced by the extrusion is visible")]
 #[then("the solid is visible again")]

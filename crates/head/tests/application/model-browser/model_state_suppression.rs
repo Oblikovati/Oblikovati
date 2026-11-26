@@ -67,6 +67,7 @@ fn activate_copy_fixture(world: &mut ApplicationWorld) {
 }
 #[when("the user activates the Primary model state")]
 fn activate_primary(world: &mut ApplicationWorld) {
+    super::view_visibility::remember_visible_face(world);
     activate_state_row(world, "Primary");
 }
 #[given("the user activates Copy State")]
@@ -95,21 +96,7 @@ fn copy_marked(world: &mut ApplicationWorld) {
 }
 #[then("the solid body is absent from the viewport")]
 fn no_solid(world: &mut ApplicationWorld) {
-    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
-    let status = world
-        .app()
-        .window
-        .native
-        .scene_status()
-        .expect("expected a published scene");
-    assert_eq!(
-        status.visible_bodies, 0,
-        "expected the suppressed part to publish no bodies"
-    );
-    assert!(!super::super::solid_visibility::visible_solid_fill(
-        &capture,
-        &diagnostics::window_occlusions()
-    ));
+    super::view_visibility::expect_sampled_solid_hidden(world);
 }
 #[then("the solid body is visible in the viewport")]
 fn solid_visible(world: &mut ApplicationWorld) {
@@ -205,6 +192,7 @@ fn native_state_switch_updates_scene_and_suppression_row() {
     states_with_extrusion(&mut world);
     set_primary_suppression(&mut world);
     activate_copy_fixture(&mut world);
+    super::view_visibility::remember_visible_face(&mut world);
     native_double_click(&mut world, "Primary");
     primary_marked(&mut world);
     no_solid(&mut world);
