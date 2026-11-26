@@ -1360,14 +1360,14 @@
           "fixtures/cad/planar-sketch-empty-xy.opd": "d936ef6b165b4bcbe14e04ac1b08bb5b16c81fddb597e70acb781e753c07e9a8",
           "fixtures/cad/workspace-layout-native.opd": "d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-26-ribbon-sketch-context-3856/wayland.json",
-        "cucumber_sha256": "3ee2c0e4d2d0e6e7296f372a45d0f360849dafd82d5da1b1862ea7a9fd1c59ac",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-ribbon-sketch-context-3856/wayland-arguments.json",
-        "scenario_arguments_sha256": "1ea4dc0a30d495fbe3abbe6abe0b2034241b5572fb4dfbdcd8404201dba9ccf5",
-        "application_commit": "cd2a49adaa1322c788f7f67b4b2cf76cd94be657",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-ribbon-command-geometry-3856/wayland.json",
+        "cucumber_sha256": "6e6f995f5fcb0874d3e81952f3cd8cf508117f82ed9cc34bab51b31c82bde6c1",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-ribbon-command-geometry-3856/wayland-arguments.json",
+        "scenario_arguments_sha256": "ca181e20482e4da28322f4208ad40097efa8e0063fc36c01de6a226fc5eae4e6",
+        "application_commit": "70b8fd5cc616f704977302d5c30a250931066b50",
         "command": "OBK_BDD_ROOT=<published-scenarios> OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-display OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
-        "environment": "Linux Wayland with nested Weston 13, Xvfb, and Vulkan Lavapipe.",
-        "notes": "49 of 52 amended scenarios passed on Wayland with 563 steps in passing cases. The existing-sketch ribbon transition passed on Wayland and X11. The native build included existing local GUI filesystem edits."
+        "environment": "Linux Wayland with nested Weston 13 and X11 with Openbox, Xvfb and Vulkan Lavapipe on both.",
+        "notes": "50 of 52 amended scenarios passed on each backend, with 569 steps in passing cases. Two cases require a valid Shell preview. The test build included existing local GUI filesystem edits."
       }
     }
   },
