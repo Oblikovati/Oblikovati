@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T19:54:33.348367346Z" time="7.1441775419999995"><testcase name="Scenario: extrusion-06 Accepted creation supports Undo and Redo: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:66:3" time="7.1441775419999995"><system-out><![CDATA[  Scenario: extrusion-06 Accepted creation supports Undo and Redo
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/revolve/revolve-profile.opd` is open with the rectangular Extrude preview at Distance A 8 mm and zero taper
+   ✔  When OK is clicked then Undo then Redo
+   ✔  Then Extrusion1 and Solid Bodies(1) return with the shaded solid
+   ✔  And the subsequent Measure result lists two extrusion edges of length 8.000 mm
+]]></system-out></testcase></testsuite></testsuites>

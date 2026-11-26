@@ -194,11 +194,8 @@ fn changed_visible_preview(
     let covered = windows
         .iter()
         .any(|w| point[0] >= w[0] && point[0] < w[2] && point[1] >= w[1] && point[1] < w[3]);
-    !covered && before != after && (preview_pixel(before) || preview_pixel(after))
-}
-
-fn preview_pixel(pixel: &[u8; 4]) -> bool {
-    pixel[0] > pixel[1].saturating_add(20) && pixel[1] > pixel[2].saturating_add(20)
+    use super::super::solid_visibility::preview_hue;
+    !covered && before != after && (preview_hue(before) || preview_hue(after))
 }
 
 fn assert_extrusion_edges(world: &mut ApplicationWorld, expected: f64) {
@@ -230,7 +227,7 @@ fn edge_length_matches(world: &mut ApplicationWorld, key: &str, expected: f64) -
 #[test]
 fn preview_difference_excludes_unchanged_and_covered_pixels() {
     let before = sample_capture([0, 0, 0, 255]);
-    let after = sample_capture([200, 100, 10, 255]);
+    let after = sample_capture([10, 115, 100, 255]);
     assert!(!preview_changed_outside_windows(&before, &before, &[]));
     assert!(preview_changed_outside_windows(&before, &after, &[]));
     assert!(!preview_changed_outside_windows(

@@ -5,6 +5,19 @@ use super::*;
 #[given("Distance A 8 mm and zero taper")]
 fn eight_millimeter_preview(world: &mut ApplicationWorld) {
     super::selected_rectangle_preview(world);
+    set_eight_millimeter_distance(world);
+}
+
+#[cfg(target_os = "linux")]
+#[given(
+    "a copy of `fixtures/cad/revolve/revolve-profile.opd` is open with the rectangular Extrude preview at Distance A 8 mm and zero taper"
+)]
+fn published_eight_millimeter_preview(world: &mut ApplicationWorld) {
+    super::reference_extent::native_fixture_preview(world);
+    set_eight_millimeter_distance(world);
+}
+
+fn set_eight_millimeter_distance(world: &mut ApplicationWorld) {
     super::replace_extrusion_distance(world, "8");
     world.pump(Vec::new());
     super::positive_distance_is_accepted(world);
@@ -66,21 +79,41 @@ fn measure_two_extrusion_edges(world: &mut ApplicationWorld) {
         .filter(|run| run.text == "Measure")
         .min_by(|a, b| a.center()[1].total_cmp(&b.center()[1]))
         .expect("expected the Measure ribbon command");
-    x11_input::click(super::super::diagnostics::pointer_pixels(command.center()));
-    world.pump(Vec::new());
+    let pixel = super::super::diagnostics::pointer_pixels(command.center());
+    super::viewport_interaction::click_at(world, pixel);
     assert!(world.state().measure.is_some(), "expected Measure to open");
     let [first, second] = visible_depth_edge_midpoints(world)
         .map(|point| world.app().window.native.view.model_pixel(point).unwrap());
-    x11_input::click(first);
-    world.pump(Vec::new());
-    x11_input::control_click(second);
-    world.pump(Vec::new());
+    super::viewport_interaction::click_at(world, first);
+    if world.app().window.native.view.uses_wayland() {
+        pick_additional_edge(world, second);
+    } else {
+        x11_input::control_click(second);
+        world.pump(Vec::new());
+    }
     assert_eq!(world.state().selected_edge_count, 2);
     let text = world.window_text("Measure");
     assert!(
         text.contains("Selection1:Edge Length8.000mm Selection2:Edge Length8.000mm"),
         "Measure should show both 8 mm edges, found {text:?}"
     );
+}
+
+#[cfg(target_os = "linux")]
+fn pick_additional_edge(world: &mut ApplicationWorld, position: [i32; 2]) {
+    use oblikovati_viewport::{ViewportButton, ViewportEvent, ViewportInput, ViewportModifiers};
+    world.hover(position);
+    for pressed in [true, false] {
+        world.pump(vec![ViewportEvent::Input(ViewportInput::Button {
+            button: ViewportButton::Left,
+            position,
+            pressed,
+            modifiers: ViewportModifiers {
+                control: true,
+                ..Default::default()
+            },
+        })]);
+    }
 }
 
 #[cfg(target_os = "linux")]

@@ -25,9 +25,7 @@ helical-spring sweep use the owning command and are additional scenario files.
 The baseline run on `80cdf0e9c` executed all 74 current cases under Xvfb and
 Lavapipe. Four passed (`extrusion-10`, `extrusion-11`, `extrusion-12a`,
 `extrusion-12b`). Sixty-eight stopped on unbound steps, and two stopped on
-assertions. The existing native named-parameter test also updates the
-submitted mesh but fails its framebuffer comparison on the baseline and
-after the binding changes.
+assertions.
 The published 8 mm recipe has a literal distance. Its Tolerance menu item
 currently requires an editable parameter, so `extrusion-12` stops before the
 Tolerance window opens. Taper, surface and reference operations still need
@@ -38,11 +36,23 @@ and X11. It covers entry, direction changes and presentation, Cancel, zero
 distance validation, reference selector validation, and the Parameters
 table. See the [native run receipt](receipts/2026-11-26-extrude-entry-direction-3857/README.md).
 
+The next pass covered `extrusion-06` on both desktops, including Undo, Redo
+and two measured 8 mm edges. The named-parameter preview check now uses the
+cyan preview palette and passes on both desktops. The wider native Extrude
+suite passed all 14 tests under Xvfb.
+See the [history and measurement receipt](receipts/2026-11-26-extrude-history-3857/README.md).
+
 ## Sweep, Loft, and Revolve
 
-The host exposes no runnable Sweep or Loft command at the baseline revision.
-Qualify a straight-path Sweep and a two-section Loft through native preview,
-commit, undo, redo and reopen before extending to guides, Boolean placement,
-or spatial sections. Revolve has a persisted definition type and a geometry
-probe, and still needs the desktop command and replay path. Each command
-requires separate evidence for the regular, rejected and cancelled workflows.
+The [release probes](../../crates/martensite/tests/release_probe/create.rs)
+check the first Sweep and Loft fixtures' geometry on Martensite v0.14.2.
+The straight Sweep produces a cylinder of volume `0.75π cm³`. Ruled and
+smoothed Loft both produce a frustum of volume `1.75π cm³`. Each result is
+a valid solid with two cap faces and a side face attributed to the source
+curves. Both Loft section edges generate the same side face.
+
+Sweep and Loft still require persistent input identities, selection,
+preview, commit, undo, redo and reopen in the host. The probes cover the
+straight circular Sweep and two coaxial Loft sections. Guided, Boolean and
+spatial inputs still need qualification. Revolve has a persisted definition
+type and a geometry probe, and still needs desktop authoring and replay.

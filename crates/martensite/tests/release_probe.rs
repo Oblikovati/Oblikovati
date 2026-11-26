@@ -2,6 +2,9 @@
 
 use oblikovati_martensite::probe_box_release;
 
+#[path = "release_probe/create.rs"]
+mod create;
+
 #[test]
 fn released_toolkits_construct_validate_and_integrate_in_working_units() {
     for extents in [[2.0, 3.0, 4.0], [20.0, 30.0, 40.0], [0.2, 0.3, 0.4]] {
