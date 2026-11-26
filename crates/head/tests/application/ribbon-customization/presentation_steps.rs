@@ -128,9 +128,11 @@ fn sketch_caption(world: &ApplicationWorld) -> Option<&diagnostics::RenderedRun>
 }
 
 fn user_commands_bounds(world: &ApplicationWorld) -> Bounds {
+    const RIBBON: &str = "##application-ribbon";
     let title = world.run("User Commands");
-    let (position, size) = diagnostics::window_geometry("##application-ribbon").unwrap();
+    let top = world.run_in_window(RIBBON, "3DModel").maximum[1];
+    let (position, size) = diagnostics::window_geometry(RIBBON).unwrap();
     let [left, bottom] = title.minimum;
-    // User Commands is the last panel in 3D Model, and its title starts at its left edge.
-    ([left - 1., bottom - 66.], [position[0] + size[0], bottom])
+    // The centered caption has padding on both sides of its text.
+    ([left - 16., top], [position[0] + size[0], bottom])
 }
