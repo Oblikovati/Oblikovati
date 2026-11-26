@@ -38,6 +38,18 @@ fn lock_copy(world: &mut ApplicationWorld) {
 #[when("the user chooses All Hidden from the copied view context menu")]
 #[when("the user chooses All Hidden from the active view context menu")]
 fn hide_copy_bodies(world: &mut ApplicationWorld) {
+    if world
+        .app()
+        .window
+        .native
+        .scene_status()
+        .is_some_and(|scene| scene.visible_bodies > 0)
+    {
+        let point = super::super::ribbon_keyboard_navigation::visible_face_point(world);
+        let pixel = world.pixel_at(point.map(|coordinate| coordinate as usize));
+        assert!(super::super::solid_visibility::neutral_fixture_hue(&pixel));
+        world.observed_view = Some(point);
+    }
     choose_copy_action(world, "All Hidden");
 }
 fn choose_copy_action(world: &mut ApplicationWorld, label: &str) {
@@ -49,7 +61,6 @@ fn choose_copy_action(world: &mut ApplicationWorld, label: &str) {
 #[then("the solid body is not displayed in the viewport")]
 fn prism_hidden(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
-    let capture = super::super::capture_framebuffer(&mut world.app().window.native);
     let status = world
         .app()
         .window
@@ -57,10 +68,15 @@ fn prism_hidden(world: &mut ApplicationWorld) {
         .scene_status()
         .expect("expected a published scene");
     assert_eq!(status.visible_bodies, 0);
-    assert!(!super::super::solid_visibility::visible_solid_fill(
-        &capture,
-        &diagnostics::window_occlusions()
-    ));
+    // The saved sketch annotations remain visible and can match a whole-frame color search.
+    let point = world
+        .observed_view
+        .expect("expected a sampled face before hiding the solid");
+    let pixel = world.pixel_at(point.map(|coordinate| coordinate as usize));
+    assert!(
+        !super::super::solid_visibility::neutral_fixture_hue(&pixel),
+        "face sample at {point:?}: {pixel:?}"
+    );
 }
 #[then("the copied view displays a lock indicator")]
 pub(super) fn copied_view_is_locked(world: &mut ApplicationWorld) {
