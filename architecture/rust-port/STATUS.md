@@ -328,7 +328,7 @@ using this status; the live scenario directory can change.
   At 640 × 480 the side docks narrow, the active tab stays visible, the compact
   ribbon fits, and the floating Shell panel stays inside the viewport.
   The Wayland minimum drag used a private patched Weston test compositor.
-- Viewport Entity Selection (#4055) passed all four current solid-face scenarios and 24 steps on [Wayland and X11](receipts/2026-11-26-viewport-entity-selection-wayland-4055/README.md).
+- Viewport Entity Selection (#4055) passed all four current solid-face scenarios and 24 steps on [Wayland and X11](receipts/2026-11-26-viewport-entity-selection-current-4055/README.md).
   The native spatial fixture opens, but its 3D sketches are absent from the browser and viewport
   (#4092). See the [current run](receipts/2026-11-25-viewport-entity-selection-current-4055/README.md).
 - Corliss 0.1.0 now reads point and line records from the Inventor fixture's

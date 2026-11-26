@@ -188,21 +188,21 @@
         "supporting_files": {
           "features/application/viewport-entity-selection/BLOCKERS.md": "f5b82a3598b7428dc40946e314a98523e76fb4caf6eca8d21f26e843b985534b",
           "features/application/viewport-entity-selection/FIXTURES.md": "1207d8b9bb6d879cfe1e87cb49117939002eaf11a503b2cefa3366f9b0736ad9",
-          "features/application/viewport-entity-selection/FUNCTIONAL.md": "d8517d0d9fb3319511ff857bf224ab553e980a7e467aec342e6493fa25abe1a9",
-          "features/application/viewport-entity-selection/VISUAL.md": "44ebd21990d447dcd5c23004c06bf93dde096d14966b3b8115d90215a6853118",
+          "features/application/viewport-entity-selection/FUNCTIONAL.md": "20dee5cb1498a0f64676be8fc5d98308dffca1212969ea9618f5a223b58d82f5",
+          "features/application/viewport-entity-selection/VISUAL.md": "d377aff4e2de058c904208269e5a6fdaec402826bf4c2ed9ad896f46e249a474",
           "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
           "features/application/viewport-entity-selection/spatial-line-and-point.opd": "f5f181944c243f50bd2cc0ff7a73e556302b1a6ddb3f194f827aabfb53b2372a"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-26-viewport-entity-selection-wayland-4055/wayland.json",
-        "cucumber_sha256": "864d4e99c96b5f1a5684f5c8b35e985dd528a9897b257fe894581c2189e06fb1",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-viewport-entity-selection-current-4055/wayland.json",
+        "cucumber_sha256": "11f16fe40554666b9a6bfcd84f183d1a98a42aa6a5ca4f09c42ec5c69eef05a7",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-viewport-entity-selection-current-4055/scenario-inventory.json",
         "scenario_inventory_sha256": "1b3c95311bc6fb8622e7f3afde7b271cc02e2a3fe811d90492df98cac4c5a623",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-viewport-entity-selection-wayland-4055/wayland-arguments.json",
-        "scenario_arguments_sha256": "3d5285f33b88edc3e23c70b2897a2c5f494250b931667699f7de65f4490f6aeb",
-        "application_commit": "9223d33a84626d518747c2663dce628e279a15b6",
-        "command": "Full published Viewport Entity Selection diagnostics on both backends. See the receipt.",
-        "environment": "Linux Wayland with nested Weston 13 and Vulkan Lavapipe. X11 cross-check used Xvfb and Openbox.",
-        "notes": "Four solid-face scenarios and 24 steps passed on both backends with native desktop input. Strict build and runtime provenance remains open under #3978.",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-viewport-entity-selection-current-4055/wayland-arguments.json",
+        "scenario_arguments_sha256": "7e680b5e92bdf397e645ba68e889f3fb846d37c8811bf5dfb7e9019a68ea7d52",
+        "application_commit": "96b2086bbc58e3849efdb3a842b2d92093706069",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=viewport-entity-selection <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
+        "environment": "Linux Wayland with nested Weston 13 and X11 with Openbox, Xvfb and Vulkan Lavapipe on both.",
+        "notes": "All four solid-face scenarios and 24 steps in passing cases passed on each backend. Four spatial-sketch cases stopped during setup. Strict build and runtime provenance remains open under #3978.",
         "blocker": "Four spatial-sketch scenarios require desktop display and picking of saved 3D sketch geometry, and active 3D sketch editing for the last two cases (#4092)."
       }
     }
