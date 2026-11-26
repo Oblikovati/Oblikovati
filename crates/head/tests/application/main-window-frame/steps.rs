@@ -170,6 +170,10 @@ fn click_maximize_restore(world: &mut ApplicationWorld) {
 #[then("the window fills the monitor's work area and respects the taskbar")]
 fn maximized_to_work_area(world: &mut ApplicationWorld) {
     super::main_window_frame_native::pump_until(world, true);
+    if world.app().window.native.view.uses_wayland() {
+        wayland::expect_maximized_work_area();
+        return;
+    }
     assert_eq!(
         super::x11_input::application_bounds(),
         super::x11_input::desktop_work_area()
@@ -185,6 +189,11 @@ fn maximize_replaces_restore(world: &mut ApplicationWorld) {
 }
 #[then("the ribbon and viewport lay out within the enlarged window")]
 fn enlarged_window_layout(world: &mut ApplicationWorld) {
+    if world.app().window.native.view.uses_wayland() {
+        let extent = world.extent();
+        wayland::expect_frame_layout(world, extent, world.previous_document.unwrap());
+        return;
+    }
     let bounds = super::x11_input::application_bounds();
     let (position, size) =
         super::window_geometry("##application-ribbon").expect("expected the ribbon");
