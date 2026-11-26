@@ -225,6 +225,49 @@ fn tapered_sweep_keeps_named_topology_when_restored_or_set_to_zero() {
 }
 
 #[test]
+fn coaxial_twist_reopens_with_its_angle_and_analytic_tapered_body() {
+    use oblikovati_model::feature::{FeatureSequence, work_geometry::DatumAngle};
+
+    let (snapshot, sweep) = fixture();
+    let taper = 5_f64.to_radians();
+    let twist = DatumAngle::constant(PI / 2.).unwrap();
+    let authored = sweep
+        .with_taper(DatumAngle::constant(taper).unwrap())
+        .unwrap()
+        .with_twist(twist)
+        .unwrap();
+    let mut history = owner(snapshot);
+    let token = history.begin("Sweep1").unwrap();
+    let feature = history
+        .edit(&token, |snapshot, ids| {
+            snapshot.create_sketch_sweep("Sweep1", authored, ids)
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    let mut program = history.snapshot().work_geometry.part_recipe().unwrap();
+    assert_eq!(program.version, 31);
+    program.version = 30;
+    assert!(FeatureSequence::from_part_recipe(&program).is_err());
+
+    let reopened = reopen(&history);
+    let entry = reopened.snapshot().work_geometry.get(feature).unwrap();
+    let PartFeatureDefinition::SketchSweep(restored) = entry.definition() else {
+        panic!("expected a persisted Sweep")
+    };
+    assert_eq!(restored.recipe().twist, Some(twist));
+    let document: DocumentGuid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let original = named(&history, document, feature);
+    let solid = named(&reopened, document, feature);
+    assert_eq!(
+        solid.reference_keys(&reopened, document).unwrap(),
+        original.reference_keys(&history, document).unwrap()
+    );
+    let end_radius = 0.5 + 3. * taper.tan();
+    let expected = PI * (0.25 + 0.5 * end_radius + end_radius * end_radius);
+    assert!((solid.volume(&reopened, document).unwrap() - expected).abs() < 1e-8);
+}
+
+#[test]
 fn fixed_orientation_preserves_section_and_topology_after_reopen() {
     use oblikovati_model::feature::{
         sketch_sweep::SketchSweepOrientation, work_geometry::DatumAngle,

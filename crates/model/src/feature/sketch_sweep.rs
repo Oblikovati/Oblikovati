@@ -15,6 +15,7 @@ use std::{collections::BTreeSet, fmt};
 const VERSION: u32 = 1;
 const TAPER_VERSION: u32 = 2;
 const FIXED_VERSION: u32 = 3;
+const TWIST_VERSION: u32 = 4;
 
 /// How the source profile is transported along a Sweep path.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -40,6 +41,8 @@ pub struct SketchSweepRecipe {
     pub path: Vec<SketchDirectedCurve>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub taper: Option<DatumAngle>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub twist: Option<DatumAngle>,
     #[serde(default, skip_serializing_if = "SketchSweepOrientation::follows_path")]
     pub orientation: SketchSweepOrientation,
 }
@@ -56,6 +59,7 @@ pub struct ResolvedSketchSweep<'a> {
     pub path: ResolvedDocumentSketch<'a>,
     pub traversal: &'a [SketchDirectedCurve],
     pub taper: f64,
+    pub twist: f64,
     pub orientation: SketchSweepOrientation,
 }
 
@@ -110,6 +114,7 @@ impl SketchSweepDefinition {
             path_sketch,
             path,
             taper: None,
+            twist: None,
             orientation: SketchSweepOrientation::FollowPath,
         })
     }
@@ -117,9 +122,24 @@ impl SketchSweepDefinition {
     /// Follow the path with the provided taper driver. Example: `untapered.with_taper(angle)?`.
     pub fn with_taper(self, angle: DatumAngle) -> Result<Self, SketchSweepError> {
         Self::from_recipe(SketchSweepRecipe {
-            version: TAPER_VERSION,
+            version: follow_path_version(Some(angle), self.0.twist),
             taper: Some(angle),
             orientation: SketchSweepOrientation::FollowPath,
+            ..self.0
+        })
+    }
+
+    /// Change the angular driver on a Follow Path Sweep. Example: `definition.with_twist(angle)?`.
+    pub fn with_twist(self, angle: DatumAngle) -> Result<Self, SketchSweepError> {
+        if self.0.orientation == SketchSweepOrientation::Fixed {
+            return Err(twist_error("Fixed orientation does not take a twist"));
+        }
+        let twist = (!matches!(angle.source(), DatumLength::Constant(value) if value == 0.))
+            .then_some(angle);
+        let version = follow_path_version(self.0.taper, twist);
+        Self::from_recipe(SketchSweepRecipe {
+            version,
+            twist,
             ..self.0
         })
     }
@@ -130,6 +150,7 @@ impl SketchSweepDefinition {
         Self(SketchSweepRecipe {
             version: FIXED_VERSION,
             taper: None,
+            twist: None,
             orientation: SketchSweepOrientation::Fixed,
             ..self.0
         })
@@ -138,22 +159,13 @@ impl SketchSweepDefinition {
     /// Compare exact persisted sources. Example: `old.same_recipe(&candidate)` during replay planning.
     pub fn same_recipe(&self, other: &Self) -> bool {
         self == other
-            && match (self.0.taper, other.0.taper) {
-                (Some(first), Some(second)) => first.same_recipe(second),
-                _ => true,
-            }
+            && same_angle(self.0.taper, other.0.taper)
+            && same_angle(self.0.twist, other.0.twist)
     }
 
     /// Validate saved sources before use. Example: `SketchSweepDefinition::from_recipe(recipe)?`.
     pub fn from_recipe(recipe: SketchSweepRecipe) -> Result<Self, SketchSweepError> {
-        let expected = match (recipe.orientation, recipe.taper) {
-            (SketchSweepOrientation::FollowPath, None) => VERSION,
-            (SketchSweepOrientation::FollowPath, Some(_)) => TAPER_VERSION,
-            (SketchSweepOrientation::Fixed, None) => FIXED_VERSION,
-            (SketchSweepOrientation::Fixed, Some(_)) => {
-                return Err(taper_error("Fixed orientation does not take a taper"));
-            }
-        };
+        let expected = recipe_version(&recipe)?;
         if recipe.version != expected || recipe.profile_sketch.0 == 0 || recipe.path_sketch.0 == 0 {
             return Err(SketchSweepError::Definition(format!(
                 "sweep version {}, profile {:?}, path {:?}: expected version {expected} and nonzero sketch IDs",
@@ -169,6 +181,9 @@ impl SketchSweepDefinition {
                 require_taper_range(angle)?;
             }
         }
+        if let Some(twist) = recipe.twist {
+            twist.validate_source().map_err(twist_error)?;
+        }
         Ok(Self(recipe))
     }
 
@@ -183,9 +198,10 @@ impl SketchSweepDefinition {
                 .into_iter()
                 .map(|owner| FeatureReadKey::Sketch(owner.0))
                 .chain(
-                    self.0
-                        .taper
-                        .and_then(DatumAngle::parameter_id)
+                    [self.0.taper, self.0.twist]
+                        .into_iter()
+                        .flatten()
+                        .filter_map(DatumAngle::parameter_id)
                         .map(FeatureReadKey::Parameter),
                 ),
             false,
@@ -252,15 +268,51 @@ impl SketchSweepDefinition {
             angle.resolve(&snapshot.parameters).map_err(taper_error)
         })?;
         require_taper_range(taper)?;
+        let twist = self.0.twist.map_or(Ok(0.), |angle| {
+            angle.resolve(&snapshot.parameters).map_err(twist_error)
+        })?;
         Ok(ResolvedSketchSweep {
             profile,
             boundary: &self.0.profile,
             path,
             traversal: &self.0.path,
             taper,
+            twist,
             orientation: self.0.orientation,
         })
     }
+}
+
+fn recipe_version(recipe: &SketchSweepRecipe) -> Result<u32, SketchSweepError> {
+    match (recipe.orientation, recipe.taper, recipe.twist) {
+        (SketchSweepOrientation::FollowPath, taper, twist) => Ok(follow_path_version(taper, twist)),
+        (SketchSweepOrientation::Fixed, None, None) => Ok(FIXED_VERSION),
+        (SketchSweepOrientation::Fixed, _, Some(_)) => {
+            Err(twist_error("Fixed orientation does not take a twist"))
+        }
+        (SketchSweepOrientation::Fixed, Some(_), None) => {
+            Err(taper_error("Fixed orientation does not take a taper"))
+        }
+    }
+}
+
+fn follow_path_version(taper: Option<DatumAngle>, twist: Option<DatumAngle>) -> u32 {
+    match (taper, twist) {
+        (_, Some(_)) => TWIST_VERSION,
+        (Some(_), None) => TAPER_VERSION,
+        (None, None) => VERSION,
+    }
+}
+
+fn same_angle(first: Option<DatumAngle>, second: Option<DatumAngle>) -> bool {
+    match (first, second) {
+        (Some(first), Some(second)) => first.same_recipe(second),
+        _ => first == second,
+    }
+}
+
+fn twist_error(cause: impl fmt::Display) -> SketchSweepError {
+    SketchSweepError::Definition(format!("sweep twist: {cause}"))
 }
 
 fn require_taper_range(radians: f64) -> Result<(), SketchSweepError> {

@@ -59,6 +59,34 @@ fn taper_refuses_a_collapsed_section() {
 }
 
 #[test]
+fn off_center_twist_is_declined_and_zero_preserves_the_supported_path() {
+    let (mut snapshot, sweep) = fixture();
+    let mut geometry = Sketch2D::default();
+    let [start, end] = [5, 6].map(SketchEntityId);
+    geometry.add_point(start, [0.25, 0.]).unwrap();
+    geometry.add_point(end, [0.25, 3.]).unwrap();
+    geometry.add_line(SPINE, [start, end]).unwrap();
+    snapshot.sketches.replace_geometry(PATH, geometry).unwrap();
+    solve(&mut snapshot);
+    let datums = snapshot
+        .work_geometry
+        .evaluate_work_geometry(&snapshot.parameters)
+        .unwrap();
+    let twist = sweep
+        .with_twist(DatumAngle::constant(PI / 2.).unwrap())
+        .unwrap();
+    let failed = build_sweep(twist.resolve(&snapshot, &datums).unwrap(), resolution());
+    let error = failed
+        .err()
+        .expect("expected an off-center axis to require a rotational sweep");
+    assert_eq!(error.phase(), EvaluationPhase::Input);
+    assert!(error.to_string().contains("through the circle center"));
+    let zero = twist.with_twist(DatumAngle::constant(0.).unwrap()).unwrap();
+    assert_eq!(zero.recipe().version, 1);
+    assert_sweep(&snapshot, &zero, 3.);
+}
+
+#[test]
 fn taper_parameter_changes_geometry_without_replacing_its_source() {
     use oblikovati_api::types::USER_PARAM;
 

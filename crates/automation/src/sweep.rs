@@ -158,6 +158,11 @@ pub fn prepare_sweep(
     } else {
         prepare_sweep_taper(snapshot, definition, &input.taper)?
     };
+    let definition = if input.twist.trim().is_empty() {
+        definition
+    } else {
+        prepare_sweep_twist(snapshot, definition, &input.twist)?
+    };
     definition.resolve(snapshot, datums).map_err(api_error)?;
     Ok(PreparedSweep {
         name: crate::fillet::next_name(snapshot, "Sweep")?,
@@ -175,10 +180,27 @@ pub fn prepare_sweep_taper(
     definition.with_taper(taper).map_err(api_error)
 }
 
+/// Resolve the Twist field against the angular unit and parameter environment.
+/// Example: `prepare_sweep_twist(snapshot, definition, "90 deg")?`.
+pub fn prepare_sweep_twist(
+    snapshot: &DocumentSnapshot,
+    definition: SketchSweepDefinition,
+    expression: &str,
+) -> Result<SketchSweepDefinition, Error> {
+    let angle = crate::move_body::angle(snapshot, expression, "sweep twist")
+        .map_err(|cause| Error(format!("sweep twist {expression:?}: {cause}")))?;
+    definition.with_twist(angle).map_err(api_error)
+}
+
 fn validate_options(input: &Sweep) -> Result<(), Error> {
     if input.orientation == "parallelToOriginalProfile" && !input.taper.trim().is_empty() {
         return Err(Error(
             "sweep taper: Fixed orientation uses the original profile".into(),
+        ));
+    }
+    if input.orientation == "parallelToOriginalProfile" && !input.twist.trim().is_empty() {
+        return Err(Error(
+            "sweep twist: Fixed orientation uses the original profile".into(),
         ));
     }
     if !matches!(input.definition_type.as_str(), "" | "path")
@@ -187,7 +209,6 @@ fn validate_options(input: &Sweep) -> Result<(), Error> {
             input.orientation.as_str(),
             "" | "normalToPath" | "parallelToOriginalProfile"
         )
-        || !input.twist.is_empty()
         || input
             .align_vector
             .as_ref()
@@ -206,7 +227,7 @@ fn validate_options(input: &Sweep) -> Result<(), Error> {
         || !input.guide_face_key.is_empty()
         || input.tool_body_index.is_some()
     {
-        return Err(Error("sweep options: supported definition is New Solid, Path with Follow Path or Fixed orientation, zero twist and no guide".into()));
+        return Err(Error("sweep options: expected New Solid and Path with Follow Path or Fixed orientation, without a guide or station overrides".into()));
     }
     Ok(())
 }

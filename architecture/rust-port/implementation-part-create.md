@@ -144,3 +144,19 @@ edge, removes the Sweep body from the preview and disables OK. Restore
 Path puts the saved reference back in the draft. Cancel shows the original
 body again, and reopening the feature restores its references and taper.
 See the [native receipt](receipts/2026-11-26-sweep-path-cancel-3917/README.md).
+
+### Sweep twist
+
+Follow Path accepts a signed twist angle or an angular parameter. The
+released kernel can evaluate it for a single circular profile when the
+straight path starts at its center and is normal to its plane. Rotation
+preserves the circular sections, including those of a tapered Sweep. The
+adapter requires that geometry before using the same analytic result and
+face ownership. Nonzero twist outside that geometry is declined. The
+Part program stores the twist driver in version 31.
+
+The [native receipt](receipts/2026-11-26-sweep-twist-3917/README.md)
+covers accepting and reopening a 90-degree twist and correcting an
+invalid expression. The [replay test](../../crates/martensite/tests/release_probe/sweep_sources/replay.rs)
+checks the authored value, body references, and analytic volume after
+package reopen.

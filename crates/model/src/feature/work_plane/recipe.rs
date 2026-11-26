@@ -200,6 +200,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::MoveBody(_) => 18,
             Self::Shell(_) => 19,
             Self::SketchSweep(recipe) => match recipe.version {
+                4 => 26,
                 3 => 25,
                 2 => 24,
                 _ => 23,
@@ -235,6 +236,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::MoveBody(_) => 23,
             Self::Shell(_) => 24,
             Self::SketchSweep(recipe) => match recipe.version {
+                4 => 31,
                 3 => 30,
                 2 => 29,
                 _ => 28,

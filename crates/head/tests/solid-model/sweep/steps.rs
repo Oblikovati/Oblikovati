@@ -157,6 +157,7 @@ fn create_tapered_sweep(world: &mut ApplicationWorld) {
 }
 
 #[when("Sweep1 is reopened for editing")]
+#[when("Sweep1 is reopened")]
 fn reopen_sweep(world: &mut ApplicationWorld) {
     let row = world.run("Sweep1").center();
     world.right_click(super::diagnostics::pointer_pixels(row));
@@ -208,13 +209,76 @@ fn straight_sweep_stays_in_the_browser(world: &mut ApplicationWorld) {
 }
 
 fn replace_taper(world: &mut ApplicationWorld, expression: &str) {
-    let label = world.run_in_window("Sweep", "Taper").clone();
+    replace_angle(world, "Taper", expression);
+}
+
+fn replace_angle(world: &mut ApplicationWorld, field: &str, expression: &str) {
+    let label = world.run_in_window("Sweep", field).clone();
     let (origin, size) = super::diagnostics::window_geometry("Sweep").unwrap();
     let point = [origin[0] + size[0] * 0.73, label.center()[1]];
     world.click(super::diagnostics::pointer_pixels(point));
     world.key(ViewportPhysicalKey::A, true);
     world.type_text(expression);
     world.pump(Vec::new());
+}
+
+#[when("Follow Path is selected and Twist is set to 90 degrees")]
+fn set_twist(world: &mut ApplicationWorld) {
+    click_panel(world, "FollowPath");
+    replace_angle(world, "Twist", "90 deg");
+    let preview = world.state().sweep_preview.unwrap();
+    assert_eq!(preview.result, GuiSweepPreview::Ready);
+    assert_eq!(preview.request.twist, "90 deg");
+    assert!((preview_width(world) - 1.525).abs() < 0.03);
+}
+
+#[when("the edit is accepted")]
+fn accept_twisted_sweep(world: &mut ApplicationWorld) {
+    assert!(world.run_is_enabled("OK"));
+    accept(world);
+}
+
+#[then("Sweep1 and its solid remain")]
+fn twisted_sweep_stays_in_the_browser(world: &mut ApplicationWorld) {
+    accepted_sweep(world);
+    let browser = world.state().browser.unwrap();
+    assert_eq!(
+        browser.sweep_edits[&browser.bodies[0].feature].twist,
+        "90 deg"
+    );
+}
+
+#[then("Twist displays 90 deg")]
+fn twist_is_retained(world: &mut ApplicationWorld) {
+    chosen_sources(world);
+    let panel = super::world::squeezed(&world.window_text("Sweep"));
+    assert!(panel.contains("Twist90deg"), "{panel}");
+    assert_eq!(world.state().sweep_preview.unwrap().request.twist, "90 deg");
+}
+
+#[when("q is entered as the Twist expression")]
+fn enter_invalid_twist(world: &mut ApplicationWorld) {
+    replace_angle(world, "Twist", "q");
+}
+
+#[then("an error indicator appears and OK is disabled")]
+fn invalid_twist_disables_accept(world: &mut ApplicationWorld) {
+    assert!(matches!(world.state().sweep_preview.unwrap().result,
+        GuiSweepPreview::Failed(cause) if cause.contains("sweep twist \"q\"")));
+    assert!(super::world::squeezed(&world.window_text("Sweep")).contains("sweeptwist"));
+    assert!(!world.run_is_enabled("OK"));
+}
+
+#[when("the expression is replaced with 0")]
+fn correct_twist(world: &mut ApplicationWorld) {
+    replace_angle(world, "Twist", "0");
+}
+
+#[then("the error indicator disappears and OK is enabled")]
+fn valid_twist_enables_accept(world: &mut ApplicationWorld) {
+    chosen_sources(world);
+    assert!(!super::world::squeezed(&world.window_text("Sweep")).contains("sweeptwist"));
+    assert!(world.run_is_enabled("OK"));
 }
 
 fn preview_width(world: &mut ApplicationWorld) -> f32 {

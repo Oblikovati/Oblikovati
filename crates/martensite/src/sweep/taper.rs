@@ -13,22 +13,21 @@ pub(super) fn build(
     input: ResolvedSketchSweep<'_>,
     resolution: PrismResolution,
 ) -> Result<(Shape, Vec<(SweepFaceRole, Shape)>), EvaluationFailure> {
-    let [section] = input.boundary.outer.as_slice() else {
-        return Err(taper_input("expected one circular profile"));
-    };
-    if !input.boundary.holes.is_empty() {
-        return Err(taper_input("expected a circular profile without holes"));
-    }
-    let profile = input.profile.sketch.geometry();
-    let circle = profile.circle(section.curve).map_err(taper_input)?;
-    let center = profile.point(circle.center).map_err(taper_input)?.position;
-    let center = input.profile.plane.to_model(center).map_err(taper_input)?;
-    let (path, normal, height) = normal_path(&input, center, resolution)?;
-    let end_radius = circle.radius + height * input.taper.tan();
+    let (section, center, radius) = circular_section(&input, "taper")?;
+    let (path, ends) = straight_ends(&input)?;
+    let (normal, height) = normal_path(
+        ends,
+        input.profile.plane.normal(),
+        center,
+        resolution,
+        "taper",
+    )?;
+    let end_radius = radius + height * input.taper.tan();
     if !end_radius.is_finite() || end_radius <= resolution.maximum_tolerance {
-        return Err(taper_input(format!(
-            "end radius {end_radius}: expected a circle larger than the model tolerance"
-        )));
+        return Err(angle_input(
+            "taper",
+            format!("end radius {end_radius}: expected a circle larger than the model tolerance"),
+        ));
     }
     let x_axis = input.profile.plane.recipe().x_axis;
     let regions = super::resolved_regions(
@@ -46,25 +45,77 @@ pub(super) fn build(
         )
     };
     let mut maker = axes()
-        .and_then(|axes| BRepPrimAPIMakeCone::with_axes(axes, circle.radius, end_radius, height))
+        .and_then(|axes| BRepPrimAPIMakeCone::with_axes(axes, radius, end_radius, height))
         .map_err(|cause| sweep_failure("expected an analytic tapered sweep", cause))?;
     let shape = maker
         .shape()
         .cloned()
         .map_err(|cause| sweep_failure("expected a completed tapered sweep", cause))?;
-    let faces = cone_faces(&mut maker, section.curve, path)?;
+    let faces = cone_faces(&mut maker, section, path)?;
     Ok((shape, faces))
 }
 
-fn normal_path(
+pub(super) fn require_coaxial_twist(
     input: &ResolvedSketchSweep<'_>,
+    resolution: PrismResolution,
+) -> Result<(), EvaluationFailure> {
+    let (_, center, _) = circular_section(input, "twist")?;
+    let (_, ends) = straight_ends(input)?;
+    // At either endpoint the straight axis must pass through the transported center. The
+    // resulting circular sections are invariant under rotation about this axis.
+    let normal = input.profile.plane.normal();
+    normal_path(ends, normal, center, resolution, "twist")?;
+    for endpoint in ends {
+        let offset = difference(endpoint, center);
+        let along = dot(offset, normal);
+        let radial = std::array::from_fn(|i| offset[i] - along * normal[i]);
+        if dot(radial, radial).sqrt() > resolution.maximum_tolerance {
+            return Err(angle_input(
+                "twist",
+                "expected a straight path through the circle center",
+            ));
+        }
+    }
+    Ok(())
+}
+
+fn circular_section(
+    input: &ResolvedSketchSweep<'_>,
+    option: &str,
+) -> Result<(SketchEntityId, [f64; 3], f64), EvaluationFailure> {
+    let ([section], []) = (
+        input.boundary.outer.as_slice(),
+        input.boundary.holes.as_slice(),
+    ) else {
+        return Err(angle_input(
+            option,
+            "expected one circular profile without holes",
+        ));
+    };
+    let profile = input.profile.sketch.geometry();
+    let circle = profile
+        .circle(section.curve)
+        .map_err(|cause| angle_input(option, cause))?;
+    let point = profile
+        .point(circle.center)
+        .map_err(|cause| angle_input(option, cause))?;
+    let center = input
+        .profile
+        .plane
+        .to_model(point.position)
+        .map_err(|cause| angle_input(option, cause))?;
+    Ok((section.curve, center, circle.radius))
+}
+
+fn normal_path(
+    [start, end]: [[f64; 3]; 2],
+    normal: [f64; 3],
     profile_center: [f64; 3],
     resolution: PrismResolution,
-) -> Result<(SketchEntityId, [f64; 3], f64), EvaluationFailure> {
-    let (curve, [start, end]) = straight_ends(input)?;
+    option: &str,
+) -> Result<([f64; 3], f64), EvaluationFailure> {
     let offset = difference(start, profile_center);
     let delta = difference(end, start);
-    let normal = input.profile.plane.normal();
     let axial = dot(delta, normal);
     let height = axial.abs();
     let off_axis = std::array::from_fn(|i| delta[i] - axial * normal[i]);
@@ -73,11 +124,12 @@ fn normal_path(
         || drift > height * resolution.angular
         || dot(offset, normal).abs() + drift > resolution.maximum_tolerance
     {
-        return Err(taper_input(
+        return Err(angle_input(
+            option,
             "expected a nonzero path normal to and starting in the profile plane",
         ));
     }
-    Ok((curve, normal.map(|v| v * axial.signum()), height))
+    Ok((normal.map(|v| v * axial.signum()), height))
 }
 
 fn cone_faces(
@@ -103,10 +155,10 @@ fn cone_faces(
     ])
 }
 
-fn taper_input(cause: impl std::fmt::Display) -> EvaluationFailure {
+fn angle_input(option: &str, cause: impl std::fmt::Display) -> EvaluationFailure {
     Phase::Input.refused(
         Kind::InvalidInput,
         Entity::Body,
-        format!("sweep taper: {cause}"),
+        format!("sweep {option}: {cause}"),
     )
 }

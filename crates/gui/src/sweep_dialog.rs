@@ -22,6 +22,7 @@ pub enum GuiSweepOrientation {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GuiSweepEditSeed {
     pub taper: String,
+    pub twist: String,
     pub orientation: GuiSweepOrientation,
 }
 
@@ -34,6 +35,7 @@ pub struct GuiSweepRequest {
     pub path_cleared: bool,
     pub orientation: GuiSweepOrientation,
     pub taper: String,
+    pub twist: String,
 }
 
 /// The geometry owner's response to a Sweep preview request.
@@ -108,6 +110,7 @@ pub(crate) struct SweepDialog {
     orientation: GuiSweepOrientation,
     selector: orientation::OrientationSelector,
     taper: String,
+    twist: String,
     show_help: bool,
 }
 impl DockableWindow for SweepDialog {}
@@ -133,12 +136,14 @@ impl SweepDialog {
             }
             None => GuiSweepEditSeed {
                 taper: "0 deg".into(),
+                twist: "0 deg".into(),
                 ..Default::default()
             },
         };
         self.feature = feature;
         self.path_cleared = false;
         self.taper = seed.taper;
+        self.twist = seed.twist;
         self.orientation = seed.orientation;
         self.document = state.document;
         self.dock.set_open(self.document.is_some());
@@ -184,7 +189,7 @@ impl SweepDialog {
         let (Some(document), Some(generation)) = (self.document, state.document_generation) else {
             return;
         };
-        let height = if self.show_help { 363. } else { 289. };
+        let height = if self.show_help { 393. } else { 319. };
         crate::widget_abi::fit_viewport_properties(ui, "Sweep", area, [300., height]);
         let _border = crate::theme::property_window_border(ui);
         let mut open = true;
@@ -243,6 +248,8 @@ impl SweepDialog {
             crate::theme::property_label(ui, "Taper");
             let _width = ui.push_item_width(-1.);
             ui.input_text("##sweep-taper", &mut self.taper).build();
+            crate::theme::property_label(ui, "Twist");
+            ui.input_text("##sweep-twist", &mut self.twist).build();
         }
         let request = GuiSweepRequest {
             document,
@@ -252,6 +259,11 @@ impl SweepDialog {
             orientation: self.orientation,
             taper: if follows_path {
                 self.taper.clone()
+            } else {
+                String::new()
+            },
+            twist: if follows_path {
+                self.twist.clone()
             } else {
                 String::new()
             },
@@ -268,7 +280,10 @@ impl SweepDialog {
         {
             Some(GuiSweepPreview::MissingInputs) => ui.text_wrapped(TIP),
             Some(GuiSweepPreview::MissingGuide) => ui.text_wrapped("Select Rail or Surfaces"),
-            Some(GuiSweepPreview::Failed(cause)) => ui.text_wrapped(cause),
+            Some(GuiSweepPreview::Failed(cause)) => {
+                let _error = ui.push_style_color(imgui::StyleColor::Text, [1., 0.25, 0.25, 1.]);
+                ui.text_wrapped(cause);
+            }
             None if tip => ui.text_wrapped(TIP),
             _ => {}
         }

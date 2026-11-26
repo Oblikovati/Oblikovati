@@ -73,6 +73,9 @@ pub fn build_sweep(
         let (shape, faces) = fixed::build(input, resolution)?;
         return checked_candidate(shape, faces, 0., resolution);
     }
+    if input.twist != 0. {
+        taper::require_coaxial_twist(&input, resolution)?;
+    }
     if input.taper != 0. {
         let (shape, faces) = taper::build(input, resolution)?;
         return checked_candidate(shape, faces, 0., resolution);

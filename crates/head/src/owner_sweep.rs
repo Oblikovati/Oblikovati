@@ -3,7 +3,7 @@
 use super::*;
 use oblikovati_api::{Error, client::Client, wire::featureargs::Sweep};
 use oblikovati_automation::{
-    PartUpdateAccess, automatic_sweep, prepare_sweep, prepare_sweep_taper,
+    PartUpdateAccess, automatic_sweep, prepare_sweep, prepare_sweep_taper, prepare_sweep_twist,
 };
 use oblikovati_gui::{
     GuiSweepAction, GuiSweepEditSeed, GuiSweepOrientation, GuiSweepPreview, GuiSweepPreviewState,
@@ -14,6 +14,7 @@ use oblikovati_model::{
         FeatureId,
         part::PartFeatureDefinition,
         sketch_sweep::{SketchSweepDefinition, SketchSweepOrientation},
+        work_geometry::DatumAngle,
     },
     history::DocumentSnapshot,
 };
@@ -42,23 +43,35 @@ pub(in crate::owner) fn edit_seeds(
                 return None;
             };
             let recipe = definition.recipe();
-            let taper = match recipe.taper {
-                Some(angle) => match angle.parameter_id() {
-                    Some(id) => snapshot.parameters.get(id)?.name.clone(),
-                    None => format!(
-                        "{} deg",
-                        angle.resolve(&snapshot.parameters).ok()?.to_degrees()
-                    ),
-                },
-                None => "0 deg".into(),
-            };
+            let taper = angle_field(snapshot, recipe.taper)?;
+            let twist = angle_field(snapshot, recipe.twist)?;
             let orientation = match recipe.orientation {
                 SketchSweepOrientation::FollowPath => GuiSweepOrientation::FollowPath,
                 SketchSweepOrientation::Fixed => GuiSweepOrientation::Fixed,
             };
-            Some((feature.id(), GuiSweepEditSeed { taper, orientation }))
+            Some((
+                feature.id(),
+                GuiSweepEditSeed {
+                    taper,
+                    twist,
+                    orientation,
+                },
+            ))
         })
         .collect()
+}
+
+fn angle_field(snapshot: &DocumentSnapshot, angle: Option<DatumAngle>) -> Option<String> {
+    let Some(angle) = angle else {
+        return Some("0 deg".into());
+    };
+    match angle.parameter_id() {
+        Some(id) => Some(snapshot.parameters.get(id)?.name.clone()),
+        None => Some(format!(
+            "{} deg",
+            angle.resolve(&snapshot.parameters).ok()?.to_degrees()
+        )),
+    }
 }
 
 impl<
@@ -189,6 +202,12 @@ impl<
             if request.taper != "0 deg" {
                 input.taper.clone_from(&request.taper);
             }
+            if request.twist.trim().is_empty() {
+                return Err("Sweep twist requires an angle.".into());
+            }
+            if request.twist != "0 deg" {
+                input.twist.clone_from(&request.twist);
+            }
         }
         let prepared =
             prepare_sweep(snapshot, &datums, policy, &input).map_err(|cause| cause.to_string())?;
@@ -218,7 +237,9 @@ impl<
         let edited = if request.orientation == GuiSweepOrientation::Fixed {
             definition.with_fixed_orientation()
         } else {
-            prepare_sweep_taper(snapshot, definition, &request.taper)
+            let tapered = prepare_sweep_taper(snapshot, definition, &request.taper)
+                .map_err(|cause| cause.to_string())?;
+            prepare_sweep_twist(snapshot, tapered, &request.twist)
                 .map_err(|cause| cause.to_string())?
         };
         self.preview_selected_blend(request.document, |candidate, _| {
