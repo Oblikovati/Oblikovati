@@ -808,6 +808,29 @@
         "command": "OBK_BDD_ROOT=<published-scenarios> OBK_BDD_AREA=application OBK_BDD_FEATURE=viewport-orientation <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
         "environment": "Linux Wayland under nested Weston and X11 under Xvfb/Openbox, with Vulkan Lavapipe",
         "notes": "All 26 scenarios and 284 steps passed on each backend. The three hover scenarios used native pointer motion and completed framebuffer comparisons. Strict build and runtime provenance remains open under #3978."
+      },
+      "67ed99a2454acea20cc86be807d33ff8e05a1f41aac3cdfb77129b29547dd739": {
+        "feature_sha256": "67ed99a2454acea20cc86be807d33ff8e05a1f41aac3cdfb77129b29547dd739",
+        "supporting_files": {
+          "features/application/viewport-orientation/BLOCKERS.md": "4bf2f343c88f4293c5fe7cc46152981ce811a253abc1d85eea7613f016c0a94f",
+          "features/application/viewport-orientation/FIXTURES.md": "86615dd74f586912716f3b1ed2f087bb47ce48e763a8b65c0ea617c4c1b819d7",
+          "features/application/viewport-orientation/FUNCTIONAL.md": "5b7781e167899f305935e94a90773b15149924920eeadf2da96cc37898bde2ff",
+          "features/application/viewport-orientation/VISUAL.md": "59d84df00b98ae8a30f474faae8582619bb2f374eef546b18d675ae66a6871e2",
+          "features/application/viewport-orientation/feature-icon.svg": "d158e003c9c3d5a00b67cf124c8e34f85c2329a5c19e9b1b399d7f4d382541d3",
+          "features/application/viewport-orientation/orientation-control.svg": "17b7f50eea8d5272b5cd8e346485134f6854b8e7727d2e237ef8fe5eb110284c",
+          "features/application/viewport-orientation/orientation-states.svg": "7872830e2a252c7d5a7d08f1ac72cc45f2e1416412288cc7ba25d6b326e8c10b",
+          "features/application/viewport-orientation/preferences-concept.svg": "afff50856b21a56358b51b28179846879f6e62edc033d01128201de9514f4679",
+          "features/application/viewport-orientation/viewcube-axis-triad.svg": "d5c76c95dc1ac1a3554f8b0b3cfca47accbbd5c2509a9874b183ae790f837a3d",
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-viewcube-hud-3961/wayland.json",
+        "cucumber_sha256": "17c08f97272e7695e2dbb16185b05a2b433c1b2af2de777b4d18920844447b38",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-viewcube-hud-3961/wayland-arguments.json",
+        "scenario_arguments_sha256": "c8c5d1614dd06bee8a5123d7036b8c9b91acb2dc7f478b0e7605a48d24b79f23",
+        "application_commit": "6ac7b8e282cc7e4eecef5cdd99c00cddbb02e387",
+        "command": "OBK_BDD_ROOT=<published-scenarios> OBK_BDD_AREA=application OBK_BDD_FEATURE=viewport-orientation <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
+        "environment": "Linux Wayland under nested Weston and X11 under Xvfb/Openbox, with Vulkan Lavapipe",
+        "notes": "All 27 amended scenarios and 291 steps passed on each backend. The new HUD case covered a saved Part and blank Assembly, transparent canvas margins, idle and hover controls, and projected label contrast in Dark and Light. Strict provenance remains open under #3978."
       }
     }
   },
