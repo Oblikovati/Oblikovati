@@ -11,7 +11,7 @@ use oblikovati_gui::{
 };
 use oblikovati_model::assets::{
     AppearanceAsset, AppearanceMetadata, CeramicAppearance, ConcreteAppearance, DocumentAssets,
-    MaterialAsset, ScopedAssets,
+    MaterialAsset, MetalAppearance, ScopedAssets,
 };
 
 macro_rules! owned_part_asset_work_methods {
@@ -199,14 +199,21 @@ impl<
         match template {
             AppearanceTemplate::Ceramic => initialize_typed_surface(
                 &mut asset,
-                1.,
+                [1.; 3],
                 CeramicAppearance::default().finish.surface(),
+                false,
             )?,
             AppearanceTemplate::Concrete => initialize_typed_surface(
                 &mut asset,
-                120. / 255.,
+                [120. / 255.; 3],
                 ConcreteAppearance::default().surface(),
+                false,
             )?,
+            AppearanceTemplate::Metal => {
+                let metal = MetalAppearance::default();
+                let color = metal.kind.color().map(|value| f32::from(value) / 255.);
+                initialize_typed_surface(&mut asset, color, metal.finish.surface(), true)?;
+            }
             AppearanceTemplate::Generic => (),
         }
         Ok(asset)
@@ -247,15 +254,19 @@ impl<
 
 fn initialize_typed_surface(
     asset: &mut AppearanceAsset,
-    gray: f32,
+    color: [f32; 3],
     [roughness, weight]: [u8; 2],
+    metallic: bool,
 ) -> Result<(), String> {
     let mut record = asset.info();
     [
         record.base.color.r,
         record.base.color.g,
         record.base.color.b,
-    ] = [gray; 3];
+    ] = color;
+    if metallic {
+        record.base.metalness = 1.;
+    }
     record.specular.roughness = f32::from(roughness) / 255.;
     record.specular.weight = f32::from(weight) / 255.;
     asset.edit(record)?;
@@ -307,6 +318,12 @@ fn commit_appearance_edit(
     if let Some(value) = highlights {
         record.specular.weight = f32::from(*value) / 255.;
     }
+    if let Some(metal) = metadata
+        .as_deref()
+        .and_then(|metadata| metadata.metal.as_ref())
+    {
+        record.specular.roughness_anisotropy = f32::from(metal.finish.anisotropy()) / 255.;
+    }
     asset.edit(record)?;
     let embedded = assets.embed_appearance(&asset)?;
     if let Some(metadata) = metadata.as_deref() {
@@ -355,6 +372,10 @@ fn embed_new_appearance(
             },
             AppearanceTemplate::Concrete => AppearanceMetadata {
                 concrete: Some(ConcreteAppearance::default()),
+                ..Default::default()
+            },
+            AppearanceTemplate::Metal => AppearanceMetadata {
+                metal: Some(MetalAppearance::default()),
                 ..Default::default()
             },
         };

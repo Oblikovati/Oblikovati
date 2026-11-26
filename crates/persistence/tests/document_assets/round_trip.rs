@@ -136,6 +136,7 @@ fn document_appearance_information_round_trips_and_clears() {
         keywords: "metal, finition".into(),
         ceramic: None,
         concrete: None,
+        metal: None,
         checker: Some(oblikovati_model::assets::AppearanceChecker {
             size_mm: [18, 32],
             rotation_degrees: 45,

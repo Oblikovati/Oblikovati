@@ -19,6 +19,8 @@ pub(super) enum HeightMapTarget {
     Relief,
     ConcreteStamp,
     ConcreteWeathering,
+    MetalRelief,
+    MetalCutouts,
 }
 
 impl HeightMapTarget {
@@ -40,6 +42,8 @@ impl HeightMapTarget {
                 .concrete
                 .as_mut()
                 .map(|value| &mut value.weathering_image),
+            Self::MetalRelief => metadata.metal.as_mut().map(|value| &mut value.relief_image),
+            Self::MetalCutouts => metadata.metal.as_mut().map(|value| &mut value.cutout_image),
         };
         if let Some(destination) = destination {
             *destination = Some(map);

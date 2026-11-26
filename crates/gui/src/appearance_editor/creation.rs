@@ -18,6 +18,7 @@ pub(super) fn template_choice(ui: &Ui) -> Option<AppearanceTemplate> {
         ("New Generic Appearance", AppearanceTemplate::Generic),
         ("Ceramic", AppearanceTemplate::Ceramic),
         ("Concrete", AppearanceTemplate::Concrete),
+        ("Metal", AppearanceTemplate::Metal),
     ]
     .into_iter()
     .find_map(|(label, template)| ui.menu_item(label).then_some(template))

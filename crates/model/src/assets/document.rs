@@ -4,6 +4,7 @@ mod ceramic;
 mod concrete;
 mod effects;
 mod height_map;
+mod metal;
 mod texture;
 use super::{AppearanceAsset, AssetAssignments, AssetCollection, MaterialAsset};
 pub use assign::{AppearanceAssignmentTarget, MaterialAssignmentTarget};
@@ -14,6 +15,7 @@ pub use effects::{
     GenericRoughSurface,
 };
 pub use height_map::AppearanceHeightMap;
+pub use metal::{MetalAppearance, MetalFinish, MetalKind};
 use oblikovati_api::{
     contract::{Appearance, Material},
     types::{ASSET_BUILTIN, ASSET_DOCUMENT},
@@ -38,10 +40,12 @@ pub struct AppearanceMetadata {
     pub ceramic: Option<CeramicAppearance>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub concrete: Option<ConcreteAppearance>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metal: Option<MetalAppearance>,
 }
 
 impl AppearanceMetadata {
-    /// Translate a ceramic surface's preview inputs into Generic effects.
+    /// Translate a typed surface's preview inputs into Generic effects.
     /// For example, use `saved_metadata.clone().into_generic()` for a Generic copy.
     pub fn into_generic(mut self) -> Self {
         if let Some(ceramic) = self.ceramic.take() {
@@ -58,6 +62,13 @@ impl AppearanceMetadata {
             let effects = self.generic_effects.get_or_insert_with(Default::default);
             effects.tint = std::mem::take(&mut concrete.tint);
             effects.concrete_surface = Some(Box::new(concrete));
+        }
+        if let Some(mut metal) = self.metal.take() {
+            let effects = self.generic_effects.get_or_insert_with(Default::default);
+            effects.tint = std::mem::take(&mut metal.tint);
+            effects.cutouts_enabled = metal.cutouts;
+            effects.bump = metal.relief;
+            effects.metal_surface = Some(Box::new(metal));
         }
         self
     }
@@ -232,6 +243,11 @@ impl DocumentAssets {
         }
         if let Some(concrete) = &metadata.concrete {
             concrete
+                .validate()
+                .map_err(|cause| format!("appearance {id:?}: {cause}"))?;
+        }
+        if let Some(metal) = &metadata.metal {
+            metal
                 .validate()
                 .map_err(|cause| format!("appearance {id:?}: {cause}"))?;
         }

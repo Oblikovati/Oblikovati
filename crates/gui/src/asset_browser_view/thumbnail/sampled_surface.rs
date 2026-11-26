@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Sample textured and transmissive surfaces for the browser and editor previews.
-use super::height_shading::HeightShading;
+use super::height_shading::{HeightShading, height_at};
 use super::{PreviewLight, concrete_shading};
 use crate::GuiAssetChoice;
 use crate::appearance_editor::CheckerSampler;
 use imgui::DrawListMut;
 use oblikovati_model::assets::{
-    AppearanceReflectivity, ConcreteAppearance, GenericAppearanceEffects,
+    AppearanceHeightMap, AppearanceReflectivity, ConcreteAppearance, GenericAppearanceEffects,
 };
 
 pub(super) fn paint(
@@ -41,6 +41,7 @@ pub(super) struct PreviewSurface<'a> {
     height_shading: HeightShading<'a>,
     rough_diffuse: f32,
     concrete: Option<&'a ConcreteAppearance>,
+    cutout: Option<&'a AppearanceHeightMap>,
 }
 
 impl<'a> PreviewSurface<'a> {
@@ -52,9 +53,11 @@ impl<'a> PreviewSurface<'a> {
         let metadata = asset.appearance_metadata.as_ref();
         let ceramic = metadata.and_then(|metadata| metadata.ceramic.as_ref());
         let concrete = metadata.and_then(|metadata| metadata.concrete.as_ref());
+        let metal = metadata.and_then(|metadata| metadata.metal.as_ref());
         let tint = ceramic
             .map(|value| value.tint)
-            .or_else(|| concrete.map(|value| value.tint));
+            .or_else(|| concrete.map(|value| value.tint))
+            .or_else(|| metal.map(|value| value.tint));
         let base = tint.filter(|tint| tint.enabled).map_or(base, |tint| {
             std::array::from_fn(|index| base[index] * f32::from(tint.color[index]) / 255.)
         });
@@ -72,11 +75,28 @@ impl<'a> PreviewSurface<'a> {
             .filter(|texture| texture.fade > 0);
         let rough_surface =
             ceramic.is_some() || effects.is_some_and(|effect| effect.rough_surface.is_some());
+        let converted = effects.and_then(|effect| {
+            effect
+                .metal_surface
+                .as_deref()
+                .map(|metal| (metal, effect.bump, effect.cutouts_enabled))
+        });
+        let metal_surface = metal
+            .map(|metal| (metal, metal.relief, metal.cutouts))
+            .or(converted);
         Self {
             base,
             effects,
             concrete,
-            height_shading: HeightShading::new(ceramic, effects),
+            height_shading: metal_surface.map_or_else(
+                || HeightShading::new(ceramic, effects),
+                |(metal, relief, _)| {
+                    HeightShading::metal_relief(metal.relief_image.as_ref(), relief)
+                },
+            ),
+            cutout: metal_surface
+                .filter(|(_, _, enabled)| *enabled)
+                .and_then(|(metal, _, _)| metal.cutout_image.as_ref()),
             rough_diffuse: asset
                 .appearance_preview
                 .filter(|_| rough_surface)
@@ -97,6 +117,16 @@ impl<'a> PreviewSurface<'a> {
             || self.checker.is_some()
             || self.height_shading.enabled()
             || self.concrete.is_some()
+            || self.has_cutout()
+    }
+
+    pub(super) fn has_cutout(&self) -> bool {
+        self.cutout.is_some()
+    }
+
+    pub(super) fn opacity(&self, at: [f32; 2]) -> f32 {
+        self.cutout
+            .map_or(1., |map| f32::from(u8::from(height_at(map, at) >= 0.5)))
     }
 
     fn sphere(&self, [x, y]: [f32; 2], light: PreviewLight) -> [f32; 4] {
@@ -115,7 +145,7 @@ impl<'a> PreviewSurface<'a> {
         ];
         let diffuse = (0.56 * normal_z + lateral[0] * x + lateral[1] * y).max(0.) + 0.27;
         let [r, g, b] = light.illuminate(self.color([x, y], diffuse, normal_z));
-        [r, g, b, 1.]
+        [r, g, b, self.opacity([x, y])]
     }
 
     pub(super) fn color(&self, [x, y]: [f32; 2], diffuse: f32, facing: f32) -> [f32; 3] {

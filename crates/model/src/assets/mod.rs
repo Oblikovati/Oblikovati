@@ -55,7 +55,8 @@ pub use document::{
     AppearanceIllumination, AppearanceMetadata, AppearanceReflectivity, AppearanceTint,
     AppearanceTransparency, CeramicAppearance, CeramicFinish, CeramicKind, ConcreteAppearance,
     ConcreteFinish, ConcreteSealant, DocumentAssets, GenericAppearanceEffects, GenericRoughSurface,
-    MaterialAssignmentTarget, RefractionPreset, TextureRepeat,
+    MaterialAssignmentTarget, MetalAppearance, MetalFinish, MetalKind, RefractionPreset,
+    TextureRepeat,
 };
 pub use material::MaterialAsset;
 pub use project::ProjectAssetLibrary;

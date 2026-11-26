@@ -149,3 +149,9 @@ The image chooser can embed stamped finish and weathering maps, and
 Apply commits them with the selected settings. A Generic copy retains
 the concrete preview surface and map data. See the
 [native Concrete receipt](receipts/2026-11-26-appearance-concrete-3563/README.md).
+
+Metal opens from either creation menu. Selecting an alloy sets its base
+color. The finish sets roughness and highlight strength, including
+anisotropy for Brushed. Relief Pattern, Cutouts, and Tint have separate
+enable controls. The shared image chooser can embed relief and cutout
+maps with the Part. See the [native Metal receipt](receipts/2026-11-26-appearance-metal-3563/README.md).

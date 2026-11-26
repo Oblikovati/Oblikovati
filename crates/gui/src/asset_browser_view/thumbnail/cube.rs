@@ -41,21 +41,24 @@ pub(crate) fn paint_cube_preview(
     let material = PreviewSurface::from_asset(asset);
     let gloss = 1. - f32::from(finish.roughness) / 255.;
     let highlight = f32::from(finish.highlights) / 255.;
+    let anisotropy = f32::from(finish.anisotropy) / 255.;
     for face in &FACES {
         let paint = |[u, v]: [f32; 2]| {
             let facing = face.facing;
             let metallic = 1. + f32::from(finish.metalness) / 255. * facing * 0.22;
             let key = [0.5 + light.offset[0] * 0.7, 0.5 + light.offset[1] * 0.7];
-            let distance = (u - key[0]).powi(2) + (v - key[1]).powi(2);
+            let distance = ((u - key[0]) / (1. + anisotropy)).powi(2) + (v - key[1]).powi(2);
             let shine = (1. - distance * (4. + gloss * 21.)).max(0.).powi(2)
                 * highlight
                 * gloss
                 * face.shade
                 * 0.36;
-            let base = material.color([2. * u - 1., 2. * v - 1.], face.shade * metallic, facing);
-            light.illuminate(base.map(|value| value + (1. - value) * shine))
+            let at = [2. * u - 1., 2. * v - 1.];
+            let base = material.color(at, face.shade * metallic, facing);
+            let [r, g, b] = light.illuminate(base.map(|value| value + (1. - value) * shine));
+            [r, g, b, material.opacity(at)]
         };
-        paint_face(draw, center, radius, face, paint);
+        paint_face(draw, center, radius, face, !material.has_cutout(), paint);
     }
 }
 
@@ -64,14 +67,17 @@ fn paint_face(
     center: [f32; 2],
     radius: f32,
     face: &Face,
-    paint: impl Fn([f32; 2]) -> [f32; 3],
+    opaque: bool,
+    paint: impl Fn([f32; 2]) -> [f32; 4],
 ) {
     // Paint the full face first to cover the antialiased joins between samples.
-    quad(
-        draw,
-        face.corners.map(|at| project(center, radius, at)),
-        paint([0.5; 2]),
-    );
+    if opaque {
+        quad(
+            draw,
+            face.corners.map(|at| project(center, radius, at)),
+            paint([0.5; 2]),
+        );
+    }
     const CELLS: u8 = 14;
     let step = 1. / f32::from(CELLS);
     for y in 0..CELLS {
@@ -84,8 +90,8 @@ fn paint_face(
     }
 }
 
-fn quad(draw: &DrawListMut<'_>, points: [[f32; 2]; 4], [r, g, b]: [f32; 3]) {
-    draw.add_polyline(points.to_vec(), [r, g, b, 1.])
+fn quad(draw: &DrawListMut<'_>, points: [[f32; 2]; 4], color: [f32; 4]) {
+    draw.add_polyline(points.to_vec(), color)
         .filled(true)
         .build();
 }

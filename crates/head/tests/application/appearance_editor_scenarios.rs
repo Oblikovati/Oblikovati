@@ -407,5 +407,6 @@ fn document_appearance_information_survives_reopening_the_part() {
 mod ceramic;
 mod concrete;
 mod effects;
+mod metal;
 mod preview;
 mod texture;

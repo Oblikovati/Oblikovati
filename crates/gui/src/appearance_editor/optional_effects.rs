@@ -111,3 +111,21 @@ pub(super) fn edit_effect_color(ui: &Ui, label: &str, color: &mut [u8; 3]) {
         *color = components.map(|channel| (channel.clamp(0., 1.) * 255.).round() as u8);
     }
 }
+
+pub(super) fn choice<T: Copy + Eq>(ui: &Ui, label: &str, selected: &mut T, choices: &[(T, &str)]) {
+    let Some((_, preview)) = choices.iter().find(|(value, _)| value == selected) else {
+        return;
+    };
+    let Some(_menu) = ui.begin_combo(label, *preview) else {
+        return;
+    };
+    for (value, name) in choices {
+        if ui
+            .selectable_config(*name)
+            .selected(value == selected)
+            .build()
+        {
+            *selected = *value;
+        }
+    }
+}

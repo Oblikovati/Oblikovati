@@ -9,6 +9,7 @@ mod ceramic;
 mod concrete;
 mod creation;
 mod image_chooser;
+mod metal;
 mod optional_effects;
 mod preview_options;
 mod texture;
@@ -59,6 +60,7 @@ pub enum AppearanceTemplate {
     Generic,
     Ceramic,
     Concrete,
+    Metal,
 }
 
 impl AppearanceTemplate {
@@ -67,11 +69,14 @@ impl AppearanceTemplate {
             Self::Generic => "Generic",
             Self::Ceramic => "Ceramic",
             Self::Concrete => "Concrete",
+            Self::Metal => "Metal",
         }
     }
 
     pub(crate) fn from_metadata(metadata: &AppearanceMetadata) -> Self {
-        if metadata.concrete.is_some() {
+        if metadata.metal.is_some() {
+            Self::Metal
+        } else if metadata.concrete.is_some() {
             Self::Concrete
         } else if metadata.ceramic.is_some() {
             Self::Ceramic
@@ -85,6 +90,7 @@ impl AppearanceTemplate {
             Self::Generic => "generic",
             Self::Ceramic => "ceramic",
             Self::Concrete => "concrete",
+            Self::Metal => "metal",
         }
     }
 }
@@ -338,6 +344,9 @@ fn preview_asset(asset: &GuiAssetChoice, draft: &AppearanceDraft) -> GuiAssetCho
     if let Some(finish) = &mut preview.appearance_preview {
         finish.roughness = draft.roughness;
         finish.highlights = draft.highlights;
+        if let Some(metal) = &draft.metadata.metal {
+            finish.anisotropy = metal.finish.anisotropy();
+        }
     }
     preview
 }
@@ -358,6 +367,7 @@ fn draw_properties(
         AppearanceTemplate::Concrete => {
             return concrete::draw(ui, draft, color_dialog, image_chooser);
         }
+        AppearanceTemplate::Metal => return metal::draw(ui, draft, image_chooser),
         AppearanceTemplate::Generic => (),
     }
     if let Some(_generic) = ui.tree_node_config("Generic").default_open(true).push() {

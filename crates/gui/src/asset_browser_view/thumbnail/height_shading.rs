@@ -55,6 +55,16 @@ impl<'a> HeightShading<'a> {
         }
     }
 
+    pub(super) fn metal_relief(
+        image: Option<&'a AppearanceHeightMap>,
+        effect: AppearanceBump,
+    ) -> Self {
+        Self {
+            relief: image_effect(image, effect),
+            ..Default::default()
+        }
+    }
+
     pub(super) fn enabled(&self) -> bool {
         self.wavy > 0. || self.bump.is_some() || self.relief.is_some()
     }

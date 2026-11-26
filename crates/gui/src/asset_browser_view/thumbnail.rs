@@ -101,17 +101,19 @@ pub(crate) fn paint_preview(
     } else {
         paint_surface(draw, center, radius, &material, metalness, light);
     }
-    paint_reflection(
-        draw,
-        center,
-        radius,
-        roughness,
-        f32::from(finish.anisotropy) / 255.,
-        f32::from(finish.highlights) / 255.,
-        light,
-    );
-    if finish.fuzz_weight > 0 {
-        paint_fibers(draw, center, radius, finish);
+    if !material.has_cutout() {
+        paint_reflection(
+            draw,
+            center,
+            radius,
+            roughness,
+            f32::from(finish.anisotropy) / 255.,
+            f32::from(finish.highlights) / 255.,
+            light,
+        );
+        if finish.fuzz_weight > 0 {
+            paint_fibers(draw, center, radius, finish);
+        }
     }
 }
 

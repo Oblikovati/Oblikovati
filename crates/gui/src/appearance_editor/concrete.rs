@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Concrete uses the common base color and its own finish and weathering choices.
 use super::image_chooser::{HeightMapTarget, ImageChooser};
-use super::optional_effects::{edit_effect_color, section};
+use super::optional_effects::{choice, edit_effect_color, section};
 use super::{AppearanceDraft, ColorDialog, base_color};
 use imgui::Ui;
 use oblikovati_model::assets::{ConcreteAppearance, ConcreteFinish, ConcreteSealant};
@@ -52,7 +52,7 @@ fn finish(ui: &Ui, concrete: &mut ConcreteAppearance, chooser: &mut ImageChooser
     let Some(_finish) = ui.tree_node_config("Finish Bumps").push() else {
         return;
     };
-    type_menu(
+    choice(
         ui,
         "Type",
         &mut concrete.finish,
@@ -103,24 +103,6 @@ fn weathering(ui: &Ui, concrete: &mut ConcreteAppearance, chooser: &mut ImageCho
             image_name(ui, image.as_ref());
         }
     });
-}
-
-fn type_menu<T: Copy + Eq>(ui: &Ui, label: &str, selected: &mut T, choices: &[(T, &str)]) {
-    let Some((_, preview)) = choices.iter().find(|(value, _)| value == selected) else {
-        return;
-    };
-    let Some(_menu) = ui.begin_combo(label, *preview) else {
-        return;
-    };
-    for (value, name) in choices {
-        if ui
-            .selectable_config(*name)
-            .selected(value == selected)
-            .build()
-        {
-            *selected = *value;
-        }
-    }
 }
 
 fn image_name(ui: &Ui, map: Option<&oblikovati_model::assets::AppearanceHeightMap>) {

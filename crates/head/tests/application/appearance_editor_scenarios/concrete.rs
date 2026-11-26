@@ -220,7 +220,7 @@ fn owned_concrete(world: &mut ApplicationWorld) -> oblikovati_gui::GuiAssetChoic
         .expect("expected a document-owned Concrete appearance")
 }
 
-fn expect_popup_choices(world: &ApplicationWorld, choices: &[&str]) {
+pub(super) fn expect_popup_choices(world: &ApplicationWorld, choices: &[&str]) {
     for label in choices {
         assert!(
             world
@@ -234,7 +234,7 @@ fn expect_popup_choices(world: &ApplicationWorld, choices: &[&str]) {
     }
 }
 
-fn close_dropdown(world: &mut ApplicationWorld) {
+pub(super) fn close_dropdown(world: &mut ApplicationWorld) {
     world.escape();
     world.pump(Vec::new());
 }
