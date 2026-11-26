@@ -48,6 +48,9 @@ window activates another attached document when one is available and
 shows Home when the detached drawing was the only attached document.
 The [native Wayland detachment](receipts/2026-11-26-document-tabs-wayland-detach-3900/README.md)
 keeps the drawing toplevel mapped while the main window switches between Parts.
+Right-click opens the detached tab menu, and Escape dismisses it. Clicking
+the detached sheet updates the shared ribbon and browser, and selecting a
+Part restores its controls. [Native drawing context and menu](receipts/2026-11-26-document-tabs-wayland-drawing-context-3900/README.md)
 Detached drawing and sheet preview tests take the same ImGui context
 lease as the main frame owner. [Parallel test results](receipts/2026-11-26-gui-context-lease-4078/README.md)
 

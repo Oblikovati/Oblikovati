@@ -37,12 +37,16 @@ pub(in super::super) fn move_fullscreen_pointer(position: [i32; 2]) {
 }
 
 pub(in super::super) fn fullscreen_left_button(position: [i32; 2], pressed: bool) {
+    fullscreen_button(position, 1, pressed);
+}
+
+pub(in super::super) fn fullscreen_button(position: [i32; 2], button: u8, pressed: bool) {
     let event = if pressed {
         BUTTON_PRESS_EVENT
     } else {
         BUTTON_RELEASE_EVENT
     };
-    fullscreen_pointer_event(position, event, 1);
+    fullscreen_pointer_event(position, event, button);
 }
 
 pub(in super::super) fn switch_fullscreen_wayland_task() {
@@ -65,6 +69,16 @@ pub(in super::super) fn switch_fullscreen_wayland_task() {
 
 /// Drive a document shortcut through the fullscreen Weston test output.
 pub(in super::super) fn press_weston_control_tab(reverse: bool) {
+    let (connection, root) = weston_keyboard_target();
+    send_control_tab(&connection, root, reverse);
+}
+
+pub(in super::super) fn press_weston_key(keysym: u32) {
+    let (connection, root) = weston_keyboard_target();
+    press_target_key(&connection, root, keysym);
+}
+
+fn weston_keyboard_target() -> (RustConnection, Window) {
     let (connection, screen) = x11rb::connect(None).expect("expected the Weston host display");
     let root = connection.setup().roots[screen].root;
     let property = atom(&connection, b"_NET_WM_NAME");
@@ -75,7 +89,7 @@ pub(in super::super) fn press_weston_control_tab(reverse: bool) {
         panic!("expected one fullscreen Weston window, found {outputs:?}");
     };
     focus_target(&connection, *output);
-    send_control_tab(&connection, root, reverse);
+    (connection, root)
 }
 
 pub(in super::super) fn press_labwc_close_shortcut() {

@@ -198,6 +198,12 @@ fn drawing_point_in_main_coordinates(world: &mut ApplicationWorld, point: [i32; 
     std::array::from_fn(|axis| point[axis] + drawing[axis] - main[axis])
 }
 
+fn drawing_point_on_weston(world: &mut ApplicationWorld, point: [i32; 2]) -> [i32; 2] {
+    let name = world.document_name(drawing_of(world));
+    let [x, y, _, _] = wayland::compositor_toplevel_bounds(&name);
+    [x + point[0], y + point[1]]
+}
+
 #[then("the drawing remains open in its separate window")]
 #[then("the detached drawing remains open")]
 #[given("the drawing has a document tab in that window")]
@@ -214,15 +220,24 @@ fn drawing_in_window(world: &mut ApplicationWorld) {
 #[when("the user opens the detached drawing tab context menu")]
 fn open_detached_menu(world: &mut ApplicationWorld) {
     let point = detached_tab_position(world);
-    super::super::x11_input::right_click(drawing_point_in_main_coordinates(world, point));
+    if world.app().window.native.view.uses_wayland() {
+        let at = drawing_point_on_weston(world, point);
+        wayland::right_click_compositor_point(world, at);
+    } else {
+        super::super::x11_input::right_click(drawing_point_in_main_coordinates(world, point));
+    }
     world.pump(Vec::new());
     world.frame = detached_frame(world);
     world.detached_drawing_menu = true;
 }
 
 pub(super) fn dismiss_detached_menu(world: &mut ApplicationWorld) {
-    let name = world.document_name(drawing_of(world));
-    super::super::x11_input::press_window_key(&name, 0xff1b);
+    if world.app().window.native.view.uses_wayland() {
+        super::super::x11_input::window_targets::press_weston_key(0xff1b);
+    } else {
+        let name = world.document_name(drawing_of(world));
+        super::super::x11_input::press_window_key(&name, 0xff1b);
+    }
     world.pump(Vec::new());
     let auxiliary_frame = detached_frame(world);
     let main_frame = std::mem::replace(&mut world.frame, auxiliary_frame);
@@ -239,7 +254,12 @@ fn part_context(world: &mut ApplicationWorld) {
 #[when("the user clicks the detached drawing sheet")]
 fn click_detached_sheet(world: &mut ApplicationWorld) {
     let point = detached_extent(world).map(|dimension| dimension as i32 / 2);
-    super::super::x11_input::click(drawing_point_in_main_coordinates(world, point));
+    if world.app().window.native.view.uses_wayland() {
+        let at = drawing_point_on_weston(world, point);
+        wayland::click_compositor_point(world, at);
+    } else {
+        super::super::x11_input::click(drawing_point_in_main_coordinates(world, point));
+    }
     world.pump(Vec::new());
     world.pump(Vec::new());
 }

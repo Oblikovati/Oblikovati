@@ -44,16 +44,25 @@ pub(in super::super) fn click_window_point(world: &mut ApplicationWorld, [px, py
 }
 
 pub(in super::super) fn click_compositor_point(world: &mut ApplicationWorld, target: [i32; 2]) {
-    use super::super::x11_input::window_targets::{
-        fullscreen_left_button, move_fullscreen_pointer,
-    };
+    compositor_click(world, target, 1);
+}
+
+pub(in super::super) fn right_click_compositor_point(
+    world: &mut ApplicationWorld,
+    target: [i32; 2],
+) {
+    compositor_click(world, target, 3);
+}
+
+fn compositor_click(world: &mut ApplicationWorld, target: [i32; 2], button: u8) {
+    use super::super::x11_input::window_targets::{fullscreen_button, move_fullscreen_pointer};
 
     require_nested_input();
     move_fullscreen_pointer(target);
     world.pump(Vec::new());
-    fullscreen_left_button(target, true);
+    fullscreen_button(target, button, true);
     world.pump(Vec::new());
-    fullscreen_left_button(target, false);
+    fullscreen_button(target, button, false);
 }
 
 fn wait_for_frame_layer(world: &mut ApplicationWorld, ready: impl Fn(Option<&str>) -> bool) {
