@@ -47,6 +47,9 @@ Native tab reordering keeps the active drawing visible and activates an
 inactive Part when it is dragged, while keeping the drawing open.
 [Current Document Tabs runs](receipts/2026-11-26-document-tabs-current-wayland-3900/README.md)
 include the Wayland reorder trace and full reports for both backends.
+When the native window narrows, the tab strip brings the active tab into
+view and keeps both ends of its label. The overflow arrows can then move
+the strip independently of the active document.
 
 Dragging a drawing out of the strip opens a native window. The main
 window activates another attached document when one is available and

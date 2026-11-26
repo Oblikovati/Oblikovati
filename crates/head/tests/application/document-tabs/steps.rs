@@ -18,6 +18,9 @@ mod home_preview_native;
 mod keyboard_native;
 #[path = "mixed_documents.rs"]
 mod mixed_documents;
+#[cfg(target_os = "linux")]
+#[path = "narrow_resize.rs"]
+mod narrow_resize;
 #[path = "offscreen_selection.rs"]
 mod offscreen_selection;
 #[path = "overflow_order.rs"]
