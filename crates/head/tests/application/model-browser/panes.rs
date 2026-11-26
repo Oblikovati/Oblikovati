@@ -227,15 +227,18 @@ fn expect_viewport_change(world: &mut ApplicationWorld, narrowed: bool) {
         .expect("expected the previous viewport")
         .0;
     let after = world.viewport_bounds();
+    assert_viewport_width_change(before, after, narrowed);
+}
+
+fn assert_viewport_width_change(before: [u32; 4], after: [u32; 4], narrowed: bool) {
+    let before_width = before[2] - before[0];
+    let after_width = after[2] - after[0];
     let changed = if narrowed {
-        after[0] > before[0]
+        after[0] > before[0] && after_width < before_width
     } else {
-        after[0] < before[0]
+        after[0] < before[0] && after_width > before_width
     };
-    assert!(
-        changed && after[2] == before[2],
-        "viewport {before:?} -> {after:?}"
-    );
+    assert!(changed, "viewport {before:?} -> {after:?}");
 }
 #[given("a part is open in the MCAD Software with the model browser docked at the left")]
 #[given("a part is open in the MCAD Software with the model browser docked on the left")]

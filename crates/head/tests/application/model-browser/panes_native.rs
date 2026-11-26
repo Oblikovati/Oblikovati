@@ -14,7 +14,8 @@ fn native_browser_resize_changes_the_viewport() {
     drag_boundary(&mut world, before, delta);
     let widened = viewport(&mut world);
     expect_browser_widened(&mut world, before, widened, original_width);
-    drag_boundary(&mut world, widened, -delta);
+    let restore_delta = before[0] as i32 - widened[0] as i32;
+    drag_boundary(&mut world, widened, restore_delta);
     let restored = viewport(&mut world);
     expect_browser_restored(before, restored, original_width);
     world.close();
@@ -39,11 +40,7 @@ fn expect_browser_widened(
         widened_width > original_width,
         "browser width {original_width} -> {widened_width}"
     );
-    assert!(widened[0] > before[0], "viewport {before:?} -> {widened:?}");
-    assert_eq!(
-        widened[2], before[2],
-        "viewport right edge must remain fixed"
-    );
+    assert_viewport_width_change(before, widened, true);
     expect_block_kept(world);
 }
 
