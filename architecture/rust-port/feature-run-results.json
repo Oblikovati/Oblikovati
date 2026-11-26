@@ -1401,6 +1401,24 @@
         "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=docking-system OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
         "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
         "notes": "All eleven current scenarios passed with the published native Parts, including a two-process desktop restart. Strict build and runtime provenance remains open under #3978."
+      },
+      "d0f4d200193d06399a7b024b3e64a037bf34b6164429a9982d0705ad4f8e37d1": {
+        "feature_sha256": "d0f4d200193d06399a7b024b3e64a037bf34b6164429a9982d0705ad4f8e37d1",
+        "supporting_files": {
+          "features/application/docking-system/BLOCKERS.md": "6bd8f9bbece6767cb871c0f6cf22847ab9d155a816f5361d96db6f72a3325d45",
+          "features/application/docking-system/FIXTURES.md": "f53e330504c7933d3d0232d54b4059e32cdfa13f3fefcb5115546581b0912bcd",
+          "features/application/docking-system/FUNCTIONAL.md": "5a8de9fdbbc4d600660c8f8d23467553a694ed0126e0e297e33825b020025d3e",
+          "features/application/docking-system/VISUAL.md": "3bcd52d16ffdb8a2ba66b896ad42d4984c57b43cb926146203b8f286da7fc49d",
+          "features/application/docking-system/right-dock-tabs.svg": "f07847f1b581581045032a3cf5d17d8d67de6f3a3ac82c4f035b5b692982ca55",
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+          "fixtures/cad/quick-access-toolbar/PartOne.opd": "09fedf5c0e865867a3088067f3f8378dc01b6e226924a5c64210102e10227993"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-docking-system-wayland-4133/cucumber.json",
+        "cucumber_sha256": "9b670c264246836d78dfad1e23b6c8db5e02f2317e06fe57820cfe6cfb5166b7",
+        "application_commit": "9f67524cf1c2bb34b1e9ab2b8da51213eb6bca8c",
+        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=docking-system OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
+        "environment": "Linux Wayland with isolated headless Weston (1440x900), Pixman and Vulkan Lavapipe",
+        "notes": "All 13 current scenarios and 134 steps passed. The three affected scenarios were run with the Wayland verifier changes. Strict build and runtime provenance remains open under #3978."
       }
     }
   },

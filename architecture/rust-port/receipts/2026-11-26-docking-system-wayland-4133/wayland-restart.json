@@ -1,0 +1,21 @@
+{
+  "fixture_sha256": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+  "binary_sha256": "b24abae8dee5a66469176da37534b6d100474e43f41f7ca0dbd9b8ddd06f7eb9",
+  "panels": [
+    {
+      "dock": "0x00000004",
+      "tab": 0,
+      "geometry": "Pos=1043,149\nSize=397,727\nCollapsed=0\nDockId=0x00000004,0"
+    },
+    {
+      "dock": "0x00000004",
+      "tab": 1,
+      "geometry": "Pos=1043,149\nSize=397,727\nCollapsed=0\nDockId=0x00000004,1"
+    }
+  ],
+  "model_panel": {
+    "dock": "0x00000001",
+    "tab": 0,
+    "geometry": "Pos=0,149\nSize=246,727\nCollapsed=0\nDockId=0x00000001,0"
+  }
+}

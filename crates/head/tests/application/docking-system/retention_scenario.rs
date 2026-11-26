@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Verify workspace docking while the user switches document tabs.
+use super::dock_menu_steps::click_workspace_pointer;
 use super::{ApplicationWorld, PANEL, diagnostics, panel_docked, viewport};
 use cucumber::{given, then, when};
 
@@ -71,6 +72,7 @@ fn tabbed_arrangement_remains(world: &mut ApplicationWorld) {
 #[then("the active document changes in the viewport")]
 fn other_document_active(world: &mut ApplicationWorld) {
     assert_eq!(world.state().document, world.other_document);
+    super::super::viewport_background::expect_empty_part(world);
 }
 
 #[when("the user returns to the first document")]
@@ -78,14 +80,14 @@ fn other_document_active(world: &mut ApplicationWorld) {
 fn return_to_first(world: &mut ApplicationWorld) {
     select_document(world, world.previous_document.unwrap());
     assert_eq!(world.state().document, world.previous_document);
+    super::workspace_layout::browser_feature::expect_solid_visible(world);
 }
 
 fn select_document(world: &mut ApplicationWorld, document: u64) {
     let name = world.document_name(document);
     reveal_tab(world, &name);
     let point = diagnostics::pointer_pixels(world.expect_tab(&name).center());
-    super::super::x11_input::click(point);
-    world.pump(Vec::new());
+    click_workspace_pointer(world, point);
     assert_eq!(world.state().document, Some(document));
 }
 
@@ -96,9 +98,7 @@ fn reveal_tab(world: &mut ApplicationWorld, name: &str) {
             if world.tab_run(name).is_some() {
                 return;
             }
-            let point = world.exact_run_center(arrow);
-            super::super::x11_input::click(point);
-            world.pump(Vec::new());
+            click_workspace_pointer(world, world.exact_run_center(arrow));
         }
     }
     assert!(

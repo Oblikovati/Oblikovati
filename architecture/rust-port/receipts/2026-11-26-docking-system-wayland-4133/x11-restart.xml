@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Dockable workspace panels: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature" package="testsuite/Feature: Dockable workspace panels: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T01:47:22.153033298Z" time="48.273252113"><testcase name="Scenario: Restore the saved panel arrangement after restarting the application: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:170:3" time="48.273252113"><system-out><![CDATA[  Scenario: Restore the saved panel arrangement after restarting the application
+   ✔  Given `fixtures/cad/docking-visible-solid-current.opd` is open
+   ✔  And Model Browser is docked on the left and Appearance Browser and Material Browser share a right dock as tabs
+   ✔  And the MCAD Software has saved that arrangement
+   ✔  When the user closes and restarts the MCAD Software
+   ✔  And the user opens the same native part
+   ✔  Then the saved left Model Browser and right tabbed browsers are restored in their positions and sizes
+]]></system-out></testcase></testsuite></testsuites>

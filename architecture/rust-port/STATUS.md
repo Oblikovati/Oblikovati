@@ -70,7 +70,7 @@ using this status; the live scenario directory can change.
   have R0 baseline records. See `receipts/2026-11-21-project-dialog-r0-3895/`.
   Strict verification still requires bounded build and runtime inputs under
   #3978.
-- Docking System (#4133) passed the [11-scenario Studio snapshot](receipts/2026-11-25-docking-system-studio-4133/README.md),
+- Docking System (#4133) passed all [13 current scenarios and 134 steps on Wayland](receipts/2026-11-26-docking-system-wayland-4133/README.md),
   including a two-process desktop restart. The [floating Appearance Browser](receipts/2026-11-26-dock-floating-appearance-4133/README.md)
   and [per-document dock selection](receipts/2026-11-26-dock-document-tabs-4133/README.md) passed on Wayland and X11.
   The standalone [dock-menu test](receipts/2026-11-24-dock-menu-repository-fixture-4133/README.md)

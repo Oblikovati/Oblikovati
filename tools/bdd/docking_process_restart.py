@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-only
-"""Exercise a saved dock group across two desktop processes on a 1440x900 X11 display."""
+"""Exercise a saved dock group across two desktop processes on Wayland or X11."""
 import argparse
 import ctypes
 import hashlib
@@ -43,6 +43,13 @@ class RestartResult(TypedDict):
     panels: list[PanelRecord]
     viewport_before: ViewportSamples
     viewport_after: ViewportSamples
+
+
+class WaylandRestartResult(TypedDict):
+    fixture_sha256: str
+    binary_sha256: str
+    panels: list[PanelRecord]
+    model_panel: PanelRecord
 
 
 class NativePointer:
@@ -208,7 +215,8 @@ def close_process(process: subprocess.Popen[bytes], pointer: NativePointer) -> N
 
 def file_hash(path: Path) -> str:
     """Hash evidence input bytes; for example, `file_hash(Path('fixture.opd'))`."""
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
 def wait_for_window(process: subprocess.Popen[bytes]) -> None:
@@ -260,6 +268,49 @@ def restart_in_same_profile(
     return panels
 
 
+def run_wayland_phase(binary: Path, fixture: Path, profile: Path) -> WorkspaceSettings:
+    """Render the part, exit, and read the profile saved by this process."""
+    environment = dict(os.environ, OBK_CONFIG_DIR=str(profile), OBK_ADDINS_DIR=str(profile))
+    environment.pop("DISPLAY", None)
+    settings = profile / "workspace-layout.json"
+    os.utime(settings, ns=(0, 0))
+    result = subprocess.run(
+        [str(binary), "--frames", "20", str(fixture)],
+        env=environment, capture_output=True, text=True, timeout=30,
+    )
+    if result.returncode:
+        raise RuntimeError(f"Wayland desktop exited with {result.returncode}: {result.stderr}")
+    if settings.stat().st_mtime_ns == 0:
+        raise RuntimeError("Wayland desktop exited without saving the workspace profile")
+    return json.loads(settings.read_text())
+
+
+def exercise_wayland(binary: Path, fixture: Path, layout: Path) -> WaylandRestartResult:
+    """Compare the saved Model position and browser group after each Wayland launch."""
+    fixture_hash = file_hash(fixture)
+    seed = layout.read_bytes()
+    original = json.loads(seed)
+    expected = check_group(original)
+    model = panel_record(original, "Model")
+    if model["dock"] == expected[0]["dock"]:
+        raise ValueError("saved Model Browser: expected a dock separate from the tab group")
+    with tempfile.TemporaryDirectory(prefix="obk-wayland-dock-") as config:
+        profile = Path(config)
+        (profile / "workspace-layout.json").write_bytes(seed)
+        for phase in ("initial", "restarted"):
+            saved = run_wayland_phase(binary, fixture, profile)
+            if check_group(saved) != expected or panel_record(saved, "Model") != model:
+                raise AssertionError(f"{phase} Wayland desktop changed the saved dock positions, sizes, or tabs")
+    if file_hash(fixture) != fixture_hash:
+        raise AssertionError("fixture hash changed during the restart test")
+    return {
+        "fixture_sha256": fixture_hash,
+        "binary_sha256": file_hash(binary),
+        "panels": expected,
+        "model_panel": model,
+    }
+
+
 def exercise(
     binary: Path, fixture: Path, output: Path, layout: Path, area: ViewportArea
 ) -> RestartResult:
@@ -286,11 +337,17 @@ def main() -> None:
     parser.add_argument("output", type=Path)
     parser.add_argument("--layout", type=Path, required=True)
     parser.add_argument("--area", type=int, nargs=4, required=True)
+    parser.add_argument("--wayland", action="store_true")
     args = parser.parse_args()
-    result = exercise(
-        args.binary.resolve(), args.fixture.resolve(), args.output.resolve(), args.layout.resolve(),
-        tuple(args.area),
+    binary, fixture, output, layout = (
+        path.resolve() for path in (args.binary, args.fixture, args.output, args.layout)
     )
+    result: RestartResult | WaylandRestartResult
+    if args.wayland:
+        result = exercise_wayland(binary, fixture, layout)
+        output.mkdir(parents=True, exist_ok=True)
+    else:
+        result = exercise(binary, fixture, output, layout, tuple(args.area))
     (args.output / "restart-summary.json").write_text(json.dumps(result, indent=2) + "\n")
     print(json.dumps(result, indent=2))
 

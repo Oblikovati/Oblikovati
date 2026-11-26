@@ -56,8 +56,9 @@ fn workspace_is_saveable(world: &mut ApplicationWorld) {
 
 #[when("the user closes and restarts the MCAD Software")]
 fn restart_application(world: &mut ApplicationWorld) {
+    let wayland = world.app().window.native.view.uses_wayland();
     world.close();
-    run_desktop_restart_check(world);
+    run_desktop_restart_check(world, wayland);
     world.reopen_application();
     if world.saved_path.is_none() {
         super::open_docking_part(world);
@@ -110,7 +111,24 @@ fn desktop_executable() -> std::path::PathBuf {
         })
 }
 
-fn run_desktop_restart_check(world: &ApplicationWorld) {
+fn run_desktop_restart_check(world: &ApplicationWorld, wayland: bool) {
+    let script = restart_driver();
+    let layout = saved_restart_layout(world);
+    let mut driver = restart_command(world, script.path(), layout.path());
+    if wayland {
+        driver.arg("--wayland");
+    }
+    let result = driver
+        .output()
+        .expect("docking restart: expected python3 and the native desktop test");
+    assert!(
+        result.status.success(),
+        "desktop restart failed: {}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+}
+
+fn restart_driver() -> tempfile::NamedTempFile {
     let script = tempfile::NamedTempFile::new().expect("restart driver: expected a temporary file");
     std::fs::write(
         script.path(),
@@ -120,29 +138,31 @@ fn run_desktop_restart_check(world: &ApplicationWorld) {
         )),
     )
     .expect("restart driver: expected to write the embedded source");
+    script
+}
+
+fn restart_command(
+    world: &ApplicationWorld,
+    script: &std::path::Path,
+    layout: &std::path::Path,
+) -> std::process::Command {
     let fixture =
         super::super::scenario_root().join("fixtures/cad/docking-visible-solid-current.opd");
     let output = super::super::world::reports_folder().join("docking-process-restart");
-    let layout = saved_restart_layout(world);
     let (area, _) = world.docking_resize.expect("saved dock layout bounds");
-    let result = std::process::Command::new("python3")
+    let mut driver = std::process::Command::new("python3");
+    driver
         .args([
-            script.path(),
+            script,
             desktop_executable().as_path(),
             fixture.as_path(),
             output.as_path(),
         ])
         .arg("--layout")
-        .arg(layout.path())
+        .arg(layout)
         .arg("--area")
-        .args(area.map(|edge| edge.to_string()))
-        .output()
-        .expect("docking restart: expected python3 and the native desktop test");
-    assert!(
-        result.status.success(),
-        "desktop restart failed: {}",
-        String::from_utf8_lossy(&result.stderr)
-    );
+        .args(area.map(|edge| edge.to_string()));
+    driver
 }
 
 fn saved_restart_layout(world: &ApplicationWorld) -> tempfile::NamedTempFile {

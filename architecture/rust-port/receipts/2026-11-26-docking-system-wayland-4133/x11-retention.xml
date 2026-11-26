@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Dockable workspace panels: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature" package="testsuite/Feature: Dockable workspace panels: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T01:47:08.318609671Z" time="12.900083082"><testcase name="Scenario: Retain a panel layout while switching active documents: mnt/vininas-projects/MCAD-Scenarios/features/application/docking-system/docking-system.feature:159:3" time="12.900083082"><system-out><![CDATA[  Scenario: Retain a panel layout while switching active documents
+   ✔  Given `fixtures/cad/quick-access-toolbar/PartOne.opd` and `fixtures/cad/docking-visible-solid-current.opd` are open in that order
+   ✔  And Model Browser is docked on the left and Appearance Browser and Material Browser share a right dock as tabs
+   ✔  And `docking-visible-solid-current.opd` is active
+   ✔  When the user switches to PartOne
+   ✔  Then the left Model Browser and right tabbed browsers remain in place
+   ✔  And the active document changes in the viewport
+   ✔  When the user returns to `docking-visible-solid-current.opd`
+   ✔  Then the left Model Browser and right tabbed browsers remain available
+]]></system-out></testcase></testsuite></testsuites>

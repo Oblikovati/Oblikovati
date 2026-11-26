@@ -2,6 +2,7 @@
 """Regression tests for validating the saved dock group and viewport."""
 from pathlib import Path
 from subprocess import CompletedProcess
+from tempfile import TemporaryDirectory
 import unittest
 from unittest.mock import call, patch
 
@@ -78,6 +79,19 @@ class ViewportVisibilityTests(unittest.TestCase):
     def test_rejects_a_probe_outside_the_document_area(self) -> None:
         with self.assertRaisesRegex(ValueError, "inside document area"):
             restart.viewport_crop((0, 0, 120, 80), restart.FIXTURE_FACE_OFFSET)
+
+
+class WaylandProfileTests(unittest.TestCase):
+    def test_successful_exit_without_a_profile_write_is_rejected(self) -> None:
+        with TemporaryDirectory() as directory, patch.object(
+            restart.subprocess, "run", return_value=CompletedProcess([], 0)
+        ) as child:
+            profile = Path(directory)
+            (profile / "workspace-layout.json").write_text("{}")
+            with self.assertRaisesRegex(RuntimeError, "without saving"):
+                restart.run_wayland_phase(Path("oblikovati"), Path("part.opd"), profile)
+            self.assertEqual(child.call_args.args[0], ["oblikovati", "--frames", "20", "part.opd"])
+            self.assertNotIn("DISPLAY", child.call_args.kwargs["env"])
 
 
 if __name__ == "__main__":

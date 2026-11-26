@@ -84,7 +84,10 @@ fn close_tab(world: &mut ApplicationWorld, label: &str) {
 }
 
 fn click_dock_control(world: &mut ApplicationWorld, point: [f32; 2]) {
-    let position = diagnostics::pointer_pixels(point);
+    click_workspace_pointer(world, diagnostics::pointer_pixels(point));
+}
+
+pub(super) fn click_workspace_pointer(world: &mut ApplicationWorld, position: [i32; 2]) {
     if world.app().window.native.view.uses_wayland() {
         world.click(position);
         return;
