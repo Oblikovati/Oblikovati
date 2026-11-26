@@ -112,6 +112,28 @@ fn sweep_recipe_declines_an_unknown_version_and_duplicate_path_members() {
     assert!(SketchSweepDefinition::from_recipe(recipe).is_err());
 }
 
+#[test]
+fn region_ray_picks_the_solved_circle_and_ignores_misses() {
+    use oblikovati_martensite::pick_sketch_region;
+
+    let (snapshot, sweep) = fixture();
+    let sketch = || snapshot.require_converged_resolved_sketch(PROFILE).unwrap();
+    let normal = [0., 0., -1.];
+    let hit = pick_sketch_region(sketch(), resolution(), [[0.2, 0.1, 3.], normal]).unwrap();
+    assert_eq!(hit.as_ref(), Some(&sweep.recipe().profile));
+    assert_eq!(sweep.clone().with_profile(hit.unwrap()).unwrap(), sweep);
+    let edge_hit = pick_sketch_region(sketch(), resolution(), [[0.5, 0., 3.], normal]).unwrap();
+    assert_eq!(edge_hit.as_ref(), Some(&sweep.recipe().profile));
+    for ray in [[[0.8, 0., 3.], normal], [[0., 0., 3.], [1., 0., 0.]]] {
+        assert!(
+            pick_sketch_region(sketch(), resolution(), ray)
+                .unwrap()
+                .is_none(),
+            "expected no profile at ray {ray:?}"
+        );
+    }
+}
+
 fn fixture() -> (DocumentSnapshot, SketchSweepDefinition) {
     let mut snapshot = document_snapshot::empty_snapshot();
     let frame = SketchPlane::new([0.; 3], [1., 0., 0.], [0., 0., 1.], Default::default()).unwrap();

@@ -192,6 +192,11 @@ impl SketchSweepDefinition {
         &self.0
     }
 
+    /// Replace the bounded profile on the source sketch. Example: `sweep.with_profile(region)?`.
+    pub fn with_profile(self, profile: SketchPrismSelection) -> Result<Self, SketchSweepError> {
+        Self::from_recipe(SketchSweepRecipe { profile, ..self.0 })
+    }
+
     pub(super) fn source_reads(&self) -> FeatureReadFootprint {
         FeatureReadFootprint::new(
             [self.0.profile_sketch, self.0.path_sketch]

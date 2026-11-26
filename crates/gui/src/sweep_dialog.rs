@@ -7,7 +7,7 @@ use imgui::Ui;
 #[path = "sweep_orientation.rs"]
 mod orientation;
 use crate::icons::GuiRibbonIcons;
-use oblikovati_model::feature::FeatureId;
+use oblikovati_model::feature::{FeatureId, sketch_prism::SketchPrismSelection};
 
 /// Sweep orientation choices available in Properties.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -16,6 +16,15 @@ pub enum GuiSweepOrientation {
     FollowPath,
     Fixed,
     Guide,
+}
+
+/// The section retained or selected for the current feature edit.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum GuiSweepProfile {
+    #[default]
+    Saved,
+    Empty,
+    Picked(SketchPrismSelection),
 }
 
 /// Authored Sweep options shown when editing an existing feature.
@@ -32,6 +41,7 @@ pub struct GuiSweepRequest {
     pub document: u64,
     pub generation: u64,
     pub feature: Option<FeatureId>,
+    pub profile: GuiSweepProfile,
     pub path_cleared: bool,
     pub orientation: GuiSweepOrientation,
     pub taper: String,
@@ -43,6 +53,7 @@ pub struct GuiSweepRequest {
 pub enum GuiSweepPreview {
     Ready,
     MissingInputs,
+    MissingProfile,
     MissingPath,
     MissingGuide,
     Failed(String),
@@ -106,6 +117,7 @@ pub(crate) struct SweepDialog {
     attempted: Option<GuiSweepRequest>,
     submitted: Option<GuiSweepRequest>,
     feature: Option<FeatureId>,
+    profile: GuiSweepProfile,
     path_cleared: bool,
     orientation: GuiSweepOrientation,
     selector: orientation::OrientationSelector,
@@ -141,6 +153,7 @@ impl SweepDialog {
             },
         };
         self.feature = feature;
+        self.profile = GuiSweepProfile::Saved;
         self.path_cleared = false;
         self.taper = seed.taper;
         self.twist = seed.twist;
@@ -215,6 +228,7 @@ impl SweepDialog {
             .as_ref()
             .is_some_and(|browser| browser.sketches.is_empty());
         let preview = state.sweep_preview.as_ref();
+        self.adopt_profile_pick(preview);
         if self.feature.is_some()
             || preview.is_some_and(|state| {
                 matches!(
@@ -225,8 +239,7 @@ impl SweepDialog {
                 )
             })
         {
-            crate::theme::property_label(ui, "Profiles");
-            ui.text("1 Profile");
+            self.profile_selector(ui);
             crate::theme::property_label(ui, "Path");
             if self.path_cleared {
                 ui.text("Select Curve or Edge");
@@ -255,6 +268,7 @@ impl SweepDialog {
             document,
             generation,
             feature: self.feature,
+            profile: self.profile.clone(),
             path_cleared: self.path_cleared,
             orientation: self.orientation,
             taper: if follows_path {
@@ -313,6 +327,31 @@ impl SweepDialog {
         ui.same_line();
         if crate::widget_abi::button(ui, "Help", [58., 28.]) {
             self.show_help = !self.show_help;
+        }
+    }
+
+    fn profile_selector(&mut self, ui: &Ui) {
+        crate::theme::property_label(ui, "Profiles");
+        if self.profile == GuiSweepProfile::Empty {
+            ui.text("Select Profiles");
+            return;
+        }
+        ui.text("1 Profile");
+        if self.feature.is_some() && crate::widget_abi::button(ui, "Clear Profile", [0., 0.]) {
+            self.profile = GuiSweepProfile::Empty;
+        }
+    }
+
+    fn adopt_profile_pick(&mut self, preview: Option<&GuiSweepPreviewState>) {
+        let Some(preview) = preview.filter(|_| self.profile == GuiSweepProfile::Empty) else {
+            return;
+        };
+        let mut prior = preview.request.clone();
+        let profile = std::mem::replace(&mut prior.profile, GuiSweepProfile::Empty);
+        if matches!(profile, GuiSweepProfile::Picked(_)) && self.attempted.as_ref() == Some(&prior)
+        {
+            self.profile = profile;
+            self.attempted = Some(preview.request.clone());
         }
     }
 }

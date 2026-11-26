@@ -155,7 +155,7 @@ mod shell_feature_dialog;
 mod sweep_dialog;
 pub use sweep_dialog::{
     GuiSweepAction, GuiSweepEditSeed, GuiSweepOrientation, GuiSweepPreview, GuiSweepPreviewState,
-    GuiSweepRequest,
+    GuiSweepProfile, GuiSweepRequest,
 };
 mod shell_ribbon;
 pub use face_properties::GuiFaceProperties;

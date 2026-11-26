@@ -160,3 +160,12 @@ covers accepting and reopening a 90-degree twist and correcting an
 invalid expression. The [replay test](../../crates/martensite/tests/release_probe/sweep_sources/replay.rs)
 checks the authored value, body references, and analytic volume after
 package reopen.
+
+### Reselect a Sweep profile
+
+Clear Profile keeps the saved path in the draft, hides the Sweep body, and
+temporarily shows the original profile sketch for picking. A viewport click
+inside a certified bounded region on that sketch supplies the directed
+boundary. The preview and OK return after the new draft is evaluated. Empty
+space, edge-on views, and ambiguous hits leave the selection open.
+See the [native receipt](receipts/2026-11-26-sweep-profile-pick-3917/README.md).

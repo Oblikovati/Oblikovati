@@ -471,12 +471,13 @@ impl<
     fn take_sketch_scene(&mut self) -> Result<Option<crate::HeadSketchSceneUpdate>, String> {
         let opened_hidden = self.sketch_opened_while_hidden();
         let active_sketch = self.active_sketch_edit().map(|edit| edit.sketch);
+        let sweep_profile = self.sweep_profile_pick_sketch();
         let curvature = self.curvature_scene();
         self.sketch_scenes.refresh(
             &mut self.files,
             &mut self.part_scenes,
-            opened_hidden,
-            active_sketch,
+            opened_hidden.or(sweep_profile),
+            active_sketch.or(sweep_profile),
             curvature,
         )
     }

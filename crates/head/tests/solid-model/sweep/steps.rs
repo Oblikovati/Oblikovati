@@ -339,6 +339,65 @@ fn original_sweep_inputs_return(world: &mut ApplicationWorld) {
     assert!(!world.state().sweep_preview.unwrap().request.path_cleared);
 }
 
+#[when("the profile is cleared")]
+fn clear_sweep_profile(world: &mut ApplicationWorld) {
+    click_panel(world, "ClearProfile");
+}
+
+#[then("selects Profiles is shown and OK is disabled")]
+fn sweep_requests_a_profile(world: &mut ApplicationWorld) {
+    assert_eq!(
+        world.state().sweep_preview.unwrap().result,
+        GuiSweepPreview::MissingProfile
+    );
+    let panel = super::world::squeezed(&world.window_text("Sweep"));
+    assert!(panel.contains("SelectProfiles"), "{panel}");
+    assert!(!world.run_is_enabled("OK"));
+    let window = &world.app().window;
+    assert!(window.scene_triangles.is_empty());
+    assert_eq!(
+        window.native.sketch_scene_status().unwrap().sketches.len(),
+        1
+    );
+}
+
+#[then("the selected path remains")]
+fn sweep_keeps_its_path(world: &mut ApplicationWorld) {
+    assert!(!world.state().sweep_preview.unwrap().request.path_cleared);
+    world.run_in_window("Sweep", "1Curve");
+}
+
+#[when("the circular region is selected again")]
+fn select_sweep_region(world: &mut ApplicationWorld) {
+    let window = &mut world.app().window.native;
+    crate::HeadWindow::navigate_view(window, ViewportNavigation::Home { margin: 0.25 }).unwrap();
+    let pixel = crate::HeadWindow::model_pixel(window, [0.2, 0.1, 0.]).unwrap();
+    world.click(pixel);
+    world.pump(Vec::new());
+}
+
+#[then("1 Profile and the solid preview return")]
+fn sweep_profile_preview_returns(world: &mut ApplicationWorld) {
+    chosen_sources(world);
+    let draft = world.state().sweep_preview.unwrap().request;
+    let oblikovati_gui::GuiSweepProfile::Picked(profile) = draft.profile else {
+        panic!("expected a viewport profile selection");
+    };
+    assert_eq!(profile.outer[0].curve.0, 3);
+    assert!(!draft.path_cleared);
+    assert!((preview_width(world) - 1.525).abs() < 0.03);
+    assert!(
+        world
+            .app()
+            .window
+            .native
+            .sketch_scene_status()
+            .unwrap()
+            .sketches
+            .is_empty()
+    );
+}
+
 #[when("orientation selector style is changed to Dropdown")]
 fn dropdown_style(world: &mut ApplicationWorld) {
     click_panel(world, "Orientation");

@@ -35,6 +35,9 @@ impl<
         toggle: bool,
     ) -> Result<bool, String> {
         self.require_browser_document(document)?;
+        if let Some(changed) = self.pick_sweep_profile(document, line)? {
+            return Ok(changed);
+        }
         if self
             .files
             .workspace()

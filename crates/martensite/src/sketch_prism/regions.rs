@@ -4,6 +4,9 @@ use super::*;
 use martensite_tkbo::profile_extrusion::{
     PlanarRegion, PlanarRegionSet, ProfileLoop, build_planar_regions,
 };
+use martensite_tkg3d::top_abs::State;
+use martensite_tkmath::gp::Point3;
+use martensite_tktopalgo::brep_class::BRepClassFaceClassifier;
 use oblikovati_model::{
     feature::work_geometry::WorkGeometryEvaluation, history::ResolvedDocumentSketch,
     sketch::SketchEntityId,
@@ -136,6 +139,62 @@ pub(crate) fn region_boundary(region: &PlanarRegion) -> SketchRegionBoundary {
         outer: boundary(region.outer()),
         holes: region.holes().iter().map(boundary).collect(),
     }
+}
+
+/// Pick an unambiguous analytic profile, including its boundary.
+/// Example: `pick_sketch_region(sketch, resolution, view_line)?` while selecting a profile.
+pub fn pick_sketch_region(
+    sketch: ResolvedDocumentSketch<'_>,
+    policy: crate::PrismResolutionPolicy,
+    [origin, direction]: [[f64; 3]; 2],
+) -> Result<Option<SketchPrismSelection>, EvaluationFailure> {
+    let failed = |cause| Phase::Profile.refused(Kind::InvalidInput, Entity::Body, cause);
+    let Some(point) = crate::sketch_projection(
+        sketch.plane,
+        origin,
+        direction,
+        crate::SKETCH_PROJECTION_MIN_NORMAL_COSINE,
+    )
+    .map_err(failed)?
+    else {
+        return Ok(None);
+    };
+    let [x, y, z] = sketch
+        .plane
+        .to_model(point)
+        .map_err(|cause| failed(cause.to_string()))?;
+    let resolution = policy.for_sketch(&sketch)?;
+    let Some(regions) = resolved_regions(sketch, policy)? else {
+        return Ok(None);
+    };
+    classify_region(&regions, Point3::new(x, y, z), resolution.weld)
+}
+
+fn classify_region(
+    regions: &PlanarRegionSet,
+    point: Point3,
+    tolerance: f64,
+) -> Result<Option<SketchPrismSelection>, EvaluationFailure> {
+    let mut hit = None;
+    for region in regions.regions() {
+        let classifier = BRepClassFaceClassifier::with_face_point3d(
+            region.face(),
+            &point,
+            tolerance,
+            false,
+            tolerance,
+        )
+        .map_err(|cause| {
+            Phase::Profile.native(Entity::Body, "classify sketch profile".into(), cause)
+        })?;
+        if matches!(classifier.state(), State::In | State::On) {
+            if hit.is_some() {
+                return Ok(None);
+            }
+            hit = Some(region_boundary(region).selection());
+        }
+    }
+    Ok(hit)
 }
 
 /// Area in database square centimetres and hole count of a certified bounded region.
