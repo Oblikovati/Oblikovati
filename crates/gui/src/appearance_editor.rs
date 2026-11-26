@@ -5,6 +5,7 @@ use crate::{GuiAssetChoice, GuiCommandState, GuiShellAction};
 use imgui::{Condition, Ui, WindowFlags};
 use oblikovati_model::assets::AppearanceMetadata;
 
+mod optional_effects;
 mod transparency;
 
 /// One document appearance edit; example: `GuiAppearanceChange::Create { id, name }`.
@@ -250,6 +251,9 @@ fn draw_preview(ui: &Ui, asset: &GuiAssetChoice, draft: &AppearanceDraft) {
         .get_or_insert_with(Default::default);
     preview_metadata.reflectivity = draft.metadata.reflectivity;
     preview_metadata.transparency = draft.metadata.transparency;
+    preview_metadata
+        .generic_effects
+        .clone_from(&draft.metadata.generic_effects);
     if let Some(finish) = &mut preview.appearance_preview {
         finish.roughness = draft.roughness;
         finish.highlights = draft.highlights;
@@ -293,6 +297,7 @@ fn draw_properties(ui: &Ui, draft: &mut AppearanceDraft, color_dialog: &mut Colo
     }
     draw_reflectivity(ui, &mut draft.metadata);
     transparency::draw(ui, &mut draft.metadata);
+    optional_effects::draw(ui, &mut draft.metadata);
 }
 
 fn draw_reflectivity(ui: &Ui, metadata: &mut AppearanceMetadata) {

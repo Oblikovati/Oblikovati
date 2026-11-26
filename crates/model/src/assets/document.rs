@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-only
 mod assign;
+mod effects;
 use super::{AppearanceAsset, AssetAssignments, AssetCollection, MaterialAsset};
 pub use assign::{AppearanceAssignmentTarget, MaterialAssignmentTarget};
+pub use effects::{
+    AppearanceBump, AppearanceIllumination, AppearanceTint, GenericAppearanceEffects,
+};
 use oblikovati_api::{
     contract::{Appearance, Material},
     types::{ASSET_BUILTIN, ASSET_DOCUMENT},
@@ -16,6 +20,9 @@ pub struct AppearanceMetadata {
     pub reflectivity: Option<AppearanceReflectivity>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transparency: Option<AppearanceTransparency>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "genericEffects")]
+    pub generic_effects: Option<GenericAppearanceEffects>,
 }
 
 /// Generic appearance reflection strengths as percentages.
@@ -169,6 +176,11 @@ impl DocumentAssets {
             return Err(format!(
                 "appearance {id:?} transparency {transparency:?}: expected percentages from 0 to 100 and a custom index from 0.001 to 5.0"
             ));
+        }
+        if let Some(effects) = &metadata.generic_effects {
+            effects
+                .validate()
+                .map_err(|cause| format!("appearance {id:?}: {cause}"))?;
         }
         if metadata == AppearanceMetadata::default() {
             self.appearance_metadata.remove(id);

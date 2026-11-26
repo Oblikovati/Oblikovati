@@ -96,12 +96,12 @@ fn appearance_reflectivity_controls_apply_and_restore_independent_values() {
 
 #[given("Transparency is unchecked")]
 fn transparency_unchecked(world: &mut ApplicationWorld) {
-    assert!(!world.checked_run(transparency_checkbox(world)));
+    assert!(!world.checked_run(effect_checkbox(world, "Transparency")));
     clean_dialog(world);
 }
 
-fn transparency_checkbox(world: &ApplicationWorld) -> &diagnostics::RenderedRun {
-    let header = world.run_in_window(EDITOR, "Transparency");
+fn effect_checkbox<'a>(world: &'a ApplicationWorld, title: &str) -> &'a diagnostics::RenderedRun {
+    let header = world.run_in_window(EDITOR, title);
     world
         .frame
         .runs
@@ -112,34 +112,40 @@ fn transparency_checkbox(world: &ApplicationWorld) -> &diagnostics::RenderedRun 
                 && run.minimum[0] > header.maximum[0]
                 && (run.center()[1] - header.center()[1]).abs() < 8.
         })
-        .expect("expected the Transparency checkbox beside its disclosure")
+        .unwrap_or_else(|| panic!("expected the {title} checkbox beside its disclosure"))
 }
 
 #[when("I expand and enable Transparency")]
 fn enable_transparency(world: &mut ApplicationWorld) {
     world.last_capture = Some(capture_framebuffer(&mut world.app().window.native));
     click_in(world, EDITOR, "Transparency");
-    let point = diagnostics::pointer_pixels(transparency_checkbox(world).center());
+    let point = diagnostics::pointer_pixels(effect_checkbox(world, "Transparency").center());
     world.click(point);
     world.pump(Vec::new());
-    assert!(world.checked_run(transparency_checkbox(world)));
+    assert!(world.checked_run(effect_checkbox(world, "Transparency")));
     scroll_to_refraction(world);
 }
 
 fn scroll_to_refraction(world: &mut ApplicationWorld) {
-    if world.window_text(EDITOR).contains("Indexofrefraction") {
-        return;
+    for _ in 0..4 {
+        if world.window_text(EDITOR).contains("Indexofrefraction") {
+            return;
+        }
+        scroll_properties(world, -1);
     }
+}
+
+fn scroll_properties(world: &mut ApplicationWorld, notches: i32) {
     let (position, size) = diagnostics::window_geometry(EDITOR).unwrap();
     let at = diagnostics::pointer_pixels([position[0] + 90., position[1] + size[1] - 58.]);
     #[cfg(target_os = "linux")]
-    super::super::desktop_input::scroll(world, at, -4);
+    super::super::desktop_input::scroll(world, at, notches);
     #[cfg(not(target_os = "linux"))]
     {
         use oblikovati_viewport::{ViewportEvent, ViewportInput};
         world.pump(vec![ViewportEvent::Input(ViewportInput::Wheel {
             position: at,
-            notches: -4,
+            notches,
         })]);
     }
 }
@@ -235,3 +241,5 @@ fn transparency_preserves_custom_refraction_through_apply() {
     assert_eq!(applied.refraction, RefractionPreset::Custom);
     assert_eq!(applied.custom_index_milli, 1700);
 }
+
+mod optional;

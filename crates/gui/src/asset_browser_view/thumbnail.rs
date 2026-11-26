@@ -69,10 +69,17 @@ pub(crate) fn paint_preview(
     let Some(finish) = asset.appearance_preview else {
         return;
     };
-    let base = asset
+    let mut base = asset
         .swatch
         .unwrap_or([128; 3])
         .map(|v| f32::from(v) / 255.);
+    if let Some(effects) = asset
+        .appearance_metadata
+        .as_ref()
+        .and_then(|metadata| metadata.generic_effects.as_ref())
+    {
+        base = preview_effect_color(base, effects);
+    }
     let metalness = f32::from(finish.metalness) / 255.;
     let roughness = f32::from(finish.roughness) / 255.;
     let reflectivity = asset
@@ -101,6 +108,36 @@ pub(crate) fn paint_preview(
     if finish.fuzz_weight > 0 {
         paint_fibers(draw, center, radius, finish);
     }
+}
+
+fn preview_effect_color(
+    base: [f32; 3],
+    effects: &oblikovati_model::assets::GenericAppearanceEffects,
+) -> [f32; 3] {
+    let tint = if effects.tint.enabled {
+        effects.tint.color
+    } else {
+        [255; 3]
+    };
+    let emission = effects.illumination;
+    let light = if emission.enabled {
+        f32::from(emission.luminance) / 500.
+    } else {
+        0.
+    };
+    // Provide a warm/cool cue in the preview while keeping 6500 K neutral.
+    let temperature = (f32::from(emission.temperature) - 6500.) / 5500.;
+    let temperature_filter = [
+        1. - temperature.max(0.) * 0.50,
+        1.,
+        1. + temperature.min(0.) * 0.60,
+    ];
+    std::array::from_fn(|channel| {
+        let filtered = base[channel] * f32::from(tint[channel]) / 255.;
+        let emitted =
+            light * f32::from(emission.color[channel]) / 255. * temperature_filter[channel];
+        (filtered + emitted).min(1.)
+    })
 }
 
 fn paint_surface(

@@ -103,3 +103,10 @@ sets the transmitted contribution and Translucency softens the contrast
 of the transmitted pattern. The selected preset and custom index are
 stored with the appearance. See the
 [native Transparency receipt](receipts/2026-11-26-appearance-transparency-3563/README.md).
+
+Cutouts, Self Illumination, Bump, and Tint have independent disclosure
+and enable controls. Expanding a disabled section leaves the preview
+and document unchanged. Enabled Tint and Self Illumination change the
+preview, and Apply stores the authored settings with the Part. The
+Cutouts and Bump image slots remain inactive pending texture editing.
+See the [native optional-effects receipt](receipts/2026-11-26-optional-appearance-effects-3563/README.md).
