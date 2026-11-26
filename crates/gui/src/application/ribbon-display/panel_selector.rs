@@ -10,11 +10,12 @@ impl RibbonDisplayState {
         self.temporary = None;
         self.tab_release_consumed = true;
     }
-    /// Toggle panels without reopening the list; example: `display.panel_selector(ui, tab, panels, 47.)`.
+    /// Toggle panels without reopening the list; example: `display.panel_selector(ui, tab, commands, panels, 47.)`.
     pub(crate) fn panel_selector(
         &mut self,
         ui: &Ui,
         tab: RibbonTab,
+        commands: &crate::GuiCommandState,
         panels: &[RibbonPanel],
         row_center: f32,
     ) {
@@ -44,12 +45,18 @@ impl RibbonDisplayState {
             ui,
             [origin[0] + width - 180., origin[1] + row_center + 14.],
         );
-        self.selector_choices(ui, tab, panels);
+        self.selector_choices(ui, tab, commands.authoring, panels);
         help::draw(ui, hovered && !self.selector_open);
     }
     /// Show the same checklist at the bottom of a side ribbon.
-    /// Example: `display.side_panel_selector(ui, tab, panels)`.
-    pub(crate) fn side_panel_selector(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
+    /// Example: `display.side_panel_selector(ui, tab, commands, panels)`.
+    pub(crate) fn side_panel_selector(
+        &mut self,
+        ui: &Ui,
+        tab: RibbonTab,
+        commands: &crate::GuiCommandState,
+        panels: &[RibbonPanel],
+    ) {
         self.selector_escape =
             self.selector_open && ui.is_key_pressed_no_repeat(imgui::Key::Escape);
         let size = ui.window_size();
@@ -66,10 +73,16 @@ impl RibbonDisplayState {
             origin[0] + size[0]
         };
         crate::widget_abi::next_window_position(ui, [x, origin[1] + position[1]]);
-        self.selector_choices(ui, tab, panels);
+        self.selector_choices(ui, tab, commands.authoring, panels);
         help::draw(ui, hovered && !self.selector_open);
     }
-    fn selector_choices(&mut self, ui: &Ui, tab: RibbonTab, panels: &[RibbonPanel]) {
+    fn selector_choices(
+        &mut self,
+        ui: &Ui,
+        tab: RibbonTab,
+        authoring: crate::GuiAuthoringContext,
+        panels: &[RibbonPanel],
+    ) {
         let Some(_list) = ui.begin_popup(SELECTOR_POPUP) else {
             self.selector_keyboard_started = false;
             self.selector_focused_panel = None;
@@ -88,7 +101,13 @@ impl RibbonDisplayState {
         self.selector_keyboard_started |= first_down
             || ui.is_key_pressed_no_repeat(imgui::Key::UpArrow)
             || ui.is_key_pressed_no_repeat(imgui::Key::Tab);
-        for (index, panel) in panels.iter().copied().enumerate() {
+        // Part Tools exposes custom panel visibility in the ribbon context menu (#3856).
+        let part_tools = tab == RibbonTab::Tools && authoring == crate::GuiAuthoringContext::Part;
+        let choices = panels
+            .iter()
+            .copied()
+            .filter(|panel| !part_tools || *panel != RibbonPanel::UserCommands);
+        for (index, panel) in choices.enumerate() {
             if (first_down && index == 0) || preserve == Some(panel) {
                 ui.set_keyboard_focus_here();
             }

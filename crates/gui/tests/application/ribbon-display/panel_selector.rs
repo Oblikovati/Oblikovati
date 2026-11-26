@@ -108,9 +108,7 @@ fn home_and_end_keep_the_focused_panel_row() {
         let mut owner = GuiFrameEngine::new().unwrap();
         let mut request = part_request();
         settle(&mut owner, &mut request);
-        click(&mut owner, &mut request, [1418., 45.]);
-        press_key(&mut owner, &mut request, GuiKey::DownArrow);
-        press_key(&mut owner, &mut request, GuiKey::DownArrow);
+        focus_create_in_panel_selector(&mut owner, &mut request);
         press_key(&mut owner, &mut request, key);
         press_key(&mut owner, &mut request, GuiKey::Space);
         assert!(
@@ -131,9 +129,7 @@ fn keyboard_panel_round_trip(activate: GuiKey) {
     let mut owner = GuiFrameEngine::new().unwrap();
     let mut request = part_request();
     settle(&mut owner, &mut request);
-    click(&mut owner, &mut request, [1418., 45.]);
-    press_key(&mut owner, &mut request, GuiKey::DownArrow);
-    press_key(&mut owner, &mut request, GuiKey::DownArrow);
+    focus_create_in_panel_selector(&mut owner, &mut request);
     let key = (RibbonTab::Model, RibbonPanel::PartCreate);
     assert!(!owner.ribbon.display.hidden_panels.contains(&key));
     for hidden in [true, false] {
@@ -147,6 +143,14 @@ fn keyboard_panel_round_trip(activate: GuiKey) {
         assert!(owner.popup_was_open);
     }
 }
+fn focus_create_in_panel_selector(owner: &mut GuiFrameEngine, request: &mut GuiFrameRequest) {
+    click(owner, request, [1418., 45.]);
+    // Create follows Sketch and Primitives, even when Primitives is hidden.
+    for _ in 0..3 {
+        press_key(owner, request, GuiKey::DownArrow);
+    }
+}
+
 #[test]
 fn keyboard_wraps_from_first_to_last_panel() {
     let mut owner = GuiFrameEngine::new().unwrap();

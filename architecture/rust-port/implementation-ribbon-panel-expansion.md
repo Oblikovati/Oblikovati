@@ -62,6 +62,13 @@ ribbon panels. Pressing F1 while the hint is visible opens built-in help.
 The [native help receipt](receipts/2026-11-24-selector-help-3856/README.md)
 covers tooltip dismissal, F1, and switching between ribbon menus.
 
+The Part Tools checklist shows the built-in panels and leaves User Commands
+visible on the ribbon. To hide or restore User Commands, use Show Panels
+from a ribbon panel's context menu. The published scenario also verifies
+that Customize opens while the checklist is shown and removing the last
+custom command removes its panel.
+[Part Tools native checks](receipts/2026-11-26-part-tools-panel-selector-3856/README.md)
+
 Primitives is hidden by default on 3D Model and can be shown from the
 panel selector. The Box, Cylinder, Sphere and Torus controls report their
 unavailability when hovered. Space toggles the panel while keeping the

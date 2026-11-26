@@ -76,41 +76,27 @@ fn user_panel_removed(world: &mut ApplicationWorld) {
     world.expect_no_text("User Commands");
 }
 
-fn open_selector(world: &mut ApplicationWorld) {
-    let (_, size) = diagnostics::window_geometry("##application-ribbon").unwrap();
-    world.click([(size[0] - 22.) as i32, 45]);
-    world.pump(Vec::new());
-}
 #[test]
-fn user_panel_can_be_hidden_and_restored_from_both_visibility_menus() {
+fn part_tools_user_panel_visibility_uses_the_context_menu() {
     let mut world = ApplicationWorld::new();
     world.add_part();
     open_tools_customization(&mut world);
     stage_sketch_visibility(&mut world);
     confirm_customization(&mut world);
-    world.expect_text("User Commands");
-    open_selector(&mut world);
-    assert!(world.checked("User Commands"));
-    world.click_text("User Commands");
-    world.escape();
+    toggle_user_panel_from_context(&mut world, true);
     world.expect_no_text("User Commands");
-    open_selector(&mut world);
-    assert!(!world.checked("User Commands"));
-    world.click_text("User Commands");
-    world.escape();
-    world.expect_text("User Commands");
-    open_user_panel_menu(&mut world);
-    world.click_text("Show Panels");
-    assert!(world.checked("User Commands"));
-    world.click_text("User Commands");
-    world.pump(Vec::new());
-    world.expect_no_text("User Commands");
-    open_selector(&mut world);
-    assert!(!world.checked("User Commands"));
-    world.click_text("User Commands");
-    world.escape();
+    toggle_user_panel_from_context(&mut world, false);
     world.expect_text("User Commands");
     world.close();
+}
+
+fn toggle_user_panel_from_context(world: &mut ApplicationWorld, shown: bool) {
+    let options = diagnostics::pointer_pixels(world.run("Options").center());
+    world.right_click(options);
+    world.click_text("Show Panels");
+    assert_eq!(world.checked("User Commands"), shown);
+    world.click_text("User Commands");
+    world.pump(Vec::new());
 }
 
 #[test]

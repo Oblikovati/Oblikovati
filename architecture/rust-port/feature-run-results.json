@@ -2060,8 +2060,8 @@
         "application_commit": "e7715ee4746da7729ef8ba7579e767af9e74444d",
         "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-panel-visibility OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
         "environment": "Linux X11 with Xvfb, Openbox and Vulkan Lavapipe",
-        "blocker": "The published 3D Model and Manage panel inventories include panels absent from the native catalog. Two Shell cases require the initial preview without a selected face. One scenario conflicts with the documented User Commands entry in the direct selector.",
-        "notes": "43 current cases passed. The outline has two blocked examples, for 55 executions across 54 declarations. The individual receipts identify the test builds and the existing local GUI changes. Strict build and runtime provenance remains open under #3978."
+        "blocker": "The published 3D Model and Manage panel inventories include panels absent from the native catalog. Two Shell cases require the initial preview without a selected face.",
+        "notes": "43 cases passed in the combined run. The Part Tools custom-panel case later passed on Wayland and X11. See architecture/rust-port/receipts/2026-11-26-part-tools-panel-selector-3856/README.md. The individual receipts identify the test builds and the existing local GUI changes. Strict build and runtime provenance remains open under #3978."
       }
     }
   },

@@ -482,7 +482,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 - Kept origin-plane labels inside the clickable workspace when starting a sketch. (#3857)
 
-- Included User Commands in the ribbon panel visibility controls. (#3856)
+- Included User Commands in Show Panels in the ribbon context menu and limited the Part Tools checklist to built-in panels. (#3856)
 
 - Added a missing-file warning and filename recovery to ribbon settings import. (#3856)
 

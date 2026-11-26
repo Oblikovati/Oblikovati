@@ -85,7 +85,7 @@ pub(super) fn side_ribbon(
     owners
         .ribbon
         .display
-        .side_panel_selector(ui, owners.ribbon.active, &panels);
+        .side_panel_selector(ui, owners.ribbon.active, &request.commands, &panels);
     crate::widget_abi::cursor_position(ui, cursor);
     let tabs_width = side_tabs_width(ui, frame);
     side_tabs(ui, owners.ribbon, frame, selector_was_open, tabs_width);

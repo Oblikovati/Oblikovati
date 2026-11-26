@@ -309,7 +309,7 @@ fn ribbon_contents(
             &owners.ribbon.customization,
         );
         let center = tab_top + row_height * 0.5;
-        display.panel_selector(ui, owners.ribbon.active, &panels, center);
+        display.panel_selector(ui, owners.ribbon.active, &request.commands, &panels, center);
         ribbon_panel_row(ui, request, owners, actions, tab_top + row_height);
     }
     crate::theme_editor::panel(
