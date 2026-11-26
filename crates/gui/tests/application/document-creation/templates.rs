@@ -2,6 +2,28 @@
 use super::*;
 
 #[test]
+fn remembered_template_survives_loading_the_first_project_after_home() {
+    let saved = std::path::PathBuf::from("/project/Metric/Standard (mm).opd");
+    let mut chooser = TemplateChooser::default();
+    chooser.remember_project_template(Some(saved.clone()));
+    chooser.sync_active_project(&GuiCommandState::default());
+    let mut state = GuiCommandState {
+        projects: vec![crate::GuiProject {
+            location: "/project/shop.opj".into(),
+            active: true,
+            ..Default::default()
+        }],
+        project_template_revision: 1,
+        ..Default::default()
+    };
+    chooser.sync_active_project(&state);
+    assert_eq!(chooser.project_template_path(), Some(saved.as_path()));
+    state.projects[0].location = "/other/design.opj".into();
+    chooser.sync_active_project(&state);
+    assert_eq!(chooser.project_template_path(), None);
+}
+
+#[test]
 fn restored_selection_matches_the_file_in_the_active_catalog() {
     let saved = crate::GuiProjectTemplate {
         path: "/project/English/Standard (in).opd".into(),

@@ -75,6 +75,14 @@ names the selected component and waits for acknowledgement before adding
 the drawing tab. Its checkbox suppresses later warnings for the session.
 The parts list reads the linked Part's metadata. [Native confirmation runs](receipts/2026-11-25-layout-confirmation-3899/README.md)
 
+## Startup template selection
+
+The chooser keeps the profile's saved template path across the first Home
+frame and the initial project load. It restores the selection when the active
+catalog contains that exact path. Switching between loaded projects or
+rebuilding an active catalog resets the chooser's project selection.
+[Native restart verification](receipts/2026-11-26-template-selection-after-home-3899/README.md)
+
 ## Remaining creation work
 
 Port subtype registration and flavor setup;

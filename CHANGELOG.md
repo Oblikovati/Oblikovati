@@ -301,7 +301,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 - Kept long tab labels readable when the ribbon is docked on either side. (#3860)
 - Allowed the only attached drawing to open in its own window, with Home in the main window. (#3900)
 - Wrapped long project names in the Projects dialog. (#3899)
-- Restored the template gallery's left edge when keyboard navigation reaches the first tile. (#3899)
+- Restored the template gallery's left edge when keyboard navigation reaches the first tile. Kept the saved template selection when the startup project loads after Home. (#3899)
 - Enabled Page Up and Page Down in the staged ribbon command list. (#3856)
 - Moved keyboard focus to Add when pressing Tab from a selected available ribbon command. (#3856)
 - Drew the 3D Annotations icon at its configured size in custom ribbon panels. (#3856)

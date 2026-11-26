@@ -2284,18 +2284,18 @@
         "supporting_files": {
           "fixtures/cad/document-creation-generic-candidate.opj": "8819d3312b2317abef13185289f738e5265fc2ef47c77b6c89062fcd3d71e39b",
           "fixtures/cad/document-creation-generic-candidate/Metric/Standard (mm).opd": "41ae38e6bcdb04c0f12056c11def9ac629feb0b6b3961abc6c066b7e31492575",
-          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+          "fixtures/cad/workspace-layout-native.opd": "d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-24-document-creation-template-restart-3899/cucumber.json",
-        "cucumber_sha256": "1e68693d1dfed69118b021ed23586f74b8e279b18fdb475ee0b9035acf9f5d41",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-24-document-creation-template-restart-3899/scenario-arguments.json",
-        "scenario_arguments_sha256": "2ab7ce757994b2193ef3f87241f0899b3391bc657f7246d24763218173eceb69",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-template-selection-after-home-3899/wayland.json",
+        "cucumber_sha256": "0e5c1181138efb651bcbc81c8528116826a74106f0ef0de7800ce8d5816d19bf",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-template-selection-after-home-3899/scenario-arguments.json",
+        "scenario_arguments_sha256": "a455a2a3aadc7ec57ac875e262de52a13b6492990d4fb6144bfe60d582a2b5d0",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-24-document-creation-template-restart-3899/scenario-inventory.json",
         "scenario_inventory_sha256": "a193510506b898c9c2f631c5ce108dee5c9552a344d96c4a0325acec352e21b2",
-        "application_commit": "ff684bda6b276bb7a45c4421e809424186baa2ae",
+        "application_commit": "fa3deaad9ec454adb5dee6d15d50b80b0d104233",
         "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=document-creation OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
-        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
-        "notes": "The current template restart scenario passed all 22 steps. Two separate native desktop processes also restored the same template details and selection highlight. Strict build and runtime provenance remains open under #3978."
+        "environment": "Linux Wayland with headless Weston, Pixman, and Vulkan Lavapipe",
+        "notes": "All 22 steps passed after keeping the saved template path when the first project loads after Home. An X11 rerun also passed. Strict build and runtime provenance remains open under #3978."
       }
     }
   },

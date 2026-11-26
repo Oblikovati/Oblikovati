@@ -79,7 +79,10 @@ impl TemplateChooser {
                 || self.project_template_revision != state.project_template_revision)
         {
             self.selected = None;
-            self.remembered_project_template = None;
+            // The desktop can render Home before the startup project is loaded.
+            if self.active_project_location.is_some() {
+                self.remembered_project_template = None;
+            }
             self.drawing_layout = None;
             self.create_requested = false;
             self.folder = TemplateFolder::default();
