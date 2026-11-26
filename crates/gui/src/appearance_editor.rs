@@ -6,6 +6,7 @@ use imgui::{Condition, Ui, WindowFlags};
 use oblikovati_model::assets::AppearanceMetadata;
 
 mod ceramic;
+mod duplicate;
 mod image_chooser;
 mod optional_effects;
 mod preview_options;
@@ -20,13 +21,19 @@ pub struct GuiAppearanceEdit {
     pub change: GuiAppearanceChange,
 }
 
-/// Create a document appearance or apply edits to an existing appearance.
+/// Create, duplicate, or update a document appearance.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GuiAppearanceChange {
     Create {
         id: String,
         name: String,
         template: AppearanceTemplate,
+    },
+    Duplicate {
+        source: String,
+        id: String,
+        name: String,
+        kind: AppearanceCopy,
     },
     Apply {
         id: String,
@@ -36,6 +43,13 @@ pub enum GuiAppearanceChange {
         highlights: Option<u8>,
         metadata: Option<Box<AppearanceMetadata>>,
     },
+}
+
+/// Keep the source property set or convert its surface to Generic controls.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AppearanceCopy {
+    SameType,
+    Generic,
 }
 
 /// Select a document appearance's initial property set when creating it.
@@ -71,6 +85,7 @@ pub(crate) struct AppearanceEditor {
     confirm_close: bool,
     texture_open: bool,
     close_after_apply: bool,
+    pending_duplicate: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -160,6 +175,7 @@ impl AppearanceEditor {
         &mut self,
         ui: &Ui,
         state: &GuiCommandState,
+        selected: &mut Option<String>,
         actions: &mut Vec<GuiShellAction>,
     ) {
         let Some((document, id)) = self.target.clone().filter(|(document, _)| {
@@ -167,12 +183,16 @@ impl AppearanceEditor {
         }) else {
             return;
         };
-        let Some(asset) = state.browser.as_ref().and_then(|browser| {
-            browser
-                .appearances
-                .iter()
-                .find(|asset| asset.id == id && asset.document)
-        }) else {
+        let Some(browser) = state.browser.as_ref() else {
+            self.close();
+            return;
+        };
+        let id = self.accept_duplicate(document, id, &browser.appearances, selected);
+        let Some(asset) = browser
+            .appearances
+            .iter()
+            .find(|asset| asset.id == id && asset.document)
+        else {
             self.close();
             return;
         };
@@ -183,14 +203,16 @@ impl AppearanceEditor {
             self.close();
             return;
         }
-        self.window(
+        if let Some(kind) = self.window(
             ui,
             asset,
             &original,
             document,
             state.transaction_open,
             actions,
-        );
+        ) {
+            self.queue_duplicate(asset, &browser.appearances, document, kind, actions);
+        }
     }
 
     fn window(
@@ -201,7 +223,7 @@ impl AppearanceEditor {
         document: u64,
         read_only: bool,
         actions: &mut Vec<GuiShellAction>,
-    ) {
+    ) -> Option<AppearanceCopy> {
         let draft = self.draft.get_or_insert_with(|| original.clone());
         let title = format!("Appearance Editor — {}###appearance-editor", original.name);
         let mut open = true;
@@ -236,6 +258,9 @@ impl AppearanceEditor {
                 let changed = draft != original;
                 let editable = changed && !draft.name.trim().is_empty() && !read_only;
                 exit = editor_buttons(ui, editable);
+                if exit == EditorExit::KeepOpen {
+                    exit = duplicate::menu(ui, !changed && !read_only);
+                }
                 if self.confirm_close {
                     exit = confirm_exit(ui, editable);
                 }
@@ -258,10 +283,12 @@ impl AppearanceEditor {
                 self.close_after_apply = exit == EditorExit::SaveAndClose;
                 self.confirm_close = false;
             }
+            EditorExit::Duplicate(kind) => return Some(kind),
             EditorExit::Discard => self.close(),
             EditorExit::CancelClose => self.confirm_close = false,
             EditorExit::KeepOpen => {}
         }
+        None
     }
 
     fn close(&mut self) {
@@ -272,6 +299,7 @@ impl AppearanceEditor {
         self.image_chooser = Default::default();
         self.preview_options = Default::default();
         self.close_after_apply = false;
+        self.pending_duplicate = None;
     }
 }
 
@@ -388,6 +416,7 @@ enum EditorExit {
     SaveAndClose,
     Discard,
     CancelClose,
+    Duplicate(AppearanceCopy),
 }
 
 fn editor_buttons(ui: &Ui, editable: bool) -> EditorExit {

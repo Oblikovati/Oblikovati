@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Modulate local preview lighting using procedural or embedded height differences.
-use oblikovati_model::assets::{AppearanceBump, AppearanceHeightMap, CeramicAppearance};
+use oblikovati_model::assets::{
+    AppearanceBump, AppearanceHeightMap, CeramicAppearance, GenericAppearanceEffects,
+};
 
 #[derive(Default)]
 pub(super) struct HeightShading<'a> {
@@ -10,18 +12,47 @@ pub(super) struct HeightShading<'a> {
 }
 
 impl<'a> HeightShading<'a> {
-    pub(super) fn new(ceramic: Option<&'a CeramicAppearance>) -> Self {
-        let Some(ceramic) = ceramic else {
-            return Self::default();
-        };
-        let bump = image_effect(ceramic.custom_bump.as_ref(), ceramic.finish_bumps);
-        let relief = image_effect(ceramic.relief_image.as_ref(), ceramic.relief);
-        let wavy = if ceramic.finish_bumps.enabled && ceramic.custom_bump.is_none() {
-            f32::from(ceramic.finish_bumps.amount) / 100.
+    pub(super) fn new(
+        ceramic: Option<&'a CeramicAppearance>,
+        generic: Option<&'a GenericAppearanceEffects>,
+    ) -> Self {
+        if let Some(ceramic) = ceramic {
+            return Self::for_surface(
+                ceramic.finish_bumps,
+                ceramic.custom_bump.as_ref(),
+                ceramic.relief,
+                ceramic.relief_image.as_ref(),
+            );
+        }
+        generic
+            .and_then(|effects| {
+                let surface = effects.rough_surface.as_ref()?;
+                Some(Self::for_surface(
+                    effects.bump,
+                    surface.bump_image.as_ref(),
+                    surface.relief,
+                    surface.relief_image.as_ref(),
+                ))
+            })
+            .unwrap_or_default()
+    }
+
+    fn for_surface(
+        bump: AppearanceBump,
+        bump_image: Option<&'a AppearanceHeightMap>,
+        relief: AppearanceBump,
+        relief_image: Option<&'a AppearanceHeightMap>,
+    ) -> Self {
+        let wavy = if bump.enabled && bump_image.is_none() {
+            f32::from(bump.amount) / 100.
         } else {
             0.
         };
-        Self { wavy, bump, relief }
+        Self {
+            wavy,
+            bump: image_effect(bump_image, bump),
+            relief: image_effect(relief_image, relief),
+        }
     }
 
     pub(super) fn enabled(&self) -> bool {

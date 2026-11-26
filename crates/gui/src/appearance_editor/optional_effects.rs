@@ -20,6 +20,15 @@ pub(super) fn draw(ui: &Ui, metadata: &mut AppearanceMetadata) {
     });
     section(ui, "Bump", &mut effects.bump.enabled, || {
         image_slot(ui);
+        if let Some(surface) = &effects.rough_surface {
+            ui.same_line_with_spacing(0., 14.);
+            ui.text(
+                surface
+                    .bump_image
+                    .as_ref()
+                    .map_or("Wavy", |image| image.name()),
+            );
+        }
         ui.slider_config("Amount", 0, 100)
             .display_format("%d%%")
             .build(&mut effects.bump.amount);

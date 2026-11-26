@@ -68,7 +68,7 @@ impl MaterialBrowser {
     ) {
         self.sync_before_docking(state, home_in_front);
         if !home_in_front && self.appearance_browser {
-            self.editor.panel(ui, state, actions);
+            self.editor.panel(ui, state, &mut self.appearance, actions);
         }
         if !self.is_open() {
             return;

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Authored settings for the optional Generic document appearance effects.
+use super::AppearanceHeightMap;
 
 /// Generic appearance settings retained when the individual effects are disabled.
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
@@ -9,6 +10,8 @@ pub struct GenericAppearanceEffects {
     pub bump: AppearanceBump,
     pub illumination: AppearanceIllumination,
     pub tint: AppearanceTint,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rough_surface: Option<Box<GenericRoughSurface>>,
 }
 
 impl GenericAppearanceEffects {
@@ -24,6 +27,36 @@ impl GenericAppearanceEffects {
                 "illumination temperature {}: expected 1000 to 12000 K",
                 self.illumination.temperature
             ));
+        }
+        if let Some(surface) = &self.rough_surface {
+            surface.validate()?;
+        }
+        Ok(())
+    }
+}
+
+/// Diffuse scattering and height inputs retained when a surface becomes Generic.
+/// A missing bump image selects the procedural Wavy source.
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct GenericRoughSurface {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub bump_image: Option<AppearanceHeightMap>,
+    pub relief: AppearanceBump,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub relief_image: Option<AppearanceHeightMap>,
+}
+
+impl GenericRoughSurface {
+    fn validate(&self) -> Result<(), String> {
+        if self.relief.amount > 100 {
+            return Err(format!(
+                "relief amount {}: expected a percentage from 0 to 100",
+                self.relief.amount
+            ));
+        }
+        for map in self.bump_image.iter().chain(&self.relief_image) {
+            map.validate()?;
         }
         Ok(())
     }

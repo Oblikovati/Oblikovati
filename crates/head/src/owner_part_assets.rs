@@ -7,7 +7,7 @@ use oblikovati_api::{
     wire::{AssignAppearanceArgs, AssignMaterialArgs},
 };
 use oblikovati_gui::{
-    AppearanceTemplate, GuiAppearanceChange, GuiMaterialChoice, GuiPartAssetKind,
+    AppearanceCopy, AppearanceTemplate, GuiAppearanceChange, GuiMaterialChoice, GuiPartAssetKind,
 };
 use oblikovati_model::assets::{
     AppearanceAsset, AppearanceMetadata, CeramicAppearance, DocumentAssets, MaterialAsset,
@@ -140,25 +140,28 @@ impl<
             ));
         }
         let name = match &edit.change {
-            GuiAppearanceChange::Create { name, .. } | GuiAppearanceChange::Apply { name, .. } => {
-                name
-            }
+            GuiAppearanceChange::Create { name, .. }
+            | GuiAppearanceChange::Duplicate { name, .. }
+            | GuiAppearanceChange::Apply { name, .. } => name,
         };
         if name.trim().is_empty() {
             return Err(format!(
                 "appearance name {name:?}: expected a non-empty name"
             ));
         }
-        let created = match &edit.change {
+        let (created, label) = match &edit.change {
             GuiAppearanceChange::Create { id, name, template } => {
-                Some(self.new_document_appearance(document, id, name, *template)?)
+                self.require_new_appearance_id(document, id)?;
+                (
+                    Some(self.new_document_appearance(id, name, *template)?),
+                    "Create document appearance",
+                )
             }
-            GuiAppearanceChange::Apply { .. } => None,
-        };
-        let label = if created.is_some() {
-            "Create document appearance"
-        } else {
-            "Edit document appearance"
+            GuiAppearanceChange::Duplicate { id, .. } => {
+                self.require_new_appearance_id(document, id)?;
+                (None, "Duplicate document appearance")
+            }
+            GuiAppearanceChange::Apply { .. } => (None, "Edit document appearance"),
         };
         self.files
             .commands(document)
@@ -170,13 +173,7 @@ impl<
         Ok(true)
     }
 
-    fn new_document_appearance(
-        &self,
-        document: u64,
-        id: &str,
-        name: &str,
-        template: AppearanceTemplate,
-    ) -> Result<AppearanceAsset, String> {
+    fn require_new_appearance_id(&self, document: u64, id: &str) -> Result<(), String> {
         if self
             .gui_appearance_choices(document, None)?
             .iter()
@@ -184,6 +181,15 @@ impl<
         {
             return Err(format!("appearance {id:?}: expected a new asset identity"));
         }
+        Ok(())
+    }
+
+    fn new_document_appearance(
+        &self,
+        id: &str,
+        name: &str,
+        template: AppearanceTemplate,
+    ) -> Result<AppearanceAsset, String> {
         let catalog = self.files.builtin_catalog()?;
         let base = catalog
             .appearances()
@@ -248,6 +254,15 @@ fn commit_appearance_edit(
     edit: &GuiAppearanceChange,
     created: Option<&AppearanceAsset>,
 ) -> Result<bool, String> {
+    if let GuiAppearanceChange::Duplicate {
+        source,
+        id,
+        name,
+        kind,
+    } = edit
+    {
+        return duplicate_document_appearance(assets, source, id, name, *kind);
+    }
     let GuiAppearanceChange::Apply {
         id,
         name,
@@ -283,6 +298,29 @@ fn commit_appearance_edit(
     let embedded = assets.embed_appearance(&asset)?;
     if let Some(metadata) = metadata.as_deref() {
         assets.set_appearance_metadata(id, metadata.clone())?;
+    }
+    Ok(embedded)
+}
+
+fn duplicate_document_appearance(
+    assets: &mut DocumentAssets,
+    source: &str,
+    id: &str,
+    name: &str,
+    kind: AppearanceCopy,
+) -> Result<bool, String> {
+    let original = assets.appearances().get(source).ok_or_else(|| {
+        format!("appearance {source:?}: expected a document-owned source to copy")
+    })?;
+    let copy = original.duplicate(id, name, oblikovati_api::types::ASSET_DOCUMENT)?;
+    let metadata = assets.appearance_metadata(source).cloned();
+    let embedded = assets.embed_appearance(&copy)?;
+    if let Some(metadata) = metadata {
+        let metadata = match kind {
+            AppearanceCopy::SameType => metadata,
+            AppearanceCopy::Generic => metadata.into_generic(),
+        };
+        assets.set_appearance_metadata(id, metadata)?;
     }
     Ok(embedded)
 }

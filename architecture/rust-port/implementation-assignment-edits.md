@@ -134,3 +134,10 @@ uses the same image chooser. The editor samples PNG, JPEG, or BMP images
 into 32×32 grayscale maps for the preview and embeds the maps in the Part
 when Apply commits the draft. Cancel preserves the previously selected
 type and map. See the [native ceramic map receipt](receipts/2026-11-26-appearance-ceramic-maps-3563/README.md).
+
+The Appearance Editor copies an applied asset through a document history
+command. Duplicate keeps the source type and recipe. Duplicate as Generic
+keeps the common surface parameters and moves Ceramic scattering, Tint,
+bump, and relief into Generic preview settings. Both commands select the
+new asset and keep the current preview scene and lighting. See the
+[native duplicate receipt](receipts/2026-11-26-appearance-duplicate-3563/README.md).

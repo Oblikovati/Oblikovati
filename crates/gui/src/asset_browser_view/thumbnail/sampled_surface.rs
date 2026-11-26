@@ -37,7 +37,7 @@ pub(super) struct PreviewSurface<'a> {
     checker: Option<(CheckerSampler, f32)>,
     effects: Option<&'a GenericAppearanceEffects>,
     height_shading: HeightShading<'a>,
-    ceramic_scatter: f32,
+    rough_diffuse: f32,
 }
 
 impl<'a> PreviewSurface<'a> {
@@ -63,12 +63,15 @@ impl<'a> PreviewSurface<'a> {
         let checker = metadata
             .and_then(|metadata| metadata.checker)
             .filter(|texture| texture.fade > 0);
+        let rough_surface =
+            ceramic.is_some() || effects.is_some_and(|effect| effect.rough_surface.is_some());
         Self {
             base,
             effects,
-            height_shading: HeightShading::new(ceramic),
-            ceramic_scatter: ceramic
-                .and(asset.appearance_preview)
+            height_shading: HeightShading::new(ceramic, effects),
+            rough_diffuse: asset
+                .appearance_preview
+                .filter(|_| rough_surface)
                 .map_or(0., |finish| 0.48 * f32::from(finish.roughness) / 255.),
             reflectivity,
             transmission: transparency.map_or(0., |effect| f32::from(effect.amount) / 100.),
@@ -115,8 +118,8 @@ impl<'a> PreviewSurface<'a> {
             .effects
             .map_or(base, |effects| super::preview_effect_color(base, effects));
         let diffuse = self.height_shading.apply([x, y], diffuse);
-        // Matte ceramic scatters the directional light into a broader, softer lobe.
-        let diffuse = diffuse + (0.65 - diffuse) * self.ceramic_scatter;
+        // A rough surface scatters the directional light into a broader, softer lobe.
+        let diffuse = diffuse + (0.65 - diffuse) * self.rough_diffuse;
         let surface = super::surface_color(base, diffuse, facing, self.reflectivity);
         if self.transmission == 0. {
             return surface;

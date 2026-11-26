@@ -9,6 +9,7 @@ pub use assign::{AppearanceAssignmentTarget, MaterialAssignmentTarget};
 pub use ceramic::{CeramicAppearance, CeramicFinish, CeramicKind};
 pub use effects::{
     AppearanceBump, AppearanceIllumination, AppearanceTint, GenericAppearanceEffects,
+    GenericRoughSurface,
 };
 pub use height_map::AppearanceHeightMap;
 use oblikovati_api::{
@@ -33,6 +34,24 @@ pub struct AppearanceMetadata {
     pub checker: Option<AppearanceChecker>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ceramic: Option<CeramicAppearance>,
+}
+
+impl AppearanceMetadata {
+    /// Translate a ceramic surface's preview inputs into Generic effects.
+    /// For example, use `saved_metadata.clone().into_generic()` for a Generic copy.
+    pub fn into_generic(mut self) -> Self {
+        if let Some(ceramic) = self.ceramic.take() {
+            let effects = self.generic_effects.get_or_insert_with(Default::default);
+            effects.tint = ceramic.tint;
+            effects.bump = ceramic.finish_bumps;
+            effects.rough_surface = Some(Box::new(GenericRoughSurface {
+                bump_image: ceramic.custom_bump,
+                relief: ceramic.relief,
+                relief_image: ceramic.relief_image,
+            }));
+        }
+        self
+    }
 }
 
 /// Generic appearance reflection strengths as percentages.
