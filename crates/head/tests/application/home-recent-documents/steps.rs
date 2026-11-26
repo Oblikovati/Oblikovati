@@ -24,6 +24,8 @@ mod published_profile;
 use published_profile::{assembly_name, other_recent_names, recent_name};
 #[path = "startup_observation.rs"]
 mod startup_observation;
+#[path = "workspace_chrome.rs"]
+mod workspace_chrome;
 
 /// Real files through a real save: each lands on the recent list as a person's would.
 fn save_recent_files(world: &mut ApplicationWorld) -> [u64; 4] {

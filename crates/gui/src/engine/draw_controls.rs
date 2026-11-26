@@ -92,6 +92,7 @@ impl GuiFrameEngine {
         self.workspace.draw_status(
             ui,
             request,
+            home_was_active,
             (
                 self.command_alias.text(),
                 self.extrude_dialog.distance_prompt(),

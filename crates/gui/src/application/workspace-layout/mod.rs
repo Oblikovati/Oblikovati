@@ -169,10 +169,11 @@ impl WorkspaceLayout {
         &self,
         ui: &Ui,
         request: &crate::GuiFrameRequest,
+        home: bool,
         (alias, distance): (Option<&str>, Option<&str>),
     ) {
         if self.status_bar_visible {
-            status_bar::status_bar(ui, request, alias, distance);
+            status_bar::status_bar(ui, request, home, alias, distance);
         }
     }
     pub(crate) fn browser_consumed_arrow(&self) -> bool {

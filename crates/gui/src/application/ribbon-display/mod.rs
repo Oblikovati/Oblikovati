@@ -188,6 +188,12 @@ impl Default for RibbonDisplayState {
     }
 }
 impl RibbonDisplayState {
+    pub(crate) fn clear_workspace_temporary(&mut self) {
+        self.temporary = None;
+        self.temporary_focus = false;
+        self.side_anchor = None;
+        self.keep_temporary_on_click = false;
+    }
     /// Expand a new tab after an open compact panel; for example, Create to Annotate (#3856).
     pub(crate) fn switch_from_open_compact_panel(&mut self) {
         if self.mode == RibbonDisplay::PanelButtons

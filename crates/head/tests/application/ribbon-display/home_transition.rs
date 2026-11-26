@@ -27,6 +27,7 @@ fn document_settings_enabled(world: &mut ApplicationWorld) {
     assert!(world.run_is_enabled("Document Settings"));
 }
 #[when("the user selects the open part document tab")]
+#[when("the user selects the open part document tab again")]
 fn activate_open_part(world: &mut ApplicationWorld) {
     world.click_tab(world.previous_document.expect("expected an open part"));
 }
@@ -63,10 +64,10 @@ fn tools_tab_visible(world: &mut ApplicationWorld) {
 #[then("the Tools ribbon tab remains selected")]
 #[then("the Tools ribbon tab is selected")]
 fn tools_tab_selected(world: &mut ApplicationWorld) {
-    world.hover([1000, 600]);
-    let inactive = world.pixel_left_of("View");
-    assert_eq!(world.pixel_left_of("Manage"), inactive);
-    assert_ne!(world.pixel_left_of("Tools"), inactive);
+    assert_eq!(
+        ribbon_tab_underlines(world, ["Tools", "Manage", "View"]),
+        [true, false, false]
+    );
 }
 
 #[given("the Home workspace is active")]

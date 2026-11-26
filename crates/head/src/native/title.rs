@@ -3,7 +3,22 @@
 use super::NativeHeadWindow;
 
 impl NativeHeadWindow {
+    pub(super) fn home_in_front(&self) -> bool {
+        self.gui.as_ref().is_some_and(|gui| gui.home_in_front())
+    }
+
     pub(super) fn refresh_title(&mut self) -> Result<(), String> {
+        let title = if self.home_in_front() && self.document_title.is_some() {
+            "Home - Oblikovati".to_owned()
+        } else {
+            self.document_scene_title()?
+        };
+        self.view.set_title(&title)?;
+        self.accessibility_title = title;
+        Ok(())
+    }
+
+    fn document_scene_title(&self) -> Result<String, String> {
         let mut title = self
             .scene_status
             .as_ref()
@@ -18,8 +33,6 @@ impl NativeHeadWindow {
         if let Some(notice) = &self.command_notice {
             title.push_str(&format!(" - {}", notice.message()));
         }
-        self.view.set_title(&title)?;
-        self.accessibility_title = title;
-        Ok(())
+        Ok(title)
     }
 }

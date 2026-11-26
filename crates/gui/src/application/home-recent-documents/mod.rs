@@ -127,6 +127,9 @@ impl HomeWorkspace {
         self.checks.keep_only(&rows);
         self.selected_actions(ui, actions);
         if state.recent_documents.is_empty() {
+            if !self.grid {
+                self.list(ui, &rows, actions, icons);
+            }
             ui.text_disabled("No recent documents");
         } else if rows.is_empty() {
             self.no_results(ui);

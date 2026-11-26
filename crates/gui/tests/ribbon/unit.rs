@@ -75,6 +75,44 @@ fn changing_document_identity_keeps_the_tab_but_changing_kind_selects_its_base()
     state.document_type = Some(DOCUMENT_DRAWING);
     assert_eq!(ribbon.prepare(&state).select, Some(RibbonTab::PlaceViews));
 }
+
+#[test]
+fn home_restores_the_documents_tab_and_placement_and_clears_flyouts() {
+    use crate::application::ribbon_display::TemporaryPanel;
+    let mut ribbon = DocumentRibbon::default();
+    let part = part_state();
+    ribbon.prepare_workspace(&part, None);
+    ribbon.select_tab(RibbonTab::View);
+    ribbon.display.placement = RibbonPlacement::Left;
+    ribbon.display.open_temporary(TemporaryPanel::WholeTab);
+
+    let home = ribbon.prepare_workspace(&GuiCommandState::default(), part.document);
+    assert_eq!(home.tabs, [RibbonTab::GetStarted, RibbonTab::Tools]);
+    assert_eq!(home.select, Some(RibbonTab::GetStarted));
+    assert_eq!(ribbon.display.placement, RibbonPlacement::Top);
+    assert!(ribbon.display.temporary.is_none());
+
+    ribbon.select_tab(RibbonTab::Tools);
+    ribbon.display.open_temporary(TemporaryPanel::WholeTab);
+    let returned = ribbon.prepare_workspace(&part, None);
+    assert_eq!(returned.select, Some(RibbonTab::View));
+    assert_eq!(ribbon.display.placement, RibbonPlacement::Left);
+    assert!(ribbon.display.temporary.is_none());
+}
+
+#[test]
+fn home_tools_stays_selected_when_returning_to_a_tabs_only_part() {
+    let mut ribbon = DocumentRibbon::default();
+    let part = part_state();
+    ribbon.prepare_workspace(&part, None);
+    ribbon.display.mode = RibbonDisplay::Tabs;
+    ribbon.prepare_workspace(&GuiCommandState::default(), part.document);
+    ribbon.select_tab(RibbonTab::Tools);
+    let returned = ribbon.prepare_workspace(&part, None);
+    assert_eq!(returned.select, Some(RibbonTab::Tools));
+    assert_eq!(ribbon.display.mode, RibbonDisplay::Tabs);
+    assert!(ribbon.display.temporary.is_none());
+}
 #[test]
 fn document_tabs_keep_sketch_context_off_other_document_types() {
     for (key, tabs) in [

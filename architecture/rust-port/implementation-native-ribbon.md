@@ -10,6 +10,17 @@ Resizing to a narrow window uses labeled compact groups with icons and
 dropdown markers. The [native sizing receipt](receipts/2026-11-26-ribbon-height-compaction-3856/README.md)
 covers both desktop backends.
 
+Home keeps Get Started, Tools, and the display controls while it covers an
+open document. The ribbon suspends document commands and closes temporary
+panels at the workspace boundary. Returning to the document restores its
+ribbon placement and context. In tabs-only display, an active Home Tools tab
+carries back to the document as Tools with its flyout closed.
+
+The application bar and native window title identify Home while the document
+docks are suspended. The status bar hides document telemetry during the visit
+and resumes it on return. List View keeps its recent-document column headings
+when the list is empty.
+
 The drawing ribbon cycles through all four display modes on repeat
 double-clicks. Wheel input selects adjacent Part ribbon tabs and updates
 temporary command groups when open. The [tab navigation receipt](receipts/2026-11-26-ribbon-tab-navigation-3856/README.md)

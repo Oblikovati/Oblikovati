@@ -43,12 +43,16 @@ pub(crate) fn ribbon_band(
 ) -> f32 {
     owners.ribbon.display.appearance = owners.ribbon.customization.appearance();
     let width = request.extent[0] as f32 / request.layout_scale()[0];
-    if owners.home_active && request.commands.document.is_some() {
-        return home_band(ui, request, &mut owners, width, actions);
-    }
+    let home_document = request.commands.document.filter(|_| owners.home_active);
+    let home_commands = home_document.map(|_| GuiCommandState {
+        ui_scale: request.commands.ui_scale,
+        transaction_open: request.commands.transaction_open,
+        ..Default::default()
+    });
+    let commands = home_commands.as_ref().unwrap_or(&request.commands);
     let height_total = request.extent[1] as f32 / request.layout_scale()[1];
+    let mut frame = owners.ribbon.prepare_workspace(commands, home_document);
     let placement = owners.ribbon.display.placement;
-    let mut frame = owners.ribbon.prepare(&request.commands);
     // A moved ribbon leaves only the menu, quick access and status in the top band.
     let bar_height = application_bar_height(owners.icons);
     let tabs_height = tab_row_height(ui);
@@ -88,17 +92,25 @@ pub(crate) fn ribbon_band(
     );
     let action =
         process_ribbon_key_tips(ui, request, &mut owners, &frame, blocked, grouped, height);
-    let open_menu = apply_key_tip(action, &mut owners, &request.commands, &mut frame, actions);
+    let open_menu = apply_key_tip(action, &mut owners, commands, &mut frame, actions);
     owners.quick_access.command_took_right_click = false;
     if let Some(_band) = begin_ribbon_band(ui, width, height) {
-        ribbon_contents(ui, request, &mut owners, &frame, open_menu, actions);
+        ribbon_contents(
+            ui,
+            request,
+            commands,
+            &mut owners,
+            &frame,
+            open_menu,
+            actions,
+        );
         if !owners.quick_access.command_took_right_click {
             request_context_menu_when_clicked(ui, owners.ribbon);
         }
         let tab = owners.ribbon.active;
         let panels = crate::ribbon_panels::panels_for_placement(
             tab,
-            &request.commands,
+            commands,
             &owners.ribbon.customization,
             owners.ribbon.display.placement,
         );
@@ -106,12 +118,12 @@ pub(crate) fn ribbon_band(
             ui,
             tab,
             &panels,
-            crate::ribbon_panels::supports_custom_panel(tab, &request.commands),
+            crate::ribbon_panels::supports_custom_panel(tab, commands),
             &mut owners.ribbon.customization,
-            (&request.commands, owners.quick_access),
+            (commands, owners.quick_access),
         );
         owners.ribbon.apply_context_actions(tab);
-        owners.ribbon.reset_confirmation(ui, &request.commands);
+        owners.ribbon.reset_confirmation(ui, commands);
     }
     side_ribbon(
         ui,
@@ -136,34 +148,6 @@ pub(crate) fn ribbon_band(
     height + owners.quick_access.below_height(owners.icons)
 }
 
-fn home_band(
-    ui: &Ui,
-    request: &GuiFrameRequest,
-    owners: &mut RibbonDrawOwners<'_>,
-    width: f32,
-    actions: &mut Vec<GuiShellAction>,
-) -> f32 {
-    owners.workspace.reserve_for_ribbon(0., 0.);
-    let top = application_bar_height(owners.icons) + 1.;
-    let height = top + tab_row_height(ui);
-    if let Some(_band) = begin_ribbon_band(ui, width, height) {
-        application_controls_row(ui, request, owners, actions);
-        crate::widget_abi::cursor_position(ui, [0., top]);
-        ribbon_menu_row(ui, request, owners, actions);
-    }
-    if !owners.quick_access.below_ribbon {
-        return height;
-    }
-    owners.quick_access.band_below(
-        ui,
-        ([0., height], width),
-        owners.icons,
-        &request.commands,
-        actions,
-        &owners.ribbon.tips,
-    );
-    height + owners.quick_access.below_height(owners.icons)
-}
 fn apply_key_tip(
     action: Option<crate::ribbon_key_tips::KeyTipAction>,
     owners: &mut RibbonDrawOwners<'_>,
@@ -277,6 +261,7 @@ fn begin_ribbon_band(ui: &Ui, width: f32, height: f32) -> Option<imgui::WindowTo
 fn ribbon_contents(
     ui: &Ui,
     request: &GuiFrameRequest,
+    commands: &GuiCommandState,
     owners: &mut RibbonDrawOwners<'_>,
     frame: &RibbonFrame,
     open_display_menu: bool,
@@ -305,12 +290,12 @@ fn ribbon_contents(
         // #3856: adopt selector changes before the row takes its visibility snapshot.
         let panels = crate::ribbon_panels::available_panels(
             owners.ribbon.active,
-            &request.commands,
+            commands,
             &owners.ribbon.customization,
         );
         let center = tab_top + row_height * 0.5;
-        display.panel_selector(ui, owners.ribbon.active, &request.commands, &panels, center);
-        ribbon_panel_row(ui, request, owners, actions, tab_top + row_height);
+        display.panel_selector(ui, owners.ribbon.active, commands, &panels, center);
+        ribbon_panel_row(ui, commands, owners, actions, tab_top + row_height);
     }
     crate::theme_editor::panel(
         ui,
@@ -348,19 +333,24 @@ fn application_controls_row(
             application_document_context(
                 ui,
                 &request.commands,
+                owners.home_active,
                 application_bar_height(owners.icons),
             );
         });
 }
-fn application_document_context(ui: &Ui, state: &GuiCommandState, height: f32) {
-    let title = state
-        .documents
-        .iter()
-        .find(|item| Some(item.id) == state.document)
-        .map_or_else(
-            || "Oblikovati".to_owned(),
-            |document| document_title(state, document),
-        );
+fn application_document_context(ui: &Ui, state: &GuiCommandState, home: bool, height: f32) {
+    let title = if home && state.document.is_some() {
+        "Home — Oblikovati".to_owned()
+    } else {
+        state
+            .documents
+            .iter()
+            .find(|item| Some(item.id) == state.document)
+            .map_or_else(
+                || "Oblikovati".to_owned(),
+                |document| document_title(state, document),
+            )
+    };
     let left = ui.item_rect_max()[0] + 12.;
     let right = ui.window_pos()[0] + ui.window_size()[0] - 8.;
     let screen_center = ui.io().display_size[0] / 2.;
@@ -421,7 +411,7 @@ fn ribbon_menu_row(
 }
 fn ribbon_panel_row(
     ui: &Ui,
-    request: &GuiFrameRequest,
+    commands: &GuiCommandState,
     owners: &mut RibbonDrawOwners<'_>,
     actions: &mut Vec<GuiShellAction>,
     top: f32,
@@ -433,7 +423,7 @@ fn ribbon_panel_row(
     crate::ribbon_panels::draw_panels(
         ui,
         ribbon.active,
-        &request.commands,
+        commands,
         crate::ribbon_panels::RibbonPanelOwners {
             home_active: owners.home_active,
             icons: &icons,

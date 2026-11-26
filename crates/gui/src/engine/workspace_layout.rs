@@ -4,6 +4,10 @@ use super::{GuiFrameEngine, GuiFrameRequest, GuiInputEvent};
 use crate::application::workspace_docking::persistence::WorkspaceDockSettings;
 
 impl GuiFrameEngine {
+    /// Report the visible workspace for the native window title.
+    pub fn home_in_front(&self) -> bool {
+        self.home.active
+    }
     /// Update the workspace and report whether it needs the fresh profile's asset dock.
     /// Example: `let seed_asset_dock = engine.prepare_workspace_frame(&request.commands)`.
     pub(super) fn prepare_workspace_frame(&mut self, commands: &crate::GuiCommandState) -> bool {
@@ -180,7 +184,7 @@ mod tests {
         }
         assert_eq!(bounds[0], bounds[2]);
         assert_eq!([bounds[1][0], bounds[1][2]], [0, 1100]);
-        assert!(bounds[1][1] < bounds[0][1]);
+        assert_eq!(bounds[1][1], bounds[0][1]);
     }
 
     #[test]

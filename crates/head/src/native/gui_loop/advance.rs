@@ -2,6 +2,12 @@
 //! Present the main GUI and any detached document windows on the desktop thread.
 use super::*;
 
+impl NativeGui {
+    pub(in crate::native) fn home_in_front(&self) -> bool {
+        self.engine.home_in_front()
+    }
+}
+
 #[cfg(target_os = "linux")]
 impl NativeGui {
     pub(in crate::native) fn note_window_preview_pixels(

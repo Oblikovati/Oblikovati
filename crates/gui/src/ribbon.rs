@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use crate::application::ribbon_display::{RibbonDisplay, RibbonPlacement};
 use crate::{GuiAuthoringContext, GuiCommandState};
 use oblikovati_api::types::{
     ASSEMBLY_RIBBON, DOCUMENT_ASSEMBLY, DOCUMENT_DRAWING, DOCUMENT_PART, DOCUMENT_PRESENTATION,
@@ -86,6 +87,7 @@ pub(crate) struct DocumentRibbon {
     previous: Option<(RibbonKey, bool, bool)>,
     previous_document: Option<u64>,
     pre_sketch_tab: Option<(u64, RibbonTab)>,
+    before_home: Option<(u64, RibbonTab, RibbonPlacement)>,
     pub active: RibbonTab,
     pub tips: crate::ribbon_key_tips::RibbonKeyTips,
     pub panels: crate::ribbon_panels::RibbonPanelLayout,
@@ -130,6 +132,50 @@ impl DocumentRibbon {
     }
     pub(crate) fn needs_frame(&self) -> bool {
         self.settling_frames > 0 || self.pending_tab.is_some()
+    }
+    /// Use the zero-document ribbon while Home covers an open document.
+    /// For example, the Part's Tools tab is restored after visiting Home.
+    pub(crate) fn prepare_workspace(
+        &mut self,
+        commands: &GuiCommandState,
+        home_over_document: Option<u64>,
+    ) -> RibbonFrame {
+        let selected = self.switch_home_ribbon(commands.document, home_over_document);
+        let mut frame = self.prepare(commands);
+        if let Some(tab) = selected.filter(|tab| frame.tabs.contains(tab)) {
+            self.active = tab;
+            frame.select = Some(tab);
+        }
+        frame
+    }
+
+    fn switch_home_ribbon(
+        &mut self,
+        document: Option<u64>,
+        home_over_document: Option<u64>,
+    ) -> Option<RibbonTab> {
+        let selected = match (home_over_document, self.before_home) {
+            (Some(document), None) => {
+                self.before_home = Some((document, self.active, self.display.placement));
+                self.display.placement = RibbonPlacement::Top;
+                (self.active == RibbonTab::Tools).then_some(RibbonTab::Tools)
+            }
+            (None, Some((saved_document, tab, placement))) => {
+                self.before_home = None;
+                // Selecting a document can dismiss the flyout before the workspace changes.
+                let opened_tools =
+                    self.display.mode == RibbonDisplay::Tabs && self.active == RibbonTab::Tools;
+                self.display.placement = placement;
+                (document == Some(saved_document)).then_some(if opened_tools {
+                    RibbonTab::Tools
+                } else {
+                    tab
+                })
+            }
+            _ => return None,
+        };
+        self.display.clear_workspace_temporary();
+        selected
     }
     pub(crate) fn prepare(&mut self, state: &GuiCommandState) -> RibbonFrame {
         let key = document_ribbon_key(state);

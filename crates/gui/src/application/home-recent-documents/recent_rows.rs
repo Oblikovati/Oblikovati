@@ -90,9 +90,11 @@ impl HomeWorkspace {
     fn list_header(&mut self, ui: &Ui, rows: &[&GuiRecentDocument], layout: RecentListLayout) {
         let state = self.checks.header(rows);
         let mut all = state == HeaderCheck::All;
+        let disabled = ui.begin_disabled(rows.is_empty());
         if checkbox(ui, "##recent-all", &mut all, state == HeaderCheck::Partial) {
             self.checks.toggle_header(rows);
         }
+        drop(disabled);
         self.header_cell(ui, SortField::Name, CHECK_COLUMN + KIND_COLUMN, layout);
         let mut x = CHECK_COLUMN + KIND_COLUMN + layout.width(SortField::Name);
         for column in self.columns.shown.clone() {

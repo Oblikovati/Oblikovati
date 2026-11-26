@@ -14,6 +14,7 @@ const CELL_GAP: f32 = 9.;
 pub(crate) fn status_bar(
     ui: &Ui,
     request: &GuiFrameRequest,
+    home: bool,
     alias: Option<&str>,
     tool_prompt: Option<&str>,
 ) {
@@ -36,7 +37,11 @@ pub(crate) fn status_bar(
         .size([width, STATUS_BAR_HEIGHT], imgui::Condition::Always)
         .flags(flags())
         .build(|| {
-            let prompt = command_status(tool_prompt.or(request.status.as_deref()), alias);
+            let prompt = if home {
+                command_status(request.status.as_deref(), None)
+            } else {
+                command_status(tool_prompt.or(request.status.as_deref()), alias)
+            };
             let origin = ui.window_pos();
             let y = ((STATUS_BAR_HEIGHT - ui.current_font_size()) * 0.5).floor();
             ui.get_window_draw_list()
@@ -54,7 +59,9 @@ pub(crate) fn status_bar(
             crate::widget_abi::cursor_position(ui, [prompt_x, y]);
             ui.text(&prompt);
             let prompt_right = prompt_x + ui.calc_text_size(&prompt)[0] + CELL_GAP;
-            telemetry(ui, &request.commands, width, prompt_right);
+            if !home {
+                telemetry(ui, &request.commands, width, prompt_right);
+            }
         });
 }
 fn telemetry(ui: &Ui, commands: &crate::GuiCommandState, width: f32, prompt_right: f32) {

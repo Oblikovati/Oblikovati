@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Inspect model panel visibility from a minimized ribbon tab.
+use super::super::diagnostics::window_geometry;
 use super::*;
 use cucumber::{given, then, when};
 
@@ -47,7 +48,13 @@ fn panel_checks(world: &mut ApplicationWorld) {
 #[then("the ribbon remains minimized to tabs")]
 fn still_minimized(world: &mut ApplicationWorld) {
     world.expect_no_text("Start 2D Sketch");
-    world.expect_text("3D Model");
+    if window_geometry("##home-workspace").is_some() {
+        world.expect_text("Get Started");
+        world.expect_text("Tools");
+        world.expect_no_text("Application Options");
+    } else {
+        world.expect_text("3D Model");
+    }
 }
 #[when("the user presses Escape twice")]
 fn escape_twice(world: &mut ApplicationWorld) {
