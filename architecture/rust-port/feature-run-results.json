@@ -345,6 +345,30 @@
         "command": "OBK_BDD_AREA=application OBK_BDD_ROOT=<source> OBK_BDD_SCENARIO=<case> bash crates/head/tests/accessibility_atspi/frame_run.sh",
         "environment": "Linux X11 with Xvfb, Openbox, tint2, AT-SPI, and Vulkan Lavapipe",
         "notes": "All eleven current declarations passed, including twenty executions with the published Parts and Home. Strict build and runtime provenance remains open under #3978."
+      },
+      "c3933f72e878423e05e1fcb72a41b48879fe02ecc3d9029e3c30d494b81a0fe0": {
+        "feature_sha256": "c3933f72e878423e05e1fcb72a41b48879fe02ecc3d9029e3c30d494b81a0fe0",
+        "supporting_files": {
+          "features/application/main-window-frame/BLOCKERS.md": "74497d26b6ca0dc34b56447a7a1ce81021d16bc00122103f5b286d22fcc3cff0",
+          "features/application/main-window-frame/FIXTURES.md": "49a4e4341ede7b2027a74c8801958e2325d5a95cf19f6b0d63d30959fcfca9a5",
+          "features/application/main-window-frame/FUNCTIONAL.md": "e0e1d40050c979d360ea6722f837f0fd174c3c1e78fd8277e301a8afd39d8ab9",
+          "features/application/main-window-frame/VISUAL.md": "ac5ec70ba1b13b310b0bfa14691b45070dd7723b5664fe894089d34ef76cffb5",
+          "features/application/main-window-frame/references/oblikovati-rust-work-de1cfac9-docking-visible-solid.png": "943622da5c4748205d7dd6c847dc57be9cc8f66fbffb5772e10ccb43c22cff3f",
+          "features/application/main-window-frame/references/oblikovati-rust-work-de1cfac9-no-document.png": "57ab786d7b3b0a7a77dfdb62b9ee603d56ea0e1b210239b967260a723285f4c3",
+          "features/application/main-window-frame/window-controls-icons.svg": "55c2f13b69f15d7d218e312b996c499a4d570a6897a708e1de28a93604909357",
+          "fixtures/cad/extrusion/extrusion-rect-8mm.opd": "d55a0cce8c436ece286dd96d1ebf8aa7a9e58058e5f059a528bd4f38e6ae8ea4",
+          "fixtures/cad/main-window-frame-start.opd": "cc73edf320f84eb44f0a6ebf15757c35acd97be99601add6ab44d1664dd881c7"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-main-window-frame-minimum-layout-4063/wayland.json",
+        "cucumber_sha256": "57c82f8aa949f9107812ffc6605c46f1a26a45f3e6c7cc3e9c97f4cc52f287d4",
+        "scenario_inventory": "architecture/rust-port/receipts/2026-11-26-main-window-frame-minimum-layout-4063/scenario-inventory.json",
+        "scenario_inventory_sha256": "42c6776365681454c4e0c6827e9e65b6604d169677ab957dd433f4dea6acc8c9",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-main-window-frame-minimum-layout-4063/wayland-arguments.json",
+        "scenario_arguments_sha256": "b75b1357a0c2a7a2335e2c0abd751a94bef79aff3dea8318a1306333c3904ffe",
+        "application_commit": "3dcf36933cebc15905573677dc61fc5f8677ea6e",
+        "command": "Native Main Window Frame runs. See the receipt README for commands and compositor details.",
+        "environment": "Linux Wayland with Weston and Labwc, and X11 with Openbox, tint2 and AT-SPI. Vulkan Lavapipe.",
+        "notes": "All 11 declarations, 20 cases and 171 steps passed on each backend. The Wayland minimum uses a private patched Weston 13 test compositor. Strict provenance remains open under #3978."
       }
     }
   },
