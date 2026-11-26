@@ -14,7 +14,7 @@ all = "warn"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 oblikovati-model = { path = "../model" }
-oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "907cd4c28713b47501b077b8d902dbb6a008aada", version = "=0.165.0" }
+oblikovati-api = { git = "https://github.com/Oblikovati/Oblikovati.API.git", rev = "c8200b2da97c9a7dde43afb25debc977ff23b2fd", version = "=0.166.0" }
 image = { version = "=0.25.6", default-features = false }
 resvg = { version = "=0.49.0", default-features = false }
 xml = "=1.4.0"

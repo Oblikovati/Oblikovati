@@ -9,7 +9,7 @@ using this status; the live scenario directory can change.
 - Preserve the user's modified `README.md` and the untracked review file.
 - Integrate completed work into `rust-work` and push; remove merged task branches,
   worktrees, and task-owned caches after checking them.
-- Use the Go application as the reference and BDD scenarios as acceptance.
+- Use the Go application as the reference and BDD scenarios as acceptance. The released host contract is [Oblikovati.API v0.166.0](https://github.com/Oblikovati/Oblikovati.API/releases/tag/v0.166.0) at `c8200b2`.
   Do not change Martensite; report kernel defects to its agent.
 
 ## Current evidence

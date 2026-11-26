@@ -10,8 +10,8 @@ c-abi = "pending"
 
 [api]
 repository = "Oblikovati/Oblikovati.API"
-version = "0.165.0"
-revision = "907cd4c28713b47501b077b8d902dbb6a008aada"
+version = "0.166.0"
+revision = "c8200b2da97c9a7dde43afb25debc977ff23b2fd"
 
 [kernel]
 repository = "Oblikovati/Martensite"
