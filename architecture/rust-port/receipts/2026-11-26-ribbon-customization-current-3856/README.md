@@ -35,6 +35,18 @@ beside the small icon again.
 - Tab switches on [Wayland](shell-size-retain-wayland-report.json) and [X11](shell-size-retain-x11-report.json)
 - Text Off on [Wayland](shell-size-text-off-wayland-report.json) and [X11](shell-size-text-off-x11-report.json)
 
+At `96b2086bbc58e3849efdb3a842b2d92093706069`, the Plane regrouping and
+window reflow checks passed 19 steps per backend. Clicking the compact
+Work Features caption opened the flyout. Maximizing showed more command
+labels and retained the grouped Plane control.
+
+- Plane regrouping on [Wayland](plane-regroup-wayland-report.json) and [X11](plane-regroup-x11-report.json)
+- Ribbon reflow on [Wayland](plane-reflow-wayland-report.json) and [X11](plane-reflow-x11-report.json)
+
+The keyboard search scenario requires bindable Pattern commands in more
+than one category. The desktop shortcut catalog has no Pattern entries
+and the Part Pattern controls are still unavailable.
+
 The [later removal checks](../2026-11-26-ribbon-panel-retirement-3856/README.md)
 cover applying an empty panel and retaining it during Shell. That fix and
 the icon checks were run separately from the full suite.
