@@ -20,7 +20,11 @@ pub(crate) fn apply(
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
     if method == wire::METHOD_VIEW_GET_CAMERA {
-        let args: GetCameraArgs = decode_wire_arguments(method, request)?;
+        let args: GetCameraArgs = if request.is_empty() {
+            GetCameraArgs::default()
+        } else {
+            decode_wire_arguments(method, request)?
+        };
         let slot = resolve_slot(caller, slots, args.document)?;
         return encode_wire_reply(&window.wire_camera(slot).map_err(Error)?);
     }

@@ -82,8 +82,7 @@ impl<'a, D: ScriptDocumentOwner, W: DispatchWakeup + 'static> NativeAddInDesktop
     ) -> Result<bool, String> {
         let (outcome, window_changed) = {
             let slots = self.owner.document_camera_slots();
-            let host =
-                crate::window_caller::WindowCaller::new(self.owner.script_host(), window, slots);
+            let host = crate::window_caller::WindowCaller::new(self.owner, window, slots);
             let outcome = self.runtime.poll(budget, &host);
             (outcome, host.window_changed())
         };

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use crate::HeadWindow;
+use crate::{HeadWindow, ScriptDocumentOwner};
 use oblikovati_api::{Error, client::Caller};
 use std::{
     cell::{Cell, RefCell},
@@ -7,22 +7,22 @@ use std::{
 };
 
 /// Combine document calls with owner-thread viewport automation.
-pub(crate) struct WindowCaller<'a, C> {
-    model: C,
+pub(crate) struct WindowCaller<'a, D> {
+    owner: RefCell<&'a mut D>,
     window: RefCell<&'a mut dyn HeadWindow>,
     window_changed: Cell<bool>,
     camera_slots: BTreeMap<u64, u64>,
 }
 
-impl<'a, C> WindowCaller<'a, C> {
-    /// Bind one document caller and its live window; example: `WindowCaller::new(host, window, slots)`.
+impl<'a, D> WindowCaller<'a, D> {
+    /// Bind one document caller and its live window; example: `WindowCaller::new(owner, window, slots)`.
     pub(crate) fn new(
-        model: C,
+        owner: &'a mut D,
         window: &'a mut dyn HeadWindow,
         camera_slots: BTreeMap<u64, u64>,
     ) -> Self {
         Self {
-            model,
+            owner: RefCell::new(owner),
             window: RefCell::new(window),
             window_changed: Cell::new(false),
             camera_slots,
@@ -34,13 +34,20 @@ impl<'a, C> WindowCaller<'a, C> {
     }
 }
 
-impl<C: Caller> Caller for WindowCaller<'_, C> {
+impl<D: ScriptDocumentOwner> Caller for WindowCaller<'_, D> {
     fn call(&self, method: &str, request: &[u8]) -> Result<Vec<u8>, Error> {
         let mut window = self.window.borrow_mut();
+        let mut owner = self.owner.borrow_mut();
+        if method == oblikovati_api::wire::METHOD_COMMANDS_EXECUTE {
+            let value = crate::frames::execute_command(&mut **window, &mut **owner, request)?;
+            self.window_changed.set(true);
+            return Ok(value);
+        }
+        let model = owner.script_host();
         use oblikovati_api::wire::{METHOD_VIEW_GET_CAMERA, METHOD_VIEW_SET_CAMERA};
         if matches!(method, METHOD_VIEW_GET_CAMERA | METHOD_VIEW_SET_CAMERA) {
             let reply = crate::camera_automation::apply(
-                &self.model,
+                &model,
                 &mut **window,
                 &self.camera_slots,
                 method,
@@ -57,7 +64,7 @@ impl<C: Caller> Caller for WindowCaller<'_, C> {
             }
             return reply;
         }
-        self.model.call(method, request)
+        model.call(method, request)
     }
 }
 

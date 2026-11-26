@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{HeadWindow, HeadWork, ViewportEvent, resource_browser, synchronize_sketch_view};
+use super::{
+    HeadWindow, HeadWork, ViewportEvent, report_authoring_result, resource_browser,
+    synchronize_sketch_view,
+};
 use oblikovati_gui::GuiShellAction;
 use oblikovati_viewport::ViewportInput;
 use std::time::Duration;
@@ -255,6 +258,17 @@ pub(super) fn dispatch_gui_action(
     owner: &mut dyn HeadWork,
     action: &GuiShellAction,
 ) -> Result<bool, String> {
+    dispatch_action(window, owner, action, report_authoring_result)
+}
+
+type CommandResultHandler = fn(&mut dyn HeadWindow, Result<bool, String>) -> Result<bool, String>;
+
+pub(super) fn dispatch_action(
+    window: &mut dyn HeadWindow,
+    owner: &mut dyn HeadWork,
+    action: &GuiShellAction,
+    report: CommandResultHandler,
+) -> Result<bool, String> {
     // A GUI action can change tools or geometry without a viewport pointer event (#4043).
     if !matches!(action, GuiShellAction::KeepDocumentPicture { .. }) {
         window.set_tool_feedback(None)?;
@@ -292,7 +306,7 @@ pub(super) fn dispatch_gui_action(
         }
         GuiShellAction::Exit => return window.request_close(),
         GuiShellAction::OpenTeamWebInBrowser(url) => {
-            return report_authoring_result(window, resource_browser::open(url).map(|()| true));
+            return report(window, resource_browser::open(url).map(|()| true));
         }
         GuiShellAction::OpenDocumentFolder(document) => {
             let result = owner.saved_document_path(*document).and_then(|file| {
@@ -301,7 +315,7 @@ pub(super) fn dispatch_gui_action(
                     .ok_or_else(|| format!("file {file:?} has no parent"))?;
                 window.open_directory(directory).map(|()| true)
             });
-            return report_authoring_result(window, result);
+            return report(window, result);
         }
         GuiShellAction::OrientView {
             command,
@@ -309,11 +323,11 @@ pub(super) fn dispatch_gui_action(
             animate,
         } => {
             let result = orient_view(window, owner, *command, *fit, *animate);
-            return report_authoring_result(window, result);
+            return report(window, result);
         }
         GuiShellAction::SetOrientationSelectionLock(locked) => {
             let result = owner.set_orientation_lock_from_gui(*locked);
-            return report_authoring_result(window, result);
+            return report(window, result);
         }
         GuiShellAction::SetViewProjection(mode) => {
             window.set_view_projection(*mode);
@@ -352,7 +366,7 @@ pub(super) fn dispatch_gui_action(
                     (false, Some(plane)) => owner.start_sketch_on_plane_from_gui(*plane),
                     _ => Ok(found),
                 });
-            let changed = report_authoring_result(window, result)?;
+            let changed = report(window, result)?;
             return Ok(synchronize_sketch_view(window, owner)? || changed);
         }
         _ => {}
@@ -415,20 +429,8 @@ pub(super) fn dispatch_gui_action(
     {
         window.show_command_notice(crate::DesktopCommandNotice::Ready)?;
     }
-    let changed = report_authoring_result(window, result)?;
+    let changed = report(window, result)?;
     Ok(synchronize_sketch_view(window, owner)? || changed)
-}
-fn report_authoring_result(
-    window: &mut dyn HeadWindow,
-    result: Result<bool, String>,
-) -> Result<bool, String> {
-    match result {
-        Ok(changed) => Ok(changed),
-        Err(cause) => {
-            window.show_command_notice(crate::DesktopCommandNotice::AuthoringFailed { cause })?;
-            Ok(true)
-        }
-    }
 }
 /// The whole model in view, with the margin Home leaves.
 const FIT_THE_MODEL: oblikovati_viewport::ViewportNavigation =

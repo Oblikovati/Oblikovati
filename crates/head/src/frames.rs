@@ -12,6 +12,8 @@ pub struct HeadSummary {
     pub completed: u64,
 }
 mod gui;
+mod wire_command;
+pub(crate) use wire_command::execute_command;
 mod ready_motion;
 pub(crate) mod resource_browser;
 pub use gui::HeadGuiUpdate;
@@ -273,6 +275,18 @@ fn checked_summary(summary: HeadSummary, options: HeadOptions) -> Result<HeadSum
 #[path = "../tests/frames.rs"]
 mod tests;
 
+fn report_authoring_result(
+    window: &mut dyn HeadWindow,
+    result: Result<bool, String>,
+) -> Result<bool, String> {
+    match result {
+        Ok(changed) => Ok(changed),
+        Err(cause) => {
+            window.show_command_notice(crate::DesktopCommandNotice::AuthoringFailed { cause })?;
+            Ok(true)
+        }
+    }
+}
 fn publish_owner_scene(
     window: &mut dyn HeadWindow,
     owner: &mut dyn HeadWork,

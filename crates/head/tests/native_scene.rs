@@ -476,3 +476,6 @@ mod depth;
 #[cfg(target_os = "linux")]
 #[path = "native_scene/normal_debug.rs"]
 mod normal_debug;
+
+#[path = "native_scene/wire_command.rs"]
+mod wire_command;

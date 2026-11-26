@@ -32,6 +32,7 @@ pub use activity::GuiFrameActivity;
 pub use clipboard::GuiClipboard;
 mod chrome;
 mod color_scheme_state;
+mod command_ids;
 mod commands;
 #[allow(unsafe_code)]
 mod context_owner;
