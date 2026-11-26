@@ -3,6 +3,8 @@
 mod annotation;
 mod border;
 pub use border::border_zone_label;
+mod datum_feature;
+pub use datum_feature::DrawingDatumFeaturePresentation;
 mod document;
 mod format;
 pub use format::DrawingTitleProperty;

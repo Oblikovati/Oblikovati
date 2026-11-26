@@ -19,6 +19,14 @@ pub(super) fn draw(
     );
     list.with_clip_rect_intersect(minimum, maximum, || {
         for annotation in annotations {
+            if let Some(datum) = annotation.datum_feature_presentation() {
+                draw_segments(list, datum.frame_and_stem_mm, position, dimensions);
+                let [a, b, c] = datum.triangle_mm.map(position);
+                if a.into_iter().chain(b).chain(c).all(f32::is_finite) {
+                    list.add_triangle(a, b, c, LINE_COLOR).filled(true).build();
+                }
+                center_text(ui, list, position(datum.text_center_mm), datum.letter);
+            }
             if let Some(note) = annotation.note_presentation() {
                 draw_segments(list, note.leader_segments_mm, position, dimensions);
                 let origin = position(note.anchor_mm);

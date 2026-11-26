@@ -7,6 +7,24 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", deny_unknown_fields)]
 pub enum DrawingAnnotationDefinition {
+    #[serde(rename = "datumFeature")]
+    DatumFeature {
+        name: String,
+        #[serde(rename = "xmm", default)]
+        x_mm: f64,
+        #[serde(rename = "ymm", default)]
+        y_mm: f64,
+        #[serde(rename = "tag")]
+        letter: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        characteristic: Option<String>,
+        #[serde(
+            rename = "materialRemoval",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        material_removal: Option<String>,
+    },
     /// A parts list whose rows must be resolved from the referenced model's BOM.
     #[serde(rename = "partsList")]
     PartsList {
@@ -144,6 +162,7 @@ impl DrawingAnnotationDefinition {
             | Self::CustomTable { name, .. }
             | Self::RevisionTable { name, .. }
             | Self::RevisionTag { name, .. }
+            | Self::DatumFeature { name, .. }
             | Self::RevisionCloud { name, .. } => name,
         }
     }
@@ -189,6 +208,13 @@ impl DrawingAnnotationDefinition {
                 characteristic,
                 material_removal,
                 ..
+            }
+            | Self::DatumFeature {
+                x_mm,
+                y_mm,
+                characteristic,
+                material_removal,
+                ..
             } => ([*x_mm, *y_mm], [0., 0.], characteristic, material_removal),
             Self::Note {
                 x_mm,
@@ -221,6 +247,7 @@ impl DrawingAnnotationDefinition {
 
     fn validate_content(&self) -> Result<(), DrawingError> {
         match self {
+            Self::DatumFeature { letter, .. } => require_label("datum letter", letter),
             Self::PartsList { .. } => Ok(()),
             Self::Note { text, .. } => require_label("note text", text),
             Self::CustomTable { headers, rows, .. } => super::table::validate_cells(headers, rows),

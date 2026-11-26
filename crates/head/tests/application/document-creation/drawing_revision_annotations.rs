@@ -4,8 +4,8 @@ use oblikovati_api::{
     client::Caller,
     json::EmptyObject,
     wire::{
-        AddRevisionCloudArgs, AddRevisionTableArgs, AddRevisionTagArgs, DeleteAnnotationArgs,
-        DrawingAnnotationInfo, RevisionTableRow,
+        AddDatumFeatureArgs, AddRevisionCloudArgs, AddRevisionTableArgs, AddRevisionTagArgs,
+        DeleteAnnotationArgs, DrawingAnnotationInfo, RevisionTableRow,
     },
 };
 use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits};
@@ -40,6 +40,72 @@ fn drawing_owner() -> (TestOwner, u64) {
         .unwrap();
     let drawing = owner.documents().workspace().active_document().unwrap();
     (owner, drawing)
+}
+
+#[test]
+fn drawing_datum_feature_round_trips_box_stem_and_filled_triangle() {
+    let (mut owner, drawing) = drawing_owner();
+    let client = Client::new(owner.document_host());
+    let datum = add_datum(&client);
+    client.transactions().undo().unwrap();
+    assert!(listed(&client).is_empty());
+    client.transactions().redo().unwrap();
+    assert_eq!(listed(&client).as_slice(), std::slice::from_ref(&datum));
+    let reopened =
+        super::drawing_custom_table::reopen(&client, drawing, "/memory/datum-feature.odd");
+    assert_eq!(listed(&client).as_slice(), std::slice::from_ref(&datum));
+    drop(client);
+    let state = owner.gui_command_state().unwrap();
+    assert!(state.drawing_projections[&reopened].error.is_none());
+    let sheet = &state.drawing_documents[&reopened].sheets()[0];
+    assert_datum_presentation(&sheet.annotations[0]);
+    let client = Client::new(owner.document_host());
+    let deleted = client
+        .drawing_annotations()
+        .delete(&DeleteAnnotationArgs { name: datum.name })
+        .unwrap();
+    assert!(deleted.annotations.is_none());
+}
+
+fn add_datum(client: &Client<impl Caller>) -> DrawingAnnotationInfo {
+    let annotations = client.drawing_annotations();
+    let request = AddDatumFeatureArgs {
+        name: "Reference plane".into(),
+        xmm: 60.,
+        ymm: 80.,
+        letter: "A".into(),
+    };
+    assert!(
+        annotations
+            .add_datum_feature(&AddDatumFeatureArgs {
+                letter: String::new(),
+                ..request.clone()
+            })
+            .is_err()
+    );
+    let info = annotations.add_datum_feature(&request).unwrap().annotation;
+    assert_eq!(
+        (info.kind.as_str(), info.tag.as_str(), info.curve_count),
+        ("datumFeature", "A", 10)
+    );
+    info
+}
+
+fn assert_datum_presentation(annotation: &DrawingAnnotationDefinition) {
+    let datum = annotation.datum_feature_presentation().unwrap();
+    assert_eq!(datum.letter, "A");
+    assert_eq!(datum.text_center_mm, [64., 76.]);
+    assert_eq!(
+        datum.frame_and_stem_mm,
+        [
+            [[60., 80.], [68., 80.]],
+            [[68., 80.], [68., 72.]],
+            [[68., 72.], [60., 72.]],
+            [[60., 72.], [60., 80.]],
+            [[64., 72.], [64., 68.]],
+        ]
+    );
+    assert_eq!(datum.triangle_mm, [[64., 68.], [66.5, 63.], [61.5, 63.]]);
 }
 
 #[test]

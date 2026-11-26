@@ -65,3 +65,17 @@ clipping, and save and reopen. A native Wayland MCP run added a
 60 × 40 mm cloud with a B tag and verified 204 nominal segments.
 The cloud changed 2,560 sheet pixels. Undo, redo, reopening, and
 deletion matched their respective captures pixel for pixel.
+
+## Datum feature symbols
+
+`drawingAnnotations.addDatumFeature` places the top-left corner of a
+boxed datum letter at the requested sheet point. The box has a stem
+and a filled triangle. The sheet recipe stores the point and the letter.
+The wire reply reports the datum letter as its tag and uses the Go
+reference's 10-curve count, which includes two triangle fill strokes.
+
+The owner test checks blank-letter rejection, the box, stem, and triangle
+coordinates, history, save and reopen, and deletion. The native Wayland
+MCP run placed datum A on a sheet with no referenced model. It changed
+584 sheet pixels. Undo, redo, reopen, and deletion matched their
+expected sheet captures pixel for pixel.

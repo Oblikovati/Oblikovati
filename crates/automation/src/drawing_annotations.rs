@@ -3,9 +3,9 @@ use oblikovati_api::{
     Error,
     types::DOCUMENT_PART,
     wire::{
-        self, AddCustomTableArgs, AddDrawingNoteArgs, AddRevisionCloudArgs, AddRevisionTableArgs,
-        AddRevisionTagArgs, AnnotationResult, DeleteAnnotationArgs, DrawingAnnotationInfo,
-        ListDrawingAnnotationsResult,
+        self, AddCustomTableArgs, AddDatumFeatureArgs, AddDrawingNoteArgs, AddRevisionCloudArgs,
+        AddRevisionTableArgs, AddRevisionTagArgs, AnnotationResult, DeleteAnnotationArgs,
+        DrawingAnnotationInfo, ListDrawingAnnotationsResult,
     },
 };
 use oblikovati_model::drawing::{
@@ -16,7 +16,8 @@ use oblikovati_model::property::{DESIGN_TRACKING, DocumentProperties};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
-pub(super) const ANNOTATION_METHODS: [&str; 7] = [
+pub(super) const ANNOTATION_METHODS: [&str; 8] = [
+    wire::METHOD_DRAWING_ANNOTATIONS_ADD_DATUM,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_NOTE,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_CUSTOM_TABLE,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_REV_TABLE,
@@ -48,6 +49,12 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         )));
     }
     match method {
+        wire::METHOD_DRAWING_ANNOTATIONS_ADD_DATUM => {
+            let args: AddDatumFeatureArgs = crate::decode(method, request)?;
+            add_annotation(files, owner, "Add Drawing Datum Feature", |drawing| {
+                drawing.add_datum_feature(&args.name, [args.xmm, args.ymm], &args.letter)
+            })
+        }
         wire::METHOD_DRAWING_ANNOTATIONS_ADD_NOTE => {
             let args: AddDrawingNoteArgs = crate::decode(method, request)?;
             add_annotation(files, owner, "Add Drawing Note", |drawing| {
@@ -211,6 +218,12 @@ fn annotation_details<'a>(
     table: Option<&DrawingPartsListPresentation>,
 ) -> (&'static str, &'a str, usize, usize) {
     match annotation {
+        DrawingAnnotationDefinition::DatumFeature { letter, .. } => {
+            let curves = annotation
+                .datum_feature_presentation()
+                .map_or(0, |datum| datum.curve_count());
+            ("datumFeature", letter, curves, 0)
+        }
         DrawingAnnotationDefinition::RevisionCloud { tag, .. } => {
             let curves = annotation
                 .revision_cloud_presentation()
