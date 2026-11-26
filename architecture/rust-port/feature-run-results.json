@@ -1117,14 +1117,14 @@
           "fixtures/cad/quick-access-toolbar/PartTwo.opd": "349c57f7cd94593d1ab6a0df940b666774c73ac3f8b27af89dbc0fd203d744c4",
           "fixtures/cad/revolve/revolve-profile.opd": "5f784d35371961dcf2a249c0df1cd09560ba941e66beb43d6a0de97cf6a54995"
         },
-        "application_commit": "5c15be9fa29c7c15285ed07604638c585ca22dee",
+        "application_commit": "76eb9395764471659a1a42045d454d053679bb6f",
         "command": "OBK_BDD_ROOT=<published-scenarios> OBK_BDD_AREA=application OBK_BDD_FEATURE=document-tabs OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
         "environment": "Linux Wayland under nested Weston 13 and X11 under Openbox with Xvfb and Vulkan Lavapipe.",
-        "notes": "40 of 41 amended scenarios and 347 steps in passing cases on Wayland. The four-step resize scenario also passed on X11. The saved-tab preview case has an undefined network path setup step. Strict provenance remains open under #3978.",
-        "cucumber": "architecture/rust-port/receipts/2026-11-26-document-tabs-narrow-3900/wayland.json",
-        "cucumber_sha256": "7b092fc93b11d6f1a6abfcc4f57486a020aa7f1a857c0947e03d35a784669cb0",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-document-tabs-narrow-3900/wayland-arguments.json",
-        "scenario_arguments_sha256": "c9001ddcb4196a74cb57c27393a5e79a8a12aec956ea3c5e47ef9dadf2aaea39"
+        "notes": "All 41 amended scenarios and 352 steps passed on each backend. The saved-tab preview used the published Part on a mounted CIFS share. A separate Linux native test rendered extended Windows UNC metadata. Strict provenance remains open under #3978.",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-document-tabs-preview-3900/wayland.json",
+        "cucumber_sha256": "a59bb099837506d8726d3ddc2ac5b0f67541a3cbf59f9a1c603ef3e541ebbd62",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-document-tabs-preview-3900/wayland-arguments.json",
+        "scenario_arguments_sha256": "3e5e0e4fec5e3d09bf229149dacad5b743a8202ef205a758c39bd2a0c781b44a"
       }
     }
   },

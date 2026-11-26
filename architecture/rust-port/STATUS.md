@@ -42,8 +42,8 @@ using this status; the live scenario directory can change.
   MCPBridge. Rule Log and Rule Automation are disabled under #4185.
   The [older pinned run](receipts/2026-11-20-workspace-layout-3897/) has 44 R0 baseline records. Strict verification
   still needs a current pin and bounded build and runtime inputs under Issue #3978.
-- Document Tabs (#3900) passed 40 of 41 amended scenarios and 347 steps in passing cases on Wayland. The resize case also passed on X11.
-  See the [current runs](receipts/2026-11-26-document-tabs-narrow-3900/README.md).
+- Document Tabs (#3900) passed all 41 amended scenarios and 352 steps on Wayland and X11, including the saved preview on a CIFS share.
+  See the [current runs](receipts/2026-11-26-document-tabs-preview-3900/README.md).
   The pinned snapshot passed all 38 scenarios and 334 steps, with R0 baseline records in
   `receipts/2026-11-21-document-tabs-r0-3900/`.
   Strict verification remains blocked by #3978.
