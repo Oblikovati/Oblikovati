@@ -206,6 +206,11 @@ impl HeadWindow for ScriptedGuiWindow {
         if let Some(cause) = &self.template_size_issue_override {
             current.template_size_issue = Some(cause.clone());
         }
+        if let Some((document, path)) = &self.document_path_override
+            && let Some(storage) = current.document_storage.get_mut(document)
+        {
+            storage.path = Some(path.clone());
+        }
         let result = self.native.gui_frame(event, &current)?;
         if let Some(trace) = &mut self.orientation_trace {
             trace.axes = current.view_axes;

@@ -7,6 +7,7 @@ use std::{collections::BTreeMap, sync::Arc};
 pub struct GuiTextureKey(u32);
 impl GuiTextureKey {
     pub const FONT: Self = Self(1);
+    pub const TAB_PREVIEW: Self = Self(u32::MAX);
     /// Refuse null and pointer-width-dependent values; example: `GuiTextureKey::from_raw(id)?`.
     pub fn from_raw(raw: usize) -> Result<Self, String> {
         let value = u32::try_from(raw)
@@ -38,6 +39,19 @@ impl GuiTextureSource {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GuiTextureResources(Arc<BTreeMap<GuiTextureKey, GuiTextureSource>>);
 impl GuiTextureResources {
+    /// Add a color image to an owned frame generation, for example a tab preview.
+    pub fn with_color(&self, key: GuiTextureKey, pixels: GuiAtlas) -> Result<Self, String> {
+        validate_texture_pixels(key, &pixels, false)?;
+        if self.0.contains_key(&key) {
+            return Err(format!(
+                "GUI texture {}: expected a new color binding",
+                key.raw()
+            ));
+        }
+        let mut sources = self.0.as_ref().clone();
+        sources.insert(key, GuiTextureSource::Color(pixels));
+        Ok(Self(Arc::new(sources)))
+    }
     /// Own one font and unique color images; example: `GuiTextureResources::new(font, [(key, icon)])?`.
     pub fn new(
         font: GuiAtlas,

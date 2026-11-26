@@ -429,7 +429,7 @@ impl GuiFrameEngine {
             crate::sketch::constraint_glyphs::unobstructed_hover(ui, constraint_hover);
         self.external_docks.observe_actions(&selected);
         let dock_lifecycle_changed = self.dock_lifecycle.reconcile_native_tabs(ui)?;
-        let snapshot = capture_frame(self.context.render(), request.extent, &self.resources)?;
+        let snapshot = self.capture_controls(request.extent)?;
         let mut activity = frame_activity()?;
         let mut capture = input_capture(self.context.io());
         capture.keyboard &= !keys.tool_keyboard;

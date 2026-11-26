@@ -10,6 +10,14 @@ impl GuiFrameRequest {
     }
 }
 impl GuiFrameEngine {
+    pub(super) fn capture_controls(&mut self, extent: [u32; 2]) -> Result<crate::GuiFrame, String> {
+        self.resources = self
+            .document_tabs
+            .previews
+            .frame_resources(&self.resources)?;
+        capture_frame(self.context.render(), extent, &self.resources)
+    }
+
     /// Report whether the tab preview can use the next frame.
     /// Example: `engine.needs_frame_pixels()` before reading the composed surface.
     pub fn needs_frame_pixels(&self) -> bool {

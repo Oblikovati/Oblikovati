@@ -403,7 +403,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 - Kept off-screen document selection from highlighting a different visible tab. (#3992)
 
-- Kept document tab previews clear of the tab at large UI scales and near window edges. (#3988)
+- Kept document tab previews clear of the tab at large UI scales and near window edges. Used a higher-resolution filtered thumbnail and displayed Windows drive and network paths without internal prefixes. (#3988, #3900)
 
 - Cleared selected body and face appearance overrides together in one undoable edit. (#3962)
 

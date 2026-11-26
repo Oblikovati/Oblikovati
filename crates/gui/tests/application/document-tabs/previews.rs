@@ -92,14 +92,23 @@ fn each_window_keeps_its_own_last_picture() {
     let mut previews = TabPreviews::default();
     assert!(!previews.needs_frame_pixels());
     previews.note_frame([4, 2], &frame());
-    assert!(previews.images.is_empty(), "nothing is in front yet");
+    assert!(
+        previews.texture.pictures.is_empty(),
+        "nothing is in front yet"
+    );
     previews.showing = Some((PreviewKey::Window(7), [[0., 0.], [2., 2.]]));
     assert!(previews.needs_frame_pixels());
     previews.note_frame([4, 2], &frame());
     previews.showing = Some((PreviewKey::Home, [[2., 0.], [4., 2.]]));
     previews.note_frame([4, 2], &frame());
-    assert_eq!(previews.images[&PreviewKey::Window(7)].rgb[0], [200, 0, 0]);
-    assert_eq!(previews.images[&PreviewKey::Home].rgb[0], [0, 0, 200]);
+    assert_eq!(
+        previews.texture.pictures[&PreviewKey::Window(7)].rgba[0],
+        [200, 0, 0, 255]
+    );
+    assert_eq!(
+        previews.texture.pictures[&PreviewKey::Home].rgba[0],
+        [0, 0, 200, 255]
+    );
 }
 
 #[test]
@@ -119,7 +128,10 @@ fn preview_readback_is_reused_only_for_the_same_composition_and_crop() {
     previews.showing = Some((PreviewKey::Home, [[2., 0.], [4., 2.]]));
     assert!(previews.needs_frame_pixels_at(generations));
     previews.note_frame_at([4, 2], &frame(), generations);
-    assert_eq!(previews.images[&PreviewKey::Home].rgb[0], [0, 0, 200]);
+    assert_eq!(
+        previews.texture.pictures[&PreviewKey::Home].rgba[0],
+        [0, 0, 200, 255]
+    );
     previews.showing = Some((PreviewKey::Window(7), [[2., 0.], [4., 2.]]));
     assert!(previews.needs_frame_pixels_at(generations));
 }
@@ -132,17 +144,17 @@ fn visible_preview_is_not_captured_inside_its_own_picture() {
         ..Default::default()
     };
     previews.note_frame([2, 2], &[9; 16]);
-    let original = previews.images[&PreviewKey::Window(7)].clone();
+    let original = previews.texture.pictures[&PreviewKey::Window(7)].clone();
     previews.preview_visible = true;
     assert!(!previews.needs_frame_pixels());
     previews.note_frame([2, 2], &[200; 16]);
-    assert_eq!(previews.images[&PreviewKey::Window(7)], original);
+    assert_eq!(previews.texture.pictures[&PreviewKey::Window(7)], original);
     previews.synchronize(&crate::GuiCommandState {
         documents: vec![document(7, true)],
         ..Default::default()
     });
     previews.note_frame([2, 2], &[200; 16]);
-    assert_ne!(previews.images[&PreviewKey::Window(7)], original);
+    assert_ne!(previews.texture.pictures[&PreviewKey::Window(7)], original);
 }
 
 #[test]
@@ -156,11 +168,14 @@ fn changed_front_gets_a_clean_frame_before_the_preview() {
     previews.showing = Some((PreviewKey::Home, [[0., 0.], [2., 2.]]));
     previews.showing_document = None;
     previews.note_frame([2, 2], &[9; 16]);
-    assert!(previews.images.contains_key(&PreviewKey::Home));
+    assert!(previews.texture.pictures.contains_key(&PreviewKey::Home));
     assert!(!previews.needs_clean_front_capture(Some(PreviewKey::Home)));
     previews.preview_visible = true;
     previews.note_frame([2, 2], &[200; 16]);
-    assert_eq!(previews.images[&PreviewKey::Home].rgb[0], [9, 9, 9]);
+    assert_eq!(
+        previews.texture.pictures[&PreviewKey::Home].rgba[0],
+        [9, 9, 9, 255]
+    );
 }
 
 #[test]
@@ -258,9 +273,19 @@ fn closed_document_loses_picture_and_pending_notification() {
     capture(&mut previews, 1, 1);
     state.documents.remove(0);
     previews.synchronize(&state);
-    assert!(!previews.images.contains_key(&PreviewKey::Window(1)));
-    assert!(previews.images.contains_key(&PreviewKey::Window(2)));
-    assert!(previews.images.contains_key(&PreviewKey::Home));
+    assert!(
+        !previews
+            .texture
+            .pictures
+            .contains_key(&PreviewKey::Window(1))
+    );
+    assert!(
+        previews
+            .texture
+            .pictures
+            .contains_key(&PreviewKey::Window(2))
+    );
+    assert!(previews.texture.pictures.contains_key(&PreviewKey::Home));
     assert!(previews.take_changed_picture().is_none());
     assert!(previews.showing.is_none());
     assert_eq!(previews.captured_front, None);
@@ -276,7 +301,12 @@ fn hidden_document_remains_open_and_keeps_its_picture() {
     previews.synchronize(&state);
     capture(&mut previews, 1, 1);
     previews.synchronize(&state);
-    assert!(previews.images.contains_key(&PreviewKey::Window(1)));
+    assert!(
+        previews
+            .texture
+            .pictures
+            .contains_key(&PreviewKey::Window(1))
+    );
     assert_eq!(previews.take_changed_picture().map(|(id, _)| id), Some(1));
 }
 
@@ -294,9 +324,24 @@ fn closing_one_of_three_windows_only_discards_that_window() {
     capture(&mut previews, 1, 91);
     state.document_windows.retain(|item| item.id != 91);
     previews.synchronize(&state);
-    assert!(!previews.images.contains_key(&PreviewKey::Window(91)));
-    assert!(previews.images.contains_key(&PreviewKey::Window(90)));
-    assert!(previews.images.contains_key(&PreviewKey::Window(1)));
+    assert!(
+        !previews
+            .texture
+            .pictures
+            .contains_key(&PreviewKey::Window(91))
+    );
+    assert!(
+        previews
+            .texture
+            .pictures
+            .contains_key(&PreviewKey::Window(90))
+    );
+    assert!(
+        previews
+            .texture
+            .pictures
+            .contains_key(&PreviewKey::Window(1))
+    );
     assert!(previews.take_changed_picture().is_none());
 }
 
@@ -313,8 +358,18 @@ fn closing_original_window_discards_only_its_picture() {
     capture(&mut previews, 1, 1);
     state.document_windows.retain(|item| item.id == 90);
     previews.synchronize(&state);
-    assert!(!previews.images.contains_key(&PreviewKey::Window(1)));
-    assert!(previews.images.contains_key(&PreviewKey::Window(90)));
+    assert!(
+        !previews
+            .texture
+            .pictures
+            .contains_key(&PreviewKey::Window(1))
+    );
+    assert!(
+        previews
+            .texture
+            .pictures
+            .contains_key(&PreviewKey::Window(90))
+    );
     assert_eq!(previews.captured_front, None);
     assert!(previews.take_changed_picture().is_none());
     capture(&mut previews, 1, 90);
@@ -333,7 +388,12 @@ fn stable_survivor_keeps_its_picture_when_extra_window_closes() {
     capture(&mut previews, 1, 1);
     state.document_windows.clear();
     previews.synchronize(&state);
-    assert!(previews.images.contains_key(&PreviewKey::Window(1)));
+    assert!(
+        previews
+            .texture
+            .pictures
+            .contains_key(&PreviewKey::Window(1))
+    );
     assert!(previews.take_changed_picture().is_some());
 }
 
@@ -348,7 +408,12 @@ fn stable_survivor_detects_open_and_close_between_frames() {
     capture(&mut previews, 1, 1);
     state.document_windows.push(window(90, 1));
     previews.synchronize(&state);
-    assert!(!previews.images.contains_key(&PreviewKey::Window(1)));
+    assert!(
+        !previews
+            .texture
+            .pictures
+            .contains_key(&PreviewKey::Window(1))
+    );
     assert!(previews.take_changed_picture().is_none());
     capture(&mut previews, 1, 90);
     assert!(previews.take_changed_picture().is_some());

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Reject blank tab preview picture interiors.
 
-pub(super) fn picture_has_detail(
+pub(in super::super) fn picture_has_detail(
     capture: &oblikovati_viewport::ViewportCapture,
     position: [f32; 2],
     size: [f32; 2],

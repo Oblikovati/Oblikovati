@@ -5,7 +5,7 @@ use super::super::diagnostics::window_geometry;
 use super::super::world::squeezed;
 use cucumber::{given, then, when};
 #[path = "preview_probe.rs"]
-mod preview_probe;
+pub(super) mod preview_probe;
 #[path = "saved_overflow.rs"]
 mod saved_overflow;
 #[path = "saved_previews.rs"]

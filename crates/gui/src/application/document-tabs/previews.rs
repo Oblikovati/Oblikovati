@@ -6,6 +6,9 @@ use imgui::Ui;
 use oblikovati_viewport::ViewportPreviewPixels;
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "preview_texture.rs"]
+mod preview_texture;
+use preview_texture::PreviewTexture;
 /// What a hovered tab shows: the Home workspace, or one window of a document.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) enum PreviewKey {
@@ -43,7 +46,7 @@ struct PreviewSample {
 /// One small picture per window, updated from its presented frames.
 #[derive(Default)]
 pub(crate) struct TabPreviews {
-    images: BTreeMap<PreviewKey, GuiPreviewImage>,
+    texture: PreviewTexture,
     /// The document in front, whose picture its next save stores.
     pub showing_document: Option<u64>,
     /// The picture its save should store, until the owner has been told.
@@ -114,7 +117,7 @@ impl TabPreviews {
             if let Some(document) = self.showing_document {
                 self.document_picture = Some((document, key, image.clone()));
             }
-            self.images.insert(key, image);
+            self.texture.note(key, extent, pixels, minimum, maximum);
         }
     }
     /// A changed picture of the front document, once; example: each frame, for the owner.
@@ -152,9 +155,9 @@ impl TabPreviews {
         self.preview_visible = false;
         self.deferred_preview = false;
         let current = open_windows(state);
-        self.images.retain(|key, _| match key {
+        self.texture.retain(|key| match key {
             PreviewKey::Home => true,
-            PreviewKey::Window(id) => has_window(&current, *id),
+            PreviewKey::Window(id) => has_window(&current, id),
         });
         if matches!(self.captured_front, Some(PreviewKey::Window(id)) if !has_window(&current, id))
         {
@@ -234,28 +237,23 @@ impl TabPreviews {
     pub(crate) fn needs_frame(&self) -> bool {
         self.deferred_preview
     }
-    fn picture(&self, ui: &Ui, key: PreviewKey, size: [f32; 2]) {
-        let [x, y] = ui.cursor_screen_pos();
-        let cell_size = [size[0] / CELLS[0] as f32, size[1] / CELLS[1] as f32];
-        let list = ui.get_window_draw_list();
-        if let Some(image) = self.images.get(&key) {
-            for (index, color) in image.rgb.iter().enumerate() {
-                let cell = [
-                    x + (index as u32 % CELLS[0]) as f32 * cell_size[0],
-                    y + (index as u32 / CELLS[0]) as f32 * cell_size[1],
-                ];
-                let rgba = color.map(|channel| f32::from(channel) / 255.);
-                list.add_rect(
-                    cell,
-                    [cell[0] + cell_size[0], cell[1] + cell_size[1]],
-                    [rgba[0], rgba[1], rgba[2], 1.],
-                )
-                .filled(true)
-                .build();
-            }
+    fn picture(&mut self, ui: &Ui, key: PreviewKey, size: [f32; 2]) {
+        if self.texture.bind(key) {
+            imgui::Image::new(
+                imgui::TextureId::new(crate::GuiTextureKey::TAB_PREVIEW.raw()),
+                size,
+            )
+            .build(ui);
+        } else {
+            ui.dummy(size);
         }
-        drop(list);
-        ui.dummy(size);
+    }
+
+    pub(crate) fn frame_resources(
+        &mut self,
+        base: &crate::GuiTextureResources,
+    ) -> Result<crate::GuiTextureResources, String> {
+        self.texture.resources(base)
     }
 }
 fn preview_dimensions(

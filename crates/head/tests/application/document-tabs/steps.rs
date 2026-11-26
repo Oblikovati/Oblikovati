@@ -27,6 +27,9 @@ mod offscreen_selection;
 mod overflow_order;
 #[path = "reordering.rs"]
 mod reordering;
+#[cfg(target_os = "linux")]
+#[path = "saved_preview_quality.rs"]
+mod saved_preview_quality;
 #[path = "saved_sketch_parts.rs"]
 mod saved_sketch_parts;
 #[path = "saved_tabs.rs"]

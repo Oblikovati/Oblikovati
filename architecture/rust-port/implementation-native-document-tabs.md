@@ -32,6 +32,10 @@ The native Home preview and the pinned tab scenarios use the same pixel check
 below the rendered thumbnail caption. The 2× placement test gives the Part tab
 room in a saved workspace with the asset panels closed. See the
 [native tab preview checks](receipts/2026-11-24-document-tab-previews-4078/README.md).
+Hover previews use a filtered texture up to 384 × 216 pixels. The saved
+document picture keeps its existing dimensions. Extended Windows drive
+and UNC prefixes are normalized in the hover caption while file
+operations continue to use the stored path.
 
 The [current saved-tab cases](receipts/2026-11-25-document-tabs-saved-parts-3900/README.md)
 use disposable copies of PartOne and PartTwo. Inactive Properties reads

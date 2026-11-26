@@ -37,6 +37,7 @@ struct ScriptedGuiWindow {
     presentation_delay: Duration,
     template_material_override: Option<oblikovati_gui::GuiTemplateMaterialEntry>,
     template_size_issue_override: Option<String>,
+    document_path_override: Option<(u64, String)>,
     orientation_trace: Option<OrientationTrace>,
 }
 
@@ -68,6 +69,7 @@ fn scripted_window(native: NativeHeadWindow) -> ScriptedGuiWindow {
         presentation_delay: Duration::ZERO,
         template_material_override: None,
         template_size_issue_override: None,
+        document_path_override: None,
         orientation_trace: None,
     }
 }

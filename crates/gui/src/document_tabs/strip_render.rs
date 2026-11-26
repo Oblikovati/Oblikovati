@@ -157,12 +157,42 @@ fn note_hovered_tab(
         .commands
         .document_storage
         .get(&tab.row.id)
-        .and_then(|storage| storage.path.clone());
+        .and_then(|storage| storage.path.as_deref())
+        .map(display_preview_path);
     owner.hovered = Some(HoveredTab {
         key: PreviewKey::Window(tab.window),
         bounds: [ui.item_rect_min(), ui.item_rect_max()],
         labels: saved.into_iter().chain([tab.name.clone()]).collect(),
     });
+}
+
+fn display_preview_path(path: &str) -> String {
+    let Some(extended) = path.strip_prefix(r"\\?\") else {
+        return path.to_owned();
+    };
+    if extended
+        .get(..4)
+        .is_some_and(|prefix| prefix.eq_ignore_ascii_case(r"UNC\"))
+    {
+        return format!(r"\\{}", &extended[4..]);
+    }
+    if matches!(extended.as_bytes(), [letter, b':', b'\\', ..] if letter.is_ascii_alphabetic()) {
+        return extended.to_owned();
+    }
+    path.to_owned()
+}
+#[cfg(test)]
+#[test]
+fn preview_paths_preserve_drive_and_server_share_notation() {
+    for (raw, display) in [
+        (r"\\?\P:\Models\Peça.opd", r"P:\Models\Peça.opd"),
+        (r"\\?\UNC\Server\Share\Part.opd", r"\\Server\Share\Part.opd"),
+        (r"\\?\unc\Server\Share\Part.opd", r"\\Server\Share\Part.opd"),
+        (r"\\?\Volume{123}\Part.opd", r"\\?\Volume{123}\Part.opd"),
+        ("/work/Part.opd", "/work/Part.opd"),
+    ] {
+        assert_eq!(display_preview_path(raw), display);
+    }
 }
 fn tab_label(tab: &TabRow<'_>) -> String {
     format!("{}{}", tab.name, if tab.row.dirty { " *" } else { "" })
