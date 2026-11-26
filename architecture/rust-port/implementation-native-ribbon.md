@@ -10,6 +10,12 @@ Resizing to a narrow window uses labeled compact groups with icons and
 dropdown markers. The [native sizing receipt](receipts/2026-11-26-ribbon-height-compaction-3856/README.md)
 covers both desktop backends.
 
+The drawing ribbon cycles through all four display modes on repeat
+double-clicks. Wheel input selects adjacent Part ribbon tabs and updates
+temporary command groups when open. The [tab navigation receipt](receipts/2026-11-26-ribbon-tab-navigation-3856/README.md)
+covers the active underline, wheel boundaries, and tabs-only behavior
+on Wayland and X11.
+
 Ribbon key tips work with the current saved extrusion and sketch across
 full, temporary, and side-docked ribbon groups. The
 [native keyboard navigation run](receipts/2026-11-26-ribbon-keyboard-current-3856/README.md)
