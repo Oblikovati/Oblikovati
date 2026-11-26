@@ -14,7 +14,7 @@ pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
     ),
     ("application/document-tabs/previews.rs", "##tab-preview"),
     (
-        "application/home-recent-documents/mod.rs",
+        "application/home-recent-documents/home_layout.rs",
         "##home-workspace",
     ),
     (
@@ -73,7 +73,10 @@ pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
     ("dockable_window.rs", "title"),
     ("dockable_window.rs", "title"),
     ("ribbon_reset.rs", "modal:RESET_TITLE"),
-    ("application/document-creation/mod.rs", "modal:New document"),
+    (
+        "application/document-creation/chooser_modal.rs",
+        "modal:TITLE",
+    ),
     (
         "application/document-creation/component_dialog.rs",
         "modal:TITLE",
@@ -83,8 +86,16 @@ pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
         "modal:FILE_CHOOSER",
     ),
     (
+        "application/document-creation/component_dialog.rs",
+        "modal:WARNING",
+    ),
+    (
         "application/document-creation/workspaces.rs",
         "modal:INSERT",
+    ),
+    (
+        "application/project-dialog/project_picker.rs",
+        "modal:TITLE",
     ),
     (
         "application/document-saving/close_prompt.rs",
