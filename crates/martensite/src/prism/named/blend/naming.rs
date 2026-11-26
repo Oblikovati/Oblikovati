@@ -362,14 +362,22 @@ fn direct_name(
             && (record.source.is_same(output)
                 || record.modified.iter().any(|shape| shape.is_same(output)))
         {
-            retained.push(record.name.clone());
+            retained.push(record);
         }
         if record.generated.iter().any(|shape| shape.is_same(output)) {
             generated.push(record.name.clone());
         }
     }
+    // The temporary tool has no prior owner references. A sole saved name
+    // can survive this merge, subject to uniqueness across result entities.
+    if generated.is_empty() && retained.len() > 1 {
+        let mut persistent = retained.iter().filter(|record| !record.transient);
+        if let (Some(target), None) = (persistent.next(), persistent.next()) {
+            return Ok(Some(target.name.clone()));
+        }
+    }
     match (retained.len(), generated.is_empty()) {
-        (1, true) => Ok(retained.pop()),
+        (1, true) => Ok(retained.pop().map(|record| record.name.clone())),
         (0, false) => {
             DerivedReferenceName::new(document, feature.0, kind, "generated", &generated)?
                 .encode()
@@ -463,6 +471,16 @@ mod tests {
             deleted: false,
             transient: false,
         };
+        let target = record(1);
+        let expected = target.name.clone();
+        let tool = BlendHistoryRecord {
+            transient: true,
+            ..record(2)
+        };
+        assert_eq!(
+            direct_name(&[target, tool], &face, 1, document, FeatureId(3)).unwrap(),
+            Some(expected),
+        );
         assert!(
             direct_name(&[record(1), record(2)], &face, 1, document, FeatureId(3))
                 .unwrap_err()

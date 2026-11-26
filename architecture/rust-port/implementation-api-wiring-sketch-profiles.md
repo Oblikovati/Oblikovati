@@ -127,3 +127,16 @@ The desktop-owner regression joins a boss supported by a parametric work
 plane and checks analytic volume and body identity after resize, undo,
 redo, and reopen. A separate regression checks rejection of a disconnected
 tool and preservation of the prior body and visible sketch.
+
+The focused run passed 35 desktop-owner extrusion tests, 16 recipe tests,
+and 253 executed adapter tests. The Wayland MCP smoke test joined a
+circular boss and matched the analytic volume before and after the target
+depth changed from 50 mm to 60 mm.
+
+In the 21 live Join workflows, the first implementation exposed a common
+case where the kernel attributes one result entity to both the saved
+target and the temporary tool. The adapter keeps the saved name when it
+is the only persistent contributor and binds to exactly one result entity.
+The surface-mount resistor then passed. After that change, 12 workflows
+still reached a split-name refusal, five produced two solids, two added
+no volume, and one required a parameter formula for extrusion depth.
