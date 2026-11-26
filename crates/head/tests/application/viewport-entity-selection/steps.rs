@@ -58,7 +58,7 @@ pub(super) fn click_visible_face(world: &mut ApplicationWorld) {
 
 fn left_click(world: &mut ApplicationWorld, at: [i32; 2]) {
     #[cfg(target_os = "linux")]
-    super::x11_input::click(at);
+    super::desktop_input::click(world, at);
     #[cfg(not(target_os = "linux"))]
     world.click(at);
     world.pump(Vec::new());
@@ -103,7 +103,7 @@ fn right_click_selected_face(world: &mut ApplicationWorld) {
         .expect("expected the selected face");
     let point = world.app().window.model_pixel(cue.position).unwrap();
     #[cfg(target_os = "linux")]
-    super::x11_input::right_click(point);
+    super::desktop_input::right_click(world, point);
     #[cfg(not(target_os = "linux"))]
     world.right_click(point);
     world.pump(Vec::new());

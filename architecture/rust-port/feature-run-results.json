@@ -186,23 +186,23 @@
       "ad05fe05f389cdd07103f7beb06bef953cac94e068222a7d2a60b084e5d78d99": {
         "feature_sha256": "ad05fe05f389cdd07103f7beb06bef953cac94e068222a7d2a60b084e5d78d99",
         "supporting_files": {
-          "features/application/viewport-entity-selection/spatial-line-and-point.opd": "6730c3dda695288052001e7e3314529bc294b6da4c61e2a1a090c20c641555c9",
-          "features/application/viewport-entity-selection/FIXTURES.md": "7f1f6aaada198cd9f902ff3ac4794f2b687aa0099c7ee4a54d8aeef09e901563",
-          "features/application/viewport-entity-selection/FUNCTIONAL.md": "d8517d0d9fb3319511ff857bf224ab553e980a7e467aec342e6493fa25abe1a9",
-          "features/application/viewport-entity-selection/VISUAL.md": "c633080a52ed39d9c0b46f08b8951d1a5d09b8e2cf2a77054eb0af8b1b774697",
           "features/application/viewport-entity-selection/BLOCKERS.md": "f5b82a3598b7428dc40946e314a98523e76fb4caf6eca8d21f26e843b985534b",
-          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+          "features/application/viewport-entity-selection/FIXTURES.md": "1207d8b9bb6d879cfe1e87cb49117939002eaf11a503b2cefa3366f9b0736ad9",
+          "features/application/viewport-entity-selection/FUNCTIONAL.md": "d8517d0d9fb3319511ff857bf224ab553e980a7e467aec342e6493fa25abe1a9",
+          "features/application/viewport-entity-selection/VISUAL.md": "44ebd21990d447dcd5c23004c06bf93dde096d14966b3b8115d90215a6853118",
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a",
+          "features/application/viewport-entity-selection/spatial-line-and-point.opd": "f5f181944c243f50bd2cc0ff7a73e556302b1a6ddb3f194f827aabfb53b2372a"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-25-viewport-entity-selection-current-4055/cucumber.json",
-        "cucumber_sha256": "4c8393a130167454db1b9706deb111e4afaccc035161cffa5f28d3141d0df19f",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-viewport-entity-selection-wayland-4055/wayland.json",
+        "cucumber_sha256": "864d4e99c96b5f1a5684f5c8b35e985dd528a9897b257fe894581c2189e06fb1",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-viewport-entity-selection-current-4055/scenario-inventory.json",
         "scenario_inventory_sha256": "1b3c95311bc6fb8622e7f3afde7b271cc02e2a3fe811d90492df98cac4c5a623",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-viewport-entity-selection-current-4055/scenario-arguments.json",
-        "scenario_arguments_sha256": "4b14f504fa420ee8c27175574a326b77c8b9daa1adcb503895786635d6a437fc",
-        "application_commit": "b126f7c5e792e96103012979177d654cc4cf07e5",
-        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=viewport-entity-selection OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
-        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
-        "notes": "Four solid-face scenarios and 24 steps passed. Strict build and runtime provenance remains open under #3978.",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-viewport-entity-selection-wayland-4055/wayland-arguments.json",
+        "scenario_arguments_sha256": "3d5285f33b88edc3e23c70b2897a2c5f494250b931667699f7de65f4490f6aeb",
+        "application_commit": "9223d33a84626d518747c2663dce628e279a15b6",
+        "command": "Full published Viewport Entity Selection diagnostics on both backends. See the receipt.",
+        "environment": "Linux Wayland with nested Weston 13 and Vulkan Lavapipe. X11 cross-check used Xvfb and Openbox.",
+        "notes": "Four solid-face scenarios and 24 steps passed on both backends with native desktop input. Strict build and runtime provenance remains open under #3978.",
         "blocker": "Four spatial-sketch scenarios require desktop display and picking of saved 3D sketch geometry, and active 3D sketch editing for the last two cases (#4092)."
       }
     }

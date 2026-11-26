@@ -170,3 +170,9 @@ The [Navigation Wheel runs](receipts/2026-11-26-navigation-wheel-wayland-3881/RE
 use the active desktop for the saved Part picker, wheel motion, menu
 clicks, and Escape. The compact layout check counts visible radial
 separators across both lighter and darker parts of the wheel.
+
+## Solid-face desktop selection
+
+The [solid-face scenarios](receipts/2026-11-26-viewport-entity-selection-wayland-4055/README.md)
+use native clicks on Wayland and X11 to verify the selection cue, highlight,
+toolbar, standard and radial menus, and clearing from empty viewport space.

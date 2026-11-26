@@ -329,7 +329,7 @@ using this status; the live scenario directory can change.
   saved Part active. Both Close paths prompted before exiting, and Cancel
   kept the unsaved edit and preserved the working file. [X11 suite](receipts/2026-11-25-main-window-frame-current-4063/README.md) [Custom Close](receipts/2026-11-26-wayland-custom-close-4063/README.md), [desktop Close](receipts/2026-11-26-wayland-desktop-close-4063/README.md), and [taskbar reactivation](receipts/2026-11-26-wayland-taskbar-4063/README.md) passed on Wayland and X11.
   [Accessible controls](receipts/2026-11-26-wayland-frame-atspi-4064/README.md), [maximize and restore](receipts/2026-11-26-wayland-maximize-work-area-4063/README.md), [double-click](receipts/2026-11-26-wayland-double-click-4063/README.md), [window move](receipts/2026-11-26-wayland-window-move-4063/README.md), [perimeter resizing](receipts/2026-11-26-wayland-perimeter-resize-4063/README.md), [maximized edge drag](receipts/2026-11-26-wayland-maximized-edge-4063/README.md), and [minimum size with a Weston test patch](receipts/2026-11-26-wayland-minimum-frame-4063/README.md) passed on Wayland and X11.
-- Viewport Entity Selection (#4055) passed all four current solid-face scenarios and 24 steps.
+- Viewport Entity Selection (#4055) passed all four current solid-face scenarios and 24 steps on [Wayland and X11](receipts/2026-11-26-viewport-entity-selection-wayland-4055/README.md).
   The native spatial fixture opens, but its 3D sketches are absent from the browser and viewport
   (#4092). See the [current run](receipts/2026-11-25-viewport-entity-selection-current-4055/README.md).
 - Corliss 0.1.0 now reads point and line records from the Inventor fixture's

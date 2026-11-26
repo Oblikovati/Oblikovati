@@ -1,0 +1,22 @@
+Full wayland diagnostic
+8 scenarios (4 passed, 4 failed)
+30 steps (26 passed, 4 failed)
+Solid-face subset passed four scenarios and 24 steps.
+
+wayland face menu properties
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 18.50s
+
+Full x11 diagnostic
+8 scenarios (4 passed, 4 failed)
+30 steps (26 passed, 4 failed)
+Solid-face subset passed four scenarios and 24 steps.
+
+x11 face menu properties
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 21.47s
+
+Wayland Ribbon Customization with a selected face
+1 scenario (1 passed)
+13 steps (13 passed)
+
+Head Clippy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.32s
