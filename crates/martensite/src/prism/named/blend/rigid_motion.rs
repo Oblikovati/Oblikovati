@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Detached rigid motions with exact topology history (#4097).
 use super::*;
-use martensite_tkmath::gp::{Axis1, Direction3, Point3, Transform3};
+use martensite_tkmath::gp::{Axis1, Axis2, Direction3, Point3, Transform3};
 use martensite_tktopalgo::brep_builder_api::BRepBuilderAPITransform;
 
 /// One ordered, resolved rigid operation in model units.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum RigidMotion {
     Translation([f64; 3]),
+    Reflection {
+        origin: [f64; 3],
+        normal: [f64; 3],
+    },
     Rotation {
         origin: [f64; 3],
         direction: [f64; 3],
@@ -76,29 +80,27 @@ fn motion(operation: RigidMotion) -> Result<Transform3, String> {
             finite(vector, "translation")?;
             Ok(Transform3::translation(vector))
         }
+        RigidMotion::Reflection { origin, normal } => {
+            finite(origin, "reflection origin")?;
+            Axis2::new(
+                Point3::new(origin[0], origin[1], origin[2]),
+                unit_direction(normal, "reflection normal")?,
+            )
+            .map(Transform3::mirror_plane)
+            .map_err(|cause| cause.to_string())
+        }
         RigidMotion::Rotation {
             origin,
             direction,
             radians,
         } => {
             finite(origin, "rotation origin")?;
-            finite(direction, "rotation direction")?;
             if !radians.is_finite() {
                 return Err(format!(
                     "rotation angle {radians:?}: expected finite radians"
                 ));
             }
-            // Martensite #550: normalize the scale before its squared-norm calculation.
-            let scale = direction.into_iter().map(f64::abs).fold(0., f64::max);
-            if scale == 0. {
-                return Err(format!(
-                    "rotation direction {direction:?}: expected a nonzero direction"
-                ));
-            }
-            let scaled = direction.map(|value| value / scale);
-            let direction = Direction3::new(scaled[0], scaled[1], scaled[2]).map_err(|cause| {
-                format!("rotation direction {direction:?}: expected a nonzero direction: {cause}")
-            })?;
+            let direction = unit_direction(direction, "rotation direction")?;
             Transform3::rotation(
                 Axis1::new(Point3::new(origin[0], origin[1], origin[2]), direction),
                 radians,
@@ -107,6 +109,18 @@ fn motion(operation: RigidMotion) -> Result<Transform3, String> {
         }
     }
 }
+fn unit_direction(vector: [f64; 3], label: &str) -> Result<Direction3, String> {
+    finite(vector, label)?;
+    // Martensite #550: scale the components before the squared-norm calculation.
+    let scale = vector.into_iter().map(f64::abs).fold(0., f64::max);
+    if scale == 0. {
+        return Err(format!("{label} {vector:?}: expected a nonzero direction"));
+    }
+    let [x, y, z] = vector.map(|value| value / scale);
+    Direction3::new(x, y, z)
+        .map_err(|cause| format!("{label} {vector:?}: expected a unit direction: {cause}"))
+}
+
 fn finite(values: [f64; 3], label: &str) -> Result<(), String> {
     if values.iter().all(|value| value.is_finite()) {
         return Ok(());

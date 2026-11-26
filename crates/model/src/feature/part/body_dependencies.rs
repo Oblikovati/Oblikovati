@@ -64,6 +64,7 @@ fn track_replacement(
         PartFeatureDefinition::Hole(hole) => hole.body_source(),
         PartFeatureDefinition::Shell(shell) => shell.body_source(),
         PartFeatureDefinition::MoveBody(motion) => motion.body_source(),
+        PartFeatureDefinition::Mirror(mirror) => mirror.recipe().sources[0],
         PartFeatureDefinition::CircularPattern(pattern) => pattern.recipe().sources[0],
         PartFeatureDefinition::RectangularPattern(pattern) => pattern.recipe().sources[0],
         PartFeatureDefinition::DeleteBody(delete) => delete.source(),

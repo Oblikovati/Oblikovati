@@ -139,7 +139,6 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         self.bodies.remove(&feature)
     }
 }
-
 fn datum_health<Failure>(
     record: &FeatureHealthRecord<PartFeatureFailure<Failure>>,
 ) -> Option<FeatureHealthRecord<WorkGeometryError>> {
@@ -373,6 +372,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 | PartFeatureDefinition::Hole(_)
                 | PartFeatureDefinition::Shell(_)
                 | PartFeatureDefinition::MoveBody(_)
+                | PartFeatureDefinition::Mirror(_)
                 | PartFeatureDefinition::CircularPattern(_)
                 | PartFeatureDefinition::RectangularPattern(_)
         ) {
@@ -399,7 +399,8 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::Hole(definition) => {
                 self.evaluate_hole(snapshot, backend, id, definition)
             }
-            definition @ (PartFeatureDefinition::CircularPattern(_)
+            definition @ (PartFeatureDefinition::Mirror(_)
+            | PartFeatureDefinition::CircularPattern(_)
             | PartFeatureDefinition::RectangularPattern(_)) => {
                 self.evaluate_extrusion_pattern(snapshot, backend, id, definition)
             }
@@ -475,7 +476,6 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         Ok(())
     }
 }
-
 impl DocumentSnapshot {
     pub(super) fn part_replay_range(&self) -> Result<FeatureReplayRange, PartFeatureProgramError> {
         self.validate_prism_reads()?;

@@ -52,7 +52,7 @@ fn typed_cut_replaces_the_named_body_and_replays_after_reopen() {
     assert_eq!(check_boolean_body(&mut owner, reopened, 1.536), key);
 }
 
-fn check_boolean_body(owner: &mut TestOwner, document: u64, volume: f64) -> Vec<u8> {
+pub(super) fn check_boolean_body(owner: &mut TestOwner, document: u64, volume: f64) -> Vec<u8> {
     assert_eq!(
         owner.take_scene().unwrap().unwrap().status.visible_bodies,
         1
@@ -76,7 +76,7 @@ fn check_boolean_body(owner: &mut TestOwner, document: u64, volume: f64) -> Vec<
     key.to_vec()
 }
 
-fn reopen_boolean_part(owner: &mut TestOwner, document: u64) -> u64 {
+pub(super) fn reopen_boolean_part(owner: &mut TestOwner, document: u64) -> u64 {
     let path = "/memory/certified-cut.opd";
     let client = Client::new(owner.document_host());
     client

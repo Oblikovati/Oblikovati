@@ -12,6 +12,7 @@ impl AuthoredFeature<WorkGeometryDefinition> {
                     | WorkGeometryDefinition::Hole(_)
                     | WorkGeometryDefinition::Shell(_)
                     | WorkGeometryDefinition::MoveBody(_)
+                    | WorkGeometryDefinition::Mirror(_)
                     | WorkGeometryDefinition::CircularPattern(_)
                     | WorkGeometryDefinition::RectangularPattern(_)
             )

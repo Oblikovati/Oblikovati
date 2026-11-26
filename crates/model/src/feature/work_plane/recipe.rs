@@ -21,6 +21,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Hole(crate::feature::hole::HoleRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
+    Mirror(crate::feature::mirror::MirrorRecipe),
     CircularPattern(crate::feature::circular_pattern::CircularPatternRecipe),
     RectangularPattern(crate::feature::rectangular_pattern::RectangularPatternRecipe),
     SketchPrism(crate::feature::sketch_prism::SketchPrismRecipe),
@@ -63,6 +64,7 @@ impl WorkPlaneDefinition {
             Self::Hole(definition) => Source::Hole(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
+            Self::Mirror(mirror) => Source::Mirror(mirror.recipe().clone()),
             Self::CircularPattern(pattern) => Source::CircularPattern(pattern.recipe().clone()),
             Self::RectangularPattern(pattern) => {
                 Source::RectangularPattern(pattern.recipe().clone())
@@ -98,6 +100,9 @@ fn restore_definition(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     use WorkPlaneDefinitionRecipe::*;
     match definition {
+        Mirror(recipe) => crate::feature::mirror::MirrorDefinition::new(recipe)
+            .map(|definition| WorkPlaneDefinition::Mirror(Box::new(definition)))
+            .map_err(WorkPlaneError::BodyReference),
         CircularPattern(recipe) => {
             crate::feature::circular_pattern::CircularPatternDefinition::new(recipe)
                 .map(|definition| WorkPlaneDefinition::CircularPattern(Box::new(definition)))
@@ -187,6 +192,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 17,
             Self::MoveBody(_) => 18,
             Self::Shell(_) => 19,
+            Self::Mirror(_) => 22,
             Self::CircularPattern(_) => 21,
             Self::RectangularPattern(_) => 20,
             Self::Fillet(_) => 15,
@@ -216,6 +222,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 22,
             Self::MoveBody(_) => 23,
             Self::Shell(_) => 24,
+            Self::Mirror(_) => 27,
             Self::CircularPattern(_) => 26,
             Self::RectangularPattern(_) => 25,
             Self::Fillet(_) => 20,

@@ -165,6 +165,7 @@ impl DatumCollection {
             | WorkGeometryDefinition::Hole(_)
             | WorkGeometryDefinition::Shell(_)
             | WorkGeometryDefinition::MoveBody(_)
+            | WorkGeometryDefinition::Mirror(_)
             | WorkGeometryDefinition::CircularPattern(_)
             | WorkGeometryDefinition::RectangularPattern(_) => {
                 return false;

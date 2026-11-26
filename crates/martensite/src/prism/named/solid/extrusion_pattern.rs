@@ -143,6 +143,7 @@ fn occurrence_name(
         match occurrence.motion {
             ResolvedBodyMotion::Translation(_) => "rectangular-pattern",
             ResolvedBodyMotion::Rotation { .. } => "circular-pattern",
+            ResolvedBodyMotion::Reflection { .. } => "mirror",
         },
         "occurrence",
         &[source.0, column, row],

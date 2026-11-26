@@ -14,6 +14,7 @@ pub mod extrusion_pattern;
 pub mod fillet;
 mod footprint;
 pub mod hole;
+pub mod mirror;
 pub mod move_body;
 pub mod part;
 pub mod rectangular_pattern;

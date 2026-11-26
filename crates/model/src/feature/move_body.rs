@@ -49,6 +49,10 @@ pub enum ResolvedBodyMotion {
         direction: [f64; 3],
         radians: f64,
     },
+    Reflection {
+        origin: [f64; 3],
+        normal: [f64; 3],
+    },
 }
 impl MoveBodyDefinition {
     /// Validate an ordered motion; example: `MoveBodyDefinition::new(body_key, operations)?`.

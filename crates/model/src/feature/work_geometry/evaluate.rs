@@ -139,6 +139,7 @@ impl WorkGeometryEvaluation {
                 | WorkPlaneDefinition::Chamfer(_)
                 | WorkPlaneDefinition::Hole(_)
                 | WorkPlaneDefinition::MoveBody(_)
+                | WorkPlaneDefinition::Mirror(_)
                 | WorkPlaneDefinition::CircularPattern(_)
                 | WorkPlaneDefinition::RectangularPattern(_)
         ) {

@@ -241,3 +241,19 @@ The desktop regression cuts a square through a block from a sketch on
 the offset face, checks the analytic volume after resizing the block,
 and verifies it again after reopening the part. All 39 desktop
 extrusion tests passed.
+
+## Mirrored extrusion features
+
+The typed `mirror` request in feature mode stores the source feature
+IDs and the authored plane. The adapter reflects certified Join and
+Cut tools and reapplies them to their current solid. The original
+body key survives replay. The desktop test checks a reflected through
+cut across undo, redo, resize, and reopen. All 40 desktop extrusion
+tests passed.
+
+Fixing block passed through MCP on native Wayland. Its two vertical
+bores and one cross bore matched 3.003611 cm³ at 12 mm thickness and
+4.055080 cm³ at 16 mm. A PCB mount variant replaced the four-post
+pattern with a two-post mirror. It matched 4.052389 cm³ and
+4.222035 cm³ at post lengths of 11 mm and 14 mm, respectively.
+Whole-body mirror modes remain open.

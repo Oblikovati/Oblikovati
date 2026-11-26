@@ -299,3 +299,68 @@ fn typed_cut_discovers_the_profile_on_a_named_face_offset() {
     reopen_extent_document(&mut owner, document);
     assert_extent_body(&mut owner, 0, 1653., 6.);
 }
+
+#[test]
+fn feature_mirror_reflects_a_through_cut_and_preserves_the_body() {
+    use super::boolean::{check_boolean_body, reopen_boolean_part};
+    use oblikovati_api::wire::featureargs::Mirror;
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let document = open_sketch(&mut owner);
+    let client = Client::new(owner.document_host());
+    client.features().add_feature(&request()).unwrap();
+    let sketch_index = client
+        .sketch()
+        .create(&Default::default())
+        .unwrap()
+        .sketch_index;
+    client
+        .sketch()
+        .add_entity(&AddSketchEntityArgs {
+            sketch_index,
+            kind: "rectangle".into(),
+            points: Some(vec![Some(vec![0.125, 0.375]), Some(vec![0.375, 0.625])]),
+            ..Default::default()
+        })
+        .unwrap();
+    let cut = client
+        .features()
+        .add_feature(&Extrude {
+            sketch_index,
+            operation: "cut".into(),
+            extent: "through-all".into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .0
+        .unwrap();
+    let seed = cut["name"].as_str().unwrap().to_owned();
+    let body_key = check_boolean_body(&mut owner, document, 0.9375);
+    let mirrored = Client::new(owner.document_host())
+        .features()
+        .add_feature(&Mirror {
+            source_features: Some(vec![seed]),
+            origin: Some(vec![0.5, 0., 0.]),
+            normal: Some(vec![2., 0., 0.]),
+            ..Default::default()
+        })
+        .unwrap()
+        .0
+        .unwrap();
+    assert_eq!(mirrored["kind"], "mirror");
+    assert_eq!(check_boolean_body(&mut owner, document, 0.875), body_key);
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
+    assert_extent_body(&mut owner, 0, 937.5, 5.);
+    Client::new(owner.document_host())
+        .transactions()
+        .redo()
+        .unwrap();
+    set_size(&mut owner, "12 mm");
+    let reopened = reopen_boolean_part(&mut owner, document);
+    assert_eq!(check_boolean_body(&mut owner, reopened, 1.578), body_key);
+}

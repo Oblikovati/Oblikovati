@@ -25,6 +25,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             PartFeatureDefinition::RectangularPattern(pattern) => {
                 (&pattern.recipe().sources, pattern.occurrences())
             }
+            PartFeatureDefinition::Mirror(mirror) => {
+                (&mirror.recipe().sources, Ok(vec![mirror.occurrence()]))
+            }
             PartFeatureDefinition::CircularPattern(pattern) => (
                 &pattern.recipe().sources,
                 pattern.occurrences(&snapshot.parameters),

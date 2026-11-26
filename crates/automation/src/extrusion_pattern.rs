@@ -4,7 +4,8 @@ use oblikovati_api::{
     wire::{
         AddFeatureArgs,
         featureargs::{
-            KIND_PATTERN_CIRCULAR, PatternCircular, PatternPlacement, PatternRectangular,
+            KIND_MIRROR, KIND_PATTERN_CIRCULAR, Mirror, PatternCircular, PatternPlacement,
+            PatternRectangular,
         },
     },
 };
@@ -14,6 +15,7 @@ use oblikovati_model::{
         circular_pattern::{
             CircularPatternDefinition, CircularPatternRecipe, CircularPatternSpacing,
         },
+        mirror::{MirrorDefinition, MirrorRecipe},
         rectangular_pattern::{RectangularPatternDefinition, RectangularPatternRecipe},
     },
     history::DocumentSnapshot,
@@ -44,18 +46,28 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .map_err(api_error)?
         .snapshot();
     let value = request.args.0.unwrap_or_else(|| serde_json::json!({}));
-    let (name_prefix, definition) = if request.kind == KIND_PATTERN_CIRCULAR {
-        let input: PatternCircular = serde_json::from_value(value).map_err(api_error)?;
-        (
+    let (name_prefix, definition) = match request.kind.as_str() {
+        KIND_MIRROR => (
+            "Mirror",
+            Pattern::Mirror(prepare_mirror(
+                snapshot,
+                serde_json::from_value(value).map_err(api_error)?,
+            )?),
+        ),
+        KIND_PATTERN_CIRCULAR => (
             "CircularPattern",
-            Pattern::Circular(prepare_circular(snapshot, input)?),
-        )
-    } else {
-        let input: PatternRectangular = serde_json::from_value(value).map_err(api_error)?;
-        (
+            Pattern::Circular(prepare_circular(
+                snapshot,
+                serde_json::from_value(value).map_err(api_error)?,
+            )?),
+        ),
+        _ => (
             "RectangularPattern",
-            Pattern::Rectangular(prepare_rectangular(snapshot, input)?),
-        )
+            Pattern::Rectangular(prepare_rectangular(
+                snapshot,
+                serde_json::from_value(value).map_err(api_error)?,
+            )?),
+        ),
     };
     let name = crate::fillet::next_name(snapshot, name_prefix)?;
     owner.ensure_part(files, document).map_err(Error)?;
@@ -69,6 +81,9 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         "extrusion pattern",
         |candidate, ids| {
             match definition {
+                Pattern::Mirror(definition) => {
+                    candidate.create_mirrored_features(&name, definition, ids)
+                }
                 Pattern::Circular(definition) => {
                     candidate.create_circular_feature_pattern(&name, definition, ids)
                 }
@@ -84,8 +99,34 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
 }
 
 enum Pattern {
+    Mirror(MirrorDefinition),
     Circular(CircularPatternDefinition),
     Rectangular(RectangularPatternDefinition),
+}
+
+fn prepare_mirror(snapshot: &DocumentSnapshot, input: Mirror) -> Result<MirrorDefinition, Error> {
+    if !matches!(input.mode.trim(), "" | "features") {
+        return Err(Error(format!(
+            "mirror mode {:?}: expected features",
+            input.mode
+        )));
+    }
+    if input.remove_original || !matches!(input.operation.trim(), "" | "newBody") {
+        return Err(Error(format!(
+            "feature mirror removeOriginal={}, operation {:?}: expected feature replay with the source retained",
+            input.remove_original, input.operation
+        )));
+    }
+    MirrorDefinition::new(MirrorRecipe {
+        sources: source_ids(snapshot, input.source_features)?,
+        origin: input
+            .origin
+            .map(|value| vector(value, "origin"))
+            .transpose()?
+            .unwrap_or([0.; 3]),
+        normal: vector(input.normal.unwrap_or_default(), "normal")?,
+    })
+    .map_err(Error)
 }
 
 fn prepare_rectangular(
