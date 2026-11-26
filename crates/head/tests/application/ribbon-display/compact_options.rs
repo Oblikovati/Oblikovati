@@ -101,15 +101,10 @@ fn click_selected_tools(world: &mut ApplicationWorld) {
 
 #[when("the user clicks the Options title at the bottom of that panel")]
 fn click_options_panel_title(world: &mut ApplicationWorld) {
-    let title = world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| run.text == "Options")
-        .max_by(|a, b| a.minimum[1].total_cmp(&b.minimum[1]))
-        .expect("expected the Options panel title")
-        .center();
-    world.click(super::super::diagnostics::pointer_pixels(title));
+    let title = world.run_in_window("##ribbon-temporary-panel", "OPTIONS");
+    assert!(title.minimum[1] > world.run("Document Settings").maximum[1]);
+    let point = super::super::diagnostics::pointer_pixels(title.center());
+    super::super::desktop_input::click(world, point);
 }
 
 #[then("the Tools panel buttons remain visible")]
