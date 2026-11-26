@@ -83,7 +83,7 @@ using this status; the live scenario directory can change.
   remains unverified. See `receipts/2026-11-20-picked-point-4179/` and
   `receipts/2026-11-20-midpoint-line-4178/`.
 - Ribbon Appearance (#3957) passed all 18 current scenarios and 201 steps.
-  See the [current run](receipts/2026-11-25-ribbon-appearance-current-3957/README.md).
+  See the [current Wayland and X11 runs](receipts/2026-11-26-ribbon-appearance-native-3957/README.md).
   The [earlier run](receipts/2026-11-20-ribbon-appearance-complete-3957/README.md)
   includes the pinned scenarios and the X11 Team Web launch check.
   All 18 pinned scenarios have R0 baseline records. Strict acceptance
