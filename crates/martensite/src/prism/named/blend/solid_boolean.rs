@@ -230,7 +230,7 @@ mod tests {
             maximum_tolerance: 1e-5,
         };
         let mut tools = [BooleanTool {
-            shape: (*tool).clone(),
+            shape: tool.to_shape(),
             sources: Vec::new(),
             resolution: None,
         }];
