@@ -17,6 +17,9 @@ widget submission.
 The expanded Geometry Properties color picker leaves room for the palette
 scrollbar so Add to Custom Colors remains visible when the dialog fits.
 On shorter displays the palette scrolls while OK and Cancel remain below it.
+Native checks cover the color picker, Scale field focus, and the Model dock
+resize while the Assets dock shares the available width.
+[Model Browser properties and resize](receipts/2026-11-26-model-browser-properties-and-resize-3896/README.md)
 
 A double-click sends the document and sketch IDs to the existing owner edit
 operation. The same operation remains available through script and add-in owner
