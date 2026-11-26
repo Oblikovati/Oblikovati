@@ -350,6 +350,7 @@ impl GuiShellAction {
             Self::OpenMoveBody | Self::OpenHole => hole_enabled::open(state),
             Self::OpenShellFeature => shell_enabled::open(state),
             Self::Sweep(action) => action.enabled(state),
+            Self::Loft(action) => action.enabled(state),
             Self::PreviewMoveBody(None)
             | Self::PreviewHole(None)
             | Self::PreviewShellFeature(None) => true,
@@ -360,8 +361,7 @@ impl GuiShellAction {
             Self::PreviewShellFeature(Some(request)) | Self::CreateShellFeature(request) => {
                 shell_enabled::request(state, request)
             }
-            Self::OpenFillet => blend_enabled::create(state),
-            Self::OpenChamfer => blend_enabled::create(state),
+            Self::OpenFillet | Self::OpenChamfer => blend_enabled::create(state),
             Self::PreviewFillet(None) | Self::PreviewChamfer(None) => true,
             Self::OpenFilletEdit(feature) => blend_enabled::open(state, *feature),
             Self::OpenChamferEdit(feature) => blend_enabled::open_chamfer(state, *feature),

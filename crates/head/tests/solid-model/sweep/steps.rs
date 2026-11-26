@@ -6,6 +6,9 @@ use oblikovati_gui::GuiSweepPreview;
 use oblikovati_viewport::{ViewportNavigation, ViewportPhysicalKey};
 #[path = "draft_settings.rs"]
 mod draft_settings;
+#[path = "properties_buttons.rs"]
+mod properties_buttons;
+use properties_buttons::accept;
 #[path = "solid_result.rs"]
 mod solid_result;
 
@@ -57,14 +60,6 @@ fn geometry_tip(world: &mut ApplicationWorld) {
     assert!(super::world::squeezed(&world.window_text("Sweep")).contains("closedprofilesketch"));
 }
 
-#[then("OK and Help are available")]
-fn help_and_ok(world: &mut ApplicationWorld) {
-    assert!(world.run_is_enabled("OK"));
-    assert!(world.run_is_enabled("Help"));
-    click_panel(world, "Help");
-    assert!(super::world::squeezed(&world.window_text("Sweep")).contains("Startthepath"));
-}
-
 #[then("the panel shows 1 Profile and 1 Curve")]
 fn chosen_sources(world: &mut ApplicationWorld) {
     assert_eq!(
@@ -95,11 +90,6 @@ fn shaded_preview(world: &mut ApplicationWorld) {
         "expected a visible shaded Sweep preview"
     );
     world.save_capture("sweep-preview");
-}
-
-#[when("OK is clicked")]
-fn accept(world: &mut ApplicationWorld) {
-    click_panel(world, "OK");
 }
 
 #[then("Sweep1 and Solid Bodies(1) appear")]

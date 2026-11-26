@@ -17,6 +17,7 @@ impl GuiFrameEngine {
 enum Draft {
     Extrude,
     Sweep,
+    Loft,
     Blend,
     Shell,
     Hole,
@@ -28,6 +29,7 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::Sweep(crate::GuiSweepAction::Open | crate::GuiSweepAction::OpenEdit(_)) => {
             Draft::Sweep
         }
+        GuiShellAction::Loft(crate::GuiLoftAction::Open) => Draft::Loft,
         GuiShellAction::OpenExtrude | GuiShellAction::OpenExtrudeEdit(_) => Draft::Extrude,
         GuiShellAction::OpenFillet
         | GuiShellAction::OpenChamfer
@@ -43,12 +45,17 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
 pub(super) fn open_drafts(
     state: &GuiCommandState,
     actions: &mut Vec<GuiShellAction>,
-    shell: &mut crate::shell_feature_dialog::ShellFeatureDialog,
-    hole: &mut crate::hole_dialog::HoleDialog,
-    motion: &mut crate::move_body_dialog::MoveBodyDialog,
-    (blend, sweep): (
+    (shell, hole): (
+        &mut crate::shell_feature_dialog::ShellFeatureDialog,
+        &mut crate::hole_dialog::HoleDialog,
+    ),
+    (motion, blend): (
+        &mut crate::move_body_dialog::MoveBodyDialog,
         &mut crate::blend_dialog::BlendDialog,
+    ),
+    (sweep, loft): (
         &mut crate::sweep_dialog::SweepDialog,
+        &mut crate::loft_dialog::LoftDialog,
     ),
     extrude: &mut crate::extrude_dialog::ExtrudeDialog,
 ) {
@@ -72,6 +79,9 @@ pub(super) fn open_drafts(
     if draft != Draft::Sweep {
         sweep.close(actions);
     }
+    if draft != Draft::Loft {
+        loft.close(actions);
+    }
     if draft != Draft::Shell {
         shell.close(actions);
     }
@@ -89,6 +99,7 @@ pub(super) fn open_drafts(
         GuiShellAction::Sweep(crate::GuiSweepAction::OpenEdit(feature)) => {
             sweep.open(state, Some(feature))
         }
+        GuiShellAction::Loft(crate::GuiLoftAction::Open) => loft.open(state, actions),
         GuiShellAction::OpenExtrude => extrude.requested = true,
         GuiShellAction::OpenExtrudeEdit(feature) => extrude.open_edit(state, feature),
         GuiShellAction::OpenFillet => blend.open(state),

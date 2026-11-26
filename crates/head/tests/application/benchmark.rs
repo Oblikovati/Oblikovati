@@ -242,6 +242,8 @@ mod ribbon_panel_visibility;
 mod sketch;
 #[path = "../solid-model/extrusion/steps.rs"]
 mod solid_extrusion;
+#[path = "../solid-model/loft/steps.rs"]
+mod solid_loft;
 #[path = "../solid-model/sweep/steps.rs"]
 mod solid_sweep;
 #[path = "viewport-entity-selection/steps.rs"]

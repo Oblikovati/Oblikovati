@@ -147,6 +147,9 @@ macro_rules! forward_owner_view_work {
         ) -> Result<bool, String> {
             self.$owner.commit_move_body_from_gui(request)
         }
+        fn loft_from_gui(&mut self, action: oblikovati_gui::GuiLoftAction) -> Result<bool, String> {
+            self.$owner.loft_from_gui(action)
+        }
         fn sweep_from_gui(
             &mut self,
             action: oblikovati_gui::GuiSweepAction,

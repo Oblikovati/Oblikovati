@@ -324,6 +324,16 @@ fn part_create_controls(
         size,
         actions,
     );
+    let (position, size) = owners.icons.appearance.cell(3);
+    owners.icons.cursor(ui, origin, position);
+    owners.icons.command_button(
+        ui,
+        "Loft",
+        GuiShellAction::Loft(crate::GuiLoftAction::Open),
+        state,
+        size,
+        actions,
+    );
 }
 /// Stays lit while the origin planes wait for a choice.
 fn start_sketch_command(

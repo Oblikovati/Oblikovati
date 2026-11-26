@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" package="testsuite/Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T23:25:33.168106754Z" time="4.471771212"><testcase name="Scenario: loft-01 Invoke Loft in an empty part: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature:7:3" time="4.471771212"><system-out><![CDATA[  Scenario: loft-01 Invoke Loft in an empty part
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/blank-metric-part.opd" is open
+   ✔  And the part contains no visible sketches or solid bodies
+   ✔  When Loft is clicked
+   ✔  Then a tip says Loft requires a body or at least two visible sketches
+   ✔  And OK and Help are available
+   ✔  When OK is clicked
+   ✔  Then the tip closes
+]]></system-out></testcase></testsuite></testsuites>

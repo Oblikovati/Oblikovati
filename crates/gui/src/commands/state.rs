@@ -126,6 +126,7 @@ pub struct GuiCommandState {
     /// The owner has accepted an extrusion preview for the active document.
     pub extrude_preview_active: bool,
     /// Current certified Sweep preview for the active document.
+    pub loft_sections: Vec<crate::GuiLoftSection>,
     pub sweep_preview: Option<crate::GuiSweepPreviewState>,
     /// The exact reference draft accepted for preview at this document generation.
     pub extrude_reference_preview: Option<crate::GuiExtrudePreview>,

@@ -228,3 +228,12 @@ Bodies. The [native receipt](receipts/2026-11-27-sweep-surface-3917/README.md)
 covers the published explicit selections on Wayland and X11.
 The same receipt covers the incomplete Guide draft. A browser sketch
 click leaves Path and Guide awaiting geometry and keeps OK disabled.
+
+### Loft entry and section selection
+
+The Part ribbon opens a dockable Loft draft. An empty Part shows geometry
+guidance with OK and Help. With visible circular sketches, viewport picks
+retain the authored point or profile curve identity and list the sections
+in pick order. The [native receipt](receipts/2026-11-27-loft-section-selection-3917/README.md)
+covers the first two published scenarios. Solid preview and acceptance
+belong to the next scenario.

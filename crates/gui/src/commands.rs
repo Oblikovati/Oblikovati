@@ -345,6 +345,7 @@ pub enum GuiShellAction {
     FinishSketch,
     OpenExtrude,
     Sweep(crate::GuiSweepAction),
+    Loft(crate::GuiLoftAction),
     /// Open a fillet draft for selected edges.
     OpenFillet,
     /// Open a body motion draft.
@@ -477,9 +478,6 @@ mod parameter_mutation;
 pub use parameter_mutation::GuiParameterMutation;
 /// A bounded owner snapshot; the GUI holds no document history or transaction token.
 mod asset_kind;
-pub use crate::application::model_browser::feature_properties::{
-    GuiFeatureCondition, GuiFeatureEdit,
-};
 pub use asset_kind::GuiPartAssetKind;
 mod line_style;
 pub use line_style::GuiSketchLineStyle;

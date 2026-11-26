@@ -15,6 +15,8 @@ mod datum_overlay;
 mod datum_pick;
 #[path = "owner_documents.rs"]
 mod documents_gui;
+#[path = "owner_loft.rs"]
+mod loft;
 #[path = "owner_offset_plane.rs"]
 mod offset_plane;
 #[path = "owner_sketch_text.rs"]
@@ -165,6 +167,7 @@ pub struct DesktopOwner<O, W, F, G, R, S: DispatchWakeup> {
     drawing_view_preview: Option<drawing_projection::DrawingViewPreview>,
     extrusion_access: Option<crate::part_scene::extrusion::CertifiedExtrudeAccess>,
     fillet_access: Option<oblikovati_automation::CertifiedFilletAccess>,
+    loft_selection: Option<loft::LoftSelection>,
     sweep_preview: Option<owner_blend::owner_sweep::SweepPreview>,
     extrusion_preview: Option<owner_extrusion_preview::ScenePreview>,
     extrusion_reference_preview: Option<oblikovati_gui::GuiExtrudePreview>,
@@ -286,6 +289,7 @@ impl<
             drawing_view_preview: None,
             extrusion_access: None,
             fillet_access: None,
+            loft_selection: None,
             sweep_preview: None,
             extrusion_preview: None,
             extrusion_reference_preview: None,

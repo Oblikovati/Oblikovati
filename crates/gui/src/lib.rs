@@ -121,12 +121,11 @@ pub use application::ribbon_customization::GuiRibbonSettingsStore;
 pub use commands::{
     GuiAuthoringContext, GuiBaseViewRequest, GuiBrowserChoice, GuiCommandState, GuiDocumentStorage,
     GuiDrawingLayoutAction, GuiDrawingLine, GuiDrawingProjection, GuiExtrudeDistanceValidation,
-    GuiExtrudeEditRequest, GuiExtrudePreview, GuiExtrudeReferenceExtent, GuiFeatureCondition,
-    GuiFeatureEdit, GuiFilletEditRequest, GuiFilletRequest, GuiHoleRequest, GuiLayoutComponent,
-    GuiMoveBodyRequest, GuiOffsetPlaneBase, GuiOffsetPlaneValidation, GuiParameterMutation,
-    GuiPartAssetKind, GuiPreviewImage, GuiProject, GuiProjectAction, GuiProjectGroup,
-    GuiProjectSettings, GuiSelectionMode, GuiShellAction, GuiShellFeatureRequest,
-    GuiSketchLineStyle,
+    GuiExtrudeEditRequest, GuiExtrudePreview, GuiExtrudeReferenceExtent, GuiFilletEditRequest,
+    GuiFilletRequest, GuiHoleRequest, GuiLayoutComponent, GuiMoveBodyRequest, GuiOffsetPlaneBase,
+    GuiOffsetPlaneValidation, GuiParameterMutation, GuiPartAssetKind, GuiPreviewImage, GuiProject,
+    GuiProjectAction, GuiProjectGroup, GuiProjectSettings, GuiSelectionMode, GuiShellAction,
+    GuiShellFeatureRequest, GuiSketchLineStyle,
 };
 pub use engine::{
     GuiFrameEngine, GuiFrameOutput, GuiFrameRequest, GuiWindowAction, GuiWindowControls,
@@ -149,9 +148,12 @@ mod extrude_dialog;
 mod face_draft;
 mod face_properties;
 mod hole_dialog;
+pub use application::model_browser::feature_properties::{GuiFeatureCondition, GuiFeatureEdit};
+mod loft_dialog;
 mod move_body_dialog;
 mod move_body_ribbon;
 mod shell_feature_dialog;
+pub use loft_dialog::{GuiLoftAction, GuiLoftElement, GuiLoftSection};
 mod sweep_dialog;
 pub use sweep_dialog::{
     GuiSweepAction, GuiSweepEditSeed, GuiSweepOrientation, GuiSweepOutput, GuiSweepPresetStore,

@@ -84,6 +84,7 @@ pub(super) fn apply(owner: &mut dyn HeadWork, action: &GuiShellAction) -> Result
         }
         GuiShellAction::FinishSketch => owner.edit_sketch_from_gui(false),
         GuiShellAction::OpenExtrude => Ok(false),
+        GuiShellAction::Loft(action) => owner.loft_from_gui(*action),
         GuiShellAction::Sweep(action) => owner.sweep_from_gui(action.clone()),
         GuiShellAction::OpenMoveBody => Ok(false),
         GuiShellAction::PreviewMoveBody(request) => {

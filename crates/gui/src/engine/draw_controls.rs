@@ -290,10 +290,9 @@ impl GuiFrameEngine {
         feature_actions::open_drafts(
             &request.commands,
             &mut selected,
-            &mut self.shell_feature_dialog,
-            &mut self.hole_dialog,
-            &mut self.move_body_dialog,
-            (&mut self.blend_dialog, &mut self.sweep_dialog),
+            (&mut self.shell_feature_dialog, &mut self.hole_dialog),
+            (&mut self.move_body_dialog, &mut self.blend_dialog),
+            (&mut self.sweep_dialog, &mut self.loft_dialog),
             &mut self.extrude_dialog,
         );
         self.home.panel(
@@ -333,6 +332,7 @@ impl GuiFrameEngine {
         );
         self.sweep_dialog
             .panel(ui, commands, (area, icons), &mut selected);
+        self.loft_dialog.panel(ui, commands, area, &mut selected);
         self.blend_dialog.panel(ui, commands, &mut selected, area);
         self.hole_dialog.panel(ui, commands, area, &mut selected);
         self.shell_feature_dialog
