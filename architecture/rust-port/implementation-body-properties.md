@@ -46,6 +46,10 @@ The six pinned Body Properties desktop scenarios passed individually. The
 69 steps cover physical value updates, reopening in the same session, and
 applying or discarding appearance changes. [Native reports and captures](receipts/2026-11-24-body-properties-pinned-3954/README.md)
 
+The six current scenarios also passed on Wayland and X11 with the shared
+solid Part. The appearance check follows the same sampled solid face
+through Apply and restore. [Current native reports](receipts/2026-11-26-body-properties-wayland-3954/README.md)
+
 This does not implement whole-part aggregation, assembly analysis, non-prism
 feature families, or full foreground MCPBridge acceptance. Full port acceptance
 remains open. Geometry recognizers, fallbacks, and native type assertions have

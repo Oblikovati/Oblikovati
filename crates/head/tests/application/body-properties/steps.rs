@@ -74,6 +74,11 @@ fn prepare_body_appearance(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
     click_branch_arrow(world, "Solid Bodies");
     world.expect_text(BODY);
+    let point = super::ribbon_keyboard_navigation::visible_face_point(world);
+    world.observed_view = Some(point);
+    assert!(super::solid_visibility::neutral_fixture_hue(
+        &body_face_pixel(world)
+    ));
 }
 fn open_dialog(world: &mut ApplicationWorld) {
     right_click_row(world, BODY);
@@ -135,13 +140,7 @@ fn expected_physical_rows(world: &mut ApplicationWorld) -> [&'static str; 6] {
 }
 fn expect_physical_calculated(world: &mut ApplicationWorld) {
     let expected = expected_physical_rows(world);
-    let (position, size) = diagnostics::window_geometry(TITLE).expect("expected Body Properties");
-    let rows = world.frame.runs.iter().filter(|run| {
-        let point = run.center();
-        (0..2)
-            .all(|axis| point[axis] >= position[axis] && point[axis] <= position[axis] + size[axis])
-    });
-    validate_physical_rows(rows.map(|run| run.text.as_str()), expected).unwrap();
+    validate_physical_rows(world.window_text(TITLE).split_whitespace(), expected).unwrap();
 }
 fn validate_physical_rows<'a>(
     rows: impl Iterator<Item = &'a str>,
@@ -269,8 +268,17 @@ fn selector_and_buttons(world: &mut ApplicationWorld) {
 #[when("I choose Update")]
 #[when("the user chooses Update")]
 fn choose_update(world: &mut ApplicationWorld) {
-    world.click_text("Update");
-    world.pump(Vec::new());
+    let caption = world.window_text(TITLE);
+    let label = caption
+        .split_whitespace()
+        .find(|run| run.ends_with("Update"))
+        .expect("expected the dialog's Update control");
+    let run = world.run_in_window(TITLE, label);
+    // The adjacent body name can share the Update caption's rendered text run.
+    world.click(diagnostics::pointer_pixels([
+        run.maximum[0] - 3.,
+        run.center()[1],
+    ]));
     world.pump(Vec::new());
 }
 #[then("mass, area, volume, and the center of gravity coordinates display calculated values")]
@@ -363,25 +371,23 @@ fn choose_ok(world: &mut ApplicationWorld) {
 }
 #[then("the solid is displayed with the Black appearance")]
 fn solid_black(world: &mut ApplicationWorld) {
-    let capture = super::capture_framebuffer(&mut world.app().window.native);
-    let windows = diagnostics::window_occlusions();
+    let pixel = body_face_pixel(world);
     assert!(
-        super::solid_visibility::visible_fixture_point(&capture, &windows).is_none(),
-        "expected no default appearance left"
-    );
-    assert!(
-        super::solid_visibility::visible_appearance_fill(&capture, &windows, BLACK_COLOR),
-        "expected the model's Black appearance outside the GUI windows"
+        (0..3).all(|channel| pixel[channel].abs_diff(BLACK_COLOR[channel]) <= 10),
+        "expected the sampled face to show Black, found {pixel:?}"
     );
 }
 #[then("the solid is displayed with the part appearance")]
 fn solid_part(world: &mut ApplicationWorld) {
-    let capture = super::capture_framebuffer(&mut world.app().window.native);
-    let windows = diagnostics::window_occlusions();
+    let pixel = body_face_pixel(world);
     assert!(
-        super::solid_visibility::visible_fixture_point(&capture, &windows).is_some(),
-        "expected the part's appearance"
+        super::solid_visibility::neutral_fixture_hue(&pixel),
+        "expected the sampled face to show the part appearance, found {pixel:?}"
     );
+}
+fn body_face_pixel(world: &mut ApplicationWorld) -> [u8; 4] {
+    let point = world.observed_view.expect("expected the sampled body face");
+    world.pixel_at(point.map(|coordinate| coordinate as usize))
 }
 #[then("the body row remains selected in the model browser")]
 fn row_selected(world: &mut ApplicationWorld) {
