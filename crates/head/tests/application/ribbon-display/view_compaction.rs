@@ -25,8 +25,7 @@ fn narrow_windows_panel(world: &mut ApplicationWorld) {
 }
 
 pub(super) fn click_compact_panel(world: &mut ApplicationWorld, name: &str) {
-    super::super::x11_input::click(compact_panel_point(world, name));
-    world.pump(Vec::new());
+    super::super::desktop_input::click(world, compact_panel_point(world, name));
 }
 
 #[when("the user clicks the Appearance panel button")]
@@ -63,21 +62,26 @@ fn windows_popup_closed(world: &mut ApplicationWorld) {
 
 #[then("the Tools ribbon groups are displayed")]
 fn tools_groups_visible(world: &mut ApplicationWorld) {
-    for _ in 0..4 {
-        if world.shows("Options") {
-            break;
-        }
-        world.pump(Vec::new());
+    let row = super::super::diagnostics::child_scroll("##application-ribbon", "##ribbon-panels")
+        .expect("expected the ribbon command row");
+    for name in ["Measure", "Material and Appearance"] {
+        assert!(
+            world.frame.runs.iter().any(|run| {
+                run.list == row.list
+                    && super::super::diagnostics::panel_caption_matches(&run.text, name)
+            }),
+            "expected {name} in the visible Tools command row"
+        );
     }
-    world.expect_text("Options");
-    let command = sketch_visibility_label(world);
-    world.expect_no_text(command);
+    assert_eq!(
+        ribbon_tab_underlines(world, ["Sketch", "Tools"]),
+        [false, true]
+    );
 }
 
 #[then("the View ribbon groups are displayed")]
 fn view_groups_visible(world: &mut ApplicationWorld) {
-    let command = sketch_visibility_label(world);
-    world.expect_text(command);
+    super::overflow::view_groups_shown(world);
 }
 
 #[test]

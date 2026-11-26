@@ -287,7 +287,10 @@ fn model_selected(world: &mut ApplicationWorld) {
     world.save_capture("3d-model-tab-selected");
 }
 
-fn ribbon_tab_underlines(world: &mut ApplicationWorld, tabs: [&str; 3]) -> [bool; 3] {
+fn ribbon_tab_underlines<const COUNT: usize>(
+    world: &mut ApplicationWorld,
+    tabs: [&str; COUNT],
+) -> [bool; COUNT] {
     let ribbon = "##application-ribbon";
     let capture = super::capture_framebuffer(&mut world.app().window.native);
     let [width, height] = capture.extent.map(|pixels| pixels as usize);

@@ -29,15 +29,15 @@ fn active_view_in_overflow(world: &mut ApplicationWorld) {
     view_in_overflow(world);
     open_overflow(world);
     select_hidden_view(world);
-    let command = sketch_visibility_label(world);
-    world.expect_text(command);
+    view_groups_shown(world);
 }
 
 #[given("the application window is narrow enough that View is outside the visible tab row")]
 #[given("the narrow application window places View in the tab overflow menu")]
 pub(super) fn view_in_overflow(world: &mut ApplicationWorld) {
     use crate::HeadWork;
-    let scale = oblikovati_model::ui_scale::UiScaleOptions::new(1.25, 1.).unwrap();
+    // At the minimum window width, the current tab labels still fit with the smaller font.
+    let scale = oblikovati_model::ui_scale::UiScaleOptions::new(1.7, 1.).unwrap();
     world.app().owner.set_ui_scale_from_gui(scale).unwrap();
     world.pump(Vec::new());
     super::window_compaction::resize_window(world, 640);
@@ -53,12 +53,14 @@ fn part_with_minimized_tools(world: &mut ApplicationWorld) {
 }
 
 fn view_in_tab_row(world: &ApplicationWorld) -> bool {
-    let [_, y] = super::display_control_point(world);
+    let tabs =
+        super::super::diagnostics::child_scroll("##application-ribbon", "##ribbon-tab-region")
+            .expect("expected the visible tab strip");
     world
         .frame
         .runs
         .iter()
-        .any(|run| run.text == "View" && (run.center()[1] - y as f32).abs() < 12.)
+        .any(|run| run.list == tabs.list && run.text == "View")
 }
 
 #[when("the user clicks the ribbon tab overflow control")]
@@ -69,8 +71,7 @@ fn open_overflow(world: &mut ApplicationWorld) {
     let label = world.run(">>");
     let point =
         super::super::diagnostics::pointer_pixels([label.minimum[0] + 4., label.center()[1]]);
-    super::super::x11_input::click(point);
-    world.pump(Vec::new());
+    super::super::desktop_input::click(world, point);
 }
 
 #[then("a menu lists the tabs that do not fit in the row, including View")]
@@ -82,8 +83,7 @@ fn hidden_tabs_listed(world: &mut ApplicationWorld) {
 #[when("the user selects View from the overflow menu")]
 fn select_hidden_view(world: &mut ApplicationWorld) {
     let point = super::super::diagnostics::pointer_pixels(world.run("View").center());
-    super::super::x11_input::click(point);
-    world.pump(Vec::new());
+    super::super::desktop_input::click(world, point);
 }
 
 #[when("the user opens the tab overflow menu and selects View")]
@@ -129,8 +129,7 @@ fn overflow_popup_check_ignores_the_browser_view_row() {
 #[then("the View command groups remain displayed")]
 #[then("the overflow menu closes and the View command groups remain displayed")]
 fn view_commands_remain(world: &mut ApplicationWorld) {
-    let command = sketch_visibility_label(world);
-    world.expect_text(command);
+    view_groups_shown(world);
     overflow_menu_closed(world);
 }
 
@@ -138,17 +137,17 @@ fn view_commands_remain(world: &mut ApplicationWorld) {
 #[when("the user selects the visible Tools tab")]
 fn click_visible_tools(world: &mut ApplicationWorld) {
     let point = super::super::diagnostics::pointer_pixels(world.run("Tools").center());
-    super::super::x11_input::click(point);
-    world.pump(Vec::new());
+    super::super::desktop_input::click(world, point);
 }
 
 #[then("Tools becomes active and its command groups replace the View groups")]
 fn tools_replace_view(world: &mut ApplicationWorld) {
     let command = sketch_visibility_label(world);
     world.expect_no_text(command);
-    world.hover([500, 600]);
-    let inactive = world.pixel_left_of("Sketch");
-    assert_ne!(world.pixel_left_of("Tools"), inactive);
+    assert_eq!(
+        ribbon_tab_underlines(world, ["Sketch", "Tools"]),
+        [false, true]
+    );
 }
 
 #[then("no temporary ribbon command panel opens")]
@@ -158,14 +157,19 @@ fn no_temporary_ribbon(_world: &mut ApplicationWorld) {
 
 #[then("the menu closes and the View command groups replace the Manage command groups")]
 fn view_commands_replace_manage(world: &mut ApplicationWorld) {
-    let command = sketch_visibility_label(world);
-    world.expect_text(command);
+    view_groups_shown(world);
     assert!(
         !world
             .window_text("##application-ribbon")
             .contains("Parameters")
     );
     overflow_menu_closed(world);
+}
+
+pub(super) fn view_groups_shown(world: &ApplicationWorld) {
+    for group in ["Visibility", "Appearance", "Windows"] {
+        world.expect_text(group);
+    }
 }
 
 #[then("View remains outside the visible tab row at this window width")]
@@ -177,10 +181,10 @@ fn view_stays_hidden(world: &mut ApplicationWorld) {
 #[then("View is visible as the active tab")]
 fn view_visible_and_active(world: &mut ApplicationWorld) {
     assert!(view_in_tab_row(world));
-    world.hover([1000, 600]);
-    let inactive = world.pixel_left_of("Tools");
-    assert_eq!(world.pixel_left_of("Manage"), inactive);
-    assert_ne!(world.pixel_left_of("View"), inactive);
+    assert_eq!(
+        ribbon_tab_underlines(world, ["Tools", "Manage", "View"]),
+        [false, false, true]
+    );
 }
 
 #[then("its command groups and the part remain visible")]

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exercise width-compacted ribbon panels with the native window manager.
+use super::super::{desktop_input, main_window_frame_native};
 use super::*;
 
 #[given("a part is active in the MCAD Software with the full 3D Model ribbon displayed")]
@@ -21,28 +22,30 @@ pub(super) fn narrow_window(world: &mut ApplicationWorld) {
 }
 
 pub(super) fn resize_window(world: &mut ApplicationWorld, width: i32) {
-    super::super::x11_input::focus_window();
-    let bounds = super::super::x11_input::application_bounds();
-    let edge = [bounds[2] - 2, bounds[3] / 2];
+    let [before_width, height] = world.extent().map(|value| value as i32);
+    let edge = [before_width - 2, height / 2];
     let target = [width, edge[1]];
-    super::super::main_window_frame_native::drag_resize_handle(world, edge, target);
+    desktop_input::drag(world, edge, target);
     world.pump(Vec::new());
-    assert!(world.app().window.native.drawable_extent().unwrap()[0] < 800);
+    let actual = world.extent()[0] as i32;
+    assert!(
+        actual.abs_diff(width) <= 4,
+        "resize from {before_width} toward {width} ended at {actual}"
+    );
 }
 
 #[given("the temporary Modify panel is open")]
 fn open_modify(world: &mut ApplicationWorld) {
     let button = compact_panel_point(world, "Modify");
-    super::super::x11_input::click(button);
-    world.pump(Vec::new());
+    desktop_input::click(world, button);
     world.expect_text("Hole");
     assert!(world.run("Hole").minimum[1] > band_height());
 }
 
 #[when("the user maximizes the application window")]
 fn maximize_window(world: &mut ApplicationWorld) {
-    super::super::main_window_frame_native::press_maximize(world);
-    super::super::main_window_frame_native::pump_until(world, true);
+    desktop_input::click(world, main_window_frame_native::frame_control_center(1));
+    main_window_frame_native::pump_until(world, true);
     world.pump(Vec::new());
     world.pump(Vec::new());
 }

@@ -34,8 +34,7 @@ fn open_options(world: &mut ApplicationWorld) {
 #[when("the user selects Document Settings")]
 fn open_document_settings(world: &mut ApplicationWorld) {
     let at = super::super::diagnostics::pointer_pixels(world.run("Document Settings").center());
-    super::super::x11_input::click(at);
-    world.pump(Vec::new());
+    super::super::desktop_input::click(world, at);
 }
 
 #[then("the Document Settings dialog opens for the active part")]
@@ -73,8 +72,7 @@ fn standard_tab_selected(world: &mut ApplicationWorld) {
 fn close_settings(world: &mut ApplicationWorld) {
     let close = world.run_in_window("Document Settings", "Close");
     let at = super::super::diagnostics::pointer_pixels(close.center());
-    super::super::x11_input::click(at);
-    world.pump(Vec::new());
+    super::super::desktop_input::click(world, at);
     assert!(window_geometry("Document Settings").is_none());
 }
 
