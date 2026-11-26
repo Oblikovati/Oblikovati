@@ -95,7 +95,7 @@ using this status; the live scenario directory can change.
   includes the pinned scenarios and X11 Text and Fillet checks.
 - Ribbon Keyboard Navigation (#3856) passed all 18 current scenarios and 220 steps
   on [Wayland and X11 with the updated Part fixture](receipts/2026-11-26-ribbon-keyboard-current-3856/README.md).
-- Ribbon Docking (#3860) passed 21 current scenarios and 223 steps. The pinned Martensite build rejects the Shell preview (#554).
+- Ribbon Docking (#3860) passed [21 of 22 current scenarios and 223 steps on Wayland and X11](receipts/2026-11-26-ribbon-docking-native-3860/README.md). The Shell preview scenario remains blocked by Martensite #554.
   See the [current run](receipts/2026-11-25-ribbon-docking-current-3860/README.md).
 - Sketch Text (#3907) opens the dockable Format Text editor from the Sketch
   ribbon. Point placement, preview, Cancel, OK, and creation undo and redo
