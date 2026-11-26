@@ -261,8 +261,24 @@ fn right_click_tile(world: &mut ApplicationWorld) {
 }
 #[then("a context menu appears with Open, Copy, Rename and Properties choices")]
 fn tile_menu(world: &mut ApplicationWorld) {
-    for row in ["Copy", "Rename", "Properties"] {
-        world.expect_text(row);
+    let menu = world
+        .frame
+        .runs
+        .iter()
+        .find(|row| row.text == "Rename" && world.frame.is_popup_row(row))
+        .expect("expected the thumbnail context menu");
+    let choices: Vec<_> = world
+        .frame
+        .runs
+        .iter()
+        .filter(|row| row.list == menu.list)
+        .map(|row| row.text.as_str())
+        .collect();
+    for choice in ["Open", "Copy", "Rename", "Properties"] {
+        assert!(
+            choices.contains(&choice),
+            "missing {choice:?} in {choices:?}"
+        );
     }
 }
 #[when("I click an empty area of the file list")]
@@ -315,6 +331,7 @@ fn file_row_context_menu_properties_remains_clickable() {
     world.close();
 }
 
+#[cfg(target_os = "linux")]
 #[path = "native_context.rs"]
 mod native_context;
 // Several drawings
