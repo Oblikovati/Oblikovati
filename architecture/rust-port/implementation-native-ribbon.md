@@ -4,6 +4,11 @@ Side-docked tabs reserve enough width for their full labels. The command
 groups start beside that measured tab column, within the existing ribbon
 bounds.
 
+Ribbon key tips work with the current saved extrusion and sketch across
+full, temporary, and side-docked ribbon groups. The
+[native keyboard navigation run](receipts/2026-11-26-ribbon-keyboard-current-3856/README.md)
+also covers face selection, view rotation, and model-browser navigation.
+
 Ribbon Customization selects the clicked command in either list on a
 secondary click. The selected row can then be transferred with the
 list's transfer control. The [native customization runs](receipts/2026-11-24-native-customization-transactions-3856/README.md)

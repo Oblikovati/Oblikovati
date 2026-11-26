@@ -839,18 +839,27 @@
       "fd44aa235ec7af710f1ab4f2255e9cf48cb849e7643a094c9dd7c622393cb3cf": {
         "feature_sha256": "fd44aa235ec7af710f1ab4f2255e9cf48cb849e7643a094c9dd7c622393cb3cf",
         "supporting_files": {
-          "fixtures/cad/workspace-layout-native.opd": "58aafeb5ffcba693695903b57e8541178a77e27f7e0a45c27c1f680eb225b1f9"
+          "features/application/ribbon-keyboard-navigation/BLOCKERS.md": "5360700b3610a9255ee4aa7ae7dfd9890c3ea3bea551c2ea1302b13efbbfcb81",
+          "features/application/ribbon-keyboard-navigation/FIXTURES.md": "a299361ef65dd28fd8620db2d33b1bcf0986140201ef969dc5f35dbf273afa7c",
+          "features/application/ribbon-keyboard-navigation/FUNCTIONAL.md": "0071bbdd5b8bafcd6bb65bb749f7114a5fbd26de960d08a2accd699041d035c3",
+          "features/application/ribbon-keyboard-navigation/VISUAL.md": "cc7980283db198f6681b74f7c09eb41cc22b07af0527e7ba2802d2c4c8a94228",
+          "features/application/ribbon-keyboard-navigation/key-tip-states.svg": "9c2f83449e39d6ad1c8d4c04ac0504cb8aaf56bd179ee9ef4cb2568a886a3e3c",
+          "features/application/ribbon-keyboard-navigation/key-tips-face-selection.svg": "61d99e5a427f15db3c56ec986d4b189c9c80538e6cc7d8d76b18a7c75af09de5",
+          "features/application/ribbon-keyboard-navigation/key-tips-panel-selector.svg": "55771030969c53ff3c3061a9ca4d161254e2b10bf778ea9120a15a60d9e283c8",
+          "features/application/ribbon-keyboard-navigation/minimized-command-launch.svg": "f1f575402c213202925593aa80db6d34ee3e6caac67f1655e2b381d0501de29b",
+          "features/application/ribbon-keyboard-navigation/property-focus-key-tips.svg": "cd40b3e2234dfdc3b95662f0e2a6f0e7dd02a85e26d2fee8be0ed8a45b21b210",
+          "features/application/ribbon-keyboard-navigation/side-docked-key-tips.svg": "0c1f50b5153a78bb2a587e172f249168782719b71b67d1ef43219062e102426b",
+          "features/application/ribbon-keyboard-navigation/temporary-key-tip-sequence.svg": "16de05cda3e57a95712728db21fe2a759e06aabf8482ba14ac881759f42206e2",
+          "fixtures/cad/workspace-layout-native.opd": "d85db64234c40a7bb09268f57abbd97aaa33c7542a81a022f385e8d590bae2ac"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-25-ribbon-keyboard-current-3856/cucumber.json",
-        "cucumber_sha256": "3836e5bf446b2b31eda8987d42e8538423c100b42ab1773b54d7cb586bff8022",
-        "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-ribbon-keyboard-current-3856/scenario-inventory.json",
-        "scenario_inventory_sha256": "e71b56d8934f36b366f35e7b6d6f118bbc5391370d6934a801b1c65867e4fc62",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-25-ribbon-keyboard-current-3856/scenario-arguments.json",
-        "scenario_arguments_sha256": "233ada7528a2b6ae80816791353e46ed1c9050ec8270e76e127a3455beafa2a7",
-        "application_commit": "5d8d516b5f37aff62f8a79140a2fe7505f4baee3",
-        "command": "OBK_BDD_AREA=application OBK_BDD_FEATURE=ribbon-keyboard-navigation OBK_BDD_SCENARIO=<case> <head-test-binary> application_scenarios_use_the_native_window --nocapture",
-        "environment": "Linux X11 with Xvfb, Openbox, and Vulkan Lavapipe",
-        "notes": "All eighteen current scenarios passed with the published native Part. Strict build and runtime provenance remains open under #3978."
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-ribbon-keyboard-current-3856/wayland.json",
+        "cucumber_sha256": "1ad0ce0e75e07c276ce5d6c5d54b12f71eb08c80b9236f9d8bc3af389cac30fc",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-ribbon-keyboard-current-3856/wayland-arguments.json",
+        "scenario_arguments_sha256": "dc5bf978c3b2cde0c23f22d8aacd7f687b892e6c4aee7b44755615adf70af2f3",
+        "application_commit": "bcd51cda7b2d3c26ba38de77f92e010ea5d7be75",
+        "command": "Full ribbon keyboard navigation run through the native test window. See the receipt README.",
+        "environment": "Linux Wayland with nested Weston 13 and Vulkan Lavapipe. X11 cross-check used Xvfb and Openbox.",
+        "notes": "18 published scenarios and 220 steps passed on both backends with the current workspace-layout-native.opd fixture. Strict build and runtime provenance remains open under #3978."
       }
     }
   },
