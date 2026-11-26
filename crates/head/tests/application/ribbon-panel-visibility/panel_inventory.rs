@@ -97,6 +97,22 @@ fn model_docked_active(world: &mut ApplicationWorld) {
     side_selector::side_group_y(world, "Modify");
 }
 
+#[test]
+fn side_model_measure_visibility_is_shared_with_the_direct_selector() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    dock_model_left(&mut world);
+    side_selector::open_side_selector(&mut world);
+    assert!(!world.checked("Measure"));
+    world.click_text("Measure");
+    assert!(world.checked("Measure"));
+    side_selector::click_selector(&mut world);
+    assert!(!side_selector::selector_popup_open());
+    side_selector::side_group_y(&world, "Measure");
+    side_selector::side_group_y(&world, "Explore");
+    world.close();
+}
+
 #[when("the user opens Show Panels from the ribbon context menu")]
 #[when("the user opens Show Panels in the context menu")]
 #[when("the user opens the \"Show Panels\" submenu")]

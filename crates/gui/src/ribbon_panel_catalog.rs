@@ -59,6 +59,11 @@ pub(crate) enum RibbonPanel {
     PartNotes,
     PartShapeGenerator,
     PartFreeform,
+    PartSurface,
+    PartPlastic,
+    PartHarness,
+    PartFactory,
+    PartConvert,
     PartGeometricAnnotation,
     PartGeneralAnnotation,
     PartAnnotationManage,
@@ -109,6 +114,11 @@ impl RibbonPanel {
             Self::PartNotes => "Notes",
             Self::PartShapeGenerator => "Shape Generator",
             Self::PartFreeform => "Create Freeform",
+            Self::PartSurface => "Surface",
+            Self::PartPlastic => "Plastic Part",
+            Self::PartHarness => "Harness",
+            Self::PartFactory => "iPart/Assembly",
+            Self::PartConvert => "Convert",
             Self::PartGeometricAnnotation => "Geometric Annotation",
             Self::PartGeneralAnnotation => "General Annotation",
             Self::PartAnnotationManage => "Manage",
@@ -182,6 +192,11 @@ impl RibbonPanel {
             | Self::PartNotes
             | Self::PartShapeGenerator
             | Self::PartFreeform
+            | Self::PartSurface
+            | Self::PartPlastic
+            | Self::PartHarness
+            | Self::PartFactory
+            | Self::PartConvert
             | Self::PartGeometricAnnotation
             | Self::PartGeneralAnnotation
             | Self::PartAnnotationManage
@@ -218,7 +233,7 @@ pub(crate) fn available_panels(
     }
     panels
 }
-/// Add the documented floating Part groups to the standard context catalog.
+/// Match the panel catalog to the ribbon placement, e.g. the side-docked 3D Model groups.
 pub(crate) fn panels_for_placement(
     tab: RibbonTab,
     state: &GuiCommandState,
@@ -226,10 +241,27 @@ pub(crate) fn panels_for_placement(
     placement: RibbonPlacement,
 ) -> Vec<RibbonPanel> {
     let panels = available_panels(tab, state, customization);
-    if placement != RibbonPlacement::Floating {
-        return panels;
+    match placement {
+        RibbonPlacement::Left | RibbonPlacement::Right if tab == RibbonTab::Model => {
+            panels.into_iter().flat_map(side_model_groups).collect()
+        }
+        RibbonPlacement::Floating => panels.into_iter().flat_map(floating_groups).collect(),
+        _ => panels,
     }
-    panels.into_iter().flat_map(floating_groups).collect()
+}
+fn side_model_groups(panel: RibbonPanel) -> impl Iterator<Item = RibbonPanel> {
+    use RibbonPanel::*;
+    let extra: &[RibbonPanel] = match panel {
+        PartPattern => &[PartFreeform, PartSurface, Parameters],
+        PartSimplification => &[PartPlastic, ToolMeasure, Insert, PartHarness, PartFactory],
+        PartSimulation => &[PartConvert],
+        _ => &[],
+    };
+    // Parameters is placed above Simplification on the side ribbon.
+    (panel != Parameters)
+        .then_some(panel)
+        .into_iter()
+        .chain(extra.iter().copied())
 }
 fn floating_groups(panel: RibbonPanel) -> impl Iterator<Item = RibbonPanel> {
     use RibbonPanel::*;

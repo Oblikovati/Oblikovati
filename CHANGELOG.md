@@ -13,7 +13,7 @@
 - Added analytic solid-edge lengths to the Part Measure panel. (#3967)
 - Added Zoom, Zoom All, Zoom Selected, and Zoom Window to ribbon customization. (#3856)
 - Added Show Panels instructions, F1 help, and visibility toggles for Primitives, Simulation, and 3D Print on the 3D Model ribbon. Added the ten Part Manage panels and connected Update and iProperties to their existing actions. (#3856)
-- Added an Explore panel with Measure to the 3D Model ribbon. (#3856)
+- Added an Explore panel with Measure to the 3D Model ribbon and completed the side-docked 3D Model panel list and default check states. (#3856)
 - Added the Standard overview and Units tab to Document Settings. (#3856)
 - Added the Exit 2D Sketch Tab category and source paging. Transfers after Ctrl+A put the focused command first. Up and Down select staged rows without reordering them. (#3856)
 - Added a Tools Options expansion with a ribbon layout reset confirmation. Kept Shell and the solid visible when opening Customize and deferred removal of the empty User Commands group until Customize closed. (#3856)

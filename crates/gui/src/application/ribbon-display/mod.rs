@@ -174,6 +174,11 @@ impl Default for RibbonDisplayState {
             hidden_panels: BTreeSet::from([
                 (RibbonTab::Model, RibbonPanel::PartPrimitives),
                 (RibbonTab::Model, RibbonPanel::Parameters),
+                (RibbonTab::Model, RibbonPanel::PartPlastic),
+                (RibbonTab::Model, RibbonPanel::ToolMeasure),
+                (RibbonTab::Model, RibbonPanel::Insert),
+                (RibbonTab::Model, RibbonPanel::PartHarness),
+                (RibbonTab::Model, RibbonPanel::PartFactory),
                 (RibbonTab::Sketch, RibbonPanel::Layout),
                 (RibbonTab::Sketch, RibbonPanel::Parameters),
                 (RibbonTab::Tools, RibbonPanel::ToolTutorials),

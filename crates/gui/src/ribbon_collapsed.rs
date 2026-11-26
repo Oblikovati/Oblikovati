@@ -121,15 +121,19 @@ fn compact_group_icon(panel: RibbonPanel) -> crate::icons::IconGlyph {
         RibbonPanel::AnnotateText | RibbonPanel::PartNotes | RibbonPanel::PartGeneralAnnotation => {
             IconGlyph::Annotation
         }
-        RibbonPanel::AnnotateSymbols | RibbonPanel::PartGeometricAnnotation => {
-            IconGlyph::DrawingSurface
-        }
+        RibbonPanel::AnnotateSymbols
+        | RibbonPanel::PartGeometricAnnotation
+        | RibbonPanel::PartSurface => IconGlyph::DrawingSurface,
         RibbonPanel::PartCreate => IconGlyph::Extrude,
         RibbonPanel::PartPrimitives => IconGlyph::CreateBlock,
         RibbonPanel::PartModify => IconGlyph::Fillet,
         RibbonPanel::PartWorkFeatures => IconGlyph::WorkPlane,
         RibbonPanel::PartSimplification | RibbonPanel::PartShapeGenerator => IconGlyph::Simplify,
         RibbonPanel::PartFreeform => IconGlyph::Envelope,
+        RibbonPanel::PartPlastic => IconGlyph::Shell,
+        RibbonPanel::PartHarness => IconGlyph::WorkAxis,
+        RibbonPanel::PartFactory => IconGlyph::NewAssembly,
+        RibbonPanel::PartConvert => IconGlyph::Import,
         RibbonPanel::PartPrint => IconGlyph::Print,
         RibbonPanel::UserCommands | RibbonPanel::PartAnnotationManage => IconGlyph::Customize,
     }

@@ -93,6 +93,11 @@ commands inline when the leading groups fit, and opens from a compact
 button at narrower widths.
 [Manage panel inventory and compaction](receipts/2026-11-26-manage-panel-inventory-3856/README.md)
 
+The side-docked 3D Model ribbon uses its full 19-panel catalog in Show
+Panels, the direct selector, and the ribbon column. Measure is hidden
+by default and opens the existing tool when enabled. Groups whose
+modeling commands are pending can be shown or hidden from either list.
+
 The [Wayland and X11 visibility reruns](receipts/2026-11-26-ribbon-visibility-wayland-3856/README.md)
 cover switching tabs with the selector open, closing Modify's expanded
 commands, and restoring Parameters between Format and Exit.
