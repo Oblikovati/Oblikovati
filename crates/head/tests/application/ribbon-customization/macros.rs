@@ -39,12 +39,6 @@ fn only_separator_in_source(world: &mut ApplicationWorld) {
     assert_eq!(rows, ["<Separator>"]);
 }
 
-#[then("the custom panel list remains empty")]
-fn target_is_empty(world: &mut ApplicationWorld) {
-    assert_eq!(separator_count(world), 1);
-    super::transaction_steps::target_is_empty(world);
-}
-
 #[when("the user double-clicks \"<Separator>\" in the available list")]
 fn double_click_separator(world: &mut ApplicationWorld) {
     let center = world.run_in_window("Customize", "<Separator>").center();

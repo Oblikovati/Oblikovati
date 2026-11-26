@@ -19,6 +19,9 @@ The published scenario passed all ten steps on Wayland and X11. The native
 source-list paging regression passed on both backends and all 58 ribbon
 customization unit tests passed.
 
+The [Home, End, and Z sequence](../2026-11-26-ribbon-source-keyboard-3856/README.md)
+also passed, including closing Customize with the target still empty.
+
 [Wayland report](wayland.xml) · [X11 report](x11.xml) · [Published inputs](current-inputs.sha256)
 
 The build used base `a8f03ae2d3cfb00c9ecd3be391b89d4f8d2b6bd0`, this change,

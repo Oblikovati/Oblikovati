@@ -13,16 +13,42 @@ fn jump_to_z(world: &mut ApplicationWorld) {
 }
 
 #[then("the available commands list scrolls to and selects \"Z Parallel\"")]
+#[then("the list scrolls to and selects \"Z Parallel\"")]
 fn selected_z_parallel(world: &mut ApplicationWorld) {
+    expect_source_highlight(world, "ZParallel", "ZoomAll");
+}
+
+#[then("the list scrolls to its end and selects \"Zoom Window\"")]
+fn selected_source_end(world: &mut ApplicationWorld) {
+    assert_eq!(
+        source_rows(world).last().map(|row| row.text.as_str()),
+        Some("ZoomWindow")
+    );
+    expect_source_highlight(world, "ZoomWindow", "ZoomAll");
+}
+
+#[then("the list scrolls to its beginning and selects \"<Separator>\"")]
+fn selected_source_start(world: &mut ApplicationWorld) {
+    assert_eq!(
+        source_rows(world).first().map(|row| row.text.as_str()),
+        Some("<Separator>")
+    );
+    expect_source_highlight(world, "<Separator>", "2DSketches");
+}
+
+fn expect_source_highlight(world: &mut ApplicationWorld, selected: &str, plain: &str) {
     world.hover([800, 900]);
     let rows = source_rows(world);
-    for label in ["ZParallel", "ZoomAll"] {
+    for label in [selected, plain] {
         assert!(
             rows.iter().any(|row| row.text == label),
             "expected {label} in the source list"
         );
     }
-    assert!(world.row_accented_beside("ZParallel", "ZoomAll"));
+    assert!(
+        world.row_accented_beside(selected, plain),
+        "expected {selected} highlighted"
+    );
 }
 
 #[test]

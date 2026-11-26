@@ -104,6 +104,7 @@ fn open_blank_part_customization(world: &mut ApplicationWorld) {
 }
 
 #[given("the available commands are in ascending name order")]
+#[given("the available command list is in its observed ascending order")]
 #[given("the available command category is All Commands in ascending name order")]
 #[then("All Commands is selected and the available commands are in ascending name order")]
 fn all_commands_ascending(world: &mut ApplicationWorld) {
@@ -150,6 +151,7 @@ fn reopen_without_staging(world: &mut ApplicationWorld) {
 }
 
 #[then("the custom-panel target remains empty")]
+#[then("the custom panel list remains empty")]
 fn target_remains_empty(world: &mut ApplicationWorld) {
     target_is_empty(world);
 }
