@@ -29,6 +29,10 @@ C++ selects the draw list, constructs `ImVec2` locally and derives the text end
 from the byte length. The direct Rust vector draw-list call is deleted. No
 private native pointer escapes the adapter, and no second renderer is added.
 
+The application chrome title uses the current-window entry point. It draws the
+same document caption through the scalar boundary, including Unicode and
+characters from user-selected document names.
+
 The live Ui borrow retains the context through each synchronous call. ImGui
 copies glyph vertices before the borrowed label bytes expire. Background text
 stays behind chrome; current-window text keeps its existing layer. Label

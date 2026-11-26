@@ -41,7 +41,6 @@
 - Added individual sketch constraint glyph hiding and Show All through the viewport and typed API. (#4166)
 - Enabled the Rust desktop application on Windows through a native Win32 window and Martensite Vulkan rendering.
 - Enabled isolated Lua scripting on Windows in the desktop and CLI.
-
 - Added analytic face properties from the selected-face context menu. (#4053)
 
 - Show the type and highlight of a sketch entity under the pointer in Ready. (#4043)
@@ -290,6 +289,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 ### Fixed
 
+- Corrected the native draw call for application window captions on Windows ARM64. (#3803)
 - Preserved exact pointer positions when drawing an untyped sketch Line and rejected Close for chains with fewer than two accepted segments. (#3830)
 - Rendered Windows windows at the monitor DPI and scaled layout, input, and fonts when display density changes. Linux X11 uses desktop DPI from X resources or XSETTINGS for the same layout, input, and font scaling. (#3850)
 - Made File Properties dockable from Open and restored the picker and its selection on close. (#4073) Fixed a thumbnail crash in large file lists, kept Details headings visible while scrolling, and kept long filenames out of the date column. Kept newly opened drawings in front when an existing document path used different separators. (#3889)
