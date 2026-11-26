@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{DrawingAnnotationDefinition, DrawingBaseViewDefinition, spelling};
-use oblikovati_api::types::{DraftingStandard, SheetOrientation, SheetSize, TitleBlockLocation};
+use oblikovati_api::types::{
+    BorderLabelMode, DraftingStandard, SheetOrientation, SheetSize, TitleBlockLocation,
+};
 use serde::{Deserialize, Serialize};
 /// Drawing content in the Go native recipe shape; no workspace pointers or kernel handles are stored.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -30,6 +32,24 @@ pub struct DrawingSheetRecipe {
     pub height_mm: f64,
     #[serde(default)]
     pub border: bool,
+    #[serde(default, rename = "borderHZones", skip_serializing_if = "zero_zones")]
+    pub border_h_zones: i64,
+    #[serde(default, rename = "borderVZones", skip_serializing_if = "zero_zones")]
+    pub border_v_zones: i64,
+    #[serde(
+        default,
+        rename = "borderHLabel",
+        with = "spelling::border_label",
+        skip_serializing_if = "default_border_label"
+    )]
+    pub border_h_label: BorderLabelMode,
+    #[serde(
+        default,
+        rename = "borderVLabel",
+        with = "spelling::border_label",
+        skip_serializing_if = "default_border_label"
+    )]
+    pub border_v_label: BorderLabelMode,
     #[serde(default)]
     pub title_block: String,
     #[serde(default, with = "spelling::title_block_location")]
@@ -40,6 +60,14 @@ pub struct DrawingSheetRecipe {
     pub views: Vec<DrawingBaseViewDefinition>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub annotations: Vec<DrawingAnnotationDefinition>,
+}
+
+fn zero_zones(count: &i64) -> bool {
+    *count == 0
+}
+
+fn default_border_label(mode: &BorderLabelMode) -> bool {
+    *mode == oblikovati_api::types::ALPHABETICAL_BORDER_LABEL
 }
 
 fn default_sheets() -> Vec<DrawingSheetRecipe> {

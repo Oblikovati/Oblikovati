@@ -17,6 +17,53 @@ fn a_new_drawing_owns_one_bordered_a3_landscape_sheet() {
     assert_eq!(sheet.title_block, "Default");
     assert!(sheet.views.is_empty());
 }
+
+#[test]
+fn border_zone_labels_use_spreadsheet_columns_and_independent_row_modes() {
+    use oblikovati_api::types::{ALPHABETICAL_BORDER_LABEL, NO_BORDER_LABEL, NUMERIC_BORDER_LABEL};
+    use oblikovati_model::drawing::border_zone_label;
+    for (index, label) in [(0, "A"), (25, "Z"), (26, "AA"), (701, "ZZ"), (702, "AAA")] {
+        assert_eq!(border_zone_label(index, ALPHABETICAL_BORDER_LABEL), label);
+    }
+    assert_eq!(border_zone_label(26, NUMERIC_BORDER_LABEL), "27");
+    assert!(border_zone_label(26, NO_BORDER_LABEL).is_empty());
+}
+
+#[test]
+fn malformed_zoned_border_recipes_are_rejected() {
+    let mut drawing = DrawingDocument::new();
+    drawing
+        .set_zoned_border(0, [4, 3], ["numeric", ""])
+        .unwrap();
+    let mut incomplete = drawing.recipe().clone();
+    incomplete.sheets[0].border_v_zones = 0;
+    assert!(DrawingDocument::from_recipe(incomplete).is_err());
+    let mut missing_border = drawing.recipe().clone();
+    missing_border.sheets[0].border = false;
+    assert!(DrawingDocument::from_recipe(missing_border).is_err());
+}
+
+#[test]
+fn zoned_border_uses_the_go_sheet_recipe_keys() {
+    use oblikovati_model::drawing::DrawingRecipe;
+    let recipe = serde_json::json!({
+        "sheets": [{
+            "name": "Sheet:1", "size": "a3", "orientation": "landscape", "border": true,
+            "borderHZones": 4, "borderVZones": 3, "borderHLabel": "numeric", "borderVLabel": "none"
+        }]
+    });
+    let decoded: DrawingRecipe = serde_json::from_value(recipe.clone()).unwrap();
+    let drawing = DrawingDocument::from_recipe(decoded).unwrap();
+    let written = serde_json::to_value(drawing.recipe()).unwrap();
+    for key in [
+        "borderHZones",
+        "borderVZones",
+        "borderHLabel",
+        "borderVLabel",
+    ] {
+        assert_eq!(written["sheets"][0][key], recipe["sheets"][0][key]);
+    }
+}
 #[test]
 fn a_view_definition_requires_a_source_and_retains_its_requested_placement() {
     let mut drawing = DrawingDocument::new();

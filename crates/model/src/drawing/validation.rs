@@ -82,6 +82,7 @@ pub(super) fn validate_sheet(sheet: &DrawingSheetRecipe) -> Result<(), DrawingEr
 }
 fn validate_sheet_format(sheet: &DrawingSheetRecipe) -> Result<(), DrawingError> {
     sheet.title_block_fields()?;
+    sheet.validate_border()?;
     if super::spelling::title_block_location::name(&sheet.title_block_at).is_none() {
         return Err(DrawingError(format!(
             "sheet {:?} title-block location {:?}: expected a canonical sheet corner",

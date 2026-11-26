@@ -478,3 +478,6 @@ mod drawing_sheet_collection;
 
 #[path = "drawing_title_block.rs"]
 mod drawing_title_block;
+
+#[path = "drawing_border.rs"]
+mod drawing_border;

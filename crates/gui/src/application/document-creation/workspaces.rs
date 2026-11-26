@@ -12,6 +12,8 @@ use std::rc::Rc;
 mod assembly_place_dialog;
 #[path = "base_view_dialog.rs"]
 mod base_view_dialog;
+#[path = "drawing_border_zones.rs"]
+mod drawing_border_zones;
 #[path = "drawing_lines.rs"]
 mod drawing_lines;
 
@@ -232,11 +234,21 @@ fn sheet_on_list(
     };
     let (minimum, maximum) = sheet_rectangle(area, dimensions);
     list.add_rect(minimum, maximum, paper).filled(true).build();
+    let (border_minimum, border_maximum) =
+        sheet_inner_bounds(minimum, maximum, dimensions, sheet.border_margins_mm());
+    let zoned = sheet.border_h_zones > 0;
+    if zoned {
+        drawing_border_zones::draw(
+            ui,
+            list,
+            sheet,
+            [minimum, maximum],
+            [border_minimum, border_maximum],
+        );
+    }
     if let Some(projection) = projection {
         drawing_lines::draw(ui, list, projection, minimum, maximum, dimensions);
     }
-    let (border_minimum, border_maximum) =
-        sheet_inner_bounds(minimum, maximum, dimensions, sheet.border_margins_mm());
     if sheet.border {
         list.add_rect(border_minimum, border_maximum, LINE_COLOR)
             .build();
@@ -246,6 +258,11 @@ fn sheet_on_list(
     }
     let (title_minimum, title_maximum) =
         title_bounds(border_minimum, border_maximum, sheet.title_block_at);
+    if zoned {
+        list.add_rect(title_minimum, title_maximum, paper)
+            .filled(true)
+            .build();
+    }
     list.add_rect(title_minimum, title_maximum, LINE_COLOR)
         .build();
     let divider = (title_minimum[1] + title_maximum[1]) * 0.5;

@@ -84,6 +84,15 @@ impl DrawingDocument {
         self.sheet_mut(index)?.revision = revision.into();
         Ok(())
     }
+    /// Replace a sheet's border. Example: `drawing.set_zoned_border(0, [4, 3], ["numeric", ""])?`.
+    pub fn set_zoned_border(
+        &mut self,
+        index: usize,
+        counts: [i64; 2],
+        labels: [&str; 2],
+    ) -> Result<(), DrawingError> {
+        self.sheet_mut(index)?.set_zoned_border(counts, labels)
+    }
     /// Read the unresolved document reference; example: `drawing.model_reference()` for workspace resolution.
     pub fn model_reference(&self) -> &str {
         &self.recipe.model_reference

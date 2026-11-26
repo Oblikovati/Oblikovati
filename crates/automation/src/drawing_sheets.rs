@@ -3,8 +3,8 @@
 use oblikovati_api::{
     Error,
     wire::{
-        self, AddSheetArgs, ListSheetsResult, RemoveSheetArgs, SetActiveSheetArgs,
-        SetSheetRevisionArgs, SetTitleBlockArgs, SheetInfo, SheetResult,
+        self, AddDefaultBorderArgs, AddSheetArgs, ListSheetsResult, RemoveSheetArgs,
+        SetActiveSheetArgs, SetSheetRevisionArgs, SetTitleBlockArgs, SheetInfo, SheetResult,
     },
 };
 use oblikovati_model::drawing::{DrawingDocument, DrawingSheetRecipe};
@@ -13,7 +13,7 @@ use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::W
 
 mod title_block;
 
-pub(super) const SHEET_METHODS: [&str; 7] = [
+pub(super) const SHEET_METHODS: [&str; 8] = [
     wire::METHOD_DRAWING_LIST_SHEETS,
     wire::METHOD_DRAWING_ADD_SHEET,
     wire::METHOD_DRAWING_REMOVE_SHEET,
@@ -21,6 +21,7 @@ pub(super) const SHEET_METHODS: [&str; 7] = [
     wire::METHOD_DRAWING_TITLE_BLOCK_FIELDS,
     wire::METHOD_DRAWING_SET_TITLE_BLOCK,
     wire::METHOD_DRAWING_SET_SHEET_REVISION,
+    wire::METHOD_DRAWING_ADD_DEFAULT_BORDER,
 ];
 
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -148,10 +149,28 @@ fn update_sheet_format(
                 .map_err(api_error)?;
             Ok(("Set Sheet Revision", Some(index)))
         }
+        wire::METHOD_DRAWING_ADD_DEFAULT_BORDER => {
+            let args: AddDefaultBorderArgs = crate::decode(method, request)?;
+            Ok(("Add Border", Some(add_border(drawing, args)?)))
+        }
         _ => Err(Error(format!(
             "method {method:?}: expected a sheet format edit"
         ))),
     }
+}
+
+fn add_border(drawing: &mut DrawingDocument, args: AddDefaultBorderArgs) -> Result<usize, Error> {
+    let index = drawing
+        .named_or_active_sheet(&args.sheet)
+        .map_err(api_error)?;
+    drawing
+        .set_zoned_border(
+            index,
+            [args.h_zones, args.v_zones],
+            [&args.h_label_mode, &args.v_label_mode],
+        )
+        .map_err(api_error)?;
+    Ok(index)
 }
 
 fn add_sheet(drawing: &mut DrawingDocument, args: AddSheetArgs) -> Result<(), Error> {
@@ -208,7 +227,8 @@ fn sheet_info(sheet: &DrawingSheetRecipe, active: bool) -> Result<SheetInfo, Err
         has_title_block: !sheet.title_block.is_empty(),
         revision: sheet.revision.clone(),
         title_block_location: corner.into(),
-        ..Default::default()
+        border_h_zones: sheet.border_h_zones,
+        border_v_zones: sheet.border_v_zones,
     })
 }
 

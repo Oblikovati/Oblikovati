@@ -46,7 +46,7 @@ title text.
 
 ## Verification
 
-The ten drawing owner tests passed. The sheet lifecycle test checks
+The eleven drawing owner tests cover sheet and view edits. The sheet lifecycle test checks
 standard and custom paper, invalid input, the displayed projection on the
 active sheet, last-sheet refusal, undo and redo, and native-format save and
 reopen.
@@ -89,6 +89,29 @@ same-process drawing reopen cycles, and the full sheet workflow all
 completed. The full workflow verified the surviving A4 sheet after
 closing and reopening it in the same process. The existing source
 inventory guard still reports unregistered Appearance Editor windows.
+
+## Zoned borders
+
+`drawing.addDefaultBorder` replaces the requested sheet's border with
+a zoned border. It defaults to the active sheet and alphabetical labels
+on each axis. The reply and `drawing.listSheets` report the column and
+row counts. Counts must be positive. Each axis accepts alphabetical,
+numeric, or hidden labels. Alphabetical labels continue with AA after Z.
+
+The sheet stores these settings with the Go recipe keys
+`borderHZones`, `borderVZones`, `borderHLabel`, and `borderVLabel`.
+Old drawings with a plain border still open without a grid. The edit
+has one undo step, and the canvas draws the divisions behind the views
+with labels in the margins. Dense grids retain their authored counts
+while the canvas samples divisions to stay within the available pixels.
+
+The native Wayland MCP run added a four-column by three-row border and
+switched both label modes to `none`. In the drawing crop, the labeled
+grid changed 13,209 pixels from the plain sheet. Hiding labels changed
+445 pixels with the divisions retained. Undo restored the labeled and
+plain crops pixel for pixel. Redo and save/reopen reproduced the
+labeled crop. The model tests cover Go recipe keys, invalid persisted
+grids, and alphabetical wrapping.
 
 ## Drawing curve gap
 

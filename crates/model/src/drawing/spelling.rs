@@ -49,3 +49,8 @@ recipe_spelling!(title_block_location, TitleBlockLocation, {
     BOTTOM_RIGHT_TITLE_BLOCK => "bottomRight", BOTTOM_LEFT_TITLE_BLOCK => "bottomLeft",
     TOP_LEFT_TITLE_BLOCK => "topLeft", TOP_RIGHT_TITLE_BLOCK => "topRight", BOTTOM_RIGHT_TITLE_BLOCK => ""
 });
+
+recipe_spelling!(border_label, BorderLabelMode, {
+    ALPHABETICAL_BORDER_LABEL => "alphabetical", NUMERIC_BORDER_LABEL => "numeric",
+    NO_BORDER_LABEL => "none", ALPHABETICAL_BORDER_LABEL => ""
+});
