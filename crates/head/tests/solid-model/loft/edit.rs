@@ -76,3 +76,54 @@ fn saved_options_remain_unchecked(world: &mut ApplicationWorld) {
     }
     shows_saved_sections_and_preview(world);
 }
+
+#[given("Loft1 is open for editing in its default Rails mode")]
+fn starts_in_rails_mode(world: &mut ApplicationWorld) {
+    double_click_loft(world);
+    rails_and_preview_return(world);
+}
+
+#[when("the second path mode is selected")]
+fn view_center_line_mode(world: &mut ApplicationWorld) {
+    click_loft_control(world, "CenterLine");
+}
+
+#[then("the dialog requests a Center Line sketch and OK is disabled")]
+fn center_line_awaits_geometry(world: &mut ApplicationWorld) {
+    assert!(loft_panel_has_text(world, "SelectaCenterLinesketch"));
+    assert!(!loft_panel_has_text(world, "Norailsselected"));
+    assert!(world.state().loft_preview.is_none());
+    assert!(
+        world
+            .app()
+            .window
+            .scene_triangles
+            .iter()
+            .all(|triangle| { triangle.color != crate::part_scene::NEW_SOLID_PREVIEW })
+    );
+    assert!(!world.run_is_enabled("OK"));
+}
+
+#[when("the third path mode is selected")]
+fn view_placed_sections_mode(world: &mut ApplicationWorld) {
+    click_loft_control(world, "CenterLinewithPlacedSections");
+}
+
+#[then("the dialog requests a Center Line and offers Placed Sections")]
+fn section_placement_needs_a_center_line(world: &mut ApplicationWorld) {
+    center_line_awaits_geometry(world);
+    world.run_in_window("Loft", "PlacedSections");
+}
+
+#[when("the first mode is selected again")]
+fn restore_rails_mode(world: &mut ApplicationWorld) {
+    click_loft_control(world, "Rails");
+}
+
+#[then("the Rails list and solid preview return")]
+fn rails_and_preview_return(world: &mut ApplicationWorld) {
+    assert!(loft_panel_has_text(world, "Norailsselected"));
+    assert!(!loft_panel_has_text(world, "SelectaCenterLinesketch"));
+    assert!(world.run_is_enabled("OK"));
+    shows_saved_sections_and_preview(world);
+}

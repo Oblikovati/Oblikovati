@@ -2,7 +2,7 @@
 //! Collect exact sketch identities from viewport picks in a Loft draft.
 use super::*;
 use oblikovati_automation::PartUpdateAccess;
-use oblikovati_gui::{GuiLoftAction, GuiLoftElement, GuiLoftSection};
+use oblikovati_gui::{GuiLoftAction, GuiLoftElement, GuiLoftPathMode, GuiLoftSection};
 use oblikovati_model::{
     feature::{FeatureId, part::PartFeatureDefinition, sketch_loft::SketchLoftSection},
     history::{DocumentSnapshot, ResolvedDocumentSketch},
@@ -12,6 +12,7 @@ pub(super) struct LoftSelection {
     document: u64,
     generation: u64,
     feature: Option<FeatureId>,
+    path_mode: GuiLoftPathMode,
     sections: Vec<GuiLoftSection>,
     preview: Option<Result<(), String>>,
 }
@@ -36,6 +37,7 @@ impl<
                 self.loft_selection = None;
                 Ok(true)
             }
+            GuiLoftAction::SetPath { document, mode } => self.choose_loft_path(document, mode),
             GuiLoftAction::Commit(document) => self.commit_loft(document),
             GuiLoftAction::Begin { document, feature } => self.begin_loft(document, feature),
         }
@@ -62,9 +64,42 @@ impl<
             document,
             generation,
             feature,
+            path_mode: GuiLoftPathMode::Rails,
             sections,
             preview,
         });
+        Ok(true)
+    }
+
+    fn choose_loft_path(&mut self, document: u64, mode: GuiLoftPathMode) -> Result<bool, String> {
+        let generation = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?
+            .generation();
+        let Some(draft) = self.loft_selection.as_ref().filter(|draft| {
+            draft.document == document && draft.generation == generation && draft.path_mode != mode
+        }) else {
+            return Ok(false);
+        };
+        let feature = draft.feature;
+        let sections = solid_sections(&draft.sections);
+        self.clear_loft_preview();
+        let preview = match (mode, feature, sections) {
+            (GuiLoftPathMode::Rails, Some(id), _) => Some(
+                self.preview_selected_blend(document, |_, _| Ok(id))
+                    .map(|_| ()),
+            ),
+            (GuiLoftPathMode::Rails, None, Some(sections)) => {
+                Some(self.preview_loft(document, sections))
+            }
+            _ => None,
+        };
+        if let Some(draft) = &mut self.loft_selection {
+            draft.path_mode = mode;
+            draft.preview = preview;
+        }
         Ok(true)
     }
 
@@ -111,6 +146,7 @@ impl<
             .filter(|draft| {
                 draft.document == document
                     && draft.feature.is_none()
+                    && draft.path_mode == GuiLoftPathMode::Rails
                     && draft.generation == session.generation()
                     && draft.preview.as_ref().is_some_and(Result::is_ok)
             })
@@ -164,11 +200,9 @@ impl<
         }) {
             return Ok(None);
         }
-        if self
-            .loft_selection
-            .as_ref()
-            .is_some_and(|draft| draft.feature.is_some())
-        {
+        if self.loft_selection.as_ref().is_some_and(|draft| {
+            draft.feature.is_some() || draft.path_mode != GuiLoftPathMode::Rails
+        }) {
             return Ok(Some(false));
         }
         let Some(tolerance) = tolerance else {

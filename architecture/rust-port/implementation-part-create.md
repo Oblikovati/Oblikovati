@@ -250,3 +250,7 @@ the existing solid for its edit preview. Cancel discards Closed Loop and
 Merge Tangent Faces draft changes and restores the committed presentation.
 The [edit receipt](receipts/2026-11-27-loft-reopen-3917/README.md)
 covers cancellation and reopening on both Linux display backends.
+
+The [path mode receipt](receipts/2026-11-27-loft-path-modes-3917/README.md)
+covers choosing both Center Line modes in an existing solid edit and restoring
+the Rails list and preview.

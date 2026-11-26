@@ -30,6 +30,15 @@ pub struct GuiLoftSection {
     pub element: GuiLoftElement,
 }
 
+/// The geometry that controls a Loft between its sections.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum GuiLoftPathMode {
+    #[default]
+    Rails,
+    CenterLine,
+    PlacedSections,
+}
+
 /// Lifecycle requests for the active Loft draft.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiLoftAction {
@@ -38,6 +47,10 @@ pub enum GuiLoftAction {
     Begin {
         document: u64,
         feature: Option<FeatureId>,
+    },
+    SetPath {
+        document: u64,
+        mode: GuiLoftPathMode,
     },
     Commit(u64),
     Clear,
@@ -65,6 +78,7 @@ impl GuiLoftAction {
                     && state.document == Some(document)
                     && feature.is_none_or(|id| Self::OpenEdit(id).enabled(state))
             }
+            Self::SetPath { document, .. } => available && state.document == Some(document),
             Self::Commit(document) => {
                 available
                     && state.document == Some(document)
@@ -81,6 +95,7 @@ pub(crate) struct LoftDialog {
     document: Option<(u64, u64)>,
     show_help: bool,
     editing: bool,
+    path_mode: GuiLoftPathMode,
     closed_loop: bool,
     merge_tangent_faces: bool,
     select_curves: bool,
@@ -112,6 +127,7 @@ impl LoftDialog {
         self.document = Some((document, generation));
         self.show_help = false;
         self.editing = feature.is_some();
+        self.path_mode = GuiLoftPathMode::Rails;
         self.closed_loop = false;
         self.merge_tangent_faces = false;
         self.select_curves = true;
@@ -179,7 +195,7 @@ impl LoftDialog {
         if tip {
             ui.text_wrapped(EMPTY_PART);
         } else {
-            self.tabs(ui, &state.loft_sections);
+            self.tabs(ui, &state.loft_sections, actions);
             if let Some(Err(cause)) = &state.loft_preview {
                 ui.text_wrapped(cause);
             }
@@ -192,7 +208,8 @@ impl LoftDialog {
             .document
             .map(|(document, _)| GuiLoftAction::Commit(document))
             .filter(|action| {
-                !self.manual_mapping
+                self.path_mode == GuiLoftPathMode::Rails
+                    && !self.manual_mapping
                     && !self.closed_loop
                     && !self.merge_tangent_faces
                     && action.enabled(state)
@@ -216,7 +233,7 @@ impl LoftDialog {
             || cancelled
             || ui.is_key_pressed_no_repeat(imgui::Key::Escape)
     }
-    fn tabs(&mut self, ui: &Ui, sections: &[GuiLoftSection]) {
+    fn tabs(&mut self, ui: &Ui, sections: &[GuiLoftSection], actions: &mut Vec<GuiShellAction>) {
         let Some(_tabs) = ui.tab_bar("##loft-pages") else {
             return;
         };
@@ -230,11 +247,52 @@ impl LoftDialog {
             if !self.editing {
                 ui.text("Select sections in the viewport");
             }
+            self.path_controls(ui, actions);
             ui.checkbox("Closed Loop", &mut self.closed_loop);
             ui.checkbox("Merge Tangent Faces", &mut self.merge_tangent_faces);
         }
         if let Some(_transition) = ui.tab_item("Transition") {
             self.transition(ui);
+        }
+    }
+
+    fn path_controls(&mut self, ui: &Ui, actions: &mut Vec<GuiShellAction>) {
+        let before = self.path_mode;
+        ui.radio_button("Rails", &mut self.path_mode, GuiLoftPathMode::Rails);
+        ui.same_line();
+        ui.radio_button(
+            "Center Line",
+            &mut self.path_mode,
+            GuiLoftPathMode::CenterLine,
+        );
+        ui.radio_button(
+            "Center Line with Placed Sections",
+            &mut self.path_mode,
+            GuiLoftPathMode::PlacedSections,
+        );
+        if self.path_mode != before
+            && let Some((document, _)) = self.document
+        {
+            actions.push(GuiShellAction::Loft(GuiLoftAction::SetPath {
+                document,
+                mode: self.path_mode,
+            }));
+        }
+        match self.path_mode {
+            GuiLoftPathMode::Rails => {
+                ui.child_window("##loft-rails")
+                    .size([0., 27.])
+                    .border(true)
+                    .build(|| {
+                        ui.text_disabled("No rails selected");
+                    });
+            }
+            GuiLoftPathMode::CenterLine => ui.text("Select a Center Line sketch"),
+            GuiLoftPathMode::PlacedSections => {
+                ui.text("Select a Center Line sketch");
+                let _disabled = ui.begin_disabled(true);
+                crate::widget_abi::button(ui, "Placed Sections", [0., 0.]);
+            }
         }
     }
 
