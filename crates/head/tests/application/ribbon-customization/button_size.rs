@@ -13,7 +13,7 @@ const RIBBON: &str = "##application-ribbon";
 )]
 fn open_part_with_normal_ribbon(world: &mut ApplicationWorld) {
     super::super::ribbon_panel_expansion::open_blank_metric_part(world);
-    assert!(world.window_text(RIBBON).contains("Modify"));
+    world.expect_text("Modify");
     shell_standard(world);
 }
 
@@ -81,14 +81,12 @@ fn retained_menu_selection(world: &mut ApplicationWorld) {
 fn shell_large(world: &mut ApplicationWorld) {
     let shell = world.run_in_window(RIBBON, "Shell");
     let [x, _] = shell.center();
-    let y = shell.minimum[1];
-    let icons = icon_images_inside(([x - 26., y - 52.], [x + 26., y + 1.]));
+    let top = world.run_in_window(RIBBON, "3DModel").maximum[1];
+    let icons = icon_images_inside(([x - 26., top], [x + 26., shell.minimum[1]]));
     let (_, texture) = icons
         .iter()
         .find(|((first, last), _)| {
-            (36. ..45.).contains(&(last[0] - first[0]))
-                && (first[0]..last[0]).contains(&x)
-                && (0. ..9.).contains(&(y - last[1]))
+            (36. ..45.).contains(&(last[0] - first[0])) && (first[0]..last[0]).contains(&x)
         })
         .unwrap_or_else(|| panic!("expected a large Shell icon above its caption: {icons:?}"));
     world.shell_button_texture = Some(*texture);
@@ -141,7 +139,7 @@ fn set_appearance(world: &mut ApplicationWorld, mode: &str) {
 #[then("command labels are hidden and the Modify panel title remains visible")]
 fn modify_labels_hidden(world: &mut ApplicationWorld) {
     let ribbon = world.window_text(RIBBON);
-    assert!(ribbon.contains("Modify"));
+    world.expect_text("Modify");
     for label in ["Shell", "Hole", "Fillet", "Chamfer"] {
         assert!(!ribbon.contains(label), "unexpected {label} caption");
     }
