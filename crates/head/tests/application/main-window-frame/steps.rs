@@ -278,6 +278,10 @@ fn restored_part_window(world: &mut ApplicationWorld) {
 }
 #[when("the user drags an empty region of the application bar within the work area")]
 fn drag_application_bar(world: &mut ApplicationWorld) {
+    if world.app().window.native.view.uses_wayland() {
+        wayland::drag_application_bar(world);
+        return;
+    }
     let width = world.app().window.native.drawable_extent().unwrap()[0] as i32;
     let point = [width - 390, 18];
     super::x11_input::move_pointer(point);
@@ -294,7 +298,13 @@ fn drag_application_bar(world: &mut ApplicationWorld) {
 #[then("the entire window follows the drag without changing size")]
 fn window_moved_without_resize(world: &mut ApplicationWorld) {
     let before = world.window_frame_before.unwrap();
-    let after = super::x11_input::application_bounds();
+    let after = if world.app().window.native.view.uses_wayland() {
+        let after = wayland::compositor_frame_bounds().unwrap();
+        assert_eq!(before[1], after[1], "expected horizontal movement");
+        after
+    } else {
+        super::x11_input::application_bounds()
+    };
     assert_ne!(&before[..2], &after[..2]);
     assert_eq!(&before[2..], &after[2..]);
 }

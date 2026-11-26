@@ -211,11 +211,17 @@ fn bar_gesture(
     if !*drag_armed {
         return None;
     }
-    if ui.is_mouse_double_clicked(MouseButton::Left) {
-        return Some(GuiWindowAction::ToggleMaximize);
+    let action = if ui.is_mouse_double_clicked(MouseButton::Left) {
+        Some(GuiWindowAction::ToggleMaximize)
+    } else {
+        ui.is_mouse_dragging(MouseButton::Left)
+            .then_some(GuiWindowAction::Move)
+    };
+    if action.is_some() {
+        // The native window manager owns the gesture after this handoff.
+        *drag_armed = false;
     }
-    ui.is_mouse_dragging(MouseButton::Left)
-        .then_some(GuiWindowAction::Move)
+    action
 }
 
 fn record_control(ui: &Ui, index: usize, bounds: &mut [[f32; 4]; 3], focused: &mut Option<usize>) {

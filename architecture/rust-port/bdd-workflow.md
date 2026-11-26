@@ -214,6 +214,13 @@ scenario with `OBK_BDD_SCENARIO`. The tests compare the application view's
 global bounds in Weston's scene graph. The button scenario also derives
 the work area from the output and panel bounds.
 
+For the window-move scenario, use a private Xvfb display with Openbox
+and run Weston's desktop shell fullscreen with its X11 backend at scale
+1. Keep both `DISPLAY` and `WAYLAND_DISPLAY` when running the native
+benchmark directly, with `OBK_BDD_WESTON_DEBUG` and
+`OBK_BDD_WESTON_NESTED_X11=1` set. XTest sends the drag to the compositor,
+which delivers native Wayland pointer events to the application.
+
 The Linux docking-system restart scenario also starts the desktop executable
 twice. Build `oblikovati` from the same source as the test, and set
 `OBK_BDD_DESKTOP_BINARY` to its absolute path. Run with an X11 window manager,

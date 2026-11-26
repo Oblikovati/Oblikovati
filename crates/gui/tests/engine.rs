@@ -438,6 +438,32 @@ fn focused_accessible_maximize_responds_to_enter_and_space() {
 }
 
 #[test]
+fn application_bar_hands_off_one_move_per_drag() {
+    let mut engine = GuiFrameEngine::new().unwrap();
+    let mut input = request();
+    input.extent = [1440, 900];
+    for (event, action) in [
+        (Some(GuiInputEvent::PointerMoved([1050., 18.])), None),
+        (Some(left_button_event(true)), None),
+        (
+            Some(GuiInputEvent::PointerMoved([1070., 18.])),
+            Some(GuiWindowAction::Move),
+        ),
+        (None, None),
+        (Some(GuiInputEvent::PointerMoved([1120., 18.])), None),
+        (Some(left_button_event(false)), None),
+        (Some(left_button_event(true)), None),
+        (
+            Some(GuiInputEvent::PointerMoved([1150., 18.])),
+            Some(GuiWindowAction::Move),
+        ),
+    ] {
+        input.events = event.into_iter().collect();
+        assert_eq!(engine.frame(&input).unwrap().window_action, action);
+    }
+}
+
+#[test]
 fn queued_window_actions_are_not_consumed_by_tool_closure() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut input = request();

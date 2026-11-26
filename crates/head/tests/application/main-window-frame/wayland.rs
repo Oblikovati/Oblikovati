@@ -20,6 +20,40 @@ pub(super) fn expect_maximized_work_area() {
     assert_eq!(current_frame_bounds(&graph), work_area);
 }
 
+pub(super) fn drag_application_bar(world: &mut ApplicationWorld) {
+    assert_eq!(
+        std::env::var("OBK_BDD_WESTON_NESTED_X11").as_deref(),
+        Ok("1"),
+        "set OBK_BDD_WESTON_NESTED_X11=1 for fullscreen Weston on a private X11 display"
+    );
+    let graph = compositor_scene_graph().expect("set OBK_BDD_WESTON_DEBUG for Wayland bounds");
+    let [x, y, width, _] = current_frame_bounds(&graph);
+    let [area_x, _, area_width, _] = scene_work_area(&graph).expect("expected Weston work area");
+    let direction = if area_x + area_width - x - width >= 72 {
+        1
+    } else {
+        -1
+    };
+    drag_fullscreen_pointer(world, [x + width - 390, y + 18], direction);
+}
+
+fn drag_fullscreen_pointer(world: &mut ApplicationWorld, [x, y]: [i32; 2], direction: i32) {
+    use super::super::x11_input::window_targets::{
+        fullscreen_left_button, move_fullscreen_pointer,
+    };
+
+    move_fullscreen_pointer([x, y]);
+    world.pump(Vec::new());
+    fullscreen_left_button([x, y], true);
+    world.pump(Vec::new());
+    for distance in [20, 72] {
+        move_fullscreen_pointer([x + direction * distance, y]);
+        world.pump(Vec::new());
+    }
+    fullscreen_left_button([x + direction * 72, y], false);
+    world.pump(Vec::new());
+}
+
 fn current_frame_bounds(graph: &str) -> [i32; 4] {
     let pid = std::process::id();
     scene_frame_bounds(graph, pid).unwrap_or_else(|| {

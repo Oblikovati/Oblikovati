@@ -32,6 +32,38 @@ pub(in super::super) fn click_fullscreen_output([x, y]: [i32; 2]) {
     );
 }
 
+pub(in super::super) fn move_fullscreen_pointer(position: [i32; 2]) {
+    fullscreen_pointer_event(position, MOTION_NOTIFY_EVENT, 0);
+}
+
+pub(in super::super) fn fullscreen_left_button(position: [i32; 2], pressed: bool) {
+    let event = if pressed {
+        BUTTON_PRESS_EVENT
+    } else {
+        BUTTON_RELEASE_EVENT
+    };
+    fullscreen_pointer_event(position, event, 1);
+}
+
+fn fullscreen_pointer_event([x, y]: [i32; 2], event: u8, detail: u8) {
+    let (connection, screen) =
+        x11rb::connect(None).expect("X11: expected a private nested display");
+    let root = connection.setup().roots[screen].root;
+    connection
+        .xtest_fake_input(
+            event,
+            detail,
+            0,
+            root,
+            x.try_into().unwrap(),
+            y.try_into().unwrap(),
+            0,
+        )
+        .unwrap()
+        .check()
+        .unwrap();
+}
+
 pub(super) fn application_window(connection: &RustConnection, root: Window) -> Window {
     let windows = application_descendants(connection, root);
     let [window] = windows.as_slice() else {
