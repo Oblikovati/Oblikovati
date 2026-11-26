@@ -62,9 +62,14 @@ ribbon panels. Pressing F1 while the hint is visible opens built-in help.
 The [native help receipt](receipts/2026-11-24-selector-help-3856/README.md)
 covers tooltip dismissal, F1, and switching between ribbon menus.
 
+Primitives is hidden by default on 3D Model and can be shown from the
+panel selector. The Box, Cylinder, Sphere and Torus controls report their
+unavailability when hovered. Space toggles the panel while keeping the
+selector open and the same row focused.
+[Native keyboard toggle](receipts/2026-11-26-ribbon-primitives-space-3856/README.md)
+
 The direct checklist wraps keyboard focus from the first row to the last
 with Up and from the last row to the first with Down. The
 [native regression](receipts/2026-11-24-selector-keyboard-wrap-3856/README.md)
-checks all seven rows in the current 3D Model catalog and verifies their
-checkbox states after navigation. The published wrap scenario names the
+checks the checkbox states after navigation. The published wrap scenario names the
 3D Print panel, which is still absent from that catalog.

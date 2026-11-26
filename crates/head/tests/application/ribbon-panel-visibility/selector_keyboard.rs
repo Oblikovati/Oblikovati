@@ -19,8 +19,9 @@ fn top_model_ribbon(world: &mut ApplicationWorld) {
 fn create_focused(world: &mut ApplicationWorld) {
     let (_, size) = window_geometry("##application-ribbon").unwrap();
     world.click([size[0] as i32 - 22, 45]);
-    world.key(Key::DownArrow, false);
-    world.key(Key::DownArrow, false);
+    for _ in 0..3 {
+        world.key(Key::DownArrow, false);
+    }
     assert!(world.checked("Create"));
     world.key(Key::Space, false);
     assert!(
@@ -64,15 +65,67 @@ fn selector_closed(_: &mut ApplicationWorld) {
     assert!(!super::side_selector::selector_popup_open());
 }
 
-const MODEL_PANELS: [&str; 7] = [
+const MODEL_PANELS: [&str; 9] = [
     "Sketch",
+    "Primitives",
     "Create",
     "Modify",
+    "Explore",
     "Work Features",
     "Pattern",
     "Simplification",
     "Parameters",
 ];
+
+#[given("the Primitives panel is hidden")]
+fn primitives_hidden(world: &mut ApplicationWorld) {
+    assert!(model_panel_run(world, "Primitives").is_none());
+}
+
+fn model_panel_run<'a>(
+    world: &'a ApplicationWorld,
+    label: &str,
+) -> Option<&'a super::super::diagnostics::RenderedRun> {
+    let inside = world.run("Start 2D Sketch").center();
+    let list = super::super::diagnostics::child_draw_list_at("##application-ribbon", inside)
+        .expect("expected the 3D Model panel draw list");
+    ribbon_runs(world, label).find(|run| run.list == list)
+}
+
+#[when("the user presses Down twice")]
+fn press_down_twice(world: &mut ApplicationWorld) {
+    for _ in 0..2 {
+        world.key(Key::DownArrow, false);
+    }
+}
+
+#[then("the Primitives row has keyboard focus and is unchecked")]
+fn primitives_focused(world: &mut ApplicationWorld) {
+    selector_open(world);
+    assert!(!world.checked("Primitives"));
+    let focused = focus_id();
+    assert_ne!(focused, 0, "expected a focused panel row");
+    world.panel_selector_focus = Some(focused);
+}
+
+#[then("Primitives is checked and its panel appears in the ribbon")]
+fn primitives_shown(world: &mut ApplicationWorld) {
+    assert_eq!(Some(focus_id()), world.panel_selector_focus);
+    assert!(world.checked("Primitives"));
+    assert!(model_panel_run(world, "Primitives").is_some());
+    for command in ["Box", "Cylinder", "Sphere", "Torus"] {
+        let run = model_panel_run(world, command).expect("expected primitive command");
+        assert_ne!(run.alpha, u8::MAX, "expected {command} disabled");
+    }
+    world.save_capture("primitives-visible");
+}
+
+#[then("Primitives is unchecked and its panel disappears")]
+fn primitives_hidden_after_toggle(world: &mut ApplicationWorld) {
+    assert_eq!(Some(focus_id()), world.panel_selector_focus);
+    assert!(!world.checked("Primitives"));
+    primitives_hidden(world);
+}
 
 fn check_arrow_wrap(world: &mut ApplicationWorld) {
     world.key(Key::DownArrow, false);

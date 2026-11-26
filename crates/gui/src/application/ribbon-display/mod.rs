@@ -172,6 +172,7 @@ impl Default for RibbonDisplayState {
             selector_escape: false,
             // Parameters lives on Manage, and is offered here for those who want it beside Create.
             hidden_panels: BTreeSet::from([
+                (RibbonTab::Model, RibbonPanel::PartPrimitives),
                 (RibbonTab::Model, RibbonPanel::Parameters),
                 (RibbonTab::Sketch, RibbonPanel::Layout),
                 (RibbonTab::Sketch, RibbonPanel::Parameters),

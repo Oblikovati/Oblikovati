@@ -273,8 +273,9 @@ fn side_selector_home_and_end_keep_keyboard_focus() {
         world.add_part();
         dock_side(&mut world, side);
         click_side_selector(&mut world);
-        world.key(Key::DownArrow, false);
-        world.key(Key::DownArrow, false);
+        for _ in 0..3 {
+            world.key(Key::DownArrow, false);
+        }
         for key in [Key::Home, Key::End] {
             world.key(key, false);
             world.key(Key::Space, false);

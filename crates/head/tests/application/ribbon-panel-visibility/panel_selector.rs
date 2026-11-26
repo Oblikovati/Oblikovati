@@ -212,8 +212,9 @@ fn native_panel_selector_uses_arrow_and_activation_keys() {
         let mut world = ApplicationWorld::new();
         world.add_part();
         open_selector(&mut world);
-        world.key(DownArrow, false);
-        world.key(DownArrow, false);
+        for _ in 0..3 {
+            world.key(DownArrow, false);
+        }
         assert!(world.checked("Create"));
         world.key(activate, false);
         assert!(!world.checked("Create"));

@@ -1,0 +1,17 @@
+
+final-wayland
+1 scenario (1 passed)
+14 steps (14 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 6.58s
+
+final-x11
+1 scenario (1 passed)
+14 steps (14 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1733 filtered out; finished in 6.79s
+
+GUI and native selector regressions
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 1731 filtered out; finished in 18.82s
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 827 filtered out; finished in 0.00s
+
+Workspace Clippy
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 14s

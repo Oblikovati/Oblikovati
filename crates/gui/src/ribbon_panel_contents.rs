@@ -181,6 +181,18 @@ pub(crate) fn draw_panel_content(
         }
         RibbonPanel::Visibility => sketch::visibility_controls(ui, state, owners.icons, actions),
         RibbonPanel::Windows => appearance_view::windows(ui, origin, state, owners, actions),
+        RibbonPanel::PartPrimitives => muted_icon_commands(
+            ui,
+            origin,
+            owners.icons,
+            &[
+                ("Box", None),
+                ("Cylinder", None),
+                ("Sphere", None),
+                ("Torus", None),
+            ],
+            false,
+        ),
         RibbonPanel::PartCreate => part_create_controls(ui, origin, state, owners, actions),
         RibbonPanel::PartModify => {
             part_modify_controls(ui, origin, state, actions, owners);

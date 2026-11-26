@@ -103,6 +103,7 @@ fn compact_group_icon(panel: RibbonPanel) -> crate::icons::IconGlyph {
             IconGlyph::DrawingSurface
         }
         RibbonPanel::PartCreate => IconGlyph::Extrude,
+        RibbonPanel::PartPrimitives => IconGlyph::CreateBlock,
         RibbonPanel::PartModify => IconGlyph::Fillet,
         RibbonPanel::PartWorkFeatures => IconGlyph::WorkPlane,
         RibbonPanel::PartSimplification | RibbonPanel::PartShapeGenerator => IconGlyph::Simplify,

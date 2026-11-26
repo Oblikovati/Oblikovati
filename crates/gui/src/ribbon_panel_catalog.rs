@@ -39,6 +39,7 @@ pub(crate) enum RibbonPanel {
     AnnotateDimension,
     AnnotateText,
     AnnotateSymbols,
+    PartPrimitives,
     PartCreate,
     PartModify,
     PartExplore,
@@ -82,6 +83,7 @@ impl RibbonPanel {
             Self::Windows => "Windows",
             Self::Component => "Component",
             Self::SheetMetalTools => "Sheet Metal",
+            Self::PartPrimitives => "Primitives",
             Self::DrawingViews | Self::PartCreate => "Create",
             Self::DrawingModify | Self::PartModify => "Modify",
             Self::PartExplore => "Explore",
@@ -141,6 +143,7 @@ impl RibbonPanel {
             | Self::AnnotateDimension
             | Self::AnnotateText
             | Self::AnnotateSymbols
+            | Self::PartPrimitives
             | Self::PartCreate
             | Self::PartModify
             | Self::PartWorkFeatures
@@ -222,6 +225,7 @@ pub(crate) fn panels_for(tab: RibbonTab, state: &GuiCommandState) -> Vec<RibbonP
         RibbonTab::GetStarted => vec![Launch],
         RibbonTab::Model => vec![
             Sketch,
+            PartPrimitives,
             PartCreate,
             PartModify,
             PartExplore,
