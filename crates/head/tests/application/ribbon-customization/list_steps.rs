@@ -97,6 +97,25 @@ fn reverse_source(world: &mut ApplicationWorld) {
 }
 
 #[test]
+fn available_name_header_sorts_near_its_right_edge() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    open_tools_customization(&mut world);
+    click_in_customize(&mut world, "2DSketches");
+    let header = world.run_in_window("Customize", "Name");
+    let row = source_rows(&world)[0];
+    let width = diagnostics::child_size_at("Customize", row.center())[0];
+    let point = [header.minimum[0] + width * 0.9, header.center()[1]];
+    world.click(diagnostics::pointer_pixels(point));
+    world.pump(Vec::new());
+    expect_source_prefix(&world, &DESCENDING);
+    target_is_empty(&world);
+    transfer(&mut world);
+    assert_eq!(target_rows(&world), ["2DSketches"]);
+    world.close();
+}
+
+#[test]
 fn reversing_available_command_order_returns_to_top_and_keeps_selection() {
     let mut world = ApplicationWorld::new();
     world.add_part();

@@ -229,7 +229,7 @@ impl RibbonCustomization {
         if let Some(_category) = category {
             self.category_menu(ui);
         }
-        let reverse = ui.small_button("Name##available-sort");
+        let reverse = layout::source_sort_header(ui, size[0]);
         if reverse {
             self.draft.reverse_source_order();
             self.source_scroll_ratio = None;

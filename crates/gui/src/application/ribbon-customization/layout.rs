@@ -1,9 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Layout of the Customize window and its command lists.
 use super::{RibbonCustomization, Ui};
+use imgui::StyleVar;
 
 const DEFAULT_SIZE: [f32; 2] = [760., 540.];
 pub(super) const TARGET_OPTIONS_X: [f32; 2] = [132., 180.];
+
+pub(super) fn source_sort_header(ui: &Ui, width: f32) -> bool {
+    let padding_x = ui.clone_style().frame_padding[0];
+    let _padding = ui.push_style_var(StyleVar::FramePadding([padding_x, 0.]));
+    let _align = ui.push_style_var(StyleVar::ButtonTextAlign([0., 0.5]));
+    ui.button_with_size("Name##available-sort", [width, 0.])
+}
 
 pub(super) fn target_headings(ui: &Ui) {
     let origin = ui.cursor_pos()[0] + ui.clone_style().window_padding[0];
