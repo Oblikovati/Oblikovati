@@ -126,10 +126,10 @@ fn manage_active(world: &mut ApplicationWorld) {
 #[then("Manage becomes the active tab")]
 #[then("Manage remains active in tabs-only display")]
 fn manage_tab_selected(world: &mut ApplicationWorld) {
-    world.hover([1000, 600]);
-    let inactive = world.pixel_left_of("View");
-    assert_eq!(world.pixel_left_of("Tools"), inactive);
-    assert_ne!(world.pixel_left_of("Manage"), inactive);
+    assert_eq!(
+        ribbon_tab_underlines(world, ["Manage", "Tools", "View"]),
+        [true, false, false]
+    );
 }
 #[when("the user scrolls up over the same position on the tab row")]
 fn wheel_up_over_same_tab_position(world: &mut ApplicationWorld) {
@@ -142,10 +142,10 @@ fn tools_active(world: &mut ApplicationWorld) {
 }
 #[then("Tools becomes the active tab")]
 fn tools_tab_selected(world: &mut ApplicationWorld) {
-    world.hover([1000, 600]);
-    let inactive = world.pixel_left_of("View");
-    assert_eq!(world.pixel_left_of("Manage"), inactive);
-    assert_ne!(world.pixel_left_of("Tools"), inactive);
+    assert_eq!(
+        ribbon_tab_underlines(world, ["Tools", "Manage", "View"]),
+        [true, false, false]
+    );
 }
 
 #[given("no temporary ribbon commands are open")]

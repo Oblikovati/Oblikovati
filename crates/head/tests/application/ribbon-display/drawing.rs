@@ -8,19 +8,12 @@ fn place_views_full(world: &mut ApplicationWorld) {
     world.expect_text("Base View");
     world.ribbon_height = band_height();
 }
-fn double_click_place_views(world: &mut ApplicationWorld) {
-    let center = world.run("Place Views").center().map(|value| value as i32);
-    world.pump(crate::native::gui_loop_tests::pointer_click_events(
-        center, 2,
-    ));
-    world.pump(Vec::new());
-}
 #[when("I double-click the active Place Views tab")]
 #[when("the user double-clicks the active Place Views tab")]
 #[when("I double-click the active Place Views tab again")]
 #[when("the user double-clicks the active Place Views tab again")]
 fn double_click(world: &mut ApplicationWorld) {
-    double_click_place_views(world);
+    super::double_click::double_click_tab(world, "Place Views");
 }
 fn expect_compact_drawing(world: &mut ApplicationWorld) {
     for group in DRAWING_GROUPS {

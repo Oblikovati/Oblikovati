@@ -85,8 +85,9 @@ fn tools_commands_close(world: &mut ApplicationWorld) {
 
 #[then("Tools remains the active tab in tabs-only display")]
 fn tools_selected(world: &mut ApplicationWorld) {
-    let tools = world.pixel_left_of("Tools");
-    let view = world.pixel_left_of("View");
-    assert_ne!(tools, view, "expected Tools to be selected");
+    assert_eq!(
+        ribbon_tab_underlines(world, ["Tools", "View"]),
+        [true, false]
+    );
     world.expect_no_text("Document Settings");
 }

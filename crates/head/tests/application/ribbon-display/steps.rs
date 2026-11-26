@@ -291,20 +291,28 @@ fn ribbon_tab_underlines<const COUNT: usize>(
     world: &mut ApplicationWorld,
     tabs: [&str; COUNT],
 ) -> [bool; COUNT] {
-    let ribbon = "##application-ribbon";
     let capture = super::capture_framebuffer(&mut world.app().window.native);
     let [width, height] = capture.extent.map(|pixels| pixels as usize);
-    let [_, _, _, bottom] =
-        super::diagnostics::window_pixel_bounds(ribbon).expect("expected the application ribbon");
+    let tab_strip = super::diagnostics::child_scroll("##application-ribbon", "##ribbon-tab-region")
+        .expect("expected the ribbon tab strip");
+    // Commands below the tab strip can also use the accent.
+    let bottom = super::diagnostics::pointer_pixels([0., tab_strip.origin[1] + tab_strip.size[1]])
+        [1] as usize;
     // The live GUI context provides the accent for both light and dark themes.
     let accent =
         unsafe { imgui::sys::igGetColorU32_Col(imgui::sys::ImGuiCol_NavHighlight as i32, 1.) }
             .to_le_bytes();
     tabs.map(|label| {
-        let run = world.run_in_window(ribbon, label);
+        let label = super::world::squeezed(label);
+        let run = world
+            .frame
+            .runs
+            .iter()
+            .find(|run| run.list == tab_strip.list && super::world::squeezed(&run.text) == label)
+            .unwrap_or_else(|| panic!("expected {label:?} in the ribbon tab strip"));
         let [x, top] = super::diagnostics::pointer_pixels([run.center()[0], run.maximum[1]])
             .map(|pixel| pixel as usize);
-        (top..(bottom as usize).min(height)).any(|y| {
+        (top..bottom.min(height)).any(|y| {
             let at = (y * width + x) * 4;
             capture.rgba.get(at..at + 3) == Some(&accent[..3])
         })

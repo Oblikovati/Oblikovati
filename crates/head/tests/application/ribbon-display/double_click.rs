@@ -2,7 +2,9 @@
 //! Real pointer input for ribbon tab double-click scenarios.
 use super::*;
 
-fn double_click_tab(world: &mut ApplicationWorld, label: &str) {
+pub(super) fn double_click_tab(world: &mut ApplicationWorld, label: &str) {
+    // Keep successive gestures separate, even when the assertions finish within the click interval.
+    std::thread::sleep(std::time::Duration::from_millis(500));
     let position = super::super::diagnostics::pointer_pixels(world.run(label).center());
     world.pump(crate::native::gui_loop_tests::pointer_click_events(
         position, 2,
@@ -26,7 +28,6 @@ fn full_tools_visible(world: &mut ApplicationWorld) {
 #[when("the user double-clicks the active Tools tab")]
 #[when("the user double-clicks the active Tools tab again")]
 fn double_click_active_tools(world: &mut ApplicationWorld) {
-    std::thread::sleep(std::time::Duration::from_millis(500));
     double_click_tab(world, "Tools");
 }
 
@@ -68,9 +69,10 @@ fn double_click_inactive_view(world: &mut ApplicationWorld) {
 #[then("View becomes the active tab")]
 #[then("View remains the active tab in tabs-only display")]
 fn view_active(world: &mut ApplicationWorld) {
-    let view = world.pixel_left_of("View");
-    let tools = world.pixel_left_of("Tools");
-    assert_ne!(view, tools, "expected View to be selected");
+    assert_eq!(
+        ribbon_tab_underlines(world, ["View", "Tools"]),
+        [true, false]
+    );
 }
 
 #[then("its command groups appear in a temporary panel")]
@@ -81,7 +83,6 @@ fn temporary_view(world: &mut ApplicationWorld) {
 
 #[when("the user double-clicks the active View tab")]
 fn double_click_active_view(world: &mut ApplicationWorld) {
-    std::thread::sleep(std::time::Duration::from_millis(500));
     double_click_tab(world, "View");
 }
 
