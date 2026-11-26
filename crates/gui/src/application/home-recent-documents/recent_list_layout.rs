@@ -23,6 +23,11 @@ impl RecentListLayout {
         let marks = ui.calc_text_size(" v")[0].max(ui.calc_text_size(" ^")[0]);
         let minimum = SortField::MENU.map(|field| {
             let width = ui.calc_text_size(field.label())[0] + marks + spacing + frame_padding;
+            let width = if matches!(field, SortField::Modified | SortField::Opened) {
+                width.max(ui.calc_text_size("0000-00-00")[0] + spacing.max(12.))
+            } else {
+                width
+            };
             (field, width)
         });
         Self {
@@ -38,6 +43,10 @@ impl RecentListLayout {
             .find(|(field, _)| *field == column)
             .unwrap_or_else(|| panic!("recent column {column:?}: expected a measured width"))
             .1
+    }
+
+    pub(super) fn metadata_width(self, column: SortField) -> f32 {
+        self.width(column) - self.spacing.max(12.)
     }
 }
 
@@ -115,6 +124,40 @@ fn extra_recent_column_width(field: SortField, minimum: f32) -> f32 {
         return 0.;
     }
     (column_width(field) - minimum).max(0.)
+}
+
+#[cfg(test)]
+#[test]
+fn one_wide_timestamp_selects_dates_for_the_whole_list() {
+    use super::{GuiRecentDocument, list_dates_need_short_format};
+    let mut regular = GuiRecentDocument::of_file("regular.opd", 0, false, std::time::UNIX_EPOCH);
+    regular.modified_text = "2025-02-03 07:07:00 UTC".into();
+    regular.opened_text = regular.modified_text.clone();
+    let mut wide = regular.clone();
+    wide.modified_text = "2025-02-03 08:08:00 UTC".into();
+    let mut layout = RecentListLayout {
+        widths: SortField::MENU.map(|field| (field, 36.)),
+        spacing: 8.,
+        frame_padding: 8.,
+    };
+    let measure = |text: &str| text.len() as f32 + if text.contains("08:08") { 4. } else { 0. };
+    assert!(!list_dates_need_short_format(layout, &[&regular], measure));
+    assert!(list_dates_need_short_format(
+        layout,
+        &[&regular, &wide],
+        measure
+    ));
+    layout
+        .widths
+        .iter_mut()
+        .find(|(field, _)| *field == SortField::Modified)
+        .unwrap()
+        .1 = 0.;
+    assert!(!list_dates_need_short_format(
+        layout,
+        &[&regular, &wide],
+        measure
+    ));
 }
 
 #[cfg(test)]

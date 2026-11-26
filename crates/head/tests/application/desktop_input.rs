@@ -51,6 +51,18 @@ fn compositor_point(world: &mut ApplicationWorld, [px, py]: [i32; 2]) -> [i32; 2
     [x + px, y + py]
 }
 
+pub(super) fn scroll(world: &mut ApplicationWorld, point: [i32; 2], notches: i32) {
+    if world.app().window.native.view.uses_wayland() {
+        let target = compositor_point(world, point);
+        x11_input::window_targets::move_fullscreen_pointer(target);
+        world.pump(Vec::new());
+        x11_input::window_targets::scroll_fullscreen_output(target, notches);
+    } else {
+        x11_input::scroll(point, notches);
+    }
+    world.pump(Vec::new());
+}
+
 pub(super) fn hover(world: &mut ApplicationWorld, point: [i32; 2]) {
     if world.app().window.native.view.uses_wayland() {
         let target = compositor_point(world, point);

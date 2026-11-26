@@ -13,7 +13,7 @@ mod recent_checkbox;
 #[path = "recent_list_layout.rs"]
 mod recent_list_layout;
 pub(crate) use recent_cell_text::fit_recent_cell;
-use recent_cell_text::{fit_recent_timestamp, reveal_full_cell, visible_source_text};
+use recent_cell_text::{fit_recent_timestamp, recent_date, reveal_full_cell, visible_source_text};
 use recent_checkbox::checkbox;
 use recent_list_layout::RecentListLayout;
 
@@ -33,15 +33,24 @@ fn open_action(path: &str) -> GuiShellAction {
 fn remove_action(path: &str) -> GuiShellAction {
     GuiShellAction::Recent(GuiRecentAction::Remove(path.to_owned()))
 }
-fn metadata_cell(ui: &Ui, full: &str, width: f32, timestamp: bool) {
-    let measure = |text: &str| ui.calc_text_size(text)[0];
-    let shown = if timestamp {
-        fit_recent_timestamp(full, width, measure)
-    } else {
-        fit_recent_cell(full, width, measure)
-    };
-    ui.text(shown.as_ref());
-    reveal_full_cell(ui, full, &shown);
+fn metadata_cell(ui: &Ui, full: &str, shown: &str) {
+    ui.text(shown);
+    reveal_full_cell(ui, full, shown);
+}
+
+fn list_dates_need_short_format(
+    layout: RecentListLayout,
+    rows: &[&GuiRecentDocument],
+    measure: impl Fn(&str) -> f32,
+) -> bool {
+    [SortField::Modified, SortField::Opened]
+        .into_iter()
+        .any(|field| {
+            layout.width(field) > 0.
+                && rows
+                    .iter()
+                    .any(|row| measure(cell_text(row, field)) > layout.metadata_width(field))
+        })
 }
 fn accent_row(ui: &Ui, height: f32, width: f32) {
     let [x, y] = ui.cursor_screen_pos();
@@ -81,10 +90,12 @@ impl HomeWorkspace {
         icons: &crate::icons::GuiRibbonIcons,
     ) {
         let layout = RecentListLayout::for_columns(ui, &self.columns.shown);
+        let date_only =
+            list_dates_need_short_format(layout, rows, |text| ui.calc_text_size(text)[0]);
         self.list_header(ui, rows, layout);
         ui.separator();
         for row in rows {
-            self.list_row(ui, row, layout, actions, icons);
+            self.list_row(ui, row, (layout, date_only), actions, icons);
         }
     }
     fn list_header(&mut self, ui: &Ui, rows: &[&GuiRecentDocument], layout: RecentListLayout) {
@@ -126,7 +137,7 @@ impl HomeWorkspace {
         &mut self,
         ui: &Ui,
         row: &GuiRecentDocument,
-        layout: RecentListLayout,
+        (layout, date_only): (RecentListLayout, bool),
         actions: &mut Vec<GuiShellAction>,
         icons: &crate::icons::GuiRibbonIcons,
     ) {
@@ -152,13 +163,17 @@ impl HomeWorkspace {
                 continue;
             }
             ui.same_line_with_pos(x);
+            let full = cell_text(row, *column);
             let timestamp = matches!(column, SortField::Modified | SortField::Opened);
-            metadata_cell(
-                ui,
-                cell_text(row, *column),
-                width - layout.spacing.max(12.),
-                timestamp,
-            );
+            if timestamp && !date_only {
+                metadata_cell(ui, full, full);
+            } else {
+                let value = if timestamp { recent_date(full) } else { full };
+                let shown = fit_recent_cell(value, layout.metadata_width(*column), |text| {
+                    ui.calc_text_size(text)[0]
+                });
+                metadata_cell(ui, full, &shown);
+            }
             x += width;
         }
         ui.same_line_with_pos(x + ACTION_GAP);
@@ -352,12 +367,15 @@ impl HomeWorkspace {
         ) {
             actions.push(open_action(&row.path));
         }
-        metadata_cell(ui, &row.name, width, false);
+        let name = fit_recent_cell(&row.name, width, |text| ui.calc_text_size(text)[0]);
+        metadata_cell(ui, &row.name, &name);
         let _dim = ui.push_style_color(
             imgui::StyleColor::Text,
             ui.style_color(imgui::StyleColor::TextDisabled),
         );
-        metadata_cell(ui, &row.modified_text, width, true);
+        let modified =
+            fit_recent_timestamp(&row.modified_text, width, |text| ui.calc_text_size(text)[0]);
+        metadata_cell(ui, &row.modified_text, &modified);
     }
 }
 

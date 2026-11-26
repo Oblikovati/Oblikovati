@@ -44,8 +44,13 @@ pub(super) fn fit_recent_timestamp(
         return Cow::Borrowed(full);
     }
     // The time is useful only as a complete value. Keep the date and expose the rest on hover.
-    let date = full.split_once(' ').map_or(full, |(date, _)| date);
-    fit_recent_cell(date, width, measure)
+    fit_recent_cell(recent_date(full), width, measure)
+}
+
+pub(super) fn recent_date(timestamp: &str) -> &str {
+    timestamp
+        .split_once(' ')
+        .map_or(timestamp, |(date, _)| date)
 }
 
 pub(super) fn visible_source_text<'a>(shown: &'a str, full: &str) -> &'a str {

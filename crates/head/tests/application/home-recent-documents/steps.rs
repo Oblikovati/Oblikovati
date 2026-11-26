@@ -21,6 +21,8 @@ mod lists;
 mod native_input;
 #[path = "published_profile.rs"]
 mod published_profile;
+#[path = "responsive_list.rs"]
+mod responsive_list;
 use published_profile::{assembly_name, other_recent_names, recent_name};
 #[path = "startup_observation.rs"]
 mod startup_observation;

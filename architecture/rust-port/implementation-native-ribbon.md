@@ -21,6 +21,11 @@ docks are suspended. The status bar hides document telemetry during the visit
 and resumes it on return. List View keeps its recent-document column headings
 when the list is empty.
 
+Home Recent uses one timestamp format across Date Modified and Last Opened.
+When either visible date column needs a shorter format, the whole list uses
+dates and preserves the full timestamps in hover text. The list reserves
+room for filenames and keeps clearance above the tab strip at the scroll end.
+
 The drawing ribbon cycles through all four display modes on repeat
 double-clicks. Wheel input selects adjacent Part ribbon tabs and updates
 temporary command groups when open. The [tab navigation receipt](receipts/2026-11-26-ribbon-tab-navigation-3856/README.md)
