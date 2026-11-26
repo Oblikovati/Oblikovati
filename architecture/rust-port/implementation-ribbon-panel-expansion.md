@@ -81,6 +81,11 @@ uses the same panel visibility. Stress Analysis is disabled while its
 analysis backend is unavailable.
 [Minimized ribbon visibility](receipts/2026-11-26-ribbon-simulation-3856/README.md)
 
+The 3D Model checklist starts with Sketch and ends with 3D Print. Up
+and Down wrap between those rows without changing their check states.
+The 3D Print panel shows Export STL as unavailable.
+[Keyboard wrap on Wayland and X11](receipts/2026-11-26-ribbon-print-wrap-3856/README.md)
+
 The [Wayland and X11 visibility reruns](receipts/2026-11-26-ribbon-visibility-wayland-3856/README.md)
 cover switching tabs with the selector open, closing Modify's expanded
 commands, and restoring Parameters between Format and Exit.

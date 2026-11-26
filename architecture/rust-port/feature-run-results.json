@@ -2051,17 +2051,17 @@
           "fixtures/cad/quick-access-toolbar/PartOne.opd": "09fedf5c0e865867a3088067f3f8378dc01b6e226924a5c64210102e10227993",
           "fixtures/cad/quick-access-toolbar/PartTwo.opd": "349c57f7cd94593d1ab6a0df940b666774c73ac3f8b27af89dbc0fd203d744c4"
         },
-        "cucumber": "architecture/rust-port/receipts/2026-11-26-ribbon-visibility-wayland-3856/full-wayland.json",
-        "cucumber_sha256": "74ba8278150f4233330371056f5be1f2123fcb6530cb9811dbf77ac2df21e5c1",
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-ribbon-print-wrap-3856/full-wayland.json",
+        "cucumber_sha256": "c903bbfe30f2a461854dc118fa82a144689ef0521131b259590c7b4bdca3f868",
         "scenario_inventory": "architecture/rust-port/receipts/2026-11-25-ribbon-panel-visibility-current-3856/scenario-inventory.json",
         "scenario_inventory_sha256": "b4a1bec6908990d2ba0668313548f339a0e1658634af222cded041b9c11a0174",
-        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-ribbon-visibility-wayland-3856/full-wayland-arguments.json",
-        "scenario_arguments_sha256": "67829b8af97748a4f6d3c61301cc7cac5196fd4c0ebb63b73683f2338aee4611",
-        "application_commit": "6cf166bc6dd5e03ea615240a86e65129077c94af",
-        "command": "Full published Wayland panel visibility suite with five isolated scenario reruns. See the receipt.",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-ribbon-print-wrap-3856/full-wayland-arguments.json",
+        "scenario_arguments_sha256": "ec679d59f54b7b2b6514bbff161deaced73049ff03dd9c06c11f8584ff6360cc",
+        "application_commit": "ece3bda4e12ab7d7996e36763c5885b24005037f",
+        "command": "Full published Wayland panel visibility suite and focused 3D Print keyboard wrap on Wayland and X11. See the receipt.",
         "environment": "Linux Wayland with nested Weston 13, Xvfb, and Vulkan Lavapipe.",
-        "blocker": "Three cases require missing panel inventory, and two require Shell previews.",
-        "notes": "50 of 55 current cases passed on Wayland, covering 601 steps in passing cases. All five rerun cases passed on X11. Strict build and runtime provenance remains open under #3978."
+        "blocker": "Two cases require the full Manage and 3D Model panel inventories and two require Shell previews.",
+        "notes": "51 of 55 current cases passed on Wayland, covering 612 steps in passing cases. The 3D Print keyboard wrap also passed on X11. Strict build and runtime provenance remains open under #3978."
       }
     }
   },

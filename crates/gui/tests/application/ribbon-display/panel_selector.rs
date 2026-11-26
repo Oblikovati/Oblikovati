@@ -165,7 +165,7 @@ fn keyboard_wraps_from_first_to_last_panel() {
             .ribbon
             .display
             .hidden_panels
-            .contains(&(RibbonTab::Model, RibbonPanel::PartSimulation)),
+            .contains(&(RibbonTab::Model, RibbonPanel::PartPrint)),
         "expected the last panel to be hidden after wrapping focus"
     );
     assert!(owner.popup_was_open);

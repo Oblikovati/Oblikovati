@@ -65,18 +65,6 @@ fn selector_closed(_: &mut ApplicationWorld) {
     assert!(!super::side_selector::selector_popup_open());
 }
 
-const MODEL_PANELS: [&str; 9] = [
-    "Sketch",
-    "Primitives",
-    "Create",
-    "Modify",
-    "Explore",
-    "Work Features",
-    "Pattern",
-    "Simplification",
-    "Parameters",
-];
-
 #[given("the Primitives panel is hidden")]
 fn primitives_hidden(world: &mut ApplicationWorld) {
     assert!(model_panel_run(world, "Primitives").is_none());
@@ -129,23 +117,69 @@ fn primitives_hidden_after_toggle(world: &mut ApplicationWorld) {
     primitives_hidden(world);
 }
 
-fn check_arrow_wrap(world: &mut ApplicationWorld) {
+fn model_selector_rows(world: &ApplicationWorld) -> Vec<&super::super::diagnostics::RenderedRun> {
+    assert!(super::side_selector::selector_popup_open());
+    let list = world.run("Primitives").list;
+    let mut rows: Vec<_> = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| run.list == list)
+        .collect();
+    rows.sort_by(|left, right| left.center()[1].total_cmp(&right.center()[1]));
+    rows
+}
+
+#[given("the Sketch row is the first row and 3D Print is the last row")]
+fn capture_model_selector_rows(world: &mut ApplicationWorld) {
+    let rows = model_selector_rows(world);
+    assert_eq!(rows.first().map(|run| run.text.as_str()), Some("Sketch"));
+    assert_eq!(rows.last().map(|run| run.text.as_str()), Some("3DPrint"));
+    world.observed_counts = rows
+        .into_iter()
+        .map(|run| usize::from(world.checked_run(run)))
+        .collect();
+}
+
+#[when("the user presses Down to focus the Sketch row")]
+fn begin_selector_keyboard_navigation(world: &mut ApplicationWorld) {
     world.key(Key::DownArrow, false);
-    let first = focus_id();
-    assert_ne!(first, 0, "expected a focused first row");
-    world.key(Key::UpArrow, false);
-    let wrapped_up = focus_id();
-    assert_ne!(first, wrapped_up, "Up from the first row should wrap");
-    world.key(Key::DownArrow, false);
-    assert_eq!(focus_id(), first, "Down from the last row should wrap");
-    for _ in 1..MODEL_PANELS.len() {
-        world.key(Key::DownArrow, false);
-    }
-    assert_eq!(
-        focus_id(),
-        wrapped_up,
-        "Up should have reached the last row"
+    sketch_focused(world);
+}
+
+fn expect_selector_focus(world: &ApplicationWorld, label: &str) {
+    let context = unsafe { imgui::sys::igGetCurrentContext().as_ref() }.expect("expected GUI");
+    let window = unsafe { context.NavWindow.as_ref() }.expect("expected a focused selector");
+    let text = std::ffi::CString::new(label).unwrap();
+    let expected = unsafe { imgui::sys::igImHashStr(text.as_ptr(), 0, window.ID) };
+    assert!(
+        model_selector_rows(world)
+            .iter()
+            .any(|row| row.text == label.replace(' ', ""))
     );
+    assert_eq!(
+        context.NavId, expected,
+        "expected focus on the {label} checkbox"
+    );
+}
+
+#[then("keyboard focus moves to the 3D Print row")]
+fn print_focused(world: &mut ApplicationWorld) {
+    expect_selector_focus(world, "3D Print");
+}
+
+#[then("keyboard focus moves to the Sketch row")]
+fn sketch_focused(world: &mut ApplicationWorld) {
+    expect_selector_focus(world, "Sketch");
+}
+
+#[then("no panel checkbox has changed")]
+fn selector_checks_unchanged(world: &mut ApplicationWorld) {
+    let current: Vec<_> = model_selector_rows(world)
+        .into_iter()
+        .map(|run| usize::from(world.checked_run(run)))
+        .collect();
+    assert_eq!(current, world.observed_counts);
 }
 
 #[test]
@@ -153,9 +187,12 @@ fn panel_selector_wraps_arrow_focus_without_changing_visibility() {
     let mut world = ApplicationWorld::new();
     world.add_part();
     super::side_selector::open_side_selector(&mut world);
-    let before = MODEL_PANELS.map(|panel| world.checked(panel));
-    check_arrow_wrap(&mut world);
-    assert_eq!(MODEL_PANELS.map(|panel| world.checked(panel)), before);
-    selector_open(&mut world);
+    capture_model_selector_rows(&mut world);
+    begin_selector_keyboard_navigation(&mut world);
+    world.key(Key::UpArrow, false);
+    print_focused(&mut world);
+    world.key(Key::DownArrow, false);
+    sketch_focused(&mut world);
+    selector_checks_unchanged(&mut world);
     world.close();
 }
