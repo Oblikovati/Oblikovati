@@ -80,7 +80,8 @@ verified removing and adding the same staged command after selecting a
 different source row.
 [Home and End navigation](../2026-11-25-ribbon-customization-target-ends-3856/README.md)
 selected the first and last staged rows and preserved their order and options.
-[Letter navigation](case-071/cucumber.json) also remains open.
+[Letter navigation](../2026-11-26-ribbon-z-parallel-3856/README.md) later passed
+on both Wayland and X11.
 
 One [cancellation case](case-055/cucumber.json) closes Customize and
 then expects a Measure panel that the scenario never opens. Another

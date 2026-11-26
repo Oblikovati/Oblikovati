@@ -2,6 +2,7 @@
 //! Ribbon command edits stay in a draft until Apply or OK.
 mod builtin;
 mod category;
+mod command_catalog;
 pub(crate) mod interface_export;
 mod keyboard;
 mod keyboard_catalog;

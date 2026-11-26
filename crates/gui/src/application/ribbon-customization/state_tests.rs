@@ -137,6 +137,13 @@ fn source_sort_preserves_selection_and_transfers_in_display_order() {
     draft.open(RibbonTab::Tools);
     let ascending = draft.available_commands();
     assert_eq!(ascending[0], Command::Separator);
+    assert_eq!(
+        ascending
+            .iter()
+            .copied()
+            .find(|command| command.label().starts_with('Z')),
+        Some(Command::ZParallel)
+    );
     assert!(
         ascending[1..]
             .windows(2)

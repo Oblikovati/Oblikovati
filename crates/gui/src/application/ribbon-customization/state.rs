@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Session-local applied commands and a separate editable draft per ribbon tab.
 use super::Category;
+pub(super) use super::command_catalog::COMMANDS;
 use crate::{GuiSketchConstraint, GuiSketchTool};
 use crate::{application::viewport_orientation::ZoomAction, ribbon::RibbonTab};
 use std::collections::{BTreeMap, BTreeSet};
@@ -9,6 +10,7 @@ use std::collections::{BTreeMap, BTreeSet};
 pub(super) enum Command {
     Separator,
     Drawing2D,
+    ZParallel,
     Sketches,
     Annotations,
     Tool(GuiSketchTool),
@@ -24,6 +26,7 @@ impl Command {
         match self {
             Self::Separator => "separator",
             Self::Drawing2D => "drawing-2d",
+            Self::ZParallel => "constraint-z-parallel",
             Self::Sketches => "sketch-visibility",
             Self::Annotations => "annotations-visibility",
             Self::Measure => "measure",
@@ -68,6 +71,7 @@ impl Command {
         match self {
             Self::Separator => "<Separator>",
             Self::Drawing2D => "2-D Drawing",
+            Self::ZParallel => "Z Parallel",
             Self::Sketches => "2D Sketches",
             Self::Annotations => "3D Annotations",
             Self::Tool(GuiSketchTool::Circle) => "Circle (Center Point)",
@@ -81,44 +85,6 @@ impl Command {
         }
     }
 }
-pub(super) const COMMANDS: [Command; 36] = [
-    Command::Separator,
-    Command::Drawing2D,
-    Command::Tool(GuiSketchTool::Line),
-    Command::Tool(GuiSketchTool::MidpointLine),
-    Command::Sketches,
-    Command::Annotations,
-    Command::Tool(GuiSketchTool::Circle),
-    Command::Measure,
-    Command::Tool(GuiSketchTool::Rectangle),
-    Command::Tool(GuiSketchTool::Point),
-    Command::Tool(GuiSketchTool::CenterPointArc),
-    Command::Tool(GuiSketchTool::Ellipse),
-    Command::Tool(GuiSketchTool::Fillet),
-    Command::Tool(GuiSketchTool::Text),
-    Command::Tool(GuiSketchTool::CenterRectangle),
-    Command::Tool(GuiSketchTool::ThreePointRectangle),
-    Command::Tool(GuiSketchTool::ThreePointCenterRectangle),
-    Command::Tool(GuiSketchTool::ThreePointCircle),
-    Command::Tool(GuiSketchTool::ThreePointArc),
-    Command::Constraint(GuiSketchConstraint::Horizontal),
-    Command::Constraint(GuiSketchConstraint::Vertical),
-    Command::Constraint(GuiSketchConstraint::Coincident),
-    Command::Constraint(GuiSketchConstraint::Fix),
-    Command::Constraint(GuiSketchConstraint::Parallel),
-    Command::Constraint(GuiSketchConstraint::Perpendicular),
-    Command::Constraint(GuiSketchConstraint::Collinear),
-    Command::Constraint(GuiSketchConstraint::Equal),
-    Command::Constraint(GuiSketchConstraint::Concentric),
-    Command::Constraint(GuiSketchConstraint::Tangent),
-    Command::Dimension,
-    Command::CancelSketch,
-    Command::FinishSketch,
-    Command::Zoom(ZoomAction::Zoom),
-    Command::Zoom(ZoomAction::All),
-    Command::Zoom(ZoomAction::Window),
-    Command::Zoom(ZoomAction::Selected),
-];
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct Entry {
     pub command: Command,
@@ -488,7 +454,7 @@ fn sort_name(command: Command) -> String {
     command
         .label()
         .chars()
-        .filter(|character| character.is_alphanumeric())
+        .filter(|character| character.is_alphanumeric() || *character == ' ')
         .flat_map(char::to_lowercase)
         .collect()
 }

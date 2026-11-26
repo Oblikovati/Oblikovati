@@ -5,6 +5,26 @@ use super::transaction_steps::{add_command, target_row_runs, target_rows};
 use super::*;
 use oblikovati_viewport::{ViewportCapture, ViewportPhysicalKey};
 
+#[when("the user presses the Z key while the available commands list has focus")]
+fn jump_to_z(world: &mut ApplicationWorld) {
+    assert!(!source_rows(world).iter().any(|row| row.text == "ZParallel"));
+    world.key(ViewportPhysicalKey::Z, false);
+    world.pump(Vec::new());
+}
+
+#[then("the available commands list scrolls to and selects \"Z Parallel\"")]
+fn selected_z_parallel(world: &mut ApplicationWorld) {
+    world.hover([800, 900]);
+    let rows = source_rows(world);
+    for label in ["ZParallel", "ZoomAll"] {
+        assert!(
+            rows.iter().any(|row| row.text == label),
+            "expected {label} in the source list"
+        );
+    }
+    assert!(world.row_accented_beside("ZParallel", "ZoomAll"));
+}
+
 #[test]
 fn remove_continues_at_the_next_staged_command_after_an_upward_selection() {
     let mut world = ApplicationWorld::new();

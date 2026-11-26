@@ -26,6 +26,12 @@ fn round_trip_preserves_tabs_commands_and_options() {
                 text: true,
                 expanded: false,
             },
+            Entry {
+                command: Command::ZParallel,
+                large: false,
+                text: true,
+                expanded: false,
+            },
         ],
     )]);
     let settings = SettingsDocument {
