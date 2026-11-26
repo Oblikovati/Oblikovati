@@ -114,6 +114,7 @@ impl GuiSweepAction {
 }
 
 const TIP: &str = "Sweep needs a closed profile sketch and a path sketch. Make both sketches visible to select an unambiguous pair.";
+const RECENT_TWIST_LIMIT: usize = 8;
 
 #[derive(Default)]
 pub(crate) struct SweepDialog {
@@ -129,6 +130,8 @@ pub(crate) struct SweepDialog {
     presets: presets::SweepPresets,
     taper: String,
     twist: String,
+    initial_twist: String,
+    recent_twist: Vec<String>,
     optimize_single_selection: bool,
     show_help: bool,
 }
@@ -175,6 +178,7 @@ impl SweepDialog {
         self.path_cleared = false;
         self.taper = seed.taper;
         self.twist = seed.twist;
+        self.initial_twist.clone_from(&self.twist);
         self.optimize_single_selection = false;
         self.presets.reset();
         self.orientation = seed.orientation;
@@ -187,6 +191,7 @@ impl SweepDialog {
 
     pub(super) fn close(&mut self, actions: &mut Vec<GuiShellAction>) {
         if self.document.take().is_some() {
+            self.submitted = None;
             self.dock.set_open(false);
             actions.push(GuiShellAction::Sweep(GuiSweepAction::Clear));
         }
@@ -197,14 +202,18 @@ impl SweepDialog {
         state: &GuiCommandState,
         actions: &mut Vec<GuiShellAction>,
     ) {
-        if self.document.is_some()
-            && (self.document != state.document
-                || !GuiSweepAction::Open.enabled(state)
-                || self.submitted.as_ref().is_some_and(|request| {
-                    Some(request.generation) != state.document_generation
-                        || state.sweep_preview.is_none()
-                }))
+        if self.document.is_none() {
+            return;
+        }
+        if self.document != state.document || !GuiSweepAction::Open.enabled(state) {
+            self.close(actions);
+            return;
+        }
+        // The owner clears the exact preview after accepting the request, including a no-op edit.
+        if state.sweep_preview.is_none()
+            && let Some(request) = self.submitted.take()
         {
+            self.remember_twist(&request);
             self.close(actions);
         }
     }
@@ -281,8 +290,7 @@ impl SweepDialog {
             crate::theme::property_label(ui, "Taper");
             let _width = ui.push_item_width(-1.);
             ui.input_text("##sweep-taper", &mut self.taper).build();
-            crate::theme::property_label(ui, "Twist");
-            ui.input_text("##sweep-twist", &mut self.twist).build();
+            self.twist_field(ui);
         }
         let mut request = self.request(document, generation);
         if !tip {
@@ -354,6 +362,41 @@ impl SweepDialog {
         if self.feature.is_some() && crate::widget_abi::button(ui, "Clear Profile", [0., 0.]) {
             self.profile = GuiSweepProfile::Empty;
         }
+    }
+
+    fn twist_field(&mut self, ui: &Ui) {
+        crate::theme::property_label(ui, "Twist");
+        if !self.recent_twist.is_empty() {
+            ui.set_next_item_width(-68.);
+        }
+        ui.input_text("##sweep-twist", &mut self.twist).build();
+        if self.recent_twist.is_empty() {
+            return;
+        }
+        ui.same_line();
+        if crate::widget_abi::button(ui, "Recent##sweep-twist-recent", [60., 0.]) {
+            ui.open_popup("##sweep-recent-expressions");
+        }
+        ui.popup("##sweep-recent-expressions", || {
+            for expression in &self.recent_twist {
+                if ui.selectable(expression) {
+                    self.twist.clone_from(expression);
+                }
+            }
+        });
+    }
+
+    fn remember_twist(&mut self, request: &GuiSweepRequest) {
+        let expression = request.twist.trim();
+        if request.orientation != GuiSweepOrientation::FollowPath
+            || expression.is_empty()
+            || expression == self.initial_twist.trim()
+        {
+            return;
+        }
+        self.recent_twist.retain(|value| value != expression);
+        self.recent_twist.insert(0, expression.into());
+        self.recent_twist.truncate(RECENT_TWIST_LIMIT);
     }
 
     fn request(&self, document: u64, generation: u64) -> GuiSweepRequest {

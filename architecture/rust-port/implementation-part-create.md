@@ -179,3 +179,11 @@ current angular unit. Choosing a preset reapplies those settings to the
 current draft without changing its profile or path. The preset file is
 independent of the Part and its Undo history.
 See the [native receipt](receipts/2026-11-26-sweep-presets-3917/README.md).
+
+### Recent Sweep twist expressions
+
+The Twist field offers recently accepted changes from the current desktop
+session. Choosing an expression updates the draft and validates it against
+the current geometry. Cancel discards that draft. The [native receipt](receipts/2026-11-26-sweep-recent-twist-3917/README.md)
+covers accepting 45 degrees, reusing the original expression, and
+cancelling without editing the saved feature or body.

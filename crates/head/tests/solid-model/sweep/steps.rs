@@ -12,7 +12,14 @@ fn open_sweep_fixture(world: &mut ApplicationWorld, relative: String) {
     let source = scenario_root().join(&relative);
     let copy = world.scratch_folder().join(source.file_name().unwrap());
     std::fs::copy(source, &copy).unwrap();
-    world.open_fixture(&copy);
+    let document = world
+        .app()
+        .owner
+        .document_host()
+        .open_path(&copy, true)
+        .unwrap();
+    world.pump(Vec::new());
+    world.activate_through_tab(document);
 }
 
 #[given("the part contains no sketches or solid bodies")]

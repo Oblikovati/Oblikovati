@@ -115,3 +115,61 @@ fn preset_file(world: &mut ApplicationWorld) -> std::path::PathBuf {
         .unwrap()
         .join("sweep-presets.json")
 }
+
+#[given("the user edits Sweep1, enters 45 degrees for Twist and accepts")]
+fn accept_45_degree_twist(world: &mut ApplicationWorld) {
+    open_valid_sweep(world);
+    replace_angle(world, "Twist", "45");
+    assert!(world.run_is_enabled("OK"));
+    accept(world);
+    accepted_sweep(world);
+    let browser = world.state().browser.unwrap();
+    assert_eq!(
+        browser.sweep_edits[&browser.bodies[0].feature].twist,
+        "45 deg"
+    );
+}
+
+#[given("Sweep1 is reopened for editing and the Twist expression menu contains 45")]
+fn show_recent_twist(world: &mut ApplicationWorld) {
+    open_valid_sweep(world);
+    click_panel(world, "Recent");
+    assert!(
+        world
+            .frame
+            .runs
+            .iter()
+            .any(|run| run.text == "45" && world.frame.is_popup_row(run))
+    );
+}
+
+#[when("45 is selected from the menu")]
+fn reuse_45_degree_twist(world: &mut ApplicationWorld) {
+    click_orientation_option(world, "45");
+}
+
+#[then("the Twist field displays 45")]
+fn shows_recent_twist(world: &mut ApplicationWorld) {
+    chosen_sources(world);
+    assert_eq!(world.state().sweep_preview.unwrap().request.twist, "45");
+    assert!(super::super::world::squeezed(&world.window_text("Sweep")).contains("Twist45"));
+}
+
+#[when("the edit is cancelled")]
+fn cancel_twist_draft(world: &mut ApplicationWorld) {
+    let generation = world.state().document_generation;
+    click_panel(world, "Cancel");
+    assert_eq!(world.state().document_generation, generation);
+    assert!(world.state().sweep_preview.is_none());
+}
+
+#[then("the existing Sweep1 solid remains")]
+fn accepted_twist_survives_cancel(world: &mut ApplicationWorld) {
+    accepted_sweep(world);
+    let browser = world.state().browser.unwrap();
+    assert_eq!(
+        browser.sweep_edits[&browser.bodies[0].feature].twist,
+        "45 deg"
+    );
+    assert!(!world.app().window.scene_triangles.is_empty());
+}
