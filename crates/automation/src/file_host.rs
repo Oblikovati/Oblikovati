@@ -349,15 +349,8 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         if method == METHOD_ASSEMBLY_SUPPRESS {
             return assembly_occurrence_edits::suppress_wire(self.files, decode(method, request)?);
         }
-        if method == oblikovati_api::wire::METHOD_DRAWING_SET_MODEL_REFERENCE {
-            let result = crate::drawing_reference::apply(self.files, decode(method, request)?)?;
-            self.synchronize_drawing_references();
-            return Ok(result);
-        }
-        if method == oblikovati_api::wire::METHOD_DRAWING_VIEWS_ADD_BASE {
-            let result = self.add_drawing_base(decode(method, request)?)?;
-            self.synchronize_drawing_references();
-            return Ok(result);
+        if crate::DRAWING_COMMAND_METHODS.contains(&method) {
+            return self.drawing_view_command(method, request);
         }
         if method == METHOD_FEATURES_ADD {
             return self.add_feature(request);

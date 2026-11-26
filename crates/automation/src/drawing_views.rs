@@ -11,6 +11,8 @@ use oblikovati_model::{
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
+pub(super) mod collection;
+
 /// Project a current part before a drawing view is adopted.
 pub trait DrawingViewProjectionAccess {
     /// Give the certified policy for drawing geometry; example: `backend.resolution_policy()`.
@@ -85,9 +87,11 @@ pub fn with_current_drawing_part<
     project(session.history(), guid, owner.current_part(files, source)?)
 }
 /// Drawing calls served by the document owner.
-pub const DRAWING_COMMAND_METHODS: [&str; 2] = [
+pub const DRAWING_COMMAND_METHODS: [&str; 4] = [
     wire::METHOD_DRAWING_SET_MODEL_REFERENCE,
     wire::METHOD_DRAWING_VIEWS_ADD_BASE,
+    wire::METHOD_DRAWING_VIEWS_LIST,
+    wire::METHOD_DRAWING_VIEWS_DELETE,
 ];
 
 pub(super) fn add_base<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -138,7 +142,9 @@ pub(super) fn add_base<O: TransactionObserver, W: WorkspaceObserver, F: Document
             backend.counts_current(history, guid, &definition, part)
         })
         .map_err(Error)?;
-    let response = view_result(&definition, &request, counts)?;
+    let response = ViewResult {
+        view: view_info(&definition, counts)?,
+    };
     files
         .commands(drawing_id)
         .map_err(api_error)?
@@ -164,31 +170,28 @@ pub fn prepare_base_view(
     request: &AddBaseViewArgs,
 ) -> Result<DrawingBaseViewDefinition, Error> {
     let orientation = match request.orientation.as_str() {
-        "" | "front" => BASE_VIEW_FRONT,
-        "back" => BASE_VIEW_BACK,
-        "top" => BASE_VIEW_TOP,
-        "bottom" => BASE_VIEW_BOTTOM,
-        "left" => BASE_VIEW_LEFT,
-        "right" => BASE_VIEW_RIGHT,
-        "iso" => BASE_VIEW_ISO,
-        value => {
-            return Err(Error(format!(
-                "view orientation {value:?}: expected front, back, top, bottom, left, right, or iso"
-            )));
-        }
+        "" => BASE_VIEW_FRONT,
+        value => ORIENTATIONS
+            .iter()
+            .find(|(name, _)| *name == value)
+            .map(|(_, kind)| *kind)
+            .ok_or_else(|| {
+                Error(format!(
+                    "view orientation {value:?}: expected a canonical drawing view orientation"
+                ))
+            })?,
     };
     let style = match request.style.as_str() {
-        "" | "hiddenLine" => HIDDEN_LINE_VIEW_STYLE,
-        "hiddenLineRemoved" => HIDDEN_LINE_REMOVED_VIEW_STYLE,
-        "wireframe" => WIREFRAME_VIEW_STYLE,
-        "shaded" => SHADED_VIEW_STYLE,
-        "shadedHiddenLine" => SHADED_HIDDEN_LINE_VIEW_STYLE,
-        "fromBase" => FROM_BASE_VIEW_STYLE,
-        value => {
-            return Err(Error(format!(
-                "view style {value:?}: expected a canonical drawing view style"
-            )));
-        }
+        "" => HIDDEN_LINE_VIEW_STYLE,
+        value => STYLES
+            .iter()
+            .find(|(name, _)| *name == value)
+            .map(|(_, kind)| *kind)
+            .ok_or_else(|| {
+                Error(format!(
+                    "view style {value:?}: expected a canonical drawing view style"
+                ))
+            })?,
     };
     if !request.scale.is_finite() {
         return Err(Error(format!(
@@ -225,11 +228,43 @@ fn view_name(drawing: &oblikovati_model::drawing::DrawingDocument, requested: &s
     }
     format!("VIEW:{index}")
 }
-fn view_result(
+const ORIENTATIONS: [(&str, BaseViewOrientation); 7] = [
+    ("front", BASE_VIEW_FRONT),
+    ("back", BASE_VIEW_BACK),
+    ("top", BASE_VIEW_TOP),
+    ("bottom", BASE_VIEW_BOTTOM),
+    ("left", BASE_VIEW_LEFT),
+    ("right", BASE_VIEW_RIGHT),
+    ("iso", BASE_VIEW_ISO),
+];
+const STYLES: [(&str, DrawingViewStyle); 6] = [
+    ("hiddenLine", HIDDEN_LINE_VIEW_STYLE),
+    ("hiddenLineRemoved", HIDDEN_LINE_REMOVED_VIEW_STYLE),
+    ("wireframe", WIREFRAME_VIEW_STYLE),
+    ("shaded", SHADED_VIEW_STYLE),
+    ("shadedHiddenLine", SHADED_HIDDEN_LINE_VIEW_STYLE),
+    ("fromBase", FROM_BASE_VIEW_STYLE),
+];
+
+fn view_info(
     view: &DrawingBaseViewDefinition,
-    request: &AddBaseViewArgs,
     counts: [usize; 2],
-) -> Result<ViewResult, Error> {
+) -> Result<DrawingViewInfo, Error> {
+    let orientation = ORIENTATIONS
+        .iter()
+        .find(|(_, kind)| *kind == view.orientation)
+        .map(|(name, _)| *name)
+        .ok_or_else(|| {
+            Error(format!(
+                "view {:?}: expected a canonical orientation",
+                view.name
+            ))
+        })?;
+    let style = STYLES
+        .iter()
+        .find(|(_, kind)| *kind == view.style)
+        .map(|(name, _)| *name)
+        .ok_or_else(|| Error(format!("view {:?}: expected a canonical style", view.name)))?;
     let count = |value| {
         i64::try_from(value).map_err(|_| {
             Error(format!(
@@ -237,35 +272,26 @@ fn view_result(
             ))
         })
     };
-    Ok(ViewResult {
-        view: DrawingViewInfo {
-            name: view.name.clone(),
-            type_: "base".into(),
-            orientation: if request.orientation.is_empty() {
-                "front".into()
-            } else {
-                request.orientation.clone()
-            },
-            style: if request.style.is_empty() {
-                "hiddenLine".into()
-            } else {
-                request.style.clone()
-            },
-            scale: view.scale,
-            center_xmm: view.center_x_mm,
-            center_ymm: view.center_y_mm,
-            visible_count: count(counts[0])?,
-            hidden_count: count(counts[1])?,
-            display_tangent_edges: true,
-            show_label: true,
-            show_name: true,
-            show_scale: true,
-            label: format!("{}  SCALE {}", view.name, scale_note(view.scale)),
-            justification: "centered".into(),
-            ..Default::default()
-        },
+    Ok(DrawingViewInfo {
+        name: view.name.clone(),
+        type_: "base".into(),
+        orientation: orientation.into(),
+        style: style.into(),
+        scale: view.scale,
+        center_xmm: view.center_x_mm,
+        center_ymm: view.center_y_mm,
+        visible_count: count(counts[0])?,
+        hidden_count: count(counts[1])?,
+        display_tangent_edges: true,
+        show_label: true,
+        show_name: true,
+        show_scale: true,
+        label: format!("{}  SCALE {}", view.name, scale_note(view.scale)),
+        justification: "centered".into(),
+        ..Default::default()
     })
 }
+
 fn scale_note(scale: f64) -> String {
     if scale >= 1. {
         format!("{scale}:1")

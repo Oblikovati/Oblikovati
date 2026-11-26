@@ -414,6 +414,7 @@ fn drawing_base_view_api_validates_current_geometry_and_replays() {
         "VIEW:1"
     );
     assert!(!state.drawing_projections[&reopened].lines.is_empty());
+    drawing_view_collection::verify(&Client::new(owner.document_host()), reply.view);
 }
 
 #[path = "owner/drawing_view.rs"]
@@ -468,3 +469,6 @@ fn unassigned_template_metadata_does_not_require_a_catalog() {
 
 #[path = "drawing_replay.rs"]
 mod drawing_replay;
+
+#[path = "drawing_view_collection.rs"]
+mod drawing_view_collection;

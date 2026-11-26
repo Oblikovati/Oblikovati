@@ -123,6 +123,26 @@ impl DrawingDocument {
         target.views.push(view);
         Ok(())
     }
+    /// Delete a named view from one sheet; example: `drawing.remove_view(0, "Front")?`.
+    pub fn remove_view(&mut self, sheet: usize, name: &str) -> Result<(), DrawingError> {
+        let count = self.recipe.sheets.len();
+        let target = self.recipe.sheets.get_mut(sheet).ok_or_else(|| {
+            DrawingError(format!(
+                "sheet index {sheet}: expected an index below {count}"
+            ))
+        })?;
+        let index = target
+            .views
+            .iter()
+            .position(|view| view.name == name)
+            .ok_or_else(|| {
+                DrawingError(format!(
+                    "drawing view {name:?}: expected a view on sheet {sheet}"
+                ))
+            })?;
+        target.views.remove(index);
+        Ok(())
+    }
     /// Append an authored parts list; example: `drawing.add_annotation_definition(0, annotation)?`.
     pub fn add_annotation_definition(
         &mut self,
