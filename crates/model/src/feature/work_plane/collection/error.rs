@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 
+use super::version::MAX_PROGRAM_VERSION;
 use crate::feature::{
     FeatureId, FeatureReplayError, FeatureSequenceError, FeatureSuppressionError,
     work_plane::WorkPlaneError,
@@ -59,7 +60,7 @@ impl std::error::Error for WorkPlaneProgramRecipeError {
 fn unsupported_version(version: u32, formatter: &mut Formatter<'_>) -> std::fmt::Result {
     write!(
         formatter,
-        "work plane program version {version}: expected 1 through 30"
+        "work plane program version {version}: expected 1 through {MAX_PROGRAM_VERSION}"
     )
 }
 

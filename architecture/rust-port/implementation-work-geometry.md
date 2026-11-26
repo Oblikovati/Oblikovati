@@ -24,6 +24,8 @@ its checked line recipe. Plane-only programs keep versions 1 or 2. An old reader
 therefore rejects a mixed version instead of ignoring an unknown section and
 silently losing axes. Restore validates kind-specific versions, exact source
 bits, attributed dependencies and permanent ID high-water marks before adoption.
+An unsupported version reports the same range the reader validates. Model and
+package tests exercise the first unsupported version after each format update.
 
 Sketch deletion uses the same exact incidence graph for all datum kinds.
 Unused construction datums are removed in reverse validated feature order.
