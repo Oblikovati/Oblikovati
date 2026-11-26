@@ -729,26 +729,53 @@
     }
   },
   "features/application/viewport-orientation/viewport-orientation.feature": {
-    "feature_sha256": "4368a0cdb1767d8a80ddad9966f82709f610fdbd6c48987cc4073273cc939f62",
-    "supporting_files": {
-      "features/application/viewport-orientation/BLOCKERS.md": "10a64066f582c916e4cca165e35ea1371e5c5a258c5e2aef49f41e932138a4ed",
-      "features/application/viewport-orientation/FIXTURES.md": "86615dd74f586912716f3b1ed2f087bb47ce48e763a8b65c0ea617c4c1b819d7",
-      "features/application/viewport-orientation/FUNCTIONAL.md": "d16bc245264456ecdecc0961ea65f5d6e89a300d12a0afd2b0603d312a3441a7",
-      "features/application/viewport-orientation/VISUAL.md": "f170821a79d31b3ba5b6a62987df492511a0e59a970f50e5ad5908fb5a81fdf1",
-      "features/application/viewport-orientation/orientation-control.svg": "17b7f50eea8d5272b5cd8e346485134f6854b8e7727d2e237ef8fe5eb110284c",
-      "features/application/viewport-orientation/orientation-states.svg": "7872830e2a252c7d5a7d08f1ac72cc45f2e1416412288cc7ba25d6b326e8c10b",
-      "features/application/viewport-orientation/preferences-concept.svg": "afff50856b21a56358b51b28179846879f6e62edc033d01128201de9514f4679",
-      "features/application/viewport-orientation/viewcube-axis-triad.svg": "d5c76c95dc1ac1a3554f8b0b3cfca47accbbd5c2509a9874b183ae790f837a3d",
-      "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
-    },
-    "cucumber": "architecture/rust-port/receipts/2026-11-20-orientation-transition-3961/cucumber.json",
-    "cucumber_sha256": "97528aaa2bd184afa6f3f3a86a2fb8f1ab2e66db10fa462c133637a7f631c0d3",
-    "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-orientation-transition-3961/scenario-arguments.json",
-    "scenario_arguments_sha256": "b19cb2f29aea3a82aeb85b727b7b0bba7f38220591a35565ec87734ac67a7105",
-    "application_commit": "7550ae9f2561ef0c0c5e894a5fc49a3c36e0218b",
-    "command": "Full viewport-orientation desktop run. See the receipt README.",
-    "environment": "Linux X11, Xvfb and Vulkan Lavapipe. Focused animation run under Openbox.",
-    "notes": "All 23 scenarios and 253 steps passed. Strict receipt provenance remains open under #3978."
+    "by_source_sha256": {
+      "4368a0cdb1767d8a80ddad9966f82709f610fdbd6c48987cc4073273cc939f62": {
+        "feature_sha256": "4368a0cdb1767d8a80ddad9966f82709f610fdbd6c48987cc4073273cc939f62",
+        "supporting_files": {
+          "features/application/viewport-orientation/BLOCKERS.md": "10a64066f582c916e4cca165e35ea1371e5c5a258c5e2aef49f41e932138a4ed",
+          "features/application/viewport-orientation/FIXTURES.md": "86615dd74f586912716f3b1ed2f087bb47ce48e763a8b65c0ea617c4c1b819d7",
+          "features/application/viewport-orientation/FUNCTIONAL.md": "d16bc245264456ecdecc0961ea65f5d6e89a300d12a0afd2b0603d312a3441a7",
+          "features/application/viewport-orientation/VISUAL.md": "f170821a79d31b3ba5b6a62987df492511a0e59a970f50e5ad5908fb5a81fdf1",
+          "features/application/viewport-orientation/orientation-control.svg": "17b7f50eea8d5272b5cd8e346485134f6854b8e7727d2e237ef8fe5eb110284c",
+          "features/application/viewport-orientation/orientation-states.svg": "7872830e2a252c7d5a7d08f1ac72cc45f2e1416412288cc7ba25d6b326e8c10b",
+          "features/application/viewport-orientation/preferences-concept.svg": "afff50856b21a56358b51b28179846879f6e62edc033d01128201de9514f4679",
+          "features/application/viewport-orientation/viewcube-axis-triad.svg": "d5c76c95dc1ac1a3554f8b0b3cfca47accbbd5c2509a9874b183ae790f837a3d",
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-20-orientation-transition-3961/cucumber.json",
+        "cucumber_sha256": "97528aaa2bd184afa6f3f3a86a2fb8f1ab2e66db10fa462c133637a7f631c0d3",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-20-orientation-transition-3961/scenario-arguments.json",
+        "scenario_arguments_sha256": "b19cb2f29aea3a82aeb85b727b7b0bba7f38220591a35565ec87734ac67a7105",
+        "application_commit": "7550ae9f2561ef0c0c5e894a5fc49a3c36e0218b",
+        "command": "Full viewport-orientation desktop run. See the receipt README.",
+        "environment": "Linux X11, Xvfb and Vulkan Lavapipe. Focused animation run under Openbox.",
+        "notes": "All 23 scenarios and 253 steps passed. Strict receipt provenance remains open under #3978."
+      },
+      "d34541fa4d78f98d489acb7db7db009bf7065e7efdbe51313d557b95100a41ce": {
+        "feature_sha256": "d34541fa4d78f98d489acb7db7db009bf7065e7efdbe51313d557b95100a41ce",
+        "supporting_files": {
+          "features/application/viewport-orientation/BLOCKERS.md": "4bf2f343c88f4293c5fe7cc46152981ce811a253abc1d85eea7613f016c0a94f",
+          "features/application/viewport-orientation/FIXTURES.md": "86615dd74f586912716f3b1ed2f087bb47ce48e763a8b65c0ea617c4c1b819d7",
+          "features/application/viewport-orientation/FUNCTIONAL.md": "d16bc245264456ecdecc0961ea65f5d6e89a300d12a0afd2b0603d312a3441a7",
+          "features/application/viewport-orientation/VISUAL.md": "ef26162ca8c811a1dd3cadc2228165e2def317affeb92461f33ac6659dc0348c",
+          "features/application/viewport-orientation/feature-icon.svg": "d158e003c9c3d5a00b67cf124c8e34f85c2329a5c19e9b1b399d7f4d382541d3",
+          "features/application/viewport-orientation/orientation-control.svg": "17b7f50eea8d5272b5cd8e346485134f6854b8e7727d2e237ef8fe5eb110284c",
+          "features/application/viewport-orientation/orientation-states.svg": "7872830e2a252c7d5a7d08f1ac72cc45f2e1416412288cc7ba25d6b326e8c10b",
+          "features/application/viewport-orientation/preferences-concept.svg": "afff50856b21a56358b51b28179846879f6e62edc033d01128201de9514f4679",
+          "features/application/viewport-orientation/viewcube-axis-triad.svg": "d5c76c95dc1ac1a3554f8b0b3cfca47accbbd5c2509a9874b183ae790f837a3d",
+          "fixtures/cad/docking-visible-solid-current.opd": "54a6f807b8084cc19061bce4079aaee3d4cefc03eaad2ac33123544997999f8a"
+        },
+        "cucumber": "architecture/rust-port/receipts/2026-11-26-viewcube-hover-3961/wayland-cucumber.json",
+        "cucumber_sha256": "ffb88601ab106b40a3b6a7ede04eebd64e13b4f3087ac4790d87418df7011a13",
+        "scenario_arguments": "architecture/rust-port/receipts/2026-11-26-viewcube-hover-3961/wayland-scenario-arguments.json",
+        "scenario_arguments_sha256": "27678abafd91c90ae2c1ed92e00750bf50cf247fded38bde6e5acab7d32adc91",
+        "application_commit": "9af470f54eac97762a14d2e57ece448ad01b1e29",
+        "command": "OBK_BDD_ROOT=<published-scenarios> OBK_BDD_AREA=application OBK_BDD_FEATURE=viewport-orientation <head-test-binary> application_scenarios_use_the_native_window --test-threads=1 --nocapture",
+        "environment": "Linux Wayland under nested Weston and X11 under Xvfb/Openbox, with Vulkan Lavapipe",
+        "notes": "All 26 scenarios and 284 steps passed on each backend. The three hover scenarios used native pointer motion and completed framebuffer comparisons. Strict build and runtime provenance remains open under #3978."
+      }
+    }
   },
   "features/application/ribbon-appearance/ribbon-appearance.feature": {
     "by_source_sha256": {

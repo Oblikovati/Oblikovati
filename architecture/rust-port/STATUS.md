@@ -32,11 +32,11 @@ using this status; the live scenario directory can change.
   have R0 records. The live feature requires a native Part fixture, and strict
   acceptance remains open under #3978. See
   `receipts/2026-11-20-viewport-pan-r0-3881/`.
-- Viewport Orientation (#3961): all 23 scenarios and 253 steps passed on the
-  current native Part fixture. A separate X11 click under Openbox showed an
-  intermediate frame before the model and ViewCube reached Top. See
-  `receipts/2026-11-20-orientation-transition-3961/`. Strict verification
-  remains open under #3978. The 20 pinned declarations have R0 records in `receipts/2026-11-20-viewport-orientation-r0-3961/`.
+- Viewport Orientation (#3961) passed all 26 current scenarios and 284 steps
+  on Wayland and X11. Native hover covered face centers and shared edge and
+  corner highlights. See the [current receipt](receipts/2026-11-26-viewcube-hover-3961/README.md).
+  The [20 pinned declarations](receipts/2026-11-20-viewport-orientation-r0-3961/) have R0 records.
+  Strict build and runtime verification remains open under #3978.
 - Workspace Layout (#3897) passed all [53 current cases and 523 steps](receipts/2026-11-25-workspace-layout-current-3897/README.md).
   The 52 declarations include two examples in one outline. The older
   foreground X11 check captured the View checklist and Mini-Toolbar with
