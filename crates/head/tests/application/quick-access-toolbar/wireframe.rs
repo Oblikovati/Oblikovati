@@ -69,11 +69,7 @@ fn icons_without_captions(world: &mut ApplicationWorld) {
     regex = r"^the user hovers over the (New|Open|Save|Undo|Redo|Home|Projects|Update|Select|Material Browser|Materials|Appearance Browser|Parameters) icon until its tooltip appears$"
 )]
 fn hover_icon(world: &mut ApplicationWorld, command: String) {
-    #[cfg(target_os = "linux")]
-    super::super::x11_input::move_pointer(icon(&command));
-    #[cfg(not(target_os = "linux"))]
-    world.pump(vec![super::super::pointer_motion(icon(&command))]);
-    world.pump(Vec::new());
+    hover(world, icon(&command));
 }
 
 #[then(
@@ -106,11 +102,14 @@ fn part_remains_without_dialog(world: &mut ApplicationWorld) {
 
 #[when("the user moves the pointer to an empty area of the viewport")]
 fn pointer_leaves(world: &mut ApplicationWorld) {
+    hover(world, [1100, 650]);
+}
+
+fn hover(world: &mut ApplicationWorld, point: [i32; 2]) {
     #[cfg(target_os = "linux")]
-    super::super::x11_input::move_pointer([1100, 650]);
+    super::super::desktop_input::hover(world, point);
     #[cfg(not(target_os = "linux"))]
-    world.pump(vec![super::super::pointer_motion([1100, 650])]);
-    world.pump(Vec::new());
+    world.pump(vec![super::super::pointer_motion(point)]);
 }
 
 #[then("the tooltip disappears")]
