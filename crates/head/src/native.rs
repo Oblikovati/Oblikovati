@@ -50,6 +50,7 @@ pub struct NativeHeadWindow {
     status_projection: status_telemetry::StatusProjection,
     view_slot: u64,
     saved_views: std::collections::BTreeMap<u64, SavedWindowView>,
+    wire_camera_stamp: Option<saved_view::WireCameraStamp>,
     command_notice: Option<crate::DesktopCommandNotice>,
     gui: Option<gui_loop::NativeGui>,
     #[cfg(target_os = "linux")]
@@ -77,6 +78,7 @@ mod view_inputs;
 use view_inputs::validate_window_extent;
 mod head_window;
 mod status_telemetry;
+mod wire_camera;
 
 mod capture;
 #[cfg(target_os = "linux")]

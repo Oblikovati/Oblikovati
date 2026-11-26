@@ -24,8 +24,9 @@ mod addin_discovery;
 mod arguments;
 pub use arguments::{HeadCommand, HeadOptions, parse_arguments};
 #[cfg(any(target_os = "linux", target_os = "windows"))]
-mod frames;
+mod camera_automation;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
+mod frames;
 mod viewport_automation;
 #[cfg(any(target_os = "linux", target_os = "windows"))]
 mod window_caller;

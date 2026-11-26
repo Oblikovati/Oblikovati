@@ -323,6 +323,16 @@ impl HeadWindow for NativeHeadWindow {
     fn model_pixel(&self, point: [f64; 3]) -> Result<[i32; 2], String> {
         self.view.model_pixel(point)
     }
+    fn wire_camera(&self, slot: u64) -> Result<oblikovati_api::wire::CameraView, String> {
+        self.camera_for_slot(slot)
+    }
+    fn set_wire_camera(
+        &mut self,
+        slot: u64,
+        args: &oblikovati_api::wire::SetCameraArgs,
+    ) -> Result<oblikovati_api::wire::CameraView, String> {
+        self.assign_camera(slot, args)
+    }
     fn view_camera(&self) -> Result<oblikovati_viewport::ViewportCamera, String> {
         self.view.camera_state()
     }

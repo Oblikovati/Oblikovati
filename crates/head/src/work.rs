@@ -201,6 +201,10 @@ pub trait HeadWork: HeadSketchWork {
     fn view_slot(&self) -> u64 {
         0
     }
+    /// Map open documents to their selected window slots. Example: `work.document_camera_slots()`.
+    fn document_camera_slots(&self) -> std::collections::BTreeMap<u64, u64> {
+        Default::default()
+    }
     /// Bring forward or close one document window; example: `work.document_window_from_gui(7, false)`.
     fn document_window_from_gui(&mut self, id: u64, close: bool) -> Result<bool, String> {
         Err(format!(

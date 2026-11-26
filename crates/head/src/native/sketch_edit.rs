@@ -36,21 +36,25 @@ impl NativeHeadWindow {
         if slot == self.view_slot {
             return Ok(false);
         }
+        let current = self.current_window_view()?;
+        let next = self
+            .saved_views
+            .get(&slot)
+            .cloned()
+            .unwrap_or_else(|| super::SavedWindowView::initial(slot));
+        self.view.set_camera(next.camera)?;
         self.orientation_transition = None;
-        let camera = self.view.camera_state()?;
-        self.saved_views
-            .insert(self.view_slot, (camera, self.sketch_view.take()));
-        let (camera, sketch_view) = self.saved_views.remove(&slot).unwrap_or_else(|| {
-            let first_view = oblikovati_viewport::ViewportCamera::default();
-            let camera = if slot >= crate::FIRST_EXTRA_WINDOW {
-                first_view.isometric()
-            } else {
-                first_view
-            };
-            (camera, None)
-        });
-        self.view.set_camera(camera)?;
-        self.sketch_view = sketch_view;
+        self.saved_views.insert(self.view_slot, current);
+        self.saved_views.remove(&slot);
+        self.view_projection = next.projection;
+        self.sketch_view = next.sketch;
+        self.wire_camera_stamp = next
+            .authored
+            .map(|authored| super::saved_view::WireCameraStamp {
+                camera: self.view.camera_state().unwrap_or(next.camera),
+                projection: next.projection,
+                authored,
+            });
         self.view_slot = slot;
         self.navigation = Default::default();
         Ok(true)

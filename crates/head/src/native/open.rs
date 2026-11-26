@@ -106,6 +106,7 @@ impl NativeHeadWindow {
             status_projection: Default::default(),
             view_slot: 0,
             saved_views: Default::default(),
+            wire_camera_stamp: None,
             command_notice: None,
             gui: None,
             accessibility,

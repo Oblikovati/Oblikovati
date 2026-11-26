@@ -80,13 +80,15 @@ impl<'a, D: ScriptDocumentOwner, W: DispatchWakeup + 'static> NativeAddInDesktop
         budget: usize,
         window: &mut dyn crate::HeadWindow,
     ) -> Result<bool, String> {
-        let (outcome, capture_queued) = {
-            let host = crate::window_caller::WindowCaller::new(self.owner.script_host(), window);
+        let (outcome, window_changed) = {
+            let slots = self.owner.document_camera_slots();
+            let host =
+                crate::window_caller::WindowCaller::new(self.owner.script_host(), window, slots);
             let outcome = self.runtime.poll(budget, &host);
-            (outcome, host.capture_queued())
+            (outcome, host.window_changed())
         };
         let outcome = outcome.map_err(|cause| cause.to_string())?;
-        Ok(self.record_native_outcome(outcome)? || capture_queued)
+        Ok(self.record_native_outcome(outcome)? || window_changed)
     }
     fn record_native_outcome(
         &mut self,
@@ -219,6 +221,9 @@ impl<D: ScriptDocumentOwner, W: DispatchWakeup + 'static> HeadWork
     }
     fn view_slot(&self) -> u64 {
         self.owner.view_slot()
+    }
+    fn document_camera_slots(&self) -> std::collections::BTreeMap<u64, u64> {
+        self.owner.document_camera_slots()
     }
     fn document_window_from_gui(&mut self, id: u64, close: bool) -> Result<bool, String> {
         self.owner.document_window_from_gui(id, close)

@@ -6,7 +6,7 @@ fn surviving_window_retains_its_identity_across_close_and_reopen() {
     let (mut owner, awake) = owner();
     let document = create(&mut owner, &awake);
     owner.new_document_window().unwrap();
-    let extra = owner.active_window.unwrap();
+    let extra = owner.active_view_slot();
     owner.close_document_window(extra).unwrap();
     assert!(
         owner
@@ -18,13 +18,13 @@ fn surviving_window_retains_its_identity_across_close_and_reopen() {
 
     // No GUI state is sampled between creating a view and closing the original.
     owner.new_document_window().unwrap();
-    let first = owner.active_window.unwrap();
+    let first = owner.active_view_slot();
     owner.close_document_window(document).unwrap();
     let state = owner.gui_command_state().unwrap();
     assert_eq!(state.document_windows[0].id, first);
     assert_eq!(state.active_window, Some(first));
     owner.new_document_window().unwrap();
-    let second = owner.active_window.unwrap();
+    let second = owner.active_view_slot();
     owner.close_document_window(first).unwrap();
     let state = owner.gui_command_state().unwrap();
     assert_eq!(state.document_windows[0].id, second);
@@ -43,7 +43,7 @@ fn closing_an_inactive_window_keeps_the_active_window_and_sketch() {
     let document = create(&mut owner, &awake);
     owner.new_document_window().unwrap();
     owner.new_document_window().unwrap();
-    let active = owner.active_window.unwrap();
+    let active = owner.active_view_slot();
     let sketch = owner
         .create_sketch_for_edit(document, &sketch_edit::request(SketchPlane::xy()))
         .unwrap();
@@ -58,7 +58,7 @@ fn closing_an_inactive_original_window_keeps_the_other_document_active() {
     let (mut owner, awake) = owner();
     let first = create(&mut owner, &awake);
     owner.new_document_window().unwrap();
-    let survivor = owner.active_window.unwrap();
+    let survivor = owner.active_view_slot();
     let second = create(&mut owner, &awake);
     owner.close_document_window(first).unwrap();
     let state = owner.gui_command_state().unwrap();
@@ -184,4 +184,29 @@ fn gui_document_switch_refuses_hidden_targets_and_target_transactions() {
             .is_err()
     );
     assert_eq!(owner.gui_command_state().unwrap().document, Some(second));
+}
+
+#[test]
+fn switching_documents_retains_each_selected_camera_slot() {
+    let (mut owner, awake) = owner();
+    let first = create(&mut owner, &awake);
+    owner.new_document_window().unwrap();
+    let first_view = owner.active_view_slot();
+    let second = create(&mut owner, &awake);
+    owner.new_document_window().unwrap();
+    let second_view = owner.active_view_slot();
+
+    assert_eq!(owner.camera_slots()[&first], first_view);
+    assert_eq!(owner.camera_slots()[&second], second_view);
+    owner
+        .activate_document_from_gui(&ActivateDocumentArgs { id: first })
+        .unwrap();
+    assert_eq!(owner.active_view_slot(), first_view);
+    owner.close_document_window(second_view).unwrap();
+    assert_eq!(owner.active_view_slot(), first_view);
+    assert_eq!(owner.camera_slots().get(&second), None);
+    owner
+        .activate_document_from_gui(&ActivateDocumentArgs { id: second })
+        .unwrap();
+    assert_eq!(owner.active_view_slot(), second);
 }

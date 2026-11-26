@@ -191,7 +191,6 @@ impl<
             .documents()
             .activate(request)
             .map_err(|cause| format!("Activate document {}: {cause}", request.id))?;
-        self.active_window = None;
         let slot = self.active_view_slot();
         self.resume_parked_sketch_edit(slot, request.id)?;
         Ok(true)

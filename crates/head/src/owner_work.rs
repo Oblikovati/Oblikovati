@@ -221,6 +221,9 @@ impl<
     fn view_slot(&self) -> u64 {
         self.active_view_slot()
     }
+    fn document_camera_slots(&self) -> std::collections::BTreeMap<u64, u64> {
+        self.camera_slots()
+    }
     fn document_window_from_gui(&mut self, id: u64, close: bool) -> Result<bool, String> {
         if close {
             return self.close_document_window(id);

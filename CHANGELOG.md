@@ -354,7 +354,7 @@ Model tree reads reuse current part results and refresh them after edits. (#4079
 
 - Restored the panel-add control after the last browser tab closes and activated the tab selected from its menu. (#3897)
 - Kept Add to Custom Colors above the scrollbar when the expanded Geometry Properties color picker fits the display. (#3896)
-- Animated ViewCube turns when the animated transitions option is enabled. Kept a single hover highlight across every visible side of a shared edge or corner. (#3961)
+- Animated ViewCube turns when the animated transitions option is enabled. Kept a single hover highlight across every visible side of a shared edge or corner. Added typed camera reads and writes for the active or addressed document window. (#3961)
 
 - Restored Ready after closing the navigation wheel. (#3881)
 

@@ -345,6 +345,18 @@ pub trait HeadWindow {
         ))
     }
 
+    /// Read one view slot's camera. Example: `window.wire_camera(slot)?`.
+    fn wire_camera(&self, slot: u64) -> Result<oblikovati_api::wire::CameraView, String> {
+        Err(format!("camera slot {slot}: expected a native view owner"))
+    }
+    /// Set one view slot's look-at frame. Example: `window.set_wire_camera(slot, &request)?`.
+    fn set_wire_camera(
+        &mut self,
+        slot: u64,
+        _: &oblikovati_api::wire::SetCameraArgs,
+    ) -> Result<oblikovati_api::wire::CameraView, String> {
+        Err(format!("camera slot {slot}: expected a native view owner"))
+    }
     /// The camera the view looks through; example: for the orientation control.
     fn view_camera(&self) -> Result<oblikovati_viewport::ViewportCamera, String> {
         Err("view camera: expected a window with a view".into())

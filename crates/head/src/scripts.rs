@@ -145,6 +145,9 @@ impl<D: ScriptDocumentOwner> HeadWork for DesktopScripts<D> {
     fn view_slot(&self) -> u64 {
         self.owner.view_slot()
     }
+    fn document_camera_slots(&self) -> std::collections::BTreeMap<u64, u64> {
+        self.owner.document_camera_slots()
+    }
     fn document_window_from_gui(&mut self, id: u64, close: bool) -> Result<bool, String> {
         self.owner.document_window_from_gui(id, close)
     }
