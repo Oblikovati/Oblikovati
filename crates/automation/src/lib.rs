@@ -27,6 +27,7 @@ mod file_host;
 mod fillet;
 mod hole;
 mod shell;
+mod sweep;
 pub use extrusion::{
     CapturedExtrudeCandidate, ExtrudePrefixReplay, ExtrudeRegionAccess, ExtrudeReplayPrefix,
     PreparedExtrusion, prepare_extrusion, validate_extrude_distance,
@@ -37,6 +38,7 @@ pub use fillet::{
 };
 pub use hole::{PreparedHole, prepare_hole};
 pub use shell::{PreparedShell, prepare_shell};
+pub use sweep::{PreparedSweep, automatic_sweep, prepare_sweep};
 mod interests;
 pub use file_host::{
     APPLICATION_PREFERENCE_METHODS, ASSEMBLY_COMMAND_METHODS, AssemblyReferenceFailure,

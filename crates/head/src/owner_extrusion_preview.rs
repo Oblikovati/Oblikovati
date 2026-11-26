@@ -142,7 +142,7 @@ impl<
         let scene = oblikovati_viewport::ViewportScene::from_prism(
             &presentation,
             [0., 0., 1.],
-            [20. / 255., 184. / 255., 166. / 255., 0.22],
+            crate::part_scene::NEW_SOLID_PREVIEW,
         )?;
         let generation = self
             .files
@@ -158,8 +158,9 @@ impl<
     }
     pub(super) fn clear_extrusion_preview(&mut self) -> bool {
         self.extrusion_reference_preview = None;
+        let sweep_changed = self.sweep_preview.take().is_some();
         if self.extrusion_preview.take().is_none() {
-            return false;
+            return sweep_changed;
         }
         self.part_scenes.invalidate_presentation();
         true

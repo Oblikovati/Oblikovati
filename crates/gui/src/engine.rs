@@ -84,6 +84,7 @@ pub struct GuiFrameEngine {
     icons: crate::icons::GuiIconCache,
     raster_scale: f32,
     preferences: crate::ui_scale::GuiScalePreferences,
+    sweep_dialog: crate::sweep_dialog::SweepDialog,
     extrude_dialog: crate::extrude_dialog::ExtrudeDialog,
     blend_dialog: crate::blend_dialog::BlendDialog,
     hole_dialog: crate::hole_dialog::HoleDialog,
@@ -176,6 +177,7 @@ impl GuiFrameEngine {
             icons,
             raster_scale: 1.,
             preferences: Default::default(),
+            sweep_dialog: Default::default(),
             extrude_dialog: Default::default(),
             blend_dialog: Default::default(),
             hole_dialog: Default::default(),
@@ -455,12 +457,6 @@ fn workspace_front(
         [area.right * scale[0], area.bottom * scale[1]],
     ];
     front_key(&request.commands, home_active).map(|key| (key, bounds))
-}
-impl GuiFrameEngine {
-    /// Keep a window's picture for its tab; example: after each completed presentation.
-    pub fn note_presented_frame(&mut self, extent: [u32; 2], rgba: &[u8]) {
-        self.document_tabs.previews.note_frame(extent, rgba);
-    }
 }
 /// Home is left by actions that put a document in front of it.
 fn home_follows_actions(

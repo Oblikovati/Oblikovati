@@ -22,6 +22,10 @@ impl DocumentSnapshot {
                 cause: Box::new(cause),
             })
         })?;
+        let sources = [
+            definition.recipe().profile_sketch,
+            definition.recipe().path_sketch,
+        ];
         self.work_geometry
             .append(AuthoredFeature::new(
                 id,
@@ -32,6 +36,11 @@ impl DocumentSnapshot {
             .map_err(|cause| HistoryError::PartProgram(PartFeatureProgramError::Sequence(cause)))?;
         if let Some(states) = &mut self.model_states {
             states.register_feature(id.0);
+        }
+        for sketch in sources {
+            self.sketches
+                .set_visible(sketch, false)
+                .map_err(|_| HistoryError::UnreservedSketchId(sketch.0))?;
         }
         Ok(id)
     }

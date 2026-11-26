@@ -243,6 +243,7 @@ impl<
             extrude_preview_active: self.extrusion_preview.as_ref().is_some_and(
                 |(id, generation, _, _)| *id == document && *generation == session.generation(),
             ),
+            sweep_preview: self.gui_sweep_preview(document, session.generation()),
             extrude_reference_preview: self
                 .extrusion_reference_preview
                 .as_ref()

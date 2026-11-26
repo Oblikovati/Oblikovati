@@ -27,12 +27,11 @@ impl GuiFrameEngine {
         self.document_files.home_in_front = self.home.active;
         let home_was_active = self.home.active;
         // The selector can close before the same gesture releases over the viewport.
-        let right = imgui::MouseButton::Right;
-        if ui.is_mouse_clicked(right) {
+        if ui.is_mouse_clicked(imgui::MouseButton::Right) {
             self.selector_context_gesture = self.ribbon.display.selector_open;
         }
         let selector_context_gesture = self.selector_context_gesture;
-        self.selector_context_gesture &= ui.is_mouse_down(right);
+        self.selector_context_gesture &= ui.is_mouse_down(imgui::MouseButton::Right);
         let band_height = crate::chrome::ribbon_band(
             ui,
             request,
@@ -62,7 +61,6 @@ impl GuiFrameEngine {
         self.selection_filter.set_open(visibility.selection_filter);
         self.history_browser.set_open(visibility.history);
         let focus = self.accessible_focus.take();
-        let frame_focus = super::frame_inputs::frame_focus(focus);
         if let Some(crate::GuiAccessibleFocus::ClosePrompt(choice)) = focus {
             self.document_files.focus_close_prompt(choice);
         }
@@ -72,7 +70,7 @@ impl GuiFrameEngine {
             crate::chrome::application_bar_height(&self.icons.presentation),
             &mut selected,
             &mut self.window_frame_interaction,
-            frame_focus,
+            super::frame_inputs::frame_focus(focus),
         );
         if std::mem::take(&mut self.pending_extrusion_shortcut) {
             selected.push(crate::extrude_dialog::start_action(&request.commands));
@@ -103,17 +101,18 @@ impl GuiFrameEngine {
         self.dock_lifecycle.reconcile_native_tabs(ui)?;
         let logical =
             std::array::from_fn(|axis| request.extent[axis] as f32 / request.layout_scale()[axis]);
-        let outer = self.workspace.outer_area(logical, band_height);
         let area = crate::application::workspace_docking::draw(
             ui,
-            outer,
+            self.workspace.outer_area(logical, band_height),
             &mut self.workspace,
             logical,
             band_height,
             seed_asset_dock,
         );
-        let visibility = &self.workspace.object_visibility;
-        let dimension_positions = visibility.dimension_positions(ui, request, area);
+        let dimension_positions = self
+            .workspace
+            .object_visibility
+            .dimension_positions(ui, request, area);
         let constraint_hover =
             crate::sketch::draw_viewport_overlays(ui, request, &dimension_positions);
         let over_fields = crate::sketch::line::hud_panel(ui, request);
@@ -294,7 +293,7 @@ impl GuiFrameEngine {
             &mut self.shell_feature_dialog,
             &mut self.hole_dialog,
             &mut self.move_body_dialog,
-            &mut self.blend_dialog,
+            (&mut self.blend_dialog, &mut self.sweep_dialog),
             &mut self.extrude_dialog,
         );
         self.home.panel(
@@ -332,6 +331,7 @@ impl GuiFrameEngine {
                 area,
             },
         );
+        self.sweep_dialog.panel(ui, commands, area, &mut selected);
         self.blend_dialog.panel(ui, commands, &mut selected, area);
         self.hole_dialog.panel(ui, commands, area, &mut selected);
         self.shell_feature_dialog

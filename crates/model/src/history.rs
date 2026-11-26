@@ -22,7 +22,6 @@ mod occurrence_ids;
 mod prism_create;
 mod scalar_ownership;
 mod shell_create;
-mod sweep_create;
 mod sketch_block_create;
 mod sketch_block_explode;
 mod sketch_create;
@@ -31,6 +30,7 @@ mod sketch_dimension_create;
 mod sketch_dimension_delete;
 mod sketch_dimension_sources;
 mod sketch_entity_delete;
+mod sweep_create;
 pub use sketch_dimension_create::{
     SketchDimensionCreation, SketchDimensionCreationError, SketchDimensionCreationReport,
 };

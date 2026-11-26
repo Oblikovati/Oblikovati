@@ -41,6 +41,12 @@ macro_rules! desktop_extrusion_work {
         ) -> Result<bool, String> {
             self.commit_move_body(request)
         }
+        fn sweep_from_gui(
+            &mut self,
+            action: oblikovati_gui::GuiSweepAction,
+        ) -> Result<bool, String> {
+            self.sweep_command(action)
+        }
         fn preview_shell_from_gui(
             &mut self,
             request: Option<&oblikovati_gui::GuiShellFeatureRequest>,

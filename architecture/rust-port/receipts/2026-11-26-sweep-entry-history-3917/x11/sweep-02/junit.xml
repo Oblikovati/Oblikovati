@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" package="testsuite/Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T20:34:23.419362542Z" time="5.847958317"><testcase name="Scenario: sweep-02 Create and traverse a sweep history: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature:15:3" time="5.847958317"><system-out><![CDATA[  Scenario: sweep-02 Create and traverse a sweep history
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/sweep/circle-straight-path.opd" is open
+   ✔  And its circle profile and straight path sketches are visible
+   ✔  When Sweep is invoked
+   ✔  Then the panel shows 1 Profile and 1 Curve
+   ✔  And a solid preview and enabled OK are displayed
+   ✔  When OK is clicked
+   ✔  Then Sweep1 and Solid Bodies(1) appear
+   ✔  When Undo is invoked
+   ✔  Then the two sketches return without the solid
+   ✔  When Redo is invoked
+   ✔  Then Sweep1 and its solid return
+]]></system-out></testcase></testsuite></testsuites>

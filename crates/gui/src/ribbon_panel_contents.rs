@@ -314,6 +314,16 @@ fn part_create_controls(
     owners
         .quick_access
         .ribbon_command_menu(ui, "Revolve", false, state);
+    let (position, size) = owners.icons.appearance.cell(2);
+    owners.icons.cursor(ui, origin, position);
+    owners.icons.command_button(
+        ui,
+        "Sweep",
+        GuiShellAction::Sweep(crate::GuiSweepAction::Open),
+        state,
+        size,
+        actions,
+    );
 }
 /// Stays lit while the origin planes wait for a choice.
 fn start_sketch_command(

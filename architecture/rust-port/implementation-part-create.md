@@ -79,7 +79,21 @@ checks the same body, face, edge and vertex keys through full replay, suffix
 replay, Undo, Redo, a path-length change and package reopen. It also checks
 the volume and measures the two circular edges and the straight seam.
 
-Sweep desktop authoring and native scenarios remain open, along with guided,
-Boolean and spatial inputs. Loft still requires authored section identities
-and host integration. Revolve has a persisted definition type and a geometry
-probe, and still needs desktop authoring and replay.
+### Straight-path desktop Sweep
+
+Part → Create → Sweep discovers a unique visible closed region and an
+independent single-line path. The preview uses the current Part generation
+and the new-solid palette. OK commits the same inputs through `features.add`,
+and Undo restores the source sketches' visibility. An empty Part opens the
+geometry tip and Help.
+
+The five Part Create icons already used in the desktop now match the feature
+SVGs for Extrude, Revolve, Sweep, Derive, and Import. The drawing code applies
+the named paint classes in Dark, Light, and High Contrast.
+
+The [desktop receipt](receipts/2026-11-26-sweep-entry-history-3917/README.md)
+covers `sweep-01` and `sweep-02` on Wayland and X11. Sweep input selection and
+editing, taper, twist, guides, Boolean and surface operations remain open.
+Loft still requires authored section identities and host integration.
+Revolve has a persisted definition type and a geometry probe, and still
+needs desktop authoring and replay.

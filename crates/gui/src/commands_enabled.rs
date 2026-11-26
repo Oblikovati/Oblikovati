@@ -349,6 +349,7 @@ impl GuiShellAction {
             Self::LookAtSelection => state.look_at_available,
             Self::OpenMoveBody | Self::OpenHole => hole_enabled::open(state),
             Self::OpenShellFeature => shell_enabled::open(state),
+            Self::Sweep(action) => action.enabled(state),
             Self::PreviewMoveBody(None)
             | Self::PreviewHole(None)
             | Self::PreviewShellFeature(None) => true,

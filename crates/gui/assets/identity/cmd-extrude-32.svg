@@ -1,18 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="Extrude">
-  <title>Extrude (32px 2.5D Isometric)</title>
-  <!-- Layer 1: Base neutral solid slab -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-labelledby="t d">
+  <title id="t">Extrude</title>
+  <desc id="d">2D profile extruded upward into a 2.5D Indigo-Violet solid with crisp directional arrow.</desc>
   <g id="layer-body">
-    <polygon points="16,18 27,23 16,28 5,23" fill="var(--icon-body-top, #D2D7E2)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.2" stroke-linejoin="round"/>
-    <polygon points="5,23 16,28 16,29.5 5,24.5" fill="var(--icon-body-front, #9EA6B8)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.1" stroke-linejoin="round"/>
-    <polygon points="27,23 16,28 16,29.5 27,24.5" fill="var(--icon-body-side, #677084)" stroke="var(--icon-body-stroke, #181B22)" stroke-width="1.1" stroke-linejoin="round"/>
+    <polygon points="16,17.8 27.5,23.5 16,29.2 4.5,23.5" class="f-icon-body-front s-icon-body-stroke" fill="#9EA6B8" fill-opacity="0.38" stroke="#181B22" stroke-width="1.15" stroke-linejoin="round" stroke-dasharray="2.6 1.5" />
+    <polygon points="16,10.799999999999999 24.8,15.2 16,19.6 7.199999999999999,15.2" class="f-icon-mod-top s-icon-mod-stroke" fill="#B4AAFF" stroke="#1D1840" stroke-width="1.2" stroke-linejoin="round" />
+    <polygon points="7.199999999999999,15.2 16,19.6 16,27.8 7.199999999999999,23.4" class="f-icon-mod-front s-icon-mod-stroke" fill="#8172FA" stroke="#1D1840" stroke-width="1.2" stroke-linejoin="round" />
+    <polygon points="24.8,15.2 16,19.6 16,27.8 24.8,23.4" class="f-icon-mod-side s-icon-mod-stroke" fill="#5948D4" stroke="#1D1840" stroke-width="1.2" stroke-linejoin="round" />
   </g>
-  <!-- Layer 2: Newly extruded Indigo-Violet volume + upward direction arrow -->
   <g id="layer-accent">
-    <polygon points="16,9 24,13 16,17 8,13" fill="var(--icon-mod-top, #B4AAFF)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.2" stroke-linejoin="round"/>
-    <polygon points="8,13 16,17 16,25 8,21" fill="var(--icon-mod-front, #8172FA)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.2" stroke-linejoin="round"/>
-    <polygon points="24,13 16,17 16,25 24,21" fill="var(--icon-mod-side, #5948D4)" stroke="var(--icon-mod-stroke, #1D1840)" stroke-width="1.2" stroke-linejoin="round"/>
-    <!-- Direction arrow with subtle cutout halo -->
-    <path d="M16,12.5 L16,3.5 M12.5,6.8 L16,3 L19.5,6.8" fill="none" stroke="var(--icon-cutout, #121317)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M16,12.5 L16,3.5 M12.5,6.8 L16,3 L19.5,6.8" fill="none" stroke="var(--accent-selection-bright, #2DD4BF)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M16,14.5 V4.2 M12.8,7.4 L16,3.8 L19.2,7.4" class="s-icon-cutout" fill="none" stroke="#121317" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M16,14.5 V4.2 M12.8,7.4 L16,3.8 L19.2,7.4" class="s-accent-selection-bright" fill="none" stroke="#2DD4BF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
   </g>
 </svg>

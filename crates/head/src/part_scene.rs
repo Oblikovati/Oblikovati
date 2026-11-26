@@ -19,6 +19,7 @@ pub(crate) mod pick_candidates;
 pub(crate) mod resolution_policy;
 mod selection_bounds;
 mod update;
+pub(crate) const NEW_SOLID_PREVIEW: [f32; 4] = [20. / 255., 184. / 255., 166. / 255., 0.22];
 /// Owned display state names its document and generation; kernel handles stay in result storage.
 #[derive(Clone, Debug)]
 pub struct HeadSceneStatus {

@@ -188,6 +188,7 @@ pub(crate) fn action_glyph(action: &GuiShellAction) -> Option<IconGlyph> {
         GuiShellAction::Undo => IconGlyph::Undo,
         GuiShellAction::Redo => IconGlyph::Redo,
         GuiShellAction::OpenShellFeature => IconGlyph::Shell,
+        GuiShellAction::Sweep(crate::GuiSweepAction::Open) => IconGlyph::Sweep,
         _ => return None,
     })
 }

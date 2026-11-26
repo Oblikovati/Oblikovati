@@ -6,7 +6,7 @@ use image::{
     imageops::{self, FilterType},
 };
 use resvg::{tiny_skia, usvg};
-use std::sync::Arc;
+use std::{fmt::Write, sync::Arc};
 
 pub(super) fn rasterize_identity(
     source: &str,
@@ -21,7 +21,8 @@ pub(super) fn rasterize_identity_at_size(
     extent: [u32; 2],
     mode: usize,
 ) -> Result<crate::GuiAtlas, String> {
-    let resolved = resolve_identity_paints(source, mode)?;
+    let mut resolved = resolve_identity_paints(source, mode)?;
+    apply_identity_classes(&mut resolved, mode)?;
     let pixels = render_at_size(resolved.as_bytes(), extent)?;
     let rgba = pixels
         .pixels()
@@ -58,6 +59,28 @@ fn resolve_identity_paints(mut source: &str, mode: usize) -> Result<String, Stri
     }
     resolved.push_str(source);
     Ok(resolved)
+}
+fn apply_identity_classes(svg: &mut String, mode: usize) -> Result<(), String> {
+    if !svg.contains("class=") {
+        return Ok(());
+    }
+    let mut rules = String::from("<style>");
+    for (token, colors) in super::identity_paints::PAINTS {
+        for (prefix, property) in [('f', "fill"), ('s', "stroke")] {
+            let class = format!("{prefix}-{token}");
+            if svg.contains(&class) {
+                write!(rules, ".{class}{{{property}:{}}}", colors[mode])
+                    .map_err(|cause| cause.to_string())?;
+            }
+        }
+    }
+    rules.push_str("</style>");
+    let root = svg
+        .find("<svg")
+        .and_then(|start| svg[start..].find('>').map(|end| start + end + 1))
+        .ok_or("identity icon classes: expected an SVG root")?;
+    svg.insert_str(root, &rules);
+    Ok(())
 }
 #[derive(Clone, Debug)]
 pub(crate) struct IconRoleMasks {

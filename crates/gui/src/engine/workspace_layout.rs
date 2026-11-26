@@ -4,6 +4,10 @@ use super::{GuiFrameEngine, GuiFrameRequest, GuiInputEvent};
 use crate::application::workspace_docking::persistence::WorkspaceDockSettings;
 
 impl GuiFrameEngine {
+    /// Keep a window's picture for its tab; example: after each completed presentation.
+    pub fn note_presented_frame(&mut self, extent: [u32; 2], rgba: &[u8]) {
+        self.document_tabs.previews.note_frame(extent, rgba);
+    }
     /// Report the visible workspace for the native window title.
     pub fn home_in_front(&self) -> bool {
         self.home.active

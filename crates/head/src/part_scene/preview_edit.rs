@@ -73,13 +73,24 @@ impl DesktopPartScenes {
         }
         #[cfg(not(test))]
         let _ = used_checkpoint;
+        let preview_color = match candidate
+            .work_geometry
+            .get(feature)
+            .map_err(|cause| cause.to_string())?
+            .definition()
+        {
+            oblikovati_model::feature::part::PartFeatureDefinition::SketchSweep(_) => {
+                NEW_SOLID_PREVIEW
+            }
+            _ => [1., 0.65, 0.1, 1.],
+        };
         render_preview(
             files,
             session,
             candidate,
             &evaluated,
             guid,
-            &edited_key,
+            (&edited_key, preview_color),
             document,
         )
     }
@@ -110,7 +121,7 @@ fn render_preview<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles
     candidate: &DocumentSnapshot,
     evaluated: &PreviewEvaluation,
     guid: DocumentGuid,
-    edited_key: &str,
+    (edited_key, preview_color): (&str, [f32; 4]),
     document: u64,
 ) -> Result<ViewportScene, String> {
     let update = render_part_scene(evaluated, (document, session.generation()), |body| {
@@ -119,7 +130,7 @@ fn render_preview<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles
             return Ok(None);
         }
         if key == edited_key {
-            return Ok(Some([1., 0.65, 0.1, 1.]));
+            return Ok(Some(preview_color));
         }
         Ok(Some(body_color(files, candidate, &key)?))
     })?;

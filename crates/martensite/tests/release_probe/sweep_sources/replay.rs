@@ -30,8 +30,13 @@ fn named_sweep_replays_through_creation_history_path_edit_and_reopen() {
     history.commit(&token, false).unwrap();
     let candidate = history.snapshot();
     let mut backend = CertifiedNamedSolidEvaluator::with_policy(&history, document, resolution());
+    let mut replay_candidate = candidate.clone();
+    for sketch in [PROFILE, PATH] {
+        assert!(!candidate.sketches.get(sketch).unwrap().visible());
+        replay_candidate.sketches.set_visible(sketch, true).unwrap();
+    }
     let tail = prefix
-        .replay_candidate_tail(candidate, &mut backend)
+        .replay_candidate_tail(&replay_candidate, &mut backend)
         .unwrap();
     assert_eq!(tail.body_count(), 1);
     let original = named(&history, document, feature);
@@ -52,8 +57,9 @@ fn named_sweep_replays_through_creation_history_path_edit_and_reopen() {
 
     assert_eq!(history.undo().unwrap(), "Sweep1");
     assert!(history.snapshot().work_geometry.get(feature).is_err());
-    assert!(history.snapshot().sketches.get(PROFILE).is_ok());
-    assert!(history.snapshot().sketches.get(PATH).is_ok());
+    for sketch in [PROFILE, PATH] {
+        assert!(history.snapshot().sketches.get(sketch).unwrap().visible());
+    }
     assert!(original.reference_keys(&history, document).is_err());
     assert_eq!(history.redo().unwrap(), "Sweep1");
     assert_eq!(

@@ -46,6 +46,7 @@ pub(super) fn source(glyph: IconGlyph, light: bool) -> Option<&'static str> {
         IconGlyph::CreateSketch => include_str!("../../assets/identity/cmd-sketch-2d-32.svg"),
         IconGlyph::Extrude => include_str!("../../assets/identity/cmd-extrude-32.svg"),
         IconGlyph::Revolve => include_str!("../../assets/identity/cmd-revolve-32.svg"),
+        IconGlyph::Sweep => include_str!("../../assets/identity/cmd-model-sweep-32.svg"),
         IconGlyph::Fillet => include_str!("../../assets/identity/cmd-fillet-32.svg"),
         IconGlyph::Hole => include_str!("../../assets/identity/cmd-hole-32.svg"),
         IconGlyph::Shell => include_str!("../../assets/identity/cmd-shell-32.svg"),

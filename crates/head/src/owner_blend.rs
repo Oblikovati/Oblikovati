@@ -9,6 +9,8 @@ mod owner_move_body;
 mod owner_shell_face_body;
 #[path = "owner_shell_feature.rs"]
 mod owner_shell_feature;
+#[path = "owner_sweep.rs"]
+pub(super) mod owner_sweep;
 use oblikovati_automation::{PreparedChamfer, PreparedFillet, prepare_chamfer, prepare_fillet};
 
 impl<

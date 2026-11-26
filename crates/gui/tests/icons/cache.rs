@@ -108,6 +108,22 @@ fn design_assets_draw_visible_vectors_at_native_and_double_density() {
     }
 }
 #[test]
+fn feature_icon_classes_apply_light_and_high_contrast_palettes() {
+    use crate::icons::{identity_sources::source, raster::rasterize_identity};
+    for glyph in [
+        catalog::IconGlyph::Extrude,
+        catalog::IconGlyph::Revolve,
+        catalog::IconGlyph::Sweep,
+        catalog::IconGlyph::Derive,
+        catalog::IconGlyph::Import,
+    ] {
+        let svg = source(glyph, false).unwrap();
+        let images = [0, 1, 2].map(|mode| rasterize_identity(svg, 64, mode).unwrap());
+        assert_ne!(images[0].rgba, images[1].rgba, "{}", glyph.name());
+        assert_ne!(images[0].rgba, images[2].rgba, "{}", glyph.name());
+    }
+}
+#[test]
 fn invalid_edges_leave_the_published_bank_unchanged() {
     let mut cache = GuiIconCache::new(font()).unwrap();
     let initial = cache.resources.clone();

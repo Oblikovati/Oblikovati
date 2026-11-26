@@ -343,8 +343,8 @@ pub enum GuiShellAction {
         origin_plane: Option<crate::GuiOriginPlaneKind>,
     },
     FinishSketch,
-    /// Open the Extrude dialog for the active part.
     OpenExtrude,
+    Sweep(crate::GuiSweepAction),
     /// Open a fillet draft for selected edges.
     OpenFillet,
     /// Open a body motion draft.

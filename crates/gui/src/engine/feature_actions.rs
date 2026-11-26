@@ -5,6 +5,7 @@ use super::*;
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Draft {
     Extrude,
+    Sweep,
     Blend,
     Shell,
     Hole,
@@ -13,6 +14,7 @@ enum Draft {
 
 fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
     Some(match action {
+        GuiShellAction::Sweep(crate::GuiSweepAction::Open) => Draft::Sweep,
         GuiShellAction::OpenExtrude | GuiShellAction::OpenExtrudeEdit(_) => Draft::Extrude,
         GuiShellAction::OpenFillet
         | GuiShellAction::OpenChamfer
@@ -31,7 +33,10 @@ pub(super) fn open_drafts(
     shell: &mut crate::shell_feature_dialog::ShellFeatureDialog,
     hole: &mut crate::hole_dialog::HoleDialog,
     motion: &mut crate::move_body_dialog::MoveBodyDialog,
-    blend: &mut crate::blend_dialog::BlendDialog,
+    (blend, sweep): (
+        &mut crate::blend_dialog::BlendDialog,
+        &mut crate::sweep_dialog::SweepDialog,
+    ),
     extrude: &mut crate::extrude_dialog::ExtrudeDialog,
 ) {
     let requested = actions
@@ -51,6 +56,9 @@ pub(super) fn open_drafts(
     if draft != Draft::Extrude || matches!(action, GuiShellAction::OpenExtrudeEdit(_)) {
         extrude.close(actions);
     }
+    if draft != Draft::Sweep {
+        sweep.close(actions);
+    }
     if draft != Draft::Shell {
         shell.close(actions);
     }
@@ -64,6 +72,7 @@ pub(super) fn open_drafts(
         blend.close(actions);
     }
     match action {
+        GuiShellAction::Sweep(crate::GuiSweepAction::Open) => sweep.open(state),
         GuiShellAction::OpenExtrude => extrude.requested = true,
         GuiShellAction::OpenExtrudeEdit(feature) => extrude.open_edit(state, feature),
         GuiShellAction::OpenFillet => blend.open(state),
