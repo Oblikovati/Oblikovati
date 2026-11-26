@@ -22,6 +22,7 @@ mod occurrence_ids;
 mod prism_create;
 mod scalar_ownership;
 mod shell_create;
+mod sweep_create;
 mod sketch_block_create;
 mod sketch_block_explode;
 mod sketch_create;
@@ -97,7 +98,6 @@ use std::sync::{
     Arc,
     atomic::{AtomicU64, Ordering},
 };
-
 /// Owned document recipe and metadata; identity allocation and file identity are outside history.
 #[derive(Clone, Debug)]
 pub struct DocumentSnapshot {

@@ -25,6 +25,7 @@ pub enum WorkPlaneDefinitionRecipe {
     CircularPattern(crate::feature::circular_pattern::CircularPatternRecipe),
     RectangularPattern(crate::feature::rectangular_pattern::RectangularPatternRecipe),
     SketchPrism(crate::feature::sketch_prism::SketchPrismRecipe),
+    SketchSweep(crate::feature::sketch_sweep::SketchSweepRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
     ThroughTwoAxes([crate::feature::work_axis::WorkAxisReference; 2]),
     NormalToAxis(crate::feature::work_geometry::WorkPlaneLinePoint),
@@ -69,6 +70,7 @@ impl WorkPlaneDefinition {
             Self::RectangularPattern(pattern) => {
                 Source::RectangularPattern(pattern.recipe().clone())
             }
+            Self::SketchSweep(definition) => Source::SketchSweep(definition.recipe().clone()),
             Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
             Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(source.clone()),
             Self::ThroughTwoAxes(axes) => Source::ThroughTwoAxes(*axes),
@@ -131,6 +133,11 @@ fn restore_definition(
         DeleteBody(key) => crate::feature::part::DeleteBodyDefinition::new(key)
             .map(WorkPlaneDefinition::DeleteBody)
             .map_err(WorkPlaneError::BodyReference),
+        SketchSweep(recipe) => {
+            crate::feature::sketch_sweep::SketchSweepDefinition::from_recipe(recipe)
+                .map(|definition| WorkPlaneDefinition::SketchSweep(Box::new(definition)))
+                .map_err(|cause| WorkPlaneError::Sweep(Box::new(cause)))
+        }
         SketchPrism(recipe) => restore_prism_inputs(recipe),
         AtAngleAboutAxis(source) => restore_line_angle(source),
         ThroughTwoAxes(axes) => Ok(WorkPlaneDefinition::ThroughTwoAxes(axes)),
@@ -192,6 +199,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 17,
             Self::MoveBody(_) => 18,
             Self::Shell(_) => 19,
+            Self::SketchSweep(_) => 23,
             Self::Mirror(_) => 22,
             Self::CircularPattern(_) => 21,
             Self::RectangularPattern(_) => 20,
@@ -222,6 +230,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 22,
             Self::MoveBody(_) => 23,
             Self::Shell(_) => 24,
+            Self::SketchSweep(_) => 28,
             Self::Mirror(_) => 27,
             Self::CircularPattern(_) => 26,
             Self::RectangularPattern(_) => 25,

@@ -59,6 +59,10 @@ fn track_replacement(
                 return;
             }
         },
+        PartFeatureDefinition::SketchSweep(_) => {
+            owners.insert(id, id);
+            return;
+        }
         PartFeatureDefinition::Fillet(fillet) => fillet.body_source(),
         PartFeatureDefinition::Chamfer(chamfer) => chamfer.body_source(),
         PartFeatureDefinition::Hole(hole) => hole.body_source(),

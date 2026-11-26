@@ -39,6 +39,7 @@ mod checkpoint_suffix;
 mod replay_boundary;
 mod replay_observer;
 mod shell_evaluation;
+mod sketch_body_evaluation;
 mod sketch_recompute;
 pub use super::work_plane::{
     WorkPlaneProgramRecipe as PartFeatureProgramRecipe,
@@ -58,6 +59,7 @@ pub enum PartFeatureDefinition {
     CircularPattern(Box<super::circular_pattern::CircularPatternDefinition>),
     RectangularPattern(Box<super::rectangular_pattern::RectangularPatternDefinition>),
     SketchPrism(Box<super::sketch_prism::SketchPrismDefinition>),
+    SketchSweep(Box<super::sketch_sweep::SketchSweepDefinition>),
     Fixed(SketchPlane),
     Offset {
         base: WorkPlaneReference,
@@ -79,6 +81,7 @@ impl PartFeatureDefinition {
     pub fn kind(&self) -> &'static str {
         match self {
             Self::SketchPrism(_) => "extrude",
+            Self::SketchSweep(_) => "sweep",
             Self::DeleteBody(_) => "delete-body",
             Self::Chamfer(_) => "chamfer",
             Self::Fillet(_) => "fillet",

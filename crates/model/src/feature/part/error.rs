@@ -12,6 +12,10 @@ pub enum PartFeatureProgramError {
         feature: FeatureId,
         cause: SketchPrismError,
     },
+    Sweep {
+        feature: FeatureId,
+        cause: Box<crate::feature::sketch_sweep::SketchSweepError>,
+    },
     Sequence(FeatureSequenceError),
     Reads(FeatureReplayError),
 }
@@ -23,6 +27,7 @@ impl fmt::Display for PartFeatureProgramError {
                 "part replay cancelled after {completed} entries: expected a complete current generation"
             ),
             Self::Prism { feature, cause } => write!(output, "part feature {feature:?}: {cause}"),
+            Self::Sweep { feature, cause } => write!(output, "part feature {feature:?}: {cause}"),
             Self::Sequence(cause) => cause.fmt(output),
             Self::Reads(cause) => cause.fmt(output),
         }
@@ -33,6 +38,7 @@ impl Error for PartFeatureProgramError {
         match self {
             Self::Cancelled { .. } => None,
             Self::Prism { cause, .. } => Some(cause),
+            Self::Sweep { cause, .. } => Some(cause.as_ref()),
             Self::Sequence(cause) => Some(cause),
             Self::Reads(cause) => Some(cause),
         }

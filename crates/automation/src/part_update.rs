@@ -396,6 +396,7 @@ fn feature_kind(definition: &PartFeatureDefinition) -> &'static str {
     use PartFeatureDefinition::*;
     match definition {
         SketchPrism(_) => "extrude",
+        SketchSweep(_) => "sweep",
         DeleteBody(_) => "delete-body",
         Fillet(_) => "fillet",
         Chamfer(_) => "chamfer",

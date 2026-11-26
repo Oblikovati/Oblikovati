@@ -117,6 +117,15 @@ where
             .evaluate_extrusion_pattern(feature, body.get(), sources, occurrences)
             .map(PrefixBody::Created)
     }
+    fn evaluate_sweep(
+        &mut self,
+        feature: FeatureId,
+        input: crate::feature::sketch_sweep::ResolvedSketchSweep<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_sweep(feature, input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,

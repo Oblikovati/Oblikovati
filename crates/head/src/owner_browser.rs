@@ -297,10 +297,11 @@ fn feature_kind_name(
     definition: &oblikovati_model::feature::part::PartFeatureDefinition,
 ) -> &'static str {
     use oblikovati_model::feature::part::PartFeatureDefinition::{
-        Chamfer, DeleteBody, Fillet, SketchPrism,
+        Chamfer, DeleteBody, Fillet, SketchPrism, SketchSweep,
     };
     match definition {
         SketchPrism(_) => "Extrusion",
+        SketchSweep(_) => "Sweep",
         Fillet(_) => "Fillet",
         Chamfer(_) => "Chamfer",
         DeleteBody(_) => "Delete Body",

@@ -49,6 +49,39 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     fn resolve_frame_origin(&self, body: &NamedSolid, key: &[u8]) -> Result<[f64; 3], String> {
         body.frame_origin(self.history, self.document, key)
     }
+    fn evaluate_sweep(
+        &mut self,
+        feature: FeatureId,
+        input: oblikovati_model::feature::sketch_sweep::ResolvedSketchSweep<'_>,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        let Some(prism) = &self.prism else {
+            return Err(PartFeatureFailure::Unsupported(
+                "sweep: expected an explicit model resolution policy".into(),
+            ));
+        };
+        let sources = [input.profile.sketch.id().0, input.path.sketch.id().0];
+        let candidate = crate::sweep::build_sweep(input, prism.resolution_policy())
+            .map_err(|error| PartFeatureFailure::Kernel(error.for_feature(feature)))?;
+        let topology = BlendNamedTopology::from_sweep(
+            self.history,
+            self.document,
+            feature,
+            sources,
+            candidate,
+        )
+        .map_err(|cause| {
+            PartFeatureFailure::Kernel(
+                crate::EvaluationPhase::Naming
+                    .refused(
+                        crate::EvaluationFailureKind::InvalidReference,
+                        crate::EvaluationEntity::Body,
+                        format!("sweep topology: {cause}"),
+                    )
+                    .for_feature(feature),
+            )
+        })?;
+        Ok(NamedSolid::Derived(Box::new(topology)))
+    }
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,

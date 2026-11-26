@@ -3,7 +3,7 @@
 mod path;
 use crate::{
     EvaluationEntity as Entity, EvaluationFailure, EvaluationFailureKind as Kind,
-    EvaluationPhase as Phase, PrismAchievedTolerance, PrismResolutionPolicy,
+    EvaluationPhase as Phase, PrismAchievedTolerance, PrismResolution, PrismResolutionPolicy,
     ReleaseProbeProperties,
     sketch_prism::regions::{region_boundary, resolved_regions},
 };
@@ -32,8 +32,9 @@ pub enum SweepFaceRole {
 
 /// A privately constructed solid with verified face lineage.
 pub struct SweepCandidate {
-    shape: Shape,
-    faces: Vec<(SweepFaceRole, Shape)>,
+    pub(crate) shape: Shape,
+    pub(crate) faces: Vec<(SweepFaceRole, Shape)>,
+    pub(crate) resolution: PrismResolution,
     surface_error: f64,
     achieved: PrismAchievedTolerance,
 }
@@ -82,6 +83,7 @@ pub fn build_sweep(
     Ok(SweepCandidate {
         shape,
         faces,
+        resolution,
         surface_error,
         achieved,
     })

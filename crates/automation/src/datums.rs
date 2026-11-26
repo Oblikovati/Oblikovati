@@ -159,6 +159,7 @@ impl DatumCollection {
     fn contains(self, definition: &WorkGeometryDefinition) -> bool {
         let kind = match definition {
             WorkGeometryDefinition::SketchPrism(_)
+            | WorkGeometryDefinition::SketchSweep(_)
             | WorkGeometryDefinition::DeleteBody(_)
             | WorkGeometryDefinition::Fillet(_)
             | WorkGeometryDefinition::Chamfer(_)

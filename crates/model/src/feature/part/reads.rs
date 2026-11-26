@@ -11,16 +11,22 @@ impl crate::feature::FeatureSequence<PartFeatureDefinition> {
         &self,
         sketch: crate::document_sketch::DocumentSketchId,
     ) -> impl Iterator<Item = &crate::feature::AuthoredFeature<PartFeatureDefinition>> {
-        self.features().iter().filter(move |feature| {
-            matches!(feature.definition(),
-            PartFeatureDefinition::SketchPrism(definition) if definition.sketch() == sketch)
-        })
+        self.features()
+            .iter()
+            .filter(move |feature| match feature.definition() {
+                PartFeatureDefinition::SketchPrism(definition) => definition.sketch() == sketch,
+                PartFeatureDefinition::SketchSweep(definition) => {
+                    let recipe = definition.recipe();
+                    recipe.profile_sketch == sketch || recipe.path_sketch == sketch
+                }
+                _ => false,
+            })
     }
 }
 impl DocumentSnapshot {
     /// Validate current body source dependencies before owner adoption; example: `snapshot.validate_prism_reads()?`.
     pub fn validate_prism_reads(&self) -> Result<(), PartFeatureProgramError> {
-        for (id, reads) in self.current_prism_reads()? {
+        for (id, reads) in self.current_sketch_body_reads()? {
             let feature = self
                 .work_geometry
                 .get(id)
@@ -31,7 +37,7 @@ impl DocumentSnapshot {
     }
     /// Atomically refresh typed source dependencies after sketch edits; example: `candidate.refresh_prism_reads()?`.
     pub fn refresh_prism_reads(&mut self) -> Result<(), PartFeatureProgramError> {
-        let reads = self.current_prism_reads()?;
+        let reads = self.current_sketch_body_reads()?;
         let mut program = self.work_geometry.clone();
         for (id, reads) in reads {
             let feature = program.get(id).map_err(PartFeatureProgramError::Sequence)?;
@@ -46,21 +52,27 @@ impl DocumentSnapshot {
         self.work_geometry = program;
         Ok(())
     }
-    fn current_prism_reads(
+    fn current_sketch_body_reads(
         &self,
     ) -> Result<Vec<(FeatureId, FeatureReadFootprint)>, PartFeatureProgramError> {
         let mut reads = Vec::new();
         for feature in self.work_geometry.features() {
-            let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
-                continue;
-            };
             let current =
-                definition
-                    .reads(self)
-                    .map_err(|cause| PartFeatureProgramError::Prism {
-                        feature: feature.id(),
-                        cause,
-                    })?;
+                match feature.definition() {
+                    PartFeatureDefinition::SketchPrism(definition) => definition
+                        .reads(self)
+                        .map_err(|cause| PartFeatureProgramError::Prism {
+                            feature: feature.id(),
+                            cause,
+                        })?,
+                    PartFeatureDefinition::SketchSweep(definition) => definition
+                        .reads(self)
+                        .map_err(|cause| PartFeatureProgramError::Sweep {
+                            feature: feature.id(),
+                            cause: Box::new(cause),
+                        })?,
+                    _ => continue,
+                };
             reads.push((feature.id(), current));
         }
         Ok(reads)

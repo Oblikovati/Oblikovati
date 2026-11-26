@@ -195,7 +195,7 @@ fn contributes(record: &BlendHistoryRecord, entity: &Shape) -> bool {
             .any(|child| child.is_same(entity))
 }
 
-fn incident_name(
+pub(super) fn incident_name(
     document: DocumentGuid,
     feature: FeatureId,
     target_kind: u32,
@@ -220,7 +220,7 @@ fn incident_name(
     DerivedReferenceName::new(document, feature.0, target_kind, "incidence", &parents)?.encode()
 }
 
-fn require_unique(names: &[(Vec<u8>, Shape)]) -> Result<(), String> {
+pub(super) fn require_unique(names: &[(Vec<u8>, Shape)]) -> Result<(), String> {
     let mut seen = BTreeMap::new();
     for (name, shape) in names {
         if seen.insert(name, shape).is_some() {

@@ -6,6 +6,7 @@ impl AuthoredFeature<WorkGeometryDefinition> {
             && matches!(
                 self.definition(),
                 WorkGeometryDefinition::SketchPrism(_)
+                    | WorkGeometryDefinition::SketchSweep(_)
                     | WorkGeometryDefinition::DeleteBody(_)
                     | WorkGeometryDefinition::Fillet(_)
                     | WorkGeometryDefinition::Chamfer(_)

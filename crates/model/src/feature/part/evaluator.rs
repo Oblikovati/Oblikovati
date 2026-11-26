@@ -100,6 +100,16 @@ pub trait PartFeatureEvaluator {
             "rectangular pattern: expected a named tool replay backend".into(),
         ))
     }
+    /// Construct a named solid from a solved profile and path. Example: `backend.evaluate_sweep(feature, input)?`.
+    fn evaluate_sweep(
+        &mut self,
+        _feature: FeatureId,
+        _input: crate::feature::sketch_sweep::ResolvedSketchSweep<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "sweep: expected an available named sweep evaluator".into(),
+        ))
+    }
     /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.
     fn evaluate_prism(
         &mut self,

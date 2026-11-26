@@ -110,19 +110,27 @@ impl SketchSweepDefinition {
         &self.0
     }
 
+    pub(super) fn source_reads(&self) -> FeatureReadFootprint {
+        FeatureReadFootprint::new(
+            [self.0.profile_sketch, self.0.path_sketch]
+                .into_iter()
+                .map(|owner| FeatureReadKey::Sketch(owner.0)),
+            false,
+        )
+    }
+
     /// Read both sketches and their upstream dependencies. Example: `sweep.reads(&snapshot)?`.
     pub fn reads(
         &self,
         snapshot: &DocumentSnapshot,
     ) -> Result<FeatureReadFootprint, SketchSweepError> {
-        let mut keys = BTreeSet::new();
+        let mut keys = self.source_reads().keys().clone();
         let mut unattributed = false;
         for owner in [self.0.profile_sketch, self.0.path_sketch] {
             let sketch = snapshot
                 .sketches
                 .get(owner)
                 .map_err(|cause| SketchSweepError::Sketch { owner, cause })?;
-            keys.insert(FeatureReadKey::Sketch(owner.0));
             keys.extend(sketch.read_footprint().keys());
             unattributed |= sketch.read_footprint().has_unattributed_reads();
         }
@@ -135,8 +143,33 @@ impl SketchSweepDefinition {
         snapshot: &'a DocumentSnapshot,
         datums: &WorkGeometryEvaluation,
     ) -> Result<ResolvedSketchSweep<'a>, SketchSweepError> {
-        let profile = resolve_source(snapshot, datums, self.0.profile_sketch)?;
-        let path = resolve_source(snapshot, datums, self.0.path_sketch)?;
+        self.resolve_sources(|owner| {
+            snapshot.require_converged_resolved_sketch_with_datums(owner, datums)
+        })
+    }
+
+    pub(super) fn resolve_for_replay<'a>(
+        &'a self,
+        snapshot: &'a DocumentSnapshot,
+        datums: &WorkGeometryEvaluation,
+    ) -> Result<ResolvedSketchSweep<'a>, SketchSweepError> {
+        self.resolve_sources(|owner| snapshot.require_converged_sketch_with_datums(owner, datums))
+    }
+
+    fn resolve_sources<'a>(
+        &'a self,
+        resolve: impl Fn(
+            DocumentSketchId,
+        ) -> Result<ResolvedDocumentSketch<'a>, DocumentSketchPlacementError>,
+    ) -> Result<ResolvedSketchSweep<'a>, SketchSweepError> {
+        let source = |owner| {
+            resolve(owner).map_err(|cause| SketchSweepError::Placement {
+                owner,
+                cause: Box::new(cause),
+            })
+        };
+        let profile = source(self.0.profile_sketch)?;
+        let path = source(self.0.path_sketch)?;
         validate_curves(&profile, profile_curves(&self.0.profile))?;
         validate_curves(&path, self.0.path.iter())?;
         Ok(ResolvedSketchSweep {
@@ -160,19 +193,6 @@ fn require_path(path: &[SketchDirectedCurve]) -> Result<(), SketchSweepError> {
         )));
     }
     Ok(())
-}
-
-fn resolve_source<'a>(
-    snapshot: &'a DocumentSnapshot,
-    datums: &WorkGeometryEvaluation,
-    owner: DocumentSketchId,
-) -> Result<ResolvedDocumentSketch<'a>, SketchSweepError> {
-    snapshot
-        .require_converged_resolved_sketch_with_datums(owner, datums)
-        .map_err(|cause| SketchSweepError::Placement {
-            owner,
-            cause: Box::new(cause),
-        })
 }
 
 fn profile_curves(profile: &SketchPrismSelection) -> impl Iterator<Item = &SketchDirectedCurve> {

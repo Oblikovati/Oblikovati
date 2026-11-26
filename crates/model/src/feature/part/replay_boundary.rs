@@ -105,6 +105,7 @@ fn feature_reads_changed(
     }
     let reads = match feature.definition() {
         super::PartFeatureDefinition::SketchPrism(definition) => definition.reads(snapshot).ok()?,
+        super::PartFeatureDefinition::SketchSweep(definition) => definition.reads(snapshot).ok()?,
         definition => definition.reads(),
     };
     if reads.has_unattributed_reads() {

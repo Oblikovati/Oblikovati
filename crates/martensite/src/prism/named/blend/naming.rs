@@ -27,6 +27,7 @@ mod result_names;
 mod rigid_motion;
 mod shell;
 mod source;
+mod sweep;
 pub(in crate::prism::named) use capture::CapturedBlendTopology;
 
 impl BlendNamedTopology {

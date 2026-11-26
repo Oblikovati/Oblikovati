@@ -66,8 +66,20 @@ round-trip the recipe, rebuild the cylinder after a path length edit, and
 reject a replacement path even when it occupies the same coordinates. A
 disconnected path reports the offending curve and returns no solid.
 
-Ordered Part replay, document serialization and desktop authoring remain
-open for Sweep. Loft still requires authored section identities and host
-integration. Guided, Boolean and spatial inputs still need qualification.
-Revolve has a persisted definition type and a geometry probe, and still
-needs desktop authoring and replay.
+### Sweep history and persistence
+
+Ordered Part replay produces a named solid for a supported Sweep. The
+document stores both sketch selections in Part program version 28. The
+body and faces use authored source roles. Edges and vertices use their named
+incident entities. Replay declines ambiguous topology instead of assigning
+keys from kernel enumeration order.
+
+The [replay test](../../crates/martensite/tests/release_probe/sweep_sources/replay.rs)
+checks the same body, face, edge and vertex keys through full replay, suffix
+replay, Undo, Redo, a path-length change and package reopen. It also checks
+the volume and measures the two circular edges and the straight seam.
+
+Sweep desktop authoring and native scenarios remain open, along with guided,
+Boolean and spatial inputs. Loft still requires authored section identities
+and host integration. Revolve has a persisted definition type and a geometry
+probe, and still needs desktop authoring and replay.

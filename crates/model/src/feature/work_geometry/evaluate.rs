@@ -134,6 +134,7 @@ impl WorkGeometryEvaluation {
         if matches!(
             feature.definition(),
             WorkPlaneDefinition::SketchPrism(_)
+                | WorkPlaneDefinition::SketchSweep(_)
                 | WorkPlaneDefinition::DeleteBody(_)
                 | WorkPlaneDefinition::Fillet(_)
                 | WorkPlaneDefinition::Chamfer(_)

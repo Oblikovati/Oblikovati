@@ -41,6 +41,7 @@ pub enum PartFeatureFailure<Failure> {
     Datum(Box<WorkGeometryError>),
     Metadata(Box<WorkGeometryError>),
     Inputs(SketchPrismError),
+    SweepInput(Box<crate::feature::sketch_sweep::SketchSweepError>),
     Kernel(Failure),
     BodyReference(String),
     FilletInput(String),
@@ -324,33 +325,6 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         self.datums.replace_sketch_faces(faces);
         self.datums.replace_sketch_frame_origins(origins);
     }
-    pub(super) fn solve_feature_sketch(
-        &self,
-        snapshot: &mut Cow<'_, DocumentSnapshot>,
-        id: FeatureId,
-        options: oblikovati_solve::nonlinear::SolveOptions,
-        completed: usize,
-        cancelled: &mut impl FnMut() -> bool,
-    ) -> Result<(), PartFeatureProgramError> {
-        let Ok(feature) = snapshot.work_geometry.get(id) else {
-            return Ok(());
-        };
-        let PartFeatureDefinition::SketchPrism(definition) = feature.definition() else {
-            return Ok(());
-        };
-        let sketch = definition.sketch();
-        let candidate = snapshot.to_mut();
-        if let Ok(solved) = candidate.solve_one_document_sketch_with_datums(
-            sketch,
-            options,
-            &mut *cancelled,
-            &self.datums,
-        ) {
-            require_replay_current(solved.report.cancelled || cancelled(), completed)?;
-            candidate.sketches = solved.candidate;
-        }
-        Ok(())
-    }
     pub(super) fn evaluate_entry<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
         &mut self,
         snapshot: &DocumentSnapshot,
@@ -366,6 +340,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         if matches!(
             feature.definition(),
             PartFeatureDefinition::SketchPrism(_)
+                | PartFeatureDefinition::SketchSweep(_)
                 | PartFeatureDefinition::DeleteBody(_)
                 | PartFeatureDefinition::Fillet(_)
                 | PartFeatureDefinition::Chamfer(_)
@@ -383,6 +358,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         match feature.definition() {
             PartFeatureDefinition::SketchPrism(definition) => {
                 self.evaluate_prism(snapshot, backend, feature, definition)
+            }
+            PartFeatureDefinition::SketchSweep(definition) => {
+                self.evaluate_sweep(snapshot, backend, id, definition)
             }
             PartFeatureDefinition::DeleteBody(definition) => {
                 self.delete_body(backend, id, definition)
@@ -443,36 +421,6 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         self.bodies.remove(&slot);
         self.body_lineage.retire(slot);
         self.deleted.insert(feature, definition.key().to_vec());
-        Ok(())
-    }
-    fn evaluate_prism<B: PartFeatureEvaluator<Body = Body, Failure = Failure>>(
-        &mut self,
-        snapshot: &DocumentSnapshot,
-        backend: &mut B,
-        feature: &crate::feature::AuthoredFeature<PartFeatureDefinition>,
-        definition: &crate::feature::sketch_prism::SketchPrismDefinition,
-    ) -> Result<(), PartFeatureFailure<Failure>> {
-        if let Some(target) = definition.boolean_target() {
-            return self.replace_with_prism(snapshot, backend, feature.id(), target, definition);
-        }
-        let resolve_face =
-            |reference: &_| resolve_body_face(&self.bodies, &self.body_lineage, backend, reference);
-        let resolver = crate::feature::work_geometry::DatumFaceResolver {
-            datums: &self.datums,
-            resolve_face: &resolve_face,
-        };
-        let input = definition
-            .resolve_with_datums(snapshot, &self.datums, &resolver, |_, _| {
-                Err("through-all extent: expected Cut against a current target body".into())
-            })
-            .map_err(PartFeatureFailure::Inputs)?;
-        let body = backend
-            .evaluate_prism(feature.id(), input)
-            .map_err(PartFeatureFailure::Kernel)?;
-        self.body_lineage
-            .register(feature.id())
-            .map_err(PartFeatureFailure::BodyReference)?;
-        self.bodies.insert(feature.id(), body);
         Ok(())
     }
 }
