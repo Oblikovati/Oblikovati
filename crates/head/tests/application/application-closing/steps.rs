@@ -104,7 +104,7 @@ fn close_from_wayland_frame(world: &mut ApplicationWorld, can_close: bool) {
     }
 }
 
-fn finish_clean_application(world: &mut ApplicationWorld) {
+pub(super) fn finish_clean_application(world: &mut ApplicationWorld) {
     let mut app = world.app.take().expect("expected an open application");
     crate::run_window_with_owner(
         &mut app.window,

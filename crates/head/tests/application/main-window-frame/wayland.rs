@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Exercise the application-owned frame against the Wayland compositor.
-use super::super::main_window_frame_native::{press_maximize, pump_until};
+use super::super::main_window_frame_native::{
+    frame_control_center, press_maximize, pump_frame_controls, pump_until,
+};
 use super::super::{diagnostics, workspace_layout};
 use super::{
     ApplicationWorld, controls_remain_in_bar, double_click_bar, maximize_tooltip, open_frame_part,
@@ -18,6 +20,67 @@ pub(super) fn expect_maximized_work_area() {
     let work_area =
         scene_work_area(&graph).expect("expected one Weston output with a full-width top panel");
     assert_eq!(current_frame_bounds(&graph), work_area);
+}
+
+pub(super) fn minimize_and_switch_back(world: &mut ApplicationWorld) {
+    use super::super::x11_input::window_targets::switch_fullscreen_wayland_task;
+
+    require_nested_input();
+    let visible = compositor_frame_layer().expect("expected a visible Weston layer");
+    click_frame_control(world, 0);
+    wait_for_frame_layer(world, |layer| layer != Some(visible.as_str()));
+    switch_fullscreen_wayland_task();
+    wait_for_frame_layer(world, |layer| layer == Some(visible.as_str()));
+    world.pump(Vec::new());
+}
+
+pub(in super::super) fn click_frame_control(world: &mut ApplicationWorld, index: usize) {
+    use super::super::x11_input::window_targets::{
+        fullscreen_left_button, move_fullscreen_pointer,
+    };
+
+    require_nested_input();
+    let [x, y, _, _] = compositor_frame_bounds().unwrap();
+    let [control_x, control_y] = frame_control_center(index);
+    let target = [x + control_x, y + control_y];
+    move_fullscreen_pointer(target);
+    world.pump(Vec::new());
+    fullscreen_left_button(target, true);
+    world.pump(Vec::new());
+    fullscreen_left_button(target, false);
+}
+
+fn wait_for_frame_layer(world: &mut ApplicationWorld, ready: impl Fn(Option<&str>) -> bool) {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    loop {
+        pump_frame_controls(world);
+        let layer = compositor_frame_layer();
+        if ready(layer.as_deref()) {
+            break;
+        }
+        assert!(
+            std::time::Instant::now() < deadline,
+            "unexpected Weston frame layer {layer:?}"
+        );
+        std::thread::sleep(std::time::Duration::from_millis(30));
+    }
+}
+
+fn compositor_frame_layer() -> Option<String> {
+    let graph = compositor_scene_graph().expect("set OBK_BDD_WESTON_DEBUG for Wayland layers");
+    let pid = format!(", PID {}, ", std::process::id());
+    let mut layer = None;
+    for line in graph.lines() {
+        if line.starts_with("Layer ") {
+            layer = line
+                .split_once("(pos ")
+                .and_then(|(_, tail)| tail.strip_suffix("):"));
+        }
+        if is_application_toplevel(line, &pid) {
+            return layer.map(str::to_owned);
+        }
+    }
+    None
 }
 
 pub(super) fn drag_application_bar(world: &mut ApplicationWorld) {
@@ -119,12 +182,14 @@ fn compositor_scene_graph() -> Option<String> {
 fn scene_frame_bounds(graph: &str, pid: u32) -> Option<[i32; 4]> {
     let pid = format!(", PID {pid}, ");
     let mut lines = graph.lines();
-    lines.find(|line| {
-        line.contains("(role xdg_toplevel")
-            && line.contains(&pid)
-            && line.contains(" of org.oblikovati.Oblikovati,")
-    })?;
+    lines.find(|line| is_application_toplevel(line, &pid))?;
     scene_bounds(lines.next()?)
+}
+
+fn is_application_toplevel(line: &str, pid: &str) -> bool {
+    line.contains("(role xdg_toplevel")
+        && line.contains(pid)
+        && line.contains(" of org.oblikovati.Oblikovati,")
 }
 
 fn scene_work_area(graph: &str) -> Option<[i32; 4]> {

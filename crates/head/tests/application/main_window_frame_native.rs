@@ -19,6 +19,17 @@ pub(super) fn press_maximize(world: &mut ApplicationWorld) {
     world.pump(Vec::new());
 }
 
+pub(super) fn exercise_minimum_maximize_and_restore(world: &mut ApplicationWorld) {
+    for maximized in [true, false] {
+        if world.app().window.native.view.uses_wayland() {
+            super::main_window_frame::wayland::click_frame_control(world, 1);
+        } else {
+            press_maximize(world);
+        }
+        pump_until(world, maximized);
+    }
+}
+
 /// Native center of the drawn control, with index 0 for Minimize and 2 for Close.
 pub(super) fn frame_control_center(index: usize) -> [i32; 2] {
     let [left, top, right, bottom] =
@@ -287,27 +298,27 @@ pub(super) fn wait_for_hidden(hidden: bool) {
     }
 }
 pub(super) fn pump_minimize_button(world: &mut ApplicationWorld) {
-    use crate::HeadWindow;
     x11_input::click(frame_control_center(0));
     let deadline = Instant::now() + Duration::from_secs(5);
     while !x11_input::window_has_state(b"_NET_WM_STATE_HIDDEN") {
-        let app = world.app();
-        let events = app.window.events(64).unwrap();
-        for event in events {
-            crate::frames::advance_gui_for_native_test(
-                &mut app.window,
-                &mut app.owner,
-                Some(&event),
-            )
-            .unwrap();
-        }
-        crate::frames::advance_gui_for_native_test(&mut app.window, &mut app.owner, None).unwrap();
+        pump_frame_controls(world);
         assert!(
             Instant::now() < deadline,
             "Minimize control: expected the window to become hidden"
         );
         std::thread::sleep(Duration::from_millis(30));
     }
+}
+
+pub(super) fn pump_frame_controls(world: &mut ApplicationWorld) {
+    use crate::HeadWindow;
+
+    let app = world.app();
+    for event in app.window.events(64).unwrap() {
+        crate::frames::advance_gui_for_native_test(&mut app.window, &mut app.owner, Some(&event))
+            .unwrap();
+    }
+    crate::frames::advance_gui_for_native_test(&mut app.window, &mut app.owner, None).unwrap();
 }
 fn exercise_minimize_reactivation(use_taskbar: bool) {
     for maximized in [false, true] {

@@ -336,6 +336,15 @@ fn shrink_past_minimum(world: &mut ApplicationWorld) {
 }
 
 fn resize_from_bottom_right(world: &mut ApplicationWorld, target: [i32; 2]) {
+    if world.app().window.native.view.uses_wayland() {
+        let [x, y, width, height] = wayland::compositor_frame_bounds().unwrap();
+        wayland::drag_resize_handle(
+            world,
+            [x + width - 2, y + height - 2],
+            [x + target[0], y + target[1]],
+        );
+        return;
+    }
     let bounds = super::x11_input::application_bounds();
     super::main_window_frame_native::drag_resize_handle(
         world,
@@ -344,25 +353,33 @@ fn resize_from_bottom_right(world: &mut ApplicationWorld, target: [i32; 2]) {
     );
 }
 #[then("the window stops shrinking at its minimum size")]
-fn minimum_window_bounds(_: &mut ApplicationWorld) {
-    assert_eq!(&super::x11_input::application_bounds()[2..], &[640, 480]);
+fn minimum_window_bounds(world: &mut ApplicationWorld) {
+    assert_eq!(world.extent(), [640, 480]);
+    if world.app().window.native.view.uses_wayland() {
+        let [_, _, width, height] = wayland::compositor_frame_bounds().unwrap();
+        assert_eq!([width, height], [640, 480]);
+    } else {
+        assert_eq!(&super::x11_input::application_bounds()[2..], &[640, 480]);
+    }
 }
 #[then("Minimize, Maximize and Close remain fully visible and usable")]
 fn minimum_controls_usable(world: &mut ApplicationWorld) {
     super::main_window_frame_accessibility::assert_drawn_frame_controls(world);
-    super::main_window_frame_native::press_maximize(world);
-    super::main_window_frame_native::pump_until(world, true);
-    super::main_window_frame_native::press_maximize(world);
-    super::main_window_frame_native::pump_until(world, false);
-    super::main_window_frame_native::pump_minimize_button(world);
-    activate_from_taskbar(world);
+    super::main_window_frame_native::exercise_minimum_maximize_and_restore(world);
+    if world.app().window.native.view.uses_wayland() {
+        wayland::minimize_and_switch_back(world);
+    } else {
+        super::main_window_frame_native::pump_minimize_button(world);
+        activate_from_taskbar(world);
+    }
 }
+
 #[then("the active part remains displayed in the resized viewport")]
 fn minimum_viewport_keeps_part(world: &mut ApplicationWorld) {
     same_part_in_viewport(world);
     assert!(!world.state().document_storage[&world.active_id()].unsaved_edits);
     world.expect_no_text("Command failed");
-    assert_eq!(&super::x11_input::application_bounds()[2..], &[640, 480]);
+    minimum_window_bounds(world);
     let [left, _, right, _] = world.viewport_bounds();
     let width = world.extent()[0];
     assert!(
@@ -372,13 +389,13 @@ fn minimum_viewport_keeps_part(world: &mut ApplicationWorld) {
 }
 
 #[test]
-#[ignore = "requires an X11 window manager and the scenario source with the native frame fixture"]
+#[ignore = "requires a private desktop and the scenario source with the native frame fixture"]
 fn native_close_at_minimum_size_exits_with_a_clean_part() {
     let mut world = ApplicationWorld::new();
     restored_window_with_saved_part(&mut world);
     let original_viewport = world.viewport_bounds();
     let [width, height] = world.extent().map(|value| value as i32);
-    shrink_past_minimum(&mut world);
+    resize_from_bottom_right(&mut world, [638, 478]);
     minimum_viewport_keeps_part(&mut world);
     resize_from_bottom_right(&mut world, [width - 2, height - 2]);
     assert_eq!(
@@ -386,12 +403,17 @@ fn native_close_at_minimum_size_exits_with_a_clean_part() {
         original_viewport,
         "restored dock widths"
     );
-    shrink_past_minimum(&mut world);
+    resize_from_bottom_right(&mut world, [638, 478]);
     minimum_window_bounds(&mut world);
     minimum_viewport_keeps_part(&mut world);
     // Activating Close here can destroy the clean window without obscuring the
     // minimum-size scenario's final check that the Part is still displayed.
-    super::application_closing::request_application_close(&mut world);
+    if world.app().window.native.view.uses_wayland() {
+        wayland::click_frame_control(&mut world, 2);
+        super::application_closing::finish_clean_application(&mut world);
+    } else {
+        super::application_closing::request_application_close(&mut world);
+    }
     assert!(world.app.is_none());
 }
 

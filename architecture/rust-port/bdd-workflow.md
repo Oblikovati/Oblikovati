@@ -228,6 +228,14 @@ with `XCURSOR_PATH` set to a private directory, and set `XCURSOR_THEME=oblikovat
 for the application process. The fixture gives each resize icon a distinct
 buffer width. The test reads the displayed cursor surface from Weston.
 
+For the minimum-size scenario, set `binding-modifier=super` in Weston's
+`[shell]` section so the test can reactivate Oblikovati with Super+Tab.
+Stock Weston 13 ignores the xdg-toplevel minimum size during a desktop-shell
+resize. Apply the [private Weston 13 test patch](receipts/2026-11-26-wayland-minimum-frame-4063/weston-13-min-size.patch)
+to its source before building the compositor for the overshoot scenario.
+The separate `native_close_at_minimum_size_exits_with_a_clean_part` test
+drags directly to the minimum dimensions and runs on stock Weston.
+
 The Linux docking-system restart scenario also starts the desktop executable
 twice. Build `oblikovati` from the same source as the test, and set
 `OBK_BDD_DESKTOP_BINARY` to its absolute path. Run with an X11 window manager,

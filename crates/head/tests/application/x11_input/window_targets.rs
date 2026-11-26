@@ -45,6 +45,24 @@ pub(in super::super) fn fullscreen_left_button(position: [i32; 2], pressed: bool
     fullscreen_pointer_event(position, event, 1);
 }
 
+pub(in super::super) fn switch_fullscreen_wayland_task() {
+    let (connection, screen) =
+        x11rb::connect(None).expect("X11: expected a private nested display");
+    let root = connection.setup().roots[screen].root;
+    let modifier = keyboard_keycode(&connection, 0xffeb);
+    let tab = keyboard_keycode(&connection, 0xff09);
+    send_key_sequence(
+        &connection,
+        root,
+        &[
+            (KEY_PRESS_EVENT, modifier),
+            (KEY_PRESS_EVENT, tab),
+            (KEY_RELEASE_EVENT, tab),
+            (KEY_RELEASE_EVENT, modifier),
+        ],
+    );
+}
+
 fn fullscreen_pointer_event([x, y]: [i32; 2], event: u8, detail: u8) {
     let (connection, screen) =
         x11rb::connect(None).expect("X11: expected a private nested display");

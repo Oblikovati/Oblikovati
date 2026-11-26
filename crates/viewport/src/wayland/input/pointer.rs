@@ -116,6 +116,8 @@ impl WindowState {
             self.input.resize_grab = true;
             return true;
         }
+        // The compositor may consume the release that ended the preceding resize.
+        self.input.resize_grab = false;
         self.input.pointer_press = Some((seat.clone(), serial));
         false
     }
