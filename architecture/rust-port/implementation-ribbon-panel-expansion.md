@@ -78,6 +78,11 @@ or Tools shows Primitives unchecked and Modify checked. The 3D Model
 command strip stays visible while the menu is open.
 [Native inactive-tab examples](receipts/2026-11-26-ribbon-inactive-tab-panel-menu-3856/README.md)
 
+The display control closes the panel selector and changes the ribbon
+display on a single click. The temporary 3D Model command area exposes
+the same panel choices. Restoring the full ribbon closes the selector.
+[Native minimization scenario](receipts/2026-11-26-ribbon-selector-minimize-3856/README.md)
+
 The direct checklist wraps keyboard focus from the first row to the last
 with Up and from the last row to the first with Down. The
 [native regression](receipts/2026-11-24-selector-keyboard-wrap-3856/README.md)

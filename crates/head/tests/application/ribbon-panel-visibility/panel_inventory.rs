@@ -151,7 +151,10 @@ fn context_menu_opens(world: &mut ApplicationWorld) {
 }
 
 #[then("Primitives is unchecked and Modify is checked")]
+#[given("Modify is checked and Primitives is unchecked")]
+#[then("Modify is still checked and Primitives is still unchecked")]
 fn model_panel_states(world: &mut ApplicationWorld) {
+    assert!(side_selector::popup_depth() > 0, "expected a panel menu");
     expect_checks(world, &["Primitives"], false);
     expect_checks(world, &["Modify"], true);
 }

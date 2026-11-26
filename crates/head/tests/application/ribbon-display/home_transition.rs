@@ -40,6 +40,7 @@ fn part_workspace_visible(world: &mut ApplicationWorld) {
 }
 
 #[given("the ribbon display policy is \"Minimize to Tabs\"")]
+#[given("the ribbon display control is set to toggle between the full ribbon and tabs only")]
 fn tabs_policy_selected(world: &mut ApplicationWorld) {
     click_display_menu(world);
     if world.checked("Minimize to Tabs") {

@@ -31,7 +31,7 @@ impl RibbonDisplayState {
         if tips.tabs() && tips.matching("X2") {
             crate::ribbon_key_tips::badge(ui, "X2");
         }
-        if activate || self.selector_pointer_press(ui) {
+        if activate {
             self.advance();
         }
         if ui.is_item_hovered() {

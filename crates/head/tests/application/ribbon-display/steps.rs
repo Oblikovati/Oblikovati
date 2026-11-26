@@ -407,6 +407,7 @@ fn model_ribbon_expanded(world: &mut ApplicationWorld) {
 }
 #[then("the permanent command groups disappear and the ribbon tabs remain visible")]
 #[then("the ribbon is minimized to tabs")]
+#[then("only the ribbon tabs remain visible")]
 fn groups_gone(world: &mut ApplicationWorld) {
     world.expect_no_text("Start 2D Sketch");
     world.expect_text("3D Model");

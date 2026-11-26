@@ -20,8 +20,10 @@ fn click_side_selector(world: &mut ApplicationWorld) {
 #[when("the user clicks the direct panel selector arrow")]
 #[when("the user clicks the direct panel selector")]
 #[when("the user opens the direct panel selector")]
+#[when("the user opens the direct panel visibility list")]
 #[when("the user opens the direct ribbon panel selector")]
 #[given("the direct panel selector is open")]
+#[given("the direct panel visibility list is open")]
 #[given("the ribbon panel selector is open")]
 pub(super) fn open_side_selector(world: &mut ApplicationWorld) {
     click_selector(world);
