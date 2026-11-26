@@ -81,7 +81,7 @@ pub struct GuiExtrudeEditRequest {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct GuiDrawingProjection {
     pub lines: Vec<GuiDrawingLine>,
-    pub view_bottoms_mm: std::collections::BTreeMap<String, f64>,
+    pub view_bounds_mm: std::collections::BTreeMap<String, [[f64; 2]; 2]>,
     pub parts_lists: Vec<oblikovati_model::drawing::DrawingPartsListPresentation>,
     pub error: Option<String>,
 }

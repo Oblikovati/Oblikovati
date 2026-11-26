@@ -349,7 +349,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         if method == METHOD_ASSEMBLY_SUPPRESS {
             return assembly_occurrence_edits::suppress_wire(self.files, decode(method, request)?);
         }
-        if crate::DRAWING_COMMAND_METHODS.contains(&method) {
+        if crate::DRAWING_COMMAND_METHODS.contains(&method)
+            || crate::drawing_annotations::ANNOTATION_METHODS.contains(&method)
+        {
             return self.drawing_view_command(method, request);
         }
         if crate::drawing_sheets::SHEET_METHODS.contains(&method) {
@@ -357,9 +359,6 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         }
         if crate::drawing_styles::STYLE_METHODS.contains(&method) {
             return crate::drawing_styles::apply(self.files, method, request);
-        }
-        if crate::drawing_annotations::ANNOTATION_METHODS.contains(&method) {
-            return crate::drawing_annotations::apply(self.files, method, request);
         }
         if method == METHOD_FEATURES_ADD {
             return self.add_feature(request);

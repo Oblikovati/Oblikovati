@@ -3,12 +3,13 @@ use super::{
     LINE_COLOR,
     drawing_lines::{clip_segment, screen_point},
 };
-use oblikovati_model::drawing::DrawingAnnotationDefinition;
+use oblikovati_model::drawing::{DrawingAnnotationDefinition, DrawingCenterlines};
 
 pub(super) fn draw(
     ui: &imgui::Ui,
     list: &imgui::DrawListMut<'_>,
     annotations: &[DrawingAnnotationDefinition],
+    projection: Option<&crate::GuiDrawingProjection>,
     [minimum, maximum]: [[f32; 2]; 2],
     dimensions: [f64; 2],
 ) {
@@ -19,6 +20,18 @@ pub(super) fn draw(
     );
     list.with_clip_rect_intersect(minimum, maximum, || {
         for annotation in annotations {
+            if let DrawingAnnotationDefinition::Centerlines { view_name, .. } = annotation
+                && let Some(bounds) =
+                    projection.and_then(|projection| projection.view_bounds_mm.get(view_name))
+            {
+                let centerlines = DrawingCenterlines::from_view_bounds(*bounds);
+                draw_segments(
+                    list,
+                    centerlines.visible_segments(dimensions, mm_per_pixel),
+                    position,
+                    dimensions,
+                );
+            }
             if let Some(surface) = annotation.surface_texture_presentation() {
                 draw_segments(list, surface.segments_mm, position, dimensions);
                 center_text(

@@ -3,7 +3,9 @@
 use super::*;
 use oblikovati_drawing::project_evaluated_part;
 use oblikovati_gui::{GuiDrawingLine, GuiDrawingProjection};
-use oblikovati_model::drawing::{DrawingAnnotationDefinition, DrawingDocument};
+use oblikovati_model::drawing::{
+    DrawingAnnotationDefinition, DrawingDocument, drawing_view_bounds,
+};
 use std::collections::BTreeMap;
 
 type ProjectionKey = (u64, u64, u64);
@@ -263,11 +265,7 @@ impl<
                     history,
                     document,
                 )?;
-                if let Some(bottom) = view_bottom(&output.lines[first..]) {
-                    output
-                        .view_bottoms_mm
-                        .insert(definition.name.clone(), bottom);
-                }
+                keep_view_bounds(&mut output, first, &definition.name);
             }
             Ok(output)
         })
@@ -308,18 +306,18 @@ fn saved_sheet_projection(
                 hidden: line.hidden,
                 preview: false,
             }));
-        if let Some(bottom) = view_bottom(&projection.lines[first..]) {
-            projection.view_bottoms_mm.insert(view.view.clone(), bottom);
-        }
+        keep_view_bounds(&mut projection, first, &view.view);
     }
     projection
 }
 
-fn view_bottom(lines: &[GuiDrawingLine]) -> Option<f64> {
-    lines
+fn keep_view_bounds(projection: &mut GuiDrawingProjection, first: usize, name: &str) {
+    let points = projection.lines[first..]
         .iter()
-        .flat_map(|line| line.points.iter().map(|point| point[1]))
-        .reduce(f64::min)
+        .flat_map(|line| line.points.iter().copied());
+    if let Some(bounds) = drawing_view_bounds(points) {
+        projection.view_bounds_mm.insert(name.to_owned(), bounds);
+    }
 }
 
 fn append_curves(

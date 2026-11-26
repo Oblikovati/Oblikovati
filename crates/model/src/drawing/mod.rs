@@ -2,7 +2,9 @@
 //! Owned drawing recipes; geometry projection and referenced-document resolution are injected by the host.
 mod annotation;
 mod border;
+mod centerlines;
 pub use border::border_zone_label;
+pub use centerlines::{CENTERLINE_OVERSHOOT_MM, DrawingCenterlines, drawing_view_bounds};
 mod datum_feature;
 pub use datum_feature::DrawingDatumFeaturePresentation;
 mod document;

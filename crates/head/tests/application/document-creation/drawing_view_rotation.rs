@@ -2,11 +2,123 @@
 use super::*;
 use oblikovati_api::{
     client::Caller,
-    wire::{AddBaseViewArgs, RotateViewArgs, SetModelReferenceArgs},
+    json::EmptyObject,
+    wire::{
+        AddBaseViewArgs, AddCenterlinesArgs, DeleteViewArgs, DrawingAnnotationInfo, RotateViewArgs,
+        SetModelReferenceArgs,
+    },
 };
 use oblikovati_gui::{GuiDocumentTemplate, GuiDrawingLine, GuiTemplateKind, GuiTemplateUnits};
 
 const CENTER: [f64; 2] = [120., 90.];
+
+#[test]
+fn drawing_centerlines_track_view_bounds_and_restore_with_history() {
+    let (mut owner, _) = owner();
+    super::super::part_scene::open_prism(&mut owner, false);
+    owner
+        .create_document_template(GuiDocumentTemplate {
+            kind: GuiTemplateKind::Drawing,
+            units: GuiTemplateUnits::Metric,
+        })
+        .unwrap();
+    let drawing = owner.documents().workspace().active_document().unwrap();
+    let client = Client::new(owner.document_host());
+    add_top_view(&client);
+    assert!(
+        client
+            .drawing_annotations()
+            .add_centerlines(&AddCenterlinesArgs {
+                view_name: "Missing".into(),
+                ..Default::default()
+            })
+            .is_err()
+    );
+    let info = client
+        .drawing_annotations()
+        .add_centerlines(&AddCenterlinesArgs {
+            name: "Axes".into(),
+            view_name: "Top".into(),
+        })
+        .unwrap()
+        .annotation;
+    assert_eq!(
+        (info.kind.as_str(), info.view_name.as_str()),
+        ("centerline", "Top")
+    );
+    assert!(info.curve_count > 2);
+    drop(client);
+    let initial = centerline_segments(&mut owner, drawing);
+    assert_eq!(initial.len() as i64, info.curve_count);
+    let client = Client::new(owner.document_host());
+    client
+        .drawing_views()
+        .rotate(&RotateViewArgs {
+            name: "Top".into(),
+            angle_deg: 45.,
+        })
+        .unwrap();
+    drop(client);
+    let rotated = centerline_segments(&mut owner, drawing);
+    assert_ne!(rotated, initial);
+    let client = Client::new(owner.document_host());
+    client.transactions().undo().unwrap();
+    drop(client);
+    assert_eq!(centerline_segments(&mut owner, drawing), initial);
+    let client = Client::new(owner.document_host());
+    client.transactions().redo().unwrap();
+    verify_view_delete(&client, rotated.len() as i64);
+    let path = "/memory/centerlines.odd";
+    let reopened = super::drawing_custom_table::reopen(&client, drawing, path);
+    assert_eq!(listed_centerline(&client).curve_count, rotated.len() as i64);
+    drop(client);
+    assert_eq!(centerline_segments(&mut owner, reopened), rotated);
+    let client = Client::new(owner.document_host());
+    client
+        .documents()
+        .close(&CloseDocumentArgs {
+            id: reopened,
+            force: true,
+        })
+        .unwrap();
+    drop(client);
+    let deferred = owner
+        .document_host()
+        .open_deferred_drawing_path(std::path::Path::new(path))
+        .unwrap();
+    assert_eq!(
+        listed_centerline(&Client::new(owner.document_host())).curve_count,
+        rotated.len() as i64
+    );
+    assert_eq!(centerline_segments(&mut owner, deferred), rotated);
+}
+
+fn verify_view_delete(client: &Client<impl Caller>, curves: i64) {
+    client
+        .drawing_views()
+        .delete(&DeleteViewArgs { name: "Top".into() })
+        .unwrap();
+    assert_eq!(listed_centerline(client).curve_count, 0);
+    client.transactions().undo().unwrap();
+    assert_eq!(listed_centerline(client).curve_count, curves);
+}
+
+fn listed_centerline(client: &Client<impl Caller>) -> DrawingAnnotationInfo {
+    client
+        .drawing_annotations()
+        .list(&EmptyObject {})
+        .unwrap()
+        .annotations
+        .unwrap()
+        .remove(0)
+}
+
+fn centerline_segments(owner: &mut TestOwner, drawing: u64) -> Vec<[[f64; 2]; 2]> {
+    let state = owner.gui_command_state().unwrap();
+    let bounds = state.drawing_projections[&drawing].view_bounds_mm["Top"];
+    oblikovati_model::drawing::DrawingCenterlines::from_view_bounds(bounds)
+        .visible_segments([420., 297.], 0.25)
+}
 
 #[test]
 fn drawing_view_rotation_preserves_visibility_and_round_trips() {

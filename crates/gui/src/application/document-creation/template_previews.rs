@@ -51,6 +51,7 @@ impl GuiTemplateSheet {
                     | DrawingAnnotationDefinition::DatumFeature { .. }
                     | DrawingAnnotationDefinition::SurfaceTexture { .. }
                     | DrawingAnnotationDefinition::FeatureControlFrame { .. }
+                    | DrawingAnnotationDefinition::Centerlines { .. }
                     | DrawingAnnotationDefinition::RevisionCloud { .. } => None,
                 })
                 .collect(),

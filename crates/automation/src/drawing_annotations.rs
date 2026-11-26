@@ -18,7 +18,10 @@ use oblikovati_model::property::{DESIGN_TRACKING, DocumentProperties};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
-pub(super) const ANNOTATION_METHODS: [&str; 10] = [
+mod centerlines;
+
+pub(super) const ANNOTATION_METHODS: [&str; 11] = [
+    wire::METHOD_DRAWING_ANNOTATIONS_ADD_CENTERLINES,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_FCF,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_SURFACE_TEXT,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_DATUM,
@@ -33,6 +36,8 @@ pub(super) const ANNOTATION_METHODS: [&str; 10] = [
 
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
+    backend: Option<&dyn crate::DrawingViewProjectionAccess>,
+    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
     method: &str,
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
@@ -41,7 +46,9 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         if !request.is_empty() {
             crate::decode::<oblikovati_api::json::EmptyObject>(method, request)?;
         }
-        return list(files, owner, drawing);
+        let drawing = drawing.clone();
+        let counts = centerlines::counts(files, backend, replay, owner, &drawing, None)?;
+        return list(files, owner, &drawing, &counts);
     }
     if files
         .deferred_drawing_views(owner)
@@ -53,6 +60,11 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         )));
     }
     match method {
+        wire::METHOD_DRAWING_ANNOTATIONS_ADD_CENTERLINES => {
+            let args: wire::AddCenterlinesArgs = crate::decode(method, request)?;
+            let drawing = drawing.clone();
+            centerlines::add(files, backend, replay, owner, drawing, args)
+        }
         wire::METHOD_DRAWING_ANNOTATIONS_ADD_FCF => {
             let args: AddFeatureControlFrameArgs = crate::decode(method, request)?;
             let characteristic =
@@ -142,7 +154,12 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         }
         wire::METHOD_DRAWING_ANNOTATIONS_DELETE => {
             let args: DeleteAnnotationArgs = crate::decode(method, request)?;
-            delete(files, owner, drawing.clone(), &args.name)
+            let mut drawing = drawing.clone();
+            drawing
+                .remove_annotation(drawing.active_sheet(), &args.name)
+                .map_err(api_error)?;
+            let counts = centerlines::counts(files, backend, replay, owner, &drawing, None)?;
+            delete(files, owner, drawing, &counts)
         }
         _ => Err(Error(format!(
             "method {method:?}: expected a drawing annotation route"
@@ -173,7 +190,7 @@ fn add_annotation<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles
             },
             |_, annotation| {
                 crate::encode(&AnnotationResult {
-                    annotation: annotation_info(&annotation, None)?,
+                    annotation: annotation_info(&annotation, None, 0)?,
                 })
             },
         )
@@ -183,13 +200,10 @@ fn add_annotation<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles
 fn delete<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     owner: u64,
-    mut drawing: DrawingDocument,
-    name: &str,
+    drawing: DrawingDocument,
+    centerline_counts: &centerlines::Counts,
 ) -> Result<Vec<u8>, Error> {
-    drawing
-        .remove_annotation(drawing.active_sheet(), name)
-        .map_err(api_error)?;
-    let response = list(files, owner, &drawing)?;
+    let response = list(files, owner, &drawing, centerline_counts)?;
     files
         .commands(owner)
         .map_err(api_error)?
@@ -205,6 +219,7 @@ fn list<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     owner: u64,
     drawing: &DrawingDocument,
+    centerline_counts: &centerlines::Counts,
 ) -> Result<Vec<u8>, Error> {
     let sheet = &drawing.sheets()[drawing.active_sheet()];
     if sheet.annotations.is_empty() {
@@ -219,7 +234,11 @@ fn list<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
                 .iter()
                 .find(|(name, _)| name == annotation.name())
                 .map(|(_, table)| table);
-            annotation_info(annotation, table)
+            let count = annotation_view_name(annotation)
+                .and_then(|name| centerline_counts.get(name))
+                .copied()
+                .unwrap_or_default();
+            annotation_info(annotation, table, count)
         })
         .collect::<Result<Vec<_>, _>>()?;
     crate::encode(&ListDrawingAnnotationsResult {
@@ -230,12 +249,14 @@ fn list<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
 fn annotation_info(
     annotation: &DrawingAnnotationDefinition,
     table: Option<&DrawingPartsListPresentation>,
+    centerline_count: usize,
 ) -> Result<DrawingAnnotationInfo, Error> {
-    let (kind, tag, curves, rows) = annotation_details(annotation, table);
+    let (kind, tag, curves, rows) = annotation_details(annotation, table, centerline_count);
     let count = |value| i64::try_from(value).map_err(api_error);
     Ok(DrawingAnnotationInfo {
         name: annotation.name().into(),
         kind: kind.into(),
+        view_name: annotation_view_name(annotation).unwrap_or_default().into(),
         tag: tag.into(),
         curve_count: count(curves)?,
         row_count: count(rows)?,
@@ -243,11 +264,20 @@ fn annotation_info(
     })
 }
 
+fn annotation_view_name(annotation: &DrawingAnnotationDefinition) -> Option<&str> {
+    match annotation {
+        DrawingAnnotationDefinition::Centerlines { view_name, .. } => Some(view_name),
+        _ => None,
+    }
+}
+
 fn annotation_details<'a>(
     annotation: &'a DrawingAnnotationDefinition,
     table: Option<&DrawingPartsListPresentation>,
+    centerline_count: usize,
 ) -> (&'static str, &'a str, usize, usize) {
     match annotation {
+        DrawingAnnotationDefinition::Centerlines { .. } => ("centerline", "", centerline_count, 0),
         DrawingAnnotationDefinition::FeatureControlFrame { .. } => {
             let curves = annotation
                 .authored_table_presentation()

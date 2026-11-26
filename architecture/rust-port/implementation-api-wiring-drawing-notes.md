@@ -113,3 +113,23 @@ The native Wayland MCP run placed a position frame with `⌀0.2` and
 datum references B then A, followed by a line-profile frame with
 `0.5`. Their wire curve counts were 33 and 5. Undo, redo, reopening,
 and deletion produced the expected sheet pixels in each capture.
+
+## View centre lines
+
+`drawingAnnotations.addCenterlines` places horizontal and vertical
+dash-dot strokes through the current projection bounds of a named
+view. The strokes extend 4 mm beyond the view and the automatic
+caption clears the vertical stroke. The drawing saves the view name.
+The bounds are rebuilt from live projection samples or the saved
+projection when the drawing opens with updates deferred. A removed
+view leaves its annotation with zero curves until the view returns.
+
+The model test checks the dash-dot phase and clipping. The owner
+test checks missing-view rejection, rotation, deletion and undo of the
+view, and both live and deferred reopening.
+
+The native Wayland MCP run created centre lines on a 40 × 20 mm top
+view and verified eight dash-dot segments. Rotation changed the line
+extents, and undo, redo, and reopening reproduced their respective
+sheet captures pixel for pixel. The default caption cleared the
+vertical line in both orientations.

@@ -265,11 +265,19 @@ fn sheet_on_list(
         ui,
         list,
         &sheet.views,
+        &sheet.annotations,
         projection,
         [minimum, maximum],
         dimensions,
     );
-    drawing_markup::draw(ui, list, &sheet.annotations, [minimum, maximum], dimensions);
+    drawing_markup::draw(
+        ui,
+        list,
+        &sheet.annotations,
+        projection,
+        [minimum, maximum],
+        dimensions,
+    );
     list.with_clip_rect_intersect(minimum, maximum, || {
         for table in sheet.annotations.iter().filter_map(
             oblikovati_model::drawing::DrawingAnnotationDefinition::authored_table_presentation,

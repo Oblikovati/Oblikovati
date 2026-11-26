@@ -21,6 +21,15 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
                     .as_deref_mut()
                     .map(|owner| owner as &mut dyn crate::PartUpdateAccess<O, W, F>),
             };
+        if crate::drawing_annotations::ANNOTATION_METHODS.contains(&method) {
+            return crate::drawing_annotations::apply(
+                self.files,
+                self.drawing_views,
+                replay,
+                method,
+                request,
+            );
+        }
         if method == METHOD_DRAWING_VIEWS_ADD_BASE {
             let result = crate::drawing_views::add_base(
                 self.files,

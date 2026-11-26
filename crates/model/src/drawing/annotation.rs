@@ -7,6 +7,20 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", deny_unknown_fields)]
 pub enum DrawingAnnotationDefinition {
+    #[serde(rename = "centerline")]
+    Centerlines {
+        name: String,
+        #[serde(rename = "viewName")]
+        view_name: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        characteristic: Option<String>,
+        #[serde(
+            rename = "materialRemoval",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        material_removal: Option<String>,
+    },
     #[serde(rename = "featureControlFrame")]
     FeatureControlFrame {
         name: String,
@@ -202,7 +216,8 @@ impl DrawingAnnotationDefinition {
             | Self::DatumFeature { name, .. }
             | Self::RevisionCloud { name, .. }
             | Self::SurfaceTexture { name, .. }
-            | Self::FeatureControlFrame { name, .. } => name,
+            | Self::FeatureControlFrame { name, .. }
+            | Self::Centerlines { name, .. } => name,
         }
     }
     /// Check whether a definition requires a model, as a parts list does.
@@ -213,6 +228,16 @@ impl DrawingAnnotationDefinition {
         self.validate_content()?;
         require_label("annotation name", self.name())?;
         let (point, leader, characteristic, material_removal) = match self {
+            Self::Centerlines {
+                characteristic,
+                material_removal,
+                ..
+            } => (
+                [0., 0.],
+                [0., 0.],
+                characteristic.as_deref(),
+                material_removal.as_deref(),
+            ),
             Self::FeatureControlFrame {
                 x_mm,
                 y_mm,
@@ -303,6 +328,7 @@ impl DrawingAnnotationDefinition {
 
     fn validate_content(&self) -> Result<(), DrawingError> {
         match self {
+            Self::Centerlines { view_name, .. } => require_label("centerline view name", view_name),
             Self::FeatureControlFrame {
                 characteristic,
                 tolerance,
