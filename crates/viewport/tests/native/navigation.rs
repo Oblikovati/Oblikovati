@@ -274,13 +274,13 @@ fn recover_panned_geometry(view: &mut Viewport) -> ViewportCapture {
 fn previous_view_keeps_the_new_native_extent_after_resize() {
     let runtime = ViewportRuntime::new(ViewportOptions::default()).unwrap();
     let mut view = runtime
-        .open_window("Oblikovati Previous acceptance", [128, 96])
+        .open_document_window("Oblikovati Previous acceptance", [128, 96])
         .unwrap();
     view.submit(&scene()).unwrap();
     let original = view.camera_state().unwrap();
     view.navigate(ViewportNavigation::Home { margin: 0.1 })
         .unwrap();
-    view.resize([192, 128]).unwrap();
+    super::resize_native(&mut view, [192, 128]);
     assert!(view.previous_view().unwrap());
     assert_eq!(view.camera_state().unwrap(), original);
     let restored = verify_native(&mut view);
