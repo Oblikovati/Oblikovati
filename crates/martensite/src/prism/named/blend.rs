@@ -10,6 +10,8 @@ use oblikovati_model::identity::ReferenceEnvelope;
 mod hole;
 mod rigid_motion;
 mod shell;
+mod subtraction;
+mod tolerances;
 pub use rigid_motion::RigidMotion;
 mod naming;
 pub(super) use hole::HoleRequest;

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
-//! Measure and cap Hole-result entity tolerances (#4093).
-use super::*;
+//! Reject a Boolean or shell result whose entity tolerances exceed the source and configured cap.
+use super::{PrismAchievedTolerance, PrismResolution, Shape, subtraction::entities};
 use martensite_tkbrep::{brep::BRepTool, topods};
+use martensite_tkg3d::top_abs::ShapeEnum;
 
-pub(in crate::prism::named::blend) fn check(
+pub(super) fn check(
     source: &Shape,
     result: &Shape,
     resolution: Option<PrismResolution>,
@@ -12,8 +13,8 @@ pub(in crate::prism::named::blend) fn check(
     let resolution = resolution
         .ok_or_else(|| format!("{operation} input: expected a certified source resolution"))?
         .validate()?;
-    let before = measure(source)?;
-    let after = measure(result)?;
+    let before = measure(source, operation)?;
+    let after = measure(result, operation)?;
     for (kind, value, source_limit) in [
         ("vertex", after.vertex, before.vertex),
         ("edge", after.edge, before.edge),
@@ -28,14 +29,14 @@ pub(in crate::prism::named::blend) fn check(
     }
     Ok(after)
 }
-fn measure(shape: &Shape) -> Result<PrismAchievedTolerance, String> {
+fn measure(shape: &Shape, operation: &str) -> Result<PrismAchievedTolerance, String> {
     Ok(PrismAchievedTolerance {
-        vertex: maximum(shape, ShapeEnum::Vertex)?,
-        edge: maximum(shape, ShapeEnum::Edge)?,
-        face: maximum(shape, ShapeEnum::Face)?,
+        vertex: maximum(shape, ShapeEnum::Vertex, operation)?,
+        edge: maximum(shape, ShapeEnum::Edge, operation)?,
+        face: maximum(shape, ShapeEnum::Face, operation)?,
     })
 }
-fn maximum(shape: &Shape, kind: ShapeEnum) -> Result<f64, String> {
+fn maximum(shape: &Shape, kind: ShapeEnum, operation: &str) -> Result<f64, String> {
     let mut maximum: f64 = 0.;
     for entity in entities(shape, kind)? {
         let tolerance = match kind {
@@ -50,14 +51,14 @@ fn maximum(shape: &Shape, kind: ShapeEnum) -> Result<f64, String> {
             }
             _ => {
                 return Err(format!(
-                    "hole tolerance kind {kind:?}: expected vertex, edge or face"
+                    "{operation} tolerance kind {kind:?}: expected vertex, edge or face"
                 ));
             }
         }
         .map_err(|error| error.to_string())?;
         if !tolerance.is_finite() || tolerance < 0. {
             return Err(format!(
-                "hole {kind:?} tolerance {tolerance}: expected finite nonnegative value"
+                "{operation} {kind:?} tolerance {tolerance}: expected finite nonnegative value"
             ));
         }
         maximum = maximum.max(tolerance);

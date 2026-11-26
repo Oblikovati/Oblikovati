@@ -45,3 +45,19 @@ The PCB case still stops at profile discovery. A diagnostic retry exposed
 degrees of freedom and its patterned hole moved from 3.6 cm to 5.6 cm
 when the board width changed from 40 mm to 60 mm. The driver summarizes
 the kernel refusal as “no board-with-holes profile.”
+
+## Shared subtraction for Cut replay
+
+The Oblikovati Martensite adapter now uses a detached subtraction path for
+Hole. It takes the tool shape and its names, checks that the Boolean produced
+one valid solid with lower analytic volume, applies the existing tolerance
+limits, and carries generated, modified, and deleted entities into the
+existing feature naming pass. Hole still builds its cylinder and supplies
+its own names. Shell uses the same tolerance helper it used before.
+
+The square-prism probe produced one geometrically valid 6 cm³ solid with
+two through-openings and left the 8 cm³ source unchanged. The existing Hole
+tolerance rule refused that result because the largest vertex tolerance grew
+from 1.0 nm to 1.5 nm. The regression records both outcomes. The Cut API
+still needs a two-operand tolerance contract, a persisted target body
+reference, and ordered replay that replaces the target.

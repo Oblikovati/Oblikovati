@@ -67,7 +67,7 @@ pub(super) fn build_shell_candidate(
             format!("shell thickness {thickness}: expected a completed shell: {cause}")
         })?;
     let (shape, records) = finish_blend(&mut maker, &sources, "shell", thickness)?;
-    let achieved = super::hole::tolerances::check(&body, &shape, Some(resolution), "shell")?;
+    let achieved = super::tolerances::check(&body, &shape, Some(resolution), "shell")?;
     Ok(BlendCandidate {
         resolution: Some(resolution),
         achieved_tolerance: Some(achieved),
