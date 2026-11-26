@@ -16,6 +16,8 @@ mod base_view_dialog;
 mod drawing_border_zones;
 #[path = "drawing_lines.rs"]
 mod drawing_lines;
+#[path = "drawing_view_labels.rs"]
+mod drawing_view_labels;
 
 const INSERT: &str = "Insert";
 /// An A3 landscape sheet: the built-in drawing template's only format.
@@ -257,6 +259,14 @@ fn sheet_on_list(
             drawing.standard_style().visible_line_mm,
         );
     }
+    drawing_view_labels::draw(
+        ui,
+        list,
+        &sheet.views,
+        projection,
+        [minimum, maximum],
+        dimensions,
+    );
     if sheet.border {
         list.add_rect(border_minimum, border_maximum, LINE_COLOR)
             .build();

@@ -56,7 +56,7 @@ fn drawing_view_rotation_preserves_visibility_and_round_trips() {
     assert_eq!(lines(&mut owner, reopened), rotated);
 }
 
-fn add_top_view(client: &Client<impl Caller>) -> oblikovati_api::wire::DrawingViewInfo {
+pub(super) fn add_top_view(client: &Client<impl Caller>) -> oblikovati_api::wire::DrawingViewInfo {
     let model = std::env::temp_dir()
         .join("head-scene.opd")
         .to_string_lossy()

@@ -249,6 +249,17 @@ impl DrawingDocument {
         target.views[index].rotation_deg = angle_deg;
         Ok(())
     }
+    /// Edit the caption of a named view on one sheet.
+    pub fn set_view_label(
+        &mut self,
+        sheet: usize,
+        name: &str,
+        edit: super::DrawingViewLabelEdit<'_>,
+    ) -> Result<(), DrawingError> {
+        let target = self.sheet_mut(sheet)?;
+        let index = view_index(target, name)?;
+        target.views[index].set_label(edit)
+    }
     /// Append an authored parts list; example: `drawing.add_annotation_definition(0, annotation)?`.
     pub fn add_annotation_definition(
         &mut self,

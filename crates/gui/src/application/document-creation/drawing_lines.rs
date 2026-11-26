@@ -83,7 +83,7 @@ fn draw_parts_list(
         });
     }
 }
-fn screen_point(
+pub(super) fn screen_point(
     point: [f64; 2],
     minimum: [f32; 2],
     maximum: [f32; 2],

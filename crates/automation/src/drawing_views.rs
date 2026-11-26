@@ -87,12 +87,13 @@ pub fn with_current_drawing_part<
     project(session.history(), guid, owner.current_part(files, source)?)
 }
 /// Drawing calls served by the document owner.
-pub const DRAWING_COMMAND_METHODS: [&str; 5] = [
+pub const DRAWING_COMMAND_METHODS: [&str; 6] = [
     wire::METHOD_DRAWING_SET_MODEL_REFERENCE,
     wire::METHOD_DRAWING_VIEWS_ADD_BASE,
     wire::METHOD_DRAWING_VIEWS_LIST,
     wire::METHOD_DRAWING_VIEWS_DELETE,
     wire::METHOD_DRAWING_VIEWS_ROTATE,
+    wire::METHOD_DRAWING_VIEWS_SET_LABEL,
 ];
 
 pub(super) fn add_base<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -273,6 +274,7 @@ fn view_info(
             ))
         })
     };
+    let [label_xmm, label_ymm] = view.label_position_mm();
     Ok(DrawingViewInfo {
         name: view.name.clone(),
         type_: "base".into(),
@@ -285,22 +287,17 @@ fn view_info(
         visible_count: count(counts[0])?,
         hidden_count: count(counts[1])?,
         display_tangent_edges: true,
-        show_label: true,
-        show_name: true,
-        show_scale: true,
-        label: format!("{}  SCALE {}", view.name, scale_note(view.scale)),
+        show_label: view.show_label(),
+        show_name: view.show_name(),
+        show_scale: view.show_scale(),
+        label: view.label(),
+        label_xmm,
+        label_ymm,
         justification: "centered".into(),
         ..Default::default()
     })
 }
 
-fn scale_note(scale: f64) -> String {
-    if scale >= 1. {
-        format!("{scale}:1")
-    } else {
-        format!("1:{}", 1. / scale)
-    }
-}
 fn api_error(cause: impl std::fmt::Display) -> Error {
     Error(cause.to_string())
 }

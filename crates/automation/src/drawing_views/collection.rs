@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Read or edit authored views on the drawing's active sheet.
 use super::*;
-use oblikovati_api::wire::{DeleteViewArgs, ListDrawingViewsResult, RotateViewArgs};
-use oblikovati_model::drawing::DrawingDocument;
+use oblikovati_api::wire::{
+    DeleteViewArgs, ListDrawingViewsResult, RotateViewArgs, SetViewLabelArgs,
+};
+use oblikovati_model::drawing::{DrawingDocument, DrawingViewLabelEdit};
 
 pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
@@ -64,6 +66,23 @@ fn edit_view(
                 .rotate_view(sheet_index, &args.name, args.angle_deg)
                 .map_err(api_error)?;
             Ok("Rotate View")
+        }
+        wire::METHOD_DRAWING_VIEWS_SET_LABEL => {
+            let args: SetViewLabelArgs = crate::decode(method, request)?;
+            drawing
+                .set_view_label(
+                    sheet_index,
+                    &args.name,
+                    DrawingViewLabelEdit {
+                        text: args.text.as_deref().map(String::as_str),
+                        show_label: args.show_label.map(|show| *show),
+                        show_name: args.show_name.map(|show| *show),
+                        show_scale: args.show_scale.map(|show| *show),
+                        position_mm: args.label_xmm.zip(args.label_ymm).map(|(x, y)| [*x, *y]),
+                    },
+                )
+                .map_err(api_error)?;
+            Ok("Set View Label")
         }
         _ => Err(Error(format!(
             "method {method:?}: expected a drawing view edit"

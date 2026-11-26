@@ -272,6 +272,7 @@ impl<
             let mut output = GuiDrawingProjection::default();
             for definition in &drawing.sheets()[drawing.active_sheet()].views {
                 let projection = project_evaluated_part(history, document, definition, part)?;
+                let first = output.lines.len();
                 append_curves(
                     &mut output,
                     &projection,
@@ -279,6 +280,11 @@ impl<
                     history,
                     document,
                 )?;
+                if let Some(bottom) = view_bottom(&output.lines[first..]) {
+                    output
+                        .view_bottoms_mm
+                        .insert(definition.name.clone(), bottom);
+                }
             }
             Ok(output)
         })
@@ -309,21 +315,28 @@ fn saved_sheet_projection(
     views: &oblikovati_persistence::package::SavedDrawingViews,
     sheet: &str,
 ) -> GuiDrawingProjection {
-    let lines = views
-        .views
-        .iter()
-        .filter(|view| view.sheet == sheet)
-        .flat_map(|view| view.lines.iter())
-        .map(|line| GuiDrawingLine {
-            points: line.points.clone(),
-            hidden: line.hidden,
-            preview: false,
-        })
-        .collect();
-    GuiDrawingProjection {
-        lines,
-        ..Default::default()
+    let mut projection = GuiDrawingProjection::default();
+    for view in views.views.iter().filter(|view| view.sheet == sheet) {
+        let first = projection.lines.len();
+        projection
+            .lines
+            .extend(view.lines.iter().map(|line| GuiDrawingLine {
+                points: line.points.clone(),
+                hidden: line.hidden,
+                preview: false,
+            }));
+        if let Some(bottom) = view_bottom(&projection.lines[first..]) {
+            projection.view_bottoms_mm.insert(view.view.clone(), bottom);
+        }
     }
+    projection
+}
+
+fn view_bottom(lines: &[GuiDrawingLine]) -> Option<f64> {
+    lines
+        .iter()
+        .flat_map(|line| line.points.iter().map(|point| point[1]))
+        .reduce(f64::min)
 }
 
 fn text_property<'a>(

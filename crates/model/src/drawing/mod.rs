@@ -25,4 +25,4 @@ pub use parts_list::{
     DrawingTableLine,
 };
 pub use recipe::{DrawingRecipe, DrawingSheetRecipe};
-pub use view::DrawingBaseViewDefinition;
+pub use view::{DrawingBaseViewDefinition, DrawingViewLabelEdit};

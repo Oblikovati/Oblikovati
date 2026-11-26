@@ -38,3 +38,20 @@ the Top view. Undo reproduced the original drawing crop pixel for
 pixel, and redo and reopen reproduced the rotated crop. The owner test
 also checks each projected point against the independent quarter-turn
 formula and verifies that its visibility flag stays the same.
+
+## View captions
+
+`drawingViews.setLabel` edits the name, scale, and overall caption
+visibility, custom text, and sheet position of a named base view.
+Omitted fields retain their values. An empty text override restores the
+default caption, and both coordinates must be supplied to move it.
+The zero coordinate pair places the caption under the projected view.
+The operation is undoable and returns the updated active-sheet view
+list. Label settings are optional fields in the drawing recipe.
+
+The typed owner regression covers partial edits, unknown names, undo
+and redo, save and reopen, and restoration of default text and position.
+On native Wayland the MCP Bridge edited the Top view caption in a
+two-view drawing. Undo, redo, and reopening each reproduced the
+corresponding sheet capture exactly. Hiding the edited caption changed
+580 pixels confined to the caption's 85 × 11 pixel area.
