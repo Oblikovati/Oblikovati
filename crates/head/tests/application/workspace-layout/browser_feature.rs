@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Feature rows in the part browser: extended names, the row's menu and the solid's outline.
-use super::super::ApplicationWorld;
+use super::super::{ApplicationWorld, diagnostics};
 use super::browser_tree::expand_display_preferences;
 use crate::scene_fixture as fixture;
 use cucumber::{given, then, when};
@@ -148,10 +148,12 @@ pub(in super::super) fn right_click_row(world: &mut ApplicationWorld, label: &st
 fn right_click_feature(world: &mut ApplicationWorld) {
     right_click_row(world, FEATURE);
 }
-/// A branch's arrow sits just left of its text, and folds it without choosing the row.
+/// Click the disclosure arrow before any icon or text in the branch label.
 pub(in super::super) fn click_branch_arrow(world: &mut ApplicationWorld, label: &str) {
-    let run = world.run(label).clone();
-    world.click([run.minimum[0] as i32 - 10, run.center()[1] as i32]);
+    let run = world.run(label);
+    let label_left = diagnostics::caption_icon_left(run).unwrap_or(run.minimum[0]);
+    let point = diagnostics::pointer_pixels([label_left - 10., run.center()[1]]);
+    world.click(point);
     world.pump(Vec::new());
 }
 pub(in super::super) fn choose_menu_row(world: &mut ApplicationWorld, label: &str) {

@@ -154,30 +154,31 @@ pub(super) fn radio_mark_rendered(run: &RenderedRun) -> bool {
 /// Check for a visible image beside a caption in the same draw list.
 #[cfg(target_os = "linux")]
 pub(super) fn has_caption_icon(run: &RenderedRun) -> bool {
+    caption_icon_left(run).is_some()
+}
+
+pub(super) fn caption_icon_left(run: &RenderedRun) -> Option<f32> {
     use imgui::{DrawCmd, internal::RawCast};
-    let Some(raw) = (unsafe { sys::igGetDrawData().as_ref() }) else {
-        return false;
-    };
+    let raw = unsafe { sys::igGetDrawData().as_ref() }?;
     let draws = unsafe { imgui::DrawData::from_raw(raw) };
-    let Some(list) = draws.draw_lists().nth(run.list) else {
-        return false;
-    };
-    list.commands().any(|command| {
+    let list = draws.draw_lists().nth(run.list)?;
+    list.commands().find_map(|command| {
         let DrawCmd::Elements {
             count: 6,
             cmd_params,
         } = command
         else {
-            return false;
+            return None;
         };
         let indices = &list.idx_buffer()[cmd_params.idx_offset..];
         let vertices = &list.vtx_buffer()[cmd_params.vtx_offset..];
         let [first, opposite] = [indices[0], indices[2]].map(|index| vertices[index as usize]);
-        first.uv == [0., 0.]
+        (first.uv == [0., 0.]
             && opposite.uv == [1., 1.]
             && drawn_text::inside_clip(first, opposite, cmd_params.clip_rect)
             && (0. ..10.).contains(&(run.minimum[0] - opposite.pos[0]))
-            && (first.pos[1]..opposite.pos[1]).contains(&run.center()[1])
+            && (first.pos[1]..opposite.pos[1]).contains(&run.center()[1]))
+        .then_some(first.pos[0])
     })
 }
 

@@ -74,8 +74,10 @@ fn block_stays(world: &mut ApplicationWorld) {
 #[when("the user clicks the extrusion branch expansion control again")]
 fn fold_extrusion(world: &mut ApplicationWorld) {
     let extrusion = single_extrusion_name(world);
+    let selected = world.state().browser.unwrap().selected_feature;
     click_branch_arrow(world, &extrusion);
     settle(world);
+    assert_eq!(world.state().browser.unwrap().selected_feature, selected);
 }
 #[then("the sketch row is hidden and the extrusion row remains visible")]
 fn sketch_folded(world: &mut ApplicationWorld) {
