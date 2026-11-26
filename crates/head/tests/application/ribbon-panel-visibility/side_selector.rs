@@ -392,7 +392,16 @@ fn pinned_side_additional(side: &str) {
 }
 
 pub(in super::super) fn open_side_additional(world: &mut ApplicationWorld) {
-    let title = world.run("Modifyv");
+    let title = world
+        .frame
+        .runs
+        .iter()
+        .rev()
+        .find(|run| {
+            run.text.ends_with(['v', '▼'])
+                && super::super::diagnostics::panel_caption_matches(&run.text, "Modify")
+        })
+        .expect("expected the Modify expansion arrow");
     let arrow = [title.maximum[0] - 2., title.center()[1]];
     world.click(pointer_pixels(arrow));
 }

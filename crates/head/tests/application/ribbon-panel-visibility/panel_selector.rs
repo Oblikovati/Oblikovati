@@ -150,8 +150,7 @@ fn select_view(world: &mut ApplicationWorld) {
     #[cfg(target_os = "linux")]
     {
         let point = super::super::diagnostics::pointer_pixels(world.run("View").center());
-        super::super::x11_input::click(point);
-        world.pump(Vec::new());
+        super::super::desktop_input::click(world, point);
     }
     #[cfg(not(target_os = "linux"))]
     world.click_text("View");
@@ -188,12 +187,7 @@ fn modify_back(world: &mut ApplicationWorld) {
     assert!(modify_caption_visible(world));
 }
 fn modify_caption_visible(world: &ApplicationWorld) -> bool {
-    let (_, size) = window_geometry("##application-ribbon").unwrap();
-    world.frame.runs.iter().any(|run| {
-        run.text.contains("Modify")
-            && run.center()[0] < size[0] * 0.5
-            && run.center()[1] < ribbon_bottom()
-    })
+    ribbon_runs(world, "Modify").any(|run| !world.frame.is_popup_row(run))
 }
 #[then("its additional command area is not open")]
 fn no_additional(_: &mut ApplicationWorld) {

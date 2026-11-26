@@ -72,7 +72,10 @@ fn panel_caption<'a>(
         .frame
         .runs
         .iter()
-        .find(|run| run.text == name && (run.center()[1] - y).abs() < 8.)
+        .find(|run| {
+            super::super::diagnostics::panel_caption_matches(&run.text, name)
+                && (run.center()[1] - y).abs() < 8.
+        })
         .unwrap_or_else(|| {
             panic!(
                 "expected ribbon caption {name:?} near {y}: {:?}",
