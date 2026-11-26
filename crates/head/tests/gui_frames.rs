@@ -405,13 +405,13 @@ fn captured_pointer_does_not_reach_document_or_camera() {
 fn deferred_publication_does_not_present_or_replay_actions() {
     let mut window = FakeGuiWindow {
         packets: [
-            HeadGuiUpdate::default(),
             HeadGuiUpdate {
                 deferred: true,
                 actions: vec![GuiShellAction::Save],
                 wake_after: Some(Duration::ZERO),
                 ..Default::default()
             },
+            HeadGuiUpdate::default(),
         ]
         .into(),
         ..Default::default()
@@ -421,6 +421,7 @@ fn deferred_publication_does_not_present_or_replay_actions() {
         super::super::run_frames(&mut window, HeadOptions { frames: Some(1) }, &mut owner).unwrap();
     assert_eq!(summary.completed, 1);
     assert_eq!(window.presentations, 1);
+    assert_eq!(window.states.len(), 2);
     assert_eq!(owner.inputs.len(), 1);
 }
 #[test]
