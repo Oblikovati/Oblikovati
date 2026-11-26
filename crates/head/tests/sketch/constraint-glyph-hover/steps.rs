@@ -15,7 +15,7 @@ fn editable_sketch(world: &mut ApplicationWorld) {
 }
 #[given("the viewport pointer is idle")]
 fn idle_pointer(world: &mut ApplicationWorld) {
-    move_pointer(world, [1100, 650]);
+    world.pump(vec![super::super::world::pointer_motion([1100, 650])]);
 }
 #[given("two lines have a visible parallel constraint glyph")]
 fn parallel_lines(world: &mut ApplicationWorld) {
@@ -64,7 +64,7 @@ fn move_pointer(world: &mut ApplicationWorld, position: [i32; 2]) {
     #[cfg(target_os = "linux")]
     super::super::x11_input::move_pointer(position);
     #[cfg(not(target_os = "linux"))]
-    world.pump(vec![super::super::super::pointer_motion(position)]);
+    world.pump(vec![super::super::world::pointer_motion(position)]);
     world.pump(Vec::new());
 }
 #[then("both constrained lines highlight")]

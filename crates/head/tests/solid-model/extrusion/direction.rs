@@ -1,29 +1,31 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Compare native direction drafts and verify the accepted geometry.
 use super::acceptance::feature_count;
-use super::viewport_interaction::{click_text_native, preview_changed_outside_windows};
+use super::viewport_interaction::click_text_native;
 use super::*;
 
 #[given("the rectangle extrusion preview is open at Default direction")]
 fn default_direction(world: &mut ApplicationWorld) {
     super::selected_rectangle_preview(world);
+    default_preview_points_forward(world);
+}
+
+#[given(
+    "a copy of `fixtures/cad/revolve/revolve-profile.opd` is open with an active rectangular Extrude preview at Default direction"
+)]
+fn published_default_direction(world: &mut ApplicationWorld) {
+    super::reference_extent::native_fixture_preview(world);
+    default_preview_points_forward(world);
+}
+
+fn default_preview_points_forward(world: &mut ApplicationWorld) {
     world.expect_text("Direction");
-    let view = &mut world.app().window.native;
-    crate::HeadWindow::navigate_view(
-        view,
-        oblikovati_viewport::ViewportNavigation::Home { margin: 0.2 },
-    )
-    .unwrap();
-    world.pump(Vec::new());
-    world.last_capture = Some(super::super::capture_framebuffer(
-        &mut world.app().window.native,
-    ));
+    assert_eq!(preview_depth(world), [0., 1.]);
 }
 
 #[when("Flipped is selected in Direction")]
 fn choose_flipped(world: &mut ApplicationWorld) {
-    click_text_native(world, "Flipped");
-    world.pump(Vec::new());
+    choose_direction_icon(world, 1);
 }
 
 #[when("Symmetric is selected in Direction")]
@@ -37,15 +39,18 @@ fn choose_asymmetric(world: &mut ApplicationWorld) {
 }
 
 fn choose_direction_icon(world: &mut ApplicationWorld, index: usize) {
-    use super::super::{diagnostics, ribbon_appearance::icon_quads, x11_input};
-    let ([left, _], [width, _]) = diagnostics::window_geometry("Extrude").unwrap();
-    let y = world.run_in_window("Extrude", "Default").center()[1];
-    let icons = icon_quads::icon_quads_inside(([left, y - 28.], [left + width, y - 4.]));
+    let icons = direction_icons(world);
     assert_eq!(icons.len(), 4);
     let (low, high) = icons[index];
     let center = std::array::from_fn(|axis| (low[axis] + high[axis]) / 2.);
-    x11_input::click(diagnostics::pointer_pixels(center));
-    world.pump(Vec::new());
+    super::viewport_interaction::click_at(world, super::super::diagnostics::pointer_pixels(center));
+}
+
+pub(super) fn direction_icons(world: &ApplicationWorld) -> Vec<([f32; 2], [f32; 2])> {
+    use super::super::{diagnostics, ribbon_appearance::icon_quads};
+    let ([left, _], [width, _]) = diagnostics::window_geometry("Extrude").unwrap();
+    let y = world.run_in_window("Extrude", "Default").center()[1];
+    icon_quads::icon_quads_inside(([left, y - 28.], [left + width, y - 4.]))
 }
 
 #[then("Distance B and Taper B controls appear")]
@@ -137,16 +142,15 @@ fn second_distance_row(world: &ApplicationWorld) -> &super::super::diagnostics::
 }
 
 #[then("the preview changes its side or extent relative to Default direction")]
-fn preview_is_flipped(world: &mut ApplicationWorld) {
+fn preview_reaches_the_opposite_side(world: &mut ApplicationWorld) {
     assert!(world.state().extrude_preview_active);
     assert_eq!(feature_count(world), 0);
     world.expect_text("10.00 mm");
     let capture = super::super::capture_framebuffer(&mut world.app().window.native);
     let windows = super::super::diagnostics::window_occlusions();
-    assert!(preview_changed_outside_windows(
-        world.last_capture.as_ref().expect("Default preview"),
-        &capture,
-        &windows,
+    assert!(matches!(preview_depth(world), [-1., 0.] | [-0.5, 1.]));
+    assert!(super::super::solid_visibility::visible_preview_fill(
+        &capture, &windows
     ));
 }
 
@@ -156,7 +160,8 @@ fn flipped_literal_preview_and_commit_use_the_same_direction() {
     let mut world = ApplicationWorld::new();
     default_direction(&mut world);
     choose_flipped(&mut world);
-    preview_is_flipped(&mut world);
+    preview_reaches_the_opposite_side(&mut world);
+    assert_eq!(preview_depth(&mut world), [-1., 0.]);
     click_text_native(&mut world, "OK");
     assert_eq!(feature_count(&mut world), 1);
     let body = Client::new(world.app().owner.document_host())

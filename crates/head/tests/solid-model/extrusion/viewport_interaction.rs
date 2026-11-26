@@ -136,9 +136,17 @@ fn updated_solid_is_visible(world: &mut ApplicationWorld) {
 }
 
 pub(super) fn click_text_native(world: &mut ApplicationWorld, text: &str) {
-    let position = world.run(text).center().map(|value| value as i32);
-    super::super::x11_input::click(position);
-    world.pump(Vec::new());
+    let position = super::super::diagnostics::pointer_pixels(world.run(text).center());
+    click_at(world, position);
+}
+
+pub(super) fn click_at(world: &mut ApplicationWorld, position: [i32; 2]) {
+    if world.app().window.native.view.uses_wayland() {
+        world.click(position);
+    } else {
+        super::super::x11_input::click(position);
+        world.pump(Vec::new());
+    }
 }
 
 pub(super) fn replace_distance_native(world: &mut ApplicationWorld, distance: &str) {

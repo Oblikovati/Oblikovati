@@ -17,13 +17,17 @@ fn numeric_preview(world: &mut ApplicationWorld) {
 #[given(
     "a copy of `fixtures/cad/revolve/revolve-profile.opd` is open with a selected profile and numeric Distance A preview"
 )]
-fn native_fixture_preview(world: &mut ApplicationWorld) {
-    let scratch = tempfile::tempdir().unwrap();
-    let copy = scratch.path().join("revolve-profile.opd");
+#[given(
+    "a copy of `fixtures/cad/revolve/revolve-profile.opd` is open with an uncommitted rectangular Extrude preview"
+)]
+#[given(
+    "a copy of `fixtures/cad/revolve/revolve-profile.opd` is open with a selected rectangular profile and Default direction"
+)]
+pub(super) fn native_fixture_preview(world: &mut ApplicationWorld) {
+    let copy = world.scratch_folder().join("revolve-profile.opd");
     let source = super::super::scenario_root().join("fixtures/cad/revolve/revolve-profile.opd");
     std::fs::copy(source, &copy).unwrap();
     world.open_fixture(&copy);
-    world.scratch = Some(scratch);
     world.click_text("Extrude");
     world.pump(Vec::new());
     waiting_extrusion_shows_profile(world);
@@ -97,8 +101,7 @@ fn choose_extent(world: &mut ApplicationWorld, shown: &str, choice: &str) {
         .unwrap_or_else(|| panic!("expected {choice} in the extent popup"));
     let point = super::super::diagnostics::pointer_pixels(row.center());
     world.save_capture(&format!("extent-choose-{choice}"));
-    super::super::x11_input::click(point);
-    world.pump(Vec::new());
+    super::viewport_interaction::click_at(world, point);
     world.pump(Vec::new());
 }
 
@@ -117,8 +120,7 @@ fn from_dropdown_restores_the_numeric_preview() {
 
 fn click_in_extrude(world: &mut ApplicationWorld, label: &str) {
     let point = world.run_in_window("Extrude", label).center();
-    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(point));
-    world.pump(Vec::new());
+    super::viewport_interaction::click_at(world, super::super::diagnostics::pointer_pixels(point));
 }
 
 #[test]
@@ -163,8 +165,7 @@ fn pick_top_face(world: &mut ApplicationWorld) {
         .view
         .model_pixel([x, y, 1.])
         .unwrap();
-    super::super::x11_input::click(pixel);
-    world.pump(Vec::new());
+    super::viewport_interaction::click_at(world, pixel);
 }
 
 fn assert_committed_extent(world: &mut ApplicationWorld) {

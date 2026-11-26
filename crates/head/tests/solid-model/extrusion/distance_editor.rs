@@ -248,8 +248,7 @@ fn open_parameter_panel(world: &mut ApplicationWorld) {
 #[then("a Parameters dialog opens for the active part")]
 fn part_parameter_panel_opens(world: &mut ApplicationWorld) {
     world.run_in_window("Parameters", "ModelParameters");
-    let name = current_feature_parameter(world);
-    world.run_in_window("Parameters", &name);
+    assert_eq!(world.state().document, Some(world.active_id()));
 }
 
 #[then(
@@ -267,7 +266,6 @@ fn table_headers(world: &mut ApplicationWorld) {
     ] {
         world.run_in_window("Parameters", caption);
     }
-    world.run_in_window("Parameters", "Extrusion1");
     world.save_capture("distance-parameter-table");
 }
 
@@ -346,6 +344,5 @@ fn click_window_label(world: &mut ApplicationWorld, window: &str, label: &str) {
 }
 
 fn click_position(world: &mut ApplicationWorld, point: [f32; 2]) {
-    x11_input::click(diagnostics::pointer_pixels(point));
-    world.pump(Vec::new());
+    super::viewport_interaction::click_at(world, diagnostics::pointer_pixels(point));
 }

@@ -228,7 +228,7 @@ fn save_and_reopen(world: &mut ApplicationWorld, path: &std::path::Path) {
 }
 
 pub(super) fn open_extrusion_editor(world: &mut ApplicationWorld) {
-    let position = world.run("Extrusion1").center().map(|value| value as i32);
+    let position = super::super::diagnostics::pointer_pixels(world.run("Extrusion1").center());
     world.right_click(position);
     world.pump(Vec::new());
     world.pump(Vec::new());
@@ -241,7 +241,7 @@ pub(super) fn open_extrusion_editor(world: &mut ApplicationWorld) {
 
 pub(super) fn edit_menu_position(world: &ApplicationWorld) -> [i32; 2] {
     let anchor = world.run("Show Dimensions").center();
-    world
+    let center = world
         .frame
         .runs
         .iter()
@@ -257,8 +257,8 @@ pub(super) fn edit_menu_position(world: &ApplicationWorld) -> [i32; 2] {
                 .total_cmp(&(b.center()[1] - anchor[1]).abs())
         })
         .expect("expected Edit Feature in the context menu")
-        .center()
-        .map(|value| value as i32)
+        .center();
+    super::super::diagnostics::pointer_pixels(center)
 }
 pub(super) fn feature_distance(world: &mut ApplicationWorld) -> f64 {
     use oblikovati_api::{client::Client, wire::FeatureRefArgs};

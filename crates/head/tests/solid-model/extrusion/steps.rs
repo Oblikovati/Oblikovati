@@ -25,6 +25,19 @@ fn new_metric_part(world: &mut ApplicationWorld) {
     world.click_text("Standard metric part");
     world.expect_text("millimeters (mm)");
     world.click_text("Create");
+    assert_no_sketches(world);
+}
+
+#[given("a copy of `fixtures/cad/revolve/revolve-blank.opd` is open with no sketch")]
+fn published_blank_part(world: &mut ApplicationWorld) {
+    let source = super::scenario_root().join("fixtures/cad/revolve/revolve-blank.opd");
+    let copy = world.scratch_folder().join("revolve-blank.opd");
+    std::fs::copy(source, &copy).unwrap();
+    world.open_fixture(&copy);
+    assert_no_sketches(world);
+}
+
+fn assert_no_sketches(world: &mut ApplicationWorld) {
     let browser = world
         .state()
         .browser

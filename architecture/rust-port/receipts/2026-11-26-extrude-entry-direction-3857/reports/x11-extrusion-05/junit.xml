@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T19:50:09.345816923Z" time="6.436132949"><testcase name="Scenario: extrusion-05 Zero distance validation and recovery: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:59:3" time="6.436132949"><system-out><![CDATA[  Scenario: extrusion-05 Zero distance validation and recovery
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/revolve/revolve-profile.opd` is open with a selected rectangular profile and Default direction
+   ✔  When Distance A is replaced with 0
+   ✔  Then a red error indicator appears and OK is disabled
+   ✔  When the value is replaced with 8
+   ✔  Then the error clears and OK becomes available
+]]></system-out></testcase></testsuite></testsuites>

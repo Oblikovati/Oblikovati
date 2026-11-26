@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" package="testsuite/Feature: Extrude a profile in a part document: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T19:50:36.591718621Z" time="6.687685156"><testcase name="Scenario: extrusion-12c Parameters opens the part parameter table: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/extrusion/extrusion.feature:136:3" time="6.687685156"><system-out><![CDATA[  Scenario: extrusion-12c Parameters opens the part parameter table
+   ✔> Given the MCAD Software is displaying a part in the solid modeling workspace
+   ✔> And the viewport pointer is idle
+   ✔  Given a copy of `fixtures/cad/extrusion/extrusion-rect-8mm.opd` is open with Edit Feature active
+   ✔  When the user opens the Distance A editor menu and chooses Parameters
+   ✔  Then a Parameters dialog opens for the active part
+   ✔  And the table includes parameter name, consumed-by, unit or type, equation, nominal value, tolerance and model value columns
+   ✔  When the user clicks Done
+   ✔  Then the extrusion panel remains open
+   ✔  When the user clicks Cancel
+   ✔  Then the accepted feature remains unchanged
+]]></system-out></testcase></testsuite></testsuites>

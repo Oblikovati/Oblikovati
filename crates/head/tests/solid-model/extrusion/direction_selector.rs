@@ -11,6 +11,14 @@ fn icon_preview(world: &mut ApplicationWorld) {
     icons_visible(world);
 }
 
+#[given(
+    "a copy of `fixtures/cad/revolve/revolve-profile.opd` is open with an active rectangular Extrude preview and icon direction controls"
+)]
+fn published_icon_preview(world: &mut ApplicationWorld) {
+    super::reference_extent::native_fixture_preview(world);
+    icons_visible(world);
+}
+
 #[when("the user opens the Direction menu")]
 fn open_style_menu(world: &mut ApplicationWorld) {
     click_text_native(world, "Direction");
@@ -66,8 +74,7 @@ fn choose_icons(world: &mut ApplicationWorld) {
         .iter()
         .any(|run| run.text == "Asymmetric" && world.frame.is_popup_row(run))
     {
-        super::super::x11_input::press_escape();
-        world.pump(Vec::new());
+        world.escape();
     }
     open_style_menu(world);
     click_popup_option(world, "Icons");
@@ -80,12 +87,17 @@ fn icons_restored(world: &mut ApplicationWorld) {
 }
 
 fn icons_visible(world: &mut ApplicationWorld) {
+    assert_eq!(
+        super::direction::direction_icons(world).len(),
+        OPTIONS.len()
+    );
+    let text = world.window_text("Extrude");
+    let mut remaining = text.as_str();
     for label in OPTIONS {
-        let caption = world.run_in_window("Extrude", label);
-        assert!(
-            super::super::diagnostics::has_caption_icon(caption),
-            "expected an icon beside {label}"
-        );
+        remaining = remaining
+            .split_once(label)
+            .unwrap_or_else(|| panic!("expected direction labels in order: {text:?}"))
+            .1;
     }
 }
 
@@ -103,8 +115,7 @@ fn popup_option<'w>(
 
 fn click_popup_option(world: &mut ApplicationWorld, label: &str) {
     let position = super::super::diagnostics::pointer_pixels(popup_option(world, label).center());
-    super::super::x11_input::click(position);
-    world.pump(Vec::new());
+    super::viewport_interaction::click_at(world, position);
 }
 
 #[test]
