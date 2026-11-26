@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" package="testsuite/Feature: Loft: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T23:52:13.207597153Z" time="8.308663168"><testcase name="Scenario: loft-06 Reopen a Loft and cancel option changes: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/loft/loft.feature:54:3" time="8.308663168"><system-out><![CDATA[  Scenario: loft-06 Reopen a Loft and cancel option changes
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/loft/parallel-circles.opd" is open
+   ✔  And the user creates a solid Loft1 by selecting both circular sketches as sections
+   ✔  When Loft1 is double-clicked in the browser
+   ✔  Then its Loft dialog displays both sections and a preview
+   ✔  When Closed Loop and Merge Tangent Faces are checked and Cancel is clicked
+   ✔  Then Loft1 remains visible
+   ✔  When Loft1 is reopened
+   ✔  Then both options are unchecked
+]]></system-out></testcase></testsuite></testsuites>

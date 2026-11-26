@@ -235,5 +235,18 @@ The Part ribbon opens a dockable Loft draft. An empty Part shows geometry
 guidance with OK and Help. With visible circular sketches, viewport picks
 retain the authored point or profile curve identity and list the sections
 in pick order. The [native receipt](receipts/2026-11-27-loft-section-selection-3917/README.md)
-covers the first two published scenarios. Solid preview and acceptance
-belong to the next scenario.
+covers the first two published scenarios.
+
+### Loft solid creation and editing
+
+Two circular sections drive the released section builder. The Part recipe
+stores their identities in order. The [solid receipt](receipts/2026-11-27-loft-solid-3917/README.md)
+covers the native preview and body identity through a package round trip.
+The [mapping receipt](receipts/2026-11-27-loft-mapping-3917/README.md)
+covers switching between automatic and manual transition mapping in a draft.
+
+Double-clicking Loft1 in the browser restores both source rows and evaluates
+the existing solid for its edit preview. Cancel discards Closed Loop and
+Merge Tangent Faces draft changes and restores the committed presentation.
+The [edit receipt](receipts/2026-11-27-loft-reopen-3917/README.md)
+covers cancellation and reopening on both Linux display backends.

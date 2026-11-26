@@ -13,6 +13,10 @@ mod face_toolbar_placement;
 #[path = "browser_feature_states.rs"]
 mod states;
 
+#[path = "browser_feature_edit.rs"]
+mod edit;
+use edit::{feature_edit_action, loft_edit_action};
+
 const FEATURE_MENU: &str = "##feature-menu";
 const BODIES_MENU: &str = "##bodies-menu";
 const BODY_MENU: &str = "##body-menu";
@@ -132,6 +136,12 @@ fn choose_on_press(
             document: state.document.unwrap_or(0),
             feature: feature.id,
         });
+    }
+    if clicked
+        && ui.is_mouse_double_clicked(MouseButton::Left)
+        && let Some(edit) = loft_edit_action(feature).filter(|edit| edit.enabled(state))
+    {
+        actions.push(edit);
     }
 }
 fn feature_menu(
@@ -344,18 +354,6 @@ pub(crate) fn selection_toolbar(
             actions.push(edit);
         }
     });
-}
-fn feature_edit_action(browser: &GuiModelBrowser, feature: &GuiBrowserFeature) -> GuiShellAction {
-    if browser.sweep_edits.contains_key(&feature.id) {
-        return GuiShellAction::Sweep(crate::GuiSweepAction::OpenEdit(feature.id));
-    }
-    if browser.chamfer_edits.contains_key(&feature.id) {
-        return GuiShellAction::OpenChamferEdit(feature.id);
-    }
-    if browser.fillet_edits.contains_key(&feature.id) {
-        return GuiShellAction::OpenFilletEdit(feature.id);
-    }
-    GuiShellAction::OpenExtrudeEdit(feature.id)
 }
 fn edge_selection_toolbar(ui: &Ui, request: &GuiFrameRequest, actions: &mut Vec<GuiShellAction>) {
     let Some(corner) = outline_corner(request) else {

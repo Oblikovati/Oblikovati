@@ -3,11 +3,15 @@
 use super::*;
 use oblikovati_automation::PartUpdateAccess;
 use oblikovati_gui::{GuiLoftAction, GuiLoftElement, GuiLoftSection};
-use oblikovati_model::{feature::sketch_loft::SketchLoftSection, history::ResolvedDocumentSketch};
+use oblikovati_model::{
+    feature::{FeatureId, part::PartFeatureDefinition, sketch_loft::SketchLoftSection},
+    history::{DocumentSnapshot, ResolvedDocumentSketch},
+};
 
 pub(super) struct LoftSelection {
     document: u64,
     generation: u64,
+    feature: Option<FeatureId>,
     sections: Vec<GuiLoftSection>,
     preview: Option<Result<(), String>>,
 }
@@ -23,7 +27,7 @@ impl<
 {
     pub(super) fn loft_command(&mut self, action: GuiLoftAction) -> Result<bool, String> {
         match action {
-            GuiLoftAction::Open => Ok(false),
+            GuiLoftAction::Open | GuiLoftAction::OpenEdit(_) => Ok(false),
             GuiLoftAction::Clear => {
                 if self.loft_selection.is_none() {
                     return Ok(false);
@@ -33,24 +37,35 @@ impl<
                 Ok(true)
             }
             GuiLoftAction::Commit(document) => self.commit_loft(document),
-            GuiLoftAction::Begin(document) => {
-                self.require_browser_document(document)?;
-                let generation = self
-                    .files
-                    .workspace()
-                    .session(document)
-                    .map_err(|cause| cause.to_string())?
-                    .generation();
-                self.clear_extrusion_preview();
-                self.loft_selection = Some(LoftSelection {
-                    document,
-                    generation,
-                    sections: Vec::new(),
-                    preview: None,
-                });
-                Ok(true)
-            }
+            GuiLoftAction::Begin { document, feature } => self.begin_loft(document, feature),
         }
+    }
+
+    fn begin_loft(&mut self, document: u64, feature: Option<FeatureId>) -> Result<bool, String> {
+        self.require_browser_document(document)?;
+        let session = self
+            .files
+            .workspace()
+            .session(document)
+            .map_err(|cause| cause.to_string())?;
+        let generation = session.generation();
+        let sections = feature
+            .map(|id| loft_sources(session.snapshot(), id))
+            .transpose()?
+            .unwrap_or_default();
+        self.clear_extrusion_preview();
+        let preview = feature.map(|id| {
+            self.preview_selected_blend(document, |_, _| Ok(id))
+                .map(|_| ())
+        });
+        self.loft_selection = Some(LoftSelection {
+            document,
+            generation,
+            feature,
+            sections,
+            preview,
+        });
+        Ok(true)
     }
 
     pub(super) fn gui_loft_sections(&self, document: u64, generation: u64) -> Vec<GuiLoftSection> {
@@ -95,6 +110,7 @@ impl<
             .as_ref()
             .filter(|draft| {
                 draft.document == document
+                    && draft.feature.is_none()
                     && draft.generation == session.generation()
                     && draft.preview.as_ref().is_some_and(Result::is_ok)
             })
@@ -147,6 +163,13 @@ impl<
             draft.document == document && draft.generation == session.generation()
         }) {
             return Ok(None);
+        }
+        if self
+            .loft_selection
+            .as_ref()
+            .is_some_and(|draft| draft.feature.is_some())
+        {
+            return Ok(Some(false));
         }
         let Some(tolerance) = tolerance else {
             return Ok(Some(false));
@@ -205,6 +228,32 @@ impl<
         }
         Ok(closest.map(|hit| hit.section))
     }
+}
+
+fn loft_sources(snapshot: &DocumentSnapshot, id: FeatureId) -> Result<Vec<GuiLoftSection>, String> {
+    let authored = snapshot
+        .work_geometry
+        .get(id)
+        .map_err(|cause| cause.to_string())?;
+    let PartFeatureDefinition::SketchLoft(definition) = authored.definition() else {
+        return Err(format!("feature {id:?}: expected a Loft"));
+    };
+    definition
+        .recipe()
+        .sections
+        .into_iter()
+        .map(|section| {
+            let sketch = snapshot
+                .sketches
+                .get(section.sketch)
+                .map_err(|cause| cause.to_string())?;
+            Ok(GuiLoftSection {
+                sketch: section.sketch,
+                name: sketch.name().to_owned(),
+                element: GuiLoftElement::Profile(section.circle),
+            })
+        })
+        .collect()
 }
 
 fn solid_sections(sections: &[GuiLoftSection]) -> Option<[SketchLoftSection; 2]> {

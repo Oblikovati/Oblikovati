@@ -6,6 +6,8 @@ use oblikovati_gui::GuiLoftElement;
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchEntityId};
 use oblikovati_viewport::ViewportNavigation;
 
+mod edit;
+
 #[given("the part contains no visible sketches or solid bodies")]
 fn empty_part_has_no_loft_inputs(world: &mut ApplicationWorld) {
     let browser = world.state().browser.unwrap();

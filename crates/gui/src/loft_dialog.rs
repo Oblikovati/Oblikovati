@@ -7,7 +7,9 @@ use crate::{
     dockable_window::DockableWindow,
 };
 use imgui::{TabItemFlags, Ui};
-use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchEntityId};
+use oblikovati_model::{
+    document_sketch::DocumentSketchId, feature::FeatureId, sketch::SketchEntityId,
+};
 
 const TITLE: &str = "Loft";
 const EMPTY_PART: &str = "Loft requires a body or at least two visible sketches.";
@@ -32,7 +34,11 @@ pub struct GuiLoftSection {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GuiLoftAction {
     Open,
-    Begin(u64),
+    OpenEdit(FeatureId),
+    Begin {
+        document: u64,
+        feature: Option<FeatureId>,
+    },
     Commit(u64),
     Clear,
 }
@@ -45,7 +51,20 @@ impl GuiLoftAction {
             && !state.transaction_open;
         match self {
             Self::Open => available,
-            Self::Begin(document) => available && state.document == Some(document),
+            Self::OpenEdit(feature) => {
+                available
+                    && state.browser.as_ref().is_some_and(|browser| {
+                        browser
+                            .features
+                            .iter()
+                            .any(|row| row.id == feature && row.kind == "Loft" && !row.suppressed)
+                    })
+            }
+            Self::Begin { document, feature } => {
+                available
+                    && state.document == Some(document)
+                    && feature.is_none_or(|id| Self::OpenEdit(id).enabled(state))
+            }
             Self::Commit(document) => {
                 available
                     && state.document == Some(document)
@@ -61,6 +80,9 @@ pub(crate) struct LoftDialog {
     dock: DockableState,
     document: Option<(u64, u64)>,
     show_help: bool,
+    editing: bool,
+    closed_loop: bool,
+    merge_tangent_faces: bool,
     select_curves: bool,
     manual_mapping: bool,
     point_sets: usize,
@@ -73,21 +95,33 @@ impl LoftDialog {
         registry.register::<Self>(TITLE, &self.dock)
     }
 
-    pub(crate) fn open(&mut self, state: &GuiCommandState, actions: &mut Vec<GuiShellAction>) {
+    pub(crate) fn open(
+        &mut self,
+        state: &GuiCommandState,
+        feature: Option<FeatureId>,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let open = feature.map_or(GuiLoftAction::Open, GuiLoftAction::OpenEdit);
         let Some((document, generation)) = state
             .document
             .zip(state.document_generation)
-            .filter(|_| GuiLoftAction::Open.enabled(state))
+            .filter(|_| open.enabled(state))
         else {
             return;
         };
         self.document = Some((document, generation));
         self.show_help = false;
+        self.editing = feature.is_some();
+        self.closed_loop = false;
+        self.merge_tangent_faces = false;
         self.select_curves = true;
         self.manual_mapping = false;
         self.point_sets = 0;
         self.dock.set_open(true);
-        actions.push(GuiShellAction::Loft(GuiLoftAction::Begin(document)));
+        actions.push(GuiShellAction::Loft(GuiLoftAction::Begin {
+            document,
+            feature,
+        }));
     }
 
     pub(crate) fn close(&mut self, actions: &mut Vec<GuiShellAction>) {
@@ -157,9 +191,17 @@ impl LoftDialog {
         let commit = self
             .document
             .map(|(document, _)| GuiLoftAction::Commit(document))
-            .filter(|action| !self.manual_mapping && action.enabled(state));
+            .filter(|action| {
+                !self.manual_mapping
+                    && !self.closed_loop
+                    && !self.merge_tangent_faces
+                    && action.enabled(state)
+            });
         let accepted = crate::theme::property_accept(ui, tip || commit.is_some());
-        if accepted && let Some(commit) = commit {
+        if accepted
+            && !self.editing
+            && let Some(commit) = commit
+        {
             actions.push(GuiShellAction::Loft(commit));
         }
         ui.same_line();
@@ -170,7 +212,9 @@ impl LoftDialog {
         if crate::widget_abi::button(ui, "Help", [58., 28.]) {
             self.show_help = !self.show_help;
         }
-        (accepted && tip) || cancelled || ui.is_key_pressed_no_repeat(imgui::Key::Escape)
+        (accepted && (tip || self.editing))
+            || cancelled
+            || ui.is_key_pressed_no_repeat(imgui::Key::Escape)
     }
     fn tabs(&mut self, ui: &Ui, sections: &[GuiLoftSection]) {
         let Some(_tabs) = ui.tab_bar("##loft-pages") else {
@@ -183,6 +227,11 @@ impl LoftDialog {
         };
         if let Some(_curves) = ui.tab_item_with_flags("Curves", None, flags) {
             draw_sections(ui, sections);
+            if !self.editing {
+                ui.text("Select sections in the viewport");
+            }
+            ui.checkbox("Closed Loop", &mut self.closed_loop);
+            ui.checkbox("Merge Tangent Faces", &mut self.merge_tangent_faces);
         }
         if let Some(_transition) = ui.tab_item("Transition") {
             self.transition(ui);
@@ -221,5 +270,4 @@ fn draw_sections(ui: &Ui, sections: &[GuiLoftSection]) {
             GuiLoftElement::Profile(_) => ui.text(&section.name),
         }
     }
-    ui.text("Select sections in the viewport");
 }

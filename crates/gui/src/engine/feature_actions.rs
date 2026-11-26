@@ -29,7 +29,9 @@ fn requested_draft(action: &GuiShellAction) -> Option<Draft> {
         GuiShellAction::Sweep(crate::GuiSweepAction::Open | crate::GuiSweepAction::OpenEdit(_)) => {
             Draft::Sweep
         }
-        GuiShellAction::Loft(crate::GuiLoftAction::Open) => Draft::Loft,
+        GuiShellAction::Loft(crate::GuiLoftAction::Open | crate::GuiLoftAction::OpenEdit(_)) => {
+            Draft::Loft
+        }
         GuiShellAction::OpenExtrude | GuiShellAction::OpenExtrudeEdit(_) => Draft::Extrude,
         GuiShellAction::OpenFillet
         | GuiShellAction::OpenChamfer
@@ -99,7 +101,10 @@ pub(super) fn open_drafts(
         GuiShellAction::Sweep(crate::GuiSweepAction::OpenEdit(feature)) => {
             sweep.open(state, Some(feature))
         }
-        GuiShellAction::Loft(crate::GuiLoftAction::Open) => loft.open(state, actions),
+        GuiShellAction::Loft(crate::GuiLoftAction::Open) => loft.open(state, None, actions),
+        GuiShellAction::Loft(crate::GuiLoftAction::OpenEdit(feature)) => {
+            loft.open(state, Some(feature), actions)
+        }
         GuiShellAction::OpenExtrude => extrude.requested = true,
         GuiShellAction::OpenExtrudeEdit(feature) => extrude.open_edit(state, feature),
         GuiShellAction::OpenFillet => blend.open(state),
