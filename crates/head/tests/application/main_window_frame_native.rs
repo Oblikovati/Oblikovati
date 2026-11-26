@@ -15,7 +15,7 @@ pub(super) fn pump_until(world: &mut ApplicationWorld, expected: bool) {
     }
 }
 pub(super) fn press_maximize(world: &mut ApplicationWorld) {
-    x11_input::click(frame_control_center(1));
+    world.desktop_click(frame_control_center(1));
     world.pump(Vec::new());
 }
 

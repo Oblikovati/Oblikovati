@@ -183,6 +183,44 @@ fn prior_window_bounds(world: &mut ApplicationWorld) {
     restored_bounds(world);
 }
 
+#[test]
+#[ignore = "requires a Wayland desktop compositor with room to maximize"]
+fn wayland_frame_maximizes_and_restores_the_saved_part() {
+    use super::main_window_frame_native::{press_maximize, pump_until};
+
+    let mut world = ApplicationWorld::new();
+    assert!(world.app().window.native.view.uses_wayland());
+    let document = open_frame_part(&mut world);
+    let restored = world.extent();
+    maximize_tooltip(&mut world);
+    press_maximize(&mut world);
+    pump_until(&mut world, true);
+    let maximized = world.extent();
+    assert!(
+        (0..2).all(|axis| maximized[axis] > restored[axis]),
+        "expected growth from {restored:?} to {maximized:?}"
+    );
+    expect_wayland_frame_layout(&mut world, maximized, document);
+    restore_tooltip(&mut world);
+    press_maximize(&mut world);
+    pump_until(&mut world, false);
+    assert_eq!(world.extent(), restored);
+    expect_wayland_frame_layout(&mut world, restored, document);
+    maximize_tooltip(&mut world);
+    world.close();
+}
+
+fn expect_wayland_frame_layout(world: &mut ApplicationWorld, extent: [u32; 2], document: u64) {
+    let [left, top, right, bottom] = world.viewport_bounds();
+    assert!(left < right && right <= extent[0] && top < bottom && bottom <= extent[1]);
+    let [left, top, right, bottom] =
+        super::diagnostics::window_pixel_bounds("##application-ribbon").unwrap();
+    assert!(0. <= left && right <= extent[0] as f32 && 0. <= top && bottom <= extent[1] as f32);
+    controls_remain_in_bar(world);
+    world.expect_active(document);
+    super::workspace_layout::browser_feature::expect_solid_visible(world);
+}
+
 #[given("the main window is restored")]
 fn remember_restored_part(world: &mut ApplicationWorld) {
     remember_part_view(world);
@@ -373,11 +411,12 @@ fn panels_beneath_tabs(world: &mut ApplicationWorld) {
 }
 #[then("the window controls remain in the application bar")]
 fn controls_remain_in_bar(world: &mut ApplicationWorld) {
-    let (position, size) = super::window_geometry("##application-window-controls").unwrap();
     let file = world.run("File");
-    assert!(position[1] + size[1] <= file.minimum[1]);
+    let [_, _, right, bottom] =
+        super::diagnostics::window_pixel_bounds("##application-window-controls").unwrap();
+    assert!(bottom <= super::pointer_pixels(file.minimum)[1] as f32);
     let width = world.app().window.native.drawable_extent().unwrap()[0] as f32;
-    assert_eq!(position[0] + size[0], width);
+    assert!((right - width).abs() <= 1.);
 }
 
 #[given(regex = r"^the MCAD Software is open in a restored window showing (Home|an active part)$")]

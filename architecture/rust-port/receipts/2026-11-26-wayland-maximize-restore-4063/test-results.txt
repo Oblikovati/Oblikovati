@@ -1,0 +1,31 @@
+
+Wayland 1x
+[03:20:47.990669] {Default Queue} wl_output#11.mode(3, 1920, 1080, 60000)
+[03:20:48.131778] wl_output#11.mode(3, 1920, 1080, 60000)
+[03:20:48.131800] xdg_toplevel#8.configure(0, 0, array[0])
+[03:20:48.131898]  -> wl_surface#5.set_buffer_scale(1)
+[03:20:52.393572]  -> xdg_toplevel#8.set_maximized()
+[03:20:52.442341] xdg_toplevel#8.configure(1920, 1048, array[4])
+[03:20:52.442422]  -> wl_surface#5.set_buffer_scale(1)
+[03:20:54.143576]  -> xdg_toplevel#8.unset_maximized()
+[03:20:54.210443] xdg_toplevel#8.configure(0, 0, array[0])
+[03:20:54.210534]  -> wl_surface#5.set_buffer_scale(1)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1730 filtered out; finished in 7.80s
+
+Wayland 4k
+[03:21:17.129523] {Default Queue} wl_output#11.mode(3, 3840, 2160, 60000)
+[03:21:17.227040] wl_output#11.mode(3, 3840, 2160, 60000)
+[03:21:17.227065] xdg_toplevel#8.configure(0, 0, array[0])
+[03:21:17.227190]  -> wl_surface#5.set_buffer_scale(1)
+[03:21:19.110693]  -> wl_surface#5.set_buffer_scale(2)
+[03:21:25.317278]  -> xdg_toplevel#8.set_maximized()
+[03:21:25.400895] xdg_toplevel#8.configure(1920, 1048, array[4])
+[03:21:25.400991]  -> wl_surface#5.set_buffer_scale(2)
+[03:21:27.940220]  -> xdg_toplevel#8.unset_maximized()
+[03:21:28.039274] xdg_toplevel#8.configure(0, 0, array[0])
+[03:21:28.039352]  -> wl_surface#5.set_buffer_scale(2)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1730 filtered out; finished in 13.02s
+
+Published X11 scenario
+11 steps (11 passed)
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1730 filtered out; finished in 7.00s
