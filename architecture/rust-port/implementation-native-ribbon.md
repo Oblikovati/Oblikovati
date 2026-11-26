@@ -143,6 +143,10 @@ until a ribbon width change triggers a new measurement.
 Shell's Button Size menu switches the main-panel command between
 Standard and Large. Its setting follows the ribbon profile, including
 XML import and export. Global Text Off still hides its caption.
+The [current Quick Access toolbar suite](receipts/2026-11-26-quick-access-wayland-3955/README.md)
+passed all 25 cases on Wayland and X11. It covers native tooltip hover,
+command placement, document context, Extrude invocation, and menu dismissal.
+
 Shell can also be added to Quick Access from its main-panel menu.
 The shortcut uses the same availability check and action as the
 ribbon control, and Quick Access owns its removal.

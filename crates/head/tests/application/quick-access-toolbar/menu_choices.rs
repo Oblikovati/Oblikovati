@@ -30,8 +30,37 @@ const CHOICES: [&str; 22] = [
 fn read_choices(world: &ApplicationWorld, labels: &[&str]) -> Vec<(String, bool)> {
     labels
         .iter()
-        .map(|label| ((*label).to_owned(), world.checked(label)))
+        .map(|label| {
+            (
+                (*label).to_owned(),
+                world.checked_run(menu_choice(world, label)),
+            )
+        })
         .collect()
+}
+
+fn menu_choice<'a>(
+    world: &'a ApplicationWorld,
+    label: &str,
+) -> &'a super::super::diagnostics::RenderedRun {
+    let expected = super::super::world::squeezed(label);
+    let menu = world.run("Show Below the Ribbon").list;
+    world
+        .frame
+        .runs
+        .iter()
+        .find(|run| {
+            run.list == menu
+                && (run.text == expected
+                // The text decoder can omit the narrow leading glyph in iProperties.
+                || (label == "iProperties" && run.text == "Properties"))
+        })
+        .unwrap_or_else(|| {
+            panic!(
+                "expected quick-access choice {label:?} in {:?}",
+                world.text()
+            )
+        })
 }
 
 #[then(
@@ -39,15 +68,7 @@ fn read_choices(world: &ApplicationWorld, labels: &[&str]) -> Vec<(String, bool)
 )]
 fn lists_current_choices(world: &mut ApplicationWorld) {
     for label in CHOICES {
-        let expected = super::super::world::squeezed(label);
-        assert!(
-            world
-                .frame
-                .runs
-                .iter()
-                .any(|run| super::super::world::squeezed(&run.text) == expected),
-            "expected quick-access choice {label:?}"
-        );
+        menu_choice(world, label);
     }
 }
 

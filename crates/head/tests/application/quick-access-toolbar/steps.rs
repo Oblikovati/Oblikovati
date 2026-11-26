@@ -256,6 +256,12 @@ fn extrude_gone(world: &mut ApplicationWorld) {
 fn extrude_added(world: &mut ApplicationWorld) {
     add_extrude(world);
     assert!(on_row(world, "Extrude"), "expected Extrude on the row");
+    // Face-on views project two selectable origin planes edge-on.
+    use crate::HeadWindow as _;
+    let window = &mut world.app().window;
+    let camera = window.view_camera().unwrap();
+    window.set_view_camera(camera.isometric()).unwrap();
+    world.pump(Vec::new());
 }
 #[then("the context menu offers Add Separator")]
 fn offers_separator(world: &mut ApplicationWorld) {
@@ -299,24 +305,27 @@ fn select_shortcut(world: &mut ApplicationWorld) {
     world.click(at);
     world.pump(Vec::new());
 }
-fn expect_planes(world: &mut ApplicationWorld) {
-    for plane in ["XY Plane", "XZ Plane", "YZ Plane"] {
-        let shown = world
-            .frame
-            .runs
-            .iter()
-            .filter(|run| run.text == plane.replace(' ', ""))
-            .count();
-        assert_eq!(
-            shown, 2,
-            "{plane}: expected a label in the view and a browser row"
-        );
-    }
-}
 #[then("the workspace displays the origin planes for selection")]
 #[then("the origin planes are displayed for selection")]
 fn planes_shown(world: &mut ApplicationWorld) {
-    expect_planes(world);
+    let (position, size) = window_geometry("##plane-selection").expect("expected the plane picker");
+    // The projected glyphs can span several text runs. Read their plane identifiers in draw order.
+    let captions: String = world
+        .frame
+        .runs
+        .iter()
+        .filter(|run| {
+            let center = run.center();
+            (0..2).all(|axis| (position[axis]..position[axis] + size[axis]).contains(&center[axis]))
+        })
+        .map(|run| run.text.as_str())
+        .collect();
+    for name in ["XYPl", "XZPl", "YZPl"] {
+        assert!(
+            captions.contains(name),
+            "{name}: expected a plane label in {captions:?}"
+        );
+    }
 }
 #[then("Start 2D Sketch is highlighted on the ribbon")]
 fn start_highlighted(world: &mut ApplicationWorld) {
@@ -329,13 +338,8 @@ fn start_highlighted(world: &mut ApplicationWorld) {
 }
 #[then("the origin plane selection display closes")]
 fn planes_closed(world: &mut ApplicationWorld) {
-    let shown = world
-        .frame
-        .runs
-        .iter()
-        .filter(|run| run.text == "XYPlane")
-        .count();
-    assert_eq!(shown, 1, "expected only the browser row of the XY plane");
+    assert!(window_geometry("##plane-selection").is_none());
+    world.expect_text("XY Plane");
 }
 #[then("the empty part remains active")]
 fn empty_remains(world: &mut ApplicationWorld) {

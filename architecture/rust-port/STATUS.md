@@ -22,6 +22,7 @@ using this status; the live scenario directory can change.
   The visual checks cover active controls, row alignment, and the overlay shadow.
   See the [current run](receipts/2026-11-26-file-menu-visual-contract-3894/README.md)
   and the [pinned run](receipts/2026-11-21-file-menu-r0-3894/README.md).
+- Quick Access Toolbar (#3955) passed [all 25 cases and 268 steps on Wayland and X11](receipts/2026-11-26-quick-access-wayland-3955/README.md).
 - Body Properties (#3954) passed all six current scenarios and 69 steps.
   The published Part verified calculated values, appearance changes, and
   dismissal without applying pending changes. See the
