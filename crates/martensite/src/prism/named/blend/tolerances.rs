@@ -29,6 +29,54 @@ pub(super) fn check(
     }
     Ok(after)
 }
+pub(super) fn check_two_operand_cut(
+    target: &Shape,
+    tool: &Shape,
+    result: &Shape,
+    target_resolution: Option<PrismResolution>,
+    tool_resolution: PrismResolution,
+    operation: &str,
+) -> Result<PrismAchievedTolerance, String> {
+    let target_resolution = target_resolution
+        .ok_or_else(|| format!("{operation}: expected a certified target resolution"))?
+        .validate()?;
+    let tool_resolution = tool_resolution.validate()?;
+    require_budget(
+        measure(target, operation)?,
+        target_resolution.maximum_tolerance,
+        operation,
+    )?;
+    require_budget(
+        measure(tool, operation)?,
+        tool_resolution.maximum_tolerance,
+        operation,
+    )?;
+    let achieved = measure(result, operation)?;
+    let cap = target_resolution
+        .maximum_tolerance
+        .min(tool_resolution.maximum_tolerance);
+    require_budget(achieved, cap, operation)?;
+    Ok(achieved)
+}
+
+fn require_budget(
+    measured: PrismAchievedTolerance,
+    cap: f64,
+    operation: &str,
+) -> Result<(), String> {
+    for (kind, value) in [
+        ("vertex", measured.vertex),
+        ("edge", measured.edge),
+        ("face", measured.face),
+    ] {
+        if value > cap {
+            return Err(format!(
+                "{operation} {kind} tolerance {value}: expected at most {cap}"
+            ));
+        }
+    }
+    Ok(())
+}
 fn measure(shape: &Shape, operation: &str) -> Result<PrismAchievedTolerance, String> {
     Ok(PrismAchievedTolerance {
         vertex: maximum(shape, ShapeEnum::Vertex, operation)?,

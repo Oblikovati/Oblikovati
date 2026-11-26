@@ -115,3 +115,34 @@ fn displacement_resolves_current_length_units_without_rewriting_sources() {
 mod placement;
 #[path = "sketch_prism_recipe/refusals.rs"]
 mod refusals;
+
+#[test]
+fn cut_recipe_retains_a_body_name_and_tracks_its_producer() {
+    use oblikovati_model::{
+        feature::FeatureId,
+        identity::{SketchPrismReferenceRole, sketch_prism_reference_name},
+    };
+    let document = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let source = FeatureId(42);
+    let body =
+        sketch_prism_reference_name(document, source, SKETCH, SketchPrismReferenceRole::Body)
+            .unwrap();
+    let cap =
+        sketch_prism_reference_name(document, source, SKETCH, SketchPrismReferenceRole::EndCap)
+            .unwrap();
+    assert!(driven_definition().with_cut_target(cap).is_err());
+    let authored = driven_definition().with_cut_target(body.clone()).unwrap();
+    let encoded = serde_json::to_vec(&authored.recipe()).unwrap();
+    let restored =
+        SketchPrismDefinition::from_recipe(&serde_json::from_slice(&encoded).unwrap()).unwrap();
+    assert!(restored.same_recipe(&authored));
+    let target = restored.cut_target().unwrap();
+    assert_eq!(target.key(), body);
+    assert_eq!(target.source(), source);
+    assert!(
+        restored
+            .source_reads()
+            .keys()
+            .contains(&FeatureReadKey::Feature(source))
+    );
+}

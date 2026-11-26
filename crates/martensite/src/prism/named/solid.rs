@@ -432,6 +432,14 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
         }?;
         Ok(NamedSolid::Prism(Box::new(body)))
     }
+    fn evaluate_prism_cut(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        input: ResolvedSketchPrism<'_>,
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_prism_cut(feature, body, input)
+    }
     fn evaluate_blend(
         &mut self,
         kind: PartBlendKind,
@@ -478,6 +486,7 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
 }
 
 mod blend_evaluation;
+mod extrusion_cut;
 mod hole_evaluation;
 mod hole_placement;
 mod move_body_evaluation;

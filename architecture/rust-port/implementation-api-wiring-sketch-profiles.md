@@ -61,3 +61,17 @@ tolerance rule refused that result because the largest vertex tolerance grew
 from 1.0 nm to 1.5 nm. The regression records both outcomes. The Cut API
 still needs a two-operand tolerance contract, a persisted target body
 reference, and ordered replay that replaces the target.
+
+## Cut with a single target body
+
+The typed `features.add` Extrude request now accepts `operation: "cut"`
+for a part with one current solid. The saved extrusion stores that solid's
+exact reference and adds its producer to the feature's dependency footprint.
+Replay builds a certified tool from the selected profile, resolves the saved
+body through earlier replacements, and publishes the surviving solid only
+after validating geometry, tolerance, and topology names.
+
+The Cut result must meet the tighter of the target and tool tolerance caps.
+Each operand is checked against its own cap. Cut refuses an empty result,
+a split result, or a tool that removes no volume. Join and the Through All
+extent still require separate integration.

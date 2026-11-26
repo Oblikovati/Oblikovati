@@ -455,6 +455,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         let input = definition
             .resolve_with_datums(snapshot, &self.datums, &resolver)
             .map_err(PartFeatureFailure::Inputs)?;
+        if let Some(target) = definition.cut_target() {
+            return self.cut_prism(backend, feature.id(), target, input);
+        }
         let body = backend
             .evaluate_prism(feature.id(), input)
             .map_err(PartFeatureFailure::Kernel)?;

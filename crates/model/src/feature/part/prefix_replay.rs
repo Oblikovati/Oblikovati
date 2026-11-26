@@ -87,6 +87,16 @@ where
             .evaluate_shell(feature, body.get(), openings, input)
             .map(PrefixBody::Created)
     }
+    fn evaluate_prism_cut(
+        &mut self,
+        feature: FeatureId,
+        body: &Self::Body,
+        input: ResolvedSketchPrism<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        self.0
+            .evaluate_prism_cut(feature, body.get(), input)
+            .map(PrefixBody::Created)
+    }
     fn evaluate_prism(
         &mut self,
         feature: FeatureId,

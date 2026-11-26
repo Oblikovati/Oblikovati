@@ -52,10 +52,13 @@ fn track_replacement(
     definition: &PartFeatureDefinition,
 ) {
     let source = match definition {
-        PartFeatureDefinition::SketchPrism(_) => {
-            owners.insert(id, id);
-            return;
-        }
+        PartFeatureDefinition::SketchPrism(prism) => match prism.cut_target() {
+            Some(target) => target.source(),
+            None => {
+                owners.insert(id, id);
+                return;
+            }
+        },
         PartFeatureDefinition::Fillet(fillet) => fillet.body_source(),
         PartFeatureDefinition::Chamfer(chamfer) => chamfer.body_source(),
         PartFeatureDefinition::Hole(hole) => hole.body_source(),

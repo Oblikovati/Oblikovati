@@ -65,6 +65,17 @@ pub trait PartFeatureEvaluator {
             "hole: expected an available named-face evaluator".into(),
         ))
     }
+    /// Subtract a prism from a named target. Example: `backend.evaluate_prism_cut(id, body, input)`.
+    fn evaluate_prism_cut(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _input: ResolvedSketchPrism<'_>,
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "extrude Cut: expected a named subtraction evaluator".into(),
+        ))
+    }
     /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.
     fn evaluate_prism(
         &mut self,

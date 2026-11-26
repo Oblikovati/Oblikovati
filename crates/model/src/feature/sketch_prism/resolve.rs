@@ -153,7 +153,11 @@ impl SketchPrismDefinition {
                     .filter_map(DatumLength::parameter)
                     .map(FeatureReadKey::Parameter),
             )
-            .chain(self.extent.iter().flat_map(SketchPrismExtent::reads));
+            .chain(self.extent.iter().flat_map(SketchPrismExtent::reads))
+            .chain(
+                self.cut_target()
+                    .map(|target| FeatureReadKey::Feature(target.source())),
+            );
         FeatureReadFootprint::new(keys, false)
     }
 }

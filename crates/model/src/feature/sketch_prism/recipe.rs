@@ -16,6 +16,8 @@ pub struct SketchPrismRecipe {
     pub second_depth: Option<DatumLength>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub extent: Option<SketchPrismExtent>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cut_target: Option<Vec<u8>>,
 }
 impl SketchPrismDefinition {
     /// Capture only authored inputs; example: `serde_json::to_string(&definition.recipe())?`.
@@ -29,6 +31,7 @@ impl SketchPrismDefinition {
             centered_normal: self.direction == SketchPrismDirection::Symmetric,
             second_depth: self.second_depth,
             extent: self.extent.clone(),
+            cut_target: self.cut_target().map(|target| target.key().to_vec()),
         }
     }
     /// Validate the saved version and sources before adoption; example: `SketchPrismDefinition::from_recipe(&recipe)?`.
@@ -42,9 +45,16 @@ impl SketchPrismDefinition {
                 ))),
             });
         }
-        if let Some(extent) = &recipe.extent {
-            return Self::from_plane_recipe(recipe, extent);
+        let definition = match &recipe.extent {
+            Some(extent) => Self::from_plane_recipe(recipe, extent),
+            None => Self::from_distance_recipe(recipe),
+        }?;
+        match &recipe.cut_target {
+            Some(key) => definition.with_cut_target(key.clone()),
+            None => Ok(definition),
         }
+    }
+    fn from_distance_recipe(recipe: &SketchPrismRecipe) -> Result<Self, SketchPrismError> {
         let definition = Self::new(recipe.sketch, recipe.selection.clone(), recipe.displacement)?;
         match (
             recipe.reversed_normal,

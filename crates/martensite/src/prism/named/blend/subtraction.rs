@@ -7,24 +7,35 @@ use martensite_tkg3d::top_abs::ShapeEnum;
 use martensite_tkgeombase::gprop::GProps;
 use martensite_tktopalgo::brep_gprop::BRepGProp;
 
+pub(super) struct SubtractionTool<'a> {
+    pub shape: &'a Shape,
+    pub sources: Vec<(Vec<u8>, Shape)>,
+    pub resolution: Option<PrismResolution>,
+}
+
 pub(super) fn build_subtraction_candidate(
     input: BlendInputTopology<'_>,
     history: &DocumentEditHistory,
     document: DocumentGuid,
-    tool: &Shape,
-    tool_sources: Vec<(Vec<u8>, Shape)>,
+    tool: SubtractionTool<'_>,
     operation: &str,
 ) -> Result<BlendCandidate, String> {
     let mut copier = crate::checked_shape::copy_shape(input.body, &format!("{operation} input"))
         .map_err(|error| error.to_string())?;
     let copied = copy_named_sources(&mut copier, input.source)?;
     let target = copier.shape().map_err(|error| error.to_string())?;
-    let cut = BRepAlgoAPICut::from_shapes(target, tool).map_err(|error| {
+    let cut = BRepAlgoAPICut::from_shapes(target, tool.shape).map_err(|error| {
         format!("{operation} cut: expected completed Boolean operation: {error}")
     })?;
-    let (shape, achieved_tolerance) = checked_cut(target, &cut, input.resolution, operation)?;
+    let (shape, achieved_tolerance) = checked_cut(
+        target,
+        &cut,
+        input.resolution,
+        tool.resolution.map(|policy| (tool.shape, policy)),
+        operation,
+    )?;
     let mut records = cut_history(&cut, copied, false)?;
-    records.extend(cut_history(&cut, tool_sources, true)?);
+    records.extend(cut_history(&cut, tool.sources, true)?);
     Ok(BlendCandidate {
         resolution: input.resolution,
         achieved_tolerance: Some(achieved_tolerance),
@@ -43,6 +54,7 @@ fn checked_cut(
     target: &Shape,
     cut: &BRepAlgoAPICut,
     resolution: Option<PrismResolution>,
+    tool: Option<(&Shape, PrismResolution)>,
     operation: &str,
 ) -> Result<(Shape, PrismAchievedTolerance), String> {
     if !cut.is_done() || cut.has_errors() || cut.has_warnings() {
@@ -57,7 +69,12 @@ fn checked_cut(
     crate::checked_shape::require_geometry(&result, &format!("{operation} result"))
         .map_err(|error| error.to_string())?;
     validate_result_faces(&result, operation)?;
-    let achieved = tolerances::check(target, &result, resolution, operation)?;
+    let achieved = match tool {
+        Some((tool, policy)) => {
+            tolerances::check_two_operand_cut(target, tool, &result, resolution, policy, operation)?
+        }
+        None => tolerances::check(target, &result, resolution, operation)?,
+    };
     let before = crate::checked_shape::analytic_properties(target, &format!("{operation} input"))
         .map_err(|error| error.to_string())?;
     let after = crate::checked_shape::analytic_properties(&result, &format!("{operation} result"))
@@ -180,10 +197,34 @@ mod tests {
         let cut = BRepAlgoAPICut::from_shapes(&target, &tool).unwrap();
         let result = single_solid(cut.shape(), "square prism").unwrap();
         crate::checked_shape::require_geometry(&result, "cut result").unwrap();
-        let decline = checked_cut(&target, &cut, Some(resolution), "square prism").unwrap_err();
+        let decline =
+            checked_cut(&target, &cut, Some(resolution), None, "square prism").unwrap_err();
         assert!(
             decline.contains("square prism vertex tolerance"),
             "{decline}"
+        );
+        let (_, tolerance) = checked_cut(
+            &target,
+            &cut,
+            Some(resolution),
+            Some((&tool, resolution)),
+            "square prism",
+        )
+        .unwrap();
+        assert!(tolerance.vertex <= resolution.maximum_tolerance);
+        let tight_tool = PrismResolution {
+            maximum_tolerance: 1e-7,
+            ..resolution
+        };
+        assert!(
+            checked_cut(
+                &target,
+                &cut,
+                Some(resolution),
+                Some((&tool, tight_tool)),
+                "square prism",
+            )
+            .is_err()
         );
         let properties = crate::checked_shape::analytic_properties(&result, "cut result").unwrap();
         assert!((properties.volume - 6.).abs() < 1e-10);

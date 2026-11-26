@@ -19,6 +19,7 @@ use oblikovati_model::{
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
+mod cut;
 mod extent;
 mod replay;
 use replay::{ExtrudeProjection, adopt_extrude_candidate, prepare_owned_prefix};
@@ -92,6 +93,7 @@ pub trait ExtrudeRegionAccess {
 pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &mut FileWorkspace<O, W, F>,
     backend: Option<&dyn ExtrudeRegionAccess>,
+    replay: Option<&mut dyn crate::PartUpdateAccess<O, W, F>>,
     encoded: &[u8],
 ) -> Result<Vec<u8>, Error> {
     let request: wire::AddFeatureArgs = crate::decode(wire::METHOD_FEATURES_ADD, encoded)?;
@@ -100,12 +102,17 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     let backend = backend.ok_or_else(|| {
         Error("extrude: expected an injected certified profile and validation service".into())
     })?;
+    let target = if input.operation.trim().eq_ignore_ascii_case("cut") {
+        Some(cut::target(files, document, replay)?)
+    } else {
+        None
+    };
     let snapshot = files
         .workspace()
         .session(document)
         .map_err(api_error)?
         .snapshot();
-    let prepared = prepare_extrusion(snapshot, backend, &input)?;
+    let prepared = prepare_extrusion_for_target(snapshot, backend, &input, target)?;
     create(files, document, backend, prepared)
 }
 
@@ -177,7 +184,34 @@ pub fn prepare_extrusion(
     backend: &dyn ExtrudeRegionAccess,
     input: &Extrude,
 ) -> Result<PreparedExtrusion, Error> {
+    prepare_extrusion_for_target(snapshot, backend, input, None)
+}
+
+fn prepare_extrusion_for_target(
+    snapshot: &DocumentSnapshot,
+    backend: &dyn ExtrudeRegionAccess,
+    input: &Extrude,
+    target: Option<Vec<u8>>,
+) -> Result<PreparedExtrusion, Error> {
     require_supported(input)?;
+    if input.operation.trim().eq_ignore_ascii_case("cut") && target.is_none() {
+        return Err(Error("extrude Cut: expected a named target body".into()));
+    }
+    let mut prepared = prepare_prism(snapshot, backend, input)?;
+    if let Some(key) = target {
+        prepared.definition = prepared
+            .definition
+            .with_cut_target(key)
+            .map_err(api_error)?;
+    }
+    Ok(prepared)
+}
+
+fn prepare_prism(
+    snapshot: &DocumentSnapshot,
+    backend: &dyn ExtrudeRegionAccess,
+    input: &Extrude,
+) -> Result<PreparedExtrusion, Error> {
     let extent = extent::reference_extent(snapshot, input)?;
     let sketch = sketch_index(snapshot, input.sketch_index)?;
     let index = usize::try_from(input.profile_index).map_err(|_| {
@@ -292,7 +326,7 @@ fn require_supported(input: &Extrude) -> Result<(), Error> {
         (
             "operation",
             input.operation.as_str(),
-            &["new", "newbody", "new-body"][..],
+            &["new", "newbody", "new-body", "cut"][..],
         ),
         (
             "direction",
