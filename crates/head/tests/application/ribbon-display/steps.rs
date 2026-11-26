@@ -276,10 +276,34 @@ fn groups_closed(world: &mut ApplicationWorld) {
 }
 #[then("the 3D Model tab remains selected")]
 fn model_selected(world: &mut ApplicationWorld) {
-    // A selected tab has its own fill, so the pixel left of each label tells them apart.
-    let selected = world.pixel_left_of("3D Model");
-    let other = world.pixel_left_of("View");
-    assert_ne!(selected, other, "expected the 3D Model tab to be selected");
+    let tabs = ["3DModel", "Tools", "View"];
+    assert_eq!(
+        ribbon_tab_underlines(world, tabs),
+        [true, false, false],
+        "active underline for {tabs:?}"
+    );
+    world.save_capture("3d-model-tab-selected");
+}
+
+fn ribbon_tab_underlines(world: &mut ApplicationWorld, tabs: [&str; 3]) -> [bool; 3] {
+    let ribbon = "##application-ribbon";
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    let [width, height] = capture.extent.map(|pixels| pixels as usize);
+    let [_, _, _, bottom] =
+        super::diagnostics::window_pixel_bounds(ribbon).expect("expected the application ribbon");
+    // The live GUI context provides the accent for both light and dark themes.
+    let accent =
+        unsafe { imgui::sys::igGetColorU32_Col(imgui::sys::ImGuiCol_NavHighlight as i32, 1.) }
+            .to_le_bytes();
+    tabs.map(|label| {
+        let run = world.run_in_window(ribbon, label);
+        let [x, top] = super::diagnostics::pointer_pixels([run.center()[0], run.maximum[1]])
+            .map(|pixel| pixel as usize);
+        (top..(bottom as usize).min(height)).any(|y| {
+            let at = (y * width + x) * 4;
+            capture.rgba.get(at..at + 3) == Some(&accent[..3])
+        })
+    })
 }
 #[then("Minimize to Tabs is checked")]
 fn tabs_checked(world: &mut ApplicationWorld) {

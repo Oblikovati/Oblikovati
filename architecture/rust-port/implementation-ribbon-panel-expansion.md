@@ -83,6 +83,10 @@ display on a single click. The temporary 3D Model command area exposes
 the same panel choices. Restoring the full ribbon closes the selector.
 [Native minimization scenario](receipts/2026-11-26-ribbon-selector-minimize-3856/README.md)
 
+Clicking the viewport dismisses the temporary commands and keeps 3D Model
+underlined in tabs-only display. The selected minimization policy stays checked.
+[Native tabs-only selection](receipts/2026-11-26-ribbon-tabs-only-selection-3856/README.md)
+
 The direct checklist wraps keyboard focus from the first row to the last
 with Up and from the last row to the first with Down. The
 [native regression](receipts/2026-11-24-selector-keyboard-wrap-3856/README.md)
