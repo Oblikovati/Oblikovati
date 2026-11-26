@@ -9,6 +9,8 @@ pub(super) use fixture::{bundled_frame_fixture, open_dirty_frame_part_from};
 pub(super) use fixture::{open_dirty_frame_part, open_frame_part};
 #[path = "maximized_edge.rs"]
 mod maximized_edge;
+#[path = "minimum_layout.rs"]
+mod minimum_layout;
 #[path = "wayland.rs"]
 pub(super) mod wayland;
 #[path = "wayland_taskbar.rs"]
@@ -324,6 +326,7 @@ fn restored_window_with_saved_part(world: &mut ApplicationWorld) {
 }
 #[when("the user drags the bottom right corner inward past the supported minimum size")]
 fn shrink_past_minimum(world: &mut ApplicationWorld) {
+    minimum_layout::remember_docks(world);
     resize_from_bottom_right(world, [100, 100]);
 }
 

@@ -2,6 +2,116 @@
 //! Keep compact groups identifiable by their caption and emblem.
 use super::*;
 
+pub(super) fn row_widths(
+    context: &PanelDrawContext<'_>,
+    tab: RibbonTab,
+    panels: &[RibbonPanel],
+    layout: &RibbonPanelLayout,
+    available: f32,
+    natural: f32,
+) -> (Vec<f32>, usize) {
+    let factor = context.owners.icons.layout_factor();
+    let normal = |panel| normal_group_width(context, tab, panel, natural);
+    let room = compact_room(tab, panels, layout, available, factor);
+    let (minimum, count) = compact_row_minimum(context, panels, factor);
+    // Keep the scrollable ribbon when the groups would have too little room for captions.
+    let caption_floor = count * (minimum + context.ui.calc_text_size("M...")[0]);
+    if widths_without_exit(panels, normal).sum::<f32>() <= room || room < caption_floor {
+        let expanded = layout.expanded_count(tab, panels, natural, available, factor);
+        return (panels.iter().copied().map(normal).collect(), expanded);
+    }
+    (
+        compressed_group_widths(context, panels, room, minimum, count),
+        0,
+    )
+}
+
+fn normal_group_width(
+    context: &PanelDrawContext<'_>,
+    tab: RibbonTab,
+    panel: RibbonPanel,
+    natural: f32,
+) -> f32 {
+    if tab == RibbonTab::Manage {
+        caption_width(context, tab, panel)
+    } else {
+        natural
+    }
+}
+
+fn compact_row_minimum(
+    context: &PanelDrawContext<'_>,
+    panels: &[RibbonPanel],
+    factor: f32,
+) -> (f32, f32) {
+    let minimum = if context.owners.icons.appearance.command_height() >= 44. {
+        28.
+    } else {
+        30.
+    } * factor;
+    let count = panels
+        .iter()
+        .filter(|&&panel| panel != RibbonPanel::Exit)
+        .count() as f32;
+    (minimum, count)
+}
+
+fn compressed_group_widths(
+    context: &PanelDrawContext<'_>,
+    panels: &[RibbonPanel],
+    room: f32,
+    minimum: f32,
+    count: f32,
+) -> Vec<f32> {
+    let tight = |panel: RibbonPanel| {
+        (context.ui.calc_text_size(panel.label())[0] + caption_padding(context)).max(minimum)
+    };
+    let floor = count * minimum;
+    let total = widths_without_exit(panels, tight).sum::<f32>();
+    let share = ((room - floor) / (total - floor).max(1.)).clamp(0., 1.);
+    panels
+        .iter()
+        .copied()
+        .map(|panel| minimum + (tight(panel) - minimum) * share)
+        .collect()
+}
+
+fn compact_room(
+    tab: RibbonTab,
+    panels: &[RibbonPanel],
+    layout: &RibbonPanelLayout,
+    available: f32,
+    factor: f32,
+) -> f32 {
+    let exit = if panels.contains(&RibbonPanel::Exit) {
+        layout
+            .panel_width(tab, RibbonPanel::Exit, factor)
+            .unwrap_or(132. * factor)
+    } else {
+        0.
+    };
+    available - panels.len().saturating_sub(1) as f32 * 8. - exit - 2.
+}
+
+fn widths_without_exit(
+    panels: &[RibbonPanel],
+    width: impl Fn(RibbonPanel) -> f32,
+) -> impl Iterator<Item = f32> {
+    panels
+        .iter()
+        .copied()
+        .filter(|&panel| panel != RibbonPanel::Exit)
+        .map(width)
+}
+
+fn caption_padding(context: &PanelDrawContext<'_>) -> f32 {
+    if context.owners.icons.appearance.command_height() >= 44. {
+        20.
+    } else {
+        34.
+    }
+}
+
 pub(super) fn minimum_width(tab: RibbonTab) -> f32 {
     match tab {
         RibbonTab::Sketch => 64.,
@@ -15,11 +125,7 @@ pub(super) fn caption_width(
     tab: RibbonTab,
     panel: RibbonPanel,
 ) -> f32 {
-    let caption_room = if context.owners.icons.appearance.command_height() >= 44. {
-        20.
-    } else {
-        34.
-    };
+    let caption_room = caption_padding(context);
     (context.ui.calc_text_size(panel.label())[0] + caption_room).max(minimum_width(tab))
 }
 
@@ -37,9 +143,15 @@ pub(super) fn collapsed_button(
     let stacked = height >= 42.;
     let size = [width, icons.cell([0., height])[1]];
     let glyph = compact_group_icon(panel);
+    let room = if stacked { 16. } else { 34. };
+    let caption = crate::application::home_recent_documents::recent_rows::fit_recent_cell(
+        panel.label(),
+        width - room,
+        |text| ui.calc_text_size(text)[0],
+    );
     let clicked = crate::widget_abi::icon_button(
         ui,
-        &format!("{}{identity}", panel.label()),
+        &format!("{caption}#{identity}"),
         crate::widget_abi::IconButtonPresentation {
             texture: icons.key(glyph, crate::icons::IconSize::Large),
             size,
@@ -48,7 +160,7 @@ pub(super) fn collapsed_button(
             show_caption: true,
         },
     );
-    draw_disclosure(ui, panel.label(), stacked);
+    draw_disclosure(ui, &caption, stacked);
     clicked
 }
 

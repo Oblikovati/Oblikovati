@@ -320,8 +320,8 @@ fn draw_row(
         .iter()
         .map(|panel| collapsed::caption_width(context, tab, *panel))
         .fold(0., f32::max);
-    let factor = context.owners.icons.layout_factor();
-    let expanded = layout.expanded_count(tab, &panels, collapsed, available, factor);
+    let (widths, expanded) =
+        collapsed::row_widths(context, tab, &panels, layout, available, collapsed);
     let mut x = 0.;
     let mut activated = false;
     for (index, panel) in panels.into_iter().enumerate() {
@@ -338,11 +338,7 @@ fn draw_row(
             layout.record_width(tab, panel, width);
             width
         } else {
-            let width = if tab == RibbonTab::Manage {
-                collapsed::caption_width(context, tab, panel)
-            } else {
-                collapsed
-            };
+            let width = widths[index];
             draw_collapsed(context, tab, panel, [x, 0.], width, layout);
             width
         };

@@ -22,6 +22,9 @@ values come from the same handoff.
   with the accent underline reserved for the active tab. The Model browser’s
   search field encloses its clear control, sketch badges use 10 px mono,
   and the dashed rollback marker uses the theme’s strong border color.
+- At the native window minimum, compact ribbon groups share the row
+  using their measured captions. Long captions shorten before the
+  disclosure arrow and keep the full group name in the tooltip.
 - The camera projects into the live document area as the window and docks
   resize. Layout changes preserve the current camera and Previous View
   restores its saved camera in the current layout. A cropped origin plane
