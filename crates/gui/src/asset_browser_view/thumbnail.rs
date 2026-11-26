@@ -4,7 +4,27 @@ use super::{AssetRows, GuiAssetChoice};
 use imgui::{DrawListMut, StyleColor, Ui};
 use oblikovati_model::assets::AppearanceReflectivity;
 
+mod cube;
 mod sampled_surface;
+pub(crate) use cube::paint_cube_preview;
+
+#[derive(Clone, Copy)]
+pub(crate) struct PreviewLight {
+    offset: [f32; 2],
+    color: [f32; 3],
+}
+
+impl PreviewLight {
+    pub(crate) const GRID: Self = Self::new([-0.32, -0.36], [1.; 3]);
+
+    pub(crate) const fn new(offset: [f32; 2], color: [f32; 3]) -> Self {
+        Self { offset, color }
+    }
+
+    fn illuminate(self, surface: [f32; 3]) -> [f32; 3] {
+        std::array::from_fn(|channel| (surface[channel] * self.color[channel]).min(1.))
+    }
+}
 
 pub(super) fn grid(ui: &Ui, assets: &[&GuiAssetChoice], selection: &mut AssetRows<'_>, size: f32) {
     let width = ui.content_region_avail()[0].max(1.);
@@ -43,6 +63,7 @@ fn tile(ui: &Ui, asset: &GuiAssetChoice, selection: &mut AssetRows<'_>, size: f3
         [left + width / 2., top + size / 2. + 4.],
         size / 2.,
         asset,
+        PreviewLight::GRID,
     );
     let caption = crate::application::home_recent_documents::recent_rows::fit_recent_cell(
         &asset.name,
@@ -65,39 +86,18 @@ pub(crate) fn paint_preview(
     center: [f32; 2],
     radius: f32,
     asset: &GuiAssetChoice,
+    light: PreviewLight,
 ) {
     let Some(finish) = asset.appearance_preview else {
         return;
     };
-    let base = asset
-        .swatch
-        .unwrap_or([128; 3])
-        .map(|v| f32::from(v) / 255.);
+    let material = sampled_surface::PreviewSurface::from_asset(asset);
     let metalness = f32::from(finish.metalness) / 255.;
     let roughness = f32::from(finish.roughness) / 255.;
-    let metadata = asset.appearance_metadata.as_ref();
-    let reflectivity = metadata
-        .and_then(|metadata| metadata.reflectivity)
-        .filter(|effect| effect.enabled);
-    let effects = metadata.and_then(|metadata| metadata.generic_effects.as_ref());
-    let transparency = metadata
-        .and_then(|metadata| metadata.transparency)
-        .filter(|effect| effect.enabled && effect.amount > 0);
-    let checker = metadata
-        .and_then(|metadata| metadata.checker)
-        .filter(|texture| texture.fade > 0);
-    if transparency.is_some() || checker.is_some() {
-        let material = sampled_surface::PreviewSurface::new(
-            base,
-            reflectivity,
-            transparency,
-            checker,
-            effects,
-        );
-        sampled_surface::paint(draw, center, radius, &material);
+    if material.needs_samples() {
+        sampled_surface::paint(draw, center, radius, &material, light);
     } else {
-        let base = effects.map_or(base, |effects| preview_effect_color(base, effects));
-        paint_surface(draw, center, radius, base, metalness, reflectivity);
+        paint_surface(draw, center, radius, &material, metalness, light);
     }
     paint_reflection(
         draw,
@@ -106,6 +106,7 @@ pub(crate) fn paint_preview(
         roughness,
         f32::from(finish.anisotropy) / 255.,
         f32::from(finish.highlights) / 255.,
+        light,
     );
     if finish.fuzz_weight > 0 {
         paint_fibers(draw, center, radius, finish);
@@ -146,23 +147,22 @@ fn paint_surface(
     draw: &DrawListMut<'_>,
     center: [f32; 2],
     radius: f32,
-    base: [f32; 3],
+    material: &sampled_surface::PreviewSurface<'_>,
     metalness: f32,
-    reflectivity: Option<AppearanceReflectivity>,
+    light: PreviewLight,
 ) {
     let layers = if radius > 40. { 24 } else { 10 };
     for step in 0..=layers {
         let fraction = step as f32 / layers as f32;
-        let offset = radius * fraction * 0.38;
+        let at = std::array::from_fn(|axis| {
+            center[axis]
+                + radius * fraction * (light.offset[axis] - PreviewLight::GRID.offset[axis] - 0.38)
+        });
         let shade = 0.26 + fraction * (0.81 + metalness * 0.22);
-        let [r, g, b] = surface_color(base, shade, fraction, reflectivity);
-        draw.add_circle(
-            [center[0] - offset, center[1] - offset],
-            radius * (1. - 0.82 * fraction),
-            [r, g, b, 1.],
-        )
-        .filled(true)
-        .build();
+        let [r, g, b] = light.illuminate(material.color([0.; 2], shade, fraction));
+        draw.add_circle(at, radius * (1. - 0.82 * fraction), [r, g, b, 1.])
+            .filled(true)
+            .build();
     }
 }
 
@@ -190,12 +190,17 @@ fn paint_reflection(
     roughness: f32,
     anisotropy: f32,
     highlights: f32,
+    environment: PreviewLight,
 ) {
-    let light = [center[0] - radius * 0.32, center[1] - radius * 0.36];
+    let light =
+        std::array::from_fn::<_, 2, _>(|axis| center[axis] + radius * environment.offset[axis]);
+    let [r, g, b] = environment
+        .illuminate([0.85; 3])
+        .map(|channel| (channel / 0.85).min(1.));
     let intensity = (0.18 + 0.55 * (1. - roughness)) * highlights;
     for layer in (1..=4).rev() {
         let diffuse = radius * (0.11 + roughness * 0.25) * layer as f32 / 4.;
-        draw.add_circle(light, diffuse, [1., 1., 1., intensity / 4.])
+        draw.add_circle(light, diffuse, [r, g, b, intensity / 4.])
             .filled(true)
             .build();
     }
@@ -204,7 +209,7 @@ fn paint_reflection(
         draw.add_line(
             [light[0] - length, light[1]],
             [light[0] + length, light[1]],
-            [1., 1., 1., anisotropy * intensity * 0.4],
+            [r, g, b, anisotropy * intensity * 0.4],
         )
         .build();
     }

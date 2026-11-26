@@ -6,6 +6,7 @@ use imgui::{Condition, Ui, WindowFlags};
 use oblikovati_model::assets::AppearanceMetadata;
 
 mod optional_effects;
+mod preview_options;
 mod texture;
 mod transparency;
 pub(crate) use texture::CheckerSampler;
@@ -39,6 +40,7 @@ pub(crate) struct AppearanceEditor {
     target: Option<(u64, String)>,
     draft: Option<AppearanceDraft>,
     color_dialog: ColorDialog,
+    preview_options: preview_options::PreviewOptions,
     confirm_close: bool,
     texture_open: bool,
     close_after_apply: bool,
@@ -180,7 +182,7 @@ impl AppearanceEditor {
             .flags(WindowFlags::NO_DOCKING)
             .opened(&mut open)
             .build(|| {
-                draw_preview(ui, asset, draft);
+                self.preview_options.draw(ui, &preview_asset(asset, draft));
                 ui.input_text("Name", &mut draft.name).build();
                 let height =
                     (ui.content_region_avail()[1] - ui.frame_height_with_spacing()).max(1.);
@@ -225,6 +227,7 @@ impl AppearanceEditor {
         self.draft = None;
         self.confirm_close = false;
         self.texture_open = false;
+        self.preview_options = Default::default();
         self.close_after_apply = false;
     }
 }
@@ -250,7 +253,7 @@ fn available_identity(assets: &[GuiAssetChoice]) -> (String, String) {
     }
 }
 
-fn draw_preview(ui: &Ui, asset: &GuiAssetChoice, draft: &AppearanceDraft) {
+fn preview_asset(asset: &GuiAssetChoice, draft: &AppearanceDraft) -> GuiAssetChoice {
     let mut preview = asset.clone();
     preview.swatch = Some(draft.color);
     let preview_metadata = preview
@@ -266,15 +269,7 @@ fn draw_preview(ui: &Ui, asset: &GuiAssetChoice, draft: &AppearanceDraft) {
         finish.roughness = draft.roughness;
         finish.highlights = draft.highlights;
     }
-    let [left, top] = ui.cursor_screen_pos();
-    let width = ui.content_region_avail()[0];
-    ui.dummy([width, 116.]);
-    crate::asset_browser_view::paint_appearance_preview(
-        &ui.get_window_draw_list(),
-        [left + width / 2., top + 55.],
-        49.,
-        &preview,
-    );
+    preview
 }
 
 fn draw_properties(

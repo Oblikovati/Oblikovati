@@ -116,3 +116,8 @@ changes the draft colors, softness, sample size, transforms, and repeat
 modes. Image Fade controls the blend between the base color and texture.
 Apply stores the Checker in the Part, and the Asset Browser uses it in
 the saved appearance thumbnail. See the [native Checker receipt](receipts/2026-11-26-appearance-checker-3563/README.md).
+
+Preview Options switches the sample between Sphere and Cube and exposes
+Grid Light, Plaza, Snowfield, and Warm Light. Quick is the active render
+setting. Scene and lighting choices live in the open editor and do not
+mark the appearance draft dirty. See the [native preview receipt](receipts/2026-11-26-appearance-preview-3563/README.md).

@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Sample textured and transmissive surfaces for the browser and editor previews.
+use super::PreviewLight;
+use crate::GuiAssetChoice;
 use crate::appearance_editor::CheckerSampler;
 use imgui::DrawListMut;
-use oblikovati_model::assets::{
-    AppearanceChecker, AppearanceReflectivity, AppearanceTransparency, GenericAppearanceEffects,
-};
+use oblikovati_model::assets::{AppearanceReflectivity, GenericAppearanceEffects};
 
 pub(super) fn paint(
     draw: &DrawListMut<'_>,
     center: [f32; 2],
     radius: f32,
     material: &PreviewSurface<'_>,
+    light: PreviewLight,
 ) {
     let cells = if radius > 40. { 36 } else { 20 };
     let step = 2. / cells as f32;
@@ -18,7 +19,7 @@ pub(super) fn paint(
         for x in 0..cells {
             let left = x as f32 * step - 1.;
             let top = y as f32 * step - 1.;
-            let color = material.sample([left + step * 0.5, top + step * 0.5]);
+            let color = material.sphere([left + step * 0.5, top + step * 0.5], light);
             let min = [center[0] + radius * left, center[1] + radius * top];
             let max = [min[0] + radius * step, min[1] + radius * step];
             draw.add_rect(min, max, color).filled(true).build();
@@ -37,13 +38,22 @@ pub(super) struct PreviewSurface<'a> {
 }
 
 impl<'a> PreviewSurface<'a> {
-    pub(super) fn new(
-        base: [f32; 3],
-        reflectivity: Option<AppearanceReflectivity>,
-        transparency: Option<AppearanceTransparency>,
-        checker: Option<AppearanceChecker>,
-        effects: Option<&'a GenericAppearanceEffects>,
-    ) -> Self {
+    pub(super) fn from_asset(asset: &'a GuiAssetChoice) -> Self {
+        let base = asset
+            .swatch
+            .unwrap_or([128; 3])
+            .map(|v| f32::from(v) / 255.);
+        let metadata = asset.appearance_metadata.as_ref();
+        let reflectivity = metadata
+            .and_then(|metadata| metadata.reflectivity)
+            .filter(|effect| effect.enabled);
+        let effects = metadata.and_then(|metadata| metadata.generic_effects.as_ref());
+        let transparency = metadata
+            .and_then(|metadata| metadata.transparency)
+            .filter(|effect| effect.enabled);
+        let checker = metadata
+            .and_then(|metadata| metadata.checker)
+            .filter(|texture| texture.fade > 0);
         Self {
             base,
             effects,
@@ -58,7 +68,11 @@ impl<'a> PreviewSurface<'a> {
         }
     }
 
-    fn sample(&self, [x, y]: [f32; 2]) -> [f32; 4] {
+    pub(super) fn needs_samples(&self) -> bool {
+        self.transmission > 0. || self.checker.is_some()
+    }
+
+    fn sphere(&self, [x, y]: [f32; 2], light: PreviewLight) -> [f32; 4] {
         let squared_radius = x * x + y * y;
         if squared_radius >= 1. {
             return if self.transmission > 0. {
@@ -68,10 +82,16 @@ impl<'a> PreviewSurface<'a> {
             };
         }
         let normal_z = (1. - squared_radius).sqrt();
-        let scale = 1. + self.bend * normal_z * 0.8;
-        let through = checker(x * scale, y * scale).unwrap_or(0.40);
-        let through = through + (0.40 - through) * self.scatter;
-        let diffuse = (0.56 * normal_z - 0.23 * x - 0.28 * y).max(0.) + 0.27;
+        let lateral = [
+            light.offset[0] - PreviewLight::GRID.offset[0] - 0.23,
+            light.offset[1] - PreviewLight::GRID.offset[1] - 0.28,
+        ];
+        let diffuse = (0.56 * normal_z + lateral[0] * x + lateral[1] * y).max(0.) + 0.27;
+        let [r, g, b] = light.illuminate(self.color([x, y], diffuse, normal_z));
+        [r, g, b, 1.]
+    }
+
+    pub(super) fn color(&self, [x, y]: [f32; 2], diffuse: f32, facing: f32) -> [f32; 3] {
         let base = self.checker.as_ref().map_or(self.base, |(sampler, fade)| {
             let texture = sampler.color([(x + 1.) * 50., (y + 1.) * 50.]);
             std::array::from_fn(|channel| {
@@ -81,9 +101,14 @@ impl<'a> PreviewSurface<'a> {
         let base = self
             .effects
             .map_or(base, |effects| super::preview_effect_color(base, effects));
-        let surface = super::surface_color(base, diffuse, normal_z, self.reflectivity);
-        let [r, g, b] = surface.map(|channel| channel + (through - channel) * self.transmission);
-        [r, g, b, 1.]
+        let surface = super::surface_color(base, diffuse, facing, self.reflectivity);
+        if self.transmission == 0. {
+            return surface;
+        }
+        let scale = 1. + self.bend * facing * 0.8;
+        let through = checker(x * scale, y * scale).unwrap_or(0.40);
+        let through = through + (0.40 - through) * self.scatter;
+        surface.map(|channel| channel + (through - channel) * self.transmission)
     }
 }
 

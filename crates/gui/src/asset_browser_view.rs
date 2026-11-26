@@ -4,7 +4,9 @@ use crate::{GuiAssetChoice, GuiAssetLibrary};
 use imgui::Ui;
 
 mod thumbnail;
-pub(crate) use thumbnail::paint_preview as paint_appearance_preview;
+pub(crate) use thumbnail::{
+    PreviewLight, paint_cube_preview, paint_preview as paint_appearance_preview,
+};
 const THUMBNAIL_SIZES: [f32; 5] = [16., 24., 32., 64., 256.];
 
 #[derive(Default)]
