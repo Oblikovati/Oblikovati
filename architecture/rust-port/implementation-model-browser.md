@@ -129,6 +129,9 @@ check per-member values and the resulting solid centroid.
 The [model-state table fixture runs](receipts/2026-11-24-model-state-table-native-fixtures-4119/README.md)
 check removal and cancellation, invalid and arithmetic expressions, copied
 rows, and member names on the same saved Part.
+The [arithmetic expression scenario](receipts/2026-11-26-model-state-arithmetic-wayland-4119/README.md)
+also covers the full workflow on Wayland, including authoring the extrusion
+and reading the resulting nominal and model values in Parameters.
 
 The [suppression cases](receipts/2026-11-24-browser-suppression-fixture-3896/README.md)
 keep the saved solid Part through table edits, model-state switches and

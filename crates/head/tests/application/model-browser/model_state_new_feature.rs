@@ -59,7 +59,8 @@ pub(super) fn prepare_rectangle_extrusion(world: &mut ApplicationWorld) {
         world.click_text(label);
     }
     for point in [[0., 0.], [1., 1.]] {
-        super::super::x11_input::click(world.sketch_pixel_of(point));
+        let pixel = world.sketch_pixel_of(point);
+        world.desktop_click(pixel);
         world.pump(Vec::new());
     }
     assert_eq!(world.edited_geometry().lines().len(), 4);

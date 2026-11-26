@@ -7,7 +7,7 @@ use oblikovati_api::{
 };
 
 pub(super) fn click(world: &mut ApplicationWorld, label: &str) {
-    super::super::x11_input::click(diagnostics::pointer_pixels(world.run(label).center()));
+    world.desktop_click(diagnostics::pointer_pixels(world.run(label).center()));
     world.pump(Vec::new());
 }
 fn setup(world: &mut ApplicationWorld) {
@@ -32,7 +32,7 @@ fn setup(world: &mut ApplicationWorld) {
 }
 pub(super) fn open(world: &mut ApplicationWorld) {
     let point = diagnostics::pointer_pixels(world.run("Model State").center());
-    super::super::x11_input::right_click(point);
+    world.desktop_right_click(point);
     world.pump(Vec::new());
     click(world, "Edit Table");
 }

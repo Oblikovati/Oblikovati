@@ -65,7 +65,7 @@ fn open_manage_parameters(world: &mut ApplicationWorld) {
         .find(|run| run.text == "Parameters" && run.center()[1] < 150.)
         .expect("expected Parameters in Manage ribbon")
         .center();
-    super::super::x11_input::click(diagnostics::pointer_pixels(point));
+    world.desktop_click(diagnostics::pointer_pixels(point));
     world.pump(Vec::new());
 }
 #[then("d0 has nominal and model values of 1.5 in")]

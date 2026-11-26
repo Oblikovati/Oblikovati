@@ -84,8 +84,13 @@ pub(super) fn grid_cell_text(world: &ApplicationWorld, column: &str, row: &str) 
 }
 pub(super) fn set_parameter_cell(world: &mut ApplicationWorld, row: &str, value: &str) {
     let point = [grid_run(world, "d0")[0], row_run(world, row)[1]];
-    super::super::x11_input::click(diagnostics::pointer_pixels(point));
+    world.desktop_click(diagnostics::pointer_pixels(point));
     world.pump(Vec::new());
+    if world.app().window.native.view.uses_wayland() {
+        world.key(oblikovati_viewport::ViewportPhysicalKey::A, true);
+        world.type_text(value);
+        return;
+    }
     super::super::x11_input::press_control_a();
     for character in value.chars() {
         if character == '+' {
