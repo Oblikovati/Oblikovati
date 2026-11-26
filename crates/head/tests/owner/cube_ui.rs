@@ -31,7 +31,7 @@ fn mouse_drawn_parameter_circle_extrudes_through_the_desktop_owner() {
         .unwrap()
         .geometry()
         .circles()[0];
-    constrain_circle(&mut owner, circle.id.0);
+    constrain_circle(&mut owner, circle.id.0, circle.center.0);
     assert_eq!(
         owner
             .documents()
@@ -63,8 +63,18 @@ fn add_size(owner: &mut TestOwner) {
         .unwrap();
 }
 
-fn constrain_circle(owner: &mut TestOwner, circle: u64) {
-    Client::new(owner.document_host())
+fn constrain_circle(owner: &mut TestOwner, circle: u64, center: u64) {
+    let client = Client::new(owner.document_host());
+    client
+        .constrain()
+        .add(&AddConstraintArgs {
+            sketch_index: 0,
+            kind: "fix".into(),
+            entities: Some(vec![center]),
+            ..Default::default()
+        })
+        .unwrap();
+    client
         .dimension()
         .add(&AddDimensionArgs {
             sketch_index: 0,
