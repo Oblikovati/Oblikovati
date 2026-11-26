@@ -23,7 +23,7 @@ using this status; the live scenario directory can change.
   See the [current run](receipts/2026-11-26-file-menu-visual-contract-3894/README.md)
   and the [pinned run](receipts/2026-11-21-file-menu-r0-3894/README.md).
 - Quick Access Toolbar (#3955) passed [all 25 cases and 268 steps on Wayland and X11](receipts/2026-11-26-quick-access-wayland-3955/README.md).
-- Object Visibility (#3897) passed [all four published checklist scenarios and 29 steps](receipts/2026-11-26-object-visibility-sketches-3897/README.md) on Wayland and X11. Native checks covered rendered origin axes, sketch dimensions, and temporary 2D sketch filtering.
+- Object Visibility (#3897) passed [all four published checklist scenarios and 29 steps](receipts/2026-11-26-object-visibility-work-planes-3897/README.md) on Wayland and X11. Native checks covered work-plane display and picking, origin axes, sketch dimensions, and temporary 2D sketch filtering.
 - Body Properties (#3954) passed all six current scenarios and 69 steps on Wayland and X11.
   The published Part verified calculated values, appearance changes, and
   dismissal without applying pending changes. See the [current runs](receipts/2026-11-26-body-properties-wayland-3954/README.md).

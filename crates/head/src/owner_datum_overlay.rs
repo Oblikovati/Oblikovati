@@ -19,6 +19,9 @@ impl<
 > DesktopOwner<O, W, F, G, R, S>
 {
     pub(super) fn datum_planes_for_view(&mut self) -> Result<crate::HeadDatumPlaneUpdate, String> {
+        if self.work_plane_overlays_hidden {
+            return Ok(crate::HeadDatumPlaneUpdate::default());
+        }
         let Some(document) = self.active_datum_part()? else {
             return Ok(crate::HeadDatumPlaneUpdate::default());
         };

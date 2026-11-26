@@ -27,7 +27,7 @@ pub(super) fn action_key(action: &GuiShellAction) -> Option<ViewportKey> {
         | GuiShellAction::SetSketchOptions(_)
         | GuiShellAction::SetDocumentSketchSettings { .. }
         | GuiShellAction::SetSketchIsolation(_)
-        | GuiShellAction::SetSketchOverlays(_)
+        | GuiShellAction::SetOverlayVisibility(..)
         | GuiShellAction::SetPartOptions(_)
         | GuiShellAction::LineCommand(_)
         | GuiShellAction::PrecisePoint(_)

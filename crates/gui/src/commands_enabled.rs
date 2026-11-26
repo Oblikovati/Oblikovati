@@ -185,7 +185,7 @@ impl GuiShellAction {
                 !state.transaction_open
             }
             Self::SetSketchOptions(_) => state.sketch_options.is_some(),
-            Self::SetSketchOverlays(_) => state.document.is_some(),
+            Self::SetOverlayVisibility(..) => state.document.is_some(),
             Self::SetDocumentSketchSettings { document, .. } => {
                 sketch_enabled::settings_available(state, *document)
             }

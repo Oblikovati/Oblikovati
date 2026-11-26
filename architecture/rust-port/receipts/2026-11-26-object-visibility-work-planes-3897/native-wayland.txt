@@ -1,0 +1,8 @@
+running 6 tests
+test native::gui_loop_tests::application_bdd::offset_plane_overlay::a_hidden_plane_stays_hidden_after_reopen ... ok
+test native::gui_loop_tests::application_bdd::offset_plane_overlay::created_plane_is_rendered_and_follows_undo_and_redo ... ok
+test native::gui_loop_tests::application_bdd::offset_plane_overlay::object_visibility_filters_work_plane_display_and_picking ... ok
+test native::gui_loop_tests::application_bdd::offset_plane_overlay::viewport_selected_work_plane_is_an_offset_base ... ok
+test native::gui_loop_tests::application_bdd::offset_plane_overlay::viewport_selected_work_plane_starts_a_sketch ... ok
+test native::gui_loop_tests::application_bdd::offset_plane_overlay::visible_plane_survives_save_and_reopen ... ok
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 1734 filtered out; finished in 22.61s

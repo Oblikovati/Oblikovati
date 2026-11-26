@@ -121,22 +121,11 @@ fn visible_plane_survives_save_and_reopen() {
 
 #[test]
 fn a_hidden_plane_stays_hidden_after_reopen() {
-    use oblikovati_api::{client::Client, types::WORK_REF_XY_PLANE, wire::CreateWorkPlaneArgs};
     let mut world = ApplicationWorld::new();
     world.add_part();
     camera(&mut world);
     let before = capture(&mut world);
-    Client::new(world.app().owner.document_host())
-        .work_planes()
-        .create(&CreateWorkPlaneArgs {
-            kind: "plane-offset".into(),
-            refs: Some(vec![WORK_REF_XY_PLANE.into()]),
-            offset: "10 mm".into(),
-            visible: Some(Box::new(false)),
-            ..Default::default()
-        })
-        .unwrap();
-    world.pump(Vec::new());
+    add_hidden_plane(&mut world);
     assert!(world.app().owner.datum_planes().unwrap().planes.is_empty());
     save_and_reopen(&mut world);
     assert!(world.app().owner.datum_planes().unwrap().planes.is_empty());
@@ -169,6 +158,62 @@ fn select_plane_from_view(world: &mut ApplicationWorld) -> oblikovati_model::fea
         Some(feature)
     );
     feature
+}
+
+#[test]
+fn object_visibility_filters_work_plane_display_and_picking() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    camera(&mut world);
+    let background = capture(&mut world);
+    create_plane(&mut world);
+    let point = center(&mut world);
+    add_hidden_plane(&mut world);
+    let undo = world.state().undo_labels;
+    world.click_text("View");
+    world.click_text("Object Visibility");
+    world.click_text("User Work Planes");
+    world.escape();
+    world.pump(Vec::new());
+    assert_eq!(
+        pixel(&capture(&mut world), point),
+        pixel(&background, point)
+    );
+    assert!(world.app().owner.datum_planes().unwrap().planes.is_empty());
+    world.click(point);
+    world.pump(Vec::new());
+    assert!(world.state().browser.unwrap().selected_feature.is_none());
+
+    world.click_text("Object Visibility");
+    world.click_text("User Work Planes");
+    world.click_text("All Workfeatures");
+    assert!(world.app().owner.datum_planes().unwrap().planes.is_empty());
+    world.click_text("All Workfeatures");
+    world.escape();
+    world.pump(Vec::new());
+    assert_eq!(center(&mut world), point);
+    assert_ne!(
+        pixel(&capture(&mut world), point),
+        pixel(&background, point)
+    );
+    select_plane_from_view(&mut world);
+    assert_eq!(world.state().undo_labels, undo);
+    world.close();
+}
+
+fn add_hidden_plane(world: &mut ApplicationWorld) {
+    use oblikovati_api::{client::Client, types::WORK_REF_XY_PLANE, wire::CreateWorkPlaneArgs};
+    Client::new(world.app().owner.document_host())
+        .work_planes()
+        .create(&CreateWorkPlaneArgs {
+            kind: "plane-offset".into(),
+            refs: Some(vec![WORK_REF_XY_PLANE.into()]),
+            offset: "10 mm".into(),
+            visible: Some(Box::new(false)),
+            ..Default::default()
+        })
+        .unwrap();
+    world.pump(Vec::new());
 }
 
 #[test]

@@ -29,6 +29,9 @@ available for editing. [Native checks](receipts/2026-11-26-object-visibility-389
 The 2D Sketches switch filters the committed sketch scene and its annotations
 while preserving each sketch's stored visibility. It keeps the active edit
 visible. [Native sketch overlay checks](receipts/2026-11-26-object-visibility-sketches-3897/README.md)
+User Work Planes also controls the published plane overlays and analytic
+viewport hits. Restoring the category uses each plane's stored visibility.
+[Native work-plane checks](receipts/2026-11-26-object-visibility-work-planes-3897/README.md)
 
 Home keeps Get Started, Tools, and the display controls while it covers an
 open document. The ribbon suspends document commands and closes temporary

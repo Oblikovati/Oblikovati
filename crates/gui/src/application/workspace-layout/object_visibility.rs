@@ -4,7 +4,10 @@ use crate::icons::{GuiRibbonIcons, IconGlyph};
 use imgui::Ui;
 
 const MENU: &str = "##object-visibility";
-const SKETCHES_2D: usize = 7;
+const RENDERER_SWITCHES: [(usize, GuiOverlayCategory); 2] = [
+    (3, GuiOverlayCategory::UserWorkPlanes),
+    (7, GuiOverlayCategory::Sketches2D),
+];
 const SKETCH_DIMENSIONS: usize = 9;
 const UCS_START: usize = 11;
 // The second column identifies the categories controlled by All Workfeatures.
@@ -30,6 +33,13 @@ const CATEGORIES: [(&str, bool); 15] = [
 pub(crate) struct ObjectVisibility {
     workfeatures: bool,
     categories: [bool; CATEGORIES.len()],
+}
+
+/// A visibility switch handled by the desktop scene owner.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuiOverlayCategory {
+    Sketches2D,
+    UserWorkPlanes,
 }
 
 impl Default for ObjectVisibility {
@@ -59,11 +69,15 @@ impl ObjectVisibility {
         let Some(_popup) = ui.begin_popup(MENU) else {
             return false;
         };
-        let before = self.categories[SKETCHES_2D];
+        let before = self.categories;
         let changed = self.checklist(ui);
-        let visible = self.categories[SKETCHES_2D];
-        if before != visible {
-            actions.push(crate::GuiShellAction::SetSketchOverlays(visible));
+        for (index, category) in RENDERER_SWITCHES {
+            let visible = self.categories[index];
+            if before[index] != visible {
+                actions.push(crate::GuiShellAction::SetOverlayVisibility(
+                    category, visible,
+                ));
+            }
         }
         changed
     }

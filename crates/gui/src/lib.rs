@@ -155,6 +155,7 @@ mod part_context_menu;
 pub use dimensions::{GuiDimensionAction, GuiDimensionDraft};
 
 mod dimension_labels;
+pub use application::workspace_layout::object_visibility::GuiOverlayCategory;
 pub use dimension_labels::{GuiDimensionLabel, GuiDimensionLabelRole};
 
 mod sketch_delete;

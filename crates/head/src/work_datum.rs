@@ -19,5 +19,22 @@ macro_rules! datum_work_methods {
         fn datum_planes(&mut self) -> Result<crate::HeadDatumPlaneUpdate, String> {
             Ok(crate::HeadDatumPlaneUpdate::default())
         }
+        /// Toggle the display and picking of user work planes for this desktop session.
+        fn set_work_plane_overlays(&mut self, _visible: bool) -> bool {
+            false
+        }
     };
 }
+
+macro_rules! datum_view_owner_methods {
+    () => {
+        fn datum_planes(&mut self) -> Result<crate::HeadDatumPlaneUpdate, String> {
+            self.datum_planes_for_view()
+        }
+        fn set_work_plane_overlays(&mut self, visible: bool) -> bool {
+            let hidden = !visible;
+            std::mem::replace(&mut self.work_plane_overlays_hidden, hidden) != hidden
+        }
+    };
+}
+pub(crate) use datum_view_owner_methods;

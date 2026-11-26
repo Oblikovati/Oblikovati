@@ -477,9 +477,7 @@ impl<
         let serviced = self.drain_calls(budget, None)?;
         self.finish_owner_poll(serviced)
     }
-    fn datum_planes(&mut self) -> Result<crate::HeadDatumPlaneUpdate, String> {
-        self.datum_planes_for_view()
-    }
+    crate::work_datum::datum_view_owner_methods!();
     fn take_scene(&mut self) -> Result<Option<crate::HeadSceneUpdate>, String> {
         self.take_scene_with_extrusion_preview()
     }

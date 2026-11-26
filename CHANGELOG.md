@@ -4,7 +4,7 @@
 
 ### Added
 
-- Added the View ribbon Object Visibility checklist with independent category switches and the All Workfeatures control. Connected origin, 2D sketch, and sketch dimension overlays to the checklist. (#3897)
+- Added the View ribbon Object Visibility checklist with independent category switches and the All Workfeatures control. Connected origin, user work plane, 2D sketch, and sketch dimension overlays to the checklist. (#3897)
 - Enabled Open File Location for a saved Model Browser document, opening its containing folder in the system file manager. (#4116)
 - Enabled Make New Folder in the project wizard and selected the created folder for workspace confirmation. Finish saved the new project with the chosen reference libraries. Enabled Browse to load a project, Apply to activate it and refresh the template chooser, and Save to commit edited project settings. (#3895)
 - Added Home and End navigation to the staged Ribbon Customization list. Advanced the available command selection after a single transfer and kept Space on Add after a mouse edit to Large or Text. (#3856)

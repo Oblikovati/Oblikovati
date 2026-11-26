@@ -448,6 +448,9 @@ macro_rules! forward_owner_view_work {
         fn datum_planes(&mut self) -> Result<$crate::HeadDatumPlaneUpdate, String> {
             self.$owner.datum_planes()
         }
+        fn set_work_plane_overlays(&mut self, visible: bool) -> bool {
+            self.$owner.set_work_plane_overlays(visible)
+        }
         fn take_scene(&mut self) -> Result<Option<$crate::HeadSceneUpdate>, String> {
             self.$owner.take_scene()
         }

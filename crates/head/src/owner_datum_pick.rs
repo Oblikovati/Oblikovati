@@ -19,6 +19,9 @@ impl<
         line: [[f64; 3]; 2],
         candidates: &mut PickCandidates,
     ) -> Result<(), String> {
+        if self.work_plane_overlays_hidden {
+            return Ok(());
+        }
         let session = self
             .files
             .workspace()
