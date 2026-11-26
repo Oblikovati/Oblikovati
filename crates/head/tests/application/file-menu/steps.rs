@@ -2,6 +2,8 @@
 use super::ApplicationWorld;
 use cucumber::{given, then, when};
 
+#[path = "appearance_contract.rs"]
+mod appearance_contract;
 #[cfg(test)]
 #[path = "native_input.rs"]
 mod native_input;
