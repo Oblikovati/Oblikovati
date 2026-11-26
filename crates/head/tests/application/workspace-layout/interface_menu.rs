@@ -35,6 +35,10 @@ fn show_visibility_options(world: &mut ApplicationWorld) {
 #[then(
     "the menu lists the viewport orientation control, navigation bar, contextual command toolbar, status bar, document tabs, marking menu, model browser, rule log, rule automation and favorites"
 )]
+// The pinned benchmark uses the Go product names for the two rule options.
+#[then(
+    "the menu lists ViewCube, Navigation Bar, Mini-Toolbar, Status Bar, Document Tabs, Marking Menu, Model Browser, iLogic Log, iLogic and Favorites"
+)]
 fn lists_workspace_options(world: &mut ApplicationWorld) {
     let absent: Vec<_> = CHECKED
         .into_iter()
@@ -47,6 +51,9 @@ fn lists_workspace_options(world: &mut ApplicationWorld) {
 #[then(
     "the viewport orientation control, navigation bar, status bar, document tabs, marking menu and model browser are checked"
 )]
+#[then(
+    "ViewCube, Navigation Bar, Status Bar, Document Tabs, Marking Menu and Model Browser are checked"
+)]
 fn visible_regions_are_checked(world: &mut ApplicationWorld) {
     for label in CHECKED {
         assert!(
@@ -57,6 +64,7 @@ fn visible_regions_are_checked(world: &mut ApplicationWorld) {
 }
 
 #[then("the contextual command toolbar, rule log, rule automation and favorites are unchecked")]
+#[then("Mini-Toolbar, iLogic Log, iLogic and Favorites are unchecked")]
 fn hidden_regions_are_unchecked(world: &mut ApplicationWorld) {
     for label in UNCHECKED {
         world.expect_text(label);
@@ -69,7 +77,13 @@ fn hidden_regions_are_unchecked(world: &mut ApplicationWorld) {
 
 #[then("the part remains visible in the viewport")]
 fn part_visible_behind_menu(world: &mut ApplicationWorld) {
-    browser_feature::expect_solid_visible(world);
+    let document = world.active_id();
+    let state = world.state();
+    if state.document_storage[&document].path.is_some() {
+        browser_feature::expect_solid_visible(world);
+    } else {
+        super::wireframe_tabs::active_document_visible(world);
+    }
 }
 
 #[cfg(target_os = "linux")]

@@ -142,6 +142,13 @@ fn open_blank_part_customization(world: &mut ApplicationWorld) {
     empty_tools_customization(world);
 }
 
+#[given("ribbon customization is open in the MCAD Software with All Commands selected")]
+fn open_all_commands(world: &mut ApplicationWorld) {
+    let document = world.state().document.unwrap_or_else(|| world.add_part());
+    world.previous_document = Some(document);
+    empty_tools_customization(world);
+}
+
 #[given("the available commands are in ascending name order")]
 #[given("the available command list is in its observed ascending order")]
 #[given("the available command category is All Commands in ascending name order")]

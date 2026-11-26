@@ -14,6 +14,12 @@ fn open_blank_customize(world: &mut ApplicationWorld) {
     assert!(world.run_in_window("Customize", "Apply").alpha < u8::MAX);
 }
 
+#[given("ribbon customization is open in the MCAD Software with an empty Part Tools target")]
+fn open_empty_tools_target(world: &mut ApplicationWorld) {
+    world.previous_document = world.state().document.or_else(|| Some(world.add_part()));
+    empty_tools_customization(world);
+}
+
 #[given("All Commands is shown in the available-command list")]
 fn all_commands_visible(world: &mut ApplicationWorld) {
     transaction_steps::all_commands(world);

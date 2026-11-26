@@ -20,9 +20,11 @@ pub(super) fn close_customization_button(world: &mut ApplicationWorld) {
 }
 
 #[given("ribbon customization is open without pending edits")]
+#[given("ribbon customization is open in the MCAD Software with no pending edits")]
 #[given("Ribbon customization is open in the MCAD Software")]
 fn open_clean_dialog(world: &mut ApplicationWorld) {
-    world.previous_document = world.state().document;
+    let document = world.state().document.unwrap_or_else(|| world.add_part());
+    world.previous_document = Some(document);
     empty_tools_customization(world);
     for label in ["Cancel", "Apply"] {
         assert!(world.run_in_window("Customize", label).alpha < u8::MAX);

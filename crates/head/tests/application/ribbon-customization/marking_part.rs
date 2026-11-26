@@ -12,6 +12,13 @@ fn part_without_sketch(world: &mut ApplicationWorld) {
     world.closed_document = world.previous_document;
 }
 
+#[given("a part is active in the MCAD Software with no active sketch")]
+fn active_part_without_sketch(world: &mut ApplicationWorld) {
+    world.add_part();
+    assert_eq!(world.state().authoring, GuiAuthoringContext::Part);
+    world.closed_document = Some(world.active_id());
+}
+
 #[then("the environment selector shows \"Part\"")]
 fn part_environment(world: &mut ApplicationWorld) {
     world.run_in_window("Customize", "Part");

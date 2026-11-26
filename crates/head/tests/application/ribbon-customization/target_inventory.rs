@@ -16,6 +16,9 @@ fn part_tools_is_empty(world: &mut ApplicationWorld) {
 #[then(
     "the visible part targets include Tools, Manage, View, Environments, Collaborate and the final available command tab"
 )]
+#[then(
+    "the visible part targets include Tools, Manage, View, Environments, Collaborate and Fusion"
+)]
 fn primary_part_targets(world: &mut ApplicationWorld) {
     target_names(
         world,

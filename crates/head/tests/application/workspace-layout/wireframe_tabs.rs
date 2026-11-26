@@ -52,7 +52,7 @@ fn ribbon_does_not_meet_strip(world: &mut ApplicationWorld) {
     );
 }
 #[then("the active document remains visible in the viewport")]
-fn active_document_visible(world: &mut ApplicationWorld) {
+pub(super) fn active_document_visible(world: &mut ApplicationWorld) {
     assert_eq!(world.state().document, world.previous_document);
     assert!(world.previous_document.is_some());
     let area = viewport_area(world);
@@ -148,6 +148,13 @@ fn model_ribbon_expanded(world: &mut ApplicationWorld) {
     world.expect_text("3D Model");
     world.expect_text("Start 2D Sketch");
 }
+#[then("the ribbon shows tabs and grouped commands above the workspace")]
+fn grouped_ribbon_above_workspace(world: &mut ApplicationWorld) {
+    super::super::wireframe_ribbon::assert_tabs_share_row(world);
+    super::super::wireframe_ribbon::assert_panels_below_tabs(world);
+    workspace_below_ribbon(world);
+}
+
 #[then("the model browser and viewport occupy the workspace below the ribbon")]
 fn workspace_below_ribbon(world: &mut ApplicationWorld) {
     let (ribbon, size) = geometry("##application-ribbon");
