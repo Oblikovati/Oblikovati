@@ -102,3 +102,15 @@ Through All.
 The desktop-owner regression covers all three directions, grows the
 original solid from 10 mm to 20 mm, and verifies analytic volume and the
 same target body key after save and reopen.
+
+The focused verification passed 33 desktop-owner extrusion tests, 15
+recipe tests, and 253 executed adapter tests. A native Wayland MCP
+test confirmed the analytic volume of a circular Through All Cut before
+and after the target depth grew from 50 mm to 90 mm.
+
+All 14 previously blocked Through All workflows were rerun. Mains socket
+holes passed. Fixing block, bolt flange, veroboard, and jack advanced to
+mirror, circular pattern, rectangular pattern, and Join, respectively.
+Three cases exposed unresolved split or merged topology names and three
+hit profile certification limits. Two Through All requests timed out.
+Ziptie timed out during its initial New Solid request on the fresh host.
