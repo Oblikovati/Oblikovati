@@ -23,25 +23,14 @@ fn ungroup_plane_choices(world: &mut ApplicationWorld) {
 #[when("the user opens the compact Work Features panel")]
 #[when("the user opens the Work Features panel again")]
 fn show_compact_work_features(world: &mut ApplicationWorld) {
-    let arrow = compact_work_features_arrow(world);
-    world.click(diagnostics::pointer_pixels(arrow.center()));
+    let button = compact_work_features(world);
+    world.click(diagnostics::pointer_pixels(button.center()));
     assert!(diagnostics::command_popup_open());
 }
 
-fn compact_work_features_arrow(world: &ApplicationWorld) -> &diagnostics::RenderedRun {
-    let group = world.run_in_window("##application-ribbon", "WorkFeatures");
-    let width = group.maximum[0] - group.minimum[0];
-    world
-        .frame
-        .runs
-        .iter()
-        .find(|run| {
-            run.text == "v"
-                && run.list == group.list
-                && (group.minimum[0]..group.minimum[0] + width + 16.).contains(&run.center()[0])
-                && (24. ..70.).contains(&(group.minimum[1] - run.center()[1]))
-        })
-        .expect("expected the Work Features compact panel button")
+fn compact_work_features(world: &ApplicationWorld) -> &diagnostics::RenderedRun {
+    // Expanded panels use uppercase captions, while the compact button uses its title.
+    world.run_in_window("##application-ribbon", "WorkFeatures")
 }
 
 #[then(
@@ -87,7 +76,7 @@ fn compact_after_regrouping(world: &mut ApplicationWorld) {
     show_compact_work_features(world);
     regroup_plane_choices(world);
     world.escape();
-    compact_work_features_arrow(world);
+    compact_work_features(world);
     assert!(!diagnostics::command_popup_open());
     world.observed_counts = vec![model_ribbon_caption_count(world)];
 }
@@ -107,7 +96,7 @@ fn expanded_after_maximize(world: &mut ApplicationWorld) {
 
 #[cfg(target_os = "linux")]
 fn model_ribbon_caption_count(world: &ApplicationWorld) -> usize {
-    let title = world.run_in_window("##application-ribbon", "WorkFeatures");
+    let title = world.run("Work Features");
     world
         .frame
         .runs
