@@ -198,6 +198,45 @@ const PROJECTS: &str = "Projects###file-projects";
 const TEMPLATE_PROJECTS: &str = "Projects###template-projects";
 const MATERIAL_BROWSER: &str = "Material Browser";
 
+#[test]
+fn file_properties_docks_and_returns_to_the_selected_file() {
+    use super::super::{diagnostics, document_opening as picker};
+    let mut world = ApplicationWorld::with_asset_tools_closed();
+    let folder = picker::models_folder(&mut world);
+    let part = picker::saved_part(&mut world, &folder);
+    let node = dock_material_browser(&mut world);
+    picker::open_dialog(&mut world);
+    picker::look_in(&mut world, &folder);
+    picker::select_row(&mut world, picker::PART_FILE);
+    open_file_properties(&mut world);
+
+    let title = "File Properties";
+    let (position, size) = window_geometry(MATERIAL_BROWSER).unwrap();
+    let target = [
+        (position[0] + size[0] * 0.5) as i32,
+        (position[1] + 10.) as i32,
+    ];
+    drag_title(&mut world, title, target);
+    for _ in 0..2 {
+        assert_eq!(diagnostics::window_dock_id(title), Some(node));
+        select_dock_tab(&mut world, title);
+        click_before_dock_frame(&mut world, title, "Cancel");
+        assert_closed_with_visible_tab(&mut world, title, MATERIAL_BROWSER);
+        picker::settle(&mut world);
+        picker::expect_name_and_preview(&mut world, picker::PART_FILE);
+        open_file_properties(&mut world);
+    }
+    world.expect_active(part);
+    world.close();
+}
+
+fn open_file_properties(world: &mut ApplicationWorld) {
+    let link = world.run_in_window("Open", "Properties").center();
+    world.click(super::super::diagnostics::pointer_pixels(link));
+    super::super::document_opening::settle(world);
+    world.run_in_window("File Properties", "General");
+}
+
 fn dock_standalone_projects(world: &mut ApplicationWorld) -> u32 {
     let node = dock_material_browser(world);
     open_toolbar_tool(world, "Projects");

@@ -105,6 +105,9 @@ impl OpenDialog {
     }
     /// Open where the last file opened from, or at the last folder; example: Control+O.
     pub(crate) fn request(&mut self) {
+        if self.properties.is_open() {
+            return;
+        }
         let name = match &self.last_opened {
             Some((folder, name)) => {
                 self.browser.folder.clone_from(folder);
@@ -121,8 +124,9 @@ impl OpenDialog {
     }
     /// A frame must follow so the popup opens without waiting for an event.
     pub(crate) fn is_opening(&self) -> bool {
-        self.draft.as_ref().is_some_and(|draft| draft.opening)
-            || self.draft.is_some() && self.browser.selection_redraw
+        !self.properties.is_open()
+            && (self.draft.as_ref().is_some_and(|draft| draft.opening)
+                || self.draft.is_some() && self.browser.selection_redraw)
             || self.properties.is_opening()
             || self.defer_opening
     }
@@ -150,6 +154,10 @@ impl OpenDialog {
             self.request();
         }
         self.defer_message(ui, actions);
+        if self.properties.is_open() {
+            self.show_properties(ui, state, actions);
+            return;
+        }
         let Some(draft) = &mut self.draft else {
             return;
         };
@@ -183,8 +191,12 @@ impl OpenDialog {
             &mut self.properties,
             actions,
         );
-        self.properties.panel(ui, &draft.inspections);
         let Some(end) = opened else {
+            if self.properties.is_open() {
+                // Dock targets are outside the Open modal. Keep its draft and restore it on return.
+                draft.geometry = Some((ui.window_pos(), ui.window_size()));
+                ui.close_current_popup();
+            }
             return;
         };
         self.properties.close();
@@ -281,7 +293,6 @@ fn contents(
     let filter = draft.types.filter(draft.file_type);
     let wanted = selected
         .into_iter()
-        .chain(properties.shown_path())
         .chain(browser.listed_for_pictures(filter));
     draft.inspections.ask_next(wanted, actions);
     preview(ui, &draft.inspections, browser, &path);

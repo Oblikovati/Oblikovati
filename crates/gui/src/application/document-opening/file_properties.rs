@@ -48,9 +48,9 @@ impl FileProperties {
     ) -> Result<(), String> {
         registry.register::<Self>(TITLE, &self.dock_state)
     }
-    /// The file its window is showing, whose stored properties it must have read.
-    pub(super) fn shown_path(&self) -> Option<String> {
-        self.path.clone()
+    /// Whether a file inspection is active.
+    pub(super) fn is_open(&self) -> bool {
+        self.path.is_some()
     }
     pub(super) fn new(folders: Rc<dyn GuiFolders>) -> Self {
         Self {
@@ -112,11 +112,31 @@ impl FileProperties {
         });
         if closed || !open {
             self.close();
-            // The Properties window has ended, so the current window is its Open dialog.
-            crate::widget_abi::focus_current_window(ui);
         }
     }
 }
+
+impl super::OpenDialog {
+    /// Render the inspector independently of the Open modal and resume the picker on close.
+    pub(super) fn show_properties(
+        &mut self,
+        ui: &Ui,
+        state: &GuiCommandState,
+        actions: &mut Vec<GuiShellAction>,
+    ) {
+        let Some(draft) = &mut self.draft else {
+            self.properties.close();
+            return;
+        };
+        draft.inspections.follow(state, &mut self.browser);
+        draft
+            .inspections
+            .ask_next(self.properties.path.clone().into_iter(), actions);
+        self.properties.panel(ui, &draft.inspections);
+        draft.opening = !self.properties.is_open();
+    }
+}
+
 fn end_buttons(ui: &Ui) -> bool {
     let closed = crate::widget_abi::button(ui, "OK", [80., 0.])
         || crate::widget_abi::button(ui, "Cancel", [80., 0.]);
