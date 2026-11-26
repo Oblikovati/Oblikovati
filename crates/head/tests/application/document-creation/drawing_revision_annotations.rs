@@ -3,21 +3,17 @@ use super::*;
 use oblikovati_api::{
     client::Caller,
     json::EmptyObject,
-    wire::{AddRevisionTableArgs, AddRevisionTagArgs, DrawingAnnotationInfo, RevisionTableRow},
+    wire::{
+        AddRevisionCloudArgs, AddRevisionTableArgs, AddRevisionTagArgs, DeleteAnnotationArgs,
+        DrawingAnnotationInfo, RevisionTableRow,
+    },
 };
 use oblikovati_gui::{GuiDocumentTemplate, GuiTemplateKind, GuiTemplateUnits};
 use oblikovati_model::drawing::DrawingAnnotationDefinition;
 
 #[test]
 fn drawing_revision_table_and_tag_have_independent_history_and_persist() {
-    let (mut owner, _) = owner();
-    owner
-        .create_document_template(GuiDocumentTemplate {
-            kind: GuiTemplateKind::Drawing,
-            units: GuiTemplateUnits::Metric,
-        })
-        .unwrap();
-    let drawing = owner.documents().workspace().active_document().unwrap();
+    let (mut owner, drawing) = drawing_owner();
     let client = Client::new(owner.document_host());
     let [table, tag] = add_revision_annotations(&client);
     client.transactions().undo().unwrap();
@@ -32,6 +28,98 @@ fn drawing_revision_table_and_tag_have_independent_history_and_persist() {
     assert!(state.drawing_projections[&reopened].error.is_none());
     let sheet = &state.drawing_documents[&reopened].sheets()[0];
     assert_presentations(&sheet.annotations);
+}
+
+fn drawing_owner() -> (TestOwner, u64) {
+    let (mut owner, _) = owner();
+    owner
+        .create_document_template(GuiDocumentTemplate {
+            kind: GuiTemplateKind::Drawing,
+            units: GuiTemplateUnits::Metric,
+        })
+        .unwrap();
+    let drawing = owner.documents().workspace().active_document().unwrap();
+    (owner, drawing)
+}
+
+#[test]
+fn drawing_revision_cloud_has_outward_scallops_and_round_trips() {
+    let (mut owner, drawing) = drawing_owner();
+    let client = Client::new(owner.document_host());
+    let cloud = add_cloud(&client);
+    client.transactions().undo().unwrap();
+    assert!(listed(&client).is_empty());
+    client.transactions().redo().unwrap();
+    assert_eq!(listed(&client).as_slice(), std::slice::from_ref(&cloud));
+    let reopened =
+        super::drawing_custom_table::reopen(&client, drawing, "/memory/revision-cloud.odd");
+    assert_eq!(listed(&client).as_slice(), std::slice::from_ref(&cloud));
+    drop(client);
+    let state = owner.gui_command_state().unwrap();
+    assert!(state.drawing_projections[&reopened].error.is_none());
+    let sheet = &state.drawing_documents[&reopened].sheets()[0];
+    assert_cloud_presentation(&sheet.annotations[0]);
+    let client = Client::new(owner.document_host());
+    assert!(
+        client
+            .drawing_annotations()
+            .delete(&DeleteAnnotationArgs { name: cloud.name })
+            .unwrap()
+            .annotations
+            .is_none()
+    );
+}
+
+fn add_cloud(client: &Client<impl Caller>) -> DrawingAnnotationInfo {
+    let annotations = client.drawing_annotations();
+    let request = AddRevisionCloudArgs {
+        xmm: 60.,
+        ymm: 80.,
+        width_mm: 60.,
+        height_mm: 40.,
+        tag: "A".into(),
+        ..Default::default()
+    };
+    for width_mm in [0., -1., 1e30] {
+        assert!(
+            annotations
+                .add_revision_cloud(&AddRevisionCloudArgs {
+                    width_mm,
+                    ..request.clone()
+                })
+                .is_err()
+        );
+    }
+    let cloud = annotations.add_revision_cloud(&request).unwrap().annotation;
+    assert_eq!(
+        (
+            cloud.name.as_str(),
+            cloud.kind.as_str(),
+            cloud.tag.as_str(),
+            cloud.curve_count
+        ),
+        ("NOTE:1", "revisionCloud", "A", 204)
+    );
+    cloud
+}
+
+fn assert_cloud_presentation(annotation: &DrawingAnnotationDefinition) {
+    let cloud = annotation.revision_cloud_presentation().unwrap();
+    assert_eq!(cloud.tag, "A");
+    assert_eq!(cloud.label_center_mm(), [90., 126.]);
+    let outline = cloud.visible_segments([420., 297.], 0.25);
+    assert_eq!(outline.len(), 204);
+    assert_eq!(outline[0][0], [60., 80.]);
+    assert!((outline[2][1][0] - 63.).abs() < 1e-10);
+    assert_eq!(outline[2][1][1], 77.);
+    assert!(
+        outline[60..102]
+            .iter()
+            .flatten()
+            .all(|point| point[0] >= 120.)
+    );
+    assert_eq!(cloud.visible_segments([420., 297.], 10.).len(), 4);
+    assert_eq!(cloud.visible_segments([90., 90.], 0.25).len(), 84);
 }
 
 fn add_revision_annotations(client: &Client<impl Caller>) -> [DrawingAnnotationInfo; 2] {

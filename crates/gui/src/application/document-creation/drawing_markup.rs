@@ -13,6 +13,10 @@ pub(super) fn draw(
     dimensions: [f64; 2],
 ) {
     let position = |point| screen_point(point, minimum, maximum, dimensions);
+    let mm_per_pixel = f64::max(
+        dimensions[0] / f64::from(maximum[0] - minimum[0]),
+        dimensions[1] / f64::from(maximum[1] - minimum[1]),
+    );
     list.with_clip_rect_intersect(minimum, maximum, || {
         for annotation in annotations {
             if let Some(note) = annotation.note_presentation() {
@@ -24,16 +28,23 @@ pub(super) fn draw(
             }
             if let Some(tag) = annotation.revision_tag_presentation() {
                 draw_segments(list, tag.segments_mm, position, dimensions);
-                let center = position(tag.text_center_mm);
-                if center.iter().all(|coordinate| coordinate.is_finite()) {
-                    let size = ui.calc_text_size(tag.text);
-                    let origin =
-                        std::array::from_fn::<_, 2, _>(|axis| center[axis] - size[axis] * 0.5);
-                    list.add_text(origin, LINE_COLOR, tag.text);
-                }
+                center_text(ui, list, position(tag.text_center_mm), tag.text);
+            }
+            if let Some(cloud) = annotation.revision_cloud_presentation() {
+                let segments = cloud.visible_segments(dimensions, mm_per_pixel);
+                draw_segments(list, segments, position, dimensions);
+                center_text(ui, list, position(cloud.label_center_mm()), cloud.tag);
             }
         }
     });
+}
+
+fn center_text(ui: &imgui::Ui, list: &imgui::DrawListMut<'_>, [x, y]: [f32; 2], text: &str) {
+    if text.is_empty() || !x.is_finite() || !y.is_finite() {
+        return;
+    }
+    let [width, height] = ui.calc_text_size(text);
+    list.add_text([x - width * 0.5, y - height * 0.5], LINE_COLOR, text);
 }
 
 fn draw_segments(

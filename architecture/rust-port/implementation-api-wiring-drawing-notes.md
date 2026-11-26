@@ -51,3 +51,17 @@ The native Wayland MCP run placed a two-row table and a B tag on a
 drawing with no referenced model. The table changed 7,149 sheet pixels,
 and the tag changed another 454. Undo, redo, reopen, and tag deletion
 matched their expected captures pixel for pixel.
+
+## Revision clouds
+
+`drawingAnnotations.addRevisionCloud` places an outward scalloped
+outline around a sheet rectangle, with an optional tag above it.
+The active sheet stores the rectangle and tag. The API returns the
+nominal segment count. At small display scales the canvas draws
+subpixel scallops as straight edges.
+
+The owner test checks invalid extents, the outward outline, sheet
+clipping, and save and reopen. A native Wayland MCP run added a
+60 × 40 mm cloud with a B tag and verified 204 nominal segments.
+The cloud changed 2,560 sheet pixels. Undo, redo, reopening, and
+deletion matched their respective captures pixel for pixel.

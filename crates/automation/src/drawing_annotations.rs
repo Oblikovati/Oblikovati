@@ -3,8 +3,8 @@ use oblikovati_api::{
     Error,
     types::DOCUMENT_PART,
     wire::{
-        self, AddCustomTableArgs, AddDrawingNoteArgs, AddRevisionTableArgs, AddRevisionTagArgs,
-        AnnotationResult, DeleteAnnotationArgs, DrawingAnnotationInfo,
+        self, AddCustomTableArgs, AddDrawingNoteArgs, AddRevisionCloudArgs, AddRevisionTableArgs,
+        AddRevisionTagArgs, AnnotationResult, DeleteAnnotationArgs, DrawingAnnotationInfo,
         ListDrawingAnnotationsResult,
     },
 };
@@ -16,11 +16,12 @@ use oblikovati_model::property::{DESIGN_TRACKING, DocumentProperties};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
-pub(super) const ANNOTATION_METHODS: [&str; 6] = [
+pub(super) const ANNOTATION_METHODS: [&str; 7] = [
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_NOTE,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_CUSTOM_TABLE,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_REV_TABLE,
     wire::METHOD_DRAWING_ANNOTATIONS_ADD_REV_TAG,
+    wire::METHOD_DRAWING_ANNOTATIONS_ADD_REVISION_CLOUD,
     wire::METHOD_DRAWING_ANNOTATIONS_LIST,
     wire::METHOD_DRAWING_ANNOTATIONS_DELETE,
 ];
@@ -89,6 +90,17 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
             let args: AddRevisionTagArgs = crate::decode(method, request)?;
             add_annotation(files, owner, "Add Drawing Revision Tag", |drawing| {
                 drawing.add_revision_tag(&args.name, [args.xmm, args.ymm], &args.revision)
+            })
+        }
+        wire::METHOD_DRAWING_ANNOTATIONS_ADD_REVISION_CLOUD => {
+            let args: AddRevisionCloudArgs = crate::decode(method, request)?;
+            add_annotation(files, owner, "Add Drawing Revision Cloud", |drawing| {
+                drawing.add_revision_cloud(
+                    &args.name,
+                    [args.xmm, args.ymm],
+                    [args.width_mm, args.height_mm],
+                    &args.tag,
+                )
             })
         }
         wire::METHOD_DRAWING_ANNOTATIONS_DELETE => {
@@ -199,6 +211,12 @@ fn annotation_details<'a>(
     table: Option<&DrawingPartsListPresentation>,
 ) -> (&'static str, &'a str, usize, usize) {
     match annotation {
+        DrawingAnnotationDefinition::RevisionCloud { tag, .. } => {
+            let curves = annotation
+                .revision_cloud_presentation()
+                .map_or(0, |cloud| cloud.curve_count());
+            ("revisionCloud", tag, curves, 0)
+        }
         DrawingAnnotationDefinition::RevisionTag { revision, .. } => {
             ("revisionTag", revision, 3, 0)
         }

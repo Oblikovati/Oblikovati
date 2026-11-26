@@ -47,7 +47,8 @@ impl GuiTemplateSheet {
                         Some(anchor(*x_mm, *y_mm))
                     }
                     DrawingAnnotationDefinition::Note { .. }
-                    | DrawingAnnotationDefinition::RevisionTag { .. } => None,
+                    | DrawingAnnotationDefinition::RevisionTag { .. }
+                    | DrawingAnnotationDefinition::RevisionCloud { .. } => None,
                 })
                 .collect(),
         })

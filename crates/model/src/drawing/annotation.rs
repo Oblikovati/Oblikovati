@@ -100,6 +100,28 @@ pub enum DrawingAnnotationDefinition {
         )]
         material_removal: Option<String>,
     },
+    #[serde(rename = "revisionCloud")]
+    RevisionCloud {
+        name: String,
+        #[serde(rename = "xmm", default)]
+        x_mm: f64,
+        #[serde(rename = "ymm", default)]
+        y_mm: f64,
+        #[serde(rename = "widthMm")]
+        width_mm: f64,
+        #[serde(rename = "heightMm")]
+        height_mm: f64,
+        #[serde(default, skip_serializing_if = "String::is_empty")]
+        tag: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        characteristic: Option<String>,
+        #[serde(
+            rename = "materialRemoval",
+            default,
+            skip_serializing_if = "Option::is_none"
+        )]
+        material_removal: Option<String>,
+    },
 }
 impl DrawingAnnotationDefinition {
     /// Define a parts list without inventing BOM rows; example: `DrawingAnnotationDefinition::parts_list("Parts", [40., 200.])?`.
@@ -121,7 +143,8 @@ impl DrawingAnnotationDefinition {
             | Self::Note { name, .. }
             | Self::CustomTable { name, .. }
             | Self::RevisionTable { name, .. }
-            | Self::RevisionTag { name, .. } => name,
+            | Self::RevisionTag { name, .. }
+            | Self::RevisionCloud { name, .. } => name,
         }
     }
     /// Check whether a definition requires a model, as a parts list does.
@@ -154,6 +177,13 @@ impl DrawingAnnotationDefinition {
                 ..
             }
             | Self::RevisionTag {
+                x_mm,
+                y_mm,
+                characteristic,
+                material_removal,
+                ..
+            }
+            | Self::RevisionCloud {
                 x_mm,
                 y_mm,
                 characteristic,
@@ -196,6 +226,16 @@ impl DrawingAnnotationDefinition {
             Self::CustomTable { headers, rows, .. } => super::table::validate_cells(headers, rows),
             Self::RevisionTable { revisions, .. } => super::revision::validate_rows(revisions),
             Self::RevisionTag { revision, .. } => require_label("revision tag", revision),
+            Self::RevisionCloud {
+                x_mm,
+                y_mm,
+                width_mm,
+                height_mm,
+                tag,
+                ..
+            } => {
+                super::revision_cloud::validate_cloud([*x_mm, *y_mm], [*width_mm, *height_mm], tag)
+            }
         }
     }
 }
