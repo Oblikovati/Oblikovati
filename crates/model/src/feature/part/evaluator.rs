@@ -65,6 +65,16 @@ pub trait PartFeatureEvaluator {
             "hole: expected an available named-face evaluator".into(),
         ))
     }
+    /// Resolve the sweep from a sketch plane to the current target body's bounds.
+    /// Example: `backend.prism_through_all_span(body, plane, direction)?`.
+    fn prism_through_all_span(
+        &self,
+        _body: &Self::Body,
+        _plane: crate::sketch::SketchPlane,
+        _direction: crate::feature::sketch_prism::ThroughAllDirection,
+    ) -> Result<(f64, f64), String> {
+        Err("extrude Through All: expected an analytic body bounds evaluator".into())
+    }
     /// Subtract a prism from a named target. Example: `backend.evaluate_prism_cut(id, body, input)`.
     fn evaluate_prism_cut(
         &mut self,

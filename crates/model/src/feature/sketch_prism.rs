@@ -10,7 +10,7 @@ use super::work_geometry::DatumLength;
 use crate::{document_sketch::DocumentSketchId, sketch::SketchEntityId};
 pub use cut::SketchPrismCutTarget;
 pub use error::{SketchPrismCause, SketchPrismError};
-pub use extent::SketchPrismExtent;
+pub use extent::{SketchPrismExtent, ThroughAllDirection};
 pub use recipe::SketchPrismRecipe;
 pub use resolve::ResolvedSketchPrism;
 /// One authored curve in a directed boundary; reversal changes traversal, not its source identity.

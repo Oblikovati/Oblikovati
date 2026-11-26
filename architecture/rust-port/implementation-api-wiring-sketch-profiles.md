@@ -88,3 +88,17 @@ end advanced to Join. Four cases exposed split or merged topology naming
 gaps, two returned multiple solids, and two reached region certification
 refusals. The fan frame reached its third mounting-hole request before the
 owner dispatch timed out. The 14 prior Through All cases remain open.
+
+## Through All Cut
+
+Through All stores the target reference and the positive, negative, or
+symmetric direction. Replay projects the current body's analytic bounds
+onto the sketch normal and extends the tool beyond the selected end using
+the admitted tolerance and an outward rounding allowance. One-sided cuts
+start at the sketch plane. The model stores neither a fixed distance nor
+the measured body extents. The browser displays the feature as Cut,
+Through All.
+
+The desktop-owner regression covers all three directions, grows the
+original solid from 10 mm to 20 mm, and verifies analytic volume and the
+same target body key after save and reopen.

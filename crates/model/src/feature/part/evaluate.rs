@@ -446,6 +446,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         feature: &crate::feature::AuthoredFeature<PartFeatureDefinition>,
         definition: &crate::feature::sketch_prism::SketchPrismDefinition,
     ) -> Result<(), PartFeatureFailure<Failure>> {
+        if let Some(target) = definition.cut_target() {
+            return self.cut_prism(snapshot, backend, feature.id(), target, definition);
+        }
         let resolve_face =
             |reference: &_| resolve_body_face(&self.bodies, &self.body_lineage, backend, reference);
         let resolver = crate::feature::work_geometry::DatumFaceResolver {
@@ -453,11 +456,10 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             resolve_face: &resolve_face,
         };
         let input = definition
-            .resolve_with_datums(snapshot, &self.datums, &resolver)
+            .resolve_with_datums(snapshot, &self.datums, &resolver, |_, _| {
+                Err("through-all extent: expected Cut against a current target body".into())
+            })
             .map_err(PartFeatureFailure::Inputs)?;
-        if let Some(target) = definition.cut_target() {
-            return self.cut_prism(backend, feature.id(), target, input);
-        }
         let body = backend
             .evaluate_prism(feature.id(), input)
             .map_err(PartFeatureFailure::Kernel)?;

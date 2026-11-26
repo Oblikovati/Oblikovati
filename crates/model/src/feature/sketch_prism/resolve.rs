@@ -26,29 +26,36 @@ impl SketchPrismDefinition {
         let sketch = snapshot
             .require_converged_resolved_sketch(self.sketch)
             .map_err(|cause| self.decline(SketchPrismCause::Placement(cause)))?;
-        self.resolve_current_sketch(snapshot, sketch, &WorkGeometryEvaluation::default())
+        self.resolve_current_sketch(
+            snapshot,
+            sketch,
+            &WorkGeometryEvaluation::default(),
+            extent::missing_target_bounds,
+        )
     }
     pub(crate) fn resolve_with_datums<'a>(
         &'a self,
         snapshot: &'a DocumentSnapshot,
         datums: &WorkGeometryEvaluation,
         resolver: &impl WorkPlaneResolver,
+        target_span: impl FnOnce(SketchPlane, ThroughAllDirection) -> Result<(f64, f64), String>,
     ) -> Result<ResolvedSketchPrism<'a>, SketchPrismError> {
         let sketch = snapshot
             .require_converged_sketch_with_datums(self.sketch, datums)
             .map_err(|cause| self.decline(SketchPrismCause::Placement(cause)))?;
-        self.resolve_current_sketch(snapshot, sketch, resolver)
+        self.resolve_current_sketch(snapshot, sketch, resolver, target_span)
     }
     fn resolve_current_sketch<'a>(
         &'a self,
         snapshot: &'a DocumentSnapshot,
         sketch: ResolvedDocumentSketch<'a>,
         resolver: &impl WorkPlaneResolver,
+        target_span: impl FnOnce(SketchPlane, ThroughAllDirection) -> Result<(f64, f64), String>,
     ) -> Result<ResolvedSketchPrism<'a>, SketchPrismError> {
         let mut displacement = self.resolve_displacement(snapshot)?;
         let (offset, depth) = if let Some(extent) = &self.extent {
             extent
-                .span(sketch.plane, resolver)
+                .span(sketch.plane, resolver, target_span)
                 .map_err(|cause| self.decline(cause))?
         } else {
             self.validate_normal_source(displacement[2])

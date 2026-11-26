@@ -3,7 +3,7 @@ use super::*;
 use oblikovati_model::{
     document_sketch::SketchPlacement,
     feature::{
-        sketch_prism::SketchPrismExtent,
+        sketch_prism::{SketchPrismExtent, ThroughAllDirection},
         work_plane::{WorkPlaneFaceReference, WorkPlaneOrigin, WorkPlaneReference},
     },
 };
@@ -17,12 +17,31 @@ pub(super) fn reference_extent(
         "" | "distance" => Err(Error(
             "extrude distance extent: expected no fromFace or toFace".into(),
         )),
+        "through-all" => through_all(input).map(Some),
         "to-face" | "from-to" => parse_plane_extent(snapshot, input).map(Some),
         _ => Err(Error(format!(
-            "extrude extent {:?}: expected distance, to-face, or from-to",
+            "extrude extent {:?}: expected distance, through-all, to-face, or from-to",
             input.extent
         ))),
     }
+}
+
+fn through_all(input: &Extrude) -> Result<SketchPrismExtent, Error> {
+    if !input.operation.trim().eq_ignore_ascii_case("cut") {
+        return Err(Error("extrude Through All: expected operation Cut".into()));
+    }
+    if !input.to_face.is_empty() || !input.from_face.is_empty() || !input.second_distance.is_empty()
+    {
+        return Err(Error(
+            "extrude Through All: expected direction without face bounds or Distance B".into(),
+        ));
+    }
+    let direction = match input.direction.trim().to_ascii_lowercase().as_str() {
+        "negative" => ThroughAllDirection::Negative,
+        "symmetric" => ThroughAllDirection::Symmetric,
+        _ => ThroughAllDirection::Positive,
+    };
+    Ok(SketchPrismExtent::ThroughAll { direction })
 }
 
 fn parse_plane_extent(

@@ -87,6 +87,14 @@ where
             .evaluate_shell(feature, body.get(), openings, input)
             .map(PrefixBody::Created)
     }
+    fn prism_through_all_span(
+        &self,
+        body: &Self::Body,
+        plane: crate::sketch::SketchPlane,
+        direction: crate::feature::sketch_prism::ThroughAllDirection,
+    ) -> Result<(f64, f64), String> {
+        self.0.prism_through_all_span(body.get(), plane, direction)
+    }
     fn evaluate_prism_cut(
         &mut self,
         feature: FeatureId,

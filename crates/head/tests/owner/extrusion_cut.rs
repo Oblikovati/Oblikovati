@@ -102,3 +102,51 @@ fn reopen_cut(owner: &mut TestOwner, document: u64) -> u64 {
         .unwrap()
         .id
 }
+
+#[test]
+fn through_all_cut_follows_the_target_after_it_grows() {
+    for direction in ["positive", "negative", "symmetric"] {
+        let (owner, _) = owner();
+        let mut owner = owner
+            .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+            .unwrap();
+        let document = open_sketch(&mut owner);
+        let client = Client::new(owner.document_host());
+        client
+            .features()
+            .add_feature(&Extrude {
+                direction: direction.into(),
+                ..request()
+            })
+            .unwrap();
+        let sketch_index = client
+            .sketch()
+            .create(&Default::default())
+            .unwrap()
+            .sketch_index;
+        client
+            .sketch()
+            .add_entity(&AddSketchEntityArgs {
+                sketch_index,
+                kind: "rectangle".into(),
+                points: Some(vec![Some(vec![0.3, 0.3]), Some(vec![0.7, 0.7])]),
+                ..Default::default()
+            })
+            .unwrap();
+        client
+            .features()
+            .add_feature(&Extrude {
+                sketch_index,
+                operation: "cut".into(),
+                extent: "through-all".into(),
+                direction: direction.into(),
+                ..Default::default()
+            })
+            .unwrap();
+        let key = check_cut_body(&mut owner, document, 0.84);
+        set_size(&mut owner, "20 mm");
+        assert_eq!(check_cut_body(&mut owner, document, 7.68), key);
+        let reopened = reopen_cut(&mut owner, document);
+        assert_eq!(check_cut_body(&mut owner, reopened, 7.68), key);
+    }
+}

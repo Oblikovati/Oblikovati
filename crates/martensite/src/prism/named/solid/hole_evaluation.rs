@@ -38,7 +38,8 @@ impl CertifiedNamedSolidEvaluator<'_> {
         let shape = body
             .native_shape(self.history, self.document)
             .map_err(PartFeatureFailure::BodyReference)?;
-        let bounds = analytic_bounds(shape).map_err(|message| hole_failure(feature, message))?;
+        let bounds =
+            analytic_bounds(shape, "hole").map_err(|message| hole_failure(feature, message))?;
         let axis = body
             .hole_axis(
                 self.history,
@@ -83,16 +84,16 @@ fn hole_failure(feature: FeatureId, message: String) -> PartFeatureFailure<Evalu
             .for_feature(feature),
     )
 }
-fn analytic_bounds(shape: &Shape) -> Result<[f64; 6], String> {
+pub(super) fn analytic_bounds(shape: &Shape, operation: &str) -> Result<[f64; 6], String> {
     let mut bounds = BoundingBox3::default();
     BRepBndLib::add_optimal(shape, &mut bounds, false, false)
-        .map_err(|error| format!("hole body bounds: expected analytic bounds: {error}"))?;
+        .map_err(|error| format!("{operation} body bounds: expected analytic bounds: {error}"))?;
     let result = bounds
         .get()
-        .map_err(|error| format!("hole body bounds: expected finite limits: {error}"))?;
+        .map_err(|error| format!("{operation} body bounds: expected finite limits: {error}"))?;
     if result.iter().any(|value| !value.is_finite()) {
         return Err(format!(
-            "hole body bounds {result:?}: expected finite limits"
+            "{operation} body bounds {result:?}: expected finite limits"
         ));
     }
     Ok(result)

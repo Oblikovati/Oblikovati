@@ -329,13 +329,19 @@ fn extended_feature_name(
     let SketchPrism(definition) = feature.definition() else {
         return None;
     };
+    let operation = if definition.cut_target().is_some() {
+        "Cut"
+    } else {
+        "New Solid"
+    };
     if let Some(extent) = definition.extent() {
         use oblikovati_model::feature::sketch_prism::SketchPrismExtent;
         let label = match extent {
+            SketchPrismExtent::ThroughAll { .. } => "Through All",
             SketchPrismExtent::ToFace { .. } => "To Face",
             SketchPrismExtent::FromTo { .. } => "From–To",
         };
-        return Some(format!("New Solid, {label}"));
+        return Some(format!("{operation}, {label}"));
     }
     let depth = definition.displacement()[2]
         .resolve(&snapshot.parameters)
@@ -345,7 +351,7 @@ fn extended_feature_name(
         .units()
         .display_rounded_expression(Quantity::new(depth.abs(), Dimension::Length))
         .ok()?;
-    Some(format!("New Solid, {shown}"))
+    Some(format!("{operation}, {shown}"))
 }
 fn browser_sketch<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     snapshot: &oblikovati_model::history::DocumentSnapshot,

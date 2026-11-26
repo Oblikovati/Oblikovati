@@ -13,6 +13,9 @@ use crate::{
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "kebab-case", deny_unknown_fields)]
 pub enum SketchPrismExtent {
+    ThroughAll {
+        direction: ThroughAllDirection,
+    },
     ToFace {
         to: WorkPlaneReference,
     },
@@ -22,8 +25,25 @@ pub enum SketchPrismExtent {
     },
 }
 
+/// Sides of the sketch plane covered by a through-all Cut.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum ThroughAllDirection {
+    Positive,
+    Negative,
+    Symmetric,
+}
+
+pub(super) fn missing_target_bounds(
+    _plane: SketchPlane,
+    _direction: ThroughAllDirection,
+) -> Result<(f64, f64), String> {
+    Err("through-all extent: expected current target body bounds".into())
+}
+
 impl SketchPrismDefinition {
-    /// Author an extrusion bounded by planes. Example: `SketchPrismDefinition::between_planes(sketch, selection, extent)?`.
+    /// Author a prism bounded by associative geometry.
+    /// Example: `SketchPrismDefinition::between_planes(sketch, selection, extent)?`.
     pub fn between_planes(
         sketch: DocumentSketchId,
         selection: SketchPrismSelection,
@@ -53,6 +73,7 @@ impl SketchPrismExtent {
 
     fn references(&self) -> [Option<&WorkPlaneReference>; 2] {
         match self {
+            Self::ThroughAll { .. } => [None, None],
             Self::ToFace { to } => [None, Some(to)],
             Self::FromTo { from, to } => [Some(from), Some(to)],
         }
@@ -62,7 +83,11 @@ impl SketchPrismExtent {
         &self,
         sketch: SketchPlane,
         resolver: &impl WorkPlaneResolver,
+        target_span: impl FnOnce(SketchPlane, ThroughAllDirection) -> Result<(f64, f64), String>,
     ) -> Result<(f64, f64), SketchPrismCause> {
+        if let Self::ThroughAll { direction } = self {
+            return target_span(sketch, *direction).map_err(SketchPrismCause::Definition);
+        }
         let [start, end] = self.references().map(|reference| {
             reference
                 .map(|plane| plane_offset(sketch, plane, resolver))

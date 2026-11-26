@@ -146,3 +146,35 @@ fn cut_recipe_retains_a_body_name_and_tracks_its_producer() {
             .contains(&FeatureReadKey::Feature(source))
     );
 }
+
+#[test]
+fn through_all_recipe_requires_the_body_its_extent_depends_on() {
+    use oblikovati_model::{
+        feature::{
+            FeatureId,
+            sketch_prism::{SketchPrismExtent, ThroughAllDirection},
+        },
+        identity::{SketchPrismReferenceRole, sketch_prism_reference_name},
+    };
+    let document = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let key = sketch_prism_reference_name(
+        document,
+        FeatureId(42),
+        SKETCH,
+        SketchPrismReferenceRole::Body,
+    )
+    .unwrap();
+    let extent = SketchPrismExtent::ThroughAll {
+        direction: ThroughAllDirection::Negative,
+    };
+    let definition =
+        SketchPrismDefinition::between_planes(SKETCH, selected_sketch_boundary(), extent.clone())
+            .unwrap();
+    assert!(SketchPrismDefinition::from_recipe(&definition.recipe()).is_err());
+    let definition = definition.with_cut_target(key.clone()).unwrap();
+    let bytes = serde_json::to_vec(&definition.recipe()).unwrap();
+    let restored =
+        SketchPrismDefinition::from_recipe(&serde_json::from_slice(&bytes).unwrap()).unwrap();
+    assert_eq!(restored.extent(), Some(&extent));
+    assert_eq!(restored.cut_target().unwrap().key(), key);
+}

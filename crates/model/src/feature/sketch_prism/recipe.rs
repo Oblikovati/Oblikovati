@@ -51,6 +51,15 @@ impl SketchPrismDefinition {
         }?;
         match &recipe.cut_target {
             Some(key) => definition.with_cut_target(key.clone()),
+            None if matches!(
+                definition.extent(),
+                Some(SketchPrismExtent::ThroughAll { .. })
+            ) =>
+            {
+                Err(definition.decline(SketchPrismCause::Definition(
+                    "through-all extent: expected a saved target body".into(),
+                )))
+            }
             None => Ok(definition),
         }
     }
