@@ -151,6 +151,12 @@ pub fn prepare_sweep(
         }],
     )
     .map_err(api_error)?;
+    let definition = if input.taper.trim().is_empty() {
+        definition
+    } else {
+        let taper = crate::move_body::angle(snapshot, &input.taper, "sweep taper")?;
+        definition.with_taper(taper).map_err(api_error)?
+    };
     definition.resolve(snapshot, datums).map_err(api_error)?;
     Ok(PreparedSweep {
         name: crate::fillet::next_name(snapshot, "Sweep")?,
@@ -162,7 +168,6 @@ fn validate_options(input: &Sweep) -> Result<(), Error> {
     if !matches!(input.definition_type.as_str(), "" | "path")
         || !matches!(input.operation.as_str(), "" | "new")
         || !matches!(input.orientation.as_str(), "" | "normalToPath")
-        || !input.taper.is_empty()
         || !input.twist.is_empty()
         || input
             .align_vector
@@ -182,7 +187,7 @@ fn validate_options(input: &Sweep) -> Result<(), Error> {
         || !input.guide_face_key.is_empty()
         || input.tool_body_index.is_some()
     {
-        return Err(Error("sweep options: supported definition is New Solid, Path, Follow Path, with zero taper and twist and no guide".into()));
+        return Err(Error("sweep options: supported definition is New Solid, Path, Follow Path, with zero twist and no guide".into()));
     }
     Ok(())
 }

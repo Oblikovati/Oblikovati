@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Build a solid from a current sketch region and directed planar path.
 mod path;
+mod taper;
 use crate::{
     EvaluationEntity as Entity, EvaluationFailure, EvaluationFailureKind as Kind,
     EvaluationPhase as Phase, PrismAchievedTolerance, PrismResolution, PrismResolutionPolicy,
@@ -67,6 +68,10 @@ pub fn build_sweep(
     policy: PrismResolutionPolicy,
 ) -> Result<SweepCandidate, EvaluationFailure> {
     let resolution = policy.for_sketch(&input.profile)?;
+    if input.taper != 0. {
+        let (shape, faces) = taper::build(input, resolution)?;
+        return checked_candidate(shape, faces, 0., resolution);
+    }
     let regions = resolved_regions(input.profile, PrismResolutionPolicy::Fixed(resolution))?;
     let region = selected_region(regions.as_ref(), input.boundary)?;
     let path = path::build_path(input.path, input.traversal)?;
@@ -74,11 +79,24 @@ pub fn build_sweep(
         BRepOffsetAPIMakePipe::new(&path.wire, region.face().as_ref()).map_err(|cause| {
             sweep_failure("expected a sweep from the supplied region and path", cause)
         })?;
-    let shape = require_solid(&mut maker)?;
+    let shape = maker
+        .shape()
+        .cloned()
+        .map_err(|cause| sweep_failure("expected a completed sweep", cause))?;
     let surface_error = maker.error_on_surface();
+    let faces = face_history(&mut maker, region, &path)?;
+    checked_candidate(shape, faces, surface_error, resolution)
+}
+
+fn checked_candidate(
+    shape: Shape,
+    faces: Vec<(SweepFaceRole, Shape)>,
+    surface_error: f64,
+    resolution: PrismResolution,
+) -> Result<SweepCandidate, EvaluationFailure> {
+    require_solid(&shape)?;
     require_surface_error(surface_error, resolution.maximum_tolerance)?;
     let achieved = measured_tolerances(&shape, resolution.maximum_tolerance)?;
-    let faces = face_history(&mut maker, region, &path)?;
     verify_faces(&shape, &faces)?;
     Ok(SweepCandidate {
         shape,
@@ -161,11 +179,7 @@ fn same_loop(
         })
 }
 
-fn require_solid(maker: &mut BRepOffsetAPIMakePipe) -> Result<Shape, EvaluationFailure> {
-    let shape = maker
-        .shape()
-        .cloned()
-        .map_err(|cause| sweep_failure("expected a completed sweep", cause))?;
+fn require_solid(shape: &Shape) -> Result<(), EvaluationFailure> {
     let kind = shape
         .shape_type()
         .map_err(|cause| sweep_failure("expected body type", cause))?;
@@ -176,8 +190,7 @@ fn require_solid(maker: &mut BRepOffsetAPIMakePipe) -> Result<Shape, EvaluationF
             format!("sweep result {kind:?}: expected a solid"),
         ));
     }
-    crate::checked_shape::require_geometry(&shape, "sweep result")?;
-    Ok(shape)
+    crate::checked_shape::require_geometry(shape, "sweep result")
 }
 
 fn require_surface_error(actual: f64, maximum: f64) -> Result<(), EvaluationFailure> {

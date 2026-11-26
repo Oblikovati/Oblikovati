@@ -207,3 +207,6 @@ fn resolution() -> PrismResolutionPolicy {
 
 #[path = "sweep_sources/replay.rs"]
 mod replay;
+
+#[path = "sweep_sources/taper.rs"]
+mod taper;

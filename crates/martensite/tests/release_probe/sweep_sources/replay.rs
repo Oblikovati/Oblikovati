@@ -158,3 +158,68 @@ fn reopen(history: &DocumentEditHistory) -> DocumentEditHistory {
     solve(&mut snapshot);
     owner(snapshot)
 }
+
+#[test]
+fn tapered_sweep_keeps_named_topology_when_restored_or_set_to_zero() {
+    use oblikovati_model::feature::work_geometry::DatumAngle;
+
+    let (snapshot, sweep) = fixture();
+    let original = sweep
+        .clone()
+        .with_taper(DatumAngle::constant(5_f64.to_radians()).unwrap())
+        .unwrap();
+    let document: DocumentGuid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let mut history = owner(snapshot);
+    let token = history.begin("Sweep1").unwrap();
+    let feature = history
+        .edit(&token, |snapshot, ids| {
+            snapshot.create_sketch_sweep("Sweep1", original.clone(), ids)
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    let body = named(&history, document, feature);
+    let faces = body.reference_keys(&history, document).unwrap();
+    let subentities = body.subentity_reference_keys(&history, document).unwrap();
+    assert_eq!(faces.len(), 4);
+    assert_eq!(subentities.len(), 5);
+    let recipe = history.snapshot().work_geometry.part_recipe().unwrap();
+    assert_eq!(recipe.version, 29);
+    let mut old_recipe = recipe.clone();
+    old_recipe.version = 28;
+    assert!(oblikovati_model::feature::FeatureSequence::from_part_recipe(&old_recipe).is_err());
+
+    let reopened = reopen(&history);
+    let reopened_body = named(&reopened, document, feature);
+    assert_eq!(
+        reopened_body.reference_keys(&reopened, document).unwrap(),
+        faces
+    );
+    assert_eq!(
+        reopened_body
+            .subentity_reference_keys(&reopened, document)
+            .unwrap(),
+        subentities
+    );
+    let zero = sweep.with_taper(DatumAngle::constant(0.).unwrap()).unwrap();
+    let token = history.begin("Edit Sweep1").unwrap();
+    history
+        .edit(&token, |snapshot, _| {
+            let reads = zero.reads(snapshot).unwrap();
+            snapshot.work_geometry.replace(
+                feature,
+                PartFeatureDefinition::SketchSweep(Box::new(zero)),
+                reads,
+            )
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    let straight = named(&history, document, feature);
+    assert_eq!(straight.reference_keys(&history, document).unwrap(), faces);
+    assert_eq!(
+        straight
+            .subentity_reference_keys(&history, document)
+            .unwrap(),
+        subentities
+    );
+    assert!((straight.volume(&history, document).unwrap() - 0.75 * PI).abs() < 1e-8);
+}

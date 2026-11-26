@@ -93,7 +93,24 @@ the named paint classes in Dark, Light, and High Contrast.
 
 The [desktop receipt](receipts/2026-11-26-sweep-entry-history-3917/README.md)
 covers `sweep-01` and `sweep-02` on Wayland and X11. Sweep input selection and
-editing, taper, twist, guides, Boolean and surface operations remain open.
+editing, twist, guides, Boolean and surface operations remain open.
 Loft still requires authored section identities and host integration.
 Revolve has a persisted definition type and a geometry probe, and still
 needs desktop authoring and replay.
+
+### Taper on a straight Sweep
+
+The typed Sweep API accepts a taper angle or named angle parameter. A
+nonzero taper builds an analytic frustum from a circular profile and a
+single path normal to its plane. Positive angles widen the end section and
+negative angles narrow it. Zero continues to use the original pipe builder.
+Collapsed sections fail validation.
+
+The [geometry tests](../../crates/martensite/tests/release_probe/sweep_sources/taper.rs)
+check signed angles against analytic volumes and verify that a parameter
+edit invalidates the Sweep. The
+[history tests](../../crates/martensite/tests/release_probe/sweep_sources/replay.rs)
+verify stable body, face, edge, and vertex keys through package reopen and
+after changing the taper to zero. Part program version 29 stores the taper
+driver. Existing untapered documents still use version 28. The Sweep
+Properties editor still needs the taper field and Edit command.
