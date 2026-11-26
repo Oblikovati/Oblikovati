@@ -52,6 +52,38 @@ impl DrawingDocument {
             .position(|sheet| sheet.name == name)
             .ok_or_else(|| DrawingError(format!("sheet {name:?}: expected a sheet in the drawing")))
     }
+    /// Resolve an optional sheet name. Example: `drawing.named_or_active_sheet("")?`.
+    pub fn named_or_active_sheet(&self, name: &str) -> Result<usize, DrawingError> {
+        if name.is_empty() {
+            return Ok(self.active_sheet());
+        }
+        self.sheet_index(name)
+    }
+    /// Place the default title block, creating it if absent.
+    /// Example: `drawing.set_title_block(0, "topLeft")?`.
+    pub fn set_title_block(&mut self, index: usize, location: &str) -> Result<(), DrawingError> {
+        let corner = super::spelling::title_block_location::parse(location).ok_or_else(|| {
+            DrawingError(format!(
+                "title block location {location:?}: expected a sheet corner"
+            ))
+        })?;
+        let sheet = self.sheet_mut(index)?;
+        if sheet.title_block.is_empty() {
+            sheet.title_block = "Default".into();
+        }
+        sheet.title_block_at = corner;
+        Ok(())
+    }
+    /// Set the authored sheet revision. Example: `drawing.set_sheet_revision(0, "B")?`.
+    pub fn set_sheet_revision(&mut self, index: usize, revision: &str) -> Result<(), DrawingError> {
+        if revision.contains('\0') {
+            return Err(DrawingError(format!(
+                "sheet revision {revision:?}: expected text without NUL"
+            )));
+        }
+        self.sheet_mut(index)?.revision = revision.into();
+        Ok(())
+    }
     /// Read the unresolved document reference; example: `drawing.model_reference()` for workspace resolution.
     pub fn model_reference(&self) -> &str {
         &self.recipe.model_reference
@@ -189,6 +221,9 @@ impl DrawingDocument {
         if self.recipe.model_reference.is_empty() {
             return Err(DrawingError("model reference \"\": expected a referenced document before adding model-dependent drawing content".into()));
         }
+        self.sheet_mut(sheet)
+    }
+    fn sheet_mut(&mut self, sheet: usize) -> Result<&mut DrawingSheetRecipe, DrawingError> {
         let count = self.recipe.sheets.len();
         self.recipe.sheets.get_mut(sheet).ok_or_else(|| {
             DrawingError(format!(

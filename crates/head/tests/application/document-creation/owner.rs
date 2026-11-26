@@ -475,3 +475,6 @@ mod drawing_view_collection;
 
 #[path = "drawing_sheet_collection.rs"]
 mod drawing_sheet_collection;
+
+#[path = "drawing_title_block.rs"]
+mod drawing_title_block;

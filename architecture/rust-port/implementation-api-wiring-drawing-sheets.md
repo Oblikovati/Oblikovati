@@ -15,9 +15,38 @@ updates deferred, the API can list the frozen recipe. Reopen with updates
 enabled before editing it because the saved display cache is keyed to that
 recipe.
 
+## Title block and sheet revision
+
+`drawing.titleBlockFields` resolves the selected sheet's bindings against
+the current referenced document. The response keeps the definition order
+and returns the property source with each value. Unset properties resolve
+to empty text. Reads use the current document snapshot, so an unsaved
+property edit is visible on the next call.
+
+`drawing.setTitleBlock` places the default title block in the requested
+corner, creating it if necessary. `drawing.setSheetRevision` edits the
+authored sheet revision separately from the model's Revision Number
+property. Both commands target the named sheet or default to the active
+sheet. Each is an undoable drawing edit, and the corner is used by the
+native canvas.
+
+The Wayland MCP run switched the drawing reference between two saved
+parts and read `PN-42` and `PN-43` with the same Part Number binding.
+It moved the native title block from bottom-right to top-left, changing
+6,095 pixels in the drawing crop. Undo and redo reproduced the earlier
+and moved crops pixel for pixel. Reopening the drawing in the same
+process retained the moved corner and revision D.
+
+The bridge currently rejects typed Variant inputs to
+`documents_set_property` during schema validation. The native fixtures
+were seeded through the CLI script host. The Rust drawing-owner test
+uses the typed property-write call to verify that live property changes
+are visible immediately. The canvas still uses the drawing name as its
+title text.
+
 ## Verification
 
-The eight drawing owner tests passed. The sheet lifecycle test checks
+The ten drawing owner tests passed. The sheet lifecycle test checks
 standard and custom paper, invalid input, the displayed projection on the
 active sheet, last-sheet refusal, undo and redo, and native-format save and
 reopen.

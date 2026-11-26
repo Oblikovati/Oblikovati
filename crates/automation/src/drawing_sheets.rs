@@ -3,19 +3,24 @@
 use oblikovati_api::{
     Error,
     wire::{
-        self, AddSheetArgs, ListSheetsResult, RemoveSheetArgs, SetActiveSheetArgs, SheetInfo,
-        SheetResult,
+        self, AddSheetArgs, ListSheetsResult, RemoveSheetArgs, SetActiveSheetArgs,
+        SetSheetRevisionArgs, SetTitleBlockArgs, SheetInfo, SheetResult,
     },
 };
 use oblikovati_model::drawing::{DrawingDocument, DrawingSheetRecipe};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
-pub(super) const SHEET_METHODS: [&str; 4] = [
+mod title_block;
+
+pub(super) const SHEET_METHODS: [&str; 7] = [
     wire::METHOD_DRAWING_LIST_SHEETS,
     wire::METHOD_DRAWING_ADD_SHEET,
     wire::METHOD_DRAWING_REMOVE_SHEET,
     wire::METHOD_DRAWING_SET_ACTIVE_SHEET,
+    wire::METHOD_DRAWING_TITLE_BLOCK_FIELDS,
+    wire::METHOD_DRAWING_SET_TITLE_BLOCK,
+    wire::METHOD_DRAWING_SET_SHEET_REVISION,
 ];
 
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -24,6 +29,14 @@ pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
     let (owner, drawing) = active_drawing(files)?;
+    if method == wire::METHOD_DRAWING_TITLE_BLOCK_FIELDS {
+        let args = if request.is_empty() {
+            Default::default()
+        } else {
+            crate::decode(method, request)?
+        };
+        return title_block::fields(files, owner, drawing, args);
+    }
     if method == wire::METHOD_DRAWING_LIST_SHEETS {
         if !request.is_empty() {
             crate::decode::<oblikovati_api::json::EmptyObject>(method, request)?;
@@ -66,14 +79,12 @@ fn edit_sheets<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     method: &str,
     request: &[u8],
 ) -> Result<Vec<u8>, Error> {
-    let label = update_sheets(&mut drawing, method, request)?;
-    let reply = if method == wire::METHOD_DRAWING_REMOVE_SHEET {
-        list_sheets(&drawing)?
-    } else {
-        let sheet = &drawing.sheets()[drawing.active_sheet()];
-        crate::encode(&SheetResult {
-            sheet: sheet_info(sheet, true)?,
-        })?
+    let (label, sheet_index) = update_sheets(&mut drawing, method, request)?;
+    let reply = match sheet_index {
+        None => list_sheets(&drawing)?,
+        Some(index) => crate::encode(&SheetResult {
+            sheet: sheet_info(&drawing.sheets()[index], index == drawing.active_sheet())?,
+        })?,
     };
     files
         .commands(owner)
@@ -90,24 +101,56 @@ fn update_sheets(
     drawing: &mut DrawingDocument,
     method: &str,
     request: &[u8],
-) -> Result<&'static str, Error> {
+) -> Result<(&'static str, Option<usize>), Error> {
     match method {
         wire::METHOD_DRAWING_ADD_SHEET => {
             add_sheet(drawing, crate::decode(method, request)?)?;
-            Ok("Add Sheet")
+            Ok(("Add Sheet", Some(drawing.active_sheet())))
         }
         wire::METHOD_DRAWING_REMOVE_SHEET => {
             let args: RemoveSheetArgs = crate::decode(method, request)?;
             drawing.remove_sheet(&args.name).map_err(api_error)?;
-            Ok("Delete Sheet")
+            Ok(("Delete Sheet", None))
         }
         wire::METHOD_DRAWING_SET_ACTIVE_SHEET => {
             let args: SetActiveSheetArgs = crate::decode(method, request)?;
             let index = drawing.sheet_index(&args.name).map_err(api_error)?;
             drawing.set_active_sheet(index).map_err(api_error)?;
-            Ok("Activate Sheet")
+            Ok(("Activate Sheet", Some(index)))
         }
-        _ => Err(Error(format!("method {method:?}: expected a sheet edit"))),
+        _ => update_sheet_format(drawing, method, request),
+    }
+}
+
+fn update_sheet_format(
+    drawing: &mut DrawingDocument,
+    method: &str,
+    request: &[u8],
+) -> Result<(&'static str, Option<usize>), Error> {
+    match method {
+        wire::METHOD_DRAWING_SET_TITLE_BLOCK => {
+            let args: SetTitleBlockArgs = crate::decode(method, request)?;
+            let index = drawing
+                .named_or_active_sheet(&args.sheet)
+                .map_err(api_error)?;
+            drawing
+                .set_title_block(index, &args.location)
+                .map_err(api_error)?;
+            Ok(("Set Title Block", Some(index)))
+        }
+        wire::METHOD_DRAWING_SET_SHEET_REVISION => {
+            let args: SetSheetRevisionArgs = crate::decode(method, request)?;
+            let index = drawing
+                .named_or_active_sheet(&args.sheet)
+                .map_err(api_error)?;
+            drawing
+                .set_sheet_revision(index, &args.revision)
+                .map_err(api_error)?;
+            Ok(("Set Sheet Revision", Some(index)))
+        }
+        _ => Err(Error(format!(
+            "method {method:?}: expected a sheet format edit"
+        ))),
     }
 }
 
