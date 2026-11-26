@@ -3,17 +3,19 @@
 use oblikovati_api::{
     Error,
     wire::{
-        self, AddDefaultBorderArgs, AddSheetArgs, ListSheetsResult, RemoveSheetArgs,
-        SetActiveSheetArgs, SetSheetRevisionArgs, SetTitleBlockArgs, SheetInfo, SheetResult,
+        self, AddDefaultBorderArgs, AddSheetArgs, AddSheetUsingFormatArgs, ListSheetsResult,
+        RemoveSheetArgs, SetActiveSheetArgs, SetSheetRevisionArgs, SetTitleBlockArgs, SheetInfo,
+        SheetResult,
     },
 };
 use oblikovati_model::drawing::{DrawingDocument, DrawingSheetRecipe};
 use oblikovati_persistence::file_access::DocumentFiles;
 use oblikovati_session::{TransactionObserver, files::FileWorkspace, workspace::WorkspaceObserver};
 
+mod reusable_format;
 mod title_block;
 
-pub(super) const SHEET_METHODS: [&str; 8] = [
+pub(super) const SHEET_METHODS: [&str; 10] = [
     wire::METHOD_DRAWING_LIST_SHEETS,
     wire::METHOD_DRAWING_ADD_SHEET,
     wire::METHOD_DRAWING_REMOVE_SHEET,
@@ -22,6 +24,8 @@ pub(super) const SHEET_METHODS: [&str; 8] = [
     wire::METHOD_DRAWING_SET_TITLE_BLOCK,
     wire::METHOD_DRAWING_SET_SHEET_REVISION,
     wire::METHOD_DRAWING_ADD_DEFAULT_BORDER,
+    wire::METHOD_DRAWING_DEFINE_SHEET_FORMAT,
+    wire::METHOD_DRAWING_ADD_SHEET_USING_FORMAT,
 ];
 
 pub(super) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
@@ -119,6 +123,18 @@ fn update_sheets(
             drawing.set_active_sheet(index).map_err(api_error)?;
             Ok(("Activate Sheet", Some(index)))
         }
+        wire::METHOD_DRAWING_DEFINE_SHEET_FORMAT => {
+            reusable_format::define(drawing, crate::decode(method, request)?)?;
+            Ok(("Define Sheet Format", None))
+        }
+        wire::METHOD_DRAWING_ADD_SHEET_USING_FORMAT => {
+            let args: AddSheetUsingFormatArgs = crate::decode(method, request)?;
+            let name = sheet_name(drawing, args.name);
+            drawing
+                .add_sheet_using_format(&name, &args.format)
+                .map_err(api_error)?;
+            Ok(("Add Sheet", Some(drawing.active_sheet())))
+        }
         _ => update_sheet_format(drawing, method, request),
     }
 }
@@ -174,11 +190,7 @@ fn add_border(drawing: &mut DrawingDocument, args: AddDefaultBorderArgs) -> Resu
 }
 
 fn add_sheet(drawing: &mut DrawingDocument, args: AddSheetArgs) -> Result<(), Error> {
-    let name = if args.name.is_empty() {
-        next_sheet_name(drawing)
-    } else {
-        args.name
-    };
+    let name = sheet_name(drawing, args.name);
     let sheet = DrawingSheetRecipe::with_paper(
         &name,
         &args.size,
@@ -189,7 +201,10 @@ fn add_sheet(drawing: &mut DrawingDocument, args: AddSheetArgs) -> Result<(), Er
     drawing.add_sheet(sheet).map_err(api_error)
 }
 
-fn next_sheet_name(drawing: &DrawingDocument) -> String {
+fn sheet_name(drawing: &DrawingDocument, requested: String) -> String {
+    if !requested.is_empty() {
+        return requested;
+    }
     let mut index = drawing.sheets().len() + 1;
     loop {
         let name = format!("Sheet:{index}");

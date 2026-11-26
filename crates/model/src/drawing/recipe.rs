@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::{DrawingAnnotationDefinition, DrawingBaseViewDefinition, spelling};
+use super::{DrawingAnnotationDefinition, DrawingBaseViewDefinition, DrawingSheetFormat, spelling};
 use oblikovati_api::types::{
     BorderLabelMode, DraftingStandard, SheetOrientation, SheetSize, TitleBlockLocation,
 };
@@ -16,6 +16,8 @@ pub struct DrawingRecipe {
     pub active_sheet: usize,
     #[serde(default = "default_sheets")]
     pub sheets: Vec<DrawingSheetRecipe>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sheet_formats: Vec<DrawingSheetFormat>,
 }
 /// One owned sheet definition; view definitions do not claim an evaluated projection.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

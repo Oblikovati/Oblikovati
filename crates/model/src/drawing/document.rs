@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::{
     DrawingAnnotationDefinition, DrawingBaseViewDefinition, DrawingError, DrawingRecipe,
-    DrawingSheetRecipe,
+    DrawingSheetFormat, DrawingSheetRecipe,
     validation::{validate_drawing, validate_sheet},
 };
 /// One owner of the sheet and view definitions; workspace resolvers never enter history snapshots.
@@ -23,6 +23,7 @@ impl DrawingDocument {
                 standard: oblikovati_api::types::DRAFTING_ISO,
                 active_sheet: 0,
                 sheets: vec![DrawingSheetRecipe::a3_landscape("Sheet:1")],
+                sheet_formats: Vec::new(),
             },
         }
     }
@@ -62,17 +63,7 @@ impl DrawingDocument {
     /// Place the default title block, creating it if absent.
     /// Example: `drawing.set_title_block(0, "topLeft")?`.
     pub fn set_title_block(&mut self, index: usize, location: &str) -> Result<(), DrawingError> {
-        let corner = super::spelling::title_block_location::parse(location).ok_or_else(|| {
-            DrawingError(format!(
-                "title block location {location:?}: expected a sheet corner"
-            ))
-        })?;
-        let sheet = self.sheet_mut(index)?;
-        if sheet.title_block.is_empty() {
-            sheet.title_block = "Default".into();
-        }
-        sheet.title_block_at = corner;
-        Ok(())
+        self.sheet_mut(index)?.set_title_block(location)
     }
     /// Set the authored sheet revision. Example: `drawing.set_sheet_revision(0, "B")?`.
     pub fn set_sheet_revision(&mut self, index: usize, revision: &str) -> Result<(), DrawingError> {
@@ -149,6 +140,39 @@ impl DrawingDocument {
         self.recipe.sheets.push(sheet);
         self.recipe.active_sheet = self.recipe.sheets.len() - 1;
         Ok(())
+    }
+    /// Register or replace a reusable format. Example: `drawing.define_sheet_format(format)?`.
+    pub fn define_sheet_format(&mut self, format: DrawingSheetFormat) -> Result<(), DrawingError> {
+        format.validate()?;
+        if let Some(current) = self
+            .recipe
+            .sheet_formats
+            .iter_mut()
+            .find(|current| current.name() == format.name())
+        {
+            *current = format;
+        } else {
+            self.recipe.sheet_formats.push(format);
+        }
+        Ok(())
+    }
+    /// Append a copy of a named format. Example: `drawing.add_sheet_using_format("Plate", "A2 Grid")?`.
+    pub fn add_sheet_using_format(
+        &mut self,
+        sheet: &str,
+        format: &str,
+    ) -> Result<(), DrawingError> {
+        let prototype = self
+            .recipe
+            .sheet_formats
+            .iter()
+            .find(|candidate| candidate.name() == format)
+            .ok_or_else(|| {
+                DrawingError(format!(
+                    "sheet format {format:?}: expected a format defined in the drawing"
+                ))
+            })?;
+        self.add_sheet(prototype.stamp(sheet))
     }
     /// Remove a named sheet and keep the active index in range.
     /// Example: `drawing.remove_sheet("Sheet:2")?`.

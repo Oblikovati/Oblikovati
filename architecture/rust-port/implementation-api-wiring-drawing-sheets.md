@@ -46,7 +46,7 @@ title text.
 
 ## Verification
 
-The eleven drawing owner tests cover sheet and view edits. The sheet lifecycle test checks
+The twelve drawing owner tests cover sheet and view edits. The sheet lifecycle test checks
 standard and custom paper, invalid input, the displayed projection on the
 active sheet, last-sheet refusal, undo and redo, and native-format save and
 reopen.
@@ -112,6 +112,30 @@ grid changed 13,209 pixels from the plain sheet. Hiding labels changed
 plain crops pixel for pixel. Redo and save/reopen reproduced the
 labeled crop. The model tests cover Go recipe keys, invalid persisted
 grids, and alphabetical wrapping.
+
+## Reusable sheet formats
+
+`drawing.defineSheetFormat` registers or replaces a format in the
+active drawing. It returns the current sheet list and leaves the active
+sheet in place. `drawing.addSheetUsingFormat` creates and activates a
+new sheet with the format's paper dimensions, border, and title-block
+corner. Existing sheets retain the settings they received when created.
+Both commands record an undo step.
+
+The Rust drawing recipe adds an optional `sheetFormats` collection of
+named blank sheet definitions. Older drawings open with an empty
+collection. The Go application's recipe has no format collection, so a
+save from that application cannot retain the definitions. Stamped sheets
+store the usual sheet fields.
+
+The native Wayland MCP run stamped an A2 landscape sheet with a 6 × 4
+border and a lower-left title block, then redefined the format. The
+earlier drawing crop stayed pixel-identical. The redefined format
+stamped a 200 × 120 mm sheet with a 3 × 2 border and an upper-right
+title block. Stamping the saved format after reopen reproduced that
+layout, with pixel changes confined to the sheet-number caption. The
+package tests also verified that saving an empty registry clears the
+old format key and retains unrelated model fields.
 
 ## Drawing curve gap
 

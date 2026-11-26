@@ -64,6 +64,26 @@ fn zoned_border_uses_the_go_sheet_recipe_keys() {
         assert_eq!(written["sheets"][0][key], recipe["sheets"][0][key]);
     }
 }
+
+#[test]
+fn reusable_formats_require_unique_blank_prototypes() {
+    use oblikovati_model::drawing::{DrawingRecipe, DrawingSheetFormat, DrawingSheetRecipe};
+    let mut drawing = DrawingDocument::new();
+    let paper = DrawingSheetRecipe::a3_landscape("Plate");
+    assert!(DrawingSheetFormat::new(paper.clone(), [-1, 0], ["", ""], "").is_err());
+    let plain = DrawingSheetFormat::new(paper, [4, 0], ["numeric", ""], "").unwrap();
+    drawing.define_sheet_format(plain.clone()).unwrap();
+    drawing.add_sheet_using_format("Plain", "Plate").unwrap();
+    assert_eq!(drawing.sheets()[1].border_h_zones, 0);
+    let mut duplicate = drawing.recipe().clone();
+    duplicate.sheet_formats.push(plain);
+    assert!(DrawingDocument::from_recipe(duplicate).is_err());
+
+    let mut stored = serde_json::to_value(drawing.recipe()).unwrap();
+    stored["sheetFormats"][0]["revision"] = "B".into();
+    let invalid: DrawingRecipe = serde_json::from_value(stored).unwrap();
+    assert!(DrawingDocument::from_recipe(invalid).is_err());
+}
 #[test]
 fn a_view_definition_requires_a_source_and_retains_its_requested_placement() {
     let mut drawing = DrawingDocument::new();

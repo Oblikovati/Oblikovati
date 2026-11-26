@@ -15,6 +15,19 @@ const STANDARD_MM: &[(SheetSize, [f64; 2])] = &[
     (SHEET_SIZE_ANSI_E, [863.6, 1117.6]),
 ];
 impl DrawingSheetRecipe {
+    pub(super) fn set_title_block(&mut self, location: &str) -> Result<(), DrawingError> {
+        let corner = title_block_location::parse(location).ok_or_else(|| {
+            DrawingError(format!(
+                "title block location {location:?}: expected a sheet corner"
+            ))
+        })?;
+        if self.title_block.is_empty() {
+            self.title_block = "Default".into();
+        }
+        self.title_block_at = corner;
+        Ok(())
+    }
+
     /// The Go model/drawing/content.go default: one bordered A3 landscape sheet.
     /// Example: `DrawingSheetRecipe::a3_landscape("Sheet:1")`.
     pub fn a3_landscape(name: &str) -> Self {

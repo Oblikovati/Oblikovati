@@ -36,6 +36,20 @@ pub(super) fn validate_drawing(recipe: &DrawingRecipe) -> Result<(), DrawingErro
             )));
         }
     }
+    validate_formats(recipe)
+}
+
+fn validate_formats(recipe: &DrawingRecipe) -> Result<(), DrawingError> {
+    let mut names = BTreeSet::new();
+    for format in &recipe.sheet_formats {
+        format.validate()?;
+        if !names.insert(format.name()) {
+            return Err(DrawingError(format!(
+                "sheet format {:?}: expected a unique format name",
+                format.name()
+            )));
+        }
+    }
     Ok(())
 }
 fn validate_header(recipe: &DrawingRecipe) -> Result<(), DrawingError> {

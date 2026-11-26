@@ -164,6 +164,39 @@ fn a_new_drawing_round_trips_without_claiming_a_projection() {
 }
 
 #[test]
+fn saved_drawing_formats_are_restored_and_the_empty_registry_removes_the_old_key() {
+    use oblikovati_model::drawing::{DrawingSheetFormat, DrawingSheetRecipe};
+    let package = DocumentPackage::decode(
+        b"schemaVersion: 2\ndocumentType: 3\nmodel:\n  unrelated: retained\n",
+    )
+    .unwrap();
+    let mut drawing = DrawingDocument::new();
+    let plain = drawing.clone();
+    let paper = DrawingSheetRecipe::a3_landscape("Plate");
+    let format = DrawingSheetFormat::new(paper, [4, 3], ["numeric", ""], "bottomLeft").unwrap();
+    drawing.define_sheet_format(format).unwrap();
+    let saved = package
+        .with_drawing(Some(&drawing))
+        .unwrap()
+        .encode()
+        .unwrap();
+    let saved = DocumentPackage::decode(&saved).unwrap();
+    assert_eq!(saved.restore_drawing().unwrap().as_ref(), Some(&drawing));
+
+    let undone = saved.with_drawing(Some(&plain)).unwrap().encode().unwrap();
+    let yaml = String::from_utf8(undone.clone()).unwrap();
+    assert!(yaml.contains("unrelated: retained"));
+    assert!(!yaml.contains("sheetFormats"));
+    assert_eq!(
+        DocumentPackage::decode(&undone)
+            .unwrap()
+            .restore_drawing()
+            .unwrap(),
+        Some(plain)
+    );
+}
+
+#[test]
 fn saving_an_untouched_default_drawing_writes_its_real_sheet_for_go_readers() {
     let package = DocumentPackage::decode(b"schemaVersion: 2\ndocumentType: 3\n").unwrap();
     let saved = package

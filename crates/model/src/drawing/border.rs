@@ -45,7 +45,7 @@ impl DrawingSheetRecipe {
     }
 }
 
-fn parse_label(value: &str) -> Result<BorderLabelMode, DrawingError> {
+pub(super) fn parse_label(value: &str) -> Result<BorderLabelMode, DrawingError> {
     border_label::parse(value).ok_or_else(|| {
         DrawingError(format!(
             "border label mode {value:?}: expected alphabetical, numeric, or none"

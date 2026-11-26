@@ -3,7 +3,13 @@
 use super::{DocumentPackage, Mapping, PackageCodecError, Value};
 use oblikovati_api::types::DOCUMENT_DRAWING;
 use oblikovati_model::drawing::{DrawingDocument, DrawingRecipe};
-const RECIPE_FIELDS: &[&str] = &["modelReference", "standard", "activeSheet", "sheets"];
+const RECIPE_FIELDS: &[&str] = &[
+    "modelReference",
+    "standard",
+    "activeSheet",
+    "sheets",
+    "sheetFormats",
+];
 impl DocumentPackage {
     /// Restore owned drawing content by document kind, without resolving or projecting a model.
     /// Example: `let drawing = package.restore_drawing()?;` before workspace registration.
@@ -54,7 +60,13 @@ impl DocumentPackage {
             .and_then(Value::as_mapping)
             .cloned()
             .unwrap_or_default();
-        model.extend(drawing_mapping(drawing)?);
+        let updated = drawing_mapping(drawing)?;
+        for field in RECIPE_FIELDS {
+            if !updated.contains_key(*field) {
+                model.remove(*field);
+            }
+        }
+        model.extend(updated);
         candidate.root.insert("model".into(), Value::Mapping(model));
         Ok(candidate)
     }
