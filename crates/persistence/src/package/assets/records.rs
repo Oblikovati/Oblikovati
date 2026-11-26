@@ -4,15 +4,23 @@ use oblikovati_api::{
     types::ASSET_DOCUMENT,
     wire::{AppearanceInfo, MaterialInfo},
 };
-use oblikovati_model::assets::{AppearanceAsset, DocumentAssets, MaterialAsset};
+use oblikovati_model::assets::{
+    AppearanceAsset, AppearanceMetadata, DocumentAssets, MaterialAsset,
+};
 use serde::{Deserialize, Serialize};
 use serde_yaml_ng::{Mapping, Value};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 #[derive(Default, Serialize, Deserialize)]
 #[serde(default)]
 pub(super) struct AssetRecipe {
     #[serde(deserialize_with = "null_record")]
     pub appearances: Vec<Value>,
+    #[serde(
+        rename = "appearanceMetadata",
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "null_record"
+    )]
+    pub appearance_metadata: BTreeMap<String, AppearanceMetadata>,
     #[serde(deserialize_with = "null_record")]
     pub materials: Vec<Value>,
     pub assignments: Option<AssignmentRecipe>,
@@ -25,6 +33,9 @@ impl AssetRecipe {
         }
         for asset in decode_appearance_definitions(&self.appearances, ASSET_DOCUMENT)? {
             assets.embed_appearance(&asset)?;
+        }
+        for (id, metadata) in &self.appearance_metadata {
+            assets.set_appearance_metadata(id, metadata.clone())?;
         }
         if let Some(assignments) = &self.assignments {
             assets.assignments = assignments.restore(schema)?;
@@ -43,6 +54,10 @@ impl AssetRecipe {
                 .ordered()
                 .map(|asset| stored_record(&asset.info(), false))
                 .collect::<Result<_, _>>()?,
+            appearance_metadata: assets
+                .appearance_metadata_entries()
+                .map(|(id, metadata)| (id.to_owned(), metadata.clone()))
+                .collect(),
             assignments: Some(AssignmentRecipe::capture(&assets.assignments)?),
         })
     }

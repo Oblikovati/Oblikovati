@@ -1,0 +1,4 @@
+running 1 test
+test native::gui_loop_tests::application_bdd::appearance_editor_scenarios::document_appearance_information_survives_reopening_the_part ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 1740 filtered out; finished in 9.40s

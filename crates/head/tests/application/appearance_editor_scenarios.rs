@@ -191,21 +191,32 @@ fn search_browser(world: &mut ApplicationWorld, query: String) {
 #[then(expr = "the document results show {string} with a blue preview")]
 fn search_result(world: &mut ApplicationWorld, name: String) {
     assert_eq!(owned_asset(world).name, name);
+    let caption = document_appearance_caption(world, "CustomOcean").clone();
+    let capture = super::capture_framebuffer(&mut world.app().window.native);
+    let [x, y] = diagnostics::pointer_pixels(caption.minimum).map(|v| v as usize);
+    assert!(pixels_in(&capture, [x, y - 61], [x + 76, y - 5]).any(is_blue));
+}
+
+fn document_appearance_caption<'a>(
+    world: &'a ApplicationWorld,
+    prefix: &str,
+) -> &'a diagnostics::RenderedRun {
     let heading = world.run_in_window(BROWSER, "Documentassets").center()[1];
     let boundary = world.run_in_window(BROWSER, "Alllibraries").center()[1];
-    let caption = world
+    let (position, size) = diagnostics::window_geometry(BROWSER).unwrap();
+    world
         .frame
         .runs
         .iter()
         .find(|run| {
-            let y = run.center()[1];
-            run.text.starts_with("CustomOcean") && y > heading && y < boundary
+            let [x, y] = run.center();
+            run.text.starts_with(prefix)
+                && y > heading
+                && y < boundary
+                && x > position[0]
+                && x < position[0] + size[0]
         })
-        .expect("expected the custom appearance above the library")
-        .clone();
-    let capture = super::capture_framebuffer(&mut world.app().window.native);
-    let [x, y] = diagnostics::pointer_pixels(caption.minimum).map(|v| v as usize);
-    assert!(pixels_in(&capture, [x, y - 61], [x + 76, y - 5]).any(is_blue));
+        .unwrap_or_else(|| panic!("expected appearance {prefix:?} in the document region"))
 }
 
 #[then("its type is Generic and its category is Uncategorized")]
@@ -307,4 +318,89 @@ fn is_blue([r, g, b, _]: [u8; 4]) -> bool {
 fn capture_rgb(capture: &ViewportCapture, x: usize, y: usize) -> [u8; 4] {
     let index = (y * capture.extent[0] as usize + x) * 4;
     capture.rgba[index..index + 4].try_into().unwrap()
+}
+
+#[given("a generic document appearance is open in the Appearance Editor")]
+fn open_generic_document_appearance(world: &mut ApplicationWorld) {
+    create_generic(world);
+}
+
+#[when("I expand Information")]
+fn expand_information(world: &mut ApplicationWorld) {
+    click_in(world, EDITOR, "Information");
+}
+
+#[then("I see Name, Description and Keywords fields")]
+fn information_fields(world: &mut ApplicationWorld) {
+    let heading = world.run_in_window(EDITOR, "Information").center()[1];
+    assert!(world.run_in_window(EDITOR, "Description").center()[1] > heading);
+    assert!(world.run_in_window(EDITOR, "Keywords").center()[1] > heading);
+    assert!(world.frame.runs.iter().any(|run| {
+        run.text == "Name"
+            && run.center()[1] > heading
+            && run.center()[1] < world.run_in_window(EDITOR, "Description").center()[1]
+    }));
+}
+
+#[then("I see the appearance Type and Source")]
+fn information_type_and_source(world: &mut ApplicationWorld) {
+    world.run_in_window(EDITOR, "Type:Generic");
+    world.run_in_window(EDITOR, "Source:Document");
+}
+
+#[then("the appearance name is also shown above the property sections")]
+fn name_above_sections(world: &mut ApplicationWorld) {
+    let heading = world.run_in_window(EDITOR, "Information");
+    let name = world.run_in_window(EDITOR, "DefaultGeneric");
+    assert!(name.center()[1] < heading.center()[1]);
+}
+
+#[test]
+fn document_appearance_information_survives_reopening_the_part() {
+    let mut world = ApplicationWorld::new();
+    let document = world.add_part();
+    super::asset_browser_shared::open_tool(&mut world, BROWSER);
+    create_generic(&mut world);
+    expand_information(&mut world);
+    let text = [
+        ("Description", "Used on machined parts"),
+        ("Keywords", "blue, machined"),
+    ];
+    for (label, value) in text {
+        let field = world.run_in_window(EDITOR, label);
+        world.click(diagnostics::pointer_pixels([
+            field.minimum[0] - 50.,
+            field.center()[1],
+        ]));
+        world.type_text(value);
+        world.pump(Vec::new());
+    }
+    can_apply(&mut world);
+    apply(&mut world);
+    clean_dialog(&mut world);
+    let applied = owned_asset(&mut world).appearance_metadata.unwrap();
+    assert_eq!(applied.description, text[0].1);
+    assert_eq!(applied.keywords, text[1].1);
+    let path = world.save_part_to_file(document, "appearance-information.opd");
+    close_editor(&mut world);
+    world.reopen_application();
+    world.open_fixture(&path);
+    assert_eq!(owned_asset(&mut world).appearance_metadata, Some(applied));
+    super::asset_browser_shared::open_tool(&mut world, BROWSER);
+    let tile = document_appearance_caption(&world, "DefaultGeneric").center();
+    world.click(diagnostics::pointer_pixels(tile));
+    world.pump(Vec::new());
+    click_in(&mut world, BROWSER, "Editappearance");
+    assert!(diagnostics::window_geometry(EDITOR).is_some());
+    if !world.window_text(EDITOR).contains("Description") {
+        expand_information(&mut world);
+    }
+    let current = world.window_text(EDITOR);
+    for (_, value) in text {
+        assert!(
+            current.contains(&super::world::squeezed(value)),
+            "{current}"
+        );
+    }
+    clean_dialog(&mut world);
 }

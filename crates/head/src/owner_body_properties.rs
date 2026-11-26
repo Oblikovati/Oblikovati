@@ -192,6 +192,7 @@ impl<
                 );
                 GuiAppearanceChoice {
                     category: catalog.appearance_category(&id),
+                    appearance_metadata: assets.appearance_metadata(&id).cloned(),
                     document: assets.appearances().get(&id).is_some() || used.contains(id.as_str()),
                     used: used.contains(id.as_str()),
                     library,

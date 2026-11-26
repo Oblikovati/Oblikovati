@@ -3,6 +3,7 @@
 use crate::application::model_browser::color_dialog::{self, ColorAnswer, ColorDialog};
 use crate::{GuiAssetChoice, GuiCommandState, GuiShellAction};
 use imgui::{Condition, Ui, WindowFlags};
+use oblikovati_model::assets::AppearanceMetadata;
 
 /// One document appearance edit; example: `GuiAppearanceChange::Create { id, name }`.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -24,6 +25,7 @@ pub enum GuiAppearanceChange {
         color: Option<[u8; 3]>,
         roughness: Option<u8>,
         highlights: Option<u8>,
+        metadata: Option<AppearanceMetadata>,
     },
 }
 
@@ -42,6 +44,7 @@ struct AppearanceDraft {
     color: [u8; 3],
     roughness: u8,
     highlights: u8,
+    metadata: AppearanceMetadata,
 }
 
 impl AppearanceDraft {
@@ -52,6 +55,7 @@ impl AppearanceDraft {
             color: asset.swatch?,
             roughness: finish.roughness,
             highlights: finish.highlights,
+            metadata: asset.appearance_metadata.clone().unwrap_or_default(),
         })
     }
 
@@ -62,6 +66,7 @@ impl AppearanceDraft {
             color: (self.color != original.color).then_some(self.color),
             roughness: (self.roughness != original.roughness).then_some(self.roughness),
             highlights: (self.highlights != original.highlights).then_some(self.highlights),
+            metadata: (self.metadata != original.metadata).then(|| self.metadata.clone()),
         }
     }
 }
@@ -254,6 +259,15 @@ fn draw_preview(ui: &Ui, asset: &GuiAssetChoice, draft: &AppearanceDraft) {
 }
 
 fn draw_properties(ui: &Ui, draft: &mut AppearanceDraft, color_dialog: &mut ColorDialog) {
+    if let Some(_information) = ui.tree_node_config("Information").push() {
+        ui.input_text("Name##information", &mut draft.name).build();
+        ui.input_text_multiline("Description", &mut draft.metadata.description, [0., 48.])
+            .build();
+        ui.input_text("Keywords", &mut draft.metadata.keywords)
+            .build();
+        ui.text("Type: Generic");
+        ui.text("Source: Document");
+    }
     if let Some(_generic) = ui.tree_node_config("Generic").default_open(true).push() {
         let [r, g, b] = draft.color;
         if ui.button(format!("Color  {r}, {g}, {b}###editor-color")) {

@@ -7,6 +7,7 @@ pub struct GuiAssetChoice {
     pub name: String,
     pub swatch: Option<[u8; 3]>,
     pub appearance_preview: Option<GuiAppearancePreview>,
+    pub appearance_metadata: Option<oblikovati_model::assets::AppearanceMetadata>,
     pub category: Option<&'static str>,
     pub document: bool,
     pub used: bool,

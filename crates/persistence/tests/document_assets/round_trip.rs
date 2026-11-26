@@ -124,3 +124,34 @@ fn absence_null_and_cleared_assets_do_not_create_an_authored_section() {
         package_with_model("  materials: {assignments: {partMaterial: null, bodyMaterial: null}}");
     assert!(nullable.restore_assets().unwrap().is_empty());
 }
+
+#[test]
+fn document_appearance_information_round_trips_and_clears() {
+    use oblikovati_model::assets::AppearanceMetadata;
+
+    let mut assets = owned_assets();
+    let appearance = "custom-look";
+    let information = AppearanceMetadata {
+        description: "Metallic finish\nFinish per drawing".into(),
+        keywords: "metal, finition".into(),
+    };
+    assets
+        .set_appearance_metadata(appearance, information.clone())
+        .unwrap();
+    let saved = empty_package().with_assets(&assets).unwrap();
+    let mut restored = DocumentPackage::decode(&saved.encode().unwrap())
+        .unwrap()
+        .restore_assets()
+        .unwrap();
+    assert_eq!(restored.appearance_metadata(appearance), Some(&information));
+    restored
+        .set_appearance_metadata(appearance, AppearanceMetadata::default())
+        .unwrap();
+    let cleared = saved.with_assets(&restored).unwrap();
+    assert_eq!(cleared.restore_assets().unwrap(), owned_assets());
+    assert!(
+        raw_package(&cleared)["model"]["materials"]
+            .get("appearanceMetadata")
+            .is_none()
+    );
+}

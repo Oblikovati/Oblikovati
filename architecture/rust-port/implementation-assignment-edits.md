@@ -84,3 +84,10 @@ document history edits. Pending color, name, glossiness, and highlight
 changes are available in the live preview. The editor can reopen a
 selected document appearance from the browser. See the
 [native editor receipt](receipts/2026-11-26-appearance-editor-generic-3563/README.md).
+
+The Information section edits a document appearance's description and
+keywords. The optional `appearanceMetadata` recipe map is keyed by
+appearance identity and travels with the Part. Older Parts read with
+blank values. Saving an empty description and keywords removes the
+metadata entry. See the
+[native Information receipt](receipts/2026-11-26-appearance-information-3563/README.md).

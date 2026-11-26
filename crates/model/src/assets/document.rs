@@ -6,11 +6,20 @@ use oblikovati_api::{
     contract::{Appearance, Material},
     types::{ASSET_BUILTIN, ASSET_DOCUMENT},
 };
+/// Application-owned description and keywords for one document appearance.
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Deserialize, serde::Serialize)]
+#[serde(default)]
+pub struct AppearanceMetadata {
+    pub description: String,
+    pub keywords: String,
+}
+
 /// A portable document owns asset snapshots and assignment intent together.
 #[derive(Clone, Debug, Default)]
 pub struct DocumentAssets {
     materials: AssetCollection<MaterialAsset>,
     appearances: AssetCollection<AppearanceAsset>,
+    appearance_metadata: std::collections::BTreeMap<String, AppearanceMetadata>,
     pub assignments: AssetAssignments,
 }
 impl DocumentAssets {
@@ -42,6 +51,42 @@ impl DocumentAssets {
     pub fn appearances(&self) -> &AssetCollection<AppearanceAsset> {
         &self.appearances
     }
+    /// Read the authored information; example: `assets.appearance_metadata("custom")`.
+    pub fn appearance_metadata(&self, id: &str) -> Option<&AppearanceMetadata> {
+        self.appearance_metadata.get(id)
+    }
+
+    /// Iterate persisted information; example: `assets.appearance_metadata_entries().count()`.
+    pub fn appearance_metadata_entries(&self) -> impl Iterator<Item = (&str, &AppearanceMetadata)> {
+        self.appearance_metadata
+            .iter()
+            .map(|(id, metadata)| (id.as_str(), metadata))
+    }
+
+    /// Set or clear a document appearance's information; example: `assets.set_appearance_metadata(id, metadata)?`.
+    pub fn set_appearance_metadata(
+        &mut self,
+        id: &str,
+        metadata: AppearanceMetadata,
+    ) -> Result<(), String> {
+        if self.appearances.get(id).is_none() {
+            return Err(format!(
+                "appearance {id:?}: expected a document-owned definition for its information"
+            ));
+        }
+        if metadata.description.contains('\0') || metadata.keywords.contains('\0') {
+            return Err(format!(
+                "appearance {id:?}: expected description and keywords without NUL characters"
+            ));
+        }
+        if metadata == AppearanceMetadata::default() {
+            self.appearance_metadata.remove(id);
+        } else {
+            self.appearance_metadata.insert(id.into(), metadata);
+        }
+        Ok(())
+    }
+
     /// Test whether the document has no authored asset content; example: `assets.is_empty()` for recipe omission.
     pub fn is_empty(&self) -> bool {
         self.materials.ordered().next().is_none()
@@ -54,6 +99,7 @@ impl PartialEq for DocumentAssets {
         // Document definitions are a set; category display order belongs to the shared catalog.
         self.materials.ordered().eq(other.materials.ordered())
             && self.appearances.ordered().eq(other.appearances.ordered())
+            && self.appearance_metadata == other.appearance_metadata
             && self.assignments == other.assignments
     }
 }

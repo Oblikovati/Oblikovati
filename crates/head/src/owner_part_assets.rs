@@ -88,6 +88,7 @@ impl<
                     name: asset.display_name(),
                     swatch: look_up(&asset.appearance_id()),
                     appearance_preview: None,
+                    appearance_metadata: None,
                 }
             },
         ))
@@ -222,6 +223,7 @@ fn commit_appearance_edit(
         color,
         roughness,
         highlights,
+        metadata,
     } = edit
     else {
         let created =
@@ -249,7 +251,11 @@ fn commit_appearance_edit(
         record.specular.weight = f32::from(*value) / 255.;
     }
     asset.edit(record)?;
-    assets.embed_appearance(&asset)
+    let embedded = assets.embed_appearance(&asset)?;
+    if let Some(metadata) = metadata {
+        assets.set_appearance_metadata(id, metadata.clone())?;
+    }
+    Ok(embedded)
 }
 
 pub(super) fn asset_library(
