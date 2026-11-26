@@ -35,6 +35,9 @@ Cancelling removal restores the parameter column and its per-member values.
 Verify leaves an invalid equation highlighted. Accepting the draft opens
 the warning, which can be dismissed before cancelling the table.
 [Model State equation checks](receipts/2026-11-26-model-state-equation-verification-3896/README.md)
+Creating a feature in single-member scope computes it in Copy State.
+Switching to Primary suppresses the solid and strikes through the row.
+[Single-member feature checks](receipts/2026-11-26-model-state-single-member-feature-3896/README.md)
 
 A double-click sends the document and sketch IDs to the existing owner edit
 operation. The same operation remains available through script and add-in owner

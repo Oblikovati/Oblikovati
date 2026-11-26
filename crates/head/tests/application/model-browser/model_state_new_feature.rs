@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Create a feature in a single model-state member (#4119).
+use super::model_state_suppression::activate_state_row;
+use super::view_visibility::{expect_sampled_solid_hidden, remember_visible_face};
 use super::*;
 use cucumber::{given, then, when};
 use oblikovati_api::{
@@ -76,14 +78,16 @@ fn extrusion_computed(world: &mut ApplicationWorld) {
 }
 #[then("its model-state indicator lists the extrusion as suppressed in Primary and Capture State")]
 fn other_members_suppressed(world: &mut ApplicationWorld) {
-    let position = world.run("States").center();
+    // Text diagnostics can join the feature label and the trailing States button.
+    let badge = world.run("States");
+    let position = [badge.maximum[0] - 3., badge.center()[1]];
     let (browser, size) = diagnostics::window_geometry("Model").unwrap();
     assert!(
         position[0] < browser[0] + size[0],
         "States {position:?} outside Model {browser:?} size {size:?}"
     );
     let point = diagnostics::pointer_pixels(position);
-    super::super::x11_input::click(point);
+    world.desktop_click(point);
     world.pump(Vec::new());
     world.expect_text("Primary: Suppressed");
     world.expect_text("Capture State: Suppressed");
@@ -91,18 +95,18 @@ fn other_members_suppressed(world: &mut ApplicationWorld) {
 }
 #[when("the user shows the solid using All Visible on the active view representation")]
 fn show_solid(world: &mut ApplicationWorld) {
-    super::super::x11_input::press_keysym(0xff1b);
-    world.pump(Vec::new());
+    super::super::desktop_input::key(world, 0xff1b);
     super::part_views::expanded_primary_view(world);
     right_click_row(world, "Primary");
     choose_menu_row(world, "All Visible");
     world.pump(Vec::new());
+    remember_visible_face(world);
 }
 #[when("activates Primary")]
 fn activate_primary(world: &mut ApplicationWorld) {
     super::model_state_fixture::expand_state_branch(world);
-    let view_y = super::part_views::view_branch(world).center()[1];
     let state_y = world.run("Model State").center()[1];
+    let view_y = super::part_views::view_branch(world).center()[1];
     let member = world
         .frame
         .runs
@@ -111,46 +115,16 @@ fn activate_primary(world: &mut ApplicationWorld) {
             run.text.trim() == "Primary" && run.center()[1] > state_y && run.center()[1] < view_y
         })
         .expect("Primary model-state row");
-    let point = diagnostics::pointer_pixels(member.center());
-    super::super::x11_input::click(point);
-    super::super::x11_input::click(point);
-    world.pump(Vec::new());
-    assert_eq!(
-        world
-            .state()
-            .browser
-            .unwrap()
-            .model_states
-            .unwrap()
-            .active()
-            .unwrap()
-            .name,
-        "Primary"
-    );
+    world.double_click(diagnostics::pointer_pixels(member.center()));
+    assert!(world.checked("Primary (Active)"));
 }
 #[when("the user reactivates Copy State")]
 fn reactivate_copy(world: &mut ApplicationWorld) {
-    let point = diagnostics::pointer_pixels(world.run("Copy State").center());
-    super::super::x11_input::click(point);
-    super::super::x11_input::click(point);
-    world.pump(Vec::new());
-    assert_eq!(
-        world
-            .state()
-            .browser
-            .unwrap()
-            .model_states
-            .unwrap()
-            .active()
-            .unwrap()
-            .name,
-        "Copy State"
-    );
+    activate_state_row(world, "Copy State");
 }
 #[then("the solid is absent and the extrusion row is dimmed and struck through")]
 fn absent_and_suppressed(world: &mut ApplicationWorld) {
-    let status = world.app().window.native.scene_status().unwrap();
-    assert_eq!(status.visible_bodies, 0);
+    expect_sampled_solid_hidden(world);
     let name = world.state().browser.unwrap().features[0].name.clone();
     let run = world.run(&format!("{name} (suppressed)"));
     let regular = world.run("Model State");
