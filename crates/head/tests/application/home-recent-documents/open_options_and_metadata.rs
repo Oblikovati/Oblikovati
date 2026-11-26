@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
+use super::super::super::diagnostics::pointer_pixels;
 use super::*;
 
 // Open options
@@ -243,15 +244,18 @@ fn part_row_visible(world: &mut ApplicationWorld) {
 #[when("the user hovers over the part row")]
 #[when("I hover over the part row")]
 fn hover_row(world: &mut ApplicationWorld) {
-    let at = row_run(world, SEARCHED).center().map(|value| value as i32);
+    let at = pointer_pixels(row_run(world, SEARCHED).center());
     world.observed_row_plain = Some(row_ground(world, SEARCHED));
     world.hover(at);
     world.pump(Vec::new());
 }
-/// The row's colour well past its text, where only an accent reaches.
+/// Sample the space between columns, away from text, buttons, and the type icon.
 fn row_ground(world: &mut ApplicationWorld, name: &str) -> [u8; 4] {
     let run = row_run(world, name);
-    world.pixel_at([run.minimum[0] as usize - 20, run.minimum[1] as usize - 1])
+    let location = home_run(world, "Location").expect("expected the Location heading");
+    let x = (run.maximum[0] + location.minimum[0]) * 0.5;
+    let point = pointer_pixels([x, run.center()[1]]);
+    world.pixel_at(point.map(|pixel| pixel as usize))
 }
 #[then("the row is visually highlighted")]
 fn row_lit(world: &mut ApplicationWorld) {

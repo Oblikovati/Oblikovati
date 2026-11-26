@@ -58,17 +58,26 @@ fn new_part_from_startup_home_opens_the_part_workspace() {
     let [left, _, right, _] = world.viewport_bounds();
     assert_eq!([left, right], [0, world.extent()[0]]);
     world.save_capture("home-without-empty-docks");
-    let action = home_run(&world, "New Part").expect("expected New Part in Home");
-    super::super::x11_input::click(super::super::diagnostics::pointer_pixels(action.center()));
-    world.pump(Vec::new());
+    open_part_from_home(&mut world);
+    world.close();
+}
+
+fn open_part_from_home(world: &mut ApplicationWorld) {
+    let action = home_run(world, "New Part").expect("expected New Part in Home");
+    let at = super::super::diagnostics::pointer_pixels(action.center());
+    if world.app().window.native.view.uses_wayland() {
+        world.click(at);
+    } else {
+        super::super::x11_input::click(at);
+        world.pump(Vec::new());
+    }
     assert_eq!(
         world.state().authoring,
         oblikovati_gui::GuiAuthoringContext::Part
     );
     world.run_in_window("##application-ribbon", "3DModel");
-    assert!(!home_shows(&world, "Recent"));
+    assert!(!home_shows(world, "Recent"));
     world.pump(Vec::new());
     assert!(window_dock_id("Model").is_some_and(|id| id != 0));
-    startup_asset_browsers_are_docked(&mut world);
-    world.close();
+    startup_asset_browsers_are_docked(world);
 }

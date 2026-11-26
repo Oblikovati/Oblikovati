@@ -23,6 +23,9 @@ The desktop command state publishes Open dialog file inspections while Home
 is active. A saved drawing preview remains available after the last drawing
 is closed, as verified by the
 [native drawing scenarios](receipts/2026-11-25-document-opening-drawing-previews-3889/README.md).
+Home Recent highlights hovered rows and reveals the row actions control.
+The [native Recent runs](receipts/2026-11-26-home-recent-wayland-3898/README.md)
+verify the highlight and actions menu on Wayland and X11.
 Save As captures drawing sheets using the workspace renderer on an offscreen
 surface. The [capture rerun](receipts/2026-11-25-document-opening-sheet-capture-3889/README.md)
 checks the saved paper pixels and the reopened preview.
