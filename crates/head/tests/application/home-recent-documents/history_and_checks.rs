@@ -22,23 +22,12 @@ fn history_contains(world: &mut ApplicationWorld) {
 }
 #[given("the search field is empty and the broader recent list is displayed")]
 fn empty_field_broad(world: &mut ApplicationWorld) {
-    if published_profile::uses_published_profile(world) {
-        field_empty(world);
-        list_contains(world);
-        return;
+    if !published_profile::uses_published_profile(world) {
+        clear_field(world);
+        click_home(world, "Search");
     }
-    let run = world
-        .frame
-        .runs
-        .iter()
-        .rev()
-        .find(|run| in_home(run) && run.text == "x")
-        .cloned()
-        .expect("expected a clear control");
-    world.click(run.center().map(|value| value as i32));
-    world.pump(Vec::new());
-    click_home(world, "Search");
-    assert!(home_shows(world, OTHERS[0]), "expected the broader list");
+    field_empty(world);
+    list_contains(world);
 }
 #[when("the user focuses Search recent")]
 #[when("I focus Search recent")]
