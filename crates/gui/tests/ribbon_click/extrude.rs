@@ -27,14 +27,22 @@ fn request_with_profile() -> GuiFrameRequest {
 fn extrusion_ribbon_opens_the_dialog_and_escape_cancels() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = request_with_profile();
-    settle_ribbon(&mut engine, &mut request);
-    expect_open_default(&click_ribbon(&mut engine, &mut request, [160., 70.]));
+    expect_open_default(&click_extrude(&mut engine, &mut request));
     assert_eq!(
         dimension_editor_key(&mut engine, &mut request, GuiKey::Escape),
         [GuiShellAction::PreviewExtrude(None)]
     );
     assert!(dimension_editor_key(&mut engine, &mut request, GuiKey::Enter).is_empty());
-    expect_open_default(&click_ribbon(&mut engine, &mut request, [160., 70.]));
+    expect_open_default(&click_extrude(&mut engine, &mut request));
+}
+
+fn click_extrude(
+    engine: &mut GuiFrameEngine,
+    request: &mut GuiFrameRequest,
+) -> Vec<GuiShellAction> {
+    open_collapsed_panel(engine, request, "Create");
+    let position = ribbon_caption(engine, request, "Extrude", true);
+    click_ribbon(engine, request, position)
 }
 
 fn expect_open_default(actions: &[GuiShellAction]) {
@@ -50,8 +58,7 @@ fn expect_open_default(actions: &[GuiShellAction]) {
 fn extrusion_dialog_accepts_keyboard_distance_and_emits_owner_action() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = request_with_profile();
-    settle_ribbon(&mut engine, &mut request);
-    click_ribbon(&mut engine, &mut request, [160., 70.]);
+    click_extrude(&mut engine, &mut request);
     click_distance_field(&mut engine, &mut request);
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
@@ -75,15 +82,13 @@ fn unavailable_extrusion_service_keeps_the_ribbon_command_inert() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = request_with_profile();
     request.commands.extrude_available = false;
-    settle_ribbon(&mut engine, &mut request);
-    assert!(click_ribbon(&mut engine, &mut request, [160., 70.]).is_empty());
+    assert!(click_extrude(&mut engine, &mut request).is_empty());
 }
 #[test]
 fn extrusion_preview_button_and_escape_send_transient_actions() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = request_with_profile();
-    settle_ribbon(&mut engine, &mut request);
-    click_ribbon(&mut engine, &mut request, [160., 70.]);
+    click_extrude(&mut engine, &mut request);
     click_distance_field(&mut engine, &mut request);
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
@@ -112,8 +117,7 @@ fn extrusion_preview_button_and_escape_send_transient_actions() {
 fn changing_distance_clears_the_existing_preview() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = request_with_profile();
-    settle_ribbon(&mut engine, &mut request);
-    click_ribbon(&mut engine, &mut request, [160., 70.]);
+    click_extrude(&mut engine, &mut request);
     click_distance_field(&mut engine, &mut request);
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
@@ -129,15 +133,14 @@ fn changing_distance_clears_the_existing_preview() {
 fn reopening_extrusion_clears_the_previous_preview() {
     let mut engine = GuiFrameEngine::new().unwrap();
     let mut request = request_with_profile();
-    settle_ribbon(&mut engine, &mut request);
-    click_ribbon(&mut engine, &mut request, [160., 70.]);
+    click_extrude(&mut engine, &mut request);
     click_distance_field(&mut engine, &mut request);
     request.events = vec![GuiInputEvent::Text("size".into())];
     engine.frame(&request).unwrap();
     validate_size(&mut engine, &mut request);
     let preview = ribbon_caption(&mut engine, &mut request, "Preview", false);
     click_ribbon(&mut engine, &mut request, preview);
-    let actions = click_ribbon(&mut engine, &mut request, [160., 70.]);
+    let actions = click_extrude(&mut engine, &mut request);
     assert_eq!(actions.first(), Some(&GuiShellAction::OpenExtrude));
     assert!(actions.contains(&GuiShellAction::PreviewExtrude(None)));
     assert!(actions.iter().any(|action| matches!(action,
