@@ -325,7 +325,8 @@ impl Draft {
                 removed.push(rows.remove(*selected));
             }
         }
-        self.selected = (!rows.is_empty()).then_some(index.min(rows.len().saturating_sub(1)));
+        let next = index - indices.range(..index).count();
+        self.selected = (!rows.is_empty()).then_some(next.min(rows.len().saturating_sub(1)));
         self.target_extra.clear();
         self.target_extent = None;
         removed.reverse();

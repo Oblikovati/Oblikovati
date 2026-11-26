@@ -288,6 +288,36 @@ fn shift_selection_extends_and_shrinks_in_both_directions() {
     assert!(draft.target_extra.is_empty());
 }
 #[test]
+fn removing_a_range_above_the_anchor_selects_the_next_remaining_command() {
+    let mut draft = Draft::default();
+    draft.open(RibbonTab::Tools);
+    for command in [
+        Command::Drawing2D,
+        Command::Sketches,
+        Command::Annotations,
+        Command::Measure,
+    ] {
+        draft.reset_source_selection(command);
+        draft.add();
+    }
+    draft.reset_target_selection(1);
+    draft.extend_target(-1);
+    draft.remove();
+    assert_eq!(
+        draft.rows()[draft.selected.unwrap()].command,
+        Command::Annotations
+    );
+    draft.remove();
+    assert_eq!(
+        draft.rows()[draft.selected.unwrap()].command,
+        Command::Measure
+    );
+    draft.remove();
+    assert!(draft.rows().is_empty());
+    assert!(draft.target_changed());
+}
+
+#[test]
 fn removed_command_restores_its_options_on_its_own_target() {
     let mut draft = Draft::default();
     draft.open(RibbonTab::Tools);

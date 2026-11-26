@@ -29,6 +29,9 @@ drafts, and per-target display options.
 Secondary-click selection transfers keyboard focus to the clicked
 command list. Ctrl+A then selects rows in that list.
 [Native focus checks](receipts/2026-11-26-ribbon-secondary-focus-3856/README.md)
+Removing a staged range preserves the next surviving command's
+selection, so repeated Remove clicks continue in order.
+[Native removal checks](receipts/2026-11-26-ribbon-removal-next-3856/README.md)
 Escape from the open category list discards the staged edit. The pinned
 and published scenarios continue into an unrelated Measure sequence.
 [Source defect and native results](scenario-defects/ribbon-category-escape-measure.md)

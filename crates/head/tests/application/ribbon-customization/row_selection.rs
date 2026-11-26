@@ -43,10 +43,11 @@ fn cancel_from_keyboard_scenario(world: &mut ApplicationWorld) {
 }
 #[when("the user presses Shift+Down")]
 pub(super) fn shift_down(world: &mut ApplicationWorld) {
-    use oblikovati_viewport::{
-        ViewportEvent, ViewportInput, ViewportModifiers, ViewportPhysicalKey,
-    };
-    let key = ViewportPhysicalKey::DownArrow;
+    shift_arrow(world, ViewportPhysicalKey::DownArrow);
+}
+
+pub(super) fn shift_arrow(world: &mut ApplicationWorld, key: ViewportPhysicalKey) {
+    use oblikovati_viewport::{ViewportEvent, ViewportInput, ViewportModifiers};
     let event = |pressed, modifiers| {
         ViewportEvent::Input(ViewportInput::PhysicalKey {
             key,

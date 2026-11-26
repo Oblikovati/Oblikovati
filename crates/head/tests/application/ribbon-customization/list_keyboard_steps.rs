@@ -6,6 +6,33 @@ use super::*;
 use oblikovati_viewport::{ViewportCapture, ViewportPhysicalKey};
 
 #[test]
+fn remove_continues_at_the_next_staged_command_after_an_upward_selection() {
+    let mut world = ApplicationWorld::new();
+    world.add_part();
+    empty_tools_customization(&mut world);
+    let staged = ["2-DDrawing", "2DSketches", "3DAnnotations", "3-PointArc"];
+    for label in staged {
+        add_command(&mut world, label);
+    }
+    assert_eq!(target_rows(&world), staged);
+    click_in_customize(&mut world, "2DSketches");
+    super::row_selection::shift_arrow(&mut world, ViewportPhysicalKey::UpArrow);
+    expect_target_selections(&mut world, &staged[..2]);
+
+    click_in_customize(&mut world, "<");
+    assert_eq!(target_rows(&world), &staged[2..]);
+    expect_target_selection(&mut world, staged[2]);
+    click_in_customize(&mut world, "<");
+    assert_eq!(target_rows(&world), &staged[3..]);
+    expect_target_selection(&mut world, staged[3]);
+    click_in_customize(&mut world, "<");
+    assert!(target_rows(&world).is_empty());
+    super::transaction_steps::expect_target_pending(&world, true);
+    click_in_customize(&mut world, "Cancel");
+    world.close();
+}
+
+#[test]
 fn secondary_click_focuses_source_commands_for_keyboard_selection() {
     let mut world = ApplicationWorld::new();
     world.add_part();

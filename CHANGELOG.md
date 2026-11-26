@@ -132,7 +132,7 @@
 
 - Added Ctrl+A selection and a title-bar close control to ribbon customization. (#3856)
 
-- Added keyboard selection and transfer of multiple ribbon commands. Secondary-click selection gives its list keyboard focus. (#3856)
+- Added keyboard selection and transfer of multiple ribbon commands. Secondary-click selection gives its list keyboard focus. Selected the next surviving staged row after removing a range. (#3856)
 
 - Added sketch tools and constraints to the ribbon customization command list. (#3856)
 
