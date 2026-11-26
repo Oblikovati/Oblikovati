@@ -15,6 +15,28 @@ pub(in crate::prism::named) struct BooleanTool {
     pub resolution: Option<PrismResolution>,
 }
 
+#[derive(Debug)]
+pub(in crate::prism::named) enum BooleanFailure {
+    Refused(String),
+    UnchangedCut { faces: usize, message: String },
+}
+
+impl From<String> for BooleanFailure {
+    fn from(message: String) -> Self {
+        Self::Refused(message)
+    }
+}
+
+impl std::fmt::Display for BooleanFailure {
+    fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Refused(message) | Self::UnchangedCut { message, .. } => {
+                output.write_str(message)
+            }
+        }
+    }
+}
+
 pub(super) fn build_boolean_candidate(
     input: BlendInputTopology<'_>,
     history: &DocumentEditHistory,
@@ -22,7 +44,7 @@ pub(super) fn build_boolean_candidate(
     tools: Vec<BooleanTool>,
     kind: PrismBoolean,
     operation: &str,
-) -> Result<BlendCandidate, String> {
+) -> Result<BlendCandidate, BooleanFailure> {
     let mut copier = crate::checked_shape::copy_shape(input.body, &format!("{operation} input"))
         .map_err(|error| error.to_string())?;
     let copied = copy_named_sources(&mut copier, input.source)?;
@@ -79,14 +101,14 @@ fn checked_boolean(
     tools: &[BooleanTool],
     kind: PrismBoolean,
     operation: &str,
-) -> Result<(Shape, PrismAchievedTolerance), String> {
+) -> Result<(Shape, PrismAchievedTolerance), BooleanFailure> {
     if !boolean.is_done() || boolean.has_errors() || boolean.has_warnings() {
         return Err(format!(
             "{operation}: expected a completed Boolean without errors or warnings (done={}, errors={}, warnings={})",
             boolean.is_done(),
             boolean.has_errors(),
             boolean.has_warnings()
-        ));
+        ).into());
     }
     let result = single_solid(boolean.shape(), operation)?;
     crate::checked_shape::require_geometry(&result, &format!("{operation} result"))
@@ -109,10 +131,17 @@ fn checked_boolean(
         PrismBoolean::Join => after.volume > before.volume,
     };
     if !changed {
-        return Err(format!(
+        let message = format!(
             "{operation} volume {} from {}: expected a nonempty solid with material changed by {kind}",
             after.volume, before.volume
-        ));
+        );
+        if kind == PrismBoolean::Cut && after.volume == before.volume {
+            // A touching tool can imprint edges without removing material. The accepted
+            // target retains its original topology when the candidate is discarded.
+            let faces = entities(target, ShapeEnum::Face)?.len();
+            return Err(BooleanFailure::UnchangedCut { faces, message });
+        }
+        return Err(message.into());
     }
     Ok((result, achieved))
 }
@@ -247,7 +276,9 @@ mod tests {
         )
         .unwrap_err();
         assert!(
-            decline.contains("square prism vertex tolerance"),
+            decline
+                .to_string()
+                .contains("square prism vertex tolerance"),
             "{decline}"
         );
         tools[0].resolution = Some(resolution);

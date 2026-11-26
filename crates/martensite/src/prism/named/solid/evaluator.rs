@@ -82,43 +82,50 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
         })?;
         Ok(NamedSolid::Derived(Box::new(topology)))
     }
-    fn evaluate_sweep_join(
+    fn evaluate_sweep_boolean(
         &mut self,
         feature: FeatureId,
         body: &NamedSolid,
         input: oblikovati_model::feature::sketch_sweep::ResolvedSketchSweep<'_>,
+        operation: oblikovati_model::feature::sketch_prism::PrismBoolean,
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
-        use oblikovati_model::feature::sketch_prism::PrismBoolean;
+        use super::super::blend::extrusion_boolean::BooleanFailure;
         let NamedSolid::Derived(tool) = self.evaluate_sweep(feature, input)? else {
             return Err(PartFeatureFailure::Unsupported(
-                "sweep Join: expected a named Sweep tool".into(),
+                "sweep Boolean: expected a named Sweep tool".into(),
             ));
         };
-        let failure = |message| {
+        let failure = |kind, message| {
             PartFeatureFailure::Kernel(
                 crate::EvaluationPhase::Sweep
-                    .refused(
-                        crate::EvaluationFailureKind::InvalidResult,
-                        crate::EvaluationEntity::Body,
-                        message,
-                    )
+                    .refused(kind, crate::EvaluationEntity::Body, message)
                     .for_feature(feature),
             )
         };
         let tool = tool
             .sweep_boolean_tool(self.history, self.document)
-            .map_err(failure)?;
-        let joined = body
+            .map_err(|message| failure(crate::EvaluationFailureKind::InvalidResult, message))?;
+        let candidate = body
             .boolean_tools(
                 self.history,
                 self.document,
                 vec![tool],
-                PrismBoolean::Join,
-                "sweep Join",
+                operation,
+                &format!("sweep {operation}"),
             )
-            .and_then(|candidate| candidate.name_topology(self.history, self.document, feature))
-            .map_err(failure)?;
-        let result = NamedSolid::Derived(Box::new(joined));
+            .map_err(|decline| match decline {
+                BooleanFailure::UnchangedCut { faces, .. } => failure(
+                    crate::EvaluationFailureKind::UnchangedCut,
+                    format!("The feature did not change the number of faces ({faces})."),
+                ),
+                BooleanFailure::Refused(message) => {
+                    failure(crate::EvaluationFailureKind::InvalidResult, message)
+                }
+            })?;
+        let named = candidate
+            .name_topology(self.history, self.document, feature)
+            .map_err(|message| failure(crate::EvaluationFailureKind::InvalidResult, message))?;
+        let result = NamedSolid::Derived(Box::new(named));
         self.verify_result_lineage(body, &result)
             .map_err(PartFeatureFailure::BodyReference)?;
         Ok(result)

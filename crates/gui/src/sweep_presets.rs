@@ -209,7 +209,7 @@ mod tests {
             orientation: GuiSweepOrientation::FollowPath,
             taper: "0 deg".into(),
             twist: "90 deg".into(),
-            join: false,
+            output: super::super::GuiSweepOutput::NewSolid,
         };
         let name = "Follow Path_0 deg_90 deg";
         let mut first = SweepPresets::default();

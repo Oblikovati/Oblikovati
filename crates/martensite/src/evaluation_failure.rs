@@ -38,6 +38,7 @@ pub enum EvaluationFailureKind {
     Unsupported,
     Incomplete,
     ToleranceExceeded,
+    UnchangedCut,
 }
 /// Authored identity or semantic result role; indices are diagnostic, never persistent names.
 #[derive(Clone, Debug, PartialEq, Eq)]

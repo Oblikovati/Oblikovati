@@ -4,17 +4,18 @@ use super::*;
 use oblikovati_api::{Error, client::Client, wire::featureargs::Sweep};
 use oblikovati_automation::{
     PartUpdateAccess, automatic_sweep, prepare_sweep_for_target, prepare_sweep_taper,
-    prepare_sweep_twist, sweep_join_target,
+    prepare_sweep_twist, sweep_boolean_target,
 };
 use oblikovati_gui::{
-    GuiSweepAction, GuiSweepEditSeed, GuiSweepOrientation, GuiSweepPreview, GuiSweepPreviewState,
-    GuiSweepProfile, GuiSweepRequest,
+    GuiSweepAction, GuiSweepEditSeed, GuiSweepOrientation, GuiSweepOutput, GuiSweepPreview,
+    GuiSweepPreviewState, GuiSweepProfile, GuiSweepRequest,
 };
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     feature::{
         FeatureId,
         part::PartFeatureDefinition,
+        sketch_prism::PrismBoolean,
         sketch_sweep::{SketchSweepDefinition, SketchSweepOrientation},
         work_geometry::DatumAngle,
     },
@@ -28,9 +29,14 @@ enum SweepCommit {
     Edit(FeatureId, SketchSweepDefinition),
 }
 
+enum SweepOutcome {
+    Ready(SweepCommit),
+    UnchangedCut(String),
+}
+
 pub(in crate::owner) struct SweepPreview {
     request: GuiSweepRequest,
-    result: Result<Option<SweepCommit>, String>,
+    result: Result<Option<SweepOutcome>, String>,
 }
 
 pub(in crate::owner) fn edit_seeds(
@@ -57,7 +63,14 @@ pub(in crate::owner) fn edit_seeds(
                     taper,
                     twist,
                     orientation,
-                    join: definition.join_target().is_some(),
+                    output: match definition
+                        .boolean_target()
+                        .map(|(operation, _, _)| operation)
+                    {
+                        Some(PrismBoolean::Join) => GuiSweepOutput::Join,
+                        Some(PrismBoolean::Cut) => GuiSweepOutput::Cut,
+                        None => GuiSweepOutput::NewSolid,
+                    },
                 },
             ))
         })
@@ -96,7 +109,10 @@ impl<
             || GuiSweepPreviewState {
                 request: preview.request.clone(),
                 result: match &preview.result {
-                    Ok(Some(_)) => GuiSweepPreview::Ready,
+                    Ok(Some(SweepOutcome::Ready(_))) => GuiSweepPreview::Ready,
+                    Ok(Some(SweepOutcome::UnchangedCut(cause))) => {
+                        GuiSweepPreview::UnchangedCut(cause.clone())
+                    }
                     Ok(None) if preview.request.profile == GuiSweepProfile::Empty => {
                         GuiSweepPreview::MissingProfile
                     }
@@ -135,6 +151,10 @@ impl<
                     .filter(|preview| preview.request == request)
                     .and_then(|preview| preview.result.as_ref().ok())
                     .and_then(Option::as_ref)
+                    .and_then(|outcome| match outcome {
+                        SweepOutcome::Ready(commit) => Some(commit),
+                        SweepOutcome::UnchangedCut(_) => None,
+                    })
                     .ok_or("sweep: expected a current certified preview")?
                     .clone();
                 self.commit_sweep(request.document, commit)?;
@@ -219,7 +239,7 @@ impl<
             .map_err(|cause| cause.to_string())
     }
 
-    fn preview_sweep(&mut self, request: &GuiSweepRequest) -> Result<Option<SweepCommit>, String> {
+    fn preview_sweep(&mut self, request: &GuiSweepRequest) -> Result<Option<SweepOutcome>, String> {
         if request.path_cleared || request.profile == GuiSweepProfile::Empty {
             if let Some(feature) = request.feature {
                 let scene = self.part_scenes.part_scene_without_feature_body(
@@ -261,10 +281,10 @@ impl<
         let Some(mut input) = automatic_sweep(snapshot, &datums, policy) else {
             return Ok(None);
         };
-        let target = if request.join {
-            input.operation = "join".into();
+        let target = if let Some(operation) = sweep_boolean(request.output) {
+            input.operation = operation.to_string().to_ascii_lowercase();
             Some(
-                sweep_join_target(&self.files, &self.part_scenes, document, None)
+                sweep_boolean_target(&self.files, &self.part_scenes, document, None)
                     .map_err(|cause| cause.to_string())?,
             )
         } else {
@@ -289,14 +309,16 @@ impl<
         let prepared = prepare_sweep_for_target(snapshot, &datums, policy, &input, target)
             .map_err(|cause| cause.to_string())?;
         self.preview_selected_blend(document, |candidate, ids| prepared.create(candidate, ids))?;
-        Ok(Some(SweepCommit::Create(Box::new(input))))
+        Ok(Some(SweepOutcome::Ready(SweepCommit::Create(Box::new(
+            input,
+        )))))
     }
 
     fn preview_sweep_edit(
         &mut self,
         request: &GuiSweepRequest,
         id: FeatureId,
-    ) -> Result<SweepCommit, String> {
+    ) -> Result<SweepOutcome, String> {
         let snapshot = self
             .files
             .workspace()
@@ -310,19 +332,19 @@ impl<
                 .map_err(|cause| cause.to_string())?,
             _ => definition,
         };
-        let definition = if request.join {
-            if definition.join_target().is_some() {
-                definition
-            } else {
-                let key =
-                    sweep_join_target(&self.files, &self.part_scenes, request.document, Some(id))
-                        .map_err(|cause| cause.to_string())?;
-                definition
-                    .with_join_target(key)
-                    .map_err(|cause| cause.to_string())?
-            }
+        let definition = if let Some(operation) = sweep_boolean(request.output) {
+            let key = match definition.boolean_target() {
+                Some((_, key, _)) => key.to_vec(),
+                None => {
+                    sweep_boolean_target(&self.files, &self.part_scenes, request.document, Some(id))
+                        .map_err(|cause| cause.to_string())?
+                }
+            };
+            definition
+                .with_boolean_target(operation, key)
+                .map_err(|cause| cause.to_string())?
         } else {
-            definition.without_join_target()
+            definition.without_boolean_target()
         };
         let edited = if request.orientation == GuiSweepOrientation::Fixed {
             definition.with_fixed_orientation()
@@ -332,14 +354,50 @@ impl<
             prepare_sweep_twist(snapshot, tapered, &request.twist)
                 .map_err(|cause| cause.to_string())?
         };
-        self.preview_selected_blend(request.document, |candidate, _| {
-            replace_sweep(candidate, id, edited.clone())?;
-            Ok(id)
-        })?;
-        if let Some((_, _, _, kind)) = &mut self.extrusion_preview {
-            *kind = super::super::owner_extrusion_preview::PreviewKind::Replacement;
+        self.preview_sweep_edit_scene(request, id, edited)
+    }
+
+    fn preview_sweep_edit_scene(
+        &mut self,
+        request: &GuiSweepRequest,
+        id: FeatureId,
+        edited: SketchSweepDefinition,
+    ) -> Result<SweepOutcome, String> {
+        use crate::part_scene::FeatureEditPreviewError;
+        let session = self
+            .files
+            .workspace()
+            .session(request.document)
+            .map_err(|cause| cause.to_string())?;
+        let projection = session
+            .preview_projected(
+                |candidate, _| replace_sweep(candidate, id, edited.clone()),
+                |candidate, ()| {
+                    Ok(self.part_scenes.project_feature_edit(
+                        &self.files,
+                        request.document,
+                        candidate,
+                        id,
+                    ))
+                },
+            )
+            .map_err(|cause| cause.to_string())?;
+        match projection {
+            Ok(scene) => {
+                self.extrusion_preview = Some((
+                    request.document,
+                    request.generation,
+                    scene,
+                    super::super::owner_extrusion_preview::PreviewKind::Replacement,
+                ));
+                self.part_scenes.invalidate_presentation();
+                Ok(SweepOutcome::Ready(SweepCommit::Edit(id, edited)))
+            }
+            Err(FeatureEditPreviewError::UnchangedCut(cause)) => {
+                Ok(SweepOutcome::UnchangedCut(cause))
+            }
+            Err(cause) => Err(cause.to_string()),
         }
-        Ok(SweepCommit::Edit(id, edited))
     }
 
     fn commit_sweep(&mut self, document: u64, commit: SweepCommit) -> Result<(), String> {
@@ -362,6 +420,14 @@ impl<
             }
         }
         Ok(())
+    }
+}
+
+fn sweep_boolean(output: GuiSweepOutput) -> Option<PrismBoolean> {
+    match output {
+        GuiSweepOutput::NewSolid => None,
+        GuiSweepOutput::Join => Some(PrismBoolean::Join),
+        GuiSweepOutput::Cut => Some(PrismBoolean::Cut),
     }
 }
 

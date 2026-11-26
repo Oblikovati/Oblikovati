@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-pub(in crate::prism::named) use super::solid_boolean::BooleanTool;
+pub(in crate::prism::named) use super::solid_boolean::{BooleanFailure, BooleanTool};
 use super::*;
 use martensite_tktopalgo::brep_builder_api::BRepBuilderAPITransform;
 use oblikovati_model::feature::sketch_prism::PrismBoolean;
@@ -28,6 +28,7 @@ impl NamedSolid {
         kind: PrismBoolean,
     ) -> Result<BlendCandidate, String> {
         self.boolean_tools(history, document, tools, kind, &format!("extrude {kind}"))
+            .map_err(|failure| failure.to_string())
     }
 
     pub(in crate::prism::named) fn boolean_tools(
@@ -37,7 +38,7 @@ impl NamedSolid {
         tools: Vec<BooleanTool>,
         kind: PrismBoolean,
         operation: &str,
-    ) -> Result<BlendCandidate, String> {
+    ) -> Result<BlendCandidate, BooleanFailure> {
         match self {
             Self::Prism(body) => body.boolean_tools(history, document, tools, kind, operation),
             Self::Derived(body) => body.boolean_tools(history, document, tools, kind, operation),
@@ -53,7 +54,7 @@ impl NamedPrismSnapshot {
         tools: Vec<BooleanTool>,
         kind: PrismBoolean,
         operation: &str,
-    ) -> Result<BlendCandidate, String> {
+    ) -> Result<BlendCandidate, BooleanFailure> {
         let body = self.body_reference_key(history, document)?.to_vec();
         super::solid_boolean::build_boolean_candidate(
             BlendInputTopology {

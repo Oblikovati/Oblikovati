@@ -93,11 +93,12 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
         let input = definition
             .resolve_for_replay(snapshot, &self.datums)
             .map_err(|cause| PartFeatureFailure::SweepInput(Box::new(cause)))?;
-        if let Some((key, source)) = definition.join_target() {
+        if let Some((operation, key, source)) = definition.boolean_target() {
             let slot = resolve_body_slot(&self.bodies, &self.body_lineage, backend, source, key)
                 .map_err(PartFeatureFailure::BodyReference)?;
-            let joined = backend.evaluate_sweep_join(feature, &self.bodies[&slot], input)?;
-            return self.accept_body_replacement(backend, feature, slot, key, joined);
+            let result =
+                backend.evaluate_sweep_boolean(feature, &self.bodies[&slot], input, operation)?;
+            return self.accept_body_replacement(backend, feature, slot, key, result);
         }
         let body = backend.evaluate_sweep(feature, input)?;
         self.body_lineage

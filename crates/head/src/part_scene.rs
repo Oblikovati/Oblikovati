@@ -466,6 +466,7 @@ pub(crate) fn render_part_scene(
 }
 
 mod preview_edit;
+pub(crate) use preview_edit::FeatureEditPreviewError;
 mod references;
 
 mod bodies;

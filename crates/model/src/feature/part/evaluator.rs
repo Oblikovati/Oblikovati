@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //! Injected ordered part feature evaluation boundary.
 use super::{PartBlendKind, PartFeatureFailure};
-use crate::feature::{FeatureId, sketch_prism::ResolvedSketchPrism};
+use crate::feature::{
+    FeatureId,
+    sketch_prism::{PrismBoolean, ResolvedSketchPrism},
+};
 /// The model resolves current source inputs; the injected adapter owns kernel construction and validation.
 pub trait PartFeatureEvaluator {
     type Body;
@@ -110,15 +113,16 @@ pub trait PartFeatureEvaluator {
             "sweep: expected an available named sweep evaluator".into(),
         ))
     }
-    /// Join the solved Sweep to a live target. Example: `backend.evaluate_sweep_join(feature, body, input)?`.
-    fn evaluate_sweep_join(
+    /// Combine a solved Sweep with a live target. Example: `backend.evaluate_sweep_boolean(feature, body, input, operation)?`.
+    fn evaluate_sweep_boolean(
         &mut self,
         _feature: FeatureId,
         _body: &Self::Body,
         _input: crate::feature::sketch_sweep::ResolvedSketchSweep<'_>,
+        _operation: PrismBoolean,
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
         Err(PartFeatureFailure::Unsupported(
-            "sweep Join: expected an available named Boolean evaluator".into(),
+            "sweep: expected an available named Boolean evaluator".into(),
         ))
     }
     /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.

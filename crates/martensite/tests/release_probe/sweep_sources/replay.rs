@@ -104,7 +104,7 @@ fn owner(snapshot: DocumentSnapshot) -> DocumentEditHistory {
 #[test]
 fn sweep_join_replaces_the_named_base_and_retains_its_reference() {
     let (snapshot, sweep) = fixture();
-    let mut history = owner(with_join_base(snapshot));
+    let mut history = owner(with_block_base(snapshot));
     let document: DocumentGuid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
     let base = FeatureId(2);
     let key = named(&history, document, base)
@@ -158,7 +158,62 @@ fn sweep_join_replaces_the_named_base_and_retains_its_reference() {
     assert!((solid.volume(&history, document).unwrap() - (8. + 0.75 * PI)).abs() < 1e-8);
 }
 
-fn with_join_base(mut snapshot: DocumentSnapshot) -> DocumentSnapshot {
+#[test]
+fn inward_sweep_cut_preserves_the_body_key_through_reopen() {
+    use oblikovati_model::feature::sketch_prism::PrismBoolean;
+
+    let (mut snapshot, sweep) = fixture();
+    snapshot
+        .sketches
+        .replace_geometry(PATH, path(-1., SPINE))
+        .unwrap();
+    let mut history = owner(with_block_base(snapshot));
+    let document: DocumentGuid = "11111111-2222-3333-4444-555555555555".parse().unwrap();
+    let base = FeatureId(2);
+    let body_key = named(&history, document, base)
+        .body_reference_key(&history, document)
+        .unwrap()
+        .to_vec();
+    let cut = sweep
+        .with_boolean_target(PrismBoolean::Cut, body_key.clone())
+        .unwrap();
+    let token = history.begin("Sweep Cut").unwrap();
+    let feature = history
+        .edit(&token, |snapshot, ids| {
+            snapshot.create_sketch_sweep("Sweep1", cut, ids)
+        })
+        .unwrap();
+    history.commit(&token, false).unwrap();
+    assert_eq!(
+        history
+            .snapshot()
+            .work_geometry
+            .part_recipe()
+            .unwrap()
+            .version,
+        33
+    );
+
+    let reopened = reopen(&history);
+    let restored = reopened.snapshot().work_geometry.get(feature).unwrap();
+    assert!(
+        restored
+            .reads()
+            .keys()
+            .contains(&FeatureReadKey::Feature(base))
+    );
+    assert!(matches!(restored.definition(),
+        PartFeatureDefinition::SketchSweep(sweep)
+            if sweep.boolean_target() == Some((PrismBoolean::Cut, body_key.as_slice(), base))));
+    let solid = named(&reopened, document, feature);
+    assert_eq!(
+        solid.body_reference_key(&reopened, document).unwrap(),
+        body_key
+    );
+    assert!((solid.volume(&reopened, document).unwrap() - (8. - 0.25 * PI)).abs() < 1e-8);
+}
+
+fn with_block_base(mut snapshot: DocumentSnapshot) -> DocumentSnapshot {
     use oblikovati_model::feature::{
         sketch_prism::SketchPrismDefinition, work_geometry::DatumLength,
     };
@@ -247,7 +302,7 @@ fn reopen(history: &DocumentEditHistory) -> DocumentEditHistory {
     let current = history.snapshot();
     let package = DocumentPackage::decode(b"schemaVersion: 3\ndocumentType: 1\n")
         .unwrap()
-        .with_sketches(&current.sketches, PATH.0, SPINE.0)
+        .with_sketch_reservations(&current.sketches, history.sketch_reservations())
         .unwrap()
         .with_work_geometry(&current.work_geometry, history.feature_high_water())
         .unwrap();

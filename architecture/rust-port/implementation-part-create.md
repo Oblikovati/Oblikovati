@@ -198,3 +198,16 @@ stores the exact target key alongside the Sweep sources. The
 checks the target dependency, retained identity, and analytic volume.
 The [native receipt](receipts/2026-11-26-sweep-join-3917/README.md)
 covers creating Solid2 and editing the same Sweep to Join.
+
+### Sweep Cut
+
+Cut subtracts the swept volume from the sole eligible body and retains
+its reference. The version 33 Part program stores the operation with the
+target key for replay. When an edit would remove no material and the face
+count stays the same, OK opens the Edit Sweep Feature warning with a
+collapsed Details section. Cancel closes the edit and leaves the saved
+Join, body, and document generation intact.
+The [native receipt](receipts/2026-11-26-sweep-cut-3917/README.md) covers
+the unchanged edit on Wayland and X11. The published inward cylinder
+fixture is blocked at profile certification by
+[Martensite #619](https://github.com/Oblikovati/Martensite/issues/619).

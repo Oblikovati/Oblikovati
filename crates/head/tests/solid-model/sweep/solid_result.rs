@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 use super::*;
+use oblikovati_gui::GuiSweepOutput;
 use oblikovati_model::{document_sketch::DocumentSketchId, sketch::SketchEntityId};
 
 #[given("an existing solid has a circular profile on its top face")]
@@ -70,7 +71,10 @@ fn new_solid_name_is_shown(world: &mut ApplicationWorld) {
     let panel = super::super::world::squeezed(&world.window_text("Sweep"));
     assert!(panel.contains("BodyNameSolid2"), "{panel}");
     assert!(world.run_is_enabled("OK"));
-    assert!(!world.state().sweep_preview.unwrap().request.join);
+    assert_eq!(
+        world.state().sweep_preview.unwrap().request.output,
+        GuiSweepOutput::NewSolid
+    );
 }
 
 #[then("Sweep1 and Solid Bodies(2) appear")]
@@ -101,13 +105,16 @@ fn edit_sweep_to_join(world: &mut ApplicationWorld) {
     click_panel(world, "Join");
     let draft = world.state().sweep_preview.unwrap();
     assert_eq!(draft.result, GuiSweepPreview::Ready);
-    assert!(draft.request.join);
+    assert_eq!(draft.request.output, GuiSweepOutput::Join);
     assert!(world.run_is_enabled("OK"));
     accept(world);
     let browser = world.state().browser.unwrap();
     assert_eq!(browser.bodies.len(), 1);
     assert_eq!(browser.bodies[0].key, original.key);
-    assert!(browser.sweep_edits[&browser.bodies[0].feature].join);
+    assert_eq!(
+        browser.sweep_edits[&browser.bodies[0].feature].output,
+        GuiSweepOutput::Join
+    );
 }
 
 #[then("the raised boss remains and Solid Bodies(1) is shown")]
@@ -128,4 +135,77 @@ fn joined_part_has_one_body_with_the_boss(world: &mut ApplicationWorld) {
     );
     world.expect_text("Sweep1");
     world.expect_text("Solid Bodies");
+}
+
+#[given(
+    "the user creates Sweep1 by joining the circular profile along the outward straight path at zero taper"
+)]
+fn create_joined_boss(world: &mut ApplicationWorld) {
+    block_has_a_circular_top_profile(world);
+    straight_path_extends_upward(world);
+    invoke_sweep(world);
+    click_panel(world, "Join");
+    let preview = world.state().sweep_preview.unwrap();
+    assert_eq!(preview.request.output, GuiSweepOutput::Join);
+    assert_eq!(preview.result, GuiSweepPreview::Ready);
+    accept(world);
+    joined_part_has_one_body_with_the_boss(world);
+}
+
+#[when("Sweep1 is edited to Cut and OK is clicked")]
+fn try_to_cut_outside_the_part(world: &mut ApplicationWorld) {
+    reopen_sweep(world);
+    click_panel(world, "Cut");
+    let preview = world.state().sweep_preview.unwrap();
+    assert_eq!(preview.request.output, GuiSweepOutput::Cut);
+    assert_eq!(
+        preview.result,
+        GuiSweepPreview::UnchangedCut("The feature did not change the number of faces (6).".into())
+    );
+    assert!(world.run_is_enabled("OK"));
+    accept(world);
+}
+
+#[then("an Edit Sweep Feature warning is displayed")]
+fn unchanged_cut_warning_is_displayed(world: &mut ApplicationWorld) {
+    world.expect_text("Edit Sweep Feature");
+    world.expect_text("Details");
+}
+
+#[then("its expanded detail reports that the feature did not change the number of faces")]
+fn expand_unchanged_cut_detail(world: &mut ApplicationWorld) {
+    click_warning(world, "Details");
+    let warning = super::super::world::squeezed(&world.window_text("Edit Sweep Feature"));
+    assert!(
+        warning.contains("didnotchangethenumberoffaces(6)"),
+        "{warning}"
+    );
+}
+
+#[when("Cancel is clicked in the warning")]
+fn cancel_unchanged_cut(world: &mut ApplicationWorld) {
+    let generation = world.state().sweep_preview.unwrap().request.generation;
+    click_warning(world, "Cancel");
+    assert!(world.state().sweep_preview.is_none());
+    let workspace = world.app().owner.documents().workspace();
+    let session = workspace
+        .session(workspace.active_document().unwrap())
+        .unwrap();
+    assert_eq!(session.generation(), generation);
+}
+
+fn click_warning(world: &mut ApplicationWorld, label: &str) {
+    let row = world.run_in_window("Edit Sweep Feature", label);
+    world.click(super::diagnostics::pointer_pixels(row.center()));
+    world.pump(Vec::new());
+}
+
+#[then("the joined boss and one solid body return")]
+fn the_previous_join_is_retained(world: &mut ApplicationWorld) {
+    joined_part_has_one_body_with_the_boss(world);
+    let browser = world.state().browser.unwrap();
+    assert_eq!(
+        browser.sweep_edits[&browser.bodies[0].feature].output,
+        GuiSweepOutput::Join
+    );
 }

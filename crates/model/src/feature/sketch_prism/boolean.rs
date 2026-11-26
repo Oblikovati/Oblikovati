@@ -11,7 +11,7 @@ pub struct SketchPrismTarget {
 }
 
 /// Boolean operations that replace a named extrusion target.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum PrismBoolean {
     Cut,
     Join,

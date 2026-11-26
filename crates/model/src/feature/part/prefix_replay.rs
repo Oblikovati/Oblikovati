@@ -4,7 +4,7 @@ use super::{PartBlendKind, PartFeatureEvaluation, PartFeatureEvaluator, PartFeat
 use crate::{
     feature::{
         FeatureHealthRecord, FeatureId, FeatureReplayController, FeatureReplayRange,
-        sketch_prism::ResolvedSketchPrism,
+        sketch_prism::{PrismBoolean, ResolvedSketchPrism},
     },
     history::DocumentSnapshot,
 };
@@ -126,14 +126,15 @@ where
             .evaluate_sweep(feature, input)
             .map(PrefixBody::Created)
     }
-    fn evaluate_sweep_join(
+    fn evaluate_sweep_boolean(
         &mut self,
         feature: FeatureId,
         body: &Self::Body,
         input: crate::feature::sketch_sweep::ResolvedSketchSweep<'_>,
+        operation: PrismBoolean,
     ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
         self.0
-            .evaluate_sweep_join(feature, body.get(), input)
+            .evaluate_sweep_boolean(feature, body.get(), input, operation)
             .map(PrefixBody::Created)
     }
     fn evaluate_prism(

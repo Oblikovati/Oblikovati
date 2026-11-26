@@ -8,7 +8,9 @@ use oblikovati_martensite::{PrismResolutionPolicy, certified_sketch_regions_with
 use oblikovati_model::{
     document_sketch::DocumentSketchId,
     feature::{
-        FeatureId, sketch_prism::SketchDirectedCurve, sketch_sweep::SketchSweepDefinition,
+        FeatureId,
+        sketch_prism::{PrismBoolean, SketchDirectedCurve},
+        sketch_sweep::SketchSweepDefinition,
         work_geometry::WorkGeometryEvaluation,
     },
     history::{DocumentSnapshot, RecipeReservations},
@@ -36,8 +38,8 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
         .ok_or_else(|| Error("sweep: expected a certified resolution policy".into()))?;
     owner.ensure_part(files, document).map_err(Error)?;
     let datums = owner.datum_evaluation(files, document).map_err(Error)?;
-    let target = (input.operation == "join")
-        .then(|| sweep_join_target(files, owner, document, None))
+    let target = matches!(input.operation.as_str(), "join" | "cut")
+        .then(|| sweep_boolean_target(files, owner, document, None))
         .transpose()?;
     let workspace = files.workspace();
     let guid = workspace
@@ -60,9 +62,9 @@ pub(crate) fn apply<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFil
     Ok(reply)
 }
 
-/// Find the sole other live solid for a Sweep Join.
-/// Example: `sweep_join_target(files, replay, document, None)?` before creating a Sweep.
-pub fn sweep_join_target<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
+/// Find the sole other live solid for a Sweep Boolean.
+/// Example: `sweep_boolean_target(files, replay, document, None)?` before creating a Sweep.
+pub fn sweep_boolean_target<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,
     replay: &dyn crate::PartUpdateAccess<O, W, F>,
     document: u64,
@@ -76,7 +78,7 @@ pub fn sweep_join_target<O: TransactionObserver, W: WorkspaceObserver, F: Docume
         .filter_map(|row| evaluated.body(row.feature));
     let (Some(body), None) = (bodies.next(), bodies.next()) else {
         return Err(Error(
-            "sweep Join: expected one eligible target body".into(),
+            "sweep Boolean: expected one eligible target body".into(),
         ));
     };
     let workspace = files.workspace();
@@ -209,8 +211,15 @@ pub fn prepare_sweep_for_target(
         prepare_sweep_twist(snapshot, definition, &input.twist)?
     };
     let definition = match (input.operation.as_str(), target) {
-        ("join", Some(key)) => definition.with_join_target(key).map_err(api_error)?,
-        ("join", None) => return Err(Error("sweep Join: expected a named target body".into())),
+        ("join", Some(key)) => definition
+            .with_boolean_target(PrismBoolean::Join, key)
+            .map_err(api_error)?,
+        ("cut", Some(key)) => definition
+            .with_boolean_target(PrismBoolean::Cut, key)
+            .map_err(api_error)?,
+        ("join" | "cut", None) => {
+            return Err(Error("sweep Boolean: expected a named target body".into()));
+        }
         (_, _) => definition,
     };
     definition.resolve(snapshot, datums).map_err(api_error)?;
@@ -254,7 +263,7 @@ fn validate_options(input: &Sweep) -> Result<(), Error> {
         ));
     }
     if !matches!(input.definition_type.as_str(), "" | "path")
-        || !matches!(input.operation.as_str(), "" | "new" | "join")
+        || !matches!(input.operation.as_str(), "" | "new" | "join" | "cut")
         || !matches!(
             input.orientation.as_str(),
             "" | "normalToPath" | "parallelToOriginalProfile"
@@ -277,7 +286,7 @@ fn validate_options(input: &Sweep) -> Result<(), Error> {
         || !input.guide_face_key.is_empty()
         || input.tool_body_index.is_some()
     {
-        return Err(Error("sweep options: expected New Solid or Join with Follow Path or Fixed orientation, without a guide or station overrides".into()));
+        return Err(Error("sweep options: expected New Solid, Join or Cut with Follow Path or Fixed orientation, without a guide or station overrides".into()));
     }
     Ok(())
 }

@@ -7,6 +7,25 @@ type PreviewEvaluation = oblikovati_model::feature::part::PartFeatureEvaluation<
     NamedSolid,
     oblikovati_martensite::EvaluationFailure,
 >;
+
+pub(crate) enum FeatureEditPreviewError {
+    UnchangedCut(String),
+    Failed(String),
+}
+
+impl From<String> for FeatureEditPreviewError {
+    fn from(cause: String) -> Self {
+        Self::Failed(cause)
+    }
+}
+
+impl std::fmt::Display for FeatureEditPreviewError {
+    fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnchangedCut(cause) | Self::Failed(cause) => output.write_str(cause),
+        }
+    }
+}
 impl DesktopPartScenes {
     #[cfg(test)]
     pub(crate) fn checkpoint_preview_metrics(&self) -> (u64, usize) {
@@ -86,9 +105,24 @@ impl DesktopPartScenes {
         candidate: &DocumentSnapshot,
         feature: FeatureId,
     ) -> Result<ViewportScene, String> {
+        self.project_feature_edit(files, document, candidate, feature)
+            .map_err(|cause| cause.to_string())
+    }
+
+    pub(crate) fn project_feature_edit<
+        O: TransactionObserver,
+        W: WorkspaceObserver,
+        F: DocumentFiles,
+    >(
+        &self,
+        files: &FileWorkspace<O, W, F>,
+        document: u64,
+        candidate: &DocumentSnapshot,
+        feature: FeatureId,
+    ) -> Result<ViewportScene, FeatureEditPreviewError> {
         let policy = self
             .resolution
-            .ok_or("feature preview: expected a certified resolution")?;
+            .ok_or_else(|| "feature preview: expected a certified resolution".to_owned())?;
         let session = files
             .workspace()
             .session(document)
@@ -136,9 +170,10 @@ impl DesktopPartScenes {
             (&edited_key, preview_color),
             document,
         )
+        .map_err(Into::into)
     }
 }
-fn preview_failure(evaluated: &PreviewEvaluation, feature: FeatureId) -> String {
+fn preview_failure(evaluated: &PreviewEvaluation, feature: FeatureId) -> FeatureEditPreviewError {
     use oblikovati_model::feature::{FeatureEvaluationStatus, part::PartFeatureFailure};
     let records: Vec<_> = evaluated
         .health()
@@ -148,15 +183,18 @@ fn preview_failure(evaluated: &PreviewEvaluation, feature: FeatureId) -> String 
     if let [record] = records.as_slice()
         && let FeatureEvaluationStatus::Failed(PartFeatureFailure::Kernel(cause)) = &record.status
     {
-        return format!(
+        if cause.kind() == oblikovati_martensite::EvaluationFailureKind::UnchangedCut {
+            return FeatureEditPreviewError::UnchangedCut(cause.to_string());
+        }
+        return FeatureEditPreviewError::Failed(format!(
             "{cause}; feature {feature:?} preview: expected a valid body; health {:?}",
             evaluated.health()
-        );
+        ));
     }
-    format!(
+    FeatureEditPreviewError::Failed(format!(
         "feature {feature:?} preview: expected a valid body; health {:?}",
         evaluated.health()
-    )
+    ))
 }
 fn render_preview<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles>(
     files: &FileWorkspace<O, W, F>,

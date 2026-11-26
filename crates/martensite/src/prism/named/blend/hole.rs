@@ -73,6 +73,7 @@ pub(super) fn build_hole_candidate(
         oblikovati_model::feature::sketch_prism::PrismBoolean::Cut,
         "hole",
     )
+    .map_err(|failure| failure.to_string())
 }
 
 fn cylinder(

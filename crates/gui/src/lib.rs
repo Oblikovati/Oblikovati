@@ -154,8 +154,8 @@ mod move_body_ribbon;
 mod shell_feature_dialog;
 mod sweep_dialog;
 pub use sweep_dialog::{
-    GuiSweepAction, GuiSweepEditSeed, GuiSweepOrientation, GuiSweepPresetStore, GuiSweepPreview,
-    GuiSweepPreviewState, GuiSweepProfile, GuiSweepRequest,
+    GuiSweepAction, GuiSweepEditSeed, GuiSweepOrientation, GuiSweepOutput, GuiSweepPresetStore,
+    GuiSweepPreview, GuiSweepPreviewState, GuiSweepProfile, GuiSweepRequest,
 };
 mod shell_ribbon;
 pub use face_properties::GuiFaceProperties;

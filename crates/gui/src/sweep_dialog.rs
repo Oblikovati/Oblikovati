@@ -12,6 +12,7 @@ mod output;
 mod presets;
 use crate::icons::GuiRibbonIcons;
 use oblikovati_model::feature::{FeatureId, sketch_prism::SketchPrismSelection};
+pub use output::GuiSweepOutput;
 pub use presets::GuiSweepPresetStore;
 
 /// Sweep orientation choices available in Properties.
@@ -41,7 +42,7 @@ pub struct GuiSweepEditSeed {
     pub twist: String,
     pub orientation: GuiSweepOrientation,
     #[serde(skip)]
-    pub join: bool,
+    pub output: GuiSweepOutput,
 }
 
 /// Document and generation whose Sweep inputs may be previewed or accepted.
@@ -52,7 +53,7 @@ pub struct GuiSweepRequest {
     pub feature: Option<FeatureId>,
     pub profile: GuiSweepProfile,
     pub path_cleared: bool,
-    pub join: bool,
+    pub output: GuiSweepOutput,
     pub orientation: GuiSweepOrientation,
     pub taper: String,
     pub twist: String,
@@ -66,6 +67,7 @@ pub enum GuiSweepPreview {
     MissingProfile,
     MissingPath,
     MissingGuide,
+    UnchangedCut(String),
     Failed(String),
 }
 
@@ -130,7 +132,7 @@ pub(crate) struct SweepDialog {
     feature: Option<FeatureId>,
     profile: GuiSweepProfile,
     path_cleared: bool,
-    join: bool,
+    output: GuiSweepOutput,
     orientation: GuiSweepOrientation,
     selector: orientation::OrientationSelector,
     presets: presets::SweepPresets,
@@ -182,7 +184,7 @@ impl SweepDialog {
         self.feature = feature;
         self.profile = GuiSweepProfile::Saved;
         self.path_cleared = false;
-        self.join = seed.join;
+        self.output = seed.output;
         self.taper = seed.taper;
         self.twist = seed.twist;
         self.initial_twist.clone_from(&self.twist);
@@ -332,6 +334,7 @@ impl SweepDialog {
             _ => {}
         }
         let ready = GuiSweepAction::Commit(request.clone()).enabled(state);
+        let cut_warning = output::cut_warning(preview, &request);
         if !tip && ui.collapsing_header("Advanced Properties", imgui::TreeNodeFlags::empty()) {
             ui.checkbox(
                 "Optimize for Single Selection",
@@ -342,8 +345,10 @@ impl SweepDialog {
             ui.text_wrapped("Create a closed section in one sketch and a straight path in another. Start the path on the profile plane and keep both sketches visible.");
         }
         ui.separator();
-        if crate::theme::property_accept(ui, tip || ready) {
-            if ready {
+        if crate::theme::property_accept(ui, tip || ready || cut_warning.is_some()) {
+            if cut_warning.is_some() {
+                ui.open_popup(output::EDIT_WARNING);
+            } else if ready {
                 self.submitted = Some(request.clone());
                 actions.push(GuiShellAction::Sweep(GuiSweepAction::Commit(request)));
             } else {
@@ -359,6 +364,9 @@ impl SweepDialog {
         ui.same_line();
         if crate::widget_abi::button(ui, "Help", [58., 28.]) {
             self.show_help = !self.show_help;
+        }
+        if Self::draw_cut_warning(ui, cut_warning) {
+            self.close(actions);
         }
     }
 
@@ -417,7 +425,7 @@ impl SweepDialog {
             feature: self.feature,
             profile: self.profile.clone(),
             path_cleared: self.path_cleared,
-            join: self.join,
+            output: self.output,
             orientation: self.orientation,
             taper: if follows_path {
                 self.taper.clone()
@@ -446,7 +454,7 @@ impl SweepDialog {
                 taper: preset_angle(state, &request.taper),
                 twist: preset_angle(state, &request.twist),
                 orientation: request.orientation,
-                join: false,
+                output: GuiSweepOutput::NewSolid,
             })
     }
 

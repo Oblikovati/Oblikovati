@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite id="0" name="Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" package="testsuite/Feature: Sweep: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature" tests="1" errors="0" failures="0" hostname="localhost" timestamp="2026-11-26T22:28:52.680004203Z" time="11.543452388"><testcase name="Scenario: sweep-14 Cancel a Cut that does not change faces: mnt/vininas-projects/MCAD-Scenarios/features/solid-model/sweep/sweep.feature:155:3" time="11.543452388"><system-out><![CDATA[  Scenario: sweep-14 Cancel a Cut that does not change faces
+   ✔  Given a disposable copy of the native fixture "fixtures/cad/sweep/block-outward-path.opd" is open
+   ✔  And the user creates Sweep1 by joining the circular profile along the outward straight path at zero taper
+   ✔  When Sweep1 is edited to Cut and OK is clicked
+   ✔  Then an Edit Sweep Feature warning is displayed
+   ✔  And its expanded detail reports that the feature did not change the number of faces
+   ✔  When Cancel is clicked in the warning
+   ✔  Then the joined boss and one solid body return
+]]></system-out></testcase></testsuite></testsuites>

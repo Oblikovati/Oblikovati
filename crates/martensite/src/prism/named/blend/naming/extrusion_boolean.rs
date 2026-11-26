@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-only
-use super::super::solid_boolean::BooleanTool;
+use super::super::solid_boolean::{BooleanFailure, BooleanTool};
 use super::*;
 use oblikovati_model::feature::sketch_prism::PrismBoolean;
 
@@ -11,7 +11,7 @@ impl BlendNamedTopology {
         tools: Vec<BooleanTool>,
         kind: PrismBoolean,
         operation: &str,
-    ) -> Result<BlendCandidate, String> {
+    ) -> Result<BlendCandidate, BooleanFailure> {
         let input = self.source_topology(history, document)?;
         super::super::solid_boolean::build_boolean_candidate(
             BlendInputTopology {
