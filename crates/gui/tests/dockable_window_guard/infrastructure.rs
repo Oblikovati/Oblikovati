@@ -174,4 +174,6 @@ pub(super) const INFRASTRUCTURE: &[(&str, &str)] = &[
     ),
     // One transient confirmation; the Move tool itself remains dockable (#4054).
     ("sketch/move_tool.rs", "modal:REJECTION_POPUP"),
+    // Cut rejection blocks acceptance while the owning Sweep tool remains dockable (#3917).
+    ("sweep_output.rs", "modal:EDIT_WARNING"),
 ];
