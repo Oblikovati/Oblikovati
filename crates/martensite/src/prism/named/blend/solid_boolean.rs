@@ -9,8 +9,8 @@ use martensite_tkgeombase::gprop::GProps;
 use martensite_tktopalgo::brep_gprop::BRepGProp;
 use oblikovati_model::feature::sketch_prism::PrismBoolean;
 
-pub(super) struct BooleanTool<'a> {
-    pub shape: &'a Shape,
+pub(in crate::prism::named) struct BooleanTool {
+    pub shape: Shape,
     pub sources: Vec<(Vec<u8>, Shape)>,
     pub resolution: Option<PrismResolution>,
 }
@@ -19,7 +19,7 @@ pub(super) fn build_boolean_candidate(
     input: BlendInputTopology<'_>,
     history: &DocumentEditHistory,
     document: DocumentGuid,
-    tool: BooleanTool<'_>,
+    tools: Vec<BooleanTool>,
     kind: PrismBoolean,
     operation: &str,
 ) -> Result<BlendCandidate, String> {
@@ -27,18 +27,14 @@ pub(super) fn build_boolean_candidate(
         .map_err(|error| error.to_string())?;
     let copied = copy_named_sources(&mut copier, input.source)?;
     let target = copier.shape().map_err(|error| error.to_string())?;
-    let boolean = performed_boolean(target, tool.shape, kind)
+    let boolean = performed_boolean(target, &tools, kind)
         .map_err(|error| format!("{operation}: expected completed Boolean operation: {error}"))?;
-    let (shape, achieved_tolerance) = checked_boolean(
-        target,
-        &boolean,
-        input.resolution,
-        tool.resolution.map(|policy| (tool.shape, policy)),
-        kind,
-        operation,
-    )?;
+    let (shape, achieved_tolerance) =
+        checked_boolean(target, &boolean, input.resolution, &tools, kind, operation)?;
     let mut records = boolean_history(&boolean, copied, false)?;
-    records.extend(boolean_history(&boolean, tool.sources, true)?);
+    for tool in tools {
+        records.extend(boolean_history(&boolean, tool.sources, true)?);
+    }
     Ok(BlendCandidate {
         resolution: input.resolution,
         achieved_tolerance: Some(achieved_tolerance),
@@ -56,14 +52,16 @@ pub(super) fn build_boolean_candidate(
 
 fn performed_boolean(
     target: &Shape,
-    tool: &Shape,
+    tool_shapes: &[BooleanTool],
     kind: PrismBoolean,
 ) -> Result<BRepAlgoAPIBooleanOperation, martensite_tkernel::standard::Failure> {
     let mut boolean = BRepAlgoAPIBooleanOperation::new();
     let mut arguments = List::default();
     arguments.append(target.clone());
     let mut tools = List::default();
-    tools.append(tool.clone());
+    for tool in tool_shapes {
+        tools.append(tool.shape.clone());
+    }
     boolean.set_arguments(&arguments);
     boolean.set_tools(&tools);
     boolean.set_operation(match kind {
@@ -78,7 +76,7 @@ fn checked_boolean(
     target: &Shape,
     boolean: &BRepAlgoAPIBooleanOperation,
     resolution: Option<PrismResolution>,
-    tool: Option<(&Shape, PrismResolution)>,
+    tools: &[BooleanTool],
     kind: PrismBoolean,
     operation: &str,
 ) -> Result<(Shape, PrismAchievedTolerance), String> {
@@ -94,11 +92,13 @@ fn checked_boolean(
     crate::checked_shape::require_geometry(&result, &format!("{operation} result"))
         .map_err(|error| error.to_string())?;
     validate_result_faces(&result, operation)?;
-    let achieved = match tool {
-        Some((tool, policy)) => tolerances::check_two_operand_boolean(
-            target, tool, &result, resolution, policy, operation,
-        )?,
-        None => tolerances::check(target, &result, resolution, operation)?,
+    let certified_tools = tools
+        .iter()
+        .filter_map(|tool| Some((&tool.shape, tool.resolution?)));
+    let achieved = if tools.iter().any(|tool| tool.resolution.is_some()) {
+        tolerances::check_boolean(target, certified_tools, &result, resolution, operation)?
+    } else {
+        tolerances::check(target, &result, resolution, operation)?
     };
     let before = crate::checked_shape::analytic_properties(target, &format!("{operation} input"))
         .map_err(|error| error.to_string())?;
@@ -229,14 +229,19 @@ mod tests {
             display_angular: 0.1,
             maximum_tolerance: 1e-5,
         };
-        let boolean = performed_boolean(&target, &tool, PrismBoolean::Cut).unwrap();
+        let mut tools = [BooleanTool {
+            shape: (*tool).clone(),
+            sources: Vec::new(),
+            resolution: None,
+        }];
+        let boolean = performed_boolean(&target, &tools, PrismBoolean::Cut).unwrap();
         let result = single_solid(boolean.shape(), "square prism").unwrap();
         crate::checked_shape::require_geometry(&result, "cut result").unwrap();
         let decline = checked_boolean(
             &target,
             &boolean,
             Some(resolution),
-            None,
+            &tools,
             PrismBoolean::Cut,
             "square prism",
         )
@@ -245,26 +250,27 @@ mod tests {
             decline.contains("square prism vertex tolerance"),
             "{decline}"
         );
+        tools[0].resolution = Some(resolution);
         let (_, tolerance) = checked_boolean(
             &target,
             &boolean,
             Some(resolution),
-            Some((&tool, resolution)),
+            &tools,
             PrismBoolean::Cut,
             "square prism",
         )
         .unwrap();
         assert!(tolerance.vertex <= resolution.maximum_tolerance);
-        let tight_tool = PrismResolution {
+        tools[0].resolution = Some(PrismResolution {
             maximum_tolerance: 1e-7,
             ..resolution
-        };
+        });
         assert!(
             checked_boolean(
                 &target,
                 &boolean,
                 Some(resolution),
-                Some((&tool, tight_tool)),
+                &tools,
                 PrismBoolean::Cut,
                 "square prism",
             )

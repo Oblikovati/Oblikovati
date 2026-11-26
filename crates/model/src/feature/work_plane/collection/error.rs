@@ -59,7 +59,7 @@ impl std::error::Error for WorkPlaneProgramRecipeError {
 fn unsupported_version(version: u32, formatter: &mut Formatter<'_>) -> std::fmt::Result {
     write!(
         formatter,
-        "work plane program version {version}: expected 1 through 24"
+        "work plane program version {version}: expected 1 through 25"
     )
 }
 

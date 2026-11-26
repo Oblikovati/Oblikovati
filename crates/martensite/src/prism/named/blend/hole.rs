@@ -65,11 +65,11 @@ pub(super) fn build_hole_candidate(
         input,
         history,
         document,
-        super::solid_boolean::BooleanTool {
-            shape: &tool,
+        vec![super::solid_boolean::BooleanTool {
+            shape: tool,
             sources: tool_faces,
             resolution: None,
-        },
+        }],
         oblikovati_model::feature::sketch_prism::PrismBoolean::Cut,
         "hole",
     )

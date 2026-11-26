@@ -252,6 +252,7 @@ impl BlendCandidate {
         let mut entries: Vec<_> = self
             .source_bodies
             .iter()
+            .filter(|key| *key != &body)
             .map(|key| (key.clone(), self.shape.clone()))
             .collect();
         entries.push((body.clone(), self.shape.clone()));

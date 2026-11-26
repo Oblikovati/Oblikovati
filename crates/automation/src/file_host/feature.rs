@@ -9,6 +9,7 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
             featureargs::KIND_MOVE_BODY,
             featureargs::KIND_HOLE,
             featureargs::KIND_SHELL,
+            featureargs::KIND_PATTERN_RECTANGULAR,
         ]
         .contains(&args.kind.as_str())
         {
@@ -39,6 +40,9 @@ impl<O: TransactionObserver, W: WorkspaceObserver, F: DocumentFiles> FileContext
         match args.kind.as_str() {
             featureargs::KIND_MOVE_BODY => crate::move_body::apply(self.files, replay, args),
             featureargs::KIND_SHELL => crate::shell::apply(self.files, replay, args),
+            featureargs::KIND_PATTERN_RECTANGULAR => {
+                crate::rectangular_pattern::apply(self.files, replay, args)
+            }
             _ => crate::hole::apply(self.files, replay, args),
         }
     }

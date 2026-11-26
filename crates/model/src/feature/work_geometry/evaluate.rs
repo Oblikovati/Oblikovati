@@ -139,6 +139,7 @@ impl WorkGeometryEvaluation {
                 | WorkPlaneDefinition::Chamfer(_)
                 | WorkPlaneDefinition::Hole(_)
                 | WorkPlaneDefinition::MoveBody(_)
+                | WorkPlaneDefinition::RectangularPattern(_)
         ) {
             return Err(WorkPlaneError::Kind(super::WorkGeometryKindMismatch {
                 feature: id,

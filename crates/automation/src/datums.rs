@@ -164,7 +164,8 @@ impl DatumCollection {
             | WorkGeometryDefinition::Chamfer(_)
             | WorkGeometryDefinition::Hole(_)
             | WorkGeometryDefinition::Shell(_)
-            | WorkGeometryDefinition::MoveBody(_) => {
+            | WorkGeometryDefinition::MoveBody(_)
+            | WorkGeometryDefinition::RectangularPattern(_) => {
                 return false;
             }
             WorkGeometryDefinition::Axis(_) | WorkGeometryDefinition::AxisThroughPoints(_) => {

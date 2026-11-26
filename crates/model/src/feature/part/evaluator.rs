@@ -87,6 +87,19 @@ pub trait PartFeatureEvaluator {
             "extrude {operation}: expected a named Boolean evaluator"
         )))
     }
+    /// Apply the resolved extrusion tools at each grid occurrence.
+    /// Example: `backend.evaluate_rectangular_pattern(id, body, &sources, &occurrences)`.
+    fn evaluate_rectangular_pattern(
+        &mut self,
+        _feature: FeatureId,
+        _body: &Self::Body,
+        _sources: &[crate::feature::rectangular_pattern::PatternPrismSource<'_>],
+        _occurrences: &[crate::feature::rectangular_pattern::RectangularPatternOccurrence],
+    ) -> Result<Self::Body, PartFeatureFailure<Self::Failure>> {
+        Err(PartFeatureFailure::Unsupported(
+            "rectangular pattern: expected a named tool replay backend".into(),
+        ))
+    }
     /// Construct an isolated result from checked inputs; example: `backend.evaluate_prism(feature.id(), input)?`.
     fn evaluate_prism(
         &mut self,

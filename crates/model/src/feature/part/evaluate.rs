@@ -373,6 +373,7 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
                 | PartFeatureDefinition::Hole(_)
                 | PartFeatureDefinition::Shell(_)
                 | PartFeatureDefinition::MoveBody(_)
+                | PartFeatureDefinition::RectangularPattern(_)
         ) {
             feature
                 .validate_plane_metadata()
@@ -396,6 +397,9 @@ impl<Body, Failure> PartFeatureEvaluation<Body, Failure> {
             }
             PartFeatureDefinition::Hole(definition) => {
                 self.evaluate_hole(snapshot, backend, id, definition)
+            }
+            PartFeatureDefinition::RectangularPattern(definition) => {
+                self.evaluate_rectangular_pattern(snapshot, backend, id, definition)
             }
             PartFeatureDefinition::Shell(definition) => {
                 self.evaluate_shell(snapshot, backend, id, definition)

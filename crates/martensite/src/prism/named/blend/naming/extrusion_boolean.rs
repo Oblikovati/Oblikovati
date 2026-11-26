@@ -8,7 +8,7 @@ impl BlendNamedTopology {
         &self,
         history: &DocumentEditHistory,
         document: DocumentGuid,
-        tool: BooleanTool<'_>,
+        tools: Vec<BooleanTool>,
         kind: PrismBoolean,
     ) -> Result<BlendCandidate, String> {
         let input = self.source_topology(history, document)?;
@@ -25,7 +25,7 @@ impl BlendNamedTopology {
             },
             history,
             document,
-            tool,
+            tools,
             kind,
             &format!("extrude {kind}"),
         )

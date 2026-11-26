@@ -12,6 +12,7 @@ impl AuthoredFeature<WorkGeometryDefinition> {
                     | WorkGeometryDefinition::Hole(_)
                     | WorkGeometryDefinition::Shell(_)
                     | WorkGeometryDefinition::MoveBody(_)
+                    | WorkGeometryDefinition::RectangularPattern(_)
             )
         {
             return Err(WorkGeometryError::Kind(super::WorkGeometryKindMismatch {

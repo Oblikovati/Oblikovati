@@ -169,3 +169,28 @@ advances to a Cut that produces four solids, and square button advances
 to a later Join that adds no volume. Belt B still has indistinguishable
 descendants. In a separate rerun of seven Cut naming failures, adjust and
 light strip clip passed and five cases still had indistinguishable names.
+
+## Rectangular patterns of extrusion features
+
+The typed `patternRectangular` request stores Join and Cut source feature
+IDs and replays their tools on one current solid. It supports numeric
+counts, spacing or fitted extents, mid-plane placement, and occurrence
+suppression. Occurrence names use the source ID and signed offsets from
+the seed cell. The feature recipe and body references survive save and
+reopen.
+
+The adapter translates certified seed tools and batches consecutive
+tools with the same Boolean operation. Each batch checks solid geometry,
+analytic volume, and the target and tool tolerance caps. Batching keeps
+the 6×4 veroboard Cut inside the desktop owner's response window.
+
+Three Wayland MCP workflows passed on API 0.166.0. PCB mount matched
+4.504779 cm³ and 4.844071 cm³ at post lengths of 11 mm and 14 mm.
+Faceplate matched 5.817876 cm³ and 6.873451 cm³ at boss lengths of 8 mm
+and 12 mm. Veroboard matched 0.485969 cm³ with 24 holes. The desktop-owner
+regression checks the original body key and analytic volume through
+undo, redo, resize, and reopen.
+
+Count expressions, boundary clipping, other placement modes, and source
+features outside Join and Cut extrusions remain open. The report's
+unsupported-method totals still reflect its original sweep.

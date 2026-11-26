@@ -401,4 +401,5 @@ mod extrusion_span;
 mod hole_evaluation;
 mod hole_placement;
 mod move_body_evaluation;
+mod rectangular_pattern;
 mod shell_evaluation;

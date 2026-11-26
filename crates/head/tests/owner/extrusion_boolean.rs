@@ -323,3 +323,90 @@ fn split_cap_keys(owner: &TestOwner, document: u64, parent: &[u8]) -> Vec<Vec<u8
     }
     descendants.clone()
 }
+
+#[test]
+fn rectangular_pattern_replays_joined_bosses_on_the_same_body() {
+    use oblikovati_api::wire::featureargs::PatternRectangular;
+    let (owner, _) = owner();
+    let mut owner = owner
+        .with_extrusion_policy(crate::part_scene::resolution_policy::desktop_policy())
+        .unwrap();
+    let document = open_sketch(&mut owner);
+    let client = Client::new(owner.document_host());
+    client.features().add_feature(&request()).unwrap();
+    let plane = client
+        .work_planes()
+        .create(&CreateWorkPlaneArgs {
+            kind: "plane-offset".into(),
+            refs: Some(vec!["origin/plane/xy".into()]),
+            offset: "width".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let sketch_index = client
+        .sketch()
+        .create(&CreateSketchArgs {
+            work_plane_index: Some(Box::new(plane.index)),
+            ..Default::default()
+        })
+        .unwrap()
+        .sketch_index;
+    client
+        .sketch()
+        .add_entity(&AddSketchEntityArgs {
+            sketch_index,
+            kind: "circle".into(),
+            points: Some(vec![Some(vec![0.2, 0.2])]),
+            radius: "1 mm".into(),
+            ..Default::default()
+        })
+        .unwrap();
+    let join = client
+        .features()
+        .add_feature(&Extrude {
+            sketch_index,
+            operation: "join".into(),
+            distance: "5 mm".into(),
+            ..Default::default()
+        })
+        .unwrap()
+        .0
+        .unwrap();
+    let seed = join["name"].as_str().unwrap().to_owned();
+    let result = client
+        .features()
+        .add_feature(&PatternRectangular {
+            source_features: Some(vec![seed]),
+            count_x: 2,
+            count_y: 2,
+            step_x: Some(vec![0.56, 0., 0.]),
+            step_y: Some(vec![0., 0.56, 0.]),
+            ..Default::default()
+        })
+        .unwrap()
+        .0
+        .unwrap();
+    assert_eq!(result["kind"], "rectangular-pattern");
+    assert_eq!(result["bodies"], 1);
+    let boss = std::f64::consts::PI * 0.005;
+    let primary = check_boolean_body(&mut owner, document, 1. + 4. * boss);
+    Client::new(owner.document_host())
+        .transactions()
+        .undo()
+        .unwrap();
+    assert_eq!(check_boolean_body(&mut owner, document, 1. + boss), primary);
+    Client::new(owner.document_host())
+        .transactions()
+        .redo()
+        .unwrap();
+    assert_eq!(
+        check_boolean_body(&mut owner, document, 1. + 4. * boss),
+        primary
+    );
+    set_size(&mut owner, "12 mm");
+    let reopened = reopen_boolean_part(&mut owner, document);
+    assert_eq!(
+        check_boolean_body(&mut owner, reopened, 1.728 + 4. * boss),
+        primary
+    );
+}

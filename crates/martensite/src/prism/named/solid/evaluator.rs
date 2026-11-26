@@ -55,6 +55,15 @@ impl PartFeatureEvaluator for CertifiedNamedSolidEvaluator<'_> {
     ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
         self.evaluate_named_prism_boolean(feature, body, input, kind)
     }
+    fn evaluate_rectangular_pattern(
+        &mut self,
+        feature: FeatureId,
+        body: &NamedSolid,
+        sources: &[oblikovati_model::feature::rectangular_pattern::PatternPrismSource<'_>],
+        occurrences: &[oblikovati_model::feature::rectangular_pattern::RectangularPatternOccurrence],
+    ) -> Result<NamedSolid, PartFeatureFailure<EvaluationFailure>> {
+        self.evaluate_named_rectangular_pattern(feature, body, sources, occurrences)
+    }
     fn evaluate_blend(
         &mut self,
         kind: PartBlendKind,

@@ -21,6 +21,7 @@ pub enum WorkPlaneDefinitionRecipe {
     Hole(crate::feature::hole::HoleRecipe),
     MoveBody(crate::feature::move_body::MoveBodyRecipe),
     Shell(crate::feature::shell::ShellRecipe),
+    RectangularPattern(crate::feature::rectangular_pattern::RectangularPatternRecipe),
     SketchPrism(crate::feature::sketch_prism::SketchPrismRecipe),
     AtAngleAboutAxis(crate::feature::work_geometry::WorkPlaneLineAngle),
     ThroughTwoAxes([crate::feature::work_axis::WorkAxisReference; 2]),
@@ -61,6 +62,9 @@ impl WorkPlaneDefinition {
             Self::Hole(definition) => Source::Hole(definition.recipe()),
             Self::MoveBody(definition) => Source::MoveBody(definition.recipe()),
             Self::Shell(definition) => Source::Shell(definition.recipe()),
+            Self::RectangularPattern(pattern) => {
+                Source::RectangularPattern(pattern.recipe().clone())
+            }
             Self::SketchPrism(definition) => Source::SketchPrism(definition.recipe()),
             Self::AtAngleAboutAxis(source) => Source::AtAngleAboutAxis(source.clone()),
             Self::ThroughTwoAxes(axes) => Source::ThroughTwoAxes(*axes),
@@ -92,6 +96,11 @@ fn restore_definition(
 ) -> Result<WorkPlaneDefinition, WorkPlaneError> {
     use WorkPlaneDefinitionRecipe::*;
     match definition {
+        RectangularPattern(recipe) => {
+            crate::feature::rectangular_pattern::RectangularPatternDefinition::new(recipe)
+                .map(|definition| WorkPlaneDefinition::RectangularPattern(Box::new(definition)))
+                .map_err(WorkPlaneError::BodyReference)
+        }
         Shell(recipe) => crate::feature::shell::ShellDefinition::from_recipe(&recipe)
             .map(|definition| WorkPlaneDefinition::Shell(Box::new(definition)))
             .map_err(WorkPlaneError::BodyReference),
@@ -171,6 +180,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 17,
             Self::MoveBody(_) => 18,
             Self::Shell(_) => 19,
+            Self::RectangularPattern(_) => 20,
             Self::Fillet(_) => 15,
             Self::DeleteBody(_) => 12,
             Self::SketchPrism(_) => 11,
@@ -198,6 +208,7 @@ impl WorkPlaneDefinitionRecipe {
             Self::Hole(_) => 22,
             Self::MoveBody(_) => 23,
             Self::Shell(_) => 24,
+            Self::RectangularPattern(_) => 25,
             Self::Fillet(_) => 20,
             Self::DeleteBody(_) => 17,
             Self::SketchPrism(_) => 16,

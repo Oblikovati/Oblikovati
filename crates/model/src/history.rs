@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: GPL-2.0-only
-
 //! Single-owner edits over owned recipe state. Kernel handles are not snapshot contents.
 use crate::{
     identity::{RecipeIdAllocator, RecipeIdError},
@@ -20,6 +19,7 @@ mod hole_create;
 mod move_body_create;
 mod occurrence_ids;
 mod prism_create;
+mod rectangular_pattern_create;
 mod scalar_ownership;
 mod shell_create;
 mod sketch_block_create;

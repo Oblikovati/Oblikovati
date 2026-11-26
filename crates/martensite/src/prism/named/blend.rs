@@ -7,7 +7,7 @@ use martensite_tkfillet::{
 };
 use martensite_tktopalgo::brep_builder_api::{BRepBuilderAPICopy, BRepBuilderAPIMakeShape};
 use oblikovati_model::identity::ReferenceEnvelope;
-mod extrusion_boolean;
+pub(super) mod extrusion_boolean;
 mod hole;
 mod rigid_motion;
 mod shell;
@@ -47,6 +47,10 @@ pub struct BlendHistoryRecord {
 }
 
 impl BlendCandidate {
+    pub(in crate::prism::named) fn with_body_parent(mut self, key: &[u8]) -> Self {
+        self.body_parent = key.to_vec();
+        self
+    }
     /// Read input records in name order; example: `candidate.history()`.
     pub fn history(&self) -> &[BlendHistoryRecord] {
         &self.history

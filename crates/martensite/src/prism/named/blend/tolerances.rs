@@ -29,32 +29,28 @@ pub(super) fn check(
     }
     Ok(after)
 }
-pub(super) fn check_two_operand_boolean(
+pub(super) fn check_boolean<'a>(
     target: &Shape,
-    tool: &Shape,
+    tools: impl Iterator<Item = (&'a Shape, PrismResolution)>,
     result: &Shape,
     target_resolution: Option<PrismResolution>,
-    tool_resolution: PrismResolution,
     operation: &str,
 ) -> Result<PrismAchievedTolerance, String> {
     let target_resolution = target_resolution
         .ok_or_else(|| format!("{operation}: expected a certified target resolution"))?
         .validate()?;
-    let tool_resolution = tool_resolution.validate()?;
     require_budget(
         measure(target, operation)?,
         target_resolution.maximum_tolerance,
         operation,
     )?;
-    require_budget(
-        measure(tool, operation)?,
-        tool_resolution.maximum_tolerance,
-        operation,
-    )?;
+    let mut cap = target_resolution.maximum_tolerance;
+    for (tool, resolution) in tools {
+        let maximum = resolution.validate()?.maximum_tolerance;
+        require_budget(measure(tool, operation)?, maximum, operation)?;
+        cap = cap.min(maximum);
+    }
     let achieved = measure(result, operation)?;
-    let cap = target_resolution
-        .maximum_tolerance
-        .min(tool_resolution.maximum_tolerance);
     require_budget(achieved, cap, operation)?;
     Ok(achieved)
 }
